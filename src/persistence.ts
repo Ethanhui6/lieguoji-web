@@ -1,6 +1,6 @@
 import { validateWorld } from './sim/core';
 import type { World } from './sim/types';
-export type SaveEnvelope = { format: 'lieguoji-save'; version: 1; rulesVersion: '0.1.0'; createdAt: string; checksum: string; world: World };
+export type SaveEnvelope = { format: 'lieguoji-save'; version: 1 | 2; rulesVersion: '0.1.0' | '0.2.0'; createdAt: string; checksum: string; world: World };
 const DB_NAME = 'lieguoji-test-continent-v1';
 async function checksum(world: World) {
  const bytes = new TextEncoder().encode(JSON.stringify(world));
@@ -9,15 +9,18 @@ async function checksum(world: World) {
 }
 export async function encodeSave(world: World): Promise<SaveEnvelope> {
  if (!validateWorld(world)) throw new Error('世界状态校验失败，未写入存档。');
- return {format:'lieguoji-save',version:1,rulesVersion:'0.1.0',createdAt:new Date().toISOString(),checksum:await checksum(world),world:structuredClone(world)};
+ const snapshot=structuredClone(world);
+ return {format:'lieguoji-save',version:snapshot.schemaVersion,rulesVersion:snapshot.rulesVersion,createdAt:new Date().toISOString(),checksum:await checksum(snapshot),world:snapshot};
 }
 export async function decodeSave(raw: unknown): Promise<World> {
  if(!raw || typeof raw !== 'object') throw new Error('无法识别存档。');
- const e = raw as Partial<SaveEnvelope>;
- if(e.format !== 'lieguoji-save' || e.version !== 1 || e.rulesVersion !== '0.1.0') throw new Error('存档版本不兼容，原存档未修改。');
+ rejectFutureSave(raw);
+ const e = structuredClone(raw) as Partial<SaveEnvelope>;
+ if(e.format !== 'lieguoji-save' || !versionPair(e.version,e.rulesVersion)) throw new Error('存档版本不兼容，原存档未修改。');
  if(!validateWorld(e.world)) throw new Error('存档内容损坏，原存档未修改。');
+ if(e.version!==e.world.schemaVersion || e.rulesVersion!==e.world.rulesVersion) throw new Error('存档内外版本不一致，原存档未修改。');
  if(e.checksum !== await checksum(e.world)) throw new Error('存档校验和不匹配，原存档未修改。');
- return structuredClone(e.world);
+ return e.world;
 }
 function openDB(scope='test-continent'): Promise<IDBDatabase> {
  if(!/^[a-z][a-z0-9-]{0,90}$/.test(scope)) return Promise.reject(new Error('存档空间标识无效。'));
@@ -30,23 +33,43 @@ function openDB(scope='test-continent'): Promise<IDBDatabase> {
   req.onblocked=()=>reject(new Error('另一窗口正在升级存档，请关闭旧窗口后再试。'));
  });
 }
+function versionPair(version:unknown,rules:unknown) {
+ return version===1&&rules==='0.1.0'||version===2&&rules==='0.2.0';
+}
 function rejectFutureSave(raw:unknown) {
- if(raw && typeof raw==='object' && 'format' in raw && raw.format==='lieguoji-save' && ('version' in raw && raw.version!==1 || 'rulesVersion' in raw && raw.rulesVersion!=='0.1.0')) throw new Error('存档版本不兼容，已锁定写入；请使用创建该存档的新版游戏。');
+ if(!raw || typeof raw!=='object' || !('format'in raw) || raw.format!=='lieguoji-save')return;
+ const outer=raw as Record<string,unknown>;
+ const world=outer.world&&typeof outer.world==='object'?outer.world as Record<string,unknown>:null;
+ const statecraft=world?.statecraft&&typeof world.statecraft==='object'?world.statecraft as Record<string,unknown>:null;
+ const unknownOuter=('version'in outer && outer.version!==1 && outer.version!==2)||('rulesVersion'in outer && outer.rulesVersion!=='0.1.0' && outer.rulesVersion!=='0.2.0');
+ const unknownInner=world&&(('schemaVersion'in world && world.schemaVersion!==1 && world.schemaVersion!==2)||('rulesVersion'in world && world.rulesVersion!=='0.1.0' && world.rulesVersion!=='0.2.0'));
+ const mismatchedOuter='version'in outer&&'rulesVersion'in outer&&!versionPair(outer.version,outer.rulesVersion);
+ const mismatchedInner=world&&'schemaVersion'in world&&'rulesVersion'in world&&!versionPair(world.schemaVersion,world.rulesVersion);
+ const mismatchedLayers=world&&('version'in outer&&'schemaVersion'in world&&outer.version!==world.schemaVersion || 'rulesVersion'in outer&&'rulesVersion'in world&&outer.rulesVersion!==world.rulesVersion);
+ if(unknownOuter||unknownInner||mismatchedOuter||mismatchedInner||mismatchedLayers||(statecraft&&'version'in statecraft&&statecraft.version!==1))throw new Error('存档版本不兼容，已锁定写入；请使用创建该存档的兼容游戏版本。');
+}
+function checkedRevision(value:unknown):number {
+ const revision=value===undefined?0:value;
+ if(typeof revision!=='number'||!Number.isSafeInteger(revision)||revision<0)throw new Error('存档版本计数损坏，原存档已保留。');
+ return revision;
 }
 export async function readSave(scope='test-continent'): Promise<{world:World|null; recovery:boolean; revision:number}> {
  const db=await openDB(scope);
- const raw=await new Promise<{current:unknown;backup:unknown;revision:number}>((resolve,reject)=>{
+ const raw=await new Promise<{current:unknown;backup:unknown;revision:unknown}>((resolve,reject)=>{
   const tx=db.transaction('saves','readonly'), store=tx.objectStore('saves');
   const c=store.get('current'), b=store.get('backup'), r=store.get('revision');
-  tx.oncomplete=()=>resolve({current:c.result,backup:b.result,revision:r.result??0});
-  tx.onerror=()=>reject(tx.error);
+  tx.oncomplete=()=>resolve({current:c.result,backup:b.result,revision:r.result});
+  tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('存档读取中断，原档保留。'));
  }).finally(()=>db.close());
+ const revision=checkedRevision(raw.revision);
  rejectFutureSave(raw.current);
- if(raw.current === undefined) return {world:null,recovery:false,revision:raw.revision};
- try {return {world:await decodeSave(raw.current),recovery:false,revision:raw.revision};}
- catch (err) { if(raw.backup !== undefined) return {world:await decodeSave(raw.backup),recovery:true,revision:raw.revision}; throw err; }
+ if(raw.current === undefined) return {world:null,recovery:false,revision};
+ try {return {world:await decodeSave(raw.current),recovery:false,revision};}
+ catch (err) { if(raw.backup !== undefined) return {world:await decodeSave(raw.backup),recovery:true,revision}; throw err; }
 }
 export async function writeSave(world:World,expectedRevision:number,scope='test-continent'): Promise<number> {
+ checkedRevision(expectedRevision);
+ if(expectedRevision===undefined||expectedRevision>=Number.MAX_SAFE_INTEGER)throw new Error('存档版本计数无效或已达上限，原档保留。');
  const envelope=await encodeSave(world);
  const db=await openDB(scope);
  try {
@@ -65,7 +88,7 @@ export async function writeSave(world:World,expectedRevision:number,scope='test-
    revision.onsuccess=()=>{
     try {
      rejectFutureSave(actual.result);
-     if((revision.result??0)!==expectedRevision || JSON.stringify(actual.result)!==JSON.stringify(current)) throw new Error('另一窗口已更新存档，本次未覆盖。请先导出当前进度，再刷新载入最新存档。');
+     if(checkedRevision(revision.result)!==expectedRevision || JSON.stringify(actual.result)!==JSON.stringify(current)) throw new Error('另一窗口已更新存档，本次未覆盖。请先导出当前进度，再刷新载入最新存档。');
      if(validCurrent !== undefined) store.put(validCurrent,'backup');
      store.put(envelope,'current');store.put(expectedRevision+1,'revision');
     } catch(err){failure=err instanceof Error?err:new Error('保存失败');tx.abort();}

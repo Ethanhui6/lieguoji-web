@@ -3,11 +3,12 @@ import { useGame } from './useGame';
 import { previewOrder,canCommandArmy } from './sim/core';
 import type { Army, Order, World } from './sim/types';
 import { MapCanvas } from './ui/MapCanvas';
+import { StatecraftPanel } from './ui/StatecraftPanel';
 import './styles.css';
 
 const statusLabels: Record<Army['status'], string> = { idle: '驻防', marching: '行军', fighting: '交战', retreating: '撤退', destroyed: '溃散' };
 const terrainLabels = { plain: '平原', forest: '林地', mountain: '山地' };
-const eventLabels = { order: '军令', march: '行军', supply: '补给', battle: '交战', occupation: '控制', retreat: '撤退', system: '记事' };
+const eventLabels = { order: '军令', march: '行军', supply: '补给', battle: '交战', occupation: '控制', retreat: '撤退', system: '记事', economy: '生计', diplomacy: '外交' };
 const number = (value: number) => Math.round(value).toLocaleString('zh-CN');
 
 function Meter({ label, value }: { label: string; value: number }) {
@@ -29,14 +30,15 @@ function ArmyRoster({ world, selected, onSelect }: { world: World; selected: str
   })}</div>;
 }
 
-export default function App({scope='test-continent',onBack}:{scope?:string;onBack?:()=>void}) {
+export default function App({scope='test-continent',onBack,onUpgrade}:{scope?:string;onBack?:()=>void;onUpgrade?:(world:World)=>Promise<void>}) {
   const game = useGame(scope);
   const [selectedArmyId, setSelectedArmyId] = useState('');
   const [selectedProvinceId, setSelectedProvinceId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [orderKind, setOrderKind] = useState<Order['kind']>('march');
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
-  const [drawer, setDrawer] = useState<'map' | 'armies' | 'orders' | 'events' | 'save'>('map');
+  const [drawer, setDrawer] = useState<'map' | 'armies' | 'orders' | 'government' | 'events' | 'save'>('map');
+  const [rightPanel, setRightPanel] = useState<'military' | 'government'>('military');
   const [showNewGame, setShowNewGame] = useState(false);
   const [pendingImport, setPendingImport] = useState<File | null>(null);
   const [actionMessage, setActionMessage] = useState('');
@@ -57,6 +59,7 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
     const next = world?.armies.find((item) => item.id === id);
     if (next) { setSelectedProvinceId(next.provinceId); setTargetId(next.provinceId); }
     setDrawer('orders');
+    setRightPanel('military');
     setActionMessage('');
   }
 
@@ -65,6 +68,7 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
     setTargetId(id);
     setPendingOrder(null);
     setDrawer('orders');
+    setRightPanel('military');
   }
 
   async function act(action: () => Promise<void>, success: string) {
@@ -104,7 +108,7 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
     {actionMessage && <div className="action-message" role="status"><span>{actionMessage}</span><button aria-label="关闭操作提示" onClick={() => setActionMessage('')}>×</button></div>}
 
     {!world ? <main className="loading-state" aria-live="polite"><span className="brand-seal">列</span><h1>{game.error?'尚未载入推演':'正在铺开舆图'}</h1><p>{scope==='test-continent'?'准备测试大陆与推演线程…':'读取自建世界与推演线程…'}</p>{game.error && <button onClick={() => window.location.reload()}>重新载入</button>}</main> : <>
-      <main id="main-game" className={`game-layout drawer-${drawer}`}>
+      <main id="main-game" className={`game-layout drawer-${drawer} ${rightPanel === 'government' ? 'government-open' : ''}`}>
         <aside className="roster-panel" aria-label="各国军队">
           <div className="panel-heading"><div><small>兵力与驻地</small><h2>军情簿</h2></div><span>{world.armies.filter((item) => item.status !== 'destroyed').length} 支军队</span><button className="drawer-close" onClick={() => setDrawer('map')} aria-label="关闭军情簿">×</button></div>
           <p className="roster-note">{world.scenario==='custom-world'?'各国依据兵力与补给选择行动。你可以暂停并干预任何军队。':'你正指挥烈军，守军依规则防御。'}<br />{world.scenario==='custom-world'?'继续推演即可观察世界变化。':'选中烈军，再点选目的地。'}</p>
@@ -113,6 +117,9 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
         </aside>
 
         <MapCanvas world={world} selectedArmyId={army?.id ?? ''} selectedProvinceId={province?.id ?? ''} route={preview?.route ?? []} onArmySelect={selectArmy} onProvinceSelect={selectProvince} />
+
+        <div className="right-panel-switch" aria-label="右侧面板"><button aria-pressed={rightPanel === 'military'} onClick={() => { setRightPanel('military'); setActionMessage(''); }}>军令</button><button aria-pressed={rightPanel === 'government'} onClick={() => { setRightPanel('government'); setActionMessage(''); }}>国家</button></div>
+        <StatecraftPanel world={world} busy={game.busy} snapshot={game.snapshot} command={game.stateCommand} onUpgrade={onUpgrade} onClose={() => setDrawer('map')} />
 
         <aside className="orders-panel" aria-label="军队详情与下令">
           <div className="panel-heading"><div><small>当前编队</small><h2>{army?.name ?? '选择军队'}</h2></div><button className="drawer-close" onClick={() => setDrawer('map')} aria-label="关闭军令面板">×</button></div>
@@ -147,7 +154,7 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
         <section className="mobile-save-panel" aria-label="存档管理"><div className="panel-heading"><h2>存档</h2><button onClick={() => setDrawer('map')} aria-label="关闭存档管理">×</button></div><p>存档保存在此浏览器。换设备或更换网址前，请先导出。</p>{saveControls}<p role="status">{game.saveStatus}</p>{game.restored && <p>已从此浏览器恢复推演。</p>}</section>
       </main>
       <footer className="desktop-footer"><span><i className={game.ready ? 'connected' : ''} />{game.ready ? '推演线程就绪' : '推演线程连接中'} <b>·</b> {game.restored ? '已恢复本地存档' : '本地沙盒'}</span><span>规则 {world.rulesVersion} <b>·</b> <span title={__BUILD_SHA__}>构建 {__BUILD_SHA__.slice(0, 8)}</span> <b>·</b> {world.scenario==='custom-world'?'自建地图 · 创作沙盒':'正式地图待核定'}</span></footer>
-      <nav className="mobile-toolbar" aria-label="游戏工具">{([{ id: 'map', icon: '◇', label: '舆图' }, { id: 'armies', icon: '⚑', label: '军情' }, { id: 'orders', icon: '↗', label: '军令' }, { id: 'events', icon: '≡', label: '纪事' }, { id: 'save', icon: '▣', label: '存档' }] as const).map((item) => <button key={item.id} onClick={() => setDrawer(item.id)} aria-pressed={drawer === item.id}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
+      <nav className="mobile-toolbar" aria-label="游戏工具">{([{ id: 'map', icon: '◇', label: '舆图' }, { id: 'armies', icon: '⚑', label: '军情' }, { id: 'orders', icon: '↗', label: '军令' }, { id: 'government', icon: '印', label: '国家' }, { id: 'events', icon: '≡', label: '纪事' }, { id: 'save', icon: '▣', label: '存档' }] as const).map((item) => <button key={item.id} onClick={() => { setActionMessage(''); setDrawer(item.id); if(item.id === 'government') setRightPanel('government'); else if(item.id === 'orders') setRightPanel('military'); }} aria-pressed={drawer === item.id}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
     </>}
     {(showNewGame || pendingImport) && <div className="modal-backdrop"><section className="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="replace-title" aria-describedby="replace-description" onKeyDown={(event) => { if (event.key === 'Escape') { setShowNewGame(false); setPendingImport(null); } if (event.key === 'Tab') { const items = event.currentTarget.querySelectorAll<HTMLButtonElement>('button'); const first = items[0]; const last = items[items.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } }}>
       <small>推演已暂停</small><h2 id="replace-title">{pendingImport ? '导入并替换当前推演？' : '重新开始测试大陆？'}</h2><p id="replace-description">{pendingImport ? `将校验并载入「${pendingImport.name}」。` : '将回到测试大陆的初始状态。'}当前未导出的进度可能被替换。可先取消，导出存档后再继续。</p><div className="confirm-actions"><button ref={newGameCancelRef} autoFocus onClick={() => { setShowNewGame(false); setPendingImport(null); }}>保留当前推演</button><button className="primary-button" onClick={() => { const file = pendingImport; setShowNewGame(false); setPendingImport(null); setPendingOrder(null); setSelectedArmyId(''); setSelectedProvinceId(''); setTargetId(''); void act(file ? () => game.importSave(file) : game.newGame, file ? '存档已载入。' : '新的测试大陆已准备就绪。'); }}>{pendingImport ? '确认导入' : '确认新开局'}</button></div>

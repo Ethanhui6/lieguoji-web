@@ -3,6 +3,8 @@ import { advanceWorld, canCommandArmy, issueOrder, validateWorld } from '../sim/
 import { createWorld } from '../sim/demo';
 import { addNation, cellAt, compileWorld, createDraft, draftProblems, fillUnclaimed, generateCities, generateLand, generateNations, generateTerrain, paintStroke, placeCity, validateDraft } from './engine';
 import type { DraftCell, EditorDraft } from './types';
+import type { World } from '../sim/types';
+import legacyCustomFixture from '../../tests/fixtures/legacy-custom-0.1.json';
 
 const seed = '山海生成回归-2026';
 const readyDraft = () => generateCities(generateNations(createDraft(seed), 5), 3);
@@ -180,6 +182,10 @@ describe('custom world compilation and military autonomy', () => {
     expect(() => compileWorld(createDraft(seed))).toThrow();
     const draft = readyDraft(), before = structuredClone(draft), world = compileWorld(draft);
     expect(validateWorld(world)).toBe(true); expect(world.scenario).toBe('custom-world'); expect(world.custom?.seed).toBe(seed);
+    expect(world.schemaVersion).toBe(2); expect(world.rulesVersion).toBe('0.2.0');
+    expect(world.statecraft?.relations).toHaveLength(10);
+    expect(world.statecraft?.relations.every(relation => relation.status === 'peace')).toBe(true);
+    expect(world.statecraft?.provinces).toHaveLength(world.provinces.length);
     expect(world.provinces.length).toBe(draft.cells.filter(cell => cell.land).length);
     expect(world.armies).toHaveLength(5);
     expect(world.armies.every(army => canCommandArmy(world, army))).toBe(true);
@@ -188,14 +194,16 @@ describe('custom world compilation and military autonomy', () => {
     expect(draft).toEqual(before);
   });
 
-  it('starts real autonomous moves, spends days and supplies, and remains deterministic', () => {
-    const world = compileWorld(readyDraft()), after = advanceWorld(world, 18);
-    expect(after.day).toBe(18);
-    expect(after.events.some(event => event.kind === 'order' && event.text.includes('自主'))).toBe(true);
-    expect(after.events.some(event => event.kind === 'march')).toBe(true);
+  it('keeps real autonomous military moves and deterministic continuation for a published legacy custom save', () => {
+    const world = structuredClone(legacyCustomFixture.world) as World, before = structuredClone(world), after = advanceWorld(world, 18);
+    expect(after.day).toBe(world.day + 18);
+    expect(after.events.some(event => event.day > world.day && event.kind === 'order' && event.text.includes('自主'))).toBe(true);
+    expect(after.events.some(event => event.day > world.day && event.kind === 'march')).toBe(true);
     expect(after.armies.some(army => army.provinceId !== world.armies.find(item => item.id === army.id)!.provinceId)).toBe(true);
     expect(after).toEqual(advanceWorld(world, 18));
     expect(validateWorld(after)).toBe(true);
+    expect(world).toEqual(before); expect(after.schemaVersion).toBe(1); expect(after.rulesVersion).toBe('0.1.0');
+    expect(Object.hasOwn(after, 'statecraft')).toBe(false);
   });
 
   it('does not overwrite an accepted player route and can command a custom non-Lie nation', () => {

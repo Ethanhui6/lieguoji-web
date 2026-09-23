@@ -1,4 +1,22 @@
-import type { Army, GameEvent, Order, OrderPreview, Province, Terrain, World } from './types';
+import type { Army, GameEvent, Order, OrderPreview, Province, StateAction, StateActionPreview, StateVersion, Terrain, World } from './types';
+import { advanceEconomy, applyManagementAction, buildNationReports, initializeManagement, makeDiplomaticDecisions, nationsAtWar, previewManagementAction, setDecision, transferEconomy, validateManagement } from './statecraft';
+export { policyOptions } from './statecraft';
+export const isAtWar = nationsAtWar;
+
+export function initializeStatecraft(world: World, relations: 'peace' | 'war' = 'peace'): World {
+  if (!validateWorld(world)) throw new Error('世界状态校验失败。');
+  return initializeManagement(world, relations, event);
+}
+export function previewStateAction(world: World, action: StateAction): StateActionPreview {
+  const basedOn = { day: world.day, nextEventId: world.nextEventId };
+  if (!validateWorld(world)) return { valid: false, reason: '世界状态校验失败。', changes: [], warnings: [], basedOn };
+  return previewManagementAction(world, action);
+}
+export function applyStateAction(world: World, action: StateAction, expected: StateVersion): World {
+  if (!validateWorld(world)) throw new Error('世界状态校验失败。');
+  return applyManagementAction(world, action, expected, event);
+}
+export function nationReports(world: World) { return buildNationReports(world); }
 
 const MAX_EVENTS = 160;
 const PLAYER_NATION = 'lie';
@@ -56,7 +74,9 @@ class RouteQueue {
 /** Heap Dijkstra. A null target finds the nearest safe province in ONE search. */
 function findRoute(world: World, army: Army, targetId: string | null, retreat: boolean): string[] {
   const index = indexes.get(world) ?? indexWorld(world);
-  const hostile = new Set(world.armies.filter(other => canHoldGround(other) && other.nationId !== army.nationId).map(other => other.provinceId));
+  const hostile = new Set(world.armies.filter(other => canHoldGround(other) && isAtWar(world, other.nationId, army.nationId)).map(other => other.provinceId));
+  const originController = provinceById(world, army.provinceId).controller;
+  const evacuation = world.statecraft && originController !== army.nationId && !isAtWar(world, army.nationId, originController) ? originController : null;
   const distances = new Map<string, number>([[army.provinceId, 0]]);
   const previous = new Map<string, string>();
   const queue = new RouteQueue(); queue.push({ id: army.provinceId, cost: 0, order: index.order.get(army.provinceId)! });
@@ -74,7 +94,8 @@ function findRoute(world: World, army: Army, targetId: string | null, retreat: b
     if (current !== army.provinceId && hostile.has(current)) continue;
     for (const neighborId of province.neighbors) {
       const neighbor = provinceById(world, neighborId);
-      if (retreat && (neighbor.controller !== army.nationId || hostile.has(neighborId))) continue;
+      if (retreat && ((neighbor.controller !== army.nationId && neighbor.controller !== evacuation) || hostile.has(neighborId))) continue;
+      if (!retreat && neighbor.controller !== army.nationId && !isAtWar(world, army.nationId, neighbor.controller)) continue;
       const candidate = cheapest + legDays(neighbor, retreat);
       if (candidate < (distances.get(neighborId) ?? Infinity)) { distances.set(neighborId, candidate); previous.set(neighborId, current); queue.push({ id: neighborId, cost: candidate, order: index.order.get(neighborId)! }); }
     }
@@ -98,13 +119,14 @@ export function previewOrder(world: World, order: Order): OrderPreview {
   if (army.status === 'fighting' && order.kind !== 'retreat') return invalid('交战期间只能下达撤退命令。');
   const retreat = order.kind === 'retreat';
   if (retreat && target.controller !== army.nationId) return invalid('撤退目标必须由本国实际控制。');
+  if (!retreat && target.controller !== army.nationId && !isAtWar(world, army.nationId, target.controller)) return invalid('目标属于和平国家；必须先宣战，不能和平入侵或占领。');
   const route = findRoute(world, army, target.id, retreat);
   if (!route.length) return invalid(retreat ? '没有安全的己方撤退路线。' : '目标不可达，或途中有敌军阻断；请先处理沿途守军。');
   const legs = route.slice(1).map(id => provinceById(world, id));
   const days = legs.reduce((sum, province) => sum + legDays(province, retreat), 0);
   const supplyCost = legs.reduce((sum, province) => sum + legDays(province, retreat) * (retreat ? 5 : 6), 0);
   const warnings: string[] = [];
-  const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && other.nationId !== army.nationId);
+  const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && isAtWar(world, other.nationId, army.nationId));
   if (defenders.length) warnings.push(`目标有 ${defenders.reduce((sum, defender) => sum + defender.troops, 0)} 名守军，抵达后按兵力、士气、补给、地形和城防逐日交战；到达时间不含战斗。`);
   if (legs.some(province => province.controller !== army.nationId)) warnings.push('进入敌境将失去本国驻扎补给；占领仅改变实控，不改变法理归属。');
   if (supplyCost >= army.supplies) warnings.push('现有军粮不足以完成预计行程；断粮会降低速度、士气并造成减员。');
@@ -134,8 +156,8 @@ function destroyArmy(world: World, army: Army, reason: string) {
 
 function replenishOrConsume(world: World, army: Army) {
   const province = provinceById(world, army.provinceId);
-  const contested = world.armies.some(other => canHoldGround(other) && other.nationId !== army.nationId && other.provinceId === army.provinceId);
-  if (army.status === 'idle' && province.controller === army.nationId && !contested) {
+  const contested = world.armies.some(other => canHoldGround(other) && isAtWar(world, other.nationId, army.nationId) && other.provinceId === army.provinceId);
+  if (!world.statecraft && army.status === 'idle' && province.controller === army.nationId && !contested) {
     const before = army.supplies;
     army.supplies = clamp(army.supplies + province.supply, 0, 100);
     army.morale = clamp(army.morale + 3, 0, 100);
@@ -143,7 +165,10 @@ function replenishOrConsume(world: World, army: Army) {
     return;
   }
   const consumption = army.status === 'fighting' ? 8 : army.status === 'retreating' ? 5 : army.status === 'marching' ? 6 : 4;
-  army.supplies = Math.max(0, army.supplies - consumption);
+  // Schema2 already paid daily consumption and finite local resupply in its
+  // economy ledger. Legacy saves retain the original logistics unchanged.
+  if (!world.statecraft) army.supplies = Math.max(0, army.supplies - consumption);
+  else if (army.status === 'idle' && province.controller === army.nationId && !contested && army.supplies > 0) army.morale = clamp(army.morale + 3, 0, 100);
   if (army.supplies === 0) {
     const loss = Math.min(army.troops, Math.max(1, Math.ceil(army.troops * 0.018)));
     army.troops -= loss; army.morale = Math.max(0, army.morale - 6);
@@ -156,12 +181,18 @@ function moveArmy(world: World, army: Army) {
   if ((army.status !== 'marching' && army.status !== 'retreating') || !army.route.length) return;
   const retreating = army.status === 'retreating';
   const nextProvince = provinceById(world, army.route[0]);
-  if (retreating && nextProvince.controller !== army.nationId) {
+  const controller = provinceById(world, army.provinceId).controller;
+  const evacuating = world.statecraft && controller !== army.nationId && !isAtWar(world, army.nationId, controller) && nextProvince.controller === controller;
+  if (retreating && nextProvince.controller !== army.nationId && !evacuating && !(world.statecraft && army.progress > 0)) {
     army.route = []; army.progress = 0; army.status = 'idle';
     event(world, 'retreat', `${army.name}撤退路线中断`, `${nextProvince.name}已失去己方控制，重新选择撤退目标。`);
     return;
   }
-  if (retreating && world.armies.some(other => canHoldGround(other) && other.nationId !== army.nationId && other.provinceId === army.provinceId)) {
+  if (!retreating && army.progress === 0 && nextProvince.controller !== army.nationId && !isAtWar(world, army.nationId, nextProvince.controller)) {
+    army.route = []; army.status = 'idle';
+    event(world, 'diplomacy', `${army.name}停止前往和平领土`, '关系或实控已改变，尚未开始的路段取消；不会越境占领。'); return;
+  }
+  if (retreating && world.armies.some(other => canHoldGround(other) && isAtWar(world, other.nationId, army.nationId) && other.provinceId === army.provinceId)) {
     const loss = Math.min(army.troops, Math.max(1, Math.ceil(army.troops * 0.025)));
     army.troops -= loss;
     event(world, 'retreat', `${army.name}脱离接触，追击损失 ${loss}`, '在交战辖区撤离期间，每日承受现有兵力 2.5% 的追击损失。');
@@ -173,7 +204,7 @@ function moveArmy(world: World, army: Army) {
   army.provinceId = army.route.shift()!; army.progress = 0;
   if (isFriendly(world, army, previousId)) army.originId = previousId;
   event(world, retreating ? 'retreat' : 'march', `${army.name}抵达${nextProvince.name}`, `${terrainNames[nextProvince.terrain]}基础行程 ${legDays(nextProvince, retreating)} 天；现有兵力 ${army.troops}、军粮 ${army.supplies}。`);
-  const enemies = world.armies.some(other => canHoldGround(other) && other.provinceId === army.provinceId && other.nationId !== army.nationId);
+  const enemies = world.armies.some(other => canHoldGround(other) && other.provinceId === army.provinceId && isAtWar(world, other.nationId, army.nationId));
   if (enemies) {
     army.route = []; army.status = 'fighting';
     event(world, 'battle', `${army.name}遭遇敌军`, '抵达敌军所在辖区，后续行军中止；战斗采用同日结算，双方同时承受损失。');
@@ -196,7 +227,9 @@ function forceRetreat(world: World, army: Army) {
 
 function resolveBattles(world: World) {
   for (const province of world.provinces) {
-    const participants = world.armies.filter(army => canHoldGround(army) && army.provinceId === province.id);
+    const present = world.armies.filter(army => canHoldGround(army) && army.provinceId === province.id);
+    const participants = present.filter(army => present.some(other => isAtWar(world, army.nationId, other.nationId)));
+    for (const army of present) if (!participants.includes(army) && army.status === 'fighting') army.status = 'idle';
     if (new Set(participants.map(army => army.nationId)).size < 2) {
       for (const army of participants) if (army.status === 'fighting') army.status = 'idle';
       continue;
@@ -206,7 +239,7 @@ function resolveBattles(world: World) {
     // one side strike first or erase the other side's simultaneous response.
     const casualties = powers.map(({ army }) => {
       const friendlyCount = participants.filter(other => other.nationId === army.nationId).length;
-      const enemyPower = powers.filter(other => other.army.nationId !== army.nationId).reduce((sum, other) => sum + other.power, 0);
+      const enemyPower = powers.filter(other => isAtWar(world, other.army.nationId, army.nationId)).reduce((sum, other) => sum + other.power, 0);
       return { army, loss: Math.min(army.troops, Math.max(1, Math.round(enemyPower * 0.085 / friendlyCount))) };
     });
     for (const { army, loss } of casualties) {
@@ -226,22 +259,39 @@ function resolveBattles(world: World) {
 function resolveControl(world: World) {
   for (const province of world.provinces) {
     const present = world.armies.filter(army => canHoldGround(army) && army.provinceId === province.id);
-    const nations = new Set(present.map(army => army.nationId));
+    const nations = new Set(present.filter(army => !world.statecraft || isAtWar(world, army.nationId, province.controller)).map(army => army.nationId));
     if (nations.size !== 1) continue;
-    const nationId = present[0].nationId;
+    const nationId = [...nations][0];
+    if (present.some(army => isAtWar(world, nationId, army.nationId))) continue;
     for (const army of present) if (army.status === 'fighting') army.status = 'idle';
     if (province.controller === nationId) continue;
     const oldNation = world.nations.find(nation => nation.id === province.controller)!;
     const newNation = world.nations.find(nation => nation.id === nationId)!;
+    transferEconomy(world, province.id, province.controller, nationId);
     province.controller = nationId;
     const capturedCapital = world.cities.some(city => city.id === oldNation.capitalId && city.provinceId === province.id);
     event(world, 'occupation', `${newNation.name}控制${province.name}`, `该辖区已无保持战线的敌军；实控由${oldNation.name}转移，法理归属仍为${world.nations.find(nation => nation.id === province.legalOwner)!.name}。${capturedCapital ? `${oldNation.name}首都失守，但国家、政权、皇室与其他部队继续存在。` : ''}`);
   }
 }
 
-/** Basic military autonomy only; no scripted victor, diplomacy or economy. */
+/** Stop neutral trespass by walking home; never teleport a ceasefire army. */
+function evacuatePeacefulVisitors(world: World) {
+  if (!world.statecraft) return;
+  for (const army of world.armies) {
+    if (!alive(army) || army.status !== 'idle') continue;
+    const controller = provinceById(world, army.provinceId).controller;
+    if (controller === army.nationId || isAtWar(world, army.nationId, controller)) continue;
+    const route = findRoute(world, army, null, true);
+    if (!route.length) { setDecision(world, army.nationId, '等待撤离', `${army.name}位于和平国领土，暂时没有通向己方领土的安全陆路；原地等待，不占领、不借道第三国。`); continue; }
+    army.route = route.slice(1); army.progress = 0; army.status = 'retreating';
+    event(world, 'retreat', `${army.name}按停战规则撤离`, '沿所在和平国与己方领土的真实相邻道路撤回本国，逐日消耗军粮；和平双方不会互相追击或占领。');
+  }
+}
+
+/** Basic causal military autonomy. Accepted player routes are never replaced. */
 function makeAutonomousDecisions(world: World) {
   if (world.scenario !== 'custom-world') return;
+  const reports = new Map(buildNationReports(world).map(report => [report.nationId, report]));
   const frontierDistances = new Map<string, Map<string, number>>();
   const distancesFor = (nationId: string) => {
     const cached = frontierDistances.get(nationId); if (cached) return cached;
@@ -255,15 +305,21 @@ function makeAutonomousDecisions(world: World) {
     if (!alive(army) || army.status !== 'idle') continue;
     const stagger = [...army.id].reduce((sum, character) => sum + character.charCodeAt(0), 0);
     if ((world.day + stagger) % 3 !== 0) continue;
+    if (world.statecraft && provinceById(world, army.provinceId).controller !== army.nationId && !isAtWar(world, army.nationId, provinceById(world, army.provinceId).controller)) continue;
+    const report = reports.get(army.nationId);
+    if (report && report.grain < report.civilianNeedPerDay + report.militaryNeedPerDay) {
+      setDecision(world, army.nationId, '缺粮休整', `储粮 ${report.grain} 不足预计一日民军需求 ${report.civilianNeedPerDay + report.militaryNeedPerDay}，停止新的进攻调动，优先驻地供给。`); continue;
+    }
     if (army.supplies < 35 || army.morale < 50 || army.troops <= 180) {
+      setDecision(world, army.nationId, '部队休整', `现有军粮 ${army.supplies}、士气 ${army.morale}、兵力 ${army.troops}；出发要求军粮 ≥ 35、士气 ≥ 50、兵力 > 180。`);
       if ((world.day + stagger) % 9 === 0) event(world, 'supply', `${army.name}自主休整`, `现有军粮 ${army.supplies}、士气 ${army.morale}、兵力 ${army.troops}；出发要求军粮 ≥ 35、士气 ≥ 50、兵力 > 180，优先恢复作战能力。`);
       continue;
     }
     const province = provinceById(world, army.provinceId);
     const neighbors = province.neighbors.map(id => provinceById(world, id));
     const attackPower = army.troops * (0.35 + army.morale * 0.0065);
-    const attacks = neighbors.filter(target => target.controller !== army.nationId).map(target => {
-      const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && other.nationId !== army.nationId);
+    const attacks = neighbors.filter(target => isAtWar(world, target.controller, army.nationId)).map(target => {
+      const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && isAtWar(world, other.nationId, army.nationId));
       const defensePower = defenders.reduce((sum, defender) => sum + combatPower(world, defender), 0);
       return { target, defensePower, cost: legDays(target) * 6 };
     }).filter(candidate => candidate.cost + 12 <= army.supplies && attackPower >= candidate.defensePower * 1.15).sort((a, b) => a.defensePower - b.defensePower || a.cost - b.cost || a.target.id.localeCompare(b.target.id));
@@ -273,14 +329,16 @@ function makeAutonomousDecisions(world: World) {
       reason = `自主判断：军粮 ${army.supplies} 可覆盖 ${attacks[0].cost} 点行军消耗并保留 12 点余粮；攻击有效军力 ${Math.round(attackPower)}，目标守方含地形城防为 ${Math.round(attacks[0].defensePower)}，达到 1.15 倍进攻门槛。实际交战仍逐日结算。`;
     } else {
       const distances = distancesFor(army.nationId), here = distances.get(province.id) ?? Infinity;
-      target = neighbors.filter(neighbor => neighbor.controller === army.nationId && (distances.get(neighbor.id) ?? Infinity) < here && legDays(neighbor) * 6 + 12 <= army.supplies && !world.armies.some(other => canHoldGround(other) && other.nationId !== army.nationId && other.provinceId === neighbor.id)).sort((a, b) => (distances.get(a.id)! - distances.get(b.id)!) || legDays(a) - legDays(b) || a.id.localeCompare(b.id))[0];
+      target = neighbors.filter(neighbor => neighbor.controller === army.nationId && (distances.get(neighbor.id) ?? Infinity) < here && legDays(neighbor) * 6 + 12 <= army.supplies && !world.armies.some(other => canHoldGround(other) && isAtWar(world, other.nationId, army.nationId) && other.provinceId === neighbor.id)).sort((a, b) => (distances.get(a.id)! - distances.get(b.id)!) || legDays(a) - legDays(b) || a.id.localeCompare(b.id))[0];
       reason = '自主调动：沿己方相邻辖区接近陆地边界；逐段行军，军粮不足时在实际控制区休整补给，不穿越海洋。';
     }
     if (!target) {
+      setDecision(world, army.nationId, '维持防御', '保持边境防御；和平国家不可进攻，战争目标也须满足地形、守军和行军余粮门槛。');
       if (neighbors.some(neighbor => neighbor.controller !== army.nationId) && (world.day + stagger) % 9 === 0) event(world, 'system', `${army.name}维持防御`, '相邻目标的守军实力、地形城防或行程余粮不满足进攻门槛，留在驻地防御并恢复补给。');
       continue;
     }
     army.originId = army.provinceId; army.route = [target.id]; army.progress = 0; army.status = 'marching';
+    setDecision(world, army.nationId, isAtWar(world, target.controller, army.nationId) ? '进攻调动' : '边境防御调动', reason);
     event(world, 'order', `${army.name}自主向${target.name}行军`, reason);
   }
 }
@@ -293,7 +351,10 @@ export function advanceWorld(world: World, days: number): World {
   indexWorld(next);
   for (let day = 0; day < days; day++) {
     next.day++;
+    makeDiplomaticDecisions(next, event);
+    evacuatePeacefulVisitors(next);
     makeAutonomousDecisions(next);
+    if (next.statecraft) advanceEconomy(next, event);
     for (const army of next.armies) if (alive(army)) replenishOrConsume(next, army);
     for (const army of next.armies) if (alive(army)) moveArmy(next, army);
     resolveBattles(next);
@@ -322,8 +383,10 @@ function list(value: unknown, minimum: number, maximum: number): value is unknow
 
 /** Treat imported IndexedDB / JSON content as untrusted, including nested data. */
 export function validateWorld(value: unknown): value is World {
-  if (!isRecord(value) || !exactKeys(value, ['schemaVersion', 'rulesVersion', 'scenario', 'mode', 'day', 'nations', 'provinces', 'cities', 'armies', 'events', 'nextEventId', ...(value.scenario === 'custom-world' ? ['custom'] : [])])) return false;
-  if (value.schemaVersion !== 1 || value.rulesVersion !== '0.1.0' || (value.scenario !== 'test-continent' && value.scenario !== 'custom-world') || value.mode !== 'sandbox' || !integer(value.day, 0, MAX_DAY) || !integer(value.nextEventId, 1, Number.MAX_SAFE_INTEGER - 100000)) return false;
+  if (!isRecord(value) || !exactKeys(value, ['schemaVersion', 'rulesVersion', 'scenario', 'mode', 'day', 'nations', 'provinces', 'cities', 'armies', 'events', 'nextEventId', ...(value.scenario === 'custom-world' ? ['custom'] : []), ...(value.schemaVersion === 2 ? ['statecraft'] : [])])) return false;
+  const legacy = value.schemaVersion === 1 && value.rulesVersion === '0.1.0';
+  const modern = value.schemaVersion === 2 && value.rulesVersion === '0.2.0' && value.scenario === 'custom-world';
+  if ((!legacy && !modern) || (value.scenario !== 'test-continent' && value.scenario !== 'custom-world') || value.mode !== 'sandbox' || !integer(value.day, 0, MAX_DAY) || !integer(value.nextEventId, 1, Number.MAX_SAFE_INTEGER - 100000)) return false;
   if (value.scenario === 'custom-world') {
     const custom = value.custom;
     if (!isRecord(custom) || !exactKeys(custom, ['id', 'name', 'seed', 'rivers']) || !isId(custom.id) || !isText(custom.name) || !isText(custom.seed, 200) || !list(custom.rivers, 0, 128)) return false;
@@ -363,8 +426,8 @@ export function validateWorld(value: unknown): value is World {
   let previousId = 0;
   let previousDay = 0;
   for (const item of value.events) {
-    if (!isRecord(item) || !exactKeys(item, ['id', 'day', 'kind', 'text', 'reason']) || !integer(item.id, previousId + 1, value.nextEventId - 1) || !integer(item.day, previousDay, value.day) || !['order', 'march', 'supply', 'battle', 'occupation', 'retreat', 'system'].includes(item.kind as string) || !isText(item.text, 5000) || !isText(item.reason, 10000)) return false;
+    if (!isRecord(item) || !exactKeys(item, ['id', 'day', 'kind', 'text', 'reason']) || !integer(item.id, previousId + 1, value.nextEventId - 1) || !integer(item.day, previousDay, value.day) || !['order', 'march', 'supply', 'battle', 'occupation', 'retreat', 'system', ...(modern ? ['economy', 'diplomacy'] : [])].includes(item.kind as string) || !isText(item.text, 5000) || !isText(item.reason, 10000)) return false;
     previousId = item.id; previousDay = item.day;
   }
-  return true;
+  return !modern || validateManagement(value as World);
 }

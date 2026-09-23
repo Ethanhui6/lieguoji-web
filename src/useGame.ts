@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { World, Order, WorkerRequest, WorkerResponse } from './sim/types';
+import type { World, Order, StateAction, StateVersion, WorkerRequest, WorkerResponse } from './sim/types';
 import { readSave, writeSave, encodeSave, parseSaveFile } from './persistence';
 type Request = WorkerRequest extends infer T ? T extends WorkerRequest ? Omit<T,'id'> : never : never;
 export function useGame(scope='test-continent') {
@@ -7,6 +7,8 @@ export function useGame(scope='test-continent') {
  const [running,setRunning]=useState(false),[speed,setSpeed]=useState(1),[busy,setBusy]=useState(false);
  const [saveStatus,setSaveStatus]=useState('尚未保存'),[restored,setRestored]=useState(false);
  const saveRevision=useRef(0),storageLocked=useRef(false),writing=useRef(false);
+ const runningRef=useRef(false);
+ const controlRunning=(value:boolean)=>{runningRef.current=value;setRunning(value);};
  const worker=useRef<Worker|null>(null),seq=useRef(0),pending=useRef(new Map<number,{resolve:(w:World)=>void;reject:(e:Error)=>void;timer:ReturnType<typeof setTimeout>}>());
  const request=useCallback((message:Request):Promise<World>=>new Promise((resolve,reject)=>{
   if(!worker.current) {reject(new Error('模拟尚未就绪'));return;}
@@ -39,7 +41,7 @@ export function useGame(scope='test-continent') {
  },[request,scope]);
  useEffect(()=>{
   if(!running || !world)return;
-  const interval=setInterval(()=>{if(pending.current.size===0)void request({type:'step',days:1}).catch(()=>setRunning(false));},1000/Math.max(1,Math.min(12,speed)));
+  const interval=setInterval(()=>{if(runningRef.current&&pending.current.size===0)void request({type:'step',days:1}).catch(()=>setRunning(false));},1000/Math.max(1,Math.min(12,speed)));
   return()=>clearInterval(interval);
  },[running,speed,!!world,request]);
  const snapshot=()=>request({type:'step',days:0});
@@ -53,11 +55,13 @@ export function useGame(scope='test-continent') {
   try {const state=await snapshot();await persist(state);setSaveStatus(`已保存 · 第 ${state.day} 日`);setError(null);}
   catch(err){setError(err instanceof Error?err.message:'保存失败');throw err;}
  };
- return {world,ready:!!world,busy,error,running,speed,saveStatus,restored,setRunning,setSpeed,
-  step:()=>{setRunning(false);void request({type:'step',days:1}).catch(()=>{});},
+ return {world,ready:!!world,busy,error,running,speed,saveStatus,restored,setRunning:controlRunning,setSpeed,
+  snapshot:async()=>{controlRunning(false);return snapshot();},
+  stateCommand:async(action:StateAction,expected:StateVersion)=>{controlRunning(false);setError(null);await request({type:'state-action',action,expected});},
+  step:()=>{controlRunning(false);void request({type:'step',days:1}).catch(()=>{});},
   command:async(order:Order)=>{setError(null);await request({type:'order',order});},save,
-  newGame:async()=>{setRunning(false);try {if(scope!=='test-continent')throw new Error('请回到世界工坊创建新的推演，当前历史已保留。');const current=await snapshot();await persist(current);await request({type:'init'});setRestored(false);setSaveStatus('新局尚未保存 · 旧局已保留');setError(null);}catch(err){setError(String(err));throw err;}},
+  newGame:async()=>{controlRunning(false);try {if(scope!=='test-continent')throw new Error('请回到世界工坊创建新的推演，当前历史已保留。');const current=await snapshot();await persist(current);await request({type:'init'});setRestored(false);setSaveStatus('新局尚未保存 · 旧局已保留');setError(null);}catch(err){setError(String(err));throw err;}},
   exportSave:async()=>{try {const envelope=await encodeSave(await snapshot());const url=URL.createObjectURL(new Blob([JSON.stringify(envelope)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`列国纪-${envelope.world.custom?.name??'测试大陆'}-第${envelope.world.day}日.save.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(err){setError(String(err));throw err;}},
-  importSave:async(file:File)=>{setRunning(false);try{const incoming=await parseSaveFile(file);if(scope==='test-continent'&&incoming.scenario!=='test-continent')throw new Error('自建世界存档请从世界工坊导入，战役样例原档未修改。');if(scope!=='test-continent'&&(incoming.scenario!=='custom-world'||`custom-${incoming.custom?.id}`!==scope))throw new Error('这份存档属于其他世界，请从世界工坊导入为独立推演。当前历史未修改。');await persist(incoming);await request({type:'init',world:incoming});setSaveStatus(`已导入 · 第 ${incoming.day} 日`);setRestored(true);setError(null);}catch(err){setError(err instanceof Error?err.message:'导入失败');throw err;}}
+  importSave:async(file:File)=>{controlRunning(false);try{const incoming=await parseSaveFile(file);if(scope==='test-continent'&&incoming.scenario!=='test-continent')throw new Error('自建世界存档请从世界工坊导入，战役样例原档未修改。');if(scope!=='test-continent'&&(incoming.scenario!=='custom-world'||`custom-${incoming.custom?.id}`!==scope))throw new Error('这份存档属于其他世界，请从世界工坊导入为独立推演。当前历史未修改。');await persist(incoming);await request({type:'init',world:incoming});setSaveStatus(`已导入 · 第 ${incoming.day} 日`);setRestored(true);setError(null);}catch(err){setError(err instanceof Error?err.message:'导入失败');throw err;}}
  };
 }

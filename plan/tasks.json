@@ -212,15 +212,17 @@
       "dependsOn": [
         "M2-003"
       ],
-      "status": "todo",
-      "acceptance": "以已确认的国家经营/外交目标细分真实规则、交互和验收；未知原规划内容恢复后差异核对，不以空面板或缺资料宣称完成",
-      "evidence": [],
+      "status": "done",
+      "acceptance": "以M3经营、外交和可解释决策三项任务拆分规则与验收，独立于缺失正式地图；规划完成不代表功能完成",
+      "evidence": [
+        "docs/adr/0003-statecraft.md"
+      ],
       "id": "M3-PLAN"
     },
     {
       "title": "皇室与历史分支回放",
       "dependsOn": [
-        "M3-PLAN"
+        "M3-003"
       ],
       "status": "todo",
       "acceptance": "回放分支不污染原史",
@@ -248,6 +250,51 @@
       "acceptance": "离线缓存更新与存档版本安全，真机验收",
       "evidence": [],
       "id": "M6-PLAN"
+    },
+    {
+      "dependsOn": [
+        "M2-003"
+      ],
+      "acceptance": "新世界逐日结算实际控制土地人口、地形产粮、民用消耗和国库；驻军补给真实扣粮，短缺有明确人口/军队后果；政策影响真实产耗，确定性规则及粮食不凭空生成单测通过",
+      "id": "M3-001",
+      "evidence": [
+        "docs/evidence/2026-09-23-statecraft.md"
+      ],
+      "status": "pending_acceptance",
+      "title": "人口、粮食账本与有限军队补给",
+      "issue": 11,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/11",
+      "branch": "feat/statecraft"
+    },
+    {
+      "dependsOn": [
+        "M3-001"
+      ],
+      "acceptance": "新世界和平起步；宣战/停战预览确认取消经Worker重校验，和平约束寻路、战斗、追击和占领；停战阻止在途敌对命令且不瞬移军队，不改变法理疆域，不自动灭国；停战保护期和无效命令有说明与测试",
+      "id": "M3-002",
+      "evidence": [
+        "docs/evidence/2026-09-23-statecraft.md"
+      ],
+      "status": "pending_acceptance",
+      "title": "和平战争关系与外交命令",
+      "issue": 12,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/12",
+      "branch": "feat/statecraft"
+    },
+    {
+      "dependsOn": [
+        "M3-002"
+      ],
+      "acceptance": "桌面/手机/平板国家面板可切国、查看每日人口粮食账本与决策原因、调整政策和外交；AI按粮食/实力/陆地接壤做确定性选择。旧0.1规则原样保留，新规则0.2严格双版存档；旧自建局可明确创建新推演副本，原库字节不改，未来版本内外层锁写与多标签保护不退化；真实CI与HTTPS闭环通过",
+      "id": "M3-003",
+      "evidence": [
+        "docs/evidence/2026-09-23-statecraft.md"
+      ],
+      "status": "pending_acceptance",
+      "title": "国家经营操作、自主决策与双版存档",
+      "issue": 13,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/13",
+      "branch": "feat/statecraft"
     }
   ],
   "milestones": [
@@ -259,5 +306,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0真实CI/HTTPS持续部署、M1闭环、M2自由创世基础版均完成并上线；生产048c30e的远端100单测/30浏览器首次通过。线上30个不同场景经测试缓存和就绪同步修正后覆盖通过，原失败记录保留。下一批M3国家经营/外交/可解释决策；真机、正式核图与原规划差异恢复仍待验。"
+  "phaseState": "M0/M1/M2已发布262bd76；M3三项已实现，163单测与39不同浏览器场景通过，待同提交CI和原生Pages HTTPS预览验收后受控合并。正式核图与真机独立待验。"
 }

@@ -1,0 +1,48 @@
+{
+  "phase": "PH04",
+  "acceptedAt": "2026-09-23T21:09:46.707Z",
+  "status": "accepted-local-phase",
+  "scope": "Production atlas draft, shared topology and stable identity, bounded actual Worker messages, real atomic content-addressed IDB commits, preview/edit/undo/backup/fork/cancel/reload. Not full game simulation or release.",
+  "build": {
+    "units": 776,
+    "testFiles": 33,
+    "releasePolicy": 14,
+    "distArtifacts": 25,
+    "testStartedLocal": "2026-09-24 05:00:11",
+    "testDurationSeconds": 69.51,
+    "log": "docs/evidence/ph04/integration-v2/second-batch-build-byte-first.log"
+  },
+  "browser": {
+    "startTime": "2026-09-23T21:05:23.599Z",
+    "duration": 195014.373,
+    "expected": 24,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "report": "docs/evidence/ph04/integration-v2/browser-byte-first.json",
+    "realDevices": false
+  },
+  "performance": {
+    "evaluation": "docs/evidence/ph04/performance-v4/byte-evaluation-first.json",
+    "gates": 13,
+    "source": "dd311e07b13b371f1ddf0e76d03361433282ac4aaffbb3fd74dfea2bfae6c988",
+    "dist": "d4228157a164051bf96c177ca5f0d41fff1ed8274a36afa93e4750f949d52ebc"
+  },
+  "legacyBrowserEvidence": {
+    "passed": 81,
+    "report": "docs/evidence/ph04/integration-v1/browser-legacy-pathfix.json",
+    "scope": "Reused earlier PH04 integration v1 legacy-route regression; not rerun on final storage-only optimized build. Frozen-engine golden/unit tests included in final776."
+  },
+  "publication": {
+    "pushed": false,
+    "deployed": false,
+    "gate": "PH00-PH35 and actual device/user visual acceptance incomplete; no remote writes"
+  },
+  "limitations": [
+    "This evaluator does not accept the entire PH04 phase or modify plan/tasks.json.",
+    "Correct-frame timing is CPU drawing submission and a frame opportunity, not physical display completion.",
+    "Computation is nonoverlapping observed elapsed work including WebCrypto waits, not exact CPU time; diagnostic reporting overhead is excluded.",
+    "Restore means new document, app, Worker and decoded cache; browser and OS disk caches are not cleared.",
+    "Real devices, user visual acceptance, future full simulation and PH05 rendering budgets are separate."
+  ]
+}

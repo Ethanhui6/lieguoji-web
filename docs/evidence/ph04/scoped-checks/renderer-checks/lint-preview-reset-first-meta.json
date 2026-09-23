@@ -1,0 +1,6 @@
+{
+  "startedAt": "2026-09-24T04:19:11.7285067+08:00",
+  "command": "node node_modules/eslint/bin/eslint.js src/world/renderer.ts src/world/renderer.test.ts src/editor/AtlasStudio.tsx",
+  "completedAt": "2026-09-24T04:19:13.5717314+08:00",
+  "exitCode": 0
+}

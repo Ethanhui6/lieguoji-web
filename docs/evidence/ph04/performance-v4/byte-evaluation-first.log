@@ -1,0 +1,98 @@
+{
+  "status": "measurement-gates-passed",
+  "checks": {
+    "sameSourceAndDist": true,
+    "cleanMeasurementRuns": true,
+    "complete100EditCoverage": true,
+    "workerCompute25ms": true,
+    "durableCorrectFrame250ms": true,
+    "feedback50ms": true,
+    "logicalWire128KiB": true,
+    "transportThreeSizes10Percent": true,
+    "singlePacket512KiB": true,
+    "realProgress250ms": true,
+    "tenInitialSaves5s": true,
+    "tenFreshDocumentRestores5s": true,
+    "tenPrecommitCancels500ms": true
+  },
+  "metrics": {
+    "computeMs": {
+      "valid": true,
+      "count": 100,
+      "min": 12.199999995529652,
+      "p95": 21.100000005215406,
+      "max": 26.6999999769032
+    },
+    "localCommitMs": {
+      "valid": true,
+      "count": 100,
+      "min": 34.100000001490116,
+      "p95": 51.100000001490116,
+      "max": 62.899999998509884
+    },
+    "feedbackMs": {
+      "valid": true,
+      "count": 100,
+      "min": 1.0999999977648258,
+      "p95": 1.699999999254942,
+      "max": 2.100000001490116
+    },
+    "initialSaveMs": {
+      "valid": true,
+      "count": 10,
+      "min": 2491.10000000149,
+      "p95": 2671.7999999970198,
+      "max": 2671.7999999970198
+    },
+    "restoreMs": {
+      "valid": true,
+      "count": 10,
+      "min": 1596.300000000745,
+      "p95": 1657.9000000022352,
+      "max": 1657.9000000022352
+    },
+    "wireBytes": {
+      "valid": true,
+      "count": 109,
+      "min": 22064,
+      "p95": 22501,
+      "max": 23849
+    },
+    "transportWireBytes": {
+      "valid": true,
+      "count": 9,
+      "min": 22064,
+      "p95": 23849,
+      "max": 23849
+    },
+    "packetBytes": {
+      "valid": true,
+      "count": 143,
+      "min": 9980,
+      "p95": 26294,
+      "max": 104438
+    },
+    "workerProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 5.900000002235174,
+      "p95": 30.600000001490116,
+      "max": 88.30000000074506
+    },
+    "visibleProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 24.800000000745058,
+      "p95": 57.100000001490116,
+      "max": 109.80000000074506
+    },
+    "cancellationMs": {
+      "valid": true,
+      "count": 10,
+      "min": 3.5,
+      "p95": 8.300000000745058,
+      "max": 8.300000000745058
+    }
+  },
+  "variationPercent": 8.090101522842641
+}

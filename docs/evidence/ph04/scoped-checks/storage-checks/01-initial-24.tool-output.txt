@@ -1,0 +1,13 @@
+TOOL-OUTPUT TRANSCRIPT — not an original redirected stdout file.
+Copied from this session's tool output. No test was rerun to create this file.
+Command: .\node_modules\.bin\vitest.cmd run src/world/storage.test.ts
+Working directory: D:\游戏\架空地图模拟器
+Session: 75953; completion chunk: 2796f9; process exit code: 0.
+No per-run source SHA recorded.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  03:53:03
+   Duration  16.65s (tests 99%, transform 1%, import 1%)

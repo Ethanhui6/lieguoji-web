@@ -10,7 +10,7 @@ import { Icon } from '../ui/Icon';
 import { ModalDialog } from '../ui/ModalDialog';
 import './studio.css';
 
-type Props = { draft: EditorDraft; onChange: (draft: EditorDraft) => void; onStart: (draft: EditorDraft) => Promise<void>; onDemo: () => void; onSave: () => Promise<void>; onExport: () => Promise<void>; onImport: (file: File) => Promise<void>; saveStatus: string; error: string | null; onResume: () => void; canResume: boolean; savedRuns: readonly { id: string; name: string; createdAt: string }[]; onResumeRun: (id: string) => void };
+type Props = { draft: EditorDraft; onChange: (draft: EditorDraft) => void; onStart: (draft: EditorDraft) => Promise<void>; onDemo: () => void; onSave: () => Promise<void>; onExport: () => Promise<void>; onImport: (file: File) => Promise<void>; saveStatus: string; error: string | null; onResume: () => void; canResume: boolean; savedRuns: readonly { id: string; name: string; createdAt: string }[]; onResumeRun: (id: string) => void; onAtlas?: () => void };
 const tools: { id: StudioTool; label: string; icon: string; detail: string }[] = [
   { id: 'land', label: '绘制陆地', icon: '◒', detail: '在海面绘出大陆。拖动可连续落笔。' },
   { id: 'sea', label: '擦为海洋', icon: '≈', detail: '擦除陆地及其归属与城市。完整一笔可以撤销。' },
@@ -102,6 +102,7 @@ export function WorldStudio(props: Props) {
     <div className="studio-city-list">{draft.cities.map((city) => <div key={city.id}><span className="studio-city-symbol">{city.capital ? '◇' : '▫'}</span><input aria-label={`城市名称 ${city.name}`} defaultValue={city.name} key={`${city.id}-${city.name}`} maxLength={24} onBlur={(event) => { const name = event.target.value.trim(); if (name && name !== city.name) commit({ ...draft, cities: draft.cities.map((item) => item.id === city.id ? { ...item, name } : item) }); }} /><small>{city.capital ? '首都' : '城市'}</small><button aria-label={`移除城市 ${city.name}`} onClick={() => commit({ ...draft, cities: draft.cities.filter((item) => item.id !== city.id) })}>×</button></div>)}</div>
   </>;
   const worldPanel = <>
+    {props.onAtlas && <div className="studio-generators"><button disabled={busy} onClick={props.onAtlas}>大世界草稿 <span>→</span></button><p className="studio-help">独立的大地图地理编辑入口；当前世界与已有推演继续保留。</p></div>}
     <label className="studio-field">世界名称<input aria-label="世界名称" value={draft.name} maxLength={40} onChange={(event) => props.onChange({ ...draft, name: event.target.value })} /></label>
     <label className="studio-field">生成种子<input aria-label="生成种子" value={draft.seed} maxLength={80} onChange={(event) => props.onChange({ ...draft, seed: event.target.value })} /></label><p className="studio-help">同一生成种子得到相同初始地理。修改种子后，点击生成才会改变地图。</p>
     <div className="studio-two-buttons"><button onClick={() => makeNew(true)}>空白海洋</button><button onClick={() => makeNew(false)}>新大陆</button></div>

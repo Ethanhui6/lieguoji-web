@@ -12,6 +12,8 @@ dist/
 *.p12
 *.pfx
 *.log
+# Reviewed local test/measurement evidence; runtime and authentication logs stay ignored.
+!docs/evidence/ph04/**/*.log
 playwright-report/
 test-results/
 coverage/

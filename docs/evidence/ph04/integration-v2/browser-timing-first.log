@@ -1,0 +1,35 @@
+
+Running 24 tests using 1 worker
+
+(node:17936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chromium] › tests\atlas.spec.ts:57:1 › 65k真实大图：点选、浏览、取消、跨块编辑、共享顶点、撤销和刷新恢复 (10.1s)
+  ok  2 [desktop-chromium] › tests\atlas.spec.ts:124:1 › 只读备份生成独立可编辑草稿，原主备不被回滚或覆盖 (8.8s)
+  ok  3 [desktop-chromium] › tests\atlas.spec.ts:155:1 › 双标签陈旧命令拒绝覆盖，新标签恢复已经提交的内容 (5.4s)
+  ok  4 [desktop-chromium] › tests\atlas.spec.ts:173:1 › 缺失大世界链接不伪造新世界；原工坊可往返且大世界选择独立 (736ms)
+  ok  5 [desktop-chromium] › tests\atlas.spec.ts:185:1 › 取消扩展草稿准备保持原存档；旧备份链接轮换后拒绝悄悄换时点 (6.5s)
+  ok  6 [desktop-chromium] › tests\atlas.spec.ts:214:1 › 已打开草稿的备份被换成未知版本时，确认与刷新都保护原主备 (3.2s)
+  ok  7 [desktop-chromium] › tests\atlas.spec.ts:248:1 › 关闭正在创建大世界的页面后，原草稿仍可恢复且没有半成品根 (6.5s)
+  ok  8 [desktop-chromium] › tests\atlas.spec.ts:274:1 › 存储已提交后取消接收画面，明确锁定显示并刷新恢复该提交 (20.8s)
+(node:25784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  9 [mobile-chromium] › tests\atlas.spec.ts:57:1 › 65k真实大图：点选、浏览、取消、跨块编辑、共享顶点、撤销和刷新恢复 (9.9s)
+  ok 10 [mobile-chromium] › tests\atlas.spec.ts:124:1 › 只读备份生成独立可编辑草稿，原主备不被回滚或覆盖 (9.0s)
+  ok 11 [mobile-chromium] › tests\atlas.spec.ts:155:1 › 双标签陈旧命令拒绝覆盖，新标签恢复已经提交的内容 (6.0s)
+  ok 12 [mobile-chromium] › tests\atlas.spec.ts:173:1 › 缺失大世界链接不伪造新世界；原工坊可往返且大世界选择独立 (777ms)
+  ok 13 [mobile-chromium] › tests\atlas.spec.ts:185:1 › 取消扩展草稿准备保持原存档；旧备份链接轮换后拒绝悄悄换时点 (6.7s)
+  ok 14 [mobile-chromium] › tests\atlas.spec.ts:214:1 › 已打开草稿的备份被换成未知版本时，确认与刷新都保护原主备 (3.9s)
+  ok 15 [mobile-chromium] › tests\atlas.spec.ts:248:1 › 关闭正在创建大世界的页面后，原草稿仍可恢复且没有半成品根 (6.3s)
+  ok 16 [mobile-chromium] › tests\atlas.spec.ts:274:1 › 存储已提交后取消接收画面，明确锁定显示并刷新恢复该提交 (20.2s)
+(node:13792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 17 [tablet-chromium] › tests\atlas.spec.ts:57:1 › 65k真实大图：点选、浏览、取消、跨块编辑、共享顶点、撤销和刷新恢复 (12.5s)
+  ok 18 [tablet-chromium] › tests\atlas.spec.ts:124:1 › 只读备份生成独立可编辑草稿，原主备不被回滚或覆盖 (10.0s)
+  ok 19 [tablet-chromium] › tests\atlas.spec.ts:155:1 › 双标签陈旧命令拒绝覆盖，新标签恢复已经提交的内容 (7.5s)
+  ok 20 [tablet-chromium] › tests\atlas.spec.ts:173:1 › 缺失大世界链接不伪造新世界；原工坊可往返且大世界选择独立 (900ms)
+  ok 21 [tablet-chromium] › tests\atlas.spec.ts:185:1 › 取消扩展草稿准备保持原存档；旧备份链接轮换后拒绝悄悄换时点 (7.4s)
+  ok 22 [tablet-chromium] › tests\atlas.spec.ts:214:1 › 已打开草稿的备份被换成未知版本时，确认与刷新都保护原主备 (3.8s)
+  ok 23 [tablet-chromium] › tests\atlas.spec.ts:248:1 › 关闭正在创建大世界的页面后，原草稿仍可恢复且没有半成品根 (6.2s)
+  ok 24 [tablet-chromium] › tests\atlas.spec.ts:274:1 › 存储已提交后取消接收画面，明确锁定显示并刷新恢复该提交 (21.8s)
+
+  24 passed (3.3m)

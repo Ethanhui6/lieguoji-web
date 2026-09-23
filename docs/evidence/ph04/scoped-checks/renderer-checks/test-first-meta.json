@@ -1,0 +1,6 @@
+{
+  "command": "node node_modules/vitest/vitest.mjs run src/world/renderer.test.ts",
+  "completedAt": "2026-09-24T04:11:26.7893587+08:00",
+  "startedAt": "2026-09-24T04:11:14.6797652+08:00",
+  "exitCode": 0
+}

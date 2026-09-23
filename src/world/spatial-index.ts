@@ -9,7 +9,15 @@ export interface SpatialUpdate {
   invalidatedCells: { cellId: number; oldAabb: AtlasAabb; newAabb: AtlasAabb }[];
   geometryOwnerBlocks: BlockKey[]; affectedDisplayBlocks: BlockKey[]; stats: SpatialUpdateStats;
 }
+export interface SpatialBuildControl {
+  signal?: AbortSignal;
+  onProgress?: (progress: { stage: string; completed: number; total: number }) => void;
+  yieldTask?: () => Promise<void>;
+}
 const BUCKET_CELLS = 8;
+// This capability never leaves this module. The async factory holds its partial
+// candidate privately and only returns it after both bucket layers are complete.
+const DEFER_BUILD = Symbol('private spatial-index builder');
 const overlaps = (a: AtlasAabb, b: AtlasAabb) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 const boxOfPoint = (p: AtlasPoint): AtlasAabb => ({ minX: p.x, minY: p.y, maxX: p.x, maxY: p.y });
 const emptyQuery = (): SpatialQueryStats => ({ bucketsVisited: 0, candidateCells: 0, aabbTests: 0, polygonTests: 0 });
@@ -77,7 +85,7 @@ export class SpatialIndex {
   private updates = 0;
   private totalReindexedCells = 0;
 
-  constructor(data: AtlasDraftData) {
+  constructor(data: AtlasDraftData, deferred?: typeof DEFER_BUILD) {
     this.data = data; this.spec = { ...data.manifest.spec }; this.specKey = specIdentity(this.spec);
     this.key = getGeometryDependencyKey(data);
     const count = this.spec.columns * this.spec.rows;
@@ -87,11 +95,39 @@ export class SpatialIndex {
     this.bucketHeight = this.spec.height / this.spec.rows * BUCKET_CELLS;
     const marginX = this.spec.width / this.spec.columns / 4, marginY = this.spec.height / this.spec.rows / 4;
     this.domain = { minX: -marginX, minY: -marginY, maxX: this.spec.width + marginX, maxY: this.spec.height + marginY };
-    for (let cellId = 0; cellId < count; cellId++) {
-      const measured = measureCell(data, cellId); this.writeCell(cellId, measured.bounds, measured.area);
+    if (deferred === DEFER_BUILD) return;
+    this.buildCells(0, count);
+    for (let blockId = 0; blockId < this.blockColumns * this.spec.rows / this.spec.blockCells; blockId++) this.rebuildBlock(blockId);
+  }
+  static async createAsync(data: AtlasDraftData, control: SpatialBuildControl = {}): Promise<SpatialIndex> {
+    control.signal?.throwIfAborted();
+    const index = new SpatialIndex(data, DEFER_BUILD), count = index.areas.length;
+    const pause = async () => {
+      control.signal?.throwIfAborted();
+      await (control.yieldTask?.() ?? new Promise<void>(resolve => setTimeout(resolve, 0)));
+      control.signal?.throwIfAborted();
+    };
+    for (let start = 0; start < count; start += 4096) {
+      const end = Math.min(start + 4096, count);
+      index.buildCells(start, end);
+      control.onProgress?.({ stage: '建立地块空间索引', completed: end, total: count });
+      await pause();
+    }
+    const blocks = index.blockColumns * index.spec.rows / index.spec.blockCells;
+    for (let start = 0; start < blocks; start += 8) {
+      const end = Math.min(start + 8, blocks);
+      for (let blockId = start; blockId < end; blockId++) index.rebuildBlock(blockId);
+      control.onProgress?.({ stage: '建立地图块查询索引', completed: end, total: blocks });
+      await pause();
+    }
+    control.signal?.throwIfAborted();
+    return index;
+  }
+  private buildCells(start: number, end: number) {
+    for (let cellId = start; cellId < end; cellId++) {
+      const measured = measureCell(this.data, cellId); this.writeCell(cellId, measured.bounds, measured.area);
       this.insert(this.buckets, cellId, measured.bounds);
     }
-    for (let blockId = 0; blockId < this.blockColumns * this.spec.rows / this.spec.blockCells; blockId++) this.rebuildBlock(blockId);
   }
   get dependencyKey() { return this.key; }
   stats() { return { builds: 1, updates: this.updates, totalCells: this.areas.length, totalReindexedCells: this.totalReindexedCells, bucketCells: BUCKET_CELLS, occupiedBuckets: this.buckets.size }; }
@@ -185,3 +221,4 @@ export class SpatialIndex {
   }
 }
 export function createSpatialIndex(data: AtlasDraftData) { return new SpatialIndex(data); }
+export function createSpatialIndexAsync(data: AtlasDraftData, control?: SpatialBuildControl) { return SpatialIndex.createAsync(data, control); }

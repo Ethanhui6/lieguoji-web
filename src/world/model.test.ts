@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ATLAS_LAYERS, UNASSIGNED, blockKey, cloneAtlasDraft, cloneBlock, createAtlasDraft, decodeBlock, decodeManifest, encodeBlock, encodeManifest, getAdminLeaf, getBlock, getCellLayerSlot, getSimRegion, getVertexSlot, hashBlock, hashManifest, validateAtlasDraft, validateBlock, validateCatalogs, validateManifest, verifyAtlasDraft } from './model';
+import { ATLAS_LAYERS, UNASSIGNED, blockKey, cloneAtlasDraft, cloneBlock, cloneVerifiedAtlasDraft, createAtlasDraft, decodeBlock, decodeManifest, encodeBlock, encodeManifest, getAdminLeaf, getBlock, getCellLayerSlot, getSimRegion, getVertexSlot, hashBlock, hashManifest, validateAtlasDraft, validateAtlasDraftAsync, validateBlock, validateCatalogs, validateManifest, verifyAtlasDraft } from './model';
 import type { AtlasBlock, AtlasCreateOptions, AtlasDraftData, BlockKey, GeometryBlock } from './model';
 
 const fixedIds = { draftId: 'atlas-11111111-1111-4111-8111-111111111111', atlasId: 'geo-22222222-2222-4222-8222-222222222222' };
@@ -13,6 +13,42 @@ async function refresh(data: AtlasDraftData, keys: BlockKey[]) {
 }
 
 describe('production atlas model and immutable block codec', () => {
+  it('cooperative validation visits real structure and geometry and cancels before completion', async () => {
+    const aborter = new AbortController(), seen: { stage: string; completed: number; total: number }[] = [];
+    await expect(validateAtlasDraftAsync(standard, {
+      ...noWait, signal: aborter.signal, onProgress: progress => {
+        seen.push(progress); if (progress.stage === '核验共享地理与跨块邻接') aborter.abort();
+      },
+    })).rejects.toThrow();
+    expect(seen.some(row => row.stage === '核验地理块结构与成员引用' && row.completed === standard.blocks.size)).toBe(true);
+    expect(seen.at(-1)).toEqual({ stage: '核验共享地理与跨块邻接', completed: 4096, total: 257 ** 2 });
+    await expect(validateAtlasDraftAsync(standard, noWait)).resolves.toBe(true);
+    const missing = cloneAtlasDraft(standard); missing.blocks.delete('elevation:7:7');
+    await expect(validateAtlasDraftAsync(missing, noWait)).resolves.toBe(false);
+    const badMembership = cloneAtlasDraft(standard), block = badMembership.blocks.get('admin-membership:7:7')!;
+    if (block.layer !== 'admin-membership') throw new Error('wrong fixture layer'); block.values[1023] = 42;
+    expect(validateAtlasDraft(badMembership)).toBe(false); await expect(validateAtlasDraftAsync(badMembership, noWait)).resolves.toBe(false);
+  });
+
+  it('takes a strict complete ingress copy before the first cooperative yield without laundering unsafe buffers', async () => {
+    const input = cloneAtlasDraft(standard); let yields = 0;
+    const owned = await cloneVerifiedAtlasDraft(input, { yieldTask: async () => {
+      if (yields++ === 0) {
+        const last = input.blocks.get('elevation:7:7')!; if (last.layer !== 'elevation') throw new Error('wrong fixture layer');
+        last.values[1023] = 900; input.manifest.name = 'caller mutation'; input.manifest.blockRefs.at(-1)!.hash = '0'.repeat(64);
+      }
+    } });
+    expect(yields).toBeGreaterThan(1); expect(owned).toEqual(standard); expect(input).not.toEqual(owned);
+    const unsafe = cloneAtlasDraft(standard), last = unsafe.blocks.get('elevation:7:7')!;
+    if (last.layer !== 'elevation') throw new Error('wrong fixture layer'); last.values = new Int32Array(new SharedArrayBuffer(4096));
+    let yieldedUnsafe = false;
+    await expect(cloneVerifiedAtlasDraft(unsafe, { yieldTask: async () => { yieldedUnsafe = true; } })).rejects.toThrow();
+    expect(yieldedUnsafe).toBe(false);
+    const staleHash = cloneAtlasDraft(standard), altered = staleHash.blocks.get('elevation:7:7')!;
+    if (altered.layer !== 'elevation') throw new Error('wrong fixture layer'); altered.values[1023] = 900;
+    await expect(cloneVerifiedAtlasDraft(staleHash, noWait)).rejects.toThrow('摘要');
+  });
+
   it('creates a real 65,536-cell empty ocean with unique shared vertices and independent empty memberships', async () => {
     expect(validateAtlasDraft(standard)).toBe(true); await expect(verifyAtlasDraft(standard, noWait)).resolves.toBeUndefined();
     expect(standard.manifest).toMatchObject({ format: 'lieguoji-atlas-draft', version: 1, kind: 'draft', revision: 0, ...fixedIds, spec: { columns: 256, rows: 256, width: 4096, height: 4096, coordinateScale: 256, blockCells: 32 }, catalogs: { simRegions: [], administration: [] } });

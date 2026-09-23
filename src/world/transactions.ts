@@ -1,6 +1,6 @@
 import {
-  cloneAtlasDraft, cloneBlock, getCellLayerSlot, getVertexSlot, hashBlock, hashManifest,
-  UNASSIGNED, validateBlock, verifyAtlasDraft,
+  cloneAtlasDraft, cloneBlock, cloneVerifiedAtlasDraft, getCellLayerSlot, getVertexSlot, hashBlock, hashManifest,
+  UNASSIGNED, validateBlock,
   type AtlasBlock, type AtlasDraftData, type AtlasDraftManifest, type BlockKey,
 } from './model';
 import { cellBlock, incidentCellIds, validateLocalGeometry } from './topology';
@@ -184,12 +184,15 @@ export class OwnedAtlasSession {
   private constructor(data: AtlasDraftData, rootDigest: string, manifestDigest: string) {
     this.#data = data; this.#rootDigest = rootDigest; this.#manifestDigest = manifestDigest;
   }
-  static async open(raw: AtlasDraftData, rootDigest: string) {
+  static async open(raw: AtlasDraftData, rootDigest: string, control?: AtlasEditControl) {
     if (!HEX.test(rootDigest)) throw new Error('草稿根摘要无效。');
-    const owned = cloneAtlasDraft(raw); await verifyAtlasDraft(owned);
-    return new OwnedAtlasSession(owned, rootDigest, await hashManifest(owned.manifest));
+    abort(control);
+    const owned = await cloneVerifiedAtlasDraft(raw, control); abort(control);
+    const manifestDigest = await hashManifest(owned.manifest); abort(control);
+    return new OwnedAtlasSession(owned, rootDigest, manifestDigest);
   }
   get head() { return { draftId: this.#data.manifest.draftId, revision: this.#data.manifest.revision, rootDigest: this.#rootDigest, manifestDigest: this.#manifestDigest, undoCount: this.#undo.length }; }
+  get metadata(): Pick<AtlasDraftManifest, 'atlasId' | 'name'> { return { atlasId: this.#data.manifest.atlasId, name: this.#data.manifest.name }; }
   snapshot() { return cloneAtlasDraft(this.#data); }
   manifest() { return structuredClone(this.#data.manifest); }
   readBlocks(keys: readonly BlockKey[]) {

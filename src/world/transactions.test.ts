@@ -27,6 +27,25 @@ describe('production owned atlas edits', () => {
     const copy = session.snapshot(); getCellLayerSlot(copy, 'elevation', 0).block.values[0] = 400;
     expect(getCellLayerSlot(session.snapshot(), 'elevation', 0).block.values[0]).toBe(-100);
   });
+  it('cancels full initialization before or during verified block loading without changing input', async () => {
+    const before = initial.manifest.blockRefs.map(ref => ({ ...ref }));
+    const already = new AbortController(); already.abort();
+    await expect(OwnedAtlasSession.open(initial, root, { signal: already.signal })).rejects.toMatchObject({ name: 'AbortError' });
+    const during = new AbortController(); let progressCount = 0;
+    await expect(OwnedAtlasSession.open(initial, root, { signal: during.signal, onProgress: () => { progressCount++; }, yieldTask: async () => during.abort() })).rejects.toMatchObject({ name: 'AbortError' });
+    expect(progressCount).toBe(1); expect(initial.manifest.blockRefs).toEqual(before);
+  });
+  it('returns only independent identity and name scalars without exposing mutable manifest ownership', async () => {
+    const session = await OwnedAtlasSession.open(initial, root), expected = { atlasId: initial.manifest.atlasId, name: initial.manifest.name };
+    const metadata = session.metadata;
+    expect(metadata).toEqual(expected);
+    metadata.name = '外部替换名称'; metadata.atlasId = `atlas-${crypto.randomUUID()}`;
+    expect(session.metadata).toEqual(expected);
+    const prepared = await session.prepare(command(session, elevation([0])), noWait);
+    session.publish(prepared.candidateId, receipt(session, prepared));
+    expect(session.metadata).toEqual(expected); expect(session.head.revision).toBe(1);
+    expect(session.snapshot().manifest.name).toBe(expected.name);
+  });
   it('prepares four actual data blocks without publishing; detached candidate exports cannot mutate the pending edit', async () => {
     const session = await OwnedAtlasSession.open(initial, root), spec = initial.manifest.spec;
     const ids = [cellIdAt(spec, 31, 31), cellIdAt(spec, 32, 31), cellIdAt(spec, 31, 32), cellIdAt(spec, 32, 32)];

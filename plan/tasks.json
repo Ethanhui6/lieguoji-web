@@ -598,13 +598,17 @@
       "id": "PH04",
       "title": "分块世界数据与事务存储",
       "phase": "PH04",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "PH01",
         "PH03"
       ],
       "acceptance": "跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-09-24-ph04-chunked-world.md",
+        "docs/evidence/ph04/verification.json",
+        "docs/evidence/ph04/performance-v4/byte-evaluation-first.json"
+      ],
       "workItems": [
         {
           "id": "PH04-T1",
@@ -613,7 +617,8 @@
           "acceptance": "完成「地理采样、模拟区与行政树解耦」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": [
             "docs/evidence/2026-09-24-ph04-chunked-world.md",
-            "docs/evidence/ph04/first-batch/verification.json"
+            "docs/evidence/ph04/first-batch/verification.json",
+            "docs/evidence/ph04/verification.json"
           ]
         },
         {
@@ -623,22 +628,29 @@
           "acceptance": "完成「建立稳定ID、空间索引和跨块邻接」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": [
             "docs/evidence/2026-09-24-ph04-chunked-world.md",
-            "docs/evidence/ph04/first-batch/verification.json"
+            "docs/evidence/ph04/first-batch/verification.json",
+            "docs/evidence/ph04/verification.json"
           ]
         },
         {
           "id": "PH04-T3",
           "title": "实现增量Worker消息及可取消长任务",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「实现增量Worker消息及可取消长任务」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph04-chunked-world.md",
+            "docs/evidence/ph04/verification.json"
+          ]
         },
         {
           "id": "PH04-T4",
           "title": "分块事务、主备、CAS和空间预算接入保存",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「分块事务、主备、CAS和空间预算接入保存」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph04-chunked-world.md",
+            "docs/evidence/ph04/verification.json"
+          ]
         }
       ],
       "branch": "codex/ph04-chunked-world"
@@ -1955,7 +1967,7 @@
     "M5",
     "M6"
   ],
-  "phaseState": "持续目标已启动：PH01旧引擎冻结/注册分派/版本边界本地实施中；PH02—PH35仍todo。全部PH完成并验收前发布保持锁定。",
+  "phaseState": "PH00—PH04已完成本地阶段验收；下一阶段PH05相机、分块缓存与LOD。全部PH及真机/视觉验收完成前禁止推送、远程写入和发布。",
   "programme": {
     "version": "V4",
     "title": "列国纪原创独立PWA完整沙盒",

@@ -1,0 +1,8 @@
+{
+  "startedAt": "2026-09-23T19:48:02.2357416Z",
+  "finishedAt": "2026-09-23T19:48:12.1051107Z",
+  "vitestCommand": "node node_modules/vitest/vitest.mjs run src/world/bridge.test.ts src/world/atlas.worker.test.ts",
+  "vitestExit": 0,
+  "eslintCommand": "node node_modules/eslint/bin/eslint.js src/world/protocol.ts src/world/delta.ts src/world/bridge.ts src/world/atlas.worker.ts src/world/bridge.test.ts src/world/atlas.worker.test.ts",
+  "eslintExit": 1
+}

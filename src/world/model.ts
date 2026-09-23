@@ -160,18 +160,63 @@ export function cloneAtlasDraft(data: AtlasDraftData): AtlasDraftData {
   return { manifest: structuredClone(data.manifest), blocks: new Map([...data.blocks].map(([key, block]) => [key, cloneBlock(block)])) };
 }
 
+function atlasEnvelope(raw: unknown): raw is AtlasDraftData {
+  return keys(raw, ['manifest', 'blocks']) && validateManifest(raw.manifest) && raw.blocks instanceof Map && Object.getPrototypeOf(raw.blocks) === Map.prototype && Reflect.ownKeys(raw.blocks).length === 0 && raw.blocks.size === raw.manifest.blockRefs.length;
+}
+function checkReferencedBlock(data: AtlasDraftData, ref: AtlasBlockRef, regions: Set<number>, leaves: Set<number>) {
+  const block = data.blocks.get(ref.key);
+  if (!validateBlock(block, data.manifest.spec) || blockKey(block.layer, block.bx, block.by) !== ref.key) return false;
+  if (block.layer === 'sim-membership' || block.layer === 'admin-membership') {
+    const allowed = block.layer === 'sim-membership' ? regions : leaves;
+    for (const value of block.values) if (value !== UNASSIGNED && !allowed.has(value)) return false;
+  }
+  return true;
+}
+
+/** Complete validation of privately owned input; yields after real bounded work.
+ * Callers must not mutate input while validation runs. For external input, use
+ * cloneVerifiedAtlasDraft, which takes ownership before its first await. */
+export async function validateAtlasDraftAsync(raw: unknown, control?: AtlasControl): Promise<boolean> {
+  control?.signal?.throwIfAborted();
+  try {
+    if (!atlasEnvelope(raw)) return false;
+    const regions = new Set(raw.manifest.catalogs.simRegions.map(region => region.id)), leaves = new Set(raw.manifest.catalogs.administration.filter(node => node.kind === 'leaf').map(node => node.id));
+    for (let i = 0; i < raw.manifest.blockRefs.length; i++) {
+      if (!checkReferencedBlock(raw, raw.manifest.blockRefs[i], regions, leaves)) return false;
+      if (i % 16 === 15) await yieldAtlas(control, '核验地理块结构与成员引用', i + 1, raw.manifest.blockRefs.length);
+    }
+    const total = (raw.manifest.spec.columns + 1) * (raw.manifest.spec.rows + 1);
+    for (let offset = 0; offset < total; offset += 4096) {
+      const count = Math.min(4096, total - offset);
+      validateLocalGeometry(raw, Array.from({ length: count }, (_, index) => offset + index));
+      await yieldAtlas(control, '核验共享地理与跨块邻接', offset + count, total);
+    }
+    return true;
+  } catch { control?.signal?.throwIfAborted(); return false; }
+}
+
+/** No authority is returned before full validation and hashes. The ingress
+ * snapshot must be synchronous so a caller cannot alter a later block at a yield. */
+export async function cloneVerifiedAtlasDraft(raw: AtlasDraftData, control?: AtlasControl): Promise<AtlasDraftData> {
+  control?.signal?.throwIfAborted();
+  if (!atlasEnvelope(raw)) throw new Error('不能复制结构或版本无效的草稿。');
+  const owned: AtlasDraftData = { manifest: structuredClone(raw.manifest), blocks: new Map() };
+  for (const ref of raw.manifest.blockRefs) {
+    const block = raw.blocks.get(ref.key);
+    if (!block) throw new Error('不能复制缺失地理块的草稿。');
+    owned.blocks.set(ref.key, cloneBlock(block));
+  }
+  await verifyAtlasDraft(owned, control);
+  return owned;
+}
+
 /** Structural/reference/geometry predicate. Use verifyAtlasDraft for content hashes. */
 export function validateAtlasDraft(raw: unknown): raw is AtlasDraftData {
   try {
-    if (!keys(raw, ['manifest', 'blocks']) || !validateManifest(raw.manifest) || !(raw.blocks instanceof Map) || Object.getPrototypeOf(raw.blocks) !== Map.prototype || Reflect.ownKeys(raw.blocks).length || raw.blocks.size !== raw.manifest.blockRefs.length) return false;
+    if (!atlasEnvelope(raw)) return false;
     const data = raw as unknown as AtlasDraftData, regions = new Set(data.manifest.catalogs.simRegions.map(region => region.id)), leaves = new Set(data.manifest.catalogs.administration.filter(node => node.kind === 'leaf').map(node => node.id));
     for (const ref of data.manifest.blockRefs) {
-      const block = data.blocks.get(ref.key);
-      if (!validateBlock(block, data.manifest.spec) || blockKey(block.layer, block.bx, block.by) !== ref.key) return false;
-      if (block.layer === 'sim-membership' || block.layer === 'admin-membership') {
-        const allowed = block.layer === 'sim-membership' ? regions : leaves;
-        for (const value of block.values) if (value !== UNASSIGNED && !allowed.has(value)) return false;
-      }
+      if (!checkReferencedBlock(data, ref, regions, leaves)) return false;
     }
     // A registry may describe unfinished draft entities; only populated mappings
     // are authoritative membership. Starting a simulation needs later validation.
@@ -242,11 +287,12 @@ async function digest(bytes: Uint8Array): Promise<string> {
 export function hashBlock(block: AtlasBlock): Promise<string> { return digest(encodeBlock(block)); }
 export function hashManifest(manifest: AtlasDraftManifest): Promise<string> { return digest(encodeManifest(manifest)); }
 export async function verifyAtlasDraft(raw: unknown, control?: AtlasControl): Promise<void> {
-  if (!validateAtlasDraft(raw)) throw new Error('草稿结构、几何、目录或成员引用无效。');
-  for (let i = 0; i < raw.manifest.blockRefs.length; i++) {
-    const ref = raw.manifest.blockRefs[i];
-    if (await hashBlock(getBlock(raw, ref.key)) !== ref.hash) throw new Error(`地理块 ${ref.key} 完整摘要不符。`);
-    if (i % 16 === 15) await yieldAtlas(control, '核验不可变地理块', i + 1, raw.manifest.blockRefs.length);
+  if (!await validateAtlasDraftAsync(raw, control)) throw new Error('草稿结构、几何、目录或成员引用无效。');
+  const data = raw as AtlasDraftData;
+  for (let i = 0; i < data.manifest.blockRefs.length; i++) {
+    const ref = data.manifest.blockRefs[i];
+    if (await hashBlock(getBlock(data, ref.key)) !== ref.hash) throw new Error(`地理块 ${ref.key} 完整摘要不符。`);
+    if (i % 16 === 15) await yieldAtlas(control, '核验不可变地理块', i + 1, data.manifest.blockRefs.length);
   }
   control?.signal?.throwIfAborted();
 }
@@ -284,6 +330,6 @@ export async function createAtlasDraft(options: AtlasCreateOptions, control?: At
     const key = blockKey(layer, bx, by); data.blocks.set(key, block); manifest.blockRefs.push({ key, hash: await hashBlock(block) });
     if (manifest.blockRefs.length % 8 === 0) await yieldAtlas(control, '创建空白海洋共享地理', manifest.blockRefs.length, total);
   }
-  if (!validateAtlasDraft(data)) throw new Error('新建草稿未通过完整结构与共享几何校验。');
+  if (!await validateAtlasDraftAsync(data, control)) throw new Error('新建草稿未通过完整结构与共享几何校验。');
   control?.signal?.throwIfAborted(); return data;
 }

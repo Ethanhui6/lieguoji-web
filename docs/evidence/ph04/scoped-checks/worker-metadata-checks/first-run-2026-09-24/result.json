@@ -1,0 +1,8 @@
+{
+  "startedAt": "2026-09-23T20:57:53.6535950Z",
+  "completedAt": "2026-09-23T20:58:42.1060892Z",
+  "testCommand": "node node_modules/vitest/vitest.mjs run src/world/transactions.test.ts src/world/atlas.worker.test.ts",
+  "testExit": 0,
+  "lintCommand": "node node_modules/eslint/bin/eslint.js src/world/atlas.worker.ts src/world/atlas.worker.test.ts src/world/transactions.ts src/world/transactions.test.ts",
+  "lintExit": 0
+}

@@ -1,0 +1,130 @@
+{
+  "format": "lieguoji-ph04-measurement-evaluation",
+  "version": 1,
+  "evaluatedAt": "2026-09-23T20:54:17.410Z",
+  "status": "measurement-gates-not-passed",
+  "sources": {
+    "edits": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T20-50-44-244Z-edits/report.json",
+      "source": "1750452d43f82e5c2b9811c4189c723612d3d020d881f0f67bca69399d9605f5",
+      "dist": "e2db626537bc8bea353964ea25ad102344194c2270397fba60f4d2a475b3e9f0"
+    },
+    "loads": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T20-51-23-031Z-loads/report.json",
+      "source": "1750452d43f82e5c2b9811c4189c723612d3d020d881f0f67bca69399d9605f5",
+      "dist": "e2db626537bc8bea353964ea25ad102344194c2270397fba60f4d2a475b3e9f0"
+    },
+    "transport": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T20-52-37-071Z-transport/report.json",
+      "source": "1750452d43f82e5c2b9811c4189c723612d3d020d881f0f67bca69399d9605f5",
+      "dist": "e2db626537bc8bea353964ea25ad102344194c2270397fba60f4d2a475b3e9f0"
+    },
+    "cancel": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T20-53-08-740Z-cancel/report.json",
+      "source": "1750452d43f82e5c2b9811c4189c723612d3d020d881f0f67bca69399d9605f5",
+      "dist": "e2db626537bc8bea353964ea25ad102344194c2270397fba60f4d2a475b3e9f0"
+    }
+  },
+  "metrics": {
+    "computeMs": {
+      "valid": true,
+      "count": 100,
+      "min": 31.600000001490116,
+      "p95": 43.6000000089407,
+      "max": 54.69999998807907
+    },
+    "localCommitMs": {
+      "valid": true,
+      "count": 100,
+      "min": 59.599999997764826,
+      "p95": 79.10000000149012,
+      "max": 89
+    },
+    "feedbackMs": {
+      "valid": true,
+      "count": 100,
+      "min": 1.1000000014901161,
+      "p95": 1.699999999254942,
+      "max": 1.9000000022351742
+    },
+    "initialSaveMs": {
+      "valid": true,
+      "count": 10,
+      "min": 2551.300000000745,
+      "p95": 2748.599999997765,
+      "max": 2748.599999997765
+    },
+    "restoreMs": {
+      "valid": true,
+      "count": 10,
+      "min": 1625.699999999255,
+      "p95": 1731.2999999970198,
+      "max": 1731.2999999970198
+    },
+    "wireBytes": {
+      "valid": true,
+      "count": 109,
+      "min": 22037,
+      "p95": 22483,
+      "max": 23815
+    },
+    "transportWireBytes": {
+      "valid": true,
+      "count": 9,
+      "min": 22037,
+      "p95": 23815,
+      "max": 23815
+    },
+    "packetBytes": {
+      "valid": true,
+      "count": 143,
+      "min": 9980,
+      "p95": 26294,
+      "max": 104438
+    },
+    "workerProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 11.699999999254942,
+      "p95": 39.5,
+      "max": 170.30000000074506
+    },
+    "visibleProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 35.399999998509884,
+      "p95": 100.40000000223517,
+      "max": 201.5
+    },
+    "cancellationMs": {
+      "valid": true,
+      "count": 10,
+      "min": 3.600000001490116,
+      "p95": 8,
+      "max": 8
+    }
+  },
+  "variationPercent": 8.068248854199744,
+  "checks": {
+    "sameSourceAndDist": true,
+    "cleanMeasurementRuns": true,
+    "complete100EditCoverage": true,
+    "workerCompute25ms": false,
+    "durableCorrectFrame250ms": true,
+    "feedback50ms": true,
+    "logicalWire128KiB": true,
+    "transportThreeSizes10Percent": true,
+    "singlePacket512KiB": true,
+    "realProgress250ms": true,
+    "tenInitialSaves5s": true,
+    "tenFreshDocumentRestores5s": true,
+    "tenPrecommitCancels500ms": true
+  },
+  "limitations": [
+    "This evaluator does not accept the entire PH04 phase or modify plan/tasks.json.",
+    "Correct-frame timing is CPU drawing submission and a frame opportunity, not physical display completion.",
+    "Computation is nonoverlapping observed elapsed work including WebCrypto waits, not exact CPU time; diagnostic reporting overhead is excluded.",
+    "Restore means new document, app, Worker and decoded cache; browser and OS disk caches are not cleared.",
+    "Real devices, user visual acceptance, future full simulation and PH05 rendering budgets are separate."
+  ]
+}

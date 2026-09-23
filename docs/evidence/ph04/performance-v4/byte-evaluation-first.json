@@ -1,0 +1,130 @@
+{
+  "format": "lieguoji-ph04-measurement-evaluation",
+  "version": 1,
+  "evaluatedAt": "2026-09-23T21:05:20.791Z",
+  "status": "measurement-gates-passed",
+  "sources": {
+    "edits": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T21-01-46-718Z-edits/report.json",
+      "source": "dd311e07b13b371f1ddf0e76d03361433282ac4aaffbb3fd74dfea2bfae6c988",
+      "dist": "d4228157a164051bf96c177ca5f0d41fff1ed8274a36afa93e4750f949d52ebc"
+    },
+    "loads": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T21-02-38-512Z-loads/report.json",
+      "source": "dd311e07b13b371f1ddf0e76d03361433282ac4aaffbb3fd74dfea2bfae6c988",
+      "dist": "d4228157a164051bf96c177ca5f0d41fff1ed8274a36afa93e4750f949d52ebc"
+    },
+    "transport": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T21-03-44-816Z-transport/report.json",
+      "source": "dd311e07b13b371f1ddf0e76d03361433282ac4aaffbb3fd74dfea2bfae6c988",
+      "dist": "d4228157a164051bf96c177ca5f0d41fff1ed8274a36afa93e4750f949d52ebc"
+    },
+    "cancel": {
+      "path": ".autopilot/ph04/measurements/2026-09-23T21-04-34-536Z-cancel/report.json",
+      "source": "dd311e07b13b371f1ddf0e76d03361433282ac4aaffbb3fd74dfea2bfae6c988",
+      "dist": "d4228157a164051bf96c177ca5f0d41fff1ed8274a36afa93e4750f949d52ebc"
+    }
+  },
+  "metrics": {
+    "computeMs": {
+      "valid": true,
+      "count": 100,
+      "min": 12.199999995529652,
+      "p95": 21.100000005215406,
+      "max": 26.6999999769032
+    },
+    "localCommitMs": {
+      "valid": true,
+      "count": 100,
+      "min": 34.100000001490116,
+      "p95": 51.100000001490116,
+      "max": 62.899999998509884
+    },
+    "feedbackMs": {
+      "valid": true,
+      "count": 100,
+      "min": 1.0999999977648258,
+      "p95": 1.699999999254942,
+      "max": 2.100000001490116
+    },
+    "initialSaveMs": {
+      "valid": true,
+      "count": 10,
+      "min": 2491.10000000149,
+      "p95": 2671.7999999970198,
+      "max": 2671.7999999970198
+    },
+    "restoreMs": {
+      "valid": true,
+      "count": 10,
+      "min": 1596.300000000745,
+      "p95": 1657.9000000022352,
+      "max": 1657.9000000022352
+    },
+    "wireBytes": {
+      "valid": true,
+      "count": 109,
+      "min": 22064,
+      "p95": 22501,
+      "max": 23849
+    },
+    "transportWireBytes": {
+      "valid": true,
+      "count": 9,
+      "min": 22064,
+      "p95": 23849,
+      "max": 23849
+    },
+    "packetBytes": {
+      "valid": true,
+      "count": 143,
+      "min": 9980,
+      "p95": 26294,
+      "max": 104438
+    },
+    "workerProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 5.900000002235174,
+      "p95": 30.600000001490116,
+      "max": 88.30000000074506
+    },
+    "visibleProgressGapMs": {
+      "valid": true,
+      "count": 143,
+      "min": 24.800000000745058,
+      "p95": 57.100000001490116,
+      "max": 109.80000000074506
+    },
+    "cancellationMs": {
+      "valid": true,
+      "count": 10,
+      "min": 3.5,
+      "p95": 8.300000000745058,
+      "max": 8.300000000745058
+    }
+  },
+  "variationPercent": 8.090101522842641,
+  "checks": {
+    "sameSourceAndDist": true,
+    "cleanMeasurementRuns": true,
+    "complete100EditCoverage": true,
+    "workerCompute25ms": true,
+    "durableCorrectFrame250ms": true,
+    "feedback50ms": true,
+    "logicalWire128KiB": true,
+    "transportThreeSizes10Percent": true,
+    "singlePacket512KiB": true,
+    "realProgress250ms": true,
+    "tenInitialSaves5s": true,
+    "tenFreshDocumentRestores5s": true,
+    "tenPrecommitCancels500ms": true
+  },
+  "limitations": [
+    "This evaluator does not accept the entire PH04 phase or modify plan/tasks.json.",
+    "Correct-frame timing is CPU drawing submission and a frame opportunity, not physical display completion.",
+    "Computation is nonoverlapping observed elapsed work including WebCrypto waits, not exact CPU time; diagnostic reporting overhead is excluded.",
+    "Restore means new document, app, Worker and decoded cache; browser and OS disk caches are not cleared.",
+    "Real devices, user visual acceptance, future full simulation and PH05 rendering budgets are separate."
+  ]
+}

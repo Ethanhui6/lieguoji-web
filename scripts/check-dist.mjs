@@ -54,6 +54,9 @@ if (!files.some(file => /^assets\/sim\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))
 if (!files.some(file => /^assets\/replay\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/replay.worker-<hash>.js', 'required isolated replay Worker is missing');
 }
+if (!files.some(file => /^assets\/atlas\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
+  reject('assets/atlas.worker-<hash>.js', 'required isolated atlas draft Worker is missing');
+}
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }

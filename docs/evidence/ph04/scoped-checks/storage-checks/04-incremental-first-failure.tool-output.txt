@@ -1,0 +1,32 @@
+TOOL-OUTPUT TRANSCRIPT — not an original redirected stdout file.
+Copied from this session's tool output. No test was rerun to create this file.
+Command: .\node_modules\.bin\vitest.cmd run src/world/storage.test.ts
+Working directory: D:\游戏\架空地图模拟器
+Session: 17653; completion chunk: 5d6872; process exit code: 1.
+No per-run source SHA recorded. The source line below is the location printed for that run.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/world/storage.test.ts (41 tests | 1 failed) 69832ms
+   ❯ PH04 independent immutable-block/root-CAS storage (27)
+     × known damaged current content allows only explicit backup recovery, then independent fork preserves raw source 5416ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/world/storage.test.ts > PH04 independent immutable-block/root-CAS storage > known damaged current content allows only explicit backup recovery, then independent fork preserves raw source
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/world/storage.test.ts:230:3
+    228|   });
+    229|
+    230|   it('known damaged current content allows only explicit backup recove…
+       |   ^
+    231|     const { next, second } = await pair(), changed = next.manifest.blo…
+    232|     record.bytes[record.bytes.length - 1] ^= 1; await putRaw('blocks',…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 40 passed (41)
+   Start at  04:14:05
+   Duration  70.46s (tests 100%)

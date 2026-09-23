@@ -1,0 +1,8 @@
+{
+  "command": ".\\node_modules\\.bin\\eslint.cmd src/world/storage.ts src/world/storage-types.ts src/world/storage.test.ts",
+  "startedUtc": "2026-09-23T20:42:45.1690031Z",
+  "endedUtc": "2026-09-23T20:42:48.6091942Z",
+  "exitCode": 0,
+  "log": ".autopilot\\ph04\\storage-timing-checks\\lint-first.log",
+  "capture": "actual command combined stdout and stderr"
+}

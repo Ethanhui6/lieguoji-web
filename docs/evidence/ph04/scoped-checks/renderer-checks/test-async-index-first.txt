@@ -1,0 +1,92 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/world/renderer.test.ts (20 tests | 3 failed) 21637ms
+   ❯ atlas renderer failure and lifetime boundaries (20)
+     × only resolves acceptance after its scheduled correct frame 823ms
+     × destroy during the paint yield prevents remaining blocks and acceptance 809ms
+     × resize-error during the paint yield prevents remaining blocks and acceptance 755ms
+ ❯ src/world/spatial-index.test.ts (15 tests | 1 failed) 3118ms
+   ❯ PH04 shared-geometry spatial index (15)
+     × late invalid geometry cannot replace a previously usable index 41ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > only resolves acceptance after its scheduled correct frame
+AssertionError: expected [ { type: 'return', …(1) }, …(1) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ waitForPaint src/world/renderer.test.ts:78:35
+     76| async function waitForPaint(progress: Harness['progress']) {
+     77|   for (let attempts = 0; attempts < 200 && !paintProgress(progress).le…
+     78|   expect(paintProgress(progress)).toHaveLength(1);
+       |                                   ^
+     79| }
+     80| async function loadedRenderer() {
+ ❯ src/world/renderer.test.ts:130:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy during the paint yield prevents remaining blocks and acceptance
+ FAIL  src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > resize-error during the paint yield prevents remaining blocks and acceptance
+AssertionError: expected [ { type: 'return', …(1) }, …(1) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ waitForPaint src/world/renderer.test.ts:78:35
+     76| async function waitForPaint(progress: Harness['progress']) {
+     77|   for (let attempts = 0; attempts < 200 && !paintProgress(progress).le…
+     78|   expect(paintProgress(progress)).toHaveLength(1);
+       |                                   ^
+     79| }
+     80| async function loadedRenderer() {
+ ❯ src/world/renderer.test.ts:193:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy during the paint yield prevents remaining blocks and acceptance
+ FAIL  src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > resize-error during the paint yield prevents remaining blocks and acceptance
+Error: Promise returned by `expect(actual).rejects.toThrow()` was not awaited. This assertion is asynchronous and must be awaited; otherwise, it is not guaranteed to complete before the test finishes:
+
+await expect(actual).rejects.toThrow()
+
+ ❯ src/world/renderer.test.ts:192:108
+    190|   it.each(['destroy', 'resize-error'] as const)('%s during the paint y…
+    191|     const { renderer, fatal, progress } = newRenderer(); await rendere…
+    192|     const published = vi.fn(), result = renderer.accept(source).then(p…
+       |                                                                                                            ^
+    193|     await waitForPaint(progress);
+    194|     if (boundary === 'destroy') renderer.destroy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/world/spatial-index.test.ts > PH04 shared-geometry spatial index > late invalid geometry cannot replace a previously usable index
+Error: 地理块内容或 codec 版本无效。
+ ❯ encodeBlock src/world/model.ts:248:36
+    246| /** LGAB v1, LE fixed header and typed columns; no atlas identity or m…
+    247| export function encodeBlock(block: AtlasBlock): Uint8Array {
+    248|   if (!validateBlock(block)) throw new Error('地理块内容或 codec 版本无效。');
+       |                                    ^
+    249|   const arrays = block.layer === 'geometry' ? [block.vertexIds, block.…
+    250|   const bytes = new Uint8Array(16 + arrays.reduce((sum, values) => sum…
+ ❯ hashBlock src/world/model.ts:287:79
+ ❯ moved src/world/spatial-index.test.ts:44:97
+ ❯ src/world/spatial-index.test.ts:210:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 31 passed (35)
+   Start at  04:40:23
+   Duration  25.30s (tests 99%, transform 1%)
+

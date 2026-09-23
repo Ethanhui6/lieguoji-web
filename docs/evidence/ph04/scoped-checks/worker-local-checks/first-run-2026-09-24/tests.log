@@ -1,0 +1,30 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/world/atlas.worker.test.ts (15 tests | 1 failed) 22903ms
+   ❯ atlas Worker durable authority with real binary transport and isolated IDB (15)
+     × keeps the fully verified fallback for an edit above the local cell budget 926ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/world/atlas.worker.test.ts > atlas Worker durable authority with real binary transport and isolated IDB > keeps the fully verified fallback for an edit above the local cell budget
+Error: 不能编码未知版本或无效编辑字段。
+ ❯ encodeAtlasEditMessage src/world/transactions.ts:105:70
+    103| /** Exact logical wire representation: canonical metadata + tagged lit…
+    104| export function encodeAtlasEditMessage(value: AtlasEditCommand | Atlas…
+    105|   if (!validateAtlasEdit(value) && !validateAtlasDelta(value)) throw n…
+       |                                                                      ^
+    106|   const { patch } = value;
+    107|   const metadata = value.format === 'lieguoji-atlas-edit'
+ ❯ AtlasClient.editCommand src/world/bridge.ts:90:92
+ ❯ AtlasClient.edit src/world/bridge.ts:93:164
+ ❯ src/world/atlas.worker.test.ts:104:32
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:09:55
+   Duration  23.40s (tests 97%, transform 2%, import 1%)
+

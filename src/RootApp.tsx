@@ -12,19 +12,22 @@ import {ReplaySession} from './history/replay';
 import type {HistoryLog,HistoryParent} from './history/types';
 import './styles.css';
 const Game=lazy(()=>import('./App'));
+const AtlasStudio=lazy(()=>import('./editor/AtlasStudio'));
 
 const runFromUrl=()=>{const id=new URLSearchParams(window.location.search).get('world');return id&&/^run-[a-z0-9-]{1,55}$/.test(id)?id:'';};
-const initialScreen=()=>runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
+const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??''};};
+const initialScreen=()=>new URLSearchParams(window.location.search).has('atlas')?'atlas':runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
 export default function RootApp(){
- const [screen,setScreen]=useState<'studio'|'demo'|'simulation'>(initialScreen);
+ const [screen,setScreen]=useState<'studio'|'demo'|'simulation'|'atlas'>(initialScreen);
  const [workspace,setWorkspace]=useState<Workspace>(()=>({schemaVersion:1,draft:createDraft('山河-2026'),runs:[]}));
  const [loaded,setLoaded]=useState(false),[error,setError]=useState<string|null>(null),[saveStatus,setSaveStatus]=useState('正在读取草稿…');
  const [activeRun,setActiveRun]=useState(runFromUrl);
+ const [activeAtlas,setActiveAtlas]=useState(()=>({...atlasFromUrl(),instance:0}));
  const [operating,setOperating]=useState(false);const operation=useRef(false),navigation=useRef(0);
  const revision=useRef(0),locked=useRef(false),writing=useRef(false),dirty=useRef(false);
  useEffect(()=>{let stale=false;void loadWorkspace().then(result=>{if(stale)return;revision.current=result.revision;locked.current=false;if(result.data)setWorkspace(result.data);setSaveStatus(result.data?(result.recovered?'已恢复上一份有效草稿':'已恢复工坊草稿'):'新草稿 · 尚未保存');}).catch(err=>{if(!stale){locked.current=true;setError(String(err));setSaveStatus('原草稿已锁定保护，本局仍可导出');}}).finally(()=>{if(!stale)setLoaded(true);});return()=>{stale=true;};},[]);
  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(dirty.current){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[]);
- useEffect(()=>{const navigate=()=>{navigation.current++;setScreen(initialScreen());setActiveRun(runFromUrl());};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
+ useEffect(()=>{const navigate=()=>{navigation.current++;setScreen(initialScreen());setActiveRun(runFromUrl());setActiveAtlas(previous=>({...atlasFromUrl(),instance:previous.instance+1}));};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
  const back=()=>{navigation.current++;window.history.pushState(null,'','/');setScreen('studio');};
  const demo=()=>{navigation.current++;window.history.pushState(null,'','/?demo=1');setScreen('demo');};
  async function persist(next:Workspace){
@@ -36,6 +39,11 @@ export default function RootApp(){
  const end=()=>{operation.current=false;setOperating(false);};
  const change=(draft:EditorDraft)=>{if(operation.current)return;setWorkspace(current=>({...current,draft}));dirty.current=true;setSaveStatus('草稿有未保存修改');};
  async function save(){begin();try{await persist(workspace);}catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}}
+ async function openAtlas(){
+  if(operation.current||writing.current)return;
+  if(dirty.current){try{await save();}catch{return;}}
+  navigation.current++;setActiveAtlas(previous=>({id:'',source:'current',manifest:'',instance:previous.instance+1}));window.history.pushState(null,'','/?atlas=new');setScreen('atlas');
+ }
  async function registerRun(candidate:World,draft=workspace.draft){
   if(!candidate.custom||candidate.scenario!=='custom-world')throw new Error('自建世界缺少身份信息');
   if(workspace.runs.length>=100)throw new Error('已经保留100个历史世界。请先导出备份后整理，当前历史未删除。');
@@ -123,9 +131,10 @@ export default function RootApp(){
   }
   const incoming=await decodeWorkspace(raw);const next={...workspace,draft:{...incoming.draft,id:`world-${crypto.randomUUID()}`}};await persist(next);setWorkspace(next);setError(null);
  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}}
+ if(screen==='atlas')return <Suspense fallback={<main className="loading-state"><h1>正在打开大世界草稿…</h1></main>}><AtlasStudio key={activeAtlas.instance} initialDraftId={activeAtlas.id} initialSource={activeAtlas.source} expectedManifest={activeAtlas.manifest} onBack={back} onDraftOpened={(id,source,manifest)=>{const query=new URLSearchParams({atlas:id});if(source==='backup'){query.set('atlas-source','backup');query.set('atlas-manifest',manifest);}window.history.replaceState(null,'',`/?${query}`);}}/></Suspense>;
  if(screen==='demo'||screen==='simulation')return <div inert={operating} aria-busy={operating}><Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined} onRecord={screen==='simulation'?record:undefined} onBranch={branch} onImportHistory={importHistory}/></Suspense></div>;
  if(!loaded)return <main className="loading-state" style={{minHeight:'100dvh'}}><h1>正在打开世界工坊</h1><p>读取地图草稿与历史世界…</p></main>;
  return <div inert={operating} aria-busy={operating}>
-  <WorldStudio draft={workspace.draft} onChange={change} onStart={start} onDemo={demo} onSave={save} onExport={exportDraft} onImport={importDraft} saveStatus={saveStatus} error={error} onResume={()=>void resume()} canResume={workspace.runs.length>0} savedRuns={workspace.runs} onResumeRun={id=>{void resume(id);}}/>
+  <WorldStudio draft={workspace.draft} onChange={change} onStart={start} onDemo={demo} onSave={save} onExport={exportDraft} onImport={importDraft} saveStatus={saveStatus} error={error} onResume={()=>void resume()} canResume={workspace.runs.length>0} savedRuns={workspace.runs} onResumeRun={id=>{void resume(id);}} onAtlas={()=>void openAtlas()}/>
  </div>;
 }

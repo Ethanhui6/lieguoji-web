@@ -1,4 +1,4 @@
-# V4 当前续接入口：PH04 生产分块世界，本地发布锁定
+# V4 当前续接入口：PH04已完成，接续PH05，本地发布锁定
 
 2026-09-24。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。全部 PH00—PH35、真机及用户视觉验收之前，禁止任何 push、远程写入、发行打包或 Cloudflare 构建部署。
 
@@ -6,8 +6,10 @@
 - PH00—PH03 已完成。PH03 是具名硬件上的真实规模测量与后继性能合同，不是完整游戏支持容量或性能PASS。标准65,536地理样本目标保留；262,144高实体档帧间隔p95为28.6—35.6ms，尚不达桌面目标。2048结构历史刷新读库约1.2s、完整校验载入约281s，明确由PH04/28/33解决，不能绕过验证。
 - PH03最终本地检查：569单测/24文件、14发布策略、lint、类型、生产构建及23产物审计通过。八份浏览器原报告包含保留的早期smoke失败；正式matrix290步骤、实体9组/54次传输、controls129步骤、长历史14步骤、guards6步骤、移动仿真34步骤均执行完成。mobile是桌面RTX上的Pixel参数，不是真手机。
 - 原始报告、源码快照、设备、SHA、截图及摘要均在docs/evidence/ph03/；结论docs/evidence/2026-09-24-ph03-scale.md，锁定门槛ADR0008。首次smoke的favicon404、最初报告误计缓存、取消和绘图锁修复均保留，不抹成首轮全过。
-- 当前进入PH04-T1/T2：独立生产草稿格式，地理/模拟区/行政membership分离，稳定ID、唯一共享顶点、跨块邻接和空间索引。设计ADR0009。不要将src/bench的ScaleFixture注册为生产引擎，不迁移旧档；world3/rules0.3完整模拟仍未实现。
-- 下一批PH04-T3/T4接增量Worker、可取消准备、不可变内容块和整根CAS持久化，再以真实编辑/刷新/冲突/故障检验。尚未交付PH04可玩入口，不能把数据模型当完成。
+- PH04-T1/T2核心已完成：独立生产草稿格式，地理/模拟区/行政membership分离，稳定ID、唯一共享顶点、跨块邻接和空间索引。首批合并检查96/96通过，其中69项新core、27项既有worldgen；lint/类型通过，本地提交ceddb31647d055c18ba9fc0a9da940ea2245a4bb。证据docs/evidence/2026-09-24-ph04-chunked-world.md，设计ADR0009。不要将src/bench的ScaleFixture注册为生产引擎，不迁移旧档；world3/rules0.3完整模拟仍未实现。
+- PH04全部完成本地验收：独立生产Atlas草稿/共享顶点/分块索引/Worker/原子主备与完整根CAS/容量/备份副本/实际编辑与恢复。最终build:cf **776/776单测、33文件、14发布策略、lint/类型/25产物通过**；最终8×3浏览器 **24/24、195.014秒、零重试/flaky/跳过**。旧入口81例为此前v1构建证据，最终776仍含冻结引擎golden。详见docs/evidence/ph04/verification.json与阶段证据文档。
+- PH04性能13项门全部通过：100笔完整Worker观察计算p9521.1ms、确认至保存/CPU正确画面p9551.1ms/max62.9ms；10初存max2671.8ms、10新页面全校验恢复max1657.9ms；三规模wire变化8.09%，全部可见进度max109.8ms，10次提交前取消max8.3ms且源根/键不变。精确127文件来源dd311e07...、dist d4228157...和全部raw在docs/evidence/ph04/performance-v4与source-snapshots。所有初次失败保留，未改阈值；此范围不是完整社会规则/真实手机/物理屏幕性能。
+- 下一批PH05-T1/T2：统一相机坐标与缩放锚点、真实视口拾取，建立按需分块缓存/裁剪/像素预算及WebGL生命周期；随后T3远中近LOD/标签密度，再T4压力验收。不得复制bench为游戏；不提前填国家/家族空面板。计划中PH05暂todo，开启下一本地分支时更新为in_progress。
 - 当前提交与分支：先核对git status、git log -1和.autopilot/checkpoint.json。PH01提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；PH02提交9e315b24f5311691eefce39974fe884d2baa87eb；PH03本地提交2b678523f429a871af324375174d43b9adee8034，归档字节修正6eb55165a8994b39593b61aa784798ce1b67c658；当前分支codex/ph04-chunked-world。始终未推送。
 - 历史线上0.4.0：提交b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，仓库Ethanhui6/lieguoji-web（私有），Pages lieguoji-web，唯一原生Git链，main生产/其他分支预览。稳定URL https://lieguoji-web.pages.dev/ ，固定URL https://a257d63e.lieguoji-web.pages.dev/ 。这些是此前核验的历史部署，本轮未触发云端。
 - 尚未通过：生产大世界/完整社会规则/长局性能、真实iPhone/Android/平板、用户视觉验收及其余PH。正式五国地图/未知CANON/缺失原规划独立待核，不阻挡自建沙盒；不伪造通过。

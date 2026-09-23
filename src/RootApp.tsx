@@ -6,6 +6,11 @@ import {loadWorkspace,saveWorkspace,encodeWorkspace,decodeWorkspace,type Workspa
 import {readSave,writeSave,decodeSave} from './persistence';
 import {initializeStatecraft} from './sim/core';
 import type {World} from './sim/types';
+import {createHistory,hashWorld} from './history/core';
+import {readHistoryRun,writeHistoryRun,parseHistoryFile} from './history/store';
+import {ENGINE_FINGERPRINT} from './history/engine';
+import {ReplaySession} from './history/replay';
+import type {HistoryLog,HistoryParent} from './history/types';
 import './styles.css';
 const Game=lazy(()=>import('./App'));
 
@@ -16,13 +21,13 @@ export default function RootApp(){
  const [workspace,setWorkspace]=useState<Workspace>(()=>({schemaVersion:1,draft:createDraft('山河-2026'),runs:[]}));
  const [loaded,setLoaded]=useState(false),[error,setError]=useState<string|null>(null),[saveStatus,setSaveStatus]=useState('正在读取草稿…');
  const [activeRun,setActiveRun]=useState(runFromUrl);
- const [operating,setOperating]=useState(false);const operation=useRef(false);
+ const [operating,setOperating]=useState(false);const operation=useRef(false),navigation=useRef(0);
  const revision=useRef(0),locked=useRef(false),writing=useRef(false),dirty=useRef(false);
  useEffect(()=>{let stale=false;void loadWorkspace().then(result=>{if(stale)return;revision.current=result.revision;locked.current=false;if(result.data)setWorkspace(result.data);setSaveStatus(result.data?(result.recovered?'已恢复上一份有效草稿':'已恢复工坊草稿'):'新草稿 · 尚未保存');}).catch(err=>{if(!stale){locked.current=true;setError(String(err));setSaveStatus('原草稿已锁定保护，本局仍可导出');}}).finally(()=>{if(!stale)setLoaded(true);});return()=>{stale=true;};},[]);
  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(dirty.current){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[]);
- useEffect(()=>{const navigate=()=>{setScreen(initialScreen());setActiveRun(runFromUrl());};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
- const back=()=>{window.history.pushState(null,'','/');setScreen('studio');};
- const demo=()=>{window.history.pushState(null,'','/?demo=1');setScreen('demo');};
+ useEffect(()=>{const navigate=()=>{navigation.current++;setScreen(initialScreen());setActiveRun(runFromUrl());};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
+ const back=()=>{navigation.current++;window.history.pushState(null,'','/');setScreen('studio');};
+ const demo=()=>{navigation.current++;window.history.pushState(null,'','/?demo=1');setScreen('demo');};
  async function persist(next:Workspace){
   if(locked.current)throw new Error('原工坊存档无法读取，已锁定写入；请导出当前草稿，并使用兼容版本恢复。');
   if(writing.current)throw new Error('工坊正在保存，请稍候。');writing.current=true;
@@ -48,7 +53,7 @@ export default function RootApp(){
  async function upgrade(world:World){
   begin();
   try{
-   if(screen!=='simulation'||world.scenario!=='custom-world'||!world.custom||world.custom.id!==activeRun||world.schemaVersion!==1||world.rulesVersion!=='0.1.0')throw new Error('只能为当前旧版自建世界创建经营推演副本，原历史未修改。');
+   if(screen!=='simulation'||runFromUrl()!==activeRun||world.scenario!=='custom-world'||!world.custom||world.custom.id!==activeRun||world.schemaVersion!==1||world.rulesVersion!=='0.1.0')throw new Error('只能为当前旧版自建世界创建经营推演副本，原历史未修改。');
    const copy=initializeStatecraft(world,'war');
    if(!copy.custom)throw new Error('经营副本缺少世界身份');
    copy.custom={...copy.custom,name:`${copy.custom.name.slice(0,110)} · 经营副本`};
@@ -56,7 +61,47 @@ export default function RootApp(){
   }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}
  }
  async function resume(id=workspace.runs[0]?.id){
-  if(!id)return;try{const saved=await readSave(`custom-${id}`);if(!saved.world)throw new Error('此推演的存档不在当前浏览器，请导入推演备份。');setActiveRun(id);window.history.pushState(null,'',`/?world=${id}`);setScreen('simulation');setError(null);}catch(err){setError(err instanceof Error?err.message:String(err));}
+  if(!id||operation.current||writing.current)return;
+  try{begin();}catch(err){setError(err instanceof Error?err.message:String(err));return;}
+  const ticket=++navigation.current;
+  try{const present=id.startsWith('run-h-')?(await readHistoryRun(id)).record:(await readSave(`custom-${id}`)).world;if(!present)throw new Error('此推演的存档不在当前浏览器，请导入推演备份。');if(ticket!==navigation.current)return;setActiveRun(id);window.history.pushState(null,'',`/?world=${id}`);setScreen('simulation');setError(null);}catch(err){setError(err instanceof Error?err.message:String(err));}finally{end();}
+ }
+ async function registerHistory(candidate:World,parent:HistoryParent|null,imported?:HistoryLog){
+  if(!candidate.custom||candidate.scenario!=='custom-world')throw new Error('只有自建世界可以记录历史');
+  if(workspace.runs.length>=100)throw new Error('已经保留100个历史世界，请先导出备份后整理。');
+  const sourceUrl=window.location.href,ticket=navigation.current,id=`run-h-${crypto.randomUUID()}`,world=structuredClone(candidate);
+  if(!imported)world.custom={...world.custom!,id,name:`${world.custom!.name.slice(0,95)} · ${parent?'分支':'记录'}`};
+  const history=imported??await createHistory(world,{runId:id,engineFingerprint:ENGINE_FINGERPRINT,...(parent?{parent}:{})});
+  await writeHistoryRun(id,{world,history,readOnly:!!imported},0);
+  const next:Workspace={...workspace,runs:[{id,name:imported?`${world.custom!.name.slice(0,110)} · 历史归档`:world.custom!.name,createdAt:new Date().toISOString()},...workspace.runs]};
+  try{await persist(next);}catch(err){throw new Error(`历史已单独保留，但工坊登记失败，未切换原局。恢复编号 ${id}；${err instanceof Error?err.message:String(err)}`,{cause:err});}
+  setWorkspace(next);if(window.location.href!==sourceUrl||ticket!==navigation.current)return;
+  setActiveRun(id);window.history.pushState(null,'',`/?world=${id}`);setScreen('simulation');
+ }
+ async function record(world:World){
+  begin();try{
+   if(screen!=='simulation'||runFromUrl()!==activeRun||world.custom?.id!==activeRun||activeRun.startsWith('run-h-'))throw new Error('只能从当前尚未记录的自建世界建立记录副本。');
+   await registerHistory(world,null);
+  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}
+ }
+ async function branch(point:{world:World;parent:HistoryParent}){
+  begin();let session:ReplaySession|undefined;const sourceUrl=window.location.href,ticket=navigation.current;try{
+   session=new ReplaySession();
+   const saved=await readHistoryRun(activeRun);
+   if(!saved.record||saved.record.history.runId!==point.parent.runId)throw new Error('源历史已变化，请重新选择分支位置。');
+   const verified=await session.init(saved.record.history,point.parent.seq);
+   if(await hashWorld(verified.world)!==point.parent.worldHash||await hashWorld(point.world)!==point.parent.worldHash)throw new Error('分支状态与源历史不符，原记录保留。');
+   if(window.location.href!==sourceUrl||ticket!==navigation.current)throw new Error('已离开源历史，分支创建已取消。');
+   await registerHistory(verified.world,point.parent);
+  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{session?.close();end();}
+ }
+ async function importHistory(file:File){
+  begin();let session:ReplaySession|undefined;const sourceUrl=window.location.href,ticket=navigation.current;try{
+   session=new ReplaySession();
+   const history=await parseHistoryFile(file),verified=await session.init(history);
+   if(window.location.href!==sourceUrl||ticket!==navigation.current)throw new Error('已离开当前推演，历史导入已取消。');
+   await registerHistory(verified.world,null,history);
+  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{session?.close();end();}
  }
  async function exportDraft(){const data=await encodeWorkspace({...workspace,runs:[]});const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`列国纪-${workspace.draft.name}.world.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  async function importDraft(file:File){begin();try{
@@ -67,7 +112,7 @@ export default function RootApp(){
   }
   const incoming=await decodeWorkspace(raw);const next={...workspace,draft:{...incoming.draft,id:`world-${crypto.randomUUID()}`}};await persist(next);setWorkspace(next);setError(null);
  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}}
- if(screen==='demo'||screen==='simulation')return <Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined}/></Suspense>;
+ if(screen==='demo'||screen==='simulation')return <div inert={operating} aria-busy={operating}><Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined} onRecord={screen==='simulation'?record:undefined} onBranch={branch} onImportHistory={importHistory}/></Suspense></div>;
  if(!loaded)return <main className="loading-state" style={{minHeight:'100dvh'}}><h1>正在打开世界工坊</h1><p>读取地图草稿与历史世界…</p></main>;
  return <div inert={operating} aria-busy={operating}>
   {workspace.runs.length>1&&<div className="world-archive"><label>已保存的推演 <select aria-label="已保存的推演" defaultValue="" onChange={e=>{void resume(e.target.value);}}><option value="" disabled>选择历史世界</option>{workspace.runs.map(r=><option key={r.id} value={r.id}>{r.name} · {new Date(r.createdAt).toLocaleString('zh-CN')}</option>)}</select></label></div>}

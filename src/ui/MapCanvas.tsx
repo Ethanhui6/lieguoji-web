@@ -10,6 +10,7 @@ type Props = {
   selectedArmyId: string;
   selectedProvinceId: string;
   route: string[];
+  readOnly?: boolean;
   onArmySelect: (id: string) => void;
   onProvinceSelect: (id: string) => void;
 };
@@ -334,7 +335,7 @@ export function MapCanvas(props: Props) {
   }
 
   return <section className="map-section" aria-label={props.world.scenario === 'custom-world' ? '可交互创作世界地图' : '可交互测试大陆地图'}>
-    <div className="map-kicker"><span>列国舆图</span><span>沙盒推演 · 实际控制</span></div>
+    <div className="map-kicker"><span>列国舆图</span><span>{props.readOnly ? '只读历史 · 实际控制' : '沙盒推演 · 实际控制'}</span></div>
     <div ref={hostRef} className="map-canvas" data-testid="map-canvas" role="img" aria-label={`${props.world.scenario === 'custom-world' ? '创作世界' : '测试大陆'}。单指拖动，双指或滚轮缩放；通过军队列表和地区列表也可选择。`}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
@@ -386,6 +387,6 @@ export function MapCanvas(props: Props) {
       <button onClick={() => zoom(0.8)} aria-label="缩小地图">−</button>
       <button onClick={resetView}>归位</button>
     </div>
-    <div className="map-hint">拖动查看 · 缩放舆图 · 点选地区下令</div>
+    <div className="map-hint">{props.readOnly ? '只读历史 · 拖动缩放 · 点选查看详情' : '拖动查看 · 缩放舆图 · 点选地区下令'}</div>
   </section>;
 }

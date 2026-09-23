@@ -19,5 +19,5 @@ export type NationReport = { nationId: string; population: number; grain: number
 export type World = { schemaVersion: 1 | 2; rulesVersion: '0.1.0' | '0.2.0'; scenario: 'test-continent' | 'custom-world'; custom?: { id: string; name: string; seed: string; rivers: Point[][] }; statecraft?: Statecraft; mode: 'sandbox'; day: number; nations: Nation[]; provinces: Province[]; cities: City[]; armies: Army[]; events: GameEvent[]; nextEventId: number };
 export type Order = { armyId: string; targetId: string; kind: 'march' | 'retreat' };
 export type OrderPreview = { valid: boolean; reason: string; route: string[]; days: number; supplyCost: number; warnings: string[] };
-export type WorkerRequest = { id: number; type: 'init'; world?: World } | { id: number; type: 'step'; days: number } | { id: number; type: 'order'; order: Order } | { id: number; type: 'state-action'; action: StateAction; expected: StateVersion };
-export type WorkerResponse = { id: number; world: World; error?: string };
+export type WorkerRequest = { id: number; type: 'init'; world?: World; history?: import('../history/types').HistoryLog } | { id: number; type: 'step'; days: number } | { id: number; type: 'order'; order: Order } | { id: number; type: 'state-action'; action: StateAction; expected: StateVersion };
+export type WorkerResponse = { id: number; world: World; history?: import('../history/types').HistoryLog; error?: string };

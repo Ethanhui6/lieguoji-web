@@ -91,7 +91,7 @@ export default function App({scope='test-continent',onBack}:{scope?:string;onBac
       <a className="brand" href="#main-game" aria-label="列国纪，跳至地图"><span className="brand-seal" aria-hidden="true">列</span><span><strong>列国纪</strong><small>{world?.custom?.name??'山河之间，自有兴亡'}</small></span></a>
       <div className="time-controls" aria-label="推演时间控制">
         <div className="day-counter"><small>推演历</small><strong>第 <b data-testid="day-number">{world?.day ?? 0}</b> 日</strong></div>
-        <button className={`run-button ${game.running ? 'is-running' : ''}`} disabled={!game.ready || game.busy} onClick={() => { setPendingOrder(null); game.setRunning(!game.running); }} aria-label={game.running ? '暂停推演' : '继续推演'}><span aria-hidden="true">{game.running ? 'Ⅱ' : '▶'}</span><span>{game.running ? '暂停' : '继续'}</span></button>
+        <button className={`run-button ${game.running ? 'is-running' : ''}`} disabled={!game.ready || (!game.running && game.busy)} onClick={() => { setPendingOrder(null); game.setRunning(!game.running); }} aria-label={game.running ? '暂停推演' : '继续推演'}><span aria-hidden="true">{game.running ? 'Ⅱ' : '▶'}</span><span>{game.running ? '暂停' : '继续'}</span></button>
         <button className="step-button" disabled={!game.ready || game.busy || game.running} onClick={() => { setPendingOrder(null); game.step(); }} aria-label="推进一日">单日 <span aria-hidden="true">›</span></button>
         <div className="speed-controls" aria-label="推演速度">{[1, 4, 12].map((speed) => <button key={speed} aria-pressed={game.speed === speed} onClick={() => game.setSpeed(speed)}>{speed}×</button>)}</div>
       </div>

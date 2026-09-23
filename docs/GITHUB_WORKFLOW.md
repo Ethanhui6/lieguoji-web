@@ -1,6 +1,8 @@
 # GitHub 检查与受控合并
 
-本文件对应 `.github/workflows/ci.yml`。2026-09-23 已建立本地工作流；**尚未获得远端运行记录，不能记作云端 CI 通过，也不能记作持续部署接通**。仓库、远端授权和部署实际状态以 `docs/AUTO_HANDOFF.md` 为准。
+本文件对应 `.github/workflows/ci.yml`。2026-09-23已在私有仓库Ethanhui6/lieguoji-web执行真实CI；main首次59单测/15浏览器通过，世界工坊PR初轮100单测/30浏览器中1项重试通过，暂停交互已修并要求新提交重新检查。具体run、SHA及后续部署证据见 docs/evidence/2026-09-23-cloud.md。
+
+当前账号在此私有仓库访问分支保护API返回403，明确要求升级或公开。保持仓库私有、不购买套餐，不声称设置了必需检查门禁；采用核对当前head/base及真实CI/预览后受控合并。M0—M6里程碑与M0/M2共8个任务Issue已按稳定ID创建，映射在plan/tasks.json。
 
 ## 实际检查
 
@@ -28,7 +30,7 @@ CI 只有 `contents: read` 权限。检出操作不持久保存凭证；不使�
 
 ## 与 Pages 的关系
 
-当前计划优先使用 **Cloudflare Pages 原生 Git 集成**，账号与 GitHub App 的目标仓库授权待完成。此 CI 没有生产部署 job，也没有 Direct Upload 配置；不能为了得到一个网址而增加第二条生产链。
+当前已使用 **Cloudflare Pages 原生 Git 集成**，账号与目标仓库访问已验证。此 CI 没有生产部署 job，也没有 Direct Upload 配置；Pages main自动生产、其他分支自动预览，是唯一生产链。
 
 原生 Pages 根据其自身 Git 事件构建，GitHub Actions 的 E2E 与 Pages 构建不是天然串行的。[Cloudflare 官方 Git 集成说明](https://developers.cloudflare.com/pages/configuration/git-integration/) 是连接仓库、分支部署和预览的核对入口。采用以下受控流程：
 

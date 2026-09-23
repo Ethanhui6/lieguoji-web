@@ -6,9 +6,9 @@
 
 - 项目D:\游戏\架空地图模拟器。首次为空目录，原v2包、100项任务和正式地图仍缺失。只查授权项目与明确附带指令，未扫描其他项目。
 - 实现提交8b707ca91e05defa936f04afe37c9bbd6ea13371，分支feat/world-creator。此文件为后续交接文档提交；续接先git rev-parse HEAD核对最终HEAD，.autopilot/checkpoint.json记录最终HEAD与dist版本。
-- GitHub浏览器已验证账号Ethanhui6；CLI旧授权401，官方设备码已填写至GitHub CLI授权确认页，等待本人确认。没有remote，未创建仓库、Issue、里程碑，没有真实远端CI或分支保护通过记录。
-- Cloudflare控制台登录成功；账户ID 0dccd3742e707d4f6506f2de668e516e。Workers & Pages列表7个应用中没有本项目，未改其他应用。Pages尚未创建，实际HTTPS URL不存在。
-- 部署方式：继续优先原生Pages Git，尚未创建或锁定类型；无Direct Upload生产链，无正在运行的自动生产部署。CI已配置真实检查，但未在远端执行。
+- GitHub浏览器及CLI均已验证个人账号Ethanhui6；私有仓库 https://github.com/Ethanhui6/lieguoji-web 已创建，origin及main/feat/world-creator分支正常推送，PR https://github.com/Ethanhui6/lieguoji-web/pull/1 已建立，真实CI正在执行。免费账号私有仓库分支保护API明确403要求升级或公开；保持私有且不购买，采用检查后受控合并。
+- Cloudflare控制台登录成功；账户ID 0dccd3742e707d4f6506f2de668e516e。Workers & Pages列表7个应用中没有本项目，未改其他应用。Pages项目lieguoji-web已创建，原生Git；实际地址https://lieguoji-web.pages.dev/，当前初始生产SHA5e5dcb1，世界工坊PR待预览和合并。
+- 部署方式：继续优先原生Pages Git，已锁定为原生Git，main自动生产、非main自动预览；无Direct Upload链或部署Secret。首个main远端CI59单测/15浏览器通过。PR初轮100单测/30浏览器中1项重试通过，已修暂停按钮，等待新提交复核。
 - 本机生产预览http://127.0.0.1:4173/，仅本机，不是HTTPS上线。默认工坊，旧战役/?demo=1或/campaign/test。复用端口前检查build.json，勿终止陌生进程。
 
 ## 已完成和证据
@@ -23,13 +23,13 @@
 
 ## 未通过与限制
 
-没有真实远端CI、生产部署、实际HTTPS地址或线上验收。不得将配置文件或本地测试当作上线。真iPhone/Android、低端真机长局性能、正式地图人工核对仍待验收。
+已取得真实远端CI、初始生产部署及HTTPS地址；最新世界工坊发布和完整线上验收仍待完成。不得将初始战役版冒充最新编辑器已上线。真iPhone/Android、低端真机长局性能、正式地图人工核对仍待验收。
 
 当前为640单元编辑精度与基础军队AI；完整外交、经济、皇室、历史分支回放、第一次长征和PWA未实现。无海上运输，相隔海洋不生成军队通路。正式CANON保留；玩家世界与测试地图不能自动转为正式世界。原100项规划缺失，不能宣称已完成。
 
 ## 所需授权与下一批
 
-普通工程、依赖、提交、检查、个人私有仓库与免费Pages已获授权，无需重复询问。仅本人完成官方GitHub CLI授权及必要目标仓库GitHub App访问；密码/令牌/Secret不得发聊天或从配置文件提取。
+普通工程、依赖、提交、检查、个人私有仓库与免费Pages已获授权，无需重复询问。GitHub CLI本人授权已完成；Cloudflare现有GitHub App已能读取lieguoji-web，无需扩大授权。以后新增账户/仓库访问仍由本人确认，密码/令牌/Secret不得发聊天或从配置文件提取。
 
 1. 先读本文件、plan/tasks、git status/HEAD、build.json，核实状态，不重建。设备授权可能过期；先gh auth status和gh api user，确需重发只启动一个官方流程，旧设备码不复用。
 2. 授权后查询本人账号下lieguoji-web，同项目才复用，否则建私有仓库；审查历史后正常推main及当前分支，不强推。按任务ID去重创建当前阶段Issue和M0—M6里程碑，建PR并跑真实CI。
@@ -43,3 +43,4 @@ npm ci；npm run dev；npm run check完整检查；npm run preview打开dist。�
 草稿导出.world.json，推演导出.save.json；工坊导入推演分配独立run，模拟内只接受同run。不同网址/浏览器源不共享IndexedDB，需要导入导出。未来版本锁写、坏档备份、多标签CAS与操作锁不得删掉。
 
 会话结束后不声称继续后台开发。本机预览进程不等于后台开发或公网发布；恢复本任务后从本检查点继续。
+

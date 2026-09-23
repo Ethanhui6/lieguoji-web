@@ -11,9 +11,10 @@
         "docs/evidence/2026-09-23-local-acceptance.md"
       ],
       "id": "M0-001",
-      "issue": null,
       "branch": "main",
-      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193",
+      "issue": 2,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/2"
     },
     {
       "title": "可交互测试大陆与Web Worker",
@@ -26,9 +27,10 @@
         "docs/evidence/2026-09-23-local-acceptance.md"
       ],
       "id": "M0-002",
-      "issue": null,
       "branch": "main",
-      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193",
+      "issue": 3,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/3"
     },
     {
       "title": "移动基础操作与浏览器回归",
@@ -41,32 +43,39 @@
         "docs/evidence/2026-09-23-local-acceptance.md"
       ],
       "id": "M0-003",
-      "issue": null,
       "branch": "main",
-      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193",
+      "issue": 4,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/4"
     },
     {
-      "blocker": "GitHub浏览器已登录Ethanhui6；CLI旧授权401，当前官方设备码已填写到最终Authorize GitHub CLI页面，等待本人确认。无remote、仓库、Issue或远端CI通过记录。",
+      "blocker": "",
       "title": "私有GitHub仓库、Issue与真实CI",
       "dependsOn": [
         "M0-001"
       ],
-      "status": "blocked",
+      "status": "in_progress",
       "acceptance": "验证个人身份、查询后创建/复用仓库、M0-M6里程碑与当前Issue、远端CI通过",
       "evidence": [],
-      "id": "M0-004"
+      "id": "M0-004",
+      "issue": 5,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/5"
     },
     {
-      "blocker": "Cloudflare现场登录已成功，Pages项目尚未创建；待GitHub身份与目标仓库就绪、GitHub App目标仓库授权及原生Git配置，未部署且无持续部署证据",
+      "blocker": "",
       "title": "Pages HTTPS与唯一持续部署链",
       "dependsOn": [
         "M0-003",
         "M0-004"
       ],
-      "status": "blocked",
+      "status": "in_progress",
       "acceptance": "仅dist发布，同提交检查通过，实际HTTPS URL线上验证与持续部署",
-      "evidence": [],
-      "id": "M0-005"
+      "evidence": [
+        "docs/evidence/2026-09-23-cloud.md"
+      ],
+      "id": "M0-005",
+      "issue": 6,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/6"
     },
     {
       "title": "命令预览、行军与补给",
@@ -155,9 +164,10 @@
         "docs/evidence/2026-09-23-world-studio.md"
       ],
       "id": "M2-001",
-      "issue": null,
       "branch": "feat/world-creator",
-      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371",
+      "issue": 7,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/7"
     },
     {
       "title": "手动与自动国家、城市及首都",
@@ -170,9 +180,10 @@
         "docs/evidence/2026-09-23-world-studio.md"
       ],
       "id": "M2-002",
-      "issue": null,
       "branch": "feat/world-creator",
-      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371",
+      "issue": 8,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/8"
     },
     {
       "title": "自建世界编译、基础自主决策与隔离存档",
@@ -185,9 +196,10 @@
         "docs/evidence/2026-09-23-world-studio.md"
       ],
       "id": "M2-003",
-      "issue": null,
       "branch": "feat/world-creator",
-      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371",
+      "issue": 9,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/9"
     },
     {
       "title": "外交与国家经营",
@@ -241,5 +253,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0部分完成：远端CI/HTTPS未接通；Cloudflare已登录但Pages未创建，GitHub CLI授权待本人确认。M1本地闭环已验证；M2自由创世三项本地验收通过，100单测/30浏览器场景通过。正式核图与真机仍待验，下一批M3外交与国家经营。"
+  "phaseState": "M2创世基础版完成；100单测/30本地浏览器场景通过。私有仓库、7里程碑、8任务Issue、真实CI和原生Pages均已建立；初始main技术预览已上线，世界工坊PR待暂停修复复核、分支预览及受控合并。真机与正式核图待验。"
 }

@@ -1,8 +1,8 @@
 # Cloudflare Pages 状态
 
-实际项目：控制台已查询，当前7个应用中无本项目，未创建。实际 URL：未部署。部署方式：计划原生 Git 集成，未锁定云端项目。
+实际项目：lieguoji-web，查询无同项目后创建。实际URL：https://lieguoji-web.pages.dev/ 。部署方式已锁定原生Git，main自动生产与非main分支预览；无Direct Upload链。
 2026-09-23 本轮官方控制台登录已成功，账户ID由当前 Workers & Pages 页面核实为 `0dccd3742e707d4f6506f2de668e516e`。没有修改已有其他项目。CLI OAuth旧状态曾过期，本轮以原生控制台集成为优先，不读取认证配置或令牌。
-GitHub浏览器已登录 Ethanhui6；CLI的独立设备授权仍待本人点击官方确认。仓库尚未就绪，因此未创建Pages或伪报部署成功；浏览器登录也不代表CI获得部署凭证。
+GitHub浏览器及CLI已验证 Ethanhui6；私有仓库 Ethanhui6/lieguoji-web 与PR#1已建立。Cloudflare现有GitHub App可读取该目标仓库，无需新增访问。初始main通过CI后已完成生产部署12758757-0b83-4f21-a99e-63029431d006；世界工坊等待分支预览、同提交CI与受控合并。未使用部署Secret。
 
 已准备的真实构建命令：npm run build:cf；输出 dist；生产分支 main；Node 24.18.1；根目录项目根。
 build:cf 顺序为计划校验、lint、类型检查、单元测试、生产构建及产物检查。GitHub CI 另跑 Playwright E2E；只有通过检查的提交才进入生产分支。

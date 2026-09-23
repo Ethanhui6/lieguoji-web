@@ -1,42 +1,47 @@
 # Cloudflare Pages 部署
 
-实际项目为 `lieguoji-web`，生产地址为 [https://lieguoji-web.pages.dev/](https://lieguoji-web.pages.dev/)。部署类型已确定并接通 **Pages 原生 Git 集成**：main 自动生产，其余分支自动预览，是本项目唯一自动生产部署链。未创建 Direct Upload 项目或 Actions 生产上传链。
+Pages 项目为 `lieguoji-web`，稳定生产入口为 https://lieguoji-web.pages.dev/。唯一生产链是 Pages 原生 Git 集成：main 自动生产，其他分支自动预览。没有 Direct Upload 项目或 Actions 生产上传链。
 
-## 当前配置与版本
+## 固定配置与本批验收结果
 
-| 配置项 | 实际值 |
+| 配置项 | 已核验结果 |
 | --- | --- |
 | Cloudflare 账户 | `0dccd3742e707d4f6506f2de668e516e` |
 | Pages 项目 | `lieguoji-web` |
-| GitHub 私有源仓库 | [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web) |
-| 生产分支 | `main` |
-| 预览分支 | 所有非生产分支 |
+| GitHub 私有源仓库 | https://github.com/Ethanhui6/lieguoji-web |
+| 生产 / 预览分支 | `main` / 所有非生产分支 |
 | 根目录 | 项目根 |
 | 构建系统 / Node | 版本 3 / `24.18.1` |
-| 构建命令 | `npm run build:cf` |
-| 构建输出 | `dist` |
-| 本次功能验收代码 | `048c30e9cff6e3e3649d7984101f9291a6e5ff04` |
-| 本次功能验收部署 ID | `f28b6d49-ca2e-49ad-910a-4f61671c161e` |
-| 固定生产部署 URL | [https://f28b6d49.lieguoji-web.pages.dev/](https://f28b6d49.lieguoji-web.pages.dev/) |
+| 构建命令 / 输出 | `npm run build:cf` / `dist` |
+| M4 功能 PR | https://github.com/Ethanhui6/lieguoji-web/pull/19 |
+| 最终分支预览 | `https://0100487d.lieguoji-web.pages.dev` |
+| 最终 PR CI / 测试提交 | `https://github.com/Ethanhui6/lieguoji-web/actions/runs/35868873630` / `075dce9f6b48c34bf8d0d647cb337c265b52af3b` |
+| 生产功能提交 | `d60098f13087c43d4c0d6970f6450b24c8364ac3` |
+| 生产部署 ID | `8b9382c7-73cc-4ce2-b2e8-cf501c64feed` |
+| 固定生产部署地址 | `https://8b9382c7.lieguoji-web.pages.dev` |
+| 生产 CI | `https://github.com/Ethanhui6/lieguoji-web/actions/runs/35870297239` |
+| 生产 HTTPS 验收 | `27/27 首次通过，0 重试/flaky/跳过` ；范围与报告见 M4 历史验收证据 |
 
-2026-09-23 已在官方控制台完成登录、核实账户及项目；GitHub 浏览器与 CLI 已验证个人账号 Ethanhui6。现有 Cloudflare GitHub App 已能访问目标仓库，无需新增访问授权。该原生集成使用平台连接，**不需要 GitHub Actions 单独的部署 Secret**；本地网页登录不作为 Actions 的凭证。没有读取认证配置/令牌或修改其他项目。
+账号与本仓库 GitHub App 访问已经核实；无新的登录或授权需求。原生集成使用平台连接，不需要 GitHub Actions 单独部署 Secret，也不把本地网页登录当作 Actions 凭证。不读取认证配置或令牌。
 
-PR #1 已通过修复后 CI 和分支预览核实后合并；功能验收时 main 的 [真实 CI](https://github.com/Ethanhui6/lieguoji-web/actions/runs/35834288962) 已通过 100 单测与 30 浏览器场景，0 flaky。[分支预览](https://f9a36f2d.lieguoji-web.pages.dev/)对应提交 `0af3210a1e1cd54551d7d23c59c4cc9ed10f2fc9`，部署 ID `f9a36f2d-81bd-4843-b97c-c4d77a02919a`，HTTPS 冒烟 4/4 通过。
+## 本批已有证据
 
-本次生产 HTTPS 首轮 26/30，4 项失败已定位为测试对 304 MIME 元数据及 Worker 初始化时序处理不完整。仅修正测试后，同一生产部署的全部 15 项战役用例以 `--retries=0` 补测通过；加上首轮通过的 15 项工坊/保护用例，**30 个不同线上场景均已覆盖通过，非单次线上 30/30**。详见 [云端证据](evidence/2026-09-23-cloud.md)，首轮失败 trace 与原始结果保留。
+M4 功能实现 `8d716dda2c92373c62f87aef700c3d93984c4472`，测试等待修正 `f33bb991bbbddc814849d8564ca571d431a65e67`。首个真实 PR CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35867427462 为 260 单测/60 浏览器首次全过；最终修订也已通过同提交 260 单测/60 浏览器与 HTTPS 预览 15/15。
+
+首个预览部署 `7b84ec2c-9dfe-4526-80fc-96ec4343644c`，实际地址 https://7b84ec2c.lieguoji-web.pages.dev/，首轮 23/24。唯一失败为桌面首次 canvas 就绪的 5 秒断言结束时，Pixi 动态 init 资源仍未完成；已完成 JS 为 200/正确 MIME，无控制台错误。局部首屏等待改为有界 15 秒后，定向 6/6 通过。没有跳过资源、Worker、交互和错误检查；首轮失败保留，不记为首轮 24/24。
+
+完整本地、首轮云端失败及最终发布证据统一见 [M4 历史验收](evidence/2026-09-23-history.md)。先前 0.3.0 基线为 `a25321b17c8d4292d92646ab40d48cfb341b0405`；M3 与更早部署分别见 [经营与外交证据](evidence/2026-09-23-statecraft.md)、[早期云端证据](evidence/2026-09-23-cloud.md)，不将旧部署视为 M4 验收。
 
 ## 唯一生产流程
 
-`build:cf` 依次执行计划校验、lint、类型检查、单元测试、生产构建及产物检查；GitHub CI 另运行真实 Playwright E2E。任何检查失败先修复，不跳过检查取得绿灯。
+1. 开发分支实现一批任务，提交前审查内容，完成本地检查并创建 PR。
+2. 核对当前 PR head、base、实际测试合并提交、CI 结果及 Pages 分支预览；失败、flaky 或修订变化均须解决并重新验证。
+3. 同提交检查与预览通过后受控合并。免费私有仓库分支保护 API 实际返回 403，保持私有/免费，不声称服务器强制门禁，不升级套餐或公开仓库。
+4. Pages 根据 main Git 事件执行 `build:cf`，只发布 `dist`。main CI 另行运行；Actions E2E 与 Pages 构建并非天然串行，不能用合并后 CI 冒充发布前门禁。
+5. 通过平台返回的真实部署 ID/URL 核对 `build.json` 提交、版本和核心规则指纹，再验证实际 HTTPS 的地图交互、Worker/资源 MIME、控制台、深链接刷新、保存恢复和本批历史闭环。失败先修复，不把页面能打开当成通过。
 
-1. 在开发分支完成实现与本地检查，创建指向 main 的 PR。
-2. 核对当前 PR head、实际测试合并提交、CI 结果和 Pages 分支预览；有失败、flaky 或版本变化时先解决并重新验证。
-3. 检查通过后受控合并。当前免费私有仓库分支保护 API 返回 403，未声称已有强制门禁，不购买套餐或公开仓库。
-4. Pages 由 main 的 Git 事件自动生产构建，只发布 `dist`；合并后的 main CI 再次运行。Pages 构建和 Actions E2E 并非天然串行，因此不能依赖合并后的 CI 来阻止已经启动的生产构建。
-5. 使用平台返回的真实部署 ID 和 HTTPS URL 验证版本 SHA、地图和交互、资源/Worker、深链接刷新、控制台及保存恢复，记录失败和修复后的证据。
+`build:cf` 依次检查计划、lint、类型、单元测试、生产构建及产物白名单；GitHub CI 再运行真实 Playwright。工坊主线须覆盖地图编辑/生成 → 国家/城市/首都 → 推演 → 保存刷新；历史须覆盖记录副本 → 成功操作 → 回放/只读 → 分支 → 独立保存恢复/导入归档。旧战役 `/?demo=1` 与 `/campaign/test` 继续回归。
 
-当前默认入口是世界工坊，验收需覆盖手画/生成大陆→国家→城市首都→开始自建推演→保存刷新。旧战役入口 `/?demo=1` 和 `/campaign/test` 继续回归。`build.json` 的 entry、scenarios、commit 必须对应实际部署，不用本地 URL 代替 HTTPS 证据。
+不得整包发布根目录；docs、plan、references、真实存档和认证资料不进入 `dist`。不混用部署类型，不改 DNS、购买服务或删除旧资源。手机/平板仿真与真机验收分开报告。
 
-不得整包发布根目录；docs、plan、references、真实存档及认证资料不可进入 dist。后续复用本项目和既定部署类型，不混用 Direct Upload，不改 DNS、不购买服务、不删除旧资源。手机/平板仿真与真实手机验收分开报告。
-
-以上 SHA 和部署为本次功能验收记录。后续仅文档/测试的检查点合并仍会触发新构建；收尾后的实际 HEAD、生产 SHA 和检查结果记录在本地忽略文件 .autopilot/checkpoint.json。续接须读取线上 build.json，并查询 GitHub Cloudflare Pages check 获取最新部署，不把本次验收 SHA 当作永远不变的最新版本。
+功能验收后的文档提交也会触发新构建。最新 HEAD、生产 SHA、CI 与部署 ID 记录于本地忽略文件 `.autopilot/checkpoint.json`；续接须重新查询线上 `build.json` 和 Pages check，不把静态文档的验收 SHA 当成永远最新。

@@ -138,13 +138,15 @@
       "id": "ACCEPT-MAP"
     },
     {
-      "title": "iPhone/Android真实设备验收",
+      "title": "触控稳定性与iPhone/Android真实设备验收",
       "dependsOn": [
         "M0-005"
       ],
       "status": "pending_acceptance",
-      "acceptance": "真实手机地图手势、命令、长局性能、存档恢复",
-      "evidence": [],
+      "acceptance": "真实手机地图手势、命令、长局性能、存档恢复；长历史列表连续触控的稳定性（包括仿真补查）、停止后点选较后记录、分支确认取消且源槽不变。偶发点选未响应原因尚未确定，不以一次未复现代替通过。",
+      "evidence": [
+        "docs/evidence/2026-09-23-history-touch.md"
+      ],
       "id": "ACCEPT-DEVICE"
     },
     {
@@ -308,13 +310,14 @@
         "M3-003"
       ],
       "acceptance": "从当前日创建独立记录副本；连续序号、SHA256、32步检查点、规则内容指纹、确定性重算；世界与历史同事务CAS/备份，内外未来版本锁写，容量/故障不污染原局",
-      "status": "pending_acceptance",
-      "branch": "feat/history-replay",
+      "status": "done",
+      "branch": "main",
       "evidence": [
         "docs/evidence/2026-09-23-history.md"
       ],
       "issue": 16,
-      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/16"
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/16",
+      "commit": "d60098f13087c43d4c0d6970f6450b24c8364ac3"
     },
     {
       "id": "M4-002",
@@ -323,13 +326,14 @@
         "M4-001"
       ],
       "acceptance": "按序号与日期定位、播放暂停、历史地图/账册；回放独立Worker且所有写入口拒绝，退出回原局，移动/平板/桌面仿真验证源存储字节不变",
-      "status": "pending_acceptance",
-      "branch": "feat/history-replay",
+      "status": "done",
+      "branch": "main",
       "evidence": [
         "docs/evidence/2026-09-23-history.md"
       ],
       "issue": 17,
-      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/17"
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/17",
+      "commit": "d60098f13087c43d4c0d6970f6450b24c8364ac3"
     },
     {
       "id": "M4-003",
@@ -338,13 +342,14 @@
         "M4-002"
       ],
       "acceptance": "冻结时点确认/取消，重验父链后建立新身份分支，源历史不改；历史包独立校验及只读导入，坏/未来档拒绝；保存刷新、真实CI、HTTPS与Worker验证通过",
-      "status": "pending_acceptance",
-      "branch": "feat/history-replay",
+      "status": "done",
+      "branch": "main",
       "evidence": [
         "docs/evidence/2026-09-23-history.md"
       ],
       "issue": 18,
-      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/18"
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/18",
+      "commit": "d60098f13087c43d4c0d6970f6450b24c8364ac3"
     },
     {
       "id": "M4-004",
@@ -366,5 +371,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0-M3已发布0.3.0/a25321b；M4历史三项本地实现及检查完成：260单测，60个浏览器场景首轮54+修正复测15已覆盖通过。待真实CI与HTTPS发布验收，三项pending_acceptance。M4-004皇室待实施，正式核图与真机独立待验。"
+  "phaseState": "M0-M3已发布；M4-001/002/003历史记录、只读回放与独立分支已发布0.4.0/d60098f。最终PR与main均260单测/60浏览器首次全过，最终预览15/15、生产HTTPS27/27首次通过；初轮失败及修正保留在history证据。M4-004皇室待实施，M4里程碑保持开放；正式核图/原规划缺失与真机独立待验。 额外长列表触控稳定性未验收，归入ACCEPT-DEVICE，不冒充全触控通过。"
 }

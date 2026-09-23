@@ -1,5 +1,5 @@
 import { Delaunay } from 'd3-delaunay';
-import { validateWorld } from '../sim/core';
+import { initializeStatecraft, validateWorld } from '../sim/core';
 import type { Point, Terrain, World } from '../sim/types';
 import type { BrushTool, DraftCell, DraftNation, EditorDraft } from './types';
 
@@ -333,10 +333,10 @@ export function compileWorld(draft: EditorDraft): World {
     provinces: draft.cells.filter(cell => cell.land).map((cell, index) => ({ id: cell.id, name: `${nations.find(nation => nation.id === cell.ownerId)!.name.slice(0, 100)} · 辖区 ${index + 1}`, polygon: structuredClone(cell.polygon), center: { ...cell.center }, label: { x: cell.center.x, y: Math.max(0, cell.center.y - 12) }, terrain: cell.terrain, legalOwner: cell.ownerId!, controller: cell.ownerId!, neighbors: cell.neighbors.filter(id => cells.get(id)!.land), supply: cell.terrain === 'plain' ? 18 : cell.terrain === 'forest' ? 12 : 8 })),
     cities: draft.cities.map(city => ({ id: city.id, name: city.name, provinceId: city.cellId, position: { ...cells.get(city.cellId)!.center }, label: { x: cells.get(city.cellId)!.center.x, y: Math.min(HEIGHT, cells.get(city.cellId)!.center.y + 12) }, fort: city.capital ? 2 : 1 })),
     armies: nations.map(nation => { const provinceId = draft.cities.find(city => city.id === nation.capitalId)!.cellId; return { id: generatedId('army'), name: `${nation.name.slice(0, 118)}军`, nationId: nation.id, provinceId, originId: provinceId, troops: Math.min(1500, 550 + draft.cells.filter(cell => cell.ownerId === nation.id).length * 12), morale: 85, supplies: 100, status: 'idle', route: [], progress: 0 }; }),
-    events: [{ id: 1, day: 0, kind: 'system', text: `${draft.name}开始模拟`, reason: `玩家自建世界，种子「${draft.seed}」。国家会按粮食、实力与地形行军、进攻或休整；没有预定赢家。当前为基础军队自主决策，不包含完整外交与经济。` }], nextEventId: 2,
+    events: [{ id: 1, day: 0, kind: 'system', text: `${draft.name}开始模拟`, reason: `玩家自建世界，种子「${draft.seed}」。地形、国家与城市由草稿编译；经营数值和外交初值采用沙盒规则，不代表正式世界史，没有预定赢家。` }], nextEventId: 2,
   };
   if (!validateWorld(world)) throw new Error('编译结果未通过模拟状态校验，原草稿保留。');
-  return world;
+  return initializeStatecraft(world, 'peace');
 }
 
 function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === 'object' && !Array.isArray(value) && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null); }

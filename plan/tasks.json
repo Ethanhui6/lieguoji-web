@@ -46,7 +46,7 @@
       "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
-      "blocker": "GitHub CLI旧授权401；上次官方设备流程最终交换遭遇网络EOF，新的设备授权流程等待完成，实际账号/仓库/远端CI仍待验证",
+      "blocker": "GitHub浏览器已登录Ethanhui6；CLI旧授权401，当前官方设备码已填写到最终Authorize GitHub CLI页面，等待本人确认。无remote、仓库、Issue或远端CI通过记录。",
       "title": "私有GitHub仓库、Issue与真实CI",
       "dependsOn": [
         "M0-001"
@@ -149,30 +149,45 @@
       "dependsOn": [
         "M1-003"
       ],
-      "status": "in_progress",
+      "status": "done",
       "acceptance": "空白海洋/生成大陆入口、连续海陆笔刷、可复现且连贯的地形生成、撤销重做、草稿保存恢复；双岛与山地编辑后刷新保持一致，桌面/手机/平板仿真核心操作可用，正式地图核验非前置",
-      "evidence": [],
-      "id": "M2-001"
+      "evidence": [
+        "docs/evidence/2026-09-23-world-studio.md"
+      ],
+      "id": "M2-001",
+      "issue": null,
+      "branch": "feat/world-creator",
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
     },
     {
       "title": "手动与自动国家、城市及首都",
       "dependsOn": [
         "M2-001"
       ],
-      "status": "in_progress",
+      "status": "done",
       "acceptance": "手动新建命名划国及自动陆地国家分布、城市放置和首都设置；同国可跨不连通领土、城市与文字坐标分离、城市在有效陆地/省内、首都属于有效本国城市；撤销及保存恢复后实体引用一致",
-      "evidence": [],
-      "id": "M2-002"
+      "evidence": [
+        "docs/evidence/2026-09-23-world-studio.md"
+      ],
+      "id": "M2-002",
+      "issue": null,
+      "branch": "feat/world-creator",
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
     },
     {
       "title": "自建世界编译、基础自主决策与隔离存档",
       "dependsOn": [
         "M2-002"
       ],
-      "status": "in_progress",
+      "status": "done",
       "acceptance": "校验并将自建地图编译进现有Worker，玩家无军令时也有可解释基础自主行动，地形影响真实行动/补给；暂停与调速有效，草稿/运行世界/旧测试战役存档隔离，刷新恢复世界身份日期事件且旧档保留，继续通过版本锁写/多标签冲突/备份回归",
-      "evidence": [],
-      "id": "M2-003"
+      "evidence": [
+        "docs/evidence/2026-09-23-world-studio.md"
+      ],
+      "id": "M2-003",
+      "issue": null,
+      "branch": "feat/world-creator",
+      "commit": "8b707ca91e05defa936f04afe37c9bbd6ea13371"
     },
     {
       "title": "外交与国家经营",
@@ -226,5 +241,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0部分完成：远端CI/HTTPS未接通；Cloudflare已登录但Pages未创建，GitHub新设备授权待完成；M1本地闭环已验证；当前主线M2自由创世三项进行中，正式核图与原规划恢复独立待核"
+  "phaseState": "M0部分完成：远端CI/HTTPS未接通；Cloudflare已登录但Pages未创建，GitHub CLI授权待本人确认。M1本地闭环已验证；M2自由创世三项本地验收通过，100单测/30浏览器场景通过。正式核图与真机仍待验，下一批M3外交与国家经营。"
 }

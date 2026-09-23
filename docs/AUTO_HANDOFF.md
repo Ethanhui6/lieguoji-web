@@ -1,37 +1,46 @@
 # 自动接管检查点
 
-更新时间：2026-09-23 14:27（Asia/Hong_Kong）。任务源：plan/tasks.json；验收证据：docs/evidence/2026-09-23-local-acceptance.md。
+更新时间：2026-09-23 15:35（Asia/Hong_Kong）。本轮为0.2.0世界工坊基础版；任务源plan/tasks.json，验收证据docs/evidence/2026-09-23-world-studio.md。
 
-## 已核实状态
+## 当前实际状态
 
-- 项目：列国纪 / 测试大陆。首次为空目录；指令来自用户明确附带文件；原 v2 包、100 项任务及原图未取得，未扫描其他目录。
-- 游戏源码提交：4110c49df794840861f625d48f5b3a9ae7970193；分支 main。此文件是随后交接补记，续接用 git rev-parse HEAD 核对当前文档提交；本地 .autopilot/checkpoint.json 保存最终完整HEAD和构建信息。
-- GitHub：没有 remote，未创建/复用仓库，实际账号未验证。旧 gh 授权401，官方设备授权尚未完成。Issue、M0—M6里程碑、远端CI、主分支保护均待真实登录后配置。
-- Cloudflare：未创建Pages，未部署。CLI OAuth过期，官方控制台为登录页。项目ID/账户ID/线上URL均未知，未猜造。
-- 部署模式：仍优先原生 Git 集成，未创建锁定类型；无自动生产链运行。CI配置只有检查job，未添加Direct Upload生产链。
-- 本地生产预览：http://127.0.0.1:4173（仅本机，非HTTPS上线）。复跑先检查该地址的build.json是否属于本项目；端口被其他项目占用时不得终止陌生进程。
+- 项目D:\游戏\架空地图模拟器。首次为空目录，原v2包、100项任务和正式地图仍缺失。只查授权项目与明确附带指令，未扫描其他项目。
+- 实现提交8b707ca91e05defa936f04afe37c9bbd6ea13371，分支feat/world-creator。此文件为后续交接文档提交；续接先git rev-parse HEAD核对最终HEAD，.autopilot/checkpoint.json记录最终HEAD与dist版本。
+- GitHub浏览器及CLI均已验证个人账号Ethanhui6；私有仓库 https://github.com/Ethanhui6/lieguoji-web 已创建，origin及main/feat/world-creator分支正常推送，PR https://github.com/Ethanhui6/lieguoji-web/pull/1 已建立，真实CI正在执行。免费账号私有仓库分支保护API明确403要求升级或公开；保持私有且不购买，采用检查后受控合并。
+- Cloudflare控制台登录成功；账户ID 0dccd3742e707d4f6506f2de668e516e。Workers & Pages列表7个应用中没有本项目，未改其他应用。Pages项目lieguoji-web已创建，原生Git；实际地址https://lieguoji-web.pages.dev/，当前初始生产SHA5e5dcb1，世界工坊PR待预览和合并。
+- 部署方式：继续优先原生Pages Git，已锁定为原生Git，main自动生产、非main自动预览；无Direct Upload链或部署Secret。首个main远端CI59单测/15浏览器通过。PR初轮100单测/30浏览器中1项重试通过，已修暂停按钮，等待新提交复核。
+- 本机生产预览http://127.0.0.1:4173/，仅本机，不是HTTPS上线。默认工坊，旧战役/?demo=1或/campaign/test。复用端口前检查build.json，勿终止陌生进程。
 
-## 已完成与待验收
+## 已完成和证据
 
-- M0-001/002/003：锁定工程、真实检查链、交互地图、Web Worker、桌面与触控基础通过本地验收。
-- M1-001/002/003：路径预览确认、行军粮耗、真实战损、撤退/占领原因、版本存档和刷新恢复已走通；只代表本地测试大陆闭环。
-- 59/59 单测、15/15 浏览器场景通过，无跳过；桌面/Pixel7/iPad7均为Chromium桌面或设备仿真。正式iPhone/Android真机待验收。
-- 存档修复：多标签revision比较、原子备份、未来版本锁写、失败不报成功；保留损坏/升级原档。
-- M0-004/005 阻塞于本人授权，M0整体仍部分完成。正式地图/完整产品验收未通过；完整策略AI、地图编辑、外交、皇室、历史回放、第一次长征、PWA尚未实现。
-- 大包提示保留：入口约545KB原始/166KB gzip；未做低端真机或长时性能承诺。
+- M0-001/002/003与M1-001/002/003旧战役仍可用：交互地图、Worker、命令预览确认、真实行军补给战斗、撤退/占领原因、版本存档保存恢复。
+- M2-001：640单元自由画海陆、地形笔刷、种子大陆与连续地形/下坡河流、整笔撤销重做、草稿保存刷新。
+- M2-002：手工国家名称颜色及归属、自动分国、保留手工疆域补全空地、手动与自动城市首都、双岛同国、引用与唯一首都检查。
+- M2-003：自建地图编译进真实Worker，各国基础军事自主行为，可暂停干预所有军队；草稿/每次推演/旧战役分别保存；跨run导入不覆盖当前局，缺档链接不假造世界。
+- lint、类型、plan检查、100/100单测、生产构建和dist产物检查通过。30/30浏览器场景通过（24主线+6隔离保护，0skip）；桌面Chrome、Pixel7、iPad均为Chromium桌面或设备仿真。报告与截图路径见证据文档。
+- 已实际走通手绘双岛/山地/手工疆域/西都与东山城、自动五国十城、自主演进30日以上、保存刷新。Pixel7双指打断绘图回滚暂态，平板抽屉布局已修。
+- 入库前审查59项源文件，常见凭证模式扫描未发现匹配；.env/.wrangler/私钥/真实存档/草稿导出/ZIP/.autopilot均忽略。此扫描不是通用秘密审计保证。
 
-## 授权与下一批
+## 未通过与限制
 
-用户已授权普通工程、依赖安装、检查、提交、个人私有仓库创建、免费Pages配置与正常发布，无需重新询问普通步骤。
-必须本人操作：GitHub设备登录、Cloudflare登录、目标仓库GitHub App授权；必要CI Secret仅官方安全界面输入。未请求或读取密码/令牌/认证配置。
+已取得真实远端CI、初始生产部署及HTTPS地址；最新世界工坊发布和完整线上验收仍待完成。不得将初始战役版冒充最新编辑器已上线。真iPhone/Android、低端真机长局性能、正式地图人工核对仍待验收。
 
-1. 核对 git status、HEAD、tasks、源码及已运行本地预览；不从头重建。
-2. 验证 gh auth status / gh api user；设备码失效则新发官方流程。查询当前个人账号下 lieguoji-web：同项目才复用，不相关则稳定短后缀，不强推、不覆写历史。审查后推送，按任务ID去重创建M0 Issue与M0—M6里程碑，记录对应号与远端CI结果。
-3. 控制台核对账户/现有Pages类型；本人只授权目标仓库，其余自动配置 main / 根目录 / npm run build:cf / dist / Node24.18.1。先核实同提交CI和预览，再受控生产发布，线上测试JS/Worker/MIME/深链接/存档/构建SHA。
-4. 取得原规划与地图后先差异合并，不覆盖当前代码；继续依赖满足的后续任务，正式核图保持人工待验。不得用临时15项表宣称原100项已完成。
+当前为640单元编辑精度与基础军队AI；完整外交、经济、皇室、历史分支回放、第一次长征和PWA未实现。无海上运输，相隔海洋不生成军队通路。正式CANON保留；玩家世界与测试地图不能自动转为正式世界。原100项规划缺失，不能宣称已完成。
 
-## 运行与恢复
+## 所需授权与下一批
 
-规则0.1.0 / schema1 / scenario=test-continent / mode=sandbox。npm ci；npm run dev；npm run check。npm run preview打开已构建dist。
-只发布dist；docs/plan/references/saves/.autopilot/.env/.dev.vars/.wrangler等不进入公开产物。存档在当前浏览器源的IndexedDB，跨网址需导入导出。
-会话结束后不承诺后台开发。服务器只是本地预览，后续开发/云端配置需本任务恢复运行。
+普通工程、依赖、提交、检查、个人私有仓库与免费Pages已获授权，无需重复询问。GitHub CLI本人授权已完成；Cloudflare现有GitHub App已能读取lieguoji-web，无需扩大授权。以后新增账户/仓库访问仍由本人确认，密码/令牌/Secret不得发聊天或从配置文件提取。
+
+1. 先读本文件、plan/tasks、git status/HEAD、build.json，核实状态，不重建。设备授权可能过期；先gh auth status和gh api user，确需重发只启动一个官方流程，旧设备码不复用。
+2. 授权后查询本人账号下lieguoji-web，同项目才复用，否则建私有仓库；审查历史后正常推main及当前分支，不强推。按任务ID去重创建当前阶段Issue和M0—M6里程碑，建PR并跑真实CI。
+3. 同提交检查通过后推进受控生产分支。原生Pages配置目标仓库/main/根目录/npm run build:cf/dist/Node24.18.1。GitHub App新增访问本人确认，保留唯一生产链。发布后核实真实HTTPS URL、版本SHA、资源与Worker MIME、深链接、工坊→自建推演→保存刷新及控制台。
+4. 下一批M3：国家经营的明确人口/粮食/供给因果、外交关系与战争状态、可解释自主决策，每批1—3项，先规则和实际操作再扩面板。原规划取得后差异合并；正式长征仍依赖人工核图。
+
+## 运行和存储恢复
+
+npm ci；npm run dev；npm run check完整检查；npm run preview打开dist。默认工坊按需加载推演/Pixi。规则0.1.0/schema1兼容旧测试档，新增custom-world存储隔离。
+
+草稿导出.world.json，推演导出.save.json；工坊导入推演分配独立run，模拟内只接受同run。不同网址/浏览器源不共享IndexedDB，需要导入导出。未来版本锁写、坏档备份、多标签CAS与操作锁不得删掉。
+
+会话结束后不声称继续后台开发。本机预览进程不等于后台开发或公网发布；恢复本任务后从本检查点继续。
+

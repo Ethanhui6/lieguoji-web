@@ -260,11 +260,12 @@
       "evidence": [
         "docs/evidence/2026-09-23-statecraft.md"
       ],
-      "status": "pending_acceptance",
+      "status": "done",
       "title": "人口、粮食账本与有限军队补给",
       "issue": 11,
       "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/11",
-      "branch": "feat/statecraft"
+      "branch": "main",
+      "commit": "b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6"
     },
     {
       "dependsOn": [
@@ -275,11 +276,12 @@
       "evidence": [
         "docs/evidence/2026-09-23-statecraft.md"
       ],
-      "status": "pending_acceptance",
+      "status": "done",
       "title": "和平战争关系与外交命令",
       "issue": 12,
       "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/12",
-      "branch": "feat/statecraft"
+      "branch": "main",
+      "commit": "b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6"
     },
     {
       "dependsOn": [
@@ -290,11 +292,12 @@
       "evidence": [
         "docs/evidence/2026-09-23-statecraft.md"
       ],
-      "status": "pending_acceptance",
+      "status": "done",
       "title": "国家经营操作、自主决策与双版存档",
       "issue": 13,
       "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/13",
-      "branch": "feat/statecraft"
+      "branch": "main",
+      "commit": "b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6"
     }
   ],
   "milestones": [
@@ -306,5 +309,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0/M1/M2已发布262bd76；M3三项已实现，163单测与39不同浏览器场景通过，待同提交CI和原生Pages HTTPS预览验收后受控合并。正式核图与真机独立待验。"
+  "phaseState": "M0/M1/M2/M3基础闭环已发布；0.3.0生产b4f85b5，163单测/39云端浏览器首次通过，正式HTTPS18核心场景通过。M3基础经营、和平战争、可解释决策与旧局副本验收完成；M4历史记录/回放/独立分支待实现，正式核图与真机独立待验。"
 }

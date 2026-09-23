@@ -2,7 +2,7 @@
 
 原创二维架空世界模拟网页游戏。0.3.0 在「世界工坊」上加入基础国家经营与外交：手画海陆、生成地形、创建国家与城市，再观察人口、粮食和列国关系如何影响世界推演。正式五国地图仍未提供、未核定；玩家自由创作不依赖正式核图。当前发布状态以 [交接记录](docs/AUTO_HANDOFF.md) 为准。
 
-实际游玩地址：[列国纪 · 世界工坊](https://lieguoji-web.pages.dev/)。源码位于本人私有仓库 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)。Pages 原生 Git 为唯一发布链：通过检查后合并 main 自动生产，其他分支自动预览。已验证的发布、CI 与线上验收见 [云端证据](docs/evidence/2026-09-23-cloud.md)。
+实际游玩地址：[列国纪 · 世界工坊](https://lieguoji-web.pages.dev/)。源码位于本人私有仓库 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)。Pages 原生 Git 为唯一发布链：通过检查后合并 main 自动生产，其他分支自动预览。发布、CI 与线上验收见 [M3 经营与外交证据](docs/evidence/2026-09-23-statecraft.md)，早期工程发布见 [云端证据](docs/evidence/2026-09-23-cloud.md)。
 
 Node 24.18.1，npm 锁文件安装：`npm ci`。启动：`npm run dev`。完整本地检查：`npm run check`（首次需 `npx playwright install chromium`）。Pages 构建：`npm run build:cf`，仅发布 `dist`。
 

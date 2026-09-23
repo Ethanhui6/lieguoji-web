@@ -42,6 +42,14 @@ HTTPS 首轮 39 场景为 37 通过 / 2 失败，报告 `.autopilot/m3-preview-r
 
 产物白名单另有隔离验证 27 项通过（1 个合法允许、26 个坏例拒绝），证据 `.autopilot/check-dist-lzdp7f/results.json`；实际 dist 前后逐文件 SHA256 一致。Windows 文件符号链接样本创建 EPERM，未绕过权限、未记为实测通过；目录 junction 与文件硬链接已实际拒绝。
 
-当前尚未合并或发布 M3。上一生产为 262bd7630344d2f0a68604485d7c4395375a291c / 0.2.0。继续使用本人私有仓库 Ethanhui6/lieguoji-web 和唯一 Pages 原生 Git 项目 lieguoji-web；最终 head 的 CI 与预览通过后才合并生产。
+最终 PR head 6b4d87edca09ff872d0aaf7badebdca2e8004db6 的 CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35843219490 已独立核验：163 单测与 39 浏览器首次全部通过，0失败执行/重试/flaky/跳过。实际checkout为合并测试提交556b251f422371f04a36f7c01fd490dd71c42c3b，parents为262bd76与6b4d87e，构建artifact10741484459。之前CI35842316166虽绿色但含1flaky，未作为合并依据。
+
+最终同head预览部署df8cec7d-f1ed-4f45-8074-752cb135f56f，实际地址https://df8cec7d.lieguoji-web.pages.dev/，metadata匹配6b4d87e。15项三设备HTTPS核心场景首次全通过，0重试/跳过/flaky，报告`.autopilot/m3-preview-final-results.json`。确认head/base未变化且两项检查成功后，受控合并PR #14，生产提交b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6。
+
+Pages原生Git自动生产部署527ee9de-8356-4467-8f2f-e4472c3fe30c已成功，固定地址https://527ee9de.lieguoji-web.pages.dev/。正式地址https://lieguoji-web.pages.dev/build.json实际返回b4f85b5/0.3.0，兼容规则0.1与0.2。仅dist部署，没有新增第二部署链或秘密配置。
+
+正式站18/18核心场景首次通过，2.8分钟、0重试/跳过/flaky，报告`.autopilot/m3-production-results.json`。桌面/手机/平板分别验证：战役真实行军交战占领及保存、JS/Worker加载与MIME/控制台、深链接刷新与手势、旧局副本原库不写、经营政策日账保存恢复、宣战停战保护保存恢复、手画大陆到国家城市首都和自建推演。移动仍为Chromium仿真，真实设备未代验。
+
+合并后main CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35843788634 在实际b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6上再次通过：163单测、39浏览器首次全过（4.9分钟），0失败执行/重试/flaky/跳过；run_attempt1，构建artifact10742178957。M3三项按以上完整证据验收，文档收尾分支不改变功能源码或发布配置。
 
 正式地图、原 v2 规划和未知历史尚缺；真实手机、低端设备长局性能待验。当前 640 地理单元、最多 160 条近期事件，不冒充完整历史回放。皇室模拟、历史分支回放、第一次长征和 PWA 仍未实现。

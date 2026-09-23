@@ -1,47 +1,49 @@
 # 自动接管检查点
 
-记录日期：2026-09-23（Asia/Hong_Kong）。任务源 plan/tasks.json，当前批 M3-001/002/003，版本 0.3.0 / 新规则 0.2.0。续接先核对本文件、忽略目录 `.autopilot/checkpoint.json`、Git 实际状态和线上 build.json，不从头重建。
+记录日期：2026-09-23（Asia/Hong_Kong）。0.3.0 国家经营与基础外交已发布，任务源 plan/tasks.json；详细证据 docs/evidence/2026-09-23-statecraft.md。续接先核对本文件、Git 工作区/远端与线上 build.json，不从头重建。
 
 ## 实际工程与发布链
 
-- 项目：D:\游戏\架空地图模拟器。首次为空目录，原 v2 包、100 项任务与正式地图仍缺失；未扫描其他项目。现有补缺计划不冒充原规划。
-- 当前工作分支 feat/statecraft，功能提交 049e6d6d103f3b4402964c0823a545aa7595b950，PR https://github.com/Ethanhui6/lieguoji-web/pull/14。基于已验收 main 262bd7630344d2f0a68604485d7c4395375a291c；当前文档所在提交只补测试挂载等待及真实预览证据，尚未合并或发布 M3。
-- 本人 GitHub 账号 Ethanhui6，私有仓库 https://github.com/Ethanhui6/lieguoji-web，origin 已验证。M3 对应 Issue #11/#12/#13、里程碑 M3 #4；不得重复创建。
-- Cloudflare 账户 0dccd3742e707d4f6506f2de668e516e，Pages 项目 lieguoji-web。唯一原生 Git 链：main 自动生产、其他分支预览；构建 npm run build:cf，输出 dist，根目录，Node 24.18.1。
-- 实际地址 https://lieguoji-web.pages.dev/。当前已验证生产仍为 262bd76 / 0.2.0，部署 f9b31a44-e8b2-4117-9e50-fcc7334b6d8a，固定地址 https://f9b31a44.lieguoji-web.pages.dev/。上一 main CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35836349984。本批云端证据将在实际检查后更新。
-- GitHub App 已有本仓库访问权限；没有 Direct Upload 或 Actions 部署链，不需要 Actions 部署 Secret。当前没有待完成登录或授权。
-- 免费私有仓库分支保护接口实际 403；保持私有与免费，以同提交 CI、分支预览通过后受控合并。不声称服务器强制保护，不升级、不公开、不绕过已有保护。
+- 项目：D:\游戏\架空地图模拟器。首次为空目录，原 v2 包、100 项任务与正式地图仍缺失；未扫描其他项目。补缺计划不冒充原规划。
+- 功能实现提交049e6d6d103f3b4402964c0823a545aa7595b950，测试同步修复6b4d87edca09ff872d0aaf7badebdca2e8004db6；PR https://github.com/Ethanhui6/lieguoji-web/pull/14 已受控合并，已验收生产提交b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6。
+- 本交接在docs/statecraft-release分支只更新计划与证据，不改游戏源码/配置/测试/产物。其提交/合并会触发同功能的后续原生部署；最新准确HEAD、CI与部署ID另存忽略文件.autopilot/checkpoint.json，恢复时仍须查询实际状态，避免自引用提交SHA。
+- 本人GitHub账号Ethanhui6，私有仓库https://github.com/Ethanhui6/lieguoji-web，origin已验证。M3对应Issue #11/#12/#13均附证据并关闭，里程碑M3 #4已关闭；查询后复用，不重复创建。
+- Cloudflare账户0dccd3742e707d4f6506f2de668e516e，Pages项目lieguoji-web。唯一原生Git链：main自动生产，其他分支预览；构建npm run build:cf，输出dist，项目根目录，Node24.18.1。
+- 实际游玩地址https://lieguoji-web.pages.dev/。功能验收部署527ee9de-8356-4467-8f2f-e4472c3fe30c，固定地址https://527ee9de.lieguoji-web.pages.dev/；正式build.json已匹配b4f85b5/0.3.0，规则0.2.0、兼容0.1.0。
+- GitHub App已具有本仓库访问权限；无Direct Upload、无Actions部署链，不需要Actions部署Secret。当前无待完成登录或授权。
+- 免费私有仓库分支保护接口实际403；保持私有/免费，以同提交CI与预览通过后受控合并。不声称服务器强制保护，不升级、不公开、不绕过保护。
 
-## 已实现与实际检查
+## 已完成与证据
 
-M0/M1/M2 已发布：工程与 Worker、地图交互、真实战役闭环、版本化存档，以及 640 单元海陆/地形编辑、连续地形/下坡河流、国家与城市首都、撤销重做、草稿与独立自建推演。旧验收见 docs/evidence/2026-09-23-cloud.md 和 2026-09-23-world-studio.md。
+M0/M1/M2已发布：工程与Worker、交互地图、真实战役闭环、版本化存档；640单元海陆/地形编辑、连续地形/下坡河流、国家/城市/首都、撤销重做、草稿与独立推演。早期验收见docs/evidence/2026-09-23-cloud.md与2026-09-23-world-studio.md。
 
-M3 三项已实现，本地检查通过、云端待验收，详见 docs/adr/0003-statecraft.md 与 docs/evidence/2026-09-23-statecraft.md：
+本批M3-001/002/003提供：
 
-- 地方人口粮库、民军分配政策、有限驻军补给、饥荒后果、实控变化与守恒日账；界面区分预计需求和已经发生的结算。
-- 新世界和平开始，宣战/停战影响真实路径、交战、追击与占领；保护十日，停战保留当前路段进度，再真实撤离；无安全路时等待。
-- 桌面/手机/平板国家簿、可解释 AI、Worker 权威快照与过期确认保护、旧自建局独立经营副本。
-- 完整 build:cf 通过：21 计划、lint、类型、163/163 单测、生产构建、22 个游戏产物检查；三种地图各连续推演 90 日，逐日守恒和确定性通过。
-- 修复手机保存提示遮挡决策按钮后，新增国家操作 6/6 与原功能/旧档保护 33/33 均首次通过、0 重试、0 flaky、0 跳过。报告 `.autopilot/m3-ui-final-results.json`、`m3-regression-results.json`。首轮 4 通过/2 手机失败证据保留，未用强制点击掩盖问题。
-- 已实际查看桌面、手机和平板截图，核心移动按钮至少 44px、抽屉可滚动、无横向溢出。Pixel 7/iPad Chromium 是仿真，不是真机或移动 Safari。
-- 功能版 HTTPS 预览 https://82f717dd.lieguoji-web.pages.dev/，实际 build.json 匹配049e6d6。首轮39场景37通过/2外交测试同步失败；trace确认刷新加载页被误判桌面，补充等待真实布局后，同站6/6经营外交重验通过。原33其他场景已通过，合计39不同场景覆盖；不是单次39/39。报告m3-preview-results.json与m3-preview-ui-recheck-results.json，最终head仍需CI与预览确认。
+- 地方人口粮库、有限驻军补给、民军分配政策、饥荒后果、实控变化与守恒日账；预计需求和实际结算分别显示。
+- 新世界和平起步，宣战/停战约束路径、交战、追击与占领；十日保护，在途路段保留进度后真实撤离，无安全路时等待。
+- 桌面/手机/平板国家簿、可解释自主决策、Worker权威预览与过期确认拒绝；旧自建局明确确认后建立独立经营副本。
+- build:cf完整通过：21计划、lint、类型、163单测、生产构建与22个严格白名单产物。三种地图各90日逐日守恒与确定性通过；独立边界审查覆盖中立军队、第三国路线与有限驻地供给。
+- 本地最终新增6/6、原功能/旧局保护33/33首次通过；首轮手机提示遮挡已实际修复，失败截图保留，没有force点击。
+- 最终PR CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35843219490：163单测、39浏览器首次全过，0重试/flaky/跳过。实际测试merge SHA556b251f422371f04a36f7c01fd490dd71c42c3b、artifact10741484459。旧CI35842316166的1flaky保留，未作为合并依据。
+- HTTPS首轮37/39；2个外交测试在刷新加载页误判布局。trace确认后只补测试挂载等待，同功能站6/6重验通过。最终head6b4d87e预览https://df8cec7d.lieguoji-web.pages.dev/，15/15核心场景首次全过，才合并PR14。
+- 正式站b4f85b5：18/18核心浏览器场景首次通过，0重试/flaky/跳过。包括三种布局下手画大陆→地形→建国/首都→推演→保存刷新，经营/外交/旧局副本，以及战役、Worker/JS MIME、控制台、深链接、地图手势。报告.autopilot/m3-production-results.json，截图m3-production-e2e。
+- 合并后main CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35843788634 已核验实际checkout b4f85b5：163单测与39浏览器首次全过，0失败执行/重试/flaky/跳过，artifact10742178957。上述M3三项据此完成验收；后续交接提交仅文档，不改变游戏版本内容。
+- 产物护栏27隔离检查通过（1允许/26拒绝），未知JSON、存档样本、密钥扩展、异常目录和链接被拒绝，真实dist逐文件hash不变。文件symlink fixture因Windows EPERM未实测；junction/hardlink已实测。未读认证配置，合成测试存档不进入dist。
 
-## 存档兼容与操作
+## 存档与复现
 
-旧 World schema1 / rules0.1 / envelope1 继续原规则，不静默升级；新 schema2 / rules0.2 / envelope2 明确含经营外交数据。工坊草稿与历史索引保持 schema1。未知内外层或经营版本锁写，保留 SHA256、备份与 revision/CAS 保护。
+旧World schema1/rules0.1/envelope1继续原规则，不静默升级；新schema2/rules0.2/envelope2含经营外交。草稿/历史索引仍schema1。未知内外层/经营版本锁写，保留SHA256、备份、revision上限与多标签CAS保护。
 
-旧自建局进入国家簿，可明确确认「创建经营推演副本」；副本使用新 run 和独立数据库，保留日期、地图、军队、路段与旧事件，沿用旧局敌对关系。人口和粮库是新规则初始参数，不冒充过去收支。三设备 E2E 验证原库逐槽字节不变。固定旧档仅为合成测试样本，来源见 tests/fixtures/README.md。
+旧自建局在国家簿选择「创建经营推演副本」，确认后用新run和独立数据库，保留日期、地图、军队、路段和原事件，沿用旧局敌对关系。人口粮库为明确的新规则初值，不冒充过去实际收支。三种布局验证源数据库逐槽字节不变。测试样本来源见tests/fixtures/README.md。
 
-Node 24.18.1，npm ci；npm run dev；npm run check。首次 Playwright 需 npx playwright install chromium。本机预览 http://127.0.0.1:4173/，复用前查 build.json，不终止陌生进程。默认工坊；旧战役 /?demo=1 或 /campaign/test。草稿 `.world.json`、推演 `.save.json`；跨网址存储不共享，通过导入导出迁移。
+Node24.18.1；npm ci，npm run dev，npm run check。首次浏览器环境需npx playwright install chromium。本机预览http://127.0.0.1:4173/，复用先查build.json，不终止陌生进程。默认工坊，旧战役/?demo=1或/campaign/test。草稿.world.json，推演.save.json；不同网址不共享IndexedDB，跨网址通过导入导出迁移。
 
-## 待完成与下一步
+## 下一批与边界
 
-本批下一步：审查提交内容 → 推送 feat/statecraft → 同 head 的真实 CI 与原生 Pages 预览 → HTTPS 核心闭环 → 受控合并 → 核对生产 SHA 与线上行为 → 完成任务证据。不能拿上一版本 CI 或本地构建冒充当前云端通过。
+M4按最多三项推进，详细验收先写入plan/tasks.json：可校验的历史输入/检查点 → 独立只读回放 → 从历史时点建立独立分支。保存规则实现指纹、成功输入序号与状态hash，拒绝损坏/未来格式；回放不能写当前局，分支不能覆盖源局。旧局只能从明确开始记录的当前日期建立记录副本，不能补造没有保存的过去。当前最多160条近期events不等于完整历史。
 
-随后 M4 先拆分历史记录、可验证回放与独立分支，再处理皇室模拟；现在最多 160 条近期事件不能充当完整历史。贸易、跨省运粮、海军、谈判、皇室、历史回放、第一次长征和 PWA 未实现。
+皇室目前仅有身份引用，不推断CANON未确认人物/亲属/继承。贸易、跨省运粮、海军、谈判、征募、皇室模拟、历史回放、第一次长征与PWA未实现。正式地图与原规划仍缺，ACCEPT-MAP/M2-PLAN继续blocked；第一次长征依赖正式地图及剧情确认。
 
-ACCEPT-MAP、原规划 M2-PLAN 仍 blocked；真 iPhone/Android、低端设备长局与正式轮廓人工核验待验，不阻塞独立沙盒工程。第一次长征仍依赖正式地图和确认剧情，不能杜撰。
+桌面Chrome、Pixel7和iPad均为Chromium仿真。真实iPhone/Android、移动Safari、低端设备长局和正式轮廓人工核验待验；不阻塞独立沙盒开发。
 
-普通工程、依赖、提交、检查和本项目免费部署已授权。只有新增身份选择、登录/App 授权、秘密输入或危险操作才由本人介入；不读取认证配置、不索要聊天令牌。所有资源先查后复用，只发布 dist。
-
-会话结束后不声称继续后台开发；续接从实际检查点继续。
+普通工程、依赖、提交、检查和本项目免费部署已获授权。新增身份选择、登录/App扩权、秘密输入或高风险操作才由本人介入；不读取认证配置、不索要聊天令牌。所有资源先查后复用，只发布dist。会话结束后不声称仍在后台开发。

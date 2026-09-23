@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { beforeEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { createWorld } from './sim/demo';
 import { initializeStatecraft } from './sim/core';
 import type { World } from './sim/types';
@@ -35,6 +35,7 @@ async function replace(key: string, value: unknown, scope?: string) {
  }); } finally { db.close(); }
 }
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe('双版本存档与原档保护', () => {
  it.each([['旧战役', createWorld], ['旧自建', legacyCustom], ['经营自建', modernCustom]] as const)('%s 完整往返、版本对齐且不共享对象', async (_name, factory) => {
@@ -103,6 +104,33 @@ describe('双版本存档与原档保护', () => {
   const result = await readSave(); expect(result).toEqual({ world: old, recovery: true, revision: 2 });
   await writeSave(result.world!, result.revision);
   expect(await decodeSave((await slots()).backup)).toEqual(old); expect((await readSave()).recovery).toBe(false);
+ });
+
+ it.each(['version', 'rules', 'world-schema', 'world-rules', 'statecraft-version'] as const)('未来 %s 备份存在时正常主槽也不得读取后覆盖备份', async layer => {
+  const world = modernCustom(); await writeSave(world, 0); await writeSave({ ...world, day: world.day + 1 }, 1);
+  const saved = await encodeSave(world);
+  const future = layer === 'version' ? { ...saved, version: 99 }
+   : layer === 'rules' ? { ...saved, rulesVersion: '99.0.0' }
+    : layer === 'world-schema' ? { ...saved, world: { ...saved.world, schemaVersion: 99 } }
+     : layer === 'world-rules' ? { ...saved, world: { ...saved.world, rulesVersion: '99.0.0' } }
+      : { ...saved, world: { ...saved.world, statecraft: { ...saved.world.statecraft, version: 99 } } };
+  await replace('backup', future); const before = await slots();
+  await expect(readSave()).rejects.toThrow('版本不兼容');
+  await expect(writeSave({ ...world, day: world.day + 2 }, 2)).rejects.toThrow('版本不兼容');
+  expect(await slots()).toEqual(before);
+ });
+
+ it.each([false, true])('写事务内备份被替换且未增revision时拒绝覆盖（未来版本=%s）', async future => {
+  const world = modernCustom(); await writeSave(world, 0); await writeSave({ ...world, day: world.day + 1 }, 1);
+  const before = await slots(), alternate = await encodeSave({ ...world, day: world.day + 5 });
+  const replacement = future ? { ...alternate, version: 99 } : alternate;
+  const original = IDBDatabase.prototype.transaction; let injected = false;
+  vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, stores: string | Iterable<string>, mode?: IDBTransactionMode, options?: IDBTransactionOptions) {
+   if (this.name === dbName() && mode === 'readwrite' && !injected) { injected = true; original.call(this, 'saves', 'readwrite').objectStore('saves').put(replacement, 'backup'); }
+   return original.call(this, stores, mode, options);
+  });
+  await expect(writeSave({ ...world, day: world.day + 2 }, 2)).rejects.toThrow(future ? '版本不兼容' : '另一窗口');
+  vi.restoreAllMocks(); expect(await slots()).toEqual({ ...before, backup: replacement });
  });
 
  it('经营存档拒绝旧标签及并发保存，原子保留赢家之前的备份', async () => {

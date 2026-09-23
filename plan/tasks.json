@@ -415,42 +415,58 @@
       "id": "PH01",
       "title": "旧引擎兼容与版本边界",
       "phase": "PH01",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [
         "PH00"
       ],
       "acceptance": "原rules0.1/0.2 golden逐条重算一致、原档字节不变；新旧引擎可并存；未知版本锁写且可备份导出。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-09-23-ph01-compatibility.md",
+        "docs/adr/0006-frozen-engines-and-versioned-copies.md"
+      ],
       "workItems": [
         {
           "id": "PH01-T1",
           "title": "固定0.4旧引擎和合成golden",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「固定0.4旧引擎和合成golden」，并提供本阶段对应验收事实。原rules0.1/0.2 golden逐条重算一致、原档字节不变；新旧引擎可并存；未知版本锁写且可备份导出。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-23-ph01-compatibility.md",
+            "docs/adr/0006-frozen-engines-and-versioned-copies.md"
+          ]
         },
         {
           "id": "PH01-T2",
           "title": "按完整指纹分派验证、回放、哈希和账册",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「按完整指纹分派验证、回放、哈希和账册」，并提供本阶段对应验收事实。原rules0.1/0.2 golden逐条重算一致、原档字节不变；新旧引擎可并存；未知版本锁写且可备份导出。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-23-ph01-compatibility.md",
+            "docs/adr/0006-frozen-engines-and-versioned-copies.md"
+          ]
         },
         {
           "id": "PH01-T3",
           "title": "定义新世界、行政、人物信仰和命令版本",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「定义新世界、行政、人物信仰和命令版本」，并提供本阶段对应验收事实。原rules0.1/0.2 golden逐条重算一致、原档字节不变；新旧引擎可并存；未知版本锁写且可备份导出。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-23-ph01-compatibility.md",
+            "docs/adr/0006-frozen-engines-and-versioned-copies.md"
+          ]
         },
         {
           "id": "PH01-T4",
           "title": "实现显式副本及失败恢复的兼容入口",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「实现显式副本及失败恢复的兼容入口」，并提供本阶段对应验收事实。原rules0.1/0.2 golden逐条重算一致、原档字节不变；新旧引擎可并存；未知版本锁写且可备份导出。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-23-ph01-compatibility.md",
+            "docs/adr/0006-frozen-engines-and-versioned-copies.md"
+          ]
         }
-      ]
+      ],
+      "branch": "codex/ph01-engine-compat"
     },
     {
       "id": "PH02",
@@ -1888,7 +1904,7 @@
     "M5",
     "M6"
   ],
-  "phaseState": "V4本地封版：PH00总提示词/36PH144子项/发布冻结完成；PH01—PH35仍todo，游戏新能力未实现。全部PH、真机和用户视觉验收前禁止新云端写入；下一批PH01旧引擎兼容及按依赖的PH02/PH03。",
+  "phaseState": "持续目标已启动：PH01旧引擎冻结/注册分派/版本边界本地实施中；PH02—PH35仍todo。全部PH完成并验收前发布保持锁定。",
   "programme": {
     "version": "V4",
     "title": "列国纪原创独立PWA完整沙盒",

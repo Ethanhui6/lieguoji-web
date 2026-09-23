@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import fs from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import type {EditorDraft} from '../src/worldgen/types';
 import type {World} from '../src/sim/types';
 async function panel(page:Page,name:string){const nav=page.getByRole('navigation',{name:'世界工坊工具'});if(await nav.isVisible())await nav.getByRole('button',{name,exact:true}).click();else if(name==='城市'||name==='国家')await page.locator('.studio-panel-tabs').getByRole('button',{name,exact:true}).click();}
@@ -10,6 +11,23 @@ async function ready(page:Page){await page.goto('/');await expect(page.getByTest
 async function saveDraft(page:Page){await panel(page,'世界');await button(page,'保存草稿');await expect(page.locator('.studio-save-status').filter({visible:true})).toHaveText('草稿已保存');await closePanel(page);}
 async function draftData(page:Page):Promise<EditorDraft>{return page.evaluate(()=>new Promise((resolve,reject)=>{const req=indexedDB.open('lieguoji-world-studio-v1',1);req.onsuccess=()=>{const db=req.result,tx=db.transaction('records','readonly'),r=tx.objectStore('records').get('current');tx.oncomplete=()=>{resolve(r.result.data.draft);db.close();};tx.onerror=()=>reject(tx.error);};}));}
 async function gameSave(page:Page){const nav=page.getByRole('navigation',{name:'游戏工具'});if(await nav.isVisible())await nav.getByRole('button',{name:'存档',exact:true}).click();await button(page,'保存');await expect(page.getByText(/已保存 · 第/).filter({visible:true})).toBeVisible();}
+async function savedSlotsEvidence(page:Page,database:string):Promise<{entries:number;hash:string}|null>{
+ const raw=await page.evaluate(async name=>{
+  if(!(await indexedDB.databases()).some(database=>database.name===name))return null;
+  return new Promise<{entries:number;bytes:string}>((resolve,reject)=>{
+   const request=indexedDB.open(name);
+   request.onupgradeneeded=()=>request.transaction!.abort();
+   request.onerror=()=>reject(request.error);
+   request.onsuccess=()=>{
+    const db=request.result,transaction=db.transaction('saves','readonly'),store=transaction.objectStore('saves');
+    const keys=store.getAllKeys(),values=store.getAll();
+    transaction.oncomplete=()=>{db.close();resolve({entries:keys.result.length,bytes:JSON.stringify({keys:keys.result,values:values.result})});};
+    transaction.onerror=()=>{db.close();reject(transaction.error);};
+   };
+  });
+ },database);
+ return raw?{entries:raw.entries,hash:createHash('sha256').update(raw.bytes).digest('hex')}:null;
+}
 
 test('手画大陆可撤销，地形保留海岸，国家与首都进入真实推演并刷新恢复',async({page},info)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -37,7 +55,29 @@ test('自动列国自主行动，草稿导入校验，缺失历史链接不会�
  await page.getByRole('button',{name:'12×',exact:true}).click();await page.getByRole('button',{name:'继续推演'}).click();await expect.poll(async()=>Number(await page.getByTestId('day-number').innerText()),{timeout:20000}).toBeGreaterThanOrEqual(30);await page.getByRole('button',{name:'暂停推演'}).click();await gameSave(page);
  const runUrl=page.url();const runId=new URL(runUrl).searchParams.get('world')!;const world:World=await page.evaluate(id=>new Promise((resolve,reject)=>{const req=indexedDB.open(`lieguoji-custom-${id}-v1`,1);req.onsuccess=()=>{const db=req.result,tx=db.transaction('saves','readonly'),r=tx.objectStore('saves').get('current');tx.oncomplete=()=>{resolve(r.result.world);db.close();};tx.onerror=()=>reject(tx.error);};}),runId);
  expect(world.events.some(e=>e.kind==='order')).toBeTruthy();expect(world.events.some(e=>e.kind==='march'||e.kind==='occupation'||e.kind==='battle')).toBeTruthy();await page.screenshot({path:info.outputPath('autonomous-world.png'),fullPage:true});
- await page.goto('/?world=run-missing-history');await expect(page.getByRole('alert')).toContainText('存档不在当前浏览器');await expect(page.getByRole('button',{name:'推进一日'})).toBeDisabled();await button(page,'世界工坊');await expect(page.getByTestId('world-studio')).toBeVisible();await page.goto(runUrl);await expect(page.getByTestId('day-number')).toHaveText(String(world.day));
+ const originalDatabase=`lieguoji-custom-${runId}-v1`,missingDatabase='lieguoji-custom-run-missing-history-v1';
+ const originalSlots=await savedSlotsEvidence(page,originalDatabase);
+ expect(originalSlots?.entries).toBeGreaterThan(0);
+ const originalDatabases=await page.evaluate(async()=> (await indexedDB.databases()).map(database=>database.name).sort());
+ await page.goto('/?world=run-missing-history');
+ await expect(page).toHaveURL(/\?world=run-missing-history$/);
+ await expect(page.getByRole('alert')).toContainText('存档不在当前浏览器');
+ await expect(page.getByRole('heading',{name:'尚未载入推演',exact:true})).toBeVisible();
+ await expect(page.getByTestId('protected-storage')).toBeVisible();
+ await expect(page.getByTestId('map-canvas')).toHaveCount(0);
+ await expect(page.locator('.game-layout')).toHaveCount(0);
+ await expect(page.getByTestId('day-number')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'推进一日',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'继续推演',exact:true})).toHaveCount(0);
+ // Reading this missing scope may create an empty IndexedDB container, but no
+ // world, backup, revision, test campaign, or unrelated run may be invented.
+ expect((await savedSlotsEvidence(page,missingDatabase))?.entries??0).toBe(0);
+ const afterDatabases=await page.evaluate(async()=> (await indexedDB.databases()).map(database=>database.name).sort());
+ expect(afterDatabases.filter(name=>name!==missingDatabase)).toEqual(originalDatabases.filter(name=>name!==missingDatabase));
+ expect(await savedSlotsEvidence(page,originalDatabase)).toEqual(originalSlots);
+ await page.screenshot({path:info.outputPath('missing-run-protected.png'),fullPage:true});
+ await button(page,'世界工坊');await expect(page.getByTestId('world-studio')).toBeVisible();await page.goto(runUrl);await expect(page.getByTestId('day-number')).toHaveText(String(world.day));
+ expect(await savedSlotsEvidence(page,originalDatabase)).toEqual(originalSlots);
 });
 
 test('双岛手绘、手工疆域、山地与首都城市保持有效引用',async({page,context},info)=>{
@@ -54,5 +94,4 @@ test('双岛手绘、手工疆域、山地与首都城市保持有效引用',asy
  await saveDraft(page);const before=await draftData(page);expect(before.nations.map(n=>n.name)).toEqual(['双岛国']);expect(before.cells.filter(c=>c.land).every(c=>c.ownerId===before.nations[0].id)).toBeTruthy();expect(before.cities.map(c=>c.name)).toEqual(['西都','东山城']);expect(before.cities.filter(c=>c.capital).map(c=>c.name)).toEqual(['西都']);expect(before.cells.filter(c=>c.land).some(c=>c.terrain==='mountain')).toBeTruthy();
  await page.reload();await expect(page.getByTestId('world-studio')).toBeVisible();expect(await draftData(page)).toEqual(before);await page.screenshot({path:info.outputPath('hand-drawn-islands.png'),fullPage:true});
 });
-
 

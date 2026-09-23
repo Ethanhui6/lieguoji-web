@@ -119,7 +119,7 @@ test('matching source evidence cannot authorize an uncommitted or unverified wor
 
 test('path boundary rejects outside, absolute, missing, and credential-capable candidates without reading contents', () => {
  for (const reference of ['../CANON.md', 'C:/secrets.txt', 'https://example.com/proof', 'docs/../CANON.md', 'docs/proof.txt:hidden', 'missing-proof.md']) assert.throws(() => safeProjectFile(projectRoot, reference));
- for (const name of ['.npmrc', '.env', 'nested/.netrc', 'saves/player.json', 'world.history.json', 'references/private/source.png', '.wrangler/state.json']) assert.equal(unsafeCandidatePath(name), true);
+ for (const name of ['.npmrc', '.env', 'nested/.netrc', 'saves/player.json', 'world.history.json', 'world.protected.json', 'references/private/source.png', '.wrangler/state.json']) assert.equal(unsafeCandidatePath(name), true);
  assert.equal(unsafeCandidatePath('src/sim/core.ts'), false);
  assert.equal(unsafeCandidatePath('tests/fixtures/legacy-custom-0.1.json'), false);
 });

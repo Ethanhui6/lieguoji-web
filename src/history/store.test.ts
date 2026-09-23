@@ -2,24 +2,24 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorld } from '../sim/demo';
-import { initializeStatecraft } from '../sim/core';
+import { legacyEngine } from '../engine/registry';
 import { readSave, writeSave } from '../persistence';
-import { appendHistory, createHistory, MAX_HISTORY_BYTES } from './core';
+import { MAX_HISTORY_BYTES } from './core';
 import { decodeHistoryFile, encodeHistoryFile, MAX_HISTORY_STORAGE_BYTES, parseHistoryFile, readHistoryRun, writeHistoryRun } from './store';
 import type { HistoryRecord } from './store';
 import type { World } from '../sim/types';
 
-const DB = 'lieguoji-history-v1', ENGINE = 'a'.repeat(64);
+const DB = 'lieguoji-history-v1', UNKNOWN_ENGINE = 'b'.repeat(64);
 const id = (number = 1) => `run-h-00000000-0000-4000-8000-${String(number).padStart(12, '0')}`;
 type Candidate = Pick<HistoryRecord, 'world' | 'history' | 'readOnly'>;
 type RawSlots = { format: string; version: number; revision: number; current: { version: number; checksum: string; record: HistoryRecord }; backup: { version: number; checksum: string; record: HistoryRecord } | null };
 const size = (raw: unknown): number => raw === null || raw === undefined ? 0 : new TextEncoder().encode(JSON.stringify(raw)).byteLength;
 async function candidate(storageId = id()): Promise<Candidate> {
-  const world = initializeStatecraft({ ...createWorld(), scenario: 'custom-world', custom: { id: storageId, name: '史册测试山河', seed: 'history-store', rivers: [] } } as World, 'peace');
-  return { world, history: await createHistory(world, { runId: storageId, engineFingerprint: ENGINE }), readOnly: false };
+  const world = legacyEngine.initializeStatecraft({ ...createWorld(), scenario: 'custom-world', custom: { id: storageId, name: '史册测试山河', seed: 'history-store', rivers: [] } } as World, 'peace');
+  return { world, history: await legacyEngine.createHistory(world, { runId: storageId }), readOnly: false };
 }
 async function advance(previous: Candidate): Promise<Candidate> {
-  return { ...await appendHistory(previous.history, previous.world, { type: 'step', days: 1 }, previous.history.engineFingerprint), readOnly: previous.readOnly };
+  return { ...await legacyEngine.appendHistory(previous.history, previous.world, { type: 'step', days: 1 }), readOnly: previous.readOnly };
 }
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -55,6 +55,13 @@ async function replaceUsage(value: unknown) {
     const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put(value, 'usage');
     tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
   }); } finally { db.close(); }
+}
+async function replaceFingerprint(storageId: string, slot: 'current' | 'backup', fingerprint: string) {
+  const envelope = structuredClone((await rawState()).runs.find(([key]) => key === storageId)![1][slot]!);
+  envelope.record.history.engineFingerprint = fingerprint;
+  const checksum = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(envelope.record)));
+  envelope.checksum = [...new Uint8Array(checksum)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  await replace(storageId, slots => { slots[slot] = envelope; });
 }
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -172,15 +179,49 @@ describe('独立历史库的整对保存与保护', () => {
     await expect(writeHistoryRun(id(), next, 2)).rejects.toThrow('锁定写入'); expect(await rawState()).toEqual(before);
   });
 
-  it('引擎指纹不同只留给Worker判定，不导致存储回退', async () => {
-    const first = await candidate(), second = await advance(first); second.history.engineFingerprint = 'b'.repeat(64);
+  it('已有未知指纹记录仍可读取和导出原包，不执行新规则或回退旧备份', async () => {
+    const first = await candidate(), second = await advance(first);
     await writeHistoryRun(id(), first, 0); await writeHistoryRun(id(), second, 1);
-    expect(await readHistoryRun(id())).toMatchObject({ record: { ...second, storageId: id() }, recovery: false, revision: 2 });
+    await replaceFingerprint(id(), 'current', UNKNOWN_ENGINE);
+    const before = await rawState(), loaded = await readHistoryRun(id());
+    expect(loaded).toMatchObject({ record: { world: second.world, history: { engineFingerprint: UNKNOWN_ENGINE } }, recovery: false, revision: 2 });
+    const history = loaded.record!.history, original = JSON.stringify(history);
+    expect(await decodeHistoryFile(await encodeHistoryFile(history))).toEqual(history);
+    await expect(writeHistoryRun(id(), second, 2)).rejects.toThrow('未知引擎');
+    expect(JSON.stringify(history)).toBe(original); expect(await rawState()).toEqual(before);
+  });
+
+  it.each([false, true])('未知引擎候选readOnly=%s不能建立运行或伪造末态归档', async readOnly => {
+    const unknown = await candidate(); unknown.history.engineFingerprint = UNKNOWN_ENGINE;
+    await expect(writeHistoryRun(id(), { ...unknown, readOnly }, 0)).rejects.toThrow('历史引擎未知');
+    expect(await indexedDB.databases()).toEqual([]);
+  });
+
+  it('未知备份引擎保护独立于当前槽正常与否，不被已知候选覆盖', async () => {
+    const first = await candidate(), second = await advance(first);
+    await writeHistoryRun(id(), first, 0); await writeHistoryRun(id(), second, 1);
+    await replaceFingerprint(id(), 'backup', UNKNOWN_ENGINE);
+    const before = await rawState();
+    expect((await readHistoryRun(id())).record!.world).toEqual(second.world);
+    await expect(writeHistoryRun(id(), await advance(second), 2)).rejects.toThrow('未知引擎');
+    expect(await rawState()).toEqual(before);
+  });
+
+  it('写事务内发现未知引擎替换时拒绝，不能仅依赖较早的只读检查', async () => {
+    const first = await candidate(), next = await advance(first); await writeHistoryRun(id(), first, 0);
+    const slots = structuredClone((await rawState()).runs[0][1]); slots.current.record.history.engineFingerprint = UNKNOWN_ENGINE;
+    const original = IDBDatabase.prototype.transaction; let injected = false;
+    vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, stores: string | Iterable<string>, mode?: IDBTransactionMode, options?: IDBTransactionOptions) {
+      if (this.name === DB && mode === 'readwrite' && !injected) { injected = true; original.call(this, 'runs', 'readwrite').objectStore('runs').put(slots, id()); }
+      return original.call(this, stores, mode, options);
+    });
+    await expect(writeHistoryRun(id(), next, 1)).rejects.toThrow('未知引擎'); vi.restoreAllMocks();
+    expect((await rawState()).runs[0][1]).toEqual(slots);
   });
 
   it('旧规则历史包保持schema1/rules0.1原样，无经营字段迁移', async () => {
     const world: World = { ...createWorld(), scenario: 'custom-world', custom: { id: id(), name: '旧规则记录', seed: 'legacy-history', rivers: [] } };
-    const history = await createHistory(world, { runId: id(), engineFingerprint: ENGINE }), before = structuredClone(world);
+    const history = await legacyEngine.createHistory(world, { runId: id() }), before = structuredClone(world);
     await writeHistoryRun(id(), { world, history, readOnly: false }, 0); const slots = await rawState();
     const loaded = await readHistoryRun(id()); expect(loaded.record!.world).toEqual(before);
     expect(Object.hasOwn(loaded.record!.world, 'statecraft')).toBe(false); expect(await rawState()).toEqual(slots);

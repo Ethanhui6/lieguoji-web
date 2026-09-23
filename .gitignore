@@ -20,5 +20,6 @@ references/private/
 *.save.json
 *.world.json
 *.history.json
+*.protected.json
 *.zip
 .DS_Store

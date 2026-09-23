@@ -1,15 +1,19 @@
-import { validateWorld } from './sim/core';
+import { resolveWorldEngine } from './engine/registry';
 import type { World } from './sim/types';
 export type SaveEnvelope = { format: 'lieguoji-save'; version: 1 | 2; rulesVersion: '0.1.0' | '0.2.0'; createdAt: string; checksum: string; world: World };
 const DB_NAME = 'lieguoji-test-continent-v1';
+function validateKnownWorld(value: unknown): value is World {
+ const engine = resolveWorldEngine(value);
+ return !!engine && engine.validateWorld(value);
+}
 async function checksum(world: World) {
  const bytes = new TextEncoder().encode(JSON.stringify(world));
  const digest = await crypto.subtle.digest('SHA-256', bytes);
  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
 export async function encodeSave(world: World): Promise<SaveEnvelope> {
- if (!validateWorld(world)) throw new Error('世界状态校验失败，未写入存档。');
  const snapshot=structuredClone(world);
+ if (!validateKnownWorld(snapshot)) throw new Error('世界状态校验失败，未写入存档。');
  return {format:'lieguoji-save',version:snapshot.schemaVersion,rulesVersion:snapshot.rulesVersion,createdAt:new Date().toISOString(),checksum:await checksum(snapshot),world:snapshot};
 }
 export async function decodeSave(raw: unknown): Promise<World> {
@@ -17,7 +21,7 @@ export async function decodeSave(raw: unknown): Promise<World> {
  rejectFutureSave(raw);
  const e = structuredClone(raw) as Partial<SaveEnvelope>;
  if(e.format !== 'lieguoji-save' || !versionPair(e.version,e.rulesVersion)) throw new Error('存档版本不兼容，原存档未修改。');
- if(!validateWorld(e.world)) throw new Error('存档内容损坏，原存档未修改。');
+ if(!validateKnownWorld(e.world)) throw new Error('存档内容损坏，原存档未修改。');
  if(e.version!==e.world.schemaVersion || e.rulesVersion!==e.world.rulesVersion) throw new Error('存档内外版本不一致，原存档未修改。');
  if(e.checksum !== await checksum(e.world)) throw new Error('存档校验和不匹配，原存档未修改。');
  return e.world;
@@ -62,7 +66,7 @@ export async function readSave(scope='test-continent'): Promise<{world:World|nul
   tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('存档读取中断，原档保留。'));
  }).finally(()=>db.close());
  const revision=checkedRevision(raw.revision);
- rejectFutureSave(raw.current);
+ rejectFutureSave(raw.current); rejectFutureSave(raw.backup);
  if(raw.current === undefined) return {world:null,recovery:false,revision};
  try {return {world:await decodeSave(raw.current),recovery:false,revision};}
  catch (err) { if(raw.backup !== undefined) return {world:await decodeSave(raw.backup),recovery:true,revision}; throw err; }
@@ -74,21 +78,23 @@ export async function writeSave(world:World,expectedRevision:number,scope='test-
  const db=await openDB(scope);
  try {
   // Validate outside the write transaction; never promote a corrupt current slot to backup.
-  const current:unknown=await new Promise((resolve,reject)=>{
-   const request=db.transaction('saves','readonly').objectStore('saves').get('current');
-   request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+  const before=await new Promise<{current:unknown;backup:unknown}>((resolve,reject)=>{
+   const tx=db.transaction('saves','readonly'),store=tx.objectStore('saves');
+   const current=store.get('current'),backup=store.get('backup');
+   tx.oncomplete=()=>resolve({current:current.result,backup:backup.result});
+   tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('存档读取中断，原档保留。'));
   });
   let validCurrent:unknown;
-  rejectFutureSave(current);
-  try { if(current !== undefined) {await decodeSave(current); validCurrent=current;} } catch { /* Retain earlier valid backup. */ }
+  rejectFutureSave(before.current); rejectFutureSave(before.backup);
+  try { if(before.current !== undefined) {await decodeSave(before.current); validCurrent=before.current;} } catch { /* Retain earlier valid backup. */ }
   return await new Promise<number>((resolve,reject)=>{
    const tx=db.transaction('saves','readwrite'), store=tx.objectStore('saves');
-   const actual=store.get('current'), revision=store.get('revision');
+   const actual=store.get('current'),backup=store.get('backup'),revision=store.get('revision');
    let failure:Error|null=null;
    revision.onsuccess=()=>{
     try {
-     rejectFutureSave(actual.result);
-     if(checkedRevision(revision.result)!==expectedRevision || JSON.stringify(actual.result)!==JSON.stringify(current)) throw new Error('另一窗口已更新存档，本次未覆盖。请先导出当前进度，再刷新载入最新存档。');
+     rejectFutureSave(actual.result); rejectFutureSave(backup.result);
+     if(checkedRevision(revision.result)!==expectedRevision || JSON.stringify(actual.result)!==JSON.stringify(before.current) || JSON.stringify(backup.result)!==JSON.stringify(before.backup)) throw new Error('另一窗口已更新存档，本次未覆盖。请先导出当前进度，再刷新载入最新存档。');
      if(validCurrent !== undefined) store.put(validCurrent,'backup');
      store.put(envelope,'current');store.put(expectedRevision+1,'revision');
     } catch(err){failure=err instanceof Error?err:new Error('保存失败');tx.abort();}

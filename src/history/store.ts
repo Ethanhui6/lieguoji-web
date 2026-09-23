@@ -1,6 +1,6 @@
-import { validateWorld } from '../sim/core';
+import { legacyEngine, resolveEngine, resolveHistoryEngine } from '../engine/registry';
 import type { World } from '../sim/types';
-import { hashWorld, MAX_HISTORY_BYTES, validateHistory, verifyHistoryIntegrity } from './core';
+import { MAX_HISTORY_BYTES } from './core';
 import type { HistoryLog } from './types';
 
 export type HistoryRecord = { storageId: string; readOnly: boolean; world: World; history: HistoryLog };
@@ -18,6 +18,21 @@ const isObject = (value: unknown): value is Record<string, unknown> => value !==
 const exact = (value: Record<string, unknown>, fields: string[]) => Object.keys(value).length === fields.length && fields.every(field => Object.hasOwn(value, field));
 const lockedVersion = () => new Error('历史存档版本不兼容，已锁定写入；请使用创建该记录的兼容游戏版本。');
 const failure = () => new Error('历史保存失败或浏览器空间不足，原记录及备份未修改。请导出备份。');
+
+/** Unknown fingerprints may use the frozen format-1 codec only for data integrity. */
+function historyCodec(raw: unknown) {
+  return isObject(raw) && typeof raw.engineFingerprint === 'string' ? resolveEngine(raw.engineFingerprint) ?? legacyEngine : legacyEngine;
+}
+function protectStoredEngine(raw: unknown, candidateFingerprint: string): void {
+  if (!isObject(raw) || !isObject(raw.record) || !isObject(raw.record.history) || !Object.hasOwn(raw.record.history, 'engineFingerprint')) return;
+  const fingerprint = raw.record.history.engineFingerprint;
+  if (typeof fingerprint !== 'string' || !resolveEngine(fingerprint)) throw new Error('已有历史使用未知引擎，已锁定写入；原记录及备份保留，可导出原包。');
+  if (fingerprint !== candidateFingerprint) throw new Error('不能在同一历史存储身份内更换引擎指纹，请创建独立副本。');
+}
+function protectStoredEngines(slots: Slots | null, candidateFingerprint: string): void {
+  if (!slots) return;
+  protectStoredEngine(slots.current, candidateFingerprint); protectStoredEngine(slots.backup, candidateFingerprint);
+}
 
 function requireId(storageId: unknown): asserts storageId is string {
   if (typeof storageId !== 'string' || !/^run-h-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(storageId)) throw new Error('历史存储身份无效，原记录未修改。');
@@ -109,13 +124,15 @@ function readRaw(db: IDBDatabase, storageId: string): Promise<RawRead> {
   });
 }
 async function validateRecord(record: HistoryRecord, storageId: string): Promise<void> {
+  if (!isObject(record) || !exact(record, ['storageId', 'readOnly', 'world', 'history'])) throw new Error('历史快照或记录结构、版本、大小无效，原记录未修改。');
   guardWorld(record.world); guardHistory(record.history);
-  if (!isObject(record) || !exact(record, ['storageId', 'readOnly', 'world', 'history']) || record.storageId !== storageId || typeof record.readOnly !== 'boolean' || !validateWorld(record.world) || !validateHistory(record.history)) throw new Error('历史快照或记录结构、版本、大小无效，原记录未修改。');
+  const codec = historyCodec(record.history);
+  if (record.storageId !== storageId || typeof record.readOnly !== 'boolean' || !codec.validateWorld(record.world) || !codec.validateHistory(record.history)) throw new Error('历史快照或记录结构、版本、大小无效，原记录未修改。');
   const { world, history } = record;
   if (world.scenario !== 'custom-world' || world.custom?.id !== history.runId || world.rulesVersion !== history.rulesVersion || (!record.readOnly && storageId !== history.runId)) throw new Error('历史与快照的运行身份或规则不一致，原记录未修改。');
-  await verifyHistoryIntegrity(history);
+  await codec.verifyHistoryIntegrity(history);
   const tail = history.entries.at(-1)?.after ?? { day: history.initial.world.day, nextEventId: history.initial.world.nextEventId, hash: history.initial.hash };
-  if (world.day !== tail.day || world.nextEventId !== tail.nextEventId || await hashWorld(world) !== tail.hash) throw new Error('当前快照与历史末态不一致，原记录未修改。');
+  if (world.day !== tail.day || world.nextEventId !== tail.nextEventId || await codec.hashWorld(world) !== tail.hash) throw new Error('当前快照与历史末态不一致，原记录未修改。');
 }
 async function encodeRecord(record: HistoryRecord): Promise<Envelope> {
   const snapshot = structuredClone(record);
@@ -155,12 +172,15 @@ export async function writeHistoryRun(storageId: string, candidate: { world: Wor
   // Snapshot all inputs together before the first asynchronous hash or database access.
   const snapshot = structuredClone(candidate);
   if (snapshot.readOnly && expectedRevision !== 0) throw new Error('只读历史记录不能修改，请创建独立分支。');
+  guardWorld(snapshot.world); guardHistory(snapshot.history);
+  if (!resolveHistoryEngine(snapshot.history)) throw new Error('历史引擎未知或规则不兼容，已锁定写入；不能伪造未知历史的末态或覆盖原记录。');
   const envelope = await encodeRecord({ ...snapshot, storageId });
   const db = await open(true);
   if (!db) throw failure();
   try {
     const before = await readRaw(db, storageId), previous = checkedSlots(before.slots);
     checkedUsage(before.usage, before.count);
+    protectStoredEngines(previous, snapshot.history.engineFingerprint);
     if (previous && (hasReadOnlyRecord(previous.current) || hasReadOnlyRecord(previous.backup))) throw new Error('只读历史记录不能修改，请创建独立分支。');
     let backup: unknown = previous?.backup ?? null;
     if (previous) {
@@ -175,6 +195,7 @@ export async function writeHistoryRun(storageId: string, candidate: { world: Wor
       count.onsuccess = () => {
         try {
           const stored = checkedSlots(actual.result), currentBytes = checkedUsage(usage.result, count.result);
+          protectStoredEngines(stored, snapshot.history.engineFingerprint);
           if ((stored?.revision ?? 0) !== expectedRevision || JSON.stringify(actual.result) !== JSON.stringify(before.slots)) throw new Error('另一窗口已更新历史，本次未覆盖。请导出当前记录后刷新。');
           if (stored && (hasReadOnlyRecord(stored.current) || hasReadOnlyRecord(stored.backup))) throw new Error('只读历史记录不能修改，请创建独立分支。');
           const oldBytes = slotBytes(stored);
@@ -193,7 +214,7 @@ export async function writeHistoryRun(storageId: string, candidate: { world: Wor
 
 export async function encodeHistoryFile(history: HistoryLog): Promise<HistoryFile> {
   const snapshot = structuredClone(history); guardHistory(snapshot);
-  await verifyHistoryIntegrity(snapshot);
+  await historyCodec(snapshot).verifyHistoryIntegrity(snapshot);
   const envelope: HistoryFile = { format: 'lieguoji-history-export', version: 1, checksum: await digest(snapshot), history: snapshot };
   if (bytes(envelope) > FILE_LIMIT) throw new Error('历史文件超过 20 MiB 限制，尚未导出。');
   return envelope;
@@ -203,8 +224,9 @@ export async function decodeHistoryFile(raw: unknown): Promise<HistoryLog> {
   const snapshot: unknown = structuredClone(raw);
   if (!isObject(snapshot) || !exact(snapshot, ['format', 'version', 'checksum', 'history']) || snapshot.format !== 'lieguoji-history-export' || snapshot.version !== 1 || typeof snapshot.checksum !== 'string' || !/^[a-f0-9]{64}$/.test(snapshot.checksum) || bytes(snapshot) > FILE_LIMIT) throw new Error('历史文件封装、大小或版本无效，原记录未修改。');
   if (snapshot.checksum !== await digest(snapshot.history)) throw new Error('历史文件校验和不匹配，原记录未修改。');
-  if (!validateHistory(snapshot.history)) throw new Error('历史记录结构或大小无效，原记录未修改。');
-  await verifyHistoryIntegrity(snapshot.history); return snapshot.history;
+  const codec = historyCodec(snapshot.history);
+  if (!codec.validateHistory(snapshot.history)) throw new Error('历史记录结构或大小无效，原记录未修改。');
+  await codec.verifyHistoryIntegrity(snapshot.history); return snapshot.history;
 }
 export async function parseHistoryFile(file: File): Promise<HistoryLog> {
   if (file.size > FILE_LIMIT) throw new Error('历史文件超过 20 MiB 限制，未导入。');

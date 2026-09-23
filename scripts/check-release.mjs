@@ -12,7 +12,7 @@ export function unsafeCandidatePath(relative) {
  return parts.some(part => ['.git', '.autopilot', '.wrangler', '.ssh', '.aws', 'node_modules', 'dist', 'saves', 'credentials', '.netrc', '.npmrc', '.yarnrc', '.pypirc'].includes(part))
   || /(^|\/)references\/private(\/|$)/.test(name)
   || /(^|\/)(\.env(?:\.|$)|\.dev\.vars(?:\.|$)|id_rsa(?:\.|$)|id_ed25519(?:\.|$)|credentials(?:\.|$))/.test(name)
-  || /\.(?:pem|key|p12|pfx|save\.json|world\.json|history\.json|zip|log)$/.test(name);
+  || /\.(?:pem|key|p12|pfx|save\.json|world\.json|history\.json|protected\.json|zip|log)$/.test(name);
 }
 
 export function candidateSourcePaths(root) {

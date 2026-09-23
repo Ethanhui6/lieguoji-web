@@ -34,6 +34,14 @@
 
 ## 云端与剩余边界
 
-本批尚未推送、合并或发布。上一生产为 262bd7630344d2f0a68604485d7c4395375a291c / 0.2.0。继续使用本人私有仓库 Ethanhui6/lieguoji-web 和唯一 Pages 原生 Git 项目 lieguoji-web；同提交 CI 与预览通过后才合并生产。
+功能提交 049e6d6d103f3b4402964c0823a545aa7595b950，PR https://github.com/Ethanhui6/lieguoji-web/pull/14。原生 Pages 预览部署 82f717dd-68c3-442e-977a-766e42e1b7db 已成功，实际地址 https://82f717dd.lieguoji-web.pages.dev/，build.json 核实为同一提交 / 0.3.0 / 新规则0.2、兼容0.1。
+
+HTTPS 首轮 39 场景为 37 通过 / 2 失败，报告 `.autopilot/m3-preview-results.json`。手机和平板外交在最后刷新后误判尚未挂载的移动工具栏，转去点击隐藏的桌面按钮。trace 证实 day=0 当时只是“正在铺开舆图”的加载页；并非外交操作或存档丢失。修复测试 government/save helper，等待真实 `.game-layout` 可见再选择布局，保留所有原断言和 45 秒限制，不使用强制点击。
+
+随后对同一 HTTPS 功能版本重跑全部 6 个经营/外交场景，6/6 首次通过，54.3 秒、0 重试/跳过/flaky，报告 `.autopilot/m3-preview-ui-recheck-results.json`。合计覆盖当前 39 个不同 HTTPS 场景，但不是一次 39/39。两轮失败和重验截图/trace 均保留。产品代码与生产产物未因该测试同步修复而变化。
+
+产物白名单另有隔离验证 27 项通过（1 个合法允许、26 个坏例拒绝），证据 `.autopilot/check-dist-lzdp7f/results.json`；实际 dist 前后逐文件 SHA256 一致。Windows 文件符号链接样本创建 EPERM，未绕过权限、未记为实测通过；目录 junction 与文件硬链接已实际拒绝。
+
+当前尚未合并或发布 M3。上一生产为 262bd7630344d2f0a68604485d7c4395375a291c / 0.2.0。继续使用本人私有仓库 Ethanhui6/lieguoji-web 和唯一 Pages 原生 Git 项目 lieguoji-web；最终 head 的 CI 与预览通过后才合并生产。
 
 正式地图、原 v2 规划和未知历史尚缺；真实手机、低端设备长局性能待验。当前 640 地理单元、最多 160 条近期事件，不冒充完整历史回放。皇室模拟、历史分支回放、第一次长征和 PWA 仍未实现。

@@ -5,7 +5,7 @@
 ## 实际工程与发布链
 
 - 项目：D:\游戏\架空地图模拟器。首次为空目录，原 v2 包、100 项任务与正式地图仍缺失；未扫描其他项目。现有补缺计划不冒充原规划。
-- 当前工作分支 feat/statecraft，基于已验收 main 262bd7630344d2f0a68604485d7c4395375a291c。当前文档所在提交是本批候选；尚未合并或发布 M3。
+- 当前工作分支 feat/statecraft，功能提交 049e6d6d103f3b4402964c0823a545aa7595b950，PR https://github.com/Ethanhui6/lieguoji-web/pull/14。基于已验收 main 262bd7630344d2f0a68604485d7c4395375a291c；当前文档所在提交只补测试挂载等待及真实预览证据，尚未合并或发布 M3。
 - 本人 GitHub 账号 Ethanhui6，私有仓库 https://github.com/Ethanhui6/lieguoji-web，origin 已验证。M3 对应 Issue #11/#12/#13、里程碑 M3 #4；不得重复创建。
 - Cloudflare 账户 0dccd3742e707d4f6506f2de668e516e，Pages 项目 lieguoji-web。唯一原生 Git 链：main 自动生产、其他分支预览；构建 npm run build:cf，输出 dist，根目录，Node 24.18.1。
 - 实际地址 https://lieguoji-web.pages.dev/。当前已验证生产仍为 262bd76 / 0.2.0，部署 f9b31a44-e8b2-4117-9e50-fcc7334b6d8a，固定地址 https://f9b31a44.lieguoji-web.pages.dev/。上一 main CI https://github.com/Ethanhui6/lieguoji-web/actions/runs/35836349984。本批云端证据将在实际检查后更新。
@@ -24,6 +24,7 @@ M3 三项已实现，本地检查通过、云端待验收，详见 docs/adr/0003
 - 完整 build:cf 通过：21 计划、lint、类型、163/163 单测、生产构建、22 个游戏产物检查；三种地图各连续推演 90 日，逐日守恒和确定性通过。
 - 修复手机保存提示遮挡决策按钮后，新增国家操作 6/6 与原功能/旧档保护 33/33 均首次通过、0 重试、0 flaky、0 跳过。报告 `.autopilot/m3-ui-final-results.json`、`m3-regression-results.json`。首轮 4 通过/2 手机失败证据保留，未用强制点击掩盖问题。
 - 已实际查看桌面、手机和平板截图，核心移动按钮至少 44px、抽屉可滚动、无横向溢出。Pixel 7/iPad Chromium 是仿真，不是真机或移动 Safari。
+- 功能版 HTTPS 预览 https://82f717dd.lieguoji-web.pages.dev/，实际 build.json 匹配049e6d6。首轮39场景37通过/2外交测试同步失败；trace确认刷新加载页被误判桌面，补充等待真实布局后，同站6/6经营外交重验通过。原33其他场景已通过，合计39不同场景覆盖；不是单次39/39。报告m3-preview-results.json与m3-preview-ui-recheck-results.json，最终head仍需CI与预览确认。
 
 ## 存档兼容与操作
 

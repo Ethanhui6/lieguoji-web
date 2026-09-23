@@ -26,12 +26,14 @@ async function createWorld(page: Page) {
   await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();
 }
 async function government(page: Page) {
+  await expect(page.locator('.game-layout')).toBeVisible();
   const nav = page.getByRole('navigation', { name: '游戏工具' });
   if (await nav.isVisible()) await nav.getByRole('button', { name: '国家', exact: true }).click();
   else await page.locator('.right-panel-switch').getByRole('button', { name: '国家', exact: true }).click();
   await expect(page.getByTestId('government-panel')).toBeVisible();
 }
 async function save(page: Page) {
+  await expect(page.locator('.game-layout')).toBeVisible();
   const nav = page.getByRole('navigation', { name: '游戏工具' });
   if (await nav.isVisible()) await nav.getByRole('button', { name: '存档', exact: true }).click();
   await visibleButton(page, '保存');

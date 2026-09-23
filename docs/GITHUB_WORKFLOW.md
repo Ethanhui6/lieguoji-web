@@ -1,6 +1,11 @@
 # GitHub 检查与受控合并
 
-本文件对应 `.github/workflows/ci.yml`。2026-09-23已在私有仓库Ethanhui6/lieguoji-web执行真实CI；main首次59单测/15浏览器通过，世界工坊PR初轮100单测/30浏览器中1项重试通过，暂停交互已修并要求新提交重新检查。具体run、SHA及后续部署证据见 docs/evidence/2026-09-23-cloud.md。
+本文件对应 `.github/workflows/ci.yml`。2026-09-23 已在私有仓库 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web) 执行真实 CI；[PR #1](https://github.com/Ethanhui6/lieguoji-web/pull/1) 已受控合并，功能发布的 main 为 `048c30e9cff6e3e3649d7984101f9291a6e5ff04`。
+
+- 修复暂停交互后的 [PR run 35833822865](https://github.com/Ethanhui6/lieguoji-web/actions/runs/35833822865)：head `0af3210a1e1cd54551d7d23c59c4cc9ed10f2fc9`，实际测试合并提交 `875a76166a4f2d3a3d246c6c05fcab572597fd9a`，100 单测、30 浏览器首次通过，0 flaky。
+- 合并后 [main run 35834288962](https://github.com/Ethanhui6/lieguoji-web/actions/runs/35834288962)：实际 main `048c30e9cff6e3e3649d7984101f9291a6e5ff04`，100 单测、30 浏览器通过，0 flaky。
+
+初始 main 的 59/15、PR 首轮 29 passed + 1 flaky 及修复过程均保留在 [云端证据](evidence/2026-09-23-cloud.md)。远端 CI 与生产 HTTPS 验收分开记录：生产首轮 26/30；4 项失败为测试 304 MIME 判断及初始化等待问题，修正测试后同一部署的全部 15 项战役补测通过，加上首轮 15 项工坊/保护，30 个不同线上场景均已有通过证据，非单次线上 30/30。后续文档/测试 PR 仍需自身检查，不把当前结果冒充尚未发生的 PR 检查。
 
 当前账号在此私有仓库访问分支保护API返回403，明确要求升级或公开。保持仓库私有、不购买套餐，不声称设置了必需检查门禁；采用核对当前head/base及真实CI/预览后受控合并。M0—M6里程碑与M0/M2共8个任务Issue已按稳定ID创建，映射在plan/tasks.json。
 
@@ -26,11 +31,11 @@ CI 只有 `contents: read` 权限。检出操作不持久保存凭证；不使�
 | `actions/setup-node` | `v7.0.0` | `820762786026740c76f36085b0efc47a31fe5020` | [发布](https://github.com/actions/setup-node/releases/tag/v7.0.0) · [Git 引用 API](https://api.github.com/repos/actions/setup-node/git/ref/tags/v7.0.0) · [固定版本定义](https://github.com/actions/setup-node/blob/820762786026740c76f36085b0efc47a31fe5020/action.yml) |
 | `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | [发布](https://github.com/actions/upload-artifact/releases/tag/v7.0.1) · [Git 引用 API](https://api.github.com/repos/actions/upload-artifact/git/ref/tags/v7.0.1) · [固定版本定义](https://github.com/actions/upload-artifact/blob/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/action.yml) |
 
-工作流语法和权限的依据为 [GitHub 官方工作流语法](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)。本地检查只能证明本地结果；远端首次执行后，应把实际 run URL、提交 SHA、结论和失败记录写入 `plan/tasks.json` 与交接文档。
+工作流语法和权限的依据为 [GitHub 官方工作流语法](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)。本地检查只能证明本地结果；每批远端执行后，将实际 run URL、提交 SHA、结论和失败记录写入 `plan/tasks.json`、云端证据与交接文档。不得用不同提交的成功运行替代当前代码的验证。
 
 ## 与 Pages 的关系
 
-当前已使用 **Cloudflare Pages 原生 Git 集成**，账号与目标仓库访问已验证。此 CI 没有生产部署 job，也没有 Direct Upload 配置；Pages main自动生产、其他分支自动预览，是唯一生产链。
+当前已使用 **Cloudflare Pages 原生 Git 集成**，账号与目标仓库访问已验证。此 CI 没有生产部署 job，也没有 Direct Upload 配置或部署 Secret；Pages main 自动生产、其他分支自动预览，是唯一生产链。项目为 `lieguoji-web`，构建 `npm run build:cf`、输出 `dist`、Node `24.18.1`；实际配置和生产/预览 URL 见 [部署文档](DEPLOY_CLOUDFLARE.md)。
 
 原生 Pages 根据其自身 Git 事件构建，GitHub Actions 的 E2E 与 Pages 构建不是天然串行的。[Cloudflare 官方 Git 集成说明](https://developers.cloudflare.com/pages/configuration/git-integration/) 是连接仓库、分支部署和预览的核对入口。采用以下受控流程：
 

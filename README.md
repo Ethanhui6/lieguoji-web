@@ -2,6 +2,8 @@
 
 原创二维架空世界模拟网页游戏。0.2.0 主入口为「世界工坊」：手画海陆、生成地形、创建国家与城市，再观察自己的世界推演。正式五国地图仍未提供、未核定；玩家自由创作不依赖正式核图。
 
+实际游玩地址：[列国纪 · 世界工坊](https://lieguoji-web.pages.dev/)。源码位于本人私有仓库 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)。Pages 原生 Git 为唯一发布链：通过检查后合并 main 自动生产，其他分支自动预览。已验证的发布、CI 与线上验收见 [云端证据](docs/evidence/2026-09-23-cloud.md)。
+
 Node 24.18.1，npm 锁文件安装：`npm ci`。启动：`npm run dev`。完整本地检查：`npm run check`（首次需 `npx playwright install chromium`）。Pages 构建：`npm run build:cf`，仅发布 `dist`。
 
 工坊操作：在现有大陆上编辑，或从「世界草稿 → 空白海洋」开始；使用海陆/地形笔刷，或按种子生成；手动建国并涂抹归属，或自动分国；点选城市与首都，或自动安排；保存草稿，然后开始推演。每完整一笔可撤销/重做。手机和平板通过底部画笔、国家、城市、世界面板操作；双指用于缩放，平移工具用于移动视图。
@@ -12,4 +14,4 @@ Node 24.18.1，npm 锁文件安装：`npm ci`。启动：`npm run dev`。完整�
 
 当前编辑精度为 640 个确定性 Voronoi 地理单元；画笔改变真实海陆与归属。采用连续噪声生成连贯地形及严格下坡河流，国家按陆地连通关系扩张。它是可玩的创世基础版，尚非最终地图精度或完整产品。
 
-续接先读 [docs/AUTO_HANDOFF.md](docs/AUTO_HANDOFF.md)，状态以 [plan/tasks.json](plan/tasks.json) 为准。CI 文件存在不代表云端 CI 已运行；已实现和待验收事项分别记录。
+续接先读 [docs/AUTO_HANDOFF.md](docs/AUTO_HANDOFF.md)，状态以 [plan/tasks.json](plan/tasks.json) 为准。真实远端 CI 和 HTTPS 验收已完成；移动和平板仿真不代表真机验收，未完成系统另行记录。

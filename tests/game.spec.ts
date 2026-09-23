@@ -1,5 +1,5 @@
 import { test,expect,type Page } from '@playwright/test';
-async function drawer(page:Page,name:string){const tools=page.getByRole('navigation',{name:'游戏工具'});if(await tools.isVisible())await tools.getByRole('button',{name,exact:true}).click();}
+async function drawer(page:Page,name:string){await expect(page.locator('.game-layout')).toBeVisible();const tools=page.getByRole('navigation',{name:'游戏工具'});if(await tools.isVisible())await tools.getByRole('button',{name,exact:true}).click();}
 async function ready(page:Page){await page.goto('/?demo=1');await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();await expect(page.getByRole('button',{name:'推进一日'})).toBeEnabled();}
 async function selectArmy(page:Page){await drawer(page,'军情');await page.getByTestId('army-lie-main').click();}
 async function march(page:Page){await selectArmy(page);await page.getByLabel('目的地').selectOption('ming-border');await page.getByRole('button',{name:'预览命令'}).click();await expect(page.getByTestId('order-preview')).toContainText('3 日');await page.getByRole('button',{name:'确认军令'}).click();}
@@ -7,10 +7,17 @@ async function days(page:Page,count:number){for(let i=0;i<count;i++){const befor
 async function save(page:Page){await drawer(page,'存档');await page.getByRole('button',{name:'保存',exact:true}).filter({visible:true}).click();await expect(page.getByText(/已保存 · 第/).filter({visible:true})).toBeVisible();}
 test('地图、命令取消、真实行军交战占领、原因与刷新恢复',async({page},info)=>{
  const errors:string[]=[];const failed:string[]=[];const workerUrls:string[]=[];
- const mimeErrors:string[]=[];
+ const mimeErrors:string[]=[];const verifiedJsMime=new Map<string,string>();
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  page.on('requestfailed',r=>failed.push(r.url()));page.on('worker',w=>workerUrls.push(w.url()));
- page.on('response',response=>{if(/\/assets\/.*\.js$/.test(response.url())&&!/javascript/.test(response.headers()['content-type']??''))mimeErrors.push(response.url());});
+ page.on('response',response=>{
+  const url=response.url();if(!/\/assets\/.*\.js$/.test(url))return;
+  const status=response.status(),mime=response.headers()['content-type']??'';
+  // A cache revalidation may omit representation headers; require a verified prior 200.
+  if(status===304){if(!verifiedJsMime.has(url)||(mime&&!/javascript/i.test(mime)))mimeErrors.push(`${url} [status=304,mime=${mime||'<missing>'},previous=${verifiedJsMime.get(url)||'<unverified>'}]`);return;}
+  if(status!==200||!/javascript/i.test(mime)){mimeErrors.push(`${url} [status=${status},mime=${mime||'<missing>'}]`);return;}
+  verifiedJsMime.set(url,mime);
+ });
  await ready(page);expect(workerUrls.some(url=>url.includes('sim.worker'))).toBeTruthy();
  await expect(page.getByRole('alert')).toHaveCount(0);
  await selectArmy(page);await page.getByLabel('目的地').selectOption('ming-border');await page.getByRole('button',{name:'预览命令'}).click();

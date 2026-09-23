@@ -13,7 +13,7 @@
       "id": "M0-001",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "title": "可交互测试大陆与Web Worker",
@@ -28,7 +28,7 @@
       "id": "M0-002",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "title": "移动基础操作与浏览器回归",
@@ -43,7 +43,7 @@
       "id": "M0-003",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "blocker": "gh现有授权401，已发起设备授权",
@@ -81,7 +81,7 @@
       "id": "M1-001",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "title": "战斗、撤退、占领与原因",
@@ -96,7 +96,7 @@
       "id": "M1-002",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "title": "版本化存档、刷新恢复与备份",
@@ -111,7 +111,7 @@
       "id": "M1-003",
       "issue": null,
       "branch": "main",
-      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+      "commit": "4110c49df794840861f625d48f5b3a9ae7970193"
     },
     {
       "blocker": "资料未提供",

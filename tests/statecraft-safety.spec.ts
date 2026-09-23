@@ -2,16 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { World } from '../src/sim/types';
+import {gamePanel as drawer,studioPanel} from './helpers/navigation';
 
 const legacyPath=resolve('tests/fixtures/legacy-custom-0.1.json');
 const fixture=JSON.parse(readFileSync(legacyPath,'utf8')) as {world:World};
 
-async function drawer(page:Page,name:string){
- await expect(page.locator('.game-layout')).toBeVisible();
- const nav=page.getByRole('navigation',{name:'游戏工具'});
- if(await nav.isVisible())await nav.getByRole('button',{name,exact:true}).click();
- else if(name==='国家')await page.getByRole('button',{name,exact:true}).filter({visible:true}).click();
-}
 async function slots(page:Page,run:string):Promise<{bytes:string;world:World}>{
  return page.evaluate(id=>new Promise((resolve,reject)=>{
   const request=indexedDB.open(`lieguoji-custom-${id}-v1`,1);
@@ -27,6 +22,7 @@ async function slots(page:Page,run:string):Promise<{bytes:string;world:World}>{
 test('真实旧规则自建档创建经营副本，原历史和在途军令完整保留',async({page},info)=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto('/');await expect(page.getByTestId('studio-canvas')).toBeVisible();
+ await studioPanel(page,'世界');
  await page.getByLabel('选择世界草稿文件').setInputFiles(legacyPath);
  await page.getByRole('alertdialog').getByRole('button',{name:'确认执行'}).click();
  await expect(page.getByRole('button',{name:'推进一日'})).toBeEnabled();

@@ -1,5 +1,5 @@
 import { test,expect,type Page } from '@playwright/test';
-async function drawer(page:Page,name:string){await expect(page.locator('.game-layout')).toBeVisible();const tools=page.getByRole('navigation',{name:'游戏工具'});if(await tools.isVisible())await tools.getByRole('button',{name,exact:true}).click();}
+import {gamePanel as drawer} from './helpers/navigation';
 // Public previews load the renderer dynamically after page load; bound only initial map readiness.
 async function mapReady(page:Page){await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible({timeout:15_000});}
 async function ready(page:Page){await page.goto('/?demo=1');await mapReady(page);await expect(page.getByRole('button',{name:'推进一日'})).toBeEnabled();}
@@ -7,6 +7,7 @@ async function selectArmy(page:Page){await drawer(page,'军情');await page.getB
 async function march(page:Page){await selectArmy(page);await page.getByLabel('目的地').selectOption('ming-border');await page.getByRole('button',{name:'预览命令'}).click();await expect(page.getByTestId('order-preview')).toContainText('3 日');await page.getByRole('button',{name:'确认军令'}).click();}
 async function days(page:Page,count:number){for(let i=0;i<count;i++){const before=Number(await page.getByTestId('day-number').innerText());await page.getByRole('button',{name:'推进一日'}).click();await expect(page.getByTestId('day-number')).toHaveText(String(before+1));}}
 async function save(page:Page){await drawer(page,'存档');await page.getByRole('button',{name:'保存',exact:true}).filter({visible:true}).click();await expect(page.getByText(/已保存 · 第/).filter({visible:true})).toBeVisible();}
+async function savePair(page:Page){return page.evaluate(()=>new Promise<string>((resolve,reject)=>{const request=indexedDB.open('lieguoji-test-continent-v1',1);request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,transaction=db.transaction('saves','readonly'),store=transaction.objectStore('saves'),current=store.get('current'),backup=store.get('backup'),revision=store.get('revision');transaction.oncomplete=()=>{db.close();resolve(JSON.stringify({current:current.result,backup:backup.result,revision:revision.result}));};transaction.onerror=()=>{db.close();reject(transaction.error);};};}));}
 test('地图、命令取消、真实行军交战占领、原因与刷新恢复',async({page},info)=>{
  const errors:string[]=[];const failed:string[]=[];const workerUrls:string[]=[];
  const mimeErrors:string[]=[];const verifiedJsMime=new Map<string,string>();
@@ -27,7 +28,7 @@ test('地图、命令取消、真实行军交战占领、原因与刷新恢复',
  await march(page);await days(page,3);await expect(page.locator('.orders-panel .army-status')).toHaveText('交战');
  await days(page,15);await expect(page.locator('.orders-panel .army-status')).toHaveText('驻防');
  const armyCount=await page.locator('.army-strength strong').innerText();expect(Number(armyCount.replace(/\D/g,''))).toBeLessThan(1250);
- await expect(page.locator('.province-info')).toContainText('实际控制烈帝国');await expect(page.locator('.province-info')).toContainText('法理所属明反帝国');
+ await expect(page.locator('.province-info').getByRole('button',{name:'查看 烈帝国',exact:true})).toBeVisible();await expect(page.locator('.province-info')).toContainText('法理所属明反帝国');
  await drawer(page,'纪事');const occupation=page.locator('.event-occupation').first();await expect(occupation).toBeVisible();await occupation.locator('summary').click();await expect(occupation.locator('p')).not.toBeEmpty();
  await save(page);await page.reload();await expect(page.getByTestId('day-number')).toHaveText('18');await selectArmy(page);await expect(page.locator('.army-strength strong')).toHaveText(armyCount);
  await drawer(page,'舆图');await page.screenshot({path:info.outputPath('playable-map.png'),fullPage:true});
@@ -37,7 +38,7 @@ test('主动撤退、调速与暂停、坏档不覆盖、导出导入',async({pa
  await ready(page);await march(page);await days(page,3);
  await page.getByRole('button',{name:'主动撤退'}).click();await page.getByLabel('目的地').selectOption('lie-heart');await page.getByRole('button',{name:'预览命令'}).click();await expect(page.getByTestId('order-preview')).toContainText('追击');await page.getByRole('button',{name:'确认军令'}).click();await days(page,2);
  await expect(page.locator('.stationed')).toContainText('烈城辖区');
- await page.getByRole('button',{name:'12×',exact:true}).click();await page.getByRole('button',{name:'继续推演'}).click();await expect.poll(async()=>Number(await page.getByTestId('day-number').innerText())).toBeGreaterThan(7);await page.getByRole('button',{name:'暂停推演'}).click();
+ await page.getByRole('combobox',{name:'推演速度',exact:true}).selectOption('12');await page.getByRole('button',{name:'继续推演'}).click();await expect.poll(async()=>Number(await page.getByTestId('day-number').innerText())).toBeGreaterThan(7);await page.getByRole('button',{name:'暂停推演'}).click();
  await expect(page.getByRole('button',{name:'继续推演'})).toBeEnabled();const day=await page.getByTestId('day-number').innerText();await page.waitForTimeout(400);await expect(page.getByTestId('day-number')).toHaveText(day);await save(page);
  const downloaded=page.waitForEvent('download');await page.getByRole('button',{name:'导出',exact:true}).filter({visible:true}).click();const file=await downloaded;const exportPath=info.outputPath('test-export.save.json');await file.saveAs(exportPath);
  await page.getByLabel('选择导入存档').setInputFiles({name:'corrupt.json',mimeType:'application/json',buffer:Buffer.from('{"format":"lieguoji-save","version":1}')});await page.getByRole('button',{name:'确认导入'}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByText('存档已载入。',{exact:true})).toHaveCount(0);
@@ -67,9 +68,14 @@ test('深链接、产物版本、地图手势和布局',async({page,context},inf
 test('未来版本本地存档锁写，不能被默认新局覆盖',async({page})=>{
  await ready(page);await days(page,2);await save(page);
  const before=await page.evaluate(()=>new Promise<string>((resolve,reject)=>{const req=indexedDB.open('lieguoji-test-continent-v1',1);req.onsuccess=()=>{const db=req.result;const tx=db.transaction('saves','readwrite');const store=tx.objectStore('saves');const current=store.get('current');let value:string;current.onsuccess=()=>{current.result.version=99;value=JSON.stringify(current.result);store.put(current.result,'current');};tx.oncomplete=()=>{db.close();resolve(value);};tx.onerror=()=>reject(tx.error);};}));
+ const protectedPair=await savePair(page);
  await page.reload();await expect(page.getByRole('alert')).toContainText('版本不兼容');await drawer(page,'存档');
- await page.getByRole('button',{name:'保存',exact:true}).filter({visible:true}).click();await expect(page.getByRole('alert')).toContainText('锁定');await expect(page.getByText('当前推演已保存到此浏览器。',{exact:true})).toHaveCount(0);
+ for(const name of ['推进一日','继续推演','保存','导出','导入','新开局'])await expect(page.getByRole('button',{name,exact:true})).toBeDisabled();
+ await expect(page.getByRole('combobox',{name:'推演速度',exact:true})).toBeDisabled();
+ await expect(page.getByRole('button',{name:'导出受保护原始备份',exact:true})).toBeEnabled();
+ await expect(page.getByText('当前推演已保存到此浏览器。',{exact:true})).toHaveCount(0);
  const after=await page.evaluate(()=>new Promise<string>((resolve,reject)=>{const req=indexedDB.open('lieguoji-test-continent-v1',1);req.onsuccess=()=>{const db=req.result;const tx=db.transaction('saves','readonly');const r=tx.objectStore('saves').get('current');tx.oncomplete=()=>{db.close();resolve(JSON.stringify(r.result));};tx.onerror=()=>reject(tx.error);};}));expect(after).toBe(before);
+ expect(await savePair(page)).toBe(protectedPair);
 });
 test('另一标签的新存档不会被旧标签覆盖',async({page,context})=>{
  await ready(page);await days(page,2);await save(page);

@@ -472,42 +472,58 @@
       "id": "PH02",
       "title": "信息架构与iOS质感基线",
       "phase": "PH02",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [
         "PH00"
       ],
       "acceptance": "真实创世、实体详情、地图操作与返回路径可操作；360px至桌面不挤坏地图；系统字和无透明模式可读；未完成入口不假装可点。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-09-24-ph02-workbench.md",
+        "docs/adr/0007-map-workbench-and-appearance.md"
+      ],
       "workItems": [
         {
           "id": "PH02-T1",
           "title": "完成创世到推演到回放的导航与上下文结构",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「完成创世到推演到回放的导航与上下文结构」，并提供本阶段对应验收事实。真实创世、实体详情、地图操作与返回路径可操作；360px至桌面不挤坏地图；系统字和无透明模式可读；未完成入口不假装可点。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph02-workbench.md",
+            "docs/adr/0007-map-workbench-and-appearance.md"
+          ]
         },
         {
           "id": "PH02-T2",
           "title": "建立浅深色、字体、图标、材质和动效令牌",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「建立浅深色、字体、图标、材质和动效令牌」，并提供本阶段对应验收事实。真实创世、实体详情、地图操作与返回路径可操作；360px至桌面不挤坏地图；系统字和无透明模式可读；未完成入口不假装可点。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph02-workbench.md",
+            "docs/adr/0007-map-workbench-and-appearance.md"
+          ]
         },
         {
           "id": "PH02-T3",
           "title": "以真实地图与数据完成三端代表界面",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「以真实地图与数据完成三端代表界面」，并提供本阶段对应验收事实。真实创世、实体详情、地图操作与返回路径可操作；360px至桌面不挤坏地图；系统字和无透明模式可读；未完成入口不假装可点。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph02-workbench.md",
+            "docs/adr/0007-map-workbench-and-appearance.md"
+          ]
         },
         {
           "id": "PH02-T4",
           "title": "定义触控仲裁、抽屉状态与视觉验收对照",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「定义触控仲裁、抽屉状态与视觉验收对照」，并提供本阶段对应验收事实。真实创世、实体详情、地图操作与返回路径可操作；360px至桌面不挤坏地图；系统字和无透明模式可读；未完成入口不假装可点。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph02-workbench.md",
+            "docs/adr/0007-map-workbench-and-appearance.md"
+          ]
         }
-      ]
+      ],
+      "branch": "codex/ph02-ios-workbench"
     },
     {
       "id": "PH03",

@@ -1,12 +1,16 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { Point } from '../sim/types';
 import type { BrushTool, EditorDraft } from '../worldgen/types';
 import { addNation, cellAt, createDraft, draftProblems, fillUnclaimed, generateCities, generateLand, generateNations, generateTerrain, paintStroke, placeCity } from '../worldgen/engine';
 import { StudioCanvas } from './StudioCanvas';
 import type { StudioLayer, StudioTool } from './StudioCanvas';
+import { ContextInspector, type InspectorExtent } from '../ui/ContextInspector';
+import { AppearanceSettings } from '../ui/AppearanceSettings';
+import { Icon } from '../ui/Icon';
+import { ModalDialog } from '../ui/ModalDialog';
 import './studio.css';
 
-type Props = { draft: EditorDraft; onChange: (draft: EditorDraft) => void; onStart: (draft: EditorDraft) => Promise<void>; onDemo: () => void; onSave: () => Promise<void>; onExport: () => Promise<void>; onImport: (file: File) => Promise<void>; saveStatus: string; error: string | null; onResume: () => void; canResume: boolean };
+type Props = { draft: EditorDraft; onChange: (draft: EditorDraft) => void; onStart: (draft: EditorDraft) => Promise<void>; onDemo: () => void; onSave: () => Promise<void>; onExport: () => Promise<void>; onImport: (file: File) => Promise<void>; saveStatus: string; error: string | null; onResume: () => void; canResume: boolean; savedRuns: readonly { id: string; name: string; createdAt: string }[]; onResumeRun: (id: string) => void };
 const tools: { id: StudioTool; label: string; icon: string; detail: string }[] = [
   { id: 'land', label: '绘制陆地', icon: '◒', detail: '在海面绘出大陆。拖动可连续落笔。' },
   { id: 'sea', label: '擦为海洋', icon: '≈', detail: '擦除陆地及其归属与城市。完整一笔可以撤销。' },
@@ -23,7 +27,7 @@ const palette = ['#c6a65e', '#ad7363', '#74969c', '#a289aa', '#85a275', '#c09d87
 
 export function WorldStudio(props: Props) {
   const { draft } = props;
-  const [tool, setTool] = useState<StudioTool>('land');
+  const [tool, setTool] = useState<StudioTool>('pan');
   const [radius, setRadius] = useState(38);
   const [layer, setLayer] = useState<StudioLayer>('terrain');
   const [nationId, setNationId] = useState('');
@@ -35,6 +39,8 @@ export function WorldStudio(props: Props) {
   const [undo, setUndo] = useState<EditorDraft[]>([]);
   const [redo, setRedo] = useState<EditorDraft[]>([]);
   const [section, setSection] = useState<'tools' | 'nations' | 'cities' | 'world' | null>(null);
+  const [extent, setExtent] = useState<InspectorExtent>('half');
+  const confirmationTitleId = useId();
   const [problems, setProblems] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
@@ -73,15 +79,13 @@ export function WorldStudio(props: Props) {
   function redoEdit() { const next = redo.at(-1); if (!next) return; setUndo((history) => [...history, draftRef.current]); setRedo((history) => history.slice(0, -1)); props.onChange(next); setProblems([]); }
 
   const toolPanel = <>
-    <div className="studio-section-title"><h2>塑造山海</h2><span>工具</span></div>
-    <div className="studio-tool-grid">{tools.map((item) => <button key={item.id} aria-label={item.label} aria-pressed={tool === item.id} data-testid={`tool-${item.id}`} onClick={() => { setTool(item.id); setNotice(''); if (item.id === 'claim') setLayer('political'); }}><span aria-hidden="true">{item.icon}</span><small>{item.label === '归属选中国家' ? '归属国家' : item.label}</small></button>)}</div>
+    <div className="studio-tool-grid">{tools.map((item) => <button key={item.id} aria-label={item.label} aria-pressed={tool === item.id} data-testid={`tool-${item.id}`} onClick={() => { setTool(item.id); setNotice(''); if (item.id === 'claim') setLayer('political'); }}><Icon name={item.id === 'claim' || item.id === 'unclaim' ? 'flag' : item.id === 'city' || item.id === 'capital' ? 'city' : item.id === 'pan' ? 'map' : 'brush'} /><span>{item.label === '归属选中国家' ? '归属国家' : item.label}</span></button>)}</div>
     <label className="studio-field">笔刷半径 <strong>{radius}</strong><input aria-label="笔刷半径" type="range" min={12} max={100} step={2} value={radius} onChange={(event) => setRadius(Number(event.target.value))} /></label>
     <p className="studio-help">{activeTool.detail}</p>
     {tool === 'claim' && <p className="studio-selected-country">当前国家：{selectedNation?.name ?? '请先在国家面板建国'}</p>}
     <div className="studio-generators"><button onClick={() => confirmGenerated('保留轮廓，重新生成地形？', '大陆轮廓与国家归属保留，山脉、森林和河流将重新生成。', () => generateTerrain(draftRef.current))}>自动生成地形 <span>↗</span></button><button onClick={() => confirmGenerated('重新生成大陆轮廓？', '当前海陆轮廓将被替换，可能影响国家与城市。', () => generateLand(draftRef.current))}>按种子生成大陆 <span>↗</span></button></div>
   </>;
   const nationPanel = <>
-    <div className="studio-section-title"><h2>划定列国</h2><span>{draft.nations.length} 国</span></div>
     <p className="studio-help">自定国名与颜色，亲手涂抹疆域，或让程序按地理分国。此处所有名称均为创作内容。</p>
     <div className="studio-nations">{draft.nations.map((nation) => <div key={nation.id} className={`studio-nation ${selectedNation?.id === nation.id ? 'selected' : ''}`}><button className="studio-nation-select" aria-label={`选择国家 ${nation.name}`} aria-pressed={selectedNation?.id === nation.id} onClick={() => { setNationId(nation.id); setTool('claim'); setLayer('political'); }}><i style={{ background: nation.color }} /><span>{nation.name}</span><small>{draft.cells.filter((cell) => cell.land && cell.ownerId === nation.id).length} 地</small></button>{selectedNation?.id === nation.id && <div className="studio-nation-edit"><input aria-label="选中国家名称" defaultValue={nation.name} key={`${nation.id}-${nation.name}`} maxLength={20} onBlur={(event) => { const name = event.target.value.trim(); if (name && name !== nation.name) commit({ ...draft, nations: draft.nations.map((item) => item.id === nation.id ? { ...item, name } : item) }); }} /><input aria-label="选中国家颜色" type="color" value={nation.color} onChange={(event) => commit({ ...draft, nations: draft.nations.map((item) => item.id === nation.id ? { ...item, color: event.target.value } : item) })} /></div>}</div>)}</div>
     <div className="studio-new-country"><input aria-label="新国家名称" placeholder="给新国家命名" maxLength={20} value={nationName} onChange={(event) => setNationName(event.target.value)} /><input aria-label="新国家颜色" type="color" value={nationColor} onChange={(event) => setNationColor(event.target.value)} /><button onClick={() => { try { const next = addNation(draft, nationName.trim() || `新国${draft.nations.length + 1}`, nationColor); commit(next); setNationId(next.nations.at(-1)?.id ?? ''); setNationName(''); setNationColor(palette[next.nations.length % palette.length]); setTool('claim'); setLayer('political'); } catch (error) { setNotice(String(error)); } }}>建国</button></div>
@@ -90,7 +94,6 @@ export function WorldStudio(props: Props) {
     <button className="studio-wide-button subtle" disabled={!draft.nations.length} onClick={() => attempt(() => fillUnclaimed(draftRef.current), '未分配陆地已按邻近国家分配。')}>分配剩余土地 <small>{landCount - claimedCount} 块未归属</small></button>
   </>;
   const cityPanel = <>
-    <div className="studio-section-title"><h2>城与都</h2><span>{draft.cities.length} 城</span></div>
     <label className="studio-field">新城市名称<input aria-label="新城市名称" value={cityName} maxLength={24} onChange={(event) => setCityName(event.target.value)} /></label>
     <div className="studio-two-buttons"><button aria-pressed={tool === 'city'} onClick={() => setTool('city')}>点选放置城市</button><button aria-pressed={tool === 'capital'} onClick={() => setTool('capital')}>点选设置首都</button></div>
     <p className="studio-help">城市必须落在有归属的陆地上。首都属于所在地国家，每国一座；调整首都不会消灭国家。</p>
@@ -99,19 +102,27 @@ export function WorldStudio(props: Props) {
     <div className="studio-city-list">{draft.cities.map((city) => <div key={city.id}><span className="studio-city-symbol">{city.capital ? '◇' : '▫'}</span><input aria-label={`城市名称 ${city.name}`} defaultValue={city.name} key={`${city.id}-${city.name}`} maxLength={24} onBlur={(event) => { const name = event.target.value.trim(); if (name && name !== city.name) commit({ ...draft, cities: draft.cities.map((item) => item.id === city.id ? { ...item, name } : item) }); }} /><small>{city.capital ? '首都' : '城市'}</small><button aria-label={`移除城市 ${city.name}`} onClick={() => commit({ ...draft, cities: draft.cities.filter((item) => item.id !== city.id) })}>×</button></div>)}</div>
   </>;
   const worldPanel = <>
-    <div className="studio-section-title"><h2>世界草稿</h2><span>本地优先</span></div>
     <label className="studio-field">世界名称<input aria-label="世界名称" value={draft.name} maxLength={40} onChange={(event) => props.onChange({ ...draft, name: event.target.value })} /></label>
     <label className="studio-field">生成种子<input aria-label="生成种子" value={draft.seed} maxLength={80} onChange={(event) => props.onChange({ ...draft, seed: event.target.value })} /></label><p className="studio-help">同一生成种子得到相同初始地理。修改种子后，点击生成才会改变地图。</p>
     <div className="studio-two-buttons"><button onClick={() => makeNew(true)}>空白海洋</button><button onClick={() => makeNew(false)}>新大陆</button></div>
     <div className="studio-storage-actions"><button disabled={busy} onClick={() => void run(props.onSave, '世界草稿已保存。')}>保存草稿</button><button disabled={busy} onClick={() => void run(props.onExport, '世界草稿已导出。')}>导出草稿</button><button disabled={busy} onClick={() => fileRef.current?.click()}>导入草稿</button></div>
-    <p className="studio-save-status" role="status">{props.saveStatus}</p><div className="studio-generators">{props.canResume && <button onClick={props.onResume}>继续已有推演 <span>→</span></button>}<button onClick={props.onDemo}>进入五国测试大陆 <span>→</span></button></div><p className="studio-help">创作沙盒与正式五国设定分别保存；五国测试大陆继续保留。</p>
+    <p className="studio-save-status" role="status">{props.saveStatus}</p>
+    {props.savedRuns.length > 0 && <label className="studio-field">已保存的推演<select aria-label="已保存的推演" defaultValue="" onChange={event => props.onResumeRun(event.target.value)}><option value="" disabled>选择历史世界</option>{props.savedRuns.map(run => <option key={run.id} value={run.id}>{run.name} · {new Date(run.createdAt).toLocaleString('zh-CN')}</option>)}</select></label>}
+    <div className="studio-generators">{props.canResume && <button onClick={props.onResume}>继续已有推演 <span>→</span></button>}<button onClick={props.onDemo}>进入五国测试大陆 <span>→</span></button></div><p className="studio-help">创作沙盒与正式五国设定分别保存；五国测试大陆继续保留。</p>
+    <AppearanceSettings />
+    <details className="world-metadata"><summary>工坊与版本</summary><p>技术预览 · 当前地图与名称均为创作沙盒，不是正式设定。</p><p>构建 {__BUILD_SHA__}</p></details>
   </>;
 
-  return <main className={`world-studio studio-section-${section ?? 'none'}`} data-testid="world-studio">
-    <header className="studio-header"><div className="studio-brand"><span>列</span><div><strong>列国纪</strong><small>世界工坊</small></div></div><div className="studio-heading"><h1>{draft.name || '未命名世界'}</h1><span>画一片大陆，让列国自行生长</span></div><div className="studio-header-actions"><button aria-label="撤销编辑" disabled={!undo.length} onClick={undoEdit}>↶ <span>撤销</span></button><button aria-label="重做编辑" disabled={!redo.length} onClick={redoEdit}>↷ <span>重做</span></button><button className="studio-start" disabled={busy} onClick={() => { const issues = draftProblems(draft); setProblems(issues); if (!issues.length) void run(() => props.onStart(draft)); }}>开始推演 <span>▶</span></button></div></header>
-    <div className="studio-workspace">
-      <aside className="studio-tools-panel">{toolPanel}<div className="studio-desktop-world">{worldPanel}</div></aside>
-      <section className="studio-map-area"><StudioCanvas draft={draft} tool={tool} radius={radius} layer={layer} selectedNation={selectedNation?.id ?? ''} onStrokeStart={() => { strokeRef.current = { before: draftRef.current, current: draftRef.current, points: [] }; }} onStrokePoint={(point) => {
+  const titles = { tools: '画笔与地形', nations: '国家与疆域', cities: '城市与首都', world: '世界草稿' };
+  const feedback = (props.error || notice) && <div className="inspector-feedback" tabIndex={0} aria-label="操作反馈"><div className="inspector-notice" data-testid="studio-notice" role={props.error ? 'alert' : 'status'}><span>{props.error || notice}</span>{!props.error && <button aria-label="关闭工坊提示" onClick={() => setNotice('')}><Icon name="close" /></button>}</div></div>;
+  return <main className="world-studio workbench" data-mode="studio" data-inspector-open={!!section} data-testid="world-studio">
+    <header className="workbench-header">
+      <div className="workbench-identity"><h1>{draft.name || '未命名世界'}</h1><small className="mode-label">世界工坊 · 创作沙盒</small></div>
+      <div className="studio-header-actions"><button aria-label="撤销编辑" disabled={!undo.length} onClick={undoEdit}><Icon name="chevron-left" /><span>撤销</span></button><button aria-label="重做编辑" disabled={!redo.length} onClick={redoEdit}><Icon name="chevron-left" className="icon-redo" /><span>重做</span></button><button className="studio-start" disabled={busy} onClick={() => { const issues = draftProblems(draft); setProblems(issues); if (!issues.length) void run(() => props.onStart(draft)); }}>开始推演</button></div>
+    </header>
+    <div className="studio-workspace workbench-stage">
+      <div className="workbench-map studio-map-area">
+<StudioCanvas draft={draft} tool={tool} radius={radius} layer={layer} selectedNation={selectedNation?.id ?? ''} onStrokeStart={() => { strokeRef.current = { before: draftRef.current, current: draftRef.current, points: [] }; }} onStrokePoint={(point) => {
         const stroke = strokeRef.current; if (!stroke) return;
         if (point.x < 0 || point.y < 0 || point.x > draft.width || point.y > draft.height) return;
         try { stroke.points.push(point); const recent = stroke.points.slice(-2); const next = paintStroke(stroke.current, recent, tool as BrushTool, radius, selectedNation?.id); stroke.current = next; props.onChange(next); draftRef.current = next; }
@@ -122,16 +133,18 @@ export function WorldStudio(props: Props) {
         else if (stroke.current !== stroke.before) { setUndo((history) => [...history.slice(-23), stroke.before]); setRedo([]); setProblems([]); }
         strokeRef.current = null;
       }} onPlace={(point) => { const cell = cellAt(draftRef.current, point); if (!cell?.land || !cell.ownerId) { setNotice('请在已归属国家的陆地上放置城市。'); return; } attempt(() => placeCity(draftRef.current, point, cityName.trim() || '新城', tool === 'capital')); }} />
+
         <div className="studio-layer-toggle" aria-label="工坊地图图层"><button aria-pressed={layer === 'terrain'} onClick={() => setLayer('terrain')}>自然地形</button><button aria-pressed={layer === 'political'} onClick={() => setLayer('political')}>国家政区</button></div>
-        <div className="studio-map-readout"><span>{landCount} 陆地区域</span><i /><span>{draft.nations.length} 国家</span><i /><span>{draft.cities.length} 城市</span><strong>{activeTool.label}</strong></div>
-        {(props.error || notice) && <div className="studio-notice" role="status"><span>{props.error || notice}</span><button aria-label="关闭工坊提示" onClick={() => setNotice('')}>×</button></div>}
-        {problems.length > 0 && <div className="studio-problems" role="alert"><h2>开始之前，还需要</h2><ul>{problems.map((problem) => <li key={problem}>{problem}</li>)}</ul><button onClick={() => setProblems([])}>继续编辑</button></div>}
-      </section>
-      <aside className="studio-details-panel"><div className="studio-panel-tabs"><button aria-pressed={section !== 'cities'} onClick={() => setSection('nations')}>国家</button><button aria-pressed={section === 'cities'} onClick={() => setSection('cities')}>城市</button></div>{section === 'cities' ? cityPanel : nationPanel}</aside>
+      </div>
+      <div className="context-toolbar studio-tool-context"><div className="context-primary"><Icon name={tool === 'pan' ? 'map' : tool === 'city' || tool === 'capital' ? 'city' : tool === 'claim' || tool === 'unclaim' ? 'flag' : 'brush'} /><strong>{activeTool.label}</strong><button onClick={() => setSection('tools')}>更换工具</button>{tool !== 'pan' && <button aria-label="结束绘制并平移" onClick={() => setTool('pan')}>结束绘制</button>}</div><div className="context-secondary">{tool === 'claim' ? `归属：${selectedNation?.name ?? '请先建国'}` : tool === 'city' || tool === 'capital' ? `城名：${cityName || '新城'}` : tool === 'pan' ? '拖动浏览 · 双指缩放' : `笔刷半径 ${radius}`}<span data-testid="studio-land-count">{landCount} 陆地区域</span><span>{draft.nations.length} 国 · {draft.cities.length} 城</span></div></div>
+      {!section && feedback && <div className="workbench-status">{feedback}</div>}
+      {problems.length > 0 && <div className="studio-problems" role="alert"><h2>开始之前，还需要</h2><ul>{problems.map(problem => <li key={problem}>{problem}</li>)}</ul><button onClick={() => setProblems([])}>继续编辑</button></div>}
+      {section && <ContextInspector panel={section} title={titles[section]} subtitle={section === 'nations' ? `${draft.nations.length} 个创作国家` : section === 'cities' ? `${draft.cities.length} 座城市` : undefined} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭工坊面板" actions={feedback}>
+        <div className={section === 'world' ? 'world-panel' : `studio-${section}-content`}>{section === 'tools' ? toolPanel : section === 'nations' ? nationPanel : section === 'cities' ? cityPanel : worldPanel}</div>
+      </ContextInspector>}
     </div>
-    <nav className="studio-mobile-nav" aria-label="世界工坊工具">{([{ id: 'tools', label: '画笔', icon: '◒' }, { id: 'nations', label: '国家', icon: '⚑' }, { id: 'cities', label: '城市', icon: '◇' }, { id: 'world', label: '世界', icon: '▣' }] as const).map((item) => <button key={item.id} aria-pressed={section === item.id} onClick={() => setSection(section === item.id ? null : item.id)}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
-    {section && <aside className="studio-mobile-drawer"><button className="studio-drawer-close" aria-label="关闭工坊面板" onClick={() => setSection(null)}>×</button>{section === 'tools' ? toolPanel : section === 'nations' ? nationPanel : section === 'cities' ? cityPanel : worldPanel}</aside>}
-    <input ref={fileRef} type="file" className="visually-hidden" aria-label="选择世界草稿文件" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) setConfirmation({ title: '导入并替换当前草稿？', detail: `将验证「${file.name}」，通过后替换当前编辑内容。请先保存或导出需要保留的草稿。`, action: () => { void run(async () => { await props.onImport(file); setUndo([]); setRedo([]); }, '草稿已导入。'); } }); }} />
-    {confirmation && <div className="studio-confirm-backdrop"><section role="alertdialog" aria-modal="true" aria-labelledby="studio-confirm-title" className="studio-confirm" onKeyDown={(event) => { if (event.key === 'Escape') setConfirmation(null); if (event.key === 'Tab') { const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button'); if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons[buttons.length - 1].focus(); } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) { event.preventDefault(); buttons[0].focus(); } } }}><small>确认本次编辑</small><h2 id="studio-confirm-title">{confirmation.title}</h2><p>{confirmation.detail}</p><div><button autoFocus onClick={() => setConfirmation(null)}>取消，保留当前草稿</button><button className="studio-start" onClick={() => { const action = confirmation.action; setConfirmation(null); action(); }}>确认执行</button></div></section></div>}
+    <nav className="workbench-nav" aria-label="世界工坊工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'tools', label: '画笔', icon: 'brush' }, { id: 'nations', label: '国家', icon: 'flag' }, { id: 'cities', label: '城市', icon: 'city' }, { id: 'world', label: '世界', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { setSection(item.id); if (item.id === null) setTool('pan'); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
+    <input ref={fileRef} type="file" className="visually-hidden" aria-label="选择世界草稿文件" accept="application/json,.json" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) setConfirmation({ title: '导入并替换当前草稿？', detail: `将验证「${file.name}」，通过后替换当前编辑内容。请先保存或导出需要保留的草稿。`, action: () => { void run(async () => { await props.onImport(file); setUndo([]); setRedo([]); }, '草稿已导入。'); } }); }} />
+    {confirmation && <ModalDialog titleId={confirmationTitleId} className="studio-confirm" locked={busy} onDismiss={() => setConfirmation(null)}><small>确认本次编辑</small><h2 id={confirmationTitleId}>{confirmation.title}</h2><p>{confirmation.detail}</p><div className="confirm-actions"><button autoFocus disabled={busy} onClick={() => setConfirmation(null)}>取消，保留当前草稿</button><button className="studio-start" disabled={busy} onClick={() => { const action = confirmation.action; setConfirmation(null); action(); }}>确认执行</button></div></ModalDialog>}
   </main>;
 }

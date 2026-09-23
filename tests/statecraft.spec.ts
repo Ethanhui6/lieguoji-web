@@ -1,13 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import type { World } from '../src/sim/types';
+import {studioPanel,gamePanel,expectNavigation} from './helpers/navigation';
 
 async function visibleButton(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
-}
-async function studioPanel(page: Page, name: string) {
-  const nav = page.getByRole('navigation', { name: '世界工坊工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name, exact: true }).click();
-  else await page.locator('.studio-panel-tabs').getByRole('button', { name, exact: true }).click();
 }
 async function createWorld(page: Page) {
   await page.goto('/');
@@ -21,23 +17,41 @@ async function createWorld(page: Page) {
   await visibleButton(page, '自动城池与首都');
   await page.getByRole('alertdialog').getByRole('button', { name: '确认执行' }).click();
   if (await close.isVisible()) await close.click();
-  await visibleButton(page, '开始推演 ▶');
+  await visibleButton(page, '开始推演');
   await expect(page.getByRole('button', { name: '推进一日' })).toBeEnabled();
   await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();
 }
 async function government(page: Page) {
-  await expect(page.locator('.game-layout')).toBeVisible();
-  const nav = page.getByRole('navigation', { name: '游戏工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name: '国家', exact: true }).click();
-  else await page.locator('.right-panel-switch').getByRole('button', { name: '国家', exact: true }).click();
+  await gamePanel(page, '国家');
   await expect(page.getByTestId('government-panel')).toBeVisible();
 }
 async function save(page: Page) {
   await expect(page.locator('.game-layout')).toBeVisible();
-  const nav = page.getByRole('navigation', { name: '游戏工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name: '存档', exact: true }).click();
+  await gamePanel(page, '世界');
+  const before = await savedRevision(page);
   await visibleButton(page, '保存');
+  // The same-day label can still describe an earlier save. Wait for this CAS
+  // commit, then keep each following world/rule assertion an exact comparison.
+  await expect.poll(() => savedRevision(page)).toBe(before + 1);
+  await expect(page.getByRole('button', { name: '保存', exact: true })).toBeEnabled();
   await expect(page.getByText(/已保存 · 第/).filter({ visible: true })).toBeVisible();
+}
+async function savedRevision(page: Page): Promise<number> {
+  const id = new URL(page.url()).searchParams.get('world')!;
+  return page.evaluate(id => new Promise<number>((resolve, reject) => {
+    const request = indexedDB.open(`lieguoji-custom-${id}-v1`, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result, transaction = db.transaction('saves', 'readonly');
+      const revision = transaction.objectStore('saves').get('revision');
+      transaction.oncomplete = () => {
+        db.close();
+        if (typeof revision.result !== 'number') reject(new Error('Expected an existing save revision'));
+        else resolve(revision.result);
+      };
+      transaction.onerror = () => { db.close(); reject(transaction.error); };
+    };
+  }), id);
 }
 async function savedWorld(page: Page): Promise<World> {
   const id = new URL(page.url()).searchParams.get('world')!;
@@ -77,6 +91,8 @@ test('国家经营真实账目、政策取消与过期保护、确认后保存�
   expect(canceled.statecraft).toEqual(initial.statecraft);
   expect(canceled.events).toEqual(initial.events);
   await government(page);
+  await expect(page.getByLabel('查看国家', { exact: true })).toHaveValue(nationId);
+  await expect(page.getByLabel('国家政策', { exact: true })).toHaveValue('civilian');
   await page.getByRole('button', { name: '继续推演' }).click();
   await visibleButton(page, '预览国策');
   await expect(page.getByRole('button', { name: '继续推演' })).toBeEnabled();
@@ -130,6 +146,8 @@ test('外交取消无修改、陆邻宣战与停战保护、刷新保留双边�
   await save(page);
   expect((await savedWorld(page)).statecraft).toEqual(initial.statecraft);
   await government(page);
+  await expect(page.getByLabel('查看国家', { exact: true })).toHaveValue(a);
+  await expect(page.getByLabel('外交对象', { exact: true })).toHaveValue(b);
   await visibleButton(page, '预览宣战');
   await visibleButton(page, '确认宣战');
   await expect(page.getByTestId('diplomatic-status')).toContainText('交战');
@@ -137,6 +155,8 @@ test('外交取消无修改、陆邻宣战与停战保护、刷新保留双边�
   await save(page);
   expect(pair(await savedWorld(page)).status).toBe('war');
   await government(page);
+  await expect(page.getByLabel('查看国家', { exact: true })).toHaveValue(a);
+  await expect(page.getByLabel('外交对象', { exact: true })).toHaveValue(b);
   await visibleButton(page, '预览停战');
   await expect(page.getByTestId('state-action-preview')).toBeVisible();
   await visibleButton(page, '确认停战');
@@ -161,9 +181,5 @@ test('外交取消无修改、陆邻宣战与停战保护、刷新保留双边�
   await expect(page.getByTestId('diplomatic-status')).toContainText('和平');
   await expect(page.getByTestId('truce-status')).toContainText('剩余 10 日');
   expect(await savedWorld(page)).toEqual(saved);
-  const controls = page.getByRole('navigation', { name: '游戏工具' });
-  if (await controls.isVisible()) {
-    expect(await controls.getByRole('button').count()).toBe(6);
-    for (const item of await controls.getByRole('button').all()) { const box = await item.boundingBox(); expect(box!.height).toBeGreaterThanOrEqual(44); expect(box!.width).toBeGreaterThanOrEqual(44); }
-  }
+  await expectNavigation(page, 'game');
 });

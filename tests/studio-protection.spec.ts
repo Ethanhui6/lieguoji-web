@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { createWorld } from '../src/sim/demo';
 import { encodeSave, type SaveEnvelope } from '../src/persistence';
+import {studioPanel,closeInspector as closeStudioPanel,gamePanel} from './helpers/navigation';
 
 type Slots = { current: unknown; backup: unknown; revision: unknown };
 type StudioEnvelope = {
@@ -13,29 +14,20 @@ async function click(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
 }
 
-async function studioPanel(page: Page, name: string) {
-  const navigation = page.getByRole('navigation', { name: '世界工坊工具' });
-  if (await navigation.isVisible()) await navigation.getByRole('button', { name, exact: true }).click();
-  else if (name === '国家' || name === '城市') await page.locator('.studio-panel-tabs').getByRole('button', { name, exact: true }).click();
-}
 
-async function closeStudioPanel(page: Page) {
-  const close = page.getByRole('button', { name: '关闭工坊面板' });
-  if (await close.isVisible()) await close.click();
-}
 
 async function confirmStudio(page: Page) {
   await page.getByRole('alertdialog').getByRole('button', { name: '确认执行' }).click();
 }
 
 async function saveDraft(page: Page) {
+  await studioPanel(page, '世界');
   await click(page, '保存草稿');
   await expect(page.locator('.studio-save-status').filter({ visible: true })).toHaveText('草稿已保存');
 }
 
 async function saveGame(page: Page) {
-  const navigation = page.getByRole('navigation', { name: '游戏工具' });
-  if (await navigation.isVisible()) await navigation.getByRole('button', { name: '存档', exact: true }).click();
+  await gamePanel(page, '世界');
   await click(page, '保存');
   await expect(page.getByText(/已保存 · 第/).filter({ visible: true })).toBeVisible();
 }
@@ -83,7 +75,7 @@ test('自建推演拒绝战役及另一世界导入，原历史和版本计数�
   await click(page, '自动城池与首都');
   await confirmStudio(page);
   await closeStudioPanel(page);
-  await click(page, '开始推演 ▶');
+  await click(page, '开始推演');
   await expect(page.getByRole('button', { name: '推进一日' })).toBeEnabled();
   for (let day = 1; day <= 2; day++) {
     await page.getByRole('button', { name: '推进一日' }).click();
@@ -102,6 +94,7 @@ test('自建推演拒绝战役及另一世界导入，原历史和版本计数�
   const demo = await encodeSave(createWorld());
 
   for (const [name, incoming] of [['demo.save.json', demo], ['other-world.save.json', foreign]] as const) {
+    await gamePanel(page, '世界');
     await page.getByLabel('选择导入存档').setInputFiles({
       name, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(incoming)),
     });
@@ -143,13 +136,13 @@ test('未来草稿 schema 在有效备份存在时仍锁写，UI 保存和导入
 
   await page.reload();
   await expect(page.getByTestId('world-studio')).toBeVisible();
-  await expect(page.locator('.studio-notice')).toContainText('更新版本');
+  await expect(page.getByTestId('studio-notice')).toContainText('更新版本');
   await studioPanel(page, '世界');
   await expect(page.locator('.studio-save-status').filter({ visible: true })).toContainText('锁定保护');
   await expect(page.getByLabel('世界名称', { exact: true }).filter({ visible: true })).not.toHaveValue('有效的旧备份');
   await page.getByLabel('世界名称', { exact: true }).filter({ visible: true }).fill('不能覆盖原档的新稿');
   await click(page, '保存草稿');
-  await expect(page.locator('.studio-notice')).toContainText('已锁定写入');
+  await expect(page.getByTestId('studio-notice')).toContainText('已锁定写入');
   await expect(page.getByText('世界草稿已保存。', { exact: true })).toHaveCount(0);
   expect(await readSlots(page, dbName, 'records')).toEqual(protectedSlots);
 
@@ -157,11 +150,11 @@ test('未来草稿 schema 在有效备份存在时仍锁写，UI 保存和导入
     name: 'valid-old-draft.world.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved.backup)),
   });
   await confirmStudio(page);
-  await expect(page.locator('.studio-notice')).toContainText('已锁定写入');
+  await expect(page.getByTestId('studio-notice')).toContainText('已锁定写入');
   await expect(page.getByText('草稿已导入。', { exact: true })).toHaveCount(0);
   expect(await readSlots(page, dbName, 'records')).toEqual(protectedSlots);
   await page.reload();
-  await expect(page.locator('.studio-notice')).toContainText('更新版本');
+  await expect(page.getByTestId('studio-notice')).toContainText('更新版本');
   expect(await readSlots(page, dbName, 'records')).toEqual(protectedSlots);
   await page.screenshot({ path: info.outputPath('future-studio-save-protected.png'), fullPage: true });
   expect(errors).toEqual([]);

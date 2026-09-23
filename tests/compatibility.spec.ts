@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { HistoryFile, HistoryRecord } from '../src/history/store';
 import type { World } from '../src/sim/types';
+import {gamePanel as drawer,studioPanel} from './helpers/navigation';
 
 const ENGINE = '65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5';
 const UNKNOWN_ENGINE = 'f'.repeat(64);
@@ -100,12 +101,6 @@ async function runtime(page: Page, info: TestInfo) {
 
 async function button(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
-}
-async function drawer(page: Page, name: string) {
-  await expect(page.locator('.game-layout')).toBeVisible();
-  const nav = page.getByRole('navigation', { name: '游戏工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name, exact: true }).click();
-  else if (name === '国家' || name === '军令') await page.locator('.right-panel-switch').getByRole('button', { name, exact: true }).click();
 }
 async function historyPanel(page: Page) {
   await drawer(page, '纪事');
@@ -304,6 +299,7 @@ test('0.4 legacy 黄金继续旧规则，经营升级必须显式独立副本且
     // History v1 has no operating-economy migration action. Exercise the existing
     // explicit copy entry using its original synthetic ordinary-save source.
     await page.goto('/'); await expect(page.getByTestId('studio-canvas')).toBeVisible();
+    await studioPanel(page, '世界');
     await page.getByLabel('选择世界草稿文件', { exact: true }).setInputFiles(fixturePath('legacy-source.json'));
     await page.getByRole('alertdialog').getByRole('button', { name: '确认执行', exact: true }).click();
     await expect(page.getByRole('button', { name: '推进一日', exact: true })).toBeEnabled();
@@ -353,7 +349,7 @@ test('未知引擎的合法历史只读保留与导出，不回放、不计算�
     await writeIsolatedHistory(page, id, slots, usage);
     const before = await historySlots(page, id);
     await page.goto(`/?world=${id}`);
-    await expect(page.getByTestId('replay-banner')).toContainText('规则引擎未注册');
+    await expect(page.getByTestId('replay-banner')).toContainText('引擎未注册');
     await expect(page.getByTestId('day-number')).toHaveText('66');
     await expect(page.getByRole('button', { name: '推进一日', exact: true })).toHaveCount(0);
     await historyPanel(page);
@@ -376,7 +372,7 @@ test('未知引擎的合法历史只读保留与导出，不回放、不计算�
     await drawer(page, '存档');
     await expect(page.getByRole('button', { name: '保存', exact: true }).filter({ visible: true })).toBeDisabled();
     expect(await historySlots(page, id)).toEqual(before);
-    await page.reload(); await expect(page.getByTestId('replay-banner')).toContainText('规则引擎未注册');
+    await page.reload(); await expect(page.getByTestId('replay-banner')).toContainText('引擎未注册');
     expect(await historySlots(page, id)).toEqual(before);
     expect(evidence.observations.filter(item => item.kind === 'replay' || item.kind === 'sim')).toEqual([]);
     await historyPanel(page); await page.screenshot({ path: info.outputPath('unknown-engine-preserved.png'), fullPage: true });

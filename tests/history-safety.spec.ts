@@ -1,29 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
+import {studioPanel,closeInspector as closeStudioPanel,closeInspector as closeChronicle,historyPanel,backToStudio} from './helpers/navigation';
 
 type HistoryEvidence = { slots: string; slotBytes: number; pairBytes: number; usage: string; revision: number; day: number; sequence: number; hasBackup: boolean };
 
 async function button(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
-}
-async function studioPanel(page: Page, name: string) {
-  const nav = page.getByRole('navigation', { name: '世界工坊工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name, exact: true }).click();
-  else if (name !== '世界') await page.locator('.studio-panel-tabs').getByRole('button', { name, exact: true }).click();
-}
-async function closeStudioPanel(page: Page) {
-  const close = page.getByRole('button', { name: '关闭工坊面板', exact: true });
-  if (await close.isVisible()) await close.click();
-}
-async function historyPanel(page: Page) {
-  const nav = page.getByRole('navigation', { name: '游戏工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name: '纪事', exact: true }).click();
-  await button(page, '历史');
-  await expect(page.getByTestId('history-panel')).toBeVisible();
-}
-async function closeChronicle(page: Page) {
-  const close = page.getByRole('button', { name: '关闭行军纪事', exact: true });
-  if (await close.isVisible()) await close.click();
 }
 async function createRecording(page: Page) {
   await page.goto('/');
@@ -34,7 +16,7 @@ async function createRecording(page: Page) {
   await studioPanel(page, '城市'); await button(page, '自动城池与首都');
   await page.getByRole('alertdialog').getByRole('button', { name: '确认执行', exact: true }).click();
   await closeStudioPanel(page);
-  await button(page, '开始推演 ▶');
+  await button(page, '开始推演');
   await expect(page.getByRole('button', { name: '推进一日', exact: true })).toBeEnabled();
   await historyPanel(page);
   await button(page, '开始记录副本');
@@ -111,7 +93,7 @@ async function expectWorkerFault(page: Page) {
   expect(await page.evaluate(() => (window as unknown as { historyWorkerFailures: number }).historyWorkerFailures)).toBe(1);
 }
 async function saveInStudio(page: Page) {
-  await button(page, '世界工坊');
+  await backToStudio(page);
   await expect(page.getByTestId('world-studio')).toBeVisible();
   await studioPanel(page, '世界');
   await button(page, '保存草稿');
@@ -132,9 +114,10 @@ test('历史写入配额故障保持整对快照与备份，暂停锁写后刷�
   expect(await page.evaluate(() => (window as unknown as { historyQuotaFailures: number }).historyQuotaFailures)).toBe(1);
   expect(await evidence(page, storageId)).toEqual(before);
 
-  // A second real action must encounter the write lock, not silently resume.
-  await page.getByRole('button', { name: '推进一日', exact: true }).click();
-  await expect(page.getByRole('alert').filter({ hasText: '历史写入已锁定' }).first()).toBeVisible();
+  // Protection now blocks new input before it can reach the locked writer.
+  await expect(page.getByRole('button', { name: '推进一日', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '继续推演', exact: true })).toBeDisabled();
+  await expect(page.getByRole('combobox', { name: '推演速度', exact: true })).toBeDisabled();
   await expect(page.getByTestId('day-number')).toHaveText('1');
   expect(await evidence(page, storageId)).toEqual(before);
   await historyPanel(page);

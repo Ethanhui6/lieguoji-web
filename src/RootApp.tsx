@@ -126,7 +126,6 @@ export default function RootApp(){
  if(screen==='demo'||screen==='simulation')return <div inert={operating} aria-busy={operating}><Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined} onRecord={screen==='simulation'?record:undefined} onBranch={branch} onImportHistory={importHistory}/></Suspense></div>;
  if(!loaded)return <main className="loading-state" style={{minHeight:'100dvh'}}><h1>正在打开世界工坊</h1><p>读取地图草稿与历史世界…</p></main>;
  return <div inert={operating} aria-busy={operating}>
-  {workspace.runs.length>1&&<div className="world-archive"><label>已保存的推演 <select aria-label="已保存的推演" defaultValue="" onChange={e=>{void resume(e.target.value);}}><option value="" disabled>选择历史世界</option>{workspace.runs.map(r=><option key={r.id} value={r.id}>{r.name} · {new Date(r.createdAt).toLocaleString('zh-CN')}</option>)}</select></label></div>}
-  <WorldStudio draft={workspace.draft} onChange={change} onStart={start} onDemo={demo} onSave={save} onExport={exportDraft} onImport={importDraft} saveStatus={saveStatus} error={error} onResume={()=>void resume()} canResume={workspace.runs.length>0}/>
+  <WorldStudio draft={workspace.draft} onChange={change} onStart={start} onDemo={demo} onSave={save} onExport={exportDraft} onImport={importDraft} saveStatus={saveStatus} error={error} onResume={()=>void resume()} canResume={workspace.runs.length>0} savedRuns={workspace.runs} onResumeRun={id=>{void resume(id);}}/>
  </div>;
 }

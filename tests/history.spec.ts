@@ -2,15 +2,10 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs/promises';
 import type { World } from '../src/sim/types';
 import type { HistoryRecord, HistoryFile } from '../src/history/store';
+import {gamePanel as drawer,studioPanel,closeInspector,backToStudio} from './helpers/navigation';
 
 const runId = (page: Page) => new URL(page.url()).searchParams.get('world')!;
 async function button(page: Page, name: string) { await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click(); }
-async function drawer(page: Page, name: string) {
-  await expect(page.locator('.game-layout')).toBeVisible();
-  const nav = page.getByRole('navigation', { name: '游戏工具' });
-  if (await nav.isVisible()) await nav.getByRole('button', { name, exact: true }).click();
-  else if (name === '国家' || name === '军令') await page.locator('.right-panel-switch').getByRole('button', { name, exact: true }).click();
-}
 async function history(page: Page) {
   await drawer(page, '纪事');
   await page.locator('.chronicle-tabs').getByRole('button', { name: '历史', exact: true }).click();
@@ -19,13 +14,11 @@ async function history(page: Page) {
 async function createWorld(page: Page) {
   await page.goto('/'); await expect(page.getByTestId('studio-canvas')).toBeVisible();
   for (const [name, action] of [['国家', '自动分国'], ['城市', '自动城池与首都']]) {
-    const nav = page.getByRole('navigation', { name: '世界工坊工具' });
-    if (await nav.isVisible()) await nav.getByRole('button', { name, exact: true }).click();
-    else await page.locator('.studio-panel-tabs').getByRole('button', { name, exact: true }).click();
+    await studioPanel(page, name);
     await button(page, action); await page.getByRole('alertdialog').getByRole('button', { name: '确认执行' }).click();
-    const close = page.getByRole('button', { name: '关闭工坊面板' }); if (await close.isVisible()) await close.click();
+    await closeInspector(page);
   }
-  await button(page, '开始推演 ▶');
+  await button(page, '开始推演');
   await expect(page.locator('.game-layout')).toBeVisible();
   await expect(page.getByRole('button', { name: '推进一日' })).toBeEnabled();
 }
@@ -152,8 +145,9 @@ test('历史逐条与日期定位、播放暂停、地图账册只读、退出�
   await button(page, '退出回放'); await expect(page.getByTestId('replay-banner')).toHaveCount(0);
   await expect(page.getByTestId('day-number')).toHaveText('3'); await expect(page.getByRole('button', { name: '推进一日' })).toBeEnabled();
   expect((await historySlots(page, id)).bytes).toBe(source.bytes);
-  await button(page, '进入历史回放'); await seek(page, 0); await button(page, '世界工坊');
+  await button(page, '进入历史回放'); await seek(page, 0); await backToStudio(page);
   await expect(page.getByTestId('studio-canvas')).toBeVisible(); expect((await historySlots(page, id)).bytes).toBe(source.bytes);
+  await studioPanel(page, '世界');
   await expect(page.getByRole('combobox', { name: '已保存的推演' })).toBeVisible();
   await page.getByRole('combobox', { name: '已保存的推演' }).selectOption(id);
   await expect(page).toHaveURL(url); await expect(page.locator('.game-layout')).toBeVisible(); await expect(page.getByTestId('day-number')).toHaveText('3');

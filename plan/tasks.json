@@ -224,15 +224,17 @@
       "dependsOn": [
         "M3-003"
       ],
-      "status": "todo",
-      "acceptance": "回放分支不污染原史",
-      "evidence": [],
+      "status": "done",
+      "acceptance": "以ADR0004拆分历史记录/只读回放/独立分支三项；皇室身份与继承另待定义，规划完成不代表功能完成",
+      "evidence": [
+        "docs/adr/0004-history-replay.md"
+      ],
       "id": "M4-PLAN"
     },
     {
       "title": "第一次长征",
       "dependsOn": [
-        "M4-PLAN",
+        "M4-004",
         "ACCEPT-MAP"
       ],
       "status": "todo",
@@ -298,6 +300,61 @@
       "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/13",
       "branch": "main",
       "commit": "b4f85b572450fdc2b49ef1ad1a6a220f13f67ac6"
+    },
+    {
+      "id": "M4-001",
+      "title": "成功输入、检查点与原子历史存储",
+      "dependsOn": [
+        "M3-003"
+      ],
+      "acceptance": "从当前日创建独立记录副本；连续序号、SHA256、32步检查点、规则内容指纹、确定性重算；世界与历史同事务CAS/备份，内外未来版本锁写，容量/故障不污染原局",
+      "status": "pending_acceptance",
+      "branch": "feat/history-replay",
+      "evidence": [
+        "docs/evidence/2026-09-23-history.md"
+      ],
+      "issue": 16,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/16"
+    },
+    {
+      "id": "M4-002",
+      "title": "独立线程只读历史回放",
+      "dependsOn": [
+        "M4-001"
+      ],
+      "acceptance": "按序号与日期定位、播放暂停、历史地图/账册；回放独立Worker且所有写入口拒绝，退出回原局，移动/平板/桌面仿真验证源存储字节不变",
+      "status": "pending_acceptance",
+      "branch": "feat/history-replay",
+      "evidence": [
+        "docs/evidence/2026-09-23-history.md"
+      ],
+      "issue": 17,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/17"
+    },
+    {
+      "id": "M4-003",
+      "title": "历史分支、归档导入导出与发布验收",
+      "dependsOn": [
+        "M4-002"
+      ],
+      "acceptance": "冻结时点确认/取消，重验父链后建立新身份分支，源历史不改；历史包独立校验及只读导入，坏/未来档拒绝；保存刷新、真实CI、HTTPS与Worker验证通过",
+      "status": "pending_acceptance",
+      "branch": "feat/history-replay",
+      "evidence": [
+        "docs/evidence/2026-09-23-history.md"
+      ],
+      "issue": 18,
+      "issueUrl": "https://github.com/Ethanhui6/lieguoji-web/issues/18"
+    },
+    {
+      "id": "M4-004",
+      "title": "皇室人物、谱系与继承的沙盒规则",
+      "status": "todo",
+      "dependsOn": [
+        "M4-003"
+      ],
+      "acceptance": "先明确玩家自建世界的皇室人物、亲属、君主与继承规则，再实现可解释的政权身份变化和版本化保存/回放；CANON未知正式人物不编造，不把现有dynastyId引用当作已完成皇室系统",
+      "evidence": []
     }
   ],
   "milestones": [
@@ -309,5 +366,5 @@
     "M5",
     "M6"
   ],
-  "phaseState": "M0/M1/M2/M3基础闭环已发布；0.3.0生产b4f85b5，163单测/39云端浏览器首次通过，正式HTTPS18核心场景通过。M3基础经营、和平战争、可解释决策与旧局副本验收完成；M4历史记录/回放/独立分支待实现，正式核图与真机独立待验。"
+  "phaseState": "M0-M3已发布0.3.0/a25321b；M4历史三项本地实现及检查完成：260单测，60个浏览器场景首轮54+修正复测15已覆盖通过。待真实CI与HTTPS发布验收，三项pending_acceptance。M4-004皇室待实施，正式核图与真机独立待验。"
 }

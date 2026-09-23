@@ -1,5 +1,13 @@
 # 架构
 
+## 历史记录与回放 0.4.0
+
+历史不改变 World schema/rules；HistoryLog 格式1额外保存初态、成功输入、连续序号/状态hash、32步检查点、规则源内容指纹和可选父分支引用。sim Worker串行处理输入与异步hash；useGame串行覆盖请求及持久化，世界+历史事务提交后才发布新的UI状态。失败恢复已提交状态并锁写暂停。
+
+历史运行分配 run-h UUID，独立 lieguoji-history-v1 库的 runs/meta 同事务管理整对current/backup/revision与200MiB总预算，旧普通保存API不会触及。readOnly归档storageId可区别于原HistoryLog.runId，包内容保持原样；可写运行的三处身份必须相等。工坊索引仍schema1，支持三端选回任何已登记运行。
+
+replay.worker独立核验全序列，再按检查点定位；没有持久化入口。live状态与replay状态分开，界面和hook双层只读护栏。分支在根层再次验证来源时点及hash，分配新身份；历史导入先完整重算，随后登记为只读归档。异步恢复、导入和分支受操作锁与导航代际保护；原生dialog阻止底栏/地图穿透确认。详见adr/0004-history-replay.md。
+
 React 管理界面，PixiJS 8 负责二维地图；地图读取 World 快照而不自行模拟战争。
 src/sim 为纯 TypeScript 确定性规则与测试大陆数据；sim.worker.ts 是浏览器 Web Worker，所有运行中命令/步进经带请求 ID 的消息执行。
 useGame.ts 负责线程请求、超时、暂停调速和持久化接口；切页或卸载终止线程。预览调用同一 sim-core 规则，确认时由 Worker 再校验。

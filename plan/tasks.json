@@ -529,48 +529,76 @@
       "id": "PH03",
       "title": "大世界规模原型与性能合同",
       "phase": "PH03",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [
         "PH01"
       ],
       "acceptance": "提交原始测量与设备信息；明确地理样本不等于模拟实体；标准大世界目标有实测依据；降显示质量不改世界逻辑。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-09-24-ph03-scale.md",
+        "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+        "docs/evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json"
+      ],
       "workItems": [
         {
           "id": "PH03-T1",
           "title": "构建16k/65k/262k地理候选及固定种子",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「构建16k/65k/262k地理候选及固定种子」，并提供本阶段对应验收事实。提交原始测量与设备信息；明确地理样本不等于模拟实体；标准大世界目标有实测依据；降显示质量不改世界逻辑。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph03-scale.md",
+            "docs/PH03_MEASUREMENT_PROTOCOL.md",
+            "src/bench/scale/fixture.ts",
+            "src/bench/scale/fixture.test.ts",
+            "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+            "docs/evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json"
+          ]
         },
         {
           "id": "PH03-T2",
           "title": "测量地理、行政、城市、军队、人物的独立预算",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「测量地理、行政、城市、军队、人物的独立预算」，并提供本阶段对应验收事实。提交原始测量与设备信息；明确地理样本不等于模拟实体；标准大世界目标有实测依据；降显示质量不改世界逻辑。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph03-scale.md",
+            "src/bench/scale/entity-budget.ts",
+            "src/bench/scale/entity-budget-bridge.ts",
+            "src/bench/scale/entity-budget.worker.ts",
+            "scripts/bench-scale.mjs",
+            "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+            "docs/evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json"
+          ]
         },
         {
           "id": "PH03-T3",
           "title": "测量帧时、生成、模拟、内存、存档和seek",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「测量帧时、生成、模拟、内存、存档和seek」，并提供本阶段对应验收事实。提交原始测量与设备信息；明确地理样本不等于模拟实体；标准大世界目标有实测依据；降显示质量不改世界逻辑。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph03-scale.md",
+            "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+            "docs/evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json"
+          ]
         },
         {
           "id": "PH03-T4",
           "title": "锁定具名设备档、降级策略和验收阈值",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「锁定具名设备档、降级策略和验收阈值」，并提供本阶段对应验收事实。提交原始测量与设备信息；明确地理样本不等于模拟实体；标准大世界目标有实测依据；降显示质量不改世界逻辑。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph03-scale.md",
+            "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+            "docs/evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json"
+          ]
         }
-      ]
+      ],
+      "branch": "codex/ph03-world-scale"
     },
     {
       "id": "PH04",
       "title": "分块世界数据与事务存储",
       "phase": "PH04",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "PH01",
         "PH03"
@@ -581,14 +609,14 @@
         {
           "id": "PH04-T1",
           "title": "地理采样、模拟区与行政树解耦",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「地理采样、模拟区与行政树解耦」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": []
         },
         {
           "id": "PH04-T2",
           "title": "建立稳定ID、空间索引和跨块邻接",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「建立稳定ID、空间索引和跨块邻接」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": []
         },
@@ -606,7 +634,8 @@
           "acceptance": "完成「分块事务、主备、CAS和空间预算接入保存」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": []
         }
-      ]
+      ],
+      "branch": "codex/ph04-chunked-world"
     },
     {
       "id": "PH05",

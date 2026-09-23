@@ -1,0 +1,39 @@
+
+> lieguoji-web@0.4.0 bench:measure
+> node scripts/bench-scale.mjs --mode=mobile
+
+2026-09-23T19:07:16.591Z Load local benchmark
+2026-09-23T19:07:17.043Z standard-standard-continent: generate
+2026-09-23T19:07:18.311Z standard-standard-continent: repeat generation
+2026-09-23T19:07:19.448Z standard-standard-continent: frame path
+2026-09-23T19:08:21.384Z standard-standard-continent: picking algorithm and quality invariant
+2026-09-23T19:08:22.657Z standard-standard-continent: actual pointer selection
+2026-09-23T19:08:22.852Z standard-standard-continent: low-quality frame path
+2026-09-23T19:09:24.165Z standard-standard-continent: local edit
+2026-09-23T19:09:24.884Z standard-standard-continent: undo
+2026-09-23T19:09:25.684Z standard-standard-continent: undo value verification
+2026-09-23T19:09:26.297Z standard-standard-continent: administration edit
+2026-09-23T19:09:28.044Z standard-standard-continent: structure transaction
+2026-09-23T19:09:28.616Z standard-standard-continent: transport clone 1
+2026-09-23T19:09:29.091Z standard-standard-continent: transport transfer 1
+2026-09-23T19:09:29.683Z standard-standard-continent: transport clone 2
+2026-09-23T19:09:30.134Z standard-standard-continent: transport transfer 2
+2026-09-23T19:09:30.623Z standard-standard-continent: transport clone 3
+2026-09-23T19:09:31.047Z standard-standard-continent: transport transfer 3
+2026-09-23T19:09:31.588Z standard-standard-continent: save first
+2026-09-23T19:09:32.864Z standard-standard-continent: second transaction
+2026-09-23T19:09:33.493Z standard-standard-continent: save second with backup
+2026-09-23T19:09:34.947Z standard-standard-continent: browser refresh
+2026-09-23T19:09:35.099Z standard-standard-continent: restore main and verify history
+2026-09-23T19:09:37.562Z standard-standard-continent: explicit backup recovery
+2026-09-23T19:09:39.793Z standard-standard-continent: backup cannot overwrite source
+2026-09-23T19:09:39.816Z standard-standard-continent: return to main after backup
+2026-09-23T19:09:42.140Z standard-standard-continent: read-only seek
+2026-09-23T19:09:43.126Z standard-standard-continent: read-only rejects edits
+2026-09-23T19:09:43.148Z standard-standard-continent: locate branch point
+2026-09-23T19:09:44.352Z standard-standard-continent: branch
+2026-09-23T19:09:46.257Z standard-standard-continent: branch mutation
+2026-09-23T19:09:46.994Z standard-standard-continent: save branch
+2026-09-23T19:09:48.282Z standard-standard-continent: verify untouched source
+2026-09-23T19:09:50.609Z standard-standard-continent: Worker queries and 64-record history
+{"output":"D:\\游戏\\架空地图模拟器\\.autopilot\\ph03\\runs\\2026-09-23T19-07-16-241Z-mobile-standard","status":"measured","steps":34,"failure":null}

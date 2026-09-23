@@ -1,0 +1,76 @@
+{
+  "completedAt": "2026-09-23T19:12:39.1254961Z",
+  "arguments": [
+    "scripts/report-scale.mjs",
+    "docs/evidence/ph03/raw/2026-09-23T17-08-10-495Z-smoke-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T17-12-37-061Z-smoke-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T17-15-39-171Z-matrix-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T17-59-14-769Z-entities-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T18-00-29-027Z-controls-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T18-09-54-579Z-history-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T19-07-01-970Z-guards-standard/report.json",
+    "docs/evidence/ph03/raw/2026-09-23T19-07-16-241Z-mobile-standard/report.json",
+    "--out=docs/evidence/ph03/summary/2026-09-24-eight-completed-runs"
+  ],
+  "rawSHAUnchanged": true,
+  "exitCode": 0,
+  "command": "node",
+  "files": [
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T17-08-10-495Z-smoke-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T17-08-10-495Z-smoke-standard/report.json",
+      "sha256": "29a19cf1ef1783a9b0dbbc0ebfacb683042d765d24084c5eb658a4a68a1a6cce",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T17-12-37-061Z-smoke-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T17-12-37-061Z-smoke-standard/report.json",
+      "sha256": "5ba8b27ca4339e4e8cd9ff6a96648718f208c18c4f5dc36c0e5bf12428904579",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T17-15-39-171Z-matrix-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T17-15-39-171Z-matrix-standard/report.json",
+      "sha256": "e862d4a10cb730cc21e9526bf595ae7ffc10640a4dc1b0451ab5edac91a20a51",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T17-59-14-769Z-entities-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T17-59-14-769Z-entities-standard/report.json",
+      "sha256": "c6d90ba4d87c56244aabaeabad2f79b9ffe4ef20266269927a32005d76c35f47",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T18-00-29-027Z-controls-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T18-00-29-027Z-controls-standard/report.json",
+      "sha256": "93ecb76df6ff1a4c0438309be71c2bce55d4c0df8cc44086a8f94915f33d1ced",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T18-09-54-579Z-history-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T18-09-54-579Z-history-standard/report.json",
+      "sha256": "055709b3b4e8fa809d53bbb711c1da09f5c26f475a722a5d36884e41e11000b3",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T19-07-01-970Z-guards-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T19-07-01-970Z-guards-standard/report.json",
+      "sha256": "eccd2c0bdf8067d618e36dfe14a391df4351f5231ab946b69a4f59536913d829",
+      "unchanged": true,
+      "matchesOriginal": true
+    },
+    {
+      "path": "docs/evidence/ph03/raw/2026-09-23T19-07-16-241Z-mobile-standard/report.json",
+      "source": ".autopilot/ph03/runs/2026-09-23T19-07-16-241Z-mobile-standard/report.json",
+      "sha256": "38db68f3eab227878dac89ea3a4961e7073f00d3973f0ccb68d96f01b228e2e9",
+      "unchanged": true,
+      "matchesOriginal": true
+    }
+  ]
+}

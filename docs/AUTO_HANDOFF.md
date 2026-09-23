@@ -1,17 +1,19 @@
-# V4 当前续接入口：本地开发，发布锁定
+# V4 当前续接入口：PH04 生产分块世界，本地发布锁定
 
-2026-09-23 用户最新确认：要巨大精细地图、多国可自定义行政制度、深入家族/信仰、iOS质感UI；最终网页/PWA独立游戏。**全部PH00—PH35与真机/用户视觉验收以前，不push任何分支，不做任何新云端写入或发布包上传。** 现有站保留。用户已明确要求逐PH实现直至最后一PH，完成一PH后自动进入下一PH，不逐批询问；已建立持续目标，文档完成不等于游戏完成。
+2026-09-24。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。全部 PH00—PH35、真机及用户视觉验收之前，禁止任何 push、远程写入、发行打包或 Cloudflare 构建部署。
 
-- 当前指令：CODEX_AUTOPILOT_V4.md；范围/依赖：docs/PH_ROADMAP_V4.md、plan/tasks.json；设计与世界：docs/DESIGN_V4.md、docs/WORLD_V4.md。
-- 发布锁：docs/RELEASE_POLICY_V4.md、plan/release-readiness.json；只有全部PH及十项最终验收真实完成、源指纹匹配才可准备首次候选上传。后续CI/HTTPS单独记releaseVerification，不能事前伪造。
-- 原25任务保留；新增36PH/144子项。PH00、PH01已完成：固定旧引擎/golden、完整指纹Worker/存储/UI分派、V4版本合同、显式副本及受保护原始备份。本地完整构建472单测与14发布策略通过；72个浏览器场景均有通过证据（首轮69/72，修正缺失链接显示断言后三端3/3，不写成首轮72/72）。PH02已完成单检查器/iOS质感基线、真实五项导航及阅读偏好；新增外观9/9，原72首轮66/72，修复通知遮挡及两类测试同步断言后受影响57/57；81个不同浏览器场景均有通过证据。下一步直接PH03大世界基准。旧皇室M4-004范围映射PH18—20，不跳过架构前置。
-- 规则改变前已发起的旧版最终提交：b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，版本0.4.0；部署a257d63e-95c8-48b0-bb11-c1447775bd03；https://a257d63e.lieguoji-web.pages.dev；稳定地址https://lieguoji-web.pages.dev/。
-- 该旧版最终main CI35876437785真实260单测/60浏览器首次通过，最终HTTPS4/4、0重试/flaky。历史完整功能HTTPS27/27。证据.autopilot/final-release-0.4.0.json；这些不算新版PH通过。
-- 长列表连续触控仍未验收；正式地图/未知正史、原规划与真机事项保持原状态。V4首发是原创自建沙盒，不偷偷补正式剧情。
-- V4规划本地提交a88c859，PH01本地提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；当前开发分支codex/ph02-ios-workbench，PH02本地实现与验收已完成，待本次本地提交；包含浅深色/阅读偏好和真实三端界面。只做本地提交，未推送、未创建新云端资源、未打包发行。本地具体提交见.autopilot/checkpoint.json并核实git status；勿将线上b9b8f96当成本地修改已发布。
-- PH00实际检查：36PH/144子项/旧25摘要与依赖校验通过，发布策略14/14，lint/类型通过；本地pre-push实跑退出1阻止未就绪上传，未执行网络push。core.hooksPath仅本项目.githooks，别处不改。普通本地开发可继续，发布锁仍locked。
+- 唯一任务状态：plan/tasks.json；执行指令：CODEX_AUTOPILOT_V4.md；世界/视觉合同：docs/WORLD_V4.md、docs/DESIGN_V4.md；发布门：docs/RELEASE_POLICY_V4.md。
+- PH00—PH03 已完成。PH03 是具名硬件上的真实规模测量与后继性能合同，不是完整游戏支持容量或性能PASS。标准65,536地理样本目标保留；262,144高实体档帧间隔p95为28.6—35.6ms，尚不达桌面目标。2048结构历史刷新读库约1.2s、完整校验载入约281s，明确由PH04/28/33解决，不能绕过验证。
+- PH03最终本地检查：569单测/24文件、14发布策略、lint、类型、生产构建及23产物审计通过。八份浏览器原报告包含保留的早期smoke失败；正式matrix290步骤、实体9组/54次传输、controls129步骤、长历史14步骤、guards6步骤、移动仿真34步骤均执行完成。mobile是桌面RTX上的Pixel参数，不是真手机。
+- 原始报告、源码快照、设备、SHA、截图及摘要均在docs/evidence/ph03/；结论docs/evidence/2026-09-24-ph03-scale.md，锁定门槛ADR0008。首次smoke的favicon404、最初报告误计缓存、取消和绘图锁修复均保留，不抹成首轮全过。
+- 当前进入PH04-T1/T2：独立生产草稿格式，地理/模拟区/行政membership分离，稳定ID、唯一共享顶点、跨块邻接和空间索引。设计ADR0009。不要将src/bench的ScaleFixture注册为生产引擎，不迁移旧档；world3/rules0.3完整模拟仍未实现。
+- 下一批PH04-T3/T4接增量Worker、可取消准备、不可变内容块和整根CAS持久化，再以真实编辑/刷新/冲突/故障检验。尚未交付PH04可玩入口，不能把数据模型当完成。
+- 当前提交与分支：先核对git status、git log -1和.autopilot/checkpoint.json。PH01提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；PH02提交9e315b24f5311691eefce39974fe884d2baa87eb；PH03正封存为本地提交，随后进入codex/ph04-chunked-world。始终未推送。
+- 历史线上0.4.0：提交b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，仓库Ethanhui6/lieguoji-web（私有），Pages lieguoji-web，唯一原生Git链，main生产/其他分支预览。稳定URL https://lieguoji-web.pages.dev/ ，固定URL https://a257d63e.lieguoji-web.pages.dev/ 。这些是此前核验的历史部署，本轮未触发云端。
+- 尚未通过：生产大世界/完整社会规则/长局性能、真实iPhone/Android/平板、用户视觉验收及其余PH。正式五国地图/未知CANON/缺失原规划独立待核，不阻挡自建沙盒；不伪造通过。
+- 当前无需新增账号授权。普通本地工作自动推进；发生中断保存检查点。会话结束后不声称仍在后台开发。
 
-规划与锁定证据见 docs/evidence/2026-09-23-v4-planning.md；当前PH01证据见 docs/evidence/2026-09-23-ph01-compatibility.md、规则边界见ADR0006；PH02证据见docs/evidence/2026-09-24-ph02-workbench.md及ADR0007。本地检查点 .autopilot/checkpoint.json 以V4状态覆盖旧“下一步发布”字段；不要恢复旧发布指令。会话停止后不声称仍在后台开发。
+PH01证据docs/evidence/2026-09-23-ph01-compatibility.md；PH02证据docs/evidence/2026-09-24-ph02-workbench.md。旧25任务摘要保持不变。冻结0.4核心与两套旧规则仍受原指纹和golden保护。
 
 ---
 
@@ -86,3 +88,9 @@ ACCEPT-MAP 与 M2-PLAN 继续 blocked：首次目录为空，原 v2/100 项规�
 额外长历史列表触控补查未完整通过：Pixel 7 上真实滚动及一次完整触控定位已观测，但连续滑动后单次点选出现不稳定，iPad 扩展流程未执行，原因尚未确定。详见 `docs/evidence/2026-09-23-history-touch.md`。这项并入 ACCEPT-DEVICE 待验，不能将 60 项常规 CI 或 27 项 HTTPS 通过表述为所有触控行为通过。下一批先保留并定位该交互问题，再完成相应验收；不得用强制点击或额外重复运行冒充修复。
 
 普通工程、检查、提交与本项目免费部署已获授权；新增登录/App 扩权、秘密输入、账户选择或高风险操作由用户介入。会话结束后不声称仍在后台开发。
+
+### PH03 测量检查点（2026-09-24，仍未完成）
+
+9组联合地图实测290步骤已完成，无执行/页面/控制台错误；262k帧时未达桌面目标，不能写成性能通过。PH03-T1已有固定种子、三档三景及完整摘要/编辑/恢复证据，标done；T2/T3仍测量中，T4未签收。v2整批558单测、14发布门、23生产产物检查通过；9组独立实体/54次真实传输已完成。见docs/evidence/2026-09-24-ph03-scale.md。
+
+当前仅本地分支codex/ph03-world-scale，HEAD仍9e315b24f5311691eefce39974fe884d2baa87eb，本批未提交。实验指纹v1 53543b04a578aadb0b0f672c58eec54f76487019320eeb8c3398676db8e77c53；v2 d5b5e8c6ec2b9af2d24b058f009cbcaff6014d2362b49aa65f45aba7214402cc。精确源码快照和原始结果在.autopilot/ph03/。当前controls实测未结束，禁止并行CPU测试/构建或另一个浏览器基准。之后执行standard的64/512/2048长历史与mobile仿真，核对实际结果后才签收PH03并实施PH04。ADR0009仅为待实施设计。全部PH前禁止push/远程写入/部署，旧线上0.4.0保持历史基线。

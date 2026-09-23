@@ -9,3 +9,8 @@
 *.css text eol=lf
 *.html text eol=lf
 .githooks/* text eol=lf
+# Immutable measurement reports and source snapshots must retain their recorded SHA.
+# Tool stdout / historic snapshots may intentionally include trailing whitespace.
+docs/evidence/ph03/** -text whitespace=cr-at-eol
+docs/evidence/ph03/checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/ph03/source-snapshots/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

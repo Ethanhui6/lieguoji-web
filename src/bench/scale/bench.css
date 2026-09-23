@@ -1,0 +1,65 @@
+@import "../../styles/tokens.css";
+
+/* Deliberately local and diagnostic; never imported by the production App. */
+:root { font-family: var(--font-sans); color: var(--text-primary); background: var(--surface-app); font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; font-size: 14px; line-height: 1.55; }
+button, input, select { font: inherit; }
+button, input, select { min-width: 0; min-height: 44px; border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px 10px; background: var(--surface-elevated); color: var(--text-primary); }
+button { cursor: pointer; overflow-wrap: anywhere; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:hover:not(:disabled) { background: var(--surface-hover); }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 19px; }
+h2 { font-size: 16px; margin-bottom: 12px; }
+h3 { font-size: 14px; margin-block: 20px 8px; }
+p, li { overflow-wrap: anywhere; }
+.scale-bench { display: grid; grid-template-columns: 300px minmax(0, 1fr) 300px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "header header header" "controls map results"; height: 100dvh; min-width: 0; }
+.scale-header { grid-area: header; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface-panel); }
+.scale-header p { color: var(--warning); font-size: 13px; margin-top: 4px; }
+.scale-header > span { padding: 6px 10px; border: 1px solid var(--warning); border-radius: 6px; font-size: 13px; color: var(--warning); background: var(--warning-bg); }
+.scale-controls { grid-area: controls; min-height: 0; overflow: auto; padding: 16px; border-right: 1px solid var(--border); }
+.scale-controls section + section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.scale-controls label { display: grid; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-block: 8px; }
+.scale-controls input, .scale-controls select { width: 100%; font-size: 14px; }
+.scale-controls section > button { width: 100%; margin-top: 8px; }
+.scale-field-grid { display: grid; gap: 4px; }
+.scale-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 8px; }
+.scale-actions button { flex: 1 1 80px; }
+.scale-primary { color: var(--text-on-action); background: var(--action); border-color: var(--action); font-weight: 650; }
+.scale-primary:hover:not(:disabled) { background: var(--action-hover); }
+.scale-help { color: var(--text-secondary); font-size: 13px; line-height: 1.7; margin-top: 8px; }
+.scale-map-stage { grid-area: map; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--map-ocean); }
+.scale-map-host { position: absolute; inset: 0; touch-action: none; cursor: grab; }
+.scale-map-host:active { cursor: grabbing; }
+.scale-map-host canvas { display: block; width: 100%; height: 100%; }
+.scale-status { position: absolute; top: 12px; left: 12px; right: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); color: var(--text-secondary); font-size: 13px; pointer-events: none; }
+.scale-status span { display: block; margin-top: 4px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.scale-error { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: flex-start; gap: 12px; max-height: 40%; overflow: auto; padding: 12px; border: 1px solid var(--danger); border-radius: 10px; background: var(--danger-bg); color: var(--danger); }
+.scale-error span { flex: 1; overflow-wrap: anywhere; }
+.scale-error button { flex-shrink: 0; }
+.scale-results { grid-area: results; min-height: 0; padding: 16px; overflow: auto; border-left: 1px solid var(--border); }
+.scale-counts { display: grid; gap: 4px; margin: 0; }
+.scale-counts > div { display: flex; justify-content: space-between; gap: 12px; }
+.scale-counts dt { color: var(--text-secondary); }
+.scale-counts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.scale-results pre { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-inset); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.scale-results details { margin-top: 20px; }
+.scale-results summary { min-height: 44px; padding-block: 10px; cursor: pointer; }
+.scale-results ul { padding-left: 20px; }
+.scale-run-id { font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
+@media (max-width: 1100px) {
+  .scale-bench { grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: auto minmax(400px, 70dvh) auto; grid-template-areas: "header header" "controls map" "results results"; height: auto; min-height: 100dvh; }
+  .scale-results { border-left: 0; border-top: 1px solid var(--border); }
+}
+@media (max-width: 650px) {
+  .scale-bench { display: flex; flex-direction: column; }
+  .scale-header { flex-direction: column; align-items: flex-start; padding: 12px; }
+  .scale-header > span { display: none; }
+  .scale-map-stage { order: 1; height: 60dvh; min-height: 320px; flex-shrink: 0; }
+  .scale-controls { order: 2; overflow: visible; padding: 16px; border-right: 0; }
+  .scale-results { order: 3; overflow: visible; }
+  .scale-controls input, .scale-controls select { font-size: 16px; }
+  .scale-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}

@@ -1,0 +1,144 @@
+{
+  "checkedAt": "2026-09-23T19:19:08.9228410Z",
+  "scope": "Read-only summary counts, hashes and document links; no browser rerun or game performance assessment.",
+  "checks": {
+    "reportCountEight": true,
+    "assessmentRemainsNotAssessed": true,
+    "oneSmokeOnly": true,
+    "oneFailedRetained": true,
+    "entityCasesNine": true,
+    "entityTransportFiftyFour": true,
+    "entityTransportHashesMatch": true,
+    "singleStagesFiftyFourP95Null": true,
+    "threeHistoryFreshDocumentVerified": true,
+    "helperFalsePreserved": true,
+    "oneControllerBranchProtection": true,
+    "matrixDirectWorkersNine": true,
+    "mobileTwoValid60SecondSamples": true,
+    "documentLinksExist": true
+  },
+  "documentLinks": [
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../WORLD_V4.md",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../RELEASE_POLICY_V4.md",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/ph03/summary/2026-09-24-eight-completed-runs/summary.json",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/ph03/summary/2026-09-24-eight-completed-runs/measurements.csv",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/ph03/raw/2026-09-23T17-15-39-171Z-matrix-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/ph03/archive-final-raw-and-source.json",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/ph03/summary/2026-09-24-eight-completed-runs/aggregation-command-and-sha.json",
+      "exists": true
+    },
+    {
+      "document": "docs/adr/0008-scale-benchmark-and-production-budgets.md",
+      "target": "../evidence/2026-09-24-ph03-scale.md",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "../adr/0008-scale-benchmark-and-production-budgets.md",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/checks/full-build.txt",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/checks/full-build-2.txt",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/checks/full-build-v2.txt",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/checks/full-build-v3.txt",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/archive-first-six.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/archive-final-raw-and-source.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/summary/2026-09-24-eight-completed-runs/summary.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/summary/2026-09-24-eight-completed-runs/measurements.csv",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/summary/2026-09-24-eight-completed-runs/aggregation-command-and-sha.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T17-15-39-171Z-matrix-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T17-59-14-769Z-entities-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T18-00-29-027Z-controls-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T18-09-54-579Z-history-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T19-07-01-970Z-guards-standard/report.json",
+      "exists": true
+    },
+    {
+      "document": "docs/evidence/2026-09-24-ph03-scale.md",
+      "target": "ph03/raw/2026-09-23T19-07-16-241Z-mobile-standard/report.json",
+      "exists": true
+    }
+  ],
+  "priorSixReportVerification": ".autopilot/ph03/report-checks/2026-09-24-six-completed/verification.json",
+  "rawHashes": "aggregation-command-and-sha.json"
+}

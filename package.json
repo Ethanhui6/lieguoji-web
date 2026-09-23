@@ -19,7 +19,10 @@
     "build:cf": "npm run plan:check && npm run lint && npm run typecheck && npm run test:release && npm test && npm run build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "test:e2e": "playwright test",
-    "check": "npm run build:cf && npm run test:e2e"
+    "check": "npm run build:cf && npm run test:e2e",
+    "bench:build": "vite build --config bench.vite.config.ts",
+    "bench:preview": "vite preview --config bench.vite.config.ts",
+    "bench:measure": "node scripts/bench-scale.mjs"
   },
   "dependencies": {
     "d3-delaunay": "6.0.4",

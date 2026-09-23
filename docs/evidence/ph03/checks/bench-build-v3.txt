@@ -1,0 +1,32 @@
+
+> lieguoji-web@0.4.0 bench:build
+> vite build --config bench.vite.config.ts
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 742 modules transformed.
+rendering chunks...
+computing gzip size...
+.autopilot/ph03/web/benchmark-build.json                           0.29 kB │ gzip:   0.23 kB
+.autopilot/ph03/web/bench/scale.html                               1.16 kB │ gzip:   0.63 kB
+.autopilot/ph03/web/assets/entity-budget.worker-D8khxH0m.js       32.11 kB
+.autopilot/ph03/web/assets/scale.worker-iMA1qcwr.js              826.38 kB
+.autopilot/ph03/web/assets/scale-3BIqKXdz.css                      7.41 kB │ gzip:   2.37 kB
+.autopilot/ph03/web/assets/webworkerAll-DeorNszN.js                0.05 kB │ gzip:   0.06 kB
+.autopilot/ph03/web/assets/getTextureBatchBindGroup-BKKqjbfz.js    0.34 kB │ gzip:   0.27 kB
+.autopilot/ph03/web/assets/history-storage-measure-CB-hKZ-O.js     1.14 kB │ gzip:   0.73 kB
+.autopilot/ph03/web/assets/canvasUtils-DMb7rZel.js                 6.05 kB │ gzip:   2.05 kB
+.autopilot/ph03/web/assets/BufferResource-BJwAkSvu.js             11.02 kB │ gzip:   2.82 kB
+.autopilot/ph03/web/assets/entity-budget-bridge-DUsv03XQ.js       12.94 kB │ gzip:   4.84 kB
+.autopilot/ph03/web/assets/init-BZTsYY4R.js                       15.36 kB │ gzip:   4.80 kB
+.autopilot/ph03/web/assets/browserAll-HfeQI9zx.js                 42.65 kB │ gzip:  11.19 kB
+.autopilot/ph03/web/assets/RenderTargetSystem-9zrjiD6Q.js         78.10 kB │ gzip:  22.09 kB
+.autopilot/ph03/web/assets/CanvasPool-LcM3R_HP.js                110.36 kB │ gzip:  33.59 kB
+.autopilot/ph03/web/assets/scale-C40IKCfx.js                     558.10 kB │ gzip: 169.42 kB
+
+✓ built in 517ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

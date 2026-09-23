@@ -1,4 +1,21 @@
-# 自动接管检查点
+# V4 当前续接入口：本地开发，发布锁定
+
+2026-09-23 用户最新确认：要巨大精细地图、多国可自定义行政制度、深入家族/信仰、iOS质感UI；最终网页/PWA独立游戏。**全部PH00—PH35与真机/用户视觉验收以前，不push任何分支，不做任何新云端写入或发布包上传。** 现有站保留。用户此次要求首先完善提示词与完整计划，文档完成不等于游戏完成。
+
+- 当前指令：CODEX_AUTOPILOT_V4.md；范围/依赖：docs/PH_ROADMAP_V4.md、plan/tasks.json；设计与世界：docs/DESIGN_V4.md、docs/WORLD_V4.md。
+- 发布锁：docs/RELEASE_POLICY_V4.md、plan/release-readiness.json；只有全部PH及十项最终验收真实完成、源指纹匹配才可准备首次候选上传。后续CI/HTTPS单独记releaseVerification，不能事前伪造。
+- 原25任务保留；新增36PH/144子项。PH00需求、计划、门禁与交接已验证完成；PH01—PH35仍todo，其余新功能尚未实现。下一实现批从PH01旧引擎兼容开始；PH02设计、PH03大世界基准按依赖推进。旧皇室M4-004范围映射PH18—20，不直接跳过架构前置。
+- 规则改变前已发起的旧版最终提交：b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，版本0.4.0；部署a257d63e-95c8-48b0-bb11-c1447775bd03；https://a257d63e.lieguoji-web.pages.dev；稳定地址https://lieguoji-web.pages.dev/。
+- 该旧版最终main CI35876437785真实260单测/60浏览器首次通过，最终HTTPS4/4、0重试/flaky。历史完整功能HTTPS27/27。证据.autopilot/final-release-0.4.0.json；这些不算新版PH通过。
+- 长列表连续触控仍未验收；正式地图/未知正史、原规划与真机事项保持原状态。V4首发是原创自建沙盒，不偷偷补正式剧情。
+- V4工作分支codex/v4-standalone-plan，只做本地提交，未推送、未创建新云端资源、未打包发行。本地具体提交见.autopilot/checkpoint.json并核实git status；勿将线上b9b8f96当成本地修改已发布。
+- PH00实际检查：36PH/144子项/旧25摘要与依赖校验通过，发布策略14/14，lint/类型通过；本地pre-push实跑退出1阻止未就绪上传，未执行网络push。core.hooksPath仅本项目.githooks，别处不改。普通本地开发可继续，发布锁仍locked。
+
+本次规划与锁定证据见 docs/evidence/2026-09-23-v4-planning.md。本地检查点 .autopilot/checkpoint.json 以V4状态覆盖旧“下一步发布”字段；不要恢复旧发布指令。
+
+---
+
+# 0.4 历史交接记录（以下发布节奏已由 V4 覆盖）
 
 ## 当前已发布版本
 

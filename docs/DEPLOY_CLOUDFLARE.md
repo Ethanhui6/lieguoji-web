@@ -1,5 +1,7 @@
 # Cloudflare Pages 部署
 
+> **当前禁止触发新部署。** 已有0.4站点保留，Pages原生Git配置不变；main生产、其他分支预览，因此冻结期连文档分支也不得push。全部PH和真机/视觉验收后才按 [V4发布规则](RELEASE_POLICY_V4.md) 统一上传；以下逐批预览／生产步骤暂不适用。
+
 Pages 项目为 `lieguoji-web`，稳定生产入口为 https://lieguoji-web.pages.dev/。唯一生产链是 Pages 原生 Git 集成：main 自动生产，其他分支自动预览。没有 Direct Upload 项目或 Actions 生产上传链。
 
 ## 固定配置与本批验收结果

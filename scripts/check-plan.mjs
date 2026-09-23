@@ -1,12 +1,66 @@
 import fs from 'node:fs';
-const data=JSON.parse(fs.readFileSync('plan/tasks.json','utf8'));
-const ids=new Set(data.tasks.map(t=>t.id));
-if(ids.size!==data.tasks.length) throw new Error('Duplicate task IDs');
-for(const task of data.tasks){
- if(!['todo','in_progress','blocked','done','pending_acceptance'].includes(task.status)) throw new Error(`Unknown status: ${task.id}`);
- if(!task.acceptance || !Array.isArray(task.dependsOn)) throw new Error(`Missing acceptance/dependencies: ${task.id}`);
- for(const dependency of task.dependsOn) if(!ids.has(dependency)) throw new Error(`Unknown dependency: ${dependency}`);
- if(task.status==='done' && (!task.evidence?.length || task.dependsOn.some(id=>data.tasks.find(t=>t.id===id).status!=='done'))) throw new Error(`Missing evidence or dependency for ${task.id}`);
- for(const evidence of task.evidence??[]) if(evidence.startsWith('docs/')&&!fs.existsSync(evidence.split('#')[0])) throw new Error(`Missing evidence file ${evidence}`);
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { validatePlan } from './release-policy.mjs';
+
+export const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+export function verifyGitRoot(root, cwd = process.cwd()) {
+ const resolved = fs.realpathSync(root);
+ if (fs.realpathSync(cwd) !== resolved) throw new Error('Run this check from the project Git root');
+ const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: resolved, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+ if (fs.realpathSync(gitRoot) !== resolved) throw new Error('Project directory is not the same Git root');
+ return resolved;
 }
-console.log(`Plan checked: ${data.tasks.length} tasks; original v2 plan present: ${data.originalPlanPresent}`);
+
+export function safeProjectFile(root, reference, allowFragment = true) {
+ if (typeof reference !== 'string' || !reference || reference.includes('\\') || reference.includes('\0')) throw new Error('Invalid project file reference');
+ const relative = allowFragment ? reference.split('#')[0] : reference;
+ if (!relative || path.posix.isAbsolute(relative) || relative.includes(':') || relative.split('/').some(part => !part || part === '.' || part === '..')) throw new Error('Project file reference must stay inside this project');
+ let current = fs.realpathSync(root);
+ const base = current;
+ for (const part of relative.split('/')) {
+  current = path.join(current, part);
+  if (fs.lstatSync(current).isSymbolicLink()) throw new Error('Symbolic links are not accepted as project evidence or source');
+ }
+ const resolved = fs.realpathSync(current);
+ if (!resolved.startsWith(`${base}${path.sep}`) || !fs.statSync(resolved).isFile()) throw new Error('Expected a regular file inside this project');
+ return resolved;
+}
+
+export function evidenceReferences(plan, readiness) {
+ const refs = [];
+ for (const task of plan?.tasks ?? []) {
+  refs.push(...(Array.isArray(task.evidence) ? task.evidence : []));
+  for (const item of task.workItems ?? []) refs.push(...(Array.isArray(item.evidence) ? item.evidence : []));
+ }
+ for (const check of Object.values(readiness?.checks ?? {})) refs.push(...(Array.isArray(check.evidence) ? check.evidence : []));
+ return [...new Set(refs)];
+}
+
+export function collectEvidencePaths(root, references) {
+ const present = new Set();
+ for (const reference of references) {
+  // Missing, outside, or linked evidence stays absent and fails validation.
+  try { safeProjectFile(root, reference); present.add(reference); } catch { /* Report through the owning task/check. */ }
+ }
+ return present;
+}
+
+export function loadPlan(root) {
+ return JSON.parse(fs.readFileSync(safeProjectFile(root, 'plan/tasks.json'), 'utf8'));
+}
+
+function main() {
+ if (process.argv.length !== 2) throw new Error('check-plan accepts no arguments');
+ const root = verifyGitRoot(projectRoot);
+ const plan = loadPlan(root);
+ const result = validatePlan(plan, collectEvidencePaths(root, evidenceReferences(plan)));
+ if (result.errors.length) throw new Error(result.errors.join('\n'));
+ console.log(`Plan checked: ${plan.tasks.length} tasks, ${result.phaseCount} PH, ${result.workItemCount} work items; original ${result.originalTaskCount} task digest preserved; release lock does not block local development`);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+ try { main(); } catch (error) { console.error(`Plan check failed: ${error.message}`); process.exitCode = 1; }
+}

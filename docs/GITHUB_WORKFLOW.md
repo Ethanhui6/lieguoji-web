@@ -1,5 +1,7 @@
 # GitHub 检查与受控合并
 
+> **当前云端写入冻结。** 用户要求PH00—PH35全部完成并验收前不上传GitHub/Cloudflare，包含任意分支push、PR/Issue/Milestone与artifact。允许本地提交与测试。下面的既有CI和受控合并流程只在 [V4发布门](RELEASE_POLICY_V4.md) 解除后适用；不删除已有检查或另开发布链。
+
 本文件对应 `.github/workflows/ci.yml`。仓库为本人私有的 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)，唯一生产部署由 Pages 原生 Git 完成，Actions 负责检查而不向生产上传。
 
 ## 本批 M4 记录

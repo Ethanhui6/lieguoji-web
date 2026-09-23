@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "not_ready",
+  "sourceFingerprint": null,
+  "checks": {
+    "localFullRegression": {
+      "status": "pending",
+      "evidence": []
+    },
+    "performanceAndLongRun": {
+      "status": "pending",
+      "evidence": []
+    },
+    "saveAndLegacyCompatibility": {
+      "status": "pending",
+      "evidence": []
+    },
+    "privateContentAndLicenses": {
+      "status": "pending",
+      "evidence": []
+    },
+    "realIphonePwa": {
+      "status": "pending",
+      "evidence": []
+    },
+    "realAndroidPwa": {
+      "status": "pending",
+      "evidence": []
+    },
+    "realDesktop": {
+      "status": "pending",
+      "evidence": []
+    },
+    "realTablet": {
+      "status": "pending",
+      "evidence": []
+    },
+    "continuousTouchRegression": {
+      "status": "pending",
+      "evidence": []
+    },
+    "userVisualAcceptance": {
+      "status": "pending",
+      "evidence": []
+    }
+  }
+}

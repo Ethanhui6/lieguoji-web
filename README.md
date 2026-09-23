@@ -1,5 +1,7 @@
 # 列国纪
 
+> **V4 本地开发计划已启动，尚未实现新版。** 现站 0.4.0 保留为工程基线；新版目标为大世界、各国独立行政制度、家族与信仰及 iOS 质感的完整网页/PWA游戏。当前禁止新上传与部署，全部 PH 验收后统一交付。阅读 [V4 总提示词](CODEX_AUTOPILOT_V4.md)、[36PH／144子项计划](docs/PH_ROADMAP_V4.md)、[发布锁](docs/RELEASE_POLICY_V4.md)。以下已实现能力仍指0.4基线。
+
 原创二维架空世界模拟网页游戏。手画海陆、生成地形、创建国家与城市，再观察人口、粮食和列国关系如何影响世界推演。0.4.0 增加历史记录、只读回放与独立分支，实际发布状态以 [交接记录](docs/AUTO_HANDOFF.md) 和 [M4 验收证据](docs/evidence/2026-09-23-history.md) 为准。正式五国地图仍未提供、未核定；玩家自由创作不依赖正式核图。
 
 实际游玩地址：[列国纪 · 世界工坊](https://lieguoji-web.pages.dev/)。源码位于本人私有仓库 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)。Pages 原生 Git 为唯一发布链：当前提交检查与分支预览通过后受控合并 main，自动生成生产版本；其他分支自动预览。

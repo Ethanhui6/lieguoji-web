@@ -609,28 +609,34 @@
         {
           "id": "PH04-T1",
           "title": "地理采样、模拟区与行政树解耦",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「地理采样、模拟区与行政树解耦」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph04-chunked-world.md",
+            "docs/evidence/ph04/first-batch/verification.json"
+          ]
         },
         {
           "id": "PH04-T2",
           "title": "建立稳定ID、空间索引和跨块邻接",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「建立稳定ID、空间索引和跨块邻接」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph04-chunked-world.md",
+            "docs/evidence/ph04/first-batch/verification.json"
+          ]
         },
         {
           "id": "PH04-T3",
           "title": "实现增量Worker消息及可取消长任务",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「实现增量Worker消息及可取消长任务」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": []
         },
         {
           "id": "PH04-T4",
           "title": "分块事务、主备、CAS和空间预算接入保存",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「分块事务、主备、CAS和空间预算接入保存」，并提供本阶段对应验收事实。跨块编辑无裂缝、邻接无悬空；中断写入不损原档；消息量不随全图无条件复制；保存刷新恢复身份与规则一致。",
           "evidence": []
         }

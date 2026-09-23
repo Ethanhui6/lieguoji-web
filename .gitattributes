@@ -14,3 +14,5 @@
 docs/evidence/ph03/** -text whitespace=cr-at-eol
 docs/evidence/ph03/checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph03/source-snapshots/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/ph04/** -text whitespace=cr-at-eol
+docs/evidence/ph04/first-batch/*.txt whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

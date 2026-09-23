@@ -8,7 +8,7 @@
 - 原始报告、源码快照、设备、SHA、截图及摘要均在docs/evidence/ph03/；结论docs/evidence/2026-09-24-ph03-scale.md，锁定门槛ADR0008。首次smoke的favicon404、最初报告误计缓存、取消和绘图锁修复均保留，不抹成首轮全过。
 - 当前进入PH04-T1/T2：独立生产草稿格式，地理/模拟区/行政membership分离，稳定ID、唯一共享顶点、跨块邻接和空间索引。设计ADR0009。不要将src/bench的ScaleFixture注册为生产引擎，不迁移旧档；world3/rules0.3完整模拟仍未实现。
 - 下一批PH04-T3/T4接增量Worker、可取消准备、不可变内容块和整根CAS持久化，再以真实编辑/刷新/冲突/故障检验。尚未交付PH04可玩入口，不能把数据模型当完成。
-- 当前提交与分支：先核对git status、git log -1和.autopilot/checkpoint.json。PH01提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；PH02提交9e315b24f5311691eefce39974fe884d2baa87eb；PH03正封存为本地提交，随后进入codex/ph04-chunked-world。始终未推送。
+- 当前提交与分支：先核对git status、git log -1和.autopilot/checkpoint.json。PH01提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；PH02提交9e315b24f5311691eefce39974fe884d2baa87eb；PH03本地提交2b678523f429a871af324375174d43b9adee8034，归档字节修正6eb55165a8994b39593b61aa784798ce1b67c658；当前分支codex/ph04-chunked-world。始终未推送。
 - 历史线上0.4.0：提交b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，仓库Ethanhui6/lieguoji-web（私有），Pages lieguoji-web，唯一原生Git链，main生产/其他分支预览。稳定URL https://lieguoji-web.pages.dev/ ，固定URL https://a257d63e.lieguoji-web.pages.dev/ 。这些是此前核验的历史部署，本轮未触发云端。
 - 尚未通过：生产大世界/完整社会规则/长局性能、真实iPhone/Android/平板、用户视觉验收及其余PH。正式五国地图/未知CANON/缺失原规划独立待核，不阻挡自建沙盒；不伪造通过。
 - 当前无需新增账号授权。普通本地工作自动推进；发生中断保存检查点。会话结束后不声称仍在后台开发。

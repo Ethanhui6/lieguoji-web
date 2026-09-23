@@ -1,0 +1,77 @@
+{
+  "capturedAt": "2026-09-23T19:34:34.995Z",
+  "tests": 96,
+  "files": 6,
+  "newModuleTests": 69,
+  "existingWorldgenTests": 27,
+  "lintExit": 0,
+  "typecheckExit": 0,
+  "evidence": [
+    {
+      "source": ".autopilot/ph04/first-batch-combined.txt",
+      "path": "docs/evidence/ph04/first-batch/first-batch-combined.txt",
+      "sha256": "3279d18e51e19973be7c3725b4d9417cc95d7b7b48084d2643019a16e1957468",
+      "bytes": 190
+    },
+    {
+      "source": ".autopilot/ph04/first-batch-lint.txt",
+      "path": "docs/evidence/ph04/first-batch/first-batch-lint.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "source": ".autopilot/ph04/first-batch-typecheck.txt",
+      "path": "docs/evidence/ph04/first-batch/first-batch-typecheck.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/world/model.ts",
+      "sha256": "648870a0906a43a965005a70afa388bd42a363e045ee139bc224ae6ed5065846",
+      "bytes": 23234
+    },
+    {
+      "path": "src/world/model.test.ts",
+      "sha256": "8267dacd829860da46400c6f16d5cf886cfb7fc7f41e68cb7add61d9f7edcd55",
+      "bytes": 12484
+    },
+    {
+      "path": "src/world/topology.ts",
+      "sha256": "ada2a7a317641164dfd568a9a67a8783f5c8ffffd2a6c5e8f18c8bac765f839e",
+      "bytes": 9575
+    },
+    {
+      "path": "src/world/topology.test.ts",
+      "sha256": "a9e36fd481f24e1b367bebcd2ab26c22f4c8f53df3278f32e64a785af836fa23",
+      "bytes": 7564
+    },
+    {
+      "path": "src/world/spatial-index.ts",
+      "sha256": "1ba9059ecb714dd8158453ab24579656b907527e55b7ff224bd109ba55c4e893",
+      "bytes": 13695
+    },
+    {
+      "path": "src/world/spatial-index.test.ts",
+      "sha256": "582f3e7850888c7120f0775e68f208ec79de627089efbdd656e0c4e21a734209",
+      "bytes": 12138
+    },
+    {
+      "path": "src/world/transactions.ts",
+      "sha256": "5d96deac36aba21c14f55442f7ae65be7bf59880f320f90675157692ae0a35ec",
+      "bytes": 23855
+    },
+    {
+      "path": "src/world/transactions.test.ts",
+      "sha256": "7bd98d27e4f3420a87855fcc6fa0c3e9c60e437ece3ca378499c781aceebf73b",
+      "bytes": 13695
+    },
+    {
+      "path": "src/world/edit-codec.test.ts",
+      "sha256": "2ad2abe9d445ac7c3ae2cb5dd2e1fb97f01f6796ce29643ece5dd55b21161e1f",
+      "bytes": 14103
+    }
+  ],
+  "scope": "core models and local transaction/index integration; no browser/storage/performance acceptance"
+}

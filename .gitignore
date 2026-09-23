@@ -18,5 +18,6 @@ coverage/
 saves/
 references/private/
 *.save.json
+*.world.json
 *.zip
 .DS_Store

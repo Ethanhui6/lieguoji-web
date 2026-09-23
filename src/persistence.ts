@@ -19,9 +19,11 @@ export async function decodeSave(raw: unknown): Promise<World> {
  if(e.checksum !== await checksum(e.world)) throw new Error('存档校验和不匹配，原存档未修改。');
  return structuredClone(e.world);
 }
-function openDB(): Promise<IDBDatabase> {
+function openDB(scope='test-continent'): Promise<IDBDatabase> {
+ if(!/^[a-z][a-z0-9-]{0,90}$/.test(scope)) return Promise.reject(new Error('存档空间标识无效。'));
+ const dbName=scope==='test-continent'?DB_NAME:`lieguoji-${scope}-v1`;
  return new Promise((resolve,reject)=>{
-  const req=indexedDB.open(DB_NAME,1);
+  const req=indexedDB.open(dbName,1);
   req.onupgradeneeded=()=>req.result.createObjectStore('saves');
   req.onsuccess=()=>resolve(req.result);
   req.onerror=()=>reject(new Error('无法打开本地存档，请检查浏览器存储权限。'));
@@ -31,8 +33,8 @@ function openDB(): Promise<IDBDatabase> {
 function rejectFutureSave(raw:unknown) {
  if(raw && typeof raw==='object' && 'format' in raw && raw.format==='lieguoji-save' && ('version' in raw && raw.version!==1 || 'rulesVersion' in raw && raw.rulesVersion!=='0.1.0')) throw new Error('存档版本不兼容，已锁定写入；请使用创建该存档的新版游戏。');
 }
-export async function readSave(): Promise<{world:World|null; recovery:boolean; revision:number}> {
- const db=await openDB();
+export async function readSave(scope='test-continent'): Promise<{world:World|null; recovery:boolean; revision:number}> {
+ const db=await openDB(scope);
  const raw=await new Promise<{current:unknown;backup:unknown;revision:number}>((resolve,reject)=>{
   const tx=db.transaction('saves','readonly'), store=tx.objectStore('saves');
   const c=store.get('current'), b=store.get('backup'), r=store.get('revision');
@@ -44,9 +46,9 @@ export async function readSave(): Promise<{world:World|null; recovery:boolean; r
  try {return {world:await decodeSave(raw.current),recovery:false,revision:raw.revision};}
  catch (err) { if(raw.backup !== undefined) return {world:await decodeSave(raw.backup),recovery:true,revision:raw.revision}; throw err; }
 }
-export async function writeSave(world:World,expectedRevision:number): Promise<number> {
+export async function writeSave(world:World,expectedRevision:number,scope='test-continent'): Promise<number> {
  const envelope=await encodeSave(world);
- const db=await openDB();
+ const db=await openDB(scope);
  try {
   // Validate outside the write transaction; never promote a corrupt current slot to backup.
   const current:unknown=await new Promise((resolve,reject)=>{

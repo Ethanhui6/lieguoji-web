@@ -8,10 +8,22 @@ const terrainDefense: Record<Terrain, number> = { plain: 1, forest: 1.15, mounta
 const terrainNames: Record<Terrain, string> = { plain: '平原', forest: '森林', mountain: '山地' };
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value));
-const provinceById = (world: World, id: string) => world.provinces.find(province => province.id === id)!;
+type WorldIndex = { provinces: Map<string, Province>; forts: Map<string, number>; order: Map<string, number> };
+const indexes = new WeakMap<World, WorldIndex>();
+function indexWorld(world: World) {
+  const forts = new Map<string, number>();
+  for (const city of world.cities) forts.set(city.provinceId, Math.max(forts.get(city.provinceId) ?? 0, city.fort));
+  const index = { provinces: new Map(world.provinces.map(province => [province.id, province])), forts, order: new Map(world.provinces.map((province, order) => [province.id, order])) };
+  indexes.set(world, index); return index;
+}
+const provinceById = (world: World, id: string) => (indexes.get(world) ?? indexWorld(world)).provinces.get(id)!;
 const alive = (army: Army) => army.status !== 'destroyed' && army.troops > 0;
 const canHoldGround = (army: Army) => alive(army) && army.status !== 'retreating';
 const isFriendly = (world: World, army: Army, provinceId: string) => provinceById(world, provinceId).controller === army.nationId;
+
+export function canCommandArmy(world: World, army: Army): boolean {
+  return alive(army) && (world.scenario === 'custom-world' ? world.nations.some(nation => nation.id === army.nationId) : army.nationId === PLAYER_NATION);
+}
 
 function event(world: World, kind: GameEvent['kind'], text: string, reason: string) {
   const clippedText = text.length > 5000 ? `${text.slice(0, 4960)}…（其余损耗见军队状态）` : text;
@@ -24,21 +36,34 @@ function legDays(target: Province, retreat = false): number {
   return Math.max(1, terrainDays[target.terrain] - (retreat ? 1 : 0));
 }
 
-/** Dijkstra over explicit adjacency; ties follow the map's stable province order. */
-function findRoute(world: World, army: Army, targetId: string, retreat: boolean): string[] {
+type RouteNode = { id: string; cost: number; order: number };
+class RouteQueue {
+  private values: RouteNode[] = [];
+  private before(a: RouteNode, b: RouteNode) { return a.cost < b.cost || (a.cost === b.cost && a.order < b.order); }
+  push(node: RouteNode) {
+    this.values.push(node); let index = this.values.length - 1;
+    while (index > 0) { const parent = (index - 1) >> 1; if (!this.before(node, this.values[parent])) break; this.values[index] = this.values[parent]; index = parent; }
+    this.values[index] = node;
+  }
+  pop(): RouteNode | undefined {
+    const first = this.values[0], last = this.values.pop(); if (!last || !this.values.length) return first;
+    let index = 0;
+    while (index * 2 + 1 < this.values.length) { let child = index * 2 + 1; if (child + 1 < this.values.length && this.before(this.values[child + 1], this.values[child])) child++; if (!this.before(this.values[child], last)) break; this.values[index] = this.values[child]; index = child; }
+    this.values[index] = last; return first;
+  }
+}
+
+/** Heap Dijkstra. A null target finds the nearest safe province in ONE search. */
+function findRoute(world: World, army: Army, targetId: string | null, retreat: boolean): string[] {
+  const index = indexes.get(world) ?? indexWorld(world);
+  const hostile = new Set(world.armies.filter(other => canHoldGround(other) && other.nationId !== army.nationId).map(other => other.provinceId));
   const distances = new Map<string, number>([[army.provinceId, 0]]);
   const previous = new Map<string, string>();
-  const remaining = new Set(world.provinces.map(province => province.id));
-  while (remaining.size) {
-    let current: string | undefined;
-    let cheapest = Infinity;
-    for (const id of remaining) {
-      const cost = distances.get(id) ?? Infinity;
-      if (cost < cheapest) { current = id; cheapest = cost; }
-    }
-    if (current === undefined) return [];
-    remaining.delete(current);
-    if (current === targetId) {
+  const queue = new RouteQueue(); queue.push({ id: army.provinceId, cost: 0, order: index.order.get(army.provinceId)! });
+  for (let node = queue.pop(); node; node = queue.pop()) {
+    const current = node.id, cheapest = node.cost;
+    if (cheapest !== distances.get(current)) continue;
+    if (current === targetId || (targetId === null && current !== army.provinceId && provinceById(world, current).controller === army.nationId && !hostile.has(current))) {
       const route = [current];
       while (previous.has(route[0])) route.unshift(previous.get(route[0])!);
       return route;
@@ -46,13 +71,12 @@ function findRoute(world: World, army: Army, targetId: string, retreat: boolean)
     const province = provinceById(world, current);
     // An encounter interrupts a march. A preview must not promise a route
     // through an occupied enemy army to a destination behind it.
-    if (current !== army.provinceId && world.armies.some(other => canHoldGround(other) && other.provinceId === current && other.nationId !== army.nationId)) continue;
+    if (current !== army.provinceId && hostile.has(current)) continue;
     for (const neighborId of province.neighbors) {
-      if (!remaining.has(neighborId)) continue;
       const neighbor = provinceById(world, neighborId);
-      if (retreat && (neighbor.controller !== army.nationId || world.armies.some(other => canHoldGround(other) && other.provinceId === neighborId && other.nationId !== army.nationId))) continue;
+      if (retreat && (neighbor.controller !== army.nationId || hostile.has(neighborId))) continue;
       const candidate = cheapest + legDays(neighbor, retreat);
-      if (candidate < (distances.get(neighborId) ?? Infinity)) { distances.set(neighborId, candidate); previous.set(neighborId, current); }
+      if (candidate < (distances.get(neighborId) ?? Infinity)) { distances.set(neighborId, candidate); previous.set(neighborId, current); queue.push({ id: neighborId, cost: candidate, order: index.order.get(neighborId)! }); }
     }
   }
   return [];
@@ -62,11 +86,12 @@ const invalid = (reason: string): OrderPreview => ({ valid: false, reason, route
 
 export function previewOrder(world: World, order: Order): OrderPreview {
   if (!validateWorld(world)) return invalid('世界状态校验失败，请恢复有效存档。');
+  indexWorld(world);
   if (!isRecord(order) || !exactKeys(order, ['armyId', 'targetId', 'kind']) || !isId(order.armyId) || !isId(order.targetId) || (order.kind !== 'march' && order.kind !== 'retreat')) return invalid('命令格式无效。');
   const army = world.armies.find(item => item.id === order.armyId);
   const target = world.provinces.find(item => item.id === order.targetId);
   if (!army || !alive(army)) return invalid('这支军队不存在或已失去战斗力。');
-  if (army.nationId !== PLAYER_NATION) return invalid('只能向烈军下达命令。');
+  if (!canCommandArmy(world, army)) return invalid('测试大陆只能向烈军下达命令；自建世界可以控制各国军队。');
   if (!target) return invalid('目标辖区不存在。');
   if (target.id === army.provinceId) return invalid('军队已经位于此辖区。');
   if (army.status === 'marching' || army.status === 'retreating') return invalid('军队正在执行行军，请抵达当前目标后再下令。');
@@ -157,17 +182,15 @@ function moveArmy(world: World, army: Army) {
 
 function combatPower(world: World, army: Army): number {
   const province = provinceById(world, army.provinceId);
-  const fort = world.cities.filter(city => city.provinceId === province.id).reduce((max, city) => Math.max(max, city.fort), 0);
+  const fort = (indexes.get(world) ?? indexWorld(world)).forts.get(province.id) ?? 0;
   const defense = province.controller === army.nationId ? terrainDefense[province.terrain] * (1 + fort * 0.12) : 1;
   return army.troops * (0.35 + army.morale * 0.0065) * (army.supplies > 0 ? 1 : 0.5) * defense;
 }
 
 function forceRetreat(world: World, army: Army) {
-  const candidates = world.provinces.filter(province => province.id !== army.provinceId && province.controller === army.nationId)
-    .map(province => findRoute(world, army, province.id, true)).filter(route => route.length > 1)
-    .sort((left, right) => left.slice(1).reduce((sum, id) => sum + legDays(provinceById(world, id), true), 0) - right.slice(1).reduce((sum, id) => sum + legDays(provinceById(world, id), true), 0));
-  if (!candidates.length) { destroyArmy(world, army, '兵力或士气已低于继续交战阈值，且没有通向己方控制区的安全退路。国家与法理领土仍保留。'); return; }
-  army.route = candidates[0].slice(1); army.progress = 0; army.status = 'retreating';
+  const route = findRoute(world, army, null, true);
+  if (!route.length) { destroyArmy(world, army, '兵力或士气已低于继续交战阈值，且没有通向己方控制区的安全退路。国家与法理领土仍保留。'); return; }
+  army.route = route.slice(1); army.progress = 0; army.status = 'retreating';
   event(world, 'retreat', `${army.name}被迫撤退`, `剩余兵力 ${army.troops}、士气 ${army.morale}；兵力 ≤ 120 或士气 ≤ 20 时无法维持战线，撤向${provinceById(world, army.route.at(-1)!).name}。`);
 }
 
@@ -216,13 +239,61 @@ function resolveControl(world: World) {
   }
 }
 
+/** Basic military autonomy only; no scripted victor, diplomacy or economy. */
+function makeAutonomousDecisions(world: World) {
+  if (world.scenario !== 'custom-world') return;
+  const frontierDistances = new Map<string, Map<string, number>>();
+  const distancesFor = (nationId: string) => {
+    const cached = frontierDistances.get(nationId); if (cached) return cached;
+    const distances = new Map<string, number>(), queue: Province[] = [];
+    for (const province of world.provinces) if (province.controller === nationId && province.neighbors.some(id => provinceById(world, id).controller !== nationId)) { distances.set(province.id, 0); queue.push(province); }
+    for (let i = 0; i < queue.length; i++) for (const id of queue[i].neighbors) if (provinceById(world, id).controller === nationId && !distances.has(id)) { distances.set(id, distances.get(queue[i].id)! + 1); queue.push(provinceById(world, id)); }
+    frontierDistances.set(nationId, distances); return distances;
+  };
+  for (const army of world.armies) {
+    // Never replace a player's accepted route, an ongoing battle or a retreat.
+    if (!alive(army) || army.status !== 'idle') continue;
+    const stagger = [...army.id].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    if ((world.day + stagger) % 3 !== 0) continue;
+    if (army.supplies < 35 || army.morale < 50 || army.troops <= 180) {
+      if ((world.day + stagger) % 9 === 0) event(world, 'supply', `${army.name}自主休整`, `现有军粮 ${army.supplies}、士气 ${army.morale}、兵力 ${army.troops}；出发要求军粮 ≥ 35、士气 ≥ 50、兵力 > 180，优先恢复作战能力。`);
+      continue;
+    }
+    const province = provinceById(world, army.provinceId);
+    const neighbors = province.neighbors.map(id => provinceById(world, id));
+    const attackPower = army.troops * (0.35 + army.morale * 0.0065);
+    const attacks = neighbors.filter(target => target.controller !== army.nationId).map(target => {
+      const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && other.nationId !== army.nationId);
+      const defensePower = defenders.reduce((sum, defender) => sum + combatPower(world, defender), 0);
+      return { target, defensePower, cost: legDays(target) * 6 };
+    }).filter(candidate => candidate.cost + 12 <= army.supplies && attackPower >= candidate.defensePower * 1.15).sort((a, b) => a.defensePower - b.defensePower || a.cost - b.cost || a.target.id.localeCompare(b.target.id));
+    let target = attacks[0]?.target;
+    let reason: string;
+    if (target) {
+      reason = `自主判断：军粮 ${army.supplies} 可覆盖 ${attacks[0].cost} 点行军消耗并保留 12 点余粮；攻击有效军力 ${Math.round(attackPower)}，目标守方含地形城防为 ${Math.round(attacks[0].defensePower)}，达到 1.15 倍进攻门槛。实际交战仍逐日结算。`;
+    } else {
+      const distances = distancesFor(army.nationId), here = distances.get(province.id) ?? Infinity;
+      target = neighbors.filter(neighbor => neighbor.controller === army.nationId && (distances.get(neighbor.id) ?? Infinity) < here && legDays(neighbor) * 6 + 12 <= army.supplies && !world.armies.some(other => canHoldGround(other) && other.nationId !== army.nationId && other.provinceId === neighbor.id)).sort((a, b) => (distances.get(a.id)! - distances.get(b.id)!) || legDays(a) - legDays(b) || a.id.localeCompare(b.id))[0];
+      reason = '自主调动：沿己方相邻辖区接近陆地边界；逐段行军，军粮不足时在实际控制区休整补给，不穿越海洋。';
+    }
+    if (!target) {
+      if (neighbors.some(neighbor => neighbor.controller !== army.nationId) && (world.day + stagger) % 9 === 0) event(world, 'system', `${army.name}维持防御`, '相邻目标的守军实力、地形城防或行程余粮不满足进攻门槛，留在驻地防御并恢复补给。');
+      continue;
+    }
+    army.originId = army.provinceId; army.route = [target.id]; army.progress = 0; army.status = 'marching';
+    event(world, 'order', `${army.name}自主向${target.name}行军`, reason);
+  }
+}
+
 /** Pure, deterministic daily simulation. No rendering, storage or worker API. */
 export function advanceWorld(world: World, days: number): World {
   if (!validateWorld(world)) throw new Error('世界状态校验失败。');
   if (!Number.isInteger(days) || days < 0 || days > 365 || world.day + days > MAX_DAY) throw new Error('推进天数必须是 0—365 的整数，且不能超出世界日期范围。');
   const next = structuredClone(world);
+  indexWorld(next);
   for (let day = 0; day < days; day++) {
     next.day++;
+    makeAutonomousDecisions(next);
     for (const army of next.armies) if (alive(army)) replenishOrConsume(next, army);
     for (const army of next.armies) if (alive(army)) moveArmy(next, army);
     resolveBattles(next);
@@ -251,8 +322,15 @@ function list(value: unknown, minimum: number, maximum: number): value is unknow
 
 /** Treat imported IndexedDB / JSON content as untrusted, including nested data. */
 export function validateWorld(value: unknown): value is World {
-  if (!isRecord(value) || !exactKeys(value, ['schemaVersion', 'rulesVersion', 'scenario', 'mode', 'day', 'nations', 'provinces', 'cities', 'armies', 'events', 'nextEventId'])) return false;
-  if (value.schemaVersion !== 1 || value.rulesVersion !== '0.1.0' || value.scenario !== 'test-continent' || value.mode !== 'sandbox' || !integer(value.day, 0, MAX_DAY) || !integer(value.nextEventId, 1, Number.MAX_SAFE_INTEGER - 100000)) return false;
+  if (!isRecord(value) || !exactKeys(value, ['schemaVersion', 'rulesVersion', 'scenario', 'mode', 'day', 'nations', 'provinces', 'cities', 'armies', 'events', 'nextEventId', ...(value.scenario === 'custom-world' ? ['custom'] : [])])) return false;
+  if (value.schemaVersion !== 1 || value.rulesVersion !== '0.1.0' || (value.scenario !== 'test-continent' && value.scenario !== 'custom-world') || value.mode !== 'sandbox' || !integer(value.day, 0, MAX_DAY) || !integer(value.nextEventId, 1, Number.MAX_SAFE_INTEGER - 100000)) return false;
+  if (value.scenario === 'custom-world') {
+    const custom = value.custom;
+    if (!isRecord(custom) || !exactKeys(custom, ['id', 'name', 'seed', 'rivers']) || !isId(custom.id) || !isText(custom.name) || !isText(custom.seed, 200) || !list(custom.rivers, 0, 128)) return false;
+    let count = 0;
+    for (const river of custom.rivers) { if (!list(river, 2, 1000) || !river.every(point)) return false; count += river.length; }
+    if (count > 5000) return false;
+  }
   if (!list(value.nations, 1, 50) || !list(value.provinces, 1, 1000) || !list(value.cities, 1, 1000) || !list(value.armies, 1, 500) || !list(value.events, 0, MAX_EVENTS)) return false;
   const ids = new Set<string>();
   const uniqueId = (id: unknown): id is string => { if (!isId(id) || ids.has(id)) return false; ids.add(id); return true; };
@@ -267,17 +345,18 @@ export function validateWorld(value: unknown): value is World {
     if (Math.abs(vertices.reduce((area, vertex, index) => { const following = vertices[(index + 1) % vertices.length]; return area + vertex.x * following.y - following.x * vertex.y; }, 0)) < 0.01) return false;
   }
   const provinces = value.provinces as World['provinces'];
+  const provinceMap = new Map(provinces.map(province => [province.id, province]));
   const provinceIds = new Set(provinces.map(province => province.id));
-  for (const province of provinces) if (!province.neighbors.every(id => provinces.some(other => other.id === id && other.neighbors.includes(province.id)))) return false;
+  for (const province of provinces) if (!province.neighbors.every(id => provinceMap.get(id)?.neighbors.includes(province.id))) return false;
   for (const city of value.cities) {
     if (!isRecord(city) || !exactKeys(city, ['id', 'name', 'provinceId', 'position', 'label', 'fort']) || !uniqueId(city.id) || !isText(city.name) || !provinceIds.has(city.provinceId as string) || !point(city.position) || !point(city.label) || !integer(city.fort, 0, 10)) return false;
   }
   const cities = value.cities as World['cities'];
-  for (const nation of value.nations as World['nations']) if (!cities.some(city => city.id === nation.capitalId && provinces.find(province => province.id === city.provinceId)?.legalOwner === nation.id)) return false;
+  for (const nation of value.nations as World['nations']) if (!cities.some(city => city.id === nation.capitalId && provinceMap.get(city.provinceId)?.legalOwner === nation.id)) return false;
   for (const army of value.armies) {
     if (!isRecord(army) || !exactKeys(army, ['id', 'name', 'nationId', 'provinceId', 'troops', 'morale', 'supplies', 'status', 'route', 'progress', 'originId']) || !uniqueId(army.id) || !isText(army.name) || !nationIds.has(army.nationId as string) || !provinceIds.has(army.provinceId as string) || !provinceIds.has(army.originId as string) || !integer(army.troops, 0, 10000000) || !finite(army.morale, 0, 100) || !finite(army.supplies, 0, 100) || !['idle', 'marching', 'fighting', 'retreating', 'destroyed'].includes(army.status as string) || !finite(army.progress, 0, 1) || army.progress === 1 || !list(army.route, 0, provinces.length) || !army.route.every(id => provinceIds.has(id as string)) || new Set(army.route).size !== army.route.length || army.route.includes(army.provinceId)) return false;
     let previous = army.provinceId as string;
-    for (const target of army.route as string[]) { if (!provinces.find(province => province.id === previous)!.neighbors.includes(target)) return false; previous = target; }
+    for (const target of army.route as string[]) { if (!provinceMap.get(previous)!.neighbors.includes(target)) return false; previous = target; }
     const moving = army.status === 'marching' || army.status === 'retreating';
     if (moving !== (army.route.length > 0) || (!moving && army.progress !== 0) || (army.status === 'destroyed' ? army.troops !== 0 : army.troops === 0)) return false;
   }

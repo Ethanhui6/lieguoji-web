@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import 'pixi.js/unsafe-eval';
 import type { Army, Point, World } from '../sim/types';
+import { drawStudioMap } from '../editor/StudioCanvas';
+import type { EditorDraft } from '../worldgen/types';
 
 type Props = {
   world: World;
@@ -15,6 +17,13 @@ type View = { x: number; y: number; scale: number };
 
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 700;
+const customCache = new WeakMap<Container, { key: string; background: Sprite; overlay: Container; texture: Texture }>();
+
+function clearCustomCache(layer: Container) {
+  const entry = customCache.get(layer);
+  if (!entry) return;
+  entry.background.destroy(); entry.overlay.destroy({ children: true }); entry.texture.destroy(true); customCache.delete(layer);
+}
 
 function armyPoint(army: Army, world: World): Point {
   const origin = world.provinces.find((p) => p.id === army.provinceId)?.center ?? { x: 0, y: 0 };
@@ -45,6 +54,8 @@ function label(text: string, x: number, y: number, size: number, fill: string, f
 
 function renderWorld(props: Props, layer: Container) {
   const { world, selectedArmyId, selectedProvinceId, route } = props;
+  if (world.scenario === 'custom-world') { renderCustomWorld(props, layer); return; }
+  clearCustomCache(layer);
   layer.removeChildren().forEach((child) => child.destroy({ children: true }));
   const water = new Graphics();
   for (let y = 40; y < MAP_HEIGHT; y += 48) {
@@ -142,6 +153,53 @@ function renderWorld(props: Props, layer: Container) {
   });
 }
 
+function renderCustomWorld(props: Props, layer: Container) {
+  const { world, selectedArmyId, selectedProvinceId, route } = props;
+  // Terrain, coasts, rivers and national borders only rebuild when geography or
+  // control changes. A normal simulation day redraws just a few army markers.
+  const key = `${world.custom?.id}:${world.custom?.seed}:${JSON.stringify(world.custom?.rivers)}|${world.provinces.map((p) => `${p.id}:${p.controller}:${p.terrain}`).join('|')}|${world.nations.map((n) => `${n.name}:${n.color}:${n.capitalId}`).join('|')}|${world.cities.map((c) => `${c.name}:${c.provinceId}`).join('|')}`;
+  let entry = customCache.get(layer);
+  if (!entry || entry.key !== key) {
+    clearCustomCache(layer);
+    layer.removeChildren().forEach((child) => child.destroy({ children: true }));
+    const draft: EditorDraft = {
+      schemaVersion: 1, id: world.custom?.id ?? 'custom', name: world.custom?.name ?? '创作世界', seed: world.custom?.seed ?? '', width: 1000, height: 700,
+      cells: world.provinces.map((p) => ({ id: p.id, polygon: p.polygon, center: p.center, neighbors: p.neighbors, land: true, elevation: p.terrain === 'mountain' ? 0.84 : p.terrain === 'forest' ? 0.48 : 0.28, moisture: 0.5, terrain: p.terrain, ownerId: p.controller })),
+      nations: world.nations.map((n) => ({ id: n.id, name: n.name, color: n.color })),
+      cities: world.cities.map((c) => ({ id: c.id, name: c.name, cellId: c.provinceId, capital: world.nations.some((n) => n.capitalId === c.id) })), rivers: world.custom?.rivers ?? [],
+    };
+    const canvas = document.createElement('canvas'); canvas.width = 2000; canvas.height = 1400;
+    const context = canvas.getContext('2d');
+    if (context) { context.scale(2, 2); drawStudioMap(context, draft, 'political'); }
+    const texture = Texture.from(canvas);
+    const background = new Sprite(texture); background.width = 1000; background.height = 700;
+    const overlay = new Container();
+    layer.addChild(background, overlay); entry = { key, background, overlay, texture }; customCache.set(layer, entry);
+  }
+  const overlay = entry.overlay;
+  overlay.removeChildren().forEach((child) => child.destroy({ children: true }));
+  const selectedProvince = world.provinces.find((province) => province.id === selectedProvinceId);
+  if (selectedProvince) overlay.addChild(new Graphics().poly(selectedProvince.polygon.flatMap((p) => [p.x, p.y])).fill({ color: '#ffedb1', alpha: 0.1 }).stroke({ color: '#ffeab0', width: 1.8 }));
+  const selectedArmy = world.armies.find((army) => army.id === selectedArmyId);
+  const visibleRoute = route.length ? route : (selectedArmy?.route ?? []);
+  if (selectedArmy && visibleRoute.length) {
+    const origin = armyPoint(selectedArmy, world); const path = new Graphics().moveTo(origin.x, origin.y);
+    visibleRoute.forEach((id) => { const p = world.provinces.find((p) => p.id === id); if (p) path.lineTo(p.center.x, p.center.y); });
+    path.stroke({ color: '#ffe6a8', width: 2.2 }); overlay.addChild(path);
+  }
+  world.armies.filter((army) => army.status !== 'destroyed').forEach((army) => {
+    const point = armyPoint(army, world);
+    const colocated = world.armies.filter((other) => other.provinceId === army.provinceId && other.status !== 'destroyed');
+    const offset = (colocated.findIndex((other) => other.id === army.id) - (colocated.length - 1) / 2) * 19;
+    const x = point.x + offset + 14, y = point.y - 8;
+    const flag = new Graphics(); const color = world.nations.find((nation) => nation.id === army.nationId)?.color ?? '#c1b188';
+    if (army.id === selectedArmyId) flag.circle(x, y - 5, 13).fill({ color: '#fff3c5', alpha: 0.12 }).stroke({ color: '#ffeeaa', width: 1.5 });
+    flag.moveTo(x - 5, y + 7).lineTo(x - 5, y - 15).stroke({ color: '#f1e7c0', width: 1.2 });
+    flag.poly([x - 4, y - 15, x + 10, y - 15, x + 7, y - 9, x + 10, y - 3, x - 4, y - 3]).fill(color).stroke({ color: '#153a41', width: 1 });
+    overlay.addChild(flag);
+  });
+}
+
 export function MapCanvas(props: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -230,6 +288,7 @@ export function MapCanvas(props: Props) {
       disposed = true;
       observer?.disconnect();
       appRef.current = null;
+      if (worldLayerRef.current) clearCustomCache(worldLayerRef.current);
       worldLayerRef.current = null;
       if (initialized) app.destroy(true, { children: true });
     };
@@ -265,17 +324,18 @@ export function MapCanvas(props: Props) {
       if (candidate.status === 'destroyed') return false;
       const location = armyPoint(candidate, world);
       const colocated = world.armies.filter((other) => other.provinceId === candidate.provinceId && other.status !== 'destroyed');
-      const offset = (colocated.findIndex((other) => other.id === candidate.id) - (colocated.length - 1) / 2) * 36;
-      return Math.hypot(position.x - location.x - offset - 29, position.y - location.y + 3) < Math.max(22, 20 / view.scale);
+      const custom = world.scenario === 'custom-world';
+      const offset = (colocated.findIndex((other) => other.id === candidate.id) - (colocated.length - 1) / 2) * (custom ? 19 : 36);
+      return Math.hypot(position.x - location.x - offset - (custom ? 14 : 29), position.y - location.y + (custom ? 13 : 3)) < Math.max(custom ? 13 : 22, (custom ? 13 : 20) / view.scale);
     });
     if (army) { props.onArmySelect(army.id); return; }
     const province = world.provinces.find((candidate) => contains(position, candidate.polygon));
     if (province) props.onProvinceSelect(province.id);
   }
 
-  return <section className="map-section" aria-label="可交互测试大陆地图">
+  return <section className="map-section" aria-label={props.world.scenario === 'custom-world' ? '可交互创作世界地图' : '可交互测试大陆地图'}>
     <div className="map-kicker"><span>列国舆图</span><span>沙盒推演 · 实际控制</span></div>
-    <div ref={hostRef} className="map-canvas" data-testid="map-canvas" role="img" aria-label="测试大陆。单指拖动，双指或滚轮缩放；通过军队列表和地区列表也可选择。"
+    <div ref={hostRef} className="map-canvas" data-testid="map-canvas" role="img" aria-label={`${props.world.scenario === 'custom-world' ? '创作世界' : '测试大陆'}。单指拖动，双指或滚轮缩放；通过军队列表和地区列表也可选择。`}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);

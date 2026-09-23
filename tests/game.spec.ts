@@ -1,6 +1,6 @@
 import { test,expect,type Page } from '@playwright/test';
 async function drawer(page:Page,name:string){const tools=page.getByRole('navigation',{name:'游戏工具'});if(await tools.isVisible())await tools.getByRole('button',{name,exact:true}).click();}
-async function ready(page:Page){await page.goto('/');await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();await expect(page.getByRole('button',{name:'推进一日'})).toBeEnabled();}
+async function ready(page:Page){await page.goto('/?demo=1');await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();await expect(page.getByRole('button',{name:'推进一日'})).toBeEnabled();}
 async function selectArmy(page:Page){await drawer(page,'军情');await page.getByTestId('army-lie-main').click();}
 async function march(page:Page){await selectArmy(page);await page.getByLabel('目的地').selectOption('ming-border');await page.getByRole('button',{name:'预览命令'}).click();await expect(page.getByTestId('order-preview')).toContainText('3 日');await page.getByRole('button',{name:'确认军令'}).click();}
 async function days(page:Page,count:number){for(let i=0;i<count;i++){const before=Number(await page.getByTestId('day-number').innerText());await page.getByRole('button',{name:'推进一日'}).click();await expect(page.getByTestId('day-number')).toHaveText(String(before+1));}}
@@ -37,7 +37,7 @@ test('主动撤退、调速与暂停、坏档不覆盖、导出导入',async({pa
 });
 test('深链接、产物版本、地图手势和布局',async({page,context},info)=>{
  const response=await page.goto('/campaign/test');expect(response?.status()).toBe(200);await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();await page.reload();await expect(page.getByTestId('map-canvas').locator('canvas')).toBeVisible();
- const build=await page.request.get('/build.json');expect(build.ok()).toBeTruthy();const metadata=await build.json();expect(metadata.scenario).toBe('test-continent');if(process.env.GAME_EXPECTED_SHA)expect(metadata.commit).toBe(process.env.GAME_EXPECTED_SHA);
+ const build=await page.request.get('/build.json');expect(build.ok()).toBeTruthy();const metadata=await build.json();expect(metadata.entry).toBe('world-studio');expect(metadata.scenarios).toContain('test-continent');if(process.env.GAME_EXPECTED_SHA)expect(metadata.commit).toBe(process.env.GAME_EXPECTED_SHA);
  await expect(page.getByRole('button',{name:'放大地图'})).toBeVisible();await page.getByRole('button',{name:'放大地图'}).click();await expect(page.locator('.map-tools')).toContainText('125%');await page.getByRole('button',{name:'归位',exact:true}).click();await expect(page.locator('.map-tools')).toContainText('100%');
  const box=(await page.getByTestId('map-canvas').boundingBox())!;
  const before=await page.getByTestId('map-canvas').screenshot();

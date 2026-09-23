@@ -1,0 +1,12 @@
+export type Point = { x: number; y: number };
+export type Terrain = 'plain' | 'forest' | 'mountain';
+export type Nation = { id: string; name: string; color: string; capitalId: string; regimeId: string; dynastyId: string };
+export type Province = { id: string; name: string; polygon: Point[]; center: Point; label: Point; terrain: Terrain; legalOwner: string; controller: string; neighbors: string[]; supply: number };
+export type City = { id: string; name: string; provinceId: string; position: Point; label: Point; fort: number };
+export type Army = { id: string; name: string; nationId: string; provinceId: string; troops: number; morale: number; supplies: number; status: 'idle' | 'marching' | 'fighting' | 'retreating' | 'destroyed'; route: string[]; progress: number; originId: string };
+export type GameEvent = { id: number; day: number; kind: 'order' | 'march' | 'supply' | 'battle' | 'occupation' | 'retreat' | 'system'; text: string; reason: string };
+export type World = { schemaVersion: 1; rulesVersion: '0.1.0'; scenario: 'test-continent'; mode: 'sandbox'; day: number; nations: Nation[]; provinces: Province[]; cities: City[]; armies: Army[]; events: GameEvent[]; nextEventId: number };
+export type Order = { armyId: string; targetId: string; kind: 'march' | 'retreat' };
+export type OrderPreview = { valid: boolean; reason: string; route: string[]; days: number; supplyCost: number; warnings: string[] };
+export type WorkerRequest = { id: number; type: 'init'; world?: World } | { id: number; type: 'step'; days: number } | { id: number; type: 'order'; order: Order };
+export type WorkerResponse = { id: number; world: World; error?: string };

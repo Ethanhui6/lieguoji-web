@@ -1,0 +1,200 @@
+{
+  "originalPlanPresent": false,
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "title": "工程与本地检查链",
+      "dependsOn": [],
+      "status": "done",
+      "acceptance": "锁文件安装、lint、类型、单测、生产构建、产物检查通过",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M0-001",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "title": "可交互测试大陆与Web Worker",
+      "dependsOn": [
+        "M0-001"
+      ],
+      "status": "done",
+      "acceptance": "真实地图、线程通信、暂停调速和桌面操作",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M0-002",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "title": "移动基础操作与浏览器回归",
+      "dependsOn": [
+        "M0-002"
+      ],
+      "status": "done",
+      "acceptance": "手机/平板仿真拖动缩放与确认取消，核心浏览器测试通过；真机另验",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M0-003",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "blocker": "gh现有授权401，已发起设备授权",
+      "title": "私有GitHub仓库、Issue与真实CI",
+      "dependsOn": [
+        "M0-001"
+      ],
+      "status": "blocked",
+      "acceptance": "验证个人身份、查询后创建/复用仓库、M0-M6里程碑与当前Issue、远端CI通过",
+      "evidence": [],
+      "id": "M0-004"
+    },
+    {
+      "blocker": "Cloudflare登录/App授权待用户",
+      "title": "Pages HTTPS与唯一持续部署链",
+      "dependsOn": [
+        "M0-003",
+        "M0-004"
+      ],
+      "status": "blocked",
+      "acceptance": "仅dist发布，同提交检查通过，实际HTTPS URL线上验证与持续部署",
+      "evidence": [],
+      "id": "M0-005"
+    },
+    {
+      "title": "命令预览、行军与补给",
+      "dependsOn": [
+        "M0-002"
+      ],
+      "status": "done",
+      "acceptance": "真实路径、粮耗、预览确认取消、非法命令保护",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M1-001",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "title": "战斗、撤退、占领与原因",
+      "dependsOn": [
+        "M1-001"
+      ],
+      "status": "done",
+      "acceptance": "规则决定胜负、伤亡原因、主动/自动撤退、实控独立法理、首都失守不灭国",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M1-002",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "title": "版本化存档、刷新恢复与备份",
+      "dependsOn": [
+        "M1-002"
+      ],
+      "status": "done",
+      "acceptance": "IndexedDB保存恢复、SHA256、导入导出、坏档保护、核心闭环E2E",
+      "evidence": [
+        "docs/evidence/2026-09-23-local-acceptance.md"
+      ],
+      "id": "M1-003",
+      "issue": null,
+      "branch": "main",
+      "commit": "首次验收提交，实际SHA由AUTO_HANDOFF及git核对"
+    },
+    {
+      "blocker": "资料未提供",
+      "title": "正式资料恢复与人工核图",
+      "dependsOn": [],
+      "status": "blocked",
+      "acceptance": "取得原v2计划和地图，核对确认内容，不以测试地图替代",
+      "evidence": [],
+      "id": "ACCEPT-MAP"
+    },
+    {
+      "title": "iPhone/Android真实设备验收",
+      "dependsOn": [
+        "M0-005"
+      ],
+      "status": "pending_acceptance",
+      "acceptance": "真实手机地图手势、命令、长局性能、存档恢复",
+      "evidence": [],
+      "id": "ACCEPT-DEVICE"
+    },
+    {
+      "blocker": "原计划和地图缺失",
+      "title": "对照原计划细化地图编辑任务",
+      "dependsOn": [
+        "M1-003",
+        "ACCEPT-MAP"
+      ],
+      "status": "blocked",
+      "acceptance": "保留原100项计划，校验编辑约束、候选与正式隔离",
+      "evidence": [],
+      "id": "M2-PLAN"
+    },
+    {
+      "title": "外交与国家经营",
+      "dependsOn": [
+        "M2-PLAN"
+      ],
+      "status": "todo",
+      "acceptance": "按原产品任务实现并验收",
+      "evidence": [],
+      "id": "M3-PLAN"
+    },
+    {
+      "title": "皇室与历史分支回放",
+      "dependsOn": [
+        "M3-PLAN"
+      ],
+      "status": "todo",
+      "acceptance": "回放分支不污染原史",
+      "evidence": [],
+      "id": "M4-PLAN"
+    },
+    {
+      "title": "第一次长征",
+      "dependsOn": [
+        "M4-PLAN",
+        "ACCEPT-MAP"
+      ],
+      "status": "todo",
+      "acceptance": "正式地图与确认剧情下完成长征体验",
+      "evidence": [],
+      "id": "M5-PLAN"
+    },
+    {
+      "title": "PWA与最终兼容验收",
+      "dependsOn": [
+        "M5-PLAN",
+        "ACCEPT-DEVICE"
+      ],
+      "status": "todo",
+      "acceptance": "离线缓存更新与存档版本安全，真机验收",
+      "evidence": [],
+      "id": "M6-PLAN"
+    }
+  ],
+  "milestones": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6"
+  ],
+  "phaseState": "M0部分完成：远端CI/HTTPS未接通；M1本地闭环已验证"
+}

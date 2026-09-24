@@ -1,8 +1,8 @@
-import type { AtlasDraftData } from './model';
+import type { AtlasGeographyView } from './atlas-format';
 import type { AtlasCamera, CameraSize } from './camera';
 import { atlasLodPolicy, collectAtlasLabelCandidates, layoutAtlasLabels, type AtlasLabelCandidate, type AtlasLabelRect, type AtlasLod } from './lod';
 
-type Input = { data: AtlasDraftData; camera: AtlasCamera; viewport: CameraSize; lod: AtlasLod; selectedCellId: number | null };
+type Input = { data: AtlasGeographyView; camera: AtlasCamera; viewport: CameraSize; lod: AtlasLod; selectedCellId: number | null };
 export type AtlasLabelMetrics = {
   visibleCount: number; visibleIds: number[]; boxes: (AtlasLabelRect & { cellId: number })[];
   examinedCells: number; candidateCount: number; latticeStride: number | null;

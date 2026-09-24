@@ -1,5 +1,9 @@
-import type { AtlasCreateOptions, AtlasDraftData, BlockKey } from './model';
-import type { AtlasEditDelta, PreparedAtlasEdit } from './transactions';
+import type { AtlasDocument, AtlasFormat } from './atlas-format';
+import type { GenerationRecipe, GenerationScope } from './generation-contract';
+import type { GenerationPreviewInfo, GenerationConfirm } from './generation-session';
+import type { ConstraintsPreviewInfo } from './constraints-session';
+import type { AtlasCreateOptions, BlockKey } from './model';
+import type { AtlasEditDelta, PreparedAtlasEdit, AtlasConstraintEdit } from './transactions';
 import type { AtlasCatalogEntry, AtlasStorageTiming, AtlasStoredRoot } from './storage-types';
 
 export const ATLAS_PACKET_LIMIT = 512 * 1024;
@@ -102,27 +106,38 @@ export function readAtlasComputation(raw: unknown): AtlasComputationObservation 
   return checked;
 }
 /** UI copy; the bridge separately owns the verified receive state. */
-export interface AtlasClientView { data: AtlasDraftData; head: AtlasHead; metrics: AtlasMetrics }
+export interface AtlasClientView { data: AtlasDocument; head: AtlasHead; metrics: AtlasMetrics }
 export interface AtlasEditResult extends AtlasClientView {
   delta: AtlasEditDelta; dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[];
 }
 export type AtlasPreview = PreparedAtlasEdit & { metrics: AtlasMetrics };
 export type AtlasDraftList = AtlasCatalogEntry[];
 export interface AtlasProgress { stage: string; completed: number; total: number }
-export type AtlasOperation =
+export interface AtlasGenerationPreview { data: AtlasDocument; preview: GenerationPreviewInfo; metrics: AtlasMetrics }
+export interface AtlasConstraintsPreview { data: AtlasDocument; preview: ConstraintsPreviewInfo; metrics: AtlasMetrics }
+export type AtlasOperation = (
   | { type: 'create'; options: Pick<AtlasCreateOptions, 'size' | 'seed' | 'name'>; draftId: string; commandId: string }
   | { type: 'restore'; draftId: string; source: 'current' | 'backup' }
   | { type: 'edit' | 'preview' }
   | { type: 'undo'; commandId: string }
   | { type: 'fork'; name?: string; draftId: string; commandId: string }
   | { type: 'list' }
-  | { type: 'receipt'; draftId: string; commandId: string };
+  | { type: 'receipt'; draftId: string; commandId: string }
+  | { type: 'generation-copy'; draftId: string; commandId: string; name?: string }
+  | { type: 'generation-preview'; commandId: string; expectedRevision: number; expectedRootDigest: string; recipe: GenerationRecipe; scope: GenerationScope }
+  | ({ type: 'generation-confirm' } & GenerationConfirm)
+  | { type: 'generation-discard'; candidateId: string }
+  | { type: 'constraints-preview'; command: AtlasConstraintEdit }
+  | ({ type: 'constraints-confirm' } & GenerationConfirm)
+  | { type: 'constraints-discard'; candidateId: string }) & { atlasFormat?: AtlasFormat };
 export interface AtlasPacket {
-  version: 1; id: number; type: 'request' | 'ack' | 'cancel' | 'progress' | 'begin' | 'manifest' | 'block' | 'delta' | 'complete' | 'timing' | 'error';
+  version: 1; id: number; type: 'request' | 'ack' | 'cancel' | 'progress' | 'begin' | 'manifest' | 'block' | 'lock' | 'delta' | 'complete' | 'timing' | 'error';
   sequence?: number; body?: unknown;
 }
-export interface AtlasStateHeader { head: AtlasHead; root: AtlasStoredRoot; manifestLength: number; blockCount: number }
-const TYPES = new Set(['request', 'ack', 'cancel', 'progress', 'begin', 'manifest', 'block', 'delta', 'complete', 'timing', 'error']);
+export interface AtlasStateHeader { kind?: 'durable'; head: AtlasHead; root: AtlasStoredRoot; manifestLength: number; blockCount: number; lockCount?: number }
+export interface AtlasPreviewHeader { kind: 'generation-preview'; preview: GenerationPreviewInfo; manifestLength: number; blockCount: number; lockCount: number }
+export interface AtlasConstraintsHeader { kind: 'constraints-preview'; preview: ConstraintsPreviewInfo; manifestLength: number; blockCount: number; lockCount: number }
+const TYPES = new Set(['request', 'ack', 'cancel', 'progress', 'begin', 'manifest', 'block', 'lock', 'delta', 'complete', 'timing', 'error']);
 const encoder = new TextEncoder();
 
 /** Every postMessage carries exactly this byte array, so framing is counted. */

@@ -1,0 +1,81 @@
+{
+  "format": "lieguoji-atlas-v1-before-ph06-golden",
+  "version": 1,
+  "capturedAt": "2026-09-24T02:00:54.109Z",
+  "sources": [
+    {
+      "path": "src/world/model.ts",
+      "bytes": 25780,
+      "sha256": "d5ecef8a48d0ee9e162f83cb151e614ac9b9fed9eb5deb08db90cc609345a557"
+    },
+    {
+      "path": "src/world/topology.ts",
+      "bytes": 9575,
+      "sha256": "ada2a7a317641164dfd568a9a67a8783f5c8ffffd2a6c5e8f18c8bac765f839e"
+    }
+  ],
+  "options": {
+    "size": 128,
+    "seed": "ph04-production-shared-ocean",
+    "name": "旧Atlas编码回归",
+    "draftId": "atlas-11111111-1111-4111-8111-111111111111",
+    "atlasId": "geo-22222222-2222-4222-8222-222222222222"
+  },
+  "files": [
+    {
+      "path": "manifest-v1.bin",
+      "bytes": 6888,
+      "sha256": "a1c38c1797280ea3f48039518dc24a76658585340820dd7aec844a65583671ab"
+    },
+    {
+      "path": "geometry-v1.bin",
+      "bytes": 13108,
+      "sha256": "8a1f2207e8bf139d3036794b731cef8ec364c37ce3bd4eb87fefd25ef9fe6407"
+    },
+    {
+      "path": "elevation-v1.bin",
+      "bytes": 4124,
+      "sha256": "7a6ba09cf0ecae0512fc8ea5c2d38d1009d253d92be45b92b5a792f939ebe857"
+    },
+    {
+      "path": "sim-membership-v1.bin",
+      "bytes": 4124,
+      "sha256": "48408cf0b28cfe9b22ae44bf2a2f0a964c9079b2ffc40c5e410bf70fd30c3295"
+    },
+    {
+      "path": "admin-membership-v1.bin",
+      "bytes": 4124,
+      "sha256": "79804ebea29eca76bb750f10c8e3e7a8b529a273659f21e6a8cabbe441c500f5"
+    },
+    {
+      "path": "edited-manifest-v1.bin",
+      "bytes": 6976,
+      "sha256": "218b9c557cac59d3768d6459b4f7420d74808d58e807034358b8b3c7189bf4e9"
+    },
+    {
+      "path": "edited-elevation-v1.bin",
+      "bytes": 4124,
+      "sha256": "90fada30252ab839921db0a79c7e0411287356ad6b99285c466544fc9aa4fb0a"
+    },
+    {
+      "path": "edited-sim-membership-v1.bin",
+      "bytes": 4124,
+      "sha256": "9995954718a01403c165780f9d840030a246d4e951c47ba8c5923e7a45c1a292"
+    },
+    {
+      "path": "edited-admin-membership-v1.bin",
+      "bytes": 4124,
+      "sha256": "511581daea00b41a22dc5e9e08d52362716bfa1a80be2b7aab6d1bbf3a1ea8c2"
+    },
+    {
+      "path": "options.json",
+      "bytes": 210,
+      "sha256": "7a0f8052bb01e25bc7fa28f6cb9a314a66920205c1691a0f33c01c754b950adc"
+    }
+  ],
+  "manifestSha256": "a1c38c1797280ea3f48039518dc24a76658585340820dd7aec844a65583671ab",
+  "editedManifestSha256": "218b9c557cac59d3768d6459b4f7420d74808d58e807034358b8b3c7189bf4e9",
+  "originalDataUnchanged": true,
+  "syntheticOnly": true,
+  "playerStorageOpened": false
+}

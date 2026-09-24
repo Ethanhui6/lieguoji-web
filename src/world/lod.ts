@@ -1,5 +1,6 @@
 import { cameraWorldBounds, worldToScreen, type AtlasCamera, type CameraPoint, type CameraSize } from './camera';
-import { getCellLayerSlot, validateSpec, type AtlasDraftData } from './model';
+import { getCellLayerSlot, validateSpec } from './model';
+import type { AtlasGeographyView } from './atlas-format';
 import { getCellQuad } from './topology';
 
 export type AtlasLod = 'far' | 'medium' | 'near';
@@ -15,7 +16,7 @@ export interface AtlasLabelCandidate {
 export interface AtlasPlacedLabel extends AtlasLabelCandidate { box: AtlasLabelRect }
 export interface AtlasLabelCandidateOptions {
   /** A verified, synchronously read production view; this is not an import validator. */
-  data: AtlasDraftData;
+  data: AtlasGeographyView;
   camera: AtlasCamera;
   viewport: CameraSize;
   lod: AtlasLod;

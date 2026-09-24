@@ -15,7 +15,7 @@ const Game=lazy(()=>import('./App'));
 const AtlasStudio=lazy(()=>import('./editor/AtlasStudio'));
 
 const runFromUrl=()=>{const id=new URLSearchParams(window.location.search).get('world');return id&&/^run-[a-z0-9-]{1,55}$/.test(id)?id:'';};
-const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??''};};
+const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??'',format:!query.has('atlas-format')||query.get('atlas-format')==='1'?1 as const:query.get('atlas-format')==='2'?2 as const:null};};
 const initialScreen=()=>new URLSearchParams(window.location.search).has('atlas')?'atlas':runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
 export default function RootApp(){
  const [screen,setScreen]=useState<'studio'|'demo'|'simulation'|'atlas'>(initialScreen);
@@ -42,7 +42,7 @@ export default function RootApp(){
  async function openAtlas(){
   if(operation.current||writing.current)return;
   if(dirty.current){try{await save();}catch{return;}}
-  navigation.current++;setActiveAtlas(previous=>({id:'',source:'current',manifest:'',instance:previous.instance+1}));window.history.pushState(null,'','/?atlas=new');setScreen('atlas');
+  navigation.current++;setActiveAtlas(previous=>({id:'',source:'current',manifest:'',format:2,instance:previous.instance+1}));window.history.pushState(null,'','/?atlas=new&atlas-format=2');setScreen('atlas');
  }
  async function registerRun(candidate:World,draft=workspace.draft){
   if(!candidate.custom||candidate.scenario!=='custom-world')throw new Error('自建世界缺少身份信息');
@@ -131,7 +131,7 @@ export default function RootApp(){
   }
   const incoming=await decodeWorkspace(raw);const next={...workspace,draft:{...incoming.draft,id:`world-${crypto.randomUUID()}`}};await persist(next);setWorkspace(next);setError(null);
  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}}
- if(screen==='atlas')return <Suspense fallback={<main className="loading-state"><h1>正在打开大世界草稿…</h1></main>}><AtlasStudio key={activeAtlas.instance} initialDraftId={activeAtlas.id} initialSource={activeAtlas.source} expectedManifest={activeAtlas.manifest} onBack={back} onDraftOpened={(id,source,manifest)=>{const query=new URLSearchParams({atlas:id});if(source==='backup'){query.set('atlas-source','backup');query.set('atlas-manifest',manifest);}window.history.replaceState(null,'',`/?${query}`);}}/></Suspense>;
+ if(screen==='atlas')return <Suspense fallback={<main className="loading-state"><h1>正在打开大世界草稿…</h1></main>}><AtlasStudio key={activeAtlas.instance} initialDraftId={activeAtlas.id} initialSource={activeAtlas.source} expectedManifest={activeAtlas.manifest} initialFormat={activeAtlas.format} onBack={back} onDraftOpened={(id,source,manifest,format)=>{const query=new URLSearchParams({atlas:id});if(format===2)query.set('atlas-format','2');if(source==='backup'){query.set('atlas-source','backup');query.set('atlas-manifest',manifest);}window.history.replaceState(null,'',`/?${query}`);}}/></Suspense>;
  if(screen==='demo'||screen==='simulation')return <div inert={operating} aria-busy={operating}><Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined} onRecord={screen==='simulation'?record:undefined} onBranch={branch} onImportHistory={importHistory}/></Suspense></div>;
  if(!loaded)return <main className="loading-state" style={{minHeight:'100dvh'}}><h1>正在打开世界工坊</h1><p>读取地图草稿与历史世界…</p></main>;
  return <div inert={operating} aria-busy={operating}>

@@ -1,0 +1,95 @@
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+const initial = '.autopilot/ph06/playtest-browser', recheck = '.autopilot/ph06/playtest-islands-recheck';
+const destination = 'docs/evidence/playtest-2026-09-24/browser';
+const json = file => JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const first = json(`${initial}/run.json`), second = json(`${recheck}/run.json`), response = json(`${initial}/progress-review.json`);
+const retained = first.cases.filter(test => !test.title.startsWith('岛链：')), failures = first.cases.filter(test => test.title.startsWith('岛链：'));
+const passed = test => test.status === 'expected' && test.results.length === 1 && test.results[0] === 'passed';
+const selected = [...retained.map(test => ({ ...test, source: 'initial' })), ...second.cases.map(test => ({ ...test, source: 'islands-recheck' }))];
+const oldManifest = json(`${initial}/source-manifest.json`), newManifest = json(`${recheck}/source-manifest.json`);
+const oldCoastSource = readFileSync(`${initial}/${oldManifest.entries.find(entry => entry.source === 'tests/atlas-coast-islands.spec.ts').snapshot}`, 'utf8');
+const newCoastSource = readFileSync(`${recheck}/${newManifest.entries.find(entry => entry.source === 'tests/atlas-coast-islands.spec.ts').snapshot}`, 'utf8');
+const coastMarker = "test('细海岸：", oldCoastStart = oldCoastSource.indexOf(coastMarker), newCoastStart = newCoastSource.indexOf(coastMarker);
+if (oldCoastStart < 0 || newCoastStart < 0 || oldCoastSource.slice(oldCoastStart) !== newCoastSource.slice(newCoastStart)) throw new Error('The retained coast case changed; review reuse coverage before archiving.');
+if (!first.coverageComplete || !first.postflightPassed || !first.sourceUnchanged || first.cases.length !== 13 || retained.length !== 10 || !retained.every(passed)
+  || failures.length !== 3 || !failures.every(test => test.status === 'unexpected' && test.results.length === 1 && test.results[0] === 'failed')
+  || !second.functionalPassed || second.cases.length !== 3 || !second.sourceUnchanged || !second.cases.every(passed)
+  || first.expectedBuildSha256 !== second.expectedBuildSha256 || new Set(selected.map(test => `${test.project}:${test.title}`)).size !== 13) throw new Error('The actual results do not match the reviewed 10+3 coverage selection.');
+for (const directory of [initial, recheck]) for (const name of ['build-preflight.json', 'build-postflight.json']) {
+  const build = json(`${directory}/${name}`);
+  if (build.httpStatus !== 200 || build.sha256 !== first.expectedBuildSha256 || !build.matchesDist || !build.matchesExpected) throw new Error('Build identity or byte verification is incomplete.');
+}
+if (existsSync(destination)) throw new Error('Archive target already exists. Preserve it and review before selecting a new target.');
+mkdirSync(destination, { recursive: true });
+const files = [];
+function copy(source, relative) {
+  if (path.isAbsolute(source) || source.includes('..') || path.isAbsolute(relative) || relative.includes('..')) throw new Error('Archive paths must stay within the named project evidence.');
+  const bytes = readFileSync(source), target = path.join(destination, relative); mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, bytes, { flag: 'wx' }); files.push({ source, archived: relative.replaceAll('\\', '/'), bytes: bytes.length, sha256: sha(bytes) });
+}
+for (const [directory, label] of [[initial, 'initial'], [recheck, 'islands-recheck']]) {
+  for (const name of ['results.json', 'run.json', 'build-preflight.json', 'build-postflight.json', 'source-manifest.json']) copy(`${directory}/${name}`, `${label}/${name}`);
+  copy(`${directory}/browser.log`, `${label}/console.txt`);
+  if (label === 'initial') for (const name of ['selection.json', 'progress-review.json', 'progress-raw-review.json']) copy(`${directory}/${name}`, `${label}/${name}`);
+  const manifest = json(`${directory}/source-manifest.json`);
+  for (const entry of manifest.entries) {
+    const source = `${directory}/${entry.snapshot}`;
+    if (sha(readFileSync(source)) !== entry.sha256) throw new Error('Executed source snapshot hash mismatch');
+    copy(source, `${label}/${entry.snapshot}.txt`);
+  }
+}
+copy('.autopilot/ph06/islands-contract-browser-validation.json', 'islands-recheck/static-checks.json');
+copy('.autopilot/ph06/islands-contract-browser-typecheck.log', 'islands-recheck/initial-typescript-command-error.txt');
+function filesUnder(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    if (entry.isSymbolicLink()) throw new Error('Evidence cannot traverse a symbolic link');
+    const name = `${directory}/${entry.name}`; return entry.isDirectory() ? filesUnder(name) : entry.isFile() ? [name] : [];
+  });
+}
+const initialFiles = filesUnder(`${initial}/test-results`), recheckFiles = filesUnder(`${recheck}/test-results`);
+const traces = initialFiles.filter(file => file.endsWith('/trace.zip')).map(source => { const bytes = readFileSync(source); return { source, bytes: bytes.length, sha256: sha(bytes), retainedOnlyLocally: true }; });
+if (traces.length !== 3) throw new Error('Expected all three preserved first-run failed island traces.');
+for (const source of initialFiles.filter(file => file.endsWith('/error-context.md'))) copy(source, `initial/failures/${path.basename(path.dirname(source))}-error-context.txt`);
+const screenshots = [
+  [recheckFiles, 'desktop-chromium', 'islands-added-preserving-original-full-map.png', 'islands-added-desktop-full.png'],
+  [recheckFiles, 'mobile-chromium', 'islands-saved-near-map.png', 'islands-saved-mobile-near.png'],
+  [initialFiles, 'desktop-chromium', 'coast-before-near-same-camera.png', 'coast-before-desktop-same-camera.png'],
+  [initialFiles, 'desktop-chromium', 'coast-saved-near-same-camera.png', 'coast-saved-desktop-same-camera.png'],
+  [initialFiles, 'tablet-chromium', 'constraints-restored-blue-region.png', 'constraints-restored-tablet.png'],
+  [initialFiles, 'mobile-chromium', 'generation-confirmed-full-map.png', 'macro-confirmed-mobile-full.png'],
+];
+for (const [available, project, filename, archived] of screenshots) {
+  const matches = available.filter(file => path.basename(file) === filename && path.basename(path.dirname(file)).endsWith(`-${project}`));
+  if (matches.length !== 1) throw new Error(`Expected exactly one real screenshot ${project}/${filename}`);
+  copy(matches[0], `screenshots/${archived}`);
+}
+copy('.autopilot/ph06/archive-playtest-browser.mjs', 'tools/archive-playtest-browser.mjs.txt');
+const attributes = Buffer.from('* -text\n'); writeFileSync(`${destination}/.gitattributes`, attributes, { flag: 'wx' });
+files.push({ source: 'generated byte-preservation rule scoped to this evidence directory', archived: '.gitattributes', bytes: attributes.length, sha256: sha(attributes) });
+const coverage = { createdAt: new Date().toISOString(), expectedBuildSha256: first.expectedBuildSha256, initial: { executed: 13, passed: 10, failed: 3 }, recheck: { executed: 3, passed: 3, failed: 0 },
+  evidenceBoundary: '13-scenario functional coverage comes from 10 passing original cases plus 3 corrected island rechecks on the same exact dist. It is not a single 13/13 passing execution.',
+  correctedTestContract: 'ADR0011 already permits continuous island seabed shelves. The original tests incorrectly required unchanged heights for all remaining sea cells. The recheck strengthens actual shelf/land/coast/geometry checks and does not change production source or dist.',
+  retainedCoverageBasis: { coastCaseBytesUnchanged: true, coastCaseSha256: sha(Buffer.from(oldCoastSource.slice(oldCoastStart))),
+    explanation: 'The same-file coast case body is byte-identical before and after the island-only correction. Root independently rechecked all 218 application source hashes against ../application-sources.json and reported only this island test file changed; coast runtime helpers and production/build/Worker dependencies stayed unchanged. Other initial cases retain their actual original evidence and were not rerun.',
+    applicationSourceReference: '../application-sources.json' },
+  combinedFunctionalPassed: true, functionalCoveragePassed: true, selected,
+  sources: { initial: 'initial/results.json', islandsRecheck: 'islands-recheck/results.json', initialRun: 'initial/run.json', islandsRecheckRun: 'islands-recheck/run.json', responseGates: 'initial/progress-review.json', manifest: 'manifest.json' },
+  progress: { observationComplete: response.observationComplete, progress250msPassed: response.progress250msPassed, cancellation500msPassed: response.cancellation500msPassed,
+    actualProgressRuns: response.actualProgressRuns, actualCancellationRuns: response.actualCancellationRuns, groups: response.groups },
+  knownUnpassed: [
+    { status: 'preserved-failed-execution', scope: 'Initial island case on three projects', resolution: 'The overstrict unchanged-seabed test contract was corrected and all three complete island cases were rerun; original failures remain archived.' },
+    { status: 'pending', scope: 'Physical phone/tablet acceptance and final user visual acceptance', resolution: 'Not substituted by browser emulation or screenshots.' },
+    { status: 'not-covered', scope: 'Whole-PH and unrestricted performance acceptance', resolution: 'This is a bounded playtest build review; other PH gates and older failed evidence remain separately recorded.' },
+  ],
+  limitations: ['Mobile/tablet are desktop hardware emulation, not real devices.', 'Timing coverage is macro generation only, including desktop 512.', 'Screenshots support visual review but do not automatically pass visual acceptance or any whole phase.'],
+  preservedFailedTraces: traces };
+const coverageBytes = Buffer.from(JSON.stringify(coverage, null, 2) + '\n'); writeFileSync(`${destination}/verification.json`, coverageBytes, { flag: 'wx' });
+files.push({ source: 'generated from the archived original results and explicit selection', archived: 'verification.json', bytes: coverageBytes.length, sha256: sha(coverageBytes) });
+const manifest = { format: 'lieguoji-playtest-browser-evidence', version: 1, createdAt: new Date().toISOString(), target: destination, sourceFilesUnchanged: true,
+  sourceSnapshotStorage: 'Source files are copied byte-for-byte with .txt appended; original path and SHA remain in each original source-manifest and this mapping.',
+  files, preservedFailedTraces: traces, totalArchivedBytes: files.reduce((sum, file) => sum + file.bytes, 0) };
+const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n'); writeFileSync(`${destination}/manifest.json`, manifestBytes, { flag: 'wx' });
+console.log(JSON.stringify({ target: destination, files: files.length + 1, bytes: manifest.totalArchivedBytes + manifestBytes.length, manifestSha256: sha(manifestBytes), functionalCoverage: '10+3', progress250msPassed: response.progress250msPassed, cancellation500msPassed: response.cancellation500msPassed }, null, 2));

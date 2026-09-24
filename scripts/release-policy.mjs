@@ -5,6 +5,9 @@ export const READINESS_CHECKS = Object.freeze([
  'localFullRegression', 'performanceAndLongRun', 'saveAndLegacyCompatibility', 'privateContentAndLicenses',
  'realIphonePwa', 'realAndroidPwa', 'realDesktop', 'realTablet', 'continuousTouchRegression', 'userVisualAcceptance',
 ]);
+export const PLAYTEST_BRANCH = 'refs/heads/codex/ph06-world-generation';
+export const PLAYTEST_AUTHORIZATION = 'docs/PLAYTEST_RELEASE_2026-09-24.md';
+export const PLAYTEST_CHECKS = Object.freeze(['localBuild', 'coreBrowser', 'sourcePrivacy']);
 const STATUSES = new Set(['todo', 'in_progress', 'blocked', 'done', 'pending_acceptance']);
 const sameList = (actual, expected) => Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -112,5 +115,30 @@ export function evaluateRelease(plan, readiness, context = {}) {
  if (!/^[a-f0-9]{64}$/.test(context.sourceFingerprint ?? '')) blockers.push('Current source fingerprint unavailable');
  if (!/^[a-f0-9]{64}$/.test(readiness?.sourceFingerprint ?? '') || readiness.sourceFingerprint !== context.sourceFingerprint) blockers.push('Source fingerprint missing or changed since local acceptance');
  if (context.cleanWorkingTree !== true) blockers.push('Release requires a verified clean working tree, including untracked files');
+ return { ready: blockers.length === 0, blockers: [...new Set(blockers)], ...validation };
+}
+
+/** This single authorized preview does not complete any PH or formal device gate. */
+export function evaluatePlaytest(plan, readiness, context = {}) {
+ const validation = validatePlan(plan, context.evidencePaths ?? new Set());
+ const blockers = [...validation.errors], candidate = readiness?.playtest;
+ const exact = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) && sameList(Object.keys(value).sort(), [...keys].sort());
+ if (!exact(candidate, ['version', 'status', 'authorizationEvidence', 'sourceFingerprint', 'branch', 'expiresAt', 'checks']) || candidate?.version !== 1 || candidate?.status !== 'ready') blockers.push('Authorized playtest readiness is not ready or has an unknown format');
+ if (candidate?.branch !== PLAYTEST_BRANCH || context.targetRef !== PLAYTEST_BRANCH) blockers.push(`Playtest permits only ${PLAYTEST_BRANCH}`);
+ if (candidate?.authorizationEvidence !== PLAYTEST_AUTHORIZATION) blockers.push('Playtest authorization must match the explicit 2026-09-24 request');
+ checkEvidence('playtest authorization', [candidate?.authorizationEvidence], true, context.evidencePaths ?? new Set(), blockers);
+ const expiry = candidate?.expiresAt, now = context.now ?? Date.now();
+ const expires = typeof expiry === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(expiry) ? Date.parse(expiry) : NaN;
+ const normalized = Number.isFinite(expires) ? new Date(expires).toISOString().replace('.000Z', 'Z') : null;
+ if (!Number.isFinite(now) || !Number.isFinite(expires) || typeof expiry !== 'string' || normalized !== expiry.replace('.000Z', 'Z') || expires <= now) blockers.push('Playtest authorization has expired or lacks a valid UTC expiry');
+ if (!exact(candidate?.checks, PLAYTEST_CHECKS)) blockers.push('Expected exactly the three playtest readiness checks');
+ for (const id of PLAYTEST_CHECKS) {
+  const check = candidate?.checks?.[id];
+  if (!exact(check, ['status', 'evidence']) || check?.status !== 'passed') blockers.push(`Playtest check not passed: ${id}`);
+  checkEvidence(`playtest ${id}`, check?.evidence, true, context.evidencePaths ?? new Set(), blockers);
+ }
+ if (!/^[a-f0-9]{64}$/.test(context.sourceFingerprint ?? '')) blockers.push('Current source fingerprint unavailable');
+ if (!/^[a-f0-9]{64}$/.test(candidate?.sourceFingerprint ?? '') || candidate.sourceFingerprint !== context.sourceFingerprint) blockers.push('Playtest source fingerprint missing or changed since local acceptance');
+ if (context.cleanWorkingTree !== true) blockers.push('Playtest requires a verified clean working tree, including untracked files');
  return { ready: blockers.length === 0, blockers: [...new Set(blockers)], ...validation };
 }

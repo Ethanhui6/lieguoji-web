@@ -1,0 +1,117 @@
+{
+  "startedAt": "2026-09-24T04:11:18.761Z",
+  "completedAt": "2026-09-24T04:22:51.799Z",
+  "expectedBuildSha256": "0bdf3cb4f876a06c7061f44b5b104454158504299353240ee47838fb565ead38",
+  "browserExit": 1,
+  "postflightPassed": true,
+  "sourceUnchanged": true,
+  "expectedScenarios": 13,
+  "coverageComplete": true,
+  "functionalPassed": false,
+  "cases": [
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "desktop-chromium",
+      "status": "unexpected",
+      "results": [
+        "failed"
+      ]
+    },
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "mobile-chromium",
+      "status": "unexpected",
+      "results": [
+        "failed"
+      ]
+    },
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "tablet-chromium",
+      "status": "unexpected",
+      "results": [
+        "failed"
+      ]
+    },
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "真实 512 网格创世预览、确认和刷新",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    }
+  ]
+}

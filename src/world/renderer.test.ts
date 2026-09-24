@@ -4,6 +4,8 @@ import { AtlasRenderer } from './renderer';
 import { cloneAtlasDraft, createAtlasDraft, encodeBlock, encodeManifest, getCellLayerSlot, getVertexSlot, hashBlock, type AtlasDraftData } from './model';
 import { cellVertexIds, getCellQuad, getVertexPositionQ, incidentCellIds, vertexIdAt } from './topology';
 import { AtlasTextureCache, type AtlasTextureSpec } from './atlas-texture-cache';
+import { cloneGenerationDocument, createGenerationDraft, encodeGenerationManifest } from './generation-format';
+import { hashAtlasManifest, type AtlasGenerationDocument } from './atlas-format';
 
 // Only the browser/GPU boundary is replaced. The source, shared geometry and
 // spatial index are the production 128² atlas, never a benchmark fixture.
@@ -407,6 +409,8 @@ class ResizeObserverDouble {
 }
 
 let source: AtlasDraftData;
+let generationSource: AtlasGenerationDocument;
+let generationSourceDigest: string;
 let largeSource: AtlasDraftData;
 let largeSourceDigest: string;
 let originalManifest: Uint8Array;
@@ -419,6 +423,22 @@ const encodedDigest = (data: AtlasDraftData) => {
   for (const [key, block] of data.blocks) digest.update(key).update(encodeBlock(block));
   return digest.digest('hex');
 };
+const generationDigest = (data: AtlasGenerationDocument) => {
+  const digest = createHash('sha256').update(encodeGenerationManifest(data.manifest));
+  for (const [key, block] of data.blocks) digest.update(key).update(encodeBlock(block));
+  return digest.digest('hex');
+};
+async function generationCandidate() {
+  const candidate = cloneGenerationDocument(generationSource), slot = getCellLayerSlot(candidate, 'elevation', 8256);
+  slot.block.values[slot.slot] = 650; candidate.manifest.revision++;
+  candidate.manifest.blockRefs.find(ref => ref.key === slot.key)!.hash = await hashBlock(slot.block);
+  return candidate;
+}
+async function generationRenderer(onProgress?: Parameters<typeof newRenderer>[0]) {
+  const h = newRenderer(onProgress); await h.renderer.init();
+  const accepted = h.renderer.accept(generationSource); await flushFrames(); await accepted;
+  expect(h.fatal).not.toHaveBeenCalled(); return h;
+}
 const tick = () => {
   const callbacks = [...frames.values()]; frames.clear();
   for (const callback of callbacks) callback(performance.now());
@@ -456,6 +476,8 @@ beforeAll(async () => {
   originalBlocks = new Map([...source.blocks].map(([key, block]) => [key, encodeBlock(block)]));
   largeSource = await createAtlasDraft({ size: 512, seed: 'renderer-switch-large', name: '大地图切换合成草稿' });
   largeSourceDigest = encodedDigest(largeSource);
+  generationSource = await createGenerationDraft({ size: 128, seed: 'renderer-generation', name: '生成显示边界合成草稿' });
+  generationSourceDigest = generationDigest(generationSource);
 });
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -474,7 +496,142 @@ afterEach(() => {
   expect(encodeManifest(source.manifest)).toEqual(originalManifest);
   expect([...source.blocks.keys()]).toEqual([...originalBlocks.keys()]);
   for (const [key, block] of source.blocks) expect(encodeBlock(block)).toEqual(originalBlocks.get(key));
+  expect(generationDigest(generationSource)).toBe(generationSourceDigest);
   vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks();
+});
+
+describe('generation candidate display lifecycle', () => {
+  it('renders actual v2 candidate terrain, permits inspection and discards without accepting a revision', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate(), digest = generationDigest(candidate), canvas = canvasOf(h);
+    h.renderer.focusCell(8256); const baseline = h.renderer.metrics(); pixi.targetDraw.mockClear();
+    const showing = h.renderer.showGenerationPreview(candidate); await flushFrames(); const displayed = await showing;
+    expect(displayed).toMatchObject({ displaySource: 'generation-preview', displayRevision: 1, displayVersion: 2, committedRevision: 0,
+      acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, selected: 8256, camera: baseline.camera });
+    expect(displayed.displayCorrectFrameAt).toBeGreaterThanOrEqual(baseline.correctFrameAt);
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x6f9375))).toBe(true);
+    expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(candidate);
+    expect(() => h.renderer.showPreview([8256])).toThrow('确认或取消'); expect(h.fatal).not.toHaveBeenCalled();
+    dispatch(canvas, 'keydown', { key: 'ArrowLeft' }); tick();
+    dispatch(canvas, 'wheel', { deltaY: -80, clientX: 336, clientY: 210 }); tick();
+    const camera = h.renderer.metrics().camera;
+    expect(camera.x).not.toBe(baseline.camera.x); expect(camera.scale).toBeGreaterThan(baseline.camera.scale);
+    const quad = getCellQuad(candidate, 8256), clientX = quad.reduce((sum, point) => sum + point.x, 0) / 4 * camera.scale + camera.x,
+      clientY = quad.reduce((sum, point) => sum + point.y, 0) / 4 * camera.scale + camera.y;
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX, clientY });
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX, clientY }); expect(h.pick).toHaveBeenLastCalledWith(8256);
+    pixi.targetDraw.mockClear(); const clearing = h.renderer.clearGenerationPreview(); await flushFrames(); const cleared = await clearing;
+    expect(cleared).toMatchObject({ displaySource: 'committed', displayRevision: 0, committedRevision: 0, selected: 8256, camera,
+      acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt });
+    expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(generationSource);
+    expect(pixi.targetDraw.mock.calls.length).toBeGreaterThan(0);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    expect(generationDigest(candidate)).toBe(digest); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('restores a completed candidate through repeated GPU loss and restores committed geography when discarded while lost', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate(), canvas = canvasOf(h), baseline = h.renderer.metrics();
+    const showing = h.renderer.showGenerationPreview(candidate); await flushFrames(); await showing;
+    for (let epoch = 1; epoch <= 2; epoch++) {
+      dispatch(canvas, 'webglcontextlost');
+      expect(h.renderer.metrics()).toMatchObject({ displaySource: 'generation-preview', cache: { entries: 0 }, geometryCache: { entries: 0 } });
+      pixi.targetDraw.mockClear(); dispatch(canvas, 'webglcontextrestored'); await flushFrames();
+      expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'ready', epoch }, displayRevision: 1, displaySource: 'generation-preview', acceptedRevision: 0, correctFrameAt: baseline.correctFrameAt });
+      expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(candidate);
+      expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x6f9375))).toBe(true);
+    }
+    dispatch(canvas, 'webglcontextlost'); const clearing = h.renderer.clearGenerationPreview(); await Promise.resolve();
+    expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'lost' }, displaySource: 'committed', displayRevision: 0 });
+    pixi.targetDraw.mockClear(); dispatch(canvas, 'webglcontextrestored'); await flushFrames(); await clearing;
+    expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(generationSource);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('cancels private index construction without publishing the candidate or locking subsequent previews', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate(), baseline = h.renderer.metrics();
+    labelBoundary.update.mockClear(); pixi.targetDraw.mockClear();
+    const showing = h.renderer.showGenerationPreview(candidate), rejected = expect(showing).rejects.toMatchObject({ name: 'AbortError' });
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    await expect(h.renderer.accept(candidate)).rejects.toThrow('仍在接收');
+    const clearing = h.renderer.clearGenerationPreview(); await flushFrames(); await rejected; await clearing;
+    expect(h.renderer.metrics()).toMatchObject({ displaySource: 'committed', acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, fatal: false });
+    expect(labelBoundary.update.mock.calls.every(([input]) => input.data === generationSource)).toBe(true);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    const retry = h.renderer.showGenerationPreview(candidate); await flushFrames(); await retry;
+    expect(h.renderer.metrics().displaySource).toBe('generation-preview'); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('cancels partial candidate painting after GPU loss and waits for a committed correct frame', async () => {
+    let interrupt = false;
+    const h = await generationRenderer(progress => {
+      if (interrupt && progress.stage === '绘制已核验地理块' && progress.completed === 8) { interrupt = false; dispatch(canvasOf(h), 'webglcontextlost'); }
+    });
+    const candidate = await generationCandidate(), baseline = h.renderer.metrics(); interrupt = true;
+    const showing = h.renderer.showGenerationPreview(candidate), rejected = expect(showing).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.runAllTimersAsync(); expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'lost' }, displaySource: 'generation-preview' });
+    const published = vi.fn(), clearing = h.renderer.clearGenerationPreview().then(published);
+    await flushFrames(); await rejected;
+    expect(published).not.toHaveBeenCalled(); expect(h.renderer.metrics().displaySource).toBe('committed');
+    dispatch(canvasOf(h), 'webglcontextrestored'); await flushFrames(); await clearing;
+    expect(published).toHaveBeenCalledTimes(1); expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(generationSource);
+    expect(h.renderer.metrics()).toMatchObject({ acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, fatal: false });
+  });
+
+  it('full durable acceptance confirms the candidate and discard cannot roll it back', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate();
+    const showing = h.renderer.showGenerationPreview(candidate); await flushFrames(); await showing;
+    h.renderer.focusCell(8256); const camera = h.renderer.metrics().camera;
+    await expect(h.renderer.accept(candidate, { dirtyKeys: [], changedVertexIds: [], affectedCellIds: [] })).rejects.toThrow('完整持久结果');
+    const committing = h.renderer.accept(candidate); await flushFrames(); const result = await committing;
+    expect(result).toMatchObject({ displaySource: 'committed', displayRevision: 1, acceptedRevision: 1, committedRevision: 1, camera, selected: 8256 });
+    const renders = pixi.render.mock.calls.length; expect(await h.renderer.clearGenerationPreview()).toEqual(result);
+    expect(pixi.render).toHaveBeenCalledTimes(renders); expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(candidate);
+    expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('diagnostics verify both real v2 sources and keep the top-level digest committed', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate();
+    const showing = h.renderer.showGenerationPreview(candidate); await flushFrames(); await showing;
+    vi.useRealTimers(); const canvas = canvasOf(h), baselineDigest = await hashAtlasManifest(generationSource.manifest), previewDigest = await hashAtlasManifest(candidate.manifest);
+    const reply = new Promise<CustomEvent>(resolve => canvas.addEventListener('atlas-audit-response', event => resolve(event as CustomEvent), { once: true }));
+    canvas.dispatchEvent(new CustomEvent('atlas-audit-request', { detail: { requestId: 'preview-audit' } }));
+    expect((await reply).detail).toMatchObject({ ok: true, manifestDigest: baselineDigest, revision: 0,
+      display: { source: 'generation-preview', manifestDigest: previewDigest, revision: 1, version: 2, verifiedBlocks: candidate.blocks.size } });
+    expect(previewDigest).not.toBe(baselineDigest);
+  });
+
+  it('rejects an unrelated candidate without damaging the accepted map', async () => {
+    const h = await generationRenderer(), unrelated = await generationCandidate(), baseline = h.renderer.metrics();
+    unrelated.manifest.draftId = source.manifest.draftId;
+    await expect(h.renderer.showGenerationPreview(unrelated)).rejects.toThrow('身份或规格');
+    expect(h.renderer.metrics()).toEqual(baseline); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it.each(['candidate cache release', 'durable correct frame'])('%s failure locks rendering and cannot advertise a stale committed audit', async boundary => {
+    const h = await generationRenderer(), candidate = await generationCandidate(), baseline = h.renderer.metrics();
+    if (boundary === 'durable correct frame') {
+      const preview = h.renderer.showGenerationPreview(candidate); await flushFrames(); await preview;
+      labelBoundary.update.mockImplementationOnce(() => { throw new Error('synthetic confirmation frame failure'); });
+    } else pixi.textureDestroy.mockImplementationOnce(() => { throw new Error('synthetic candidate release failure'); });
+    const pending = boundary === 'durable correct frame' ? h.renderer.accept(candidate) : h.renderer.showGenerationPreview(candidate);
+    const rejected = expect(pending).rejects.toThrow('synthetic'); await flushFrames(); await rejected;
+    expect(h.renderer.metrics()).toMatchObject({ fatal: true, acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt });
+    expect(h.fatal).toHaveBeenCalledTimes(1);
+    const replies = vi.fn(), canvas = canvasOf(h); canvas.addEventListener('atlas-audit-response', event => replies((event as CustomEvent).detail));
+    canvas.dispatchEvent(new CustomEvent('atlas-audit-request', { detail: { requestId: 'failed-audit' } }));
+    expect(replies).toHaveBeenCalledWith({ requestId: 'failed-audit', ok: false, error: expect.stringContaining('锁定') });
+  });
+
+  it('destroy aborts a pending candidate and releases both GPU caches without a late frame', async () => {
+    const h = await generationRenderer(), candidate = await generationCandidate(), baseline = h.renderer.metrics();
+    const showing = h.renderer.showGenerationPreview(candidate), rejected = expect(showing).rejects.toThrow('关闭');
+    h.renderer.destroy(); const renders = pixi.render.mock.calls.length; await flushFrames(); await rejected;
+    expect(pixi.render).toHaveBeenCalledTimes(renders);
+    expect(h.renderer.metrics()).toMatchObject({ destroyed: true, acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt,
+      cache: { entries: 0, pixels: 0, reservedPixels: 0 }, geometryCache: { entries: 0, quads: 0, reservedEntries: 0, reservedQuads: 0 } });
+    expect(h.renderer.metrics().geometryCache.created).toBe(h.renderer.metrics().geometryCache.destroyed);
+    expect(h.fatal).not.toHaveBeenCalled();
+  });
 });
 
 describe('atlas renderer failure and lifetime boundaries', () => {

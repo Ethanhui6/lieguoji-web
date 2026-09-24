@@ -43,5 +43,37 @@
       "status": "pending",
       "evidence": []
     }
+  },
+  "playtest": {
+    "version": 1,
+    "status": "ready",
+    "authorizationEvidence": "docs/PLAYTEST_RELEASE_2026-09-24.md",
+    "sourceFingerprint": "6740024ed2ecbb4323bf82e0713a0303e831a627243c77add5031e630cfb47fe",
+    "branch": "refs/heads/codex/ph06-world-generation",
+    "expiresAt": "2026-09-25T03:58:49.181Z",
+    "checks": {
+      "localBuild": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/playtest-2026-09-24/local-build.json",
+          "docs/evidence/playtest-2026-09-24/application-sources.json"
+        ]
+      },
+      "coreBrowser": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/playtest-2026-09-24/browser/verification.json"
+        ]
+      },
+      "sourcePrivacy": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/playtest-2026-09-24/source-privacy.json",
+          "docs/evidence/playtest-2026-09-24/source-privacy.md",
+          "plan/reviewed-evidence-files.json",
+          "docs/evidence/playtest-2026-09-24/source-privacy-delta.json"
+        ]
+      }
+    }
   }
 }

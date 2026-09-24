@@ -1,0 +1,59 @@
+import { createHash } from 'node:crypto';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { finished } from 'node:stream/promises';
+
+const expected = process.argv[2], relativeOutput = process.argv[3];
+if (!/^[a-f0-9]{64}$/.test(expected ?? '') || !/^\.autopilot\/ph06\/playtest-browser(?:-[a-z0-9-]+)?$/.test(relativeOutput ?? '')) throw new Error('Arguments: exact expected build.json SHA256, new .autopilot/ph06/playtest-browser[-label].');
+const directory = path.resolve(relativeOutput);
+if (existsSync(directory)) throw new Error('Evidence directory already exists; preserve previous evidence and use a new label.');
+mkdirSync(directory);
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const json = (name, value) => writeFileSync(path.join(directory, name), JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
+const sources = ['tests/atlas-generation.spec.ts', 'tests/atlas-coast-islands.spec.ts', 'tests/atlas-constraints.spec.ts', 'playwright.config.ts', '.autopilot/ph06/playtest-browser.config.ts', '.autopilot/ph06/playtest-browser-runner.mjs', '.autopilot/ph06/summarize-playtest-browser.mjs'];
+const sourceEntries = [];
+let browserExit = null, postflightPassed = false;
+async function buildEvidence(name) {
+  const response = await fetch('http://127.0.0.1:4173/build.json'), served = Buffer.from(await response.arrayBuffer()), dist = readFileSync('dist/build.json');
+  const sha256 = hash(served), matchesDist = served.equals(dist), matchesExpected = sha256 === expected;
+  const report = { checkedAt: new Date().toISOString(), url: response.url, httpStatus: response.status, sha256, matchesDist, matchesExpected, build: response.status === 200 ? JSON.parse(served.toString('utf8')) : null };
+  json(name, report);
+  if (response.status !== 200 || !matchesDist || !matchesExpected) throw new Error('Serving a different or stale build; browser validation refused.');
+}
+const startedAt = new Date().toISOString();
+try {
+  await buildEvidence('build-preflight.json');
+  mkdirSync(path.join(directory, 'source'));
+  for (const [index, source] of sources.entries()) {
+    const bytes = readFileSync(source), snapshot = `source/${index}-${path.basename(source)}`;
+    writeFileSync(path.join(directory, snapshot), bytes, { flag: 'wx' }); sourceEntries.push({ source, snapshot, bytes: bytes.length, sha256: hash(bytes) });
+  }
+  json('source-manifest.json', { createdAt: new Date().toISOString(), entries: sourceEntries });
+  json('selection.json', { expectedScenarios: 13, projects: { 'desktop-chromium': 5, 'mobile-chromium': 4, 'tablet-chromium': 4 },
+    includes: ['65k macro generation complete loop on all three projects', 'island chains complete loop on all three projects', 'coast geometry complete loop on all three projects', 'constraints complete loop on all three projects', '512 generation and active cancellation on desktop'],
+    excludedOlderEvidence: 'The other 960-build cases remain separate older evidence. This run makes no claim that those cases were rerun on this build.',
+    timeoutPolicy: 'Unchanged base and per-test timeouts; one worker; existing config retry policy.',
+    acceptanceBoundary: 'Functional/save failures block playtest delivery. Raw 250ms progress and 500ms cancellation observations are reported separately; mobile/tablet are emulated, not real devices.' });
+  const log = createWriteStream(path.join(directory, 'browser.log'), { flags: 'wx' });
+  const args = ['node_modules/playwright/cli.js', 'test', '--config=.autopilot/ph06/playtest-browser.config.ts'];
+  const child = spawn(process.execPath, args, { cwd: process.cwd(), windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, GAME_BASE_URL: 'http://127.0.0.1:4173', ATLAS_PLAYTEST_EVIDENCE: directory } });
+  child.stdout.pipe(log, { end: false }); child.stderr.pipe(log, { end: false });
+  browserExit = await new Promise((resolve, reject) => { child.once('error', reject); child.once('close', resolve); });
+  log.end(); await finished(log);
+  await buildEvidence('build-postflight.json'); postflightPassed = true;
+  const changedSources = sourceEntries.filter(entry => hash(readFileSync(entry.source)) !== entry.sha256).map(entry => entry.source);
+  if (changedSources.length) throw new Error(`Executed source changed during run: ${changedSources.join(', ')}`);
+  const report = JSON.parse(readFileSync(path.join(directory, 'results.json'), 'utf8')), cases = [];
+  function visit(suite) { for (const spec of suite.specs ?? []) for (const test of spec.tests ?? []) cases.push({ title: spec.title, project: test.projectName, status: test.status, results: test.results.map(result => result.status) }); for (const child of suite.suites ?? []) visit(child); }
+  for (const suite of report.suites) visit(suite);
+  const expectedCounts = { 'desktop-chromium': 5, 'mobile-chromium': 4, 'tablet-chromium': 4 };
+  const coverageComplete = cases.length === 13 && Object.entries(expectedCounts).every(([project, count]) => cases.filter(test => test.project === project).length === count);
+  const functionalPassed = browserExit === 0 && coverageComplete && cases.every(test => test.status === 'expected' && test.results.length === 1 && test.results[0] === 'passed');
+  json('run.json', { startedAt, completedAt: new Date().toISOString(), expectedBuildSha256: expected, browserExit, postflightPassed, sourceUnchanged: true, expectedScenarios: 13, coverageComplete, functionalPassed, cases });
+  console.log(JSON.stringify({ directory: relativeOutput, browserExit, coverageComplete, functionalPassed, postflightPassed }));
+  if (!functionalPassed) process.exitCode = 1;
+} catch (error) {
+  json('runner-failure.json', { startedAt, failedAt: new Date().toISOString(), expectedBuildSha256: expected, browserExit, postflightPassed, message: error instanceof Error ? error.message : String(error) });
+  console.error(error); process.exitCode = 1;
+}

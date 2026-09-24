@@ -1,7 +1,8 @@
-import type { AtlasBlock, AtlasDraftManifest } from './model';
+import type { AtlasBlock } from './model';
+import type { AtlasCellLockBlock, AtlasFormat, AtlasManifestFor } from './generation-contract';
 
 export interface AtlasStoredRoot {
-  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1';
+  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1' | 'atlas-draft-v2';
   draftId: string; revision: number; currentManifest: string; backupManifest: string | null;
   lastCommitId: string; rootDigest: string;
 }
@@ -37,13 +38,16 @@ export interface AtlasStorageTiming {
   postCommitVerifyWallMs: number | null;
   postCommitCacheWallMs: number | null;
 }
-export interface AtlasPrepareRequest {
-  candidateId: string; commandId: string; manifest: AtlasDraftManifest;
+export interface AtlasPrepareRequest<F extends AtlasFormat = AtlasFormat> {
+  candidateId: string; commandId: string; manifest: AtlasManifestFor<F>;
   /** Exact root obtained from open/commit. Null is only for an absent new draft. */
   expectedRoot: AtlasStoredRoot | null;
 }
-export interface AtlasLocalCommitRequest extends AtlasPrepareRequest { dirtyBlocks: AtlasBlock[] }
+export interface AtlasLocalCommitRequest<F extends AtlasFormat = AtlasFormat> extends AtlasPrepareRequest<F> { dirtyBlocks: AtlasBlock[] }
 export interface AtlasPreparation {
+  /** Existing bytes deliberately carry no caller-selected operation mode.
+   * A v2 pure-lock candidate must use commitAtlasConstraintsPreparation;
+   * its final guard derives the permitted difference from verified content. */
   preparationId: string; candidateId: string; commandId: string; draftId: string;
   requestDigest: string; manifestDigest: string; revision: number;
 }
@@ -53,15 +57,15 @@ export interface AtlasCommitReceipt {
   root: AtlasStoredRoot; baseRoot: AtlasStoredRoot | null;
   committed: true; replayed: boolean; logicalBytes: number; pairReferencedBytes: number;
 }
-export interface AtlasReadHandle {
+export interface AtlasReadHandle<F extends AtlasFormat = AtlasFormat> {
   draftId: string; source: 'current' | 'backup'; readOnly: boolean;
-  root: AtlasStoredRoot; manifest: AtlasDraftManifest; manifestDigest: string;
+  root: AtlasStoredRoot; manifest: AtlasManifestFor<F>; manifestDigest: string;
   /** Logical encoded referenced content, not physical disk allocation. */
   referencedBytes: number;
   /** Null when an explicitly recovered other slot has missing raw blocks. */
   pairReferencedBytes: number | null;
 }
-export interface AtlasBlockPage { blocks: AtlasBlock[]; nextCursor: number | null; encodedBytes: number }
+export interface AtlasBlockPage { blocks: AtlasBlock[]; locks?: AtlasCellLockBlock[]; nextCursor: number | null; encodedBytes: number }
 export interface AtlasCatalogEntry {
   draftId: string; name: string; revision: number; size: number; rootDigest: string;
   currentManifest: string; backupAvailable: boolean;

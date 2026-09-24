@@ -1,0 +1,37 @@
+{
+  "startedAt": "2026-09-24T04:25:54.610Z",
+  "completedAt": "2026-09-24T04:30:11.873Z",
+  "expectedBuildSha256": "0bdf3cb4f876a06c7061f44b5b104454158504299353240ee47838fb565ead38",
+  "browserExit": 0,
+  "sourceUnchanged": true,
+  "coverageComplete": true,
+  "functionalPassed": true,
+  "expectedScenarios": 3,
+  "cases": [
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    }
+  ],
+  "evidenceBoundary": "Only the three island cases are rerun after correcting the pre-existing shelf contract in the test. The original 13-case run and failures remain separate; passing other cases are reused explicitly."
+}

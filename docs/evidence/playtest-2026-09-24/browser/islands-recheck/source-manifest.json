@@ -1,0 +1,23 @@
+{
+  "createdAt": "2026-09-24T04:25:54.662Z",
+  "entries": [
+    {
+      "source": "tests/atlas-coast-islands.spec.ts",
+      "snapshot": "source/0-atlas-coast-islands.spec.ts",
+      "bytes": 39553,
+      "sha256": "bead1caae53137d57071a5d551ec40e58695bc2ad4550558c8169e03113b5514"
+    },
+    {
+      "source": "playwright.config.ts",
+      "snapshot": "source/1-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "source": ".autopilot/ph06/playtest-islands-recheck-runner.mjs",
+      "snapshot": "source/2-playtest-islands-recheck-runner.mjs",
+      "bytes": 4812,
+      "sha256": "2d9abd1fd5faa52e14b35cb4f51faf500a7d18b6079c0c50be996c682cde468b"
+    }
+  ]
+}

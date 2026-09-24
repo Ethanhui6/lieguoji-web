@@ -1,4 +1,8 @@
-import { blockKey, createAtlasDraft, encodeBlock, encodeManifest, hashManifest, type AtlasDraftData } from './model';
+import { createGenerationDraft, createGenerationCopy, encodeAtlasManifest, hashAtlasManifest, isGenerationDocument, type AtlasDocument } from './atlas-format';
+import { encodeAtlasCellLockBlock, lockKey } from './generation-locks';
+import { AtlasGenerationSession, type GenerationPreviewInfo, type GenerationConfirm } from './generation-session';
+import { AtlasConstraintsSession, type ConstraintsPreviewInfo } from './constraints-session';
+import { blockKey, createAtlasDraft, encodeBlock } from './model';
 import { decodeAtlasEditMessage, encodeAtlasEditMessage, OwnedAtlasSession, type AtlasEditDelta, type PreparedAtlasEdit } from './transactions';
 import * as storage from './storage';
 import type { AtlasBlockPage, AtlasCommitReceipt, AtlasStoredRoot } from './storage-types';
@@ -11,6 +15,12 @@ type WaitAck = { id: number; sequence: number; resolve: () => void; reject: (err
 /** Only this Worker runtime touches authority and the dedicated atlas database. */
 export class AtlasWorkerRuntime {
   private session?: OwnedAtlasSession;
+  private generationSession?: AtlasGenerationSession;
+  private constraintsSession?: AtlasConstraintsSession;
+  private completedGenerations = new Map<string, { confirmation: GenerationConfirm; receipt: AtlasCommitReceipt }>();
+  private completedConstraints = new Map<string, { confirmation: GenerationConfirm; receipt: AtlasCommitReceipt }>();
+  private sourceSlot: 'current' | 'backup' = 'current';
+  private get database() { return storage.getAtlasStorage(this.session?.format ?? 1); }
   private root?: AtlasStoredRoot;
   private storageSession?: storage.AtlasStorageSession;
   private readOnly = false;
@@ -28,7 +38,7 @@ export class AtlasWorkerRuntime {
     this.send(bytes, [bytes.buffer]);
     if (this.active?.id === id && type !== 'timing') this.active.timing.packetEncodeSendMs += performance.now() - started;
   }
-  private async chunk(active: Active, type: 'begin' | 'manifest' | 'block' | 'delta', body?: unknown, payload?: Uint8Array) {
+  private async chunk(active: Active, type: 'begin' | 'manifest' | 'block' | 'lock' | 'delta', body?: unknown, payload?: Uint8Array) {
     if (!active.durable) active.control.signal.throwIfAborted();
     const sequence = active.sequence++;
     await new Promise<void>((resolve, reject) => {
@@ -86,35 +96,35 @@ export class AtlasWorkerRuntime {
   private durableControl(active: Active) { return { onProgress: this.control(active).onProgress }; }
   private async openStorageSession(active: Active, root: AtlasStoredRoot) {
     active.timing.partialReasons.push('storage-session-open-or-reopen');
-    const session = await storage.openAtlasStorageSession(root.draftId, active.durable ? this.durableControl(active) : this.control(active));
+    const session = await storage.getAtlasStorage(root.domain === 'atlas-draft-v2' ? 2 : 1).openAtlasStorageSession(root.draftId, active.durable ? this.durableControl(active) : this.control(active));
     if (!session || session.currentRootDigest !== root.rootDigest) { session?.close(); throw new Error('草稿持久根在载入时已变化，请刷新后重新读取。'); }
     return session;
   }
-  private async persist(active: Active, data: { manifest: AtlasDraftData['manifest']; blocks: AtlasDraftData['blocks'] }, commandId: string, candidateId: string, expectedRoot: AtlasStoredRoot | null): Promise<AtlasCommitReceipt> {
+  private async persist(active: Active, data: AtlasDocument, commandId: string, candidateId: string, expectedRoot: AtlasStoredRoot | null, mode: 'geography' | 'constraints' = 'geography'): Promise<AtlasCommitReceipt> {
     active.timing.partialReasons.push('full-storage-path-not-instrumented');
     active.commandId = commandId; active.draftId = data.manifest.draftId;
-    const control = this.control(active), digest = await hashManifest(data.manifest);
+    const control = this.control(active), database = storage.getAtlasStorage(data.manifest.version), digest = await hashAtlasManifest(data.manifest);
     try {
-      const preparation = await storage.prepareAtlasCommit({ candidateId, commandId, manifest: data.manifest, expectedRoot }, control);
-      const blocks = [...data.blocks.values()];
+      const preparation = await database.prepareAtlasCommit({ candidateId, commandId, manifest: data.manifest, expectedRoot }, control);
+      const blocks = [...data.blocks.values(), ...(isGenerationDocument(data) ? data.locks.values() : [])];
       for (let i = 0; i < blocks.length; i += 8) {
-        await storage.stageAtlasBlocks(preparation.preparationId, blocks.slice(i, i + 8), control);
+        await database.stageAtlasBlocks(preparation.preparationId, blocks.slice(i, i + 8), control);
         control.onProgress({ stage: '准备不可变草稿块', completed: Math.min(i + 8, blocks.length), total: blocks.length });
         await new Promise<void>(resolve => setTimeout(resolve, 0)); control.signal.throwIfAborted();
       }
-      const receipt = await storage.commitAtlasPreparation(preparation.preparationId, control);
+      const receipt = await (mode === 'constraints' ? database.commitAtlasConstraintsPreparation : database.commitAtlasPreparation)(preparation.preparationId, control);
       active.durable = true; return receipt;
     } catch (error) {
       active.timing.partialReasons.push('receipt-recovery');
       if (error instanceof storage.AtlasStorageCommittedError) active.durable = true;
       // A lost completion must be resolved from its durable command, never retried as a new write.
       let receipt: AtlasCommitReceipt | null = null;
-      try { receipt = await storage.findAtlasReceipt(data.manifest.draftId, commandId); } catch { /* Retain the original failure; do not retry a write. */ }
+      try { receipt = await storage.getAtlasStorage(data.manifest.version).findAtlasReceipt(data.manifest.draftId, commandId); } catch { /* Retain the original failure; do not retry a write. */ }
       if (receipt && receipt.manifestDigest === digest && receipt.candidateId === candidateId) { active.durable = true; return receipt; }
       throw error;
     }
   }
-  private async persistLocal(active: Active, data: { manifest: AtlasDraftData['manifest']; blocks: AtlasDraftData['blocks'] }, prepared: PreparedAtlasEdit): Promise<AtlasCommitReceipt> {
+  private async persistLocal(active: Active, data: AtlasDocument, prepared: PreparedAtlasEdit): Promise<AtlasCommitReceipt> {
     if (!this.root) throw new Error('尚未加载持久根。');
     active.commandId = prepared.commandId; active.draftId = data.manifest.draftId;
     if (!this.storageSession?.valid) {
@@ -131,17 +141,18 @@ export class AtlasWorkerRuntime {
       if (error instanceof storage.AtlasStorageFallbackError) return this.persist(active, data, prepared.commandId, prepared.candidateId, this.root);
       active.timing.partialReasons.push('receipt-recovery');
       if (error instanceof storage.AtlasStorageCommittedError) active.durable = true;
-      const digest = await hashManifest(data.manifest);
+      const digest = await hashAtlasManifest(data.manifest);
       let receipt: AtlasCommitReceipt | null = null;
-      try { receipt = await storage.findAtlasReceipt(data.manifest.draftId, prepared.commandId); } catch { /* Do not turn an uncertain completion into another write. */ }
+      try { receipt = await storage.getAtlasStorage(data.manifest.version).findAtlasReceipt(data.manifest.draftId, prepared.commandId); } catch { /* Do not turn an uncertain completion into another write. */ }
       if (receipt && receipt.manifestDigest === digest && receipt.candidateId === prepared.candidateId) { active.durable = true; return receipt; }
       throw error;
     }
   }
   private async initialize(active: Active, session: OwnedAtlasSession, root: AtlasStoredRoot, readOnly: boolean, nextStorage?: storage.AtlasStorageSession) {
-    const manifest = session.manifest(), manifestBytes = encodeManifest(manifest), rootBytes = storage.encodeAtlasRoot(root);
+    const manifest = session.manifest(), manifestBytes = encodeAtlasManifest(manifest), rootBytes = storage.getAtlasStorage(manifest.version).encodeAtlasRoot(root);
     const head: AtlasHead = { ...session.head, atlasId: manifest.atlasId, name: manifest.name, readOnly, hasBackup: root.backupManifest !== null };
-    const begin: AtlasStateHeader = { head, root, manifestLength: manifestBytes.length, blockCount: manifest.blockRefs.length };
+    const locks = session.readLocks();
+    const begin: AtlasStateHeader = { kind: 'durable', head, root, manifestLength: manifestBytes.length, blockCount: manifest.blockRefs.length, lockCount: locks.length };
     await this.chunk(active, 'begin', begin);
     for (let offset = 0; offset < manifestBytes.length; offset += ATLAS_FRAGMENT_BYTES) {
       await this.chunk(active, 'manifest', { offset }, manifestBytes.slice(offset, offset + ATLAS_FRAGMENT_BYTES));
@@ -151,18 +162,32 @@ export class AtlasWorkerRuntime {
       await this.chunk(active, 'block', { key: ref.key, index: i }, encodeBlock(block));
       if (i % 8 === 7) this.post(active.id, 'progress', { stage: '传输已核验草稿块', completed: i + 1, total: manifest.blockRefs.length });
     }
+    for (let index = 0; index < locks.length; index++) { const lock = locks[index]; await this.chunk(active, 'lock', { key: lockKey(lock.bx, lock.by), index }, encodeAtlasCellLockBlock(lock)); }
     if (!active.durable) active.control.signal.throwIfAborted();
     this.storageSession?.close(); this.storageSession = nextStorage;
-    this.session = session; this.root = root; this.readOnly = readOnly;
+    if (this.session !== session) { this.generationSession = new AtlasGenerationSession(session); this.constraintsSession = new AtlasConstraintsSession(session); }
+    this.session = session; this.root = root; this.readOnly = readOnly; this.sourceSlot = readOnly ? 'backup' : 'current';
     this.post(active.id, 'complete', { operation: 'initialize', head, root, metrics: { workerMs: performance.now() - active.started, rootBytes: rootBytes.length, manifestBytes: manifestBytes.length, deltaBytes: 0 } });
+  }
+  private async sendGenerationPreview(active: Active, preview: GenerationPreviewInfo | ConstraintsPreviewInfo, kind: 'generation-preview' | 'constraints-preview' = 'generation-preview') {
+    const data = await this.session!.replacementDocumentAsync(preview.candidateId, this.control(active)), bytes = encodeAtlasManifest(data.manifest);
+    const locks = isGenerationDocument(data) ? [...data.locks.values()] : [];
+    await this.chunk(active, 'begin', { kind, preview, manifestLength: bytes.length, blockCount: data.manifest.blockRefs.length, lockCount: locks.length });
+    for (let offset = 0; offset < bytes.length; offset += ATLAS_FRAGMENT_BYTES) await this.chunk(active, 'manifest', { offset }, bytes.slice(offset, offset + ATLAS_FRAGMENT_BYTES));
+    for (let index = 0; index < data.manifest.blockRefs.length; index++) { const ref = data.manifest.blockRefs[index]; await this.chunk(active, 'block', { key: ref.key, index }, encodeBlock(data.blocks.get(ref.key)!)); if ((index + 1) % 8 === 0 || index + 1 === data.manifest.blockRefs.length) this.post(active.id, 'progress', { stage: '传输已核验生成候选', completed: index + 1, total: data.manifest.blockRefs.length }); }
+    for (let index = 0; index < locks.length; index++) { const lock = locks[index]; await this.chunk(active, 'lock', { key: lockKey(lock.bx, lock.by), index }, encodeAtlasCellLockBlock(lock)); }
+    active.control.signal.throwIfAborted(); this.post(active.id, 'complete', { operation: kind, preview, metrics: { workerMs: performance.now() - active.started, rootBytes: 0, manifestBytes: bytes.length, deltaBytes: 0 } });
   }
   private async execute(active: Active, operation: AtlasOperation, payload: Uint8Array) {
     if (!operation || typeof operation !== 'object') throw new Error('草稿操作格式无效。');
-    const control = this.control(active);
-    if (operation.type === 'list') { this.post(active.id, 'complete', { operation: 'list', entries: await storage.listAtlasDrafts(control) }); return; }
-    if (operation.type === 'receipt') { this.post(active.id, 'complete', { operation: 'receipt', receipt: await storage.findAtlasReceipt(operation.draftId, operation.commandId, control) }); return; }
+    if (operation.atlasFormat !== undefined && operation.atlasFormat !== 1 && operation.atlasFormat !== 2) throw new Error('未知草稿格式，未选择其他数据库。');
+    const control = this.control(active), database = storage.getAtlasStorage(operation.atlasFormat ?? this.session?.format ?? 1);
+    if (this.generationSession?.pending && !['generation-confirm', 'generation-discard', 'receipt', 'list'].includes(operation.type)) throw new Error('请先确认或取消生成预览。');
+    if (this.constraintsSession?.pending && !['constraints-confirm', 'constraints-discard', 'receipt', 'list'].includes(operation.type)) throw new Error('请先确认或取消区域锁预览。');
+    if (operation.type === 'list') { this.post(active.id, 'complete', { operation: 'list', entries: await database.listAtlasDrafts(control) }); return; }
+    if (operation.type === 'receipt') { this.post(active.id, 'complete', { operation: 'receipt', receipt: await database.findAtlasReceipt(operation.draftId, operation.commandId, control) }); return; }
     if (operation.type === 'create') {
-      const data = await createAtlasDraft({ ...operation.options, draftId: operation.draftId }, control);
+      const data = await (database.format === 2 ? createGenerationDraft : createAtlasDraft)({ ...operation.options, draftId: operation.draftId }, control);
       const receipt = await this.persist(active, data, operation.commandId, crypto.randomUUID(), null);
       const nextStorage = await this.openStorageSession(active, receipt.root);
       try { const session = await OwnedAtlasSession.open(data, receipt.rootDigest, this.durableControl(active)); await this.initialize(active, session, receipt.root, false, nextStorage); }
@@ -171,14 +196,15 @@ export class AtlasWorkerRuntime {
     }
     if (operation.type === 'restore') {
       if (operation.source !== 'current' && operation.source !== 'backup') throw new Error('草稿恢复来源无效。');
-      const nextStorage = operation.source === 'current' ? await storage.openAtlasStorageSession(operation.draftId, control) : undefined;
+      const nextStorage = operation.source === 'current' ? await database.openAtlasStorageSession(operation.draftId, control) : undefined;
       try {
-        const handle = operation.source === 'current' ? nextStorage?.handle : await storage.openAtlasDraft(operation.draftId, { ...control, source: 'backup' });
+        const handle = operation.source === 'current' ? nextStorage?.handle : await database.openAtlasDraft(operation.draftId, { ...control, source: 'backup' });
         if (!handle) throw new Error('没有找到该草稿存档。');
-        const data: AtlasDraftData = { manifest: handle.manifest, blocks: new Map() }; let cursor: number | null = 0;
+        const data = (handle.manifest.version === 2 ? { manifest: handle.manifest, blocks: new Map(), locks: new Map() } : { manifest: handle.manifest, blocks: new Map() }) as AtlasDocument; let cursor: number | null = 0;
         while (cursor !== null) {
-          const page: AtlasBlockPage = nextStorage ? await nextStorage.readPage(cursor, control) : await storage.readAtlasBlockPage(handle, cursor, control);
+          const page: AtlasBlockPage = nextStorage ? await nextStorage.readPage(cursor, control) : await database.readAtlasBlockPage(handle, cursor, control);
           for (const block of page.blocks) { const key = blockKey(block.layer, block.bx, block.by); if (data.blocks.has(key)) throw new Error('存档分页出现重复块。'); data.blocks.set(key, block); }
+          if (isGenerationDocument(data)) for (const lock of page.locks ?? []) { const key = lockKey(lock.bx, lock.by); if (data.locks.has(key)) throw new Error('存档分页出现重复锁块。'); data.locks.set(key, lock); }
           cursor = page.nextCursor; control.onProgress({ stage: '读取固定存档根', completed: data.blocks.size, total: data.manifest.blockRefs.length });
         }
         const session = await OwnedAtlasSession.open(data, handle.root.rootDigest, control);
@@ -186,7 +212,24 @@ export class AtlasWorkerRuntime {
       } catch (error) { nextStorage?.close(); throw error; }
       return;
     }
+    if (operation.type === 'generation-confirm' && this.completedGenerations.has(operation.commandId)) {
+      const completed = this.completedGenerations.get(operation.commandId)!, c = completed.confirmation;
+      if (operation.candidateId !== c.candidateId || operation.previewDigest !== c.previewDigest || operation.expectedRevision !== c.expectedRevision || operation.expectedRootDigest !== c.expectedRootDigest) throw new Error('已提交生成的重复确认与原候选不一致。');
+      this.post(active.id, 'complete', { operation: 'generation-receipt', receipt: structuredClone(completed.receipt) }); return;
+    }
     if (!this.session || !this.root) throw new Error('请先创建或恢复草稿。');
+    if (operation.type === 'constraints-confirm' && this.completedConstraints.has(operation.commandId)) {
+      const completed = this.completedConstraints.get(operation.commandId)!, c = completed.confirmation;
+      if (operation.candidateId !== c.candidateId || operation.previewDigest !== c.previewDigest || operation.expectedRevision !== c.expectedRevision || operation.expectedRootDigest !== c.expectedRootDigest) throw new Error('已提交区域锁的重复确认与原候选不一致。');
+      this.post(active.id, 'complete', { operation: 'constraints-receipt', receipt: structuredClone(completed.receipt) }); return;
+    }
+    if (operation.type === 'generation-copy' || operation.type === 'fork' && this.session.format === 2) {
+      const source = this.session.snapshot(), head = this.session.head;
+      const data = await createGenerationCopy(source, { format: 'lieguoji-atlas-copy-origin', version: 1, sourceFormat: source.manifest.version, sourceDraftId: head.draftId, sourceSlot: this.sourceSlot, sourceManifestDigest: head.manifestDigest, sourceManifestRevision: head.revision, observedRootDigest: this.root.rootDigest }, { draftId: operation.draftId, name: operation.name }, control);
+      const receipt = await this.persist(active, data, operation.commandId, crypto.randomUUID(), null), nextStorage = await this.openStorageSession(active, receipt.root);
+      try { await this.initialize(active, await OwnedAtlasSession.open(data, receipt.rootDigest, this.durableControl(active)), receipt.root, false, nextStorage); }
+      catch (error) { nextStorage.close(); throw error; } return;
+    }
     if (operation.type === 'fork') {
       const data = this.session.snapshot();
       data.manifest.draftId = operation.draftId; data.manifest.revision = 0;
@@ -197,7 +240,39 @@ export class AtlasWorkerRuntime {
       catch (error) { nextStorage.close(); throw error; }
       return;
     }
+    if (operation.atlasFormat !== undefined && operation.atlasFormat !== this.session.format) throw new Error('操作格式与当前会话不符。');
     if (this.readOnly) throw new Error('备份来源为只读，请创建独立副本后继续编辑。');
+    if (operation.type === 'constraints-preview') {
+      let preview: ConstraintsPreviewInfo | undefined;
+      try { preview = await this.constraintsSession!.preview(operation.command, control); await this.sendGenerationPreview(active, preview, 'constraints-preview'); }
+      catch (error) { if (preview) this.constraintsSession!.discard(preview.candidateId); throw error; } return;
+    }
+    if (operation.type === 'constraints-discard') { this.constraintsSession!.discard(operation.candidateId); this.post(active.id, 'complete', { operation: 'constraints-discard', candidateId: operation.candidateId }); return; }
+    if (operation.type === 'generation-preview') {
+      let preview: GenerationPreviewInfo | undefined;
+      try { preview = await this.generationSession!.preview(operation.commandId, operation.expectedRevision, operation.expectedRootDigest, operation.recipe, operation.scope, control); await this.sendGenerationPreview(active, preview); }
+      catch (error) { if (preview) this.generationSession!.discard(preview.candidateId); throw error; } return;
+    }
+    if (operation.type === 'generation-discard') { this.generationSession!.discard(operation.candidateId); this.post(active.id, 'complete', { operation: 'generation-discard', candidateId: operation.candidateId }); return; }
+    if (operation.type === 'generation-confirm' || operation.type === 'constraints-confirm' || operation.type === 'undo' && this.session.undoKind === 'whole') {
+      const undo = operation.type === 'undo';
+      const prepared = undo ? await this.session.prepareReplacementUndo(operation.commandId, control) : operation.type === 'constraints-confirm' ? (await this.constraintsSession!.confirm({ candidateId: operation.candidateId, commandId: operation.commandId, previewDigest: operation.previewDigest, expectedRevision: operation.expectedRevision, expectedRootDigest: operation.expectedRootDigest }, control)).preview : (await this.generationSession!.confirm(operation, control)).preview;
+      try {
+        const data = await this.session.replacementDocumentAsync(prepared.candidateId, control), receipt = await this.persist(active, data, prepared.commandId, prepared.candidateId, this.root, this.session.replacementMode(prepared.candidateId));
+        this.session.publishReplacement(prepared.candidateId, receipt); if (operation.type === 'generation-confirm') {
+          this.generationSession!.published(prepared.candidateId);
+          this.completedGenerations.set(operation.commandId, { confirmation: { candidateId: operation.candidateId, commandId: operation.commandId, previewDigest: operation.previewDigest, expectedRevision: operation.expectedRevision, expectedRootDigest: operation.expectedRootDigest }, receipt: structuredClone(receipt) });
+          if (this.completedGenerations.size > 32) this.completedGenerations.delete(this.completedGenerations.keys().next().value!);
+        }
+        if (operation.type === 'constraints-confirm') {
+          this.constraintsSession!.published(prepared.candidateId);
+          this.completedConstraints.set(operation.commandId, { confirmation: { candidateId: operation.candidateId, commandId: operation.commandId, previewDigest: operation.previewDigest, expectedRevision: operation.expectedRevision, expectedRootDigest: operation.expectedRootDigest }, receipt: structuredClone(receipt) });
+          if (this.completedConstraints.size > 32) this.completedConstraints.delete(this.completedConstraints.keys().next().value!);
+        }
+        const nextStorage = await this.openStorageSession(active, receipt.root);
+        try { await this.initialize(active, this.session, receipt.root, false, nextStorage); } catch (error) { nextStorage.close(); throw error; }
+      } catch (error) { if (!active.durable && undo) this.session.discardReplacement(prepared.candidateId); throw error; } return;
+    }
     let prepared: PreparedAtlasEdit | undefined;
     try {
       if (operation.type === 'edit' || operation.type === 'preview') {
@@ -216,15 +291,14 @@ export class AtlasWorkerRuntime {
         this.session.discard(prepared.candidateId); const preview = prepared; prepared = undefined;
         this.post(active.id, 'complete', { operation: 'preview', preview, metrics: { workerMs: performance.now() - active.started, rootBytes: 0, manifestBytes: 0, deltaBytes: 0 } }); return;
       }
-      const manifest = this.session.candidateManifest(prepared.candidateId), blocks = this.session.candidateBlocks(prepared.candidateId);
-      const data = { manifest, blocks: new Map(blocks.map(block => [blockKey(block.layer, block.bx, block.by), block])) };
+      const data = this.session.candidateStorageDocument(prepared.candidateId);
       const receipt = prepared.localBudgetEligible ? await this.persistLocal(active, data, prepared) : await this.persist(active, data, prepared.commandId, prepared.candidateId, this.root);
       if (!this.storageSession?.valid || this.storageSession.currentRootDigest !== receipt.rootDigest) {
         this.storageSession?.close(); this.storageSession = await this.openStorageSession(active, receipt.root);
       }
       const delta: AtlasEditDelta = this.session.publish(prepared.candidateId, receipt), info = prepared; prepared = undefined;
       this.root = receipt.root;
-      const bytes = encodeAtlasEditMessage(delta), rootBytes = storage.encodeAtlasRoot(receipt.root), head = this.head();
+      const bytes = encodeAtlasEditMessage(delta), rootBytes = this.database.encodeAtlasRoot(receipt.root), head = this.head();
       await this.chunk(active, 'delta', { head, root: receipt.root }, bytes);
       this.post(active.id, 'complete', { operation: 'edit', head, root: receipt.root, metrics: { workerMs: performance.now() - active.started, rootBytes: rootBytes.length, manifestBytes: 0, deltaBytes: bytes.length, preparationMs: info.preparationMs, cooperativeYieldMs: info.cooperativeYieldMs, localBudgetEligible: info.localBudgetEligible, writeBlocks: info.writeKeys.length, affectedCells: info.affectedCellCount } });
       active.timing.endedAt = performance.now();

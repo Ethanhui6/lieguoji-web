@@ -1,7 +1,6 @@
 #!/bin/sh
-# Project-local guard: no cloud uploads until the complete V4 acceptance gate.
+# Project-local guard: full acceptance, or the exact authorized playtest ref.
 root=$(git rev-parse --show-toplevel) || exit 1
-node "$root/scripts/check-release.mjs" || exit 1
 
 # Bind an accepted worktree to the one commit actually being uploaded.
 case "$2" in
@@ -20,5 +19,7 @@ while read -r local_ref local_oid remote_ref remote_oid; do
     refs/heads/*) ;;
     *) echo 'Release blocked: this gate permits a single project branch candidate only.' >&2; exit 1 ;;
   esac
+  accepted_remote_ref="$remote_ref"
 done
 [ "$count" -eq 1 ] || { echo 'Release blocked: no single candidate update was supplied.' >&2; exit 1; }
+node "$root/scripts/check-release.mjs" --target-ref "$accepted_remote_ref" || exit 1

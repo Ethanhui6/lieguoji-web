@@ -1,6 +1,6 @@
-# V4 当前续接入口：PH05完成，进入PH06大陆生成，本地发布锁定
+# V4 当前续接入口：PH06开发中，用户授权本次试玩分支发布
 
-2026-09-24。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。全部 PH00—PH35、真机及用户视觉验收之前，禁止任何 push、远程写入、发行打包或 Cloudflare 构建部署。
+2026-09-24。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。默认仍是全部 PH00—PH35、真机及用户视觉验收之前禁止发布。用户随后明确要求现在上传最新版本供试玩，因此本次仅允许经检查的 codex/ph06-world-generation 分支预览；不改 main、不伪造 PH 完成，详见 docs/PLAYTEST_RELEASE_2026-09-24.md。
 
 - 唯一任务状态：plan/tasks.json；执行指令：CODEX_AUTOPILOT_V4.md；世界/视觉合同：docs/WORLD_V4.md、docs/DESIGN_V4.md；发布门：docs/RELEASE_POLICY_V4.md。
 - PH00—PH04 已完成。PH03 是具名硬件上的真实规模测量与后继性能合同，不是完整游戏支持容量或性能PASS。标准65,536地理样本目标保留；262,144高实体档帧间隔p95为28.6—35.6ms，尚不达桌面目标。2048结构历史刷新读库约1.2s、完整校验载入约281s，明确由PH04/28/33解决，不能绕过验证。
@@ -13,10 +13,11 @@
 - PH05最新构建856/856单测、37文件、14发布检查、lint/类型/25产物通过；完整三端浏览器单轮48/48、466.161秒、零重试/flaky/跳过。另有实际像素/双GPU恢复定向6/6。记录checks/terrain-integration-build、terrain-full-browser、terrain-pixel-browser-direct，历史失败完整保留。
 - PH05-T4最终四配置正式验收72/72有效，全部原时间目标通过；headless DPR1/DPR2、headed DPR1/DPR2的最大rAF间隔分别46.4/89.3/36.0/68.0ms。统一source 6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6，dist ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5。PH04四模式13/13原门通过。归档2154文件完整恢复，保存的原评估器再次通过72/72和13/13，见docs/evidence/ph05-verification/verification.json。正式结论见2026-09-24-ph05-rendering.md；未把rAF写成物理屏幕FPS，未把移动仿真写成真机。
 - 本地预览和一次传输在会话续接中实际退出，失败/中断报告保留；仅在确认PID/端口失效后恢复。新进程信息.autopilot/ph05/preview-process.json，固定本地测量任务与终态在.autopilot/ph05/jobs。检查点.autopilot/LOCAL_HANDOFF.md已通过结构校验；它不是当前进程仍存活的证明，也不是新任务迁移。
-- 当前提交与分支：PH04最终本地提交c131c9664d30da8aafa83114a9169359e6e57635（690文件，其中662个归档Git blob逐字节核验，暂存内容秘密模式候选0）；当前分支codex/ph05-camera-lod。先核对git status、git log -1和.autopilot/checkpoint.json。PH01提交8291b376486e8d2b2fc75ce9fc1fac495f8000ce；PH02提交9e315b24f5311691eefce39974fe884d2baa87eb；PH03本地提交2b678523f429a871af324375174d43b9adee8034，归档字节修正6eb55165a8994b39593b61aa784798ce1b67c658；PH04原分支codex/ph04-chunked-world保留。始终未推送。
+- 当前试玩分支codex/ph06-world-generation；本次待上传PH06源码/浏览器/隐私证据统一绑定本地发布门，正式提交与云端build.json须核对。源基线为PH05最终本地提交f07e574eeaff3838d063fb194154ed2e73f06bbd（872文件，847个归档/恢复证据Git blob逐字节核验）；PH06四子项仍in_progress。PH04基线c131c9664d30da8aafa83114a9169359e6e57635。本段成文时新分支尚未上传；实际结果另记本地发布检查点并回填本文件。
 - 历史线上0.4.0：提交b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，仓库Ethanhui6/lieguoji-web（私有），Pages lieguoji-web，唯一原生Git链，main生产/其他分支预览。稳定URL https://lieguoji-web.pages.dev/ ，固定URL https://a257d63e.lieguoji-web.pages.dev/ 。这些是此前核验的历史部署，本轮未触发云端。
 - 尚未通过：生产大世界/完整社会规则/长局性能、真实iPhone/Android/平板、用户视觉验收及其余PH。正式五国地图/未知CANON/缺失原规划独立待核，不阻挡自建沙盒；不伪造通过。
-- 下一批PH06-T1/T2：独立v2草稿与旧档明确副本、可复现种子/大陆参数、真实生成候选预览、原子确认/取消/撤销与恢复；山系盆地岛链、细海岸与锁定局部重算必须实际实现验收，不能仅有类型或按钮。设计ADR0011，实施准备.autopilot/ph06-implementation-plan.md。
+- PH06最新0.5.0-preview.1统一构建通过：1049/1049单测、53文件、22/22发布策略、lint/类型/25产物。固定dist 0bdf3cb4…首轮核心浏览器10pass/3fail，三个岛链失败均为错误海底恒高断言，原设计允许真实海底过渡；限定测试修正后同构建三端岛链3/3通过，10+3组合覆盖13项（不写成单轮13/13），见docs/evidence/playtest-2026-09-24/browser/verification.json。三端256及桌面512的11次生成观测进度最大220.8ms、4次运行中取消10.4—16.7ms，原250/500ms门本次范围通过，旧960失败保留。区域锁已接真实存储/会话/Worker/Bridge/UI并通过三端本轮功能；近景采样台阶与更广性能/视觉验收仍待完成，PH06仍in_progress。见docs/evidence/2026-09-24-ph06-generation.md与docs/evidence/playtest-2026-09-24/。
+- 当前批PH06-T1/T2：独立v2草稿与旧档明确副本、可复现种子/大陆参数、真实生成候选预览、原子确认/取消/撤销与恢复；山系盆地岛链、细海岸与锁定局部重算必须实际实现验收，不能仅有类型或按钮。设计ADR0011，实施准备.autopilot/ph06-implementation-plan.md。
 - 当前无需新增账号授权。普通本地工作自动推进；发生中断保存检查点。会话结束后不声称仍在后台开发。
 
 PH01证据docs/evidence/2026-09-23-ph01-compatibility.md；PH02证据docs/evidence/2026-09-24-ph02-workbench.md。旧25任务摘要保持不变。冻结0.4核心与两套旧规则仍受原指纹和golden保护。

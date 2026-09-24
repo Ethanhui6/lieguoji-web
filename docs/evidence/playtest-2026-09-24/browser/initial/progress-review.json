@@ -1,0 +1,183 @@
+{
+  "createdAt": "2026-09-24T04:23:52.638Z",
+  "expectedBuildSha256": "0bdf3cb4f876a06c7061f44b5b104454158504299353240ee47838fb565ead38",
+  "resultsSha256": "b4774ce01044f3085607f6a4f5d0282508696f04e66cf404287e24b70613ec21",
+  "functionalPassed": false,
+  "measurement": "Read-only actual DOM progress and trusted input observations during Playwright tracing. Desktop hardware, with emulated phone/tablet viewports; not real devices or isolated frame performance.",
+  "timingScope": "65k macro creation on three projects and 512 macro creation on desktop only. No 250/500 timing claim is made for the separate island/coast/constraint scenarios.",
+  "expectedProgressRuns": 11,
+  "actualProgressRuns": 11,
+  "expectedCancellationRuns": 4,
+  "actualCancellationRuns": 4,
+  "observationComplete": true,
+  "progress250msPassed": true,
+  "cancellation500msPassed": true,
+  "groups": [
+    {
+      "project": "desktop-chromium",
+      "size": 256,
+      "runs": 3,
+      "validRuns": 3,
+      "maximumProgressGapMs": 161.79999999701977,
+      "cancellationRuns": 1,
+      "maximumCancellationMs": 16.700000002980232
+    },
+    {
+      "project": "desktop-chromium",
+      "size": 512,
+      "runs": 2,
+      "validRuns": 2,
+      "maximumProgressGapMs": 220.80000000447035,
+      "cancellationRuns": 1,
+      "maximumCancellationMs": 10.399999998509884
+    },
+    {
+      "project": "mobile-chromium",
+      "size": 256,
+      "runs": 3,
+      "validRuns": 3,
+      "maximumProgressGapMs": 132.39999999850988,
+      "cancellationRuns": 1,
+      "maximumCancellationMs": 14.399999998509884
+    },
+    {
+      "project": "tablet-chromium",
+      "size": 256,
+      "runs": 3,
+      "validRuns": 3,
+      "maximumProgressGapMs": 178.29999999701977,
+      "cancellationRuns": 1,
+      "maximumCancellationMs": 16.200000002980232
+    }
+  ],
+  "largestGaps": [
+    {
+      "title": "真实 512 网格创世预览、确认和刷新",
+      "project": "desktop-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 512,
+      "durationMs": 24192.5,
+      "maxGap": {
+        "ms": 220.80000000447035,
+        "from": "核验生成草稿地理块",
+        "to": "复制生成草稿分层与锁"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "tablet-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 5032.10000000149,
+      "maxGap": {
+        "ms": 178.29999999701977,
+        "from": "建立地图块查询索引",
+        "to": "[ui-ready]"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "desktop-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 5353.89999999851,
+      "maxGap": {
+        "ms": 161.79999999701977,
+        "from": "建立地图块查询索引",
+        "to": "[ui-ready]"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "tablet-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 535.3000000044703,
+      "maxGap": {
+        "ms": 149.70000000298023,
+        "from": "[trusted-preview-click]",
+        "to": "核验地理块结构与成员引用"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": 16.200000002980232,
+      "cancellation500msPassed": true
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "mobile-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 4889.69999999553,
+      "maxGap": {
+        "ms": 132.39999999850988,
+        "from": "建立地图块查询索引",
+        "to": "[ui-ready]"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "tablet-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 5519,
+      "maxGap": {
+        "ms": 130.70000000298023,
+        "from": "绘制已核验地理块",
+        "to": "[ui-ready]"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    },
+    {
+      "title": "真实 512 网格创世预览、确认和刷新",
+      "project": "desktop-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 512,
+      "durationMs": 1860.1000000014901,
+      "maxGap": {
+        "ms": 113.79999999701977,
+        "from": "[trusted-preview-click]",
+        "to": "复制生成草稿分层与锁"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": 10.399999998509884,
+      "cancellation500msPassed": true
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "desktop-chromium",
+      "operation": "预览大陆生成",
+      "valid": true,
+      "size": 256,
+      "durationMs": 5459.39999999851,
+      "maxGap": {
+        "ms": 71,
+        "from": "绘制已核验地理块",
+        "to": "[ui-ready]"
+      },
+      "progress250msPassed": true,
+      "cancellationMs": null,
+      "cancellation500msPassed": null
+    }
+  ]
+}

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, codex/ph06-world-generation]
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
   checks:
     name: Application checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 60 # Full 156-browser suite; individual test and product thresholds stay unchanged.
     env:
       CI: 'true'
     steps:

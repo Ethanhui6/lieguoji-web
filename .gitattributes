@@ -26,3 +26,6 @@ docs/evidence/ph04/scoped-checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at
 # PH05 content-addressed evidence and exact restoration/evaluator bytes.
 docs/evidence/ph05/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph05-verification/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+
+# Authorized playtest verification preserves exact report bytes.
+docs/evidence/playtest-2026-09-24/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

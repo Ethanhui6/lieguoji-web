@@ -1,4 +1,5 @@
-import type { AtlasDraftData, AtlasGridSpec, BlockKey, GeometryBlock } from './model';
+import type { AtlasGeographyView } from './atlas-format';
+import type { AtlasGridSpec, BlockKey, GeometryBlock } from './model';
 import { cellBlock, cellVertexIds, getCellQuad, getGeometryDependencyKey, incidentCellIds, validateVertexPositionQ, type AtlasPoint } from './topology';
 
 export interface AtlasAabb { minX: number; minY: number; maxX: number; maxY: number }
@@ -38,7 +39,7 @@ function contains(quad: AtlasPoint[], point: AtlasPoint) {
   }
   return true;
 }
-function measureCell(data: AtlasDraftData, cellId: number) {
+function measureCell(data: AtlasGeographyView, cellId: number) {
   const spec = data.manifest.spec, quad = getCellQuad(data, cellId), ids = cellVertexIds(spec, cellId);
   const vertices = [ids[0], ids[1], ids[3], ids[2]];
   if (quad.length !== 4) throw new Error('空间索引需要完整共享四边形。');
@@ -51,13 +52,13 @@ function measureCell(data: AtlasDraftData, cellId: number) {
   const area = (cross(quad[0], quad[1], quad[2]) + cross(quad[0], quad[2], quad[3])) / 2;
   return { bounds, area };
 }
-function geometryRefs(data: AtlasDraftData) {
+function geometryRefs(data: AtlasGeographyView) {
   return new Map(data.manifest.blockRefs.filter(ref => ref.key.startsWith('geometry:')).map(ref => [ref.key, ref.hash]));
 }
 function specIdentity(spec: AtlasGridSpec) {
   return JSON.stringify([spec.kind, spec.columns, spec.rows, spec.width, spec.height, spec.coordinateScale, spec.blockCells]);
 }
-function geometryBlock(data: AtlasDraftData, key: BlockKey): GeometryBlock {
+function geometryBlock(data: AtlasGeographyView, key: BlockKey): GeometryBlock {
   const block = data.blocks.get(key);
   if (!block || block.layer !== 'geometry') throw new Error('空间索引缺少权威共享几何块。');
   return block;
@@ -69,7 +70,7 @@ function geometryBlock(data: AtlasDraftData, key: BlockKey): GeometryBlock {
  * AABB buckets are actual occupied ranges, not just the original cell grid.
  */
 export class SpatialIndex {
-  private data: AtlasDraftData;
+  private data: AtlasGeographyView;
   private readonly spec: AtlasGridSpec;
   private readonly specKey: string;
   private readonly boxes: Float64Array;
@@ -85,7 +86,7 @@ export class SpatialIndex {
   private updates = 0;
   private totalReindexedCells = 0;
 
-  constructor(data: AtlasDraftData, deferred?: typeof DEFER_BUILD) {
+  constructor(data: AtlasGeographyView, deferred?: typeof DEFER_BUILD) {
     this.data = data; this.spec = { ...data.manifest.spec }; this.specKey = specIdentity(this.spec);
     this.key = getGeometryDependencyKey(data);
     const count = this.spec.columns * this.spec.rows;
@@ -99,7 +100,7 @@ export class SpatialIndex {
     this.buildCells(0, count);
     for (let blockId = 0; blockId < this.blockColumns * this.spec.rows / this.spec.blockCells; blockId++) this.rebuildBlock(blockId);
   }
-  static async createAsync(data: AtlasDraftData, control: SpatialBuildControl = {}): Promise<SpatialIndex> {
+  static async createAsync(data: AtlasGeographyView, control: SpatialBuildControl = {}): Promise<SpatialIndex> {
     control.signal?.throwIfAborted();
     const index = new SpatialIndex(data, DEFER_BUILD), count = index.areas.length;
     const pause = async () => {
@@ -185,7 +186,7 @@ export class SpatialIndex {
     }
     this.blockBoxes.set(blockId, bounds); this.insert(this.blockBuckets, blockId, bounds);
   }
-  updateGeometry(candidate: AtlasDraftData, changedVertexIds: readonly number[]): SpatialUpdate {
+  updateGeometry(candidate: AtlasGeographyView, changedVertexIds: readonly number[]): SpatialUpdate {
     if (candidate.manifest.atlasId !== this.data.manifest.atlasId || specIdentity(candidate.manifest.spec) !== this.specKey) throw new Error('空间索引的地理身份或拓扑发生变化，需要明确重建。');
     const key = getGeometryDependencyKey(candidate), stats = emptyUpdate();
     if (key === this.key) return { dependencyKey: this.key, changed: false, invalidatedCells: [], geometryOwnerBlocks: [], affectedDisplayBlocks: [], stats };
@@ -220,5 +221,5 @@ export class SpatialIndex {
     return { dependencyKey: key, changed: true, invalidatedCells: replacements.map(({ cellId, oldAabb, measured }) => ({ cellId, oldAabb, newAabb: { ...measured.bounds } })), geometryOwnerBlocks: changedBlocks.sort(), affectedDisplayBlocks: [...blocks].sort((a, b) => a - b).map(id => this.blockKey(id)), stats };
   }
 }
-export function createSpatialIndex(data: AtlasDraftData) { return new SpatialIndex(data); }
-export function createSpatialIndexAsync(data: AtlasDraftData, control?: SpatialBuildControl) { return SpatialIndex.createAsync(data, control); }
+export function createSpatialIndex(data: AtlasGeographyView) { return new SpatialIndex(data); }
+export function createSpatialIndexAsync(data: AtlasGeographyView, control?: SpatialBuildControl) { return SpatialIndex.createAsync(data, control); }

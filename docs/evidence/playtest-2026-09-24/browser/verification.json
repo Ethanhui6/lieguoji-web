@@ -1,0 +1,238 @@
+{
+  "createdAt": "2026-09-24T04:30:27.869Z",
+  "expectedBuildSha256": "0bdf3cb4f876a06c7061f44b5b104454158504299353240ee47838fb565ead38",
+  "initial": {
+    "executed": 13,
+    "passed": 10,
+    "failed": 3
+  },
+  "recheck": {
+    "executed": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "evidenceBoundary": "13-scenario functional coverage comes from 10 passing original cases plus 3 corrected island rechecks on the same exact dist. It is not a single 13/13 passing execution.",
+  "correctedTestContract": "ADR0011 already permits continuous island seabed shelves. The original tests incorrectly required unchanged heights for all remaining sea cells. The recheck strengthens actual shelf/land/coast/geometry checks and does not change production source or dist.",
+  "retainedCoverageBasis": {
+    "coastCaseBytesUnchanged": true,
+    "coastCaseSha256": "d716990f5686c3ba6e1f78b5cda661eaa83c719ff4d66eff9b053751e87ee5a3",
+    "explanation": "The same-file coast case body is byte-identical before and after the island-only correction. Root independently rechecked all 218 application source hashes against ../application-sources.json and reported only this island test file changed; coast runtime helpers and production/build/Worker dependencies stayed unchanged. Other initial cases retain their actual original evidence and were not rerun.",
+    "applicationSourceReference": "../application-sources.json"
+  },
+  "combinedFunctionalPassed": true,
+  "functionalCoveragePassed": true,
+  "selected": [
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "细海岸：无岸零变化禁确认，实际近景同相机候选，保全部高程的真实几何保存刷新与混合撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "区域锁：真实大陆上的取消、保存、单bit解除、混合撤销与刷新恢复",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "真实 512 网格创世预览、确认和刷新",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "65k创世：真实候选、取消、确认保存、局部编辑与混合撤销均保持正确持久边界",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "initial"
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "islands-recheck"
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "islands-recheck"
+    },
+    {
+      "title": "岛链：空海真实候选取消无写，同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        "passed"
+      ],
+      "source": "islands-recheck"
+    }
+  ],
+  "sources": {
+    "initial": "initial/results.json",
+    "islandsRecheck": "islands-recheck/results.json",
+    "initialRun": "initial/run.json",
+    "islandsRecheckRun": "islands-recheck/run.json",
+    "responseGates": "initial/progress-review.json",
+    "manifest": "manifest.json"
+  },
+  "progress": {
+    "observationComplete": true,
+    "progress250msPassed": true,
+    "cancellation500msPassed": true,
+    "actualProgressRuns": 11,
+    "actualCancellationRuns": 4,
+    "groups": [
+      {
+        "project": "desktop-chromium",
+        "size": 256,
+        "runs": 3,
+        "validRuns": 3,
+        "maximumProgressGapMs": 161.79999999701977,
+        "cancellationRuns": 1,
+        "maximumCancellationMs": 16.700000002980232
+      },
+      {
+        "project": "desktop-chromium",
+        "size": 512,
+        "runs": 2,
+        "validRuns": 2,
+        "maximumProgressGapMs": 220.80000000447035,
+        "cancellationRuns": 1,
+        "maximumCancellationMs": 10.399999998509884
+      },
+      {
+        "project": "mobile-chromium",
+        "size": 256,
+        "runs": 3,
+        "validRuns": 3,
+        "maximumProgressGapMs": 132.39999999850988,
+        "cancellationRuns": 1,
+        "maximumCancellationMs": 14.399999998509884
+      },
+      {
+        "project": "tablet-chromium",
+        "size": 256,
+        "runs": 3,
+        "validRuns": 3,
+        "maximumProgressGapMs": 178.29999999701977,
+        "cancellationRuns": 1,
+        "maximumCancellationMs": 16.200000002980232
+      }
+    ]
+  },
+  "knownUnpassed": [
+    {
+      "status": "preserved-failed-execution",
+      "scope": "Initial island case on three projects",
+      "resolution": "The overstrict unchanged-seabed test contract was corrected and all three complete island cases were rerun; original failures remain archived."
+    },
+    {
+      "status": "pending",
+      "scope": "Physical phone/tablet acceptance and final user visual acceptance",
+      "resolution": "Not substituted by browser emulation or screenshots."
+    },
+    {
+      "status": "not-covered",
+      "scope": "Whole-PH and unrestricted performance acceptance",
+      "resolution": "This is a bounded playtest build review; other PH gates and older failed evidence remain separately recorded."
+    }
+  ],
+  "limitations": [
+    "Mobile/tablet are desktop hardware emulation, not real devices.",
+    "Timing coverage is macro generation only, including desktop 512.",
+    "Screenshots support visual review but do not automatically pass visual acceptance or any whole phase."
+  ],
+  "preservedFailedTraces": [
+    {
+      "source": ".autopilot/ph06/playtest-browser/test-results/atlas-coast-islands-岛链：空海真-8468d-同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销-desktop-chromium/trace.zip",
+      "bytes": 7676885,
+      "sha256": "2ec306d593f1caffe16ccbe6249a68589492a7a93818e713018398d5dde1f8ea",
+      "retainedOnlyLocally": true
+    },
+    {
+      "source": ".autopilot/ph06/playtest-browser/test-results/atlas-coast-islands-岛链：空海真-8468d-同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销-mobile-chromium/trace.zip",
+      "bytes": 9689103,
+      "sha256": "fc689a77c84eac2a6346c4d1eb1037547cac63e0b5a4a9fc0a1e1b2d31fb7660",
+      "retainedOnlyLocally": true
+    },
+    {
+      "source": ".autopilot/ph06/playtest-browser/test-results/atlas-coast-islands-岛链：空海真-8468d-同候选保存刷新，追加岛链独立连通并保留旧陆地，逐次撤销-tablet-chromium/trace.zip",
+      "bytes": 8867457,
+      "sha256": "0030da851e4accd860c6f1cdba16e8885cbdfcb7c8c3535aafa08f5534fc5528",
+      "retainedOnlyLocally": true
+    }
+  ]
+}

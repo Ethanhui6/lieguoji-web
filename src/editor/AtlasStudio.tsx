@@ -1,6 +1,10 @@
+import { isGenerationDocument, type AtlasFormat } from '../world/atlas-format';
+import { validateCellRectangle, type GenerationRecipe, type GenerationScope, type AtlasCellRectangle } from '../world/generation-contract';
+import { atlasCellLockFlags } from '../world/generation-locks';
+import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT } from '../world/generation/fingerprint';
 import { useEffect, useId, useRef, useState } from 'react';
 import { AtlasClient } from '../world/bridge';
-import type { AtlasClientView, AtlasDraftList, AtlasEditResult, AtlasPreview, AtlasProgress } from '../world/protocol';
+import type { AtlasClientView, AtlasDraftList, AtlasGenerationPreview, AtlasConstraintsPreview, AtlasEditResult, AtlasPreview, AtlasProgress } from '../world/protocol';
 import type { AtlasPatch } from '../world/transactions';
 import type { AtlasSize } from '../world/model';
 import { getAdminLeaf, getCellLayerSlot, getSimRegion } from '../world/model';
@@ -13,28 +17,40 @@ import { ModalDialog } from '../ui/ModalDialog';
 import './atlas-studio.css';
 
 type Props = {
-  initialDraftId?: string; initialSource?: 'current' | 'backup'; expectedManifest?: string;
+  initialDraftId?: string; initialSource?: 'current' | 'backup'; expectedManifest?: string; initialFormat?: AtlasFormat | null;
   onBack: () => void;
-  onDraftOpened: (draftId: string, source: 'current' | 'backup', manifestDigest: string) => void;
+  onDraftOpened: (draftId: string, source: 'current' | 'backup', manifestDigest: string, format: AtlasFormat) => void;
 };
 type Pending = { patch: AtlasPatch; reason: string; preview: AtlasPreview; input: string };
 type Confirmation = { title: string; detail: string; button: string; action: () => Promise<void> };
 const explain = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-export default function AtlasStudio({ initialDraftId = '', initialSource = 'current', expectedManifest = '', onBack, onDraftOpened }: Props) {
+export default function AtlasStudio({ initialDraftId = '', initialSource = 'current', expectedManifest = '', initialFormat = 1, onBack, onDraftOpened }: Props) {
   const hostRef = useRef<HTMLDivElement>(null), rendererRef = useRef<AtlasRenderer | null>(null), clientRef = useRef<AtlasClient | null>(null);
   const live = useRef(false), generation = useRef(0), busyRef = useRef(false), selectedRef = useRef<number | null>(null), viewRef = useRef<AtlasClientView | null>(null);
   const callbacks = useRef({ onDraftOpened }); callbacks.current = { onDraftOpened };
   const [view, setView] = useState<AtlasClientView | null>(null), [ready, setReady] = useState(false), [busy, setBusy] = useState(true);
   const [error, setError] = useState(''), [fatal, setFatal] = useState(''), [status, setStatus] = useState('正在打开大世界草稿…');
   const [graphicsState, setGraphicsState] = useState<AtlasGraphicsState>('ready');
-  const [progress, setProgress] = useState<AtlasProgress | null>(null), [drafts, setDrafts] = useState<AtlasDraftList>([]);
-  const [section, setSection] = useState<'edit' | 'world' | null>(initialDraftId ? null : 'world'), [extent, setExtent] = useState<InspectorExtent>('half');
+  const [progress, setProgress] = useState<AtlasProgress | null>(null), [drafts, setDrafts] = useState<(AtlasDraftList[number] & { format: AtlasFormat })[]>([]);
+  const [section, setSection] = useState<'edit' | 'world' | 'generate' | null>(initialDraftId ? null : 'world'), [extent, setExtent] = useState<InspectorExtent>('half');
   const [selected, setSelected] = useState<number | null>(null), [locate, setLocate] = useState('32896');
   const [mode, setMode] = useState<'elevation' | 'vertex'>('elevation'), [range, setRange] = useState(1), [height, setHeight] = useState(100);
   const [vertexId, setVertexId] = useState<number | null>(null), [moveX, setMoveX] = useState(1), [moveY, setMoveY] = useState(0);
   const [pending, setPending] = useState<Pending | null>(null), [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [name, setName] = useState('新的山河'), [seed, setSeed] = useState('山河-大世界-01'), [size, setSize] = useState<AtlasSize>(256);
+  const [generationPreview, setGenerationPreview] = useState<AtlasGenerationPreview | null>(null), generationPreviewRef = useRef<AtlasGenerationPreview | null>(null);
+  const [constraintsPreview, setConstraintsPreview] = useState<AtlasConstraintsPreview | null>(null), constraintsPreviewRef = useRef<AtlasConstraintsPreview | null>(null);
+  const [localGeneration, setLocalGeneration] = useState(false), [showLockRegion, setShowLockRegion] = useState(false);
+  const [region, setRegion] = useState<AtlasCellRectangle>({ column: 32, row: 32, columns: 64, rows: 64 }), [transitionCells, setTransitionCells] = useState(4);
+  const [lockMask, setLockMask] = useState<1 | 2 | 3>(3), [lockAction, setLockAction] = useState<'set' | 'clear'>('set');
+  const cancelGenerationDisplay = useRef<(() => Promise<void>) | null>(null);
+  const [continents, setContinents] = useState(3), [coverage, setCoverage] = useState(400), [wavelength, setWavelength] = useState(384), [relief, setRelief] = useState(2400);
+  const [terrainSeed, setTerrainSeed] = useState('山海-01');
+  const [terrainOperation, setTerrainOperation] = useState<'macro' | 'landforms' | 'islands' | 'coast'>('macro');
+  const [chainCount, setChainCount] = useState(1), [islandsPerChain, setIslandsPerChain] = useState(3), [islandRadius, setIslandRadius] = useState(80);
+  const [coastStrength, setCoastStrength] = useState(650), [coastIterations, setCoastIterations] = useState(2);
+  const [mountainRanges, setMountainRanges] = useState(3), [basins, setBasins] = useState(2);
   const [frameMetrics, setFrameMetrics] = useState({ commitMs: 0, durableMs: 0, repaintBlocks: 0 });
   const [cameraScale, setCameraScale] = useState(1), titleId = useId();
 
@@ -47,7 +63,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   async function accept(next: AtlasClientView, start: number, durableAt: number, ticket = generation.current) {
     if (!live.current || generation.current !== ticket) return;
     const renderer = rendererRef.current!;
-    callbacks.current.onDraftOpened(next.head.draftId, next.head.readOnly ? 'backup' : 'current', next.head.manifestDigest);
+    callbacks.current.onDraftOpened(next.head.draftId, next.head.readOnly ? 'backup' : 'current', next.head.manifestDigest, next.data.manifest.version);
     const delta = 'delta' in next ? next as AtlasEditResult : undefined;
     try {
       // Painting now yields: discard old-world selection before input can run
@@ -55,7 +71,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       if (viewRef.current?.head.draftId !== next.head.draftId) { selectedRef.current = null; setSelected(null); setVertexId(null); }
       const rendered = await renderer.accept(next.data, delta);
       if (!live.current || generation.current !== ticket) return;
-      viewRef.current = next; setView(next); setPending(null);
+      viewRef.current = next; setView(next); setPending(null); generationPreviewRef.current = null; setGenerationPreview(null); constraintsPreviewRef.current = null; setConstraintsPreview(null);
       const selectedId = selectedRef.current;
       if (selectedId !== null && selectedId < next.data.manifest.spec.columns ** 2) {
         renderer.select(selectedId);
@@ -73,17 +89,18 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     busyRef.current = true; setBusy(true); setError('');
     try { await action(); }
     catch (error) { if (live.current && generation.current === ticket) { setError(explain(error)); setStatus(error instanceof Error && error.name === 'AbortError' ? '操作已取消；已经提交的草稿仍保留。' : '操作未完成，请查看原因。'); } }
-    finally { if (live.current && generation.current === ticket) { busyRef.current = false; setBusy(false); setProgress(null); } }
+    finally { if (live.current && generation.current === ticket) { busyRef.current = false; setBusy(false); setProgress(null); cancelGenerationDisplay.current = null; } }
   }
   const refreshList = async (client = clientRef.current!, ticket = generation.current) => {
-    try { const rows = await client.list(); if (live.current && generation.current === ticket) setDrafts(rows); }
+    try { const modern = (await client.list(2)).map(row => ({ ...row, format: 2 as const })), legacy = (await client.list(1)).map(row => ({ ...row, format: 1 as const })); const rows = [...modern, ...legacy]; if (live.current && generation.current === ticket) setDrafts(rows); }
     catch (failure) { if (live.current && generation.current === ticket) setError(`草稿目录暂时无法读取；已经提交的草稿保持原样。${explain(failure)}`); }
   };
   useEffect(() => {
     const ticket = ++generation.current, current = () => live.current && generation.current === ticket;
     live.current = true; busyRef.current = true;
+    if (initialFormat === null) { setFatal('链接指定了未知草稿格式，未打开或修改任何存档。'); setBusy(false); busyRef.current = false; return () => { if (generation.current === ticket) live.current = false; }; }
     let client: AtlasClient;
-    try { client = new AtlasClient({ onProgress: next => { if (current()) setProgress(next); }, onFatal: failure => { if (current()) { setFatal(explain(failure)); setReady(false); } } }); }
+    try { client = new AtlasClient({ format: initialFormat, onProgress: next => { if (current()) setProgress(next); }, onFatal: failure => { if (current()) { setFatal(explain(failure)); setReady(false); } } }); }
     catch (failure) { setFatal(`草稿线程未能启动，请刷新后恢复。${explain(failure)}`); setBusy(false); busyRef.current = false; return () => { if (generation.current === ticket) live.current = false; }; }
     clientRef.current = client;
     const renderer = new AtlasRenderer(hostRef.current!, {
@@ -91,8 +108,8 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
         if (!current()) return;
         if (busyRef.current) { renderer.select(selectedRef.current); return; }
         selectedRef.current = id; setSelected(id); setLocate(String(id)); setPending(null); renderer.showPreview([]);
-        const data = viewRef.current?.data; if (data) setVertexId(cellVertexIds(data.manifest.spec, id)[0]);
-        renderer.focusCell(id, false); setSection('edit');
+        const data = generationPreviewRef.current?.data ?? constraintsPreviewRef.current?.data ?? viewRef.current?.data; if (data) setVertexId(cellVertexIds(data.manifest.spec, id)[0]);
+        renderer.focusCell(id, false); setSection(generationPreviewRef.current || constraintsPreviewRef.current ? 'generate' : 'edit');
       },
       onCamera: camera => { if (current()) setCameraScale(camera.scale); },
       onProgress: next => { if (current()) setProgress(next); },
@@ -124,7 +141,18 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     // Route identity is fixed for this mounted studio; local draft switches use the same renderer.
   }, []);
 
-  const data = view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, graphicsLocked = graphicsState !== 'ready', locked = busy || !ready || !!fatal || readOnly || graphicsLocked;
+  const data = generationPreview?.data ?? constraintsPreview?.data ?? view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, graphicsLocked = graphicsState !== 'ready', locked = busy || !ready || !!fatal || readOnly || graphicsLocked || !!generationPreview || !!constraintsPreview;
+  const regionValid = !!spec && validateCellRectangle(region, spec), supportsLocal = terrainOperation === 'landforms' || terrainOperation === 'coast';
+  const selectedFlags = data && isGenerationDocument(data) && selected !== null ? atlasCellLockFlags(data, selected) : 0;
+  useEffect(() => {
+    if (!ready || fatal || graphicsLocked) return;
+    const savedScope = generationPreview?.preview.scope;
+    const r = constraintsPreview?.preview.rectangle ?? (savedScope?.kind === 'cell-rectangle' ? { column: savedScope.column, row: savedScope.row, columns: savedScope.columns, rows: savedScope.rows } : region);
+    const inset = constraintsPreview ? 0 : generationPreview ? savedScope?.kind === 'cell-rectangle' ? savedScope.transitionCells : 0 : localGeneration && supportsLocal ? transitionCells : 0;
+    const visible = section === 'generate' && (!!constraintsPreview || savedScope?.kind === 'cell-rectangle' || !generationPreview && (showLockRegion || localGeneration && supportsLocal));
+    const valid = !!spec && validateCellRectangle(r, spec) && Number.isInteger(inset) && inset >= 0 && inset * 2 < Math.min(r.columns, r.rows);
+    rendererRef.current?.showRegion(visible && valid ? r : null, valid ? inset : 0);
+  }, [ready, fatal, graphicsLocked, section, region, spec, generationPreview, constraintsPreview, localGeneration, supportsLocal, showLockRegion, transitionCells]);
   const selectedHeight = data && selected !== null ? (() => { const cell = getCellLayerSlot(data, 'elevation', selected); return cell.block.values[cell.slot]; })() : null;
   const selectedQuad = data && selected !== null ? getCellQuad(data, selected) : null;
   const center = selectedQuad ? { x: selectedQuad.reduce((sum, p) => sum + p.x, 0) / 4, y: selectedQuad.reduce((sum, p) => sum + p.y, 0) / 4 } : null;
@@ -147,8 +175,8 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     await accept(next, start, performance.now(), ticket); await refreshList(client, ticket);
     if (live.current && ticket === generation.current) setSection(null);
   }
-  async function restore(id: string, source: 'current' | 'backup') {
-    clearPreview(); const ticket = generation.current, client = clientRef.current!, start = performance.now(), next = await client.restore(id, source);
+  async function restore(id: string, source: 'current' | 'backup', format: AtlasFormat) {
+    clearPreview(); const ticket = generation.current, client = clientRef.current!, start = performance.now(), next = await client.restore(id, source, format);
     if (!live.current || ticket !== generation.current) return;
     selectedRef.current = null; setSelected(null); setVertexId(null); await accept(next, start, performance.now(), ticket);
     if (live.current && ticket === generation.current) setSection(source === 'backup' ? 'world' : null);
@@ -187,13 +215,108 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     if (!live.current || ticket !== generation.current) return;
     await accept(next, start, performance.now(), ticket); await refreshList(client, ticket);
   }
+  async function copyForGeneration() {
+    const start = performance.now(), next = await clientRef.current!.generationCopy((view?.head.name ?? '山河') + ' · 创世副本');
+    await accept(next, start, performance.now()); await refreshList(); setSection('generate');
+  }
+  async function previewTerrain() {
+    clearPreview();
+    const recipe: GenerationRecipe = terrainOperation === 'macro'
+      ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'macro-landmass', version: 1, fingerprint: MACRO_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { majorContinents: continents, landCoveragePermille: coverage, coastWavelengthWorld: wavelength, reliefMeters: relief } }
+      : terrainOperation === 'landforms' ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'landforms', version: 1, fingerprint: LANDFORM_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { mountainRanges, basins, reliefMeters: relief } }
+      : terrainOperation === 'islands' ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'island-chains', version: 1, fingerprint: ISLAND_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { chainCount, islandsPerChain, radiusWorld: islandRadius, reliefMeters: relief } }
+      : { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'coast-smoothing', version: 1, fingerprint: COAST_GENERATOR_FINGERPRINT }, parameters: { strengthPermille: coastStrength, iterations: coastIterations } };
+    const scope: GenerationScope = localGeneration && supportsLocal ? { kind: 'cell-rectangle', ...region, transitionCells } : { kind: 'world' };
+    const next = await clientRef.current!.previewGeneration(recipe, scope);
+    let cancelled = false; let cancellation: Promise<void> | null = null;
+    cancelGenerationDisplay.current = () => {
+      cancelled = true;
+      cancellation ??= rendererRef.current!.clearGenerationPreview().then(() => clientRef.current!.discardGeneration()).then(() => { setStatus('已取消生成，原草稿保持不变。'); });
+      return cancellation;
+    };
+    try { await rendererRef.current!.showGenerationPreview(next.data); }
+    catch (error) { if (cancelled) await cancellation; else if (rendererRef.current?.metrics().gpu.state === 'ready') await clientRef.current!.discardGeneration(); throw error; }
+    if (cancelled) { await cancellation; throw new DOMException('生成预览已取消。', 'AbortError'); }
+    cancelGenerationDisplay.current = null;
+    generationPreviewRef.current = next; setGenerationPreview(next); setStatus('正在查看生成预览，尚未保存。');
+  }
+  async function discardTerrain() {
+    await clientRef.current!.discardGeneration(); await rendererRef.current!.clearGenerationPreview(); generationPreviewRef.current = null; setGenerationPreview(null); setStatus('已取消生成，恢复原草稿。');
+  }
+  async function confirmTerrain() {
+    const start = performance.now(), next = await clientRef.current!.confirmGeneration(); await accept(next, start, performance.now()); await refreshList(); setStatus('生成地形已保存，可以继续手工编辑或撤销。');
+  }
+  async function previewLocks() {
+    clearPreview(); const next = await clientRef.current!.previewConstraints(region, lockMask, lockAction);
+    constraintsPreviewRef.current = next; setConstraintsPreview(next); setShowLockRegion(true); setStatus('正在查看区域锁预览，确认后才会保存。');
+  }
+  async function discardLocks() { await clientRef.current!.discardConstraints(); constraintsPreviewRef.current = null; setConstraintsPreview(null); setStatus('已取消区域锁修改，原草稿保持不变。'); }
+  async function confirmLocks() { const start = performance.now(), next = await clientRef.current!.confirmConstraints(); await accept(next, start, performance.now()); await refreshList(); setStatus('区域锁已保存，后续生成会保留锁定内容。'); }
+  const terrainTitle = { macro: '塑造大陆', landforms: '起伏山河', islands: '散落群岛', coast: '细化海岸' }[terrainOperation];
+  const terrainButton = { macro: '预览大陆生成', landforms: '预览山系与盆地', islands: '预览岛链生成', coast: '预览海岸细化' }[terrainOperation];
+  const terrainHelp = {
+    macro: '重建整张地图的海陆与高程，需要地图内没有锁定区域。',
+    landforms: '沿已有陆地生成相连山脊和内陆低地。保留海岸和锁定高程；山系和盆地合计 1—12 处。',
+    islands: '在开阔海面添加弯曲岛链，保留现有陆地和锁定区域。空间不足时保持原图，并说明原因。',
+    coast: '平滑真实海岸顶点，保留海陆、高程与锁定海岸。每轮检查几何；必要时自动减小位移，保护相邻地块。',
+  }[terrainOperation];
+  const generatedSummary = generationPreview?.preview.summary;
+  const generatePanel = <div className="atlas-panel-content">
+    {!view ? <p className="atlas-help">先在草稿面板创建一片空白海洋。</p> : view.data.manifest.version === 1 || readOnly ? <section><h3>在独立副本中创世</h3><p className="atlas-help">保留当前草稿和所选时点，建立可以生成地形的独立副本。</p><button className="atlas-primary" disabled={busy || !!fatal || graphicsLocked || !!generationPreview} onClick={() => setConfirmation({ title: '创建创世副本？', detail: '复制当前看到的固定时点，使用独立保存空间。原草稿与备份不改写。', button: '创建创世副本', action: copyForGeneration })}>创建创世副本</button></section> : <>
+      <h3>{terrainTitle}</h3><p className="atlas-help">先预览真实地图，再决定是否保存；你可以继续修改每一块地形。</p>
+      <fieldset className="atlas-edit-fields" disabled={locked}>
+        <label className="atlas-field">生成内容<select aria-label="生成内容" value={terrainOperation} onChange={event => {
+          const value = event.target.value; setTerrainOperation(value === 'landforms' || value === 'islands' || value === 'coast' ? value : 'macro');
+        }}><option value="macro">大陆与海洋</option><option value="landforms">山系与盆地 · 保留海岸</option><option value="islands">海上岛链 · 保留陆地</option><option value="coast">海岸细化 · 保留海陆</option></select></label>
+        {terrainOperation !== 'coast' && <label className="atlas-field">地貌种子<input aria-label="地貌种子" value={terrainSeed} maxLength={120} onChange={event => setTerrainSeed(event.target.value)} /></label>}
+        {terrainOperation === 'macro' && <>
+          <div className="atlas-two-fields"><label className="atlas-field">大陆数量<input aria-label="大陆数量" type="number" min={1} max={6} step={1} value={continents} onChange={event => setContinents(Number(event.target.value))} /></label><label className="atlas-field">陆地比例（‰）<input aria-label="陆地比例" type="number" min={150} max={650} step={10} value={coverage} onChange={event => setCoverage(Number(event.target.value))} /></label></div>
+          <label className="atlas-field">海岸变化尺度<input aria-label="海岸变化尺度" type="number" min={128} max={1024} step={32} value={wavelength} onChange={event => setWavelength(Number(event.target.value))} /></label>
+        </>}
+        {terrainOperation === 'landforms' && <div className="atlas-two-fields"><label className="atlas-field">山系数量<input aria-label="山系数量" type="number" min={0} max={8} step={1} value={mountainRanges} onChange={event => setMountainRanges(Number(event.target.value))} /></label><label className="atlas-field">盆地数量<input aria-label="盆地数量" type="number" min={0} max={8} step={1} value={basins} onChange={event => setBasins(Number(event.target.value))} /></label></div>}
+        {terrainOperation === 'islands' && <>
+          <div className="atlas-two-fields"><label className="atlas-field">岛链数量<input aria-label="岛链数量" type="number" min={1} max={3} step={1} value={chainCount} onChange={event => setChainCount(Number(event.target.value))} /></label><label className="atlas-field">每链岛屿<input aria-label="每链岛屿" type="number" min={2} max={6} step={1} value={islandsPerChain} onChange={event => setIslandsPerChain(Number(event.target.value))} /></label></div>
+          <label className="atlas-field">岛屿半径<input aria-label="岛屿半径" type="number" min={64} max={128} step={8} value={islandRadius} onChange={event => setIslandRadius(Number(event.target.value))} /></label>
+        </>}
+        {terrainOperation === 'coast' ? <>
+          <label className="atlas-field">目标平滑强度（‰）<input aria-label="目标平滑强度" type="number" min={100} max={1000} step={50} value={coastStrength} onChange={event => setCoastStrength(Number(event.target.value))} /></label>
+          <label className="atlas-field">细化轮数<input aria-label="细化轮数" type="number" min={1} max={4} step={1} value={coastIterations} onChange={event => setCoastIterations(Number(event.target.value))} /></label>
+        </> : <label className="atlas-field">内陆起伏（米）<input aria-label="内陆起伏" type="number" min={200} max={terrainOperation === 'islands' ? 3000 : 6000} step={100} value={relief} onChange={event => setRelief(Number(event.target.value))} /></label>}
+        <p className="atlas-help">{terrainHelp}先查看预览中的实际变化，再确认保存。</p>
+        <button className="atlas-primary" disabled={locked || terrainOperation !== 'coast' && !terrainSeed.trim()} onClick={() => void run(previewTerrain)}>{terrainButton}</button>
+      </fieldset>
+      <fieldset className="atlas-edit-fields" disabled={locked}>
+        <legend>局部范围与区域锁</legend>
+        {supportsLocal && <label className="atlas-field">地貌生成范围<select aria-label="地貌生成范围" value={localGeneration ? 'local' : 'world'} onChange={event => setLocalGeneration(event.target.value === 'local')}><option value="world">整张地图</option><option value="local">仅下面的矩形选区</option></select></label>}
+        <label className="atlas-field"><span><input aria-label="显示区域锁选区" type="checkbox" checked={showLockRegion} onChange={event => setShowLockRegion(event.target.checked)} /> 显示区域锁选区</span></label>
+        {(showLockRegion || supportsLocal && localGeneration) && <>
+          <div className="atlas-two-fields">{(['column', 'row', 'columns', 'rows'] as const).map(key => <label className="atlas-field" key={key}>{({ column: '起始列', row: '起始行', columns: '选区宽度', rows: '选区高度' })[key]}<input aria-label={({ column: '选区起始列', row: '选区起始行', columns: '选区宽度', rows: '选区高度' })[key]} type="number" step={1} min={key === 'column' || key === 'row' ? 0 : 1} max={spec?.columns ?? 128} value={region[key]} onChange={event => setRegion(current => ({ ...current, [key]: Number(event.target.value) }))} /></label>)}</div>
+          <button disabled={locked || selected === null || !spec} onClick={() => { if (selected !== null && spec) setRegion(current => ({ ...current, column: Math.min(selected % spec.columns, spec.columns - current.columns), row: Math.min(Math.floor(selected / spec.columns), spec.rows - current.rows) })); }}>从选中地块设置选区</button>
+          {supportsLocal && localGeneration && <label className="atlas-field">过渡带宽度（地块）<input aria-label="过渡带宽度" type="number" min={0} max={16} step={1} value={transitionCells} onChange={event => setTransitionCells(Number(event.target.value))} /></label>}
+          <p className="atlas-help">行列从 0 开始。蓝线沿真实地块边界标出选区；浅色内框是完整生效范围，之间逐步过渡。选区外保持原样。{regionValid ? '当前选区共 ' + (region.columns * region.rows).toLocaleString() + ' 个地块。' : '选区越界或尺寸无效，请调整。'}</p>
+        </>}
+        <div className="atlas-two-fields"><label className="atlas-field">保护内容<select aria-label="区域锁保护内容" value={lockMask} onChange={event => setLockMask(Number(event.target.value) as 1 | 2 | 3)}><option value={3}>海岸与高程</option><option value={1}>海岸</option><option value={2}>高程</option></select></label><label className="atlas-field">锁定操作<select aria-label="区域锁操作" value={lockAction} onChange={event => setLockAction(event.target.value === 'clear' ? 'clear' : 'set')}><option value="set">锁定选区</option><option value="clear">解除所选保护</option></select></label></div>
+        <p className="atlas-help">海岸锁保护海陆类型及相邻海岸顶点，高程锁保留高度。锁也约束手工地理编辑；解除一种保护会保留另一种。</p>
+        <button disabled={locked || !regionValid || !showLockRegion} onClick={() => void run(previewLocks)}>预览区域锁修改</button>
+      </fieldset>
+      {constraintsPreview && <section className="atlas-preview" aria-label="区域锁修改预览"><h3>尚未保存 · 区域锁预览</h3><p>{constraintsPreview.preview.action === 'set' ? '锁定' : '解除保护'}：{constraintsPreview.preview.mask === 3 ? '海岸与高程' : constraintsPreview.preview.mask === 1 ? '海岸' : '高程'}。实际改变 {constraintsPreview.preview.changedCellCount.toLocaleString()} 个地块的保护状态，地形保持原样。</p><p>列 {constraintsPreview.preview.rectangle.column} 起、行 {constraintsPreview.preview.rectangle.row} 起，{constraintsPreview.preview.rectangle.columns} × {constraintsPreview.preview.rectangle.rows} 地块。蓝线标出本次操作范围。</p>{selected !== null && <p>选中地块 #{selected}：{selectedFlags & 1 ? '海岸已锁定' : '海岸可编辑'} · {selectedFlags & 2 ? '高程已锁定' : '高程可编辑'}</p>}<div className="atlas-actions"><button disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(discardLocks)}>取消区域锁修改</button><button className="atlas-primary" disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(confirmLocks)}>确认区域锁并保存</button></div></section>}
+      {generationPreview && generatedSummary && <section className="atlas-preview" aria-label="大陆生成预览">
+        <h3>尚未保存 · 生成预览</h3>{generationPreview.preview.scope.kind === 'cell-rectangle' && <p>局部生成：列 {generationPreview.preview.scope.column}、行 {generationPreview.preview.scope.row} 起，{generationPreview.preview.scope.columns} × {generationPreview.preview.scope.rows} 地块，过渡带 {generationPreview.preview.scope.transitionCells} 格。</p>}<p>{generatedSummary.majorComponentCount} {generationPreview.preview.recipe.generator.id === 'macro-landmass' ? '个大陆' : '片独立陆地'} · 实际陆地 {Math.round(1000 * generatedSummary.landAreaQ2 / generatedSummary.worldAreaQ2)}‰ · 改变 {generatedSummary.changedCellCount.toLocaleString()} 个地块。</p>
+        {generatedSummary.landforms && <p>实际形成 {generatedSummary.landforms.mountainRanges} 条山系、{generatedSummary.landforms.basins} 处盆地；抬升 {generatedSummary.landforms.raisedCellCount.toLocaleString()} 个地块，降低 {generatedSummary.landforms.loweredCellCount.toLocaleString()} 个地块。海岸保持原样。</p>}
+        {generatedSummary.islands && <p>实际形成 {generatedSummary.islands.chainCount} 条岛链、{generatedSummary.islands.newIslandCount} 座新岛。保留原有 {generatedSummary.islands.originalComponentCount} 片陆地，新增 {generatedSummary.islands.newLandCellCount.toLocaleString()} 个陆地地块。</p>}
+        {generatedSummary.coast && <p>{generatedSummary.coast.changedVertexCount > 0 ? '细化 ' + generatedSummary.coast.changedVertexCount.toLocaleString() + ' 个海岸顶点，采用 ' + generatedSummary.coast.iterationsApplied + ' 轮有效调整。海陆与高程保持原样。' : '没有需要调整的可编辑海岸，地图保持原样。'}</p>}
+        <p>高程 {generatedSummary.minElevationMeters} 至 {generatedSummary.maxElevationMeters} 米。可缩放、拖动或点选地图检查。</p>{selected !== null && <p>选中地块 #{selected}：{selectedHeight} 米</p>}
+        <div className="atlas-actions"><button disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(discardTerrain)}>取消生成</button><button className="atlas-primary" disabled={busy || graphicsLocked || !!fatal || generatedSummary.coast?.changedVertexCount === 0} onClick={() => void run(confirmTerrain)}>确认生成并保存</button></div>
+      </section>}
+    </>}
+  </div>;
   const graphicsMessage = graphicsState === 'lost' ? '图形连接暂时中断，草稿仍保留；恢复画面后可继续编辑。' : graphicsState === 'restoring' ? '正在恢复地图画面，草稿与当前视角保持不变。' : '';
-  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${progress.stage} · ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
+  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${progress.stage} · ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
 
   const editPanel = <div className="atlas-panel-content">
     <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy || graphicsLocked}>定位</button></form>
     {selected !== null && data && <>
-      <dl className="atlas-cell-details"><div><dt>地块</dt><dd>#{selected}</dd></div><div><dt>坐标</dt><dd>{center?.x.toFixed(2)}，{center?.y.toFixed(2)}</dd></div><div><dt>高程</dt><dd data-testid="atlas-selected-height">{selectedHeight} 米</dd></div><div><dt>地表</dt><dd>{selectedHeight! < 0 ? '海洋' : '陆地'}</dd></div><div><dt>模拟区</dt><dd>{getSimRegion(data, selected) ?? '未分配'}</dd></div><div><dt>行政叶</dt><dd>{getAdminLeaf(data, selected) ?? '未分配'}</dd></div></dl>
+      <dl className="atlas-cell-details"><div><dt>地块</dt><dd>#{selected}</dd></div><div><dt>坐标</dt><dd>{center?.x.toFixed(2)}，{center?.y.toFixed(2)}</dd></div><div><dt>高程</dt><dd data-testid="atlas-selected-height">{selectedHeight} 米</dd></div><div><dt>保护</dt><dd>{selectedFlags & 1 ? '海岸锁定' : '海岸可编辑'} · {selectedFlags & 2 ? '高程锁定' : '高程可编辑'}</dd></div><div><dt>地表</dt><dd>{selectedHeight! < 0 ? '海洋' : '陆地'}</dd></div><div><dt>模拟区</dt><dd>{getSimRegion(data, selected) ?? '未分配'}</dd></div><div><dt>行政叶</dt><dd>{getAdminLeaf(data, selected) ?? '未分配'}</dd></div></dl>
       {readOnly ? <p className="atlas-help">这份备份只供查看。请在草稿面板创建独立副本后继续编辑。</p> : <fieldset className="atlas-edit-fields" disabled={locked}>
         <div className="atlas-segmented" aria-label="地理编辑方式"><button aria-pressed={mode === 'elevation'} onClick={() => { clearPreview(); setMode('elevation'); }}>高程</button><button aria-pressed={mode === 'vertex'} onClick={() => { clearPreview(); setMode('vertex'); }}>共享顶点</button></div>
         {mode === 'elevation' ? <><label className="atlas-field">调整为高程（米）<input aria-label="目标高程（米）" type="number" min={-12000} max={12000} step={10} value={height} onChange={event => { clearPreview(); setHeight(Number(event.target.value)); }} /></label><label className="atlas-field">局部范围<select aria-label="高程编辑范围" value={range} onChange={event => { clearPreview(); setRange(Number(event.target.value)); }}><option value={1}>1 个地块</option><option value={8}>8 × 8 地块</option><option value={32}>32 × 32 地块</option></select></label><p className="atlas-help">以选中地块为中心，实际影响 {cells.length} / {range * range} 个地块{cells.length < range * range ? '，已在世界边缘裁切' : ''}。高程低于 0 米显示为海洋。</p></> : <><label className="atlas-field">共享顶点<select aria-label="共享顶点" value={vertexId ?? ''} onChange={event => { clearPreview(); setVertexId(Number(event.target.value)); }}>{vertices.map(id => <option key={id} value={id}>顶点 #{id}</option>)}</select></label><div className="atlas-two-fields"><label className="atlas-field">东西位移<input aria-label="顶点东西位移" type="number" step={.25} value={moveX} onChange={event => { clearPreview(); setMoveX(Number(event.target.value)); }} /></label><label className="atlas-field">南北位移<input aria-label="顶点南北位移" type="number" step={.25} value={moveY} onChange={event => { clearPreview(); setMoveY(Number(event.target.value)); }} /></label></div><p className="atlas-help">单位为世界坐标。共享顶点的小幅移动会同时改变所有相邻地块；越界或退化的几何会被拒绝。</p></>}
@@ -205,21 +328,21 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   </div>;
   const worldPanel = <div className="atlas-panel-content">
     {view && <section className="atlas-current"><h3>{view.head.name}</h3><p>{view.head.readOnly ? '只读备份' : '已保存草稿'} · 修订 {view.head.revision} · {view.data.manifest.spec.columns ** 2} 地块</p>{view.head.readOnly && <button className="atlas-primary" disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '从备份创建独立副本？', detail: '新草稿使用独立存储身份。原主档与备份均保持不变。', button: '确认创建独立副本', action: fork })}>创建独立副本</button>}</section>}
-    <section><h3>新建空白大世界</h3><label className="atlas-field">草稿名称<input aria-label="大世界草稿名称" maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><label className="atlas-field">生成种子<input aria-label="大世界生成种子" maxLength={120} value={seed} onChange={event => setSeed(event.target.value)} /></label><label className="atlas-field">地理规模<select aria-label="大世界地理规模" value={size} onChange={event => setSize(Number(event.target.value) as AtlasSize)}><option value={128}>基本 · 16,384 地块</option><option value={256}>标准 · 65,536 地块</option><option value={512}>扩展实验 · 262,144 地块</option></select></label><p className="atlas-help">从负高程海洋开始，点选后可以局部升降地形。此草稿用于地理创作；经营与军事推演仍可从原世界工坊进入。</p><button className="atlas-primary" disabled={busy || !ready || !!fatal || graphicsLocked || !name.trim() || !seed.trim()} onClick={() => view ? setConfirmation({ title: '创建另一份空白草稿？', detail: '当前草稿已经自动保存，新建不会覆盖它。', button: '确认新建草稿', action: create }) : void run(create)}>新建空白海洋草稿</button></section>
-    <section><div className="atlas-section-heading"><h3>已保存的草稿</h3><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(refreshList)}>刷新列表</button></div>{drafts.length ? <ul className="atlas-draft-list">{drafts.map(row => <li key={row.draftId}><strong>{row.name}</strong><span>修订 {row.revision} · {row.size ** 2} 地块</span><div className="atlas-actions"><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(() => restore(row.draftId, 'current'))}>打开 {row.name}</button>{row.backupAvailable && <button disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '只读查看上一次备份？', detail: '不会回滚或改写主档。需要继续修改时，请创建独立副本。', button: '读取只读备份', action: () => restore(row.draftId, 'backup') })}>查看备份 {row.name}</button>}</div></li>)}</ul> : <p className="atlas-help">这个浏览器还没有大世界草稿。</p>}</section>
+    <section><h3>新建空白大世界</h3><label className="atlas-field">草稿名称<input aria-label="大世界草稿名称" maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><label className="atlas-field">生成种子<input aria-label="大世界生成种子" maxLength={120} value={seed} onChange={event => setSeed(event.target.value)} /></label><label className="atlas-field">地理规模<select aria-label="大世界地理规模" value={size} onChange={event => setSize(Number(event.target.value) as AtlasSize)}><option value={128}>基本 · 16,384 地块</option><option value={256}>标准 · 65,536 地块</option><option value={512}>扩展实验 · 262,144 地块</option></select></label><p className="atlas-help">从负高程海洋开始，点选后可以局部升降地形。此草稿用于地理创作；经营与军事推演仍可从原世界工坊进入。</p><button className="atlas-primary" disabled={busy || !ready || !!fatal || graphicsLocked || !!generationPreview || !!constraintsPreview || !name.trim() || !seed.trim()} onClick={() => view ? setConfirmation({ title: '创建另一份空白草稿？', detail: '当前草稿已经自动保存，新建不会覆盖它。', button: '确认新建草稿', action: create }) : void run(create)}>新建空白海洋草稿</button></section>
+    <section><div className="atlas-section-heading"><h3>已保存的草稿</h3><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(refreshList)}>刷新列表</button></div>{drafts.length ? <ul className="atlas-draft-list">{drafts.map(row => <li key={`${row.format}:${row.draftId}`}><strong>{row.name}</strong><span>修订 {row.revision} · {row.size ** 2} 地块</span><div className="atlas-actions"><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(() => restore(row.draftId, 'current', row.format))}>打开 {row.name}</button>{row.backupAvailable && <button disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '只读查看上一次备份？', detail: '不会回滚或改写主档。需要继续修改时，请创建独立副本。', button: '读取只读备份', action: () => restore(row.draftId, 'backup', row.format) })}>查看备份 {row.name}</button>}</div></li>)}</ul> : <p className="atlas-help">这个浏览器还没有大世界草稿。</p>}</section>
     <AppearanceSettings />
-    <details className="world-metadata"><summary>草稿身份与版本</summary><p>生产草稿格式 v1 · 地理编辑阶段，不是社会推演存档。</p>{view && <><p>草稿 {view.head.draftId}</p><p>地理 {view.head.atlasId}</p><p>内容摘要 {view.head.manifestDigest}</p></>}<p>构建 {__BUILD_SHA__}</p></details>
+    <details className="world-metadata"><summary>草稿身份与版本</summary><p>生产草稿格式 v{view?.data.manifest.version ?? initialFormat} · 地理编辑阶段，不是社会推演存档。</p>{view && <><p>草稿 {view.head.draftId}</p><p>地理 {view.head.atlasId}</p><p>内容摘要 {view.head.manifestDigest}</p></>}<p>构建 {__BUILD_SHA__}</p></details>
     <button className="atlas-return" disabled={busy} onClick={onBack}>返回原世界工坊</button>
   </div>;
-  return <main className="atlas-studio workbench" data-mode="atlas" data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
-    <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
+  return <main className="atlas-studio workbench" data-mode="atlas" data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-format={view?.data.manifest.version ?? initialFormat ?? 'unknown'} data-atlas-display={constraintsPreview ? 'constraints-preview' : generationPreview ? 'generation-preview' : 'committed'} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
+    <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{constraintsPreview ? '区域锁预览 · 尚未保存' : generationPreview ? '生成预览 · 尚未保存' : readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
     <div className="workbench-stage"><div className="workbench-map atlas-map" ref={hostRef} />
       <div className="context-toolbar atlas-toolbar"><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="放大大世界地图" onClick={() => rendererRef.current?.zoom(1.5)}>＋</button><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="缩小大世界地图" onClick={() => rendererRef.current?.zoom(1 / 1.5)}>−</button><button disabled={!view || !!fatal || graphicsLocked || busy} onClick={() => rendererRef.current?.fit()}>全图</button><span data-testid="atlas-zoom">{Math.round(cameraScale * 100)}%</span><small>拖动浏览 · 双指缩放 · 点选查看</small></div>
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
-      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={feedback}>{section === 'edit' ? editPanel : worldPanel}</ContextInspector>}
+      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? '大陆与地貌' : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={feedback}>{section === 'edit' ? editPanel : section === 'generate' ? generatePanel : worldPanel}</ContextInspector>}
       {!section && <div className="workbench-status atlas-status">{feedback}</div>}
     </div>
-    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'edit', label: '编辑', icon: 'brush' }, { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => setSection(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
+    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => setSection(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
     {confirmation && <ModalDialog titleId={titleId} locked={busy} onDismiss={() => setConfirmation(null)}><h2 id={titleId}>{confirmation.title}</h2><p>{confirmation.detail}</p><div className="confirm-actions"><button autoFocus disabled={busy} onClick={() => setConfirmation(null)}>取消</button><button disabled={busy} className="atlas-primary" onClick={() => { const action = confirmation.action; setConfirmation(null); void run(action); }}>{confirmation.button}</button></div></ModalDialog>}
   </main>;
 }

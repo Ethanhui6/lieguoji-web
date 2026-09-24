@@ -1,4 +1,5 @@
-import type { AtlasDraftData, AtlasGridSpec, BlockCoordinate, BlockKey } from './model';
+import type { AtlasGridSpec, BlockCoordinate, BlockKey } from './model';
+import type { AtlasGeographyView } from './atlas-format';
 
 export interface AtlasPoint { x: number; y: number }
 export interface AtlasPointQ { xQ: number; yQ: number }
@@ -80,13 +81,13 @@ export function vertexSlotLocation(spec: AtlasGridSpec, vertexId: number): { key
   const startX = bx * spec.blockCells + (bx === 0 ? 0 : 1), startY = by * spec.blockCells + (by === 0 ? 0 : 1), width = spec.blockCells + (bx === 0 ? 1 : 0);
   return { key: `geometry:${bx}:${by}`, slot: (y - startY) * width + x - startX };
 }
-export function getVertexPositionQ(data: AtlasDraftData, vertexId: number): AtlasPointQ {
+export function getVertexPositionQ(data: AtlasGeographyView, vertexId: number): AtlasPointQ {
   const { key, slot } = vertexSlotLocation(data.manifest.spec, vertexId), block = data.blocks.get(key);
   if (!block || block.layer !== 'geometry' || block.vertexIds[slot] !== vertexId) throw new Error('共享顶点的权威所有者缺失或引用不一致。');
   return { xQ: block.xyQ[slot * 2], yQ: block.xyQ[slot * 2 + 1] };
 }
 /** Returned in clockwise screen-coordinate winding; IDs elsewhere are sorted. */
-export function getCellQuad(data: AtlasDraftData, cellId: number): AtlasPoint[] {
+export function getCellQuad(data: AtlasGeographyView, cellId: number): AtlasPoint[] {
   const ids = cellVertexIds(data.manifest.spec, cellId), scale = data.manifest.spec.coordinateScale;
   return [ids[0], ids[1], ids[3], ids[2]].map(id => { const { xQ, yQ } = getVertexPositionQ(data, id); return { x: xQ / scale, y: yQ / scale }; });
 }
@@ -102,7 +103,7 @@ export function affectedGeometryBlocks(spec: AtlasGridSpec, vertexIds: readonly 
   return { ownerBlocks: uniqueBlocks(vertexIds.map(id => vertexOwnerBlock(spec, id))), cellBlocks, displayBlocks: cellBlocks.map(block => ({ ...block })) };
 }
 /** Owned candidate refs must already describe its immutable geometry blocks. */
-export function getGeometryDependencyKey(data: AtlasDraftData): string {
+export function getGeometryDependencyKey(data: AtlasGeographyView): string {
   const m = data.manifest, s = m.spec;
   return JSON.stringify([m.atlasId, s.kind, s.columns, s.rows, s.width, s.height, s.coordinateScale, s.blockCells,
     m.blockRefs.filter(ref => ref.key.startsWith('geometry:')).map(ref => [ref.key, ref.hash]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)]);
@@ -116,7 +117,7 @@ export function validateVertexPositionQ(spec: AtlasGridSpec, vertexId: number, x
   if (xQ < 0 || yQ < 0 || xQ > spec.width * spec.coordinateScale || yQ > spec.height * spec.coordinateScale || Math.abs(xQ - x) > limit || Math.abs(yQ - y) > limit) throw new Error('顶点超出固定拓扑的有界移动范围。');
   if ((col === 0 || col === spec.columns) && xQ !== x || (row === 0 || row === spec.rows) && yQ !== y) throw new Error('世界外边界顶点不能越过或移动外边界。');
 }
-export function validateLocalGeometry(data: AtlasDraftData, vertexIds: readonly number[]): void {
+export function validateLocalGeometry(data: AtlasGeographyView, vertexIds: readonly number[]): void {
   const spec = data.manifest.spec, cells = affectedGeometryCells(spec, vertexIds);
   for (const cell of cells) {
     const ids = cellVertexIds(spec, cell), points = [ids[0], ids[1], ids[3], ids[2]].map(id => {

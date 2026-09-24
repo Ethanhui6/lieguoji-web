@@ -1,11 +1,13 @@
-import { cloneBlock, getCellLayerSlot, getVertexSlot, hashBlock, hashManifest, UNASSIGNED, validateBlock, type AtlasDraftData, type BlockKey } from './model';
+import { cloneBlock, getCellLayerSlot, getVertexSlot, hashBlock, UNASSIGNED, validateBlock, type BlockKey } from './model';
+import { hashAtlasManifest, type AtlasDocument } from './atlas-format';
+import { assertAtlasLocksPreserved } from './generation-locks';
 import { validateLocalGeometry } from './topology';
 import { validateAtlasDelta, type AtlasEditDelta } from './transactions';
 
 /** Verified receive state only: copy changed blocks, independently hash every delta. */
-export async function applyAtlasDelta(base: AtlasDraftData, baseRootDigest: string, delta: AtlasEditDelta): Promise<AtlasDraftData> {
+export async function applyAtlasDelta<T extends AtlasDocument>(base: T, baseRootDigest: string, delta: AtlasEditDelta): Promise<T> {
   if (!validateAtlasDelta(delta) || delta.draftId !== base.manifest.draftId || delta.baseRevision !== base.manifest.revision || delta.baseRootDigest !== baseRootDigest) throw new Error('增量与当前草稿基线不一致。');
-  const next = { manifest: structuredClone(base.manifest), blocks: new Map(base.blocks) }, dirty = new Set<BlockKey>();
+  const next = { ...base, manifest: structuredClone(base.manifest), blocks: new Map(base.blocks) } as T, dirty = new Set<BlockKey>();
   const copy = (key: BlockKey) => { if (!dirty.has(key)) { next.blocks.set(key, cloneBlock(base.blocks.get(key)!)); dirty.add(key); } };
   for (const key of ['elevation', 'simMembership', 'adminMembership'] as const) {
     const patch = delta.patch[key]; if (!patch) continue;
@@ -33,7 +35,8 @@ export async function applyAtlasDelta(base: AtlasDraftData, baseRootDigest: stri
     if (!validateBlock(block, next.manifest.spec) || await hashBlock(block) !== ref.hash) throw new Error('增量块内容摘要不符。');
     const target = next.manifest.blockRefs.find(row => row.key === ref.key); if (!target) throw new Error('增量引用了未知块。'); target.hash = ref.hash;
   }
+  assertAtlasLocksPreserved(base, next, [...(delta.patch.elevation?.ids ?? [])], [...(delta.patch.vertices?.ids ?? [])]);
   next.manifest.revision = delta.revision;
-  if (await hashManifest(next.manifest) !== delta.manifestDigest) throw new Error('增量manifest摘要不符。');
+  if (await hashAtlasManifest(next.manifest) !== delta.manifestDigest) throw new Error('增量manifest摘要不符。');
   return next;
 }

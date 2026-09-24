@@ -31,6 +31,11 @@ export interface AtlasDraftManifest {
 }
 /** Internal owned state. Clone before export; readonly types cannot freeze buffers. */
 export interface AtlasDraftData { manifest: AtlasDraftManifest; blocks: Map<BlockKey, AtlasBlock> }
+/** Read-only geography projection, never a codec/version conversion. */
+export interface AtlasGeographyView {
+  readonly manifest: Omit<AtlasDraftManifest, 'version'> & { readonly version: 1 | 2 };
+  readonly blocks: ReadonlyMap<BlockKey, AtlasBlock>;
+}
 export interface AtlasCreateOptions { size: AtlasSize; seed: string; name: string; draftId?: string; atlasId?: string }
 export interface AtlasControl {
   signal?: AbortSignal;
@@ -96,7 +101,13 @@ export function validateCatalogs(raw: unknown): raw is AtlasCatalogs {
 }
 export function validateManifest(raw: unknown): raw is AtlasDraftManifest {
   try {
-    if (!keys(raw, ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs']) || raw.format !== 'lieguoji-atlas-draft' || raw.version !== 1 || raw.kind !== 'draft' || typeof raw.draftId !== 'string' || !new RegExp(`^atlas-${UUID}$`).test(raw.draftId) || typeof raw.atlasId !== 'string' || !new RegExp(`^geo-${UUID}$`).test(raw.atlasId) || !label(raw.name) || !label(raw.seed) || !int(raw.revision, 0, Number.MAX_SAFE_INTEGER) || !validateSpec(raw.spec) || !validateCatalogs(raw.catalogs) || !array(raw.blockRefs)) return false;
+    return keys(raw, ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs']) && raw.version === 1 && validateGeographyManifestFields(raw);
+  } catch { return false; }
+}
+/** Common fields only. Callers must separately validate the exact version envelope. */
+export function validateGeographyManifestFields(raw: unknown): raw is AtlasGeographyView['manifest'] {
+  try {
+    if (!object(raw) || raw.format !== 'lieguoji-atlas-draft' || raw.version !== 1 && raw.version !== 2 || raw.kind !== 'draft' || typeof raw.draftId !== 'string' || !new RegExp(`^atlas-${UUID}$`).test(raw.draftId) || typeof raw.atlasId !== 'string' || !new RegExp(`^geo-${UUID}$`).test(raw.atlasId) || !label(raw.name) || !label(raw.seed) || !int(raw.revision, 0, Number.MAX_SAFE_INTEGER) || !validateSpec(raw.spec) || !validateCatalogs(raw.catalogs) || !array(raw.blockRefs)) return false;
     const across = raw.spec.columns / 32, total = across * across * ATLAS_LAYERS.length;
     if (raw.blockRefs.length !== total) return false;
     let cursor = 0;
@@ -131,24 +142,24 @@ export function validateBlock(raw: unknown, spec?: AtlasGridSpec): raw is AtlasB
   } catch { return false; }
 }
 
-export function getBlock(data: AtlasDraftData, key: BlockKey): AtlasBlock {
+export function getBlock(data: AtlasGeographyView, key: BlockKey): AtlasBlock {
   const block = data.blocks.get(key); if (!block || blockKey(block.layer, block.bx, block.by) !== key) throw new Error(`权威地理块 ${key} 缺失或身份不符。`); return block;
 }
-export function getCellLayerSlot(data: AtlasDraftData, layer: CellLayer, cellId: number): { key: BlockKey; block: CellBlock; slot: number } {
+export function getCellLayerSlot(data: AtlasGeographyView, layer: CellLayer, cellId: number): { key: BlockKey; block: CellBlock; slot: number } {
   if (layer === ('geometry' as AtlasLayer) || !ATLAS_LAYERS.includes(layer)) throw new Error('该查询需要逐地块数据层。');
   const spec = data.manifest.spec, { bx, by } = cellBlock(spec, cellId), key = blockKey(layer, bx, by), block = getBlock(data, key);
   if (block.layer === 'geometry') throw new Error('地块数据层类型不符。');
   return { key, block, slot: Math.floor(cellId / spec.columns) % 32 * 32 + cellId % spec.columns % 32 };
 }
-export function getVertexSlot(data: AtlasDraftData, vertexId: number): { key: BlockKey; block: GeometryBlock; slot: number } {
+export function getVertexSlot(data: AtlasGeographyView, vertexId: number): { key: BlockKey; block: GeometryBlock; slot: number } {
   const { key, slot } = vertexSlotLocation(data.manifest.spec, vertexId), block = getBlock(data, key);
   if (block.layer !== 'geometry' || block.vertexIds[slot] !== vertexId) throw new Error('共享顶点所有者引用不符。');
   return { key, block, slot };
 }
-export function getSimRegion(data: AtlasDraftData, cellId: number): number | null {
+export function getSimRegion(data: AtlasGeographyView, cellId: number): number | null {
   const { block, slot } = getCellLayerSlot(data, 'sim-membership', cellId), id = block.values[slot]; return id === UNASSIGNED ? null : id;
 }
-export function getAdminLeaf(data: AtlasDraftData, cellId: number): number | null {
+export function getAdminLeaf(data: AtlasGeographyView, cellId: number): number | null {
   const { block, slot } = getCellLayerSlot(data, 'admin-membership', cellId), id = block.values[slot]; return id === UNASSIGNED ? null : id;
 }
 export function cloneBlock<T extends AtlasBlock>(block: T): T {
@@ -163,7 +174,7 @@ export function cloneAtlasDraft(data: AtlasDraftData): AtlasDraftData {
 function atlasEnvelope(raw: unknown): raw is AtlasDraftData {
   return keys(raw, ['manifest', 'blocks']) && validateManifest(raw.manifest) && raw.blocks instanceof Map && Object.getPrototypeOf(raw.blocks) === Map.prototype && Reflect.ownKeys(raw.blocks).length === 0 && raw.blocks.size === raw.manifest.blockRefs.length;
 }
-function checkReferencedBlock(data: AtlasDraftData, ref: AtlasBlockRef, regions: Set<number>, leaves: Set<number>) {
+function checkReferencedBlock(data: AtlasGeographyView, ref: AtlasBlockRef, regions: Set<number>, leaves: Set<number>) {
   const block = data.blocks.get(ref.key);
   if (!validateBlock(block, data.manifest.spec) || blockKey(block.layer, block.bx, block.by) !== ref.key) return false;
   if (block.layer === 'sim-membership' || block.layer === 'admin-membership') {
@@ -180,6 +191,13 @@ export async function validateAtlasDraftAsync(raw: unknown, control?: AtlasContr
   control?.signal?.throwIfAborted();
   try {
     if (!atlasEnvelope(raw)) return false;
+    return await validateAtlasGeographyAsync(raw, control);
+  } catch { control?.signal?.throwIfAborted(); return false; }
+}
+/** Shared validation runs only after a caller validates the true format envelope. */
+export async function validateAtlasGeographyAsync(raw: AtlasGeographyView, control?: AtlasControl): Promise<boolean> {
+  control?.signal?.throwIfAborted();
+  try {
     const regions = new Set(raw.manifest.catalogs.simRegions.map(region => region.id)), leaves = new Set(raw.manifest.catalogs.administration.filter(node => node.kind === 'leaf').map(node => node.id));
     for (let i = 0; i < raw.manifest.blockRefs.length; i++) {
       if (!checkReferencedBlock(raw, raw.manifest.blockRefs[i], regions, leaves)) return false;
@@ -214,7 +232,12 @@ export async function cloneVerifiedAtlasDraft(raw: AtlasDraftData, control?: Atl
 export function validateAtlasDraft(raw: unknown): raw is AtlasDraftData {
   try {
     if (!atlasEnvelope(raw)) return false;
-    const data = raw as unknown as AtlasDraftData, regions = new Set(data.manifest.catalogs.simRegions.map(region => region.id)), leaves = new Set(data.manifest.catalogs.administration.filter(node => node.kind === 'leaf').map(node => node.id));
+    return validateAtlasGeography(raw);
+  } catch { return false; }
+}
+export function validateAtlasGeography(data: AtlasGeographyView): boolean {
+  try {
+    const regions = new Set(data.manifest.catalogs.simRegions.map(region => region.id)), leaves = new Set(data.manifest.catalogs.administration.filter(node => node.kind === 'leaf').map(node => node.id));
     for (const ref of data.manifest.blockRefs) {
       if (!checkReferencedBlock(data, ref, regions, leaves)) return false;
     }

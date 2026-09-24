@@ -1,0 +1,5 @@
+/** Injected from the actual, closed runtime source graph by Vite/Vitest. */
+export const MACRO_GENERATOR_FINGERPRINT: string = __MACRO_GENERATOR_FINGERPRINT__;
+export const LANDFORM_GENERATOR_FINGERPRINT: string = __LANDFORM_GENERATOR_FINGERPRINT__;
+export const ISLAND_GENERATOR_FINGERPRINT: string = __ISLAND_GENERATOR_FINGERPRINT__;
+export const COAST_GENERATOR_FINGERPRINT: string = __COAST_GENERATOR_FINGERPRINT__;

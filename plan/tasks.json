@@ -723,43 +723,63 @@
       "id": "PH06",
       "title": "大陆海岸与地貌生成",
       "phase": "PH06",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "PH04",
         "PH05"
       ],
       "acceptance": "同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/adr/0011-atlas-generation-and-constraints.md",
+        "docs/evidence/2026-09-24-ph06-generation.md"
+      ],
       "workItems": [
         {
           "id": "PH06-T1",
           "title": "种子和大陆尺度形状参数",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「种子和大陆尺度形状参数」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph06-generation.md",
+            "docs/evidence/playtest-2026-09-24/local-build.json",
+            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+          ]
         },
         {
           "id": "PH06-T2",
           "title": "连续高程、山系盆地和岛链",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「连续高程、山系盆地和岛链」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph06-generation.md",
+            "docs/evidence/playtest-2026-09-24/local-build.json",
+            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+          ]
         },
         {
           "id": "PH06-T3",
           "title": "细海岸与几何拓扑校验",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「细海岸与几何拓扑校验」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph06-generation.md",
+            "docs/evidence/playtest-2026-09-24/local-build.json",
+            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+          ]
         },
         {
           "id": "PH06-T4",
           "title": "局部生成、区域锁定和进度取消",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「局部生成、区域锁定和进度取消」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-24-ph06-generation.md",
+            "docs/evidence/playtest-2026-09-24/local-build.json",
+            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+          ]
         }
-      ]
+      ],
+      "branch": "codex/ph06-world-generation"
     },
     {
       "id": "PH07",
@@ -2130,6 +2150,22 @@
       "candidate-pages-https",
       "controlled-main-merge",
       "production-https-save-recovery-offline-update"
-    ]
+    ],
+    "playtest": {
+      "version": "0.5.0-preview.1",
+      "authorizationEvidence": "docs/PLAYTEST_RELEASE_2026-09-24.md",
+      "branch": "codex/ph06-world-generation",
+      "deploymentMode": "Cloudflare Pages native Git branch preview",
+      "repository": "https://github.com/Ethanhui6/lieguoji-web",
+      "pagesProject": "lieguoji-web",
+      "status": "local_validation_passed_awaiting_upload",
+      "localBuildEvidence": "docs/evidence/playtest-2026-09-24/local-build.json",
+      "coreBrowserEvidence": "docs/evidence/playtest-2026-09-24/browser/verification.json",
+      "commit": null,
+      "ci": null,
+      "url": null,
+      "productionMainUnchanged": true,
+      "phaseCompletionClaim": false
+    }
   }
 }

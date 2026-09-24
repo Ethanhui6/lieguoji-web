@@ -1,8 +1,11 @@
 import {
-  cloneAtlasDraft, cloneBlock, cloneVerifiedAtlasDraft, getCellLayerSlot, getVertexSlot, hashBlock, hashManifest,
-  UNASSIGNED, validateBlock,
-  type AtlasBlock, type AtlasDraftData, type AtlasDraftManifest, type BlockKey,
+  cloneBlock, encodeBlock, getCellLayerSlot, getVertexSlot, hashBlock,
+  UNASSIGNED, validateBlock, yieldAtlas,
+  type AtlasBlock, type BlockKey,
 } from './model';
+import { cloneAtlasDocument, cloneVerifiedAtlasDocument, encodeAtlasManifest, hashAtlasManifest, isGenerationDocument, type AtlasDocument, type AtlasManifest } from './atlas-format';
+import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, encodeAtlasCellLockBlock, hashAtlasCellLockBlock, hashAtlasLockSet, lockKey } from './generation-locks';
+import { generationExact, generationInt, validateCellRectangle, type AtlasCellRectangle } from './generation-contract';
 import { cellBlock, incidentCellIds, validateLocalGeometry } from './topology';
 
 export const MAX_EDIT_CELLS = 1024;
@@ -37,6 +40,20 @@ export interface AtlasEditDelta {
   reason: string; patch: AtlasPatch;
   blockRefs: { key: BlockKey; hash: string }[];
 }
+export interface PreparedAtlasReplacement {
+  candidateId: string; commandId: string; baseRevision: number; baseRootDigest: string; baseManifestDigest: string;
+  revision: number; manifestDigest: string; reason: string;
+}
+export interface AtlasConstraintEdit {
+  format: 'lieguoji-atlas-constraint-edit'; version: 1; draftId: string; commandId: string;
+  expectedRevision: number; expectedRootDigest: string; rectangle: AtlasCellRectangle;
+  mask: 1 | 2 | 3; action: 'set' | 'clear';
+}
+export interface PreparedAtlasConstraints extends PreparedAtlasReplacement {
+  rectangle: AtlasCellRectangle; mask: 1 | 2 | 3; action: 'set' | 'clear';
+  changedCellCount: number; beforeLockSetDigest: string; afterLockSetDigest: string;
+}
+type ReplacementMode = 'geography' | 'constraints';
 export interface PreparedAtlasEdit {
   candidateId: string; commandId: string; baseRevision: number;
   baseRootDigest: string; revision: number; manifestDigest: string;
@@ -46,8 +63,9 @@ export interface PreparedAtlasEdit {
   directCellCount: number; affectedCellCount: number; localBudgetEligible: boolean;
   requestBytes: number; responseBytes: number; preparationMs: number; cooperativeYieldMs: number;
 }
-type Candidate = {
-  public: PreparedAtlasEdit; data: AtlasDraftData; inverse: AtlasPatch;
+type UndoEntry<T extends AtlasDocument> = { kind: 'patch'; inverse: AtlasPatch } | { kind: 'whole'; data: T; bytes: number; mode: ReplacementMode };
+type Candidate<T extends AtlasDocument> = {
+  public: PreparedAtlasEdit; data: T; inverse: AtlasPatch;
   delta: AtlasEditDelta; undo: boolean;
 };
 const HEX = /^[a-f0-9]{64}$/;
@@ -174,26 +192,37 @@ export function decodeAtlasEditMessage(input: Uint8Array): AtlasEditCommand | At
 }
 
 /** Only this session owns trusted blocks. Every ingress/egress receives a copy. */
-export class OwnedAtlasSession {
-  #data: AtlasDraftData;
+export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
+  #data: T;
   #rootDigest: string;
   #manifestDigest: string;
-  #candidates = new Map<string, Candidate>();
-  #undo: AtlasPatch[] = [];
+  #candidates = new Map<string, Candidate<T>>();
+  #undo: UndoEntry<T>[] = [];
+  #replacement?: { data: T; public: PreparedAtlasReplacement; undo: boolean; retainedBytes: number; mode: ReplacementMode };
+  #retainedBytes = 0;
   #preparing = false;
-  private constructor(data: AtlasDraftData, rootDigest: string, manifestDigest: string) {
+  private constructor(data: T, rootDigest: string, manifestDigest: string) {
     this.#data = data; this.#rootDigest = rootDigest; this.#manifestDigest = manifestDigest;
   }
-  static async open(raw: AtlasDraftData, rootDigest: string, control?: AtlasEditControl) {
+  static async open<T extends AtlasDocument>(raw: T, rootDigest: string, control?: AtlasEditControl) {
     if (!HEX.test(rootDigest)) throw new Error('草稿根摘要无效。');
     abort(control);
-    const owned = await cloneVerifiedAtlasDraft(raw, control); abort(control);
-    const manifestDigest = await hashManifest(owned.manifest); abort(control);
+    const owned = await cloneVerifiedAtlasDocument(raw, control); abort(control);
+    const manifestDigest = await hashAtlasManifest(owned.manifest); abort(control);
     return new OwnedAtlasSession(owned, rootDigest, manifestDigest);
   }
+  get format() { return this.#data.manifest.version; }
   get head() { return { draftId: this.#data.manifest.draftId, revision: this.#data.manifest.revision, rootDigest: this.#rootDigest, manifestDigest: this.#manifestDigest, undoCount: this.#undo.length }; }
-  get metadata(): Pick<AtlasDraftManifest, 'atlasId' | 'name'> { return { atlasId: this.#data.manifest.atlasId, name: this.#data.manifest.name }; }
-  snapshot() { return cloneAtlasDraft(this.#data); }
+  get metadata(): Pick<AtlasManifest, 'atlasId' | 'name'> { return { atlasId: this.#data.manifest.atlasId, name: this.#data.manifest.name }; }
+  readLocks() { return 'locks' in this.#data ? [...this.#data.locks.values()].map(lock => structuredClone(lock)) : []; }
+  snapshot() { return cloneAtlasDocument(this.#data); }
+  async snapshotAsync(control?: AtlasEditControl): Promise<T> {
+    abort(control);
+    const source = this.#data, rootDigest = this.#rootDigest;
+    const owned = await cloneVerifiedAtlasDocument(source, control); abort(control);
+    if (this.#data !== source || this.#rootDigest !== rootDigest) throw new Error('复制期间草稿已变化，请重新读取当前版本。');
+    return owned;
+  }
   manifest() { return structuredClone(this.#data.manifest); }
   readBlocks(keys: readonly BlockKey[]) {
     return keys.map(key => { const block = this.#data.blocks.get(key); if (!block) throw new Error('请求的数据块不存在。'); return cloneBlock(block); });
@@ -203,7 +232,7 @@ export class OwnedAtlasSession {
     if (!validateAtlasEdit(raw)) throw new Error('编辑字段、类型或局部范围无效。');
     // Copy before the first await; later caller mutations cannot alter the candidate.
     const command = structuredClone(raw);
-    if (this.#preparing || this.#candidates.size) throw new Error('已有一笔编辑等待完成或取消。');
+    if (this.#preparing || this.#candidates.size || this.#replacement) throw new Error('已有一笔编辑等待完成或取消。');
     if (command.draftId !== this.#data.manifest.draftId || command.expectedRevision !== this.#data.manifest.revision || command.expectedRootDigest !== this.#rootDigest) throw new Error('草稿版本已变化，请重新读取后编辑。');
     if (this.#data.manifest.revision >= Number.MAX_SAFE_INTEGER) throw new Error('草稿版本达到上限。');
     const requestBytes = encodeAtlasEditMessage(command).byteLength;
@@ -214,7 +243,7 @@ export class OwnedAtlasSession {
   }
   async #prepare(command: AtlasEditCommand, requestBytes: number, started: number, control?: AtlasEditControl): Promise<PreparedAtlasEdit> {
     abort(control); let cooperativeYieldMs = 0;
-    const candidate: AtlasDraftData = { manifest: structuredClone(this.#data.manifest), blocks: new Map(this.#data.blocks) };
+    const candidate = { ...this.#data, manifest: structuredClone(this.#data.manifest), blocks: new Map(this.#data.blocks) } as T;
     const inverse: AtlasPatch = {}, applied: AtlasPatch = {};
     const read = new Set<BlockKey>(), writes = new Set<BlockKey>(), affected = new Set<number>(), geometryVertexIds: number[] = [];
     const ensureCopy = (key: BlockKey) => {
@@ -269,8 +298,9 @@ export class OwnedAtlasSession {
       await checkpoint(control, '校验局部数据块', i + 1, writeKeys.length);
       cooperativeYieldMs += performance.now() - beforeYield;
     }
+    assertAtlasLocksPreserved(this.#data, candidate, [...affected], geometryVertexIds);
     candidate.manifest.revision++;
-    const manifestDigest = await hashManifest(candidate.manifest); abort(control);
+    const manifestDigest = await hashAtlasManifest(candidate.manifest); abort(control);
     // Reserved 64-byte ASCII digest is private until publish substitutes the actual durable root.
     const delta: AtlasEditDelta = { format: 'lieguoji-atlas-delta', version: 1, draftId: command.draftId, commandId: command.commandId, baseRevision: command.expectedRevision, baseRootDigest: command.expectedRootDigest, rootDigest: '0'.repeat(64), revision: candidate.manifest.revision, manifestDigest, reason: command.reason, patch: applied, blockRefs: candidate.manifest.blockRefs.filter(ref => writes.has(ref.key)).map(ref => ({ ...ref })) };
     const responseBytes = encodeAtlasEditMessage(delta).byteLength;
@@ -288,7 +318,12 @@ export class OwnedAtlasSession {
     this.#candidates.set(publicInfo.candidateId, { public: publicInfo, data: candidate, inverse, delta, undo: false });
     return structuredClone(publicInfo);
   }
-  candidateManifest(candidateId: string): AtlasDraftManifest { return structuredClone(this.#candidate(candidateId).data.manifest); }
+  candidateStorageDocument(candidateId: string): T {
+    const c = this.#candidate(candidateId), document = { ...c.data, manifest: structuredClone(c.data.manifest), blocks: new Map(c.public.writeKeys.map(key => [key, cloneBlock(c.data.blocks.get(key)!)])) } as T;
+    if ('locks' in document) document.locks = structuredClone(document.locks);
+    return document;
+  }
+  candidateManifest(candidateId: string): T['manifest'] { return structuredClone(this.#candidate(candidateId).data.manifest); }
   candidateBlocks(candidateId: string): AtlasBlock[] { const c = this.#candidate(candidateId); return c.public.writeKeys.map(key => cloneBlock(c.data.blocks.get(key)!)); }
   discard(candidateId: string) { this.#candidate(candidateId); this.#candidates.delete(candidateId); }
   /** Worker calls this only after the persistence transaction reports complete. */
@@ -298,14 +333,100 @@ export class OwnedAtlasSession {
       || receipt.manifestDigest !== c.public.manifestDigest || !HEX.test(receipt.rootDigest)) throw new Error('持久化回执与待提交编辑不一致。');
     if (c.public.baseRevision !== this.#data.manifest.revision || c.public.baseRootDigest !== this.#rootDigest) throw new Error('编辑会话已变化，不能发布旧候选。');
     this.#data = c.data; this.#rootDigest = receipt.rootDigest; this.#manifestDigest = receipt.manifestDigest;
-    if (c.undo) this.#undo.pop(); else { this.#undo.push(c.inverse); if (this.#undo.length > 100) this.#undo.shift(); }
+    if (c.undo) this.#popUndo(); else this.#pushUndo({ kind: 'patch', inverse: c.inverse });
     this.#candidates.clear(); return structuredClone({ ...c.delta, rootDigest: receipt.rootDigest });
   }
   async prepareUndo(commandId: string, control?: AtlasEditControl) {
-    const inverse = this.#undo.at(-1); if (!inverse) throw new Error('没有可撤销的编辑。');
+    const entry = this.#undo.at(-1); if (!entry || entry.kind !== 'patch') throw new Error('当前撤销需要完整草稿事务。');
+    const inverse = entry.inverse;
     const head = this.head;
     const result = await this.prepare({ format: 'lieguoji-atlas-edit', version: 1, draftId: head.draftId, commandId, expectedRevision: head.revision, expectedRootDigest: head.rootDigest, reason: '撤销上一笔编辑', patch: structuredClone(inverse) }, control);
     this.#candidate(result.candidateId).undo = true; return result;
   }
+  get undoKind() { return this.#undo.at(-1)?.kind ?? null; }
+  get replacementPending() { return !!this.#replacement; }
+  #pushUndo(entry: UndoEntry<T>) {
+    this.#undo.push(entry); if (entry.kind === 'whole') this.#retainedBytes += entry.bytes;
+    if (this.#undo.length > 100) { const dropped = this.#undo.shift()!; if (dropped.kind === 'whole') this.#retainedBytes -= dropped.bytes; }
+  }
+  #popUndo() { const entry = this.#undo.pop(); if (entry?.kind === 'whole') this.#retainedBytes -= entry.bytes; }
+  prepareReplacement(raw: T, commandId: string, reason: string, control?: AtlasEditControl) { return this.#prepareReplacement(raw, commandId, reason, false, control); }
+  async prepareConstraints(raw: AtlasConstraintEdit, control?: AtlasEditControl): Promise<PreparedAtlasConstraints> {
+    if (this.#preparing || this.#candidates.size || this.#replacement) throw new Error('已有一笔编辑等待完成或取消。');
+    if (!isGenerationDocument(this.#data)) throw new Error('区域锁需要第二版草稿。');
+    if (!generationExact(raw, ['format', 'version', 'draftId', 'commandId', 'expectedRevision', 'expectedRootDigest', 'rectangle', 'mask', 'action'])
+      || raw.format !== 'lieguoji-atlas-constraint-edit' || raw.version !== 1 || typeof raw.commandId !== 'string' || !COMMAND.test(raw.commandId)
+      || raw.draftId !== this.#data.manifest.draftId || raw.expectedRevision !== this.#data.manifest.revision || raw.expectedRootDigest !== this.#rootDigest
+      || !validateCellRectangle(raw.rectangle, this.#data.manifest.spec) || !generationInt(raw.mask, 1, 3) || !['set', 'clear'].includes(raw.action)) throw new Error('区域锁命令、范围或基线无效。');
+    const command = structuredClone(raw), data = cloneAtlasDocument(this.#data);
+    this.#preparing = true;
+    try {
+      abort(control); const touched = new Set<string>(); let changedCellCount = 0;
+      const r = command.rectangle;
+      for (let row = r.row; row < r.row + r.rows; row++) {
+        for (let column = r.column; column < r.column + r.columns; column++) {
+          const bx = Math.floor(column / 32), by = Math.floor(row / 32), key = lockKey(bx, by), slot = row % 32 * 32 + column % 32;
+          const existing = data.locks.get(key), before = existing?.flags[slot] ?? 0;
+          const after = command.action === 'set' ? before | command.mask : before & ~command.mask;
+          if (before === after) continue;
+          const block = existing ?? { format: 'lieguoji-atlas-cell-locks' as const, version: 1 as const, bx, by, flags: new Uint8Array(1024) };
+          block.flags[slot] = after; data.locks.set(key, block); touched.add(key); changedCellCount++;
+        }
+        if ((row - r.row + 1) % 8 === 0 || row + 1 === r.row + r.rows) await yieldAtlas(control, '计算选区锁定变化', row - r.row + 1, r.rows);
+      }
+      if (!changedCellCount) throw new Error('所选区域已经处于该锁定状态，原草稿未改变。');
+      const refs = new Map(data.manifest.constraints.lockRefs.map(ref => [lockKey(ref.bx, ref.by), ref]));
+      for (const key of touched) {
+        abort(control); const block = data.locks.get(key)!;
+        if (block.flags.every(flag => flag === 0)) { data.locks.delete(key); refs.delete(lockKey(block.bx, block.by)); }
+        else refs.set(lockKey(block.bx, block.by), { bx: block.bx, by: block.by, hash: await hashAtlasCellLockBlock(block) });
+      }
+      data.manifest.constraints.lockRefs = [...refs.values()].sort((a, b) => a.by - b.by || a.bx - b.bx);
+      const beforeLockSetDigest = await hashAtlasLockSet(this.#data.manifest.constraints, this.#data.manifest.spec);
+      const afterLockSetDigest = await hashAtlasLockSet(data.manifest.constraints, data.manifest.spec);
+      data.manifest.revision++;
+      const prepared = await this.#prepareReplacement(data, command.commandId, command.action === 'set' ? '锁定选区地理' : '解除选区地理锁', false, control, 'constraints', true);
+      return { ...prepared, rectangle: structuredClone(r), mask: command.mask, action: command.action, changedCellCount, beforeLockSetDigest, afterLockSetDigest };
+    } finally { this.#preparing = false; }
+  }
+  async #prepareReplacement(raw: T, commandId: string, reason: string, undo: boolean, control?: AtlasEditControl, mode: ReplacementMode = 'geography', held = false): Promise<PreparedAtlasReplacement> {
+    if (!held && (this.#preparing || this.#candidates.size || this.#replacement)) throw new Error('已有一笔编辑等待完成或取消。');
+    if (!COMMAND.test(commandId) || !reason.trim() || reason.length > 120) throw new Error('完整编辑命令无效。');
+    this.#preparing = true;
+    try {
+      const data = await cloneVerifiedAtlasDocument(raw, control); abort(control);
+      const base = this.#data.manifest, next = data.manifest;
+      if (next.version !== base.version || next.draftId !== base.draftId || next.atlasId !== base.atlasId || next.revision !== base.revision + 1 || !Number.isSafeInteger(next.revision)
+        || next.name !== base.name || next.seed !== base.seed || JSON.stringify(next.spec) !== JSON.stringify(base.spec) || JSON.stringify(next.catalogs) !== JSON.stringify(base.catalogs)) throw new Error('完整候选改变了固定身份或未绑定当前修订。');
+      if (mode === 'constraints') assertAtlasConstraintsOnly(this.#data, data); else assertAtlasLocksPreserved(this.#data, data);
+      const retainedBytes = undo ? 0 : encodeAtlasManifest(this.#data.manifest).length + [...this.#data.blocks.values()].reduce((sum, block) => sum + encodeBlock(block).length, 0) + ('locks' in this.#data ? [...this.#data.locks.values()].reduce((sum, lock) => sum + encodeAtlasCellLockBlock(lock).length, 0) : 0);
+      if (!undo && this.#retainedBytes + retainedBytes > 64 * 1024 * 1024) throw new Error('本次完整地图撤销记录超过当前会话64 MiB预算。原图未改变；请先保存并重新打开草稿后生成。');
+      const publicInfo: PreparedAtlasReplacement = { candidateId: crypto.randomUUID(), commandId, baseRevision: base.revision, baseRootDigest: this.#rootDigest, baseManifestDigest: this.#manifestDigest, revision: next.revision, manifestDigest: await hashAtlasManifest(next), reason };
+      abort(control); this.#replacement = { data, public: publicInfo, undo, retainedBytes, mode }; return structuredClone(publicInfo);
+    } finally { if (!held) this.#preparing = false; }
+  }
+  replacementMode(candidateId: string): ReplacementMode { return this.#fullCandidate(candidateId).mode; }
+  replacementDocument(candidateId: string): T { return cloneAtlasDocument(this.#fullCandidate(candidateId).data); }
+  async replacementDocumentAsync(candidateId: string, control?: AtlasEditControl): Promise<T> {
+    abort(control);
+    const candidate = this.#fullCandidate(candidateId), source = candidate.data;
+    const owned = await cloneVerifiedAtlasDocument(source, control); abort(control);
+    if (this.#fullCandidate(candidateId) !== candidate || candidate.data !== source) throw new Error('复制期间完整地图候选已变化。');
+    return owned;
+  }
+  discardReplacement(candidateId: string) { this.#fullCandidate(candidateId); this.#replacement = undefined; }
+  publishReplacement(candidateId: string, receipt: AtlasPublishedRoot) {
+    const c = this.#fullCandidate(candidateId), p = c.public;
+    if (receipt.draftId !== c.data.manifest.draftId || receipt.commandId !== p.commandId || receipt.revision !== p.revision || receipt.manifestDigest !== p.manifestDigest || !HEX.test(receipt.rootDigest)
+      || p.baseRevision !== this.#data.manifest.revision || p.baseRootDigest !== this.#rootDigest) throw new Error('完整候选的持久回执或基线不符。');
+    if (c.undo) this.#popUndo(); else this.#pushUndo({ kind: 'whole', data: this.#data, bytes: c.retainedBytes, mode: c.mode });
+    this.#data = c.data; this.#rootDigest = receipt.rootDigest; this.#manifestDigest = receipt.manifestDigest; this.#replacement = undefined;
+  }
+  async prepareReplacementUndo(commandId: string, control?: AtlasEditControl) {
+    const entry = this.#undo.at(-1); if (entry?.kind !== 'whole') throw new Error('没有可撤销的完整地图编辑。');
+    const data = cloneAtlasDocument(entry.data); data.manifest.revision = this.#data.manifest.revision + 1;
+    return this.#prepareReplacement(data, commandId, entry.mode === 'constraints' ? '撤销上一笔区域锁修改' : '撤销上一笔地图生成', true, control, entry.mode);
+  }
+  #fullCandidate(id: string) { if (!this.#replacement || this.#replacement.public.candidateId !== id) throw new Error('完整地图候选已经失效。'); return this.#replacement; }
   #candidate(id: string) { const candidate = this.#candidates.get(id); if (!candidate) throw new Error('编辑候选不存在或已经失效。'); return candidate; }
 }

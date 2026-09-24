@@ -30,7 +30,7 @@ describe('atlas client transport lifecycle', () => {
   it('sends actual framed bytes, rejects overlap and ignores a stale request identity', async () => {
     const client = new AtlasClient(), worker = WorkerDouble.instances[0], result = client.list();
     const [wire, transfer] = worker.postMessage.mock.calls[0], packet = decodeAtlasPacket(wire);
-    expect(packet.header.body).toEqual({ type: 'list' }); expect(transfer).toEqual([wire.buffer]);
+    expect(packet.header.body).toEqual({ type: 'list', atlasFormat: 1 }); expect(transfer).toEqual([wire.buffer]);
     await expect(client.list()).rejects.toThrow('尚未完成');
     worker.reply(encodeAtlasPacket({ version: 1, id: packet.header.id + 9, type: 'complete', body: { operation: 'list', entries: ['stale'] } }));
     await settleMessages();

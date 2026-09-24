@@ -1,0 +1,67 @@
+{
+  "status": "archive-restore-evaluators-passed",
+  "archive": {
+    "path": "docs/evidence/ph05",
+    "manifest": "docs/evidence/ph05/archive-manifest.json",
+    "manifestSha256": "db96df30122b4221c173c9e1ebd81f465b8f2a90ba5d752b0e0bb5e7a147de57",
+    "manifestBytes": 1149176,
+    "files": 2154,
+    "sourceBytes": 1580203960,
+    "objects": 805,
+    "uniqueBytes": 1520074077,
+    "gzipBytes": 130669461,
+    "physicalFiles": 813,
+    "physicalBytes": 131949590,
+    "gzipPercentOfSource": 8.269151597367216,
+    "operation": {
+      "command": "node .autopilot/ph05/archive-evidence-v2.mjs --source-quiescent",
+      "startedAt": "2026-09-24T01:56:35.2716555Z",
+      "endedAt": "2026-09-24T02:00:24.5160714Z",
+      "exitCode": 0,
+      "log": ".autopilot\\ph05-archive-validation\\archive-run-v3.log"
+    }
+  },
+  "restore": {
+    "status": "byte-verified",
+    "files": 2154,
+    "bytes": 1580203960
+  },
+  "rendering": {
+    "status": "render-measurement-gates-passed",
+    "configurations": {
+      "headless-dpr1": {
+        "samples": 18,
+        "valid": 18,
+        "everyTimingTarget": true,
+        "sourceSha256": "6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6",
+        "distSha256": "ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5"
+      },
+      "headless-dpr2": {
+        "samples": 18,
+        "valid": 18,
+        "everyTimingTarget": true,
+        "sourceSha256": "6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6",
+        "distSha256": "ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5"
+      },
+      "headed-dpr1": {
+        "samples": 18,
+        "valid": 18,
+        "everyTimingTarget": true,
+        "sourceSha256": "6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6",
+        "distSha256": "ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5"
+      },
+      "headed-dpr2": {
+        "samples": 18,
+        "valid": 18,
+        "everyTimingTarget": true,
+        "sourceSha256": "6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6",
+        "distSha256": "ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5"
+      }
+    },
+    "matchesPrior": true
+  },
+  "ph04": {
+    "status": "measurement-gates-passed",
+    "checks": 13
+  }
+}

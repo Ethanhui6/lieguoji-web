@@ -1,0 +1,13 @@
+{
+  "format": "lieguoji-ph05-evidence-restore",
+  "version": 2,
+  "status": "byte-verified",
+  "restoredAt": "2026-09-24T02:05:30.114Z",
+  "archive": "docs/evidence/ph05",
+  "manifestSha256": "db96df30122b4221c173c9e1ebd81f465b8f2a90ba5d752b0e0bb5e7a147de57",
+  "inventorySha256": "fce3c4cec5035c04a6857ada69e880aa51f6e1464a99d478465e175e11d777a3",
+  "output": ".autopilot/ph05-restored-review",
+  "files": 2154,
+  "bytes": 1580203960,
+  "evaluatorExecuted": false
+}

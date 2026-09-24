@@ -1,18 +1,25 @@
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Container, Graphics, Matrix } from 'pixi.js';
 import 'pixi.js/unsafe-eval';
 import type { AtlasDraftData, BlockKey } from './model';
-import { getCellLayerSlot } from './model';
-import { cellBlock, cellVertexIds, getCellQuad } from './topology';
+import { getCellLayerSlot, hashManifest, verifyAtlasDraft } from './model';
+import { cellVertexIds, getCellQuad } from './topology';
 import { createSpatialIndexAsync, type SpatialIndex } from './spatial-index';
+import { AtlasTextureCache, type AtlasTextureEntry, type AtlasTextureSpec, type AtlasCacheLayer } from './atlas-texture-cache';
+import { AtlasTerrainGeometryCache } from './atlas-terrain-geometry-cache';
+import { cameraScaleBounds, cameraWorldBounds, centerCameraAt, fitCamera, panCamera, resizeCamera, screenToWorld, zoomCameraAt, type AtlasCamera } from './camera';
+import { atlasLodPolicy, resolveAtlasLod, type AtlasLod } from './lod';
+import { AtlasLabelLayer, emptyAtlasLabelMetrics } from './atlas-label-layer';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
-export type AtlasCamera = { x: number; y: number; scale: number };
+export type { AtlasCamera } from './camera';
+export type AtlasGraphicsState = 'ready' | 'lost' | 'restoring';
 type Callbacks = {
   onPick: (cellId: number) => void; onCamera?: (camera: AtlasCamera) => void; onFatal: (error: Error) => void;
   onProgress?: (progress: { stage: string; completed: number; total: number }) => void;
+  onGraphicsState?: (state: AtlasGraphicsState) => void;
 };
-type Tile = { bx: number; by: number; terrain: Graphics; grid: Graphics; gridReady: boolean };
 const ocean = 0x133c50;
+const minimumCacheDensity = 1 / 64;
 function elevationColor(meters: number) {
   if (meters < 0) return meters < -1000 ? 0x123448 : meters < -200 ? 0x153d50 : 0x205466;
   if (meters < 200) return 0x89a68a;
@@ -29,24 +36,43 @@ export class AtlasRenderer {
   private readonly selection = new Graphics();
   private readonly preview = new Graphics();
   private readonly outline = new Graphics();
-  private readonly tiles = new Map<BlockKey, Tile>();
+  private readonly terrainLayer = new Container();
+  private readonly gridLayer = new Container();
+  private readonly cache = new AtlasTextureCache();
+  private readonly terrainGeometry = new AtlasTerrainGeometryCache();
+  private refs = new Map<BlockKey, string>();
+  // This is world-content invalidation, not a texture-entry flag. It survives
+  // eviction, density changes and GPU loss until the core is actually visible.
+  private readonly deferredDirtyCores = new Set<BlockKey>();
+  private labels?: AtlasLabelLayer;
+  private lod?: AtlasLod;
   private index?: SpatialIndex;
   private data?: AtlasDraftData;
   private selected: number | null = null;
   private previewCells: number[] = [];
   private previewVertices = new Map<number, { x: number; y: number }>();
+  private previewRevision = 0;
+  private drawnOutline?: { width: number; height: number; scale: number; epoch: number };
+  private drawnSelection?: { data: AtlasDraftData; selected: number | null; scale: number; epoch: number };
+  private drawnPreview?: { data: AtlasDraftData; revision: number; scale: number; epoch: number };
   private camera: AtlasCamera = { x: 0, y: 0, scale: 1 };
-  private fitScale = 1;
+  private graphicsState: AtlasGraphicsState = 'ready';
+  private contextEpoch = 0;
+  private restoration?: AbortController;
+  private recovery?: { promise: Promise<void>; resolve: () => void; reject: (error: Error) => void };
+  private auditing = false;
   private readonly listeners = new AbortController();
   private observer?: ResizeObserver;
   private destroyed = false;
   private initialized = false;
   private failure?: Error;
   private pendingAcceptance?: AbortController;
+  private acceptingData?: AtlasDraftData;
+  private acceptanceRepaints?: Set<BlockKey>;
   private frame = 0;
   private pointers = new Map<number, { x: number; y: number; startX: number; startY: number }>();
   private suppressTap = false;
-  private measured = { repaintBlocks: 0, visibleBlocks: 0, acceptedRevision: -1, correctFrameAt: 0 };
+  private measured = { repaintBlocks: 0, repaintBlockKeys: [] as BlockKey[], frameRepaintBlocks: 0, visibleBlocks: 0, acceptedRevision: -1, correctFrameAt: 0, frameSequence: 0, completedFrameSequence: 0, completedDrawCpuMs: 0 };
   constructor(private host: HTMLElement, private callbacks: Callbacks) {}
 
   async init() {
@@ -57,15 +83,19 @@ export class AtlasRenderer {
     canvas.setAttribute('aria-label', '大世界草稿地图，拖动平移，双指或滚轮缩放，点选地块');
     canvas.setAttribute('data-testid', 'atlas-canvas'); canvas.tabIndex = 0; canvas.style.touchAction = 'none';
     this.host.appendChild(canvas); this.app.stage.addChild(this.scene);
-    this.scene.addChild(this.outline, this.selection, this.preview);
+    this.scene.addChild(this.terrainLayer, this.gridLayer, this.outline, this.selection, this.preview);
+    this.labels = new AtlasLabelLayer(this.host, () => { if (!this.destroyed && !this.failure) this.requestDraw(); });
     this.attachInput();
+    this.attachDiagnostics();
+    canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); this.loseContext(); }, { signal: this.listeners.signal });
+    canvas.addEventListener('webglcontextrestored', () => { void this.restoreContext(); }, { signal: this.listeners.signal });
     this.observer = new ResizeObserver(() => {
       if (this.destroyed || this.failure) return;
       try {
+        if (this.host.clientWidth <= 0 || this.host.clientHeight <= 0) return;
         const before = { width: this.app.screen.width, height: this.app.screen.height };
-        this.app.renderer.resize(Math.max(1, this.host.clientWidth), Math.max(1, this.host.clientHeight));
-        this.camera.x += (this.app.screen.width - before.width) / 2; this.camera.y += (this.app.screen.height - before.height) / 2;
-        if (this.data) this.fitScale = Math.min(this.app.screen.width / 4096, this.app.screen.height / 4096) * .9;
+        this.app.renderer.resize(this.host.clientWidth, this.host.clientHeight);
+        this.camera = resizeCamera(this.camera, before, this.viewport(), this.worldSize());
         this.requestDraw();
       } catch (error) { this.fail(error); }
     });
@@ -77,7 +107,7 @@ export class AtlasRenderer {
     if (!this.initialized) throw new Error('地图显示仍在初始化。');
   }
   private fail(error: unknown) {
-    if (!this.failure) { this.failure = error instanceof Error ? error : new Error(String(error)); this.pendingAcceptance?.abort(this.failure); this.callbacks.onFatal(this.failure); }
+    if (!this.failure) { this.failure = error instanceof Error ? error : new Error(String(error)); this.labels?.hide(); this.pendingAcceptance?.abort(this.failure); this.restoration?.abort(this.failure); this.recovery?.reject(this.failure); this.recovery = undefined; this.callbacks.onFatal(this.failure); }
     return this.failure;
   }
   private assertAcceptance(pending: AbortController) { this.assertReady(); pending.signal.throwIfAborted(); }
@@ -90,166 +120,371 @@ export class AtlasRenderer {
   }
   private guarded<T>(action: () => T): T { try { this.assertReady(); return action(); } catch (error) { throw this.fail(error); } }
   private geometryKey(bx: number, by: number): BlockKey { return `geometry:${bx}:${by}`; }
-  private paint(tile: Tile) {
-    if (!this.data) return;
-    const spec = this.data.manifest.spec, groups = new Map<number, number[]>();
-    for (let row = tile.by * 32; row < (tile.by + 1) * 32; row++) for (let col = tile.bx * 32; col < (tile.bx + 1) * 32; col++) {
-      const id = row * spec.columns + col, elevation = getCellLayerSlot(this.data, 'elevation', id), color = elevationColor(elevation.block.values[elevation.slot]);
-      const cells = groups.get(color) ?? []; cells.push(id); groups.set(color, cells);
-    }
-    tile.terrain.clear();
-    for (const [color, cells] of groups) {
-      for (const id of cells) tile.terrain.poly(getCellQuad(this.data, id).flatMap(point => [point.x, point.y]));
-      tile.terrain.fill({ color });
-    }
-    tile.grid.clear(); tile.gridReady = false;
+  private viewport() { return { width: this.app.screen.width, height: this.app.screen.height }; }
+  private worldSize() { return { width: this.data?.manifest.spec.width ?? 4096, height: this.data?.manifest.spec.height ?? 4096 }; }
+  private specFor(key: BlockKey, layer: AtlasCacheLayer, density: number): AtlasTextureSpec {
+    const [, x, y] = key.split(':'), bx = Number(x), by = Number(y), spec = this.data!.manifest.spec, step = spec.width / spec.columns;
+    const span = 32 * step, corePixels = span * density, gutter = 2;
+    if (!Number.isSafeInteger(corePixels) || corePixels < 1) throw new Error('地图核心未对齐全局纹理采样格。');
+    const worldX = bx * span, worldY = by * span, sampleX = worldX - gutter / density, sampleY = worldY - gutter / density;
+    const pixelWidth = corePixels + gutter * 2, pixelHeight = corePixels + gutter * 2;
+    // Include every possible cell whose permitted shared geometry can enter
+    // the sampling halo. Dependencies are block hashes, not guessed sea colors.
+    const minCol = Math.max(0, Math.floor((sampleX - step / 4) / step)), minRow = Math.max(0, Math.floor((sampleY - step / 4) / step));
+    const maxCol = Math.min(spec.columns - 1, Math.floor((sampleX + pixelWidth / density + step / 4) / step)), maxRow = Math.min(spec.rows - 1, Math.floor((sampleY + pixelHeight / density + step / 4) / step));
+    const dependencies: BlockKey[] = [];
+    for (let oy = Math.floor(Math.max(0, minRow - 1) / 32); oy <= Math.floor(maxRow / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 1) / 32); ox <= Math.floor(maxCol / 32); ox++) dependencies.push(this.geometryKey(ox, oy));
+    if (layer === 'terrain') for (let oy = Math.floor(minRow / 32); oy <= Math.floor(maxRow / 32); oy++) for (let ox = Math.floor(minCol / 32); ox <= Math.floor(maxCol / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
+    const level = Math.log2(density);
+    return { key: `${this.data!.manifest.atlasId}/core-halo-v1/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
+      pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
   }
-  private paintGrid(tile: Tile) {
-    if (!this.data || tile.gridReady) return;
-    for (let row = tile.by * 32; row < (tile.by + 1) * 32; row++) for (let col = tile.bx * 32; col < (tile.bx + 1) * 32; col++) {
-      const quad = getCellQuad(this.data, row * this.data.manifest.spec.columns + col);
-      tile.grid.poly(quad.flatMap(point => [point.x, point.y]));
+  private visiblePlan() {
+    if (!this.data || !this.index) return { specs: [] as AtlasTextureSpec[], keys: [] as BlockKey[] };
+    // Fixed display cores partition world space. Shared quads may extend beyond
+    // their logical cell block, so their AABBs cannot cull these cropped cores.
+    const bounds = cameraWorldBounds(this.camera, this.viewport()), spec = this.data.manifest.spec, span = spec.width / spec.columns * 32, keys: BlockKey[] = [];
+    if (bounds.maxX >= 0 && bounds.maxY >= 0 && bounds.minX <= spec.width && bounds.minY <= spec.height) {
+      for (let by = Math.max(0, Math.floor(bounds.minY / span)); by <= Math.min(spec.rows / 32 - 1, Math.floor(bounds.maxY / span)); by++)
+        for (let bx = Math.max(0, Math.floor(bounds.minX / span)); bx <= Math.min(spec.columns / 32 - 1, Math.floor(bounds.maxX / span)); bx++) keys.push(this.geometryKey(bx, by));
     }
-    tile.grid.stroke({ color: 0xc1d8d3, width: .28, alpha: .25 }); tile.gridReady = true;
+    const step = this.data.manifest.spec.width / this.data.manifest.spec.columns;
+    this.lod = resolveAtlasLod(this.camera.scale * step, this.lod);
+    const grid = atlasLodPolicy(this.lod, this.viewport().width).gridVisible;
+    // Raster density is a cache sampling level, not a change to geography or semantic LOD.
+    const maximum = 2 ** Math.floor(Math.log2(1020 / (step * 32 + step / 2)));
+    let density = Math.min(maximum, 2 ** Math.ceil(Math.log2(Math.max(minimumCacheDensity, this.camera.scale * this.app.renderer.resolution))));
+    let specs: AtlasTextureSpec[];
+    do {
+      specs = keys.flatMap(key => [this.specFor(key, 'terrain', density), ...(grid ? [this.specFor(key, 'grid', density)] : [])]);
+      if (specs.reduce((sum, item) => sum + item.pixelWidth * item.pixelHeight, 0) <= this.cache.budgetPixels * .75) break;
+      density /= 2;
+      if (density < minimumCacheDensity) throw new Error('地图可见缓存无法在最低采样密度内满足预算。');
+    } while (density >= minimumCacheDensity);
+    return { specs, keys };
+  }
+  private deferDirtyDependencies(changed: ReadonlySet<BlockKey>) {
+    const across = this.data!.manifest.spec.columns / 32;
+    // The minimum density has the widest real sampling halo. Enumerating the
+    // bounded 16/64/256 cores also covers entries that were never cached or
+    // were evicted; cache membership is not evidence that content is clean.
+    for (let by = 0; by < across; by++) for (let bx = 0; bx < across; bx++) {
+      const key = this.geometryKey(bx, by);
+      if (this.specFor(key, 'terrain', minimumCacheDensity).dependencies.some(dependency => changed.has(dependency))) this.deferredDirtyCores.add(key);
+    }
+  }
+  private completeVisibleCores(plan: { specs: AtlasTextureSpec[]; keys: BlockKey[] }) {
+    const complete = new Set(plan.keys);
+    for (const spec of plan.specs) if (!this.cache.has(spec.key)) complete.delete(spec.blockKey);
+    for (const key of complete) this.deferredDirtyCores.delete(key);
+  }
+  private ensureTexture(spec: AtlasTextureSpec, protectedKeys: ReadonlySet<string>, repainted: Set<BlockKey>): AtlasTextureEntry {
+    const existing = this.cache.get(spec.key); if (existing) return existing;
+    const entry = this.cache.ensure(spec, target => {
+      const bounds = { minX: spec.sampleX, minY: spec.sampleY, maxX: spec.sampleX + spec.pixelWidth / spec.density, maxY: spec.sampleY + spec.pixelHeight / spec.density };
+      let scratch: Graphics;
+      if (spec.layer === 'terrain') {
+        const geometrySpec = { atlasId: this.data!.manifest.atlasId, blockKey: spec.blockKey, bounds, dependencies: spec.dependencies.map(key => ({ key, hash: this.refs.get(key)! })) };
+        const retained = this.terrainGeometry.get(geometrySpec, this.refs);
+        if (retained) scratch = retained;
+        else {
+          const ids = this.index!.queryCells(bounds).cellIds;
+          scratch = this.terrainGeometry.create(geometrySpec, ids.length, graphics => {
+            const groups = new Map<number, number[]>();
+            for (const id of ids) {
+              const elevation = getCellLayerSlot(this.data!, 'elevation', id), color = elevationColor(elevation.block.values[elevation.slot]);
+              const cells = groups.get(color) ?? []; cells.push(id); groups.set(color, cells);
+            }
+            for (const [color, cells] of groups) { for (const id of cells) graphics.poly(getCellQuad(this.data!, id).flatMap(p => [p.x, p.y])); graphics.fill({ color }); }
+          });
+        }
+      } else scratch = new Graphics();
+      try {
+        if (spec.layer === 'grid') {
+          for (const id of this.index!.queryCells(bounds).cellIds) scratch.poly(getCellQuad(this.data!, id).flatMap(p => [p.x, p.y]));
+          scratch.stroke({ color: 0xc1d8d3, width: 1 / spec.density, alpha: .25 });
+        }
+        // Graphics stay in world coordinates. Only the target matrix changes;
+        // a reused wider real halo is clipped by this target, never resampled.
+        // Grid strokes depend on density and remain a separate one-shot path.
+        this.app.renderer.render({ container: scratch, target, transform: new Matrix(spec.density, 0, 0, spec.density, -spec.sampleX * spec.density, -spec.sampleY * spec.density), clear: true, clearColor: [0, 0, 0, 0] });
+      } finally { if (spec.layer === 'grid') scratch.destroy(); }
+    }, protectedKeys);
+    (spec.layer === 'terrain' ? this.terrainLayer : this.gridLayer).addChild(entry.sprite); repainted.add(spec.blockKey);
+    if (this.data === this.acceptingData) this.acceptanceRepaints?.add(spec.blockKey);
+    return entry;
+  }
+  private prefetch(keys: BlockKey[], specs: AtlasTextureSpec[], protectedKeys: Set<string>, repainted: Set<BlockKey>) {
+    if (!this.data || !specs.length || this.pendingAcceptance || this.graphicsState !== 'ready') return;
+    const visible = new Set(keys), across = this.data.manifest.spec.columns / 32; let remaining = 2;
+    for (const key of keys) {
+      const [, x, y] = key.split(':'), bx = Number(x), by = Number(y);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if (bx + dx < 0 || by + dy < 0 || bx + dx >= across || by + dy >= across) continue;
+        const neighbor = this.geometryKey(bx + dx, by + dy); if (visible.has(neighbor) || this.deferredDirtyCores.has(neighbor)) continue;
+        const spec = this.specFor(neighbor, 'terrain', specs[0].density);
+        if (this.cache.has(spec.key)) continue;
+        if (!this.cache.canReserve(spec.pixelWidth * spec.pixelHeight, protectedKeys)) return;
+        this.ensureTexture(spec, protectedKeys, repainted); if (--remaining === 0) return;
+      }
+    }
+  }
+  private async warmVisible(check: () => void, recovering = false, report = true) {
+    const repainted = new Set<BlockKey>();
+    for (;;) {
+      check(); if (!recovering && this.graphicsState !== 'ready') await this.waitForGraphics(); check();
+      let start = performance.now();
+      const epoch = this.contextEpoch, plan = this.visiblePlan(), specs = plan.specs.filter(spec => !this.cache.has(spec.key)), keys = [...new Set(specs.map(spec => spec.blockKey))], protectedKeys = new Set(plan.specs.map(spec => spec.key));
+      let interrupted = false, batchPainted = new Set<BlockKey>();
+      for (let i = 0; i < specs.length; i++) {
+        check();
+        if (epoch !== this.contextEpoch || (!recovering && this.graphicsState !== 'ready')) { interrupted = true; break; }
+        this.ensureTexture(specs[i], protectedKeys, repainted); batchPainted.add(specs[i].blockKey);
+        if ((i + 1) % 8 === 0 || i === specs.length - 1) {
+          this.draw(false, recovering, start, batchPainted.size); batchPainted = new Set();
+          if (report) this.callbacks.onProgress?.({ stage: '绘制已核验地理块', completed: new Set(specs.slice(0, i + 1).map(spec => spec.blockKey)).size, total: keys.length });
+          if (i < specs.length - 1) { await new Promise<void>(resolve => setTimeout(resolve, 0)); check(); start = performance.now(); }
+        }
+      }
+      if (!interrupted && epoch === this.contextEpoch) { this.completeVisibleCores(plan); return repainted; }
+      if (recovering) throw new Error('图形恢复已被更新的上下文取代。');
+    }
   }
   /** Returns only after submitting the committed state and a frame opportunity. */
   async accept(data: AtlasDraftData, delta?: AtlasRenderDelta) {
     this.assertReady();
     if (this.pendingAcceptance) throw new Error('地图画面仍在接收，请等待本次结果。');
-    const pending = new AbortController(); this.pendingAcceptance = pending;
+    const pending = new AbortController(); this.pendingAcceptance = pending; this.acceptingData = data; this.acceptanceRepaints = new Set(); this.labels?.hide();
     try {
       const fresh = !this.data || this.data.manifest.draftId !== data.manifest.draftId || this.data.manifest.atlasId !== data.manifest.atlasId;
       const fullRepaint = fresh || !delta;
-      const dirty = new Set<BlockKey>();
       if (fullRepaint) {
         const index = await createSpatialIndexAsync(data, {
           signal: pending.signal,
           onProgress: progress => { this.assertAcceptance(pending); this.callbacks.onProgress?.(progress); },
           yieldTask: async () => { await new Promise<void>(resolve => setTimeout(resolve, 0)); this.assertAcceptance(pending); },
         });
-        this.assertAcceptance(pending); this.index = index;
-        for (const tile of this.tiles.values()) { tile.terrain.destroy(); tile.grid.destroy(); } this.tiles.clear();
-        this.data = data; this.selected = null; this.previewCells = []; this.previewVertices.clear();
-        const across = data.manifest.spec.columns / 32;
-        for (let by = 0; by < across; by++) for (let bx = 0; bx < across; bx++) {
-          const terrain = new Graphics(), grid = new Graphics(), key = this.geometryKey(bx, by);
-          this.scene.addChildAt(terrain, 0); this.scene.addChildAt(grid, 1);
-          this.tiles.set(key, { bx, by, terrain, grid, gridReady: false }); dirty.add(key);
-        }
-        this.fit();
+        this.assertAcceptance(pending); if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending); this.index = index;
+        this.cache.clear(); this.terrainGeometry.clear(); this.deferredDirtyCores.clear();
+        this.data = data; this.selected = null; this.previewCells = []; this.previewVertices.clear(); this.lod = undefined;
+        this.camera = fitCamera(this.worldSize(), this.viewport());
       } else {
+        if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending);
         if (data.manifest.revision !== this.data!.manifest.revision + 1) throw new Error('地图增量修订不连续，请恢复已保存草稿。');
-        const update = this.index!.updateGeometry(data, delta.changedVertexIds);
-        for (const key of update.affectedDisplayBlocks) dirty.add(key);
-        for (const key of delta.dirtyKeys) if (key.startsWith('elevation:')) { const [, x, y] = key.split(':'); dirty.add(this.geometryKey(Number(x), Number(y))); }
-        // The committed affected cell list includes all shared-vertex incident quads.
-        for (const id of delta.affectedCellIds) { const block = cellBlock(data.manifest.spec, id); dirty.add(this.geometryKey(block.bx, block.by)); }
+        this.index!.updateGeometry(data, delta.changedVertexIds);
         this.data = data;
       }
-      let completed = 0;
-      for (const key of dirty) {
-        const tile = this.tiles.get(key); if (!tile) throw new Error('地图增量引用缺失显示块。'); this.paint(tile); completed++;
-        if (fullRepaint && (completed % 8 === 0 || completed === dirty.size)) {
-          // Submit this batch now so Pixi does not defer all geometry work to
-          // one final render; progress follows an actual drawing submission.
-          this.draw();
-          this.callbacks.onProgress?.({ stage: '绘制已核验地理块', completed, total: dirty.size });
-          if (completed < dirty.size) { await new Promise<void>(resolve => setTimeout(resolve, 0)); this.assertAcceptance(pending); }
-        }
+      this.refs = new Map(data.manifest.blockRefs.map(ref => [ref.key, ref.hash]));
+      if (delta) {
+        const changed = new Set(delta.dirtyKeys); this.deferDirtyDependencies(changed); this.cache.invalidateDependencies(changed); this.terrainGeometry.invalidateDependencies(changed);
       }
-      this.measured.repaintBlocks = dirty.size; this.measured.acceptedRevision = data.manifest.revision;
-      this.previewCells = []; this.previewVertices.clear(); this.draw();
-      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-      this.assertAcceptance(pending); this.draw(); this.measured.correctFrameAt = performance.now();
+      this.previewCells = []; this.previewVertices.clear(); this.previewRevision++;
+      await this.warmVisible(() => this.assertAcceptance(pending), false, fullRepaint);
+      this.assertAcceptance(pending);
+      await this.waitFrame(pending.signal);
+      this.assertAcceptance(pending); if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending);
+      this.draw(true, false, performance.now(), 0, true); this.measured.repaintBlockKeys = [...this.acceptanceRepaints]; this.measured.repaintBlocks = this.measured.repaintBlockKeys.length;
+      this.measured.acceptedRevision = data.manifest.revision; this.measured.correctFrameAt = performance.now();
       return this.metrics();
     } catch (error) { throw this.fail(error); }
-    finally { if (this.pendingAcceptance === pending) this.pendingAcceptance = undefined; }
+    finally { if (this.pendingAcceptance === pending) { this.pendingAcceptance = undefined; this.acceptingData = undefined; this.acceptanceRepaints = undefined; } }
   }
-  metrics() { return { ...this.measured, camera: { ...this.camera }, viewport: { width: this.app.screen?.width ?? 0, height: this.app.screen?.height ?? 0 }, fatal: !!this.failure }; }
+  metrics() { return { ...this.measured, repaintBlockKeys: [...this.measured.repaintBlockKeys], camera: { ...this.camera }, viewport: { width: this.app.screen?.width ?? 0, height: this.app.screen?.height ?? 0, resolution: this.initialized ? this.app.renderer.resolution : 1 }, gpu: { state: this.graphicsState, epoch: this.contextEpoch }, cache: this.cache.stats(), geometryCache: this.terrainGeometry.stats(), selected: this.selected, destroyed: this.destroyed, fatal: !!this.failure,
+    lod: this.lod ?? 'far', cellPixels: this.data ? this.camera.scale * this.data.manifest.spec.width / this.data.manifest.spec.columns : 0,
+    gridVisible: this.lod ? atlasLodPolicy(this.lod, this.app.screen.width).gridVisible : false, labels: this.labels?.metrics() ?? emptyAtlasLabelMetrics() }; }
   select(cellId: number | null) { this.guarded(() => { if (cellId !== null && this.data) getCellQuad(this.data, cellId); this.selected = cellId; this.draw(); }); }
   showPreview(cellIds: number[], vertices?: { ids: Uint32Array; xyQ: Int32Array }) {
     this.guarded(() => {
-      this.previewCells = [...cellIds]; this.previewVertices.clear();
-      if (vertices) for (let i = 0; i < vertices.ids.length; i++) this.previewVertices.set(vertices.ids[i], { x: vertices.xyQ[i * 2] / 256, y: vertices.xyQ[i * 2 + 1] / 256 });
+      const nextVertices = new Map<number, { x: number; y: number }>();
+      if (vertices) for (let i = 0; i < vertices.ids.length; i++) nextVertices.set(vertices.ids[i], { x: vertices.xyQ[i * 2] / 256, y: vertices.xyQ[i * 2 + 1] / 256 });
+      const same = cellIds.length === this.previewCells.length && cellIds.every((id, index) => id === this.previewCells[index])
+        && nextVertices.size === this.previewVertices.size && [...nextVertices].every(([id, point]) => { const before = this.previewVertices.get(id); return before?.x === point.x && before.y === point.y; });
+      if (!same) { this.previewCells = [...cellIds]; this.previewVertices = nextVertices; this.previewRevision++; }
       this.draw();
     });
   }
   focusCell(cellId: number, zoom = true) {
     this.guarded(() => { if (!this.data) return;
     const quad = getCellQuad(this.data, cellId), x = quad.reduce((sum, p) => sum + p.x, 0) / 4, y = quad.reduce((sum, p) => sum + p.y, 0) / 4;
-    if (zoom) this.camera.scale = Math.max(this.camera.scale, this.fitScale * 8);
-    this.camera.x = this.app.screen.width * .42 - x * this.camera.scale; this.camera.y = this.app.screen.height * .35 - y * this.camera.scale;
+    if (this.graphicsState !== 'ready') return;
+    if (zoom) this.camera = { ...this.camera, scale: Math.max(this.camera.scale, cameraScaleBounds(this.worldSize(), this.viewport()).fitScale * 8) };
+    this.camera = centerCameraAt(this.camera, { x, y }, { x: this.app.screen.width * .42, y: this.app.screen.height * .35 });
     this.selected = cellId; this.draw(); });
   }
   fit() {
-    this.guarded(() => { this.fitScale = Math.min(this.app.screen.width / 4096, this.app.screen.height / 4096) * .9;
-      this.camera = { x: (this.app.screen.width - 4096 * this.fitScale) / 2, y: (this.app.screen.height - 4096 * this.fitScale) / 2, scale: this.fitScale }; this.draw(); });
+    this.guarded(() => { if (this.graphicsState !== 'ready') return; this.camera = fitCamera(this.worldSize(), this.viewport()); this.draw(); });
   }
   zoom(factor: number, point = { x: this.app.screen.width / 2, y: this.app.screen.height / 2 }) {
-    this.guarded(() => { const before = this.camera.scale, after = Math.max(this.fitScale * .5, Math.min(this.fitScale * 80, before * factor));
-    this.camera.x = point.x - (point.x - this.camera.x) * after / before; this.camera.y = point.y - (point.y - this.camera.y) * after / before; this.camera.scale = after; this.requestDraw();
+    this.guarded(() => { if (this.graphicsState !== 'ready') return;
+      this.camera = zoomCameraAt(this.camera, factor, point, this.worldSize(), this.viewport()); this.requestDraw();
     });
   }
-  private draw() {
-    if (!this.initialized || this.destroyed || this.failure) return;
-    this.scene.position.set(this.camera.x, this.camera.y); this.scene.scale.set(this.camera.scale);
-    if (this.index && this.data) {
-      const bounds = { minX: -this.camera.x / this.camera.scale, minY: -this.camera.y / this.camera.scale, maxX: (this.app.screen.width - this.camera.x) / this.camera.scale, maxY: (this.app.screen.height - this.camera.y) / this.camera.scale };
-      const visible = new Set(this.index.queryBlocks(bounds).blockKeys), showGrid = this.camera.scale * (4096 / this.data.manifest.spec.columns) >= 18;
-      for (const [key, tile] of this.tiles) { tile.terrain.visible = visible.has(key); tile.grid.visible = visible.has(key) && showGrid; if (tile.grid.visible) this.paintGrid(tile); }
-      this.measured.visibleBlocks = visible.size;
-      this.outline.clear().rect(0, 0, 4096, 4096).stroke({ color: 0xa9c6c5, width: 1 / this.camera.scale, alpha: .7 });
+  /** World-space overlays survive translation. Rebuild only their actual
+   * inputs, stroke scale or GPU epoch; keep this work inside draw's CPU span. */
+  private updateOverlays() {
+    if (!this.data) return;
+    const data = this.data, scale = this.camera.scale, epoch = this.contextEpoch, world = this.worldSize();
+    const outline = this.drawnOutline;
+    if (!outline || outline.width !== world.width || outline.height !== world.height || outline.scale !== scale || outline.epoch !== epoch) {
+      this.outline.clear().rect(0, 0, world.width, world.height).stroke({ color: 0xa9c6c5, width: 1 / scale, alpha: .7 });
+      this.drawnOutline = { ...world, scale, epoch };
+    }
+    const selection = this.drawnSelection;
+    if (!selection || selection.data !== data || selection.selected !== this.selected || selection.scale !== scale || selection.epoch !== epoch) {
       this.selection.clear();
-      if (this.selected !== null) this.selection.poly(getCellQuad(this.data, this.selected).flatMap(p => [p.x, p.y])).fill({ color: 0xe7ca8b, alpha: .25 }).stroke({ color: 0xf1d79c, width: 2 / this.camera.scale });
+      if (this.selected !== null) this.selection.poly(getCellQuad(data, this.selected).flatMap(p => [p.x, p.y])).fill({ color: 0xe7ca8b, alpha: .25 }).stroke({ color: 0xf1d79c, width: 2 / scale });
+      this.drawnSelection = { data, selected: this.selected, scale, epoch };
+    }
+    const preview = this.drawnPreview;
+    if (!preview || preview.data !== data || preview.revision !== this.previewRevision || preview.scale !== scale || preview.epoch !== epoch) {
       this.preview.clear();
       for (const id of this.previewCells) {
-        const ids = cellVertexIds(this.data.manifest.spec, id), ordered = [ids[0], ids[1], ids[3], ids[2]];
-        this.preview.poly(getCellQuad(this.data, id).flatMap((point, index) => { const p = this.previewVertices.get(ordered[index]) ?? point; return [p.x, p.y]; }));
+        const ids = cellVertexIds(data.manifest.spec, id), ordered = [ids[0], ids[1], ids[3], ids[2]];
+        this.preview.poly(getCellQuad(data, id).flatMap((point, index) => { const p = this.previewVertices.get(ordered[index]) ?? point; return [p.x, p.y]; }));
       }
-      if (this.previewCells.length) this.preview.fill({ color: 0xf2d49b, alpha: .24 }).stroke({ color: 0xffd88c, width: 1 / this.camera.scale });
+      if (this.previewCells.length) this.preview.fill({ color: 0xf2d49b, alpha: .24 }).stroke({ color: 0xffd88c, width: 1 / scale });
+      this.drawnPreview = { data, revision: this.previewRevision, scale, epoch };
     }
-    this.app.renderer.render(this.app.stage); this.callbacks.onCamera?.({ ...this.camera });
+  }
+  private draw(ensure = true, recovering = false, started = performance.now(), batchRepainted = 0, allowAcceptanceLabels = false) {
+    if (!this.initialized || this.destroyed || this.failure || (this.graphicsState !== 'ready' && !recovering)) return;
+    this.scene.position.set(this.camera.x, this.camera.y); this.scene.scale.set(this.camera.scale);
+    if (this.index && this.data) {
+      const { specs, keys } = this.visiblePlan(), visible = new Set(specs.map(spec => spec.key)), repainted = new Set<BlockKey>();
+      if (ensure) { for (const spec of specs) this.ensureTexture(spec, visible, repainted); this.completeVisibleCores({ specs, keys }); this.prefetch(keys, specs, visible, repainted); }
+      this.cache.forEach(entry => { entry.sprite.visible = visible.has(entry.spec.key); });
+      this.measured.visibleBlocks = keys.length; this.measured.frameRepaintBlocks = repainted.size + batchRepainted;
+      this.updateOverlays();
+    }
+    this.app.renderer.render(this.app.stage);
+    if (this.data && this.lod && ensure && (!this.pendingAcceptance || allowAcceptanceLabels)) this.labels?.update({ data: this.data, camera: this.camera, viewport: this.viewport(), lod: this.lod, selectedCellId: this.selected });
+    else this.labels?.hide();
+    this.callbacks.onCamera?.({ ...this.camera });
+    this.measured.frameSequence++;
+    // The event reports the previous complete draw: this draw's listener cost
+    // is only known once dispatch returns. A request retrieves the latest slot.
+    this.emitMetrics();
+    this.measured.completedFrameSequence = this.measured.frameSequence;
+    this.measured.completedDrawCpuMs = performance.now() - started;
   }
   private requestDraw() { if (!this.frame) this.frame = requestAnimationFrame(() => { this.frame = 0; try { this.draw(); } catch (error) { this.fail(error); } }); }
+  private waitFrame(signal: AbortSignal) {
+    return new Promise<void>((resolve, reject) => {
+      if (signal.aborted) { reject(signal.reason); return; }
+      let frame = 0;
+      const abort = () => { cancelAnimationFrame(frame); signal.removeEventListener('abort', abort); reject(signal.reason); };
+      signal.addEventListener('abort', abort, { once: true });
+      frame = requestAnimationFrame(() => { signal.removeEventListener('abort', abort); if (signal.aborted) reject(signal.reason); else resolve(); });
+    });
+  }
+  private emitMetrics() { this.app.canvas.dispatchEvent(new CustomEvent('atlas-render-metrics', { detail: this.metrics() })); }
+  private attachDiagnostics() {
+    const canvas = this.app.canvas, signal = this.listeners.signal;
+    const id = (event: Event) => { const value: unknown = (event as CustomEvent).detail?.requestId; return typeof value === 'string' && value.length > 0 && value.length <= 64 ? value : null; };
+    canvas.addEventListener('atlas-metrics-request', event => {
+      const requestId = id(event); if (requestId) canvas.dispatchEvent(new CustomEvent('atlas-metrics-response', { detail: { requestId, metrics: this.metrics() } }));
+    }, { signal });
+    canvas.addEventListener('atlas-audit-request', event => {
+      const requestId = id(event); if (!requestId) return;
+      const reply = (detail: object) => { if (!this.destroyed) canvas.dispatchEvent(new CustomEvent('atlas-audit-response', { detail: { requestId, ...detail } })); };
+      if (this.auditing || this.pendingAcceptance || !this.data) { reply({ ok: false, error: '地图仍在接收或核验，请等待后重试。' }); return; }
+      this.auditing = true; const data = this.data;
+      void (async () => {
+        try {
+          await verifyAtlasDraft(data, { signal: this.listeners.signal }); const manifestDigest = await hashManifest(data.manifest);
+          if (this.data !== data || this.pendingAcceptance) throw new Error('核验期间地图已经切换，请重试。');
+          reply({ ok: true, manifestDigest, draftId: data.manifest.draftId, atlasId: data.manifest.atlasId, revision: data.manifest.revision, verifiedBlocks: data.blocks.size });
+        } catch (error) { reply({ ok: false, error: error instanceof Error ? error.message : String(error) }); }
+        finally { this.auditing = false; }
+      })();
+    }, { signal });
+  }
+  private clearPointers() {
+    const ids = [...this.pointers.keys()]; this.pointers.clear(); this.suppressTap = false;
+    for (const id of ids) if (this.app.canvas.hasPointerCapture(id)) this.app.canvas.releasePointerCapture(id);
+  }
+  private loseContext() {
+    if (this.destroyed || this.failure) return;
+    try {
+      this.contextEpoch++; this.restoration?.abort(new Error('图形上下文已再次变化。')); this.graphicsState = 'lost'; this.labels?.hide(); this.clearPointers();
+      if (!this.recovery) {
+        let resolve!: () => void, reject!: (error: Error) => void;
+        const promise = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
+        void promise.catch(() => undefined); this.recovery = { promise, resolve, reject };
+      }
+      this.cache.clear(); this.terrainGeometry.clear(); this.callbacks.onGraphicsState?.('lost'); this.emitMetrics();
+    } catch (error) { this.fail(error); }
+  }
+  private async waitForGraphics() { if (this.graphicsState !== 'ready') await this.recovery?.promise; this.assertReady(); }
+  private async restoreContext() {
+    if (this.destroyed || this.failure || this.graphicsState !== 'lost') return;
+    const epoch = this.contextEpoch, restoration = new AbortController(); this.restoration = restoration; this.graphicsState = 'restoring';
+    const check = () => { this.assertReady(); if (epoch !== this.contextEpoch) throw new Error('图形上下文已再次变化。'); };
+    try {
+      this.callbacks.onGraphicsState?.('restoring');
+      // Pixi's contextChange handlers run first; old GPU content is discarded.
+      await this.waitFrame(restoration.signal); check();
+      await this.warmVisible(check, true); check(); this.draw(true, true);
+      this.graphicsState = 'ready'; this.callbacks.onGraphicsState?.('ready');
+      this.recovery?.resolve(); this.recovery = undefined; this.emitMetrics();
+    } catch (error) { if (!this.destroyed && epoch === this.contextEpoch) this.fail(error); }
+    finally { if (this.restoration === restoration) this.restoration = undefined; }
+  }
   private attachInput() {
     const canvas = this.app.canvas, signal = this.listeners.signal;
     const local = (event: PointerEvent) => { const bounds = canvas.getBoundingClientRect(); return { x: event.clientX - bounds.left, y: event.clientY - bounds.top }; };
     canvas.addEventListener('pointerdown', event => {
-      if (this.failure || event.button !== 0) return;
+      if (this.failure || this.graphicsState !== 'ready' || this.pendingAcceptance || event.button !== 0) return;
       const point = local(event); this.pointers.set(event.pointerId, { ...point, startX: point.x, startY: point.y });
-      if (this.pointers.size > 1) this.suppressTap = true; canvas.setPointerCapture(event.pointerId);
+      if (this.pointers.size > 1) this.suppressTap = true;
+      try { canvas.setPointerCapture(event.pointerId); } catch { this.clearPointers(); }
     }, { signal });
     canvas.addEventListener('pointermove', event => {
       const pointer = this.pointers.get(event.pointerId); if (!pointer || this.failure) return;
       const point = local(event), before = [...this.pointers.values()].map(p => ({ x: p.x, y: p.y }));
       const dx = point.x - pointer.x, dy = point.y - pointer.y; pointer.x = point.x; pointer.y = point.y;
       if (Math.hypot(point.x - pointer.startX, point.y - pointer.startY) > 6) this.suppressTap = true;
-      if (this.pointers.size === 1) { this.camera.x += dx; this.camera.y += dy; }
+      if (this.pointers.size === 1) this.camera = panCamera(this.camera, { x: dx, y: dy });
       else if (before.length === 2) {
         const after = [...this.pointers.values()], oldMid = { x: (before[0].x + before[1].x) / 2, y: (before[0].y + before[1].y) / 2 }, newMid = { x: (after[0].x + after[1].x) / 2, y: (after[0].y + after[1].y) / 2 };
         const oldDistance = Math.hypot(before[0].x - before[1].x, before[0].y - before[1].y), distance = Math.hypot(after[0].x - after[1].x, after[0].y - after[1].y);
-        if (oldDistance > 1) this.zoom(distance / oldDistance, oldMid);
-        this.camera.x += newMid.x - oldMid.x; this.camera.y += newMid.y - oldMid.y;
+        if (oldDistance > 1 && distance > 0) this.camera = zoomCameraAt(this.camera, distance / oldDistance, oldMid, this.worldSize(), this.viewport());
+        this.camera = panCamera(this.camera, { x: newMid.x - oldMid.x, y: newMid.y - oldMid.y });
       }
       this.requestDraw();
     }, { signal });
     const end = (event: PointerEvent, cancelled: boolean) => {
       const pointer = this.pointers.get(event.pointerId); if (!pointer) return;
-      if (!cancelled && !this.failure && !this.suppressTap && this.pointers.size === 1 && this.index) {
-        const point = local(event), result = this.index.pick({ x: (point.x - this.camera.x) / this.camera.scale, y: (point.y - this.camera.y) / this.camera.scale });
-        if (result.cellId !== null) { this.select(result.cellId); this.callbacks.onPick(result.cellId); }
-      }
+      const tap = !cancelled && !this.failure && !this.suppressTap && this.pointers.size === 1 && this.graphicsState === 'ready' && !this.pendingAcceptance;
+      if (cancelled) { this.clearPointers(); return; }
       this.pointers.delete(event.pointerId); if (!this.pointers.size) this.suppressTap = false;
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      if (tap && this.index) {
+        const point = local(event), result = this.index.pick(screenToWorld(this.camera, point));
+        if (result.cellId !== null) { this.select(result.cellId); this.callbacks.onPick(result.cellId); }
+      }
     };
     canvas.addEventListener('pointerup', event => end(event, false), { signal }); canvas.addEventListener('pointercancel', event => end(event, true), { signal });
-    canvas.addEventListener('wheel', event => { if (this.failure) return; event.preventDefault(); const bounds = canvas.getBoundingClientRect(); this.zoom(Math.exp(-event.deltaY * .0015), { x: event.clientX - bounds.left, y: event.clientY - bounds.top }); }, { signal, passive: false });
+    canvas.addEventListener('lostpointercapture', event => { if (this.pointers.has(event.pointerId)) this.clearPointers(); }, { signal });
+    window.addEventListener('blur', () => this.clearPointers(), { signal });
+    canvas.addEventListener('wheel', event => { if (this.failure || this.graphicsState !== 'ready' || this.pendingAcceptance) return; event.preventDefault(); const bounds = canvas.getBoundingClientRect(); this.zoom(Math.exp(Math.max(-2, Math.min(2, -event.deltaY * .0015))), { x: event.clientX - bounds.left, y: event.clientY - bounds.top }); }, { signal, passive: false });
     canvas.addEventListener('keydown', event => {
-      if (this.failure) return;
+      if (this.failure || this.graphicsState !== 'ready' || this.pendingAcceptance) return;
       if (event.key === '+' || event.key === '=') this.zoom(1.25); else if (event.key === '-') this.zoom(.8);
-      else if (event.key.startsWith('Arrow')) { this.camera.x += event.key === 'ArrowLeft' ? 48 : event.key === 'ArrowRight' ? -48 : 0; this.camera.y += event.key === 'ArrowUp' ? 48 : event.key === 'ArrowDown' ? -48 : 0; this.requestDraw(); }
+      else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) { this.camera = panCamera(this.camera, { x: event.key === 'ArrowLeft' ? 48 : event.key === 'ArrowRight' ? -48 : 0, y: event.key === 'ArrowUp' ? 48 : event.key === 'ArrowDown' ? -48 : 0 }); this.requestDraw(); }
       else return; event.preventDefault();
     }, { signal });
   }
-  destroy() { this.destroyed = true; this.pendingAcceptance?.abort(new Error('地图显示已关闭。')); this.listeners.abort(); this.observer?.disconnect(); if (this.frame) cancelAnimationFrame(this.frame); if (this.initialized) this.app.destroy(true, { children: true }); }
+  destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true; const error = new Error('地图显示已关闭。'); this.pendingAcceptance?.abort(error); this.restoration?.abort(error); this.recovery?.reject(error); this.recovery = undefined;
+    this.listeners.abort(); this.observer?.disconnect(); this.labels?.destroy(); if (this.frame) cancelAnimationFrame(this.frame);
+    this.drawnOutline = undefined; this.drawnSelection = undefined; this.drawnPreview = undefined;
+    if (this.initialized) {
+      this.clearPointers();
+      try { this.cache.clear(); } catch (error) { this.fail(error); }
+      try { this.terrainGeometry.clear(); } catch (error) { this.fail(error); }
+      finally { this.emitMetrics(); this.app.destroy(true, { children: true }); }
+    }
+  }
 }

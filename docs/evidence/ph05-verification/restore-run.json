@@ -1,0 +1,9 @@
+{
+  "command": "node docs/evidence/ph05/restore-evidence-v2.mjs --out=.autopilot/ph05-restored-review",
+  "startedAt": "2026-09-24T02:01:21.205Z",
+  "endedAt": "2026-09-24T02:05:30.148Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "log": ".autopilot/ph05-archive-validation/restore-run.log"
+}

@@ -54,6 +54,29 @@ async function rootBytes(page: Page, id: string) {
   }), id);
 }
 
+async function expectVisibleHeightHaloRepaint(page: Page) {
+  const rendered = await page.getByTestId('atlas-canvas').evaluate(element => new Promise<{ camera: { x: number; y: number; scale: number }; viewport: { width: number; height: number }; repaintBlockKeys: string[] }>((resolve, reject) => {
+    const requestId = crypto.randomUUID();
+    const timer = setTimeout(() => { element.removeEventListener('atlas-metrics-response', listener); reject(new Error('Missing read-only repaint metrics')); }, 10000);
+    const listener = (event: Event) => {
+      const detail = (event as CustomEvent).detail; if (detail.requestId !== requestId) return;
+      clearTimeout(timer); element.removeEventListener('atlas-metrics-response', listener); resolve(detail.metrics);
+    };
+    element.addEventListener('atlas-metrics-response', listener); element.dispatchEvent(new CustomEvent('atlas-metrics-request', { detail: { requestId } }));
+  }));
+  // The actual edit still writes exactly four authority blocks (3/4 × 3/4).
+  // True-neighbor texture halos also depend on the surrounding display cores.
+  // Verify the exact visible set, instead of pretending those extra real draws
+  // are the original four or raising an arbitrary numerical allowance.
+  const { camera, viewport } = rendered, minX = -camera.x / camera.scale, minY = -camera.y / camera.scale;
+  const maxX = (viewport.width - camera.x) / camera.scale, maxY = (viewport.height - camera.y) / camera.scale, expected: string[] = [];
+  for (let by = 2; by <= 5; by++) for (let bx = 2; bx <= 5; bx++) {
+    if (bx >= Math.floor(minX / 512) && bx <= Math.floor(maxX / 512) && by >= Math.floor(minY / 512) && by <= Math.floor(maxY / 512)) expected.push(`geometry:${bx}:${by}`);
+  }
+  expect([...rendered.repaintBlockKeys].sort()).toEqual([...expected].sort());
+  expect(Number(await studio(page).getAttribute('data-atlas-repainted-blocks'))).toBe(expected.length);
+}
+
 test('65k真实大图：点选、浏览、取消、跨块编辑、共享顶点、撤销和刷新恢复', async ({ page }, info) => {
   test.setTimeout(180000);
   const errors: string[] = [];
@@ -98,7 +121,7 @@ test('65k真实大图：点选、浏览、取消、跨块编辑、共享顶点�
   await expect(page.getByTestId('atlas-selected-height')).toHaveText('200 米');
   const heightRoot = await rootBytes(page, id);
   expect(heightRoot).not.toEqual(originalRoot);
-  expect(Number(await studio(page).getAttribute('data-atlas-repainted-blocks'))).toBe(4);
+  await expectVisibleHeightHaloRepaint(page);
   await button(page, '共享顶点');
   await page.getByLabel('顶点东西位移', { exact: true }).fill('0.25');
   await page.getByLabel('顶点南北位移', { exact: true }).fill('0');

@@ -1,0 +1,12 @@
+[
+  {
+    "script": "archive-evidence-v2",
+    "exitCode": 0,
+    "log": ".autopilot\\ph05-archive-validation\\archive-evidence-v2-node-check.log"
+  },
+  {
+    "script": "restore-evidence-v2",
+    "exitCode": 0,
+    "log": ".autopilot\\ph05-archive-validation\\restore-evidence-v2-node-check.log"
+  }
+]

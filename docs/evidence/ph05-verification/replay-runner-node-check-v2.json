@@ -1,0 +1,5 @@
+{
+  "script": ".autopilot/ph05-archive-validation/verify-restored-evidence.mjs",
+  "exitCode": 0,
+  "log": ".autopilot\\ph05-archive-validation\\replay-runner-node-check-v2.log"
+}

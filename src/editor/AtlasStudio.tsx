@@ -5,7 +5,7 @@ import type { AtlasPatch } from '../world/transactions';
 import type { AtlasSize } from '../world/model';
 import { getAdminLeaf, getCellLayerSlot, getSimRegion } from '../world/model';
 import { cellVertexIds, getCellQuad, getVertexPositionQ } from '../world/topology';
-import { AtlasRenderer } from '../world/renderer';
+import { AtlasRenderer, type AtlasGraphicsState } from '../world/renderer';
 import { ContextInspector, type InspectorExtent } from '../ui/ContextInspector';
 import { AppearanceSettings } from '../ui/AppearanceSettings';
 import { Icon } from '../ui/Icon';
@@ -27,6 +27,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const callbacks = useRef({ onDraftOpened }); callbacks.current = { onDraftOpened };
   const [view, setView] = useState<AtlasClientView | null>(null), [ready, setReady] = useState(false), [busy, setBusy] = useState(true);
   const [error, setError] = useState(''), [fatal, setFatal] = useState(''), [status, setStatus] = useState('正在打开大世界草稿…');
+  const [graphicsState, setGraphicsState] = useState<AtlasGraphicsState>('ready');
   const [progress, setProgress] = useState<AtlasProgress | null>(null), [drafts, setDrafts] = useState<AtlasDraftList>([]);
   const [section, setSection] = useState<'edit' | 'world' | null>(initialDraftId ? null : 'world'), [extent, setExtent] = useState<InspectorExtent>('half');
   const [selected, setSelected] = useState<number | null>(null), [locate, setLocate] = useState('32896');
@@ -67,7 +68,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     } catch (error) { if (live.current && generation.current === ticket) lockDisplay(error); throw error; }
   }
   async function run(action: () => Promise<void>) {
-    if (busyRef.current || fatal) return;
+    if (busyRef.current || fatal || rendererRef.current?.metrics().gpu.state !== 'ready') return;
     const ticket = generation.current;
     busyRef.current = true; setBusy(true); setError('');
     try { await action(); }
@@ -95,6 +96,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       },
       onCamera: camera => { if (current()) setCameraScale(camera.scale); },
       onProgress: next => { if (current()) setProgress(next); },
+      onGraphicsState: next => { if (current()) { setGraphicsState(next); if (next === 'ready') setProgress(null); } },
       onFatal: failure => { client.fail(failure); if (current()) { setFatal(`地图显示失败，已停止继续编辑。请刷新并恢复已保存草稿。${failure.message}`); setReady(false); } },
     });
     rendererRef.current = renderer;
@@ -122,7 +124,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     // Route identity is fixed for this mounted studio; local draft switches use the same renderer.
   }, []);
 
-  const data = view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, locked = busy || !ready || !!fatal || readOnly;
+  const data = view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, graphicsLocked = graphicsState !== 'ready', locked = busy || !ready || !!fatal || readOnly || graphicsLocked;
   const selectedHeight = data && selected !== null ? (() => { const cell = getCellLayerSlot(data, 'elevation', selected); return cell.block.values[cell.slot]; })() : null;
   const selectedQuad = data && selected !== null ? getCellQuad(data, selected) : null;
   const center = selectedQuad ? { x: selectedQuad.reduce((sum, p) => sum + p.x, 0) / 4, y: selectedQuad.reduce((sum, p) => sum + p.y, 0) / 4 } : null;
@@ -185,10 +187,11 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     if (!live.current || ticket !== generation.current) return;
     await accept(next, start, performance.now(), ticket); await refreshList(client, ticket);
   }
-  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || error || (progress ? `${progress.stage} · ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{fatal && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
+  const graphicsMessage = graphicsState === 'lost' ? '图形连接暂时中断，草稿仍保留；恢复画面后可继续编辑。' : graphicsState === 'restoring' ? '正在恢复地图画面，草稿与当前视角保持不变。' : '';
+  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${progress.stage} · ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
 
   const editPanel = <div className="atlas-panel-content">
-    <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy}>定位</button></form>
+    <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy || graphicsLocked}>定位</button></form>
     {selected !== null && data && <>
       <dl className="atlas-cell-details"><div><dt>地块</dt><dd>#{selected}</dd></div><div><dt>坐标</dt><dd>{center?.x.toFixed(2)}，{center?.y.toFixed(2)}</dd></div><div><dt>高程</dt><dd data-testid="atlas-selected-height">{selectedHeight} 米</dd></div><div><dt>地表</dt><dd>{selectedHeight! < 0 ? '海洋' : '陆地'}</dd></div><div><dt>模拟区</dt><dd>{getSimRegion(data, selected) ?? '未分配'}</dd></div><div><dt>行政叶</dt><dd>{getAdminLeaf(data, selected) ?? '未分配'}</dd></div></dl>
       {readOnly ? <p className="atlas-help">这份备份只供查看。请在草稿面板创建独立副本后继续编辑。</p> : <fieldset className="atlas-edit-fields" disabled={locked}>
@@ -201,17 +204,17 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     {selected === null && <p className="atlas-help">轻点地图选择地块，或输入编号定位。拖动只移动视野，不会改地形。</p>}
   </div>;
   const worldPanel = <div className="atlas-panel-content">
-    {view && <section className="atlas-current"><h3>{view.head.name}</h3><p>{view.head.readOnly ? '只读备份' : '已保存草稿'} · 修订 {view.head.revision} · {view.data.manifest.spec.columns ** 2} 地块</p>{view.head.readOnly && <button className="atlas-primary" disabled={busy || !!fatal} onClick={() => setConfirmation({ title: '从备份创建独立副本？', detail: '新草稿使用独立存储身份。原主档与备份均保持不变。', button: '确认创建独立副本', action: fork })}>创建独立副本</button>}</section>}
-    <section><h3>新建空白大世界</h3><label className="atlas-field">草稿名称<input aria-label="大世界草稿名称" maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><label className="atlas-field">生成种子<input aria-label="大世界生成种子" maxLength={120} value={seed} onChange={event => setSeed(event.target.value)} /></label><label className="atlas-field">地理规模<select aria-label="大世界地理规模" value={size} onChange={event => setSize(Number(event.target.value) as AtlasSize)}><option value={128}>基本 · 16,384 地块</option><option value={256}>标准 · 65,536 地块</option><option value={512}>扩展实验 · 262,144 地块</option></select></label><p className="atlas-help">从负高程海洋开始，点选后可以局部升降地形。此草稿用于地理创作；经营与军事推演仍可从原世界工坊进入。</p><button className="atlas-primary" disabled={busy || !ready || !!fatal || !name.trim() || !seed.trim()} onClick={() => view ? setConfirmation({ title: '创建另一份空白草稿？', detail: '当前草稿已经自动保存，新建不会覆盖它。', button: '确认新建草稿', action: create }) : void run(create)}>新建空白海洋草稿</button></section>
-    <section><div className="atlas-section-heading"><h3>已保存的草稿</h3><button disabled={busy || !!fatal} onClick={() => void run(refreshList)}>刷新列表</button></div>{drafts.length ? <ul className="atlas-draft-list">{drafts.map(row => <li key={row.draftId}><strong>{row.name}</strong><span>修订 {row.revision} · {row.size ** 2} 地块</span><div className="atlas-actions"><button disabled={busy || !!fatal} onClick={() => void run(() => restore(row.draftId, 'current'))}>打开 {row.name}</button>{row.backupAvailable && <button disabled={busy || !!fatal} onClick={() => setConfirmation({ title: '只读查看上一次备份？', detail: '不会回滚或改写主档。需要继续修改时，请创建独立副本。', button: '读取只读备份', action: () => restore(row.draftId, 'backup') })}>查看备份 {row.name}</button>}</div></li>)}</ul> : <p className="atlas-help">这个浏览器还没有大世界草稿。</p>}</section>
+    {view && <section className="atlas-current"><h3>{view.head.name}</h3><p>{view.head.readOnly ? '只读备份' : '已保存草稿'} · 修订 {view.head.revision} · {view.data.manifest.spec.columns ** 2} 地块</p>{view.head.readOnly && <button className="atlas-primary" disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '从备份创建独立副本？', detail: '新草稿使用独立存储身份。原主档与备份均保持不变。', button: '确认创建独立副本', action: fork })}>创建独立副本</button>}</section>}
+    <section><h3>新建空白大世界</h3><label className="atlas-field">草稿名称<input aria-label="大世界草稿名称" maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><label className="atlas-field">生成种子<input aria-label="大世界生成种子" maxLength={120} value={seed} onChange={event => setSeed(event.target.value)} /></label><label className="atlas-field">地理规模<select aria-label="大世界地理规模" value={size} onChange={event => setSize(Number(event.target.value) as AtlasSize)}><option value={128}>基本 · 16,384 地块</option><option value={256}>标准 · 65,536 地块</option><option value={512}>扩展实验 · 262,144 地块</option></select></label><p className="atlas-help">从负高程海洋开始，点选后可以局部升降地形。此草稿用于地理创作；经营与军事推演仍可从原世界工坊进入。</p><button className="atlas-primary" disabled={busy || !ready || !!fatal || graphicsLocked || !name.trim() || !seed.trim()} onClick={() => view ? setConfirmation({ title: '创建另一份空白草稿？', detail: '当前草稿已经自动保存，新建不会覆盖它。', button: '确认新建草稿', action: create }) : void run(create)}>新建空白海洋草稿</button></section>
+    <section><div className="atlas-section-heading"><h3>已保存的草稿</h3><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(refreshList)}>刷新列表</button></div>{drafts.length ? <ul className="atlas-draft-list">{drafts.map(row => <li key={row.draftId}><strong>{row.name}</strong><span>修订 {row.revision} · {row.size ** 2} 地块</span><div className="atlas-actions"><button disabled={busy || !!fatal || graphicsLocked} onClick={() => void run(() => restore(row.draftId, 'current'))}>打开 {row.name}</button>{row.backupAvailable && <button disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '只读查看上一次备份？', detail: '不会回滚或改写主档。需要继续修改时，请创建独立副本。', button: '读取只读备份', action: () => restore(row.draftId, 'backup') })}>查看备份 {row.name}</button>}</div></li>)}</ul> : <p className="atlas-help">这个浏览器还没有大世界草稿。</p>}</section>
     <AppearanceSettings />
     <details className="world-metadata"><summary>草稿身份与版本</summary><p>生产草稿格式 v1 · 地理编辑阶段，不是社会推演存档。</p>{view && <><p>草稿 {view.head.draftId}</p><p>地理 {view.head.atlasId}</p><p>内容摘要 {view.head.manifestDigest}</p></>}<p>构建 {__BUILD_SHA__}</p></details>
     <button className="atlas-return" disabled={busy} onClick={onBack}>返回原世界工坊</button>
   </div>;
-  return <main className="atlas-studio workbench" data-mode="atlas" data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-state={fatal ? 'fatal' : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
+  return <main className="atlas-studio workbench" data-mode="atlas" data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
     <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
     <div className="workbench-stage"><div className="workbench-map atlas-map" ref={hostRef} />
-      <div className="context-toolbar atlas-toolbar"><button disabled={!view || !!fatal} aria-label="放大大世界地图" onClick={() => rendererRef.current?.zoom(1.5)}>＋</button><button disabled={!view || !!fatal} aria-label="缩小大世界地图" onClick={() => rendererRef.current?.zoom(1 / 1.5)}>−</button><button disabled={!view || !!fatal} onClick={() => rendererRef.current?.fit()}>全图</button><span data-testid="atlas-zoom">{Math.round(cameraScale * 100)}%</span><small>拖动浏览 · 双指缩放 · 点选查看</small></div>
+      <div className="context-toolbar atlas-toolbar"><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="放大大世界地图" onClick={() => rendererRef.current?.zoom(1.5)}>＋</button><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="缩小大世界地图" onClick={() => rendererRef.current?.zoom(1 / 1.5)}>−</button><button disabled={!view || !!fatal || graphicsLocked || busy} onClick={() => rendererRef.current?.fit()}>全图</button><span data-testid="atlas-zoom">{Math.round(cameraScale * 100)}%</span><small>拖动浏览 · 双指缩放 · 点选查看</small></div>
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
       {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={feedback}>{section === 'edit' ? editPanel : worldPanel}</ContextInspector>}
       {!section && <div className="workbench-status atlas-status">{feedback}</div>}

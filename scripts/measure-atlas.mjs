@@ -41,7 +41,7 @@ async function measured(label, action) {
   console.log(`${new Date().toISOString()} ${label}`);
   const started = performance.now();
   try { const value = await action(); report.results.push({ label, elapsedMs: performance.now() - started, value }); await persist(); return value; }
-  catch (error) { report.errors.push({ label, elapsedMs: performance.now() - started, message: String(error) }); await persist(); throw error; }
+  catch (error) { report.errors.push({ label, elapsedMs: performance.now() - started, message: String(error), ...(error.measurementEvidence ? { evidence: error.measurementEvidence } : {}) }); await persist(); throw error; }
 }
 async function observe(context) {
   await context.addInitScript(() => {
@@ -95,6 +95,37 @@ async function readEvidence(page) {
     return { attributes: Object.fromEntries([...node.attributes].filter(a => a.name.startsWith('data-')).map(a => [a.name, a.value])), wire: structuredClone(window.__atlasWireEvidence), mapBounds: document.querySelector('[data-testid="atlas-canvas"]').getBoundingClientRect().toJSON() };
   });
 }
+async function readRendering(page) {
+  return page.getByTestId('atlas-canvas').evaluate(canvas => new Promise((resolve, reject) => {
+    const requestId = `ph04-regression-${crypto.randomUUID()}`;
+    const timer = setTimeout(() => { canvas.removeEventListener('atlas-metrics-response', receive); reject(new Error('Missing read-only renderer metrics')); }, 120000);
+    function receive(event) {
+      if (event.detail?.requestId !== requestId) return;
+      clearTimeout(timer); canvas.removeEventListener('atlas-metrics-response', receive);
+      if (!event.detail.metrics) reject(new Error('Read-only renderer response has no metrics'));
+      else resolve(structuredClone(event.detail.metrics));
+    }
+    canvas.addEventListener('atlas-metrics-response', receive);
+    canvas.dispatchEvent(new window.CustomEvent('atlas-metrics-request', { detail: { requestId } }));
+  }));
+}
+function expectedVisibleHaloCoreKeys(rendering, size, column, row) {
+  const { camera, viewport } = rendering;
+  if (![128, 256, 512].includes(size) || ![column, row].every(value => Number.isSafeInteger(value) && value > 0 && value < size && value % 32 === 0)
+    || !camera || !['x', 'y', 'scale'].every(key => Number.isFinite(camera[key])) || camera.scale <= 0
+    || !viewport || !['width', 'height'].every(key => Number.isFinite(viewport[key]) && viewport[key] > 0)) throw new Error('Invalid camera, viewport or four-block edit intersection');
+  const span = 4096 / size * 32, lastCore = size / 32 - 1;
+  const visibleMinX = Math.floor(-camera.x / camera.scale / span), visibleMaxX = Math.floor((viewport.width - camera.x) / camera.scale / span);
+  const visibleMinY = Math.floor(-camera.y / camera.scale / span), visibleMaxY = Math.floor((viewport.height - camera.y) / camera.scale / span);
+  // A 32x32 edit centered on this intersection writes owners [c/32-1,c/32]
+  // x [r/32-1,r/32]. Neighbor texture halos add one display core on each side.
+  // Derive that set from edit coordinates and intersect the actual visible
+  // core range; renderer-reported keys are never used to construct the oracle.
+  const minX = Math.max(0, column / 32 - 2, visibleMinX), maxX = Math.min(lastCore, column / 32 + 1, visibleMaxX);
+  const minY = Math.max(0, row / 32 - 2, visibleMinY), maxY = Math.min(lastCore, row / 32 + 1, visibleMaxY), keys = [];
+  for (let by = minY; by <= maxY; by++) for (let bx = minX; bx <= maxX; bx++) keys.push(`geometry:${bx}:${by}`);
+  return keys.sort();
+}
 async function resetEvidence(page) { await page.evaluate(() => { for (const key of ['wire', 'clicks', 'changes', 'progress']) window.__atlasWireEvidence[key].length = 0; }); }
 function summarize(evidence, operation) {
   const rows = evidence.wire.wire, request = rows.find(row => row.operation === operation && row.type === 'request');
@@ -130,14 +161,22 @@ async function edit(page, index, size) {
   await click(page, '预览地理编辑'); await page.getByRole('region', { name: '地理编辑预览' }).waitFor(); await ready(page);
   const before = await page.getByTestId('atlas-studio').evaluate(node => ({ revision: Number(node.getAttribute('data-atlas-revision')), hash: node.getAttribute('data-atlas-hash') }));
   await resetEvidence(page); await click(page, '确认地理编辑'); await ready(page);
-  const evidence = await readEvidence(page);
-  const totals = summarize(evidence, 'edit');
-  if (totals.metrics?.writeBlocks !== 4 || totals.metrics?.affectedCells !== 1024 || !totals.metrics?.localBudgetEligible) throw new Error('Measured edit is not the locked 1024-cell/four-data-block operation');
-  if (Number(evidence.attributes['data-atlas-revision']) !== before.revision + 1 || evidence.attributes['data-atlas-hash'] === before.hash || Number(evidence.attributes['data-atlas-repainted-blocks']) !== 4) throw new Error('Actual UI did not accept the expected four-block committed change');
-  const clickEvent = evidence.wire.clicks.find(row => row.label === '确认地理编辑');
-  const feedback = clickEvent && evidence.wire.changes.find(row => row.at >= clickEvent.at && row.state === 'busy');
-  if (!feedback) throw new Error('No measured immediate busy feedback: sample is invalid');
-  return { ...evidence, before, trajectory: { column, row, range: 32, targetHeight }, totals: { ...totals, feedbackMs: feedback.at - clickEvent.at } };
+  const evidence = { ...await readEvidence(page), before, trajectory: { column, row, range: 32, targetHeight } };
+  try {
+    evidence.readonlyRendering = await readRendering(page);
+    evidence.expectedCoreKeys = expectedVisibleHaloCoreKeys(evidence.readonlyRendering, size, column, row);
+    const totals = summarize(evidence, 'edit'); evidence.totals = totals;
+    if (totals.metrics?.writeBlocks !== 4 || totals.metrics?.affectedCells !== 1024 || !totals.metrics?.localBudgetEligible) throw new Error('Measured edit is not the locked 1024-cell/four-data-block operation');
+    if (Number(evidence.attributes['data-atlas-revision']) !== before.revision + 1 || evidence.attributes['data-atlas-hash'] === before.hash) throw new Error('Actual UI did not accept the committed revision and changed hash');
+    const rendering = evidence.readonlyRendering, actualKeys = rendering.repaintBlockKeys;
+    if (!Array.isArray(actualKeys) || new Set(actualKeys).size !== actualKeys.length || JSON.stringify([...actualKeys].sort()) !== JSON.stringify(evidence.expectedCoreKeys)
+      || rendering.repaintBlocks !== evidence.expectedCoreKeys.length || Number(evidence.attributes['data-atlas-repainted-blocks']) !== evidence.expectedCoreKeys.length
+      || rendering.acceptedRevision !== before.revision + 1) throw new Error('Actual renderer/UI repaint differs from the exact visible halo core set');
+    const clickEvent = evidence.wire.clicks.find(row => row.label === '确认地理编辑');
+    const feedback = clickEvent && evidence.wire.changes.find(row => row.at >= clickEvent.at && row.state === 'busy');
+    if (!feedback) throw new Error('No measured immediate busy feedback: sample is invalid');
+    return { ...evidence, totals: { ...totals, feedbackMs: feedback.at - clickEvent.at } };
+  } catch (error) { error.measurementEvidence = evidence; throw error; }
 }
 async function readRoots(page) {
   // The isolated measurement context contains only synthetic measurement drafts.

@@ -659,43 +659,65 @@
       "id": "PH05",
       "title": "相机、LOD与大图渲染",
       "phase": "PH05",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [
         "PH02",
         "PH04"
       ],
       "acceptance": "远近视图指向同一对象；缩放中心稳定；不可见区域不全量绘制；无WebGL丢失泄漏；达到PH03锁定交互预算。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/adr/0010-atlas-camera-and-render-cache.md",
+        "docs/evidence/2026-09-24-ph05-rendering.md",
+        "docs/evidence/ph05/archive-manifest.json",
+        "docs/evidence/ph05-verification/verification.json",
+        "docs/evidence/ph05-privacy-review.json"
+      ],
       "workItems": [
         {
           "id": "PH05-T1",
           "title": "实现大世界坐标、缩放平移和视口拾取",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「实现大世界坐标、缩放平移和视口拾取」，并提供本阶段对应验收事实。远近视图指向同一对象；缩放中心稳定；不可见区域不全量绘制；无WebGL丢失泄漏；达到PH03锁定交互预算。",
-          "evidence": []
+          "evidence": [
+            "docs/adr/0010-atlas-camera-and-render-cache.md",
+            "docs/evidence/2026-09-24-ph05-rendering.md"
+          ]
         },
         {
           "id": "PH05-T2",
           "title": "分层分块缓存与视口裁剪",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「分层分块缓存与视口裁剪」，并提供本阶段对应验收事实。远近视图指向同一对象；缩放中心稳定；不可见区域不全量绘制；无WebGL丢失泄漏；达到PH03锁定交互预算。",
-          "evidence": []
+          "evidence": [
+            "docs/adr/0010-atlas-camera-and-render-cache.md",
+            "docs/evidence/2026-09-24-ph05-rendering.md"
+          ]
         },
         {
           "id": "PH05-T3",
           "title": "实现远中近LOD和标签密度策略",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「实现远中近LOD和标签密度策略」，并提供本阶段对应验收事实。远近视图指向同一对象；缩放中心稳定；不可见区域不全量绘制；无WebGL丢失泄漏；达到PH03锁定交互预算。",
-          "evidence": []
+          "evidence": [
+            "docs/adr/0010-atlas-camera-and-render-cache.md",
+            "docs/evidence/2026-09-24-ph05-rendering.md"
+          ]
         },
         {
           "id": "PH05-T4",
           "title": "压力验证拖动缩放、选中和生命周期",
-          "status": "todo",
+          "status": "done",
           "acceptance": "完成「压力验证拖动缩放、选中和生命周期」，并提供本阶段对应验收事实。远近视图指向同一对象；缩放中心稳定；不可见区域不全量绘制；无WebGL丢失泄漏；达到PH03锁定交互预算。",
-          "evidence": []
+          "evidence": [
+            "docs/adr/0010-atlas-camera-and-render-cache.md",
+            "docs/evidence/2026-09-24-ph05-rendering.md",
+            "docs/evidence/ph05/archive-manifest.json",
+            "docs/evidence/ph05-verification/verification.json",
+            "docs/evidence/ph05-privacy-review.json"
+          ]
         }
-      ]
+      ],
+      "branch": "codex/ph05-camera-lod"
     },
     {
       "id": "PH06",
@@ -1967,7 +1989,7 @@
     "M5",
     "M6"
   ],
-  "phaseState": "PH00—PH04已完成本地阶段验收；下一阶段PH05相机、分块缓存与LOD。全部PH及真机/视觉验收完成前禁止推送、远程写入和发布。",
+  "phaseState": "PH00—PH04已完成；PH05-T1/T2相机与按需分块缓存实施中。全部PH及真机/视觉验收完成前禁止推送、远程写入和发布。",
   "programme": {
     "version": "V4",
     "title": "列国纪原创独立PWA完整沙盒",

@@ -1,0 +1,21 @@
+{
+  "label": "ph04",
+  "startedAt": "2026-09-24T02:06:04.374Z",
+  "completedAt": "2026-09-24T02:06:04.500Z",
+  "cwd": ".autopilot/ph05-restored-review",
+  "executable": "node",
+  "entrypoint": ".archive-tools/tool-sources/7b2eb83ada98785cd06e98d1295146d3189e0523057b9358ef3105e1680a5d01/summarize-atlas.mjs",
+  "evaluatorSha256": "7b2eb83ada98785cd06e98d1295146d3189e0523057b9358ef3105e1680a5d01",
+  "args": [
+    "--edits=.autopilot/ph05/final-evidence/ph04-regression/2026-09-23T23-41-04-455Z-edits/report.json",
+    "--loads=.autopilot/ph05/final-evidence/ph04-regression/2026-09-23T23-41-27-832Z-loads/report.json",
+    "--transport=.autopilot/ph05/final-evidence/ph04-regression/2026-09-23T23-42-24-410Z-transport/report.json",
+    "--cancel=.autopilot/ph05/final-evidence/ph04-regression/2026-09-23T23-42-46-355Z-cancel/report.json",
+    "--out=new-ph04-evaluation.json"
+  ],
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "log": ".autopilot/ph05-archive-validation/ph04-replay.log",
+  "output": ".autopilot/ph05-restored-review/new-ph04-evaluation.json"
+}

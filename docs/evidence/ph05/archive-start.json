@@ -1,0 +1,242 @@
+{
+  "format": "lieguoji-ph05-evidence-archive-start",
+  "version": 2,
+  "status": "started",
+  "startedAt": "2026-09-24T01:56:49.292Z",
+  "sourceQuiescentAsserted": true,
+  "knownJobs": [
+    {
+      "directory": ".autopilot/ph05/jobs/calibrated-formal-v2-headed-1",
+      "status": "completed",
+      "pid": 25348,
+      "childPid": 3612,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/calibrated-formal-v2-headed-2",
+      "status": "completed",
+      "pid": 17020,
+      "childPid": 604,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/calibrated-formal-v2-headless-1",
+      "status": "completed",
+      "pid": 25376,
+      "childPid": 24404,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/calibrated-formal-v2-headless-2",
+      "status": "completed",
+      "pid": 19784,
+      "childPid": 13732,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/calibrated-smoke-dpr2",
+      "status": "completed",
+      "pid": 5524,
+      "childPid": 21036,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-headed-1",
+      "status": "failed",
+      "pid": 22760,
+      "childPid": 6704,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-headed-2",
+      "status": "failed",
+      "pid": 25628,
+      "childPid": 2060,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-headless-1",
+      "status": "completed",
+      "pid": 14684,
+      "childPid": 20376,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-headless-2",
+      "status": "completed",
+      "pid": 7860,
+      "childPid": 6880,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-v2-headed-1",
+      "status": "completed",
+      "pid": 24840,
+      "childPid": 10592,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-v2-headed-2",
+      "status": "completed",
+      "pid": 20792,
+      "childPid": 17808,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-v2-headless-1",
+      "status": "completed",
+      "pid": 23044,
+      "childPid": 16988,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/native-wheel-probe-v2-headless-2",
+      "status": "completed",
+      "pid": 624,
+      "childPid": 16652,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/ph04-cancel-first",
+      "status": "completed",
+      "pid": 3272,
+      "childPid": 25832,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/ph04-edits-overlay",
+      "status": "completed",
+      "pid": 25620,
+      "childPid": 10232,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/ph04-transport-resumed",
+      "status": "completed",
+      "pid": 22788,
+      "childPid": 5516,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/render-smoke-v2-first",
+      "status": "completed",
+      "pid": 13876,
+      "childPid": 7072,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-formal-headless-1",
+      "status": "completed",
+      "pid": 25804,
+      "childPid": 23816,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-formal-headless-2",
+      "status": "failed",
+      "pid": 3264,
+      "childPid": 8568,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-full-browser",
+      "status": "completed",
+      "pid": 16208,
+      "childPid": 10868,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-pixel-browser",
+      "status": "failed",
+      "pid": 10952,
+      "childPid": 12156,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-pixel-browser-direct",
+      "status": "completed",
+      "pid": 14008,
+      "childPid": 16696,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-regression",
+      "status": "completed",
+      "pid": 9448,
+      "childPid": null,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-regression-cancel",
+      "status": "completed",
+      "pid": 16200,
+      "childPid": 8568,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-regression-edits",
+      "status": "completed",
+      "pid": 14760,
+      "childPid": 15932,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-regression-loads",
+      "status": "completed",
+      "pid": 4180,
+      "childPid": 26316,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-regression-transport",
+      "status": "completed",
+      "pid": 22600,
+      "childPid": 3752,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/jobs/terrain-smoke-v2",
+      "status": "completed",
+      "pid": 21544,
+      "childPid": 17784,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    },
+    {
+      "directory": ".autopilot/ph05/series/calibrated-formal-v2",
+      "status": "completed",
+      "pid": 18228,
+      "childPid": null,
+      "staleNonterminalRecord": false,
+      "recordedProcessesLive": false
+    }
+  ],
+  "note": "Signal 0 checked only recorded running jobs. Caller must stop every evidence writer; unchanged inventory and complete original-file hashes are rechecked before completion."
+}

@@ -3,6 +3,13 @@
 .atlas-map { overflow: hidden; }
 .atlas-map canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .atlas-map canvas:focus-visible { outline: 3px solid var(--focus-ring, #e0ba6a); outline-offset: -4px; }
+.atlas-label-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; contain: layout style; }
+.atlas-label-text { position: absolute; left: 0; top: 0; box-sizing: border-box; white-space: nowrap; width: max-content; padding: 2px 5px; border: 1px solid #577976; border-radius: 5px; background: #163b42; color: #edf1e7; font: 500 var(--font-caption, 13px)/1.35 system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .01em; pointer-events: none; }
+.atlas-label-text[data-selected="true"] { border-color: #d9bb79; color: #fff0c5; font-weight: 700; }
+.atlas-label-text[hidden] { display: none; }
+.atlas-label-measurements { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+[data-theme="light"] .atlas-label-text { background: #f1f1e6; color: #244f4d; border-color: #98aba0; }
+[data-theme="light"] .atlas-label-text[data-selected="true"] { background: #fcf0ce; color: #514621; border-color: #b2944f; }
 .atlas-toolbar { max-width: min(530px, calc(100% - 24px)); gap: 3px; }
 .atlas-toolbar > span { min-width: 48px; font-variant-numeric: tabular-nums; text-align: center; font-size: var(--font-caption); }
 .atlas-toolbar > small { padding-inline: 6px; color: var(--text-secondary); }

@@ -23,3 +23,6 @@ docs/evidence/ph04/performance-v3/*.log whitespace=cr-at-eol,-blank-at-eol,-blan
 docs/evidence/ph04/performance-v4/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph04/source-snapshots/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph04/scoped-checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+# PH05 content-addressed evidence and exact restoration/evaluator bytes.
+docs/evidence/ph05/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/ph05-verification/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

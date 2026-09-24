@@ -1,0 +1,68 @@
+{
+  "status": "render-measurement-gates-passed",
+  "checks": {
+    "fourSeparateConfigurations": true,
+    "exactSameSourceAndDist": true,
+    "matchingLegitimateSceneRecipes": true,
+    "completeFormalEvidence": true,
+    "headlessDpr1OriginalThresholds": true
+  },
+  "configurations": {
+    "headless-dpr1": {
+      "checks": {
+        "completeFingerprintManifests": true,
+        "cleanVersionLockedRun": true,
+        "isolatedNativeWheelCalibration": true,
+        "realLaunchMode": true,
+        "legalNonuniformThreeScenes": true,
+        "fixedV2Trajectory": true,
+        "formalCoverage": true,
+        "everyRawSampleValid": true,
+        "consistentActualBackend": true
+      },
+      "everySampleWithinOriginalTimingTargets": true
+    },
+    "headless-dpr2": {
+      "checks": {
+        "completeFingerprintManifests": true,
+        "cleanVersionLockedRun": true,
+        "isolatedNativeWheelCalibration": true,
+        "realLaunchMode": true,
+        "legalNonuniformThreeScenes": true,
+        "fixedV2Trajectory": true,
+        "formalCoverage": true,
+        "everyRawSampleValid": true,
+        "consistentActualBackend": true
+      },
+      "everySampleWithinOriginalTimingTargets": true
+    },
+    "headed-dpr1": {
+      "checks": {
+        "completeFingerprintManifests": true,
+        "cleanVersionLockedRun": true,
+        "isolatedNativeWheelCalibration": true,
+        "realLaunchMode": true,
+        "legalNonuniformThreeScenes": true,
+        "fixedV2Trajectory": true,
+        "formalCoverage": true,
+        "everyRawSampleValid": true,
+        "consistentActualBackend": true
+      },
+      "everySampleWithinOriginalTimingTargets": true
+    },
+    "headed-dpr2": {
+      "checks": {
+        "completeFingerprintManifests": true,
+        "cleanVersionLockedRun": true,
+        "isolatedNativeWheelCalibration": true,
+        "realLaunchMode": true,
+        "legalNonuniformThreeScenes": true,
+        "fixedV2Trajectory": true,
+        "formalCoverage": true,
+        "everyRawSampleValid": true,
+        "consistentActualBackend": true
+      },
+      "everySampleWithinOriginalTimingTargets": true
+    }
+  }
+}

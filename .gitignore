@@ -14,6 +14,7 @@ dist/
 *.log
 # Reviewed local test/measurement evidence; runtime and authentication logs stay ignored.
 !docs/evidence/ph04/**/*.log
+!docs/evidence/ph05-verification/**/*.log
 playwright-report/
 test-results/
 coverage/

@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-09-27T17:00:36.448Z",
+  "archiveComplete": true,
+  "sourceStable": true,
+  "candidateSnapshotGatesPassed": true,
+  "publicRawDiagnosticGatesPassed": false,
+  "interruptedRound": "worker-entry-fixed: initialized but no terminal result, no matching live process observed at resume",
+  "scope": "Frozen candidate Owned.snapshotAsync in real Chromium dedicated Worker, 4096 sampled fine tiles and coarse 512; isolated established-session measurement, not game end-to-end or physical-device acceptance.",
+  "productPerformanceAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

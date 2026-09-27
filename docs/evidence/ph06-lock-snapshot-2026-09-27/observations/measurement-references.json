@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/verification.json",
+      "sha256": "50c6a0261cc7c6190688963543a02a971ccab3aece902ca731dfbf9ec07d6212"
+    },
+    {
+      "path": "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/raw/resume-worker-entry-fixed/verification.json",
+      "sha256": "308e298f425af6474ea8baf55aad476d288b54821fd2052ed4de084d07b331ff"
+    }
+  ]
+}

@@ -226,9 +226,49 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
   snapshot() { return cloneAtlasDocument(this.#data); }
   async snapshotAsync(control?: AtlasEditControl): Promise<T> {
     abort(control);
-    const source = this.#data, rootDigest = this.#rootDigest;
-    const owned = await cloneVerifiedAtlasDocument(source, control); abort(control);
-    if (this.#data !== source || this.#rootDigest !== rootDigest) throw new Error('复制期间草稿已变化，请重新读取当前版本。');
+    const source = this.#data, manifest = source.manifest, rootDigest = this.#rootDigest, manifestDigest = this.#manifestDigest;
+    const version = manifest.version, revision = manifest.revision;
+    const check = () => {
+      abort(control);
+      if (this.#data !== source || source.manifest !== manifest || manifest.version !== version || manifest.revision !== revision
+        || this.#rootDigest !== rootDigest || this.#manifestDigest !== manifestDigest) throw new Error('复制期间草稿已变化，请重新读取当前版本。');
+    };
+    // Only this already-owned private source may be copied across awaits.
+    // Public raw ingress still takes every caller buffer before its first await.
+    const owned = { ...source, manifest: structuredClone(manifest), blocks: new Map<BlockKey, AtlasBlock>() } as T;
+    if (isGenerationDocument(owned)) owned.locks = new Map();
+    if (isDetailCoastDocument(owned)) owned.detailCoast = new Map();
+    const guarded: AtlasEditControl = {
+      ...control,
+      onProgress: progress => { check(); control?.onProgress?.(progress); check(); },
+      yieldTask: async () => {
+        check();
+        if (control?.yieldTask) await control.yieldTask();
+        else await new Promise<void>(resolve => setTimeout(resolve, 0));
+        check();
+      },
+    };
+    let completed = 0;
+    const blockStage = isGenerationDocument(source) ? '复制生成草稿分层与锁' : '复制自建世界分层';
+    for (const [key, block] of source.blocks) {
+      owned.blocks.set(key, cloneBlock(block)); completed++;
+      if (completed % 16 === 0 || completed === source.blocks.size) await checkpoint(guarded, blockStage, completed, source.blocks.size);
+    }
+    if (isGenerationDocument(source) && isGenerationDocument(owned)) {
+      completed = 0;
+      for (const [key, lock] of source.locks) {
+        owned.locks.set(key, cloneAtlasCellLockBlock(lock)); completed++;
+        if (completed % 16 === 0 || completed === source.locks.size) await checkpoint(guarded, '复制草稿区域锁', completed, source.locks.size);
+      }
+    }
+    if (isDetailCoastDocument(source) && isDetailCoastDocument(owned)) {
+      completed = 0;
+      for (const [key, tile] of source.detailCoast) {
+        owned.detailCoast.set(key, cloneDetailCoastTile(tile)); completed++;
+        if (completed % 16 === 0 || completed === source.detailCoast.size) await checkpoint(guarded, '复制草稿细海岸', completed, source.detailCoast.size);
+      }
+    }
+    check(); await verifyAtlasDocument(owned, guarded); check();
     return owned;
   }
   manifest() { return structuredClone(this.#data.manifest); }

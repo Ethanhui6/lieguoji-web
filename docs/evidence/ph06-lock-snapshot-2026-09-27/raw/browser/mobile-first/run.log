@@ -1,0 +1,74 @@
+
+Running 1 test using 1 worker
+
+(node:28692) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [mobile-chromium] › tests\atlas-detail-lock-relief.spec.ts:268:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload (7.6m)
+
+
+  1) [mobile-chromium] › tests\atlas-detail-lock-relief.spec.ts:268:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload 
+
+    Test timeout of 450000ms exceeded.
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByTestId('atlas-studio')
+    Expected: "ready"
+    Received: "busy"
+
+    Call log:
+      - Expect "toHaveAttribute" getByTestId('atlas-studio') with timeout 120000ms
+      - waiting for getByTestId('atlas-studio')
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-progress-stage="" data-atlas-progress-total="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-b…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="1253" data-atlas-prog…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-progress-total="256" data-atlas-repainted-blocks="0" data-atlas-progr…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="1253" data-atlas-prog…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="66049" data-atlas-pro…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="1253" data-atlas-prog…>…</main>
+        3 × unexpected value "busy"
+          - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-progress-total="996" data-atlas-repainted-blocks="0" data-atlas-progr…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-progress-total="256" data-atlas-repainted-blocks="0" data-atlas-progr…>…</main>
+        2 × unexpected value "busy"
+          - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-progress-total="996" data-atlas-repainted-blocks="0" data-atlas-progr…>…</main>
+        - unexpected value "busy"
+        - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="65536" data-atlas-pro…>…</main>
+        12 × unexpected value "busy"
+           - locator resolved to <main data-atlas-id="" data-mode="atlas" data-atlas-hash="" data-selectedcell="" data-atlas-format="4" data-atlas-revision="" data-atlas-gpu="ready" data-atlas-state="busy" data-atlas-tool="browse" data-atlas-commit-ms="0" data-atlas-durable-ms="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-request-bytes="0" data-atlas-response-bytes="0" class="atlas-studio workbench" data-atlas-display="committed" data-atlas-repainted-blocks="0" data-atlas-progress-total="4198401" data-atlas-p…>…</main>
+        - unexpected value "busy"
+      - Test timeout of 450000ms exceeded.
+
+
+       6 | // durable bytes only. No production generator, geometry or state setter imports.
+       7 | const studio = (p: Page) => p.getByTestId('atlas-studio');
+    >  8 | const ready = (p: Page, state = 'ready') => expect(studio(p)).toHaveAttribute('data-atlas-state', state, { timeout: 120000 });
+         |                                                               ^
+       9 | const click = (p: Page, name: string) => p.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
+      10 | const panel = (p: Page, name: '地图' | '创世' | '编辑') => p.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name, exact: true }).click();
+      11 | const preview = (p: Page) => p.getByRole('region', { name: '山地生成预览' });
+        at ready (D:\游戏\架空地图模拟器\tests\atlas-detail-lock-relief.spec.ts:8:63)
+        at D:\游戏\架空地图模拟器\tests\atlas-detail-lock-relief.spec.ts:331:30
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph06\lock-snapshot-checks\mobile-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph06\lock-snapshot-checks\mobile-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph06\lock-snapshot-checks\mobile-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph06\lock-snapshot-checks\mobile-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: [mobile-chromium] › tests\atlas-detail-lock-relief.spec.ts (7.6m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [mobile-chromium] › tests\atlas-detail-lock-relief.spec.ts:268:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload 

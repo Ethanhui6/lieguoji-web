@@ -1,0 +1,51 @@
+{
+  "recordedAt": "2026-09-27T12:25:52.839Z",
+  "head": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "files": [
+    {
+      "source": ".autopilot/ph06/v4-lock-ui-staging/src/editor/AtlasStudio.tsx",
+      "target": "src/editor/AtlasStudio.tsx",
+      "beforeSha256": "31779d354a1861faebc1bb3894eef121b61362c86883b6d28f69739aacbcc5ba",
+      "afterSha256": "5cab4301f60091978d9d39e42ee5392708c34f2d099b9693f8407dcf4991182e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-ui-staging/src/editor/RegionProtectionPanel.tsx",
+      "target": "src/editor/RegionProtectionPanel.tsx",
+      "beforeSha256": null,
+      "afterSha256": "ac389fc65ba4804ed6bfca5019b80131f5e436f93d7a2d5cc485644e1495dfe3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-ui-staging/src/editor/region-protection-controls.ts",
+      "target": "src/editor/region-protection-controls.ts",
+      "beforeSha256": null,
+      "afterSha256": "5f188dc77653c8fae8d26df34ca725f1fb9f66459491c878b6fc22612eae5ad6"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-ui-staging/src/editor/region-protection-controls.test.ts",
+      "target": "src/editor/region-protection-controls.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "c4d12ab1bd23f6995b9816faf0d2ea8df28bd25b9c77073c9265a3901eb27db8"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-staging/src/world/transactions.ts",
+      "target": "src/world/transactions.ts",
+      "beforeSha256": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d",
+      "afterSha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-staging/src/world/detail-owned-snapshot-copy.test.ts",
+      "target": "src/world/detail-owned-snapshot-copy.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "c11230a864ae8c156efb0482936057c4acfa7ded1cdb9a326eaec702e2e77a17"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-relief-browser-staging/tests/atlas-detail-lock-relief.spec.ts",
+      "target": "tests/atlas-detail-lock-relief.spec.ts",
+      "beforeSha256": null,
+      "afterSha256": "7516e9fbb42f5f8f3417e1a992dce876e9eb7e27d24518deb82f4a65ad6bbb5e"
+    }
+  ],
+  "version": "0.5.0-preview.13",
+  "checksRun": [],
+  "cloudWrites": false
+}

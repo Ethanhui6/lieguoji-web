@@ -1,0 +1,58 @@
+
+Running 1 test using 1 worker
+
+(node:25588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop-chromium] › tests\atlas-detail-lock-relief.spec.ts:259:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload (3.6m)
+
+
+  1) [desktop-chromium] › tests\atlas-detail-lock-relief.spec.ts:259:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Array [
+        Object {
+    -     "cellId": 26948,
+    +     "cellId": 25925,
+          "mask": 1,
+        },
+        Object {
+    -     "cellId": 27722,
+    +     "cellId": 26699,
+          "mask": 2,
+        },
+        Object {
+    -     "cellId": 28487,
+    +     "cellId": 27464,
+          "mask": 3,
+        },
+      ]
+
+      302 |   // Raw all-node footprint comparison is stronger than an unchanged tile hash:
+      303 |   // allowed and protected nodes can share a west/north-owned fine tile.
+    > 304 |   expect(editedField.regions.map(r => ({ cellId: r.cellId, mask: r.mask }))).toEqual(lockedField.regions.map(r => ({ cellId: r.cellId, mask: r.mask })));
+          |                                                                              ^
+      305 |   for (let i = 0; i < 3; i++) expect(editedField.regions[i].nodes.map(n => ({ x: n.x, y: n.y, coverage: n.coverage }))).toEqual(lockedField.regions[i].nodes.map(n => ({ x: n.x, y: n.y, coverage: n.coverage })));
+      306 |   expect(editedField.regions[1].nodes).toEqual(lockedField.regions[1].nodes); expect(editedField.regions[2].nodes).toEqual(lockedField.regions[2].nodes);
+      307 |   const changedCoastNodes = editedField.regions[0].nodes.filter((node, i) => node.height !== lockedField.regions[0].nodes[i].height);
+        at D:\游戏\架空地图模拟器\tests\atlas-detail-lock-relief.spec.ts:304:78
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph06\lock-snapshot-checks\desktop-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph06\lock-snapshot-checks\desktop-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph06\lock-snapshot-checks\desktop-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph06\lock-snapshot-checks\desktop-first\artifacts\atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop-chromium] › tests\atlas-detail-lock-relief.spec.ts:259:1 › [detail-v4-lock-relief] native nonzero coast/elevation/both locks, allowed relief, single-bit clear, mixed undo and reload 

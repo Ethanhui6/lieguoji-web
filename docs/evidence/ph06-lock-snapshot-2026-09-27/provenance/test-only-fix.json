@@ -1,0 +1,44 @@
+{
+  "recordedAt": "2026-09-27T12:33:40.435Z",
+  "path": "tests/atlas-detail-lock-relief.spec.ts",
+  "beforeSha256": "7516e9fbb42f5f8f3417e1a992dce876e9eb7e27d24518deb82f4a65ad6bbb5e",
+  "afterSha256": "3a9a56479c5c28005558b6a726a57ed5a43d4893ea6f434d40f2f86b659f6aa6",
+  "results": [
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "tests/atlas-detail-lock-relief.spec.ts"
+      ],
+      "startedAt": "2026-09-27T12:33:27.501Z",
+      "finishedAt": "2026-09-27T12:33:29.317Z",
+      "elapsedMs": 1813.9851,
+      "exitCode": 0,
+      "signal": null,
+      "log": "test-only-fix-lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T12:33:29.318Z",
+      "finishedAt": "2026-09-27T12:33:40.435Z",
+      "elapsedMs": 11116.9532,
+      "exitCode": 0,
+      "signal": null,
+      "log": "test-only-fix-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "passed": true,
+  "sourceStable": true,
+  "productionChanges": false,
+  "distRebuilt": false,
+  "reason": "First product browser failed because the independent observer reselected different witness cells after new sampled tiles materialized. Fix only freezes initial real cell ids and complete footprints across later reads. All original protection assertions and 450000ms timeout remain unchanged.",
+  "originalFailure": "desktop-first",
+  "priorRoot": "first",
+  "reusedChecks": "Root 68 selected unit cases, global lint prior unchanged files, build/dist audit retained unchanged; this check executes test-file lint and full types only."
+}

@@ -1,0 +1,46 @@
+{
+  "status": "written-unchecked",
+  "recordedAt": "2026-09-27T12:24:25.6068609Z",
+  "productionChanged": false,
+  "targetAbsentAtCapture": true,
+  "files": [
+    {
+      "path": "tests/atlas-detail-lock-relief.spec.ts",
+      "baselineSha256": null,
+      "sha256": "7516e9fbb42f5f8f3417e1a992dce876e9eb7e27d24518deb82f4a65ad6bbb5e",
+      "bytes": 32157
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "tests/helpers/atlas-shape-readonly.ts",
+      "sha256": "c04e071f8302f0cb835d98aa27aafda510b9dc3c1c21b7c543d1ecb6156759da"
+    },
+    {
+      "path": "tests/atlas-local-relief.spec.ts",
+      "sha256": "da962c18ddde147f812b0893a62d3cc82670eb7e91c8d1755bb54a9037c421b9"
+    },
+    {
+      "path": ".autopilot/ph06/v4-lock-ui-staging/ready-manifest.json",
+      "sha256": "8d0504a7aa695a1ed9ca98c781f12ea4701f7c9adb9c535e585a0fd0681d3062"
+    },
+    {
+      "path": ".autopilot/ph06/v4-lock-ui-staging/src/editor/AtlasStudio.tsx",
+      "sha256": "5cab4301f60091978d9d39e42ee5392708c34f2d099b9693f8407dcf4991182e"
+    },
+    {
+      "path": ".autopilot/ph06/v4-lock-ui-staging/src/editor/RegionProtectionPanel.tsx",
+      "sha256": "ac389fc65ba4804ed6bfca5019b80131f5e436f93d7a2d5cc485644e1495dfe3"
+    }
+  ],
+  "browserCasesWritten": 1,
+  "timeoutMs": 450000,
+  "checksRun": [],
+  "scope": "Native UI sets nonzero 1/2/3 locks; independent readonly raw-byte footprint/coverage/height assertions; single-bit clear; three mixed undos; one reload",
+  "limitations": [
+    "No static, browser, GPU or performance checks run",
+    "Three protected witnesses are interior land; no shoreline-edit acceptance",
+    "Actual sampled witness availability and bounded elapsed time are pending real browsers",
+    "Dense-lock cancellation and performance are separate root/compute scopes"
+  ]
+}

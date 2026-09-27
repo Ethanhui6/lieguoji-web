@@ -1,0 +1,52 @@
+{
+  "priorEvidence": [
+    {
+      "path": "docs/evidence/ph06-local-relief-2026-09-27/verification.json",
+      "bytes": 86920,
+      "sha256": "b57694b68a66c8dbdab39a2e1983082b300f3a23d111fd3cb9080a8f6c80e723",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-local-relief-2026-09-27/inventory.json",
+      "bytes": 22135,
+      "sha256": "b73b51871fabc8c9246b8ebf7c1844a841f75ff7fe1c3e0335a51772a779ae13",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/2026-09-27-ph06-local-relief.md",
+      "bytes": 4848,
+      "sha256": "7c8382c753515f633309cb435886f14ceb1be9826977ae2eec8fd37114d51c42",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-continuous-light-2026-09-27/verification.json",
+      "bytes": 129967,
+      "sha256": "08d074e0ba79e84652604415b06880a213695a6036d9597c86ac975f4e045df1",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-continuous-light-2026-09-27/inventory.json",
+      "bytes": 27252,
+      "sha256": "a79092002a0a27c9ba28512f2f45552868772ab4080825c15d82b5e9d299aca5",
+      "copied": false
+    }
+  ],
+  "isolatedMeasurements": [
+    {
+      "path": "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/verification.json",
+      "bytes": 649,
+      "sha256": "50c6a0261cc7c6190688963543a02a971ccab3aece902ca731dfbf9ec07d6212",
+      "copied": false,
+      "productPerformanceAccepted": false,
+      "scope": "Isolated measurement reference only; no product performance acceptance"
+    },
+    {
+      "path": "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/raw/resume-worker-entry-fixed/verification.json",
+      "bytes": 1233678,
+      "sha256": "308e298f425af6474ea8baf55aad476d288b54821fd2052ed4de084d07b331ff",
+      "copied": false,
+      "productPerformanceAccepted": false,
+      "scope": "Isolated measurement reference only; no product performance acceptance"
+    }
+  ]
+}

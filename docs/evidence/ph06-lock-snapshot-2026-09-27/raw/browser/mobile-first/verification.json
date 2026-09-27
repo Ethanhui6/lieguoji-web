@@ -1,0 +1,15 @@
+{
+  "name": "mobile-first",
+  "project": "mobile-chromium",
+  "args": [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config=.autopilot/ph06/lock-snapshot-checks/playwright.config.ts",
+    "--project=mobile-chromium"
+  ],
+  "code": 1,
+  "signal": null,
+  "elapsedMs": 465955.0518,
+  "sourceAndDistStable": true,
+  "physicalDevice": false
+}

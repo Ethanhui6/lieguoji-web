@@ -1,0 +1,87 @@
+{
+  "type": "result",
+  "id": "private-cancel-start",
+  "mode": "private-snapshot",
+  "dimensions": {
+    "coarseSize": 512,
+    "coarseBlocks": 1024,
+    "lockBlocks": 0,
+    "fineTiles": 4096,
+    "sampledTiles": 4096,
+    "ownedFineNodes": 4198401,
+    "fineArrayBytes": 16793604,
+    "fineEncodedBytes": 16859140,
+    "synthetic": true,
+    "allSeaSamples": true
+  },
+  "fullVerifiedCopy": false,
+  "headUnchanged": true,
+  "outputAudit": null,
+  "errorName": "AbortError",
+  "errorMessage": "AbortError: 编辑已取消，原草稿未修改。",
+  "timing": {
+    "settledMs": 10.899999991059303,
+    "synchronousCallPrefixMs": 8.299999997019768,
+    "firstProgressMs": 8.199999988079071,
+    "maxProgressGapMs": 8.199999988079071,
+    "maxYieldEntryIntervalMs": 8.199999988079071,
+    "maxActiveGapMs": 8.199999988079071,
+    "tailAfterLastYieldMs": 1.3999999910593033,
+    "cancelReceivedMs": 8.299999997019768,
+    "cancelReceivedToSettledMs": 2.5999999940395355
+  },
+  "finite": true,
+  "fineCopySequenceExact": false,
+  "workerProgressGatePassed": true,
+  "progress": [
+    {
+      "stage": "复制生成草稿分层与锁",
+      "completed": 16,
+      "total": 1024,
+      "atMs": 8.199999988079071
+    }
+  ],
+  "yields": [
+    {
+      "stage": "复制生成草稿分层与锁",
+      "phase": "copy",
+      "enteredMs": 8.199999988079071,
+      "resumedMs": 9.5,
+      "activeGapMs": 8.199999988079071
+    }
+  ],
+  "progressGaps": [
+    8.199999988079071,
+    2.7000000029802322
+  ],
+  "yieldEntryIntervals": [
+    8.199999988079071,
+    2.7000000029802322
+  ],
+  "scope": "Actual dedicated Worker calls frozen snapshot candidate or unchanged public raw clone; not Atlas protocol end-to-end or physical-device acceptance.",
+  "cancelWhen": "start",
+  "main": {
+    "startedReceivedMs": 0.29999999701976776,
+    "settledReceivedMs": 11.099999994039536,
+    "firstProgressMs": 8.5,
+    "progress": [
+      {
+        "stage": "复制生成草稿分层与锁",
+        "completed": 16,
+        "total": 1024,
+        "receivedMs": 8.5,
+        "workerAtMs": 8.199999988079071
+      }
+    ],
+    "gaps": [
+      8.5,
+      2.5999999940395355
+    ],
+    "maxProgressGapMs": 8.5,
+    "cancelSentMs": 0.3999999910593033,
+    "cancelSendToSettledReplyMs": 10.700000002980232,
+    "progressGatePassed": true
+  },
+  "denseFixtureConfirmed": true,
+  "acceptedScopePassed": true
+}

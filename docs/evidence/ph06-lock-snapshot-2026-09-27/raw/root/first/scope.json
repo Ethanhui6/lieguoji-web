@@ -1,0 +1,13 @@
+{
+  "unitFiles": [
+    "src/editor/region-protection-controls.test.ts",
+    "src/world/detail-owned-snapshot-copy.test.ts",
+    "src/world/cooperative-ownership.test.ts",
+    "src/world/detail-owned-replacement-copy.test.ts",
+    "src/world/transactions.test.ts",
+    "src/world/constraints-session.test.ts",
+    "src/world/constraints-storage.test.ts"
+  ],
+  "reuse": "Private snapshot ownership/cooperation/transactions and v4 real lock UI/constraints storage scope. Preview12 local-relief generator and preview11 rendering are unchanged; exact prior artifacts only reused within those scopes. Not complete PH/performance acceptance.",
+  "cloudWrites": false
+}

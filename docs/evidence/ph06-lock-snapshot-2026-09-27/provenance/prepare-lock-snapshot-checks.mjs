@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const out='.autopilot/ph06/lock-snapshot-checks',previous='.autopilot/ph06/local-relief-checks';
+const unitFiles=['src/editor/region-protection-controls.test.ts','src/world/detail-owned-snapshot-copy.test.ts','src/world/cooperative-ownership.test.ts','src/world/detail-owned-replacement-copy.test.ts','src/world/transactions.test.ts','src/world/constraints-session.test.ts','src/world/constraints-storage.test.ts'];
+let root=fs.readFileSync(previous+'/run.mjs','utf8').replaceAll('local-relief-checks','lock-snapshot-checks');
+root=root.replace(/const unitFiles=\[[^;]+;/,'const unitFiles='+JSON.stringify(unitFiles)+';');
+root=root.replace(/reuse:'[^']*'/,"reuse:'Private snapshot ownership/cooperation/transactions and v4 real lock UI/constraints storage scope. Preview12 local-relief generator and preview11 rendering are unchanged; exact prior artifacts only reused within those scopes. Not complete PH/performance acceptance.'");
+root=root.replace('&&sourceStable&&engineUnchanged&&newGeneratorRecorded','&&sourceStable&&engineUnchanged&&newGeneratorRecorded&&generatorAndEngineUnchanged').replace('Local relief operation technical scope only','Real regional protection and private snapshot technical scope only');
+fs.writeFileSync(out+'/run.mjs',root,{flag:'wx'});
+let browser=fs.readFileSync(previous+'/browser.mjs','utf8').replaceAll('local-relief-checks','lock-snapshot-checks').replaceAll('RELIEF_BROWSER','LOCK_BROWSER');fs.writeFileSync(out+'/browser.mjs',browser,{flag:'wx'});
+let config=fs.readFileSync(previous+'/playwright.config.ts','utf8').replaceAll('local-relief-checks','lock-snapshot-checks').replaceAll('RELIEF_BROWSER','LOCK_BROWSER');config=config.replace(/testMatch:[^,]+,workers:/,"testMatch:'atlas-detail-lock-relief.spec.ts',workers:");fs.writeFileSync(out+'/playwright.config.ts',config,{flag:'wx'});
+console.log(JSON.stringify({unitFiles,version:'0.5.0-preview.13',preparedOnly:true}));

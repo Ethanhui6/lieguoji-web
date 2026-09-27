@@ -1,0 +1,28 @@
+{
+  "type": "ready",
+  "dimensions": {
+    "coarseSize": 512,
+    "coarseBlocks": 1024,
+    "lockBlocks": 0,
+    "fineTiles": 4096,
+    "sampledTiles": 4096,
+    "ownedFineNodes": 4198401,
+    "fineArrayBytes": 16793604,
+    "fineEncodedBytes": 16859140,
+    "synthetic": true,
+    "allSeaSamples": true
+  },
+  "setup": {
+    "fixtureMs": 2091.6000000089407,
+    "publicSessionOpenMs": 2001.5999999940395
+  },
+  "scheduler": "scheduler.postTask(background)",
+  "workerTimeOrigin": 1790528281267.2,
+  "head": {
+    "draftId": "atlas-20a68854-d5c3-4583-9b4e-6c7940e86283",
+    "revision": 0,
+    "rootDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifestDigest": "3318f98634ef7ecc2a3cd68568009e6e6169e6463fa5bfc06370e0f7ee46ffda",
+    "undoCount": 0
+  }
+}

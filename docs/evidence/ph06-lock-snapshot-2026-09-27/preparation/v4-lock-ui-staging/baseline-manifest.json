@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-27T12:12:02.3740493Z",
+  "files": [
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "sha256": "31779d354a1861faebc1bb3894eef121b61362c86883b6d28f69739aacbcc5ba"
+    }
+  ],
+  "newFiles": [
+    "src/editor/RegionProtectionPanel.tsx",
+    "src/editor/region-protection-controls.ts",
+    "src/editor/region-protection-controls.test.ts"
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "files": [
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/run.mjs",
+      "dest": "harness/run.mjs",
+      "sha256": "ef4307173c64fbfe622f3028e95d2360657b16a4dede34ff0dcc044780f073ae",
+      "bytes": 12384
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/snapshot-metrics.worker.ts",
+      "dest": "harness/snapshot-metrics.worker.ts",
+      "sha256": "fa85f91039ddb0d4c2de51667f8f7f162c645bd4db5d5256b78df15acb326608",
+      "bytes": 8477
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/ready-manifest.json",
+      "dest": "harness/ready-manifest.json",
+      "sha256": "08a115d7e772c2b958d1182c43da0f2f2482dc7f40c09edcd26c4f7ba334651a",
+      "bytes": 12043
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/README.md",
+      "dest": "harness/README.md",
+      "sha256": "12ef7d98e0a4f8e6e813ac9b56438f2b3c7d30b1644e302c387658d519d8f90d",
+      "bytes": 8471
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/harness.html",
+      "dest": "harness/harness.html",
+      "sha256": "a4bb717efbdbdc1883e1c8e47b948353c4d6d0e7b1e506ae7952681466d48f47",
+      "bytes": 218
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/first/ready-manifest.json",
+      "dest": "raw/first/ready-manifest.json",
+      "sha256": "e330834b2b11b612b5729ecf9ad6cddab49c14ca3e748d03d9c8e64cff6c4983",
+      "bytes": 12043
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/first/run.mjs",
+      "dest": "raw/first/run.mjs",
+      "sha256": "1c11c0041158e2372e2e54e48f9c08aa54f2cf96d4f271abc426f581f5a8d1b8",
+      "bytes": 12126
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/first/source-after.json",
+      "dest": "raw/first/source-after.json",
+      "sha256": "eb447d0b126385e25a45aff4dcf8bf11d53606feb957d822db4c2a7884dde884",
+      "bytes": 8870
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/first/source-before.json",
+      "dest": "raw/first/source-before.json",
+      "sha256": "eb447d0b126385e25a45aff4dcf8bf11d53606feb957d822db4c2a7884dde884",
+      "bytes": 8870
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/first/verification.json",
+      "dest": "raw/first/verification.json",
+      "sha256": "995916bf7de2c7fd2013e9e3e9fb4f1876a259f91e085842de66076a65772110",
+      "bytes": 1975
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/worker-entry-fixed/setup.json",
+      "dest": "raw/worker-entry-fixed/setup.json",
+      "sha256": "05b3f752053e85747316594b304dfb2a8f7c27a5a33a0612452ac1e194fa2093",
+      "bytes": 776
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/worker-entry-fixed/source-before.json",
+      "dest": "raw/worker-entry-fixed/source-before.json",
+      "sha256": "3a8d5f860f46772e49bab64cad202d92c69c058d7bc17c4b96dcbd6cae70d2f8",
+      "bytes": 8870
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/partial.json",
+      "dest": "raw/resume-worker-entry-fixed/partial.json",
+      "sha256": "ccc6c5e4332c37ae14db0ce298aff2661a76b33ecf760790bacd5e7700346502",
+      "bytes": 1233613
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/private-cancel-copy.raw.json",
+      "dest": "raw/resume-worker-entry-fixed/private-cancel-copy.raw.json",
+      "sha256": "999087413353a1f5dd9bac92779adb0a4b83ce4e2c920f9fff8819302f9824e3",
+      "bytes": 39904
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/private-cancel-start.raw.json",
+      "dest": "raw/resume-worker-entry-fixed/private-cancel-start.raw.json",
+      "sha256": "3121b069063979288e73e44847d64afab386d49008c4b61951ab54c73dfe9f4b",
+      "bytes": 2381
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/private-cancel-verify.raw.json",
+      "dest": "raw/resume-worker-entry-fixed/private-cancel-verify.raw.json",
+      "sha256": "a2381a957d48b6b0bd33c21edf06f72c08ac73b2f058d873db4d495b93e34473",
+      "bytes": 301424
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/private-full.raw.json",
+      "dest": "raw/resume-worker-entry-fixed/private-full.raw.json",
+      "sha256": "f17e1412d0b82e0aa6e53243f4405e339001311606644092dbca9fcdfea3edcf",
+      "bytes": 451285
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/public-raw-full.raw.json",
+      "dest": "raw/resume-worker-entry-fixed/public-raw-full.raw.json",
+      "sha256": "c0c15d10d94d6c4d7adfdaccb9e90cad1a123a5e571e995622ce28fb1c1df8f6",
+      "bytes": 269983
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/setup.json",
+      "dest": "raw/resume-worker-entry-fixed/setup.json",
+      "sha256": "848a2afca355ab652770ba640ef1d80ebb3195b0455cb793545be140f1678810",
+      "bytes": 791
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/source-after.json",
+      "dest": "raw/resume-worker-entry-fixed/source-after.json",
+      "sha256": "3a8d5f860f46772e49bab64cad202d92c69c058d7bc17c4b96dcbd6cae70d2f8",
+      "bytes": 8870
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/source-before.json",
+      "dest": "raw/resume-worker-entry-fixed/source-before.json",
+      "sha256": "3a8d5f860f46772e49bab64cad202d92c69c058d7bc17c4b96dcbd6cae70d2f8",
+      "bytes": 8870
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-snapshot-metrics-staging/checks/resume-worker-entry-fixed/verification.json",
+      "dest": "raw/resume-worker-entry-fixed/verification.json",
+      "sha256": "308e298f425af6474ea8baf55aad476d288b54821fd2052ed4de084d07b331ff",
+      "bytes": 1233678
+    },
+    {
+      "source": ".autopilot/ph06/snapshot-probe-resume-audit.md",
+      "dest": "resume-audit.md",
+      "sha256": "37528ffce5c4cc3459141f598b456a6d370f8cbc9de596e84ee6470af87c800c",
+      "bytes": 4758
+    },
+    {
+      "dest": "verification.json",
+      "sha256": "50c6a0261cc7c6190688963543a02a971ccab3aece902ca731dfbf9ec07d6212",
+      "bytes": 649
+    }
+  ],
+  "excludesSelf": true
+}

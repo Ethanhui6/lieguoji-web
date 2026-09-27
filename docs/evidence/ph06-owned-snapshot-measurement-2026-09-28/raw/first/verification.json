@@ -1,0 +1,40 @@
+{
+  "scope": "Frozen candidate Owned.snapshotAsync in real Chromium dedicated Worker, 4096 sampled fine tiles and coarse 512; isolated established-session measurement, not game end-to-end or physical-device acceptance.",
+  "gates": {
+    "progressMs": 250,
+    "cancelResponseMs": 500
+  },
+  "startedAt": "2026-09-27T12:40:15.026Z",
+  "setup": null,
+  "cases": [],
+  "events": [
+    {
+      "type": "pageerror",
+      "text": "ReferenceError: __MACRO_GENERATOR_FINGERPRINT__ is not defined\n    at http://127.0.0.1:52804/src/world/generation/fingerprint.ts:2:44"
+    }
+  ],
+  "candidateSnapshotGatesPassed": false,
+  "publicRawDiagnosticGatesPassed": null,
+  "acceptance": {
+    "productEndToEnd": false,
+    "realDevice": false,
+    "wholePH06": false
+  },
+  "browserVersion": "153.0.8010.12",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "error": {
+    "message": "Error: page.evaluate: Error: Worker error Uncaught ReferenceError: __MACRO_GENERATOR_FINGERPRINT__ is not defined at http://127.0.0.1:52804/src/world/generation/fingerprint.ts:2\n    at worker.onerror (eval at evaluate (:311:30), <anonymous>:12:36)",
+    "stack": "page.evaluate: Error: Worker error Uncaught ReferenceError: __MACRO_GENERATOR_FINGERPRINT__ is not defined at http://127.0.0.1:52804/src/world/generation/fingerprint.ts:2\n    at worker.onerror (eval at evaluate (:311:30), <anonymous>:12:36)\n    at D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-owned-snapshot-metrics-staging\\run.mjs:51:29"
+  },
+  "probeFailureDetails": [
+    {
+      "message": "Error: Worker error Uncaught ReferenceError: __MACRO_GENERATOR_FINGERPRINT__ is not defined at http://127.0.0.1:52804/src/world/generation/fingerprint.ts:2",
+      "id": null,
+      "progress": [],
+      "cancelSentMs": null,
+      "settledReceivedMs": null
+    }
+  ],
+  "sourceStable": true,
+  "endedAt": "2026-09-27T12:40:16.731Z"
+}

@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-27T12:22:37.765Z",
+  "baselineHead": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+  "stagingOnly": true,
+  "productionModifiedByThisTask": false,
+  "status": "candidate-awaiting-authorized-checks",
+  "freeze": true,
+  "files": [
+    {
+      "path": "src/world/transactions.ts",
+      "stagedSha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc",
+      "baselineSha256": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d",
+      "productionExists": true
+    },
+    {
+      "path": "src/world/detail-owned-snapshot-copy.test.ts",
+      "stagedSha256": "c11230a864ae8c156efb0482936057c4acfa7ded1cdb9a326eaec702e2e77a17",
+      "baselineSha256": null,
+      "productionExists": false
+    }
+  ],
+  "supportingFiles": [
+    {
+      "path": "README.md",
+      "sha256": "8d01b6e43a8b7f91caba05d76c55f7c52ba33d27e8213744fade4463049617ca"
+    },
+    {
+      "path": "transactions.baseline.ts.txt",
+      "sha256": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d"
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "67f8fc811973a02cef65ee0fcd192a3182240854a764b959cd3b840791bb5255"
+    },
+    {
+      "path": "finalize-manifest.mjs",
+      "sha256": "aa2f48533c9808be3e45cc9ab0a84f373a71ce2adda97f98f25a7e900e7ad4d6"
+    }
+  ],
+  "readDependencies": [
+    {
+      "path": "src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "path": "src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "path": "src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "path": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "src/world/atlas.worker.ts",
+      "sha256": "6bbc49c5d20df6111a76a08b250f403e5e4336de1b6aa6716052731cd3c413f8"
+    },
+    {
+      "path": "src/world/cooperative-ownership.test.ts",
+      "sha256": "71fcd6753fca00af96cff9936ea6124d337981380032b1a6cd5b51ad7c128a06"
+    },
+    {
+      "path": "src/world/detail-owned-replacement-copy.test.ts",
+      "sha256": "c68438c16a9df461861d09c3fa2bd35fda5538da15c6208f49c06580f3b264f6"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    }
+  ],
+  "scope": {
+    "runtimeMethods": [
+      "OwnedAtlasSession.snapshotAsync"
+    ],
+    "maximumCopiedItemsPerBatch": 16,
+    "exactBytesOutsideMethodPreserved": true,
+    "publicRawIngressUnchanged": true,
+    "fullVerificationRetained": true,
+    "guardedSource": [
+      "private data identity",
+      "manifest identity",
+      "format version",
+      "revision",
+      "rootDigest",
+      "manifestDigest",
+      "AbortSignal"
+    ],
+    "callbackAndSchedulerGuardedBeforeAndAfter": true,
+    "storageAndDurableSemanticsUnchanged": true
+  },
+  "checks": {
+    "staticReview": "manual source/diff review plus byte/hash bookkeeping only",
+    "lint": "not_run",
+    "typecheck": "not_run",
+    "unit": "not_run",
+    "build": "not_run",
+    "browser": "not_run",
+    "performance": "not_run",
+    "writtenTestCases": 11,
+    "passedTestCases": null,
+    "productionBaselineUnchangedAtFinalization": true
+  },
+  "limitations": [
+    "No runtime or performance acceptance claimed.",
+    "Owned has no close/dispose API; existing Worker.close propagates active AbortSignal. Narrow tests exercise that signal only.",
+    "33 sampled tiles cover batching; actual dense Worker measurement remains pending.",
+    "Public raw dense ownership and synchronous manifest/per-block clone costs remain unchanged.",
+    "Synthetic Owned publication receipts do not prove IndexedDB durability."
+  ]
+}

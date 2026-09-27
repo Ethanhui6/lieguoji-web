@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-09-27T12:34:18.809Z",
+  "buildJsonSha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d",
+  "version": "0.5.0-preview.13",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+  "browser": "Codex IAB Chromium",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "baselineRevision": 2,
+  "confirmedRevision": 3,
+  "restoredRevision": 3,
+  "selectedInitialCell": 18300,
+  "verifiedRestoredCell": 21386,
+  "selection": {
+    "method": "two native map clicks",
+    "screenCorners": [
+      [
+        545,
+        280
+      ],
+      [
+        606,
+        326
+      ]
+    ],
+    "column": 111,
+    "row": 63,
+    "columns": 28,
+    "rows": 21
+  },
+  "preview": {
+    "action": "set",
+    "mask": 3,
+    "changedCellCount": 588
+  },
+  "observed": [
+    "Loaded actual saved preview12 local-relief terrain in preview13",
+    "Opened Protect region from selected land",
+    "Used native map two-corner selection; preview reported actual588 changed cells",
+    "Confirmed save; selected actual cell21386 showed coast locked and elevation locked",
+    "Reload restored revision3",
+    "Located the same cell21386 through visible number input; both locks remained",
+    "Closed panel and returned to full-map view"
+  ],
+  "consoleWarningsAndErrors": [],
+  "limits": [
+    "Manual workflow covers setting both locks and save/reload; automated product workflow must separately cover only-coast/only-height, actual relief preservation, single-bit clear and mixed undo",
+    "IAB operations overlapped desktop-first functional test; no performance or responsiveness timing claim",
+    "Map still angular/lumpy and visually coarse, new Atlas still has no countries/administration/cities/armies/war",
+    "No real save exported"
+  ],
+  "screenshots": [
+    {
+      "file": "manual-preview.png",
+      "sha256": "1f860f6d4ad4924f232cac1d2f72f9a7098ef791f12674d8b3f20e4c1daab406"
+    },
+    {
+      "file": "manual-saved.png",
+      "sha256": "e1cd9edb3b0263feff6604bc517b86a03bfffd1d3b481eb1d576cde56d91deb7"
+    },
+    {
+      "file": "manual-restored.png",
+      "sha256": "cba78b4e9d86dc0c5f23b2490944502c39449e52f9089c2329f1cc90225adc7a"
+    }
+  ]
+}

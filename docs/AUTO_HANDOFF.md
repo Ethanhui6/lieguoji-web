@@ -1,4 +1,20 @@
+# 当前续接：preview.13 区域保护已实现，手机完整流程未通过
+
+2026-09-27T17:07:57.641Z：基础HEAD 0a02f3c27ce2acafec014e4f89d2693416243105，本批源码和证据待本地提交，完成后以Git及检查点补记为准。实际preview.13构建SHA bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d。七文件68项及静态/构建/25产物检查通过；桌面完整三锁与局部山地、解除、撤销、恢复通过。手机首轮450秒总时限内最终刷新未结束，保留失败、不放宽门；平板见原始终态。归档完整=true、技术通过=false、全流程接受=false。
+
+[本批报告](evidence/2026-09-28-ph06-lock-snapshot.md)、[原件](evidence/ph06-lock-snapshot-2026-09-27/verification.json)、[隔离快照测量](evidence/ph06-owned-snapshot-measurement-2026-09-28/verification.json)。密集私有快照四门通过，公开原始复制首次约728ms诊断失败；这不等于游戏整体性能。自然视觉/用户/真机/PH都未接受。
+
+IAB tab2同一已存大陆修订3，588格双锁已恢复，试玩地址 http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4 。tab1旧未保存预览继续保留。新Atlas国家/行政区/城市/军队战争仍未实现。
+
+下一批连续曲脊+局部旧地背景在staging，preview13旧生成闭包11项/39原文件已冻结待提升；纯锁更新同地理缓存复用正在窄修。不得提前当作已接入。先核对实际终态/源码，再统一提升检查。PH06-T3/T4不改完成，全部发布门保持；仓库Ethanhui6/lieguoji-web，Pages lieguoji-web，唯一原生Git链，旧站 https://lieguoji-web.pages.dev/ 未更新；无云端写入或新授权需求。
+
+---
+
 # 当前续接：preview.12 局部山地编辑保存恢复通过，自然视觉仍未通过
+
+2026-09-27T16:53:54.246Z 续接核实：源码与preview.13构建未漂移；desktop-first因只读观察器重新选择不同采样见证点而失败，原件保留。仅固定原三处真实地块ID后，测试文件lint/全局types通过，desktop-second完整三锁→山地→单bit解锁→混合撤销→刷新通过343029.1946ms，未重跑无变化68单元或重建dist。IAB真实588格双锁已保存修订3并刷新同一地块核实；手工无控制台错误。手机实际流程运行中，平板待执行。密集snapshot测量first是Worker定义启动错误，worker-entry-fixed有真实4096tile初始化但无终态，两次进程检查无活探针，不能算性能结果；新轮须等产品browser空闲。曲脊、局部背景和preview13历史三项只在staging续接，勿提前提升或验收。
+
+2026-09-27T12:28:15.420Z 最新在做：preview.12已本地提交 `0a02f3c27ce2acafec014e4f89d2693416243105`（原147文件，119份原始SHA与index核对一致）；随后preview.13区域保护与私有snapshot七目标已提升并实际构建，未提交。根lock-snapshot-checks/first七文件68/68、全局lint/类型/计划/构建/25产物检查通过，11生成器和引擎身份与preview.12逐项相同；build.json SHA `bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d`，4173实际HTTP200一致。桌面非零锁实际流程运行中，手机/平板/手工待验，不能据单元提前通过；当前状态以终态文件核实。三个staging候选无需重新提升。
 
 2026-09-27T12:21:53.245Z 检查点：当前基础HEAD `f49da8377985ef041a56dde7f995b2c8af018b3b`；preview.12源码及以下证据待本地提交，提交后以本文件顶端补记和git核实为准。实际build.json SHA `72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305`，4173 HTTP200一致。新11生成器含局部山地真实闭包，engineFingerprint未变；旧preview.11十闭包/37源码已原字节冻结。
 

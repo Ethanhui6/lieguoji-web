@@ -1,0 +1,194 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T12:26:02.529Z",
+      "finishedAt": "2026-09-27T12:26:02.714Z",
+      "elapsedMs": 183.53349999999998,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T12:26:02.716Z",
+      "finishedAt": "2026-09-27T12:26:10.670Z",
+      "elapsedMs": 7953.824600000001,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T12:26:10.670Z",
+      "finishedAt": "2026-09-27T12:26:23.404Z",
+      "elapsedMs": 12733.799700000001,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/editor/region-protection-controls.test.ts",
+        "src/world/detail-owned-snapshot-copy.test.ts",
+        "src/world/cooperative-ownership.test.ts",
+        "src/world/detail-owned-replacement-copy.test.ts",
+        "src/world/transactions.test.ts",
+        "src/world/constraints-session.test.ts",
+        "src/world/constraints-storage.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/lock-snapshot-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T12:26:23.404Z",
+      "finishedAt": "2026-09-27T12:26:51.905Z",
+      "elapsedMs": 28501.6024,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T12:26:51.905Z",
+      "finishedAt": "2026-09-27T12:26:53.601Z",
+      "elapsedMs": 1695.2212999999974,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T12:26:53.601Z",
+      "finishedAt": "2026-09-27T12:26:53.682Z",
+      "elapsedMs": 80.87350000000151,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "sourceStable": true,
+  "generatorAndEngineUnchanged": true,
+  "engineUnchanged": true,
+  "newGeneratorRecorded": true,
+  "passed": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-qdCpf109.js",
+      "sha256": "6a94b71b7d50abfb3e00dc20a5e8ae8eb68e559f3e5badda8c3d7ff57e2a5b24"
+    },
+    {
+      "path": "dist/assets/atlas.worker-qs3OXCvq.js",
+      "sha256": "4809a8d946be92000e22e87e81e8804dc0accedcfe739fb5c3b46b43e436b64f"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BggvROi5.css",
+      "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BpVjUZmj.js",
+      "sha256": "4035b69057386e79958f67f2f854e0b0a55755b211bc6f8009bfe7d136a81eb3"
+    },
+    {
+      "path": "dist/assets/browserAll-CGEZc0HD.js",
+      "sha256": "148a627d13bcda661dd3ea37ffa1fa369a5c6e12d5b7b1b4563f14a21e4a8afb"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-Dy-X2jlL.js",
+      "sha256": "529aa0778253e8201d9b40ef4975d9aef630c4559da3222704200046e598769e"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-BOsdp4-X.js",
+      "sha256": "2dae3acce09e870ac962ab3b2fa4119d44e87016130ad85fa14dd4bf9c9d95f1"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-DQqq9Rhb.js",
+      "sha256": "33f326959ea4e2f8e28c5cb0381a5e8c5512cdeb7a952584b7bbcba7ee20f0ea"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "32bc00a603b9883e9ad220dd855e8f489e4b50e21e1dc7e485c99b6a3da25a20"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "scope": "Real regional protection and private snapshot technical scope only; no whole natural quality, performance, physical device, PH or cloud acceptance",
+  "cloudWrites": false
+}

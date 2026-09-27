@@ -814,7 +814,10 @@
             "docs/evidence/ph06-continuous-light-2026-09-27/verification.json",
             "docs/adr/0020-local-detail-relief.md",
             "docs/evidence/2026-09-27-ph06-local-relief.md",
-            "docs/evidence/ph06-local-relief-2026-09-27/verification.json"
+            "docs/evidence/ph06-local-relief-2026-09-27/verification.json",
+            "docs/evidence/2026-09-28-ph06-lock-snapshot.md",
+            "docs/evidence/ph06-lock-snapshot-2026-09-27/verification.json",
+            "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/verification.json"
           ]
         },
         {
@@ -845,7 +848,10 @@
             "docs/evidence/ph06-continuous-light-2026-09-27/verification.json",
             "docs/adr/0020-local-detail-relief.md",
             "docs/evidence/2026-09-27-ph06-local-relief.md",
-            "docs/evidence/ph06-local-relief-2026-09-27/verification.json"
+            "docs/evidence/ph06-local-relief-2026-09-27/verification.json",
+            "docs/evidence/2026-09-28-ph06-lock-snapshot.md",
+            "docs/evidence/ph06-lock-snapshot-2026-09-27/verification.json",
+            "docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/verification.json"
           ]
         }
       ],

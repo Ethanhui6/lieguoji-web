@@ -586,6 +586,153 @@
       "sha256": "d932788297398b561d26c58d0e0b5d1121eb064202f2cb65d11809d952e90da0"
     },
     {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/command.json",
+      "bytes": 376,
+      "sha256": "d45061da4e25172a3d455977dee1f86ec70da043ab178476005e87248eb31aa0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/results.json",
+      "bytes": 10349,
+      "sha256": "5db144ced484b45d2eb515c817493003bcfb86f68d52e34f4b1ab4ba63989130"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/run.log",
+      "bytes": 3001,
+      "sha256": "c620a7c0cc634c484c1bd69519a2af04c0f599e1418a402924dd74b215efb6cc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-after.json",
+      "bytes": 27679,
+      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-before.json",
+      "bytes": 27679,
+      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/verification.json",
+      "bytes": 316,
+      "sha256": "b390fad2a326f3bd6b369ce34433ab1a0c381106aa2a49edfcf1e6e7624332be"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.json",
+      "bytes": 64,
+      "sha256": "619b54d314d5dd1c7adff2740f2d549e3d5c5ad8138afc6c8c0539e1567e0cfc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/promotion-baseline.json",
+      "bytes": 822,
+      "sha256": "2c41cc8c764cc52e2a09b973c392692b61b43d007af346296ffeb21ab5fe28d6"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/command.json",
+      "bytes": 494,
+      "sha256": "e99f994a12793f0f7a522ae1cd374418f3e9b2cdcb825799b825f2fbf4c2bfcd"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/results.json",
+      "bytes": 9488,
+      "sha256": "3e4e4de2d8f59213e67165b14cfc4fe2b11090e035bb14f09e3f47a5aaedc70a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/run.log",
+      "bytes": 576,
+      "sha256": "8e4e2eaaeef646631ff8e084e2863cc1f2697ce83e5d253e29c001faa02908b8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-after.json",
+      "bytes": 27679,
+      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-before.json",
+      "bytes": 27679,
+      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/verification.json",
+      "bytes": 307,
+      "sha256": "18d641ae11a3788b9df4dff4567aed51324a9b5d444332004e3313cdae8bb38f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/run.mjs",
+      "bytes": 3176,
+      "sha256": "45f151b3e1c6a33ec66d0540c5ee03682c2d6b9a401d2a0e51e55d70566f65c8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/verification.json",
+      "bytes": 1365,
+      "sha256": "be2c388e5673da18407e559513d39294a1c2ef048eb81158b8268ae6454da0cc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-after.json",
+      "bytes": 27499,
+      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-before.json",
+      "bytes": 27499,
+      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.json",
+      "bytes": 71698,
+      "sha256": "c2e39065f94282fcddfefa1a4771181a0c8d88dfb2640e302df12db82ce537c1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.log",
+      "bytes": 110,
+      "sha256": "81706a1fcb9b7a65916a9e558ef3977e1126c7ff9780486e9dea5f952059745f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-verification.json",
+      "bytes": 379,
+      "sha256": "d044bc577dab090ee3e0637d1701bc8a3d492630871bbd9cd95bc05a7144cc5d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck-exit.json",
+      "bytes": 16,
+      "sha256": "420d0b86662fc0dc3d1e287aaca3ac7117756ff7ce8b6b72238d3f92e9a4a48b"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.json",
+      "bytes": 8585,
+      "sha256": "8e5cb9a995c25b26fc59b56d97de12346b7425e5ac4ce2ee47b44d6898bf54e2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.log",
+      "bytes": 116,
+      "sha256": "f1502b72e75d3082e78b22dd06ec880642842285c04a2e827c563d94a08ee22d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/run.mjs",
+      "bytes": 2529,
+      "sha256": "59287e80a2ff4c2131950a23d63494487d8e58663e6f9509f22df19e52117ac1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/preview6-provenance.json",
+      "bytes": 3858,
+      "sha256": "290b896df99c08ea9bd4443a6e0b62112f7c8be093b3e12707d98335f9eb410e"
+    }
+  ],
+  "omittedRebuildableToolCache": [
+    {
       "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/browserAll-BiLq_WZo.js",
       "bytes": 696,
       "sha256": "88346af0ff00ee188bd77dd82e9fc5f227eda28d44369a58cfb20ff40f110fec"
@@ -814,151 +961,7 @@
       "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/_metadata.json",
       "bytes": 3259,
       "sha256": "a81a41b798f9bfdf32e8aad3ad762175fe60e277162f8da9d1a7431384c6d693"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/command.json",
-      "bytes": 376,
-      "sha256": "d45061da4e25172a3d455977dee1f86ec70da043ab178476005e87248eb31aa0"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/results.json",
-      "bytes": 10349,
-      "sha256": "5db144ced484b45d2eb515c817493003bcfb86f68d52e34f4b1ab4ba63989130"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/run.log",
-      "bytes": 3001,
-      "sha256": "c620a7c0cc634c484c1bd69519a2af04c0f599e1418a402924dd74b215efb6cc"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-after.json",
-      "bytes": 27679,
-      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-before.json",
-      "bytes": 27679,
-      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/verification.json",
-      "bytes": 316,
-      "sha256": "b390fad2a326f3bd6b369ce34433ab1a0c381106aa2a49edfcf1e6e7624332be"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.json",
-      "bytes": 64,
-      "sha256": "619b54d314d5dd1c7adff2740f2d549e3d5c5ad8138afc6c8c0539e1567e0cfc"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.log",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/promotion-baseline.json",
-      "bytes": 822,
-      "sha256": "2c41cc8c764cc52e2a09b973c392692b61b43d007af346296ffeb21ab5fe28d6"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/command.json",
-      "bytes": 494,
-      "sha256": "e99f994a12793f0f7a522ae1cd374418f3e9b2cdcb825799b825f2fbf4c2bfcd"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/results.json",
-      "bytes": 9488,
-      "sha256": "3e4e4de2d8f59213e67165b14cfc4fe2b11090e035bb14f09e3f47a5aaedc70a"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/run.log",
-      "bytes": 576,
-      "sha256": "8e4e2eaaeef646631ff8e084e2863cc1f2697ce83e5d253e29c001faa02908b8"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-after.json",
-      "bytes": 27679,
-      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-before.json",
-      "bytes": 27679,
-      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/verification.json",
-      "bytes": 307,
-      "sha256": "18d641ae11a3788b9df4dff4567aed51324a9b5d444332004e3313cdae8bb38f"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/run.mjs",
-      "bytes": 3176,
-      "sha256": "45f151b3e1c6a33ec66d0540c5ee03682c2d6b9a401d2a0e51e55d70566f65c8"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/verification.json",
-      "bytes": 1365,
-      "sha256": "be2c388e5673da18407e559513d39294a1c2ef048eb81158b8268ae6454da0cc"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-after.json",
-      "bytes": 27499,
-      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-before.json",
-      "bytes": 27499,
-      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-lint.log",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-types.log",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.json",
-      "bytes": 71698,
-      "sha256": "c2e39065f94282fcddfefa1a4771181a0c8d88dfb2640e302df12db82ce537c1"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.log",
-      "bytes": 110,
-      "sha256": "81706a1fcb9b7a65916a9e558ef3977e1126c7ff9780486e9dea5f952059745f"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-verification.json",
-      "bytes": 379,
-      "sha256": "d044bc577dab090ee3e0637d1701bc8a3d492630871bbd9cd95bc05a7144cc5d"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck-exit.json",
-      "bytes": 16,
-      "sha256": "420d0b86662fc0dc3d1e287aaca3ac7117756ff7ce8b6b72238d3f92e9a4a48b"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.json",
-      "bytes": 8585,
-      "sha256": "8e5cb9a995c25b26fc59b56d97de12346b7425e5ac4ce2ee47b44d6898bf54e2"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.log",
-      "bytes": 116,
-      "sha256": "f1502b72e75d3082e78b22dd06ec880642842285c04a2e827c563d94a08ee22d"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/run.mjs",
-      "bytes": 2529,
-      "sha256": "59287e80a2ff4c2131950a23d63494487d8e58663e6f9509f22df19e52117ac1"
-    },
-    {
-      "path": "docs/evidence/ph06-fine-coast-2026-09-27/preview6-provenance.json",
-      "bytes": 3858,
-      "sha256": "290b896df99c08ea9bd4443a6e0b62112f7c8be093b3e12707d98335f9eb410e"
     }
-  ]
+  ],
+  "archiveNote": "Rebuildable Vite dependency cache remains on disk but is excluded from Git. Original diagnostics, source hashes, failure records, fixtures and scripts retained. Full initial inventory at local commit12b273b."
 }

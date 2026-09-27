@@ -1,0 +1,6 @@
+{
+  "output": "",
+  "elapsedSeconds": 2.1664376,
+  "command": "node node_modules/eslint/bin/eslint.js src/world/render-density.ts src/world/render-density.test.ts src/world/renderer.ts src/world/renderer.test.ts",
+  "exitCode": 0
+}

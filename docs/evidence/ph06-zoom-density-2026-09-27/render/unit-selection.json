@@ -1,0 +1,13 @@
+{
+  "files": [
+    "src/world/camera.test.ts",
+    "src/world/atlas-label-layer.test.ts",
+    "src/world/atlas-terrain-geometry-cache.test.ts",
+    "src/world/lod.test.ts",
+    "src/world/terrain-material.test.ts",
+    "src/world/terrain-mesh.test.ts",
+    "src/world/terrain-surface.test.ts",
+    "src/world/coastal-surface.test.ts"
+  ],
+  "scope": "Related camera/cache/material/label/geometry regression; changed renderer/density and independent detail-coast core use their separate owned check evidence. Prior unchanged generator/storage/compatibility results are not rerun or represented as this run."
+}

@@ -15,6 +15,7 @@ import { ContextInspector, type InspectorExtent } from '../ui/ContextInspector';
 import { AppearanceSettings } from '../ui/AppearanceSettings';
 import { Icon } from '../ui/Icon';
 import { ModalDialog } from '../ui/ModalDialog';
+import { atlasOperationFailureFeedback } from './atlas-operation-feedback';
 import './atlas-studio.css';
 
 type Props = {
@@ -95,7 +96,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     const ticket = generation.current;
     busyRef.current = true; setBusy(true); setError('');
     try { await action(); }
-    catch (error) { if (live.current && generation.current === ticket) { setError(explain(error)); setStatus(error instanceof Error && error.name === 'AbortError' ? '操作已取消；已经提交的草稿仍保留。' : '操作未完成，请查看原因。'); } }
+    catch (error) { if (live.current && generation.current === ticket) { const feedback = atlasOperationFailureFeedback(error); setError(feedback.error); setStatus(feedback.status); } }
     finally { if (live.current && generation.current === ticket) { busyRef.current = false; setBusy(false); setProgress(null); cancelGenerationDisplay.current = null; } }
   }
   const refreshList = async (client = clientRef.current!, ticket = generation.current) => {

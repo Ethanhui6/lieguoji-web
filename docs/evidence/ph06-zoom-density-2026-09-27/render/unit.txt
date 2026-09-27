@@ -1,0 +1,23 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/terrain-surface.test.ts (10 tests) 351ms
+ ✓ src/world/coastal-surface.test.ts (11 tests) 341ms
+ ✓ src/world/terrain-mesh.test.ts (5 tests) 522ms
+   ✓ continuous terrain material lookup and actual mesh resources (5)
+     ✓ has independent opaque sea and land tables, including exact flat source anchors 507ms
+ ✓ src/world/atlas-label-layer.test.ts (3 tests) 264ms
+ ✓ src/world/camera.test.ts (17 tests) 164ms
+ ✓ src/world/lod.test.ts (25 tests) 262ms
+ ✓ src/world/atlas-terrain-geometry-cache.test.ts (11 tests) 14ms
+ ✓ src/world/terrain-material.test.ts (3 tests) 5ms
+
+ Test Files  8 passed (8)
+      Tests  85 passed (85)
+   Start at  13:41:36
+   Duration  2.78s (tests 52%, import 36%, transform 10%, worker 2%)
+
+    Isolate  8 workers spawned · ~215ms startup each (spawn + environment, per file)
+             at least ~645ms faster with isolate: false — reuses workers across files instead of one per file
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/zoom-density-checks/first/unit-results.json

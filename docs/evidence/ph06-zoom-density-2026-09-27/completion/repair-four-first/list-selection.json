@@ -1,0 +1,36 @@
+{
+  "selection": "repair-four",
+  "verified": true,
+  "expected": 4,
+  "observed": 4,
+  "expectedPerProject": {
+    "desktop-chromium": 2,
+    "mobile-chromium": 1,
+    "tablet-chromium": 1
+  },
+  "coverage": true,
+  "noExecutedAttempts": true,
+  "errors": [],
+  "cases": [
+    {
+      "project": "desktop-chromium",
+      "title": "局部生成闭环：真实山系与细海岸保持范围外、区域锁与过渡带，保存刷新一致",
+      "file": "atlas-generation-completion.spec.ts"
+    },
+    {
+      "project": "desktop-chromium",
+      "title": "桌面512长任务：手绘和海床真实运行中取消，250ms进度与500ms取消保持源库",
+      "file": "atlas-generation-completion.spec.ts"
+    },
+    {
+      "project": "mobile-chromium",
+      "title": "局部生成闭环：真实山系与细海岸保持范围外、区域锁与过渡带，保存刷新一致",
+      "file": "atlas-generation-completion.spec.ts"
+    },
+    {
+      "project": "tablet-chromium",
+      "title": "局部生成闭环：真实山系与细海岸保持范围外、区域锁与过渡带，保存刷新一致",
+      "file": "atlas-generation-completion.spec.ts"
+    }
+  ]
+}

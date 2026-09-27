@@ -75,7 +75,7 @@ vi.mock('pixi.js', () => {
             }
             for (const child of node.children) visit(child);
           };
-          visit(input.container!); pixi.targetDraw({ colors: [...colors], meshes, transform: input.transform });
+          visit(input.container!); pixi.targetDraw({ colors: [...colors], meshes, transform: input.transform, target: input.target });
         }
         // Count the triangle indices actually submitted to render targets.
         // Construction/fill calls are not evidence that a Mesh was drawn.
@@ -83,7 +83,7 @@ vi.mock('pixi.js', () => {
       },
       resize: (width: number, height: number) => { pixi.resize(width, height); this.screen = { width, height }; },
     };
-    init() { return pixi.init(); }
+    init(options: { resolution: number }) { this.renderer.resolution = options.resolution; return pixi.init(options); }
     destroy() { pixi.destroy(); }
   }
   class RenderTexture {
@@ -151,17 +151,97 @@ describe('production camera, cache and GPU lifecycle', () => {
     const stats = h.renderer.metrics().geometryCache; expect(stats.surfaceMeshBufferBytes).toBeLessThanOrEqual(stats.surfaceMeshBufferByteLimit); expect(stats.shoreSegments).toBeGreaterThan(0);
     expect(h.fatal).not.toHaveBeenCalled();
   });
-  it('uses visible 8-cell texture cores for near detail while retaining logical geometry and both budgets', async () => {
+  it('uses smaller visible texture cores for near detail while retaining logical geometry and both budgets', async () => {
     const h = await loadedRenderer(); pixi.textureCreate.mockClear(); pixi.cropCreate.mockClear(); pixi.targetDraw.mockClear();
     h.renderer.zoom(16); tick();
     const view = h.renderer.metrics();
-    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.transform.a === 2)).toBe(true);
+    expect(view.raster).toMatchObject({ requestedDensity: 4, density: 4, subdivisions: 8, coreWorldSize: 128, corePixels: 512, fallbackReason: null });
+    expect(view.raster!.outputPixelsPerTexel).toBeLessThanOrEqual(1);
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.transform.a === 4)).toBe(true);
     expect(pixi.textureCreate.mock.calls.every(([options]) => options.width <= 1024 && options.height <= 1024)).toBe(true);
     expect(pixi.cropCreate.mock.calls.some(([options]) => options.frame.width === 512)).toBe(true);
     expect(view.cache.peakPixels).toBeLessThanOrEqual(32 * 1024 * 1024);
     expect(view.geometryCache.peakQuads).toBeLessThanOrEqual(131072); expect(view.geometryCache.entries).toBeLessThanOrEqual(128);
     expect(view.geometryCache.created - view.geometryCache.destroyed).toBe(view.geometryCache.entries);
     expect(view.visibleBlocks).toBeLessThan(16); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 2])('keeps real target coverage aligned across logical neighbours as subdivisions change at DPR %i', async resolution => {
+    Object.assign(window, { devicePixelRatio: resolution });
+    const h = await loadedRenderer();
+    for (const factor of [16, 2]) {
+      pixi.targetDraw.mockClear(); h.renderer.zoom(factor); tick();
+      const { raster, camera, viewport, cache } = h.renderer.metrics(), density = raster!.density, coreWorldSize = raster!.coreWorldSize;
+      const cores = pixi.targetDraw.mock.calls.map(([draw]) => {
+        const { a, d, tx, ty } = draw.transform;
+        expect(a).toBe(density); expect(d).toBe(density);
+        expect(draw.target.source.pixelWidth).toBe(raster!.textureSide); expect(draw.target.source.pixelHeight).toBe(raster!.textureSide);
+        // Both cropped cores and their two-pixel halos use one world lattice.
+        const x = (2 - tx) / a, y = (2 - ty) / d;
+        expect(Number.isInteger(x / coreWorldSize)).toBe(true); expect(Number.isInteger(y / coreWorldSize)).toBe(true);
+        return { x, y };
+      });
+      expect(cores).toHaveLength(raster!.visibleTextures);
+      const xs = [...new Set(cores.map(core => core.x))].sort((a, b) => a - b), ys = [...new Set(cores.map(core => core.y))].sort((a, b) => a - b);
+      expect(cores).toHaveLength(xs.length * ys.length); expect(new Set(cores.map(core => `${core.x}:${core.y}`)).size).toBe(cores.length);
+      expect(xs[0]).toBeLessThan(2048); expect(xs.at(-1)).toBeGreaterThanOrEqual(2048);
+      for (const coordinates of [xs, ys]) for (let i = 1; i < coordinates.length; i++) expect(coordinates[i] - coordinates[i - 1]).toBe(coreWorldSize);
+      expect(xs[0]).toBeLessThanOrEqual(-camera.x / camera.scale); expect(xs.at(-1)! + coreWorldSize).toBeGreaterThanOrEqual((viewport.width - camera.x) / camera.scale);
+      expect(ys[0]).toBeLessThanOrEqual(-camera.y / camera.scale); expect(ys.at(-1)! + coreWorldSize).toBeGreaterThanOrEqual((viewport.height - camera.y) / camera.scale);
+      expect(raster!.visiblePixels).toBe(cores.length * raster!.textureSide ** 2 + TERRAIN_LUT_PIXELS);
+      expect(raster!.fallbackReason).toBeNull(); expect(cache.peakPixels).toBeLessThanOrEqual(cache.budgetPixels);
+    }
+    expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('keeps DPR2 sub-cell targets at the unchanged maximum zoom through eviction, GPU recovery and unload', async () => {
+    Object.assign(window, { devicePixelRatio: 2 });
+    const h = await loadedRenderer(), canvas = canvasOf(h), fitScale = h.renderer.metrics().camera.scale;
+    h.renderer.zoom(1e6); tick(); const maximum = h.renderer.metrics();
+    expect(maximum.camera.scale).toBe(fitScale * 80);
+    expect(maximum.raster).toMatchObject({ density: 32, requestedDensity: 32, subdivisions: 64, coreWorldSize: 16, fallbackReason: null });
+    // Several disjoint near views force old density/core identities out under
+    // the original ledger, instead of retaining an unbounded split cache.
+    for (const id of [4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000]) h.renderer.focusCell(id);
+    const beforeLoss = h.renderer.metrics();
+    expect(beforeLoss.cache.evictions).toBeGreaterThan(0); expect(beforeLoss.cache.peakPixels).toBeLessThanOrEqual(32 * 1024 * 1024);
+    expect(beforeLoss.cache.created - beforeLoss.cache.destroyed).toBe(beforeLoss.cache.entries);
+    expect(beforeLoss.geometryCache.peakQuads).toBeLessThanOrEqual(131072); expect(beforeLoss.geometryCache.entries).toBeLessThanOrEqual(128);
+    dispatch(canvas, 'webglcontextlost'); expect(h.renderer.metrics().cache.pixels).toBe(0);
+    pixi.targetDraw.mockClear(); dispatch(canvas, 'webglcontextrestored'); await flushFrames();
+    const restored = h.renderer.metrics();
+    expect(restored.raster).toEqual(beforeLoss.raster); expect(restored.camera).toEqual(beforeLoss.camera);
+    expect(pixi.targetDraw.mock.calls.length).toBeGreaterThan(0); expect(pixi.targetDraw.mock.calls.every(([draw]) => draw.transform.a === 32)).toBe(true);
+    h.renderer.destroy(); const closed = h.renderer.metrics();
+    expect(closed.cache).toMatchObject({ pixels: 0, entries: 0, reservedPixels: 0, sharedEntries: 0 });
+    expect(closed.cache.created).toBe(closed.cache.destroyed); expect(closed.geometryCache.entries).toBe(0); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('reports a real DPR2 pixel-budget fallback and restores full sampling when the viewport shrinks', async () => {
+    Object.assign(window, { devicePixelRatio: 2 });
+    const h = await loadedRenderer(); h.renderer.zoom(5.27 / h.renderer.metrics().camera.scale); tick();
+    expect(h.renderer.metrics().raster).toMatchObject({ requestedDensity: 16, density: 16, fallbackReason: null });
+    h.host.clientWidth = 3840; h.host.clientHeight = 2160; ResizeObserverDouble.instances[0].notify(); tick();
+    const constrained = h.renderer.metrics();
+    expect(constrained.raster!.requestedDensity).toBe(16); expect(constrained.raster!.density).toBeLessThan(16);
+    expect(constrained.raster!.outputPixelsPerTexel).toBeGreaterThan(1); expect(constrained.raster!.fallbackReason).toBe('pixel-budget');
+    expect(constrained.raster!.visiblePixels).toBeLessThanOrEqual(constrained.raster!.visiblePixelBudget);
+    expect(constrained.cache.peakPixels).toBeLessThanOrEqual(32 * 1024 * 1024);
+    h.host.clientWidth = 800; h.host.clientHeight = 600; ResizeObserverDouble.instances[0].notify(); tick();
+    expect(h.renderer.metrics().raster).toMatchObject({ requestedDensity: 16, density: 16, fallbackReason: null }); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('hides only v3 sampling labels by default and restores them with the explicit geography grid', async () => {
+    const data = await createGenerationDraft({ size: 128, seed: 'natural-labels', name: '自然地表标签' }, { yieldTask: async () => {} }, 3);
+    const h = newRenderer(); await h.renderer.init(); const accepted = h.renderer.accept(data); await flushFrames(); await accepted;
+    h.renderer.zoom(16); tick();
+    expect(h.renderer.metrics()).toMatchObject({ lod: 'near', gridRequested: false }); expect(labelBoundary.update).not.toHaveBeenCalled(); expect(labelBoundary.hide).toHaveBeenCalled();
+    h.renderer.setGridVisible(true); tick();
+    expect(labelBoundary.update.mock.calls.at(-1)![0]).toMatchObject({ data, lod: 'near' });
+    labelBoundary.update.mockClear(); labelBoundary.hide.mockClear(); h.renderer.setGridVisible(false); tick();
+    expect(labelBoundary.update).not.toHaveBeenCalled(); expect(labelBoundary.hide).toHaveBeenCalled(); expect(h.renderer.metrics().lod).toBe('near');
+    const legacy = h.renderer.accept(generationSource); await flushFrames(); await legacy; h.renderer.zoom(16); tick();
+    expect(labelBoundary.update.mock.calls.at(-1)![0]).toMatchObject({ data: generationSource, lod: 'near' }); expect(h.fatal).not.toHaveBeenCalled();
   });
 
   it('draws one genuine Q8 closed outline without panning or selecting and caps retained samples', async () => {
@@ -783,6 +863,27 @@ describe('generation candidate display lifecycle', () => {
     expect(h.renderer.metrics()).toMatchObject({ acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, fatal: false });
   });
 
+  it('cancels at an early work-budget yield before painting more candidate targets', async () => {
+    let interrupt = false, clearing: ReturnType<AtlasRenderer['clearGenerationPreview']> | undefined;
+    const h = await generationRenderer(progress => {
+      if (interrupt && progress.stage === '绘制已核验地理块' && progress.completed === 2) {
+        interrupt = false; queueMicrotask(() => { clearing = h.renderer.clearGenerationPreview(); });
+      }
+    });
+    const candidate = await generationCandidate(), baseline = h.renderer.metrics(), candidateDigest = generationDigest(candidate);
+    let workMs = 1, candidateTargets = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => workMs);
+    pixi.render.mockImplementation(() => { workMs += 20; });
+    pixi.targetDraw.mockImplementation(() => { if (h.renderer.metrics().displaySource === 'generation-preview') candidateTargets++; });
+    interrupt = true;
+    const showing = h.renderer.showGenerationPreview(candidate), rejected = expect(showing).rejects.toMatchObject({ name: 'AbortError' });
+    await flushFrames(); await rejected; expect(clearing).toBeDefined(); await clearing;
+    expect(candidateTargets).toBe(2);
+    expect(h.renderer.metrics()).toMatchObject({ displaySource: 'committed', acceptedRevision: baseline.acceptedRevision, committedRevision: baseline.committedRevision, correctFrameAt: baseline.correctFrameAt, fatal: false });
+    expect(h.renderer.metrics().cache.peakPixels).toBeLessThanOrEqual(h.renderer.metrics().cache.budgetPixels);
+    expect(generationDigest(candidate)).toBe(candidateDigest); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
   it('full durable acceptance confirms the candidate and discard cannot roll it back', async () => {
     const h = await generationRenderer(), candidate = await generationCandidate();
     const showing = h.renderer.showGenerationPreview(candidate); await flushFrames(); await showing;
@@ -842,6 +943,8 @@ describe('generation candidate display lifecycle', () => {
 
 describe('atlas renderer failure and lifetime boundaries', () => {
   it('only resolves acceptance after its scheduled correct frame', async () => {
+    // Isolate the eight-target ceiling; elapsed-work yielding is covered below.
+    vi.spyOn(performance, 'now').mockReturnValue(1);
     const { renderer, fatal, progress } = newRenderer(); await renderer.init();
     const published = vi.fn(), result = renderer.accept(source).then(published);
     await Promise.resolve();
@@ -857,6 +960,24 @@ describe('atlas renderer failure and lifetime boundaries', () => {
     tick(); await result;
     expect(published).toHaveBeenCalledTimes(1); expect(renderer.metrics().correctFrameAt).toBeGreaterThan(0);
     expect(fatal).not.toHaveBeenCalled();
+  });
+
+  it('draws actual completed targets and yields on elapsed work before the eight-target ceiling', async () => {
+    const { renderer, fatal, progress } = newRenderer(); await renderer.init();
+    let workMs = 1;
+    vi.spyOn(performance, 'now').mockImplementation(() => workMs);
+    pixi.render.mockImplementation(() => { workMs += 20; });
+    const published = vi.fn(), result = renderer.accept(source).then(published);
+    await vi.runAllTimersAsync();
+    const painted = paintProgress(progress).map(item => item.value);
+    expect(painted.map(value => value.completed)).toEqual([2, 4, 6, 8, 10, 12, 14, 16]);
+    for (const value of painted) {
+      expect(value.total).toBe(16);
+      expect(value.submittedTerrainTriangles).toBeGreaterThan(value.completed * 1024 * 4);
+    }
+    expect(published).not.toHaveBeenCalled(); expect(renderer.metrics().correctFrameAt).toBe(0);
+    tick(); await result;
+    expect(published).toHaveBeenCalledTimes(1); expect(renderer.metrics().correctFrameAt).toBeGreaterThan(0); expect(fatal).not.toHaveBeenCalled();
   });
 
   it.each(['select', 'showPreview', 'fit', 'zoom', 'focusCell'] as const)('%s render failure locks every later rendering entry', async operation => {
@@ -910,6 +1031,7 @@ describe('atlas renderer failure and lifetime boundaries', () => {
   });
 
   it.each(['destroy', 'resize-error'] as const)('%s during the paint yield prevents remaining blocks and acceptance', async boundary => {
+    vi.spyOn(performance, 'now').mockReturnValue(1);
     let renders = 0;
     const { renderer, fatal, progress } = newRenderer(value => {
       if (value.stage !== '绘制已核验地理块' || value.completed !== 8) return;

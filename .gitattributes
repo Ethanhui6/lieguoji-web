@@ -29,3 +29,5 @@ docs/evidence/ph05-verification/** -text whitespace=cr-at-eol,-blank-at-eol,-bla
 
 # Authorized playtest verification preserves exact report bytes.
 docs/evidence/playtest-2026-09-24/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+# PH06 raw repair reports keep the exact bytes referenced by their inventory.
+docs/evidence/ph06-zoom-density-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

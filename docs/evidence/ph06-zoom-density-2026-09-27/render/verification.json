@@ -1,0 +1,231 @@
+{
+  "startedAt": "2026-09-27T05:40:59.627Z",
+  "completedAt": "2026-09-27T05:46:09.407Z",
+  "steps": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T05:40:59.678Z",
+      "completedAt": "2026-09-27T05:40:59.960Z",
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T05:40:59.960Z",
+      "completedAt": "2026-09-27T05:41:07.676Z",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T05:41:07.677Z",
+      "completedAt": "2026-09-27T05:41:20.385Z",
+      "exitCode": 0
+    },
+    {
+      "name": "release",
+      "args": [
+        "--test",
+        "scripts/release-policy.test.mjs"
+      ],
+      "startedAt": "2026-09-27T05:41:20.386Z",
+      "completedAt": "2026-09-27T05:41:35.089Z",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/camera.test.ts",
+        "src/world/atlas-label-layer.test.ts",
+        "src/world/atlas-terrain-geometry-cache.test.ts",
+        "src/world/lod.test.ts",
+        "src/world/terrain-material.test.ts",
+        "src/world/terrain-mesh.test.ts",
+        "src/world/terrain-surface.test.ts",
+        "src/world/coastal-surface.test.ts",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile=D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\zoom-density-checks\\first\\unit-results.json"
+      ],
+      "startedAt": "2026-09-27T05:41:35.093Z",
+      "completedAt": "2026-09-27T05:41:39.254Z",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T05:41:39.254Z",
+      "completedAt": "2026-09-27T05:41:40.909Z",
+      "exitCode": 0
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T05:41:40.909Z",
+      "completedAt": "2026-09-27T05:41:41.055Z",
+      "exitCode": 0
+    },
+    {
+      "name": "browser",
+      "args": [
+        "node_modules/playwright/cli.js",
+        "test",
+        "--config=.autopilot/ph06/zoom-density-checks/browser.config.ts"
+      ],
+      "startedAt": "2026-09-27T05:41:41.216Z",
+      "completedAt": "2026-09-27T05:46:09.287Z",
+      "exitCode": 0
+    }
+  ],
+  "buildSha256": "4c3eb86d22516ae0fe29ede3dfe7fe3d4c6a6e90a57a871dec4e086d5f660326",
+  "sourceStable": true,
+  "distStable": true,
+  "coverage": true,
+  "passed": true,
+  "stats": {
+    "startTime": "2026-09-27T05:41:42.181Z",
+    "duration": 267073.52300000004,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 56008
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 55740
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 63282
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12213
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使用真实颜色",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13558
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12454
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使用真实颜色",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13786
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 16070
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使用真实颜色",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 19883
+        }
+      ]
+    }
+  ],
+  "limitations": "Desktop browser device emulation; no real-device or user visual acceptance. Fine coast source core is not integrated into v3 and cannot be claimed playable."
+}

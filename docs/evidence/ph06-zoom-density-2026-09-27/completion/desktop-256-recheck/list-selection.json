@@ -1,0 +1,19 @@
+{
+  "selection": "desktop-256",
+  "verified": true,
+  "expected": 1,
+  "observed": 1,
+  "expectedPerProject": {
+    "desktop-chromium": 1
+  },
+  "coverage": true,
+  "noExecutedAttempts": true,
+  "errors": [],
+  "cases": [
+    {
+      "project": "desktop-chromium",
+      "title": "标准256长任务：手绘和海床真实运行中取消，250ms进度与500ms取消保持源库",
+      "file": "atlas-generation-completion.spec.ts"
+    }
+  ]
+}

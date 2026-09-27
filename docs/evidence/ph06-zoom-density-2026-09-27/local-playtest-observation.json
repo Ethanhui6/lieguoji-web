@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-27",
+  "kind": "manual-ui-observation",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-5fa3eb44-f9e4-461f-9297-30fab36fa12a&atlas-format=3",
+  "browser": "Codex in-app browser 1, existing tab 4",
+  "draft": "山海新卷 · 手绘试玩 · 自然海岸",
+  "savedRevisionObserved": 0,
+  "before": "Existing preview.5 at 547% displayed numerous sampling-center labels with the grid switched off.",
+  "after": "After the checked preview.6 build and a real page reload, the same local draft restored at revision 0. At 547% with grid off, sampling-center labels were absent. The map was then returned to full view plus one zoom step (21%) and kept as a deliverable tab.",
+  "consoleErrorsObserved": [],
+  "dataActions": "Camera/UI observation only; no edit or new save action in this manual observation.",
+  "limitations": [
+    "This manual UI observation is separate from the production-build fingerprint and independent Playwright pixel/storage tests.",
+    "It does not establish fine-coast integration, nation/city/army gameplay, real-device performance or user visual approval."
+  ]
+}

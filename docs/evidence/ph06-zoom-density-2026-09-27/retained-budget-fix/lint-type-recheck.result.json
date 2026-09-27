@@ -1,0 +1,7 @@
+{
+  "finishedAt": "2026-09-27T14:24:13.0101576+08:00",
+  "reason": "Type-only narrowing of fixture manifest after the passing unit run; no runtime test or product behavior changed",
+  "command": "node node_modules/eslint/bin/eslint.js src/world/transactions.ts src/world/replacement-cooperation.test.ts",
+  "exitCode": 0,
+  "startedAt": "2026-09-27T14:24:11.3170102+08:00"
+}

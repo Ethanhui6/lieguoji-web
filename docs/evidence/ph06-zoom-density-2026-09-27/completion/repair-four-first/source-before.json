@@ -1,0 +1,1038 @@
+[
+  {
+    "path": ".autopilot/ph06/current-completion-checks/browser.config.ts",
+    "sha256": "4d44c72c1ad1f607f061ec8b1a0a7ca8c4a3e766d18dce7879c7577c3829a33a"
+  },
+  {
+    "path": ".autopilot/ph06/current-completion-checks/run.mjs",
+    "sha256": "eb09f240724b5b556d479790e20c45a58f5cdd9b0281e8beb804c4c38ae64992"
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "21ca211f80ae8f5533e0c0350bff3e7ec727a7385d3d3df95bb612b4e45c91eb"
+  },
+  {
+    "path": "package.json",
+    "sha256": "6eff74c45e3b0b98a343ebc3239918494ea2eddf334a86f03f619447923c525b"
+  },
+  {
+    "path": "plan/tasks.json",
+    "sha256": "62e2840443ade398ce0692842dff394292109cdc384468542e1548443c940db1"
+  },
+  {
+    "path": "playwright.config.ts",
+    "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+  },
+  {
+    "path": "public/_headers",
+    "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+  },
+  {
+    "path": "public/_redirects",
+    "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+  },
+  {
+    "path": "public/favicon.svg",
+    "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+  },
+  {
+    "path": "scripts/bench-scale.mjs",
+    "sha256": "8d3c89bd049951795aea1ce30ddc53c42847cedcd3f3575572d8342ae92b2b94"
+  },
+  {
+    "path": "scripts/check-dist.mjs",
+    "sha256": "2be1d61d94aa239c917ce185322a42e15d300e59703b17c8a53736178422a066"
+  },
+  {
+    "path": "scripts/check-plan.mjs",
+    "sha256": "d5629411c44b48b715b138cb410c834744e8e493f3e8431b6f91e15f1781b74b"
+  },
+  {
+    "path": "scripts/check-release.mjs",
+    "sha256": "29de1b554c9934cb40184dbf9ebc02353e76549d24e6fd5c52cafd008a57c005"
+  },
+  {
+    "path": "scripts/engine-fingerprint.ts",
+    "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+  },
+  {
+    "path": "scripts/generator-fingerprint.ts",
+    "sha256": "83098badc6d861c5657b206aa650b99753ff764cdf1dee49cec4616d57d1e86c"
+  },
+  {
+    "path": "scripts/measure-atlas-rendering.mjs",
+    "sha256": "53855b59b85b8975d709b632b5078c7ab074fbe12ef51fe6a729c8c3711e127f"
+  },
+  {
+    "path": "scripts/measure-atlas.mjs",
+    "sha256": "1dee3b9b34301a5c5e6bf750c833fb8b51f08c0be9e5ff8e47b3c9d93483ea7f"
+  },
+  {
+    "path": "scripts/release-policy.mjs",
+    "sha256": "603fd69ca2134ccb8f63016e59d9b0f3fa832680d605584a2752d49bf63ea236"
+  },
+  {
+    "path": "scripts/release-policy.test.mjs",
+    "sha256": "27437911981e794d8d9ce877409b325f493d2349baa0f2318a26674bed5fe673"
+  },
+  {
+    "path": "scripts/report-scale.mjs",
+    "sha256": "f8a8b41e61824ee88414a2a2d7cbeb33daf50dd7f3abb050d9bb85fc72db478e"
+  },
+  {
+    "path": "scripts/summarize-atlas-rendering.mjs",
+    "sha256": "06c29985cafb13232f486286730fba06935515e08d5c24d06b819910f1a05def"
+  },
+  {
+    "path": "scripts/summarize-atlas.mjs",
+    "sha256": "7b2eb83ada98785cd06e98d1295146d3189e0523057b9358ef3105e1680a5d01"
+  },
+  {
+    "path": "src/App.tsx",
+    "sha256": "8454b4fa04b2fc40e23b69ef62ac80302083d1756e8c0efaa684e62e7a09c9c8"
+  },
+  {
+    "path": "src/RootApp.tsx",
+    "sha256": "b65fc13e21cccc6ed24a0779cd7724f0c484e178f933c75d28763403c7b4093b"
+  },
+  {
+    "path": "src/bench/scale/bench.css",
+    "sha256": "0d17d5bb651b03707b96ec9897fabdc7cef908fd2f961361165fa8bd9ee6553b"
+  },
+  {
+    "path": "src/bench/scale/bridge.test.ts",
+    "sha256": "b106c5d7d4fb6f0f313c2726c03c48ca605601894b0680974d01be82eaba8e55"
+  },
+  {
+    "path": "src/bench/scale/bridge.ts",
+    "sha256": "7ebe62b5d444a233ae782bbaef8a3687531b7485d1f5f0449b56e8cacb4e2451"
+  },
+  {
+    "path": "src/bench/scale/controller.test.ts",
+    "sha256": "a406e2b782f7c32d9add74299ac452175e3b639c87875439ec5ac7dcaabcd7de"
+  },
+  {
+    "path": "src/bench/scale/controller.ts",
+    "sha256": "31e2d1eb1f90ac1603a8b190147afb884d168e245723da9d3cf24427ed9972d4"
+  },
+  {
+    "path": "src/bench/scale/entity-budget-bridge.test.ts",
+    "sha256": "8d9cc58140809e2dc99bec5f96a58d8fb4d4d16563460e417fb73afa56b77a65"
+  },
+  {
+    "path": "src/bench/scale/entity-budget-bridge.ts",
+    "sha256": "3a8518f17ae249a2d4b53fca09f133dc0211fd29073cd57c5991e3cdfd26aece"
+  },
+  {
+    "path": "src/bench/scale/entity-budget.test.ts",
+    "sha256": "5bf9d9b3882923c4d54c8f4f909284b52bbf3a3cb0eb0e2f7fd17d143cf98762"
+  },
+  {
+    "path": "src/bench/scale/entity-budget.ts",
+    "sha256": "8ea6e472da0f2c2ddaf70533ad8c2b80ed4282a2dc079b11d835bc76e70cbd97"
+  },
+  {
+    "path": "src/bench/scale/entity-budget.worker.test.ts",
+    "sha256": "52f0a46522e0fc65c310d9bdc3d2cfdd174a3cd0c405af6a25c945552cdc8043"
+  },
+  {
+    "path": "src/bench/scale/entity-budget.worker.ts",
+    "sha256": "374cb116067a67ab5ea1e2256de13a739a8e403805fbac4ba61adf3046731380"
+  },
+  {
+    "path": "src/bench/scale/fixture.test.ts",
+    "sha256": "9e5042b5d7c60654dcbef4a9585d92b200d3b53481c3de46409f59fe65c33534"
+  },
+  {
+    "path": "src/bench/scale/fixture.ts",
+    "sha256": "a874af64c850ee4e7f7e024a66f688be6b7e75f72cbe13ffac61858b2db211fd"
+  },
+  {
+    "path": "src/bench/scale/history-storage-measure.test.ts",
+    "sha256": "8b8600f0a2bb6f7254671229e373f2b323161dcf842ebd101fda38cbe0dc10fa"
+  },
+  {
+    "path": "src/bench/scale/history-storage-measure.ts",
+    "sha256": "469e5d1acea7d3f279030c90d8c9c238e1c6567f2da274e513cb6079b98a502d"
+  },
+  {
+    "path": "src/bench/scale/history.test.ts",
+    "sha256": "9b583ed33b1aae3f6d9bc604a2d69e58a788b654276b561fe574b79f9d54820a"
+  },
+  {
+    "path": "src/bench/scale/history.ts",
+    "sha256": "15a058ddb9a196c15bf8083c92899feb26e621b229683c37acf7f67321730a7e"
+  },
+  {
+    "path": "src/bench/scale/kernels.test.ts",
+    "sha256": "2ac34222aad3a0157cf19d666906dd5cbfddf61c31c5e84bc8c56de88f238aa7"
+  },
+  {
+    "path": "src/bench/scale/kernels.ts",
+    "sha256": "33bc8372daf89ee6787cd26d4298ea18e01e9647d71440016c0564c21b34be91"
+  },
+  {
+    "path": "src/bench/scale/legacy-baseline.test.ts",
+    "sha256": "84d739077ee8a42a1749adb79a87f6529de368fab70790a2a8190af0b5f35a0c"
+  },
+  {
+    "path": "src/bench/scale/legacy-baseline.ts",
+    "sha256": "92e537b173f961224cf72e8174745d5ff641bb17e270986091e169acd8a05289"
+  },
+  {
+    "path": "src/bench/scale/main.tsx",
+    "sha256": "a3c2a154d50ae08026e3f30bf3bb339ea98c532b07b7ab14d2fa2a78659b9126"
+  },
+  {
+    "path": "src/bench/scale/measure.ts",
+    "sha256": "4d83cd03bf422a37f57b925222ebcef1ab480fa34fa9ea8bffa6943332e44ee7"
+  },
+  {
+    "path": "src/bench/scale/protocol.ts",
+    "sha256": "38192b6c95a9a5bf43e6e164e395dd7b9a704e73e3163e1b75700639d8cbf619"
+  },
+  {
+    "path": "src/bench/scale/renderer.ts",
+    "sha256": "ccb32bfcf512d0eca03ece03c65504a837cd92094e47fd07bdf42ef1aa8e602b"
+  },
+  {
+    "path": "src/bench/scale/scale.worker.test.ts",
+    "sha256": "3fa66475af93a98de503e95a9bf49aaec26d27341bae90c98d8bf7ddc0a24871"
+  },
+  {
+    "path": "src/bench/scale/scale.worker.ts",
+    "sha256": "252ddedf9fcee1ed2d9b58ac689f47af7c2f7358f2d8c378eea89e4f96d5cf92"
+  },
+  {
+    "path": "src/bench/scale/storage.test.ts",
+    "sha256": "ad507cf9c22b44c3274e12a973a6d6056111595937435006d18c44c8f575c626"
+  },
+  {
+    "path": "src/bench/scale/storage.ts",
+    "sha256": "4848a8718fab9a0c045685deb713c5cec7988097ec2e8d7966bd3e03f583553f"
+  },
+  {
+    "path": "src/bench/scale/types.ts",
+    "sha256": "e88f0572fc7a53162c96480c3a69c134ed4d1c5d031cb6cb10880a8ceb86cb5b"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-legacy.expected.json",
+    "sha256": "4874fd7f3ac76865937b8e8cfc74490f6e51c46b58e5bcab4828985eb94fb892"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-legacy.final-world.json",
+    "sha256": "a7186e2d4b42c98e7637a279b6dce6a602448e5f497a7d6e74ecfaec4713fdb8"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-legacy.json",
+    "sha256": "0348153dbe9b0221374b8d5fb764bd03f13bec910adc47a372e74ef04266466d"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-modern.expected.json",
+    "sha256": "e2333576c6c43b3fbe262b081b9072ca550416573cde4a5b5a4a8f4bd41875a3"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-modern.final-world.json",
+    "sha256": "3a1855d2a9003e1de51eabb2f77181127f47c581acb0b25a67e0e74830b59da9"
+  },
+  {
+    "path": "src/compat/fixtures/golden-0.4-modern.json",
+    "sha256": "4d16f2dde357f88b2184aaa5231764ac80471d247a477aa71ab6af262d6136fe"
+  },
+  {
+    "path": "src/compat/fixtures/legacy-source.json",
+    "sha256": "aafd0a2747e20c00caf69a68aa732fa40f96384401c00baf21a4c7c149f6da5e"
+  },
+  {
+    "path": "src/compat/fixtures/modern-source.json",
+    "sha256": "81c13c5b69922958fcc3567e59c3f11fa62128c7926152150feed2d32fd41464"
+  },
+  {
+    "path": "src/compat/frozen.test.ts",
+    "sha256": "ebb85f16d9756a6eff7a4d3aac77dd7d5e5a861f4b51fb484034f08b41818e47"
+  },
+  {
+    "path": "src/compat/v0_4/history/core.ts",
+    "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+  },
+  {
+    "path": "src/compat/v0_4/history/types.ts",
+    "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+  },
+  {
+    "path": "src/compat/v0_4/manifest.json",
+    "sha256": "5a6b31e91ddd81bdfbdaaeb80793abcc984b8cd163f2d5b56f064496f3da3fb3"
+  },
+  {
+    "path": "src/compat/v0_4/sim/core.ts",
+    "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+  },
+  {
+    "path": "src/compat/v0_4/sim/statecraft.ts",
+    "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+  },
+  {
+    "path": "src/compat/v0_4/sim/types.ts",
+    "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+  },
+  {
+    "path": "src/editor/AtlasStudio.tsx",
+    "sha256": "2435fb03ae651a1410dcf13116132c2ffc7a334e512f9bbd38a4394134c9a0c0"
+  },
+  {
+    "path": "src/editor/StudioCanvas.tsx",
+    "sha256": "340b78d358296cc162f1199f576780306895e24e75cc8720a5513ef47ae19207"
+  },
+  {
+    "path": "src/editor/WorldStudio.tsx",
+    "sha256": "fadc9213dcf143c577748f7515d29ed9f1be53d8883284bafeb6c7b26e938e8f"
+  },
+  {
+    "path": "src/editor/atlas-operation-feedback.test.ts",
+    "sha256": "e5541ec1b5935fbaa2c6ddd10d0e7883be07a1e9759c80ae7dc435f94692e7dc"
+  },
+  {
+    "path": "src/editor/atlas-operation-feedback.ts",
+    "sha256": "6b0b5328d55ea7b7ad589aed90f029db101b9bfa24a2fa494e87a363ebbadd9c"
+  },
+  {
+    "path": "src/editor/atlas-studio.css",
+    "sha256": "87138aef8f1ede52f7d53a924e46b2f3ec450e4e586fd4efcdaa4d85815ad9c7"
+  },
+  {
+    "path": "src/editor/store.test.ts",
+    "sha256": "c2d61ebc1eb3e7682426c1a9704f415b5f3d66f517a4a4a641de8bf2776f4cd6"
+  },
+  {
+    "path": "src/editor/store.ts",
+    "sha256": "4f55fbd8cf5c901c917c421d3a91b3ffc55fce5da69c375a4da49e8cc8a8ff57"
+  },
+  {
+    "path": "src/editor/studio.css",
+    "sha256": "0ce9916eb4b6d8e6b415ad790beb121a0b2bbbb97f3234fa38b3fbcfc68a3cb9"
+  },
+  {
+    "path": "src/engine/adapter.ts",
+    "sha256": "6e4bcbd7c644d90346fb846d469645d2d6798a4fd6920264c91fe9734e585227"
+  },
+  {
+    "path": "src/engine/contracts.ts",
+    "sha256": "a551e9086ad2a9bddc6bc70f4c9b86ea2dfd3bd974bef793954a9ed062b407ee"
+  },
+  {
+    "path": "src/engine/conversions.ts",
+    "sha256": "694e47b3108c0e46f8be45e1adc70a3b284ea53b69a2f8b2fc4493589b8f4a2f"
+  },
+  {
+    "path": "src/engine/fingerprint.test.ts",
+    "sha256": "d63f6c0acaade9360f8b034c091f533e8b56e4edce57fb0e22798fdfc1c0f23e"
+  },
+  {
+    "path": "src/engine/protected-backup.test.ts",
+    "sha256": "19576f57348e0fe79de65719fae2a6b2c03db43f77a1a23e41eb2e3f0ac39789"
+  },
+  {
+    "path": "src/engine/protected-backup.ts",
+    "sha256": "8c72496f0900a38a4a9a1729f23eb2bada688aceff0f7d21115954c6609ec5bf"
+  },
+  {
+    "path": "src/engine/registry.test.ts",
+    "sha256": "e4755ef7f5ca4b60b8b7fc903c6d71ad4478e9b81a7630388e2306e88c6bbf68"
+  },
+  {
+    "path": "src/engine/registry.ts",
+    "sha256": "091f0df313aeba515bbdc0b72d719b15dec995d5caaf15f9a348fb6daafc054c"
+  },
+  {
+    "path": "src/history/core.test.ts",
+    "sha256": "82d04d6e18b8f70404c6a7e0f84d729d0f9d16607fca60f9bbb5fa946821238c"
+  },
+  {
+    "path": "src/history/core.ts",
+    "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+  },
+  {
+    "path": "src/history/engine.ts",
+    "sha256": "393a9d6d9e193f42aa3bd1a7bc055fea1704accd1a8edc0d9e8a2bd5c87c3040"
+  },
+  {
+    "path": "src/history/replay.ts",
+    "sha256": "9fee5da19037c0667ebe0e4374fe0686a36d77aa731d7bd33f8ec4a1cc169090"
+  },
+  {
+    "path": "src/history/store.test.ts",
+    "sha256": "52019b9737297efc31584403c82be90c84bdb19c0f4ba374e19072474596b553"
+  },
+  {
+    "path": "src/history/store.ts",
+    "sha256": "4f1c1e59a6fdfb69e2ef2ab66e3536e46d14cc653d310af3feafd8bde541c087"
+  },
+  {
+    "path": "src/history/types.ts",
+    "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+  },
+  {
+    "path": "src/main.tsx",
+    "sha256": "942de0af490f9c904bf140f9e8d9bc4d1298731ae47b7ca05d2062b9011acd67"
+  },
+  {
+    "path": "src/persistence.test.ts",
+    "sha256": "006a2e3d6639ace0ae0f3972bbd2646b6c62b840ced1df371d8bc7abb09cdbe7"
+  },
+  {
+    "path": "src/persistence.ts",
+    "sha256": "d4cdd6f14634b4bf895cea7e487b6ac299882930a1692e86239541ba36b5f836"
+  },
+  {
+    "path": "src/replay.worker.ts",
+    "sha256": "bbbe3e9b196edbabe9b24290a6bc2bbf90ec86e58c8f48f830b7aae4318fe1ae"
+  },
+  {
+    "path": "src/sim.worker.ts",
+    "sha256": "02d7f8b55534c57835874cd36b40a42c975100bbae32562ebf7c6aa9793996fd"
+  },
+  {
+    "path": "src/sim/core.test.ts",
+    "sha256": "26d13d660c0f6a0e8f6b0c4367348b790b7c3b74374ce0a7a80300cd7b3d1a48"
+  },
+  {
+    "path": "src/sim/core.ts",
+    "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+  },
+  {
+    "path": "src/sim/demo.ts",
+    "sha256": "228731549ef664c27ce992fdb20f77f711b51646f8bbff5f3f7357d91bed2cf2"
+  },
+  {
+    "path": "src/sim/statecraft.acceptance.test.ts",
+    "sha256": "f38199f86a1627549300d3f97d64ba4530eb315deb2b544ab3969319c3cef7f3"
+  },
+  {
+    "path": "src/sim/statecraft.test.ts",
+    "sha256": "e33f8a5487bbae6ff93d084bc32d560931045ecc9bee1eb9b300559787e5e178"
+  },
+  {
+    "path": "src/sim/statecraft.ts",
+    "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+  },
+  {
+    "path": "src/sim/types.ts",
+    "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+  },
+  {
+    "path": "src/styles.css",
+    "sha256": "9a89283cc8183a2fbce3b8506501a21f3e08f4790b460ab04c7b3feeb483fdab"
+  },
+  {
+    "path": "src/styles/tokens.css",
+    "sha256": "53d721eb2701f9a324d8c9ca1b88640b55f7e66b968b9ff483fa29ff08b46b7f"
+  },
+  {
+    "path": "src/ui/AppearanceSettings.tsx",
+    "sha256": "9c4c429b9d969f4c0f9e74a578111583b53e6d6233f0da23cfa6b413756a7142"
+  },
+  {
+    "path": "src/ui/ContextInspector.tsx",
+    "sha256": "87751576d3d18cb715e7f37ce58399e47a124292ef683f7de98a4fcb9523a7fa"
+  },
+  {
+    "path": "src/ui/HistoryPanel.tsx",
+    "sha256": "3e0e610dac55e08d4da6316b7837887451e4bd4bfc8ab870613862d119f8b574"
+  },
+  {
+    "path": "src/ui/Icon.tsx",
+    "sha256": "29d043ec39136572e16aaa0671c34041741799a7bbbac59c23aa57b2e0fa985c"
+  },
+  {
+    "path": "src/ui/MapCanvas.tsx",
+    "sha256": "b211db9aa8cb47a85c4f00edbbfbb573029b6e8c5677e59463aae97c9288f742"
+  },
+  {
+    "path": "src/ui/ModalDialog.tsx",
+    "sha256": "01b8a828ee7a4b081071edf55cd1636a6dfa61b0bd8bc3c62be09aa93204bd35"
+  },
+  {
+    "path": "src/ui/StatecraftPanel.tsx",
+    "sha256": "704ebf82739b272cc4d518b018998e50c75ee6d31b28d1805a53de830ca58479"
+  },
+  {
+    "path": "src/ui/appearance.tsx",
+    "sha256": "8d6964ff4a75a6abf8ca9a6e4762879c63b431484e8d209f7c2b77e8ad162c83"
+  },
+  {
+    "path": "src/ui/history.css",
+    "sha256": "4646335760edfb936965ecafb1f2c1e41490839771152d0cc825b79c63c1ab01"
+  },
+  {
+    "path": "src/ui/statecraft.css",
+    "sha256": "454d482ab6e44aab57af2b465f4bca3dab7ea65f5bafef94efbfd5509b52fa5d"
+  },
+  {
+    "path": "src/useGame.ts",
+    "sha256": "9f78c2c169246fc6c2ac633bce114276846558ff4c438914dd7f297aeba25350"
+  },
+  {
+    "path": "src/vite-env.d.ts",
+    "sha256": "0d72b2eb5ce241ab422a585f21c886f7e410db6fd7aadaa9702e22c71eab84bc"
+  },
+  {
+    "path": "src/world/atlas-format.ts",
+    "sha256": "0525774f0f07e08f03b26733cc959cc0d7aa98c6b3227f2c5ad2e2aaa0a500e8"
+  },
+  {
+    "path": "src/world/atlas-label-layer.test.ts",
+    "sha256": "042e0b64ddedab046dfbb6f4341c57e11df03f439d9c96f9e1c7c05fccad9e43"
+  },
+  {
+    "path": "src/world/atlas-label-layer.ts",
+    "sha256": "7320927e89a5c4520f62c5d9ad80a6dd959d8ebeb56d5c99a8e6d513f9396ffc"
+  },
+  {
+    "path": "src/world/atlas-terrain-geometry-cache.test.ts",
+    "sha256": "a2a479f0ebf24870b44116d9038120c5f0933419a954cf70ea316b1973119fb7"
+  },
+  {
+    "path": "src/world/atlas-terrain-geometry-cache.ts",
+    "sha256": "82861ce43bf4574e1b3aff77c7a5ff3d7f4f37d38661ec56e5985def635494d5"
+  },
+  {
+    "path": "src/world/atlas-texture-cache.ts",
+    "sha256": "7388b345aef944cb38386360903c23d54dde4a19f5eba2aa626a14bc2ae9f6bc"
+  },
+  {
+    "path": "src/world/atlas.worker.test.ts",
+    "sha256": "3d3c72e70d1c93a121d19c552a05482b943a17188654a7ad9675d3d2f3ce99c7"
+  },
+  {
+    "path": "src/world/atlas.worker.ts",
+    "sha256": "cc5fad59e6c643df0ee9c9a10bb5200c3d387e9fc606059a6e4c2523f55ac83b"
+  },
+  {
+    "path": "src/world/bridge.test.ts",
+    "sha256": "6e3b072887d69bd99953c4786199390c1c977c7ed0628169495f9a58b6c6f494"
+  },
+  {
+    "path": "src/world/bridge.ts",
+    "sha256": "0f9e470bcacf9606bd4061e13662ab95dabb2f705de598de7318a4d58e06b8f9"
+  },
+  {
+    "path": "src/world/camera.test.ts",
+    "sha256": "e0f88b7245ec0f3d1ce29ccb9080335d77ae4455a8cc44ca48c152904bc0bfdc"
+  },
+  {
+    "path": "src/world/camera.ts",
+    "sha256": "ff2b58f223bef0ac30c10fc2d646a76d051d45947fd5d09c574a547d6ad8fe38"
+  },
+  {
+    "path": "src/world/coastal-generation-session.test.ts",
+    "sha256": "3ec76dad7435f9dceec7e25509fdf7488f4b57c7be0640dad779995c20299baa"
+  },
+  {
+    "path": "src/world/coastal-generation.test.ts",
+    "sha256": "5a987e02e706d6c88ca7d8503ee87c990472d3c853117c1d653fee1afac7b674"
+  },
+  {
+    "path": "src/world/coastal-generation.ts",
+    "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc"
+  },
+  {
+    "path": "src/world/coastal-surface.test.ts",
+    "sha256": "915ca895699c2100d6756360d32f85fc4dfda17d7a26778e8921f16e3b213456"
+  },
+  {
+    "path": "src/world/coastal-surface.ts",
+    "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092"
+  },
+  {
+    "path": "src/world/constraints-receiver.test.ts",
+    "sha256": "c8d269c8cb28a8ed6f0dd90191eb0f672f6d3e2ef21b585fd6920bec618379d9"
+  },
+  {
+    "path": "src/world/constraints-session.test.ts",
+    "sha256": "4257e9b7448cee4ec3a7189b6d093532a6051717344a8516c0ad8088997ed317"
+  },
+  {
+    "path": "src/world/constraints-session.ts",
+    "sha256": "139254dd6fc101af8bdf7ec33c5a1a0024fda070b9b0370724b49680112c0458"
+  },
+  {
+    "path": "src/world/constraints-storage.test.ts",
+    "sha256": "e1ff4752ae6ab0aa78aead0cc713a1e6287712322a912f9e9ee965a2e628c0fd"
+  },
+  {
+    "path": "src/world/cooperative-ownership.test.ts",
+    "sha256": "71fcd6753fca00af96cff9936ea6124d337981380032b1a6cd5b51ad7c128a06"
+  },
+  {
+    "path": "src/world/delta.ts",
+    "sha256": "be66a7678fb5f1187dd08853d8a440d3fb2c5143c2ef65e34fe06fce3c8b1d23"
+  },
+  {
+    "path": "src/world/detail-coast-codec.ts",
+    "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+  },
+  {
+    "path": "src/world/detail-coast-field.ts",
+    "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+  },
+  {
+    "path": "src/world/detail-coast-geometry.ts",
+    "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+  },
+  {
+    "path": "src/world/detail-coast-types.ts",
+    "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+  },
+  {
+    "path": "src/world/detail-coast.test.ts",
+    "sha256": "64f755821ec2929ec9311975540b96031777e7a029b51ca4f59fdf5bb1d6582d"
+  },
+  {
+    "path": "src/world/edit-codec.test.ts",
+    "sha256": "2ad2abe9d445ac7c3ae2cb5dd2e1fb97f01f6796ce29643ece5dd55b21161e1f"
+  },
+  {
+    "path": "src/world/generation-contract.test.ts",
+    "sha256": "3f69f996439a627a4ce892d819d3afa72920ff236aa6fb24c1872f42fecad19e"
+  },
+  {
+    "path": "src/world/generation-contract.ts",
+    "sha256": "1c650d92fb39eb9226a62426973606a317f3dd32ead0d01bffc45ddda84fb932"
+  },
+  {
+    "path": "src/world/generation-extra-recipes.test.ts",
+    "sha256": "6328c12755afdfb85523c2c9b92feb9125ca11e6d17231f915b34f148756c61e"
+  },
+  {
+    "path": "src/world/generation-format.test.ts",
+    "sha256": "61fe3dd306c87012547bcd55af111895eff48d9db8f27af8c9d1c8af4912d7c4"
+  },
+  {
+    "path": "src/world/generation-format.ts",
+    "sha256": "d1cd4ab04a059be74ee44f92eea0aae080f6096870923c1497d52be2f6100a57"
+  },
+  {
+    "path": "src/world/generation-history-preview2.test.ts",
+    "sha256": "bff699d0b145c956f25f8bafe007052d4f3f7fb3299c2dd640bd12df201cc683"
+  },
+  {
+    "path": "src/world/generation-history-preview4.test.ts",
+    "sha256": "a6d36cc43f5eee2b5542de8399d5809d0f22469bca96d1612b3c6d7217679c95"
+  },
+  {
+    "path": "src/world/generation-history-preview5.test.ts",
+    "sha256": "9e8e245290b3352bf2ce0b91cb56fe019193d607d1849fec829b0a97090fb7a0"
+  },
+  {
+    "path": "src/world/generation-history.test.ts",
+    "sha256": "eb5a78b40ea29a0749a300e9f89dab63d026985476bc0e59b945f0c1aea1a062"
+  },
+  {
+    "path": "src/world/generation-history.ts",
+    "sha256": "a2d3b9336d9ad88252fda6cbf9406772f6e20bc8d245beed24172a9659a74956"
+  },
+  {
+    "path": "src/world/generation-locks.ts",
+    "sha256": "aea5faaa1b609ecf0b14640747473b52f1bd970a30547533a5052b847d7aa4f9"
+  },
+  {
+    "path": "src/world/generation-ocean-contract.test.ts",
+    "sha256": "c832de242849b97cee7f7d86a65611c5ead04ca43fafd78cd34272a445241af4"
+  },
+  {
+    "path": "src/world/generation-receiver.test.ts",
+    "sha256": "9f7cbe651e0aa6607679c179364d1fd7967d580e31db096da1cc6acb200b5666"
+  },
+  {
+    "path": "src/world/generation-session.ts",
+    "sha256": "1e291bb07d413134f9e6fc32f6ec8dcfb378f48f68dfe3b925a455d970f9fc2b"
+  },
+  {
+    "path": "src/world/generation-shape-contract.test.ts",
+    "sha256": "3bc73c922a8dac2fa573277683837cd077b32118f172b3bc2c4b50441e78484a"
+  },
+  {
+    "path": "src/world/generation-storage.test.ts",
+    "sha256": "25acb6dd0fcbc5f017aeaf9a1c623971eef7886959f2b9dcb44d2d55d4c9d2c0"
+  },
+  {
+    "path": "src/world/generation-undo.test.ts",
+    "sha256": "458417c4ce2ec84fdd4bdb6a21cc63a8c011d8b61dc156d00c4bba424568cbcc"
+  },
+  {
+    "path": "src/world/generation/coast.test.ts",
+    "sha256": "c9ca446c0347d3b16e056f9c5f1d71de5403343418f70541711326a28e0b7bc4"
+  },
+  {
+    "path": "src/world/generation/coast.ts",
+    "sha256": "96a985c6f38f8807850e6df3721e5f769a892c3019a721670d9ccd5046a3c8f0"
+  },
+  {
+    "path": "src/world/generation/fingerprint.test.ts",
+    "sha256": "c7f283ed20496a36741fb7b29dd6a8f77452c9dd4d741f25f306d95e406ca2e4"
+  },
+  {
+    "path": "src/world/generation/fingerprint.ts",
+    "sha256": "1f1df90c5655859bb7d098f65543e3e0a8424b0d30988e467fbd3feff37cd0f4"
+  },
+  {
+    "path": "src/world/generation/islands.test.ts",
+    "sha256": "6d52510a089c0bdf82ba952af9d83b7f9c2d0448867af332a42b5792b364afe5"
+  },
+  {
+    "path": "src/world/generation/islands.ts",
+    "sha256": "29a1d240a3d52d95e9fc5db6f45208690c0341aec97c3de2ac8281de940cd17b"
+  },
+  {
+    "path": "src/world/generation/landforms.test.ts",
+    "sha256": "ebaf4eb029f1d7487c318f0fbd3ba5301ca30857b4fb6807b0f8ab89eab3c8a3"
+  },
+  {
+    "path": "src/world/generation/landforms.ts",
+    "sha256": "04343055825f896893ce708e38d70e84d338acaa32c5864402f1df533cc99eb7"
+  },
+  {
+    "path": "src/world/generation/macro.test.ts",
+    "sha256": "5c20e1964bd2ee2acede74882e0c16eaeeb03d71e96c21f67eef7b5dcd01b4cd"
+  },
+  {
+    "path": "src/world/generation/macro.ts",
+    "sha256": "f0c428330520bb1899b994cbd9207eac3fd3e671e2ad7f82273b66968a319f4a"
+  },
+  {
+    "path": "src/world/generation/ocean.test.ts",
+    "sha256": "3cfaee8423ec74ce9232e7d5d8b014b33283575fe62b667be548c18903a6769a"
+  },
+  {
+    "path": "src/world/generation/ocean.ts",
+    "sha256": "69639e549c82c7ba9589205818a71fc338af662e1ed161474fe443fc6bae6fc2"
+  },
+  {
+    "path": "src/world/generation/quality.ts",
+    "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+  },
+  {
+    "path": "src/world/generation/seed.test.ts",
+    "sha256": "4870185a1149a18e920d68a3f931e60110ecae2fbbc6a13f2c41f884c363ca40"
+  },
+  {
+    "path": "src/world/generation/seed.ts",
+    "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+  },
+  {
+    "path": "src/world/generation/shape.test.ts",
+    "sha256": "f5bc55c6d14fb0582c699e6ea3bf0103cd0cda72b2f182ed773ce486d77fb465"
+  },
+  {
+    "path": "src/world/generation/shape.ts",
+    "sha256": "4ffac2a9fab0dbaf05befd6cf6fbcf769cb9772e214ca474d414ff754e3ad60e"
+  },
+  {
+    "path": "src/world/lod.test.ts",
+    "sha256": "dc14034920b880295a2cbeb019c098d9f3809bf7b6c4960786b7ef691ed582d6"
+  },
+  {
+    "path": "src/world/lod.ts",
+    "sha256": "1320c0e2eae539b2cf8251b67701eb449bf2a3a57016bc272f17eb3c17deb2b8"
+  },
+  {
+    "path": "src/world/model.test.ts",
+    "sha256": "4886e41ff4bc80662fdddae09f7bb73f06b441dc09cc62e427902acee3ad583c"
+  },
+  {
+    "path": "src/world/model.ts",
+    "sha256": "f853d638ea210787cb6a1809fb31c7eee22bea4cfd622571a258970a34e37fa8"
+  },
+  {
+    "path": "src/world/protocol.ts",
+    "sha256": "b64e33df89fceaf484fd65969138788dfae3a6a3e05f8f82d6436fde6294e94c"
+  },
+  {
+    "path": "src/world/render-density.test.ts",
+    "sha256": "d15401a1769d22266797e3e9f1f51507f1396f811579bd8c2821d7b6f188df86"
+  },
+  {
+    "path": "src/world/render-density.ts",
+    "sha256": "203e87210b0dd0b6d867370bc9a8d0cd0e807bac934e260a60045a5e4370f7d0"
+  },
+  {
+    "path": "src/world/renderer.test.ts",
+    "sha256": "b7eebb6d70e13426d43950d8cbac816cbc4b28d9aa006adefee6a3f4bb9813c1"
+  },
+  {
+    "path": "src/world/renderer.ts",
+    "sha256": "0b437c50a993f5e7cdfd92be7147199863759adc653c2e8eeeaae7435c48ed7b"
+  },
+  {
+    "path": "src/world/replacement-cooperation.test.ts",
+    "sha256": "7287bf7cad33b3f19609170580184adfd4f8c9b2496e7d41d6bbb00e45fcf1f6"
+  },
+  {
+    "path": "src/world/spatial-index.test.ts",
+    "sha256": "70d205ff15c4fd493824a787150737e7dc689afd4db2fb235c8720ac74e60a6b"
+  },
+  {
+    "path": "src/world/spatial-index.ts",
+    "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb"
+  },
+  {
+    "path": "src/world/storage-types.ts",
+    "sha256": "a506f67aa82643aab35d717cbd32e3bc8441c1ab465c9d1556b86a5c2cb51b77"
+  },
+  {
+    "path": "src/world/storage.test.ts",
+    "sha256": "04e44a6c866d318934d361d5281cdd39afa42e54118d632664c06c189ac13cbe"
+  },
+  {
+    "path": "src/world/storage.ts",
+    "sha256": "27a6b17ed541abdf07d5c9003d4ef5fe27b7c9ef9f1e20e4d176b29861650a89"
+  },
+  {
+    "path": "src/world/surface-format-storage.test.ts",
+    "sha256": "de95bf4c198169e17af068af87090a19ae48662ce169f0c0e0d4a64d7d739523"
+  },
+  {
+    "path": "src/world/terrain-material.test.ts",
+    "sha256": "b5cd87f7647bb63f6bb9dcbaf792e390a58497e6a5e217489f2e888492227786"
+  },
+  {
+    "path": "src/world/terrain-material.ts",
+    "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+  },
+  {
+    "path": "src/world/terrain-mesh.test.ts",
+    "sha256": "0fdae277926fcea97c1c9539275c4721f2f1c25b5927d269f0f5a3006ae5df56"
+  },
+  {
+    "path": "src/world/terrain-mesh.ts",
+    "sha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc"
+  },
+  {
+    "path": "src/world/terrain-surface.test.ts",
+    "sha256": "e34d33a4ceb731c51cb0182da4c33099fe8a0116e01d5a84b778d0b2f0f53b11"
+  },
+  {
+    "path": "src/world/terrain-surface.ts",
+    "sha256": "8554a9721e51a155f575f8121ecef451652a9ecdc6842f73a07a2113d960e053"
+  },
+  {
+    "path": "src/world/topology.test.ts",
+    "sha256": "a9e36fd481f24e1b367bebcd2ab26c22f4c8f53df3278f32e64a785af836fa23"
+  },
+  {
+    "path": "src/world/topology.ts",
+    "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb"
+  },
+  {
+    "path": "src/world/transactions.test.ts",
+    "sha256": "e43a67c6b2ba0c382e593f46b49fee83abb4ca7d77ff21af01cd9ccfeface560"
+  },
+  {
+    "path": "src/world/transactions.ts",
+    "sha256": "f82cfd29da41d65260cc3142b86c5929757ad5a6890b6ffe66c3f19115ba9131"
+  },
+  {
+    "path": "src/worldgen/engine.test.ts",
+    "sha256": "3c18d8bb8e9317c03ca5939cbaf8e3ac2315a047ff1299766a955266a2dd3150"
+  },
+  {
+    "path": "src/worldgen/engine.ts",
+    "sha256": "b8476842e594646f1d3c8aa514f889a57d2b0e2286d52efcdffee5468e81d651"
+  },
+  {
+    "path": "src/worldgen/types.ts",
+    "sha256": "d6228f3538cdd8bd7ea44ac795c32e5ac2b871ef9a3826fa2093b999fcaa3821"
+  },
+  {
+    "path": "tests/appearance.spec.ts",
+    "sha256": "fcf6cc8ec84fedce39956c42ea8aa12e48e17329112499588d599657e37771b6"
+  },
+  {
+    "path": "tests/atlas-coast-islands.spec.ts",
+    "sha256": "9c03d41c6687874e65083fc10db6de369ef4dd783d8c02351398185f77ffe315"
+  },
+  {
+    "path": "tests/atlas-coastal-surface.spec.ts",
+    "sha256": "054c11d2a08b2775ef6387faf243e5c21f62eb1ee46dfef35cfd2d20ee2b5bb7"
+  },
+  {
+    "path": "tests/atlas-constraints.spec.ts",
+    "sha256": "e2ccb911d9d876ad9657676e07b8aa7b269db7e2c5e42926572a9fb6caa52493"
+  },
+  {
+    "path": "tests/atlas-generation-completion.spec.ts",
+    "sha256": "3a3895702bd6407f7817d6f4d1337d49045b0e9b8d4b0799c1728c91611fdd02"
+  },
+  {
+    "path": "tests/atlas-generation.spec.ts",
+    "sha256": "c775fc9d2549af47afe58adadafb3e4999116f5eb34e76d66450bc649e93468b"
+  },
+  {
+    "path": "tests/atlas-ocean.spec.ts",
+    "sha256": "5028f96c14eb4988df988df9577f132fa820b6065a655d40b1814fa059aded11"
+  },
+  {
+    "path": "tests/atlas-rendering.spec.ts",
+    "sha256": "664a73e2ba0357646b37d344d37c2809045d125355a4caa5e59fdcde2ecad35f"
+  },
+  {
+    "path": "tests/atlas-shape.spec.ts",
+    "sha256": "80a9019658242ec3bee6d24041bac55a8daaad05ade583077fa81c66ac053403"
+  },
+  {
+    "path": "tests/atlas.spec.ts",
+    "sha256": "97ef8738ab45c28e9477109819637d7cc17498a244b6c85fc689bd34b3633123"
+  },
+  {
+    "path": "tests/compatibility.spec.ts",
+    "sha256": "9408f1f6451dd7fe5bf69fb6fbe422d8261ae5cfa798a9142b22676e378ce3f1"
+  },
+  {
+    "path": "tests/fixtures/README.md",
+    "sha256": "b17e8d9179d52e64ec80c272026316e0da80600e686dcdc69ae6245b40dcf95a"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/README.md",
+    "sha256": "d2060f246f6d686518e1ccf187848cc668577a1468910aae56be9f043aba7c0d"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/admin-membership-v1.bin",
+    "sha256": "79804ebea29eca76bb750f10c8e3e7a8b529a273659f21e6a8cabbe441c500f5"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/baseline.json",
+    "sha256": "6f42ece57e0553aa42ba0df6d05879113c1fdcec1242d45eb826e9f069ac2f50"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/edited-admin-membership-v1.bin",
+    "sha256": "511581daea00b41a22dc5e9e08d52362716bfa1a80be2b7aab6d1bbf3a1ea8c2"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/edited-elevation-v1.bin",
+    "sha256": "90fada30252ab839921db0a79c7e0411287356ad6b99285c466544fc9aa4fb0a"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/edited-manifest-v1.bin",
+    "sha256": "218b9c557cac59d3768d6459b4f7420d74808d58e807034358b8b3c7189bf4e9"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/edited-sim-membership-v1.bin",
+    "sha256": "9995954718a01403c165780f9d840030a246d4e951c47ba8c5923e7a45c1a292"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/elevation-v1.bin",
+    "sha256": "7a6ba09cf0ecae0512fc8ea5c2d38d1009d253d92be45b92b5a792f939ebe857"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/geometry-v1.bin",
+    "sha256": "8a1f2207e8bf139d3036794b731cef8ec364c37ce3bd4eb87fefd25ef9fe6407"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/manifest-v1.bin",
+    "sha256": "a1c38c1797280ea3f48039518dc24a76658585340820dd7aec844a65583671ab"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/options.json",
+    "sha256": "7a0f8052bb01e25bc7fa28f6cb9a314a66920205c1691a0f33c01c754b950adc"
+  },
+  {
+    "path": "tests/fixtures/atlas-v1-before-ph06/sim-membership-v1.bin",
+    "sha256": "48408cf0b28cfe9b22ae44bf2a2f0a964c9079b2ffc40c5e410bf70fd30c3295"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-90cdabc/baseline.json",
+    "sha256": "c7efb8e320dca3bbe93ceb5a8f8cb1fdac35eb67dcb50dc3721a9e79e5a89000"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-90cdabc/coast.json",
+    "sha256": "53d89bed7e7f09164846c463582ea106898c66b0e4ccd63506e5e561b55c23ab"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-90cdabc/islands.json",
+    "sha256": "0423b4b67222c6addd873fb98f65f9945b409ec95a2583f84ffc4e05871a2430"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-90cdabc/landforms.json",
+    "sha256": "beae64d2fbdaa148a1d60730d356c4a18dcfdc8f09327c8b8707a3f032639277"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-90cdabc/macro.json",
+    "sha256": "aa4a645c430fa04536fd926ba5bdd4fd6ca6e3df5be0bb7e3742c1e616acabbd"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/baseline.json",
+    "sha256": "2f5e387072d406648cf8f73ef2b8f050442cbd51afc7179ad9174296addab796"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/coast.json",
+    "sha256": "d7a06633909d7cd2ea5308937aa8204351b207661542557a9e9dc44109fcd0d0"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/islands.json",
+    "sha256": "e593ca12a11dfb3d10099f18d6891a1f181b3888f5dcd32e53e94582b0456aa7"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/landforms.json",
+    "sha256": "8308cc9f76fbd6dd7c085df4029c4f123f23d7fc35f013c8be117ea88ccc1530"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/macro.json",
+    "sha256": "11a7f28e9b646f793155390103de17881d154d5404ea185a8157ea471311a31c"
+  },
+  {
+    "path": "tests/fixtures/atlas-v2-generation-history-preview2/shape.json",
+    "sha256": "c4b9767f59e69a8df49fc36cc486a62d11615d35647ea430298e462ec4b4bd84"
+  },
+  {
+    "path": "tests/fixtures/legacy-custom-0.1.json",
+    "sha256": "aafd0a2747e20c00caf69a68aa732fa40f96384401c00baf21a4c7c149f6da5e"
+  },
+  {
+    "path": "tests/fixtures/legacy-demo-0.1.json",
+    "sha256": "2ff18e88b773156b51fe8fb4c4f27f498d236e79259040f388e673915a5e8108"
+  },
+  {
+    "path": "tests/game.spec.ts",
+    "sha256": "5c043194c2eaf18956e1907040c19f046d2645615f66a27c9ad4d900c2602171"
+  },
+  {
+    "path": "tests/helpers/atlas-shape-readonly.ts",
+    "sha256": "d718fa7eb5175667af7ca1edb3f86ae3b9351a3e699624b2452cadbed10fb6b2"
+  },
+  {
+    "path": "tests/helpers/navigation.ts",
+    "sha256": "337243c2d80883e7f7606f8693d7842ab2b8e54883e9810e2d392690e4c94543"
+  },
+  {
+    "path": "tests/history-safety.spec.ts",
+    "sha256": "f2bb9da8a6abf1540ce6bc1f4f41fac672e0226dfb08e5dc0a32a59de8acac3e"
+  },
+  {
+    "path": "tests/history.spec.ts",
+    "sha256": "800870ecd4e96db29901b6e113b4b231c2c0be44f3f0b69add96a78e9d6d9ab4"
+  },
+  {
+    "path": "tests/statecraft-safety.spec.ts",
+    "sha256": "94e9d60b8dec35ea91a16a5b37aaca624e5d44ea8e90a76359105277d2ab0a64"
+  },
+  {
+    "path": "tests/statecraft.spec.ts",
+    "sha256": "e73141b2639c91a83b16abd5188307499d231c41cb5d8537f28a15cf3d038d91"
+  },
+  {
+    "path": "tests/studio-protection.spec.ts",
+    "sha256": "28ccaea9db837bcd727f770cd3ffa8a1574167a38a2b217ecee22a407edb8049"
+  },
+  {
+    "path": "tests/studio.spec.ts",
+    "sha256": "62bd66f78628a7a37319e4f334ae7ee3db02cd4017885156b1a00ef33e5fd5f9"
+  },
+  {
+    "path": "tsconfig.json",
+    "sha256": "eea9bb82bd3abcc9597674179cfa2e71b4ff1f3ae1af396c24d49d79ae3aee16"
+  },
+  {
+    "path": "vite.config.ts",
+    "sha256": "d78318f423c9e0f407d1e01481f0b9f87d55aa9fff32869e8461b1ac92f4cd43"
+  }
+]

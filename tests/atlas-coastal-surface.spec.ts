@@ -63,6 +63,32 @@ function mixedCell(data: Geography, size: number) {
 async function focus(page: Page, id: number) {
   await panel(page, '编辑'); await page.getByLabel('定位地块编号', { exact: true }).fill(String(id)); await button(page, '定位'); await panel(page, '地图');
 }
+async function rasterFrame(page: Page) {
+  const frame = await page.getByTestId('atlas-canvas').evaluate(element => new Promise<ReturnType<AtlasRenderer['metrics']>>(resolve => {
+    const requestId = crypto.randomUUID();
+    const listener = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail.requestId !== requestId) return;
+      element.removeEventListener('atlas-metrics-response', listener); resolve(detail.metrics);
+    };
+    element.addEventListener('atlas-metrics-response', listener);
+    element.dispatchEvent(new CustomEvent('atlas-metrics-request', { detail: { requestId } }));
+  }));
+  expect(frame.fatal).toBe(false); expect(frame.raster).not.toBeNull();
+  const raster = frame.raster!;
+  const physicalDensity = frame.camera.scale * frame.viewport.resolution;
+  expect(raster.requestedDensity).toBeGreaterThanOrEqual(physicalDensity);
+  expect(raster.outputPixelsPerTexel).toBeCloseTo(physicalDensity / raster.density, 8);
+  expect(raster.textureSide).toBeLessThanOrEqual(1024);
+  expect(raster.visiblePixels).toBeLessThanOrEqual(32 * 1024 * 1024 * .75);
+  expect(frame.cache.pixels).toBeLessThanOrEqual(32 * 1024 * 1024);
+  expect(frame.cache.peakPixels).toBeLessThanOrEqual(32 * 1024 * 1024);
+  expect(frame.cache.releaseFailures).toBe(0);
+  expect(frame.cache.created - frame.cache.destroyed).toBe(frame.cache.entries);
+  if (raster.fallbackReason === null) expect(raster.outputPixelsPerTexel).toBeLessThanOrEqual(1);
+  else { expect(raster.fallbackReason).toBe('pixel-budget'); expect(raster.density).toBeLessThan(raster.requestedDensity); }
+  return frame;
+}
 async function framebufferColors(page: Page, points: Point[]) {
   const sequence = (await metrics(page)).completedFrameSequence;
   await page.getByTestId('atlas-canvas').evaluate((element, args) => {
@@ -110,6 +136,7 @@ test('[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取�
   await focus(page, probe.id);
   while ((await metrics(page)).camera.scale < 3) await button(page, '放大大世界地图');
   await focus(page, probe.id);
+  await rasterFrame(page);
   const colors = await framebufferColors(page, [probe.land, probe.sea]);
   expect(colors[0][1]).toBeGreaterThan(colors[0][2]); expect(colors[1][2]).toBeGreaterThan(colors[1][0]); expect(colors[0]).not.toEqual(colors[1]);
   for (const [kind, point] of [['land', probe.land], ['sea', probe.sea]] as const) {
@@ -119,6 +146,24 @@ test('[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取�
     await expect(page.getByTestId('atlas-picked-surface')).toHaveAttribute('data-land', kind);
   }
   await panel(page, '地图'); await page.screenshot({ path: info.outputPath('coastal-v3-shore.png'), fullPage: true });
+  // Exercise the actual UI zoom ceiling. The texture ledger includes old/new
+  // cache cores while they are replaced; no saved geography is edited here.
+  const zoomFrames = [await rasterFrame(page)];
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const previous = zoomFrames.at(-1)!; await button(page, '放大大世界地图');
+    const frame = await rasterFrame(page); zoomFrames.push(frame);
+    if (frame.camera.scale === previous.camera.scale) break;
+  }
+  expect(zoomFrames.length).toBeLessThan(25);
+  expect(zoomFrames.at(-1)!.raster!.density).toBeGreaterThan(4);
+  expect(zoomFrames.at(-1)!.labels.visibleCount).toBe(0);
+  await button(page, '显示地块网格');
+  const withGrid = await rasterFrame(page); expect(withGrid.gridVisible).toBe(true); expect(withGrid.labels.visibleCount).toBeGreaterThan(0);
+  await button(page, '显示地块网格');
+  const withoutGrid = await rasterFrame(page); expect(withoutGrid.gridVisible).toBe(false); expect(withoutGrid.labels.visibleCount).toBe(0);
+  await page.screenshot({ path: info.outputPath('coastal-v3-maximum-zoom.png'), fullPage: true });
+  expect(await saved(page, id, 3)).toEqual(committed);
+  await info.attach('coastal-raster-density.json', { body: JSON.stringify({ zoomFrames, withGrid, withoutGrid }, null, 2), contentType: 'application/json' });
   await info.attach('coastal-pixel-and-pick.json', { body: JSON.stringify({ probe, colors, beforeReload: await audit(page) }, null, 2), contentType: 'application/json' });
   await page.reload(); await ready(page); expect(await saved(page, id, 3)).toEqual(committed); expect((await audit(page)).display.manifestDigest).toBe(committed.root.currentManifest);
   await page.getByTestId('atlas-canvas').evaluate(async element => {
@@ -133,6 +178,7 @@ test('[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取�
   await expect(studio(page)).toHaveAttribute('data-atlas-gpu', 'ready', { timeout: 30000 });
   expect((await audit(page)).display.manifestDigest).toBe(committed.root.currentManifest); expect(await saved(page, id, 3)).toEqual(committed);
   await focus(page, probe.id); while ((await metrics(page)).camera.scale < 3) await button(page, '放大大世界地图'); await focus(page, probe.id);
+  await rasterFrame(page);
   const restoredColors = await framebufferColors(page, [probe.land, probe.sea]);
   for (let p = 0; p < colors.length; p++) for (let channel = 0; channel < 4; channel++) expect(Math.abs(colors[p][channel] - restoredColors[p][channel])).toBeLessThanOrEqual(1);
   await info.attach('coastal-restored-pixels.json', { body: JSON.stringify({ colors, restoredColors }), contentType: 'application/json' });

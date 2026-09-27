@@ -14,6 +14,7 @@ import { AtlasLabelLayer, emptyAtlasLabelMetrics } from './atlas-label-layer';
 import { buildTerrainSurface } from './terrain-surface';
 import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './terrain-mesh';
 import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type CoastalPick } from './coastal-surface';
+import { ATLAS_MINIMUM_CACHE_DENSITY, ATLAS_TEXTURE_GUTTER, planAtlasRaster, type AtlasRasterQuality } from './render-density';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
@@ -27,7 +28,8 @@ export type AtlasRendererOptions = {
   onOutlineCancel?: () => void;
 };
 const ocean = 0x10283f;
-const minimumCacheDensity = 1 / 64;
+const minimumCacheDensity = ATLAS_MINIMUM_CACHE_DENSITY;
+const paintBatchBudgetMs = 32;
 
 /** Production atlas only. Cached logical blocks; no experiment fixture or game rule imports. */
 export class AtlasRenderer {
@@ -48,6 +50,7 @@ export class AtlasRenderer {
   private labels?: AtlasLabelLayer;
   private lod?: AtlasLod;
   private gridRequested = false;
+  private rasterQuality?: AtlasRasterQuality;
   private index?: SpatialIndex;
   private data?: AtlasGeographyView;
   private committed?: { data: AtlasGeographyView; index: SpatialIndex };
@@ -141,9 +144,9 @@ export class AtlasRenderer {
   private geometryKey(bx: number, by: number): BlockKey { return `geometry:${bx}:${by}`; }
   private viewport() { return { width: this.app.screen.width, height: this.app.screen.height }; }
   private worldSize() { return { width: this.data?.manifest.spec.width ?? 4096, height: this.data?.manifest.spec.height ?? 4096 }; }
-  private specFor(key: BlockKey, layer: AtlasCacheLayer, density: number, tile?: { x: number; y: number }): AtlasTextureSpec {
+  private specFor(key: BlockKey, layer: AtlasCacheLayer, density: number, tile?: { x: number; y: number; subdivisions: number }): AtlasTextureSpec {
     const [, x, y] = key.split(':'), bx = Number(x), by = Number(y), spec = this.data!.manifest.spec, step = spec.width / spec.columns;
-    const span = 32 * step, corePixels = span * density, gutter = 2;
+    const span = 32 * step, corePixels = span * density, gutter = ATLAS_TEXTURE_GUTTER;
     if (!Number.isSafeInteger(corePixels) || corePixels < 1) throw new Error('地图核心未对齐全局纹理采样格。');
     const worldX = bx * span, worldY = by * span, sampleX = worldX - gutter / density, sampleY = worldY - gutter / density;
     const pixelWidth = corePixels + gutter * 2, pixelHeight = corePixels + gutter * 2;
@@ -162,12 +165,12 @@ export class AtlasRenderer {
     const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/terrain-surface-v1/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
       pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
     if (!tile) return whole;
-    const tileSpan = span / 4, tilePixels = corePixels / 4, tileX = worldX + tile.x * tileSpan, tileY = worldY + tile.y * tileSpan;
+    const tileSpan = span / tile.subdivisions, tilePixels = corePixels / tile.subdivisions, tileX = worldX + tile.x * tileSpan, tileY = worldY + tile.y * tileSpan;
     if (!Number.isSafeInteger(tilePixels) || tilePixels < 1) throw new Error('地图近景子核心未对齐全局采样格。');
     // Display tiles do not become geographical blocks. They share the logical
     // core's real geometry/material dependencies, while each cropped pixel is
     // displayed exactly once and charged to the same texture budget.
-    return { ...whole, key: `${whole.key}/tile/${tile.x}/${tile.y}`, worldX: tileX, worldY: tileY, sampleX: tileX - gutter / density, sampleY: tileY - gutter / density,
+    return { ...whole, key: `${whole.key}/tile/${tile.subdivisions}/${tile.x}/${tile.y}`, worldX: tileX, worldY: tileY, sampleX: tileX - gutter / density, sampleY: tileY - gutter / density,
       pixelWidth: tilePixels + gutter * 2, pixelHeight: tilePixels + gutter * 2, core: { x: gutter, y: gutter, width: tilePixels, height: tilePixels } };
   }
   private visiblePlan() {
@@ -182,26 +185,16 @@ export class AtlasRenderer {
     const step = this.data.manifest.spec.width / this.data.manifest.spec.columns;
     this.lod = resolveAtlasLod(this.camera.scale * step, this.lod);
     const grid = this.gridRequested && atlasLodPolicy(this.lod, this.viewport().width).gridVisible;
-    // Raster density is a cache sampling level, not a change to geography or semantic LOD.
-    const requestedDensity = 2 ** Math.ceil(Math.log2(Math.max(minimumCacheDensity, this.camera.scale * this.app.renderer.resolution)));
-    const logicalMaximum = 2 ** Math.floor(Math.log2(1020 / (step * 32 + step / 2)));
-    const split = requestedDensity > logicalMaximum;
-    const maximum = split ? 2 ** Math.floor(Math.log2(1020 / (step * 8 + step / 2))) : logicalMaximum;
-    let density = Math.min(maximum, requestedDensity);
-    let specs: AtlasTextureSpec[];
-    do {
-      specs = keys.flatMap(key => {
-        const tiles: ({ x: number; y: number } | undefined)[] = split ? Array.from({ length: 16 }, (_, i) => ({ x: i % 4, y: Math.floor(i / 4) })) : [undefined];
-        return tiles.flatMap(tile => {
-          const terrain = this.specFor(key, 'terrain', density, tile), size = terrain.core.width / density;
-          if (terrain.worldX > bounds.maxX || terrain.worldY > bounds.maxY || terrain.worldX + size < bounds.minX || terrain.worldY + size < bounds.minY) return [];
-          return [terrain, ...(grid ? [this.specFor(key, 'grid', density, tile)] : [])];
-        });
-      });
-      if (specs.reduce((sum, item) => sum + item.pixelWidth * item.pixelHeight, TERRAIN_LUT_PIXELS) <= this.cache.budgetPixels * .75) break;
-      density /= 2;
-      if (density < minimumCacheDensity) throw new Error('地图可见缓存无法在最低采样密度内满足预算。');
-    } while (density >= minimumCacheDensity);
+    const plan = planAtlasRaster({ logicalSpan: span, scale: this.camera.scale, resolution: this.app.renderer.resolution, bounds,
+      cores: keys.map(key => { const [, bx, by] = key.split(':'); return { bx: Number(bx), by: Number(by) }; }),
+      layers: grid ? 2 : 1, budgetPixels: this.cache.budgetPixels, sharedPixels: TERRAIN_LUT_PIXELS });
+    const { ranges, ...quality } = plan; this.rasterQuality = quality;
+    const specs: AtlasTextureSpec[] = [];
+    for (const range of ranges) for (let y = range.firstY; y <= range.lastY; y++) for (let x = range.firstX; x <= range.lastX; x++) {
+      const key = this.geometryKey(range.bx, range.by), tile = plan.subdivisions === 1 ? undefined : { x, y, subdivisions: plan.subdivisions };
+      specs.push(this.specFor(key, 'terrain', plan.density, tile));
+      if (grid) specs.push(this.specFor(key, 'grid', plan.density, tile));
+    }
     return { specs, keys };
   }
   private deferDirtyDependencies(changed: ReadonlySet<BlockKey>) {
@@ -280,7 +273,7 @@ export class AtlasRenderer {
   }
   private prefetch(keys: BlockKey[], specs: AtlasTextureSpec[], protectedKeys: Set<string>, repainted: Set<BlockKey>) {
     if (!this.data || !specs.length || this.displayBusy() || this.graphicsState !== 'ready') return;
-    // High-density 8-cell tiles are only retained when actually visible. A
+    // High-density subcores are only retained when actually visible. A
     // whole-core prefetch at their density would defeat the size/viewport cap.
     if (specs[0].key.includes('/tile/')) return;
     const visible = new Set(keys), across = this.data.manifest.spec.columns / 32; let remaining = 2;
@@ -307,7 +300,10 @@ export class AtlasRenderer {
         check();
         if (epoch !== this.contextEpoch || data !== this.data || (!recovering && this.graphicsState !== 'ready')) { interrupted = true; break; }
         this.ensureTexture(specs[i], protectedKeys, repainted); batchPainted.add(specs[i].blockKey);
-        if ((i + 1) % 8 === 0 || i === specs.length - 1) {
+        // A target includes real geometry preparation and GPU submission. Slow
+        // targets must yield before the eight-target ceiling, after drawing
+        // the completed work; the next iteration rechecks cancellation/epoch.
+        if ((i + 1) % 8 === 0 || performance.now() - start >= paintBatchBudgetMs || i === specs.length - 1) {
           this.draw(false, recovering, start, batchPainted.size); batchPainted = new Set();
           if (report) this.callbacks.onProgress?.({ stage: '绘制已核验地理块', completed: new Set(specs.slice(0, i + 1).map(spec => spec.blockKey)).size, total: keys.length });
           if (i < specs.length - 1) { await new Promise<void>(resolve => setTimeout(resolve, 0)); check(); start = performance.now(); }
@@ -432,6 +428,7 @@ export class AtlasRenderer {
     displaySource: this.displaySource, displayRevision: this.data?.manifest.revision ?? null, displayVersion: this.data?.manifest.version ?? null,
     committedRevision: this.committed?.data.manifest.revision ?? null, displayCorrectFrameAt: this.displayCorrectFrameAt,
     lod: this.lod ?? 'far', cellPixels: this.data ? this.camera.scale * this.data.manifest.spec.width / this.data.manifest.spec.columns : 0,
+    raster: this.rasterQuality ? { ...this.rasterQuality } : null,
     gridRequested: this.gridRequested, gridVisible: this.gridRequested && this.lod ? atlasLodPolicy(this.lod, this.app.screen.width).gridVisible : false, labels: this.labels?.metrics() ?? emptyAtlasLabelMetrics() }; }
   setGridVisible(visible: boolean): void { this.guarded(() => { if (this.gridRequested !== visible) { this.gridRequested = visible; this.draw(); } }); }
   select(cellId: number | null) { this.guarded(() => { if (cellId !== null && this.data) getCellQuad(this.data, cellId); this.selected = cellId; this.draw(); }); }
@@ -550,7 +547,10 @@ export class AtlasRenderer {
       this.updateOverlays();
     }
     this.app.renderer.render(this.app.stage);
-    if (this.data && this.lod && ensure && (!this.displayBusy() || allowAcceptanceLabels)) this.labels?.update({ data: this.data, camera: this.camera, viewport: this.viewport(), lod: this.lod, selectedCellId: this.selected });
+    // Natural-coast worlds show sampling labels only with their explicit
+    // geography grid. Legacy worlds keep the original PH05 label behavior.
+    const showSamplingLabels = this.data && (!isCoastalSurface(this.data) || this.gridRequested);
+    if (this.data && this.lod && showSamplingLabels && ensure && (!this.displayBusy() || allowAcceptanceLabels)) this.labels?.update({ data: this.data, camera: this.camera, viewport: this.viewport(), lod: this.lod, selectedCellId: this.selected });
     else this.labels?.hide();
     this.callbacks.onCamera?.({ ...this.camera });
     this.measured.frameSequence++;

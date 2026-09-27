@@ -1,0 +1,4 @@
+{
+  "exitCode": 0,
+  "command": "node node_modules/eslint/bin/eslint.js src/editor/AtlasStudio.tsx src/editor/atlas-operation-feedback.ts src/editor/atlas-operation-feedback.test.ts"
+}

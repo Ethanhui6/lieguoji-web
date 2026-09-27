@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-09-27T05:52:40.568Z",
+  "completedAt": "2026-09-27T05:53:06.673Z",
+  "steps": [
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T05:52:40.622Z",
+      "completedAt": "2026-09-27T05:52:48.331Z",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T05:52:48.331Z",
+      "completedAt": "2026-09-27T05:53:04.536Z",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T05:53:04.536Z",
+      "completedAt": "2026-09-27T05:53:06.263Z",
+      "exitCode": 0
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T05:53:06.263Z",
+      "completedAt": "2026-09-27T05:53:06.465Z",
+      "exitCode": 0
+    }
+  ],
+  "passed": true,
+  "sourceStable": true,
+  "buildSha256": "4c3eb86d22516ae0fe29ede3dfe7fe3d4c6a6e90a57a871dec4e086d5f660326",
+  "distSetSha256": "a851a0610e1c0efb89331f5f1b4832d8f6d55db86ec21112523d969228c22679",
+  "note": "build.json contains version/commit/generator metadata and may equal the earlier renderer build. Full source and dist inventories distinguish the actual UI-repaired artifact set."
+}

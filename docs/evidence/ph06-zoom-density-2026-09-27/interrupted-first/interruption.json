@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-09-27T05:51:25.5067903Z",
+  "status": "interrupted-incomplete",
+  "selection": "desktop-256",
+  "intendedSelectedCases": 1,
+  "observedScheduledCases": 9,
+  "scheduledCountEvidence": "browser.log: Running 9 tests using 1 worker",
+  "cause": "defineConfig(base, overrides) merged projects by name and retained unselected mobile/tablet projects; configuration error",
+  "observedFirstCase": {
+    "project": "desktop-chromium",
+    "title": "标准256长任务：手绘和海床真实运行中取消，250ms进度与500ms取消保持源库",
+    "result": "failed",
+    "durationSecondsFromBrowserLog": 27.7,
+    "expectedFeedbackContains": "取消",
+    "actualFeedback": "signal is aborted without reason",
+    "evidence": "test-results/atlas-generation-completio-5f308-真实运行中取消，250ms进度与500ms取消保持源库-desktop-chromium/error-context.md"
+  },
+  "termination": {
+    "method": "Ctrl-C",
+    "execSession": 5664,
+    "exitCode": 1,
+    "workerPid": 30568,
+    "workerReportedNotAlive": true,
+    "source": "parent root reported actual termination and process check",
+    "interruptedAt": null
+  },
+  "completeReportAvailable": false,
+  "sourceAfterSnapshotAvailable": false,
+  "distAfterSnapshotAvailable": false,
+  "passed": false,
+  "completedCasesBeyondFirst": "unknown; no complete report",
+  "verification": "No complete run or source/dist stability conclusion; retained before snapshots, partial browser log, and failure artifacts only."
+}

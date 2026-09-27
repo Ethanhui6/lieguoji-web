@@ -1,5 +1,5 @@
 import { expect, test, type CDPSession, type Page, type TestInfo } from '@playwright/test';
-import { audit, databaseDigest, geography, metrics, saved, type Geography, type SavedSnapshot } from './helpers/atlas-shape-readonly';
+import { audit, databaseDigest as readDatabaseDigest, geography, metrics, saved as readSaved, type Geography, type SavedSnapshot } from './helpers/atlas-shape-readonly';
 
 // All mutations use the public UI and native mouse/CDP touch. Diagnostics,
 // progress DOM and IndexedDB are read-only observations, never generator calls.
@@ -8,13 +8,20 @@ const candidate = (page: Page) => page.getByRole('region', { name: '大陆生成
 const ready = (page: Page, state = 'ready') => expect(studio(page)).toHaveAttribute('data-atlas-state', state, { timeout: 90000 });
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
 const panel = (page: Page, name: '地图' | '创世' | '编辑') => page.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name, exact: true }).click();
+const databaseDigest = (page: Page) => readDatabaseDigest(page, 3);
+async function saved(page: Page, id: string) {
+  const snapshot = await readSaved(page, id, 3);
+  expect(snapshot.root.domain).toBe('atlas-draft-v3');
+  expect(snapshot.manifest).toMatchObject({ version: 3, surface: { kind: 'land-mask-fan-v1', coordinateScale: 256 } });
+  return snapshot;
+}
 type Rectangle = { column: number; row: number; columns: number; rows: number };
 type XY = { x: number; y: number };
 interface Observation {
   id: string; operation: 'shape' | 'ocean'; startedAt: number; trusted: boolean; seenBusy: boolean;
   finishedAt: number | null; finishedState: string | null; cancelRequestedAt: number | null; cancelTrusted: boolean | null;
   samples: { at: number; stage: string; completed: number; total: number }[];
-  cancelSnapshot?: { state: string | null; candidateVisible: boolean; stage: string; completed: number; total: number; algorithmRunning: boolean };
+  cancelSnapshot?: { state: string | null; candidateVisible: boolean; stage: string; completed: number; total: number; algorithmRunning: boolean; phase: 'generator' | 'coastal' | null };
 }
 interface ObserverHost { __completionActive?: Observation; __completionRecords: Observation[]; __completionInputs: { type: string; trusted: boolean; pointerType: string }[] }
 
@@ -34,9 +41,10 @@ test.beforeEach(async ({ page }) => {
         const match = (document.querySelector('.inspector-notice span')?.textContent ?? '').match(/^(.*?) · (\d+)\/(\d+)$/);
         const stage = match?.[1] ?? '', completed = Number(match?.[2] ?? 0), total = Number(match?.[3] ?? 0);
         const stages = record.operation === 'shape' ? /量测手绘轮廓|读取手绘区域|从闭合轮廓生成/ : /读取海床真实|识别世界边界海水|沿真实共享边识别外海/;
+        const phase = stages.test(stage) ? 'generator' : stage === '核验实际裁切海岸面积与保护边界' ? 'coastal' : null;
         const candidateVisible = !!document.querySelector('[aria-label="大陆生成预览"]');
         record.cancelRequestedAt = performance.now(); record.cancelTrusted = event.isTrusted;
-        record.cancelSnapshot = { state, candidateVisible, stage, completed, total, algorithmRunning: state === 'busy' && !candidateVisible && stages.test(stage) && completed > 0 && completed < total };
+        record.cancelSnapshot = { state, candidateVisible, stage, completed, total, phase, algorithmRunning: state === 'busy' && !candidateVisible && phase !== null && completed > 0 && completed < total };
       }
     }, true);
     for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) document.addEventListener(type, event => {
@@ -77,17 +85,22 @@ test.afterEach(async ({ page }, info) => {
   if (page.isClosed()) return;
   const runs = await observations(page).catch(() => []);
   const inputs = await page.evaluate(() => (window as unknown as ObserverHost).__completionInputs ?? []).catch(() => []);
+  const environment = await page.evaluate(() => ({ userAgent: navigator.userAgent, hardwareConcurrency: navigator.hardwareConcurrency,
+    deviceMemoryGiB: (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? null, maxTouchPoints: navigator.maxTouchPoints,
+    viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio }, visibilityState: document.visibilityState })).catch(() => null);
   await info.attach('completion-progress-response.json', { contentType: 'application/json', body: JSON.stringify({ project: info.project.name,
-    measurement: 'Native outline pointerup / preview button click to ready, including first and final DOM progress gaps. Cancellation from trusted cancel click to ready. Original 250/500 ms gates. No frame-rate or physical-device claim.', runs, inputs }, null, 2) });
+    format: 3, browserVersion: page.context().browser()?.version() ?? null, environment,
+    measurement: 'Fresh test context and newly created v3 world, no explicit warm-up. Native outline pointerup / preview button click to ready, including first and final DOM progress gaps. Cancellation from trusted cancel click to ready. Original 250/500 ms gates. No frame-rate or physical-device claim.', runs, inputs }, null, 2) });
 });
 
 function errorsOn(page: Page) {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message)); page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); }); return errors;
 }
 async function create(page: Page, size: '256' | '512', name: string) {
-  await page.goto('/?atlas=new&atlas-format=2'); await ready(page, 'empty');
+  await page.goto('/?atlas=new&atlas-format=3'); await ready(page, 'empty');
   await page.getByLabel('大世界草稿名称', { exact: true }).fill(name); await page.getByLabel('大世界生成种子', { exact: true }).fill('PH06-completion');
   await page.getByLabel('大世界地理规模', { exact: true }).selectOption(size); await button(page, '新建空白海洋草稿'); await ready(page);
+  await expect(studio(page)).toHaveAttribute('data-atlas-format', '3'); expect((await audit(page)).display.version).toBe(3);
   return (await studio(page).getAttribute('data-atlas-id'))!;
 }
 async function fields(page: Page, values: [string, string][]) { for (const [label, value] of values) await page.getByLabel(label, { exact: true }).fill(value); }
@@ -101,7 +114,7 @@ async function awaitCandidate(page: Page) { await expect(candidate(page)).toBeVi
 async function confirm(page: Page) { await button(page, '确认生成并保存'); await ready(page); }
 async function restored(page: Page, id: string, snapshot: SavedSnapshot, expected: Geography) {
   await page.reload(); await ready(page); expect(await saved(page, id)).toEqual(snapshot); expect(await geography(page, snapshot.manifest)).toEqual(expected);
-  expect((await audit(page)).display).toMatchObject({ source: 'committed', revision: snapshot.root.revision, manifestDigest: snapshot.root.currentManifest });
+  expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 3, revision: snapshot.root.revision, manifestDigest: snapshot.root.currentManifest });
 }
 const distance = (id: number, columns: number, r: Rectangle) => Math.min(id % columns - r.column, r.column + r.columns - 1 - id % columns, Math.floor(id / columns) - r.row, r.row + r.rows - 1 - Math.floor(id / columns));
 function neighbors(id: number, size: number) { const x = id % size, y = Math.floor(id / size); return [x ? id - 1 : -1, x + 1 < size ? id + 1 : -1, y ? id - size : -1, y + 1 < size ? id + size : -1].filter(next => next >= 0); }
@@ -126,7 +139,7 @@ function localFixture(data: Geography, size: number) {
 async function readLocks(page: Page, snapshot: SavedSnapshot) {
   return page.evaluate(async ({ refs, size }) => {
     const rows = await new Promise<{ bx: number; by: number; hash: string; bytes: Uint8Array }[]>((resolve, reject) => {
-      const request = indexedDB.open('lieguoji-atlas-drafts-v2', 1); request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
+      const request = indexedDB.open('lieguoji-atlas-drafts-v3', 1); request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result, tx = db.transaction('blocks', 'readonly'), records: { bx: number; by: number; hash: string; bytes: Uint8Array }[] = [];
         for (const ref of refs) { const query = tx.objectStore('blocks').get(ref.hash); query.onsuccess = () => { if (!(query.result?.bytes instanceof Uint8Array) || query.result.kind !== 'lock') { tx.abort(); return; } records.push({ ...ref, bytes: query.result.bytes }); }; }
@@ -148,7 +161,8 @@ function verifyLocal(before: Geography, after: Geography, size: number, rect: Re
   for (let id = 0; id < before.heights.length; id++) {
     const d = distance(id, size, rect), changed = before.heights[id] !== after.heights[id];
     if (changed) changedCells.push(id);
-    if (changed && (operation === 'coast' || d <= 0 || locks[id] || before.heights[id] < 0)) throw new Error(`Protected actual height changed at ${id}`);
+    // Persisted LGAL mask 1 protects coast geometry/class; mask 2 protects height.
+    if (changed && (operation === 'coast' || d <= 0 || (locks[id] & 2) || before.heights[id] < 0)) throw new Error(`Protected actual height changed at ${id}`);
     if ((after.heights[id] >= 0) !== (before.heights[id] >= 0)) throw new Error(`Actual sea/land class changed at ${id}`);
     if (changed) (d < transition ? transitionChanges : coreChanges).push(id);
   }
@@ -157,7 +171,7 @@ function verifyLocal(before: Geography, after: Geography, size: number, rect: Re
     for (const dy of [-1, 0]) for (const dx of [-1, 0]) if (x + dx >= 0 && x + dx < size && y + dy >= 0 && y + dy < size) cells.push((y + dy) * size + x + dx);
     const changed = before.xyQ[id * 2] !== after.xyQ[id * 2] || before.xyQ[id * 2 + 1] !== after.xyQ[id * 2 + 1];
     if (changed) changedVertices.push(id);
-    if (changed && (operation === 'landforms' || cells.some(cell => distance(cell, size, rect) <= 0 || locks[cell]))) throw new Error(`Protected actual shared vertex changed at ${id}`);
+    if (changed && (operation === 'landforms' || cells.some(cell => distance(cell, size, rect) <= 0 || (locks[cell] & 1)))) throw new Error(`Protected actual shared vertex changed at ${id}`);
     if (changed) (cells.some(cell => distance(cell, size, rect) < transition) ? transitionChanges : coreChanges).push(id);
   }
   // Independent final shared quad topology; no generator/topology module used.
@@ -195,7 +209,7 @@ function verifyCoastTransition(before: Geography, after: Geography, size: number
     const x = vertex % (size + 1), y = Math.floor(vertex / (size + 1)), incident: number[] = [];
     for (const dy of [-1, 0]) for (const dx of [-1, 0]) if (x + dx >= 0 && x + dx < size && y + dy >= 0 && y + dy < size) incident.push((y + dy) * size + x + dx);
     const neighbors = adjacent.get(vertex) ?? [], d = Math.min(...incident.map(cell => distance(cell, size, rect)));
-    const eligible = neighbors.length === 2 && x > 0 && x < size && y > 0 && y < size && d > 0 && incident.every(cell => !locks[cell]);
+    const eligible = neighbors.length === 2 && x > 0 && x < size && y > 0 && y < size && d > 0 && incident.every(cell => !(locks[cell] & 1));
     let desiredX = 0, desiredY = 0;
     if (eligible) {
       const t = Math.min(1, d / transition), weight = t * t * (3 - 2 * t);
@@ -215,6 +229,103 @@ function verifyCoastTransition(before: Geography, after: Geography, size: number
   return { oracle: 'Actual shared-coast graph; one 200-permille midpoint relaxation times cubic smoothstep d/8; <=1 Q8-unit quantization tolerance', bandCorners, interiorCorners, bandDistances: [...bandDistances].sort((a, b) => a - b), maximumCoordinateErrorQ };
 }
 
+interface IndependentCoastalPoint { x: number; y: number; coverage: number; height: number }
+/** Independent implementation of the documented v3 fixed-mask contract from
+ * decoded persisted LGAB only. It does not import the product coastal kernel,
+ * renderer or generation helpers, and does not read a product area/signature. */
+function persistedCoastalOracle(data: Geography, size: number) {
+  const centers = new Map<number, IndependentCoastalPoint>(), corners = new Map<number, IndependentCoastalPoint>();
+  const vertexIds = (cell: number) => { const first = Math.floor(cell / size) * (size + 1) + cell % size; return [first, first + 1, first + size + 2, first + size + 1]; };
+  const incident = (vertex: number) => {
+    const x = vertex % (size + 1), y = Math.floor(vertex / (size + 1)), ids: number[] = [];
+    for (const dy of [-1, 0]) for (const dx of [-1, 0]) if (x + dx >= 0 && x + dx < size && y + dy >= 0 && y + dy < size) ids.push((y + dy) * size + x + dx);
+    return ids;
+  };
+  const sourcePoint = (vertex: number) => ({ x: data.xyQ[vertex * 2], y: data.xyQ[vertex * 2 + 1] });
+  function center(cell: number): IndependentCoastalPoint {
+    const known = centers.get(cell); if (known) return known;
+    const points = vertexIds(cell).map(sourcePoint), origin = points[0]; let twiceArea = 0, nx = 0, ny = 0;
+    for (let index = 0; index < 4; index++) {
+      const a = points[index], b = points[(index + 1) % 4], ax = a.x - origin.x, ay = a.y - origin.y, bx = b.x - origin.x, by = b.y - origin.y;
+      const cross = ax * by - bx * ay; twiceArea += cross; nx += (ax + bx) * cross; ny += (ay + by) * cross;
+    }
+    if (!Number.isSafeInteger(twiceArea) || twiceArea <= 0) throw new Error(`Invalid independently decoded center ${cell}`);
+    const result = { x: (origin.x + Math.round(nx / (3 * twiceArea))) * 6, y: (origin.y + Math.round(ny / (3 * twiceArea))) * 6,
+      coverage: data.heights[cell] >= 0 ? 256 : -256, height: data.heights[cell] };
+    centers.set(cell, result); return result;
+  }
+  function corner(vertex: number): IndependentCoastalPoint {
+    const known = corners.get(vertex); if (known) return known;
+    const ids = incident(vertex), point = sourcePoint(vertex), coverage = ids.reduce((sum, id) => sum + (data.heights[id] >= 0 ? 256 : -256), 0) / ids.length;
+    let height = 0, weight = 0;
+    if (coverage !== 0) for (const id of ids) if ((data.heights[id] >= 0) === (coverage > 0)) {
+      const sample = center(id), w = 1 / Math.hypot(sample.x - point.x * 6, sample.y - point.y * 6); height += data.heights[id] * w; weight += w;
+    }
+    const result = { x: point.x * 6, y: point.y * 6, coverage, height: weight ? height / weight : 0 }; corners.set(vertex, result); return result;
+  }
+  function intersection(a: IndependentCoastalPoint, b: IndependentCoastalPoint): IndependentCoastalPoint {
+    if (a.coverage === 0) return a; if (b.coverage === 0) return b;
+    if (a.x > b.x || a.x === b.x && a.y > b.y) [a, b] = [b, a];
+    const t = a.coverage / (a.coverage - b.coverage), x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+    // Fraction multiplication can differ by machine epsilon; all intersections
+    // must lie exactly on the documented Q8*6 lattice. No loose coast tolerance.
+    if (Math.abs(x - Math.round(x)) > 1e-8 || Math.abs(y - Math.round(y)) > 1e-8) throw new Error('Non-lattice independent v3 intersection');
+    return { x: Math.round(x), y: Math.round(y), coverage: 0, height: 0 };
+  }
+  function clip(points: IndependentCoastalPoint[], land: boolean) {
+    const result: IndependentCoastalPoint[] = [], inside = (p: IndependentCoastalPoint) => land ? p.coverage >= 0 : p.coverage <= 0;
+    for (let index = 0; index < points.length; index++) { const a = points[index], b = points[(index + 1) % points.length]; if (inside(a)) result.push(a); if (inside(a) !== inside(b)) result.push(intersection(a, b)); }
+    return result.filter((point, index) => { const next = result[(index + 1) % result.length]; return point.x !== next.x || point.y !== next.y; });
+  }
+  const area = (points: IndependentCoastalPoint[]) => {
+    let sum = 0; for (let index = 1; index + 1 < points.length; index++) sum += (points[index].x - points[0].x) * (points[index + 1].y - points[0].y) - (points[index].y - points[0].y) * (points[index + 1].x - points[0].x);
+    if (!Number.isSafeInteger(sum) || sum < 0) throw new Error('Invalid independent v3 clipped polygon area'); return sum;
+  };
+  return (cell: number) => {
+    const anchor = center(cell), points = vertexIds(cell).map(corner), x = cell % size, y = Math.floor(cell / size);
+    const adjacent = [y ? cell - size : -1, x + 1 < size ? cell + 1 : -1, y + 1 < size ? cell + size : -1, x ? cell - 1 : -1];
+    const land: IndependentCoastalPoint[][] = [], sea: IndependentCoastalPoint[][] = [], shore: number[][][] = []; let total = 0;
+    for (let side = 0; side < 4; side++) {
+      const triangle = [anchor, points[side], points[(side + 1) % 4]], a = clip(triangle, true), b = clip(triangle, false), landArea = area(a), seaArea = area(b);
+      const realArea = area(triangle); if (landArea + seaArea !== realArea) throw new Error(`Independent v3 area not conserved at ${cell}`); total += realArea;
+      if (landArea) land.push(a); if (seaArea) sea.push(b);
+      if (landArea && seaArea) { const zero = a.filter(point => point.coverage === 0); if (zero.length !== 2) throw new Error('Independent shore is not a segment'); shore.push(zero.map(point => [point.x, point.y])); }
+      else if (points[side].coverage === 0 && points[(side + 1) % 4].coverage === 0 && adjacent[side] >= 0 && (data.heights[adjacent[side]] >= 0) !== (data.heights[cell] >= 0)) shore.push([points[side], points[(side + 1) % 4]].map(point => [point.x, point.y]));
+    }
+    if (!Number.isSafeInteger(total) || total <= 0) throw new Error('Independent cell area missing');
+    const coordinates = (polygons: IndependentCoastalPoint[][], heights: boolean) => polygons.map(polygon => polygon.map(point => heights ? [point.x, point.y, point.height] : [point.x, point.y]));
+    return { geometry: JSON.stringify([coordinates(land, false), coordinates(sea, false), shore]), height: JSON.stringify([coordinates(land, true), coordinates(sea, true)]), shoreSegments: shore.length };
+  };
+}
+function verifyDerivedCoastalProtection(before: Geography, after: Geography, size: number, rect: Rectangle, locks: number[]) {
+  const affected = new Set<number>(), compare = new Set<number>();
+  const include = (id: number) => {
+    const x = id % size, y = Math.floor(id / size);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (x + dx >= 0 && x + dx < size && y + dy >= 0 && y + dy < size) affected.add((y + dy) * size + x + dx);
+  };
+  for (let id = 0; id < before.heights.length; id++) { if (before.heights[id] !== after.heights[id]) include(id); if (locks[id]) compare.add(id); }
+  for (let vertex = 0; vertex < before.xyQ.length / 2; vertex++) if (before.xyQ[vertex * 2] !== after.xyQ[vertex * 2] || before.xyQ[vertex * 2 + 1] !== after.xyQ[vertex * 2 + 1]) {
+    const x = vertex % (size + 1), y = Math.floor(vertex / (size + 1));
+    for (const dy of [-1, 0]) for (const dx of [-1, 0]) if (x + dx >= 0 && x + dx < size && y + dy >= 0 && y + dy < size) include((y + dy) * size + x + dx);
+  }
+  for (const id of affected) if (distance(id, size, rect) < 0 || locks[id]) compare.add(id);
+  // The full outside two-cell perimeter is also inspected, even when the real
+  // changed neighborhood contains no outside cells. No vacuous outside pass.
+  for (let y = Math.max(0, rect.row - 2); y < Math.min(size, rect.row + rect.rows + 2); y++) for (let x = Math.max(0, rect.column - 2); x < Math.min(size, rect.column + rect.columns + 2); x++) {
+    const id = y * size + x; if (distance(id, size, rect) < 0) compare.add(id);
+  }
+  const original = persistedCoastalOracle(before, size), actual = persistedCoastalOracle(after, size); let outsideCells = 0, coastLockedCells = 0, heightLockedCells = 0, lockedShoreCells = 0;
+  for (const id of [...compare].sort((a, b) => a - b)) {
+    const a = original(id), b = actual(id), outside = distance(id, size, rect) < 0;
+    if ((outside || locks[id] & 1) && a.geometry !== b.geometry) throw new Error(`Actual persisted v3 coast changed in ${outside ? 'outside-scope' : 'coast-locked'} cell ${id}`);
+    if (locks[id] & 2 && a.height !== b.height) throw new Error(`Actual persisted v3 height changed in height-locked cell ${id}`);
+    if (outside) outsideCells++; if (locks[id] & 1) { coastLockedCells++; if (a.shoreSegments) lockedShoreCells++; } if (locks[id] & 2) heightLockedCells++;
+  }
+  expect(outsideCells).toBeGreaterThan(0); expect(coastLockedCells).toBe(64); expect(lockedShoreCells).toBeGreaterThan(0);
+  return { contract: 'Independent Q8*6 land-mask-fan-v1 polygons from persisted LGAB; exact geometry and interpolated heights', comparedCells: compare.size, changedDependencyCells: affected.size, outsideCells, coastLockedCells, heightLockedCells, lockedShoreCells,
+    limitation: 'This successful UI route uses coast locks (mask 1). V3 elevation-lock rejection remains covered by the existing unit/session/storage evidence, not claimed as a successful browser generation here.' };
+}
+
 test('局部生成闭环：真实山系与细海岸保持范围外、区域锁与过渡带，保存刷新一致', async ({ page }, info) => {
   test.setTimeout(360000); const errors = errorsOn(page), id = await create(page, '256', `PH06局部完成门-${info.project.name}`);
   await panel(page, '创世'); await page.getByLabel('生成内容', { exact: true }).selectOption('macro');
@@ -222,11 +333,11 @@ test('局部生成闭环：真实山系与细海岸保持范围外、区域锁�
   await button(page, '预览大陆生成'); await awaitCandidate(page); await confirm(page);
   const macro = await saved(page, id), original = await geography(page, macro.manifest), fixture = localFixture(original, 256);
   await regionTools(page); await page.getByLabel('显示区域锁选区', { exact: true }).check(); await setRectangle(page, fixture.locks);
-  await page.getByLabel('区域锁保护内容', { exact: true }).selectOption('3'); await page.getByLabel('区域锁操作', { exact: true }).selectOption('set');
+  await page.getByLabel('区域锁保护内容', { exact: true }).selectOption('1'); await page.getByLabel('区域锁操作', { exact: true }).selectOption('set');
   await button(page, '预览区域锁修改'); await expect(page.getByRole('region', { name: '区域锁修改预览' })).toBeVisible({ timeout: 90000 }); await ready(page);
   await button(page, '确认区域锁并保存'); await ready(page);
   let baseline = await saved(page, id), before = await geography(page, baseline.manifest); const locks = await readLocks(page, baseline);
-  expect(locks).toEqual(Array.from({ length: 256 * 256 }, (_, cell) => distance(cell, 256, fixture.locks) >= 0 ? 3 : 0));
+  expect(locks).toEqual(Array.from({ length: 256 * 256 }, (_, cell) => distance(cell, 256, fixture.locks) >= 0 ? 1 : 0));
   expect(before).toEqual(original); const reports: unknown[] = [];
   for (const operation of ['landforms', 'coast'] as const) {
     await panel(page, '创世'); await page.getByLabel('生成内容', { exact: true }).selectOption(operation); await regionTools(page);
@@ -245,6 +356,7 @@ test('局部生成闭环：真实山系与细海岸保持范围外、区域锁�
     const changedLayer = operation === 'landforms' ? 'elevation:' : 'geometry:';
     expect(committed.manifest.blockRefs.filter(ref => !ref.key.startsWith(changedLayer))).toEqual(baseline.manifest.blockRefs.filter(ref => !ref.key.startsWith(changedLayer)));
     reports.push({ operation, fixture, ...verifyLocal(before, after, 256, fixture.rect, locks, fixture.transition, operation),
+      derivedCoastalProtection: verifyDerivedCoastalProtection(before, after, 256, fixture.rect, locks),
       transitionOracle: operation === 'coast' ? verifyCoastTransition(before, after, 256, fixture.rect, locks, fixture.transition) : null, revision: committed.root.revision, recipe: last });
     await restored(page, id, committed, after); baseline = committed; before = after;
   }
@@ -266,15 +378,17 @@ async function ocean(page: Page) {
   await panel(page, '创世'); await page.getByLabel('生成内容', { exact: true }).selectOption('ocean');
   await fields(page, [['地貌种子', 'PH06-completion-ocean'], ['平均海深', '3600'], ['海底起伏', '1000'], ['陆架宽度', '320']]); await button(page, '预览海床生成');
 }
-async function runningCancel(page: Page, operation: Observation['operation']) {
-  await page.waitForFunction(operation => {
+async function runningCancel(page: Page, operation: Observation['operation'], phase: 'generator' | 'coastal' = 'generator') {
+  await page.waitForFunction(({ operation, phase }) => {
     const record = (window as unknown as ObserverHost).__completionActive, state = document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state');
     const stages = operation === 'shape' ? /量测手绘轮廓|读取手绘区域|从闭合轮廓生成/ : /读取海床真实|识别世界边界海水|沿真实共享边识别外海/;
     const match = (document.querySelector('.inspector-notice span')?.textContent ?? '').match(/^(.*?) · (\d+)\/(\d+)$/);
-    return state === 'busy' && record?.operation === operation && record.finishedAt === null && !!match && stages.test(match[1]) && Number(match[2]) > 0 && Number(match[2]) < Number(match[3]);
-  }, operation, { timeout: 15000 });
+    return state === 'busy' && record?.operation === operation && record.finishedAt === null && !!match
+      && (phase === 'generator' ? stages.test(match[1]) : match[1] === '核验实际裁切海岸面积与保护边界') && Number(match[2]) > 0 && Number(match[2]) < Number(match[3]);
+  }, { operation, phase }, { timeout: phase === 'coastal' ? 90000 : 15000 });
   await expect(candidate(page)).toHaveCount(0); await button(page, '取消操作'); await ready(page); await expect(candidate(page)).toHaveCount(0);
   await expect(studio(page)).toHaveAttribute('data-atlas-display', 'committed'); await expect(page.getByLabel('草稿操作反馈')).toContainText('取消');
+  const record = (await observations(page)).at(-1); expect(record?.cancelSnapshot?.phase).toBe(phase); expect(record?.cancelSnapshot?.algorithmRunning).toBe(true);
 }
 async function longTaskScenario(page: Page, info: TestInfo, size: '256' | '512') {
   test.setTimeout(360000); const errors = errorsOn(page), id = await create(page, size, `PH06长任务-${size}-${info.project.name}`);
@@ -285,7 +399,7 @@ async function longTaskScenario(page: Page, info: TestInfo, size: '256' | '512')
       await start(); await awaitCandidate(page); expect(await saved(page, id)).toEqual(baseline); expect(await databaseDigest(page)).toEqual(database);
       await button(page, '取消生成'); await ready(page); expect(await databaseDigest(page)).toEqual(database);
       await start(); await runningCancel(page, operation); expect(await saved(page, id)).toEqual(baseline); expect(await databaseDigest(page)).toEqual(database);
-      expect((await audit(page)).display).toMatchObject({ source: 'committed', revision: 0, manifestDigest: baseline.root.currentManifest });
+      expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 3, revision: 0, manifestDigest: baseline.root.currentManifest });
     }
     const runs = await observations(page); expect(runs).toHaveLength(4);
     for (const operation of ['shape', 'ocean'] as const) {
@@ -306,4 +420,20 @@ test('标准256长任务：手绘和海床真实运行中取消，250ms进度与
 test('桌面512长任务：手绘和海床真实运行中取消，250ms进度与500ms取消保持源库', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop-chromium', 'The existing bound is 512 on desktop; standard 256 runs on all three projects.');
   await longTaskScenario(page, info, '512');
+});
+test('桌面512裁切后段：真实v3面积与保护核验中取消，250ms进度与500ms取消保持源库', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-chromium', 'The additional v3-only late-phase sample is bounded to 512 desktop.');
+  test.setTimeout(360000); const errors = errorsOn(page), id = await create(page, '512', 'PH06-v3裁切后段取消');
+  const baseline = await saved(page, id), database = await databaseDigest(page);
+  await ocean(page); await runningCancel(page, 'ocean', 'coastal');
+  expect(await saved(page, id)).toEqual(baseline); expect(await databaseDigest(page)).toEqual(database);
+  expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 3, revision: 0, manifestDigest: baseline.root.currentManifest });
+  const runs = await observations(page); expect(runs).toHaveLength(1); const run = runs[0];
+  expect(run.cancelSnapshot).toMatchObject({ phase: 'coastal', stage: '核验实际裁切海岸面积与保护边界', state: 'busy', candidateVisible: false, algorithmRunning: true });
+  expect.soft(run.progress250msGate, `512 v3 late phase maximum observed progress gap ${run.maximumGapMs} ms`).toBe(true);
+  expect.soft(run.cancellation500msGate, `512 v3 late phase actual running cancellation ${run.cancellationResponseMs} ms`).toBe(true);
+  await info.attach('coastal-late-phase-unchanged-database.json', { contentType: 'application/json', body: JSON.stringify({ size: 512, format: 3, project: info.project.name, baselineRoot: baseline.root,
+    wholeDatabase: database, finalWholeDatabase: await databaseDigest(page), run, errors, physicalDeviceTest: false,
+    limitation: 'This empty-ocean sample exercises the shared v3 clipping/area audit after the ocean algorithm. It is not a claim of all protected-shore fixtures or real-device performance.' }, null, 2) });
+  expect(errors).toEqual([]);
 });

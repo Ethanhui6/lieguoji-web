@@ -393,16 +393,33 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
     if (!held && (this.#preparing || this.#candidates.size || this.#replacement)) throw new Error('已有一笔编辑等待完成或取消。');
     if (!COMMAND.test(commandId) || !reason.trim() || reason.length > 120) throw new Error('完整编辑命令无效。');
     this.#preparing = true;
+    const source = this.#data, sourceRootDigest = this.#rootDigest, sourceManifestDigest = this.#manifestDigest;
+    const checkSource = () => {
+      abort(control);
+      if (this.#data !== source || this.#rootDigest !== sourceRootDigest || this.#manifestDigest !== sourceManifestDigest) throw new Error('准备完整地图期间持久基线已变化。');
+    };
     try {
-      const data = await cloneVerifiedAtlasDocument(raw, control); abort(control);
-      const base = this.#data.manifest, next = data.manifest;
+      const data = await cloneVerifiedAtlasDocument(raw, control); checkSource();
+      const base = source.manifest, next = data.manifest;
       if (next.version !== base.version || next.draftId !== base.draftId || next.atlasId !== base.atlasId || next.revision !== base.revision + 1 || !Number.isSafeInteger(next.revision)
         || next.name !== base.name || next.seed !== base.seed || JSON.stringify(next.spec) !== JSON.stringify(base.spec) || JSON.stringify(next.catalogs) !== JSON.stringify(base.catalogs)) throw new Error('完整候选改变了固定身份或未绑定当前修订。');
-      if (mode === 'constraints') assertAtlasConstraintsOnly(this.#data, data); else assertAtlasLocksPreserved(this.#data, data);
-      const retainedBytes = undo ? 0 : encodeAtlasManifest(this.#data.manifest).length + [...this.#data.blocks.values()].reduce((sum, block) => sum + encodeBlock(block).length, 0) + ('locks' in this.#data ? [...this.#data.locks.values()].reduce((sum, lock) => sum + encodeAtlasCellLockBlock(lock).length, 0) : 0);
+      if (mode === 'constraints') assertAtlasConstraintsOnly(source, data); else assertAtlasLocksPreserved(source, data);
+      let retainedBytes = 0;
+      if (!undo) {
+        const blocks = [...source.blocks.values()], locks = 'locks' in source ? [...source.locks.values()] : [], total = 1 + blocks.length + locks.length;
+        for (let index = 0; index < total; index++) {
+          checkSource();
+          retainedBytes += index === 0 ? encodeAtlasManifest(base).length : index <= blocks.length ? encodeBlock(blocks[index - 1]).length : encodeAtlasCellLockBlock(locks[index - blocks.length - 1]).length;
+          // Count actual canonical encodings, including manifest and locks.
+          // Yield completed work before another whole-document copy can start.
+          if ((index + 1) % 8 === 0 || index + 1 === total) {
+            await checkpoint(control, '核算完整地图撤销字节', index + 1, total); checkSource();
+          }
+        }
+      }
       if (!undo && this.#retainedBytes + retainedBytes > 64 * 1024 * 1024) throw new Error('本次完整地图撤销记录超过当前会话64 MiB预算。原图未改变；请先保存并重新打开草稿后生成。');
-      const publicInfo: PreparedAtlasReplacement = { candidateId: crypto.randomUUID(), commandId, baseRevision: base.revision, baseRootDigest: this.#rootDigest, baseManifestDigest: this.#manifestDigest, revision: next.revision, manifestDigest: await hashAtlasManifest(next), reason };
-      abort(control); this.#replacement = { data, public: publicInfo, undo, retainedBytes, mode }; return structuredClone(publicInfo);
+      const publicInfo: PreparedAtlasReplacement = { candidateId: crypto.randomUUID(), commandId, baseRevision: base.revision, baseRootDigest: sourceRootDigest, baseManifestDigest: sourceManifestDigest, revision: next.revision, manifestDigest: await hashAtlasManifest(next), reason };
+      checkSource(); this.#replacement = { data, public: publicInfo, undo, retainedBytes, mode }; return structuredClone(publicInfo);
     } finally { if (!held) this.#preparing = false; }
   }
   replacementMode(candidateId: string): ReplacementMode { return this.#fullCandidate(candidateId).mode; }

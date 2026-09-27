@@ -1,0 +1,99 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > keeps one output pixel within one texture sample on a 128² atlas at 527% undefined 2ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > keeps one output pixel within one texture sample on a 256² atlas at 527% undefined 1ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > keeps one output pixel within one texture sample on a 512² atlas at 527% undefined 0ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > subdivides below a sample at the real maximum camera zoom without enumerating a whole logical block 2ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > accounts for every actual halo and grid target and preserves a common lattice across adjacent blocks 0ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > reports genuine DPR2 budget pressure instead of silently capping the requested sampling density 0ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > keeps minimum density and fails honestly when even its visible targets do not fit 1ms
+ ✓ src/world/render-density.test.ts > camera-dependent raster density under the unchanged pixel ledger > does not materialize offscreen high-zoom tiles or drop shared material accounting 0ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > rejects same-draft version or surface changes before reusing or changing live caches 1100ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > renders v3 clipped coast pieces and picks sea inside a land-center editable quad 966ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > uses smaller visible texture cores for near detail while retaining logical geometry and both budgets 761ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > keeps real target coverage aligned across logical neighbours as subdivisions change at DPR 1 715ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > keeps real target coverage aligned across logical neighbours as subdivisions change at DPR 2 757ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > keeps DPR2 sub-cell targets at the unchanged maximum zoom through eviction, GPU recovery and unload 764ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > reports a real DPR2 pixel-budget fallback and restores full sampling when the viewport shrinks 719ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > hides only v3 sampling labels by default and restores them with the explicit geography grid 1630ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > draws one genuine Q8 closed outline without panning or selecting and caps retained samples 711ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a second pointer cancels an outline, preserves pinch and never starts a remnant stroke 761ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > pointercancel cannot finish a stale hand-drawn outline 709ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > lostpointercapture cannot finish a stale hand-drawn outline 734ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > blur cannot finish a stale hand-drawn outline 735ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > disable cannot finish a stale hand-drawn outline 700ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > gpu cannot finish a stale hand-drawn outline 711ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > destroy cannot finish a stale hand-drawn outline 798ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > busy cannot finish a stale hand-drawn outline 823ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > zoom cannot finish a stale hand-drawn outline 737ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > fit cannot finish a stale hand-drawn outline 728ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > focus cannot finish a stale hand-drawn outline 699ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > copies explicit outline points and scales their own overlay without touching selection or region 725ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a real viewport resize cancels the outline before its camera transform changes 680ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a same-size ResizeObserver notification preserves an in-progress outline 678ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > reuses already drawn terrain Graphics at higher texture density, but rebuilds a genuinely wider halo 784ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > keeps a 1,024-cell preview, selection and outline geometry during pure pan and identical inputs 693ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > rebuilds scaled strokes and changed proposed vertices once, including after GPU recovery 773ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a committed shared vertex replaces cached selection geometry and clears the proposed overlay 798ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > uses CSS cell size with hysteresis for grid detail and passes the unchanged world to DOM labels 739ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > hides old DOM labels throughout pending acceptance and destroys the layer without a late update 741ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a DOM label layout error follows the same fatal boundary as the map frame 755ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > reuses warm textures while camera/input leave all source bytes unchanged 708ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > pointercancel terminates a gesture without picking or residual motion 726ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > lostpointercapture terminates a gesture without picking or residual motion 708ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > blur terminates a gesture without picking or residual motion 698ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > pinch then one remaining pointer never becomes a click 747ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a committed offscreen edit stays dirty until visible, without a cache allocation during acceptance 741ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > selection, density changes and GPU cache loss cannot prefetch deferred dirty cores 736ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a shared vertex change invalidates incident cores and every sampled neighboring halo 752ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > neighboring elevation changes redraw real halo colors and each crop shares one accounted source 723ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > a four-owner elevation batch reports all sixteen visible halo-dependent cores 788ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > two context losses rebuild the same view and selection without a fatal or source change 741ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > loss during new-draft acceptance cannot resolve with an old or partial frame 2595ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > destroy during context recovery never publishes a recovered or accepted frame 720ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > context reconstruction failure locks the renderer only after the failed recovery 700ms
+ ✓ src/world/renderer.test.ts > production camera, cache and GPU lifecycle > read-only events return a fully verified manifest and final destruction balances resources 908ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > counts pinned shared material sources against every render allocation and releases each source once 635ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > a shared source release failure stays charged and locks further allocation 614ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > reserves new and old resources together and evicts only unprotected entries 659ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > failed target drawing destroys its source and releases the reservation 667ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > elevation dependency invalidation leaves the independent grid layer cached 644ms
+ ✓ src/world/renderer.test.ts > explicit texture ledger > a source destruction error attempts other releases, retains unknown pixels and prohibits allocation 618ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > renders actual v2 candidate terrain, permits inspection and discards without accepting a revision 842ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > restores a completed candidate through repeated GPU loss and restores committed geography when discarded while lost 982ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > cancels private index construction without publishing the candidate or locking subsequent previews 833ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > cancels partial candidate painting after GPU loss and waits for a committed correct frame 876ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > full durable acceptance confirms the candidate and discard cannot roll it back 893ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > diagnostics verify both real v2 sources and keep the top-level digest committed 1238ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > rejects an unrelated candidate without damaging the accepted map 741ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > candidate cache release failure locks rendering and cannot advertise a stale committed audit 758ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > durable correct frame failure locks rendering and cannot advertise a stale committed audit 903ms
+ ✓ src/world/renderer.test.ts > generation candidate display lifecycle > destroy aborts a pending candidate and releases both GPU caches without a late frame 823ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > only resolves acceptance after its scheduled correct frame 725ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > select render failure locks every later rendering entry 739ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > showPreview render failure locks every later rendering entry 753ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > fit render failure locks every later rendering entry 713ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > zoom render failure locks every later rendering entry 740ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > focusCell render failure locks every later rendering entry 731ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > ResizeObserver resize failure cannot leave an editable renderer 702ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > ResizeObserver render failure cannot leave an editable renderer 747ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > a failed final frame rejects acceptance instead of publishing success 710ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy while acceptance awaits a frame rejects without a late render or accepted frame 712ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy during the paint yield prevents remaining blocks and acceptance 713ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > resize-error during the paint yield prevents remaining blocks and acceptance 688ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy during private index construction never publishes that candidate 817ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > cancel during private index construction never publishes that candidate 827ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > resize-error during private index construction never publishes that candidate 811ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > cancelling after acceptance completes is inert and the renderer remains usable 740ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > local edits do not insert a paint timer before their correct frame 689ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > switching a real 512² high-ID preview to 128² clears the old overlay before any drawing 2608ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > restoring a same-draft backup clears both pending cells and proposed shared vertices 804ms
+ ✓ src/world/renderer.test.ts > atlas renderer failure and lifetime boundaries > destroy before async initialization completes never attaches an obsolete canvas 619ms
+
+ Test Files  2 passed (2)
+      Tests  89 passed (89)
+   Start at  13:30:57
+   Duration  71.16s (tests 98%, import 1%, transform 1%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/zoom-density-checks/owned-tests-first.json

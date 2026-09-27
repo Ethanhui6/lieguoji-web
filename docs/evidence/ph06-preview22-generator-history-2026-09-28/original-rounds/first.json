@@ -1,0 +1,268 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T22:08:40.521Z",
+      "finishedAt": "2026-09-27T22:08:40.767Z",
+      "elapsedMs": 244.76569999999998,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T22:08:40.768Z",
+      "finishedAt": "2026-09-27T22:08:49.726Z",
+      "elapsedMs": 8957.6713,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T22:08:49.726Z",
+      "finishedAt": "2026-09-27T22:09:01.685Z",
+      "elapsedMs": 11959.293899999999,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/detail-natural-ranges.test.ts",
+        "src/world/generation/detail-natural-ranges-writer.test.ts",
+        "src/world/generation-preview21-history.test.ts",
+        "src/world/terrain-material.test.ts",
+        "src/world/terrain-mesh.test.ts",
+        "src/world/ocean-material.test.ts",
+        "src/world/ocean-material-cache.test.ts",
+        "src/world/detail-terrain-shader.test.ts",
+        "src/world/detail-terrain-light.test.ts",
+        "src/world/detail-terrain-pages.test.ts",
+        "src/world/detail-terrain-backend.test.ts",
+        "src/world/renderer.test.ts",
+        "src/world/renderer-detail-reuse.test.ts",
+        "src/world/generation/regional-coast-plan.test.ts",
+        "src/world/generation/regional-coast-field.test.ts",
+        "src/world/regional-coast-storage.test.ts",
+        "src/world/generation-preview20-history.test.ts",
+        "src/world/generation/detail-fine-world-relief.test.ts",
+        "src/world/generation-preview18-history.test.ts",
+        "src/world/generation/detail-curved-ridge.test.ts",
+        "src/world/generation/detail-orography.test.ts",
+        "src/world/generation/detail-natural-writer.test.ts",
+        "src/world/generation/detail-local-background.test.ts",
+        "src/world/generation/detail-local-relief.test.ts",
+        "src/world/detail-local-relief-session.test.ts",
+        "src/world/detail-coast-locks.test.ts",
+        "src/world/generation/detail-natural-coast-plan.test.ts",
+        "src/world/generation/detail-shape-natural.test.ts",
+        "src/world/generation/detail-natural-visual-repair.test.ts",
+        "src/world/detail-natural-integration.test.ts",
+        "src/world/detail-natural-history.test.ts",
+        "src/world/detail-preview16-history.test.ts",
+        "src/world/detail-preview17-history.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "src/world/generation/detail-shape-add.test.ts",
+        "src/world/detail-add-integration.test.ts",
+        "src/world/detail-add-history.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/natural-range-sea-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T22:09:01.685Z",
+      "finishedAt": "2026-09-27T22:11:07.495Z",
+      "elapsedMs": 125809.6819,
+      "exitCode": 1,
+      "signal": null
+    }
+  ],
+  "unit": {
+    "available": true,
+    "files": [
+      {
+        "path": "src/world/detail-add-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-add-integration.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-coast-locks.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/detail-local-relief-session.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-integration.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/detail-preview16-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/detail-preview17-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/detail-terrain-backend.test.ts",
+        "assertions": 4
+      },
+      {
+        "path": "src/world/detail-terrain-light.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/detail-terrain-pages.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/detail-terrain-shader.test.ts",
+        "assertions": 14
+      },
+      {
+        "path": "src/world/generation-preview18-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation-preview20-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation-preview21-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/ocean-material-cache.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/ocean-material.test.ts",
+        "assertions": 4
+      },
+      {
+        "path": "src/world/regional-coast-storage.test.ts",
+        "assertions": 1
+      },
+      {
+        "path": "src/world/renderer-detail-reuse.test.ts",
+        "assertions": 9
+      },
+      {
+        "path": "src/world/renderer.test.ts",
+        "assertions": 83
+      },
+      {
+        "path": "src/world/terrain-material.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/terrain-mesh.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-curved-ridge.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-fine-world-relief.test.ts",
+        "assertions": 7
+      },
+      {
+        "path": "src/world/generation/detail-local-background.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-local-relief.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-natural-ranges-writer.test.ts",
+        "assertions": 1
+      },
+      {
+        "path": "src/world/generation/detail-natural-ranges.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-natural-writer.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-orography.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/generation/detail-shape-add.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-shape-natural.test.ts",
+        "assertions": 13
+      },
+      {
+        "path": "src/world/generation/fingerprint.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/generation/regional-coast-field.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/generation/regional-coast-plan.test.ts",
+        "assertions": 3
+      }
+    ],
+    "scopeMatches": true,
+    "knownCountsMatch": true,
+    "total": 305,
+    "passedAssertions": 302,
+    "failedAssertions": 0,
+    "pendingAssertions": 3,
+    "passed": false
+  },
+  "sourceStable": true,
+  "allCommandsPassed": false,
+  "passed": false,
+  "dist": null,
+  "buildJsonSha256": null,
+  "engineUnchanged": false,
+  "generatorIdentityVerified": false,
+  "identityVerificationSha256": "a4cd72b0f756dce6c16f50dd02a22be79427d7e3bce8560c7d7fc678a2d6da82",
+  "classificationCounts": {},
+  "scope": "Affected branching relief, natural/additive/local height and locks, stored compatibility and actual helper runtime closure checks only; not natural visual, performance, physical device, PH or cloud acceptance.",
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

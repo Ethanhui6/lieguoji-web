@@ -1,0 +1,30 @@
+{
+  "reviewedAt": "2026-09-27T22:45:13.932Z",
+  "reviewedByRoot": true,
+  "version": "0.5.0-preview.22",
+  "buildJsonSha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+  "reviewedDevices": [
+    "desktop-chromium",
+    "mobile-chromium",
+    "tablet-chromium"
+  ],
+  "reviewedScreenshots": [
+    "observations/demo22-after-ocean.png",
+    "observations/demo22-full.png",
+    "observations/demo22-mid.png",
+    "observations/demo22-ridge.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+    "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+    "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+    "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+    "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png"
+  ],
+  "summary": "三端全图与中景、IAB同地形海色A/B及新大陆全图/40%中景已实际查看。海色青光明显减弱，但山脊仍是光滑匝道状圆管，侧谷与山块层次不足，海岸仍偏圆软。未发现本次截图上的规则方块高程色格，不能因此认定自然地貌通过。国家行政城市与战争尚未接入。",
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

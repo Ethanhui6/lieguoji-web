@@ -4,6 +4,9 @@
 
 ## 当前状态
 
+- 追加工程批次：实际preview.22的48原源码与11存储身份已接历史，5/5兼容检查通过；首轮新测试统计字段读取错误4/5及修复原件保留。双页水文receiver、Owned提取、4096节点路径已接生产源码，统一9文件94/94、全lint/类型/计划通过，见[evidence/2026-09-28-ph07-receivers.md](evidence/2026-09-28-ph07-receivers.md)。没有新Worker/界面操作，没有重新构建，dist仍为下方原22。
+- 当前山体候选peak-valley-v1在真实2-world细节点图上仍是平滑宽弧，自然视觉失败，未提升；首轮误用Hbase的粗场图已单独纠正。原件在.autopilot/ph06/ridge-landform-staging。下一area-v2仅为正在制作的面状山地/谷网候选，不能称已通过。根任务先看实际物理图，再决定产品接入与检查。
+
 - 本地preview.22已完成306/306、计划/lint/类型/构建/dist/11闭包、生产GPU及三端浏览器；实际build SHA256 517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2，原build.commit=d651bcc9502d5afe31fef80d0a17b9a9988bc819。已本地提交5aadcba21f13ed101c5983fd4e97ce16f8206f55；[本批记录](evidence/2026-09-28-ph06-natural-range-sea.md)。真实山脉仍管状，自然视觉失败；PH状态不变。
 - 分支codex/ph06-world-generation；preview.21游戏源码已本地提交31e27620c816db33993a8ac419274c9a86c32624。原build.commit=502164889fef2f0280b725c76538cd07df7d5e36如实保留；最新文档提交以git log核实。
 - preview.21为上一批已提交历史基线；149/149和旧三端证据只描述21。当前实际dist与IAB为上方22，旧存档在22读取恢复修订1已实际核实。
@@ -58,6 +61,6 @@ preview.22当前IAB独立草稿：
 http://127.0.0.1:4173/?atlas=atlas-329f6a97-78f7-4512-a2b7-4e92e4b5daf9&atlas-format=4
 同手绘输入的实际预览为22.09%陆地、-5897至2046米，保存并刷新修订1。新山系仍管状，不能称自然视觉通过。
 
-实际22源码已在.autopilot/ph06/v4-preview22-history-staging冻结：48份原字节（43生成器+5模拟引擎），11闭包及engine重算一致，inventory SHA256 d213742b9254abff675bec475ad8e72f0c3563ecb60ea83a350019586c3f0620，sourceCommit为5aadcba，原build.commit保留d651bcc。尚未接下一版本存储历史。
+实际22源码已在.autopilot/ph06/v4-preview22-history-staging冻结：48份原字节（43生成器+5模拟引擎），11闭包及engine重算一致，inventory SHA256 d213742b9254abff675bec475ad8e72f0c3563ecb60ea83a350019586c3f0620，sourceCommit为5aadcba，原build.commit保留d651bcc。现在已接入存储历史，原件及本次5/5检查见docs/evidence/ph06-preview22-generator-history-2026-09-28；冻结时的historyWired=false原文不改写。
 
-PH07 receiver隔离候选在.autopilot/ph07/receiver-staging/checks/first由root实际检查：16/16、类型和lint通过，未接生产/完整河网/存储。下一批山体候选在.autopilot/ph06/ridge-landform-staging；只依据实际高度图和产品图判断视觉，当前22失败图保留。
+PH07 receiver隔离候选16/16和路径候选5/5通过后，已于本批接src/world并完成上方统一94项检查。完整河网、存储、Worker/界面操作仍未接通。下一批山体候选在.autopilot/ph06/ridge-landform-staging/area-v2；只依据实际高度图和产品图判断视觉，当前22与peak-valley候选的失败图保留。

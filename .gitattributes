@@ -67,3 +67,6 @@ src/world/generation/test-fixtures/preview20-coast/** -text
 docs/evidence/ph06-preview21-generator-history-2026-09-28/** -text
 docs/evidence/ph06-natural-range-sea-2026-09-28/** -text
 src/world/test-fixtures/preview21-terrain-material.ts -text
+
+docs/evidence/ph06-preview22-generator-history-2026-09-28/** -text
+docs/evidence/ph07-receivers-2026-09-28/** -text

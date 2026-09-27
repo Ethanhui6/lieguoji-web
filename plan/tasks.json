@@ -922,7 +922,9 @@
         "docs/evidence/2026-09-28-ph07-hydrology-kernel.md",
         "docs/evidence/ph07-hydrology-kernel-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph07-flow-view.md",
-        "docs/evidence/ph07-flow-view-2026-09-28/verification.json"
+        "docs/evidence/ph07-flow-view-2026-09-28/verification.json",
+        "docs/evidence/2026-09-28-ph07-receivers.md",
+        "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json"
       ],
       "workItems": [
         {
@@ -935,7 +937,9 @@
             "docs/evidence/2026-09-28-ph07-hydrology-kernel.md",
             "docs/evidence/ph07-hydrology-kernel-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph07-flow-view.md",
-            "docs/evidence/ph07-flow-view-2026-09-28/verification.json"
+            "docs/evidence/ph07-flow-view-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph07-receivers.md",
+            "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json"
           ]
         },
         {

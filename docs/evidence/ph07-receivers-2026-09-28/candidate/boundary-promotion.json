@@ -1,0 +1,11 @@
+{
+  "status": "promoted-awaiting-root-unified-check",
+  "source": ".autopilot/ph07/boundary-staging/owned-v2/src/world/hydrology-boundary.test.ts",
+  "target": "src/world/hydrology-boundary.test.ts",
+  "sha256": "b03d9a3154e380c6e1df8712a30986da3d0102667cbd0bce4b7c4ccf6ae0708c",
+  "originalAssertions": 14,
+  "bytes": 13885,
+  "importReplacements": 0,
+  "checksRun": false,
+  "rootAuthorization": "Preserve existing pure boundary builder/merge regression after six-file receiver promotion"
+}

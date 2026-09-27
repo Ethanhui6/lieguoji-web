@@ -1,0 +1,340 @@
+{
+  "excludesSelf": true,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+      "bytes": 9582
+    },
+    {
+      "path": "frozen-source/src/history/core.ts",
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf",
+      "bytes": 13976
+    },
+    {
+      "path": "frozen-source/src/history/types.ts",
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f",
+      "bytes": 1012
+    },
+    {
+      "path": "frozen-source/src/sim/core.ts",
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144",
+      "bytes": 35424
+    },
+    {
+      "path": "frozen-source/src/sim/statecraft.ts",
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f",
+      "bytes": 22259
+    },
+    {
+      "path": "frozen-source/src/sim/types.ts",
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e",
+      "bytes": 3555
+    },
+    {
+      "path": "frozen-source/src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "bytes": 8219
+    },
+    {
+      "path": "frozen-source/src/world/coastal-generation.ts",
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "bytes": 8132
+    },
+    {
+      "path": "frozen-source/src/world/coastal-surface.ts",
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "bytes": 13494
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "bytes": 1110
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "bytes": 8040
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "bytes": 1689
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "bytes": 14666
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-locks.ts",
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "bytes": 9809
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "bytes": 4394
+    },
+    {
+      "path": "frozen-source/src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "bytes": 34413
+    },
+    {
+      "path": "frozen-source/src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "bytes": 12978
+    },
+    {
+      "path": "frozen-source/src/world/generation-history.ts",
+      "sha256": "da0822a61d7f4e619b504266d8eea5ebe75c72929330ecf4f872d962478bc1fa",
+      "bytes": 17808
+    },
+    {
+      "path": "frozen-source/src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "bytes": 16953
+    },
+    {
+      "path": "frozen-source/src/world/generation/coast.ts",
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f",
+      "bytes": 16967
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-curved-ridge.ts",
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "bytes": 17154
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-local-background.ts",
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026",
+      "bytes": 8795
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-local-relief.ts",
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050",
+      "bytes": 28182
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-natural-relief.ts",
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad",
+      "bytes": 17763
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-orography.ts",
+      "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260",
+      "bytes": 28765
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-adapter.ts",
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919",
+      "bytes": 7449
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-add-adapter.ts",
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2",
+      "bytes": 7553
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-add.ts",
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "bytes": 21310
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "bytes": 17258
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "bytes": 2672
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-adapter.ts",
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "bytes": 8133
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384",
+      "bytes": 7705
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1",
+      "bytes": 21608
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f",
+      "bytes": 31682
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape.ts",
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "bytes": 31690
+    },
+    {
+      "path": "frozen-source/src/world/generation/fine-range-tree.ts",
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+      "bytes": 16290
+    },
+    {
+      "path": "frozen-source/src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "bytes": 1159
+    },
+    {
+      "path": "frozen-source/src/world/generation/islands.ts",
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a",
+      "bytes": 20467
+    },
+    {
+      "path": "frozen-source/src/world/generation/landforms.ts",
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221",
+      "bytes": 19225
+    },
+    {
+      "path": "frozen-source/src/world/generation/local-detail-relief-adapter.ts",
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635",
+      "bytes": 6694
+    },
+    {
+      "path": "frozen-source/src/world/generation/macro.ts",
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f",
+      "bytes": 19697
+    },
+    {
+      "path": "frozen-source/src/world/generation/natural-ocean-base.ts",
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "bytes": 4244
+    },
+    {
+      "path": "frozen-source/src/world/generation/ocean.ts",
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae",
+      "bytes": 13207
+    },
+    {
+      "path": "frozen-source/src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "bytes": 7319
+    },
+    {
+      "path": "frozen-source/src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "bytes": 3564
+    },
+    {
+      "path": "frozen-source/src/world/generation/shape.ts",
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a",
+      "bytes": 13546
+    },
+    {
+      "path": "frozen-source/src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "bytes": 27883
+    },
+    {
+      "path": "frozen-source/src/world/topology.ts",
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "bytes": 9633
+    },
+    {
+      "path": "frozen-tool/scripts/engine-fingerprint.ts",
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5",
+      "bytes": 3378
+    },
+    {
+      "path": "frozen-tool/scripts/generator-fingerprint.ts",
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446",
+      "bytes": 4746
+    },
+    {
+      "path": "original-archive-verification.json",
+      "sha256": "b886c1ef87ac5d01f357106b3eb9fd47b2f3709c459e3937a05b7351368d485c",
+      "bytes": 24218
+    },
+    {
+      "path": "original-browser-records/desktop.json",
+      "sha256": "a8482a7c90d3662554f4a8e14fd7518e0313358dc39f21001a056d0b52f705cb",
+      "bytes": 13672
+    },
+    {
+      "path": "original-browser-records/mobile.json",
+      "sha256": "95478ae9057f32917464e4f86624b7578e59e6f269d3336cd78cae007300f611",
+      "bytes": 13668
+    },
+    {
+      "path": "original-browser-records/tablet.json",
+      "sha256": "5c2714268be27f2442810a8fa718c9784a60f6e536415d2bd7a7d1c03ecbfa4b",
+      "bytes": 13661
+    },
+    {
+      "path": "original-rounds/first.json",
+      "sha256": "3b111ce1aaf638caa0093215f5dd7d1c5b61fc209fd968d0de1100e5faffdceb",
+      "bytes": 8172
+    },
+    {
+      "path": "original-rounds/repair-1.json",
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0",
+      "bytes": 12672
+    },
+    {
+      "path": "original-visual-review.json",
+      "sha256": "8a5d1b4ee628faac98ba04543692b62655ab48ac727dbfb2981057219bf67836",
+      "bytes": 1827
+    },
+    {
+      "path": "provenance.json",
+      "sha256": "e1849e864ee8272f1bc9a62b0a20a6ea45a94ec023f51b57120a1418e219238a",
+      "bytes": 39924
+    },
+    {
+      "path": "source-package.json",
+      "sha256": "2e359aed4754006c7ba1827f82f6d33ac05fd3a7c25216cd10e067ddd9edb2dd",
+      "bytes": 1720
+    },
+    {
+      "path": "verified-preview22/build.json",
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+      "bytes": 9582
+    },
+    {
+      "path": "verified-preview22/identity-verification.json",
+      "sha256": "f4856ad0a7e5708745174b7a0adad0ab6f24d7ffa445138c8a7d101ded45c984",
+      "bytes": 31479
+    },
+    {
+      "path": "verified-preview22/scope.json",
+      "sha256": "ff204e77612b06d7e0df46aad17b9bcda7d384d02d40dcaf2ba5ff0e9c05c74b",
+      "bytes": 4433
+    },
+    {
+      "path": "verified-preview22/source-after.json",
+      "sha256": "bb3bbae4f74b48635ccc0377a8b96bd4a87c5e35b67e4b9e86f700ff57f8f7aa",
+      "bytes": 52249
+    },
+    {
+      "path": "verified-preview22/source-before.json",
+      "sha256": "bb3bbae4f74b48635ccc0377a8b96bd4a87c5e35b67e4b9e86f700ff57f8f7aa",
+      "bytes": 52249
+    },
+    {
+      "path": "verified-preview22/unit.json",
+      "sha256": "4e8ca3c18d331f3c4437866943ce465e2033097d6012c720e9f951df8540efa9",
+      "bytes": 136778
+    },
+    {
+      "path": "verified-preview22/verification.json",
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0",
+      "bytes": 12672
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "label": "first",
+  "sourceStable": true,
+  "results": [
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "-p",
+        ".autopilot/ph07/receiver-staging/tsconfig.json"
+      ],
+      "startedAt": "2026-09-27T22:44:32.269Z",
+      "finishedAt": "2026-09-27T22:44:34.337Z",
+      "elapsedMs": 2068.7147,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-boundary.ts",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-receiver-owned.ts",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-receiver.test.ts",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-receiver-owned.test.ts",
+        ".autopilot/ph07/receiver-staging/vitest.config.ts"
+      ],
+      "startedAt": "2026-09-27T22:44:34.338Z",
+      "finishedAt": "2026-09-27T22:44:36.067Z",
+      "elapsedMs": 1728.7231000000002,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--configLoader",
+        "runner",
+        "--config",
+        ".autopilot/ph07/receiver-staging/vitest.config.ts",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-receiver.test.ts",
+        ".autopilot/ph07/receiver-staging/src/world/hydrology-receiver-owned.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph07/receiver-staging/checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T22:44:36.067Z",
+      "finishedAt": "2026-09-27T22:44:39.625Z",
+      "elapsedMs": 3558.0157999999997,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "passed": true,
+  "unit": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "pending": 0
+  },
+  "productionPromoted": false,
+  "buildRun": false,
+  "browserRun": false,
+  "singleDomainTraceExtended": false,
+  "fullRiverNetworkAccepted": false,
+  "phaseAccepted": false
+}

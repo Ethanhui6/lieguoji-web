@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-09-27T23:00:35.350Z",
+  "scope": "preview22 storage-history integration only",
+  "originalBuildSha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+  "sourceStable": true,
+  "allCommandsPassed": false,
+  "results": [
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src/world/generation-history.ts",
+        "src/world/generation-preview22-history.test.ts"
+      ],
+      "startedAt": "2026-09-27T23:00:17.492Z",
+      "finishedAt": "2026-09-27T23:00:18.945Z",
+      "elapsedMs": 1450.6461,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T23:00:18.946Z",
+      "finishedAt": "2026-09-27T23:00:31.301Z",
+      "elapsedMs": 12354.8761,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation-preview22-history.test.ts",
+        "--reporter=json",
+        "--outputFile=docs/evidence/ph06-preview22-generator-history-2026-09-28/storage-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T23:00:31.301Z",
+      "finishedAt": "2026-09-27T23:00:35.342Z",
+      "elapsedMs": 4040.9565000000002,
+      "exitCode": 1,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "unit": {
+    "success": false,
+    "total": 5,
+    "passed": 4,
+    "failed": 1,
+    "pending": 0,
+    "files": 1
+  },
+  "passed": false,
+  "testsRun": true,
+  "fullProductChecksRun": false,
+  "productBuildRun": false,
+  "browserRun": false,
+  "naturalVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false
+}

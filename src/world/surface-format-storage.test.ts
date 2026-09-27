@@ -67,7 +67,7 @@ describe('explicit v3 surface contract, isolated storage and same-format edits',
     expect(base.blocks).toEqual(old.blocks); expect(base.manifest.blockRefs).toEqual(old.manifest.blockRefs);
     const encoded = encodeAtlasManifest(base.manifest); expect(decodeAtlasManifest(encoded)).toEqual(base.manifest);
     expect(await hashAtlasManifest(base.manifest)).not.toBe(await hashAtlasManifest(old.manifest));
-    await expect(createGenerationDraft({ size: 128, seed: 'x', name: 'x' }, fast, 4 as 3)).rejects.toThrow('未知');
+    await expect(createGenerationDraft({ size: 128, seed: 'x', name: 'x' }, fast, 5 as 3)).rejects.toThrow('未知');
   });
 
   it('rejects absent/unknown surface fields, future envelope and a v2 document claiming new surface semantics', () => {
@@ -102,7 +102,7 @@ describe('explicit v3 surface contract, isolated storage and same-format edits',
     expect(receipt.root.domain).toBe('atlas-draft-v3'); expect(api.database).toBe(ATLAS_SURFACE_DB);
     expect(await oldApi.exportAtlasRawBackup(old.manifest.draftId)).toEqual(before); expect((await restored()).data).toEqual(base);
     await expect(api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: base.manifest, expectedRoot: oldReceipt.root }, fast)).rejects.toThrow();
-    expect(() => getAtlasStorage(4 as 3)).toThrow('未知');
+    expect(() => getAtlasStorage(5 as 3)).toThrow('未知');
   });
 
   it('keeps v3 contract in local edits, real receipt replay, backup and stale-root rejection', async () => {

@@ -1,0 +1,15 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/generation/detail-shape-distance.test.ts (14 tests) 143ms
+ ✓ src/world/generation/detail-shape.test.ts (8 tests) 2535ms
+   ✓ empty v4 natural detail-shape kernel (8)
+     ✓ is deterministic across work partitions and owns all inputs before external mutation 919ms
+     ✓ cancels real design and distance work while leaving the input bytes and maps unchanged 916ms
+
+ Test Files  2 passed (2)
+      Tests  22 passed (22)
+   Start at  14:54:25
+   Duration  3.03s (tests 89%, transform 8%, import 3%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/detail-generator-checks/tests-first.json

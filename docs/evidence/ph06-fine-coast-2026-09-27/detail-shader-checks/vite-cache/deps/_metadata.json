@@ -1,0 +1,116 @@
+{
+  "hash": "b493a7f5",
+  "configHash": "53dbf5a8",
+  "lockfileHash": "497e91ab",
+  "browserHash": "56d3974b",
+  "optimized": {
+    "d3-delaunay": {
+      "src": "../../../../../node_modules/d3-delaunay/src/index.js",
+      "file": "d3-delaunay.js",
+      "fileHash": "15dc94fb",
+      "needsInterop": false
+    },
+    "pixi.js": {
+      "src": "../../../../../node_modules/pixi.js/lib/index.mjs",
+      "file": "pixi__js.js",
+      "fileHash": "fd125819",
+      "needsInterop": false
+    },
+    "pixi.js/unsafe-eval": {
+      "src": "../../../../../node_modules/pixi.js/lib/unsafe-eval/init.mjs",
+      "file": "pixi__js_unsafe-eval.js",
+      "fileHash": "a7b9f835",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../../../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "9a0e91af",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "2ed5a949",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../../../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "68564682",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "b31af7db",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "Cache-r6WwbQ7y": {
+      "file": "Cache-r6WwbQ7y.js",
+      "isDynamicEntry": false
+    },
+    "CanvasPool-aTQnubYN": {
+      "file": "CanvasPool-aTQnubYN.js",
+      "isDynamicEntry": false
+    },
+    "FederatedEventTarget-CK18NVE1": {
+      "file": "FederatedEventTarget-CK18NVE1.js",
+      "isDynamicEntry": false
+    },
+    "Filter-DLNb48H_": {
+      "file": "Filter-DLNb48H_.js",
+      "isDynamicEntry": false
+    },
+    "FilterSystem-BTKKFfb6": {
+      "file": "FilterSystem-BTKKFfb6.js",
+      "isDynamicEntry": false
+    },
+    "GCManagedHash-B-befWOL": {
+      "file": "GCManagedHash-B-befWOL.js",
+      "isDynamicEntry": false
+    },
+    "GpuStencilModesToPixi-BUlPM8m6": {
+      "file": "GpuStencilModesToPixi-BUlPM8m6.js",
+      "isDynamicEntry": false
+    },
+    "GraphicsContext-Ce1Zg__h": {
+      "file": "GraphicsContext-Ce1Zg__h.js",
+      "isDynamicEntry": false
+    },
+    "ParticleBuffer-sr-KNQeB": {
+      "file": "ParticleBuffer-sr-KNQeB.js",
+      "isDynamicEntry": false
+    },
+    "RenderTargetSystem-CopMsFzs": {
+      "file": "RenderTargetSystem-CopMsFzs.js",
+      "isDynamicEntry": false
+    },
+    "browserAll-BiLq_WZo": {
+      "file": "browserAll-BiLq_WZo.js",
+      "isDynamicEntry": true
+    },
+    "canvasUtils-BUqr9vfE": {
+      "file": "canvasUtils-BUqr9vfE.js",
+      "isDynamicEntry": false
+    },
+    "getTextureBatchBindGroup-Ctex5urg": {
+      "file": "getTextureBatchBindGroup-Ctex5urg.js",
+      "isDynamicEntry": false
+    },
+    "init-xgq-iJuH": {
+      "file": "init-xgq-iJuH.js",
+      "isDynamicEntry": false
+    },
+    "rolldown-runtime-DC62tzP2": {
+      "file": "rolldown-runtime-DC62tzP2.js",
+      "isDynamicEntry": false
+    },
+    "webworkerAll-0K5lmycH": {
+      "file": "webworkerAll-0K5lmycH.js",
+      "isDynamicEntry": true
+    }
+  }
+}

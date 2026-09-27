@@ -1,0 +1,23 @@
+{
+  "checks": [
+    {
+      "name": "types",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 11274.1782
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 7019.341899999999
+    },
+    {
+      "name": "unit",
+      "exitCode": 1,
+      "signal": null,
+      "durationMs": 43904.7411
+    }
+  ],
+  "sourceStable": true
+}

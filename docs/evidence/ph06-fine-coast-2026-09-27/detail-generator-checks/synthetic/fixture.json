@@ -1,0 +1,1128 @@
+{
+  "format": "lieguoji-synthetic-generator-evidence",
+  "version": 1,
+  "scope": "Synthetic kernel output only; not an Atlas document, UI save, rendered screenshot, performance acceptance, or playable-world acceptance.",
+  "arrayByteOrder": "native little-endian on this Windows host",
+  "source": "same synthetic outline as detail-shape.test.ts; explicitly generated once for later renderer comparison",
+  "size": 128,
+  "worldSize": 4096,
+  "coordinateScale": 256,
+  "stepWorld": 2,
+  "baseSampler": "centroid-compact-idw-v1",
+  "recipe": {
+    "seed": "natural-coast-contract",
+    "pointsQ": [
+      {
+        "xQ": 307200,
+        "yQ": 307200
+      },
+      {
+        "xQ": 324608,
+        "yQ": 307200
+      },
+      {
+        "xQ": 324608,
+        "yQ": 319488
+      },
+      {
+        "xQ": 327680,
+        "yQ": 319488
+      },
+      {
+        "xQ": 327680,
+        "yQ": 307200
+      },
+      {
+        "xQ": 353280,
+        "yQ": 307200
+      },
+      {
+        "xQ": 353280,
+        "yQ": 348160
+      },
+      {
+        "xQ": 307200,
+        "yQ": 348160
+      }
+    ],
+    "coastRoughnessWorld": 18,
+    "reliefMeters": 1800,
+    "shelfWidthWorld": 96,
+    "islandChainCount": 1,
+    "islandsPerChain": 4
+  },
+  "summary": {
+    "landAreaTwiceQ2": 4146797515,
+    "seaAreaTwiceQ2": 2194876458037,
+    "totalAreaTwiceQ2": 2199023255552,
+    "targetSegments": 1108,
+    "sampledTiles": 71,
+    "uniformLandTiles": 0,
+    "coarseLandSamples": 29,
+    "changedCoarseSamples": 147,
+    "islandsRequested": 4,
+    "islandsPlaced": 2,
+    "skippedIslands": [
+      {
+        "chain": 0,
+        "island": 1,
+        "reason": "near-existing-island"
+      },
+      {
+        "chain": 0,
+        "island": 3,
+        "reason": "near-existing-island"
+      }
+    ],
+    "designNodesEvaluated": 126905,
+    "originalEdgeTests": 643632,
+    "distanceSamples": 89088,
+    "exactTargetSegmentTests": 690858,
+    "maximumQuerySegmentTests": 55,
+    "auditedFineCells": 29696
+  },
+  "areaUnit": "twice Q8 squared; divide by 131072 for world squared",
+  "tiles": [
+    {
+      "key": "coast:17:15",
+      "bx": 17,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-17-15.bin"
+    },
+    {
+      "key": "coast:18:15",
+      "bx": 18,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-18-15.bin"
+    },
+    {
+      "key": "coast:19:15",
+      "bx": 19,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-19-15.bin"
+    },
+    {
+      "key": "coast:20:15",
+      "bx": 20,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-20-15.bin"
+    },
+    {
+      "key": "coast:21:15",
+      "bx": 21,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-21-15.bin"
+    },
+    {
+      "key": "coast:22:15",
+      "bx": 22,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-22-15.bin"
+    },
+    {
+      "key": "coast:23:15",
+      "bx": 23,
+      "by": 15,
+      "mode": "samples",
+      "file": "coast-23-15.bin"
+    },
+    {
+      "key": "coast:16:16",
+      "bx": 16,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-16-16.bin"
+    },
+    {
+      "key": "coast:17:16",
+      "bx": 17,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-17-16.bin"
+    },
+    {
+      "key": "coast:18:16",
+      "bx": 18,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-18-16.bin"
+    },
+    {
+      "key": "coast:19:16",
+      "bx": 19,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-19-16.bin"
+    },
+    {
+      "key": "coast:20:16",
+      "bx": 20,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-20-16.bin"
+    },
+    {
+      "key": "coast:21:16",
+      "bx": 21,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-21-16.bin"
+    },
+    {
+      "key": "coast:22:16",
+      "bx": 22,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-22-16.bin"
+    },
+    {
+      "key": "coast:23:16",
+      "bx": 23,
+      "by": 16,
+      "mode": "samples",
+      "file": "coast-23-16.bin"
+    },
+    {
+      "key": "coast:16:17",
+      "bx": 16,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-16-17.bin"
+    },
+    {
+      "key": "coast:17:17",
+      "bx": 17,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-17-17.bin"
+    },
+    {
+      "key": "coast:18:17",
+      "bx": 18,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-18-17.bin"
+    },
+    {
+      "key": "coast:19:17",
+      "bx": 19,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-19-17.bin"
+    },
+    {
+      "key": "coast:20:17",
+      "bx": 20,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-20-17.bin"
+    },
+    {
+      "key": "coast:21:17",
+      "bx": 21,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-21-17.bin"
+    },
+    {
+      "key": "coast:22:17",
+      "bx": 22,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-22-17.bin"
+    },
+    {
+      "key": "coast:23:17",
+      "bx": 23,
+      "by": 17,
+      "mode": "samples",
+      "file": "coast-23-17.bin"
+    },
+    {
+      "key": "coast:16:18",
+      "bx": 16,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-16-18.bin"
+    },
+    {
+      "key": "coast:17:18",
+      "bx": 17,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-17-18.bin"
+    },
+    {
+      "key": "coast:18:18",
+      "bx": 18,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-18-18.bin"
+    },
+    {
+      "key": "coast:19:18",
+      "bx": 19,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-19-18.bin"
+    },
+    {
+      "key": "coast:20:18",
+      "bx": 20,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-20-18.bin"
+    },
+    {
+      "key": "coast:21:18",
+      "bx": 21,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-21-18.bin"
+    },
+    {
+      "key": "coast:22:18",
+      "bx": 22,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-22-18.bin"
+    },
+    {
+      "key": "coast:23:18",
+      "bx": 23,
+      "by": 18,
+      "mode": "samples",
+      "file": "coast-23-18.bin"
+    },
+    {
+      "key": "coast:16:19",
+      "bx": 16,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-16-19.bin"
+    },
+    {
+      "key": "coast:17:19",
+      "bx": 17,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-17-19.bin"
+    },
+    {
+      "key": "coast:18:19",
+      "bx": 18,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-18-19.bin"
+    },
+    {
+      "key": "coast:19:19",
+      "bx": 19,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-19-19.bin"
+    },
+    {
+      "key": "coast:20:19",
+      "bx": 20,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-20-19.bin"
+    },
+    {
+      "key": "coast:21:19",
+      "bx": 21,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-21-19.bin"
+    },
+    {
+      "key": "coast:22:19",
+      "bx": 22,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-22-19.bin"
+    },
+    {
+      "key": "coast:23:19",
+      "bx": 23,
+      "by": 19,
+      "mode": "samples",
+      "file": "coast-23-19.bin"
+    },
+    {
+      "key": "coast:16:20",
+      "bx": 16,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-16-20.bin"
+    },
+    {
+      "key": "coast:17:20",
+      "bx": 17,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-17-20.bin"
+    },
+    {
+      "key": "coast:18:20",
+      "bx": 18,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-18-20.bin"
+    },
+    {
+      "key": "coast:19:20",
+      "bx": 19,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-19-20.bin"
+    },
+    {
+      "key": "coast:20:20",
+      "bx": 20,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-20-20.bin"
+    },
+    {
+      "key": "coast:21:20",
+      "bx": 21,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-21-20.bin"
+    },
+    {
+      "key": "coast:22:20",
+      "bx": 22,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-22-20.bin"
+    },
+    {
+      "key": "coast:23:20",
+      "bx": 23,
+      "by": 20,
+      "mode": "samples",
+      "file": "coast-23-20.bin"
+    },
+    {
+      "key": "coast:16:21",
+      "bx": 16,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-16-21.bin"
+    },
+    {
+      "key": "coast:17:21",
+      "bx": 17,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-17-21.bin"
+    },
+    {
+      "key": "coast:18:21",
+      "bx": 18,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-18-21.bin"
+    },
+    {
+      "key": "coast:19:21",
+      "bx": 19,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-19-21.bin"
+    },
+    {
+      "key": "coast:20:21",
+      "bx": 20,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-20-21.bin"
+    },
+    {
+      "key": "coast:21:21",
+      "bx": 21,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-21-21.bin"
+    },
+    {
+      "key": "coast:22:21",
+      "bx": 22,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-22-21.bin"
+    },
+    {
+      "key": "coast:23:21",
+      "bx": 23,
+      "by": 21,
+      "mode": "samples",
+      "file": "coast-23-21.bin"
+    },
+    {
+      "key": "coast:16:22",
+      "bx": 16,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-16-22.bin"
+    },
+    {
+      "key": "coast:17:22",
+      "bx": 17,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-17-22.bin"
+    },
+    {
+      "key": "coast:18:22",
+      "bx": 18,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-18-22.bin"
+    },
+    {
+      "key": "coast:19:22",
+      "bx": 19,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-19-22.bin"
+    },
+    {
+      "key": "coast:20:22",
+      "bx": 20,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-20-22.bin"
+    },
+    {
+      "key": "coast:21:22",
+      "bx": 21,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-21-22.bin"
+    },
+    {
+      "key": "coast:22:22",
+      "bx": 22,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-22-22.bin"
+    },
+    {
+      "key": "coast:23:22",
+      "bx": 23,
+      "by": 22,
+      "mode": "samples",
+      "file": "coast-23-22.bin"
+    },
+    {
+      "key": "coast:16:23",
+      "bx": 16,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-16-23.bin"
+    },
+    {
+      "key": "coast:17:23",
+      "bx": 17,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-17-23.bin"
+    },
+    {
+      "key": "coast:18:23",
+      "bx": 18,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-18-23.bin"
+    },
+    {
+      "key": "coast:19:23",
+      "bx": 19,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-19-23.bin"
+    },
+    {
+      "key": "coast:20:23",
+      "bx": 20,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-20-23.bin"
+    },
+    {
+      "key": "coast:21:23",
+      "bx": 21,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-21-23.bin"
+    },
+    {
+      "key": "coast:22:23",
+      "bx": 22,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-22-23.bin"
+    },
+    {
+      "key": "coast:23:23",
+      "bx": 23,
+      "by": 23,
+      "mode": "samples",
+      "file": "coast-23-23.bin"
+    }
+  ],
+  "files": [
+    {
+      "name": "input-centers-q8.int32-native.bin",
+      "bytes": 131072,
+      "sha256": "a9ef521b6df9385de8234b4bde656f5e70abe39c07a9ea7924f718a5bdc79e9b"
+    },
+    {
+      "name": "input-coarse-elevations.int32-native.bin",
+      "bytes": 65536,
+      "sha256": "09d98f1b29be49762bd01fee1b8cff3d202b956d43cc15e89d582b7c7b0c5924"
+    },
+    {
+      "name": "output-coarse-elevations.int32-native.bin",
+      "bytes": 65536,
+      "sha256": "fe73416a42b101194fc45359e81a90111acdbd312848263e410fc2e0ebfc1993"
+    },
+    {
+      "name": "diagnostic-target-coast.uint32-native.bin",
+      "bytes": 17728,
+      "sha256": "3235d9c56565e2311becd6fb3016b72d12616bd179c7ebaa6e99ba9d032869b8"
+    },
+    {
+      "name": "coast-17-15.bin",
+      "bytes": 4112,
+      "sha256": "b17b65352f0833a0c6125ad9ef3fbf452c554a570ab08a2c07ceabdaa4d544e1"
+    },
+    {
+      "name": "coast-18-15.bin",
+      "bytes": 4112,
+      "sha256": "5ea646e0e71ddeb093f5bd9d1d4ecbcc56e522d8a437e058378cd17c669bba9c"
+    },
+    {
+      "name": "coast-19-15.bin",
+      "bytes": 4112,
+      "sha256": "a8ec756cad22318711f5cb327f607ab9d6af17c6086fc7a247b8d1da54edc319"
+    },
+    {
+      "name": "coast-20-15.bin",
+      "bytes": 4112,
+      "sha256": "217d1d35961979540612f841a6773a9e68e72e1a0477d86f55926907edc1b2b4"
+    },
+    {
+      "name": "coast-21-15.bin",
+      "bytes": 4112,
+      "sha256": "e5174117ba9379f1ad52315b337ce5f09690398b5f1c7b56a39beb96802ebc72"
+    },
+    {
+      "name": "coast-22-15.bin",
+      "bytes": 4112,
+      "sha256": "37e06674b453e725865d8ce0fc96b2f0a78b2629ef0d0829391a924c1a3e0d64"
+    },
+    {
+      "name": "coast-23-15.bin",
+      "bytes": 4112,
+      "sha256": "41433fcccd5efef803f5a899e6b19febc9e087a8943c2332490d49d3d57ae3f6"
+    },
+    {
+      "name": "coast-16-16.bin",
+      "bytes": 4112,
+      "sha256": "089bfd54169b097937522868ca2982ef5cb692c8ce6b4cee86c55610fe6a6d92"
+    },
+    {
+      "name": "coast-17-16.bin",
+      "bytes": 4112,
+      "sha256": "accdc313e7d17e03525d61fa91bca348f2915f1cdd65b89c46f170e613aad13c"
+    },
+    {
+      "name": "coast-18-16.bin",
+      "bytes": 4112,
+      "sha256": "19e9ff0f8a2eb50ba26aa4d046f2cd27da35ad87f81dde546fb6266884c88e46"
+    },
+    {
+      "name": "coast-19-16.bin",
+      "bytes": 4112,
+      "sha256": "9b62f772b698afa8b9d24e8b68f07b9bdf747b9eb021f972a8d758daff2d8a70"
+    },
+    {
+      "name": "coast-20-16.bin",
+      "bytes": 4112,
+      "sha256": "0161ff0a102cdfe3236305ac1972f30c82f300b52a76addf7de2c61a8faa2f66"
+    },
+    {
+      "name": "coast-21-16.bin",
+      "bytes": 4112,
+      "sha256": "0a5fe31767357e61404439bcf2ca47c3b6e38db490f1f48023972b68edcd71de"
+    },
+    {
+      "name": "coast-22-16.bin",
+      "bytes": 4112,
+      "sha256": "c2310d15bed042ef4ba7026709bd4eee8133af462b4301bff340f937890a8ffe"
+    },
+    {
+      "name": "coast-23-16.bin",
+      "bytes": 4112,
+      "sha256": "b2f3ab162fc1eda6aad311b979e6a67262c6f0ddb3eb59cafdfb0df37828b6ff"
+    },
+    {
+      "name": "coast-16-17.bin",
+      "bytes": 4112,
+      "sha256": "7c869f259cf852c77b58f7e7402ffc45d6514895578efa62e3fa87594cae7dcd"
+    },
+    {
+      "name": "coast-17-17.bin",
+      "bytes": 4112,
+      "sha256": "e0863df98245a7bce7ca41e8a415c9943ab1d682f4b2a9ee3006a2dc332ac8a9"
+    },
+    {
+      "name": "coast-18-17.bin",
+      "bytes": 4112,
+      "sha256": "175e68db789d82c22a8411d5dcf89ec24afc0bd39864ac74a26389174d585e14"
+    },
+    {
+      "name": "coast-19-17.bin",
+      "bytes": 4112,
+      "sha256": "acee46d51d252029be61bc74e8962c5a32544d7128eac4bfb4fc6183f95e890d"
+    },
+    {
+      "name": "coast-20-17.bin",
+      "bytes": 4112,
+      "sha256": "b7d72d10a283cfdbeb19cc391796e87afeb6bb6c5a473f1ab36cfe4425a151af"
+    },
+    {
+      "name": "coast-21-17.bin",
+      "bytes": 4112,
+      "sha256": "cbb8351eeadc48cb005d9e5a6b730835bb7a7a3dca66dc872cd6bcae825eedd2"
+    },
+    {
+      "name": "coast-22-17.bin",
+      "bytes": 4112,
+      "sha256": "a0d42e29fbe231e726832e769d9985c2c1da56b959ab03a6f69aebbf101feae2"
+    },
+    {
+      "name": "coast-23-17.bin",
+      "bytes": 4112,
+      "sha256": "038983584d3ca0c92ea6be43d883ed79f2c67a322891b4b68915ac77db043614"
+    },
+    {
+      "name": "coast-16-18.bin",
+      "bytes": 4112,
+      "sha256": "c5b21e61fea372f68aeacf09aafa4b7c48e4afeaf20903b67ee1fa75ddb079f3"
+    },
+    {
+      "name": "coast-17-18.bin",
+      "bytes": 4112,
+      "sha256": "7144aae10a288de3a55391f554eb7cfe4c15ec76bdc98c57f4bc4e89b71c35af"
+    },
+    {
+      "name": "coast-18-18.bin",
+      "bytes": 4112,
+      "sha256": "46717cf928dac8604e93dc2ded90dd1a2c98fd8f6c7ea9d03458f868925425e8"
+    },
+    {
+      "name": "coast-19-18.bin",
+      "bytes": 4112,
+      "sha256": "b603eec8cddadd1844093d18e33c8828c2758c296a2e31a4d093685a01056a83"
+    },
+    {
+      "name": "coast-20-18.bin",
+      "bytes": 4112,
+      "sha256": "4d34afd6d75a8ed60e77a07747baec9a8e50b5946140435613c87ada5eff2afb"
+    },
+    {
+      "name": "coast-21-18.bin",
+      "bytes": 4112,
+      "sha256": "e60314dc159b51fdbbea2740eb0880f8a737a7023859d682542bd98b191ad8fb"
+    },
+    {
+      "name": "coast-22-18.bin",
+      "bytes": 4112,
+      "sha256": "b7314c2919442d07f19f228aba1f7e1c80d93aa307ae9b320b63de27de5c8fd7"
+    },
+    {
+      "name": "coast-23-18.bin",
+      "bytes": 4112,
+      "sha256": "6f2a0493bf286ef830a2ee29eac202b66582d19dada9e3b06b613656107ca5d7"
+    },
+    {
+      "name": "coast-16-19.bin",
+      "bytes": 4112,
+      "sha256": "88ca0fb87d1acf22e128fa5812c52a9443ec1213ea38fb0643204b69d4a6516d"
+    },
+    {
+      "name": "coast-17-19.bin",
+      "bytes": 4112,
+      "sha256": "87fda48ae4b108cf67835f4c0324444a92662d6ed4ffc6be6e7d04ef796e1c41"
+    },
+    {
+      "name": "coast-18-19.bin",
+      "bytes": 4112,
+      "sha256": "af1adbae3bd25f75c65de5495d775c6618aa4a6d699379472b67b9f8623a0b31"
+    },
+    {
+      "name": "coast-19-19.bin",
+      "bytes": 4112,
+      "sha256": "2b703b031fddb1cd20355f8623776d8db87155252e1cb369050a9bb060a6342a"
+    },
+    {
+      "name": "coast-20-19.bin",
+      "bytes": 4112,
+      "sha256": "27d9930666ff8ae375ccbad47009395bf99e58c6f0d22fddd431e58d35cf1cf7"
+    },
+    {
+      "name": "coast-21-19.bin",
+      "bytes": 4112,
+      "sha256": "bcae4e963838f2f8b8f8cf4810b4326a2181c4930055f2414c4b416f383acfea"
+    },
+    {
+      "name": "coast-22-19.bin",
+      "bytes": 4112,
+      "sha256": "1203e34594dca68e45664e339920b5f897e3ea27714e61d37160501baeda6f19"
+    },
+    {
+      "name": "coast-23-19.bin",
+      "bytes": 4112,
+      "sha256": "6ee294283880a9558a088e38a988baec02a55738855d03015039f1f306f5046c"
+    },
+    {
+      "name": "coast-16-20.bin",
+      "bytes": 4112,
+      "sha256": "ec38e47b9131aabf6515d9f1e97faa4e56f61b6ef523ee828b14bcb0e165384d"
+    },
+    {
+      "name": "coast-17-20.bin",
+      "bytes": 4112,
+      "sha256": "65cf5cb1c1894f475ecd6d5f4e15a3ef007c467ee766d78a4df1b34cf808db21"
+    },
+    {
+      "name": "coast-18-20.bin",
+      "bytes": 4112,
+      "sha256": "79d0ea1b27862ac1ed25e14febf84b6b04553647b6bc039e8dc2f7ac8d9b2136"
+    },
+    {
+      "name": "coast-19-20.bin",
+      "bytes": 4112,
+      "sha256": "97a9d26631acff56cd836a3f3476cc8f92f91fbdd4dd0b7c091785fe065de957"
+    },
+    {
+      "name": "coast-20-20.bin",
+      "bytes": 4112,
+      "sha256": "7e338e8cc263d1ee02297cf9903c5b97b2305748c50adf1b02944f8cbe53fd91"
+    },
+    {
+      "name": "coast-21-20.bin",
+      "bytes": 4112,
+      "sha256": "9dab6a3b34a431d4aabae86042a5e2d9a6120602c9ca414e1735c161080b90f9"
+    },
+    {
+      "name": "coast-22-20.bin",
+      "bytes": 4112,
+      "sha256": "5fd0e858e079be67393ec8f9113ae1c299a26e19192d403dafe2a1d61907374c"
+    },
+    {
+      "name": "coast-23-20.bin",
+      "bytes": 4112,
+      "sha256": "56809c5911ee585641cfa4a6ac721968933f9a645e069e3253f4ff63a768a3f3"
+    },
+    {
+      "name": "coast-16-21.bin",
+      "bytes": 4112,
+      "sha256": "7921ffb17276f3c9fd0b3a3e5f2f264002f4cdbb2fd49aed943ec9f549c418cc"
+    },
+    {
+      "name": "coast-17-21.bin",
+      "bytes": 4112,
+      "sha256": "ae846133a195f6f58ebb25bb4a3151214a0b08b5d2c5b358d4c25cad724d00c5"
+    },
+    {
+      "name": "coast-18-21.bin",
+      "bytes": 4112,
+      "sha256": "22cb4aa756e7de90ce51666400024ae74c597b8143f012281abcb9d5fa66951a"
+    },
+    {
+      "name": "coast-19-21.bin",
+      "bytes": 4112,
+      "sha256": "8a34c983f3daf34fca70b30cc06f61adc7cdc75a04aac459ac0b39736eac7328"
+    },
+    {
+      "name": "coast-20-21.bin",
+      "bytes": 4112,
+      "sha256": "a824dd26d2f92132b8e1fc5481d7d9230a85aebeb2be20a975a1d7fcaec32bab"
+    },
+    {
+      "name": "coast-21-21.bin",
+      "bytes": 4112,
+      "sha256": "e1a7f640ddae6e7f6f8bf27d6587aa7079259152b08353ebdd6d5bf04d743277"
+    },
+    {
+      "name": "coast-22-21.bin",
+      "bytes": 4112,
+      "sha256": "694bcae75dbe520ae2898171a15098ba330aecfed9429cd30ac7920edfff2279"
+    },
+    {
+      "name": "coast-23-21.bin",
+      "bytes": 4112,
+      "sha256": "15bf98e5d4195d7a8ff070c7f1824b97bc09566cb86026fbf7d10252f8331360"
+    },
+    {
+      "name": "coast-16-22.bin",
+      "bytes": 4112,
+      "sha256": "eaa108a80b98fa0b39c2dce5293d7b4f9f6130572ae55adbd6aca6d666dcb8c0"
+    },
+    {
+      "name": "coast-17-22.bin",
+      "bytes": 4112,
+      "sha256": "2288d327b30d59ce611034e98300d6cd999c1684fee26d54175169138ac19c47"
+    },
+    {
+      "name": "coast-18-22.bin",
+      "bytes": 4112,
+      "sha256": "10183e4a7620874f03bcdd7aa2ea3020304c70918062de9948f9d796562004ce"
+    },
+    {
+      "name": "coast-19-22.bin",
+      "bytes": 4112,
+      "sha256": "f1cd02e822b40c8a1d6af3e872e7787e80d6d3b64784be003a8abdbcaa15f3a2"
+    },
+    {
+      "name": "coast-20-22.bin",
+      "bytes": 4112,
+      "sha256": "bd992b8484be4b36916201c761d9eb43ec781028952f73230f7750116ec581d4"
+    },
+    {
+      "name": "coast-21-22.bin",
+      "bytes": 4112,
+      "sha256": "4ce6849790d8b17fed6c73c41e60ced73cb9d82f595db3b3ebca53d346e89c74"
+    },
+    {
+      "name": "coast-22-22.bin",
+      "bytes": 4112,
+      "sha256": "b62aacc6b202c84a294970e67e347340c2b98eff6f11a111ed118d37dce43d8a"
+    },
+    {
+      "name": "coast-23-22.bin",
+      "bytes": 4112,
+      "sha256": "a3bf948407e46e3c449067d422601429719734ae09b224ab7babda0b843dae2c"
+    },
+    {
+      "name": "coast-16-23.bin",
+      "bytes": 4112,
+      "sha256": "dc087733e56d000acab012032d27d1bb3af79aa59ed991806572e30e75a18967"
+    },
+    {
+      "name": "coast-17-23.bin",
+      "bytes": 4112,
+      "sha256": "d968a374a7a9d97190d8555690ce89249143dc674e0a81d7f76afb51d7d994a7"
+    },
+    {
+      "name": "coast-18-23.bin",
+      "bytes": 4112,
+      "sha256": "80c4bc3919dcc0c507ef7fcf1fbb0e85a2aed08f98f618136101a3753db93fd7"
+    },
+    {
+      "name": "coast-19-23.bin",
+      "bytes": 4112,
+      "sha256": "88f7b58480a829a5fec354cb87c2d66479afb11fdddbebe5ae797b79aae2ee9c"
+    },
+    {
+      "name": "coast-20-23.bin",
+      "bytes": 4112,
+      "sha256": "c0542acca8a447edb779854c2b1046986e2703ff8a650515628a4427d5a6354e"
+    },
+    {
+      "name": "coast-21-23.bin",
+      "bytes": 4112,
+      "sha256": "d4f3325eee11c49e2ba0eda23c6140c3342ccb5a1bf14edd74985c50ce3ce93a"
+    },
+    {
+      "name": "coast-22-23.bin",
+      "bytes": 4112,
+      "sha256": "1700e386cfe7355b25027c2b0b05ff13b6205ed729af1abb7fd5679f14eb2093"
+    },
+    {
+      "name": "coast-23-23.bin",
+      "bytes": 4112,
+      "sha256": "0508b94a0c32d3203ba286f9e330ebd8450960938532c0a28142ff374d51c938"
+    }
+  ],
+  "sourceHashes": [
+    {
+      "file": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "file": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "file": "src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "file": "src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "file": "src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "file": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "file": "src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "file": "src/world/generation/detail-shape.ts",
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    }
+  ],
+  "witnesses": [
+    {
+      "name": "interior land",
+      "x": 1240,
+      "y": 1280,
+      "pick": {
+        "fineCellId": 1311340,
+        "column": 620,
+        "row": 640,
+        "land": true,
+        "height": 350
+      }
+    },
+    {
+      "name": "drawn 12 world wide bay",
+      "x": 1274,
+      "y": 1220,
+      "pick": {
+        "fineCellId": 1249917,
+        "column": 637,
+        "row": 610,
+        "land": false,
+        "height": -22
+      }
+    },
+    {
+      "name": "outer sea",
+      "x": 1000,
+      "y": 1000,
+      "pick": {
+        "fineCellId": 1024500,
+        "column": 500,
+        "row": 500,
+        "land": false,
+        "height": -2002
+      }
+    }
+  ],
+  "phases": {
+    "takeover-empty-world": {
+      "completed": 1,
+      "total": 1
+    },
+    "verify-empty-world": {
+      "completed": 16384,
+      "total": 16384
+    },
+    "index-outline": {
+      "completed": 1,
+      "total": 1
+    },
+    "prepare-outline": {
+      "completed": 8,
+      "total": 8
+    },
+    "place-island-chains": {
+      "completed": 1,
+      "total": 1
+    },
+    "sample-design-field": {
+      "completed": 50176,
+      "total": 50176
+    },
+    "extract-target-coast": {
+      "completed": 288,
+      "total": 288
+    },
+    "target-takeover": {
+      "completed": 1,
+      "total": 1
+    },
+    "target-validate-segments": {
+      "completed": 1108,
+      "total": 1108
+    },
+    "target-sort-segments": {
+      "completed": 8864,
+      "total": 8864
+    },
+    "target-build-tree": {
+      "completed": 277,
+      "total": 277
+    },
+    "target-bound-tree": {
+      "completed": 277,
+      "total": 277
+    },
+    "register-distance-band": {
+      "completed": 1024,
+      "total": 1108
+    },
+    "write-owner-tiles": {
+      "completed": 4096,
+      "total": 4096
+    },
+    "write-true-distance": {
+      "completed": 72704,
+      "total": 72704
+    },
+    "write-coarse-reference": {
+      "completed": 16384,
+      "total": 16384
+    },
+    "write-continuous-heights": {
+      "completed": 72704,
+      "total": 72704
+    },
+    "audit-final-area": {
+      "completed": 4096,
+      "total": 4096
+    },
+    "audit-final-pieces": {
+      "completed": 11448,
+      "total": 32768
+    }
+  },
+  "cameraSuggestion": {
+    "centerWorld": {
+      "x": 1290,
+      "y": 1280
+    },
+    "visibleWorldWidth": 460,
+    "detailBay": {
+      "x": 1274,
+      "y": 1220,
+      "visibleWorldWidth": 80
+    }
+  },
+  "limitations": [
+    "First empty contour only; no additive union.",
+    "islandsPlaced counts accepted ellipse primitives, not independently verified connected islands.",
+    "No browser, GPU, ordinary-entry persistence, or real-device acceptance."
+  ]
+}

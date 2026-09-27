@@ -6,7 +6,7 @@ import { OwnedAtlasSession, type AtlasConstraintEdit, type AtlasPublishedRoot, t
 
 const fast = { yieldTask: async () => {} }, root = 'a'.repeat(64), accountingStage = '核算完整地图撤销字节';
 const commandId = () => `edit-${crypto.randomUUID()}`;
-let source: format.AtlasGenerationDocument;
+let source: format.AtlasGenerationDocument<3>;
 beforeAll(async () => {
   source = await format.createGenerationDraft({ size: 128, seed: 'replacement-cooperation-v3', name: '完整替换真实字节计账' }, fast, 3);
   for (const [bx, by] of [[0, 0], [1, 1], [3, 3]]) {
@@ -17,8 +17,8 @@ beforeAll(async () => {
 });
 afterEach(() => { vi.restoreAllMocks(); });
 
-function replacement(session: OwnedAtlasSession<format.AtlasGenerationDocument>) {
-  const manifest = session.manifest() as format.AtlasGenerationDocument['manifest']; manifest.revision++;
+function replacement(session: OwnedAtlasSession<format.AtlasGenerationDocument<3>>) {
+  const manifest = session.manifest() as format.AtlasGenerationDocument<3>['manifest']; manifest.revision++;
   return { manifest, blocks: source.blocks, locks: source.locks };
 }
 function lockCommand(session: OwnedAtlasSession): AtlasConstraintEdit {

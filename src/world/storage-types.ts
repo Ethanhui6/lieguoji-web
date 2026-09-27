@@ -1,8 +1,9 @@
 import type { AtlasBlock } from './model';
+import type { DetailCoastTile } from './detail-coast-types';
 import type { AtlasCellLockBlock, AtlasFormat, AtlasManifestFor } from './generation-contract';
 
 export interface AtlasStoredRoot {
-  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1' | 'atlas-draft-v2' | 'atlas-draft-v3';
+  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1' | 'atlas-draft-v2' | 'atlas-draft-v3' | 'atlas-draft-v4';
   draftId: string; revision: number; currentManifest: string; backupManifest: string | null;
   lastCommitId: string; rootDigest: string;
 }
@@ -65,7 +66,7 @@ export interface AtlasReadHandle<F extends AtlasFormat = AtlasFormat> {
   /** Null when an explicitly recovered other slot has missing raw blocks. */
   pairReferencedBytes: number | null;
 }
-export interface AtlasBlockPage { blocks: AtlasBlock[]; locks?: AtlasCellLockBlock[]; nextCursor: number | null; encodedBytes: number }
+export interface AtlasBlockPage { blocks: AtlasBlock[]; locks?: AtlasCellLockBlock[]; detailCoast?: DetailCoastTile[]; nextCursor: number | null; encodedBytes: number }
 export interface AtlasCatalogEntry {
   draftId: string; name: string; revision: number; size: number; rootDigest: string;
   currentManifest: string; backupAvailable: boolean;

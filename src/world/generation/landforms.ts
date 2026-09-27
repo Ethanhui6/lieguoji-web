@@ -60,6 +60,7 @@ class DistanceHeap {
  * Basins use available land outside ridge footprints; no water or drainage
  * topology is claimed. Locked heights remain exact, including on ridge paths. */
 export async function generateLandforms(input: LandformInput, control?: LandformControl): Promise<LandformOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!validateLandformParameters(input.parameters)) throw new Error('山系／盆地参数无效：数量各0—8、总数1—12，起伏200—6000米，种子须为1—120字符。');
   if (!generationEnvelope(input.base)) throw new Error('地貌生成需要完整、已核验的第二版草稿与已知锁。');
@@ -219,7 +220,7 @@ export async function generateLandforms(input: LandformInput, control?: Landform
   }
   // Audit actual output blocks independently of the raised/lowered fields and
   // component labels used to construct them. No hydrology is inferred here.
-  const final = await measureGeography({ manifest: base.manifest, blocks }, control, '独立核验地貌实际高程与面积'), seen = new Uint8Array(total);
+  const final = await measureGeography({ ...base, blocks }, control, '独立核验地貌实际高程与面积'), seen = new Uint8Array(total);
   let changedCellCount = 0, raisedCellCount = 0, loweredCellCount = 0, minElevationMeters = 12000, maxElevationMeters = -12000, landAreaQ2 = 0, majorComponentCount = 0, visited = 0;
   for (let id = 0; id < total; id++) {
     const before = elevation[id], value = final.elevation[id];

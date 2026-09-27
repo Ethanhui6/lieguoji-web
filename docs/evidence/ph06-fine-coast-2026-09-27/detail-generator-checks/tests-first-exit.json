@@ -1,0 +1,7 @@
+{
+  "command": "npx vitest run src/world/generation/detail-shape.test.ts src/world/generation/detail-shape-distance.test.ts --reporter=default --reporter=json --outputFile.json=.autopilot/ph06/detail-generator-checks/tests-first.json --disableConsoleIntercept",
+  "exitCode": 0,
+  "started": "2026-09-27T14:54:23.5962777+08:00",
+  "finished": "2026-09-27T14:54:29.0335856+08:00",
+  "seconds": 5.4374207
+}

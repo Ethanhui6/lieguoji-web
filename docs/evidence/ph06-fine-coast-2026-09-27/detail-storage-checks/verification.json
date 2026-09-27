@@ -1,0 +1,45 @@
+{
+  "scope": "v4 storage only; no whole-suite, browser, build, or performance acceptance",
+  "uniqueScenarios": 21,
+  "executions": 22,
+  "first": {
+    "passed": 20,
+    "failed": 1,
+    "exitCode": 1,
+    "log": "first/run.log",
+    "raw": "first/results.json",
+    "sourceUnchanged": true
+  },
+  "failure": {
+    "type": "test fixture owner coordinate",
+    "expectedEncodedBytes": 4372,
+    "actualEncodedBytes": 4112,
+    "cause": "coast:63:63 owns 32x32 nodes; coast:0:0 owns world boundary row and column, 33x33 nodes",
+    "repair": "Only quota-case fixture changed to samples(0,0); production unchanged"
+  },
+  "recheck": {
+    "passed": 1,
+    "failed": 0,
+    "unselected": 20,
+    "exitCode": 0,
+    "log": "quota-recheck/run.log",
+    "raw": "quota-recheck/results.json",
+    "sourceUnchanged": true
+  },
+  "combinedAll21Covered": true,
+  "ownedLintExitCode": 0,
+  "files": [
+    {
+      "path": "src/world/storage.ts",
+      "sha256": "e1a71ba074e8a9f0d5743ae0daf07afb64fecab6de5e5f444a7c8a5f2c98ef4f"
+    },
+    {
+      "path": "src/world/storage-types.ts",
+      "sha256": "59991407323ff37a848c35307e6640a81d58ae777996bf0026a20adc8b1edbda"
+    },
+    {
+      "path": "src/world/detail-coast-storage.test.ts",
+      "sha256": "0c2de949a9199561875e676052755103fa9b5cd9698ed779e20fed28a5d7a5ae"
+    }
+  ]
+}

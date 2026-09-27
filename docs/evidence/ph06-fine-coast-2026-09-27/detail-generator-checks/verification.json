@@ -1,0 +1,112 @@
+{
+  "recordedAt": "2026-09-27T15:00:07.8911856+08:00",
+  "scope": "Promotion and affected-scope verification of new empty-v4 natural coastline generator kernel only",
+  "sources": [
+    {
+      "path": "src/world/generation/detail-shape.ts",
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "path": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "path": "src/world/generation/detail-shape.test.ts",
+      "sha256": "0e39ac8003f685e4b1a708ac21348516d503841fe1334b7825171b9830c59620"
+    }
+  ],
+  "sourceUnchangedSinceInitialChecks": true,
+  "tests": {
+    "invocation": {
+      "command": "npx vitest run src/world/generation/detail-shape.test.ts src/world/generation/detail-shape-distance.test.ts --reporter=default --reporter=json --outputFile.json=.autopilot/ph06/detail-generator-checks/tests-first.json --disableConsoleIntercept",
+      "exitCode": 0,
+      "started": "2026-09-27T14:54:23.5962777+08:00",
+      "finished": "2026-09-27T14:54:29.0335856+08:00",
+      "seconds": 5.4374207
+    },
+    "rawJson": "tests-first.json",
+    "rawLog": "tests-first.log",
+    "success": true,
+    "numTotalTests": 22,
+    "numPassedTests": 22,
+    "numFailedTests": 0,
+    "fileResults": [
+      {
+        "name": "D:/游戏/架空地图模拟器/src/world/generation/detail-shape-distance.test.ts",
+        "status": "passed",
+        "tests": 14,
+        "milliseconds": 138.833251953125
+      },
+      {
+        "name": "D:/游戏/架空地图模拟器/src/world/generation/detail-shape.test.ts",
+        "status": "passed",
+        "tests": 8,
+        "milliseconds": 1969.123291015625
+      }
+    ],
+    "firstRunOnly": true,
+    "repairs": []
+  },
+  "lint": {
+    "invocation": {
+      "command": "npx eslint src/world/generation/detail-shape.ts src/world/generation/detail-shape-height.ts src/world/generation/detail-shape.test.ts",
+      "exitCode": 0,
+      "started": "2026-09-27T14:54:23.5963984+08:00",
+      "finished": "2026-09-27T14:54:26.7717023+08:00",
+      "seconds": 3.1754861
+    },
+    "rawLog": "lint-first.log",
+    "firstRunOnly": true
+  },
+  "syntheticFixture": {
+    "invocation": {
+      "command": "node .autopilot/ph06/detail-generator-checks/create-synthetic-fixture.mjs",
+      "exitCode": 0,
+      "started": "2026-09-27T14:59:35.3401238+08:00",
+      "finished": "2026-09-27T14:59:36.2401545+08:00",
+      "seconds": 0.9000307,
+      "scope": "Single synthetic evidence fixture generation, not a performance benchmark"
+    },
+    "manifest": "synthetic/fixture.json",
+    "rawLog": "synthetic-first.log",
+    "summary": {
+      "landAreaTwiceQ2": 4146797515,
+      "seaAreaTwiceQ2": 2194876458037,
+      "totalAreaTwiceQ2": 2199023255552,
+      "targetSegments": 1108,
+      "sampledTiles": 71,
+      "uniformLandTiles": 0,
+      "coarseLandSamples": 29,
+      "changedCoarseSamples": 147,
+      "islandsRequested": 4,
+      "islandsPlaced": 2,
+      "skippedIslands": [
+        {
+          "chain": 0,
+          "island": 1,
+          "reason": "near-existing-island"
+        },
+        {
+          "chain": 0,
+          "island": 3,
+          "reason": "near-existing-island"
+        }
+      ],
+      "designNodesEvaluated": 126905,
+      "originalEdgeTests": 643632,
+      "distanceSamples": 89088,
+      "exactTargetSegmentTests": 690858,
+      "maximumQuerySegmentTests": 55,
+      "auditedFineCells": 29696
+    },
+    "scope": "Synthetic kernel output only; not an Atlas document, UI save, rendered screenshot, performance acceptance, or playable-world acceptance."
+  },
+  "notPerformed": [
+    "Global typecheck/build/browser checks are owned by root and not claimed here.",
+    "No gameplay/UI/persistence or Atlas document integration validation.",
+    "No large-world or phone performance acceptance.",
+    "No connected-island component or passable-bridge acceptance.",
+    "No additive union or old-world migration."
+  ],
+  "evidenceKind": "Actual raw command output and Vitest JSON saved at execution time; exit manifests captured command timestamps. This is not a reconstruction of earlier logs."
+}

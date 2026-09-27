@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-09-27T06:52:13.199Z",
+  "finishedAt": "2026-09-27T06:52:37.480Z",
+  "wallMs": 24279.787500000002,
+  "exitCode": 1,
+  "tests": {
+    "total": 21,
+    "passed": 20,
+    "failed": 1,
+    "pending": 0
+  },
+  "ownedSourceUnchanged": true,
+  "fullSourceUnchanged": true,
+  "changedSourceFiles": []
+}

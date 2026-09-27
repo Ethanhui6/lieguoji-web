@@ -11,8 +11,8 @@ import type { GenerationScope } from '../generation-contract';
 const parameters: CoastParameters = { strengthPermille: 1000, iterations: 4 };
 const fast = { yieldTask: async () => undefined };
 let base: AtlasGenerationDocument, manifestBytes: Uint8Array, blockBytes: Map<BlockKey, Uint8Array>;
-const height = (data: Pick<AtlasGenerationDocument, 'manifest' | 'blocks'>, id: number) => { const slot = getCellLayerSlot(data, 'elevation', id); return slot.block.values[slot.slot]; };
-const view = (data: AtlasGenerationDocument, result: CoastOutput) => ({ manifest: data.manifest, blocks: result.blocks });
+const height = (data: AtlasGenerationDocument, id: number) => { const slot = getCellLayerSlot(data, 'elevation', id); return slot.block.values[slot.slot]; };
+const view = (data: AtlasGenerationDocument, result: CoastOutput) => ({ ...data, blocks: result.blocks });
 async function rehash(data: AtlasGenerationDocument) { for (const ref of data.manifest.blockRefs) ref.hash = await hashBlock(data.blocks.get(ref.key)!); return data; }
 async function withLand(isLand: (col: number, row: number) => boolean) {
   const data = cloneAtlasDocument(base);
@@ -30,7 +30,7 @@ async function withLocks(data: AtlasGenerationDocument, ids: number[], flags: nu
   for (const block of [...locks.values()].sort((a, b) => a.by - b.by || a.bx - b.bx)) data.manifest.constraints.lockRefs.push({ bx: block.bx, by: block.by, hash: await hashAtlasCellLockBlock(block) });
   return data;
 }
-function coastGraph(data: Pick<AtlasGenerationDocument, 'manifest' | 'blocks'>) {
+function coastGraph(data: AtlasGenerationDocument) {
   const spec = data.manifest.spec, edges: [number, number][] = [], adjacent = new Map<number, number[]>();
   function add(edge: number) {
     const [a, b] = edgeVertexIds(spec, edge); edges.push([a, b]);
@@ -40,7 +40,7 @@ function coastGraph(data: Pick<AtlasGenerationDocument, 'manifest' | 'blocks'>) 
   for (let row = 0; row < spec.rows; row++) for (let col = 0; col <= spec.columns; col++) if (col > 0 && col < spec.columns && (height(data, row * spec.columns + col - 1) >= 0) !== (height(data, row * spec.columns + col) >= 0)) add(edgeIdAt(spec, 'vertical', col, row));
   return { edges, adjacent };
 }
-function actualMetrics(data: Pick<AtlasGenerationDocument, 'manifest' | 'blocks'>) {
+function actualMetrics(data: AtlasGenerationDocument) {
   const { edges, adjacent } = coastGraph(data); let length = 0, energy = 0;
   for (const [a, b] of edges) { const p = getVertexPositionQ(data, a), q = getVertexPositionQ(data, b); length += Math.hypot(p.xQ - q.xQ, p.yQ - q.yQ) / 256; }
   for (const [id, neighbors] of adjacent) if (neighbors.length === 2) {

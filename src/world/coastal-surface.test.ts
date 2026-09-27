@@ -119,8 +119,8 @@ describe('versioned authoritative land-mask fan surface', () => {
       if (property === 'get') return (key: BlockKey) => { touched.add(key); const [layer, bx, by] = key.split(':'); if (!['geometry', 'elevation'].includes(layer) || Number(bx) > 1 || Number(by) > 1) throw new Error(`Unexpected read ${key}`); return target.get(key); };
       throw new Error(`No world scan ${String(property)}`);
     } });
-    const result = buildCoastalSurface({ manifest: data.manifest, blocks }, [idAt(31, 31)]);
+    const result = buildCoastalSurface({ ...data, blocks }, [idAt(31, 31)]);
     result.cells[0].sea[0][0].heightMeters = 999; expect(snapshot(data)).toEqual(before); expect(touched.size).toBeLessThanOrEqual(8);
-    expect(buildCoastalSurface({ manifest: data.manifest, blocks }, []).cells).toEqual([]);
+    expect(buildCoastalSurface({ ...data, blocks }, []).cells).toEqual([]);
   });
 });

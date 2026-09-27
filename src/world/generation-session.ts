@@ -1,4 +1,4 @@
-import { hashAtlasManifest, isGenerationDocument, type AtlasDocument } from './atlas-format';
+import { hashAtlasManifest, isGenerationDocument, isDetailCoastDocument, type AtlasDocument } from './atlas-format';
 import { hashBlock, yieldAtlas, type AtlasControl } from './model';
 import { hashAtlasLockSet } from './generation-locks';
 import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
@@ -42,6 +42,7 @@ export class AtlasGenerationSession {
     const recipe = structuredClone(rawRecipe), scope = structuredClone(rawScope), head = this.session.head;
     if (head.revision !== expectedRevision || head.rootDigest !== expectedRootDigest) throw new Error('生成基线已变化，请重新打开草稿。');
     const base = await this.session.snapshotAsync(control); if (!isGenerationDocument(base)) throw new Error('请先创建创世草稿，或明确复制旧草稿后生成。');
+    if (isDetailCoastDocument(base)) throw new Error('第四版细海岸生成器尚未接通；旧生成器不能修改或丢弃细海岸。');
     if (!validateGenerationOperation(recipe, scope, base.manifest.spec)) throw new Error('生成范围越界或该操作尚不支持局部范围；大陆重建与岛链使用整图，山系盆地和海岸可选择局部。');
     if (recipe.generator.id === 'macro-landmass' && base.locks.size) throw new Error('重建大陆需要未锁定的整张地图；保留海岸时请选择山系与盆地生成。');
     const recipeDigest = await generationRecipeDigest(recipe), scopeDigest = await generationScopeDigest(scope), lockSetDigest = await generationLockDigest(base);

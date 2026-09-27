@@ -1,0 +1,140 @@
+{
+  "date": "2026-09-27T06:54:21.443Z",
+  "scope": "v4 bounded backend correctness; no renderer integration, hardware/device acceptance or performance claim",
+  "promotion": {
+    "files": [
+      {
+        "path": "src/world/detail-terrain-pages.ts",
+        "stagingHash": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764",
+        "hash": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+      },
+      {
+        "path": "src/world/detail-terrain-pages.test.ts",
+        "stagingHash": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981",
+        "hash": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+      },
+      {
+        "path": "src/world/detail-terrain-shader.ts",
+        "stagingHash": "79b33b88c1e70e112c749a834eff4cb2c0c7b502cfc46ff1e974148520dacde2",
+        "hash": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92"
+      },
+      {
+        "path": "src/world/detail-terrain-shader.test.ts",
+        "stagingHash": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5",
+        "hash": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5"
+      }
+    ],
+    "inspectedCorrection": "GLSL clip neighbour deduplication changed from next to previous to match current authoritative CPU polygon fan before the first test run."
+  },
+  "cpu": {
+    "tests": 18,
+    "passed": 18,
+    "failed": 0,
+    "elapsedMs": 2454.8172,
+    "exitCode": 0,
+    "raw": [
+      "cpu-first.log",
+      "cpu-first.json",
+      "cpu-first.result.json"
+    ]
+  },
+  "lint": {
+    "startedAt": "2026-09-27T06:46:30.163Z",
+    "elapsedMs": 1604.9200999999998,
+    "exitCode": 0,
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/eslint/bin/eslint.js",
+      "src/world/detail-terrain-pages.ts",
+      "src/world/detail-terrain-pages.test.ts",
+      "src/world/detail-terrain-shader.ts",
+      "src/world/detail-terrain-shader.test.ts"
+    ],
+    "raw": "lint-first.log"
+  },
+  "gpu": {
+    "first": {
+      "passed": true,
+      "patterns": 625,
+      "probes": 55330,
+      "exactLand": 55330,
+      "maxHeightError": 0.0024232509786088485,
+      "elapsedMs": 3334,
+      "sourceStable": true,
+      "raw": "gpu-first.json"
+    },
+    "supplement": {
+      "passed": true,
+      "probes": 103,
+      "exactLand": 103,
+      "maxHeightError": 0.0024232509786088485,
+      "elapsedMs": 701.1000000014901,
+      "sourceStable": true,
+      "raw": "gpu-supplement.json"
+    },
+    "toleranceMeters": 0.0078125,
+    "browserVersion": "153.0.8010.12",
+    "gpu": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shaderVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "vendor": "WebKit",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "unmaskedVendor": "Google Inc. (Google)"
+    },
+    "capabilities": {
+      "webGL2": true,
+      "contextLost": false,
+      "maxTextureSize": 8192,
+      "fragmentTextureUnits": 32,
+      "fragmentFloatPrecision": 23,
+      "fragmentIntRangeMin": 31,
+      "fragmentIntRangeMax": 30
+    },
+    "notes": [
+      "Raw WebGL2 uses the production vertex and fragment source, actual texture uploads, drawArrays and readPixels; CPU expected data uses pickDetailCoastSurface and buildDetailCoastSurface.",
+      "Supplement adds internal half rounding 1.5Q to 2Q, both sides of that crossing, 4 identical world points at 4 drawing origins, actual WebGL1 rejection, and a position-only Pixi Geometry draw.",
+      "First Pixi smoke used MeshGeometry and reported an unused aUV warning. Supplement uses Geometry with only aPosition and no such warning. Both actual factory draws/readbacks pass.",
+      "ReadPixels GPU-stall driver warnings are retained. This is synchronous correctness readback, not a performance benchmark.",
+      "81 Pixi probes occur in both runs with different geometry setup; total probe executions are not a unique-probe count."
+    ],
+    "sourcePixels": 4278690,
+    "sourceBytes": 17114760,
+    "borrowedSourcesSurviveShaderDestroy": true
+  },
+  "sourceFiles": [
+    {
+      "path": "src/world/detail-terrain-pages.ts",
+      "sha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+    },
+    {
+      "path": "src/world/detail-terrain-pages.test.ts",
+      "sha256": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.ts",
+      "sha256": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.test.ts",
+      "sha256": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5"
+    }
+  ],
+  "sourceFrozenSinceCpu": true,
+  "pending": [
+    "Renderer/cache/Worker transfer and cooperative whole-source construction",
+    "Unified 32Mi pixel budget integration and target/geometry accounting",
+    "Context loss/restoration, cancellation and snapshot coherence in real renderer",
+    "Real-game mapping/playability and visual acceptance",
+    "Hardware/mobile device support and all performance gates",
+    "Palette rendering (diagnostic mode was used for measured GPU parity)",
+    "Root unified typecheck/build; not run by this bounded task"
+  ],
+  "productionFilesModifiedOnly": [
+    "src/world/detail-terrain-pages.ts",
+    "src/world/detail-terrain-pages.test.ts",
+    "src/world/detail-terrain-shader.ts",
+    "src/world/detail-terrain-shader.test.ts"
+  ],
+  "distModifiedByThisTask": false
+}

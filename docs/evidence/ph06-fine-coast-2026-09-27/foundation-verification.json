@@ -1,0 +1,964 @@
+{
+  "recordedAt": "2026-09-27T07:02:48.818Z",
+  "baseCommit": "5e4624a8bcfb49a97cd024753c1d39006fc3a700",
+  "scope": "v4 foundation; no game entry, integrated renderer, build or performance acceptance",
+  "foundation": {
+    "uniqueScenarios": 143,
+    "executions": 145,
+    "first": {
+      "passed": 141,
+      "failed": 2
+    },
+    "repair": {
+      "passed": 2,
+      "productionUnchanged": true,
+      "causes": [
+        "Transport old recipe fixture shelf320 exceeded max256; use128 and independently assert valid recipe",
+        "Future-format storage test used4 now supported; advance only future fixture to5"
+      ]
+    },
+    "globalTypes": 0,
+    "globalLint": 0,
+    "sourceStableFirst": true
+  },
+  "storage": {
+    "uniqueScenarios": 21,
+    "executions": 22,
+    "firstPassed": 20,
+    "firstFailed": 1,
+    "fixtureRepairPassed": 1
+  },
+  "kernel": {
+    "passed": 22,
+    "first": true
+  },
+  "shader": {
+    "cpuPassed": 18,
+    "gpuFirstProbes": 55330,
+    "gpuSupplementProbes": 103,
+    "backend": "Chromium ANGLE SwiftShader",
+    "hardwareAndPerformanceAccepted": false
+  },
+  "remaining": [
+    "generator recipe/session integration",
+    "renderer/cache/source lifecycle integration",
+    "actual UI and browser loop",
+    "additive second continent",
+    "fine quad lock dependency instead of conservative refusal",
+    "dense public clone first-yield performance",
+    "user visual and physical devices",
+    "nation/admin/city/army simulation"
+  ],
+  "inventory": [
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/create-synthetic-fixture.mjs",
+      "bytes": 5033,
+      "sha256": "f249703e5aea29f8bbcee7ed1dbea1cb8fa767359383412175623385c7fcef50"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/initial-source-hashes.json",
+      "bytes": 563,
+      "sha256": "fbefa6ed2428be1be57e2b3b03473cf65634a7f86f20723f50c538feee382736"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/lint-first-exit.json",
+      "bytes": 302,
+      "sha256": "5018e10c9ed5aceed042bc6797e79c0f42ce0669a94817378c39d26902624c5f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/bundle-metafile.json",
+      "bytes": 4309,
+      "sha256": "dd4e897dda0bd7fac9d4735043fc5ede06ffef51d7a46ac9c41635f951e0988c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-16.bin",
+      "bytes": 4112,
+      "sha256": "089bfd54169b097937522868ca2982ef5cb692c8ce6b4cee86c55610fe6a6d92"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-17.bin",
+      "bytes": 4112,
+      "sha256": "7c869f259cf852c77b58f7e7402ffc45d6514895578efa62e3fa87594cae7dcd"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-18.bin",
+      "bytes": 4112,
+      "sha256": "c5b21e61fea372f68aeacf09aafa4b7c48e4afeaf20903b67ee1fa75ddb079f3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-19.bin",
+      "bytes": 4112,
+      "sha256": "88ca0fb87d1acf22e128fa5812c52a9443ec1213ea38fb0643204b69d4a6516d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-20.bin",
+      "bytes": 4112,
+      "sha256": "ec38e47b9131aabf6515d9f1e97faa4e56f61b6ef523ee828b14bcb0e165384d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-21.bin",
+      "bytes": 4112,
+      "sha256": "7921ffb17276f3c9fd0b3a3e5f2f264002f4cdbb2fd49aed943ec9f549c418cc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-22.bin",
+      "bytes": 4112,
+      "sha256": "eaa108a80b98fa0b39c2dce5293d7b4f9f6130572ae55adbd6aca6d666dcb8c0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-16-23.bin",
+      "bytes": 4112,
+      "sha256": "dc087733e56d000acab012032d27d1bb3af79aa59ed991806572e30e75a18967"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-15.bin",
+      "bytes": 4112,
+      "sha256": "b17b65352f0833a0c6125ad9ef3fbf452c554a570ab08a2c07ceabdaa4d544e1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-16.bin",
+      "bytes": 4112,
+      "sha256": "accdc313e7d17e03525d61fa91bca348f2915f1cdd65b89c46f170e613aad13c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-17.bin",
+      "bytes": 4112,
+      "sha256": "e0863df98245a7bce7ca41e8a415c9943ab1d682f4b2a9ee3006a2dc332ac8a9"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-18.bin",
+      "bytes": 4112,
+      "sha256": "7144aae10a288de3a55391f554eb7cfe4c15ec76bdc98c57f4bc4e89b71c35af"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-19.bin",
+      "bytes": 4112,
+      "sha256": "87fda48ae4b108cf67835f4c0324444a92662d6ed4ffc6be6e7d04ef796e1c41"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-20.bin",
+      "bytes": 4112,
+      "sha256": "65cf5cb1c1894f475ecd6d5f4e15a3ef007c467ee766d78a4df1b34cf808db21"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-21.bin",
+      "bytes": 4112,
+      "sha256": "ae846133a195f6f58ebb25bb4a3151214a0b08b5d2c5b358d4c25cad724d00c5"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-22.bin",
+      "bytes": 4112,
+      "sha256": "2288d327b30d59ce611034e98300d6cd999c1684fee26d54175169138ac19c47"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-17-23.bin",
+      "bytes": 4112,
+      "sha256": "d968a374a7a9d97190d8555690ce89249143dc674e0a81d7f76afb51d7d994a7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-15.bin",
+      "bytes": 4112,
+      "sha256": "5ea646e0e71ddeb093f5bd9d1d4ecbcc56e522d8a437e058378cd17c669bba9c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-16.bin",
+      "bytes": 4112,
+      "sha256": "19e9ff0f8a2eb50ba26aa4d046f2cd27da35ad87f81dde546fb6266884c88e46"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-17.bin",
+      "bytes": 4112,
+      "sha256": "175e68db789d82c22a8411d5dcf89ec24afc0bd39864ac74a26389174d585e14"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-18.bin",
+      "bytes": 4112,
+      "sha256": "46717cf928dac8604e93dc2ded90dd1a2c98fd8f6c7ea9d03458f868925425e8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-19.bin",
+      "bytes": 4112,
+      "sha256": "af1adbae3bd25f75c65de5495d775c6618aa4a6d699379472b67b9f8623a0b31"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-20.bin",
+      "bytes": 4112,
+      "sha256": "79d0ea1b27862ac1ed25e14febf84b6b04553647b6bc039e8dc2f7ac8d9b2136"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-21.bin",
+      "bytes": 4112,
+      "sha256": "22cb4aa756e7de90ce51666400024ae74c597b8143f012281abcb9d5fa66951a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-22.bin",
+      "bytes": 4112,
+      "sha256": "10183e4a7620874f03bcdd7aa2ea3020304c70918062de9948f9d796562004ce"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-18-23.bin",
+      "bytes": 4112,
+      "sha256": "80c4bc3919dcc0c507ef7fcf1fbb0e85a2aed08f98f618136101a3753db93fd7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-15.bin",
+      "bytes": 4112,
+      "sha256": "a8ec756cad22318711f5cb327f607ab9d6af17c6086fc7a247b8d1da54edc319"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-16.bin",
+      "bytes": 4112,
+      "sha256": "9b62f772b698afa8b9d24e8b68f07b9bdf747b9eb021f972a8d758daff2d8a70"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-17.bin",
+      "bytes": 4112,
+      "sha256": "acee46d51d252029be61bc74e8962c5a32544d7128eac4bfb4fc6183f95e890d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-18.bin",
+      "bytes": 4112,
+      "sha256": "b603eec8cddadd1844093d18e33c8828c2758c296a2e31a4d093685a01056a83"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-19.bin",
+      "bytes": 4112,
+      "sha256": "2b703b031fddb1cd20355f8623776d8db87155252e1cb369050a9bb060a6342a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-20.bin",
+      "bytes": 4112,
+      "sha256": "97a9d26631acff56cd836a3f3476cc8f92f91fbdd4dd0b7c091785fe065de957"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-21.bin",
+      "bytes": 4112,
+      "sha256": "8a34c983f3daf34fca70b30cc06f61adc7cdc75a04aac459ac0b39736eac7328"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-22.bin",
+      "bytes": 4112,
+      "sha256": "f1cd02e822b40c8a1d6af3e872e7787e80d6d3b64784be003a8abdbcaa15f3a2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-19-23.bin",
+      "bytes": 4112,
+      "sha256": "88f7b58480a829a5fec354cb87c2d66479afb11fdddbebe5ae797b79aae2ee9c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-15.bin",
+      "bytes": 4112,
+      "sha256": "217d1d35961979540612f841a6773a9e68e72e1a0477d86f55926907edc1b2b4"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-16.bin",
+      "bytes": 4112,
+      "sha256": "0161ff0a102cdfe3236305ac1972f30c82f300b52a76addf7de2c61a8faa2f66"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-17.bin",
+      "bytes": 4112,
+      "sha256": "b7d72d10a283cfdbeb19cc391796e87afeb6bb6c5a473f1ab36cfe4425a151af"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-18.bin",
+      "bytes": 4112,
+      "sha256": "4d34afd6d75a8ed60e77a07747baec9a8e50b5946140435613c87ada5eff2afb"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-19.bin",
+      "bytes": 4112,
+      "sha256": "27d9930666ff8ae375ccbad47009395bf99e58c6f0d22fddd431e58d35cf1cf7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-20.bin",
+      "bytes": 4112,
+      "sha256": "7e338e8cc263d1ee02297cf9903c5b97b2305748c50adf1b02944f8cbe53fd91"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-21.bin",
+      "bytes": 4112,
+      "sha256": "a824dd26d2f92132b8e1fc5481d7d9230a85aebeb2be20a975a1d7fcaec32bab"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-22.bin",
+      "bytes": 4112,
+      "sha256": "bd992b8484be4b36916201c761d9eb43ec781028952f73230f7750116ec581d4"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-20-23.bin",
+      "bytes": 4112,
+      "sha256": "c0542acca8a447edb779854c2b1046986e2703ff8a650515628a4427d5a6354e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-15.bin",
+      "bytes": 4112,
+      "sha256": "e5174117ba9379f1ad52315b337ce5f09690398b5f1c7b56a39beb96802ebc72"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-16.bin",
+      "bytes": 4112,
+      "sha256": "0a5fe31767357e61404439bcf2ca47c3b6e38db490f1f48023972b68edcd71de"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-17.bin",
+      "bytes": 4112,
+      "sha256": "cbb8351eeadc48cb005d9e5a6b730835bb7a7a3dca66dc872cd6bcae825eedd2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-18.bin",
+      "bytes": 4112,
+      "sha256": "e60314dc159b51fdbbea2740eb0880f8a737a7023859d682542bd98b191ad8fb"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-19.bin",
+      "bytes": 4112,
+      "sha256": "bcae4e963838f2f8b8f8cf4810b4326a2181c4930055f2414c4b416f383acfea"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-20.bin",
+      "bytes": 4112,
+      "sha256": "9dab6a3b34a431d4aabae86042a5e2d9a6120602c9ca414e1735c161080b90f9"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-21.bin",
+      "bytes": 4112,
+      "sha256": "e1a7f640ddae6e7f6f8bf27d6587aa7079259152b08353ebdd6d5bf04d743277"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-22.bin",
+      "bytes": 4112,
+      "sha256": "4ce6849790d8b17fed6c73c41e60ced73cb9d82f595db3b3ebca53d346e89c74"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-21-23.bin",
+      "bytes": 4112,
+      "sha256": "d4f3325eee11c49e2ba0eda23c6140c3342ccb5a1bf14edd74985c50ce3ce93a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-15.bin",
+      "bytes": 4112,
+      "sha256": "37e06674b453e725865d8ce0fc96b2f0a78b2629ef0d0829391a924c1a3e0d64"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-16.bin",
+      "bytes": 4112,
+      "sha256": "c2310d15bed042ef4ba7026709bd4eee8133af462b4301bff340f937890a8ffe"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-17.bin",
+      "bytes": 4112,
+      "sha256": "a0d42e29fbe231e726832e769d9985c2c1da56b959ab03a6f69aebbf101feae2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-18.bin",
+      "bytes": 4112,
+      "sha256": "b7314c2919442d07f19f228aba1f7e1c80d93aa307ae9b320b63de27de5c8fd7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-19.bin",
+      "bytes": 4112,
+      "sha256": "1203e34594dca68e45664e339920b5f897e3ea27714e61d37160501baeda6f19"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-20.bin",
+      "bytes": 4112,
+      "sha256": "5fd0e858e079be67393ec8f9113ae1c299a26e19192d403dafe2a1d61907374c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-21.bin",
+      "bytes": 4112,
+      "sha256": "694bcae75dbe520ae2898171a15098ba330aecfed9429cd30ac7920edfff2279"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-22.bin",
+      "bytes": 4112,
+      "sha256": "b62aacc6b202c84a294970e67e347340c2b98eff6f11a111ed118d37dce43d8a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-22-23.bin",
+      "bytes": 4112,
+      "sha256": "1700e386cfe7355b25027c2b0b05ff13b6205ed729af1abb7fd5679f14eb2093"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-15.bin",
+      "bytes": 4112,
+      "sha256": "41433fcccd5efef803f5a899e6b19febc9e087a8943c2332490d49d3d57ae3f6"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-16.bin",
+      "bytes": 4112,
+      "sha256": "b2f3ab162fc1eda6aad311b979e6a67262c6f0ddb3eb59cafdfb0df37828b6ff"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-17.bin",
+      "bytes": 4112,
+      "sha256": "038983584d3ca0c92ea6be43d883ed79f2c67a322891b4b68915ac77db043614"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-18.bin",
+      "bytes": 4112,
+      "sha256": "6f2a0493bf286ef830a2ee29eac202b66582d19dada9e3b06b613656107ca5d7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-19.bin",
+      "bytes": 4112,
+      "sha256": "6ee294283880a9558a088e38a988baec02a55738855d03015039f1f306f5046c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-20.bin",
+      "bytes": 4112,
+      "sha256": "56809c5911ee585641cfa4a6ac721968933f9a645e069e3253f4ff63a768a3f3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-21.bin",
+      "bytes": 4112,
+      "sha256": "15bf98e5d4195d7a8ff070c7f1824b97bc09566cb86026fbf7d10252f8331360"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-22.bin",
+      "bytes": 4112,
+      "sha256": "a3bf948407e46e3c449067d422601429719734ae09b224ab7babda0b843dae2c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/coast-23-23.bin",
+      "bytes": 4112,
+      "sha256": "0508b94a0c32d3203ba286f9e330ebd8450960938532c0a28142ff374d51c938"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/diagnostic-target-coast.uint32-native.bin",
+      "bytes": 17728,
+      "sha256": "3235d9c56565e2311becd6fb3016b72d12616bd179c7ebaa6e99ba9d032869b8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/fixture.json",
+      "bytes": 26564,
+      "sha256": "16c8c02841a65d532112bfdbb2a19aec5853f5b5898196a98b852048f371a5d5"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/input-centers-q8.int32-native.bin",
+      "bytes": 131072,
+      "sha256": "a9ef521b6df9385de8234b4bde656f5e70abe39c07a9ea7924f718a5bdc79e9b"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/input-coarse-elevations.int32-native.bin",
+      "bytes": 65536,
+      "sha256": "09d98f1b29be49762bd01fee1b8cff3d202b956d43cc15e89d582b7c7b0c5924"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/kernel-bundle.mjs",
+      "bytes": 59608,
+      "sha256": "cd5a69bbff0638514fa6750ee70d74bdbb53e3bcfd91c1523b602fb174f430b0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic/output-coarse-elevations.int32-native.bin",
+      "bytes": 65536,
+      "sha256": "fe73416a42b101194fc45359e81a90111acdbd312848263e410fc2e0ebfc1993"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic-first-exit.json",
+      "bytes": 331,
+      "sha256": "346dcfef4d285d69fc946528f5f4c9df25cf0e28d2a2631483b8fee9c271893a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/synthetic-first.log",
+      "bytes": 1711,
+      "sha256": "41c86d7a3ce5f347d449944e38e5eb31e28add971a2a3684eccbcd789cf3f3ab"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/tests-first-exit.json",
+      "bytes": 412,
+      "sha256": "b33884f34e5c7338413f8d2b3c6cf4d84d3e345a0a6e459c5b18487a798d2e5b"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/tests-first.json",
+      "bytes": 9438,
+      "sha256": "3401ea3c689e4d8909521c679e14cf04baf569fadfe83489723a801965e2542c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/tests-first.log",
+      "bytes": 695,
+      "sha256": "0bb752ef85c6f8cfec834606030568789da7c888da64827f62d3acfd80be9269"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-generator-checks/verification.json",
+      "bytes": 4309,
+      "sha256": "d7e6f9942063c98ba0712e2cd2a8e9b6fde515b6f862b6c14b392044de218675"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/cpu-checks.mjs",
+      "bytes": 2119,
+      "sha256": "d4bff9bd370e72ddddbf8e785c68a005d5a1a0d68f76ae55cc9c6ec49d64dcc4"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/cpu-first.json",
+      "bytes": 8920,
+      "sha256": "5e68b837a18a8ecf44af0961ba8b1dd3625b3cf1597150119238c9c6dd5765cb"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/cpu-first.log",
+      "bytes": 419,
+      "sha256": "fe83597a5a3e6c4d2de00ce5920a59c35d3c8e49ce877603fff19d96ddf09aa4"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/cpu-first.result.json",
+      "bytes": 413,
+      "sha256": "e93b8755dca63b6edb9c4daf7422a01a6cefdc32e26f2f44e0a7ec5c8bfd30c4"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/cpu-source-hashes.json",
+      "bytes": 562,
+      "sha256": "12ec4a9466e61d3d813fdb7a318ed9e9a1402392ded5aa309bae501b85173f74"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-checks.mjs",
+      "bytes": 2823,
+      "sha256": "8e00fdac9d9fe5dd616bcc5807ce3b1b38ef23c11ee184d28dd0c718b41c2a23"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-first.json",
+      "bytes": 8481891,
+      "sha256": "00f2a9cb494b84d7725c5e5ea955462a5b654e5e24bc6e2089c6950cc920916c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-first.log",
+      "bytes": 897,
+      "sha256": "1204acee36c777341a874e4d4a47b648517b7639e0465d72afaef65671650e57"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-first.png",
+      "bytes": 5655,
+      "sha256": "f0ce8840b1dd2d33481d53804e7f0fd0661bee97f447cb3b5bf0cff8084dd60c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-supplement.json",
+      "bytes": 48633,
+      "sha256": "9a020f5f80e379b9f736dc494d635eb8153a75ae00022e94e6587fe82a194e87"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-supplement.log",
+      "bytes": 724,
+      "sha256": "31524f2e76ca95a85811a457e0765b2cfe835215a18f8841e760fed3ec680256"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-supplement.png",
+      "bytes": 5490,
+      "sha256": "ce16e3fa5dab542aaec128587f7d24c15c502e2c9c1cd57e3a725aa27a82cac0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/harness.html",
+      "bytes": 231,
+      "sha256": "ea68ed68e3b3ed0fcb836b67b7dba007ebb7f115f7c0c17e36462020b46414df"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/harness.ts",
+      "bytes": 17831,
+      "sha256": "d996d8d6687e8e6c0ce46e213fbef23dca4670f7ffacfe44b97927018749fcb3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/lint-first.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/lint-first.result.json",
+      "bytes": 376,
+      "sha256": "d1d73dff47879f9bd4667cf56466a1a036c9530c86969d8e95cc8c4fe4c74cab"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/promoted.json",
+      "bytes": 1133,
+      "sha256": "8ee8385cbaab426aa95f972353a0a1ef3c01d17f7c62a9f481487a45f7cc33ff"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/README.md",
+      "bytes": 3329,
+      "sha256": "86bb1ef76c326f3558b9c63c1f9001aeadcd94fd47b051caa81bb89618abf377"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/summarize.mjs",
+      "bytes": 3487,
+      "sha256": "90d87ac1d70bd664a0084c9b08d4b01c60e36f89f6f14d1b42347f0f5018857c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/verification.json",
+      "bytes": 5611,
+      "sha256": "d932788297398b561d26c58d0e0b5d1121eb064202f2cb65d11809d952e90da0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/browserAll-BiLq_WZo.js",
+      "bytes": 696,
+      "sha256": "88346af0ff00ee188bd77dd82e9fc5f227eda28d44369a58cfb20ff40f110fec"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/browserAll-BiLq_WZo.js.map",
+      "bytes": 1553,
+      "sha256": "bf5c7b6da5ffd2cceaa149ff125783a771f99eb1fea24978f96c4339c2e7a39f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/Cache-r6WwbQ7y.js",
+      "bytes": 2767,
+      "sha256": "96dd8ceb6d48dabc63da08c971d2b731159b03ad46bef4f9fe58b08ec4597372"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/Cache-r6WwbQ7y.js.map",
+      "bytes": 5050,
+      "sha256": "5f0de61b9a3e404bd9343aab176f3b07996fe23d09500e256deabf8812a6f472"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/CanvasPool-aTQnubYN.js",
+      "bytes": 33319,
+      "sha256": "a772530021a427b50945b96e96fcdc320e576b8d4afef90ba93417ca7a4fc48c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/CanvasPool-aTQnubYN.js.map",
+      "bytes": 56909,
+      "sha256": "d660294a4c50dfe4ea5120ad6ad7bfded11daf1bf3e9a2b9fb9944a4a4e809c2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/canvasUtils-BUqr9vfE.js",
+      "bytes": 12759,
+      "sha256": "8ec5cff1343647d15564a528b2cd265422b1d9ff8a2cdd77ae96eb2777465dd8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/canvasUtils-BUqr9vfE.js.map",
+      "bytes": 22492,
+      "sha256": "8f7f06f33c85cfadc8e05f5f72f839580818b45d915cdf6b85facf957d2780d3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/d3-delaunay.js",
+      "bytes": 40315,
+      "sha256": "a0da32e9c01885ea3bdb48f6c29cff15362fb2eb11e6cc8cc525abfeb0965db2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/d3-delaunay.js.map",
+      "bytes": 152449,
+      "sha256": "f9b62d150977784083a472c45fc14627d0b877583f4c4530e560c00d7290bff7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/FederatedEventTarget-CK18NVE1.js",
+      "bytes": 101958,
+      "sha256": "8408d923d1f2529ff505ca0ae8a07d61eb9144bf2bffb7fced3486c33c8dfa04"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/FederatedEventTarget-CK18NVE1.js.map",
+      "bytes": 159275,
+      "sha256": "e2e542a9aea019c9bd46aa21960cc1dfcf9d207ebe43a0803db30a92a209ab9a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/Filter-DLNb48H_.js",
+      "bytes": 44039,
+      "sha256": "94679239d0ebb92f1535699a05755e56c1ca7ae99fb9c3bca56f87d0489d681f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/Filter-DLNb48H_.js.map",
+      "bytes": 63624,
+      "sha256": "71d81146f1efa8313a18f2e5b8435f5eb16997eb1ab05ad2a5390f366d5989c8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/FilterSystem-BTKKFfb6.js",
+      "bytes": 96488,
+      "sha256": "0a954ed970486bf5b072b7aaef2316751aa8ceb79d50345ec2c95f41b0b578f9"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/FilterSystem-BTKKFfb6.js.map",
+      "bytes": 159445,
+      "sha256": "5bfb2ce310bbaad6e00ae1fe6aa5851a2465e09aa45f4effa82b9e224661e62c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GCManagedHash-B-befWOL.js",
+      "bytes": 37328,
+      "sha256": "2e42a1c0039aa247432c99c84097db91186a35b2ca2ab6d00ce1c3e48eacbc73"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GCManagedHash-B-befWOL.js.map",
+      "bytes": 64548,
+      "sha256": "fb8515825d299d43bc47f98486135b7569e5b18aa7faf2a712f667a83d454d08"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/getTextureBatchBindGroup-Ctex5urg.js",
+      "bytes": 1026,
+      "sha256": "e24f0d923775a03cfbf649b3342db2a2f63109b4095702fc015c66b1a4ebb6ee"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/getTextureBatchBindGroup-Ctex5urg.js.map",
+      "bytes": 1820,
+      "sha256": "695a4ce43d8344968dfeb359885a9881a26edc44c500c13cd7651484042ffed3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GpuStencilModesToPixi-BUlPM8m6.js",
+      "bytes": 5207,
+      "sha256": "6d907278a66312d4632f0424b010f76549a175069f6fd09ae86aa5650894e661"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GpuStencilModesToPixi-BUlPM8m6.js.map",
+      "bytes": 8412,
+      "sha256": "47bb009d579d97a72207523c2bccf0bd2fd33445c6472886231a584272cf9308"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GraphicsContext-Ce1Zg__h.js",
+      "bytes": 198441,
+      "sha256": "4c6e426653785733ae4cb082c73b9a03be51add2db4a1025025e840bac910763"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/GraphicsContext-Ce1Zg__h.js.map",
+      "bytes": 356260,
+      "sha256": "c756a35010a1ba51866fc2cdd5674c9666f127a19e9b038d71c4d989313fa699"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/init-xgq-iJuH.js",
+      "bytes": 314,
+      "sha256": "501c5e1fea841b30b838d75fc28f2bc9fad8230ced7775b119bf69cf51e86dee"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/init-xgq-iJuH.js.map",
+      "bytes": 591,
+      "sha256": "bb34f396dc04a6358244619abf45855031be95db24b89895a47b9c8cca365a3e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/package.json",
+      "bytes": 23,
+      "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/ParticleBuffer-sr-KNQeB.js",
+      "bytes": 350678,
+      "sha256": "78f45eb85fa49b512a39d24a65d72412773718d2cadf2d03ab28aea2df74b17d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/ParticleBuffer-sr-KNQeB.js.map",
+      "bytes": 543221,
+      "sha256": "c6a9e8dfe7ccd57c94e12db1e8c8a6e1ed04d123f7ef045488b08c8ebfb37f46"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/pixi__js.js",
+      "bytes": 1116501,
+      "sha256": "d78d18ea83198b85d91d4021bda07c2e8af69743d3ba9a0f1d62a8dddda6c42c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/pixi__js.js.map",
+      "bytes": 1877741,
+      "sha256": "34b47f8515fc06064ca99a4e0517f7383e3c3cea13e66722ce64d36db150d513"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/pixi__js_unsafe-eval.js",
+      "bytes": 20563,
+      "sha256": "72321ea80cb99c4404a9918abd18315af58a22849358665919d431740359c2d5"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/pixi__js_unsafe-eval.js.map",
+      "bytes": 43893,
+      "sha256": "31ba6dca6b65122255f20c71a1491585e27ba14378c30422311c6c9520dea79f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react-dom.js",
+      "bytes": 15147,
+      "sha256": "43bf4e2c99f19c55aea76487f296cbd7ecba76044fd8217bc6157d34964dcc00"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react-dom.js.map",
+      "bytes": 26834,
+      "sha256": "9eaadaabc0029456f06533f37ff0cc2df72f0d5264456610d2b822f3a02b36d3"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react-dom_client.js",
+      "bytes": 911941,
+      "sha256": "c0cb02f7a9e528d01f8e0974ab8e359a388d96f016dd6ee55e72741aeac00728"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react-dom_client.js.map",
+      "bytes": 1665194,
+      "sha256": "866050e4392978f610a5b72d9576f3a9f8afb6bc141f2439f92383cbf0329d05"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react.js",
+      "bytes": 39785,
+      "sha256": "364fde1ba8b7a3cb23fa57071b49a43047d84366304c67090497a4884067650e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react.js.map",
+      "bytes": 71644,
+      "sha256": "8e606e5c8ec7a9d0c3982100376d0d47d610fba65722aed251420646359fb79c"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react_jsx-dev-runtime.js",
+      "bytes": 10808,
+      "sha256": "1a91127c8526cdd59e8e8f3a5102778163c4a70d646a84a02134d772671e1efd"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/react_jsx-dev-runtime.js.map",
+      "bytes": 18666,
+      "sha256": "6cca3dabdd1184d370087bc9313ac9caf9f7ca871314e363e5f48234811b1cf7"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/RenderTargetSystem-CopMsFzs.js",
+      "bytes": 125342,
+      "sha256": "56690d0bca7428a5e39f4c729f7b1757ea4de21a53b56c4353b81708dba9c611"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/RenderTargetSystem-CopMsFzs.js.map",
+      "bytes": 199405,
+      "sha256": "89f27af403c28cdd9dc4b3e85c96a48404f44ddf2ceb40eba354ddedf22658ec"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/rolldown-runtime-DC62tzP2.js",
+      "bytes": 1445,
+      "sha256": "f74ce63fe4684f55be3ea69da3a4528da464f9d5f63cda903b76eb13e92d1954"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/webworkerAll-0K5lmycH.js",
+      "bytes": 66,
+      "sha256": "49ea1e62faff06c290ae92528dfe9c056be233b65e497cb94da692dd7ac951b1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/deps/_metadata.json",
+      "bytes": 3259,
+      "sha256": "a81a41b798f9bfdf32e8aad3ad762175fe60e277162f8da9d1a7431384c6d693"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/command.json",
+      "bytes": 376,
+      "sha256": "d45061da4e25172a3d455977dee1f86ec70da043ab178476005e87248eb31aa0"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/results.json",
+      "bytes": 10349,
+      "sha256": "5db144ced484b45d2eb515c817493003bcfb86f68d52e34f4b1ab4ba63989130"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/run.log",
+      "bytes": 3001,
+      "sha256": "c620a7c0cc634c484c1bd69519a2af04c0f599e1418a402924dd74b215efb6cc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-after.json",
+      "bytes": 27679,
+      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/source-before.json",
+      "bytes": 27679,
+      "sha256": "827c5d2ef362b374af73a54e929c7043f780d6116eae1595d2b7e54891936616"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/first/verification.json",
+      "bytes": 316,
+      "sha256": "b390fad2a326f3bd6b369ce34433ab1a0c381106aa2a49edfcf1e6e7624332be"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.json",
+      "bytes": 64,
+      "sha256": "619b54d314d5dd1c7adff2740f2d549e3d5c5ad8138afc6c8c0539e1567e0cfc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/owned-lint-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/promotion-baseline.json",
+      "bytes": 822,
+      "sha256": "2c41cc8c764cc52e2a09b973c392692b61b43d007af346296ffeb21ab5fe28d6"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/command.json",
+      "bytes": 494,
+      "sha256": "e99f994a12793f0f7a522ae1cd374418f3e9b2cdcb825799b825f2fbf4c2bfcd"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/results.json",
+      "bytes": 9488,
+      "sha256": "3e4e4de2d8f59213e67165b14cfc4fe2b11090e035bb14f09e3f47a5aaedc70a"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/run.log",
+      "bytes": 576,
+      "sha256": "8e4e2eaaeef646631ff8e084e2863cc1f2697ce83e5d253e29c001faa02908b8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-after.json",
+      "bytes": 27679,
+      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/source-before.json",
+      "bytes": 27679,
+      "sha256": "d4b8752eee2636c2b692be90bff4e91cdca299ea8e0186e86c315106b017345e"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/quota-recheck/verification.json",
+      "bytes": 307,
+      "sha256": "18d641ae11a3788b9df4dff4567aed51324a9b5d444332004e3313cdae8bb38f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/run.mjs",
+      "bytes": 3176,
+      "sha256": "45f151b3e1c6a33ec66d0540c5ee03682c2d6b9a401d2a0e51e55d70566f65c8"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-storage-checks/verification.json",
+      "bytes": 1365,
+      "sha256": "be2c388e5673da18407e559513d39294a1c2ef048eb81158b8268ae6454da0cc"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-after.json",
+      "bytes": 27499,
+      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-before.json",
+      "bytes": 27499,
+      "sha256": "d88f44f59f889112b090e322d102951d197f64f93f808c4c6f0b2a8b54413d45"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.json",
+      "bytes": 71698,
+      "sha256": "c2e39065f94282fcddfefa1a4771181a0c8d88dfb2640e302df12db82ce537c1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-unit.log",
+      "bytes": 110,
+      "sha256": "81706a1fcb9b7a65916a9e558ef3977e1126c7ff9780486e9dea5f952059745f"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/first-verification.json",
+      "bytes": 379,
+      "sha256": "d044bc577dab090ee3e0637d1701bc8a3d492630871bbd9cd95bc05a7144cc5d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck-exit.json",
+      "bytes": 16,
+      "sha256": "420d0b86662fc0dc3d1e287aaca3ac7117756ff7ce8b6b72238d3f92e9a4a48b"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.json",
+      "bytes": 8585,
+      "sha256": "8e5cb9a995c25b26fc59b56d97de12346b7425e5ac4ce2ee47b44d6898bf54e2"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/fixture-recheck.log",
+      "bytes": 116,
+      "sha256": "f1502b72e75d3082e78b22dd06ec880642842285c04a2e827c563d94a08ee22d"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/fine-foundation-checks/run.mjs",
+      "bytes": 2529,
+      "sha256": "59287e80a2ff4c2131950a23d63494487d8e58663e6f9509f22df19e52117ac1"
+    },
+    {
+      "path": "docs/evidence/ph06-fine-coast-2026-09-27/preview6-provenance.json",
+      "bytes": 3858,
+      "sha256": "290b896df99c08ea9bd4443a6e0b62112f7c8be093b3e12707d98335f9eb410e"
+    }
+  ]
+}

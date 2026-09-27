@@ -315,6 +315,7 @@ export class AtlasRenderer {
   }
   /** Returns only after submitting the committed state and a frame opportunity. */
   async accept(data: AtlasGeographyView, delta?: AtlasRenderDelta) {
+    if (data.manifest.version === 4) throw new Error('第四版细海岸显示后端尚未接通，未使用旧地块画面替代。');
     this.assertReady();
     if (this.displayBusy()) throw new Error('地图画面仍在接收，请等待本次结果。');
     if (delta && this.displaySource === 'generation-preview') throw new Error('生成预览只能通过完整持久结果确认，请先确认或取消预览。');
@@ -366,6 +367,7 @@ export class AtlasRenderer {
   /** Display a verified owned candidate without changing the durable baseline.
    * The bridge/Worker still own recipe, lock, root and confirmation validation. */
   async showGenerationPreview(data: AtlasGeographyView) {
+    if (data.manifest.version === 4) throw new Error('第四版细海岸预览显示尚未接通。');
     this.assertReady();
     if (this.displayBusy()) throw new Error('地图画面仍在接收，请等待本次结果。');
     const committed = this.committed;

@@ -34,7 +34,7 @@ beforeAll(async () => {
   }
   await refresh(inhabited, changed);
 }, 60000);
-const resultView = (base: AtlasGenerationDocument, result: IslandOutput) => ({ manifest: base.manifest, blocks: result.blocks });
+const resultView = (base: AtlasGenerationDocument, result: IslandOutput) => ({ ...base, blocks: result.blocks });
 function newLandIds(base: AtlasGenerationDocument, result: IslandOutput) {
   const ids: number[] = [], view = resultView(base, result), size = base.manifest.spec.columns;
   for (let id = 0; id < size * size; id++) if (elevationAt(base, id) < 0 && elevationAt(view, id) >= 0) ids.push(id);

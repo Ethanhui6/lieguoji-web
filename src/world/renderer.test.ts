@@ -695,7 +695,7 @@ class ResizeObserverDouble {
 }
 
 let source: AtlasDraftData;
-let generationSource: AtlasGenerationDocument;
+let generationSource: AtlasGenerationDocument<2>;
 let generationSourceDigest: string;
 let largeSource: AtlasDraftData;
 let largeSourceDigest: string;

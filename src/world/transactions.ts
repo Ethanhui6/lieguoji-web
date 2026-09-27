@@ -1,3 +1,6 @@
+import { cloneDetailCoastTile, encodeDetailCoastTile } from './detail-coast-codec';
+import type { DetailCoastKey } from './detail-coast-types';
+import { isDetailCoastDocument } from './generation-format';
 import {
   cloneBlock, encodeBlock, getCellLayerSlot, getVertexSlot, hashBlock,
   UNASSIGNED, validateBlock, yieldAtlas,
@@ -215,6 +218,11 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
   get head() { return { draftId: this.#data.manifest.draftId, revision: this.#data.manifest.revision, rootDigest: this.#rootDigest, manifestDigest: this.#manifestDigest, undoCount: this.#undo.length }; }
   get metadata(): Pick<AtlasManifest, 'atlasId' | 'name'> { return { atlasId: this.#data.manifest.atlasId, name: this.#data.manifest.name }; }
   readLocks() { return 'locks' in this.#data ? [...this.#data.locks.values()].map(lock => structuredClone(lock)) : []; }
+  readDetailCoast(keys: readonly DetailCoastKey[]) {
+    const data = this.#data;
+    if (!isDetailCoastDocument(data) || keys.length > 16 || new Set(keys).size !== keys.length) throw new Error('细海岸读取需要第四版和不超过16个独立块。');
+    return keys.map(key => { const tile = data.detailCoast.get(key); if (!tile) throw new Error('细海岸引用缺失。'); return cloneDetailCoastTile(tile); });
+  }
   snapshot() { return cloneAtlasDocument(this.#data); }
   async snapshotAsync(control?: AtlasEditControl): Promise<T> {
     abort(control);
@@ -228,6 +236,7 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
     return keys.map(key => { const block = this.#data.blocks.get(key); if (!block) throw new Error('请求的数据块不存在。'); return cloneBlock(block); });
   }
   async prepare(raw: AtlasEditCommand, control?: AtlasEditControl): Promise<PreparedAtlasEdit> {
+    if (this.#data.manifest.version === 4) throw new Error('第四版细海岸编辑需要完整候选，旧局部增量不支持；原图保持不变。');
     const started = performance.now();
     if (!validateAtlasEdit(raw)) throw new Error('编辑字段、类型或局部范围无效。');
     // Copy before the first await; later caller mutations cannot alter the candidate.
@@ -406,10 +415,10 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
       if (mode === 'constraints') assertAtlasConstraintsOnly(source, data); else assertAtlasLocksPreserved(source, data);
       let retainedBytes = 0;
       if (!undo) {
-        const blocks = [...source.blocks.values()], locks = 'locks' in source ? [...source.locks.values()] : [], total = 1 + blocks.length + locks.length;
+        const blocks = [...source.blocks.values()], locks = 'locks' in source ? [...source.locks.values()] : [], detailCoast = isDetailCoastDocument(source) ? [...source.detailCoast.values()] : [], total = 1 + blocks.length + locks.length + detailCoast.length;
         for (let index = 0; index < total; index++) {
           checkSource();
-          retainedBytes += index === 0 ? encodeAtlasManifest(base).length : index <= blocks.length ? encodeBlock(blocks[index - 1]).length : encodeAtlasCellLockBlock(locks[index - blocks.length - 1]).length;
+          retainedBytes += index === 0 ? encodeAtlasManifest(base).length : index <= blocks.length ? encodeBlock(blocks[index - 1]).length : index <= blocks.length + locks.length ? encodeAtlasCellLockBlock(locks[index - blocks.length - 1]).length : encodeDetailCoastTile(detailCoast[index - blocks.length - locks.length - 1]).length;
           // Count actual canonical encodings, including manifest and locks.
           // Yield completed work before another whole-document copy can start.
           if ((index + 1) % 8 === 0 || index + 1 === total) {

@@ -92,7 +92,7 @@ export async function inspectShapeOutput(base: AtlasGenerationDocument, blocks: 
     if (++checked % 16 === 0) await yieldAtlas(control, '核验手绘地形保留层', checked, base.blocks.size);
   }
   const before = await measureGeography(base, control, '读取手绘原图实际地理');
-  const after = await measureGeography({ manifest: base.manifest, blocks }, control, '独立量测手绘结果真实面积');
+  const after = await measureGeography({ ...base, blocks }, control, '独立量测手绘结果真实面积');
   const flags = await lockedCells(base, control), total = before.elevation.length, batch = batchSize(control), box = envelope(recipe);
   let changedCellCount = 0, landAreaQ2 = 0, newLandCellCount = 0, affectedSeaCellCount = 0, minElevationMeters = 12000, maxElevationMeters = -12000;
   for (let start = 0; start < total; start += batch) {
@@ -124,6 +124,7 @@ export async function inspectShapeOutput(base: AtlasGenerationDocument, blocks: 
  * distance bounds every coastal change; neither a random cell fill nor a
  * rebuilt whole-world seed can replace the user's bays and peninsulas. */
 export async function generateShape(input: ShapeInput, control?: GenerationControl): Promise<ShapeOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!generationExact(input, ['base', 'recipe']) || !validateShapeRecipe(input.recipe, input.base?.manifest?.spec)) throw new Error('手绘轮廓或地形参数无效；需要地图内不自交的闭合轮廓和有效地形配方。');
   const recipe = structuredClone(input.recipe), batch = batchSize(control);

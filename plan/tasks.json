@@ -792,7 +792,9 @@
             "docs/evidence/2026-09-27-ph06-coastal-surface.md",
             "docs/evidence/ph06-coastal-surface-2026-09-27/verification.json",
             "docs/evidence/2026-09-27-ph06-zoom-and-completion.md",
-            "docs/evidence/ph06-zoom-density-2026-09-27/verification.json"
+            "docs/evidence/ph06-zoom-density-2026-09-27/verification.json",
+            "docs/evidence/2026-09-27-ph06-fine-foundation.md",
+            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json"
           ]
         },
         {
@@ -805,7 +807,9 @@
             "docs/evidence/playtest-2026-09-24/local-build.json",
             "docs/evidence/playtest-2026-09-24/browser/verification.json",
             "docs/evidence/2026-09-27-ph06-zoom-and-completion.md",
-            "docs/evidence/ph06-zoom-density-2026-09-27/verification.json"
+            "docs/evidence/ph06-zoom-density-2026-09-27/verification.json",
+            "docs/evidence/2026-09-27-ph06-fine-foundation.md",
+            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json"
           ]
         }
       ],

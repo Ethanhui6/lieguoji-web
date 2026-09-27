@@ -28,7 +28,7 @@ beforeAll(async () => {
   }
   await refresh(continent, changed);
 });
-const view = (base: AtlasGenerationDocument, result: OceanOutput) => ({ manifest: base.manifest, blocks: result.blocks });
+const view = (base: AtlasGenerationDocument, result: OceanOutput) => ({ ...base, blocks: result.blocks });
 async function withLocks(data: AtlasGenerationDocument, ids: { id: number; flag: number }[]) {
   const result = cloneAtlasDocument(data), size = result.manifest.spec.columns;
   for (const { id, flag } of ids) {
@@ -67,7 +67,7 @@ describe('PH06 real editable ocean basins, shelf and enclosed-water protection',
 
   it('uses actual boundary-connected sea, preserves closed inland water and old land, and ramps from exact shore to deep sea', async () => {
     const before = cloneAtlasDocument(continent), output = await generateOcean({ base: continent, recipe: recipe({ reliefMeters: 0 }) }, fast), final = view(continent, output);
-    const originalOcean = independentlyConnectedOcean({ manifest: continent.manifest, blocks: continent.blocks });
+    const originalOcean = independentlyConnectedOcean(continent);
     expect(independentlyConnectedOcean(final)).toEqual(originalOcean); let landArea = 0, changed = 0;
     for (let id = 0; id < 128 ** 2; id++) {
       const old = elevationAt(continent, id), height = elevationAt(final, id), shore = originalOcean.has(id) && cellNeighbors(continent.manifest.spec, id).some(next => elevationAt(continent, next) >= 0);

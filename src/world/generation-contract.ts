@@ -1,9 +1,11 @@
-import type { AtlasBlock, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, AtlasSurfaceContract, BlockKey } from './model';
+import type { AtlasBlock, AtlasDetailCoastManifest, AtlasDetailCoastSurfaceContract, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, AtlasSurfaceContract, BlockKey } from './model';
+import type { DetailCoastKey, DetailCoastTile } from './detail-coast-types';
 import { ATLAS_COORDINATE_SCALE, ATLAS_WORLD_UNITS, validateSpec } from './model';
 import { COAST_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { isStoredGeneratorFingerprint } from './generation-history';
 
-export type AtlasFormat = 1 | 2 | 3;
+export type AtlasFormat = 1 | 2 | 3 | 4;
+export type { AtlasDetailCoastManifest, AtlasDetailCoastSurfaceContract } from './model';
 export type LockKey = `lock:${number}:${number}`;
 export interface AtlasCellLockBlock {
   format: 'lieguoji-atlas-cell-locks'; version: 1; bx: number; by: number; flags: Uint8Array;
@@ -72,15 +74,42 @@ export interface AtlasDraftManifestV2 extends Omit<AtlasDraftManifest, 'version'
 export interface AtlasDraftManifestV3 extends Omit<AtlasDraftManifestV2, 'version'> {
   version: 3; surface: AtlasSurfaceContract;
 }
-export type AtlasGenerationManifest = AtlasDraftManifestV2 | AtlasDraftManifestV3;
-export interface AtlasGenerationDocument<F extends 2 | 3 = 2 | 3> {
-  manifest: F extends 2 ? AtlasDraftManifestV2 : AtlasDraftManifestV3; blocks: Map<BlockKey, AtlasBlock>; locks: Map<string, AtlasCellLockBlock>;
+export interface AtlasDraftManifestV4 extends Omit<AtlasDraftManifestV2, 'version' | 'origin' | 'generation'> {
+  version: 4; origin: null; surface: AtlasDetailCoastSurfaceContract; detailCoast: AtlasDetailCoastManifest;
+  // No registered detailed-field generator yet. Old recipes cannot relabel v4.
+  generation: { format: 'lieguoji-atlas-generation'; version: 1; lastApplied: null };
 }
+export type AtlasGenerationManifest = AtlasDraftManifestV2 | AtlasDraftManifestV3 | AtlasDraftManifestV4;
+export interface AtlasLegacyGenerationDocument<F extends 2 | 3 = 2 | 3> {
+  manifest: F extends 2 ? AtlasDraftManifestV2 : AtlasDraftManifestV3; blocks: Map<BlockKey, AtlasBlock>; locks: Map<string, AtlasCellLockBlock>;
+  detailCoast?: never;
+}
+export interface AtlasDetailCoastDocument {
+  manifest: AtlasDraftManifestV4; blocks: Map<BlockKey, AtlasBlock>; locks: Map<string, AtlasCellLockBlock>;
+  detailCoast: Map<DetailCoastKey, DetailCoastTile>;
+}
+export type AtlasGenerationDocument<F extends 2 | 3 | 4 = 2 | 3 | 4> =
+  ([Extract<F, 2 | 3>] extends [never] ? never : AtlasLegacyGenerationDocument<Extract<F, 2 | 3>>)
+  | (4 extends F ? AtlasDetailCoastDocument : never);
 export type AtlasDocument = AtlasDraftData | AtlasGenerationDocument;
 export type AtlasManifest = AtlasDraftManifest | AtlasGenerationManifest;
-export type AtlasManifestFor<F extends AtlasFormat> = F extends 1 ? AtlasDraftManifest : F extends 2 ? AtlasDraftManifestV2 : AtlasDraftManifestV3;
+export type AtlasManifestFor<F extends AtlasFormat> = F extends 1 ? AtlasDraftManifest : F extends 2 ? AtlasDraftManifestV2 : F extends 3 ? AtlasDraftManifestV3 : AtlasDraftManifestV4;
 export function validateAtlasSurface(raw: unknown): raw is AtlasSurfaceContract {
   return generationExact(raw, ['kind', 'coordinateScale']) && raw.kind === 'land-mask-fan-v1' && raw.coordinateScale === 256;
+}
+export function validateAtlasDetailCoastSurface(raw: unknown): raw is AtlasDetailCoastSurfaceContract {
+  return generationExact(raw, ['kind', 'coordinateScale', 'stepWorld', 'tileCells']) && raw.kind === 'sparse-coast-field-v1'
+    && raw.coordinateScale === 256 && raw.stepWorld === 2 && raw.tileCells === 32;
+}
+export function validateAtlasDetailCoastManifest(raw: unknown): raw is AtlasDetailCoastManifest {
+  if (!generationExact(raw, ['format', 'version', 'codec', 'refs']) || raw.format !== 'lieguoji-atlas-detail-coast' || raw.version !== 1
+    || raw.codec !== 'signed-distance-q8-v1' || !generationArray(raw.refs) || raw.refs.length > 4096) return false;
+  let previous = -1;
+  for (const ref of raw.refs) {
+    if (!generationExact(ref, ['bx', 'by', 'hash']) || !generationInt(ref.bx, 0, 63) || !generationInt(ref.by, 0, 63) || !generationHash(ref.hash)) return false;
+    const order = ref.by * 64 + ref.bx; if (order <= previous) return false; previous = order;
+  }
+  return true;
 }
 export const generationHash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 export const generationInt = (value: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= min && value <= max;
@@ -212,7 +241,7 @@ export function encodeMacroRecipe(recipe: MacroRecipe): Uint8Array {
   return new TextEncoder().encode(generationCanonical(recipe));
 }
 export function validateCopyOrigin(raw: unknown): raw is AtlasCopyOrigin {
-  return generationExact(raw, ['format', 'version', 'sourceFormat', 'sourceDraftId', 'sourceSlot', 'sourceManifestDigest', 'sourceManifestRevision', 'observedRootDigest']) && raw.format === 'lieguoji-atlas-copy-origin' && raw.version === 1 && (raw.sourceFormat === 1 || raw.sourceFormat === 2 || raw.sourceFormat === 3) && typeof raw.sourceDraftId === 'string' && /^atlas-[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(raw.sourceDraftId) && (raw.sourceSlot === 'current' || raw.sourceSlot === 'backup') && generationHash(raw.sourceManifestDigest) && generationInt(raw.sourceManifestRevision) && generationHash(raw.observedRootDigest);
+  return generationExact(raw, ['format', 'version', 'sourceFormat', 'sourceDraftId', 'sourceSlot', 'sourceManifestDigest', 'sourceManifestRevision', 'observedRootDigest']) && raw.format === 'lieguoji-atlas-copy-origin' && raw.version === 1 && (raw.sourceFormat === 1 || raw.sourceFormat === 2 || raw.sourceFormat === 3 || raw.sourceFormat === 4) && typeof raw.sourceDraftId === 'string' && /^atlas-[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(raw.sourceDraftId) && (raw.sourceSlot === 'current' || raw.sourceSlot === 'backup') && generationHash(raw.sourceManifestDigest) && generationInt(raw.sourceManifestRevision) && generationHash(raw.observedRootDigest);
 }
 export function validateAtlasConstraints(raw: unknown, spec?: AtlasGridSpec): raw is AtlasConstraints {
   if (!generationExact(raw, ['format', 'version', 'lockCodec', 'lockRefs']) || raw.format !== 'lieguoji-atlas-constraints' || raw.version !== 1 || raw.lockCodec !== 'cell-lock-mask-v1' || !generationArray(raw.lockRefs)) return false;

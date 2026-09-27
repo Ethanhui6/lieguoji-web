@@ -1,0 +1,21 @@
+Isolated correctness harness: http://127.0.0.1:60279/.autopilot/ph06/detail-shader-checks/harness.html
+{
+  "passed": true,
+  "patterns": 0,
+  "probes": 103,
+  "maxHeightError": 0.0024232509786088485,
+  "failures": [],
+  "gpu": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shaderVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "renderer": "WebKit WebGL",
+    "vendor": "WebKit",
+    "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "unmaskedVendor": "Google Inc. (Google)"
+  },
+  "pixi": {
+    "sourcePixels": 4278690,
+    "borrowedSourcesSurviveShaderDestroy": true
+  },
+  "sourceStable": true
+}

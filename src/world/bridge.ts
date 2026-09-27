@@ -1,4 +1,6 @@
-import { cloneVerifiedAtlasDocument, decodeAtlasManifest, hashAtlasManifest, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
+import { cloneDetailCoastTile, decodeDetailCoastTile, hashDetailCoastTile } from './detail-coast-codec';
+import { detailCoastKey, type DetailCoastKey, type DetailCoastTile } from './detail-coast-types';
+import { cloneVerifiedAtlasDocument, decodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
 import { decodeAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, atlasCellLockFlags, assertAtlasConstraintsOnly } from './generation-locks';
 import { constraintsPreviewDigest, type ConstraintsPreviewInfo } from './constraints-session';
 import { generationRecipeDigest, generationScopeDigest, generationLockDigest, generationPreviewDigest, type GenerationPreviewInfo } from './generation-session';
@@ -12,7 +14,7 @@ import type { AtlasCommitReceipt, AtlasStoredRoot } from './storage-types';
 import { decodeAtlasPacket, encodeAtlasPacket, readAtlasComputation, type AtlasClientView, type AtlasComputationObservation, type AtlasDraftList, type AtlasEditResult, type AtlasHead, type AtlasMetrics, type AtlasOperation, type AtlasPacket, type AtlasPreview, type AtlasProgress, type AtlasStateHeader, type AtlasPreviewHeader, type AtlasGenerationPreview, type AtlasConstraintsPreview, type AtlasConstraintsHeader } from './protocol';
 
 type Result = AtlasConstraintsPreview | AtlasGenerationPreview | AtlasClientView | AtlasEditResult | AtlasPreview | AtlasDraftList | AtlasCommitReceipt | null;
-type Init = { header: AtlasStateHeader | AtlasPreviewHeader | AtlasConstraintsHeader; bytes: Uint8Array; offset: number; manifest?: AtlasManifest; blocks: AtlasDocument['blocks']; locks: Map<string, AtlasCellLockBlock> };
+type Init = { header: AtlasStateHeader | AtlasPreviewHeader | AtlasConstraintsHeader; bytes: Uint8Array; offset: number; manifest?: AtlasManifest; blocks: AtlasDocument['blocks']; locks: Map<string, AtlasCellLockBlock>; detailCoast: Map<DetailCoastKey, DetailCoastTile> };
 type Pending = {
   id: number; operation: AtlasOperation; started: number; requestBytes: number; responseBytes: number; largestPacketBytes: number;
   verificationMs: number; sequence: number; timer: ReturnType<typeof setTimeout>;
@@ -127,8 +129,8 @@ export class AtlasClient {
   async preview(patch: AtlasPatch, reason: string) { return this.request<AtlasPreview>({ type: 'preview' }, this.editCommand(patch, reason)); }
   async edit(patch: AtlasPatch, reason: string, expected?: { revision: number; rootDigest: string }) { return this.request<AtlasEditResult>({ type: 'edit' }, this.editCommand(patch, reason, expected)); }
   private async checkRoot(raw: unknown): Promise<AtlasStoredRoot> {
-    if (!object(raw) || !['atlas-draft-v1', 'atlas-draft-v2', 'atlas-draft-v3'].includes(String(raw.domain))) throw new Error('持久根领域未知，未读取其他格式。');
-    const database = getAtlasStorage(raw.domain === 'atlas-draft-v3' ? 3 : raw.domain === 'atlas-draft-v2' ? 2 : 1);
+    if (!object(raw) || !['atlas-draft-v1', 'atlas-draft-v2', 'atlas-draft-v3', 'atlas-draft-v4'].includes(String(raw.domain))) throw new Error('持久根领域未知，未读取其他格式。');
+    const database = getAtlasStorage(raw.domain === 'atlas-draft-v4' ? 4 : raw.domain === 'atlas-draft-v3' ? 3 : raw.domain === 'atlas-draft-v2' ? 2 : 1);
     if (!database.validateAtlasRoot(raw) || await database.hashAtlasRoot(raw) !== raw.rootDigest) throw new Error('持久根格式或完整摘要无效。');
     return structuredClone(raw);
   }
@@ -148,8 +150,8 @@ export class AtlasClient {
       ...(pending.computation ? { computation: pending.computation } : {}) };
   }
   private async receivedDocument(init: Init, pending: Pending): Promise<AtlasDocument> {
-    if (!init.manifest || init.offset !== init.bytes.length || init.blocks.size !== init.header.blockCount || init.locks.size !== (init.header.lockCount ?? 0)) throw new Error('地图内容尚未接收完整。');
-    const data: AtlasDocument = init.manifest.version !== 1 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks } : { manifest: init.manifest, blocks: init.blocks };
+    if (!init.manifest || init.offset !== init.bytes.length || init.blocks.size !== init.header.blockCount || init.locks.size !== (init.header.lockCount ?? 0) || init.detailCoast.size !== (init.header.detailCoastCount ?? 0)) throw new Error('地图内容尚未接收完整。');
+    const data: AtlasDocument = init.manifest.version === 4 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks, detailCoast: init.detailCoast } : init.manifest.version !== 1 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks } : { manifest: init.manifest, blocks: init.blocks };
     await verifyAtlasDocument(data, { onProgress: progress => { if (this.fatal || this.pending !== pending) throw this.fatal ?? new Error('地图接收已终止。'); this.options.onProgress?.({ ...progress, stage: '接收端' + progress.stage }); } }); return data;
   }
   private async checkGenerationBinding(p: GenerationPreviewInfo, op: Extract<AtlasOperation, { type: 'generation-preview' }>, data?: AtlasDocument) {
@@ -196,10 +198,10 @@ export class AtlasClient {
       else { clearTimeout(pending.timer); this.pending = undefined; pending.reject(error); }
       return;
     }
-    if (['begin', 'manifest', 'block', 'lock', 'delta'].includes(header.type)) {
+    if (['begin', 'manifest', 'block', 'lock', 'detail-coast', 'delta'].includes(header.type)) {
       if (header.sequence !== pending.sequence++) throw new Error('草稿分片顺序或身份不符。');
       if (header.type === 'begin') {
-        if (!object(body) || pending.init || pending.nextData || !Number.isSafeInteger(body.manifestLength) || (body.manifestLength as number) <= 0 || (body.manifestLength as number) > 16 * 1024 * 1024 || !Number.isSafeInteger(body.blockCount) || (body.blockCount as number) < 1 || (body.blockCount as number) > 1024 || body.lockCount !== undefined && (!Number.isSafeInteger(body.lockCount) || (body.lockCount as number) < 0 || (body.lockCount as number) > 256)) throw new Error('草稿初始化头无效。');
+        if (!object(body) || pending.init || pending.nextData || !Number.isSafeInteger(body.manifestLength) || (body.manifestLength as number) <= 0 || (body.manifestLength as number) > 16 * 1024 * 1024 || !Number.isSafeInteger(body.blockCount) || (body.blockCount as number) < 1 || (body.blockCount as number) > 1024 || body.lockCount !== undefined && (!Number.isSafeInteger(body.lockCount) || (body.lockCount as number) < 0 || (body.lockCount as number) > 256) || body.detailCoastCount !== undefined && (!Number.isSafeInteger(body.detailCoastCount) || (body.detailCoastCount as number) < 0 || (body.detailCoastCount as number) > 4096)) throw new Error('草稿初始化头无效。');
         let stateHeader: Init['header'];
         if (body.kind === 'generation-preview') {
           if (pending.operation.type !== 'generation-preview' || !object(body.preview) || body.lockCount === undefined) throw new Error('生成预览头与请求不符。');
@@ -219,15 +221,17 @@ export class AtlasClient {
           if (op.type === 'constraints-confirm' && (!this.verifiedConstraints || root.lastCommitId !== op.commandId || root.currentManifest !== this.verifiedConstraints.manifestDigest || root.backupManifest !== this.verifiedHead?.manifestDigest)) throw new Error('持久结果未绑定已显示的区域锁候选。');
           stateHeader = { kind: 'durable', head, root, manifestLength: body.manifestLength as number, blockCount: body.blockCount as number, lockCount: (body.lockCount as number | undefined) ?? 0 };
         }
-        pending.init = { header: stateHeader, bytes: new Uint8Array(stateHeader.manifestLength), offset: 0, blocks: new Map(), locks: new Map() };
+        if (body.detailCoastCount !== undefined) stateHeader.detailCoastCount = body.detailCoastCount as number;
+        pending.init = { header: stateHeader, bytes: new Uint8Array(stateHeader.manifestLength), offset: 0, blocks: new Map(), locks: new Map(), detailCoast: new Map() };
       } else if (header.type === 'manifest') {
         const init = pending.init;
         if (!init || init.manifest || !object(body) || body.offset !== init.offset || payload.length === 0 || init.offset + payload.length > init.bytes.length) throw new Error('草稿manifest分片缺失、重复或越界。');
         init.bytes.set(payload, init.offset); init.offset += payload.length;
         if (init.offset === init.bytes.length) {
           init.manifest = decodeAtlasManifest(init.bytes);
-          const requiredFormat = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' ? this.format : init.header.root.domain === 'atlas-draft-v3' ? 3 : init.header.root.domain === 'atlas-draft-v2' ? 2 : 1;
+          const requiredFormat = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' ? this.format : init.header.root.domain === 'atlas-draft-v4' ? 4 : init.header.root.domain === 'atlas-draft-v3' ? 3 : init.header.root.domain === 'atlas-draft-v2' ? 2 : 1;
           if (init.manifest.version !== requiredFormat) throw new Error('地图版本与持久领域或预览来源不符。');
+          if (init.manifest.version === 4 ? init.header.detailCoastCount !== init.manifest.detailCoast.refs.length : init.header.detailCoastCount !== undefined) throw new Error('细海岸条目数与格式合同不符。');
           const expected = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' ? { ...this.verifiedHead!, revision: init.header.preview.revision, manifestDigest: init.header.preview.manifestDigest } : init.header.head;
           if (await hashAtlasManifest(init.manifest) !== expected.manifestDigest || init.manifest.draftId !== expected.draftId || init.manifest.atlasId !== expected.atlasId || init.manifest.name !== expected.name || init.manifest.revision !== expected.revision || init.manifest.blockRefs.length !== init.header.blockCount || (init.manifest.version !== 1 ? init.manifest.constraints.lockRefs.length : 0) !== (init.header.lockCount ?? 0)) throw new Error('草稿manifest与已核验来源不符。');
         }
@@ -243,8 +247,14 @@ export class AtlasClient {
         const ref = init.manifest.constraints.lockRefs[init.locks.size], lock = decodeAtlasCellLockBlock(payload, init.manifest.spec);
         if (!ref || body.key !== lockKey(ref.bx, ref.by) || lock.bx !== ref.bx || lock.by !== ref.by || await hashAtlasCellLockBlock(lock) !== ref.hash) throw new Error('锁附件身份或摘要无效。');
         init.locks.set(body.key as string, lock);
+      } else if (header.type === 'detail-coast') {
+        const init = pending.init;
+        if (!init?.manifest || init.manifest.version !== 4 || init.blocks.size !== init.header.blockCount || init.locks.size !== (init.header.lockCount ?? 0) || !object(body) || body.index !== init.detailCoast.size) throw new Error('细海岸分片顺序或格式无效。');
+        const ref = init.manifest.detailCoast.refs[init.detailCoast.size], tile = decodeDetailCoastTile(payload);
+        if (!ref || body.key !== detailCoastKey(ref.bx, ref.by) || tile.bx !== ref.bx || tile.by !== ref.by || await hashDetailCoastTile(tile) !== ref.hash || init.detailCoast.has(body.key as DetailCoastKey)) throw new Error('细海岸分片身份或完整摘要不符。');
+        init.detailCoast.set(body.key as DetailCoastKey, tile);
       } else {
-        if (!['edit', 'undo'].includes(pending.operation.type) || !this.verified || !this.verifiedHead || pending.init || pending.delta || !object(body)) throw new Error('增量缺少已核验基线。');
+        if (!['edit', 'undo'].includes(pending.operation.type) || this.verified?.manifest.version === 4 || !this.verified || !this.verifiedHead || pending.init || pending.delta || !object(body)) throw new Error('增量缺少已核验基线。');
         const delta = decodeAtlasEditMessage(payload); if (delta.format !== 'lieguoji-atlas-delta') throw new Error('成功响应不是编辑增量。');
         const root = await this.checkRoot(body.root), head = this.checkHead(body.head, root);
         if (root.domain !== `atlas-draft-v${this.verified.manifest.version}` || root.lastCommitId !== delta.commandId || root.rootDigest !== delta.rootDigest || root.currentManifest !== delta.manifestDigest || root.backupManifest !== this.verifiedHead.manifestDigest || head.readOnly
@@ -321,8 +331,20 @@ export class AtlasClient {
           if (this.fatal || this.pending !== pending) return;
         }
       }
+      const detailCoast = new Map<DetailCoastKey, DetailCoastTile>();
+      if (isDetailCoastDocument(pending.nextData)) {
+        let count = 0;
+        for (const [key, tile] of pending.nextData.detailCoast) {
+          detailCoast.set(key, cloneDetailCoastTile(tile)); count++;
+          if (count % 16 === 0 || count === pending.nextData.detailCoast.size) {
+            this.options.onProgress?.({ stage: '创建独立细海岸视图', completed: count, total: pending.nextData.detailCoast.size });
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+            if (this.fatal || this.pending !== pending) return;
+          }
+        }
+      }
       this.verified = pending.nextData; this.verifiedHead = structuredClone(head);
-      this.view = { data: { ...this.verified, manifest: structuredClone(this.verified.manifest), blocks, ...(isGenerationDocument(this.verified) ? { locks: structuredClone(this.verified.locks) } : {}) } as AtlasDocument, head: structuredClone(head), metrics: this.metrics(pending, body.metrics) };
+      this.view = { data: { ...this.verified, manifest: structuredClone(this.verified.manifest), blocks, ...(isGenerationDocument(this.verified) ? { locks: structuredClone(this.verified.locks) } : {}), ...(isDetailCoastDocument(this.verified) ? { detailCoast } : {}) } as AtlasDocument, head: structuredClone(head), metrics: this.metrics(pending, body.metrics) };
       this.format = this.verified.manifest.version; this.generationPreview = null; this.verifiedGeneration = null;
       this.constraintsPreview = null; this.verifiedConstraints = null;
       result = this.view;

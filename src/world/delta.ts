@@ -6,6 +6,7 @@ import { validateAtlasDelta, type AtlasEditDelta } from './transactions';
 
 /** Verified receive state only: copy changed blocks, independently hash every delta. */
 export async function applyAtlasDelta<T extends AtlasDocument>(base: T, baseRootDigest: string, delta: AtlasEditDelta): Promise<T> {
+  if (base.manifest.version === 4) throw new Error('第四版不接受旧局部增量，细海岸需完整候选。');
   if (!validateAtlasDelta(delta) || delta.draftId !== base.manifest.draftId || delta.baseRevision !== base.manifest.revision || delta.baseRootDigest !== baseRootDigest) throw new Error('增量与当前草稿基线不一致。');
   const next = { ...base, manifest: structuredClone(base.manifest), blocks: new Map(base.blocks) } as T, dirty = new Set<BlockKey>();
   const copy = (key: BlockKey) => { if (!dirty.has(key)) { next.blocks.set(key, cloneBlock(base.blocks.get(key)!)); dirty.add(key); } };

@@ -43,6 +43,7 @@ export function validateCoastParameters(raw: unknown): raw is CoastParameters {
  * ambiguous junctions remain hard constraints; clipped coasts may not improve.
  * The caller must supply its verified, exclusively owned immutable baseline. */
 export async function generateCoast(input: CoastInput, control?: CoastControl): Promise<CoastOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!validateCoastParameters(input.parameters)) throw new Error('海岸平滑参数无效：强度须为100—1000‰，轮数须为1—4。');
   if (!generationEnvelope(input.base)) throw new Error('海岸平滑需要完整、已核验的第二版草稿与已知锁。');
@@ -103,7 +104,7 @@ export async function generateCoast(input: CoastInput, control?: CoastControl): 
     await pause('确认连续岸线与保守固定的交点', end, vertexTotal);
   }
   async function diagnostics(blocks: ReadonlyMap<BlockKey, AtlasBlock>) {
-    const data = { manifest: base.manifest, blocks }; let length = 0, energy = 0;
+    const data = { ...base, blocks }; let length = 0, energy = 0;
     for (let start = 0; start < edges.length; start += batch) {
       const end = Math.min(edges.length, start + batch);
       for (let index = start; index < end; index++) {
@@ -128,7 +129,7 @@ export async function generateCoast(input: CoastInput, control?: CoastControl): 
   let currentBlocks = new Map(base.blocks), iterationsApplied = 0, rejectedCandidates = 0;
   const stepDivisors: number[] = [];
   for (let iteration = 0; iteration < parameters.iterations; iteration++) {
-    const previous = { manifest: base.manifest, blocks: currentBlocks };
+    const previous = { ...base, blocks: currentBlocks };
     let stationary = false;
     // Nine complete candidates at most, including the full target. Failed
     // blocks never become the next round or escape into the returned candidate.
@@ -202,8 +203,8 @@ export async function generateCoast(input: CoastInput, control?: CoastControl): 
     if (changed) { blocks.set(key, next); changedKeys.push(key); }
     await pause('保留实际改变的私有海岸几何块', changedKeys.length, currentBlocks.size / 4);
   }
-  assertAtlasLocksPreserved(base, { manifest: base.manifest, blocks, locks: base.locks }, changedCells, changedVertices);
-  const final = await measureGeography({ manifest: base.manifest, blocks }, control, '独立核验平滑后的真实几何与面积');
+  assertAtlasLocksPreserved(base, { ...base, blocks }, changedCells, changedVertices);
+  const final = await measureGeography({ ...base, blocks }, control, '独立核验平滑后的真实几何与面积');
   const seen = new Uint8Array(total), queue = new Uint32Array(total);
   let landAreaQ2 = 0, majorComponentCount = 0, minElevationMeters = 12000, maxElevationMeters = -12000, visited = 0;
   for (let first = 0; first < total; first++) {

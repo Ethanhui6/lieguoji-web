@@ -1,0 +1,160 @@
+{
+  "inputs": {
+    "src/world/detail-coast-types.ts": {
+      "bytes": 4394,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/world/detail-coast-codec.ts": {
+      "bytes": 8040,
+      "imports": [
+        {
+          "path": "src/world/detail-coast-types.ts",
+          "kind": "import-statement",
+          "original": "./detail-coast-types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/world/detail-coast-field.ts": {
+      "bytes": 1689,
+      "imports": [
+        {
+          "path": "src/world/detail-coast-types.ts",
+          "kind": "import-statement",
+          "original": "./detail-coast-types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/world/detail-coast-geometry.ts": {
+      "bytes": 14666,
+      "imports": [
+        {
+          "path": "src/world/detail-coast-codec.ts",
+          "kind": "import-statement",
+          "original": "./detail-coast-codec"
+        },
+        {
+          "path": "src/world/detail-coast-field.ts",
+          "kind": "import-statement",
+          "original": "./detail-coast-field"
+        },
+        {
+          "path": "src/world/detail-coast-types.ts",
+          "kind": "import-statement",
+          "original": "./detail-coast-types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/world/generation/detail-shape-distance.ts": {
+      "bytes": 17258,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/world/generation/detail-shape-height.ts": {
+      "bytes": 2672,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/world/generation/seed.ts": {
+      "bytes": 3564,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/world/generation/detail-shape.ts": {
+      "bytes": 31690,
+      "imports": [
+        {
+          "path": "src/world/detail-coast-geometry.ts",
+          "kind": "import-statement",
+          "original": "../detail-coast-geometry"
+        },
+        {
+          "path": "src/world/detail-coast-types.ts",
+          "kind": "import-statement",
+          "original": "../detail-coast-types"
+        },
+        {
+          "path": "src/world/generation/detail-shape-distance.ts",
+          "kind": "import-statement",
+          "original": "./detail-shape-distance"
+        },
+        {
+          "path": "src/world/generation/detail-shape-height.ts",
+          "kind": "import-statement",
+          "original": "./detail-shape-height"
+        },
+        {
+          "path": "src/world/generation/seed.ts",
+          "kind": "import-statement",
+          "original": "./seed"
+        }
+      ],
+      "format": "esm"
+    },
+    "<stdin>": {
+      "bytes": 225,
+      "imports": [
+        {
+          "path": "src/world/generation/detail-shape.ts",
+          "kind": "import-statement",
+          "original": "./src/world/generation/detail-shape.ts"
+        },
+        {
+          "path": "src/world/detail-coast-codec.ts",
+          "kind": "import-statement",
+          "original": "./src/world/detail-coast-codec.ts"
+        },
+        {
+          "path": "src/world/detail-coast-geometry.ts",
+          "kind": "import-statement",
+          "original": "./src/world/detail-coast-geometry.ts"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    ".autopilot/ph06/detail-generator-checks/synthetic/kernel-bundle.mjs": {
+      "imports": [],
+      "exports": [
+        "encodeDetailCoastTile",
+        "generateDetailShape",
+        "pickDetailCoastSurface"
+      ],
+      "entryPoint": "<stdin>",
+      "inputs": {
+        "src/world/detail-coast-types.ts": {
+          "bytesInOutput": 1041
+        },
+        "src/world/detail-coast-codec.ts": {
+          "bytesInOutput": 3588
+        },
+        "src/world/detail-coast-field.ts": {
+          "bytesInOutput": 1121
+        },
+        "src/world/detail-coast-geometry.ts": {
+          "bytesInOutput": 8002
+        },
+        "src/world/generation/detail-shape-distance.ts": {
+          "bytesInOutput": 12825
+        },
+        "src/world/generation/detail-shape-height.ts": {
+          "bytesInOutput": 2165
+        },
+        "src/world/generation/seed.ts": {
+          "bytesInOutput": 1882
+        },
+        "src/world/generation/detail-shape.ts": {
+          "bytesInOutput": 28581
+        },
+        "<stdin>": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 59608
+    }
+  }
+}

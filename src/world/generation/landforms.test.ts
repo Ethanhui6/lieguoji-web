@@ -12,8 +12,8 @@ import { generateLandforms, validateLandformParameters, type LandformOutput, typ
 let base: AtlasGenerationDocument, manifestBytes: Uint8Array, blockBytes: Map<BlockKey, Uint8Array>;
 const parameters: LandformParameters = { seed: 'landforms-two-islands', mountainRanges: 2, basins: 2, reliefMeters: 2400 };
 const fast = { yieldTask: async () => undefined };
-const height = (data: Pick<AtlasGenerationDocument, 'manifest' | 'blocks'>, id: number) => { const slot = getCellLayerSlot(data, 'elevation', id); return slot.block.values[slot.slot]; };
-const view = (result: LandformOutput) => ({ manifest: base.manifest, blocks: result.blocks });
+const height = (data: AtlasGenerationDocument, id: number) => { const slot = getCellLayerSlot(data, 'elevation', id); return slot.block.values[slot.slot]; };
+const view = (result: LandformOutput) => ({ ...base, blocks: result.blocks });
 async function withLocks(ids: number[], flags: number) {
   const data = cloneAtlasDocument(base), locks = new Map<string, AtlasCellLockBlock>();
   for (const id of ids) {
@@ -93,7 +93,7 @@ describe('deterministic actual mountain ranges and land basins', () => {
     const ids = Array.from({ length: 128 * 128 }, (_, id) => id).filter(id => height(base, id) >= 0 && id % 3 === 0);
     const data = await withLocks(ids, LOCK_ELEVATION | LOCK_COAST), original = cloneAtlasDocument(data), result = await generateLandforms({ base: data, parameters }, fast);
     expect(result.summary.changedCellCount).toBeGreaterThan(100);
-    for (const id of ids) expect(height({ manifest: data.manifest, blocks: result.blocks }, id)).toBe(height(data, id));
+    for (const id of ids) expect(height({ ...data, blocks: result.blocks }, id)).toBe(height(data, id));
     expect(data).toEqual(original); expect(result.summary.majorComponentCount).toBe(2);
     for (const [key, block] of data.blocks) if (block.layer !== 'elevation') expect(result.blocks.get(key)).toBe(block);
   });
@@ -101,7 +101,7 @@ describe('deterministic actual mountain ranges and land basins', () => {
   it('permits relief changes under coast-only locks and rejects impossible all-height-locked requests without modifying input', async () => {
     const ids = Array.from({ length: 128 * 128 }, (_, id) => id).filter(id => height(base, id) >= 0), coast = await withLocks(ids, LOCK_COAST);
     const result = await generateLandforms({ base: coast, parameters }, fast); expect(result.summary.changedCellCount).toBeGreaterThan(100);
-    for (const id of ids) expect(height({ manifest: coast.manifest, blocks: result.blocks }, id)).toBeGreaterThanOrEqual(0);
+    for (const id of ids) expect(height({ ...coast, blocks: result.blocks }, id)).toBeGreaterThanOrEqual(0);
     const locked = await withLocks(ids, LOCK_ELEVATION), original = cloneAtlasDocument(locked);
     await expect(generateLandforms({ base: locked, parameters }, fast)).rejects.toThrow('可修改区域'); expect(locked).toEqual(original);
   });
@@ -116,7 +116,7 @@ describe('deterministic actual mountain ranges and land basins', () => {
     const scope: GenerationScope = { kind: 'cell-rectangle', column: 20, row: 28, columns: 32, rows: 60, transitionCells: 4 };
     const locks = [38 * 128 + 28, 45 * 128 + 39, 60 * 128 + 40], data = await withLocks(locks, LOCK_ELEVATION | LOCK_COAST), saved = cloneAtlasDocument(data);
     const result = await generateLandforms({ base: data, parameters: { ...parameters, seed: 'scoped-ridge-and-basin', mountainRanges: 1, basins: 1 }, scope }, fast);
-    const actual = { manifest: data.manifest, blocks: result.blocks };
+    const actual = { ...data, blocks: result.blocks };
     const core = (id: number) => id % 128 >= 24 && id % 128 < 48 && Math.floor(id / 128) >= 32 && Math.floor(id / 128) < 84;
     expect(result.summary).toMatchObject({ mountainRanges: 1, basins: 1, majorComponentCount: 2 });
     expect(result.summary.changedCellCount).toBeGreaterThan(20);

@@ -1,4 +1,5 @@
 import { cellBlock, ownedVertexIds, validateLocalGeometry, validateVertexPositionQ, vertexSlotLocation } from './topology';
+import type { DetailCoastKey, DetailCoastTile } from './detail-coast-types';
 
 /** Production atlas draft format. Independent from experiment and legacy saves. */
 export const UNASSIGNED = 0xffffffff;
@@ -33,11 +34,21 @@ export interface AtlasDraftManifest {
 export interface AtlasDraftData { manifest: AtlasDraftManifest; blocks: Map<BlockKey, AtlasBlock> }
 /** Explicit, immutable coast interpretation. It does not add another data layer. */
 export interface AtlasSurfaceContract { kind: 'land-mask-fan-v1'; coordinateScale: 256 }
-/** Read-only geography projection, never a codec/version conversion. */
-export interface AtlasGeographyView {
-  readonly manifest: Omit<AtlasDraftManifest, 'version'> & ({ readonly version: 1 | 2; readonly surface?: never } | { readonly version: 3; readonly surface: AtlasSurfaceContract });
-  readonly blocks: ReadonlyMap<BlockKey, AtlasBlock>;
+export interface AtlasDetailCoastSurfaceContract { kind: 'sparse-coast-field-v1'; coordinateScale: 256; stepWorld: 2; tileCells: 32 }
+export interface AtlasDetailCoastManifest {
+  format: 'lieguoji-atlas-detail-coast'; version: 1; codec: 'signed-distance-q8-v1';
+  refs: { bx: number; by: number; hash: string }[];
 }
+/** Read-only geography projection, never a codec/version conversion. */
+export type AtlasGeographyView = {
+  readonly blocks: ReadonlyMap<BlockKey, AtlasBlock>;
+} & ({
+  readonly manifest: Omit<AtlasDraftManifest, 'version'> & ({ readonly version: 1 | 2; readonly surface?: never } | { readonly version: 3; readonly surface: AtlasSurfaceContract });
+  readonly detailCoast?: never;
+} | {
+  readonly manifest: Omit<AtlasDraftManifest, 'version'> & { readonly version: 4; readonly surface: AtlasDetailCoastSurfaceContract; readonly detailCoast: AtlasDetailCoastManifest };
+  readonly detailCoast: ReadonlyMap<DetailCoastKey, DetailCoastTile>;
+});
 export interface AtlasCreateOptions { size: AtlasSize; seed: string; name: string; draftId?: string; atlasId?: string }
 export interface AtlasControl {
   signal?: AbortSignal;
@@ -109,7 +120,7 @@ export function validateManifest(raw: unknown): raw is AtlasDraftManifest {
 /** Common fields only. Callers must separately validate the exact version envelope. */
 export function validateGeographyManifestFields(raw: unknown): raw is AtlasGeographyView['manifest'] {
   try {
-    if (!object(raw) || raw.format !== 'lieguoji-atlas-draft' || raw.version !== 1 && raw.version !== 2 && raw.version !== 3 || raw.kind !== 'draft' || typeof raw.draftId !== 'string' || !new RegExp(`^atlas-${UUID}$`).test(raw.draftId) || typeof raw.atlasId !== 'string' || !new RegExp(`^geo-${UUID}$`).test(raw.atlasId) || !label(raw.name) || !label(raw.seed) || !int(raw.revision, 0, Number.MAX_SAFE_INTEGER) || !validateSpec(raw.spec) || !validateCatalogs(raw.catalogs) || !array(raw.blockRefs)) return false;
+    if (!object(raw) || raw.format !== 'lieguoji-atlas-draft' || raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 || raw.kind !== 'draft' || typeof raw.draftId !== 'string' || !new RegExp(`^atlas-${UUID}$`).test(raw.draftId) || typeof raw.atlasId !== 'string' || !new RegExp(`^geo-${UUID}$`).test(raw.atlasId) || !label(raw.name) || !label(raw.seed) || !int(raw.revision, 0, Number.MAX_SAFE_INTEGER) || !validateSpec(raw.spec) || !validateCatalogs(raw.catalogs) || !array(raw.blockRefs)) return false;
     const across = raw.spec.columns / 32, total = across * across * ATLAS_LAYERS.length;
     if (raw.blockRefs.length !== total) return false;
     let cursor = 0;

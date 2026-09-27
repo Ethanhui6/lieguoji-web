@@ -1,0 +1,14 @@
+{
+  "command": "C:\\Program Files\\nodejs\\node.exe",
+  "args": [
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/world/detail-coast-storage.test.ts",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile=D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\detail-storage-checks\\quota-recheck\\results.json",
+    "-t",
+    "cancels a privately captured fine staging page before writes and counts its exact quota cost"
+  ],
+  "cwd": "D:\\游戏\\架空地图模拟器"
+}

@@ -94,7 +94,7 @@ export async function inspectIslandOutput(base: AtlasGenerationDocument, blocks:
     }
     if (++checked % 16 === 0) await yieldAtlas(control, '核验岛链保留层', checked, base.blocks.size);
   }
-  const before = await measureGeography(base, control, '独立读取岛链原地理'), after = await measureGeography({ manifest: base.manifest, blocks }, control, '独立读取岛链结果真实面积');
+  const before = await measureGeography(base, control, '独立读取岛链原地理'), after = await measureGeography({ ...base, blocks }, control, '独立读取岛链结果真实面积');
   const locked = await lockMask(base, control), total = before.elevation.length, batch = batchSize(control);
   let changedCellCount = 0, landAreaQ2 = 0, beforeLandAreaQ2 = 0, newLandAreaQ2 = 0, newLandCellCount = 0, minElevationMeters = 12000, maxElevationMeters = -12000;
   for (let start = 0; start < total; start += batch) {
@@ -127,6 +127,7 @@ export async function inspectIslandOutput(base: AtlasGenerationDocument, blocks:
  * skeletons. The 64-world-unit minimum is two coarse-grid steps; every island
  * still must independently contain at least four connected real quads. */
 export async function generateIslands(input: IslandInput, control?: IslandControl): Promise<IslandOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!generationExact(input, ['base', 'parameters']) || !validateIslandParameters(input.parameters)) throw new Error('岛链参数无效：1—3链，每链2—6岛，半径64—128，起伏200—3000米，种子1—120字符。');
   const parameters = structuredClone(input.parameters), batch = batchSize(control);

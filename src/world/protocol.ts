@@ -131,13 +131,13 @@ export type AtlasOperation = (
   | ({ type: 'constraints-confirm' } & GenerationConfirm)
   | { type: 'constraints-discard'; candidateId: string }) & { atlasFormat?: AtlasFormat };
 export interface AtlasPacket {
-  version: 1; id: number; type: 'request' | 'ack' | 'cancel' | 'progress' | 'begin' | 'manifest' | 'block' | 'lock' | 'delta' | 'complete' | 'timing' | 'error';
+  version: 1; id: number; type: 'request' | 'ack' | 'cancel' | 'progress' | 'begin' | 'manifest' | 'block' | 'lock' | 'detail-coast' | 'delta' | 'complete' | 'timing' | 'error';
   sequence?: number; body?: unknown;
 }
-export interface AtlasStateHeader { kind?: 'durable'; head: AtlasHead; root: AtlasStoredRoot; manifestLength: number; blockCount: number; lockCount?: number }
-export interface AtlasPreviewHeader { kind: 'generation-preview'; preview: GenerationPreviewInfo; manifestLength: number; blockCount: number; lockCount: number }
-export interface AtlasConstraintsHeader { kind: 'constraints-preview'; preview: ConstraintsPreviewInfo; manifestLength: number; blockCount: number; lockCount: number }
-const TYPES = new Set(['request', 'ack', 'cancel', 'progress', 'begin', 'manifest', 'block', 'lock', 'delta', 'complete', 'timing', 'error']);
+export interface AtlasStateHeader { kind?: 'durable'; head: AtlasHead; root: AtlasStoredRoot; manifestLength: number; blockCount: number; lockCount?: number; detailCoastCount?: number }
+export interface AtlasPreviewHeader { kind: 'generation-preview'; preview: GenerationPreviewInfo; manifestLength: number; blockCount: number; lockCount: number; detailCoastCount?: number }
+export interface AtlasConstraintsHeader { kind: 'constraints-preview'; preview: ConstraintsPreviewInfo; manifestLength: number; blockCount: number; lockCount: number; detailCoastCount?: number }
+const TYPES = new Set(['request', 'ack', 'cancel', 'progress', 'begin', 'manifest', 'block', 'lock', 'detail-coast', 'delta', 'complete', 'timing', 'error']);
 const encoder = new TextEncoder();
 
 /** Every postMessage carries exactly this byte array, so framing is counted. */

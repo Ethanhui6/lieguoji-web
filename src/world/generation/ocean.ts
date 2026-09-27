@@ -117,7 +117,7 @@ export async function inspectOceanOutput(base: AtlasGenerationDocument, blocks: 
     }
     if (++checked % 16 === 0) await yieldAtlas(control, '核验海床操作的地理保留层', checked, base.blocks.size);
   }
-  const before = await measureGeography(base, control, '独立读取原海陆实际地理'), after = await measureGeography({ manifest: base.manifest, blocks }, control, '独立量测海床结果实际面积');
+  const before = await measureGeography(base, control, '独立读取原海陆实际地理'), after = await measureGeography({ ...base, blocks }, control, '独立量测海床结果实际面积');
   const domain = await oceanDomain(base, after, recipe.parameters.shelfWidthWorld * 256, control), total = before.elevation.length, batch = batchSize(control);
   let changedCellCount = 0, protectedSeaCellCount = 0, shelfCellCount = 0, deepSeaCellCount = 0, landAreaQ2 = 0, minElevationMeters = 12000, maxElevationMeters = -12000, editableSea = 0;
   for (let start = 0; start < total; start += batch) {
@@ -147,6 +147,7 @@ export async function inspectOceanOutput(base: AtlasGenerationDocument, blocks: 
  * coastal ring stays exact; smoothstep reaches a seeded basin/ridge field at
  * the requested shelf width. No visual colour is part of the saved result. */
 export async function generateOcean(input: OceanInput, control?: GenerationControl): Promise<OceanOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!generationExact(input, ['base', 'recipe']) || !validateOceanRecipe(input.recipe, input.base?.manifest?.spec)) throw new Error('海床配方、真实地图规格或参数无效。');
   const recipe = structuredClone(input.recipe), batch = batchSize(control), base = await cloneVerifiedGenerationDocument(input.base, control);

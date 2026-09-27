@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-09-27T06:46:27.705Z",
+  "elapsedMs": 2454.8172,
+  "exitCode": 0,
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/world/detail-terrain-pages.test.ts",
+    "src/world/detail-terrain-shader.test.ts",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile=.autopilot/ph06/detail-shader-checks/cpu-first.json"
+  ]
+}

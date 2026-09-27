@@ -1,6 +1,8 @@
 import { blockKey, encodeBlock, getCellLayerSlot, getVertexSlot, validateSpec, type AtlasGridSpec } from './model';
 import { cellVertexIds, incidentCellIds } from './topology';
-import { generationCanonical, generationDigest, generationExact, generationInt, validateAtlasConstraints, validateAtlasSurface, type AtlasCellLockBlock, type AtlasConstraints, type AtlasDocument, type AtlasGenerationDocument, type LockKey } from './generation-contract';
+import { generationCanonical, generationDigest, generationExact, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, type AtlasCellLockBlock, type AtlasConstraints, type AtlasDocument, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type LockKey } from './generation-contract';
+import { encodeDetailCoastTile } from './detail-coast-codec';
+import { detailCoastKey } from './detail-coast-types';
 import { buildCoastalSurface } from './coastal-surface';
 import { assertCoastalCellProtection } from './coastal-generation';
 
@@ -64,11 +66,16 @@ export function atlasCoastalAffectedCellIds(spec: AtlasGridSpec, cellIds: Iterab
  * every actual geography byte and all non-constraint manifest fields fixed.
  * It does not authorize an ordinary geography edit to change any lock. */
 export function assertAtlasConstraintsOnly(base: AtlasDocument, next: AtlasDocument): void {
-  if (base.manifest.version !== 2 && base.manifest.version !== 3 || next.manifest.version !== 2 && next.manifest.version !== 3 || base.manifest.version !== next.manifest.version || !('locks' in base) || !('locks' in next)) throw new Error('纯锁事务仅支持同版已有生成草稿。');
+  if (base.manifest.version !== 2 && base.manifest.version !== 3 && base.manifest.version !== 4 || next.manifest.version !== 2 && next.manifest.version !== 3 && next.manifest.version !== 4 || base.manifest.version !== next.manifest.version || !('locks' in base) || !('locks' in next)) throw new Error('纯锁事务仅支持同版已有生成草稿。');
   const fields = ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs', 'origin', 'constraints', 'generation'];
   if (base.manifest.version === 3) {
     fields.push('surface');
     if (!validateAtlasSurface(base.manifest.surface) || next.manifest.version !== 3 || !validateAtlasSurface(next.manifest.surface)) throw new Error('纯锁事务不能改变权威地表合同。');
+  }
+  if (base.manifest.version === 4) {
+    fields.push('surface', 'detailCoast');
+    assertDetailContract(base, next);
+    assertDetailBytesEqual(base, next);
   }
   if (!generationExact(base.manifest, fields) || !generationExact(next.manifest, fields)
     || !generationInt(base.manifest.revision, 0, Number.MAX_SAFE_INTEGER - 1) || next.manifest.revision !== base.manifest.revision + 1
@@ -87,11 +94,30 @@ export function assertAtlasConstraintsOnly(base: AtlasDocument, next: AtlasDocum
     if (before.length !== after.length || before.some((value, i) => value !== after[i])) throw new Error('纯锁事务不能修改任何实际地理值。');
   }
 }
+function assertDetailContract(base: AtlasDocument, next: AtlasDocument): void {
+  for (const data of [base, next]) {
+    if (data.manifest.version !== 4 || !validateAtlasDetailCoastSurface(data.manifest.surface) || !validateAtlasDetailCoastManifest(data.manifest.detailCoast)
+      || !('detailCoast' in data) || !data.detailCoast || data.detailCoast.size !== data.manifest.detailCoast.refs.length) throw new Error('细海岸合同或完整内容无效。');
+  }
+  if (generationCanonical((base as AtlasDetailCoastDocument).manifest.surface) !== generationCanonical((next as AtlasDetailCoastDocument).manifest.surface)) throw new Error('普通编辑不能改变细海岸解释。');
+}
+function assertDetailBytesEqual(base: AtlasDocument, next: AtlasDocument): void {
+  assertDetailContract(base, next);
+  const a = base as AtlasDetailCoastDocument, b = next as AtlasDetailCoastDocument;
+  if (generationCanonical(a.manifest.detailCoast) !== generationCanonical(b.manifest.detailCoast)) throw new Error('本操作不能改变细海岸引用。');
+  for (const ref of a.manifest.detailCoast.refs) {
+    const key = detailCoastKey(ref.bx, ref.by), before = a.detailCoast.get(key), after = b.detailCoast.get(key);
+    if (!before || !after) throw new Error('受保护细海岸块缺失。');
+    const x = encodeDetailCoastTile(before), y = encodeDetailCoastTile(after);
+    if (x.length !== y.length || x.some((value, i) => value !== y[i])) throw new Error('本操作不能修改实际细海岸数据。');
+  }
+}
 /** Baselines are verified/owned; optional IDs bound ordinary edit work to its delta. */
 export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocument, changedCellIds?: Iterable<number>, changedVertexIds?: Iterable<number>): void {
   if (base.manifest.version !== next.manifest.version) throw new Error('普通编辑不能切换草稿格式。');
   if (base.manifest.version === 1) return;
-  if (base.manifest.version !== 2 && base.manifest.version !== 3) throw new Error('未知权威地表格式，普通编辑已保护。');
+  if (base.manifest.version !== 2 && base.manifest.version !== 3 && base.manifest.version !== 4) throw new Error('未知权威地表格式，普通编辑已保护。');
+  if (base.manifest.version === 4) assertDetailContract(base, next);
   if (base.manifest.version === 3 && (next.manifest.version !== 3 || !validateAtlasSurface(base.manifest.surface) || !validateAtlasSurface(next.manifest.surface) || generationCanonical(base.manifest.surface) !== generationCanonical(next.manifest.surface))) throw new Error('普通编辑不能改变权威地表合同。');
   if (base.manifest.draftId !== next.manifest.draftId || base.manifest.atlasId !== next.manifest.atlasId || generationCanonical(base.manifest.spec) !== generationCanonical(next.manifest.spec)) throw new Error('原草稿操作不能更换地理身份或规格。');
   if (!('locks' in base) || !('locks' in next) || generationCanonical(base.manifest.origin) !== generationCanonical(next.manifest.origin) || generationCanonical(base.manifest.constraints) !== generationCanonical(next.manifest.constraints)) throw new Error('普通编辑不能改变来源或锁集合。');
@@ -101,6 +127,20 @@ export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocume
     if (!a || !b || a !== b && (!validateAtlasCellLockBlock(a, base.manifest.spec) || !validateAtlasCellLockBlock(b, next.manifest.spec) || a.flags.some((v, i) => v !== b.flags[i]))) throw new Error('锁内容变化或缺失，必须明确解锁事务。');
   }
   if (base.manifest.constraints.lockRefs.length === 0) return;
+  if (base.manifest.version === 4) {
+    // Until local fine-field lock dependency evaluation is wired, a locked v4
+    // accepts unchanged geography only. This conservative refusal is explicit;
+    // it never claims an old center-only test protects a detailed coastline.
+    assertDetailBytesEqual(base, next);
+    if (generationCanonical(base.manifest.blockRefs) !== generationCanonical(next.manifest.blockRefs)) throw new Error('第四版含区域锁，细海岸局部锁依赖尚未接通；地理修改已保护。');
+    for (const ref of base.manifest.blockRefs) {
+      const a = base.blocks.get(ref.key), b = next.blocks.get(ref.key);
+      if (!a || !b) throw new Error('受保护地理块缺失。');
+      const x = encodeBlock(a), y = encodeBlock(b);
+      if (x.length !== y.length || x.some((value, index) => value !== y[index])) throw new Error('第四版区域锁保护实际地理与细海岸数据。');
+    }
+    return;
+  }
   const flagsAt = (cellId: number) => {
     const spec = base.manifest.spec; if (!generationInt(cellId, 0, spec.columns * spec.rows - 1)) throw new Error('地块锁查询越界。');
     const column = cellId % spec.columns, row = Math.floor(cellId / spec.columns);

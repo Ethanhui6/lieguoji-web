@@ -1,0 +1,73 @@
+{
+  "scope": "Synthetic kernel output only; not an Atlas document, UI save, rendered screenshot, performance acceptance, or playable-world acceptance.",
+  "summary": {
+    "landAreaTwiceQ2": 4146797515,
+    "seaAreaTwiceQ2": 2194876458037,
+    "totalAreaTwiceQ2": 2199023255552,
+    "targetSegments": 1108,
+    "sampledTiles": 71,
+    "uniformLandTiles": 0,
+    "coarseLandSamples": 29,
+    "changedCoarseSamples": 147,
+    "islandsRequested": 4,
+    "islandsPlaced": 2,
+    "skippedIslands": [
+      {
+        "chain": 0,
+        "island": 1,
+        "reason": "near-existing-island"
+      },
+      {
+        "chain": 0,
+        "island": 3,
+        "reason": "near-existing-island"
+      }
+    ],
+    "designNodesEvaluated": 126905,
+    "originalEdgeTests": 643632,
+    "distanceSamples": 89088,
+    "exactTargetSegmentTests": 690858,
+    "maximumQuerySegmentTests": 55,
+    "auditedFineCells": 29696
+  },
+  "witnesses": [
+    {
+      "name": "interior land",
+      "x": 1240,
+      "y": 1280,
+      "pick": {
+        "fineCellId": 1311340,
+        "column": 620,
+        "row": 640,
+        "land": true,
+        "height": 350
+      }
+    },
+    {
+      "name": "drawn 12 world wide bay",
+      "x": 1274,
+      "y": 1220,
+      "pick": {
+        "fineCellId": 1249917,
+        "column": 637,
+        "row": 610,
+        "land": false,
+        "height": -22
+      }
+    },
+    {
+      "name": "outer sea",
+      "x": 1000,
+      "y": 1000,
+      "pick": {
+        "fineCellId": 1024500,
+        "column": 500,
+        "row": 500,
+        "land": false,
+        "height": -2002
+      }
+    }
+  ],
+  "fileCount": 75,
+  "tileCount": 71
+}

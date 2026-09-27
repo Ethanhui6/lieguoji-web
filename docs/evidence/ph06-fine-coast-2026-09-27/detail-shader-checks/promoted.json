@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "src/world/detail-terrain-pages.ts",
+      "stagingHash": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764",
+      "hash": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+    },
+    {
+      "path": "src/world/detail-terrain-pages.test.ts",
+      "stagingHash": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981",
+      "hash": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.ts",
+      "stagingHash": "79b33b88c1e70e112c749a834eff4cb2c0c7b502cfc46ff1e974148520dacde2",
+      "hash": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.test.ts",
+      "stagingHash": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5",
+      "hash": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5"
+    }
+  ],
+  "inspectedCorrection": "GLSL clip neighbour deduplication changed from next to previous to match current authoritative CPU polygon fan before the first test run."
+}

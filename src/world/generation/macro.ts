@@ -127,6 +127,7 @@ function fieldScore(site: Site, xQ: number, yQ: number, coastal: number) {
 /** Deterministic macro generation. Input is a verified Worker-owned document;
  * this function never changes its manifest, blocks, locks or persistence. */
 export async function generateMacro(input: GenerationInput, control?: GenerationControl): Promise<GenerationOutput> {
+  if (input.base?.manifest?.version === 4) throw new Error('旧生成器尚不支持第四版细海岸，原图未修改。');
   control?.signal?.throwIfAborted();
   if (!validateMacroRecipe(input.recipe) || !validateGenerationScope(input.scope) || input.scope.kind !== 'world') throw new Error('未知生成配方、指纹或尚未实现的生成范围。');
   if (input.base.manifest.version !== 2 && input.base.manifest.version !== 3 || input.base.manifest.constraints.lockRefs.length || input.base.locks.size) throw new Error('整图生成仅支持已核验且没有区域锁的创世草稿。');
@@ -283,7 +284,7 @@ export async function generateMacro(input: GenerationInput, control?: Generation
     if (changed) { blocks.set(key, candidate); changedKeys.push(key); }
     await yieldAtlas(control, '写入私有连续高程候选', by * across + bx + 1, across * across);
   }
-  const quality = await inspectGeneration({ manifest: base.manifest, blocks }, parameters, control);
+  const quality = await inspectGeneration({ ...base, blocks }, parameters, control);
   const { landAreaQ2, majorComponentCount, minElevationMeters, maxElevationMeters } = quality;
   return { blocks, changedKeys, summary: { changedCellCount, landAreaQ2, worldAreaQ2, majorComponentCount, minElevationMeters, maxElevationMeters },
     diagnostics: { ...quality, layout: 'branch-field-competing-growth-v2', sitesQ: sites.map(site => [site.xQ, site.yQ]), requestedAreaQ2: quotas,

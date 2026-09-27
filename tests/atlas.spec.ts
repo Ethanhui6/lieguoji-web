@@ -202,7 +202,9 @@ test('缺失大世界链接不伪造新世界；原工坊可往返且大世界�
   await page.getByRole('navigation', { name: '世界工坊工具' }).getByRole('button', { name: '世界', exact: true }).click();
   await page.getByRole('button', { name: /^大世界草稿/ }).click();
   await ready(page, 'empty');
-  await expect(page).toHaveURL(/\?atlas=new$/);
+  await expect(page).toHaveURL(url => url.pathname === '/' && url.hash === ''
+    && url.searchParams.size === 2 && url.searchParams.get('atlas') === 'new'
+    && url.searchParams.get('atlas-format') === '2');
 });
 
 test('取消扩展草稿准备保持原存档；旧备份链接轮换后拒绝悄悄换时点', async ({ page, context }) => {

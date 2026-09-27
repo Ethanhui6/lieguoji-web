@@ -5,3 +5,4 @@ declare const __MACRO_GENERATOR_FINGERPRINT__: string;
 declare const __LANDFORM_GENERATOR_FINGERPRINT__: string;
 declare const __ISLAND_GENERATOR_FINGERPRINT__: string;
 declare const __COAST_GENERATOR_FINGERPRINT__: string;
+declare const __SHAPE_GENERATOR_FINGERPRINT__: string;

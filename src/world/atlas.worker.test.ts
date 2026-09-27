@@ -1,6 +1,6 @@
-import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { cloneAtlasDocument, createGenerationDraft, isGenerationDocument, type AtlasDocument } from './atlas-format';
-import type { MacroRecipe, LandformRecipe, IslandRecipe, CoastRecipe, AtlasCellLockBlock, GenerationScope } from './generation-contract';
+import type { MacroRecipe, LandformRecipe, IslandRecipe, CoastRecipe, ShapeRecipe, AtlasCellLockBlock, GenerationScope } from './generation-contract';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -684,4 +684,26 @@ describe('PH06 local landform and shared-coast durable scopes', () => {
     expect(isGenerationDocument(undone.data) && undone.data.manifest.generation.lastApplied).toBeNull();
     expect((await client({ format: 2 }).restore(fixture.manifest.draftId)).data).toEqual(undone.data);
   }, 90_000);
+});
+
+
+describe('PH06 drawn outline durable integration', () => {
+  it('binds the actual outline to preview, cancel, persisted restore and undo without touching ocean before confirm', async () => {
+    const c = client({ format: 2 }), initial = await c.create(createOptions), before = await databaseSnapshot(2);
+    const recipe: ShapeRecipe = { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-landmass', version: 1, fingerprint: SHAPE_GENERATOR_FINGERPRINT }, seed: 'hand-drawn-worker', parameters: {
+      pointsQ: [{xQ:900*256,yQ:900*256},{xQ:2900*256,yQ:1000*256},{xQ:2800*256,yQ:2800*256},{xQ:1900*256,yQ:2200*256},{xQ:1000*256,yQ:2900*256}],
+      coastRoughnessWorld: 32, coastWavelengthWorld: 192, reliefMeters: 1800, shelfWidthWorld: 128,
+    } };
+    const p = await c.previewGeneration(recipe);
+    expect(p.preview.summary.shape?.newLandCellCount).toBeGreaterThan(100); expect(p.preview.recipe).toEqual(recipe);
+    expect(await databaseSnapshot(2)).toEqual(before); expect(c.head?.rootDigest).toBe(initial.head.rootDigest);
+    for (const [key, block] of initial.data.blocks) if (block.layer !== 'elevation') expect(p.data.blocks.get(key)).toEqual(block);
+    await c.discardGeneration(); expect(await databaseSnapshot(2)).toEqual(before);
+    const repeat = await c.previewGeneration(recipe); expect(repeat.data.blocks).toEqual(p.data.blocks);
+    const confirmed = await c.confirmGeneration(); expect(confirmed.head.revision).toBe(1);
+    expect(isGenerationDocument(confirmed.data) && confirmed.data.manifest.generation.lastApplied?.recipe).toEqual(recipe);
+    const restored = await client({ format: 2 }).restore(initial.head.draftId); expect(restored.data).toEqual(confirmed.data);
+    const undone = await c.undo(); expect(undone.head.revision).toBe(2); expect(undone.data.blocks).toEqual(initial.data.blocks);
+    expect(isGenerationDocument(undone.data) && undone.data.manifest.generation.lastApplied).toBeNull();
+  }, 90000);
 });

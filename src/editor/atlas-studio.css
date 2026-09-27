@@ -47,6 +47,67 @@
 .atlas-empty { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 12px; color: #d8e7e4; max-width: calc(100% - 32px); text-align: center; }
 .atlas-empty p { margin: 0; font-family: var(--font-heading); font-size: 22px; }
 .atlas-studio .world-metadata p { overflow-wrap: anywhere; }
+
+/* A quiet, map-first studio. Surfaces stay opaque below controls; only the
+   floating tool shelf uses one layer of translucency. */
+.atlas-studio {
+  --text-primary: #182b38; --text-secondary: #526773; --text-muted: #647885;
+  --surface-app: #f2f5f7; --surface-panel: #f9fbfc; --surface-inset: #edf2f5;
+  --surface-elevated: #fff; --surface-hover: #e2ebf1;
+  --border: #dce4e9; --border-strong: #c3d1dc;
+  --selected-bg: #e3effd; --selected-text: #0751a2; --selected-outline: #a9c9ee;
+  --action: #0868cd; --focus: #207ee4; --atlas-accent: #0868cd;
+  --radius-control: 12px; --radius-panel: 24px;
+  --shadow-panel: 0 16px 50px #092b4026, 0 2px 6px #092b4008;
+  --floating-surface: #f9fbfcf2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+[data-theme="dark"] .atlas-studio {
+  --text-primary: #e7f1f7; --text-secondary: #abbfcd; --text-muted: #95aab9;
+  --surface-app: #111e28; --surface-panel: #192a36; --surface-inset: #12222d;
+  --surface-elevated: #233947; --surface-hover: #304957;
+  --border: #304450; --border-strong: #486171;
+  --selected-bg: #163f62; --selected-text: #b1d9ff; --selected-outline: #396b96;
+  --action: #69afff; --focus: #69afff; --floating-surface: #192a36f2;
+}
+.atlas-studio .workbench-header { gap: 12px; min-height: 72px; }
+.atlas-studio .workbench-identity { gap: 16px; }
+.atlas-studio .workbench-identity h1 { font-weight: 700; letter-spacing: -.035em; }
+.atlas-studio .mode-label { padding: 5px 10px; border-radius: 20px; }
+.atlas-studio .workbench-header > button { border-color: transparent; background: transparent; }
+.atlas-studio .workbench-nav { gap: 12px; padding-top: 18px; }
+.atlas-studio .workbench-nav-item { border-radius: 16px; margin-inline: 3px; }
+.atlas-studio .workbench-nav-item[aria-pressed="true"] { border-color: transparent; }
+.atlas-studio .inspector-header { padding: 20px 16px 16px 20px; }
+.atlas-studio .inspector-heading h2 { font-size: 21px; letter-spacing: -.025em; }
+.atlas-studio .inspector-heading p { line-height: 1.5; }
+.atlas-studio .inspector-body { padding: 20px; }
+.atlas-studio .inspector-notice { border-color: transparent; border-radius: 12px; }
+.atlas-studio .inspector-notice[role="alert"] { border-color: var(--danger); }
+.atlas-studio .atlas-primary { color: #fff; background: #0868cd; border-color: #0868cd; min-height: 48px; }
+.atlas-studio .atlas-primary:active:not(:disabled) { background: #0755a8; }
+.atlas-studio .atlas-toolbar { border-color: #ffffff38; border-radius: 18px; padding: 5px; box-shadow: 0 6px 22px #092b4026; }
+.atlas-studio .atlas-toolbar > small { display: none; }
+.atlas-create-intro { display: grid; gap: 10px; }
+.atlas-eyebrow { color: var(--text-secondary); font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.atlas-draw-card { display: flex; align-items: center; gap: 14px; text-align: left; padding: 18px 14px; border-radius: 18px; border-color: var(--selected-outline); background: var(--selected-bg); color: var(--selected-text); }
+.atlas-draw-card > span { display: grid; gap: 5px; flex: 1; }
+.atlas-draw-card strong { font-size: 18px; letter-spacing: -.02em; }
+.atlas-draw-card small { font-weight: 400; line-height: 1.5; }
+.atlas-brush-toolbar { position: absolute; z-index: 6; top: 82px; left: 16px; display: flex; gap: 4px; padding: 5px; border: 1px solid #ffffff38; border-radius: 18px; background: var(--floating-surface); box-shadow: 0 6px 22px #092b4026; backdrop-filter: blur(16px); }
+.atlas-brush-toolbar button { display: inline-flex; align-items: center; gap: 8px; background: transparent; border-color: transparent; padding-inline: 12px; }
+.atlas-brush-toolbar button[aria-pressed="true"] { background: var(--selected-bg); color: var(--selected-text); }
+.atlas-drawing-hint { position: absolute; z-index: 4; pointer-events: none; bottom: 120px; left: 50%; transform: translateX(-50%); white-space: nowrap; max-width: calc(100% - 24px); padding: 9px 16px; border-radius: 30px; background: #082a42e8; color: #f2faff; font-size: 13px; box-shadow: 0 4px 18px #00182b25; }
+.atlas-studio .atlas-preview { border-radius: 18px; border-left-width: 1px; background: var(--selected-bg); }
+.atlas-studio .atlas-field { gap: 8px; }
+.atlas-studio .atlas-panel-content { gap: 22px; }
+.atlas-studio .atlas-panel-content > fieldset + fieldset { padding-top: 20px; border-top: 1px solid var(--border); }
+.atlas-studio .atlas-panel-content legend { padding: 0 0 8px; font-size: 14px; font-weight: 600; }
+.atlas-studio .atlas-status { border-color: #ffffff38; border-radius: 18px; box-shadow: 0 6px 22px #092b4026; }
+.atlas-studio .atlas-status .inspector-notice { background: transparent; }
+[data-transparency="reduced"] .atlas-studio .atlas-brush-toolbar { background: var(--surface-panel); backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) { .atlas-brush-toolbar { background: var(--surface-panel); backdrop-filter: none; } }
+@media (prefers-contrast: more) { .atlas-studio { --border: var(--text-secondary); --border-strong: var(--text-primary); } .atlas-brush-toolbar { border-color: var(--text-secondary); backdrop-filter: none; background: var(--surface-panel); } }
 @media (max-width: 599px) {
   .atlas-studio .workbench-identity { flex-direction: column; align-items: flex-start; gap: 3px; }
   .atlas-studio .workbench-identity h1 { max-width: 44vw; font-size: 17px; }
@@ -55,3 +116,17 @@
   .atlas-toolbar { max-width: calc(100% - 24px); }
   .atlas-studio .inspector-body { padding: 16px; }
 }
+
+@media (max-width: 899px), (max-width: 1279px) and (orientation: portrait) {
+  .atlas-studio .workbench-nav { padding-top: 4px; gap: 4px; }
+  .atlas-studio .workbench-nav-item { min-height: 60px; margin-inline: 0; border-radius: 14px; }
+  .atlas-studio .inspector-header { padding: 12px 12px 12px 16px; }
+  .atlas-studio .inspector-heading h2 { font-size: 18px; }
+  .atlas-studio .workbench-identity { gap: 3px; }
+  .atlas-studio .workbench-identity .mode-label { padding: 0; }
+  .atlas-brush-toolbar { top: 76px; left: 12px; }
+}
+
+.atlas-advanced { border-top: 1px solid var(--border); padding-top: 4px; }
+.atlas-advanced > summary { color: var(--text-secondary); font-size: 14px; font-weight: 600; }
+.atlas-advanced[open] > .atlas-edit-fields { padding-top: 12px; }

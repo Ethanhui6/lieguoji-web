@@ -49,3 +49,6 @@ export function fingerprintIslandGenerator(read = (file: string) => readFileSync
 export function fingerprintCoastGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
   return fingerprintGenerator('src/world/generation/coast.ts', 'coast-smoothing', read);
 }
+export function fingerprintShapeGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
+  return fingerprintGenerator('src/world/generation/shape.ts', 'shape-landmass', read);
+}

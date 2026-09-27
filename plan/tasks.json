@@ -731,40 +731,48 @@
       "acceptance": "同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
       "evidence": [
         "docs/adr/0011-atlas-generation-and-constraints.md",
-        "docs/evidence/2026-09-24-ph06-generation.md"
+        "docs/evidence/2026-09-24-ph06-generation.md",
+        "docs/adr/0012-hand-drawn-landmass.md",
+        "docs/evidence/2026-09-27-ph06-handdraw.md"
       ],
       "workItems": [
         {
           "id": "PH06-T1",
           "title": "种子和大陆尺度形状参数",
           "status": "in_progress",
-          "acceptance": "完成「种子和大陆尺度形状参数」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
+          "acceptance": "完成「种子和大陆尺度形状参数」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：实际手绘简单闭环作为可复现配方，松开后自动生成候选并可确认/取消/保存恢复。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
-            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+            "docs/evidence/playtest-2026-09-24/browser/verification.json",
+            "docs/adr/0012-hand-drawn-landmass.md",
+            "docs/evidence/2026-09-27-ph06-handdraw.md"
           ]
         },
         {
           "id": "PH06-T2",
           "title": "连续高程、山系盆地和岛链",
           "status": "in_progress",
-          "acceptance": "完成「连续高程、山系盆地和岛链」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
+          "acceptance": "完成「连续高程、山系盆地和岛链」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：沿轮廓形成连续海岸扰动、真实近海深度与内陆高程，保护原陆地和区域锁。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
-            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+            "docs/evidence/playtest-2026-09-24/browser/verification.json",
+            "docs/adr/0012-hand-drawn-landmass.md",
+            "docs/evidence/2026-09-27-ph06-handdraw.md"
           ]
         },
         {
           "id": "PH06-T3",
           "title": "细海岸与几何拓扑校验",
           "status": "in_progress",
-          "acceptance": "完成「细海岸与几何拓扑校验」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。",
+          "acceptance": "完成「细海岸与几何拓扑校验」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：海深与坡向的真实渲染、近景纹理细分，遵守原缓存/几何/恢复边界；不得以新色彩冒称水系气候完成。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
-            "docs/evidence/playtest-2026-09-24/browser/verification.json"
+            "docs/evidence/playtest-2026-09-24/browser/verification.json",
+            "docs/adr/0012-hand-drawn-landmass.md",
+            "docs/evidence/2026-09-27-ph06-handdraw.md"
           ]
         },
         {
@@ -2158,14 +2166,30 @@
       "deploymentMode": "Cloudflare Pages native Git branch preview",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
       "pagesProject": "lieguoji-web",
-      "status": "local_validation_passed_awaiting_upload",
+      "status": "preview_live_cloud_ci_failed",
       "localBuildEvidence": "docs/evidence/playtest-2026-09-24/local-build.json",
       "coreBrowserEvidence": "docs/evidence/playtest-2026-09-24/browser/verification.json",
-      "commit": null,
-      "ci": null,
-      "url": null,
+      "commit": "90cdabc6fa1c0cd0d3f8d4037b93870b63421db5",
+      "ci": {
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/35956425996",
+        "status": "failure",
+        "browser": {
+          "passed": 153,
+          "failed": 3
+        },
+        "reason": "Three device projects shared an outdated atlas URL assertion; corrected locally 2026-09-27, cloud result remains failure."
+      },
+      "url": "https://a2cb06be.lieguoji-web.pages.dev",
       "productionMainUnchanged": true,
-      "phaseCompletionClaim": false
+      "phaseCompletionClaim": false,
+      "deploymentId": "a2cb06be-416b-481d-88f2-0270a0ce0247",
+      "onlineVerification": {
+        "browserPassed": 6,
+        "browserFailed": 0,
+        "resourcesPassed": 23,
+        "evidence": ".autopilot/ph06/release-followup-20260927.json"
+      },
+      "newLocalChangesAuthorizedForUpload": false
     }
   }
 }

@@ -1,7 +1,12 @@
-# V4 当前续接入口：PH06开发中，用户授权本次试玩分支发布
+# V4 当前续接入口：PH06手绘大陆开发中，本批仅本地
 
-2026-09-24。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。默认仍是全部 PH00—PH35、真机及用户视觉验收之前禁止发布。用户随后明确要求现在上传最新版本供试玩，因此本次仅允许经检查的 codex/ph06-world-generation 分支预览；不改 main、不伪造 PH 完成，详见 docs/PLAYTEST_RELEASE_2026-09-24.md。
+2026-09-27 更新。用户最新反馈地图手绘、自然地形、海洋层次与 UI 不足，要求继续开发。当前批按 ADR0012 实施轮廓→真实地形预览→确认保存，联动海深/坡面渲染和直接工具。全 PH 发布锁保留，本批没有新的云端写入授权，旧单次试玩指纹已撤回 pending。
 
+2026-09-24 历史授权。用户要求逐 PH 推进到最后一 PH，完成后自动进入下一项，不逐批询问。最终为巨大可编辑世界、多国独立行政制度、家族和信仰、iOS质感的网页/PWA单机游戏。默认仍是全部 PH00—PH35、真机及用户视觉验收之前禁止发布。用户随后明确要求现在上传最新版本供试玩，因此本次仅允许经检查的 codex/ph06-world-generation 分支预览；不改 main、不伪造 PH 完成，详见 docs/PLAYTEST_RELEASE_2026-09-24.md。
+
+- 本批基线 HEAD `90cdabc6fa1c0cd0d3f8d4037b93870b63421db5`，分支 `codex/ph06-world-generation`。工作区新增手绘配方、历史生成来源验证、渲染与 UI，统一检查进行中，不提前标记阶段完成。设计 `docs/adr/0012-hand-drawn-landmass.md`。
+- 9/24 试玩实际已上传：`https://a2cb06be.lieguoji-web.pages.dev/`，Pages 原生 Git 分支预览，部署 `a2cb06be-416b-481d-88f2-0270a0ce0247`，提交 90cdabc。9/27 实际 HTTP build.json 仍匹配。原在线三端核心 6/6、资源 23/23 成功，属旧发布证据。
+- 旧 GitHub CI `35956425996` 最终失败：22 发布门、1049 单测、lint/类型/构建通过，浏览器 153/156，3 项为同一过时入口地址期待；已在本批严格修正路径和两个必要参数，等待新本地浏览器检查，不冒称云 CI 已绿。详情 `.autopilot/ph06/release-followup-20260927.json`。
 - 唯一任务状态：plan/tasks.json；执行指令：CODEX_AUTOPILOT_V4.md；世界/视觉合同：docs/WORLD_V4.md、docs/DESIGN_V4.md；发布门：docs/RELEASE_POLICY_V4.md。
 - PH00—PH04 已完成。PH03 是具名硬件上的真实规模测量与后继性能合同，不是完整游戏支持容量或性能PASS。标准65,536地理样本目标保留；262,144高实体档帧间隔p95为28.6—35.6ms，尚不达桌面目标。2048结构历史刷新读库约1.2s、完整校验载入约281s，明确由PH04/28/33解决，不能绕过验证。
 - PH03最终本地检查：569单测/24文件、14发布策略、lint、类型、生产构建及23产物审计通过。八份浏览器原报告包含保留的早期smoke失败；正式matrix290步骤、实体9组/54次传输、controls129步骤、长历史14步骤、guards6步骤、移动仿真34步骤均执行完成。mobile是桌面RTX上的Pixel参数，不是真手机。
@@ -13,7 +18,7 @@
 - PH05最新构建856/856单测、37文件、14发布检查、lint/类型/25产物通过；完整三端浏览器单轮48/48、466.161秒、零重试/flaky/跳过。另有实际像素/双GPU恢复定向6/6。记录checks/terrain-integration-build、terrain-full-browser、terrain-pixel-browser-direct，历史失败完整保留。
 - PH05-T4最终四配置正式验收72/72有效，全部原时间目标通过；headless DPR1/DPR2、headed DPR1/DPR2的最大rAF间隔分别46.4/89.3/36.0/68.0ms。统一source 6d02caf87c5af65e0bd882c7f29b644cbd7580633386e72f4bd6356a29e053f6，dist ec306820bb90ec941191b73f7000c9c32c5adee9cf91251e85afde639a5767f5。PH04四模式13/13原门通过。归档2154文件完整恢复，保存的原评估器再次通过72/72和13/13，见docs/evidence/ph05-verification/verification.json。正式结论见2026-09-24-ph05-rendering.md；未把rAF写成物理屏幕FPS，未把移动仿真写成真机。
 - 本地预览和一次传输在会话续接中实际退出，失败/中断报告保留；仅在确认PID/端口失效后恢复。新进程信息.autopilot/ph05/preview-process.json，固定本地测量任务与终态在.autopilot/ph05/jobs。检查点.autopilot/LOCAL_HANDOFF.md已通过结构校验；它不是当前进程仍存活的证明，也不是新任务迁移。
-- 当前试玩分支codex/ph06-world-generation；本次待上传PH06源码/浏览器/隐私证据统一绑定本地发布门，正式提交与云端build.json须核对。源基线为PH05最终本地提交f07e574eeaff3838d063fb194154ed2e73f06bbd（872文件，847个归档/恢复证据Git blob逐字节核验）；PH06四子项仍in_progress。PH04基线c131c9664d30da8aafa83114a9169359e6e57635。本段成文时新分支尚未上传；实际结果另记本地发布检查点并回填本文件。
+- 当前试玩分支codex/ph06-world-generation；本次待上传PH06源码/浏览器/隐私证据统一绑定本地发布门，正式提交与云端build.json须核对。源基线为PH05最终本地提交f07e574eeaff3838d063fb194154ed2e73f06bbd（872文件，847个归档/恢复证据Git blob逐字节核验）；PH06四子项仍in_progress。PH04基线c131c9664d30da8aafa83114a9169359e6e57635。这段为发布前历史；90cdabc 实际已于 9/24 上传，实际结果见本文件顶部 9/27 续核，不能继续按“未上传”重推。
 - 历史线上0.4.0：提交b9b8f96b40544ef8b7e1e428910fe2df64fec6f7，仓库Ethanhui6/lieguoji-web（私有），Pages lieguoji-web，唯一原生Git链，main生产/其他分支预览。稳定URL https://lieguoji-web.pages.dev/ ，固定URL https://a257d63e.lieguoji-web.pages.dev/ 。这些是此前核验的历史部署，本轮未触发云端。
 - 尚未通过：生产大世界/完整社会规则/长局性能、真实iPhone/Android/平板、用户视觉验收及其余PH。正式五国地图/未知CANON/缺失原规划独立待核，不阻挡自建沙盒；不伪造通过。
 - PH06最新0.5.0-preview.1统一构建通过：1049/1049单测、53文件、22/22发布策略、lint/类型/25产物。固定dist 0bdf3cb4…首轮核心浏览器10pass/3fail，三个岛链失败均为错误海底恒高断言，原设计允许真实海底过渡；限定测试修正后同构建三端岛链3/3通过，10+3组合覆盖13项（不写成单轮13/13），见docs/evidence/playtest-2026-09-24/browser/verification.json。三端256及桌面512的11次生成观测进度最大220.8ms、4次运行中取消10.4—16.7ms，原250/500ms门本次范围通过，旧960失败保留。区域锁已接真实存储/会话/Worker/Bridge/UI并通过三端本轮功能；近景采样台阶与更广性能/视觉验收仍待完成，PH06仍in_progress。见docs/evidence/2026-09-24-ph06-generation.md与docs/evidence/playtest-2026-09-24/。

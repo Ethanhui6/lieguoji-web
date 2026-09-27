@@ -1,5 +1,7 @@
 import type { AtlasBlock, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, BlockKey } from './model';
-import { COAST_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { ATLAS_COORDINATE_SCALE, ATLAS_WORLD_UNITS, validateSpec } from './model';
+import { COAST_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { isStoredGeneratorFingerprint } from './generation-history';
 
 export type AtlasFormat = 1 | 2;
 export type LockKey = `lock:${number}:${number}`;
@@ -38,7 +40,18 @@ export interface CoastRecipe {
   generator: { id: 'coast-smoothing'; version: 1; fingerprint: string };
   parameters: { strengthPermille: number; iterations: number };
 }
-export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe;
+export interface ShapeRecipe {
+  format: 'lieguoji-atlas-recipe'; version: 1;
+  generator: { id: 'shape-landmass'; version: 1; fingerprint: string };
+  seed: string;
+  parameters: {
+    pointsQ: { xQ: number; yQ: number }[];
+    coastRoughnessWorld: number; coastWavelengthWorld: number; reliefMeters: number; shelfWidthWorld: number;
+  };
+}
+export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe;
+/** Stored provenance may name an audited old implementation; execution may not. */
+export type GenerationValidationMode = 'execute' | 'storage';
 export interface AtlasCellRectangle { column: number; row: number; columns: number; rows: number }
 /** The rectangle includes its transition band; nothing outside it is writable. */
 export type GenerationScope = { kind: 'world' } | ({ kind: 'cell-rectangle'; transitionCells: number } & AtlasCellRectangle);
@@ -75,35 +88,81 @@ export function generationCanonical(value: unknown): string {
 export async function generationDigest(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer))].map(n => n.toString(16).padStart(2, '0')).join('');
 }
-export function validateMacroRecipe(raw: unknown): raw is MacroRecipe {
+function acceptsGeneratorFingerprint(id: string, fingerprint: unknown, current: string, mode: GenerationValidationMode): boolean {
+  return generationHash(fingerprint) && (mode === 'execute' || mode === 'storage')
+    && (fingerprint === current || mode === 'storage' && isStoredGeneratorFingerprint(id, fingerprint));
+}
+export function validateMacroRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is MacroRecipe {
   try {
-    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'macro-landmass' || raw.generator.version !== 1 || !generationHash(raw.generator.fingerprint) || raw.generator.fingerprint !== MACRO_GENERATOR_FINGERPRINT || !generationExact(raw.parameters, ['majorContinents', 'landCoveragePermille', 'coastWavelengthWorld', 'reliefMeters'])) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'macro-landmass' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('macro-landmass', raw.generator.fingerprint, MACRO_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['majorContinents', 'landCoveragePermille', 'coastWavelengthWorld', 'reliefMeters'])) return false;
     const p = raw.parameters;
     return generationInt(p.majorContinents, 1, 6) && generationInt(p.landCoveragePermille, 150, 650) && generationInt(p.coastWavelengthWorld, 128, 1024) && generationInt(p.reliefMeters, 200, 6000);
   } catch { return false; }
 }
-export function validateLandformRecipe(raw: unknown): raw is LandformRecipe {
+export function validateLandformRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is LandformRecipe {
   try {
-    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'landforms' || raw.generator.version !== 1 || !generationHash(raw.generator.fingerprint) || raw.generator.fingerprint !== LANDFORM_GENERATOR_FINGERPRINT || !generationExact(raw.parameters, ['mountainRanges', 'basins', 'reliefMeters'])) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'landforms' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('landforms', raw.generator.fingerprint, LANDFORM_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['mountainRanges', 'basins', 'reliefMeters'])) return false;
     const p = raw.parameters;
     return generationInt(p.mountainRanges, 0, 8) && generationInt(p.basins, 0, 8) && generationInt(p.reliefMeters, 200, 6000) && generationInt(p.mountainRanges + p.basins, 1, 12);
   } catch { return false; }
 }
 /** Closed registration: adding a recipe requires an implemented codec and source fingerprint. */
-export function validateGenerationRecipe(raw: unknown): raw is GenerationRecipe {
-  return validateMacroRecipe(raw) || validateLandformRecipe(raw) || validateIslandRecipe(raw) || validateCoastRecipe(raw);
+export function validateGenerationRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is GenerationRecipe {
+  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode);
 }
-export function validateIslandRecipe(raw: unknown): raw is IslandRecipe {
+export function validateIslandRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is IslandRecipe {
   try {
-    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'island-chains' || raw.generator.version !== 1 || raw.generator.fingerprint !== ISLAND_GENERATOR_FINGERPRINT || !generationHash(raw.generator.fingerprint) || !generationExact(raw.parameters, ['chainCount', 'islandsPerChain', 'radiusWorld', 'reliefMeters'])) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'island-chains' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('island-chains', raw.generator.fingerprint, ISLAND_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['chainCount', 'islandsPerChain', 'radiusWorld', 'reliefMeters'])) return false;
     const p = raw.parameters;
     return generationInt(p.chainCount, 1, 3) && generationInt(p.islandsPerChain, 2, 6) && generationInt(p.radiusWorld, 64, 128) && generationInt(p.reliefMeters, 200, 3000);
   } catch { return false; }
 }
-export function validateCoastRecipe(raw: unknown): raw is CoastRecipe {
+export function validateCoastRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is CoastRecipe {
   try {
-    if (!generationExact(raw, ['format', 'version', 'generator', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'coast-smoothing' || raw.generator.version !== 1 || raw.generator.fingerprint !== COAST_GENERATOR_FINGERPRINT || !generationHash(raw.generator.fingerprint) || !generationExact(raw.parameters, ['strengthPermille', 'iterations'])) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'coast-smoothing' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('coast-smoothing', raw.generator.fingerprint, COAST_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['strengthPermille', 'iterations'])) return false;
     return generationInt(raw.parameters.strengthPermille, 100, 1000) && generationInt(raw.parameters.iterations, 1, 4);
+  } catch { return false; }
+}
+type ShapePointQ = ShapeRecipe['parameters']['pointsQ'][number];
+const orientationQ = (a: ShapePointQ, b: ShapePointQ, c: ShapePointQ) => (b.xQ - a.xQ) * (c.yQ - a.yQ) - (b.yQ - a.yQ) * (c.xQ - a.xQ);
+const onSegmentQ = (a: ShapePointQ, b: ShapePointQ, p: ShapePointQ) => p.xQ >= Math.min(a.xQ, b.xQ) && p.xQ <= Math.max(a.xQ, b.xQ) && p.yQ >= Math.min(a.yQ, b.yQ) && p.yQ <= Math.max(a.yQ, b.yQ);
+function segmentsIntersectQ(a: ShapePointQ, b: ShapePointQ, c: ShapePointQ, d: ShapePointQ): boolean {
+  const abC = orientationQ(a, b, c), abD = orientationQ(a, b, d), cdA = orientationQ(c, d, a), cdB = orientationQ(c, d, b);
+  return abC === 0 && onSegmentQ(a, b, c) || abD === 0 && onSegmentQ(a, b, d)
+    || cdA === 0 && onSegmentQ(c, d, a) || cdB === 0 && onSegmentQ(c, d, b)
+    || (abC < 0 && abD > 0 || abC > 0 && abD < 0) && (cdA < 0 && cdB > 0 || cdA > 0 && cdB < 0);
+}
+/** Q8 points form an implicit closed, simple polygon. Validation never closes,
+ * simplifies, reorders, clamps or otherwise changes the player's contour.
+ * At most 256 points in the bounded Q8 world keep integer cross products and
+ * accumulated signed area below Number.MAX_SAFE_INTEGER.
+ */
+export function validateShapeRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is ShapeRecipe {
+  try {
+    if (spec !== undefined && !validateSpec(spec)) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'shape-landmass' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('shape-landmass', raw.generator.fingerprint, SHAPE_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['pointsQ', 'coastRoughnessWorld', 'coastWavelengthWorld', 'reliefMeters', 'shelfWidthWorld'])) return false;
+    const p = raw.parameters;
+    if (!generationArray(p.pointsQ) || !generationInt(p.pointsQ.length, 3, 256) || !generationInt(p.coastRoughnessWorld, 0, 128) || !generationInt(p.coastWavelengthWorld, 64, 512) || !generationInt(p.reliefMeters, 200, 6000) || !generationInt(p.shelfWidthWorld, 32, 256)) return false;
+    const maxXQ = (spec?.width ?? ATLAS_WORLD_UNITS) * (spec?.coordinateScale ?? ATLAS_COORDINATE_SCALE);
+    const maxYQ = (spec?.height ?? ATLAS_WORLD_UNITS) * (spec?.coordinateScale ?? ATLAS_COORDINATE_SCALE);
+    const seen = new Set<string>();
+    for (const point of p.pointsQ) {
+      if (!generationExact(point, ['xQ', 'yQ']) || !generationInt(point.xQ, 0, maxXQ) || !generationInt(point.yQ, 0, maxYQ)) return false;
+      const key = `${point.xQ}:${point.yQ}`; if (seen.has(key)) return false; seen.add(key);
+    }
+    const points = p.pointsQ as ShapePointQ[], count = points.length;
+    let area2 = 0;
+    for (let i = 0; i < count; i++) {
+      const a = points[i], b = points[(i + 1) % count], previous = points[(i + count - 1) % count];
+      area2 += a.xQ * b.yQ - b.xQ * a.yQ;
+      // Adjacent edges may meet at a straight continuation, never double back.
+      if (orientationQ(previous, a, b) === 0 && (previous.xQ - a.xQ) * (b.xQ - a.xQ) + (previous.yQ - a.yQ) * (b.yQ - a.yQ) > 0) return false;
+      for (let j = i + 1; j < count; j++) {
+        if (j === i + 1 || i === 0 && j === count - 1) continue;
+        if (segmentsIntersectQ(a, b, points[j], points[(j + 1) % count])) return false;
+      }
+    }
+    return area2 !== 0;
   } catch { return false; }
 }
 export function encodeGenerationRecipe(recipe: GenerationRecipe): Uint8Array {
@@ -122,8 +181,8 @@ export function validateGenerationScope(raw: unknown, spec?: AtlasGridSpec): raw
     && validateCellRectangle({ column: raw.column, row: raw.row, columns: raw.columns, rows: raw.rows }, spec)
     && generationInt(raw.transitionCells, 0, Math.min(16, Math.floor((Math.min(raw.columns as number, raw.rows as number) - 1) / 2)));
 }
-export function validateGenerationOperation(recipe: unknown, scope: unknown, spec?: AtlasGridSpec): boolean {
-  return validateGenerationRecipe(recipe) && validateGenerationScope(scope, spec)
+export function validateGenerationOperation(recipe: unknown, scope: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): boolean {
+  return validateGenerationRecipe(recipe, spec, mode) && validateGenerationScope(scope, spec)
     && (scope.kind === 'world' || recipe.generator.id === 'landforms' || recipe.generator.id === 'coast-smoothing');
 }
 export function encodeMacroRecipe(recipe: MacroRecipe): Uint8Array {

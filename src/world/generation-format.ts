@@ -9,7 +9,7 @@ export function validateGenerationManifest(raw: unknown): raw is AtlasDraftManif
     const value = raw as Record<string, unknown> & typeof raw;
     if (value.origin !== null && !validateCopyOrigin(value.origin) || !validateAtlasConstraints(value.constraints, raw.spec) || !generationExact(value.generation, ['format', 'version', 'lastApplied']) || value.generation.format !== 'lieguoji-atlas-generation' || value.generation.version !== 1) return false;
     const last = value.generation.lastApplied;
-    return last === null || generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) && validateGenerationOperation(last.recipe, last.scope, raw.spec) && generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
+    return last === null || generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) && validateGenerationOperation(last.recipe, last.scope, raw.spec, 'storage') && generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
   } catch { return false; }
 }
 export function encodeGenerationManifest(manifest: AtlasDraftManifestV2): Uint8Array {

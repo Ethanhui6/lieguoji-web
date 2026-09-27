@@ -347,9 +347,9 @@ async function readActualFramebuffer(page: Page, baseline: boolean) {
         let nonOpaquePixels = 0, changedPixels = 0, maxChannelDifference = 0;
         if (!baseline) require(Boolean(state.baseline && state.baseline.width === width && state.baseline.height === height), 'Restored framebuffer dimensions changed');
         for (let offset = 0; offset < bytes.length; offset += 4) {
-          if (bytes[offset] === 111 && bytes[offset + 1] === 147 && bytes[offset + 2] === 117) colors.land++;
-          if (bytes[offset] === 32 && bytes[offset + 1] === 84 && bytes[offset + 2] === 102) colors.ocean++;
-          if (bytes[offset] === 19 && bytes[offset + 1] === 60 && bytes[offset + 2] === 80) colors.background++;
+          if (bytes[offset] === 139 && bytes[offset + 1] === 163 && bytes[offset + 2] === 112) colors.land++;
+          if (bytes[offset] === 76 && bytes[offset + 1] === 151 && bytes[offset + 2] === 168) colors.ocean++;
+          if (bytes[offset] === 16 && bytes[offset + 1] === 40 && bytes[offset + 2] === 63) colors.background++;
           if (bytes[offset + 3] !== 255) nonOpaquePixels++;
           if (!baseline) {
             let changed = false;
@@ -529,7 +529,7 @@ test('[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使
       expect(Math.abs(observation.actual[channel] - observation.expected[channel]), JSON.stringify(observation)).toBeLessThanOrEqual(1);
     }
   }
-  const ocean = [32, 84, 102], land = [111, 147, 117];
+  const ocean = [76, 151, 168], land = [139, 163, 112];
   await inspectStrips('atlas-uniform-ocean-core-seams', Array.from({ length: 7 }, (_, index) => ({ worldX: (index + 1) * 512, worldY: 1792, axis: 'x' as const, rgb: ocean })));
   await locate(page); await previewHeight(page, 650); await confirm(page, 1); await panel(page, '地图'); await button(page, '全图');
   // Move the legitimate selected-entity label away from the fixed seam probes.

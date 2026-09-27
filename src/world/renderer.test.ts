@@ -37,10 +37,10 @@ vi.mock('pixi.js', () => {
     private overlayColor?: number;
     clear() { this.paths = 0; this.polygons = []; if (this.overlayColor !== undefined) pixi.overlayClear(this.overlayColor); return this; }
     rect() { return this; }
-    poly(points: number[]) { this.paths++; this.polygons.push(points); return this; }
+    poly(points: number[], close = true) { void close; this.paths++; this.polygons.push(points); return this; }
     fill(options?: { color: number }) { if (options) this.colors.add(options.color); if (options?.color === 0xf2d49b) pixi.preview(this.paths); pixi.fill(this.paths); this.paths = 0; return this; }
     stroke(options?: { color: number; width: number }) {
-      if (options && [0xa9c6c5, 0xf1d79c, 0xffd88c].includes(options.color)) {
+      if (options && [0xa9c6c5, 0xf1d79c, 0xffd88c, 0xe5f5dc].includes(options.color)) {
         this.overlayColor = options.color; pixi.overlay({ ...options, polygons: this.polygons.map(points => [...points]) });
       }
       return this;
@@ -82,6 +82,107 @@ const dispatch = (target: EventTarget, type: string, fields: object = {}) => tar
 async function flushFrames() { for (let i = 0; i < 5; i++) { await vi.runAllTimersAsync(); tick(); await Promise.resolve(); } }
 
 describe('production camera, cache and GPU lifecycle', () => {
+  it('uses visible 8-cell texture cores for near detail while retaining logical geometry and both budgets', async () => {
+    const h = await loadedRenderer(); pixi.textureCreate.mockClear(); pixi.cropCreate.mockClear(); pixi.targetDraw.mockClear();
+    h.renderer.zoom(16); tick();
+    const view = h.renderer.metrics();
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.transform.a === 2)).toBe(true);
+    expect(pixi.textureCreate.mock.calls.every(([options]) => options.width <= 1024 && options.height <= 1024)).toBe(true);
+    expect(pixi.cropCreate.mock.calls.some(([options]) => options.frame.width === 512)).toBe(true);
+    expect(view.cache.peakPixels).toBeLessThanOrEqual(32 * 1024 * 1024);
+    expect(view.geometryCache.peakQuads).toBeLessThanOrEqual(131072); expect(view.geometryCache.entries).toBeLessThanOrEqual(128);
+    expect(view.geometryCache.created - view.geometryCache.destroyed).toBe(view.geometryCache.entries);
+    expect(view.visibleBlocks).toBeLessThan(16); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('draws one genuine Q8 closed outline without panning or selecting and caps retained samples', async () => {
+    const h = await loadedRenderer(), canvas = canvasOf(h), camera = h.renderer.metrics().camera;
+    h.renderer.setOutlineMode(true);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, pointerType: 'pen', clientX: 500, clientY: 300 });
+    for (let i = 1; i <= 700; i++) {
+      const angle = Math.PI * 4 * i / 700;
+      dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 400 + Math.cos(angle) * 100, clientY: 300 + Math.sin(angle) * 100 });
+    }
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX: 500, clientY: 300 }); tick();
+    expect(h.outline).toHaveBeenCalledTimes(1); expect(h.outlineCancel).not.toHaveBeenCalled(); expect(h.pick).not.toHaveBeenCalled();
+    const points = h.outline.mock.calls[0][0] as { xQ: number; yQ: number }[];
+    expect(points.length).toBeGreaterThan(100); expect(points.length).toBeLessThanOrEqual(256);
+    expect(points[0]).toEqual({ xQ: Math.round((500 - camera.x) / camera.scale * 256), yQ: Math.round((300 - camera.y) / camera.scale * 256) });
+    expect(points.every(point => Number.isSafeInteger(point.xQ) && Number.isSafeInteger(point.yQ))).toBe(true);
+    expect(h.renderer.metrics().camera).toEqual(camera); expect(canvas.hasPointerCapture(1)).toBe(false);
+    const rendered = pixi.overlay.mock.calls.map(([draw]) => draw).filter(draw => draw.color === 0xe5f5dc).at(-1);
+    expect(rendered.polygons[0].length).toBe(points.length * 2);
+  });
+
+  it('a second pointer cancels an outline, preserves pinch and never starts a remnant stroke', async () => {
+    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.setOutlineMode(true);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 350, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 390, clientY: 260 });
+    dispatch(canvas, 'pointerdown', { pointerId: 2, button: 0, clientX: 450, clientY: 300 });
+    const scale = h.renderer.metrics().camera.scale;
+    dispatch(canvas, 'pointermove', { pointerId: 2, clientX: 500, clientY: 300 }); tick();
+    expect(h.renderer.metrics().camera.scale).toBeGreaterThan(scale); expect(h.outlineCancel).toHaveBeenCalledTimes(1);
+    dispatch(canvas, 'pointerup', { pointerId: 2, clientX: 500, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 420, clientY: 360 });
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX: 450, clientY: 260 }); tick();
+    expect(h.outline).not.toHaveBeenCalled(); expect(h.pick).not.toHaveBeenCalled();
+    dispatch(canvas, 'pointerdown', { pointerId: 3, button: 0, clientX: 350, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 3, clientX: 400, clientY: 250 });
+    dispatch(canvas, 'pointerup', { pointerId: 3, clientX: 450, clientY: 300 });
+    expect(h.outline).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['pointercancel', 'lostpointercapture', 'blur', 'disable', 'gpu', 'destroy', 'busy', 'zoom', 'fit', 'focus'] as const)('%s cannot finish a stale hand-drawn outline', async boundary => {
+    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.setOutlineMode(true);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 350, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 400, clientY: 250 });
+    let acceptance: Promise<unknown> | undefined;
+    if (boundary === 'disable') h.renderer.setOutlineMode(false);
+    else if (boundary === 'gpu') dispatch(canvas, 'webglcontextlost');
+    else if (boundary === 'destroy') h.renderer.destroy();
+    else if (boundary === 'busy') acceptance = h.renderer.accept(source);
+    else if (boundary === 'zoom') h.renderer.zoom(2);
+    else if (boundary === 'fit') h.renderer.fit();
+    else if (boundary === 'focus') h.renderer.focusCell(8256);
+    else dispatch(boundary === 'blur' ? window : canvas, boundary, { pointerId: 1 });
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX: 450, clientY: 300 });
+    if (acceptance) { await flushFrames(); await acceptance; }
+    expect(h.outline).not.toHaveBeenCalled(); expect(h.pick).not.toHaveBeenCalled(); expect(canvas.hasPointerCapture(1)).toBe(false);
+  });
+
+  it('copies explicit outline points and scales their own overlay without touching selection or region', async () => {
+    const h = await loadedRenderer(), points = [{ xQ: 256000, yQ: 256000 }, { xQ: 512000, yQ: 256000 }, { xQ: 256000, yQ: 512000 }];
+    h.renderer.select(8256); h.renderer.showRegion({ column: 32, row: 32, columns: 16, rows: 16 }); h.renderer.showOutline(points); tick();
+    points[0].xQ = 0; pixi.overlay.mockClear(); h.renderer.zoom(2); tick();
+    const rendered = pixi.overlay.mock.calls.map(([draw]) => draw).find(draw => draw.color === 0xe5f5dc);
+    expect(rendered.polygons).toEqual([[1000, 1000, 2000, 1000, 1000, 2000]]); expect(h.renderer.metrics().selected).toBe(8256);
+  });
+
+  it('a real viewport resize cancels the outline before its camera transform changes', async () => {
+    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.setOutlineMode(true);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 350, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 400, clientY: 250 });
+    const camera = h.renderer.metrics().camera;
+    h.host.clientWidth = 640; h.host.clientHeight = 480; ResizeObserverDouble.instances[0].notify(); tick();
+    expect(h.renderer.metrics().camera).not.toEqual(camera);
+    expect(h.outlineCancel).toHaveBeenCalledTimes(1); expect(canvas.hasPointerCapture(1)).toBe(false);
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 430, clientY: 280 });
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX: 450, clientY: 300 }); tick();
+    expect(h.outline).not.toHaveBeenCalled(); expect(h.pick).not.toHaveBeenCalled(); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
+  it('a same-size ResizeObserver notification preserves an in-progress outline', async () => {
+    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.setOutlineMode(true);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 350, clientY: 300 });
+    dispatch(canvas, 'pointermove', { pointerId: 1, clientX: 400, clientY: 250 });
+    const camera = h.renderer.metrics().camera;
+    ResizeObserverDouble.instances[0].notify(); tick();
+    expect(h.renderer.metrics().camera).toEqual(camera); expect(h.outlineCancel).not.toHaveBeenCalled(); expect(canvas.hasPointerCapture(1)).toBe(true);
+    dispatch(canvas, 'pointerup', { pointerId: 1, clientX: 450, clientY: 300 }); tick();
+    expect(h.outline).toHaveBeenCalledTimes(1); expect(h.outline.mock.calls[0][0]).toHaveLength(3);
+    expect(h.outlineCancel).not.toHaveBeenCalled(); expect(h.pick).not.toHaveBeenCalled(); expect(h.fatal).not.toHaveBeenCalled();
+  });
+
   it('reuses already drawn terrain Graphics at higher texture density, but rebuilds a genuinely wider halo', async () => {
     const h = await loadedRenderer(), before = h.renderer.metrics();
     expect(before.geometryCache.entries).toBe(16);
@@ -260,7 +361,7 @@ describe('production camera, cache and GPU lifecycle', () => {
     h.renderer.focusCell(id);
     expect(h.renderer.metrics().cache.created).toBeGreaterThan(created);
     expect(drawnCores()).toContain('1:1');
-    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x89a68a))).toBe(true);
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0xa4b07d))).toBe(true);
   });
 
   it('a shared vertex change invalidates incident cores and every sampled neighboring halo', async () => {
@@ -284,7 +385,10 @@ describe('production camera, cache and GPU lifecycle', () => {
     // Core 1,0 contains no edited cell. Its sampling halo includes actual land
     // from cell 31, and must therefore contain both real land and sea colors.
     const neighbor = pixi.targetDraw.mock.calls.map(([draw]) => draw).find(draw => draw.transform.tx === -254 && draw.transform.ty === 2);
-    expect(neighbor.colors.sort()).toEqual([0x205466, 0x89a68a].sort());
+    // The real land/sea cliff also shades its true adjacent cells. These are
+    // independently fixed material references, including flat sea and the
+    // north/west-facing slope at this top-row fixture.
+    expect(neighbor.colors.sort()).toEqual([0x4c97a8, 0x4a92a3, 0x9fab79].sort());
     expect(result.repaintBlockKeys.sort()).toEqual(['geometry:0:0', 'geometry:0:1', 'geometry:1:0', 'geometry:1:1']);
     for (const [crop] of pixi.cropCreate.mock.calls) {
       expect(crop.frame).toMatchObject({ x: 2, y: 2 });
@@ -444,11 +548,11 @@ const tick = () => {
   for (const callback of callbacks) callback(performance.now());
 };
 const newRenderer = (onProgress?: (value: { stage: string; completed: number; total: number }) => void) => {
-  const host = { clientWidth: 800, clientHeight: 600, appendChild: vi.fn() }, fatal = vi.fn(), camera = vi.fn(), pick = vi.fn(), gpu = vi.fn();
+  const host = { clientWidth: 800, clientHeight: 600, appendChild: vi.fn() }, fatal = vi.fn(), camera = vi.fn(), pick = vi.fn(), gpu = vi.fn(), outline = vi.fn(), outlineCancel = vi.fn();
   const progress = vi.fn((value: { stage: string; completed: number; total: number }) => { onProgress?.(value); return { ...value, submittedPolygons: pixi.render.mock.calls.at(-1)?.[0] }; });
-  const renderer = new AtlasRenderer(host as unknown as HTMLElement, { onPick: pick, onFatal: fatal, onCamera: camera, onProgress: progress, onGraphicsState: gpu });
+  const renderer = new AtlasRenderer(host as unknown as HTMLElement, { onPick: pick, onFatal: fatal, onCamera: camera, onProgress: progress, onGraphicsState: gpu, onOutline: outline, onOutlineCancel: outlineCancel });
   renderers.push(renderer);
-  return { renderer, host, fatal, camera, progress, pick, gpu };
+  return { renderer, host, fatal, camera, progress, pick, gpu, outline, outlineCancel };
 };
 type Harness = ReturnType<typeof newRenderer>;
 const paintProgress = (progress: Harness['progress']) => progress.mock.results.filter(item => item.value.stage === '绘制已核验地理块');
@@ -508,7 +612,7 @@ describe('generation candidate display lifecycle', () => {
     expect(displayed).toMatchObject({ displaySource: 'generation-preview', displayRevision: 1, displayVersion: 2, committedRevision: 0,
       acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, selected: 8256, camera: baseline.camera });
     expect(displayed.displayCorrectFrameAt).toBeGreaterThanOrEqual(baseline.correctFrameAt);
-    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x6f9375))).toBe(true);
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x8ba370))).toBe(true);
     expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(candidate);
     expect(() => h.renderer.showPreview([8256])).toThrow('确认或取消'); expect(h.fatal).not.toHaveBeenCalled();
     dispatch(canvas, 'keydown', { key: 'ArrowLeft' }); tick();
@@ -524,7 +628,7 @@ describe('generation candidate display lifecycle', () => {
       acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt });
     expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(generationSource);
     expect(pixi.targetDraw.mock.calls.length).toBeGreaterThan(0);
-    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x8ba370))).toBe(true);
     expect(generationDigest(candidate)).toBe(digest); expect(h.fatal).not.toHaveBeenCalled();
   });
 
@@ -537,13 +641,13 @@ describe('generation candidate display lifecycle', () => {
       pixi.targetDraw.mockClear(); dispatch(canvas, 'webglcontextrestored'); await flushFrames();
       expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'ready', epoch }, displayRevision: 1, displaySource: 'generation-preview', acceptedRevision: 0, correctFrameAt: baseline.correctFrameAt });
       expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(candidate);
-      expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x6f9375))).toBe(true);
+      expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.colors.includes(0x8ba370))).toBe(true);
     }
     dispatch(canvas, 'webglcontextlost'); const clearing = h.renderer.clearGenerationPreview(); await Promise.resolve();
     expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'lost' }, displaySource: 'committed', displayRevision: 0 });
     pixi.targetDraw.mockClear(); dispatch(canvas, 'webglcontextrestored'); await flushFrames(); await clearing;
     expect(labelBoundary.update.mock.calls.at(-1)![0].data).toBe(generationSource);
-    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x8ba370))).toBe(true);
     expect(h.fatal).not.toHaveBeenCalled();
   });
 
@@ -556,7 +660,7 @@ describe('generation candidate display lifecycle', () => {
     const clearing = h.renderer.clearGenerationPreview(); await flushFrames(); await rejected; await clearing;
     expect(h.renderer.metrics()).toMatchObject({ displaySource: 'committed', acceptedRevision: baseline.acceptedRevision, correctFrameAt: baseline.correctFrameAt, fatal: false });
     expect(labelBoundary.update.mock.calls.every(([input]) => input.data === generationSource)).toBe(true);
-    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x6f9375))).toBe(true);
+    expect(pixi.targetDraw.mock.calls.every(([draw]) => !draw.colors.includes(0x8ba370))).toBe(true);
     const retry = h.renderer.showGenerationPreview(candidate); await flushFrames(); await retry;
     expect(h.renderer.metrics().displaySource).toBe('generation-preview'); expect(h.fatal).not.toHaveBeenCalled();
   });

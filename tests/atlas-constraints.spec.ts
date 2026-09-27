@@ -80,7 +80,10 @@ function expectMask(snapshot: Saved, value: number) {
   }));
 }
 async function configureLocks(page: Page, mask: string, action: string) {
-  await panel(page, '创世'); await page.getByLabel('显示区域锁选区', { exact: true }).check();
+  await panel(page, '创世');
+  const tools = page.getByTestId('atlas-region-tools');
+  if (!await tools.evaluate(element => (element as HTMLDetailsElement).open)) await tools.locator('summary').click();
+  await page.getByLabel('显示区域锁选区', { exact: true }).check();
   for (const [label, value] of [['选区起始列', rectangle.column], ['选区起始行', rectangle.row], ['选区宽度', rectangle.columns], ['选区高度', rectangle.rows]] as const) await page.getByLabel(label, { exact: true }).fill(String(value));
   await page.getByLabel('区域锁保护内容', { exact: true }).selectOption(mask); await page.getByLabel('区域锁操作', { exact: true }).selectOption(action);
 }

@@ -1,6 +1,6 @@
-import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { cloneAtlasDocument, createGenerationDraft, isGenerationDocument, type AtlasDocument } from './atlas-format';
-import type { MacroRecipe, LandformRecipe, IslandRecipe, CoastRecipe, ShapeRecipe, AtlasCellLockBlock, GenerationScope } from './generation-contract';
+import type { MacroRecipe, LandformRecipe, IslandRecipe, CoastRecipe, ShapeRecipe, OceanRecipe, AtlasCellLockBlock, GenerationScope } from './generation-contract';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -705,5 +705,39 @@ describe('PH06 drawn outline durable integration', () => {
     const restored = await client({ format: 2 }).restore(initial.head.draftId); expect(restored.data).toEqual(confirmed.data);
     const undone = await c.undo(); expect(undone.head.revision).toBe(2); expect(undone.data.blocks).toEqual(initial.data.blocks);
     expect(isGenerationDocument(undone.data) && undone.data.manifest.generation.lastApplied).toBeNull();
+  }, 90000);
+});
+
+describe('PH06 ocean floor durable integration', () => {
+  it('keeps land and inland water while binding ocean preview to atomic confirm, refresh and undo', async () => {
+    const fixture = await persistLocalScopeFixture(), c = client({ format: 2 }); await c.restore(fixture.manifest.draftId);
+    await c.previewConstraints({ column: 1, row: 1, columns: 3, rows: 3 }, 3, 'set'); await c.confirmConstraints();
+    const lakeId = 50 * 128 + 40;
+    const lakePatch = { elevation: { ids: new Uint32Array([lakeId]), values: new Int32Array([-250]) } };
+    const lakePreview = await c.preview(lakePatch, '独立内湖');
+    await c.edit(lakePatch, '独立内湖', { revision: lakePreview.baseRevision, rootDigest: lakePreview.baseRootDigest });
+    const baseline = cloneAtlasDocument(c.current!.data), before = await databaseSnapshot(2), revision = c.head!.revision;
+    const recipe: OceanRecipe = { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'ocean-floor', version: 1, fingerprint: OCEAN_GENERATOR_FINGERPRINT }, seed: 'ocean-worker', parameters: { meanDepthMeters: 3600, reliefMeters: 1000, shelfWidthWorld: 320 } };
+    const p = await c.previewGeneration(recipe);
+    expect(p.preview.summary.ocean?.changedSeaCellCount).toBeGreaterThan(100); expect(p.preview.recipe).toEqual(recipe);
+    expect(p.preview.summary.ocean?.protectedSeaCellCount).toBe(9); expect(cellHeight(p.data, lakeId)).toBe(-250);
+    expect(await databaseSnapshot(2)).toEqual(before);
+    let changedSea = 0;
+    for (let id = 0; id < 128 * 128; id++) {
+      const a = cellHeight(baseline, id), b = cellHeight(p.data, id);
+      expect(a >= 0).toBe(b >= 0);
+      if (a >= 0 || cellLocks(baseline, id)) expect(b).toBe(a);
+      if (a !== b) changedSea++;
+    }
+    expect(changedSea).toBe(p.preview.summary.ocean?.changedSeaCellCount);
+    for (const [key, block] of baseline.blocks) if (block.layer !== 'elevation') expect(p.data.blocks.get(key)).toEqual(block);
+    await c.discardGeneration(); expect(await databaseSnapshot(2)).toEqual(before);
+    const repeat = await c.previewGeneration(recipe); expect(repeat.data).toEqual(p.data);
+    const confirmed = await c.confirmGeneration(); expect(confirmed.head.revision).toBe(revision + 1);
+    expect(isGenerationDocument(confirmed.data) && confirmed.data.manifest.generation.lastApplied?.recipe).toEqual(recipe);
+    expect((await client({ format: 2 }).restore(fixture.manifest.draftId)).data).toEqual(confirmed.data);
+    const undone = await c.undo(); expect(undone.head.revision).toBe(revision + 2); expect(undone.data.blocks).toEqual(baseline.blocks);
+    expect(isGenerationDocument(undone.data) && undone.data.locks).toEqual(isGenerationDocument(baseline) && baseline.locks);
+    expect((await client({ format: 2 }).restore(fixture.manifest.draftId)).data).toEqual(undone.data);
   }, 90000);
 });

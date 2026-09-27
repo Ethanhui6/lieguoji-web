@@ -11,7 +11,8 @@ import { AtlasTerrainGeometryCache } from './atlas-terrain-geometry-cache';
 import { cameraScaleBounds, cameraWorldBounds, centerCameraAt, fitCamera, panCamera, resizeCamera, screenToWorld, zoomCameraAt, type AtlasCamera } from './camera';
 import { atlasLodPolicy, resolveAtlasLod, type AtlasLod } from './lod';
 import { AtlasLabelLayer, emptyAtlasLabelMetrics } from './atlas-label-layer';
-import { atlasTerrainColor } from './terrain-material';
+import { buildTerrainSurface } from './terrain-surface';
+import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './terrain-mesh';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
@@ -45,6 +46,7 @@ export class AtlasRenderer {
   private readonly deferredDirtyCores = new Set<BlockKey>();
   private labels?: AtlasLabelLayer;
   private lod?: AtlasLod;
+  private gridRequested = false;
   private index?: SpatialIndex;
   private data?: AtlasGeographyView;
   private committed?: { data: AtlasGeographyView; index: SpatialIndex };
@@ -149,12 +151,14 @@ export class AtlasRenderer {
     const minCol = Math.max(0, Math.floor((sampleX - step / 4) / step)), minRow = Math.max(0, Math.floor((sampleY - step / 4) / step));
     const maxCol = Math.min(spec.columns - 1, Math.floor((sampleX + pixelWidth / density + step / 4) / step)), maxRow = Math.min(spec.rows - 1, Math.floor((sampleY + pixelHeight / density + step / 4) / step));
     const dependencies: BlockKey[] = [];
-    for (let oy = Math.floor(Math.max(0, minRow - 1) / 32); oy <= Math.floor(maxRow / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 1) / 32); ox <= Math.floor(maxCol / 32); ox++) dependencies.push(this.geometryKey(ox, oy));
-    // Material lighting reads each sampled cell's four real neighbours. The
-    // one-cell ring is part of the content key and every invalidation path.
-    if (layer === 'terrain') for (let oy = Math.floor(Math.max(0, minRow - 1) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + 1) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 1) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + 1) / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
+    const materialRing = layer === 'terrain' ? 2 : 0;
+    // Shared corner samples read incident cells, whose light in turn reads
+    // their true four-neighbour centroids. Geometry owners include the extra
+    // north/west owner of those cells' shared vertices.
+    for (let oy = Math.floor(Math.max(0, minRow - materialRing - 1) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + materialRing) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - materialRing - 1) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + materialRing) / 32); ox++) dependencies.push(this.geometryKey(ox, oy));
+    if (layer === 'terrain') for (let oy = Math.floor(Math.max(0, minRow - 2) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + 2) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 2) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + 2) / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
     const level = Math.log2(density);
-    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/terrain-material-v2/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
+    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/terrain-surface-v1/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
       pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
     if (!tile) return whole;
     const tileSpan = span / 4, tilePixels = corePixels / 4, tileX = worldX + tile.x * tileSpan, tileY = worldY + tile.y * tileSpan;
@@ -176,7 +180,7 @@ export class AtlasRenderer {
     }
     const step = this.data.manifest.spec.width / this.data.manifest.spec.columns;
     this.lod = resolveAtlasLod(this.camera.scale * step, this.lod);
-    const grid = atlasLodPolicy(this.lod, this.viewport().width).gridVisible;
+    const grid = this.gridRequested && atlasLodPolicy(this.lod, this.viewport().width).gridVisible;
     // Raster density is a cache sampling level, not a change to geography or semantic LOD.
     const requestedDensity = 2 ** Math.ceil(Math.log2(Math.max(minimumCacheDensity, this.camera.scale * this.app.renderer.resolution)));
     const logicalMaximum = 2 ** Math.floor(Math.log2(1020 / (step * 32 + step / 2)));
@@ -193,7 +197,7 @@ export class AtlasRenderer {
           return [terrain, ...(grid ? [this.specFor(key, 'grid', density, tile)] : [])];
         });
       });
-      if (specs.reduce((sum, item) => sum + item.pixelWidth * item.pixelHeight, 0) <= this.cache.budgetPixels * .75) break;
+      if (specs.reduce((sum, item) => sum + item.pixelWidth * item.pixelHeight, TERRAIN_LUT_PIXELS) <= this.cache.budgetPixels * .75) break;
       density /= 2;
       if (density < minimumCacheDensity) throw new Error('地图可见缓存无法在最低采样密度内满足预算。');
     } while (density >= minimumCacheDensity);
@@ -216,9 +220,10 @@ export class AtlasRenderer {
   }
   private ensureTexture(spec: AtlasTextureSpec, protectedKeys: ReadonlySet<string>, repainted: Set<BlockKey>): AtlasTextureEntry {
     const existing = this.cache.get(spec.key); if (existing) return existing;
+    const materials = spec.layer === 'terrain' ? ensureTerrainMaterials(this.cache) : undefined;
     const entry = this.cache.ensure(spec, target => {
       const bounds = { minX: spec.sampleX, minY: spec.sampleY, maxX: spec.sampleX + spec.pixelWidth / spec.density, maxY: spec.sampleY + spec.pixelHeight / spec.density };
-      let scratch: Graphics;
+      let scratch: Container;
       if (spec.layer === 'terrain') {
         const logical = this.specFor(spec.blockKey, 'terrain', spec.density);
         const geometryBounds = { minX: logical.sampleX, minY: logical.sampleY, maxX: logical.sampleX + logical.pixelWidth / logical.density, maxY: logical.sampleY + logical.pixelHeight / logical.density };
@@ -227,22 +232,13 @@ export class AtlasRenderer {
         if (retained) scratch = retained;
         else {
           const ids = this.index!.queryCells(geometryBounds).cellIds;
-          scratch = this.terrainGeometry.create(geometrySpec, ids.length, graphics => {
-            const groups = new Map<number, number[]>();
-            const materialColors = new Map<number, Map<number, number>>();
+          scratch = this.terrainGeometry.create(geometrySpec, ids.length, surface => {
+            const sampled = buildTerrainSurface(this.data!, ids);
+            surface.addSurface(sampled.sea, 'sea', materials!.sea); surface.addSurface(sampled.land, 'land', materials!.land);
+            const graphics = new Graphics({ autoGarbageCollect: false }); surface.addChild(graphics);
             const columns = this.data!.manifest.spec.columns, step = this.data!.manifest.spec.width / columns;
             const heights = new Map<number, number>();
             const height = (id: number) => { const known = heights.get(id); if (known !== undefined) return known; const slot = getCellLayerSlot(this.data!, 'elevation', id), value = slot.block.values[slot.slot]; heights.set(id, value); return value; };
-            for (const id of ids) {
-              const elevation = height(id), x = id % columns, y = Math.floor(id / columns);
-              const west = x > 0 ? height(id - 1) : elevation, east = x < columns - 1 ? height(id + 1) : elevation;
-              const north = y > 0 ? height(id - columns) : elevation, south = y < columns - 1 ? height(id + columns) : elevation, slope = east - west + south - north;
-              let slopeColors = materialColors.get(elevation); if (!slopeColors) { slopeColors = new Map(); materialColors.set(elevation, slopeColors); }
-              let color = slopeColors.get(slope);
-              if (color === undefined) { color = atlasTerrainColor(elevation, west, east, north, south, step); slopeColors.set(slope, color); }
-              const cells = groups.get(color) ?? []; cells.push(id); groups.set(color, cells);
-            }
-            for (const [color, cells] of groups) { for (const id of cells) graphics.poly(getCellQuad(this.data!, id).flatMap(p => [p.x, p.y])); graphics.fill({ color }); }
             // Only actual sea/land shared edges receive a shore line. The
             // world rectangle is never treated as an invented coastline.
             let shores = 0;
@@ -257,15 +253,17 @@ export class AtlasRenderer {
               }
             }
             if (shores) graphics.stroke({ color: 0xc5dcc7, width: step / 24, alpha: .7 });
-          });
+            surface.terrainBuffers.shoreSegments = shores;
+          }, () => new AtlasTerrainMesh());
         }
       } else scratch = new Graphics();
       try {
         if (spec.layer === 'grid') {
-          for (const id of this.index!.queryCells(bounds).cellIds) scratch.poly(getCellQuad(this.data!, id).flatMap(p => [p.x, p.y]));
-          scratch.stroke({ color: 0xc1d8d3, width: 1 / spec.density, alpha: .25 });
+          const grid = scratch as Graphics;
+          for (const id of this.index!.queryCells(bounds).cellIds) grid.poly(getCellQuad(this.data!, id).flatMap(p => [p.x, p.y]));
+          grid.stroke({ color: 0xc1d8d3, width: 1 / spec.density, alpha: .25 });
         }
-        // Graphics stay in world coordinates. Only the target matrix changes;
+        // Meshes/Graphics stay in world coordinates. Only the target matrix changes;
         // a reused wider real halo is clipped by this target, never resampled.
         // Grid strokes depend on density and remain a separate one-shot path.
         this.app.renderer.render({ container: scratch, target, transform: new Matrix(spec.density, 0, 0, spec.density, -spec.sampleX * spec.density, -spec.sampleY * spec.density), clear: true, clearColor: [0, 0, 0, 0] });
@@ -331,7 +329,7 @@ export class AtlasRenderer {
           yieldTask: async () => { await new Promise<void>(resolve => setTimeout(resolve, 0)); this.assertAcceptance(pending); },
         });
         this.assertAcceptance(pending); if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending); this.index = index;
-        this.cache.clear(); this.terrainGeometry.clear(); this.deferredDirtyCores.clear();
+        this.terrainGeometry.clear(); this.cache.clear(); this.deferredDirtyCores.clear();
         this.data = data; this.previewCells = []; this.previewVertices.clear(); this.lod = undefined;
         if (!preserveCamera) { this.selected = null; this.camera = fitCamera(this.worldSize(), this.viewport()); }
       } else {
@@ -413,7 +411,7 @@ export class AtlasRenderer {
   }
   private switchDisplayedData(data: AtlasGeographyView, index: SpatialIndex, source: 'committed' | 'generation-preview') {
     if (this.data !== data || this.index !== index) {
-      this.cache.clear(); this.terrainGeometry.clear(); this.deferredDirtyCores.clear(); this.data = data; this.index = index;
+      this.terrainGeometry.clear(); this.cache.clear(); this.deferredDirtyCores.clear(); this.data = data; this.index = index;
       this.refs = new Map(data.manifest.blockRefs.map(ref => [ref.key, ref.hash]));
     }
     this.displaySource = source; this.previewCells = []; this.previewVertices.clear(); this.previewRevision++; this.labels?.hide(); this.clearPointers();
@@ -422,7 +420,8 @@ export class AtlasRenderer {
     displaySource: this.displaySource, displayRevision: this.data?.manifest.revision ?? null, displayVersion: this.data?.manifest.version ?? null,
     committedRevision: this.committed?.data.manifest.revision ?? null, displayCorrectFrameAt: this.displayCorrectFrameAt,
     lod: this.lod ?? 'far', cellPixels: this.data ? this.camera.scale * this.data.manifest.spec.width / this.data.manifest.spec.columns : 0,
-    gridVisible: this.lod ? atlasLodPolicy(this.lod, this.app.screen.width).gridVisible : false, labels: this.labels?.metrics() ?? emptyAtlasLabelMetrics() }; }
+    gridRequested: this.gridRequested, gridVisible: this.gridRequested && this.lod ? atlasLodPolicy(this.lod, this.app.screen.width).gridVisible : false, labels: this.labels?.metrics() ?? emptyAtlasLabelMetrics() }; }
+  setGridVisible(visible: boolean): void { this.guarded(() => { if (this.gridRequested !== visible) { this.gridRequested = visible; this.draw(); } }); }
   select(cellId: number | null) { this.guarded(() => { if (cellId !== null && this.data) getCellQuad(this.data, cellId); this.selected = cellId; this.draw(); }); }
   showPreview(cellIds: number[], vertices?: { ids: Uint32Array; xyQ: Int32Array }) {
     if (this.displaySource === 'generation-preview' && (cellIds.length || vertices?.ids.length)) throw new Error('请先确认或取消生成预览，再编辑地理。');
@@ -626,7 +625,7 @@ export class AtlasRenderer {
         const promise = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
         void promise.catch(() => undefined); this.recovery = { promise, resolve, reject };
       }
-      this.cache.clear(); this.terrainGeometry.clear(); this.callbacks.onGraphicsState?.('lost'); this.emitMetrics();
+      this.terrainGeometry.clear(); this.cache.clear(); this.callbacks.onGraphicsState?.('lost'); this.emitMetrics();
     } catch (error) { this.fail(error); }
   }
   private async waitForGraphics(signal?: AbortSignal) {
@@ -730,8 +729,8 @@ export class AtlasRenderer {
     this.drawnOutline = undefined; this.drawnSelection = undefined; this.drawnPreview = undefined;
     if (this.initialized) {
       this.clearPointers();
-      try { this.cache.clear(); } catch (error) { this.fail(error); }
       try { this.terrainGeometry.clear(); } catch (error) { this.fail(error); }
+      try { this.cache.clear(); } catch (error) { this.fail(error); }
       finally {
         try { this.emitMetrics(); this.app.destroy(true, { children: true }); }
         finally {

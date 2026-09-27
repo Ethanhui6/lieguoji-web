@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "files": [
+    {
+      "before": "e2ccb911d9d876ad9657676e07b8aa7b269db7e2c5e42926572a9fb6caa52493",
+      "path": "tests/atlas-constraints.spec.ts",
+      "after": "e2ccb911d9d876ad9657676e07b8aa7b269db7e2c5e42926572a9fb6caa52493"
+    },
+    {
+      "before": "97ef8738ab45c28e9477109819637d7cc17498a244b6c85fc689bd34b3633123",
+      "path": "tests/atlas.spec.ts",
+      "after": "97ef8738ab45c28e9477109819637d7cc17498a244b6c85fc689bd34b3633123"
+    },
+    {
+      "before": "a08058ef7f641d6d747458682a0ca3f1851de78609fe10341d59edc931a91832",
+      "path": ".autopilot/ph06/handdraw-checks/browser-regressions-first.config.ts",
+      "after": "a08058ef7f641d6d747458682a0ca3f1851de78609fe10341d59edc931a91832"
+    },
+    {
+      "before": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "path": "playwright.config.ts",
+      "after": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "before": "9c3d43ed6f1d276589f472702ae75b60b5a0923a8d71d9121fcb15eb585bb70b",
+      "path": "dist/build.json",
+      "after": "9c3d43ed6f1d276589f472702ae75b60b5a0923a8d71d9121fcb15eb585bb70b"
+    }
+  ],
+  "completedAt": "2026-09-27T03:01:52.4519996Z",
+  "allSourcesAndBuildUnchanged": true
+}

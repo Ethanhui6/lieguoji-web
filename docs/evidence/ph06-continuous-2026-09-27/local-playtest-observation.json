@@ -1,0 +1,21 @@
+{
+  "date": "2026-09-27",
+  "kind": "actual-in-app-browser-ui-observation",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-d1e901ea-241a-49a2-81b4-60bf5ed0e1cf&atlas-format=2",
+  "name": "山海新卷 · 手绘试玩",
+  "servedBuildSha256": "c096754324425cc86e6fc3b9e81839362f8853c8d35ae14b3d1708f060d8b427",
+  "initialReload": { "revision": 2, "newGridButtonPresent": true, "interiorContinuousColorsObserved": true },
+  "coastPreviewThroughUi": {
+    "strengthPermille": 1000,
+    "iterations": 4,
+    "reportedChangedCells": 1089,
+    "reportedChangedVertices": 546,
+    "reportedAppliedIterations": 4,
+    "reportedLandComponents": 1,
+    "reportedLandPermille": 144,
+    "reportedHeightRangeMeters": [-4525, 1502]
+  },
+  "confirmedThroughUi": true,
+  "actualReloadAfterConfirmation": { "revision": 3, "status": "草稿已保存 · 修订 3", "observedConsoleErrors": [] },
+  "limitation": "This is the agent-created local demonstration world. UI reports above are not an independent binary geography audit. This smoke observation is separate from the frozen 31-case browser suite, does not certify real-device performance or user visual acceptance, and does not claim the old coast-smoothing tool adds subcell coastline geometry."
+}

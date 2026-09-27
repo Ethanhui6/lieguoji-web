@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AtlasTerrainGeometryCache, type AtlasTerrainGeometrySpec } from './atlas-terrain-geometry-cache';
 import type { BlockKey } from './model';
+import type { AtlasRetainedTerrain } from './atlas-terrain-geometry-cache';
 
 const gpu = vi.hoisted(() => ({ create: vi.fn(), destroy: vi.fn() }));
 vi.mock('pixi.js', () => ({ Graphics: class {
@@ -14,6 +15,19 @@ const subset = (value: AtlasTerrainGeometrySpec): AtlasTerrainGeometrySpec => ({
 beforeEach(() => { gpu.create.mockReset(); gpu.destroy.mockReset(); });
 
 describe('retained terrain Graphics ownership and real coverage', () => {
+  it('charges actual surface buffers and bounds both mesh topology and real shore segments', () => {
+    const cache = new AtlasTerrainGeometryCache(2, 3), destroy = vi.fn();
+    const resource = { destroy, terrainBuffers: { bytes: 128, vertices: 5, triangles: 4, shoreSegments: 2 } } as unknown as AtlasRetainedTerrain;
+    cache.create(spec(), 1, () => undefined, () => resource);
+    expect(cache.stats()).toMatchObject({ surfaceMeshBufferBytes: 128, liveSurfaceMeshBufferBytes: 128, reservedSurfaceMeshBufferBytes: 0,
+      surfaceMeshBufferByteLimit: 384, vertices: 5, triangles: 4, shoreSegments: 2, shoreSegmentLimit: 12 });
+    cache.clear(); expect(destroy).toHaveBeenCalledTimes(1);
+    expect(cache.stats()).toMatchObject({ surfaceMeshBufferBytes: 0, vertices: 0, triangles: 0, shoreSegments: 0 });
+    const oversized = { destroy: vi.fn(), terrainBuffers: { bytes: 129, vertices: 5, triangles: 4, shoreSegments: 0 } } as unknown as AtlasRetainedTerrain;
+    expect(() => cache.create(spec(), 1, () => undefined, () => oversized)).toThrow('资源上限');
+    expect(oversized.destroy).toHaveBeenCalledTimes(1);
+    expect(cache.stats()).toMatchObject({ entries: 0, surfaceMeshBufferBytes: 0, reservedSurfaceMeshBufferBytes: 0 });
+  });
   it('reuses actual wider terrain geometry without construction and owns immutable coverage/dependency records', () => {
     const cache = new AtlasTerrainGeometryCache(), initial = spec(), narrower = subset(initial), current = refs(initial), build = vi.fn();
     expect(cache.get(initial, current)).toBeUndefined(); const graphics = cache.create(initial, 1156, build);

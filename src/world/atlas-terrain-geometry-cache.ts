@@ -1,16 +1,20 @@
-import { Graphics } from 'pixi.js';
+import { Graphics, type Container } from 'pixi.js';
 import type { BlockKey } from './model';
 import type { AtlasAabb } from './spatial-index';
 
 export const ATLAS_TERRAIN_GEOMETRY_ENTRY_LIMIT = 128;
 export const ATLAS_TERRAIN_GEOMETRY_QUAD_LIMIT = 131072;
+/** At most five vertices (position + UV) and twelve uint32 indices per quad. */
+export const ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD = 128;
+export interface AtlasTerrainBufferMetrics { bytes: number; vertices: number; triangles: number; shoreSegments: number }
+export type AtlasRetainedTerrain = Container & { terrainBuffers?: AtlasTerrainBufferMetrics };
 export type AtlasTerrainGeometrySpec = {
   atlasId: string;
   blockKey: BlockKey;
   bounds: AtlasAabb;
   dependencies: { key: BlockKey; hash: string }[];
 };
-type Entry = { spec: AtlasTerrainGeometrySpec; graphics: Graphics; quads: number; used: number };
+type Entry = { spec: AtlasTerrainGeometrySpec; graphics: AtlasRetainedTerrain; quads: number; buffers: AtlasTerrainBufferMetrics; used: number };
 const contains = (outer: AtlasAabb, inner: AtlasAabb) => outer.minX <= inner.minX && outer.minY <= inner.minY && outer.maxX >= inner.maxX && outer.maxY >= inner.maxY;
 
 /** Retain only terrain geometry already needed by a real texture render. A
@@ -24,6 +28,12 @@ export class AtlasTerrainGeometryCache {
   private reservedQuads = 0;
   private reservedEntries = 0;
   private peakQuads = 0;
+  private bufferBytes = 0;
+  private reservedBufferBytes = 0;
+  private peakBufferBytes = 0;
+  private vertices = 0;
+  private triangles = 0;
+  private shoreSegments = 0;
   private created = 0;
   private destroyed = 0;
   private hits = 0;
@@ -37,6 +47,9 @@ export class AtlasTerrainGeometryCache {
   }
   stats() {
     return { entries: this.entries.size, quads: this.liveQuads + this.reservedQuads, liveQuads: this.liveQuads, reservedQuads: this.reservedQuads, reservedEntries: this.reservedEntries,
+      surfaceMeshBufferBytes: this.bufferBytes + this.reservedBufferBytes, liveSurfaceMeshBufferBytes: this.bufferBytes, reservedSurfaceMeshBufferBytes: this.reservedBufferBytes,
+      peakSurfaceMeshBufferBytes: this.peakBufferBytes, surfaceMeshBufferByteLimit: this.quadLimit * ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD, vertices: this.vertices, triangles: this.triangles,
+      shoreSegments: this.shoreSegments, shoreSegmentLimit: this.quadLimit * 4,
       peakQuads: this.peakQuads, quadLimit: this.quadLimit, entryLimit: this.entryLimit, created: this.created, destroyed: this.destroyed,
       hits: this.hits, misses: this.misses, evictions: this.evictions, releaseFailures: this.releaseFailures };
   }
@@ -54,13 +67,15 @@ export class AtlasTerrainGeometryCache {
     const entry = this.entries.get(key); if (!entry) return;
     try {
       entry.graphics.destroy(); this.entries.delete(key); this.liveQuads -= entry.quads; this.destroyed++;
+      this.bufferBytes -= entry.buffers.bytes; this.vertices -= entry.buffers.vertices; this.triangles -= entry.buffers.triangles;
+      this.shoreSegments -= entry.buffers.shoreSegments;
       if (evicted) this.evictions++;
     } catch (error) {
       // A failed release remains charged. Never reuse unknown GPU ownership.
       this.releaseFailures++; this.failure ??= error instanceof Error ? error : new Error(String(error)); throw this.failure;
     }
   }
-  create(spec: AtlasTerrainGeometrySpec, quads: number, build: (graphics: Graphics) => void) {
+  create<T extends AtlasRetainedTerrain = Graphics>(spec: AtlasTerrainGeometrySpec, quads: number, build: (graphics: T) => void, factory?: () => T): T {
     if (this.failure) throw this.failure;
     if (this.entries.has(spec.blockKey)) throw new Error('地形几何缓存应先核验已有条目。');
     if (!Number.isSafeInteger(quads) || quads < 1 || quads > this.quadLimit) throw new Error('单块地形几何超过缓存上限。');
@@ -73,16 +88,24 @@ export class AtlasTerrainGeometryCache {
       if (!oldest) throw new Error('地形几何缓存无法在预算内分配。');
       this.release(oldest.spec.blockKey, true);
     }
+    const reservedBytes = factory ? quads * ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD : 0;
+    this.reservedBufferBytes += reservedBytes;
+    this.peakBufferBytes = Math.max(this.peakBufferBytes, this.bufferBytes + this.reservedBufferBytes);
     this.reservedEntries++; this.reservedQuads += quads; this.peakQuads = Math.max(this.peakQuads, this.liveQuads + this.reservedQuads);
-    let graphics: Graphics | undefined;
+    let graphics: T | undefined;
     try {
-      graphics = new Graphics({ autoGarbageCollect: false }); this.created++;
+      graphics = factory ? factory() : new Graphics({ autoGarbageCollect: false }) as unknown as T; this.created++;
       build(graphics);
-      this.entries.set(spec.blockKey, { spec: { atlasId: spec.atlasId, blockKey: spec.blockKey, bounds: { ...bounds }, dependencies: spec.dependencies.map(ref => ({ ...ref })) }, graphics, quads, used: ++this.clock });
+      const buffers = { ...(graphics.terrainBuffers ?? { bytes: 0, vertices: 0, triangles: 0, shoreSegments: 0 }) };
+      if (!Object.values(buffers).every(value => Number.isSafeInteger(value) && value >= 0) || buffers.bytes > reservedBytes
+        || buffers.vertices > quads * 5 || buffers.triangles > quads * 4 || buffers.shoreSegments > quads * 4) throw new Error('连续地形缓冲超出实际地格的资源上限。');
+      this.entries.set(spec.blockKey, { spec: { atlasId: spec.atlasId, blockKey: spec.blockKey, bounds: { ...bounds }, dependencies: spec.dependencies.map(ref => ({ ...ref })) }, graphics, quads, buffers, used: ++this.clock });
+      this.bufferBytes += buffers.bytes; this.reservedBufferBytes -= reservedBytes; this.vertices += buffers.vertices; this.triangles += buffers.triangles;
+      this.shoreSegments += buffers.shoreSegments;
       this.liveQuads += quads; this.reservedQuads -= quads; this.reservedEntries--;
       return graphics;
     } catch (error) {
-      try { if (graphics) { graphics.destroy(); this.destroyed++; } this.reservedQuads -= quads; this.reservedEntries--; }
+      try { if (graphics) { graphics.destroy(); this.destroyed++; } this.reservedQuads -= quads; this.reservedEntries--; this.reservedBufferBytes -= reservedBytes; }
       catch (releaseError) { this.releaseFailures++; this.failure = releaseError instanceof Error ? releaseError : new Error(String(releaseError)); }
       throw error;
     }

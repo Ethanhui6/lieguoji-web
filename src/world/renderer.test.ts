@@ -6,10 +6,11 @@ import { cellVertexIds, getCellQuad, getVertexPositionQ, incidentCellIds, vertex
 import { AtlasTextureCache, type AtlasTextureSpec } from './atlas-texture-cache';
 import { cloneGenerationDocument, createGenerationDraft, encodeGenerationManifest } from './generation-format';
 import { hashAtlasManifest, type AtlasGenerationDocument } from './atlas-format';
+import { TERRAIN_LUT_PIXELS } from './terrain-mesh';
 
 // Only the browser/GPU boundary is replaced. The source, shared geometry and
 // spatial index are the production 128² atlas, never a benchmark fixture.
-const pixi = vi.hoisted(() => ({ init: vi.fn(), render: vi.fn(), resize: vi.fn(), destroy: vi.fn(), fill: vi.fn(), preview: vi.fn(), overlay: vi.fn(), overlayClear: vi.fn(), textureCreate: vi.fn(), textureDestroy: vi.fn(), spriteDestroy: vi.fn(), cropCreate: vi.fn(), cropDestroy: vi.fn(), targetDraw: vi.fn() }));
+const pixi = vi.hoisted(() => ({ init: vi.fn(), render: vi.fn(), resize: vi.fn(), destroy: vi.fn(), fill: vi.fn(), preview: vi.fn(), overlay: vi.fn(), overlayClear: vi.fn(), textureCreate: vi.fn(), textureDestroy: vi.fn(), spriteDestroy: vi.fn(), cropCreate: vi.fn(), cropDestroy: vi.fn(), targetDraw: vi.fn(), materialCreate: vi.fn(), materialDestroy: vi.fn(), geometryCreate: vi.fn(), geometryDestroy: vi.fn() }));
 const labelBoundary = vi.hoisted(() => ({ update: vi.fn(), hide: vi.fn(), destroy: vi.fn() }));
 vi.mock('./atlas-label-layer', () => {
   const emptyAtlasLabelMetrics = () => ({ visibleCount: 0, visibleIds: [], boxes: [], examinedCells: 0, candidateCount: 0, latticeStride: null, visibleNodes: 0, probeNodes: 0, measurementCacheEntries: 0 });
@@ -24,10 +25,13 @@ vi.mock('./atlas-label-layer', () => {
 vi.mock('pixi.js/unsafe-eval', () => ({}));
 vi.mock('pixi.js', () => {
   class Container {
+    children: Container[] = [];
+    destroyed = false;
     position = { set() {} };
     scale = { set() {} };
-    addChild() {}
+    addChild(child: Container) { if (!this.children.includes(child)) this.children.push(child); return child; }
     addChildAt() {}
+    destroy(options?: unknown) { void options; this.destroyed = true; }
   }
   class Graphics extends Container {
     visible = true;
@@ -45,7 +49,7 @@ vi.mock('pixi.js', () => {
       }
       return this;
     }
-    destroy() {}
+    override destroy() { this.destroyed = true; }
   }
   class Application {
     stage = new Container();
@@ -55,9 +59,26 @@ vi.mock('pixi.js', () => {
       getBoundingClientRect: () => ({ left: 0, top: 0 }), setPointerCapture: (id: number) => this.captures.add(id), hasPointerCapture: (id: number) => this.captures.has(id), releasePointerCapture: (id: number) => this.captures.delete(id) });
     renderer = {
       resolution: 1,
-      render: (input: { target?: unknown; container?: Graphics; transform?: unknown }) => {
-        if (input.target) pixi.targetDraw({ colors: [...input.container!.colors], transform: input.transform });
-        pixi.render(pixi.fill.mock.calls.reduce((sum, [count]) => sum + Number(count), 0));
+      render: (input: { target?: unknown; container?: Container; transform?: unknown }) => {
+        if (input.target) {
+          const colors = new Set<number>(), meshes: MeshGeometry[] = [];
+          const visit = (node: Container) => {
+            if (node instanceof Graphics) for (const color of node.colors) colors.add(color);
+            if (node instanceof Mesh) {
+              meshes.push(node.geometry);
+              const { resource, pixelWidth: width, pixelHeight: height } = node.texture.source;
+              for (let i = 0; i < node.geometry.uvs.length; i += 2) {
+                const x = Math.max(0, Math.min(width - 1, Math.floor(node.geometry.uvs[i] * width))), y = Math.max(0, Math.min(height - 1, Math.floor(node.geometry.uvs[i + 1] * height))), offset = (y * width + x) * 4;
+                colors.add(resource[offset] << 16 | resource[offset + 1] << 8 | resource[offset + 2]);
+              }
+            }
+            for (const child of node.children) visit(child);
+          };
+          visit(input.container!); pixi.targetDraw({ colors: [...colors], meshes, transform: input.transform });
+        }
+        // Count the triangle indices actually submitted to render targets.
+        // Construction/fill calls are not evidence that a Mesh was drawn.
+        pixi.render(pixi.targetDraw.mock.calls.reduce((sum, [draw]) => sum + draw.meshes.reduce((count: number, mesh: MeshGeometry) => count + mesh.indices.length / 3, 0), 0));
       },
       resize: (width: number, height: number) => { pixi.resize(width, height); this.screen = { width, height }; },
     };
@@ -70,11 +91,30 @@ vi.mock('pixi.js', () => {
     static create(options: { width: number; height: number }) { pixi.textureCreate(options); return new RenderTexture(options.width, options.height); }
     destroy(source: boolean) { pixi.textureDestroy(source); }
   }
-  class Texture { destroyed = false; constructor(options: unknown) { pixi.cropCreate(options); } destroy(source: boolean) { pixi.cropDestroy(source); this.destroyed = true; } }
+  class BufferImageSource {
+    pixelWidth: number; pixelHeight: number; resource: Uint8Array;
+    constructor(options: { width: number; height: number; resource: Uint8Array }) { this.pixelWidth = options.width; this.pixelHeight = options.height; this.resource = options.resource; pixi.materialCreate(options); }
+    destroy() { pixi.materialDestroy(this); }
+  }
+  class Texture {
+    destroyed = false; source: BufferImageSource;
+    constructor(options: { source: BufferImageSource; frame?: unknown }) { this.source = options.source; if (options.frame) pixi.cropCreate(options); }
+    destroy(source: boolean) { if (source) this.source.destroy(); else pixi.cropDestroy(source); this.destroyed = true; }
+  }
+  class MeshGeometry {
+    positions: Float32Array; uvs: Float32Array; indices: Uint32Array; batchMode = 'auto'; autoGarbageCollect = true;
+    buffers = [{ autoGarbageCollect: true }, { autoGarbageCollect: true }, { autoGarbageCollect: true }];
+    constructor(options: { positions: Float32Array; uvs: Float32Array; indices: Uint32Array }) { this.positions = options.positions; this.uvs = options.uvs; this.indices = options.indices; pixi.geometryCreate(this); }
+    destroy(buffers: boolean) { pixi.geometryDestroy(this, buffers); }
+  }
+  class Mesh extends Container {
+    geometry: MeshGeometry; texture: Texture;
+    constructor(options: { geometry: MeshGeometry; texture: Texture }) { super(); this.geometry = options.geometry; this.texture = options.texture; }
+  }
   class Rectangle { constructor(public x: number, public y: number, public width: number, public height: number) {} }
-  class Sprite extends Container { visible = true; destroyed = false; constructor(texture: unknown) { super(); void texture; } destroy(options: unknown) { pixi.spriteDestroy(options); this.destroyed = true; } }
+  class Sprite extends Container { visible = true; destroyed = false; constructor(texture: unknown) { super(); void texture; } destroy(options?: unknown) { pixi.spriteDestroy(options); this.destroyed = true; } }
   class Matrix { constructor(public a: number, public b: number, public c: number, public d: number, public tx: number, public ty: number) {} }
-  return { Application, Container, Graphics, RenderTexture, Sprite, Matrix, Texture, Rectangle };
+  return { Application, Container, Graphics, RenderTexture, Sprite, Matrix, Texture, Rectangle, BufferImageSource, MeshGeometry, Mesh };
 });
 
 const canvasOf = (harness: Harness) => harness.host.appendChild.mock.calls[0][0] as HTMLCanvasElement;
@@ -255,7 +295,8 @@ describe('production camera, cache and GPU lifecycle', () => {
     expect(h.renderer.metrics()).toMatchObject({ lod: 'far', gridVisible: false });
     toPixels(6.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'far', gridVisible: false });
     toPixels(7.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'medium', gridVisible: false });
-    toPixels(26.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'near', gridVisible: true });
+    toPixels(26.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'near', gridRequested: false, gridVisible: false });
+    h.renderer.setGridVisible(true); tick(); expect(h.renderer.metrics().gridVisible).toBe(true);
     toPixels(24); expect(h.renderer.metrics()).toMatchObject({ lod: 'near', gridVisible: true });
     toPixels(21.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'medium', gridVisible: false });
     toPixels(4.5); expect(h.renderer.metrics()).toMatchObject({ lod: 'far', gridVisible: false });
@@ -385,16 +426,17 @@ describe('production camera, cache and GPU lifecycle', () => {
     // Core 1,0 contains no edited cell. Its sampling halo includes actual land
     // from cell 31, and must therefore contain both real land and sea colors.
     const neighbor = pixi.targetDraw.mock.calls.map(([draw]) => draw).find(draw => draw.transform.tx === -254 && draw.transform.ty === 2);
-    // The real land/sea cliff also shades its true adjacent cells. These are
-    // independently fixed material references, including flat sea and the
-    // north/west-facing slope at this top-row fixture.
-    expect(neighbor.colors.sort()).toEqual([0x4c97a8, 0x4a92a3, 0x9fab79].sort());
+    // Reconstruction does not mix the isolated land height into adjacent sea.
+    // Both domains are flat here; their independently fixed material colors
+    // remain exact even though they share boundary positions.
+    expect(neighbor.colors.sort()).toEqual([0x4c97a8, 0xa4b07d].sort());
     expect(result.repaintBlockKeys.sort()).toEqual(['geometry:0:0', 'geometry:0:1', 'geometry:1:0', 'geometry:1:1']);
     for (const [crop] of pixi.cropCreate.mock.calls) {
       expect(crop.frame).toMatchObject({ x: 2, y: 2 });
       expect(crop.frame.width + 4).toBe(crop.source.pixelWidth); expect(crop.frame.height + 4).toBe(crop.source.pixelHeight);
     }
     expect(result.cache.pixels).toBeGreaterThan(0); expect(result.cache.created - result.cache.destroyed).toBe(result.cache.entries);
+    expect(result.cache).toMatchObject({ sharedPixels: TERRAIN_LUT_PIXELS, sharedEntries: 2 });
   });
 
   it('a four-owner elevation batch reports all sixteen visible halo-dependent cores', async () => {
@@ -413,11 +455,12 @@ describe('production camera, cache and GPU lifecycle', () => {
   });
 
   it('two context losses rebuild the same view and selection without a fatal or source change', async () => {
-    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.focusCell(8256); const original = h.renderer.metrics();
+    const h = await loadedRenderer(), canvas = canvasOf(h); h.renderer.focusCell(8256); h.renderer.setGridVisible(true); const original = h.renderer.metrics();
     for (let i = 0; i < 2; i++) {
       dispatch(canvas, 'webglcontextlost'); expect(h.renderer.metrics().gpu.state).toBe('lost'); expect(h.renderer.metrics().cache.pixels).toBe(0);
       expect(h.renderer.metrics().geometryCache).toMatchObject({ entries: 0, quads: 0, reservedEntries: 0, reservedQuads: 0 });
       h.renderer.zoom(2); expect(h.renderer.metrics().camera).toEqual(original.camera);
+      expect(h.renderer.metrics().gridRequested).toBe(true);
       dispatch(canvas, 'webglcontextrestored'); await flushFrames();
       expect(h.renderer.metrics()).toMatchObject({ gpu: { state: 'ready', epoch: i + 1 }, camera: original.camera, selected: 8256, acceptedRevision: original.acceptedRevision, fatal: false });
       const geometry = h.renderer.metrics().geometryCache;
@@ -464,6 +507,11 @@ describe('production camera, cache and GPU lifecycle', () => {
     expect(final).toMatchObject({ destroyed: true, cache: { entries: 0, pixels: 0, reservedPixels: 0 } }); expect(final.cache.created).toBe(final.cache.destroyed);
     expect(final.geometryCache).toMatchObject({ entries: 0, quads: 0, reservedEntries: 0, reservedQuads: 0, releaseFailures: 0 });
     expect(final.geometryCache.created).toBe(final.geometryCache.destroyed);
+    expect(final.cache).toMatchObject({ sharedEntries: 0, sharedPixels: 0 }); expect(final.cache.sharedCreated).toBe(final.cache.sharedDestroyed);
+    expect(final.geometryCache).toMatchObject({ surfaceMeshBufferBytes: 0, vertices: 0, triangles: 0, reservedSurfaceMeshBufferBytes: 0, shoreSegments: 0 });
+    expect(pixi.geometryCreate).toHaveBeenCalled(); expect(pixi.geometryDestroy).toHaveBeenCalledTimes(pixi.geometryCreate.mock.calls.length);
+    expect(pixi.geometryDestroy.mock.calls.every(([, buffers]) => buffers === true)).toBe(true);
+    expect(pixi.materialDestroy).toHaveBeenCalledTimes(pixi.materialCreate.mock.calls.length);
     expect(pixi.textureDestroy.mock.calls.every(([source]) => source === true)).toBe(true);
     expect(pixi.cropDestroy.mock.calls.every(([source]) => source === false)).toBe(true);
     expect(pixi.spriteDestroy.mock.calls.every(([options]) => options.texture === false && options.textureSource === false)).toBe(true);
@@ -472,6 +520,31 @@ describe('production camera, cache and GPU lifecycle', () => {
 
 describe('explicit texture ledger', () => {
   const spec = (key: string): AtlasTextureSpec => ({ key, blockKey: 'geometry:0:0', layer: 'terrain', level: 0, pixelWidth: 10, pixelHeight: 10, worldX: 0, worldY: 0, sampleX: -2, sampleY: -2, density: 1, core: { x: 2, y: 2, width: 6, height: 6 }, dependencies: ['geometry:0:0', 'elevation:1:0'] });
+  it('counts pinned shared material sources against every render allocation and releases each source once', async () => {
+    const { BufferImageSource, Texture } = await import('pixi.js');
+    const cache = new AtlasTextureCache(180), create = vi.fn(() => new Texture({ source: new BufferImageSource({ width: 10, height: 8, resource: new Uint8Array(320) }) }));
+    const table = cache.ensureShared('material', 10, 8, create);
+    expect(cache.ensureShared('material', 10, 8, create)).toBe(table); expect(create).toHaveBeenCalledTimes(1);
+    cache.ensure(spec('a'), () => undefined, new Set());
+    expect(cache.stats()).toMatchObject({ pixels: 180, sharedPixels: 80, sharedEntries: 1, sharedCreated: 1 });
+    expect(cache.canReserve(100, new Set(['a']))).toBe(false);
+    expect(() => cache.ensure(spec('b'), () => undefined, new Set(['a']))).toThrow('预算');
+    cache.ensure(spec('b'), () => undefined, new Set()); expect(cache.has('a')).toBe(false);
+    expect(cache.stats().pixels).toBe(180); cache.clear(); cache.clear();
+    expect(cache.stats()).toMatchObject({ pixels: 0, sharedEntries: 0, sharedCreated: 1, sharedDestroyed: 1 });
+    expect(pixi.materialDestroy).toHaveBeenCalledTimes(1);
+  });
+  it('a shared source release failure stays charged and locks further allocation', async () => {
+    const { BufferImageSource, Texture } = await import('pixi.js');
+    const cache = new AtlasTextureCache(200);
+    for (const key of ['land', 'sea']) cache.ensureShared(key, 10, 10, () => new Texture({ source: new BufferImageSource({ width: 10, height: 10, resource: new Uint8Array(400) }) }));
+    pixi.materialDestroy.mockImplementationOnce(() => { throw new Error('shared material release failed'); });
+    expect(() => cache.clear()).toThrow('shared material release failed');
+    expect(pixi.materialDestroy).toHaveBeenCalledTimes(2);
+    expect(cache.stats()).toMatchObject({ pixels: 100, sharedPixels: 100, sharedEntries: 1, sharedCreated: 2, sharedDestroyed: 1, releaseFailures: 1 });
+    expect(() => cache.ensure(spec('a'), () => undefined, new Set())).toThrow('shared material release failed');
+    cache.clear(); expect(cache.stats()).toMatchObject({ pixels: 0, sharedCreated: 2, sharedDestroyed: 2 });
+  });
   it('reserves new and old resources together and evicts only unprotected entries', () => {
     const cache = new AtlasTextureCache(300), draw = vi.fn();
     for (const key of ['a', 'b', 'c']) cache.ensure(spec(key), draw, new Set());
@@ -549,7 +622,7 @@ const tick = () => {
 };
 const newRenderer = (onProgress?: (value: { stage: string; completed: number; total: number }) => void) => {
   const host = { clientWidth: 800, clientHeight: 600, appendChild: vi.fn() }, fatal = vi.fn(), camera = vi.fn(), pick = vi.fn(), gpu = vi.fn(), outline = vi.fn(), outlineCancel = vi.fn();
-  const progress = vi.fn((value: { stage: string; completed: number; total: number }) => { onProgress?.(value); return { ...value, submittedPolygons: pixi.render.mock.calls.at(-1)?.[0] }; });
+  const progress = vi.fn((value: { stage: string; completed: number; total: number }) => { onProgress?.(value); return { ...value, submittedTerrainTriangles: pixi.render.mock.calls.at(-1)?.[0] }; });
   const renderer = new AtlasRenderer(host as unknown as HTMLElement, { onPick: pick, onFatal: fatal, onCamera: camera, onProgress: progress, onGraphicsState: gpu, onOutline: outline, onOutlineCancel: outlineCancel });
   renderers.push(renderer);
   return { renderer, host, fatal, camera, progress, pick, gpu, outline, outlineCancel };
@@ -749,8 +822,8 @@ describe('atlas renderer failure and lifetime boundaries', () => {
     expect(paintProgress(progress)).toHaveLength(2);
     expect(paintProgress(progress)[0].value).toMatchObject({ stage: '绘制已核验地理块', completed: 8, total: 16 });
     expect(paintProgress(progress)[1].value).toMatchObject({ stage: '绘制已核验地理块', completed: 16, total: 16 });
-    expect(paintProgress(progress)[0].value.submittedPolygons).toBeGreaterThan(8 * 1024);
-    expect(paintProgress(progress)[1].value.submittedPolygons).toBeGreaterThan(16 * 1024);
+    expect(paintProgress(progress)[0].value.submittedTerrainTriangles).toBeGreaterThan(8 * 1024 * 4);
+    expect(paintProgress(progress)[1].value.submittedTerrainTriangles).toBeGreaterThan(16 * 1024 * 4);
     expect(published).not.toHaveBeenCalled();
     tick(); await result;
     expect(published).toHaveBeenCalledTimes(1); expect(renderer.metrics().correctFrameAt).toBeGreaterThan(0);

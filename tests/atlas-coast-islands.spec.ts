@@ -263,11 +263,13 @@ async function screenshot(page: Page, info: TestInfo, filename: string, full = f
 async function near(page: Page, cell: number) {
   await locate(page, cell); await panel(page, '地图');
   for (let step = 0; step < 12; step++) {
-    const current = await metrics(page); if (current.cellPixels >= 36 && current.lod === 'near' && current.gridVisible) return current;
+    const current = await metrics(page);
+    expect(current.gridVisible).toBe(false);
+    if (current.cellPixels >= 36 && current.lod === 'near') return current;
     await button(page, '放大大世界地图');
     await expect.poll(async () => (await metrics(page)).completedFrameSequence).toBeGreaterThan(current.completedFrameSequence);
   }
-  throw new Error('Real UI zoom did not reach a visible near-grid scale');
+  throw new Error('Real UI zoom did not reach the required near-view scale');
 }
 async function refreshInNewDocument(page: Page, draftId: string, expected: SavedSnapshot, errors: string[]) {
   // Keep the original session's intentional in-memory undo history, while a
@@ -347,12 +349,23 @@ test('细海岸：无岸零变化禁确认，实际近景同相机候选，保�
   const before = await saved(page, id), original = await geography(page, before.manifest), originalShape = inspect(original, before.manifest.spec), beforeDatabase = await databaseDigest(page);
   expect(originalShape.componentCells).toHaveLength(2); expect(originalShape.focusCell).toBeGreaterThanOrEqual(0);
   const beforeMetrics = await near(page, originalShape.focusCell); await screenshot(page, info, 'coast-before-near-same-camera.png');
+  await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await button(page, '显示地块网格');
+  await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await metrics(page)).gridVisible).toBe(true);
+  await expect(studio(page)).toHaveAttribute('data-selectedcell', String(originalShape.focusCell));
+  await screenshot(page, info, 'coast-before-near-explicit-grid.png');
+  await button(page, '显示地块网格');
+  await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(async () => (await metrics(page)).gridVisible).toBe(false);
+  await expect(studio(page)).toHaveAttribute('data-selectedcell', String(originalShape.focusCell));
+  expect((await metrics(page)).camera).toEqual(beforeMetrics.camera); expect(await databaseDigest(page)).toEqual(beforeDatabase);
   const first = await previewCoast(page); await expect(previewRegion(page)).toContainText('个海岸顶点'); await expect(page.getByRole('button', { name: '确认生成并保存', exact: true })).toBeEnabled();
   expect(first).toMatchObject({ revision: 1, manifestDigest: before.root.currentManifest, display: { source: 'generation-preview', revision: 2, verifiedBlocks: 256 } });
   expect(first.display.manifestDigest).not.toBe(before.root.currentManifest); expect(await databaseDigest(page)).toEqual(beforeDatabase);
   await screenshot(page, info, 'coast-candidate-near-same-camera.png'); const candidateMetrics = await metrics(page);
   expect(candidateMetrics.camera).toEqual(beforeMetrics.camera); expect(candidateMetrics.viewport).toEqual(beforeMetrics.viewport);
-  expect(candidateMetrics).toMatchObject({ lod: 'near', gridVisible: true, displaySource: 'generation-preview', committedRevision: 1, acceptedRevision: 1, displayRevision: 2 });
+  expect(candidateMetrics).toMatchObject({ lod: 'near', gridVisible: false, displaySource: 'generation-preview', committedRevision: 1, acceptedRevision: 1, displayRevision: 2 });
   await panel(page, '创世'); await button(page, '取消生成'); await ready(page); expect(await saved(page, id)).toEqual(before); expect(await databaseDigest(page)).toEqual(beforeDatabase);
   await screenshot(page, info, 'coast-cancelled-near-same-camera.png'); expect((await metrics(page)).camera).toEqual(beforeMetrics.camera);
   expect((await audit(page)).display).toMatchObject({ source: 'committed', manifestDigest: before.root.currentManifest });
@@ -394,7 +407,7 @@ test('细海岸：无岸零变化禁确认，实际近景同相机候选，保�
     beforeLengthWorld: originalShape.coastLengthWorld, afterLengthWorld: changedShape.coastLengthWorld,
     beforeTurnEnergyQ2: originalShape.coastTurnEnergyQ2, afterTurnEnergyQ2: changedShape.coastTurnEnergyQ2, beforeLandAreaQ2: originalShape.landAreaQ2, afterLandAreaQ2: changedShape.landAreaQ2,
     worldAreaQ2: changedShape.worldAreaQ2, minActualQuadCross: changedShape.minCross, unchangedEveryElevation: true,
-    renderLimitation: 'Current renderer draws real shared quads through bounded render textures at every LOD. near/grid proves semantic detail, not vector output or adequate raster sampling; 256-grid cache density remains capped at 1 pixel/world unit. Same-camera screenshots require separate visual review and must not conceal this limitation.',
+    renderLimitation: 'Same-camera images show the real shared coastline with the optional grid disabled; the separate grid image verifies its explicit control. Geometry and pixel regressions do not replace human visual acceptance of the continuous terrain.',
     deviceLimitation: 'Mobile/tablet projects are emulation, not physical-device acceptance.' }, null, 2) });
   expect(errors).toEqual([]);
 });

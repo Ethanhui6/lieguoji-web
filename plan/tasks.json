@@ -733,46 +733,58 @@
         "docs/adr/0011-atlas-generation-and-constraints.md",
         "docs/evidence/2026-09-24-ph06-generation.md",
         "docs/adr/0012-hand-drawn-landmass.md",
-        "docs/evidence/2026-09-27-ph06-handdraw.md"
+        "docs/evidence/2026-09-27-ph06-handdraw.md",
+        "docs/adr/0013-ocean-bathymetry.md",
+        "docs/evidence/2026-09-27-ph06-ocean.md"
       ],
       "workItems": [
         {
           "id": "PH06-T1",
           "title": "种子和大陆尺度形状参数",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「种子和大陆尺度形状参数」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：实际手绘简单闭环作为可复现配方，松开后自动生成候选并可确认/取消/保存恢复。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
             "docs/evidence/playtest-2026-09-24/browser/verification.json",
             "docs/adr/0012-hand-drawn-landmass.md",
-            "docs/evidence/2026-09-27-ph06-handdraw.md"
+            "docs/evidence/2026-09-27-ph06-handdraw.md",
+            "docs/evidence/2026-09-27-ph06-ocean.md",
+            "docs/evidence/ph06-ocean-2026-09-27/browser-verification.json"
           ]
         },
         {
           "id": "PH06-T2",
           "title": "连续高程、山系盆地和岛链",
-          "status": "in_progress",
+          "status": "done",
           "acceptance": "完成「连续高程、山系盆地和岛链」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：沿轮廓形成连续海岸扰动、真实近海深度与内陆高程，保护原陆地和区域锁。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
             "docs/evidence/playtest-2026-09-24/browser/verification.json",
             "docs/adr/0012-hand-drawn-landmass.md",
-            "docs/evidence/2026-09-27-ph06-handdraw.md"
+            "docs/evidence/2026-09-27-ph06-handdraw.md",
+            "docs/evidence/2026-09-27-ph06-ocean.md",
+            "docs/evidence/ph06-ocean-2026-09-27/browser-verification.json",
+            "docs/adr/0013-ocean-bathymetry.md"
           ]
         },
         {
           "id": "PH06-T3",
           "title": "细海岸与几何拓扑校验",
           "status": "in_progress",
-          "acceptance": "完成「细海岸与几何拓扑校验」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：海深与坡向的真实渲染、近景纹理细分，遵守原缓存/几何/恢复边界；不得以新色彩冒称水系气候完成。",
+          "acceptance": "完成「细海岸与几何拓扑校验」，并提供本阶段对应验收事实。同种子同版本相同结果；海岸可编辑而非背景图；改变山系不重置锁定海陆；生成失败保留上次草稿。 2026-09-27用户追加：海深与坡向的真实渲染、近景纹理细分，遵守原缓存/几何/恢复边界；不得以新色彩冒称水系气候完成。 2026-09-27用户明确纠正：普通放大视图不得以逐格纯色地块和阶梯海岸作为完成效果；须参考原作实际画面，补足连续地形呈现与近景视觉验收，已有功能测试不替代此要求。",
           "evidence": [
             "docs/evidence/2026-09-24-ph06-generation.md",
             "docs/evidence/playtest-2026-09-24/local-build.json",
             "docs/evidence/playtest-2026-09-24/browser/verification.json",
             "docs/adr/0012-hand-drawn-landmass.md",
-            "docs/evidence/2026-09-27-ph06-handdraw.md"
+            "docs/evidence/2026-09-27-ph06-handdraw.md",
+            "docs/evidence/2026-09-27-ph06-ocean.md",
+            "docs/evidence/ph06-ocean-2026-09-27/browser-verification.json",
+            "docs/adr/0014-continuous-terrain-display.md",
+            "docs/evidence/2026-09-27-ph06-continuous-terrain.md",
+            "docs/evidence/ph06-continuous-2026-09-27/verification.json"
           ]
         },
         {

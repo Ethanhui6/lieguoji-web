@@ -1,6 +1,6 @@
 import type { AtlasBlock, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, BlockKey } from './model';
 import { ATLAS_COORDINATE_SCALE, ATLAS_WORLD_UNITS, validateSpec } from './model';
-import { COAST_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { COAST_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { isStoredGeneratorFingerprint } from './generation-history';
 
 export type AtlasFormat = 1 | 2;
@@ -49,7 +49,13 @@ export interface ShapeRecipe {
     coastRoughnessWorld: number; coastWavelengthWorld: number; reliefMeters: number; shelfWidthWorld: number;
   };
 }
-export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe;
+export interface OceanRecipe {
+  format: 'lieguoji-atlas-recipe'; version: 1;
+  generator: { id: 'ocean-floor'; version: 1; fingerprint: string };
+  seed: string;
+  parameters: { meanDepthMeters: number; reliefMeters: number; shelfWidthWorld: number };
+}
+export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe | OceanRecipe;
 /** Stored provenance may name an audited old implementation; execution may not. */
 export type GenerationValidationMode = 'execute' | 'storage';
 export interface AtlasCellRectangle { column: number; row: number; columns: number; rows: number }
@@ -108,7 +114,7 @@ export function validateLandformRecipe(raw: unknown, mode: GenerationValidationM
 }
 /** Closed registration: adding a recipe requires an implemented codec and source fingerprint. */
 export function validateGenerationRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is GenerationRecipe {
-  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode);
+  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode) || validateOceanRecipe(raw, spec, mode);
 }
 export function validateIslandRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is IslandRecipe {
   try {
@@ -121,6 +127,15 @@ export function validateCoastRecipe(raw: unknown, mode: GenerationValidationMode
   try {
     if (!generationExact(raw, ['format', 'version', 'generator', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'coast-smoothing' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('coast-smoothing', raw.generator.fingerprint, COAST_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['strengthPermille', 'iterations'])) return false;
     return generationInt(raw.parameters.strengthPermille, 100, 1000) && generationInt(raw.parameters.iterations, 1, 4);
+  } catch { return false; }
+}
+/** An explicit operation records sea-floor provenance without changing blank-v2 creation. */
+export function validateOceanRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is OceanRecipe {
+  try {
+    if (spec !== undefined && !validateSpec(spec)) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'ocean-floor' || raw.generator.version !== 1 || !acceptsGeneratorFingerprint('ocean-floor', raw.generator.fingerprint, OCEAN_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['meanDepthMeters', 'reliefMeters', 'shelfWidthWorld'])) return false;
+    const p = raw.parameters;
+    return generationInt(p.meanDepthMeters, 1000, 6000) && generationInt(p.reliefMeters, 0, 2000) && generationInt(p.shelfWidthWorld, 64, 1024);
   } catch { return false; }
 }
 type ShapePointQ = ShapeRecipe['parameters']['pointsQ'][number];

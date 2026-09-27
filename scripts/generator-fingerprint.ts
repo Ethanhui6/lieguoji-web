@@ -52,3 +52,6 @@ export function fingerprintCoastGenerator(read = (file: string) => readFileSync(
 export function fingerprintShapeGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
   return fingerprintGenerator('src/world/generation/shape.ts', 'shape-landmass', read);
 }
+export function fingerprintOceanGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
+  return fingerprintGenerator('src/world/generation/ocean.ts', 'ocean-floor', read);
+}

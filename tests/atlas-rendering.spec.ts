@@ -11,6 +11,7 @@ type FramebufferRecord = {
 };
 type WorldColorProbe = { worldX: number; worldY: number; axis: 'x' | 'y'; rgb: number[] };
 type WorldColorReadback = { frameSequence: number; camera: Metrics['camera']; samples: { worldX: number; worldY: number; px: number; py: number; rgba: number[]; expected: number[] }[] };
+type TerrainStripReadback = { frameSequence: number; camera: Metrics['camera']; worldY: number; samples: { worldX: number; px: number; py: number; rgba: number[] }[] };
 const { PNG } = createRequire(import.meta.url)('playwright-core/lib/utilsBundle') as { PNG: { sync: { read(bytes: Buffer): { width: number; height: number; data: Buffer } } } };
 function comparePixels(before: Buffer, after: Buffer) {
   const a = PNG.sync.read(before), b = PNG.sync.read(after);
@@ -31,6 +32,7 @@ declare global {
     __atlasGpuHarness?: { gl: WebGLRenderingContext | WebGL2RenderingContext; extension: WEBGL_lose_context; lost: number; restored: number; last?: Metrics; events: number; pendingLossTriggered?: boolean };
     __atlasPixelHarness?: { baseline?: { bytes: Uint8Array; width: number; height: number }; result?: FramebufferRecord; error?: string };
     __atlasColorReadback?: { result?: WorldColorReadback; error?: string };
+    __atlasTerrainStrip?: { result?: TerrainStripReadback; error?: string };
   }
 }
 const studio = (page: Page) => page.getByTestId('atlas-studio');
@@ -156,7 +158,8 @@ test('远中近细节和真实标签保持相同地块，显示有界且避让�
   for (const level of ['far', 'medium', 'near'] as const) {
     await setLod(page, level);
     await expect(page.getByTestId('atlas-map-label').filter({ visible: true })).not.toHaveCount(0);
-    const layout = await labelLayout(page); expect(layout.metrics.gridVisible).toBe(level === 'near');
+    const layout = await labelLayout(page); expect(layout.metrics.gridVisible).toBe(false);
+    await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'false');
     await info.attach(`lod-${level}-actual-layout`, { body: JSON.stringify(layout, null, 2), contentType: 'application/json' });
     expect(layout.labels.find(row => row.id === 32896)).toMatchObject({ elevation: 650, selected: true });
     expect(layout.labels.every(row => row.elevation === 650)).toBe(true);
@@ -171,6 +174,16 @@ test('远中近细节和真实标签保持相同地块，显示有界且避让�
     await expect(page.getByRole('region', { name: '地块 #32896', exact: true })).toBeVisible();
     await labelLayout(page); await panel(page, '地图'); await labelLayout(page);
     await page.screenshot({ path: info.outputPath(`atlas-lod-${level}.png`), fullPage: true });
+    await button(page, '显示地块网格');
+    await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(async () => ({ requested: (await metrics(page)).gridRequested, visible: (await metrics(page)).gridVisible })).toEqual({ requested: true, visible: level === 'near' });
+    await expect(studio(page)).toHaveAttribute('data-selectedcell', '32896');
+    if (level === 'near') await page.screenshot({ path: info.outputPath('atlas-lod-near-explicit-grid.png'), fullPage: true });
+    await button(page, '显示地块网格');
+    await expect(page.getByRole('button', { name: '显示地块网格', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await expect.poll(async () => (await metrics(page)).gridVisible).toBe(false);
+    await expect(studio(page)).toHaveAttribute('data-selectedcell', '32896');
+    await labelLayout(page); expect(await audit(page)).toEqual(original); expect(await rootBytes(page, id)).toEqual(root);
   }
   expect(await audit(page)).toEqual(original); expect(await rootBytes(page, id)).toEqual(root); expect(errors).toEqual([]);
 });
@@ -504,6 +517,110 @@ async function sampleWorldPixelsOnZoom(page: Page, probes: WorldColorProbe[]) {
   return result;
 }
 
+async function terrainStrip(page: Page) {
+  // Re-establish the same camera through public controls for each revision.
+  // Keep the actual selection four cells away; no overlay is hidden for sampling.
+  await locate(page, 32900); await setLod(page, 'near');
+  for (let step = 0; step < 12 && (await metrics(page)).cellPixels < 36; step++) {
+    const sequence = (await metrics(page)).completedFrameSequence;
+    await button(page, '放大大世界地图'); await nextDraw(page, sequence);
+  }
+  const before = await metrics(page); expect(before.cellPixels).toBeGreaterThanOrEqual(36); expect(before.gridVisible).toBe(false);
+  await canvas(page).evaluate((element, sequence) => {
+    const state: NonNullable<Window['__atlasTerrainStrip']> = {}; window.__atlasTerrainStrip = state;
+    const surface = element as HTMLCanvasElement;
+    const listener = (event: Event) => {
+      const value = (event as CustomEvent<Metrics>).detail;
+      if (value.gpu.state !== 'ready' || value.destroyed || value.fatal || value.frameSequence <= sequence || value.frameSequence <= value.completedFrameSequence) return;
+      element.removeEventListener('atlas-render-metrics', listener);
+      try {
+        const gl = surface.getContext('webgl2') ?? surface.getContext('webgl');
+        if (!gl || gl.isContextLost() || gl.getError() !== gl.NO_ERROR || gl.getParameter(gl.FRAMEBUFFER_BINDING) !== null) throw new Error('No healthy default framebuffer for continuous terrain');
+        if (gl instanceof WebGL2RenderingContext && (gl.getParameter(gl.READ_FRAMEBUFFER_BINDING) !== null || gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING) !== null)) throw new Error('Unexpected terrain read target or pack buffer');
+        const width = gl.drawingBufferWidth, height = gl.drawingBufferHeight;
+        if (width !== surface.width || height !== surface.height) throw new Error('Terrain buffer dimensions differ from actual surface');
+        const scaleX = width / value.viewport.width, scaleY = height / value.viewport.height;
+        const start = Math.ceil((value.camera.x + 2034 * value.camera.scale) * scaleX);
+        const end = Math.floor((value.camera.x + 2078 * value.camera.scale) * scaleX);
+        const topY = Math.floor((value.camera.y + 2056 * value.camera.scale) * scaleY), py = height - 1 - topY;
+        if (start < 0 || end >= width || end <= start || py < 0 || py >= height) throw new Error('Continuous terrain strip is outside the actual viewport');
+        const bytes = new Uint8Array((end - start + 1) * 4);
+        gl.readPixels(start, py, end - start + 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+        if (gl.getError() !== gl.NO_ERROR) throw new Error('Continuous terrain readPixels failed');
+        const samples: TerrainStripReadback['samples'] = [];
+        for (let px = start; px <= end; px++) {
+          const offset = (px - start) * 4;
+          samples.push({ worldX: ((px + .5) / scaleX - value.camera.x) / value.camera.scale, px, py, rgba: [...bytes.subarray(offset, offset + 4)] });
+        }
+        state.result = { frameSequence: value.frameSequence, camera: value.camera,
+          worldY: ((topY + .5) / scaleY - value.camera.y) / value.camera.scale, samples };
+      } catch (error) { state.error = String(error); }
+    };
+    element.addEventListener('atlas-render-metrics', listener);
+  }, before.completedFrameSequence);
+  await button(page, '放大大世界地图');
+  await expect.poll(() => page.evaluate(() => {
+    if (window.__atlasTerrainStrip?.error) throw new Error(window.__atlasTerrainStrip.error);
+    return Boolean(window.__atlasTerrainStrip?.result);
+  })).toBe(true);
+  const result = await page.evaluate(() => window.__atlasTerrainStrip!.result!);
+  expect(Math.abs(result.worldY - 2056)).toBeLessThan(.5);
+  expect(result.samples.length).toBeGreaterThan(80);
+  for (const sample of result.samples) expect(sample.rgba[3], JSON.stringify(sample)).toBe(255);
+  withinBudget(await metrics(page)); return result;
+}
+
+test('[atlas-continuous] 单格真实高峰具有格内连续颜色，共享边无跳色，撤销与刷新恢复相同地表', async ({ page }, info) => {
+  test.setTimeout(180000);
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const id = await create(page, '连续地表真实编辑'); await locate(page); await previewHeight(page, 650); await confirm(page, 1);
+  const flat = await terrainStrip(page), flatAudit = await audit(page), flatRoot = await rootBytes(page, id);
+  for (const sample of flat.samples) for (let channel = 0; channel < 4; channel++) {
+    expect(Math.abs(sample.rgba[channel] - [139, 163, 112, 255][channel]), JSON.stringify(sample)).toBeLessThanOrEqual(1);
+  }
+  await locate(page); await previewHeight(page, 3200, '1');
+  await expect(page.getByRole('region', { name: '地理编辑预览' })).toHaveAttribute('data-atlas-preview-cells', '1');
+  await confirm(page, 2); await expect(page.getByTestId('atlas-selected-height')).toHaveText('3200 米');
+  const peak = await terrainStrip(page), peakAudit = await audit(page), peakRoot = await rootBytes(page, id);
+  expect(peak.camera).toEqual(flat.camera); expect(peakAudit.manifestDigest).not.toBe(flatAudit.manifestDigest); expect(peakRoot).not.toEqual(flatRoot);
+  // These are physical pixels strictly inside ONE unselected authoritative cell.
+  // Per-cell colour changes and selection ink cannot satisfy this assertion.
+  const interior = peak.samples.filter(sample => sample.worldX > 2049 && sample.worldX < 2063);
+  expect(interior.length).toBeGreaterThan(24);
+  expect(new Set(interior.map(sample => sample.rgba.slice(0, 3).join(','))).size).toBeGreaterThanOrEqual(8);
+  const channelRanges = [0, 1, 2].map(channel => Math.max(...interior.map(sample => sample.rgba[channel])) - Math.min(...interior.map(sample => sample.rgba[channel])));
+  expect(Math.max(...channelRanges), 'A real height peak must visibly vary inside its own cell.').toBeGreaterThanOrEqual(24);
+  const edgeChecks = [];
+  // x=2048 is also a render-core boundary. A shared endpoint may change slope,
+  // but its one-pixel step must stay within the adjacent local gradients plus
+  // the two 8-bit endpoint rounding levels; no whole-image tolerance is used.
+  for (const edge of [2048, 2064]) {
+    const at = peak.samples.findIndex(sample => sample.worldX >= edge);
+    expect(at).toBeGreaterThan(4); expect(at + 4).toBeLessThan(peak.samples.length);
+    for (let channel = 0; channel < 3; channel++) {
+      const difference = (index: number) => Math.abs(peak.samples[index].rgba[channel] - peak.samples[index - 1].rgba[channel]);
+      const adjacent = [at - 3, at - 2, at - 1, at + 1, at + 2, at + 3].map(difference), jump = difference(at), maximumAdjacent = Math.max(...adjacent);
+      edgeChecks.push({ edge, channel, jump, maximumAdjacent });
+      expect(jump, JSON.stringify(edgeChecks.at(-1))).toBeLessThanOrEqual(maximumAdjacent + 2);
+    }
+  }
+  await page.screenshot({ path: info.outputPath('atlas-continuous-single-peak.png'), fullPage: true });
+  await button(page, '撤销大世界编辑'); await ready(page); await expect(studio(page)).toHaveAttribute('data-atlas-revision', '3');
+  await locate(page); await expect(page.getByTestId('atlas-selected-height')).toHaveText('650 米');
+  const undone = await terrainStrip(page), restoredAudit = await audit(page), restoredRoot = await rootBytes(page, id);
+  await page.reload(); await ready(page); expect(await audit(page)).toEqual(restoredAudit); expect(await rootBytes(page, id)).toEqual(restoredRoot);
+  const refreshed = await terrainStrip(page);
+  for (const restored of [undone, refreshed]) {
+    expect(restored.camera).toEqual(flat.camera); expect(restored.samples.length).toBe(flat.samples.length);
+    for (const [index, sample] of restored.samples.entries()) {
+      expect({ px: sample.px, py: sample.py, worldX: sample.worldX }).toEqual({ px: flat.samples[index].px, py: flat.samples[index].py, worldX: flat.samples[index].worldX });
+      for (let channel = 0; channel < 4; channel++) expect(Math.abs(sample.rgba[channel] - flat.samples[index].rgba[channel]), JSON.stringify({ index, sample, baseline: flat.samples[index] })).toBeLessThanOrEqual(1);
+    }
+  }
+  await info.attach('continuous-terrain-actual-framebuffer.json', { body: JSON.stringify({ flat, peak, undone, refreshed, edgeChecks, channelRanges, flatAudit, peakAudit, restoredAudit }, null, 2), contentType: 'application/json' });
+  expect(await rootBytes(page, id)).toEqual(restoredRoot); expect(errors).toEqual([]);
+});
+
 test('[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使用真实颜色', async ({ page }, info) => {
   test.setTimeout(120000);
   const id = await create(page, '缓存连续色验收');
@@ -545,22 +662,37 @@ test('[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使
     { worldX: 2048, worldY: 1840, axis: 'x', rgb: land },
   ]);
   // Density changes reuse only verified geographic shapes. Inspect the actual
-  // GPU pixels below labels as well, using real zoom controls. Medium has no
-  // grid, so probe across both core boundaries. Near has a real grid: inspect
-  // true cell interiors on both sides without mistaking grid ink for a seam.
+  // GPU pixels below labels as well, using real zoom controls. Grid is off by
+  // default at both levels; retain the existing interior probes and also cross
+  // the near-view core edges, where a raster seam must not become grid ink.
   for (const level of ['medium', 'near'] as const) {
     await setLod(page, level);
+    const beforeFraming = await metrics(page);
+    // Keep every original geographic probe in the narrow viewport after the
+    // next real zoom. Cell 32382 centers on (2024,2024); its selected quad at
+    // 2016..2032 does not intersect any sampled strip. This only reframes the
+    // same shared edges through the public UI; no pixel or world data is moved.
+    expect(await audit(page)).toEqual(original); expect(await rootBytes(page, id)).toEqual(root);
+    await locate(page, 32382); await panel(page, '地图');
+    await expect(studio(page)).toHaveAttribute('data-selectedcell', '32382');
+    const framed = await metrics(page);
+    expect(framed.lod).toBe(level); expect(framed.gridVisible).toBe(false);
+    expect(await audit(page)).toEqual(original); expect(await rootBytes(page, id)).toEqual(root);
     const probes: WorldColorProbe[] = level === 'medium' ? [
       { worldX: 2048, worldY: 1984, axis: 'x', rgb: land },
       { worldX: 1984, worldY: 2048, axis: 'y', rgb: land },
     ] : [
+      { worldX: 2048, worldY: 1984, axis: 'x', rgb: land },
+      { worldX: 1984, worldY: 2048, axis: 'y', rgb: land },
       { worldX: 2040, worldY: 1992, axis: 'x', rgb: land },
       { worldX: 2056, worldY: 1992, axis: 'x', rgb: land },
       { worldX: 1992, worldY: 2040, axis: 'y', rgb: land },
       { worldX: 1992, worldY: 2056, axis: 'y', rgb: land },
     ];
     const readback = await sampleWorldPixelsOnZoom(page, probes);
-    await info.attach(`atlas-${level}-geographic-gpu-probes`, { body: JSON.stringify(readback, null, 2), contentType: 'application/json' });
+    await expect(studio(page)).toHaveAttribute('data-selectedcell', '32382');
+    await info.attach(`atlas-${level}-geographic-gpu-probes`, { body: JSON.stringify({ ...readback,
+      framing: { selected: 32382, beforeCamera: beforeFraming.camera, beforeViewport: beforeFraming.viewport, camera: framed.camera, viewport: framed.viewport } }, null, 2), contentType: 'application/json' });
   }
   expect(await audit(page)).toEqual(original); expect(await rootBytes(page, id)).toEqual(root); withinBudget(await metrics(page));
 });

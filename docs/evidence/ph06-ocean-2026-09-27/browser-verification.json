@@ -1,0 +1,615 @@
+{
+  "startedAt": "2026-09-27T03:18:00.375Z",
+  "completedAt": "2026-09-27T03:28:37.606Z",
+  "expectedBuildSha256": "17e4aa3cfdcb42d96163b107a5bfea1556cadd0912113cbcfbc124089c96cc3d",
+  "browserExit": 0,
+  "postflightPassed": true,
+  "sourceUnchanged": true,
+  "distUnchanged": true,
+  "expectedScenarios": 12,
+  "coverageComplete": true,
+  "functionalPassed": true,
+  "cases": [
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床：真实大陆与封闭洼地保持，边界连通海洋生成陆架深海，取消、保存刷新及原会话撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 81590
+        }
+      ]
+    },
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床空海：无需陆地即可生成真实深度，不合法参数及取消保留全库，确认后刷新恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 45822
+        }
+      ]
+    },
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床：真实大陆与封闭洼地保持，边界连通海洋生成陆架深海，取消、保存刷新及原会话撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 85059
+        }
+      ]
+    },
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床空海：无需陆地即可生成真实深度，不合法参数及取消保留全库，确认后刷新恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 43830
+        }
+      ]
+    },
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床：真实大陆与封闭洼地保持，边界连通海洋生成陆架深海，取消、保存刷新及原会话撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 76376
+        }
+      ]
+    },
+    {
+      "file": "atlas-ocean.spec.ts",
+      "title": "海床空海：无需陆地即可生成真实深度，不合法参数及取消保留全库，确认后刷新恢复",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 41082
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 64376
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 27330
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 62204
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 22083
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 54888
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 25904
+        }
+      ]
+    }
+  ],
+  "playwrightDurationMs": 635727.78,
+  "playwrightDurationSeconds": 635.72778,
+  "runnerDurationMs": 637231,
+  "stats": {
+    "startTime": "2026-09-27T03:18:01.705Z",
+    "duration": 635727.78,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "firstExecution": true,
+  "automaticRetries": 0,
+  "allCasesOneAttempt": true,
+  "sourceVerification": {
+    "fileCount": 180,
+    "sourceSetUnchanged": true,
+    "allSourceBytesUnchanged": true,
+    "manifest": ".autopilot/ph06/ocean-checks/browser-first-execution/source-manifest.json",
+    "manifestSha256": "fb23f9cd52eaa881360c46ce1ec6bbdeb386e2b5221866d4ee67441b66998cd2"
+  },
+  "distVerification": {
+    "fileCount": 25,
+    "allArtifactPathsAndBytesUnchanged": true,
+    "httpBuildBytesMatchDistBeforeAndAfter": true,
+    "httpStatusBefore": 200,
+    "httpStatusAfter": 200,
+    "buildSha256Before": "17e4aa3cfdcb42d96163b107a5bfea1556cadd0912113cbcfbc124089c96cc3d",
+    "buildSha256After": "17e4aa3cfdcb42d96163b107a5bfea1556cadd0912113cbcfbc124089c96cc3d"
+  },
+  "evidenceDirectory": ".autopilot/ph06/ocean-checks/browser-first-execution",
+  "evidenceFiles": [
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/run.json",
+      "sha256": "7ae65256b38ca981d6bc25520c7935b14400c9e4036d744d30a38a68154d9e1a"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/results.json",
+      "sha256": "139596a35be97ead725c073bd0c9fead9e68be72f30851d22b67ab25cb5bbf44"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/browser.log",
+      "sha256": "69ba2df9118ebb9fd2b369e993ecb3745885ff96d70eab526ed4c78b23a640ec"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/source-manifest.json",
+      "sha256": "fb23f9cd52eaa881360c46ce1ec6bbdeb386e2b5221866d4ee67441b66998cd2"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/dist-manifest-before.json",
+      "sha256": "9dd1ddc433d2fb56414586b6293ea57f729b7ae3299d35e0030b8bb235dadd8f"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/dist-manifest-after.json",
+      "sha256": "9dd1ddc433d2fb56414586b6293ea57f729b7ae3299d35e0030b8bb235dadd8f"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/build-preflight.json",
+      "sha256": "0ee22a3bfe8f3732bb2101325e40dde73cb1b0676e2cc456ce41aa18f57599c2"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/build-postflight.json",
+      "sha256": "02055decc58230cb5e7e1697e29b9943ea98b16418094dc54eb3bef0ab3bc194"
+    },
+    {
+      "path": ".autopilot/ph06/ocean-checks/browser-first-execution/selection.json",
+      "sha256": "1e3ad5702fca3e1110ffc352c6c3f63eec5afeafec1a0a0b5a9c988ca1d04932"
+    }
+  ],
+  "observations": [
+    {
+      "project": "desktop-chromium",
+      "attachment": "ocean-independent-topology-and-persistence.json",
+      "observed": {
+        "first": {
+          "requestId": "fcf2b7d2-fedc-43c3-ba3d-700b2f09f6d1",
+          "ok": true,
+          "manifestDigest": "7b2659b352011548ca0ce4382d543fa7c24f1f98710cd745c2fe04a38318ef5a",
+          "draftId": "atlas-20ff10b6-2f52-4c80-a71f-e493dc687be2",
+          "atlasId": "geo-853f6685-795f-451b-b8dd-8d65ffb1a0fd",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "e6cb5786c30bf8a5b8b53e1c84c5aa7bcaf74952532725f03816df44c62250ba",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "second": {
+          "requestId": "79e1a972-61c0-4adb-8b96-02d13415b45b",
+          "ok": true,
+          "manifestDigest": "7b2659b352011548ca0ce4382d543fa7c24f1f98710cd745c2fe04a38318ef5a",
+          "draftId": "atlas-20ff10b6-2f52-4c80-a71f-e493dc687be2",
+          "atlasId": "geo-853f6685-795f-451b-b8dd-8d65ffb1a0fd",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "e6cb5786c30bf8a5b8b53e1c84c5aa7bcaf74952532725f03816df44c62250ba",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "baselineDatabase": {
+          "bytes": 6669516,
+          "sha256": "6c828c379446fce6b0cbc250e2840f49bf0e55f0ba78752972c73ef2f91d628d"
+        },
+        "oceanCells": 42599,
+        "landCells": 22936,
+        "closedNegativeCells": 1,
+        "preservedDepression": {
+          "cell": 3735,
+          "height": -250
+        },
+        "changedOceanCells": 41664,
+        "uniqueDepths": 3996,
+        "heightRange": [
+          -4525,
+          -1
+        ],
+        "landMaskSha256": "5951138c5e746b0de92f33dda10b13a52bb48013bf11d87b77f00d979c562146",
+        "boundaryOceanMaskSha256": "db77ae7f82430bf1e58341ea579c663bded3577b69d79afb8952ae10a8f504b2",
+        "independentDistance": {
+          "method": "four-neighbour BFS from actual land-adjacent boundary-connected sea cells",
+          "maximumShoreSteps": 163,
+          "nearCells": 1876,
+          "farCells": 698,
+          "nearMeanHeight": -13.133262260127932,
+          "farMeanHeight": -3822.073065902579
+        },
+        "allNonHeightRefsUnchanged": true,
+        "allLandHeightsUnchanged": true,
+        "allClosedNegativeHeightsUnchanged": true,
+        "originalGeographyRestoredAfterUndo": true,
+        "limitation": "Mobile/tablet are browser emulation, not real-device or user visual approval."
+      }
+    },
+    {
+      "project": "desktop-chromium",
+      "attachment": "ocean-empty-world-depths.json",
+      "observed": {
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "oceanCells": 65536,
+        "changedOceanCells": 65536,
+        "uniqueDepths": 1756,
+        "minimumHeight": -4525,
+        "maximumHeight": -2746,
+        "landMaskSha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+        "confirmedManifest": "0f8faee504ee63f997bbcea388f9799cbd331d84676e6c0393e1a6a3d6daef2c",
+        "candidateDeterministic": true,
+        "cancelledDatabase": {
+          "bytes": 5562886,
+          "sha256": "717609d744b3f41089d3e6f6bb672f44797ac05fd6d8baf6cb00754041c571f9"
+        }
+      }
+    },
+    {
+      "project": "mobile-chromium",
+      "attachment": "ocean-independent-topology-and-persistence.json",
+      "observed": {
+        "first": {
+          "requestId": "d790042b-d951-451f-88c7-d36e926f72d9",
+          "ok": true,
+          "manifestDigest": "0f6f6ea96d3fdb3db8e5673dd025a5d58b44f1292f693c540929c0b4eb9e7ace",
+          "draftId": "atlas-c56ccade-f986-407c-a11f-f45f9a489c3a",
+          "atlasId": "geo-b35bc7a6-4465-4f27-a28a-43d875933eb4",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "980ae2ca4d5a6df3349aefd87555d706848a855876cd2159cb1f1db21688c3e7",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "second": {
+          "requestId": "db39b45e-26c4-4f96-acdc-9ad4faa2e76a",
+          "ok": true,
+          "manifestDigest": "0f6f6ea96d3fdb3db8e5673dd025a5d58b44f1292f693c540929c0b4eb9e7ace",
+          "draftId": "atlas-c56ccade-f986-407c-a11f-f45f9a489c3a",
+          "atlasId": "geo-b35bc7a6-4465-4f27-a28a-43d875933eb4",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "980ae2ca4d5a6df3349aefd87555d706848a855876cd2159cb1f1db21688c3e7",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "baselineDatabase": {
+          "bytes": 6669497,
+          "sha256": "83a661ad2f89d8e86245115f0bf140469e97325a85e77ed6f991c96493fba5cc"
+        },
+        "oceanCells": 42599,
+        "landCells": 22936,
+        "closedNegativeCells": 1,
+        "preservedDepression": {
+          "cell": 3735,
+          "height": -250
+        },
+        "changedOceanCells": 41664,
+        "uniqueDepths": 3996,
+        "heightRange": [
+          -4525,
+          -1
+        ],
+        "landMaskSha256": "5951138c5e746b0de92f33dda10b13a52bb48013bf11d87b77f00d979c562146",
+        "boundaryOceanMaskSha256": "db77ae7f82430bf1e58341ea579c663bded3577b69d79afb8952ae10a8f504b2",
+        "independentDistance": {
+          "method": "four-neighbour BFS from actual land-adjacent boundary-connected sea cells",
+          "maximumShoreSteps": 163,
+          "nearCells": 1876,
+          "farCells": 698,
+          "nearMeanHeight": -13.133262260127932,
+          "farMeanHeight": -3822.073065902579
+        },
+        "allNonHeightRefsUnchanged": true,
+        "allLandHeightsUnchanged": true,
+        "allClosedNegativeHeightsUnchanged": true,
+        "originalGeographyRestoredAfterUndo": true,
+        "limitation": "Mobile/tablet are browser emulation, not real-device or user visual approval."
+      }
+    },
+    {
+      "project": "mobile-chromium",
+      "attachment": "ocean-empty-world-depths.json",
+      "observed": {
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "oceanCells": 65536,
+        "changedOceanCells": 65536,
+        "uniqueDepths": 1756,
+        "minimumHeight": -4525,
+        "maximumHeight": -2746,
+        "landMaskSha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+        "confirmedManifest": "8fe16f1c176f527a3fa33b790ea5d5c8a0f1a5bb2b5219ddc885987da47d5dea",
+        "candidateDeterministic": true,
+        "cancelledDatabase": {
+          "bytes": 5562887,
+          "sha256": "319ce3b82b3e3ae56f8f1d77b3f27f20cbe321bdba2cbe6bb8ab2d74b5b5adc4"
+        }
+      }
+    },
+    {
+      "project": "tablet-chromium",
+      "attachment": "ocean-independent-topology-and-persistence.json",
+      "observed": {
+        "first": {
+          "requestId": "a170d79f-da77-4590-9cbb-c56309064085",
+          "ok": true,
+          "manifestDigest": "1c892526e7d61ba93b4adc2fe30af14685d1477c019a53d87f4a6f62c50ed8dd",
+          "draftId": "atlas-9006c4c2-f598-428a-b3dc-6fdfd3e6ef09",
+          "atlasId": "geo-28baae7b-fe50-491b-841f-e0e656213153",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "7ee21039a3ec247c7c3752008e93ee359f7c1efe49925bdde37d30c9d043358a",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "second": {
+          "requestId": "8396fe35-bf34-4184-aca0-cec28f6f222e",
+          "ok": true,
+          "manifestDigest": "1c892526e7d61ba93b4adc2fe30af14685d1477c019a53d87f4a6f62c50ed8dd",
+          "draftId": "atlas-9006c4c2-f598-428a-b3dc-6fdfd3e6ef09",
+          "atlasId": "geo-28baae7b-fe50-491b-841f-e0e656213153",
+          "revision": 2,
+          "verifiedBlocks": 256,
+          "display": {
+            "source": "generation-preview",
+            "manifestDigest": "7ee21039a3ec247c7c3752008e93ee359f7c1efe49925bdde37d30c9d043358a",
+            "revision": 3,
+            "version": 2,
+            "verifiedBlocks": 256
+          }
+        },
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "baselineDatabase": {
+          "bytes": 6669525,
+          "sha256": "dbce2978d54f71acd13fb399bbd9f06d9fcc75701abbf67507af11de22f6b4d9"
+        },
+        "oceanCells": 42599,
+        "landCells": 22936,
+        "closedNegativeCells": 1,
+        "preservedDepression": {
+          "cell": 3735,
+          "height": -250
+        },
+        "changedOceanCells": 41664,
+        "uniqueDepths": 3996,
+        "heightRange": [
+          -4525,
+          -1
+        ],
+        "landMaskSha256": "5951138c5e746b0de92f33dda10b13a52bb48013bf11d87b77f00d979c562146",
+        "boundaryOceanMaskSha256": "db77ae7f82430bf1e58341ea579c663bded3577b69d79afb8952ae10a8f504b2",
+        "independentDistance": {
+          "method": "four-neighbour BFS from actual land-adjacent boundary-connected sea cells",
+          "maximumShoreSteps": 163,
+          "nearCells": 1876,
+          "farCells": 698,
+          "nearMeanHeight": -13.133262260127932,
+          "farMeanHeight": -3822.073065902579
+        },
+        "allNonHeightRefsUnchanged": true,
+        "allLandHeightsUnchanged": true,
+        "allClosedNegativeHeightsUnchanged": true,
+        "originalGeographyRestoredAfterUndo": true,
+        "limitation": "Mobile/tablet are browser emulation, not real-device or user visual approval."
+      }
+    },
+    {
+      "project": "tablet-chromium",
+      "attachment": "ocean-empty-world-depths.json",
+      "observed": {
+        "provenance": {
+          "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+          "recipe": {
+            "format": "lieguoji-atlas-recipe",
+            "generator": {
+              "fingerprint": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+              "id": "ocean-floor",
+              "version": 1
+            },
+            "parameters": {
+              "meanDepthMeters": 3600,
+              "reliefMeters": 1000,
+              "shelfWidthWorld": 320
+            },
+            "seed": "山海-01",
+            "version": 1
+          }
+        },
+        "oceanCells": 65536,
+        "changedOceanCells": 65536,
+        "uniqueDepths": 1756,
+        "minimumHeight": -4525,
+        "maximumHeight": -2746,
+        "landMaskSha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+        "confirmedManifest": "7110d075b501a8db96631c2da471e6cb74b90f5f7f20095d43b90946b47b1a1c",
+        "candidateDeterministic": true,
+        "cancelledDatabase": {
+          "bytes": 5562875,
+          "sha256": "63a207ddd772129a3c51ddb77d7ea5b4f6661629a6c17f7a3d338468a56cefa6"
+        }
+      }
+    }
+  ],
+  "scope": "Functional ocean/shape browser checks with independent read-only persisted LGAB, actual topology, persistence/undo, trusted drawing input and screenshots. No timing/performance gate or real-device/user visual acceptance claim.",
+  "selectionListingNote": "The earlier browser-first folder contains --list reporter output, not a browser execution. Runner refused to overwrite it; the sole browser execution used browser-first-execution."
+}

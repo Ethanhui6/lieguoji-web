@@ -1,18 +1,19 @@
 import { hashAtlasManifest, isGenerationDocument, type AtlasDocument } from './atlas-format';
 import { hashBlock, yieldAtlas, type AtlasControl } from './model';
 import { hashAtlasLockSet } from './generation-locks';
-import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateCoastRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
+import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
 import type { GenerationRecipe, GenerationScope } from './generation-contract';
 import { generateMacro, type GenerationOutput } from './generation/macro';
 import { generateLandforms, type LandformOutput } from './generation/landforms';
 import { generateIslands, type IslandOutput } from './generation/islands';
 import { generateCoast, type CoastOutput } from './generation/coast';
 import { generateShape, type ShapeOutput } from './generation/shape';
+import { generateOcean, type OceanOutput } from './generation/ocean';
 import { OwnedAtlasSession, type PreparedAtlasReplacement } from './transactions';
 
 export interface GenerationPreviewInfo extends PreparedAtlasReplacement {
   recipe: GenerationRecipe; scope: GenerationScope; recipeDigest: string; scopeDigest: string; lockSetDigest: string;
-  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape'] }; previewDigest: string;
+  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape']; ocean?: OceanOutput['summary']['ocean'] }; previewDigest: string;
 }
 export interface GenerationConfirm {
   candidateId: string; commandId: string; previewDigest: string; expectedRevision: number; expectedRootDigest: string;
@@ -44,7 +45,7 @@ export class AtlasGenerationSession {
     if (recipe.generator.id === 'macro-landmass' && base.locks.size) throw new Error('重建大陆需要未锁定的整张地图；保留海岸时请选择山系与盆地生成。');
     const recipeDigest = await generationRecipeDigest(recipe), scopeDigest = await generationScopeDigest(scope), lockSetDigest = await generationLockDigest(base);
     let output: Pick<GenerationOutput, 'blocks' | 'summary'>;
-    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape'> = {}, reason: string;
+    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape' | 'ocean'> = {}, reason: string;
     if (validateMacroRecipe(recipe)) {
       output = await generateMacro({ base, recipe, scope }, control ?? {}); reason = '根据种子生成大陆与高程';
     } else if (validateLandformRecipe(recipe)) {
@@ -56,6 +57,9 @@ export class AtlasGenerationSession {
     } else if (validateShapeRecipe(recipe, base.manifest.spec)) {
       const result = await generateShape({ base, recipe }, control ?? {});
       output = result; details = { shape: structuredClone(result.summary.shape) }; reason = '按手绘轮廓生成大陆与近海地形';
+    } else if (validateOceanRecipe(recipe, base.manifest.spec)) {
+      const result = await generateOcean({ base, recipe }, control ?? {});
+      output = result; details = { ocean: structuredClone(result.summary.ocean) }; reason = '保留陆地与内湖生成陆架和深海';
     } else if (validateCoastRecipe(recipe)) {
       const result = await generateCoast({ base, parameters: recipe.parameters, scope }, control ?? {});
       output = result; details = { coast: structuredClone(result.summary) }; reason = '细化真实海岸共享顶点';

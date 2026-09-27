@@ -6,6 +6,7 @@ import { sampleDetailCoastCoverage, sampleDetailCoastNode } from '../detail-coas
 import { assertDetailCoastCellProtection } from '../detail-coast-locks';
 import type { DetailShapeControl } from './detail-shape';
 import { createNaturalRelief, type NaturalReliefSummary } from './detail-natural-relief';
+import { createLocalReliefBackground } from './detail-local-background';
 import { createDetailShapeBaseSampler } from './detail-shape-height';
 import { buildDetailShapeDistanceIndex, DETAIL_DISTANCE_LIMIT_Q, DETAIL_DISTANCE_MAX_SEGMENTS } from './detail-shape-distance';
 import { FIELD_Q, roundRatio, seedHash, smoothQ } from './seed';
@@ -245,12 +246,14 @@ export async function generateLocalDetailRelief(input: DetailLocalReliefInput, c
     if ((id + 1) % batch === 0) await checkpoint(control, 'select-real-land-anchors', id + 1, owned.total);
   }
   const spanX = maxAnchorX - minAnchorX, spanY = maxAnchorY - minAnchorY, coarseStep = WORLD_Q / owned.size;
-  // The reused profile has a four-coarse-step minimum ridge width. Do not
-  // squeeze that profile into a tiny patch and call a lowland speck a mountain.
+  // Retain the real-anchor minimum while the local profile scales its ridge
+  // support to the actual available span; tiny locked slivers are not mountains.
   if (anchorCount < 3 || Math.max(spanX, spanY) < 4 * coarseStep || Math.min(spanX, spanY) < 2 * coarseStep) throw new Error('可编辑内陆过窄或被锁分割，真实山脉锚点范围不足。');
   const relief = await createNaturalRelief({ seed: seedHash(owned.seed), size: owned.size, centersQ: owned.centers, land, coastDistanceQ,
-    reliefMeters: owned.relief, shelfWidthWorld: 64, isLand: pointAllowed }, batch, control);
+    reliefMeters: owned.relief, shelfWidthWorld: 64, scaleMode: 'local', isLand: pointAllowed }, batch, control);
   if (!relief.ridges.some(ridge => ridge.peakQ > 0)) throw new Error('可编辑内陆过窄或被锁分割，无法形成真实山脉；请扩大选区或调整保护区。');
+  const background = await createLocalReliefBackground({ left: mask.left, top: mask.top, right: mask.left + mask.width, bottom: mask.top + mask.height,
+    readLandHeight: (x, y) => sampleDetailCoastCoverage(owned.tiles, x, y) > 0 ? sampleDetailCoastNode(before, x, y).heightMeters : null }, batch, control);
   const result = new Map(owned.tiles), changedOwnerKeys: DetailCoastKey[] = [], affected = new Set<DetailCoastKey>();
   let changed = 0, raised = 0, lowered = 0, materialized = 0, minChanged = 12000, maxChanged = -12000, evaluated = 0;
   const transition = owned.scope.transitionCells * (4096 / owned.size) / 2;
@@ -264,7 +267,9 @@ export async function generateLocalDetailRelief(input: DetailLocalReliefInput, c
     for (let slot = 0; slot < layout.count; slot++) {
       const x = layout.startX + slot % layout.width, y = layout.startY + Math.floor(slot / layout.width), edgeDistance = nodeDistance(mask, x, y);
       if (edgeDistance && sampleDetailCoastCoverage(owned.tiles, x, y) > 0) {
-        const old = sampleDetailCoastNode(before, x, y), target = relief.physicalHeight(old.xQ, old.yQ, true, distance.sample(old.xQ, old.yQ, 1).distanceQ, old.heightMeters);
+        const old = sampleDetailCoastNode(before, x, y), oldBackground = background.sample(old.xQ, old.yQ);
+        if (oldBackground === undefined) throw new Error('真实陆地节点缺少旧地背景。');
+        const target = relief.physicalHeight(old.xQ, old.yQ, true, distance.sample(old.xQ, old.yQ, 1).distanceQ, old.heightMeters, oldBackground);
         const weight = smoothQ(Math.min(FIELD_Q, roundRatio(edgeDistance * FIELD_Q, transition)));
         const height = Math.max(0, Math.min(12000, old.heightMeters + roundRatio((target - old.heightMeters) * weight, FIELD_Q)));
         if (height !== old.heightMeters) {

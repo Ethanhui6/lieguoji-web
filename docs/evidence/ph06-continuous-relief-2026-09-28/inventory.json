@@ -1,0 +1,507 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T17:36:03.153Z",
+  "files": [
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/verification.json",
+      "dest": "raw/browser/desktop-first/verification.json",
+      "bytes": 363,
+      "sha256": "539c0bf68ab30e1defc990a04384b6c7213bd2f0e8a18f8c3f30bd79a88e8ddf"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/build.json",
+      "dest": "raw/browser/desktop-first/build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/before.json",
+      "dest": "raw/browser/desktop-first/before.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/after.json",
+      "dest": "raw/browser/desktop-first/after.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/results.json",
+      "dest": "raw/browser/desktop-first/results.json",
+      "bytes": 162208,
+      "sha256": "6afa97ce36e89f653d893c6e0fc5c4d1b0c2d605a5c07008ae6e7723795234c9"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/run.log",
+      "dest": "raw/browser/desktop-first/run.log",
+      "bytes": 612,
+      "sha256": "6fb85d42efad5e832d8d964e2f02e3a9afb71c33ef9ae5303fa6ed68f8a8203f"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium/locked-local-relief.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium/locked-local-relief.png",
+      "bytes": 270288,
+      "sha256": "779ae038841e88d7cb8570613ac316fd0efca7c6dbb0dc4260b83a2ea954705b"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/desktop-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium/locks-mixed-undo-restored.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-desktop-chromium/locks-mixed-undo-restored.png",
+      "bytes": 294235,
+      "sha256": "06b6405df8d57b2aad33b56fa66fa937ed48b6acd38321ff6d85d442751ee88d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/verification.json",
+      "dest": "raw/root/first/verification.json",
+      "bytes": 1302,
+      "sha256": "7653dd55adf31111b94ae80bf45d9606c8f4260bd400c26ea4a9a00f17cc5034"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/prior-build.json",
+      "dest": "raw/root/first/prior-build.json",
+      "bytes": 9139,
+      "sha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/scope.json",
+      "dest": "raw/root/first/scope.json",
+      "bytes": 961,
+      "sha256": "5f5f8079996800c996e2afa7c6feaeb4e7feb6463e811c9df9afc8e0905c0ac4"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/source-before.json",
+      "dest": "raw/root/first/source-before.json",
+      "bytes": 45433,
+      "sha256": "91b1e7b6174f76f846f949655bfc08e3a2365a5fdd89e6bac2d4bcde4521a20c"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/source-after.json",
+      "dest": "raw/root/first/source-after.json",
+      "bytes": 45433,
+      "sha256": "91b1e7b6174f76f846f949655bfc08e3a2365a5fdd89e6bac2d4bcde4521a20c"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/plan.log",
+      "dest": "raw/root/first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/lint.log",
+      "dest": "raw/root/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/first/types.log",
+      "dest": "raw/root/first/types.log",
+      "bytes": 80,
+      "sha256": "52487b5ffb0e344da5ab84e9843980a87ce5091dd8d469ad1afa07c4aee59904"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/verification.json",
+      "dest": "raw/browser/mobile-first/verification.json",
+      "bytes": 367,
+      "sha256": "9fcb62eef804eb6f616dc352bb97a4d405a8fd8e69012d61fd89f419779371f7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/build.json",
+      "dest": "raw/browser/mobile-first/build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/before.json",
+      "dest": "raw/browser/mobile-first/before.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/after.json",
+      "dest": "raw/browser/mobile-first/after.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/results.json",
+      "dest": "raw/browser/mobile-first/results.json",
+      "bytes": 162233,
+      "sha256": "a46d2f52c9c98aae0dd4fb1cc28821b3000b34d199fdd96cb8e5fc8bdfa4ea6b"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/run.log",
+      "dest": "raw/browser/mobile-first/run.log",
+      "bytes": 609,
+      "sha256": "352664aec8928b32d65a49b2bde189b298b02c13461b560aa9e130340bfb953a"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium/locked-local-relief.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium/locked-local-relief.png",
+      "bytes": 222246,
+      "sha256": "704798b094a96600fcc0c4a17b5d734fe356c9fd378b7afb9e4658caa12a022e"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/mobile-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium/locks-mixed-undo-restored.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium/locks-mixed-undo-restored.png",
+      "bytes": 394995,
+      "sha256": "5da8922cceb1e4be98c144a175eafa1096187eb5410f33cfbd19ee3922d9c374"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/verification.json",
+      "dest": "raw/browser/tablet-first/verification.json",
+      "bytes": 360,
+      "sha256": "48bfb60f4c51d0b8ac2f40c59fb6676c35dc450355f80f8562b5d8577b8e583b"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/build.json",
+      "dest": "raw/browser/tablet-first/build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/before.json",
+      "dest": "raw/browser/tablet-first/before.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/after.json",
+      "dest": "raw/browser/tablet-first/after.json",
+      "bytes": 46640,
+      "sha256": "c57e072fd8f925295294f4eb0eba9a941c0ab2255e6b1c25eaf709834084aa1d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/results.json",
+      "dest": "raw/browser/tablet-first/results.json",
+      "bytes": 162241,
+      "sha256": "eae3fe328e55dc765d6f0fa8ec58d98d2346102e9581e4137e202743e71f7cd5"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/run.log",
+      "dest": "raw/browser/tablet-first/run.log",
+      "bytes": 610,
+      "sha256": "9426e0d98f46d67c2cd8719c3c0c9db93243b6d177c3cd24f8d41491bb3d0576"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-tablet-chromium/locked-local-relief.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-tablet-chromium/locked-local-relief.png",
+      "bytes": 501015,
+      "sha256": "151e3dede2ed4f2c89f68c483af298504254e057b6acfb5c601014f17ed40619"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/tablet-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-tablet-chromium/locks-mixed-undo-restored.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-tablet-chromium/locks-mixed-undo-restored.png",
+      "bytes": 653121,
+      "sha256": "bcdc791d5ae82c42aa06749bad1ed2bc044218210daa093964be2cb4df8d66a3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/verification.json",
+      "dest": "raw/root/type-guard-fix/verification.json",
+      "bytes": 6906,
+      "sha256": "4b2eca31a484aed573699485a0e4500ec94f539c083a64369c1c9c8def7c52a1"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/build.json",
+      "dest": "raw/root/type-guard-fix/build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/prior-build.json",
+      "dest": "raw/root/type-guard-fix/prior-build.json",
+      "bytes": 9139,
+      "sha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/scope.json",
+      "dest": "raw/root/type-guard-fix/scope.json",
+      "bytes": 961,
+      "sha256": "5f5f8079996800c996e2afa7c6feaeb4e7feb6463e811c9df9afc8e0905c0ac4"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/source-before.json",
+      "dest": "raw/root/type-guard-fix/source-before.json",
+      "bytes": 45433,
+      "sha256": "f1c027565adf77d3f89efeb69899242676659f423a119bbbcb600c2c45066c52"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/source-after.json",
+      "dest": "raw/root/type-guard-fix/source-after.json",
+      "bytes": 45433,
+      "sha256": "f1c027565adf77d3f89efeb69899242676659f423a119bbbcb600c2c45066c52"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/unit.json",
+      "dest": "raw/root/type-guard-fix/unit.json",
+      "bytes": 67555,
+      "sha256": "4d220d28f0fec8d17ca61e541de381c3085c91d4ef3b7e4b8c2b03ef488cd01d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/plan.log",
+      "dest": "raw/root/type-guard-fix/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/lint.log",
+      "dest": "raw/root/type-guard-fix/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/types.log",
+      "dest": "raw/root/type-guard-fix/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/unit.log",
+      "dest": "raw/root/type-guard-fix/unit.log",
+      "bytes": 121,
+      "sha256": "957c93d994c1d4b2db7cdb0f206b469bbc896901b14ee5c268ef2ee35461a3de"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/build.log",
+      "dest": "raw/root/type-guard-fix/build.log",
+      "bytes": 1866,
+      "sha256": "4049f355d758639427a21e8a3f6d54202941447a0b7c1f6604b8f129dca6b959"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/type-guard-fix/dist-audit.log",
+      "dest": "raw/root/type-guard-fix/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/ready-manifest.json",
+      "dest": "preparation/v4-preview13-history-staging/ready-manifest.json",
+      "bytes": 3572,
+      "sha256": "409ef201772143a9ce9af626648265304a26418b6bf9bdf9ecd0a672c42a69c9"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/README.md",
+      "dest": "preparation/v4-preview13-history-staging/README.md",
+      "bytes": 3382,
+      "sha256": "02b2f90f7d8cdf187b309bfd0f25ad4c6d1924299a603aa13002e8996f779802"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/baseline-manifest.json",
+      "dest": "preparation/v4-preview13-history-staging/baseline-manifest.json",
+      "bytes": 442,
+      "sha256": "8b3fa5a8544070aaf73eaf9a60a9cf5e0bb4a4a53dcb23ff6390a5bd238f2b16"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/receipt-supplement.json",
+      "dest": "preparation/v4-preview13-history-staging/receipt-supplement.json",
+      "bytes": 1892,
+      "sha256": "ea65ad385909215c4d6e30e960c024fc40e6f437fecc2f6fbd252af63add8377"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/ready-manifest.json",
+      "dest": "preparation/v4-curved-relief-staging/ready-manifest.json",
+      "bytes": 2467,
+      "sha256": "454a7d558c2cbe2858bf2db3a69e530e6d32f34795039589046d4bac0aed6762"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/README.md",
+      "dest": "preparation/v4-curved-relief-staging/README.md",
+      "bytes": 8762,
+      "sha256": "1567ca1d3bb7df26f19fb6bddf60f815b1cddf2522e26e013c33b3026d67a1be"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/baseline-manifest.json",
+      "dest": "preparation/v4-curved-relief-staging/baseline-manifest.json",
+      "bytes": 367,
+      "sha256": "4d47095fd5ef541fb81e7efc73a96fb2c35c66d8b8787ed9ef54c19722416484"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/ready-manifest.json",
+      "dest": "preparation/v4-local-background-staging/ready-manifest.json",
+      "bytes": 2766,
+      "sha256": "9c2429c63d48ca2f2cd25f4c7032d7c7e50a9470d108b3bff8f028ba8c01d59d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/README.md",
+      "dest": "preparation/v4-local-background-staging/README.md",
+      "bytes": 4168,
+      "sha256": "7297795fd1adedcf968d24faf5ce59e0491762bd64e0c6a2a7f0d9e01d729d65"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/baseline.json",
+      "dest": "preparation/v4-local-background-staging/baseline.json",
+      "bytes": 1078,
+      "sha256": "26cde13f31ee62e4f37ec1cccf1045aaaec543523203498c0c2442e137976e2f"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-render-reuse-staging/ready-manifest.json",
+      "dest": "preparation/v4-lock-render-reuse-staging/ready-manifest.json",
+      "bytes": 2051,
+      "sha256": "6355fa6e1335a8f48ab08cfa7579a07d6912cc00c3f939363cf4cb9a49f393eb"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-render-reuse-staging/README.md",
+      "dest": "preparation/v4-lock-render-reuse-staging/README.md",
+      "bytes": 4677,
+      "sha256": "2940febfd72e2a683b9cd45f5006c17078539bcc02d53117b8763c92dd7afe96"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-render-reuse-staging/baseline.json",
+      "dest": "preparation/v4-lock-render-reuse-staging/baseline.json",
+      "bytes": 999,
+      "sha256": "27cc87022b389c1e9aa2050294752d67ed02f0245d0cb308297372e43ef7a42d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-promotion.json",
+      "dest": "provenance/continuous-relief-promotion.json",
+      "bytes": 4940,
+      "sha256": "62651e4ec0204f7ddae7f998ba2afae868e6ab8a3b735c490a8525fde384a3c2"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-review.md",
+      "dest": "provenance/continuous-relief-review.md",
+      "bytes": 9534,
+      "sha256": "557948585a639b542e4c7b154dc097879191b6f2344b476fd1926e6ce298b6af"
+    },
+    {
+      "source": ".autopilot/ph06/promote-continuous-relief.mjs",
+      "dest": "provenance/promote-continuous-relief.mjs",
+      "bytes": 3165,
+      "sha256": "cfca04ca1f9fbd25e326aeb9a0c0724fae63209435abd8f6844856fdfd962737"
+    },
+    {
+      "source": ".autopilot/ph06/prepare-continuous-relief-checks.mjs",
+      "dest": "provenance/prepare-continuous-relief-checks.mjs",
+      "bytes": 2583,
+      "sha256": "3fc6188e62c1762b985474709ca19f88cebf6d6ae79f9f0206ee5ad599728da0"
+    },
+    {
+      "source": ".autopilot/ph06/prepare-continuous-browsers.mjs",
+      "dest": "provenance/prepare-continuous-browsers.mjs",
+      "bytes": 486,
+      "sha256": "a93754fc3d25bb2e7b54e8cf2c56dcd5c3ab3a7c95799cd5a70b10a49fac17d9"
+    },
+    {
+      "source": ".autopilot/ph06/verify-continuous-relief-identities.mjs",
+      "dest": "provenance/verify-continuous-relief-identities.mjs",
+      "bytes": 4593,
+      "sha256": "e897111ea625a3c696c4ca073eddf00975f22307e558997ed005727500e3fa27"
+    },
+    {
+      "source": ".autopilot/ph06/archive-continuous-relief.mjs",
+      "dest": "provenance/archive-continuous-relief.mjs",
+      "bytes": 31250,
+      "sha256": "7c51cfa0a4615401784df096e2ee61b51f76b10a69b031b2ed4db2cced92a837"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/run.mjs",
+      "dest": "runners/run.mjs",
+      "bytes": 5232,
+      "sha256": "27cf7384f0a186fd5ca1849d5147d5cb21bae2da13cfd136d8f8d552563a91f3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/browser.mjs",
+      "dest": "runners/browser.mjs",
+      "bytes": 2059,
+      "sha256": "5e017d75eb24766cd1acadc6ba3a068de142435bfa43581c425d105436b7aff2"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/playwright.config.ts",
+      "dest": "runners/playwright.config.ts",
+      "bytes": 575,
+      "sha256": "c531a103821e705d59176efb39baa439a9021223290f75ac6c4ecdc307cd003a"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/baseline-build.json",
+      "dest": "runners/baseline-build.json",
+      "bytes": 9139,
+      "sha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/identity-reconciliation.json",
+      "dest": "runners/identity-reconciliation.json",
+      "bytes": 6695,
+      "sha256": "5f13f3e6f4de4b81cd0ba8b119b8f504fa5f564921a0ea8299f6d2a7309641f9"
+    },
+    {
+      "source": "playwright.config.ts",
+      "dest": "runners/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.json",
+      "dest": "numeric/actual-256-height-field.json",
+      "bytes": 887752,
+      "sha256": "5c266e397d19a295092d0a309bb991024b5fd335be97c01e738617536b453b0c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.png",
+      "dest": "numeric/actual-256-height-field.png",
+      "bytes": 27229,
+      "sha256": "bd575d53011d368253ab11480d2dba3d6cfc4381c26f070b7e40a5f33399eb48"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.svg",
+      "dest": "numeric/actual-256-height-field.svg",
+      "bytes": 5146077,
+      "sha256": "ebeb44f8560fb7b356de2a2a514c9522ac0cfad5561038f90aa91d7e07b32944"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-relief-checks/visual.json",
+      "dest": "observations/visual.json",
+      "bytes": 2343,
+      "sha256": "21629bb34e968a83be0e15f69b291c910729afd1deae5cc093dd4cf8e2ee69f5"
+    },
+    {
+      "dest": "verification.json",
+      "generated": true,
+      "bytes": 100009,
+      "sha256": "fb43de12731f245dee573f2af8e53acba0243eed682d5e6eab2183d9a4b064ad"
+    },
+    {
+      "dest": "references.json",
+      "generated": true,
+      "bytes": 1154,
+      "sha256": "b2eec99a365fd8e277a1646fb6e882256749ed8d4c69696c2edcf8631dc82c60"
+    },
+    {
+      "dest": "README.md",
+      "generated": true,
+      "bytes": 961,
+      "sha256": "56375ea9f608c5086eb7c6bfefbf426bb9a2b5d6dc39282f7f697e9014eba89e"
+    }
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-lock-snapshot-2026-09-27/verification.json",
+      "bytes": 104904,
+      "sha256": "fd08382d7e7d1678d285564582da42e781a51c12033e238f87af438fbb75f624",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-lock-snapshot-2026-09-27/inventory.json",
+      "bytes": 24823,
+      "sha256": "0061d3191e02148e40ef102a0a53c253b8d1f8af29f50c693381cf2ec50eaa7e",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview13-generator-history-2026-09-28/build.json",
+      "bytes": 9139,
+      "sha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview13-generator-history-2026-09-28/provenance.json",
+      "bytes": 33299,
+      "sha256": "29af70a5482ebf9a63876bd23a99ad9d341f7caf8fbaf63ef347bc23500d759b",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview13-generator-history-2026-09-28/inventory.json",
+      "bytes": 8794,
+      "sha256": "eea0ac2fdb2d8d5f846d630c21b2fbee44802c177d4b9214ca2cd0218005e5d2",
+      "copied": false
+    }
+  ],
+  "excludesSelf": true
+}

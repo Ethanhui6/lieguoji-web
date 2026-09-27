@@ -1,0 +1,51 @@
+{
+  "checks": [],
+  "status": "static-ready-for-root-integrated-checks",
+  "tested": false,
+  "productionChangedByThisAgent": false,
+  "baseHead": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "files": [
+    {
+      "path": "src/world/renderer.ts",
+      "baselineSha256": "1e0c4abf539ab3179f839a70ac173b424e9729c0cce8336de04391265c8964a4",
+      "sha256": "e8cbd5ce9dc9280c4c2209cfd67a17d4b1f158a8f89cea13993994ad5c42181d",
+      "stagedPath": ".autopilot/ph06/v4-lock-render-reuse-staging/src/world/renderer.ts"
+    },
+    {
+      "path": "src/world/renderer-detail-reuse.test.ts",
+      "baselineSha256": null,
+      "sha256": "c38f41fcd67daef7b4c7c10ec55d1b00cce928cf80e8b66d753e15b652c91587",
+      "stagedPath": ".autopilot/ph06/v4-lock-render-reuse-staging/src/world/renderer-detail-reuse.test.ts"
+    }
+  ],
+  "inspectedDependencies": [
+    {
+      "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb",
+      "path": "src/world/spatial-index.ts"
+    },
+    {
+      "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b",
+      "path": "src/world/detail-terrain-backend.ts"
+    },
+    {
+      "sha256": "00906ca7c8de80a9b825cfaedc2ea275954ccd5713676d74e790c33b2200abd8",
+      "path": "src/world/atlas-texture-cache.ts"
+    },
+    {
+      "sha256": "5cab4301f60091978d9d39e42ee5392708c34f2d099b9693f8407dcf4991182e",
+      "path": "src/editor/AtlasStudio.tsx"
+    },
+    {
+      "sha256": "17aa39ac8e090d402f16f3db7c930e0b821865e38c0ace0d9a9a31dcedbbd658",
+      "path": "src/world/bridge.ts"
+    }
+  ],
+  "readmeSha256": "2940febfd72e2a683b9cd45f5006c17078539bcc02d53117b8763c92dd7afe96",
+  "recordedAt": "2026-09-27T17:10:21.9591120Z",
+  "authoredTestInstances": 8,
+  "notes": [
+    "Renderer-only cache reuse over already fully verified immutable receiver geography.",
+    "Actual lock preview is overlay-only; confirm and undo enter committed-to-committed acceptance.",
+    "No tests, build, browser or production change by this agent."
+  ]
+}

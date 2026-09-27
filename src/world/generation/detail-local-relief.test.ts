@@ -29,6 +29,7 @@ function fixture(size: 128 | 256 | 512 = 128): DetailLocalReliefInput {
     elevationMeters[slot] = Math.round(sampler(x * 512, y * 512));
     if (x >= 519 && x <= 521 && y >= 519 && y <= 521) { coverageQ[slot] = -256; elevationMeters[slot] = -24; }
     else if (x === 518 && y === 520) { coverageQ[slot] = 0; elevationMeters[slot] = 0; }
+    else if (x === 537 && y === 537) elevationMeters[slot] = 9000;
   }
   tiles.set('coast:16:16', { format: 'lieguoji-detail-coast-tile', version: 1, bx: 16, by: 16, mode: 'samples', coverageQ, elevationMeters });
   const base: DetailLocalReliefBase = { format: 'lieguoji-detail-local-relief-base', version: 1, size, centersQ: centers.buffer, elevationsMeters: heights.buffer,
@@ -55,7 +56,11 @@ describe('v4 local fine relief with fixed coarse support and exact old coverage'
         if (a.coverageQ <= 0) expect(b.heightMeters).toBe(a.heightMeters);
       }
     }
-    expect(changed).toBeGreaterThan(100); expect(raised).toBeGreaterThan(0);
+    expect(changed).toBeGreaterThan(100); expect(raised).toBeGreaterThan(0); expect(lowered).toBeGreaterThan(0);
+    // An old isolated true fine-node summit must be replaceable, not retained
+    // through max(old,new) or included as the whole selection's lowland base.
+    expect(sampleDetailCoastNode(before, 537, 537).heightMeters).toBe(9000);
+    expect(sampleDetailCoastNode(after, 537, 537).heightMeters).toBeLessThan(5000);
     expect(result.summary).toMatchObject({ changedFineNodeCount: changed, raisedFineNodeCount: raised, loweredFineNodeCount: lowered, changedFineTileCount: result.changedOwnerKeys.length,
       changedCoarseSamples: 0, changedMinimumElevationMeters: minimum, changedMaximumElevationMeters: maximum, coverageSemantics: 'exact-existing-node-coverage' });
     expect(result.summary.generated.ridgeSegments).toBeGreaterThan(0);
@@ -130,7 +135,7 @@ describe('v4 local fine relief with fixed coarse support and exact old coverage'
   }, 60000);
 
   it('cancels actual partial mask/write/audit work without mutating the source', async () => {
-    for (const stop of ['validate-local-quads', 'write-local-fine-height', 'audit-local-real-pieces']) {
+    for (const stop of ['validate-local-quads', 'read-local-old-land-background', 'reduce-local-old-land-background', 'write-local-fine-height', 'audit-local-real-pieces']) {
       const input = fixture(), saved = tileBytes(input.base.detailCoast), coarse = input.base.elevationsMeters.slice(0), controller = new AbortController(); let reached = false;
       await expect(generateLocalDetailRelief(input, { yieldControl: noWait, batchWork: 128, signal: controller.signal, onProgress: phase => { if (phase === stop) { reached = true; controller.abort(); } } })).rejects.toMatchObject({ name: 'AbortError' });
       expect(reached).toBe(true); expect(tileBytes(input.base.detailCoast)).toEqual(saved); expect(input.base.elevationsMeters).toEqual(coarse);

@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-09-27T12:38:52.1546419Z",
+  "files": [
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "sha256": "bef73352fa8920a7a2aeb496dd3533af4b936be68c7db10cc2172aa9b3d55175"
+    }
+  ],
+  "newFiles": [
+    "src/world/generation/detail-curved-ridge.ts",
+    "src/world/generation/detail-curved-ridge.test.ts"
+  ]
+}

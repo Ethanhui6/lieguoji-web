@@ -1,0 +1,19 @@
+{
+  "unitFiles": [
+    "src/world/generation/detail-curved-ridge.test.ts",
+    "src/world/generation/detail-local-background.test.ts",
+    "src/world/generation/detail-local-relief.test.ts",
+    "src/world/generation/detail-natural-visual-repair.test.ts",
+    "src/world/generation/detail-shape-natural.test.ts",
+    "src/world/detail-local-relief-session.test.ts",
+    "src/world/detail-natural-integration.test.ts",
+    "src/world/detail-natural-history.test.ts",
+    "src/world/detail-preview13-history.test.ts",
+    "src/world/generation/fingerprint.test.ts",
+    "src/world/renderer-detail-reuse.test.ts",
+    "src/world/renderer.test.ts",
+    "src/world/constraints-receiver.test.ts"
+  ],
+  "reuse": "Curved world/local relief, old-land background, prior stored generation identity, and unchanged-geography display reuse. Prior preview13 mobile whole-workflow failure is retained; no threshold changes or whole-game acceptance.",
+  "cloudWrites": false
+}

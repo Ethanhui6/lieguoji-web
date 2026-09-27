@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-09-27T17:33:12.985Z",
+  "buildJsonSha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075",
+  "scope": "Root inspected the actual mobile and tablet product full-map screenshots after mixed undo and reload at revision9. These are native browser workflow captures, not numerical illustrations. No new manual browser interaction or physical-device/user acceptance.",
+  "observations": [
+    "Both captures show the saved revision9 map restored, continuous ocean depth colors, an irregular but still broadly rounded continent, and two curving inland ridge chains.",
+    "The ridge paths bend continuously, but individual peaks are still large soft oval mounds with broad plain areas. This does not yet satisfy natural mountain appearance.",
+    "The coastline still has repeated rounded shoulders and shallow indentation. Nonuniform bay/cape changes remain staged and are absent from these preview14 screenshots.",
+    "Mobile capture shows 9% zoom and tablet 18% zoom. Neither proves close mountain/shore detail or zoomed-city/troop behavior. The local-relief close screenshot is centered mainly on a flat locked cell and is not evidence of the whole mountain visual.",
+    "Map, creation, editing and draft navigation are present. The new Atlas does not yet contain nations, administrative regions, cities, army types or war simulation.",
+    "Source and artifact identity are verified by each terminal workflow. Functional PASS is kept separate from visual quality, original 450-second deadline, actual performance targets and real-device acceptance."
+  ],
+  "screenshots": [
+    {
+      "path": ".autopilot/ph06/continuous-relief-checks/mobile-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-mobile-chromium/locks-mixed-undo-restored.png",
+      "sha256": "5da8922cceb1e4be98c144a175eafa1096187eb5410f33cfbd19ee3922d9c374"
+    },
+    {
+      "path": ".autopilot/ph06/continuous-relief-checks/tablet-first/artifacts/atlas-detail-lock-relief---8ded2-clear-mixed-undo-and-reload-tablet-chromium/locks-mixed-undo-restored.png",
+      "sha256": "bcdc791d5ae82c42aa06749bad1ed2bc044218210daa093964be2cb4df8d66a3"
+    }
+  ],
+  "naturalVisualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false
+}

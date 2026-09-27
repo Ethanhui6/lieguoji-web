@@ -100,14 +100,37 @@ describe('actual geography visual repair contracts', () => {
       if (x > 1000 * 256 && x < 2200 * 256 && y > 1000 * 256 && y < 1900 * 256) { land[id] = 1; coast[id] = 32767; }
     }
     const relief = await createNaturalRelief({ seed: 9811, size, centersQ: centers, land, coastDistanceQ: coast, reliefMeters: 2400, shelfWidthWorld: 112, isLand: () => true }, 512, control);
-    const main = relief.ridges.filter(r => r.group === 0), anchors = [...main.map(r => r.a), main.at(-1)!.b];
-    const heights = anchors.map(p => relief.physicalHeight(p.xQ, p.yQ, true, 32767, -3800));
+    const main = relief.ridges.filter(r => r.group === 0), curve = relief.curves.find(r => r.group === 0)!.points, arcLength = curve.at(-1)!.arc;
+    const atArc = (arc: number) => {
+      let index = 1; while (index + 1 < curve.length && curve[index].arc < arc) index++;
+      const a = curve[index - 1], b = curve[index], t = (arc - a.arc) / (b.arc - a.arc);
+      const tx = a.tx + (b.tx - a.tx) * t, ty = a.ty + (b.ty - a.ty) * t, norm = Math.hypot(tx, ty);
+      return { xQ: Math.round(a.xQ + (b.xQ - a.xQ) * t), yQ: Math.round(a.yQ + (b.yQ - a.yQ) * t), tx: tx / norm, ty: ty / norm };
+    };
+    // Real arc stations replace obsolete straight-span anchors. The sampler
+    // reads the actual height function, including all overlapping ridges.
+    const intervals = Math.ceil(arcLength / (8 * 256)), stations = Array.from({ length: intervals + 1 }, (_, i) => atArc(arcLength * i / intervals));
+    const heights = stations.map(p => relief.physicalHeight(p.xQ, p.yQ, true, 32767, -3800));
     expect(heights[0]).toBeLessThan(2400 * .2); expect(heights.at(-1)!).toBeLessThan(2400 * .2);
-    const peaks = heights.slice(1, -1).filter((height, i) => height > heights[i] + 200 && height > heights[i + 2] + 200);
+    // Keep the original >200m peak-to-saddle requirement on BOTH sides. At
+    // dense arc stations adjacent 8-world samples are slopes, not saddles:
+    // find each summit's lowest sample on either side before a higher summit.
+    // Plateau summits count once, and small kernel/noise ripples cannot count
+    // without the same physical 200m fall on both sides.
+    const peaks = heights.slice(1, -1).filter((height, i) => {
+      const index = i + 1;
+      if (height < heights[index - 1] || height <= heights[index + 1]) return false;
+      let leftSaddle = height, rightSaddle = height;
+      for (let j = index - 1; j >= 0 && heights[j] <= height; j--) leftSaddle = Math.min(leftSaddle, heights[j]);
+      for (let j = index + 1; j < heights.length && heights[j] <= height; j++) rightSaddle = Math.min(rightSaddle, heights[j]);
+      return height > leftSaddle + 200 && height > rightSaddle + 200;
+    });
     expect(peaks.length).toBeGreaterThanOrEqual(2); expect(Math.max(...heights) - Math.min(...heights.slice(1, -1))).toBeGreaterThan(800);
-    const actualWidths = main.map(r => {
-      const x = (r.a.xQ + r.b.xQ) / 2, y = (r.a.yQ + r.b.yQ) / 2, dx = r.b.xQ - r.a.xQ, dy = r.b.yQ - r.a.yQ, length = Math.hypot(dx, dy);
-      let width = 0; for (let d = -256; d <= 256; d += 8) if (relief.physicalHeight(Math.round(x - dy / length * d * 256), Math.round(y + dx / length * d * 256), true, 32767, -3800) > 400) width += 8;
+    const actualWidths = main.map((_, index) => {
+      const p = atArc(arcLength * (index + .5) / main.length);
+      // Same number of sections, lateral range, spacing and elevation cutoff;
+      // only the center and normal move from a chord to the real curve frame.
+      let width = 0; for (let d = -256; d <= 256; d += 8) if (relief.physicalHeight(Math.round(p.xQ - p.ty * d * 256), Math.round(p.yQ + p.tx * d * 256), true, 32767, -3800) > 400) width += 8;
       return width;
     });
     expect(Math.max(...actualWidths) - Math.min(...actualWidths)).toBeGreaterThanOrEqual(32);

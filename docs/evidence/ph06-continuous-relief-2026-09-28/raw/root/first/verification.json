@@ -1,0 +1,51 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T17:11:06.989Z",
+      "finishedAt": "2026-09-27T17:11:07.139Z",
+      "elapsedMs": 149.6341,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T17:11:07.140Z",
+      "finishedAt": "2026-09-27T17:11:14.121Z",
+      "elapsedMs": 6980.118799999999,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T17:11:14.121Z",
+      "finishedAt": "2026-09-27T17:11:23.064Z",
+      "elapsedMs": 8943.4824,
+      "exitCode": 2,
+      "signal": null
+    }
+  ],
+  "sourceStable": true,
+  "changedKeys": [],
+  "expectedIdentityChanges": false,
+  "generatorAndEngineUnchanged": false,
+  "engineUnchanged": false,
+  "newGeneratorRecorded": false,
+  "passed": false,
+  "dist": null,
+  "scope": "Continuous relief and same-geography display technical scope only; no whole natural quality, performance, physical device, PH or cloud acceptance",
+  "cloudWrites": false
+}

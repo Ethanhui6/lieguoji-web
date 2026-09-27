@@ -1,0 +1,97 @@
+{
+  "recordedAt": "2026-09-27T17:11:06.181Z",
+  "head": "a8eec28c85a012f7194c727b746c31db354b9f0f",
+  "files": [
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/src/world/generation-history.ts",
+      "target": "src/world/generation-history.ts",
+      "beforeSha256": "eed814617461c88b5b80427e93564a70e0dd31bb0362bc0eb8b2fb3e4bd6774a",
+      "afterSha256": "f32ca028d5022a907bef47ee344758f61eb5af4becbcf46c81d090eac0830b6f"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview13-history-staging/src/world/detail-preview13-history.test.ts",
+      "target": "src/world/detail-preview13-history.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "49d2a0c3c2e236477679c4ef2ce9daa057aabb44490d983bc44b4f70792503d3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "target": "src/world/generation/detail-natural-relief.ts",
+      "beforeSha256": "bef73352fa8920a7a2aeb496dd3533af4b936be68c7db10cc2172aa9b3d55175",
+      "afterSha256": "6542372a94a18f937736bf31950737f9d590fd36644faaa25a6eeb7a834cc055"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-curved-ridge.ts",
+      "target": "src/world/generation/detail-curved-ridge.ts",
+      "beforeSha256": null,
+      "afterSha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-curved-ridge.test.ts",
+      "target": "src/world/generation/detail-curved-ridge.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "b210f809bb8bff8f6cb0888a239ae74576a192c85f0e89c36ef3409b39bbe256"
+    },
+    {
+      "source": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-natural-visual-repair.test.ts",
+      "target": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "beforeSha256": "6343e307bf4ffc0e87ee53aaf062f35323f375631660c85c46617c4dd6717086",
+      "afterSha256": "20925e333cb3d6248d7e664f8ee96231d68186d789fde178ba2bd1545c8be48d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/src/world/generation/detail-local-relief.ts",
+      "target": "src/world/generation/detail-local-relief.ts",
+      "beforeSha256": "d9093a36db7e897c05794789755020b4cee70aca2ebc39a43737fab89cfc54ae",
+      "afterSha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/src/world/generation/detail-local-relief.test.ts",
+      "target": "src/world/generation/detail-local-relief.test.ts",
+      "beforeSha256": "09ac8155422cdc50f691c9f7e3c698c9db3c8ca2c888aee0c3fd99b9875c6c07",
+      "afterSha256": "d7601626bf0191b697af716ca8a7bbad07fb6d74a96551363395c555a0d043d5"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/src/world/generation/detail-local-background.ts",
+      "target": "src/world/generation/detail-local-background.ts",
+      "beforeSha256": null,
+      "afterSha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026"
+    },
+    {
+      "source": ".autopilot/ph06/v4-local-background-staging/src/world/generation/detail-local-background.test.ts",
+      "target": "src/world/generation/detail-local-background.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "5fdf7a06e78d7989f6f36ad59a4c211a9740923c192c6c640b0406d521f9e899"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-render-reuse-staging/src/world/renderer.ts",
+      "target": "src/world/renderer.ts",
+      "beforeSha256": "1e0c4abf539ab3179f839a70ac173b424e9729c0cce8336de04391265c8964a4",
+      "afterSha256": "e8cbd5ce9dc9280c4c2209cfd67a17d4b1f158a8f89cea13993994ad5c42181d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-lock-render-reuse-staging/src/world/renderer-detail-reuse.test.ts",
+      "target": "src/world/renderer-detail-reuse.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "c38f41fcd67daef7b4c7c10ec55d1b00cce928cf80e8b66d753e15b652c91587"
+    }
+  ],
+  "history": {
+    "source": ".autopilot/ph06/v4-preview13-history-staging/evidence/preview13",
+    "target": "docs/evidence/ph06-preview13-generator-history-2026-09-28",
+    "buildSha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d",
+    "sourceSnapshotSha256": "50e3d56be35f5c6ff00f79d59c144cf31662d8e62a2403a6e9710c2226b24948",
+    "closureCount": 11,
+    "sourceFiles": 39,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "allGeneratorsAndEngineEqualPreview12": true,
+    "distCount": 25,
+    "archiveFiles": 49,
+    "inventorySha256": "eea0ac2fdb2d8d5f846d630c21b2fbee44802c177d4b9214ca2cd0218005e5d2",
+    "provenanceSha256": "29af70a5482ebf9a63876bd23a99ad9d341f7caf8fbaf63ef347bc23500d759b"
+  },
+  "version": "0.5.0-preview.14",
+  "previousMobileFailureRetained": true,
+  "checksRun": [],
+  "cloudWrites": false
+}

@@ -1,0 +1,96 @@
+{
+  "frozenAt": "2026-09-27T16:58:06.855Z",
+  "stagingOnly": true,
+  "productionModified": false,
+  "files": [
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview13-history-staging/src/world/generation-history.ts",
+      "baselineSha256": "eed814617461c88b5b80427e93564a70e0dd31bb0362bc0eb8b2fb3e4bd6774a",
+      "sha256": "f32ca028d5022a907bef47ee344758f61eb5af4becbcf46c81d090eac0830b6f",
+      "baselineMatches": true,
+      "mode": "mirror"
+    },
+    {
+      "path": "src/world/detail-preview13-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview13-history-staging/src/world/detail-preview13-history.test.ts",
+      "baselineSha256": null,
+      "sha256": "49d2a0c3c2e236477679c4ef2ce9daa057aabb44490d983bc44b4f70792503d3",
+      "baselineMatches": true,
+      "mode": "new"
+    }
+  ],
+  "evidence": {
+    "source": ".autopilot/ph06/v4-preview13-history-staging/evidence/preview13",
+    "target": "docs/evidence/ph06-preview13-generator-history-2026-09-28",
+    "buildSha256": "bca77550682140eb8386b9dcee02bcb198885425cc4b5d0f63e6c0ac30e93b0d",
+    "sourceSnapshotSha256": "50e3d56be35f5c6ff00f79d59c144cf31662d8e62a2403a6e9710c2226b24948",
+    "closureCount": 11,
+    "sourceFiles": 39,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "allGeneratorsAndEngineEqualPreview12": true,
+    "distCount": 25,
+    "archiveFiles": 49,
+    "inventorySha256": "eea0ac2fdb2d8d5f846d630c21b2fbee44802c177d4b9214ca2cd0218005e5d2",
+    "provenanceSha256": "29af70a5482ebf9a63876bd23a99ad9d341f7caf8fbaf63ef347bc23500d759b"
+  },
+  "sourceIdentity": {
+    "version": "0.5.0-preview.13",
+    "actualHead": "0a02f3c27ce2acafec014e4f89d2693416243105",
+    "baseCommit": "0a02f3c27ce2acafec014e4f89d2693416243105",
+    "sourceIsHead": false,
+    "closureSourceMatchesHead": true,
+    "closureSourceMatchesHeadRawBytes": true,
+    "postBuildSourceDifferences": [
+      {
+        "path": "tests/atlas-detail-lock-relief.spec.ts",
+        "verifiedSha256": "7516e9fbb42f5f8f3417e1a992dce876e9eb7e27d24518deb82f4a65ad6bbb5e",
+        "currentSha256": "3a9a56479c5c28005558b6a726a57ed5a43d4893ea6f434d40f2f86b659f6aa6",
+        "classification": "non-runtime-test-change"
+      }
+    ]
+  },
+  "checks": {
+    "run": [],
+    "unitCasesWritten": 5,
+    "provenanceCaptureOnly": true,
+    "testsUnexecuted": true
+  },
+  "references": [
+    {
+      "path": "capture-actual.mjs",
+      "sha256": "10d9f4ae616b2a614e48e336c15ff2138550610eb548bb14a673a6df90f819b6"
+    },
+    {
+      "path": "record-ready-actual.mjs",
+      "sha256": "8970db7891bad536a40f84776954d7c11846b17df38a5fdc0a8c1c63226b3554"
+    },
+    {
+      "path": "capture-result.json",
+      "sha256": "e5f152804ff6a0cbcc9f06b5dc27d76534befb3928f585be17985591d6ca9581"
+    },
+    {
+      "path": "baseline-manifest.json",
+      "sha256": "8b3fa5a8544070aaf73eaf9a60a9cf5e0bb4a4a53dcb23ff6390a5bd238f2b16"
+    },
+    {
+      "path": "README.md",
+      "sha256": "02b2f90f7d8cdf187b309bfd0f25ad4c6d1924299a603aa13002e8996f779802"
+    }
+  ],
+  "preservedInitialCandidate": [
+    {
+      "path": "initial-candidate/capture.mjs",
+      "sha256": "2a9b5a37d6f3501dc0974c8a1208b19375f9d9f1946f77db84a52c17b437d64e"
+    },
+    {
+      "path": "initial-candidate/record-ready.mjs",
+      "sha256": "3a405aeb46ade57d1654bc74c436b757cb1e6567c4b2fb4f6e6eeb0d1d652022"
+    },
+    {
+      "path": "initial-candidate/src/world/detail-preview13-history.test.ts",
+      "sha256": "68d14054e1c3fcb2b7254382a1ab591282d87f400951497cd5ca1fd94031f381"
+    }
+  ]
+}

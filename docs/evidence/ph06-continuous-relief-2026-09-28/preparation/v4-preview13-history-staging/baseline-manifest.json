@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-09-27T16:55:30.460Z",
+  "actualHead": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "baseCommit": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "sourceIsHead": false,
+  "files": [
+    {
+      "path": "src/world/generation-history.ts",
+      "sha256": "eed814617461c88b5b80427e93564a70e0dd31bb0362bc0eb8b2fb3e4bd6774a"
+    }
+  ],
+  "newTarget": "src/world/detail-preview13-history.test.ts",
+  "newTargetAbsent": true
+}

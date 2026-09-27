@@ -1,0 +1,45 @@
+{
+  "recordedAt": "2026-09-27T17:09:49.9354906Z",
+  "status": "static-ready-for-root-integrated-checks",
+  "tested": false,
+  "productionChangedByThisAgent": false,
+  "baseHead": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "files": [
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "stagedPath": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "baselineSha256": "bef73352fa8920a7a2aeb496dd3533af4b936be68c7db10cc2172aa9b3d55175",
+      "sha256": "6542372a94a18f937736bf31950737f9d590fd36644faaa25a6eeb7a834cc055"
+    },
+    {
+      "path": "src/world/generation/detail-curved-ridge.ts",
+      "stagedPath": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-curved-ridge.ts",
+      "baselineSha256": null,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "path": "src/world/generation/detail-curved-ridge.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-curved-ridge.test.ts",
+      "baselineSha256": null,
+      "sha256": "b210f809bb8bff8f6cb0888a239ae74576a192c85f0e89c36ef3409b39bbe256"
+    },
+    {
+      "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-curved-relief-staging/src/world/generation/detail-natural-visual-repair.test.ts",
+      "baselineSha256": "6343e307bf4ffc0e87ee53aaf062f35323f375631660c85c46617c4dd6717086",
+      "sha256": "20925e333cb3d6248d7e664f8ee96231d68186d789fde178ba2bd1545c8be48d"
+    }
+  ],
+  "authoredTests": 10,
+  "checks": [],
+  "readmeSha256": "1567ca1d3bb7df26f19fb6bddf60f815b1cddf2522e26e013c33b3026d67a1be",
+  "notes": [
+    "Continues existing interrupted candidate; no test, build or browser executed.",
+    "Root owns promotion, generator history and actual integrated evidence.",
+    "Optional scaleMode and sixth physicalHeight background interface coordinated with local_background.",
+    "Included legacy visual repair test mirror: only the mountain test measurement frame changed to actual curve arc and tangent; original thresholds and four other tests preserved.",
+    "Static review repair: bounded C1 odd side-width saturation preserves 1.15 index bound; independent oracle updated and real-field finite-slope test authored, not run."
+  ],
+  "modifiedExistingTests": 1,
+  "preservedOtherExistingTests": 4
+}

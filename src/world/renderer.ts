@@ -32,6 +32,18 @@ const ocean = 0x10283f;
 const minimumCacheDensity = ATLAS_MINIMUM_CACHE_DENSITY;
 const paintBatchBudgetMs = 32;
 
+/** Compare two already independently verified, immutable receiver snapshots.
+ * This is a cache dependency check, never a codec/byte verifier or a reason to
+ * skip the bridge's full verification. Locks, names and revision do not change
+ * geography; every coarse layer and the complete fine contract/directory do. */
+export function sameVerifiedDetailGeography(a: AtlasGeographyView, b: AtlasGeographyView): boolean {
+  const x = a.manifest, y = b.manifest;
+  return x.version === 4 && y.version === 4 && !!a.detailCoast && !!b.detailCoast
+    && x.format === y.format && x.kind === y.kind && x.draftId === y.draftId && x.atlasId === y.atlasId
+    && JSON.stringify(x.spec) === JSON.stringify(y.spec) && JSON.stringify(x.surface) === JSON.stringify(y.surface)
+    && JSON.stringify(x.blockRefs) === JSON.stringify(y.blockRefs) && JSON.stringify(x.detailCoast) === JSON.stringify(y.detailCoast);
+}
+
 /** Production atlas only. Cached logical blocks; no experiment fixture or game rule imports. */
 export class AtlasRenderer {
   private readonly app = new Application();
@@ -45,6 +57,9 @@ export class AtlasRenderer {
   private readonly cache = new AtlasTextureCache();
   private readonly terrainGeometry = new AtlasTerrainGeometryCache();
   private detail?: DetailTerrainBackend;
+  // The immutable backend may retain an older equivalent geographic snapshot;
+  // this private binding records which verified metadata view is displayed.
+  private detailDisplayData?: AtlasGeographyView;
   private refs = new Map<BlockKey, string>();
   // This is world-content invalidation, not a texture-entry flag. It survives
   // eviction, density changes and GPU loss until the core is actually visible.
@@ -164,7 +179,7 @@ export class AtlasRenderer {
     for (let oy = Math.floor(Math.max(0, minRow - materialRing - 1) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + materialRing) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - materialRing - 1) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + materialRing) / 32); ox++) dependencies.push(this.geometryKey(ox, oy));
     if (layer === 'terrain') for (let oy = Math.floor(Math.max(0, minRow - 2) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + 2) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 2) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + 2) / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
     const level = Math.log2(density);
-    const surfaceIdentity = this.data!.manifest.version === 4 ? `detail-final-q8-v1/${this.data!.manifest.revision}` : 'terrain-surface-v1';
+    const surfaceIdentity = this.data!.manifest.version === 4 ? `detail-final-q8-v1/${this.detail?.data.manifest.revision ?? this.data!.manifest.revision}` : 'terrain-surface-v1';
     const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/${surfaceIdentity}/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
       pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
     if (!tile) return whole;
@@ -310,9 +325,9 @@ export class AtlasRenderer {
       if (this.data?.manifest.version === 4) {
         try {
           const data = this.data;
-          if (!this.detail) this.detail = new DetailTerrainBackend(data);
+          if (!this.detail) { this.detail = new DetailTerrainBackend(data); this.detailDisplayData = data; }
           const detail = this.detail;
-          if (detail.data !== data) throw new Error('细地表快照与当前显示不一致。');
+          if (this.detailDisplayData !== data) throw new Error('细地表快照与当前显示不一致。');
           const control = { signal, check, onProgress: (progress: { stage: string; completed: number; total: number }) => { check(); this.callbacks.onProgress?.(progress); } };
           await detail.prepare(control); check();
           if (preparationEpoch !== this.contextEpoch || preparationData !== this.data || (!recovering && this.graphicsState !== 'ready')) continue;
@@ -359,11 +374,25 @@ export class AtlasRenderer {
     try {
       const fresh = !this.data || this.data.manifest.draftId !== data.manifest.draftId || this.data.manifest.atlasId !== data.manifest.atlasId;
       const preserveCamera = !fresh && (this.displaySource === 'generation-preview' || data.manifest.version === 4);
-      // Fine changes and Hbase changes require one coherent new source set.
-      // A coarse-only delta cannot prove which fine nodes remained unchanged.
-      const fullRepaint = fresh || !delta || data.manifest.version === 4;
+      // A lock preview only updates the UI overlay, so lock confirmation and
+      // lock undo enter here from committed display. They can retain complete
+      // geography only when the existing private cache is ready and every
+      // verified geographic dependency is equal. No generation-preview shortcut.
+      const reuseDetail = !fresh && this.displaySource === 'committed' && !!this.committed && this.committed.data === this.data
+        && !!this.index && this.committed.index === this.index && this.graphicsState === 'ready'
+        && !!this.detail?.gpuReady && this.detail.metrics().complete && this.detailDisplayData === this.data
+        && this.cache.stats().entries > 0 && this.terrainGeometry.stats().entries > 0
+        && sameVerifiedDetailGeography(this.detail.data, data);
+      // Fine changes and Hbase changes still require one coherent new source
+      // set. A coarse-only delta is never proof of unchanged fine nodes.
+      const fullRepaint = !reuseDetail && (fresh || !delta || data.manifest.version === 4);
       if (!fresh && delta && data.manifest.revision !== this.data!.manifest.revision + 1) throw new Error('地图增量修订不连续，请恢复已保存草稿。');
-      if (fullRepaint) {
+      if (reuseDetail) {
+        // No yield occurs between the complete dependency/epoch readiness check
+        // and this binding. SpatialIndex's old geometry remains immutable and
+        // identical; metadata authority, labels and locks use the new data.
+        this.data = data; this.detailDisplayData = data;
+      } else if (fullRepaint) {
         const index = await createSpatialIndexAsync(data, {
           signal: pending.signal,
           onProgress: progress => { this.assertAcceptance(pending); this.callbacks.onProgress?.(progress); },
@@ -375,6 +404,7 @@ export class AtlasRenderer {
         if (!preserveCamera) { this.selected = null; this.camera = fitCamera(this.worldSize(), this.viewport()); }
       } else {
         if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending);
+        if (!delta) throw new Error('地图局部显示缺少增量，未复用未知地理。');
         if (data.manifest.revision !== this.data!.manifest.revision + 1) throw new Error('地图增量修订不连续，请恢复已保存草稿。');
         this.index!.updateGeometry(data, delta.changedVertexIds);
         this.data = data;
@@ -463,7 +493,7 @@ export class AtlasRenderer {
     let failure: unknown;
     try { this.terrainGeometry.clear(); } catch (error) { failure = error; }
     try { if (preserveDetailCpu) this.detail?.releaseGpu(); else this.detail?.destroy(); } catch (error) { failure ??= error; }
-    if (!preserveDetailCpu) this.detail = undefined;
+    if (!preserveDetailCpu) { this.detail = undefined; this.detailDisplayData = undefined; }
     try { this.cache.clear(); } catch (error) { failure ??= error; }
     if (failure) throw failure;
   }

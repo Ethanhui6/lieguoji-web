@@ -1,0 +1,30 @@
+{
+  "baseHead": "0a02f3c27ce2acafec014e4f89d2693416243105",
+  "recordedAt": "2026-09-27T17:05:11.6276762Z",
+  "files": [
+    {
+      "sha256": "1e0c4abf539ab3179f839a70ac173b424e9729c0cce8336de04391265c8964a4",
+      "path": "src/world/renderer.ts"
+    },
+    {
+      "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb",
+      "path": "src/world/spatial-index.ts"
+    },
+    {
+      "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b",
+      "path": "src/world/detail-terrain-backend.ts"
+    },
+    {
+      "sha256": "00906ca7c8de80a9b825cfaedc2ea275954ccd5713676d74e790c33b2200abd8",
+      "path": "src/world/atlas-texture-cache.ts"
+    },
+    {
+      "sha256": "5cab4301f60091978d9d39e42ee5392708c34f2d099b9693f8407dcf4991182e",
+      "path": "src/editor/AtlasStudio.tsx"
+    },
+    {
+      "sha256": "17aa39ac8e090d402f16f3db7c930e0b821865e38c0ace0d9a9a31dcedbbd658",
+      "path": "src/world/bridge.ts"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "scope": "virtual-overlay type closure of only three owned roots plus vite declarations; owned lint only",
+  "elapsedMs": 3239.2704000000003,
+  "types": [],
+  "lint": [
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    },
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\atlas.worker.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    },
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.test.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    }
+  ]
+}

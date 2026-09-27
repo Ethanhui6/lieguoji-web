@@ -1,0 +1,71 @@
+{
+  "frozenAt": "2026-09-27T09:54:40.692Z",
+  "stagingOnly": true,
+  "productionPromoted": false,
+  "files": [
+    {
+      "path": "src/world/generation/detail-shape-natural.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.ts",
+      "sha256": "1ab4122d746f7d83a9d212186a9b8bb2904409c3993a380ca5b290c9e7b452a2",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-natural-outline.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-outline.ts",
+      "sha256": "5adec553991586def3a1051c9715e287b2f42c612162499fa1c3f27f37a4cca2",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-relief.ts",
+      "sha256": "f0358fc871fedea4e74c8efd0b359f5dceef2aee0bcc61ad9c89cc2fef5032dc",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.test.ts",
+      "sha256": "409586c40c91d1d18f04128a8270c144236a0df7510a32f25a1f0576d15f6911",
+      "productionTargetAbsent": true
+    }
+  ],
+  "previousV1": {
+    "source": "src/world/generation/detail-shape.ts",
+    "capturedSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+    "actualSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+    "unchanged": true
+  },
+  "entry": "generateDetailShapeNatural({base,recipe},control)",
+  "recipe": {
+    "kernelFormat": "lieguoji-natural-shape-recipe",
+    "kernelVersion": 2,
+    "intendedGeneratorId": "shape-detail-landmass",
+    "intendedGeneratorVersion": 2,
+    "atlasContainerVersion": 1,
+    "additionalParameter": "coastStructureWorld integer 0..160",
+    "inputMarginWorld": "coastStructureWorld + coastRoughnessWorld + 52"
+  },
+  "sourceOnlyReview": true,
+  "checksRun": [],
+  "writtenTargetedTests": 10,
+  "testConfiguration": ".autopilot/ph06/v4-natural-staging/vitest.config.ts",
+  "typecheckScript": ".autopilot/ph06/v4-natural-staging/typecheck.mjs",
+  "notPerformed": [
+    "lint",
+    "semantic types",
+    "unit tests",
+    "performance benchmark",
+    "browser",
+    "GPU",
+    "product registration",
+    "actual natural fixture generation"
+  ],
+  "integration": "Register first/add v2 together using this same new-component kernel, verified private source adapters, current disjoint splice/real locks/hash/CAS/undo. Old v1 data remains unchanged.",
+  "limits": "Native 2world LGDC, max16384 derived outline points, max131072 target shore segments, max8000000 indexed validation units, max19 ridge anchors/max16 segments; no world-sized new fine height grid.",
+  "limitations": [
+    "Height planning is a procedural ridge/lowland profile, not erosion, hydrology, or natural-visual acceptance.",
+    "1world coverage probes filter ridge support; they are not a path-connectivity proof.",
+    "Performance/visual quality are unmeasured until coordinated checks and actual rendering."
+  ],
+  "readme": ".autopilot/ph06/v4-natural-staging/README.md",
+  "readmeSha256": "752f99442e661831ff1f7f6b282e1efe2d6b392f39da29e7a74fd3e9bfbd4bfc"
+}

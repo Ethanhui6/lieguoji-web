@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-09-27T10:24:39.6740612Z",
+  "files": [
+    {
+      "path": "src/world/atlas.worker.ts",
+      "baselineSha256": "00c6d9c6dcc70dd837b38ad80dfca359d1c0aa3dd021a369b062bf1fd7acf3d4"
+    },
+    {
+      "path": "src/world/worker-yield.ts",
+      "baselineSha256": null,
+      "productionExists": false
+    },
+    {
+      "path": "src/world/worker-yield.test.ts",
+      "baselineSha256": null,
+      "productionExists": false
+    }
+  ]
+}

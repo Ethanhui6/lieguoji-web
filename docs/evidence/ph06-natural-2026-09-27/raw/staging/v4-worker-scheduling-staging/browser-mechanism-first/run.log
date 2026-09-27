@@ -1,0 +1,2 @@
+Error: page.evaluate: Error
+    at worker.onerror (eval at evaluate (:311:30), <anonymous>:5:44)

@@ -9,3 +9,5 @@ declare const __SHAPE_GENERATOR_FINGERPRINT__: string;
 declare const __OCEAN_GENERATOR_FINGERPRINT__: string;
 declare const __DETAIL_SHAPE_GENERATOR_FINGERPRINT__: string;
 declare const __ADD_DETAIL_GENERATOR_FINGERPRINT__: string;
+declare const __NATURAL_DETAIL_GENERATOR_FINGERPRINT__: string;
+declare const __ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT__: string;

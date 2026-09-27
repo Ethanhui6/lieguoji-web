@@ -1,0 +1,15 @@
+{
+  "scope": "real Chromium dedicated Worker mechanism probe only; not game performance, GPU or physical-device acceptance",
+  "helperSha256": "ed2dd0cb542d1c5c56b238833b479157a9aca13cdaa8a8e336c79806c6293450",
+  "count": 256,
+  "cases": [],
+  "browserVersion": "153.0.8010.12",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "passed": false,
+  "error": {
+    "message": "Error: page.evaluate: Error\n    at worker.onerror (eval at evaluate (:311:30), <anonymous>:5:44)",
+    "stack": "page.evaluate: Error\n    at worker.onerror (eval at evaluate (:311:30), <anonymous>:5:44)\n    at D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-worker-scheduling-staging\\probe.mjs:38:27"
+  },
+  "sourceStable": true,
+  "exitCode": 1
+}

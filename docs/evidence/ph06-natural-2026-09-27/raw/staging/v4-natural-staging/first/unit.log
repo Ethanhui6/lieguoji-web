@@ -1,0 +1,16 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.test.ts (10 tests) 9091ms
+   ✓ independent natural-v2 real geography kernel (8)
+     ✓ retains a deliberately narrow sea inlet under the non-adjacent feature caps 506ms
+     ✓ retains a twelve-world land neck instead of rounding separate lobes into islands 687ms
+     ✓ is deterministic across work batches and owns source recipe/buffers before the first yield 3531ms
+     ✓ cancels actual natural outline and relief phases without changing source geography 2135ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  18:06:57
+   Duration  9.45s (tests 98%, transform 2%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/v4-natural-staging/checks/first/unit-results.json

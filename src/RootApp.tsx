@@ -42,7 +42,7 @@ export default function RootApp(){
  async function openAtlas(){
   if(operation.current||writing.current)return;
   if(dirty.current){try{await save();}catch{return;}}
-  navigation.current++;setActiveAtlas(previous=>({id:'',source:'current',manifest:'',format:3,instance:previous.instance+1}));window.history.pushState(null,'','/?atlas=new&atlas-format=3');setScreen('atlas');
+  navigation.current++;setActiveAtlas(previous=>({id:'',source:'current',manifest:'',format:4,instance:previous.instance+1}));window.history.pushState(null,'','/?atlas=new&atlas-format=4');setScreen('atlas');
  }
  async function registerRun(candidate:World,draft=workspace.draft){
   if(!candidate.custom||candidate.scenario!=='custom-world')throw new Error('自建世界缺少身份信息');

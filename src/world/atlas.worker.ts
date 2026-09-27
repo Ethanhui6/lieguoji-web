@@ -9,6 +9,7 @@ import { decodeAtlasEditMessage, encodeAtlasEditMessage, OwnedAtlasSession, type
 import * as storage from './storage';
 import type { AtlasBlockPage, AtlasCommitReceipt, AtlasStoredRoot } from './storage-types';
 import { ATLAS_FRAGMENT_BYTES, decodeAtlasPacket, encodeAtlasPacket, observeAtlasComputation, type AtlasHead, type AtlasOperation, type AtlasPacket, type AtlasStateHeader, type AtlasTimingLedger } from './protocol';
+import { yieldAtlasWorkerTask } from './worker-yield';
 
 type Sender = (bytes: Uint8Array, transfer: Transferable[]) => void;
 type Active = { id: number; control: AbortController; durable: boolean; sequence: number; started: number; commandId?: string; draftId?: string; timing: AtlasTimingLedger };
@@ -85,17 +86,17 @@ export class AtlasWorkerRuntime {
     }).finally(() => { if (this.active === active) this.active = undefined; });
   }
   private control(active: Active) {
-    return { signal: active.control.signal, onProgress: (progress: { stage: string; completed: number; total: number }) => this.post(active.id, 'progress', progress),
+    return { signal: active.control.signal, yieldTask: yieldAtlasWorkerTask, onProgress: (progress: { stage: string; completed: number; total: number }) => this.post(active.id, 'progress', progress),
       onTiming: (timing: storage.AtlasStorageTiming) => { active.timing.storageTimings.push(structuredClone(timing)); } };
   }
   private preparationControl(active: Active) {
     return { ...this.control(active), yieldTask: async () => {
-      const startMs = performance.now(); await new Promise<void>(resolve => setTimeout(resolve, 0));
+      const startMs = performance.now(); await yieldAtlasWorkerTask();
       active.timing.ownedYields.push({ startMs, endMs: performance.now() });
     } };
   }
   /** Once IDB completed, cancellation cannot turn verification into a rollback. */
-  private durableControl(active: Active) { return { onProgress: this.control(active).onProgress }; }
+  private durableControl(active: Active) { return { onProgress: this.control(active).onProgress, yieldTask: yieldAtlasWorkerTask }; }
   private async openStorageSession(active: Active, root: AtlasStoredRoot) {
     active.timing.partialReasons.push('storage-session-open-or-reopen');
     const session = await storage.getAtlasStorage(root.domain === 'atlas-draft-v4' ? 4 : root.domain === 'atlas-draft-v3' ? 3 : root.domain === 'atlas-draft-v2' ? 2 : 1).openAtlasStorageSession(root.draftId, active.durable ? this.durableControl(active) : this.control(active));
@@ -113,7 +114,7 @@ export class AtlasWorkerRuntime {
       let page: typeof blocks = [], pageBytes = pageBaseBytes, staged = 0, sinceYield = 0;
       const checkpoint = async (stage: string, completed: number) => {
         control.onProgress({ stage, completed, total: blocks.length });
-        await new Promise<void>(resolve => setTimeout(resolve, 0)); control.signal.throwIfAborted(); sinceYield = 0;
+        await control.yieldTask(); control.signal.throwIfAborted(); sinceYield = 0;
       };
       const stagePage = async () => {
         if (!page.length) return;

@@ -1,0 +1,46 @@
+{
+  "scope": "three new scheduler tests and scoped static only; no legacy Worker suite, build, GPU or performance claim",
+  "unit": {
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "--config=.autopilot/ph06/v4-worker-scheduling-staging/vitest.config.ts",
+      "--reporter=default",
+      "--reporter=json",
+      "--outputFile=D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-worker-scheduling-staging\\checks\\repair1\\results.json"
+    ],
+    "startedAt": "2026-09-27T10:29:26.894Z",
+    "finishedAt": "2026-09-27T10:29:28.948Z",
+    "elapsedMs": 2053.7754,
+    "exitCode": 0,
+    "signal": null
+  },
+  "static": {
+    "scope": "virtual-overlay type closure of only three owned roots plus vite declarations; owned lint only",
+    "elapsedMs": 3239.2704000000003,
+    "types": [],
+    "lint": [
+      {
+        "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.ts",
+        "errorCount": 0,
+        "warningCount": 0,
+        "messages": []
+      },
+      {
+        "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\atlas.worker.ts",
+        "errorCount": 0,
+        "warningCount": 0,
+        "messages": []
+      },
+      {
+        "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.test.ts",
+        "errorCount": 0,
+        "warningCount": 0,
+        "messages": []
+      }
+    ]
+  },
+  "sourceStable": true,
+  "passed": true
+}

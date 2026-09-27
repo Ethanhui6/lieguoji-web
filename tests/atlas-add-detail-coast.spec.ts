@@ -148,6 +148,7 @@ async function durableField(p: Page, id: string) {
     return { refs: rows.manifest.detailCoast.refs, sampledTiles, landTiles,
       geometryRefs: rows.manifest.blockRefs.filter(r => r.key.startsWith('geometry:')),
       firstRegionHeightSha256: await digest(new Uint8Array(new Int32Array(protectedHeights).buffer)),
+      farSea: [[3800, 500], [3700, 3300], [500, 3500]].map(([x, y]) => coarse[Math.floor(y / step) * rows.manifest.spec.columns + Math.floor(x / step)]),
       firstRegionSamples: protectedHeights.length, probe: { land: pair[1].land!, sea: pair[1].sea! } };
   }, id);
 }
@@ -156,7 +157,7 @@ function firstContinentPreserved(first: DurableField, next: DurableField) {
   expect(first.sampledTiles).toBeGreaterThan(0); expect(first.firstRegionSamples).toBeGreaterThan(1000);
   const current = new Map(next.refs.map(ref => [`${ref.bx}:${ref.by}`, ref.hash]));
   for (const ref of first.refs) expect(current.get(`${ref.bx}:${ref.by}`), `Original owner ${ref.bx}:${ref.by}`).toBe(ref.hash);
-  expect(next.geometryRefs).toEqual(first.geometryRefs);
+  expect(next.geometryRefs).toEqual(first.geometryRefs);expect(next.farSea).toEqual(first.farSea);
   expect(next.firstRegionHeightSha256).toBe(first.firstRegionHeightSha256);
 }
 async function observePoint(p: Page, point: Probe, kind: 'land' | 'sea', touch: boolean) {
@@ -191,9 +192,9 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   // and the overlapping attempt. This is a correctness ceiling, not a perf gate.
   test.setTimeout(450000);
   const response = await page.request.get('/build.json'); expect(response.ok()).toBe(true);
-  const build = await response.json() as { version: string; commit?: string; detailShapeGenerator?: { sha256: string }; addDetailGenerator?: { sha256: string } };
-  expect(build.addDetailGenerator?.sha256, 'Requires the actual newly built additive source; preview.7 has no add recipe').toMatch(/^[a-f0-9]{64}$/);
-  expect(build.detailShapeGenerator?.sha256).toMatch(/^[a-f0-9]{64}$/);
+  const build = await response.json() as { version: string; commit?: string; naturalDetailGenerator?: { sha256: string }; addNaturalDetailGenerator?: { sha256: string } };
+  expect(build.addNaturalDetailGenerator?.sha256, 'Requires the actual natural-v2 build; preview.8 only registered v1').toMatch(/^[a-f0-9]{64}$/);
+  expect(build.naturalDetailGenerator?.sha256).toMatch(/^[a-f0-9]{64}$/);
   const touch = info.project.name !== 'desktop-chromium', errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message)); page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto('/?atlas=new&atlas-format=4'); await ready(page, 'empty');
@@ -201,11 +202,13 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   await page.getByLabel('大世界生成种子', { exact: true }).fill('fine-native-additive');
   await page.getByLabel('大世界地理规模', { exact: true }).selectOption('256'); await click(page, '新建空白海洋草稿'); await ready(page);
   const id = (await studio(page).getAttribute('data-atlas-id'))!;
-  await panel(page, '创世'); await page.getByLabel('地貌种子', { exact: true }).fill('fine-native-additive');
+  await panel(page, '创世'); await expect(page.getByLabel('大陆地形风格', { exact: true })).toHaveValue('2');await expect(page.getByLabel('主要湾岬变化', { exact: true })).toHaveValue('96');
+  await page.getByLabel('地貌种子', { exact: true }).fill('fine-native-additive');
   await page.getByLabel('近岸岛链', { exact: true }).selectOption('0');
   await draw(page, firstContour, touch); await click(page, '确认生成并保存'); await ready(page);
   const first = await saved(page, id, 4), firstField = await durableField(page, id);
-  expect(first.root.revision).toBe(1); expect(first.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'shape-detail-landmass', version: 1, fingerprint: build.detailShapeGenerator!.sha256 });
+  expect(first.root.revision).toBe(1); expect(first.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'shape-detail-landmass', version: 2, fingerprint: build.naturalDetailGenerator!.sha256 });
+  expect(first.manifest.generation.lastApplied?.recipe.parameters).toMatchObject({coastStructureWorld:96});expect(firstField.farSea.every(value=>value < -1000)).toBe(true);expect(new Set(firstField.farSea).size).toBeGreaterThan(1);
   const firstPicks = await observeFirstCoast(page, firstField, touch), beforePreview = await databaseDigest(page, 4);
 
   await draw(page, secondContour, touch); const secondPreview = await audit(page);
@@ -214,7 +217,7 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   await panel(page, '创世'); await click(page, '确认生成并保存'); await ready(page);
   const second = await saved(page, id, 4), secondField = await durableField(page, id);
   expect(second.root).toMatchObject({ revision: 2, currentManifest: secondPreview.display.manifestDigest, backupManifest: first.root.currentManifest });
-  expect(second.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'add-detail-landmass', version: 1, fingerprint: build.addDetailGenerator!.sha256 });
+  expect(second.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'add-detail-landmass', version: 2, fingerprint: build.addNaturalDetailGenerator!.sha256 });
   firstContinentPreserved(firstField, secondField); expect(secondField.refs.length).toBeGreaterThan(firstField.refs.length);
 
   // Undo before navigation/reload, while the real transaction history exists.
@@ -227,7 +230,7 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   const repeated = await saved(page, id, 4), repeatedField = await durableField(page, id);
   expect(repeated.root).toMatchObject({ revision: 4, backupManifest: undone.root.currentManifest });
   firstContinentPreserved(firstField, repeatedField); expect(repeatedField).toEqual(secondField);
-  expect(repeated.manifest.generation.lastApplied?.recipe.generator.fingerprint).toBe(build.addDetailGenerator!.sha256);
+  expect(repeated.manifest.generation.lastApplied?.recipe.generator.fingerprint).toBe(build.addNaturalDetailGenerator!.sha256);
   await page.reload(); await ready(page); expect(await saved(page, id, 4)).toEqual(repeated); expect(await durableField(page, id)).toEqual(repeatedField);
   expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 4, revision: 4, manifestDigest: repeated.root.currentManifest });
   const restoredPicks = await observeFirstCoast(page, firstField, touch);
@@ -235,7 +238,7 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
 
   await panel(page, '创世');
   await expect(page.getByLabel('地貌种子', { exact: true })).toHaveValue('fine-native-additive');
-  await expect(page.getByLabel('近岸岛链', { exact: true })).toHaveValue('0');
+  await expect(page.getByLabel('近岸岛链', { exact: true })).toHaveValue('0');await expect(page.getByLabel('大陆地形风格', { exact: true })).toHaveValue('2');await expect(page.getByLabel('主要湾岬变化', { exact: true })).toHaveValue('96');
   const beforeOverlap = await databaseDigest(page, 4); await draw(page, firstContour, touch, true);
   const rejection = await page.getByRole('alert').textContent(); expect(await saved(page, id, 4)).toEqual(repeated);
   expect(await databaseDigest(page, 4)).toEqual(beforeOverlap); // Includes actual main/backup roots, manifests and content stores.

@@ -1,0 +1,32 @@
+[
+  {
+    "path": "docs/adr/0016-sparse-detail-coast.md",
+    "bytes": 5934,
+    "sha256": "3e3b00e38b9e2de8cb57fd390f460d5118705467674c0507cfd03607fc584526",
+    "copied": false
+  },
+  {
+    "path": "docs/adr/0018-natural-landscape-v2.md",
+    "bytes": 2987,
+    "sha256": "ed446b82f4d01522ba3a997b2c55c4d15086a2074263a33c39f95db86c004925",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-preview8-generator-history-2026-09-27/build.json",
+    "bytes": 6121,
+    "sha256": "30b9e2a558e0bf922bf54a75e08d2a3f200db57005e3143614698a6c7d9f58da",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-preview8-generator-history-2026-09-27/provenance.json",
+    "bytes": 12675,
+    "sha256": "ba05bf921cd9a257156f59a1c588babc946473e2314fdb52bb708092b8ea1a1d",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-additive-2026-09-27/verification.json",
+    "bytes": 356733,
+    "sha256": "cc6e588a261940ea25c556681c52718fa770f6885205da92d3e490689484300d",
+    "copied": false
+  }
+]

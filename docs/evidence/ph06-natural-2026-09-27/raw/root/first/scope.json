@@ -1,0 +1,7 @@
+{
+  "unitFiles": [
+    "src/world",
+    "src/editor/detail-coast-controls.test.ts"
+  ],
+  "unchangedScopeReused": "Unchanged preview8 renderer and old sim scope reused; fresh whole world subtree plus new UI recipe controls. Not a full game suite or performance acceptance"
+}

@@ -1,0 +1,316 @@
+{
+  "createdAt": "2026-09-27T10:20:14.031Z",
+  "stagingOnly": true,
+  "productionModified": false,
+  "files": [
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/scripts/generator-fingerprint.ts",
+      "mode": "mirror",
+      "baselineSha256": "8a70cdd527896418ff1f8c75f8caf26d8d1af109c7f78a17c882df9d74df63ac",
+      "sha256": "e4f84c756aab7246165bbdeb8315a2196d1983e0128d0803c07ba495b8ccced5",
+      "currentProductionSha256": "8a70cdd527896418ff1f8c75f8caf26d8d1af109c7f78a17c882df9d74df63ac",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/editor/atlas-generation-progress.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/editor/atlas-generation-progress.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "ae5190ae02da926dcaf8f382595974eeb7f7d99919db733c68d6be4d89b4ebff",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/editor/detail-coast-controls.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/editor/detail-coast-controls.test.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "7dfb7c78fe6e743721503f11dd8f3a28d044e08fa83bb452ab6ccb61d8c369c4",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/editor/detail-coast-controls.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/editor/detail-coast-controls.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "e0ab15cfe341155c3b56a2472795c0d8f0caf474dc53f995f95d09c2b08fbf9a",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/vite-env.d.ts",
+      "mode": "mirror",
+      "baselineSha256": "3105655dee59a0ac3523eebf44ac85320e62fb876c8ea672bf4068b98c19be70",
+      "sha256": "3d5feb93e641efc44773d84ef872c8f3094774af026fb7af2b5086fcd909b57f",
+      "currentProductionSha256": "3105655dee59a0ac3523eebf44ac85320e62fb876c8ea672bf4068b98c19be70",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/detail-natural-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/detail-natural-history.test.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "6260f93917cefd95a0459ba384de62fedd5b69704da78e732698487e33f07f71",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/detail-natural-integration.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/detail-natural-integration.test.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "4104e1e04e938a5af36b1d83452f80ce5f5f4dccdc3d841297b1720a5e3cff9a",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation-contract.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-contract.ts",
+      "mode": "mirror",
+      "baselineSha256": "c67bc8f8a097eef0ae77ce1d19d691e9d7d4970d62b6c315659e93ffae040738",
+      "sha256": "0b23c1a41660e01238c4a1becbd76fe2aa1acc955ec2fcab2f176271cb7fbf7a",
+      "currentProductionSha256": "c67bc8f8a097eef0ae77ce1d19d691e9d7d4970d62b6c315659e93ffae040738",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-format.ts",
+      "mode": "mirror",
+      "baselineSha256": "216332c924ea613263d7da749861f70a7f39fbfd466cbb549d515e340d921997",
+      "sha256": "2cdbc3f2f020570e24c019bd616c1853b2b5338ab7778e73ab92fda902dd5865",
+      "currentProductionSha256": "216332c924ea613263d7da749861f70a7f39fbfd466cbb549d515e340d921997",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-history.ts",
+      "mode": "mirror",
+      "baselineSha256": "c4817c30c71fbcc299689a7d55923e199e8151fc8e31661106555c0e66695e79",
+      "sha256": "f1f14d77874075db2aa5db11280695293271e73a2eea36d7e2938ce7321dd72d",
+      "currentProductionSha256": "c4817c30c71fbcc299689a7d55923e199e8151fc8e31661106555c0e66695e79",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-session.ts",
+      "mode": "mirror",
+      "baselineSha256": "0b01a265795fbc43f43c70d928c417fde769782e58c44137431f68ecb79a5b74",
+      "sha256": "52baff388b3698b713c451d48a157a69b8cd389fea64fea661233b3f7b56668e",
+      "currentProductionSha256": "0b01a265795fbc43f43c70d928c417fde769782e58c44137431f68ecb79a5b74",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-adapter.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-adapter.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-add.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-add.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/fingerprint.ts",
+      "mode": "mirror",
+      "baselineSha256": "7c5a6a27ffd4244720b0374421d348682f7b23e8147618d72917f3af79bd1ca2",
+      "sha256": "eaf417f807375d43083280f9fa91b274a62fba70b82880ac4623d2b0ac382f12",
+      "currentProductionSha256": "7c5a6a27ffd4244720b0374421d348682f7b23e8147618d72917f3af79bd1ca2",
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "tests/atlas-natural-entry.spec.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/tests/atlas-natural-entry.spec.ts",
+      "mode": "new",
+      "baselineSha256": null,
+      "sha256": "7bd9cb265170f31dbddd964a70090a173dd6e68343ea9f6f039a817422b1464e",
+      "currentProductionSha256": null,
+      "baselineMatchesNow": true
+    },
+    {
+      "path": "vite.config.ts",
+      "stagedPath": ".autopilot/ph06/v4-natural-integration-staging/vite.config.ts",
+      "mode": "mirror",
+      "baselineSha256": "f82c409ca4fab6efbb59fac03041086a232ad178a876438e7243b70ca09bb5b8",
+      "sha256": "16a769e6639073063adcbfcaac40bd760dffe23a0f572512785d6367981d5226",
+      "currentProductionSha256": "f82c409ca4fab6efbb59fac03041086a232ad178a876438e7243b70ca09bb5b8",
+      "baselineMatchesNow": true
+    }
+  ],
+  "incrementalFiles": [
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "baselineSha256": "16d088e07d31eb79d9eaf6ce0f71a6c076a7a999fd9bdfb1a6c4c5ac4af9f7d6",
+      "currentProductionSha256": "16d088e07d31eb79d9eaf6ce0f71a6c076a7a999fd9bdfb1a6c4c5ac4af9f7d6",
+      "baselineMatchesNow": true,
+      "reviewOnlySha256": "39bdaeafce96a9e92f67dd05d0b8e89484c7c4cfb76413ba95906c733f9517ad",
+      "doNotPromoteWholeFile": true
+    },
+    {
+      "path": "src/editor/DetailCoastPanel.tsx",
+      "baselineSha256": "34c88694b689564596437f3b8c6ec377ea017242379de34bb5699bafeecde4b1",
+      "currentProductionSha256": "34c88694b689564596437f3b8c6ec377ea017242379de34bb5699bafeecde4b1",
+      "baselineMatchesNow": true,
+      "reviewOnlySha256": "f4dd81865cb1233d06e2d2381192fcfe1764a0977b1d586d6a8724e4d3a119f2",
+      "doNotPromoteWholeFile": true
+    },
+    {
+      "path": "src/RootApp.tsx",
+      "baselineSha256": "e597da127a642750109a58c6becf7cd301ceadcc51e773717d8155cbe5050cf8",
+      "currentProductionSha256": "e597da127a642750109a58c6becf7cd301ceadcc51e773717d8155cbe5050cf8",
+      "baselineMatchesNow": true,
+      "reviewOnlySha256": "f6902d831ba24a2cdda71464316d98a1c5ff2050a0cbb52d92e4b2cb9b1bc336",
+      "doNotPromoteWholeFile": true
+    },
+    {
+      "path": "tests/atlas-detail-coast.spec.ts",
+      "baselineSha256": "1a71731b816c6e5666ed3ce01b51b1384f4d6b90ab6bb314c2cce5f146294446",
+      "currentProductionSha256": "1a71731b816c6e5666ed3ce01b51b1384f4d6b90ab6bb314c2cce5f146294446",
+      "baselineMatchesNow": true,
+      "reviewOnlySha256": "b1eb4906b2b49c2810fa0a09ade35ffe08b2008650fed88a971af5ea0feef9e8",
+      "doNotPromoteWholeFile": true
+    },
+    {
+      "path": "tests/atlas-add-detail-coast.spec.ts",
+      "baselineSha256": "4495ed1f80e1d8a617955a35144769d9c2b8b58048b79720f9234b105afe41ce",
+      "currentProductionSha256": "4495ed1f80e1d8a617955a35144769d9c2b8b58048b79720f9234b105afe41ce",
+      "baselineMatchesNow": true,
+      "reviewOnlySha256": "85c9c01d2b4f9bf0fe95df0f240b02b51542fe0c1ce9824457606cb091659544",
+      "doNotPromoteWholeFile": true
+    }
+  ],
+  "patches": [
+    {
+      "path": ".autopilot/ph06/v4-natural-integration-staging/ui-patches.json",
+      "sha256": "b4488090a74c8c39393fcb78592b53b1f1e2f95b4261ef55132421e7c07af203",
+      "count": 16
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-integration-staging/entry-browser-patches.json",
+      "sha256": "4eabba49dd8a218b79ebbe53f96c03af5b29f5b077f15ca050c26a7d8fff45d2",
+      "count": 13
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "src/world/generation/detail-shape-natural.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.ts",
+      "sha256": "1ab4122d746f7d83a9d212186a9b8bb2904409c3993a380ca5b290c9e7b452a2",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-natural-outline.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-outline.ts",
+      "sha256": "5adec553991586def3a1051c9715e287b2f42c612162499fa1c3f27f37a4cca2",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-relief.ts",
+      "sha256": "f0358fc871fedea4e74c8efd0b359f5dceef2aee0bcc61ad9c89cc2fef5032dc",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.test.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.test.ts",
+      "sha256": "409586c40c91d1d18f04128a8270c144236a0df7510a32f25a1f0576d15f6911",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/natural-ocean-base.ts",
+      "source": ".autopilot/ph06/v4-natural-ocean-staging/src/world/generation/natural-ocean-base.ts",
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "productionTargetAbsent": true
+    },
+    {
+      "path": "src/world/generation/natural-ocean-base.test.ts",
+      "source": ".autopilot/ph06/v4-natural-ocean-staging/src/world/generation/natural-ocean-base.test.ts",
+      "sha256": "b750f53f81576a8a22b72ee90de5ec9860aaf7016bfd989557659fa6a5a0f9bc",
+      "productionTargetAbsent": true
+    }
+  ],
+  "frozenV1Kernels": [
+    {
+      "path": "src/world/generation/detail-shape.ts",
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "currentSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "unchanged": true
+    },
+    {
+      "path": "src/world/generation/detail-shape-add.ts",
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "currentSha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "unchanged": true
+    }
+  ],
+  "actualHistoricalEvidence": {
+    "source": ".autopilot/ph06/v4-natural-integration-staging/evidence/preview8/",
+    "target": "docs/evidence/ph06-preview8-generator-history-2026-09-27/",
+    "buildSha256": "30b9e2a558e0bf922bf54a75e08d2a3f200db57005e3143614698a6c7d9f58da",
+    "closureCount": 8,
+    "sourceFiles": 30
+  },
+  "checks": {
+    "run": [],
+    "newUnitCasesWritten": 8,
+    "newBrowserCasesWritten": 1,
+    "existingBrowserCasesPatched": 2,
+    "note": "No lint/type/unit/browser/build/performance command was executed for this integration. Source capture matched actual old build closures; that is historical provenance, not candidate validation."
+  },
+  "authoringIssue": {
+    "command": "node .autopilot/ph06/v4-natural-integration-staging/write-ui-patches.mjs",
+    "firstExit": 1,
+    "firstError": "SyntaxError: missing ) after argument list (unescaped nested template literal in authoring script)",
+    "repaired": true,
+    "evidence": "Tool output transcription; no raw file was captured; no production script or test executed in that failure."
+  },
+  "summaryFields": [
+    "detailNatural",
+    "detailNaturalAdd"
+  ],
+  "recipeIdentities": [
+    "shape-detail-landmass@2",
+    "add-detail-landmass@2"
+  ],
+  "firstOnlyOceanProfile": "natural-ocean-base-v1",
+  "promotionOrder": [
+    "archive actual preview8 source evidence to target directory",
+    "verify dependencies against ready SHA; promote frozen natural core and ocean helper",
+    "verify mirror baseline or merge current production deltas",
+    "add new files",
+    "apply unique guarded UI/entry/browser patches without replacing whole files",
+    "coordinated static/8 new unit/ocean checks then real build/native browser visual review"
+  ],
+  "pending": [
+    "candidate checks",
+    "actual rendered natural-v2 visual assessment",
+    "physical devices",
+    "product phase acceptance"
+  ],
+  "configuration": {
+    "vitest": ".autopilot/ph06/v4-natural-integration-staging/vitest.integration.config.ts",
+    "types": ".autopilot/ph06/v4-natural-integration-staging/typecheck.mjs"
+  },
+  "sourceTargetCount": 22,
+  "dependencyTargetCount": 6
+}

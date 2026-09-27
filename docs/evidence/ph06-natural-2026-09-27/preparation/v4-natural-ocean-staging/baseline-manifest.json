@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-09-27T10:12:56.9181550Z",
+  "scope": "new staging targets only",
+  "targets": [
+    {
+      "path": "src/world/generation/natural-ocean-base.ts",
+      "productionExists": false,
+      "baselineSha256": null
+    },
+    {
+      "path": "src/world/generation/natural-ocean-base.test.ts",
+      "productionExists": false,
+      "baselineSha256": null
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "path": "src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "path": "src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    }
+  ]
+}

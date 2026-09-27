@@ -1,7 +1,7 @@
 import type { AtlasBlock, AtlasDetailCoastManifest, AtlasDetailCoastSurfaceContract, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, AtlasSurfaceContract, BlockKey } from './model';
 import type { DetailCoastKey, DetailCoastTile } from './detail-coast-types';
 import { ATLAS_COORDINATE_SCALE, ATLAS_WORLD_UNITS, validateSpec } from './model';
-import { COAST_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT, ADD_DETAIL_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { NATURAL_DETAIL_GENERATOR_FINGERPRINT, ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT, ADD_DETAIL_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { isStoredGeneratorFingerprint } from './generation-history';
 
 export type AtlasFormat = 1 | 2 | 3 | 4;
@@ -70,7 +70,14 @@ export interface DetailShapeRecipe {
 export interface AddDetailRecipe extends Omit<DetailShapeRecipe, 'generator'> {
   generator: { id: 'add-detail-landmass'; version: 1; fingerprint: string };
 }
-export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe | OceanRecipe | DetailShapeRecipe | AddDetailRecipe;
+export interface NaturalDetailRecipe extends Omit<DetailShapeRecipe, 'generator' | 'parameters'> {
+  generator: { id: 'shape-detail-landmass'; version: 2; fingerprint: string };
+  parameters: DetailShapeRecipe['parameters'] & { coastStructureWorld: number };
+}
+export interface AddNaturalDetailRecipe extends Omit<NaturalDetailRecipe, 'generator'> {
+  generator: { id: 'add-detail-landmass'; version: 2; fingerprint: string };
+}
+export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe | OceanRecipe | DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe;
 /** Stored provenance may name an audited old implementation; execution may not. */
 export type GenerationValidationMode = 'execute' | 'storage';
 export interface AtlasCellRectangle { column: number; row: number; columns: number; rows: number }
@@ -80,7 +87,7 @@ export interface LastGeneration {
   recipe: GenerationRecipe; scope: GenerationScope; baseManifestDigest: string; baseRootDigest: string;
   baseRevision: number; lockSetDigest: string; appliedRevision: number;
 }
-export interface LastDetailGeneration extends Omit<LastGeneration, 'recipe' | 'scope'> { recipe: DetailShapeRecipe | AddDetailRecipe; scope: { kind: 'world' } }
+export interface LastDetailGeneration extends Omit<LastGeneration, 'recipe' | 'scope'> { recipe: DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe; scope: { kind: 'world' } }
 export interface AtlasDraftManifestV2 extends Omit<AtlasDraftManifest, 'version'> {
   version: 2; origin: AtlasCopyOrigin | null; constraints: AtlasConstraints;
   generation: { format: 'lieguoji-atlas-generation'; version: 1; lastApplied: LastGeneration | null };
@@ -164,7 +171,7 @@ export function validateLandformRecipe(raw: unknown, mode: GenerationValidationM
 }
 /** Closed registration: adding a recipe requires an implemented codec and source fingerprint. */
 export function validateGenerationRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is GenerationRecipe {
-  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode) || validateOceanRecipe(raw, spec, mode) || validateDetailShapeRecipe(raw, spec, mode) || validateAddDetailRecipe(raw, spec, mode);
+  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode) || validateOceanRecipe(raw, spec, mode) || validateDetailShapeRecipe(raw, spec, mode) || validateAddDetailRecipe(raw, spec, mode) || validateNaturalDetailRecipe(raw, spec, mode) || validateAddNaturalDetailRecipe(raw, spec, mode);
 }
 export function validateIslandRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is IslandRecipe {
   try {
@@ -264,6 +271,48 @@ export function validateAddDetailRecipe(raw: unknown, spec?: AtlasGridSpec, mode
     const p = raw.parameters;
     if (!generationArray(p.pointsQ) || !generationInt(p.pointsQ.length, 3, 2048) || !generationInt(p.coastRoughnessWorld, 0, 64) || !generationInt(p.reliefMeters, 200, 6000) || !generationInt(p.shelfWidthWorld, 16, 128) || !generationInt(p.islandChainCount, 0, 3) || !generationInt(p.islandsPerChain, 2, 6)) return false;
     const maxQ = ATLAS_WORLD_UNITS * ATLAS_COORDINATE_SCALE, margin = (p.coastRoughnessWorld + 4) * ATLAS_COORDINATE_SCALE, seen = new Set<string>();
+    for (const point of p.pointsQ) {
+      if (!generationExact(point, ['xQ', 'yQ']) || !generationInt(point.xQ, margin, maxQ - margin) || !generationInt(point.yQ, margin, maxQ - margin)) return false;
+      const key = `${point.xQ}:${point.yQ}`; if (seen.has(key)) return false; seen.add(key);
+    }
+    const points = p.pointsQ as ShapePointQ[], count = points.length; let area2 = 0;
+    for (let i = 0; i < count; i++) {
+      const a = points[i], b = points[(i + 1) % count], previous = points[(i + count - 1) % count]; area2 += a.xQ * b.yQ - b.xQ * a.yQ;
+      if (orientationQ(previous, a, b) === 0 && (previous.xQ - a.xQ) * (b.xQ - a.xQ) + (previous.yQ - a.yQ) * (b.yQ - a.yQ) > 0) return false;
+      for (let j = i + 1; j < count; j++) if (j !== i + 1 && !(i === 0 && j === count - 1) && segmentsIntersectQ(a, b, points[j], points[(j + 1) % count])) return false;
+    }
+    return Number.isSafeInteger(area2) && Math.abs(area2) >= 2 * 64 * ATLAS_COORDINATE_SCALE ** 2;
+  } catch { return false; }
+}
+/** Independent v2 semantic identity. The Atlas envelope stays version 1.
+ * History lookup is version-specific: a v1 digest can never label v2 behavior. */
+export function validateNaturalDetailRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is NaturalDetailRecipe {
+  try {
+    if (spec !== undefined && !validateSpec(spec)) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'shape-detail-landmass' || raw.generator.version !== 2 || !acceptsGeneratorFingerprint('shape-detail-landmass@2', raw.generator.fingerprint, NATURAL_DETAIL_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['coastStructureWorld', 'pointsQ', 'coastRoughnessWorld', 'reliefMeters', 'shelfWidthWorld', 'islandChainCount', 'islandsPerChain'])) return false;
+    const p = raw.parameters;
+    if (!generationInt(p.coastStructureWorld, 0, 160) || !generationArray(p.pointsQ) || !generationInt(p.pointsQ.length, 3, 2048) || !generationInt(p.coastRoughnessWorld, 0, 64) || !generationInt(p.reliefMeters, 200, 6000) || !generationInt(p.shelfWidthWorld, 16, 128) || !generationInt(p.islandChainCount, 0, 3) || !generationInt(p.islandsPerChain, 2, 6)) return false;
+    const maxQ = ATLAS_WORLD_UNITS * ATLAS_COORDINATE_SCALE, margin = (p.coastStructureWorld + p.coastRoughnessWorld + 52) * ATLAS_COORDINATE_SCALE, seen = new Set<string>();
+    for (const point of p.pointsQ) {
+      if (!generationExact(point, ['xQ', 'yQ']) || !generationInt(point.xQ, margin, maxQ - margin) || !generationInt(point.yQ, margin, maxQ - margin)) return false;
+      const key = `${point.xQ}:${point.yQ}`; if (seen.has(key)) return false; seen.add(key);
+    }
+    const points = p.pointsQ as ShapePointQ[], count = points.length; let area2 = 0;
+    for (let i = 0; i < count; i++) {
+      const a = points[i], b = points[(i + 1) % count], previous = points[(i + count - 1) % count]; area2 += a.xQ * b.yQ - b.xQ * a.yQ;
+      if (orientationQ(previous, a, b) === 0 && (previous.xQ - a.xQ) * (b.xQ - a.xQ) + (previous.yQ - a.yQ) * (b.yQ - a.yQ) > 0) return false;
+      for (let j = i + 1; j < count; j++) if (j !== i + 1 && !(i === 0 && j === count - 1) && segmentsIntersectQ(a, b, points[j], points[(j + 1) % count])) return false;
+    }
+    return Number.isSafeInteger(area2) && Math.abs(area2) >= 2 * 64 * ATLAS_COORDINATE_SCALE ** 2;
+  } catch { return false; }
+}
+export function validateAddNaturalDetailRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is AddNaturalDetailRecipe {
+  try {
+    if (spec !== undefined && !validateSpec(spec)) return false;
+    if (!generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) || raw.format !== 'lieguoji-atlas-recipe' || raw.version !== 1 || typeof raw.seed !== 'string' || !raw.seed.trim() || raw.seed.length > 120 || !generationExact(raw.generator, ['id', 'version', 'fingerprint']) || raw.generator.id !== 'add-detail-landmass' || raw.generator.version !== 2 || !acceptsGeneratorFingerprint('add-detail-landmass@2', raw.generator.fingerprint, ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT, mode) || !generationExact(raw.parameters, ['coastStructureWorld', 'pointsQ', 'coastRoughnessWorld', 'reliefMeters', 'shelfWidthWorld', 'islandChainCount', 'islandsPerChain'])) return false;
+    const p = raw.parameters;
+    if (!generationInt(p.coastStructureWorld, 0, 160) || !generationArray(p.pointsQ) || !generationInt(p.pointsQ.length, 3, 2048) || !generationInt(p.coastRoughnessWorld, 0, 64) || !generationInt(p.reliefMeters, 200, 6000) || !generationInt(p.shelfWidthWorld, 16, 128) || !generationInt(p.islandChainCount, 0, 3) || !generationInt(p.islandsPerChain, 2, 6)) return false;
+    const maxQ = ATLAS_WORLD_UNITS * ATLAS_COORDINATE_SCALE, margin = (p.coastStructureWorld + p.coastRoughnessWorld + 52) * ATLAS_COORDINATE_SCALE, seen = new Set<string>();
     for (const point of p.pointsQ) {
       if (!generationExact(point, ['xQ', 'yQ']) || !generationInt(point.xQ, margin, maxQ - margin) || !generationInt(point.yQ, margin, maxQ - margin)) return false;
       const key = `${point.xQ}:${point.yQ}`; if (seen.has(key)) return false; seen.add(key);

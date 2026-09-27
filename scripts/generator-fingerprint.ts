@@ -61,3 +61,10 @@ export function fingerprintDetailShapeGenerator(read = (file: string) => readFil
 export function fingerprintAddDetailGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
   return fingerprintGenerator('src/world/generation/detail-shape-add-adapter.ts', 'add-detail-landmass', read);
 }
+
+export function fingerprintNaturalDetailGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
+  return fingerprintGenerator('src/world/generation/detail-shape-natural-adapter.ts', 'shape-detail-landmass-v2', read);
+}
+export function fingerprintAddNaturalDetailGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
+  return fingerprintGenerator('src/world/generation/detail-shape-natural-add-adapter.ts', 'add-detail-landmass-v2', read);
+}

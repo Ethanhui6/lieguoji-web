@@ -1,4 +1,14 @@
-# 当前续接：preview.8 已保存真实检查点，自然地形与调度修复接入中
+# 当前续接：preview.9 功能检查通过，实图自然视觉仍未达标，正在修地貌
+
+2026-09-27 18:49（香港）：本地HEAD `d17fc9bb3411226836343821e42792568b7a22c1` 保存preview.8及真实移动端失败；工作区/实际dist已为preview.9自然v2、区域海床与Worker调度。`.autopilot/ph06/natural-checks/first/`：908/908地理及配方控制测试、计划检查、全局lint/类型、生产构建和25产物审计均PASS，源码稳定。desktop-first真实两大陆、撤销、恢复、海陆点选及重叠拒绝PASS，150965ms；entry-first首页v4/旧路径保留PASS，14349ms。legacy-first终态须核。所有这些仍不是全游戏/性能/视觉/真机验收。
+
+实际 `second-continent-preview.png` 显示山脊仍像等宽胶囊与机械分叉、海岸大轮廓偏规整，`.autopilot/ph06/natural-checks/visual-first.json`明确visualAccepted=false。因此未对这一已被视觉拒绝的地貌继续手机/平板全流程；下一次真实修复后再测。自然修复候选在 `.autopilot/ph06/v4-natural-visual-repair-staging/`，仅暂存；`v4-preview9-history-staging`负责捕获当前10个真实生成器历史；`v4-owned-replacement-copy-staging`准备私有候选分批导出修复。三个候选均须核ready/基线/终态后提升，不当作已实现。
+
+`.autopilot/ph06/archive-natural.mjs`已准备但未运行。当前preview9历史与本批完整归档仍待根执行器在实际构建切换前保存。原生IAB旧preview7存档实际刷新后恢复修订1与@1参数；旧开页曾因dist替换引用已消失chunk，刷新后恢复，未修改旧存档。PH06-T3/T4与全PH发布锁保持；无push、远程写入或部署。
+
+---
+
+# 前一检查点：preview.8 已保存真实检查点，自然地形与调度修复接入中
 
 2026-09-27 18:29（香港）：游戏基础HEAD `337afb7d57af48f480d92f76ba14240aa18c5807`；最新本地提交以Git为准。preview.8追加大陆、精确细锁、坡向光照、私有接收副本和512KiB分页已实际构建。PH06-T3/T4保持in_progress；无push、远程写入或部署。
 

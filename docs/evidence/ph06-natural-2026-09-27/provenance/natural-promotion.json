@@ -1,0 +1,175 @@
+{
+  "promotedAt": "2026-09-27T10:35:44.914Z",
+  "priorAllChecksPassed": false,
+  "priorEvidence": "docs/evidence/ph06-additive-2026-09-27/verification.json",
+  "mirrored": [
+    {
+      "file": "scripts/generator-fingerprint.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/scripts/generator-fingerprint.ts",
+      "before": "8a70cdd527896418ff1f8c75f8caf26d8d1af109c7f78a17c882df9d74df63ac",
+      "after": "e4f84c756aab7246165bbdeb8315a2196d1983e0128d0803c07ba495b8ccced5"
+    },
+    {
+      "file": "src/editor/atlas-generation-progress.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/editor/atlas-generation-progress.ts",
+      "before": null,
+      "after": "ae5190ae02da926dcaf8f382595974eeb7f7d99919db733c68d6be4d89b4ebff"
+    },
+    {
+      "file": "src/editor/detail-coast-controls.test.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/editor/detail-coast-controls.test.ts",
+      "before": null,
+      "after": "7dfb7c78fe6e743721503f11dd8f3a28d044e08fa83bb452ab6ccb61d8c369c4"
+    },
+    {
+      "file": "src/editor/detail-coast-controls.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/editor/detail-coast-controls.ts",
+      "before": null,
+      "after": "e0ab15cfe341155c3b56a2472795c0d8f0caf474dc53f995f95d09c2b08fbf9a"
+    },
+    {
+      "file": "src/vite-env.d.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/vite-env.d.ts",
+      "before": "3105655dee59a0ac3523eebf44ac85320e62fb876c8ea672bf4068b98c19be70",
+      "after": "3d5feb93e641efc44773d84ef872c8f3094774af026fb7af2b5086fcd909b57f"
+    },
+    {
+      "file": "src/world/detail-natural-history.test.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/detail-natural-history.test.ts",
+      "before": null,
+      "after": "6260f93917cefd95a0459ba384de62fedd5b69704da78e732698487e33f07f71"
+    },
+    {
+      "file": "src/world/detail-natural-integration.test.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/detail-natural-integration.test.ts",
+      "before": null,
+      "after": "4104e1e04e938a5af36b1d83452f80ce5f5f4dccdc3d841297b1720a5e3cff9a"
+    },
+    {
+      "file": "src/world/generation-contract.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-contract.ts",
+      "before": "c67bc8f8a097eef0ae77ce1d19d691e9d7d4970d62b6c315659e93ffae040738",
+      "after": "0b23c1a41660e01238c4a1becbd76fe2aa1acc955ec2fcab2f176271cb7fbf7a"
+    },
+    {
+      "file": "src/world/generation-format.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-format.ts",
+      "before": "216332c924ea613263d7da749861f70a7f39fbfd466cbb549d515e340d921997",
+      "after": "2cdbc3f2f020570e24c019bd616c1853b2b5338ab7778e73ab92fda902dd5865"
+    },
+    {
+      "file": "src/world/generation-history.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-history.ts",
+      "before": "c4817c30c71fbcc299689a7d55923e199e8151fc8e31661106555c0e66695e79",
+      "after": "f1f14d77874075db2aa5db11280695293271e73a2eea36d7e2938ce7321dd72d"
+    },
+    {
+      "file": "src/world/generation-session.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation-session.ts",
+      "before": "0b01a265795fbc43f43c70d928c417fde769782e58c44137431f68ecb79a5b74",
+      "after": "52baff388b3698b713c451d48a157a69b8cd389fea64fea661233b3f7b56668e"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-adapter.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-adapter.ts",
+      "before": null,
+      "after": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "before": null,
+      "after": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/detail-shape-natural-add.ts",
+      "before": null,
+      "after": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "file": "src/world/generation/fingerprint.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/src/world/generation/fingerprint.ts",
+      "before": "7c5a6a27ffd4244720b0374421d348682f7b23e8147618d72917f3af79bd1ca2",
+      "after": "eaf417f807375d43083280f9fa91b274a62fba70b82880ac4623d2b0ac382f12"
+    },
+    {
+      "file": "tests/atlas-natural-entry.spec.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/tests/atlas-natural-entry.spec.ts",
+      "before": null,
+      "after": "7bd9cb265170f31dbddd964a70090a173dd6e68343ea9f6f039a817422b1464e"
+    },
+    {
+      "file": "vite.config.ts",
+      "source": ".autopilot/ph06/v4-natural-integration-staging/vite.config.ts",
+      "before": "f82c409ca4fab6efbb59fac03041086a232ad178a876438e7243b70ca09bb5b8",
+      "after": "16a769e6639073063adcbfcaac40bd760dffe23a0f572512785d6367981d5226"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.ts",
+      "before": null,
+      "after": "1ab4122d746f7d83a9d212186a9b8bb2904409c3993a380ca5b290c9e7b452a2"
+    },
+    {
+      "file": "src/world/generation/detail-natural-outline.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-outline.ts",
+      "before": null,
+      "after": "5adec553991586def3a1051c9715e287b2f42c612162499fa1c3f27f37a4cca2"
+    },
+    {
+      "file": "src/world/generation/detail-natural-relief.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-natural-relief.ts",
+      "before": null,
+      "after": "f0358fc871fedea4e74c8efd0b359f5dceef2aee0bcc61ad9c89cc2fef5032dc"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.test.ts",
+      "source": ".autopilot/ph06/v4-natural-staging/src/world/generation/detail-shape-natural.test.ts",
+      "before": null,
+      "after": "409586c40c91d1d18f04128a8270c144236a0df7510a32f25a1f0576d15f6911"
+    },
+    {
+      "file": "src/world/generation/natural-ocean-base.ts",
+      "source": ".autopilot/ph06/v4-natural-ocean-staging/src/world/generation/natural-ocean-base.ts",
+      "before": null,
+      "after": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8"
+    },
+    {
+      "file": "src/world/generation/natural-ocean-base.test.ts",
+      "source": ".autopilot/ph06/v4-natural-ocean-staging/src/world/generation/natural-ocean-base.test.ts",
+      "before": null,
+      "after": "b750f53f81576a8a22b72ee90de5ec9860aaf7016bfd989557659fa6a5a0f9bc"
+    }
+  ],
+  "incremental": [
+    {
+      "file": "src/editor/AtlasStudio.tsx",
+      "before": "16d088e07d31eb79d9eaf6ce0f71a6c076a7a999fd9bdfb1a6c4c5ac4af9f7d6",
+      "after": "39bdaeafce96a9e92f67dd05d0b8e89484c7c4cfb76413ba95906c733f9517ad"
+    },
+    {
+      "file": "src/editor/DetailCoastPanel.tsx",
+      "before": "34c88694b689564596437f3b8c6ec377ea017242379de34bb5699bafeecde4b1",
+      "after": "f4dd81865cb1233d06e2d2381192fcfe1764a0977b1d586d6a8724e4d3a119f2"
+    },
+    {
+      "file": "src/RootApp.tsx",
+      "before": "e597da127a642750109a58c6becf7cd301ceadcc51e773717d8155cbe5050cf8",
+      "after": "f6902d831ba24a2cdda71464316d98a1c5ff2050a0cbb52d92e4b2cb9b1bc336"
+    },
+    {
+      "file": "tests/atlas-detail-coast.spec.ts",
+      "before": "1a71731b816c6e5666ed3ce01b51b1384f4d6b90ab6bb314c2cce5f146294446",
+      "after": "b1eb4906b2b49c2810fa0a09ade35ffe08b2008650fed88a971af5ea0feef9e8"
+    },
+    {
+      "file": "tests/atlas-add-detail-coast.spec.ts",
+      "before": "4495ed1f80e1d8a617955a35144769d9c2b8b58048b79720f9234b105afe41ce",
+      "after": "85c9c01d2b4f9bf0fe95df0f240b02b51542fe0c1ce9824457606cb091659544"
+    }
+  ],
+  "historyTarget": "docs/evidence/ph06-preview8-generator-history-2026-09-27",
+  "version": "0.5.0-preview.9",
+  "checksRun": false
+}

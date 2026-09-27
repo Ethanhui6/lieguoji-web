@@ -801,7 +801,10 @@
             "docs/evidence/ph06-fine-integration-2026-09-27/verification.json",
             "docs/adr/0017-additive-fine-landmass.md",
             "docs/evidence/2026-09-27-ph06-additive.md",
-            "docs/evidence/ph06-additive-2026-09-27/verification.json"
+            "docs/evidence/ph06-additive-2026-09-27/verification.json",
+            "docs/adr/0018-natural-landscape-v2.md",
+            "docs/evidence/2026-09-27-ph06-natural.md",
+            "docs/evidence/ph06-natural-2026-09-27/verification.json"
           ]
         },
         {
@@ -821,7 +824,10 @@
             "docs/evidence/ph06-fine-integration-2026-09-27/verification.json",
             "docs/adr/0017-additive-fine-landmass.md",
             "docs/evidence/2026-09-27-ph06-additive.md",
-            "docs/evidence/ph06-additive-2026-09-27/verification.json"
+            "docs/evidence/ph06-additive-2026-09-27/verification.json",
+            "docs/adr/0018-natural-landscape-v2.md",
+            "docs/evidence/2026-09-27-ph06-natural.md",
+            "docs/evidence/ph06-natural-2026-09-27/verification.json"
           ]
         }
       ],

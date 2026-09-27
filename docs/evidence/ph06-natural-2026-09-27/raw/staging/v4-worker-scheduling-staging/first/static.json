@@ -1,0 +1,36 @@
+{
+  "scope": "virtual-overlay type closure of only three owned roots plus vite declarations; owned lint only",
+  "elapsedMs": 5345.126000000004,
+  "types": [],
+  "lint": [
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    },
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\atlas.worker.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    },
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\worker-yield.test.ts",
+      "errorCount": 1,
+      "warningCount": 0,
+      "messages": [
+        {
+          "ruleId": "@typescript-eslint/no-this-alias",
+          "severity": 2,
+          "message": "Unexpected aliasing of 'this' to local variable.",
+          "line": 19,
+          "column": 7,
+          "messageId": "thisAssignment",
+          "endLine": 19,
+          "endColumn": 15
+        }
+      ]
+    }
+  ]
+}

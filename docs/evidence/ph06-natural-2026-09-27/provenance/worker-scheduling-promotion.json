@@ -1,0 +1,28 @@
+{
+  "promotedAt": "2026-09-27T10:35:44.768Z",
+  "files": [
+    {
+      "path": "src/world/worker-yield.ts",
+      "stagedSha256": "ed2dd0cb542d1c5c56b238833b479157a9aca13cdaa8a8e336c79806c6293450",
+      "baselineSha256": null,
+      "productionExists": false,
+      "source": ".autopilot/ph06/v4-worker-scheduling-staging/src/world/worker-yield.ts"
+    },
+    {
+      "path": "src/world/atlas.worker.ts",
+      "stagedSha256": "6bbc49c5d20df6111a76a08b250f403e5e4336de1b6aa6716052731cd3c413f8",
+      "baselineSha256": "00c6d9c6dcc70dd837b38ad80dfca359d1c0aa3dd021a369b062bf1fd7acf3d4",
+      "productionExists": true,
+      "source": ".autopilot/ph06/v4-worker-scheduling-staging/src/world/atlas.worker.ts"
+    },
+    {
+      "path": "src/world/worker-yield.test.ts",
+      "stagedSha256": "4d95d33b84225fce14d5bc4a664da9dafe4b39cf3d37188fafcaacd21d15b290",
+      "baselineSha256": null,
+      "productionExists": false,
+      "source": ".autopilot/ph06/v4-worker-scheduling-staging/src/world/worker-yield.test.ts"
+    }
+  ],
+  "checksRequired": "Production static/unit/build and original-deadline native browser flows",
+  "cloudWrites": false
+}

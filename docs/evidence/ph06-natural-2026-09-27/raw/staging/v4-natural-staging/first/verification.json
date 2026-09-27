@@ -1,0 +1,82 @@
+{
+  "completedAt": "2026-09-27T10:07:07.006Z",
+  "results": [
+    {
+      "name": "typecheck",
+      "startedAt": "2026-09-27T10:06:53.084Z",
+      "durationMs": 2443.1933999999997,
+      "code": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-09-27T10:06:55.528Z",
+      "durationMs": 1517.4533999999999,
+      "code": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "startedAt": "2026-09-27T10:06:57.046Z",
+      "durationMs": 9920.2985,
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "sourceFiles": 231,
+  "sourceUnchanged": true,
+  "unit": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "assertions": [
+      {
+        "name": "independent natural-v2 real geography kernel builds structural bays/capes beyond small roughness and real lowlands below directed mountain relief",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel stores recomputed target distance and exact saturated Hbase joins, never raw structural noise",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel keeps final area, shore pickup and persisted height classification after real codec recovery",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel retains a deliberately narrow sea inlet under the non-adjacent feature caps",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel retains a twelve-world land neck instead of rounding separate lobes into islands",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel is deterministic across work batches and owns source recipe/buffers before the first yield",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel cancels actual natural outline and relief phases without changing source geography",
+        "status": "passed"
+      },
+      {
+        "name": "independent natural-v2 real geography kernel rejects the old recipe identity, out-of-envelope input, self-contact and existing worlds",
+        "status": "passed"
+      },
+      {
+        "name": "natural outline and real relief contracts rounds corners within their feature cap, preserves the literal zero-structure contour and has no periodic arc seam",
+        "status": "passed"
+      },
+      {
+        "name": "natural outline and real relief contracts varies actual shelf depths separately from land rise and reproduces bounded directed relief from copied buffers",
+        "status": "passed"
+      }
+    ]
+  },
+  "allPassed": true,
+  "firstRun": true,
+  "retries": 0,
+  "productionModified": false,
+  "performanceMeasured": false
+}

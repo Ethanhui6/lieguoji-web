@@ -67,6 +67,8 @@ async function storedFine(p:Page,id:string){return p.evaluate(async id=>{
 test('[detail-v4] native contour, private preview, exact saved coast, zoom picks, reload and GPU recovery',async({page},info)=>{
   test.setTimeout(360000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto('/?atlas=new&atlas-format=4');await ready(page,'empty');await page.getByLabel('大世界草稿名称',{exact:true}).fill('细山海 · 实际绘制');await page.getByLabel('大世界生成种子',{exact:true}).fill('fine-ui-original');await page.getByLabel('大世界地理规模',{exact:true}).selectOption('256');await click(page,'新建空白海洋草稿');await ready(page);
+  await panel(page,'创世');await expect(page.getByLabel('大陆地形风格',{exact:true})).toHaveValue('2');await page.getByLabel('大陆地形风格',{exact:true}).selectOption('1');
+  await page.getByLabel('手绘海岸曲折',{exact:true}).fill('32');await page.getByLabel('手绘近海宽度',{exact:true}).fill('128');
   const id=(await studio(page).getAttribute('data-atlas-id'))!,blank=await saved(page,id,4),digest=await databaseDigest(page,4);
   await draw(page,info.project.name!=='desktop-chromium');const candidate=await audit(page);expect(candidate.display.version).toBe(4);expect(await databaseDigest(page,4)).toEqual(digest);expect(await saved(page,id,4)).toEqual(blank);
   await panel(page,'地图');await frameReady(page);await page.screenshot({path:info.outputPath('fine-first-preview.png'),fullPage:true});await panel(page,'创世');
@@ -95,6 +97,7 @@ test('[detail-v4] native contour, private preview, exact saved coast, zoom picks
   await page.getByTestId('atlas-canvas').evaluate(element=>{const gl=(element as HTMLCanvasElement).getContext('webgl2'),ext=gl?.getExtension('WEBGL_lose_context');if(!ext)throw new Error('No actual WebGL2 loss extension');ext.loseContext();setTimeout(()=>ext.restoreContext(),200);});
   await expect(studio(page)).toHaveAttribute('data-atlas-gpu','lost');await expect(studio(page)).toHaveAttribute('data-atlas-gpu','ready',{timeout:120000});await ready(page);expect((await audit(page)).display.manifestDigest).toBe(candidate.display.manifestDigest);expect(await saved(page,id,4)).toEqual(committed);
   await page.reload();await ready(page);expect(await saved(page,id,4)).toEqual(committed);expect(await storedFine(page,id)).toEqual(fine);expect((await audit(page)).display).toMatchObject({version:4,revision:1,manifestDigest:candidate.display.manifestDigest});
+  await panel(page,'创世');await expect(page.getByLabel('大陆地形风格',{exact:true})).toHaveValue('1');await expect(page.getByLabel('手绘海岸曲折',{exact:true})).toHaveValue('32');await expect(page.getByLabel('手绘近海宽度',{exact:true})).toHaveValue('128');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
   await info.attach('fine-persistence-observation.json',{contentType:'application/json',body:JSON.stringify({candidate,refs:fine.refs,sampleTiles:fine.samples,probe:fine.probe,nearView:{zoomTarget,zoomMaximum,pickObservations},frame,build:build.detailShapeGenerator,scope:'Browser emulation; no physical-device/user visual acceptance'},null,2)});
 });

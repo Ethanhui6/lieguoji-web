@@ -8,9 +8,19 @@ const q = (world: number) => world * 256, control = { yieldControl: async () => 
 const request = () => ({ seed: 7391, perimeterQ: q(2541), structureWorld: 96 });
 
 describe('nonuniform physical coast feature plan', () => {
-  it('has unequal widths, biased shoulders, real positive and negative reach and no quarter-perimeter repetition', async () => {
+  it('has several distinct strong bay/cape scales, biased shoulders and no quarter-perimeter repetition', async () => {
     const plan = await createNaturalCoastArcPlan(request(), 128, control), broad = plan.features.filter(f => f.layer === 'regional');
-    expect(broad.length).toBe(3);
+    // Six primary physical features is the continent-scale design requirement;
+    // the old exact count of three merely mirrored the previous implementation.
+    expect(broad.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(broad.map(f => f.lengthQ)).size).toBeGreaterThanOrEqual(6);
+    expect(broad.every(f => f.lengthQ >= q(48))).toBe(true);
+    const crests = broad.map(f => plan.sample(f.startQ + f.peakQ));
+    expect(crests.filter(value => value > .65 * FIELD_Q).length).toBeGreaterThanOrEqual(2);
+    expect(crests.filter(value => value < -.65 * FIELD_Q).length).toBeGreaterThanOrEqual(2);
+    expect(broad.some(f => f.lengthQ < q(request().structureWorld * 2) && Math.abs(plan.sample(f.startQ + f.peakQ)) > .65 * FIELD_Q)).toBe(true);
+    const aroundShore = [...broad].sort((a, b) => a.startQ - b.startQ);
+    expect(aroundShore.some((f, i) => Math.sign(f.amplitudeQ) === Math.sign(aroundShore[(i + 1) % aroundShore.length].amplitudeQ))).toBe(true);
     expect(Math.max(...broad.map(f => f.lengthQ)) / Math.min(...broad.map(f => f.lengthQ))).toBeGreaterThan(1.3);
     expect(broad.some(f => Math.abs(f.peakQ / f.lengthQ - .5) > .05)).toBe(true);
     expect(broad.some(f => f.leftShapeQ !== f.rightShapeQ)).toBe(true);

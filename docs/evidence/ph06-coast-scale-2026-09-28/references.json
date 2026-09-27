@@ -1,0 +1,70 @@
+{
+  "priorEvidence": [
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/verification.json",
+      "bytes": 1885,
+      "sha256": "6931cb9c0f2e00fd2dc882b1450ebc057124b39052dab66a7fcde7ea1ebe6212",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/inventory.json",
+      "bytes": 15446,
+      "sha256": "f617414e56e94e5c4f772f2160be82d8358647b4c85a44593c95e9aa491433a5",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/first/verification.json",
+      "bytes": 3804,
+      "sha256": "f036dca52dbef6959e2320a825e2ce56954496ff95cdb2b9cf2e522cc10b4c28",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/first/unit.json",
+      "bytes": 26275,
+      "sha256": "f68341dc72b3a33cc6a25bf41969bb39d343ce19dbe533cd6032e2a953d29a9a",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/shore-projection-fix/verification.json",
+      "bytes": 8137,
+      "sha256": "ea6ac94821272f227a249ab79445bd4ff84178b73f36750d13021b5fc72b5fbb",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/build.json",
+      "bytes": 9327,
+      "sha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/provenance.json",
+      "bytes": 39216,
+      "sha256": "d1d495d140f28cb33e09b5c23d279d78631537b60a6449af733a580e52ec11fd",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/inventory.json",
+      "bytes": 9818,
+      "sha256": "e53ae7c46146d36974f6d472e3f52148d4f0912272df1c3fca30da53e119d2b1",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.json",
+      "bytes": 887752,
+      "sha256": "5c266e397d19a295092d0a309bb991024b5fd335be97c01e738617536b453b0c",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.png",
+      "bytes": 27229,
+      "sha256": "bd575d53011d368253ab11480d2dba3d6cfc4381c26f070b7e40a5f33399eb48",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.svg",
+      "bytes": 5146077,
+      "sha256": "ebeb44f8560fb7b356de2a2a514c9522ac0cfad5561038f90aa91d7e07b32944",
+      "copied": false
+    }
+  ]
+}

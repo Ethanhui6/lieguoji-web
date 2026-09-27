@@ -1,0 +1,101 @@
+{
+  "recordedAt": "2026-09-27T18:06:48.379Z",
+  "scope": "Existing same-input numerical output analysis only; not a new generation, product screenshot or visual acceptance",
+  "before": {
+    "file": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.json",
+    "sha256": "5c266e397d19a295092d0a309bb991024b5fd335be97c01e738617536b453b0c",
+    "maximumInwardWorld": 77.09933268312913,
+    "maximumOutwardWorld": 63.88584276177556,
+    "landArea": 453046.6311416626,
+    "hullArea": 491405.8359527588,
+    "landToHull": 0.9219398672042148,
+    "structuralRuns": [
+      {
+        "kind": "bay",
+        "widthWorld": 223.7611012726638
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 143.84642224671245
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 111.8805506363319
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 271.70990868823463
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 111.8805506363319
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 79.91467902595137
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 191.79522966228328
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 271.70990868823463
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 79.91467902595137
+      }
+    ],
+    "targetSegments": 3012
+  },
+  "after": {
+    "file": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.json",
+    "sha256": "0a5f55b24f7edb76e48e44625138f59eedbe0978b5ec6668c254a86a75e74d93",
+    "maximumInwardWorld": 101.68794232793634,
+    "maximumOutwardWorld": 94.84211186367769,
+    "landArea": 467234.1415786743,
+    "hullArea": 521630.0125808716,
+    "landToHull": 0.8957194377427354,
+    "structuralRuns": [
+      {
+        "kind": "bay",
+        "widthWorld": 175.81229385709298
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 63.931743220761085
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 111.8805506363319
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 255.72697288304434
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 47.94880741557082
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 159.82935805190274
+      },
+      {
+        "kind": "cape",
+        "widthWorld": 239.74403707785407
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 63.931743220761085
+      },
+      {
+        "kind": "bay",
+        "widthWorld": 127.86348644152217
+      }
+    ],
+    "targetSegments": 3382
+  },
+  "naturalVisualAccepted": false
+}

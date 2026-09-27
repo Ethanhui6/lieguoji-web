@@ -213,7 +213,7 @@ export interface NaturalCoastFeature {
 export const NATURAL_COAST_PLAN_LIMITS = { features: 48, bins: 128, references: 1024, candidates: 8 } as const;
 
 /** Plan broad bays/capes and smaller shoulder features once per private
- * generation. Unequal physical intervals, off-center peaks and independent
+ * generation. Unequal physical intervals, off-center peaks and shuffled
  * signs avoid harmonic scallops; the output is a real SDF displacement field,
  * not an offset display polygon. Existing facing-shore caps still apply at
  * the caller. All event endpoints and peak joins have zero first derivative. */
@@ -226,32 +226,40 @@ export async function createNaturalCoastArcPlan(input: { seed: number; perimeter
   // Do not force the minimum event count into a perimeter too small for the
   // 2-world real coast lattice. The existing literal/capped outline remains.
   if (structureWorld > 0 && perimeterQ >= 96 * 256) {
-    const counts = [Math.max(2, Math.min(10, Math.round(perimeterQ / (900 * 256)))), perimeterQ < 384 * 256 ? 0 : Math.min(36, Math.floor(perimeterQ / (230 * 256)))];
+    // A normal continent needs several primary bays and capes, including
+    // narrow deep ones. Shrink reach with the whole usable shore on a tiny
+    // island, not with every individual event's width on a large continent.
+    const coastReach = Math.min(1, perimeterQ / (8 * structureWorld * 256));
+    const counts = [Math.max(2, Math.min(10, Math.round(perimeterQ / (360 * 256)))), perimeterQ < 384 * 256 ? 0 : Math.min(36, Math.floor(perimeterQ / (230 * 256)))];
     for (let layer = 0; layer < 2; layer++) {
       const count = counts[layer], items: { width: number; sign: number; id: number }[] = [];
       for (let id = 0; id < count; id++) {
-        // A dominant bay, a substantial cape and a smaller shoulder region
-        // are shuffled into the arc; remaining signs are independently seeded.
+        // Distinct width bands supply different physical scales. The seeded
+        // shuffle places a balanced quota of strong bays/capes on the shore;
+        // id parity never becomes an alternating spatial waveform.
         const width = layer ? 450 + hashAt(seed, 7140, layer, id) % 1501
-          : id === 0 ? 1900 + hashAt(seed, 7140, layer, id) % 501
-            : id === 1 ? 1500 + hashAt(seed, 7140, layer, id) % 651
-              : id === 2 ? 600 + hashAt(seed, 7140, layer, id) % 801 : 900 + hashAt(seed, 7140, layer, id) % 1401;
-        const sign = id === 0 ? -1 : id === 1 || id === 2 ? 1 : hashAt(seed, 7141, layer, id) % 2 ? 1 : -1;
+          : 600 + id * 240 + hashAt(seed, 7140, layer, id) % 81;
+        const sign = layer ? id === 0 ? -1 : id === 1 || id === 2 ? 1 : hashAt(seed, 7141, layer, id) % 2 ? 1 : -1 : id % 2 ? 1 : -1;
         items.push({ width, sign, id });
       }
       for (let i = count - 1; i > 0; i--) { const j = hashAt(seed, 7142, layer, i) % (i + 1); [items[i], items[j]] = [items[j], items[i]]; }
+      // A random shuffle can still accidentally recreate the old alternating
+      // ring. Break only that case; keep seeded order and unequal slots.
+      if (!layer && count >= 6 && items.every((item, i) => item.sign !== items[(i + 1) % count].sign)) [items[1], items[2]] = [items[2], items[1]];
       const total = items.reduce((sum, item) => sum + item.width, 0), phase = hashAt(seed, 7143, layer, 0) % perimeterQ; let consumed = 0;
       for (const item of items) {
         const from = Math.round(perimeterQ * consumed / total); consumed += item.width;
         const to = Math.round(perimeterQ * consumed / total), slot = to - from;
-        const fill = (layer ? 540 : 650) + hashAt(seed, 7144, layer, item.id) % (layer ? 281 : 241);
+        const fill = (layer ? 540 : 760) + hashAt(seed, 7144, layer, item.id) % (layer ? 281 : 41);
         const lengthQ = Math.floor(slot * fill / 1000);
-        // Suppress, rather than amplify, sub-resolution or cramped events.
-        if (lengthQ < 16 * 256) continue;
+        // A full-size primary event spans at least 48 world of source arc
+        // (24 fine-step lengths). Small-shore width and reach shrink together.
+        const minimumWidthQ = (layer ? 16 : Math.max(16, 48 * coastReach)) * 256;
+        if (lengthQ < minimumWidthQ) continue;
         const shoulder = 30 + hashAt(seed, 7145, layer, item.id) % 81;
         const startQ = (phase + from + Math.floor(slot * shoulder / 1000)) % perimeterQ;
         const peakQ = Math.floor(lengthQ * (280 + hashAt(seed, 7146, layer, item.id) % 441) / 1000);
-        const reach = Math.min(1, lengthQ / Math.max(1, structureWorld * 2 * 256));
+        const reach = layer ? Math.min(1, lengthQ / Math.max(1, structureWorld * 2 * 256)) : coastReach;
         const amplitude = layer ? 533 + hashAt(seed, 7147, layer, item.id) % 779 : 3482 + hashAt(seed, 7147, layer, item.id) % 615;
         features.push({ layer: layer ? 'local' : 'regional', startQ, lengthQ, peakQ, amplitudeQ: item.sign * amplitude * reach,
           leftShapeQ: hashAt(seed, 7148, layer, item.id) % 2457 - 1228, rightShapeQ: hashAt(seed, 7149, layer, item.id) % 2457 - 1228 });

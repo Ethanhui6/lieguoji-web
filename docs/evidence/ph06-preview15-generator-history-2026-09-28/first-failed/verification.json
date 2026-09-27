@@ -1,0 +1,133 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T17:39:11.854Z",
+      "finishedAt": "2026-09-27T17:39:12.046Z",
+      "elapsedMs": 190.8741,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T17:39:12.047Z",
+      "finishedAt": "2026-09-27T17:39:19.694Z",
+      "elapsedMs": 7647.1617,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T17:39:19.694Z",
+      "finishedAt": "2026-09-27T17:39:31.940Z",
+      "elapsedMs": 12246.0876,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/detail-natural-coast-plan.test.ts",
+        "src/world/generation/detail-shape-natural.test.ts",
+        "src/world/generation/detail-natural-visual-repair.test.ts",
+        "src/world/detail-natural-integration.test.ts",
+        "src/world/detail-natural-history.test.ts",
+        "src/world/detail-preview14-history.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "src/world/generation/detail-shape-add.test.ts",
+        "src/world/detail-add-integration.test.ts",
+        "src/world/detail-add-history.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/asymmetric-coast-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T17:39:31.940Z",
+      "finishedAt": "2026-09-27T17:40:02.590Z",
+      "elapsedMs": 30649.8443,
+      "exitCode": 1,
+      "signal": null
+    }
+  ],
+  "unit": {
+    "available": true,
+    "files": [
+      {
+        "path": "src/world/detail-add-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-add-integration.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-integration.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/detail-preview14-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-shape-add.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-shape-natural.test.ts",
+        "assertions": 12
+      },
+      {
+        "path": "src/world/generation/fingerprint.test.ts",
+        "assertions": 3
+      }
+    ],
+    "scopeMatches": true,
+    "knownCountsMatch": true,
+    "total": 52,
+    "passedAssertions": 51,
+    "failedAssertions": 1,
+    "pendingAssertions": 0,
+    "passed": false
+  },
+  "sourceStable": true,
+  "allCommandsPassed": false,
+  "passed": false,
+  "dist": null,
+  "buildJsonSha256": null,
+  "engineUnchanged": false,
+  "generatorIdentityVerified": false,
+  "identityVerificationSha256": "896b7332ec5097a709fb398b95468c058c2fc647a941141cb06a4148ae23e09e",
+  "classificationCounts": {},
+  "scope": "Affected asymmetric coast data, addition and stored compatibility checks only; not natural visual, performance, physical device, PH or cloud acceptance.",
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

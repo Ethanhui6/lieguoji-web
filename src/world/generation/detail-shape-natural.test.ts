@@ -103,6 +103,16 @@ describe('independent natural-v2 real geography kernel', () => {
     expect(Math.max(...widths) - Math.min(...widths)).toBeGreaterThanOrEqual(32);
   });
 
+  it('crosses the real sea-to-land shore only once along the former micro-hole normal', () => {
+    const field = { tiles: world.detailCoast, sampleBaseElevation: world.sampleBaseElevation }, states: boolean[] = [];
+    // Cover the whole original displacement envelope, not a fixed pore-center
+    // classification: a new valid bay may move that center into the sea.
+    for (let x = 930; x <= 1270; x += 2) states.push(pickDetailCoastSurface(field, { x, y: 1382 })!.land);
+    expect(states[0]).toBe(false); expect(states.at(-1)).toBe(true);
+    let crossings = 0; for (let i = 1; i < states.length; i++) if (states[i] !== states[i - 1]) crossings++;
+    expect(crossings).toBe(1);
+  });
+
   it('keeps final area, shore pickup and persisted height classification after real codec recovery', async () => {
     const tiles = new Map<DetailCoastKey, DetailCoastTile>([...world.detailCoast].map(([key, tile]) => [key, decodeDetailCoastTile(encodeDetailCoastTile(tile))]));
     const field = { tiles, sampleBaseElevation: createDetailShapeBaseSampler(source.size, source.centersQ, world.coarseElevations.buffer as ArrayBuffer) };

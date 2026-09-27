@@ -1,0 +1,905 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T18:23:41.626Z",
+  "headAtRecording": "72fd76591d1258515b72f5b50058bb142c6e1520",
+  "version": "0.5.0-preview.16",
+  "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+  "archiveComplete": true,
+  "rootTechnicalPassed": true,
+  "technicalPassed": true,
+  "allRequiredPassed": true,
+  "scope": "Local preview16 coast-scale engineering checks and three unchanged-budget additive product workflows. All required evidence is present; natural aesthetics, full phase, user, physical device and performance remain unaccepted.",
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "allAccepted": false,
+  "cloudWrites": false,
+  "root": {
+    "original": "raw/root/first/verification.json",
+    "verificationSha256": "d71210e13ece008cd29874788ba00d052e4dd243c6419f25984350cc13251d68",
+    "identitySha256": "76ed0a5a16cc2a1dd8c23da9e68378a826f1ea033e9930817bc67db15d758d9c",
+    "commandsPassed": true,
+    "unitsPassed": true,
+    "files": 10,
+    "assertions": 53,
+    "distFiles": 25,
+    "sourceStable": true
+  },
+  "identity": {
+    "validated": true,
+    "generatorCount": 11,
+    "engineUnchanged": true,
+    "classifications": {
+      "history-only": 9,
+      "non-history-runtime-change": 2
+    }
+  },
+  "browsers": [
+    {
+      "name": "desktop-first",
+      "project": "desktop-chromium",
+      "source": ".autopilot/ph06/coast-scale-checks/desktop-first",
+      "terminal": true,
+      "v": {
+        "name": "desktop-first",
+        "project": "desktop-chromium",
+        "args": [
+          "node_modules/@playwright/test/cli.js",
+          "test",
+          "--config=.autopilot/ph06/coast-scale-checks/playwright.config.ts",
+          "--project=desktop-chromium"
+        ],
+        "code": 0,
+        "signal": null,
+        "startedAt": "2026-09-27T18:07:47.519Z",
+        "completedAt": "2026-09-27T18:12:12.735Z",
+        "elapsedMs": 265214.5621,
+        "sourceAndDistStable": true,
+        "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+        "buildSameAfter": true,
+        "checkedRound": ".autopilot/ph06/coast-scale-checks/first",
+        "rootVerificationSha256": "d71210e13ece008cd29874788ba00d052e4dd243c6419f25984350cc13251d68",
+        "spec": "tests/atlas-add-detail-coast.spec.ts",
+        "timeoutMs": 450000,
+        "retries": 0,
+        "physicalDevice": false,
+        "naturalVisualAccepted": false,
+        "userAccepted": false,
+        "phaseAccepted": false,
+        "performanceAccepted": false,
+        "cloudWrites": false
+      },
+      "report": {
+        "reportPresent": true,
+        "tests": [
+          {
+            "file": "atlas-add-detail-coast.spec.ts",
+            "project": "desktop-chromium",
+            "title": "[detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection",
+            "timeout": 450000,
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "retry": 0,
+                "duration": 263256,
+                "errors": []
+              }
+            ]
+          }
+        ],
+        "stats": {
+          "startTime": "2026-09-27T18:07:48.233Z",
+          "duration": 264388.875,
+          "expected": 1,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "errors": [],
+        "unchangedBudget": true,
+        "correctSpec": true,
+        "passed": true
+      },
+      "passed": true
+    },
+    {
+      "name": "mobile-first",
+      "project": "mobile-chromium",
+      "source": ".autopilot/ph06/coast-scale-checks/mobile-first",
+      "terminal": true,
+      "v": {
+        "name": "mobile-first",
+        "project": "mobile-chromium",
+        "args": [
+          "node_modules/@playwright/test/cli.js",
+          "test",
+          "--config=.autopilot/ph06/coast-scale-checks/playwright.config.ts",
+          "--project=mobile-chromium"
+        ],
+        "code": 0,
+        "signal": null,
+        "startedAt": "2026-09-27T18:12:23.326Z",
+        "completedAt": "2026-09-27T18:16:36.117Z",
+        "elapsedMs": 252788.03379999998,
+        "sourceAndDistStable": true,
+        "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+        "buildSameAfter": true,
+        "checkedRound": ".autopilot/ph06/coast-scale-checks/first",
+        "rootVerificationSha256": "d71210e13ece008cd29874788ba00d052e4dd243c6419f25984350cc13251d68",
+        "spec": "tests/atlas-add-detail-coast.spec.ts",
+        "timeoutMs": 450000,
+        "retries": 0,
+        "physicalDevice": false,
+        "naturalVisualAccepted": false,
+        "userAccepted": false,
+        "phaseAccepted": false,
+        "performanceAccepted": false,
+        "cloudWrites": false
+      },
+      "report": {
+        "reportPresent": true,
+        "tests": [
+          {
+            "file": "atlas-add-detail-coast.spec.ts",
+            "project": "mobile-chromium",
+            "title": "[detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection",
+            "timeout": 450000,
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "retry": 0,
+                "duration": 251029,
+                "errors": []
+              }
+            ]
+          }
+        ],
+        "stats": {
+          "startTime": "2026-09-27T18:12:23.955Z",
+          "duration": 252080.836,
+          "expected": 1,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "errors": [],
+        "unchangedBudget": true,
+        "correctSpec": true,
+        "passed": true
+      },
+      "passed": true
+    },
+    {
+      "name": "tablet-first",
+      "project": "tablet-chromium",
+      "source": ".autopilot/ph06/coast-scale-checks/tablet-first",
+      "terminal": true,
+      "v": {
+        "name": "tablet-first",
+        "project": "tablet-chromium",
+        "args": [
+          "node_modules/@playwright/test/cli.js",
+          "test",
+          "--config=.autopilot/ph06/coast-scale-checks/playwright.config.ts",
+          "--project=tablet-chromium"
+        ],
+        "code": 0,
+        "signal": null,
+        "startedAt": "2026-09-27T18:17:07.512Z",
+        "completedAt": "2026-09-27T18:23:15.467Z",
+        "elapsedMs": 367954.1911,
+        "sourceAndDistStable": true,
+        "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+        "buildSameAfter": true,
+        "checkedRound": ".autopilot/ph06/coast-scale-checks/first",
+        "rootVerificationSha256": "d71210e13ece008cd29874788ba00d052e4dd243c6419f25984350cc13251d68",
+        "spec": "tests/atlas-add-detail-coast.spec.ts",
+        "timeoutMs": 450000,
+        "retries": 0,
+        "physicalDevice": false,
+        "naturalVisualAccepted": false,
+        "userAccepted": false,
+        "phaseAccepted": false,
+        "performanceAccepted": false,
+        "cloudWrites": false
+      },
+      "report": {
+        "reportPresent": true,
+        "tests": [
+          {
+            "file": "atlas-add-detail-coast.spec.ts",
+            "project": "tablet-chromium",
+            "title": "[detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection",
+            "timeout": 450000,
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "retry": 0,
+                "duration": 366402,
+                "errors": []
+              }
+            ]
+          }
+        ],
+        "stats": {
+          "startTime": "2026-09-27T18:17:07.991Z",
+          "duration": 367373.904,
+          "expected": 1,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "errors": [],
+        "unchangedBudget": true,
+        "correctSpec": true,
+        "passed": true
+      },
+      "passed": true
+    }
+  ],
+  "binding": {
+    "expectedBuildSha": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+    "build": {
+      "version": "0.5.0-preview.16",
+      "commit": "72fd76591d1258515b72f5b50058bb142c6e1520",
+      "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+      "macroGenerator": {
+        "sha256": "b5b52bb3e22bc2bf1318b908b02685e0262b5437c573d8a966243e9fe0ca144e",
+        "files": [
+          "src/world/generation-contract.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/macro.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "landformGenerator": {
+        "sha256": "fdc071d91b80aad50182a9e54306b92efd4fe1e6089850a46297775268242100",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/landforms.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "islandGenerator": {
+        "sha256": "f43a934ceae625601744e2b36cd3dfbd21b67460a2ccf52b57ca974d375c0cdc",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/islands.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "coastGenerator": {
+        "sha256": "8a44e4e291082dcc6c33d87d022dfcf3f1d98d569a9ec2ca3760d6650dc9c0d4",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/coast.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "shapeGenerator": {
+        "sha256": "2f490ea7a608d26a99981d1a5429500c92d4be528e11e49e6b5aa63fe4ebac18",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/generation/shape.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "oceanGenerator": {
+        "sha256": "fded889a7f3fc0f289e66e78ec942aa7af1c03e73784b0a88227215b2566e605",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/ocean.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "detailShapeGenerator": {
+        "sha256": "12a6709c398f4c29f9726f3064718e14483a118e4daead309e85232072e9b43d",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-adapter.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "addDetailGenerator": {
+        "sha256": "0de3dbc587f415a1f905d5633c3f078730e495bade17d1f703f8579981d05def",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-add-adapter.ts",
+          "src/world/generation/detail-shape-add.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "naturalDetailGenerator": {
+        "sha256": "bff5b45456e29bfdc176ea6a580be35da58ddefecb17ff3377b29dd0a99b3db4",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-curved-ridge.ts",
+          "src/world/generation/detail-natural-outline.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape-natural-adapter.ts",
+          "src/world/generation/detail-shape-natural.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/natural-ocean-base.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "addNaturalDetailGenerator": {
+        "sha256": "ed413bbd13995988f37b1d697f39ad1c3d50be69519c1eac76df8524a9d004ee",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-curved-ridge.ts",
+          "src/world/generation/detail-natural-outline.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape-natural-add-adapter.ts",
+          "src/world/generation/detail-shape-natural-add.ts",
+          "src/world/generation/detail-shape-natural.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "localDetailReliefGenerator": {
+        "sha256": "c52372d95ae5812024ca277101db2c5fc9f69731a498edc8f61cb807d9d58ef6",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-curved-ridge.ts",
+          "src/world/generation/detail-local-background.ts",
+          "src/world/generation/detail-local-relief.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/local-detail-relief-adapter.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "rules": "0.2.0",
+      "supportedRules": [
+        "0.1.0",
+        "0.2.0"
+      ],
+      "entry": "world-studio",
+      "scenarios": [
+        "custom-world",
+        "test-continent"
+      ]
+    },
+    "priorBuildSha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+    "sourceNamesComplete": true,
+    "sourceStable": true,
+    "distStable": true,
+    "specSha": "982e80b83c158d97b9fe5f504f41a8bc8e81c361157fb9d929b5ef97628adaf2",
+    "promotion": {
+      "recordedAt": "2026-09-27T18:00:53.425Z",
+      "head": "72fd76591d1258515b72f5b50058bb142c6e1520",
+      "priorArchive": "docs/evidence/ph06-asymmetric-coast-2026-09-28",
+      "priorBuildSha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+      "version": "0.5.0-preview.16",
+      "files": [
+        {
+          "source": ".autopilot/ph06/v4-preview15-history-staging/src/world/generation-history.ts",
+          "target": "src/world/generation-history.ts",
+          "beforeSha256": "8d17d72c7941c0af51d6471ea4fd4065d84b569b6c6194c25766dd09134e9b6a",
+          "afterSha256": "0c030fef9f6e4f58f33003bbe2f8bc6de35460cf18943dc3414bc3c418a33c31"
+        },
+        {
+          "source": ".autopilot/ph06/v4-preview15-history-staging/src/world/detail-preview15-history.test.ts",
+          "target": "src/world/detail-preview15-history.test.ts",
+          "beforeSha256": null,
+          "afterSha256": "ac0f42a271bcc5e5f1b88caf3021f965343c4f7cb84469b85e5bd253000566bb"
+        },
+        {
+          "source": ".autopilot/ph06/v4-coast-scale-staging/src/world/generation/detail-natural-outline.ts",
+          "target": "src/world/generation/detail-natural-outline.ts",
+          "beforeSha256": "fa1cd343809c2074e6c6166c07b4ed27ea7d5ebfe7d890cebf36974867404fb6",
+          "afterSha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364"
+        },
+        {
+          "source": ".autopilot/ph06/v4-coast-scale-staging/src/world/generation/detail-natural-coast-plan.test.ts",
+          "target": "src/world/generation/detail-natural-coast-plan.test.ts",
+          "beforeSha256": "82765fdc207c60869c81bf2a0e4728ce43138447bece559937f816a6297bae82",
+          "afterSha256": "e4c492b14be49b82774e4bb98cd870f874910383c5c3b0ff6e09e5f84fd78513"
+        },
+        {
+          "source": ".autopilot/ph06/v4-coast-scale-staging/src/world/generation/detail-shape-natural.test.ts",
+          "target": "src/world/generation/detail-shape-natural.test.ts",
+          "beforeSha256": "0b95185a4b7470f4d851ef6d2df3d0cf763d0aa2eee0e6d41f1a46716aebbccc",
+          "afterSha256": "24d8d8ebee11ce00d57c05beba3f2b9cb97c0f12898df6a0dcb8986d95bbc33b"
+        }
+      ],
+      "stageIdentities": [
+        {
+          "path": ".autopilot/ph06/v4-preview15-history-staging/ready-manifest.json",
+          "sha256": "14a6895f938b4c4044d23e048bcbbade49a7034932e25169a0795764fb2e7525"
+        },
+        {
+          "path": ".autopilot/ph06/v4-coast-scale-staging/ready-manifest.json",
+          "sha256": "aab65570467bbe625f7f4e38190edfc17cc0c11d49fbfd6cea17f904a69e8ade"
+        }
+      ],
+      "history": {
+        "source": ".autopilot/ph06/v4-preview15-history-staging/evidence/preview15",
+        "target": "docs/evidence/ph06-preview15-generator-history-2026-09-28",
+        "buildSha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+        "sourceSnapshotSha256": "7638c56685187af98c3c8a1472cc289761b3205d7c1f2c493ff83e7267b0e6e1",
+        "closureCount": 11,
+        "sourceFiles": 41,
+        "allClosuresMatched": true,
+        "frozenClosuresRecomputed": true,
+        "classificationCounts": {
+          "history-only": 9,
+          "non-history-runtime-change": 2
+        },
+        "distCount": 25,
+        "archiveFiles": 55,
+        "inventorySha256": "e53ae7c46146d36974f6d472e3f52148d4f0912272df1c3fca30da53e119d2b1",
+        "provenanceSha256": "d1d495d140f28cb33e09b5c23d279d78631537b60a6449af733a580e52ec11fd"
+      },
+      "promoted": true,
+      "checksRun": [],
+      "checksStillRequired": true,
+      "priorBrowserExecuted": false,
+      "naturalVisualAccepted": false,
+      "phaseAccepted": false,
+      "cloudWrites": false
+    }
+  },
+  "numeric": {
+    "producer": "src/world/generation/detail-natural-visual-repair.test.ts",
+    "scope": "Actual unit-produced numerical diagnostic; not product screenshot or visual approval",
+    "files": [
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.json",
+        "sha256": "0a5f55b24f7edb76e48e44625138f59eedbe0978b5ec6668c254a86a75e74d93",
+        "modifiedDuringActualUnitCommand": true
+      },
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.png",
+        "sha256": "3b69ead66857ffefce202a0a7322779f5cd43a3308d8044fc776fd28102f6e6c",
+        "modifiedDuringActualUnitCommand": true
+      },
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.svg",
+        "sha256": "412268cd157fe58b0f74f62abc886e9f9fc30e9bf36b0cd4cefd90bfb5f6c106",
+        "modifiedDuringActualUnitCommand": true
+      }
+    ],
+    "sameRecipe": true,
+    "comparison": {
+      "recordedAt": "2026-09-27T18:06:48.379Z",
+      "scope": "Existing same-input numerical output analysis only; not a new generation, product screenshot or visual acceptance",
+      "before": {
+        "file": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.json",
+        "sha256": "5c266e397d19a295092d0a309bb991024b5fd335be97c01e738617536b453b0c",
+        "maximumInwardWorld": 77.09933268312913,
+        "maximumOutwardWorld": 63.88584276177556,
+        "landArea": 453046.6311416626,
+        "hullArea": 491405.8359527588,
+        "landToHull": 0.9219398672042148,
+        "structuralRuns": [
+          {
+            "kind": "bay",
+            "widthWorld": 223.7611012726638
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 143.84642224671245
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 111.8805506363319
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 271.70990868823463
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 111.8805506363319
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 79.91467902595137
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 191.79522966228328
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 271.70990868823463
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 79.91467902595137
+          }
+        ],
+        "targetSegments": 3012
+      },
+      "after": {
+        "file": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.json",
+        "sha256": "0a5f55b24f7edb76e48e44625138f59eedbe0978b5ec6668c254a86a75e74d93",
+        "maximumInwardWorld": 101.68794232793634,
+        "maximumOutwardWorld": 94.84211186367769,
+        "landArea": 467234.1415786743,
+        "hullArea": 521630.0125808716,
+        "landToHull": 0.8957194377427354,
+        "structuralRuns": [
+          {
+            "kind": "bay",
+            "widthWorld": 175.81229385709298
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 63.931743220761085
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 111.8805506363319
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 255.72697288304434
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 47.94880741557082
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 159.82935805190274
+          },
+          {
+            "kind": "cape",
+            "widthWorld": 239.74403707785407
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 63.931743220761085
+          },
+          {
+            "kind": "bay",
+            "widthWorld": 127.86348644152217
+          }
+        ],
+        "targetSegments": 3382
+      },
+      "naturalVisualAccepted": false
+    },
+    "visualAccepted": false
+  },
+  "visual": {
+    "observation": {
+      "recordedAt": "2026-09-27T18:23:36.284Z",
+      "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+      "scope": "Root actually viewed the four listed product PNGs via view_image, plus the separate same-input numerical height-field PNG. Product workflow results are independently recorded, not inferred from these images.",
+      "observations": [
+        "Full desktop20%, mobile9% and tablet18% views show more uneven bays/capes around each drawn outline. The two contours and seed were deliberately identical except horizontal translation, so this fixture does not assess continent diversity.",
+        "Actual desktop restored1125% coast is continuous across the large selected coarse cell, without the formerly obvious staircase of whole coarse squares. Selection outline remains visible and is not mistaken for coast geometry.",
+        "Current inland mountains remain wide soft rounded masses with sparse lowlands. They do not yet meet the requested natural continental detail. Tablet full view also appears to contain fine regular texture over ridges; cause is unproven here and needs a closer actual view/source-specific diagnosis.",
+        "The mobile toolbar/status/navigation occupies substantial space; the world appears inside a frame. This is a UX observation, not proof of changed map dimensions. Interface candidate is staged separately and not present in these images.",
+        "Same-input numerical output shows land/hull ratio approximately0.89572 versus prior14 approximately0.92194 and prior15 approximately0.95749. This diagnostic is not a naturalness pass threshold. No rivers, ecosystems, nations, administration, cities or troops are newly demonstrated."
+      ],
+      "screenshots": [
+        {
+          "path": ".autopilot/ph06/coast-scale-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+          "sha256": "824278b7876a6bc2fec95a229201cd850023cdf72255aaf9ee627b3d5f88ba2b"
+        },
+        {
+          "path": ".autopilot/ph06/coast-scale-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+          "sha256": "ec86b9ac43d93fd5b092bacaa7faad86e58515f15a63207bb4e0dac0b633f441"
+        },
+        {
+          "path": ".autopilot/ph06/coast-scale-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+          "sha256": "a96d2640110bbb9848889f6c30f733a6d9dc52d73572342f4a5c759bffbcb414"
+        },
+        {
+          "path": ".autopilot/ph06/coast-scale-checks/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+          "sha256": "9d2ea5e84854c70a64b082bad12fffd3b83847812fe2adceb2693a2ef06303db"
+        }
+      ],
+      "accepted": false,
+      "naturalVisualAccepted": false,
+      "visualAccepted": false,
+      "userAccepted": false,
+      "phaseAccepted": false,
+      "physicalDeviceAccepted": false,
+      "performanceAccepted": false
+    },
+    "required": true,
+    "optional": false,
+    "complete": true,
+    "bound": true,
+    "screenshots": [
+      {
+        "path": ".autopilot/ph06/coast-scale-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+        "archivePath": "raw/browser/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+        "sha256": "824278b7876a6bc2fec95a229201cd850023cdf72255aaf9ee627b3d5f88ba2b"
+      },
+      {
+        "path": ".autopilot/ph06/coast-scale-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+        "archivePath": "raw/browser/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+        "sha256": "ec86b9ac43d93fd5b092bacaa7faad86e58515f15a63207bb4e0dac0b633f441"
+      },
+      {
+        "path": ".autopilot/ph06/coast-scale-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+        "archivePath": "raw/browser/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+        "sha256": "a96d2640110bbb9848889f6c30f733a6d9dc52d73572342f4a5c759bffbcb414"
+      },
+      {
+        "path": ".autopilot/ph06/coast-scale-checks/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+        "archivePath": "raw/browser/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+        "sha256": "9d2ea5e84854c70a64b082bad12fffd3b83847812fe2adceb2693a2ef06303db"
+      }
+    ],
+    "accepted": false
+  },
+  "priorIteration": {
+    "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28",
+    "referencedOnly": true,
+    "originalRootPassed": false,
+    "firstPassedAssertions": 51,
+    "totalAssertions": 52,
+    "projectionFixPassedAssertions": 52,
+    "browserExecuted": false,
+    "naturalVisualAccepted": false
+  },
+  "pendingEvidence": false,
+  "excluded": [
+    ".autopilot/ph06/coast-scale-checks/desktop-first/artifacts/.last-run.json",
+    ".autopilot/ph06/coast-scale-checks/mobile-first/artifacts/.last-run.json",
+    ".autopilot/ph06/coast-scale-checks/tablet-first/artifacts/.last-run.json"
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/verification.json",
+      "bytes": 1885,
+      "sha256": "6931cb9c0f2e00fd2dc882b1450ebc057124b39052dab66a7fcde7ea1ebe6212",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/inventory.json",
+      "bytes": 15446,
+      "sha256": "f617414e56e94e5c4f772f2160be82d8358647b4c85a44593c95e9aa491433a5",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/first/verification.json",
+      "bytes": 3804,
+      "sha256": "f036dca52dbef6959e2320a825e2ce56954496ff95cdb2b9cf2e522cc10b4c28",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/first/unit.json",
+      "bytes": 26275,
+      "sha256": "f68341dc72b3a33cc6a25bf41969bb39d343ce19dbe533cd6032e2a953d29a9a",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-asymmetric-coast-2026-09-28/raw/root/shore-projection-fix/verification.json",
+      "bytes": 8137,
+      "sha256": "ea6ac94821272f227a249ab79445bd4ff84178b73f36750d13021b5fc72b5fbb",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/build.json",
+      "bytes": 9327,
+      "sha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/provenance.json",
+      "bytes": 39216,
+      "sha256": "d1d495d140f28cb33e09b5c23d279d78631537b60a6449af733a580e52ec11fd",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview15-generator-history-2026-09-28/inventory.json",
+      "bytes": 9818,
+      "sha256": "e53ae7c46146d36974f6d472e3f52148d4f0912272df1c3fca30da53e119d2b1",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.json",
+      "bytes": 887752,
+      "sha256": "5c266e397d19a295092d0a309bb991024b5fd335be97c01e738617536b453b0c",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.png",
+      "bytes": 27229,
+      "sha256": "bd575d53011d368253ab11480d2dba3d6cfc4381c26f070b7e40a5f33399eb48",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuous-type-guard-fix/actual-256-height-field.svg",
+      "bytes": 5146077,
+      "sha256": "ebeb44f8560fb7b356de2a2a514c9522ac0cfad5561038f90aa91d7e07b32944",
+      "copied": false
+    }
+  ],
+  "notes": [
+    "Only the exact root53 build and desktop/mobile/tablet first rounds are allowed. Missing/live rounds or changed source/dist refuse archival before creating the destination.",
+    "Terminal browser failures, timeouts, errors and missing reports are retained and make technicalPassed/allRequiredPassed false; a successful archive never turns them into passes.",
+    "Browser timeout remains450000ms, retries0. Mobile/tablet are browser emulation, not physical devices. Numerical diagnostics and authored candidates are not new browser runs.",
+    "Nonempty dated observations with real product screenshot hashes are required, including negative observations. Observation completeness is not natural visual or user approval.",
+    "Preview15 first51/52 failure and projection fix52/52 remain independent hash references with their original results. No prior browser or visual pass is invented.",
+    "Only named evidence, product artifacts and promoted candidate source are copied. No dist payload, real save, credential, authentication cache or unlisted project material is copied."
+  ]
+}

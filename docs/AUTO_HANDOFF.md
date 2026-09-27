@@ -1,4 +1,18 @@
-# 当前续接：preview.10 地貌修复已实际构建，近岸光照方格待修
+# 当前续接：preview.11 近岸连续光照通过限定检查，完整自然视觉仍未通过
+
+2026-09-27T11:46:09.677Z（UTC）归档检查点：基础HEAD `cc3dbf64e545328d2d4ed852e20128668fd2be4a`；本批preview.11产品与记录仍为未提交变更，不能把HEAD单独当作完整源码身份。实际 `dist/build.json` SHA256为 `eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7`。源码、25项构建产物及三端执行前后绑定通过；10个生成器闭包和 `engineFingerprint` 与preview.10逐项相同。未push、未部署，原GitHub/Pages发布链未改。
+
+共享细节点及量化岸线交点的显示光照已接入。在同一测试存档修订1、1280×720视口、同一组原生滚轮操作复现的1120%视图中，原近岸明暗方格不再明显，岸线位置与形状保持一致；控制台warning/error为空。该观察只关闭这一显示缺陷，没有重生成地理或改变海陆、高程、拾取、存档。`displayLightingAccepted=true`，但 `naturalVisualAccepted=false`、`visualAccepted=false`、`allAccepted=false`。规则见 [ADR0019](adr/0019-shared-terrain-light.md)。
+
+- 根相关4文件34/34单元、计划校验、全局lint/类型、生产构建及25产物审计通过。候选6/6 CPU只首轮执行，已包含在根34项中；三轮各316个GPU一致性探针不累计为测试用例。首轮无有效接缝证据；最后两轮各有5条有限接缝探针通过，最终色差0字节、原容差1字节。每片读取由4增至最多12个真实节点，未增源纹理像素/字节，但不据此宣称性能通过。
+- 本构建三端实际执行 `tests/atlas-detail-coast.spec.ts` 的legacy模式：桌面110166.6374ms、手机仿真105531.1717ms、平板仿真137727.9559ms，均exit0、源码和dist稳定。这是绘制、预览取消、保存、近景海陆拾取、刷新和GPU恢复功能检查；没有把旧两大陆追加流程记作本次重跑，也不是实机或性能验收。
+- [本批报告](evidence/2026-09-27-ph06-continuous-light.md)及 [原始归档](evidence/ph06-continuous-light-2026-09-27/verification.json)已保存；归档共95文件，inventory记录94项并排除自身，pending=0，`allRequiredPassed=true`、`allDisplayLightingAccepted=true`。旧preview.10的32/34项、三端追加/入口/旧配方及preview.9的908项仅以哈希引用复用，不叠加为本批新增检查。
+
+PH06-T3/T4仍为 `in_progress`，此次只追加证据。自然山形、内陆精度、更多种子与局部重塑仍待推进；真实新Atlas尚无国家、行政区、城市、军队和战争，水系生态、用户视觉、真机及完整游戏性能均未验收。续接先核对当前提交、工作区和本地构建身份，沿原PH06任务推进；正式本地提交后补记实际SHA，不从历史块中的“候选未提升”重新开始。所有云端写入继续受现行发布门约束。
+
+---
+
+# 前一检查点：preview.10 地貌修复已实际构建，近岸光照方格待修
 
 2026-09-27T11:28:45.407Z（UTC）终态补记：本批根检查、三端追加、entry与legacy均终态通过，完整166文件已归档于 `docs/evidence/ph06-natural-repair-2026-09-27/`（allRequiredPassed=true，naturalVisualAccepted=false，allAccepted=false）。平板208996ms、旧配方93649ms、入口13529ms。正式报告 `docs/evidence/2026-09-27-ph06-natural-repair.md` 已入PH06-T3/T4证据，状态仍进行中。当前根无测试进程；连续光照候选由shape_generator在独立staging编写并获准窄检查，未提升。准备审核本地提交。
 

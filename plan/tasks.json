@@ -808,7 +808,10 @@
             "docs/evidence/2026-09-27-ph06-natural.md",
             "docs/evidence/ph06-natural-2026-09-27/verification.json",
             "docs/evidence/2026-09-27-ph06-natural-repair.md",
-            "docs/evidence/ph06-natural-repair-2026-09-27/verification.json"
+            "docs/evidence/ph06-natural-repair-2026-09-27/verification.json",
+            "docs/adr/0019-shared-terrain-light.md",
+            "docs/evidence/2026-09-27-ph06-continuous-light.md",
+            "docs/evidence/ph06-continuous-light-2026-09-27/verification.json"
           ]
         },
         {
@@ -833,7 +836,10 @@
             "docs/evidence/2026-09-27-ph06-natural.md",
             "docs/evidence/ph06-natural-2026-09-27/verification.json",
             "docs/evidence/2026-09-27-ph06-natural-repair.md",
-            "docs/evidence/ph06-natural-repair-2026-09-27/verification.json"
+            "docs/evidence/ph06-natural-repair-2026-09-27/verification.json",
+            "docs/adr/0019-shared-terrain-light.md",
+            "docs/evidence/2026-09-27-ph06-continuous-light.md",
+            "docs/evidence/ph06-continuous-light-2026-09-27/verification.json"
           ]
         }
       ],

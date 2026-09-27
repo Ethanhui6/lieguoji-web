@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-09-27T11:30:39.223Z",
+  "version": "0.5.0-preview.10",
+  "buildJsonSha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+  "source": "Actual saved IAB test world; no save exported.",
+  "cameraActions": [
+    {
+      "action": "reload resets to fit-all"
+    },
+    {
+      "action": "native mouseWheel",
+      "x": 676,
+      "y": 566,
+      "deltasY": [
+        -1200,
+        -1200,
+        -510
+      ]
+    }
+  ],
+  "visibleZoomPercent": 1120,
+  "savedRevision": 1,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "notes": [
+    "Manual before image for same-save nearshore lighting comparison.",
+    "Current frame shows square tonal patches; visual remains not accepted."
+  ]
+}

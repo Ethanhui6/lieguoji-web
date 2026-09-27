@@ -1,0 +1,119 @@
+{
+  "recordedAt": "2026-09-27T11:34:38.6449166Z",
+  "status": "ready-for-controlled-promotion",
+  "productionUnchanged": true,
+  "files": [
+    {
+      "path": "src/world/detail-terrain-shader.ts",
+      "stagedPath": ".autopilot/ph06/v4-continuous-light-staging/src/world/detail-terrain-shader.ts",
+      "baselineSha256": "ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05",
+      "sha256": "6dc8017930eac3fcbac210e5c025538a36c53b32878b594ef43f43b3a63209cb"
+    },
+    {
+      "path": "src/world/detail-terrain-light.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-continuous-light-staging/src/world/detail-terrain-light.test.ts",
+      "baselineSha256": null,
+      "sha256": "5c7af39398d381926b9278ddc471443138e351e56242d893d635b404c74fc1d7"
+    }
+  ],
+  "tools": [
+    {
+      "path": ".autopilot/ph06/v4-continuous-light-staging/gpu-harness.ts",
+      "sha256": "9c0d3cca060c42cc23dc861c9840859b49ce197fafd879858e544a446497ea5a"
+    },
+    {
+      "path": ".autopilot/ph06/v4-continuous-light-staging/gpu-harness.html",
+      "sha256": "622fdddf725bf379ee4772481d1492fcc3ae5dae9d6fca7c62cb86deb73752e4"
+    },
+    {
+      "path": ".autopilot/ph06/v4-continuous-light-staging/run.mjs",
+      "sha256": "ffcc519d03ea27d51db1828bc02d46696c37f140acd1317faab7873e0f769387"
+    },
+    {
+      "path": ".autopilot/ph06/v4-continuous-light-staging/typecheck.mjs",
+      "sha256": "911fb68ff346ae93a78f2f5e19a400c56295bcdf126b7d43218edbd86db471d1"
+    },
+    {
+      "path": ".autopilot/ph06/v4-continuous-light-staging/vitest.config.mjs",
+      "sha256": "27e33e24f72778b4aefb9a2120e4fe92493745b64afcce7409bf2ed46a3070bd"
+    }
+  ],
+  "checks": [
+    {
+      "directory": ".autopilot/ph06/v4-continuous-light-staging/checks/first",
+      "passed": true,
+      "sourceStable": true,
+      "unit": true,
+      "unitReuse": null,
+      "lint": true,
+      "types": true,
+      "gpu": true,
+      "probes": 316,
+      "seams": 0,
+      "maxColorError": 0.0,
+      "maxHeightError": 0.001953125,
+      "seamDifferences": []
+    },
+    {
+      "directory": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity",
+      "passed": true,
+      "sourceStable": true,
+      "unit": null,
+      "unitReuse": {
+        "path": ".autopilot/ph06/v4-continuous-light-staging/checks/first/unit.raw.json",
+        "stableUnitInputs": true
+      },
+      "lint": true,
+      "types": true,
+      "gpu": true,
+      "probes": 316,
+      "seams": 5,
+      "maxColorError": 0.0,
+      "maxHeightError": 0.001953125,
+      "seamDifferences": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "directory": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite",
+      "passed": true,
+      "sourceStable": true,
+      "unit": null,
+      "unitReuse": {
+        "path": ".autopilot/ph06/v4-continuous-light-staging/checks/first/unit.raw.json",
+        "stableUnitInputs": true
+      },
+      "lint": true,
+      "types": true,
+      "gpu": true,
+      "probes": 316,
+      "seams": 5,
+      "maxColorError": 0.0,
+      "maxHeightError": 0.001953125,
+      "seamDifferences": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "uniqueUnitCases": 6,
+  "unitRunCount": 1,
+  "gpuRunCount": 3,
+  "sourceNodeFetchBound": 12,
+  "newGpuSourcePixels": 0,
+  "newGpuSourceBytes": 0,
+  "scope": "v4 display lighting only; original mask, Q8 clipping, exact height, diagnostic, pages and source budget retained",
+  "limitations": [
+    "Isolated GPU correctness, not product screenshot acceptance",
+    "Twelve source reads versus four; no game performance claim",
+    "Coarse Hbase and one-metre node quantization unchanged",
+    "Original piece relief function remains a height-gradient oracle, not displayed light"
+  ]
+}

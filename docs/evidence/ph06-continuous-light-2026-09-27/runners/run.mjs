@@ -1,0 +1,28 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+const label=process.argv[2]??'first';if(!/^[a-z0-9-]+$/.test(label))throw Error('Invalid label');
+const out=`.autopilot/ph06/continuous-light-checks/${label}`;
+const unitFiles=['src/world/detail-terrain-light.test.ts','src/world/detail-terrain-shader.test.ts','src/world/detail-terrain-pages.test.ts','src/world/detail-terrain-backend.test.ts'];
+for(const file of unitFiles)if(!fs.existsSync(file))throw Error('Missing actual selected test '+file);
+if(fs.existsSync(out))throw Error('Evidence already exists');fs.mkdirSync(out);
+const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const read=p=>JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''));
+const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>{const p=path.join(dir,e.name);return e.isDirectory()?walk(p):[{path:p.replaceAll('\\','/'),sha256:hash(p)}];});
+const snapshot=()=>[...walk('src'),...walk('tests'),...walk('scripts'),...['package.json','package-lock.json','vite.config.ts','tsconfig.json'].map(p=>({path:p,sha256:hash(p)}))];
+const save=(name,v)=>fs.writeFileSync(`${out}/${name}`,JSON.stringify(v,null,2)+'\n',{flag:'wx'});
+const before=snapshot(), priorBuild=read('dist/build.json');save('source-before.json',before);fs.copyFileSync('dist/build.json',`${out}/prior-build.json`,fs.constants.COPYFILE_EXCL);
+save('scope.json',{unitFiles,reuse:'preview10 32/34 selected checks and unchanged 908-world scope preserved in ph06-natural-repair evidence. No game simulation or generator code changed. Isolated actual GPU candidate evidence binds exact shader bytes; actual product views checked separately.',cloudWrites:false});
+const checks=[['plan',['scripts/check-plan.mjs']],['lint',['node_modules/eslint/bin/eslint.js','src','tests','scripts']],['types',['node_modules/typescript/bin/tsc','--noEmit']],['unit',['node_modules/vitest/vitest.mjs','run',...unitFiles,'--reporter=json',`--outputFile=${out}/unit.json`]],['build',['node_modules/vite/bin/vite.js','build']],['dist-audit',['scripts/check-dist.mjs']]];
+const results=[];
+for(const [name,args] of checks){const startedAt=new Date().toISOString(),t=performance.now(),r=spawnSync(process.execPath,args,{encoding:'utf8',maxBuffer:40*1024*1024});fs.writeFileSync(`${out}/${name}.log`,(r.stdout??'')+(r.stderr??''),{flag:'wx'});const v={name,args,startedAt,finishedAt:new Date().toISOString(),elapsedMs:performance.now()-t,exitCode:r.status,signal:r.signal,error:r.error?.message};results.push(v);console.log(JSON.stringify(v));if(r.status!==0)break;}
+const after=snapshot();save('source-after.json',after);
+const built=results.some(r=>r.name==='dist-audit'&&r.exitCode===0),build=built?read('dist/build.json'):null;
+if(build)fs.copyFileSync('dist/build.json',`${out}/build.json`,fs.constants.COPYFILE_EXCL);
+const identities=b=>Object.fromEntries(Object.entries(b).filter(([k])=>k.endsWith('Generator')||k==='engineFingerprint'));
+const generatorAndEngineUnchanged=!!build&&JSON.stringify(identities(priorBuild))===JSON.stringify(identities(build));
+const sourceStable=JSON.stringify(before)===JSON.stringify(after);
+const passed=results.length===checks.length&&results.every(r=>r.exitCode===0)&&sourceStable&&generatorAndEngineUnchanged;
+save('verification.json',{results,sourceStable,generatorAndEngineUnchanged,passed,dist:built?walk('dist'):null,scope:'Display shader only; no natural quality, performance, physical device or cloud acceptance',cloudWrites:false});
+process.exitCode=passed?0:1;

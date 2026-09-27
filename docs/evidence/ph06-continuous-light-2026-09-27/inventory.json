@@ -1,0 +1,621 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T11:46:09.677Z",
+  "files": [
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/build.json",
+      "dest": "raw/root/first/build.json",
+      "bytes": 8199,
+      "sha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/build.log",
+      "dest": "raw/root/first/build.log",
+      "bytes": 1866,
+      "sha256": "249acc8b4408c21beec1abba54b2e5eca9ae3c8806e194624a5352ef7317bb72"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/dist-audit.log",
+      "dest": "raw/root/first/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/lint.log",
+      "dest": "raw/root/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/plan.log",
+      "dest": "raw/root/first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/prior-build.json",
+      "dest": "raw/root/first/prior-build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/scope.json",
+      "dest": "raw/root/first/scope.json",
+      "bytes": 506,
+      "sha256": "8fa015d009aea2ac5182c9a4f9603397a83a90a9fb8f8343b0c392979ba6217d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/source-after.json",
+      "dest": "raw/root/first/source-after.json",
+      "bytes": 42472,
+      "sha256": "dbfab36d19966191d9dfe3963cf535967e69d55444d3a06a242c89ea6fd4c42e"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/source-before.json",
+      "dest": "raw/root/first/source-before.json",
+      "bytes": 42472,
+      "sha256": "dbfab36d19966191d9dfe3963cf535967e69d55444d3a06a242c89ea6fd4c42e"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/types.log",
+      "dest": "raw/root/first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/unit.json",
+      "dest": "raw/root/first/unit.json",
+      "bytes": 16887,
+      "sha256": "4fc047cac926401727168cb472c37f8fa0bdc997ee2964b9a1b5e8e903e9f8c6"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/unit.log",
+      "dest": "raw/root/first/unit.log",
+      "bytes": 111,
+      "sha256": "9c5e848555f9063e0b38deebb873b1db55d237e6d623371895a184fb88bbfef5"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/first/verification.json",
+      "dest": "raw/root/first/verification.json",
+      "bytes": 5920,
+      "sha256": "4564e8e761edb9a5bf0eff9288997fae794a02b59e1a8a64f00d8edcd725383b"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/after.json",
+      "dest": "raw/browser/desktop-first/after.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-first-preview.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-first-preview.png",
+      "bytes": 166375,
+      "sha256": "8fb9d43bc736f6f947a797a901a0801c9ee5615d3326d80294b712512735aa4a"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-shore.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-shore.png",
+      "bytes": 108883,
+      "sha256": "8c50c6b51c518b29a83c3fd84e86d3a7a384bbfa4c978eb21e9e760a9331c08e"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-world.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-world.png",
+      "bytes": 168061,
+      "sha256": "56e409a3162430a06eaecc2ba5caec52703ecc46d65387b254da8178ad8b7e3d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/before.json",
+      "dest": "raw/browser/desktop-first/before.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/build.json",
+      "dest": "raw/browser/desktop-first/build.json",
+      "bytes": 8199,
+      "sha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/results.json",
+      "dest": "raw/browser/desktop-first/results.json",
+      "bytes": 182238,
+      "sha256": "ecf6593226242ee7b779326023abeb6fa02c9851277a677c3fa695503a32fbe3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/run.log",
+      "dest": "raw/browser/desktop-first/run.log",
+      "bytes": 394,
+      "sha256": "c891b53d46f4635148eb05c896b49fbdc86b61a5f8f43d4937610cc7180a1ae0"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/desktop-first/verification.json",
+      "dest": "raw/browser/desktop-first/verification.json",
+      "bytes": 362,
+      "sha256": "c784c9887362b16e0e8053039a5af0ce7ea2878c264a36d5eeb6d4ed89b597ca"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/after.json",
+      "dest": "raw/browser/mobile-first/after.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-first-preview.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-first-preview.png",
+      "bytes": 259673,
+      "sha256": "29a33965c04f63ce37e509c7cceea21dbcae9cd77c9af914033a9729fd57a628"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-shore.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-shore.png",
+      "bytes": 186104,
+      "sha256": "bd7002a8c981d66bd2fcae7a9918dfec7dfd1b82a4558ccd2425786d0160d921"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-world.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-mobile-chromium/fine-world.png",
+      "bytes": 267651,
+      "sha256": "8520694a181401c459fdb4f5cbe696338609e51b834b0937fca2f03e384e8236"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/before.json",
+      "dest": "raw/browser/mobile-first/before.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/build.json",
+      "dest": "raw/browser/mobile-first/build.json",
+      "bytes": 8199,
+      "sha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/results.json",
+      "dest": "raw/browser/mobile-first/results.json",
+      "bytes": 182251,
+      "sha256": "7e902fd0f6ee59e9cc41d97e057a8dd9fc362fd5759de4a73bebd16780fdfb25"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/run.log",
+      "dest": "raw/browser/mobile-first/run.log",
+      "bytes": 393,
+      "sha256": "28b98d2e7b89649a91b9234d0f5b597a4a4d4a76e551467be04b92bc8061f9cc"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/mobile-first/verification.json",
+      "dest": "raw/browser/mobile-first/verification.json",
+      "bytes": 359,
+      "sha256": "33cc8a6d70a79bd1af823577b537f62b5fe300258081731dc638dc04135b20a9"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/after.json",
+      "dest": "raw/browser/tablet-first/after.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-first-preview.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-first-preview.png",
+      "bytes": 392725,
+      "sha256": "4fd474f9f6156119cc373fb46e5a0795787f9fad1f7c80678dc86750e16ef543"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-shore.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-shore.png",
+      "bytes": 201289,
+      "sha256": "928fc94efab33bfe81d066337efda23827b9b0703d7621c7bfaccdcc967b7b15"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-world.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-tablet-chromium/fine-world.png",
+      "bytes": 398096,
+      "sha256": "3aa66d07f313538df9b6c97575f19fa4ef2b63142e7581535f50c0a31f6d6499"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/before.json",
+      "dest": "raw/browser/tablet-first/before.json",
+      "bytes": 43679,
+      "sha256": "d43efec335d82aac3e63cc13008fadfd9a0473d14789e929716634ed1d0fe4c3"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/build.json",
+      "dest": "raw/browser/tablet-first/build.json",
+      "bytes": 8199,
+      "sha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/results.json",
+      "dest": "raw/browser/tablet-first/results.json",
+      "bytes": 182295,
+      "sha256": "2dc3b4db9a5c56290a665570cc49457f79b64e6e5895d3c7b5109b65798fb0da"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/run.log",
+      "dest": "raw/browser/tablet-first/run.log",
+      "bytes": 392,
+      "sha256": "22ade97d1ca2dd3e84bf6af18305a824a30660cf3dd4c3eb37d4165c065e9463"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/tablet-first/verification.json",
+      "dest": "raw/browser/tablet-first/verification.json",
+      "bytes": 359,
+      "sha256": "20b749b00df45f8e4a7d79db8c929c69070eaeb78bdbefcefb7d2c76c3a9a864"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/gpu-harness.png",
+      "dest": "raw/candidate/first/gpu-harness.png",
+      "bytes": 6433,
+      "sha256": "843988bffac3b9440bff1f163d46b3365526d3aa002a48c7eab15973c3f47162"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/gpu.raw.json",
+      "dest": "raw/candidate/first/gpu.raw.json",
+      "bytes": 195297,
+      "sha256": "1c6cbc0e8a11c1cc5d6f70c174363c99e7cca2434a9adc5a40f56d78a97e515a"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/lint.log",
+      "dest": "raw/candidate/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/lint.result.json",
+      "dest": "raw/candidate/first/lint.result.json",
+      "bytes": 945,
+      "sha256": "73f23ddf59427bc805449c3b849f16323662aa529610a044b5a7a6efb501d5b5"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/source-after.json",
+      "dest": "raw/candidate/first/source-after.json",
+      "bytes": 34171,
+      "sha256": "b228571a2ec9cc357593821c30f7470cf139c63d8ea5c2d7f47115bc13d87a35"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/source-before.json",
+      "dest": "raw/candidate/first/source-before.json",
+      "bytes": 34171,
+      "sha256": "b228571a2ec9cc357593821c30f7470cf139c63d8ea5c2d7f47115bc13d87a35"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/types.log",
+      "dest": "raw/candidate/first/types.log",
+      "bytes": 433,
+      "sha256": "11300ae075046e34b9de98d825c1b7e24a4c9e50b6dfe1d02b178321db779553"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/types.result.json",
+      "dest": "raw/candidate/first/types.result.json",
+      "bytes": 322,
+      "sha256": "133a8d9e466babdbf52af7a0d703bc96668e8ef2c920c90d28a707e0cf916bbb"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/unit.log",
+      "dest": "raw/candidate/first/unit.log",
+      "bytes": 126,
+      "sha256": "e07b1edfd8d1a72d41fbb67a13fe5fe4303b905c73919d0ae0b9c7749dbb20be"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/unit.raw.json",
+      "dest": "raw/candidate/first/unit.raw.json",
+      "bytes": 3568,
+      "sha256": "f29bcf61488d1b7d9faa9bfc2f13c2401c35bd5db6d5f5219ad139494d20c344"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/unit.result.json",
+      "dest": "raw/candidate/first/unit.result.json",
+      "bytes": 544,
+      "sha256": "410732371f1060e9ba3dd32514ffb7b1fa6293efd5f9d8d92d923d23b034aa2a"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/first/verification.json",
+      "dest": "raw/candidate/first/verification.json",
+      "bytes": 2253,
+      "sha256": "2a2f8688f92d9b29adac408cfa69a58c2a26451ca0f615c02c8cd9fe679a9e40"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/gpu-harness.png",
+      "dest": "raw/candidate/gpu-continuity/gpu-harness.png",
+      "bytes": 6433,
+      "sha256": "843988bffac3b9440bff1f163d46b3365526d3aa002a48c7eab15973c3f47162"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/gpu.raw.json",
+      "dest": "raw/candidate/gpu-continuity/gpu.raw.json",
+      "bytes": 197022,
+      "sha256": "733710d7d826ddb9f7f72fd07145ebc9ee104239d05736f07d5b7589bc83a158"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/lint.log",
+      "dest": "raw/candidate/gpu-continuity/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/lint.result.json",
+      "dest": "raw/candidate/gpu-continuity/lint.result.json",
+      "bytes": 945,
+      "sha256": "c607898d29f3e3a7fc446dad1caad94152759180e4f20389ecc3d68f8585997f"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/source-after.json",
+      "dest": "raw/candidate/gpu-continuity/source-after.json",
+      "bytes": 34171,
+      "sha256": "39c4122c4efa0cc30c6a30288a91165ee313104c1250fbe711b350cb623ef154"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/source-before.json",
+      "dest": "raw/candidate/gpu-continuity/source-before.json",
+      "bytes": 34171,
+      "sha256": "39c4122c4efa0cc30c6a30288a91165ee313104c1250fbe711b350cb623ef154"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/types.log",
+      "dest": "raw/candidate/gpu-continuity/types.log",
+      "bytes": 433,
+      "sha256": "11300ae075046e34b9de98d825c1b7e24a4c9e50b6dfe1d02b178321db779553"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/types.result.json",
+      "dest": "raw/candidate/gpu-continuity/types.result.json",
+      "bytes": 322,
+      "sha256": "df8c6edaeb5c67f02ccf858f2624f8d5d6a5a8dae4c792891b99653a2905d673"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-continuity/verification.json",
+      "dest": "raw/candidate/gpu-continuity/verification.json",
+      "bytes": 1803,
+      "sha256": "c46703ec95b1836482cd086763740b93622c53078c2d5a156df0163d0771bdf4"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/gpu-harness.png",
+      "dest": "raw/candidate/gpu-finite/gpu-harness.png",
+      "bytes": 6433,
+      "sha256": "843988bffac3b9440bff1f163d46b3365526d3aa002a48c7eab15973c3f47162"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/gpu.raw.json",
+      "dest": "raw/candidate/gpu-finite/gpu.raw.json",
+      "bytes": 197022,
+      "sha256": "899a525b03b49ba6d4584b54e1a9cdb6558aa621423afca79ba977f0605c3e3f"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/lint.log",
+      "dest": "raw/candidate/gpu-finite/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/lint.result.json",
+      "dest": "raw/candidate/gpu-finite/lint.result.json",
+      "bytes": 945,
+      "sha256": "eb76614f6c4f61af4c827051dbe6b680db03e954a898da3afc90be2bcf31bd5c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/source-after.json",
+      "dest": "raw/candidate/gpu-finite/source-after.json",
+      "bytes": 34171,
+      "sha256": "1c9a867518cee4613af4fc999cdc8e1ba222a5396081028b2ab08e4c42ce32ec"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/source-before.json",
+      "dest": "raw/candidate/gpu-finite/source-before.json",
+      "bytes": 34171,
+      "sha256": "1c9a867518cee4613af4fc999cdc8e1ba222a5396081028b2ab08e4c42ce32ec"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/types.log",
+      "dest": "raw/candidate/gpu-finite/types.log",
+      "bytes": 433,
+      "sha256": "11300ae075046e34b9de98d825c1b7e24a4c9e50b6dfe1d02b178321db779553"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/types.result.json",
+      "dest": "raw/candidate/gpu-finite/types.result.json",
+      "bytes": 322,
+      "sha256": "d7b03a21bb3824e5e0d014fd5a729e7faf5179d7addf092751020fe56b6d76b0"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/checks/gpu-finite/verification.json",
+      "dest": "raw/candidate/gpu-finite/verification.json",
+      "bytes": 1803,
+      "sha256": "601ff47449c3ebb71b1b42b99fad6b29e6ef0977e8be72e8fe00071617b6f646"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/baseline-manifest.json",
+      "dest": "preparation/baseline-manifest.json",
+      "bytes": 300,
+      "sha256": "3d4849e58706d3d2d7b43ec9077c41997172d3b21b5cf42e0f25e66531872bba"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/ready-manifest.json",
+      "dest": "preparation/ready-manifest.json",
+      "bytes": 3900,
+      "sha256": "76ca0377319662f5bf24026d9e9a7feac6f0b15cccb964affa096a5f4e8783f6"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/run.mjs",
+      "dest": "preparation/run.mjs",
+      "bytes": 5588,
+      "sha256": "ffcc519d03ea27d51db1828bc02d46696c37f140acd1317faab7873e0f769387"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/typecheck.mjs",
+      "dest": "preparation/typecheck.mjs",
+      "bytes": 1530,
+      "sha256": "911fb68ff346ae93a78f2f5e19a400c56295bcdf126b7d43218edbd86db471d1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/vitest.config.mjs",
+      "dest": "preparation/vitest.config.mjs",
+      "bytes": 1086,
+      "sha256": "27e33e24f72778b4aefb9a2120e4fe92493745b64afcce7409bf2ed46a3070bd"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/gpu-harness.ts",
+      "dest": "preparation/gpu-harness.ts",
+      "bytes": 15146,
+      "sha256": "9c0d3cca060c42cc23dc861c9840859b49ce197fafd879858e544a446497ea5a"
+    },
+    {
+      "source": ".autopilot/ph06/v4-continuous-light-staging/gpu-harness.html",
+      "dest": "preparation/gpu-harness.html",
+      "bytes": 220,
+      "sha256": "622fdddf725bf379ee4772481d1492fcc3ae5dae9d6fca7c62cb86deb73752e4"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/run.mjs",
+      "dest": "runners/run.mjs",
+      "bytes": 3609,
+      "sha256": "60d97688a2c4a765023354c97a250dfb0aac178d470af36c2e3593aa712ed503"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/browser.mjs",
+      "dest": "runners/browser.mjs",
+      "bytes": 2058,
+      "sha256": "f8452ee5f02d79dac9a2754b0e0a86d7ea9475cbd9c7cedfaf4c8c4f2c791ab4"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/playwright.config.ts",
+      "dest": "runners/playwright.config.ts",
+      "bytes": 713,
+      "sha256": "cb8062571e4392918b85f2b9ce9e61138fa665f776b54accbcc596d4cc2248c0"
+    },
+    {
+      "source": ".autopilot/ph06/archive-continuous-light.mjs",
+      "dest": "provenance/archive-continuous-light.mjs",
+      "bytes": 25418,
+      "sha256": "f349091c0aa870b328d0e796d2b909bab1410c2321df6d281af7a669a1f330f7"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-promotion.json",
+      "dest": "provenance/continuous-light-promotion.json",
+      "bytes": 848,
+      "sha256": "eea132fb5594b018f6af6591913e109f33a755d89031405a06e90c6c098fb241"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-review-final-delta.md",
+      "dest": "provenance/continuous-light-review-final-delta.md",
+      "bytes": 3737,
+      "sha256": "2ade5c2bf815ed1764e00fa024760a590111eeede26716851474e22be19d8f8d"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-review-first.md",
+      "dest": "provenance/continuous-light-review-first.md",
+      "bytes": 7799,
+      "sha256": "e0e7dcd353235e3db4290eec6674aa1b10ae3218f1e1629899c25f3058b5851c"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-review-plan.md",
+      "dest": "provenance/continuous-light-review-plan.md",
+      "bytes": 10168,
+      "sha256": "dab196195f978aadd00730b69c71014f38073cfe6fbfb2361ca4338800986bfe"
+    },
+    {
+      "source": ".autopilot/ph06/promote-continuous-light.mjs",
+      "dest": "provenance/promote-continuous-light.mjs",
+      "bytes": 1665,
+      "sha256": "08dd023dee9cebdec4c35a061cd4ecd82b3fdcf0de335a95071f9bb172c93f57"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/manual-before.json",
+      "dest": "observations/manual-before.json",
+      "bytes": 839,
+      "sha256": "01154b401d9c145cb2349f0bc52ad08f56ad459c74776f1a02b0e8970f2566e0"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/manual-before.png",
+      "dest": "observations/manual-before.png",
+      "bytes": 31758,
+      "sha256": "be8b2921df03ee26ff5764d7e6cd0822ffd844fbf9f61d00654f70cf8902b399"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/manual-after.json",
+      "dest": "observations/manual-after.json",
+      "bytes": 1182,
+      "sha256": "49d7245559706d81556cf3289648c23fed9305c7c2d170264f5f5f39c07327fe"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/manual-after.png",
+      "dest": "observations/manual-after.png",
+      "bytes": 31149,
+      "sha256": "aa83afd457b71623ca8bb079441e70f7a10e207973d45c4c301063af52b78eb8"
+    },
+    {
+      "source": ".autopilot/ph06/continuous-light-checks/visual.json",
+      "dest": "observations/visual.json",
+      "bytes": 1382,
+      "sha256": "5e35213780a69765855f744f9cddca0dd0df285674d2842211726fd2b73d6471"
+    },
+    {
+      "dest": "verification.json",
+      "generated": true,
+      "bytes": 129967,
+      "sha256": "08d074e0ba79e84652604415b06880a213695a6036d9597c86ac975f4e045df1"
+    },
+    {
+      "dest": "references.json",
+      "generated": true,
+      "bytes": 1702,
+      "sha256": "5014e8c4870f2c62b90f9c4dd6ecad077a33d7516d0892243015258dab85c206"
+    },
+    {
+      "dest": "README.md",
+      "generated": true,
+      "bytes": 1395,
+      "sha256": "48c35f16649cf0370e0e60552898ef196d5aac890de5c0061e7393de3732e1f4"
+    }
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-natural-repair-2026-09-27/raw/root/preflight-repair/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-repair-2026-09-27/verification.json",
+      "bytes": 122828,
+      "sha256": "d6e0d13068a4f82a480ada8328a1196f6e8c2e7bdd17da1332aff745b600f441",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-repair-2026-09-27/inventory.json",
+      "bytes": 48387,
+      "sha256": "1f1dffba5a139c1fb1df6d111be251bfe5f79b0164fb855393c51e9d316fd929",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-repair-2026-09-27/raw/root/preflight-repair/unit.json",
+      "bytes": 16254,
+      "sha256": "0b277e7491b7e4962c0c83f2a6763b65d100c1161c7ae58d1db30614af9dd541",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-repair-2026-09-27/raw/foundation/foundation-first/unit.json",
+      "bytes": 15779,
+      "sha256": "ebb6212409197f7a5d919c992780341dc63b5515cfe09b83ecbf88c0b4d493c2",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-2026-09-27/raw/root/first/unit.json",
+      "bytes": 400531,
+      "sha256": "89db5e3ef3fe569582cff4a9f34e09554e78ac2c163186720d75df75dbc0b6d9",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-2026-09-27/verification.json",
+      "bytes": 106915,
+      "sha256": "5857cdbbdd8d9f2923077c21679e80e98a67629ec5341453c5b2f3fe5316cbd0",
+      "copied": false
+    },
+    {
+      "path": "docs/adr/0019-shared-terrain-light.md",
+      "bytes": 2612,
+      "sha256": "c4eae92995c08ba0f10ad74fbc5879b849ac326dd0603640b6cc075b3830f020",
+      "copied": false
+    }
+  ],
+  "excludesSelf": true
+}

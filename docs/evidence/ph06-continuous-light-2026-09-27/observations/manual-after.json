@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-09-27T11:38:40.711Z",
+  "version": "0.5.0-preview.11",
+  "buildJsonSha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+  "source": "Actual saved IAB test world; no save exported.",
+  "cameraActions": [
+    {
+      "action": "reload resets to fit-all"
+    },
+    {
+      "action": "native mouseWheel",
+      "x": 676,
+      "y": 566,
+      "deltasY": [
+        -1200,
+        -1200,
+        -510
+      ]
+    }
+  ],
+  "visibleZoomPercent": 1120,
+  "savedRevision": 1,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "sameCameraConfirmed": true,
+  "warningAndErrorLogEntries": [],
+  "notes": [
+    "Repeated identical fit/reload and three native mouse wheel actions at the same screen anchor in the same viewport.",
+    "Root visually observed the same coast position and smoother continuous nearshore lighting; prior square tonal discontinuities are no longer apparent in this view.",
+    "This closes only the observed display-light defect; overall natural quality, cities, nations and performance remain unaccepted."
+  ]
+}

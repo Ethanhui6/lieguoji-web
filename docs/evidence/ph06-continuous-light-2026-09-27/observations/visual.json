@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-09-27T11:39:14.392Z",
+  "version": "0.5.0-preview.11",
+  "buildJsonSha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7",
+  "displayLightingAccepted": true,
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "scope": "Only the observed 2-world nearshore flat-light square discontinuities are closed in the same saved map and same 1120 percent viewport. Not whole natural geography, whole PH, user approval, physical device or performance acceptance.",
+  "manualComparison": {
+    "before": "manual-before.png",
+    "beforeSha256": "be8b2921df03ee26ff5764d7e6cd0822ffd844fbf9f61d00654f70cf8902b399",
+    "after": "manual-after.png",
+    "afterSha256": "aa83afd457b71623ca8bb079441e70f7a10e207973d45c4c301063af52b78eb8",
+    "sameSavedRevision": 1,
+    "sameCameraConfirmed": true
+  },
+  "observations": [
+    "Nearshore square tonal boundaries apparent before are no longer apparent after shared-node lighting.",
+    "Same shoreline position and shape visible; saved revision1 remains unchanged, no geography regeneration.",
+    "Overall terrain still sparse; inland sampling, natural mountain morphology, rivers and vegetation are unfinished. Nations, administration, cities, armies and war are not implemented in this Atlas."
+  ],
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

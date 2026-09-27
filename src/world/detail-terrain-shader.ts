@@ -1,11 +1,67 @@
 import { GlProgram, Shader, UniformGroup, type TextureSource } from 'pixi.js';
 import { detailTerrainPageLayout, detailTerrainSourceLedger } from './detail-terrain-pages';
 import { TERRAIN_LUT_WIDTH, TERRAIN_LUT_HEIGHT, TERRAIN_LUT_PIXELS } from './terrain-mesh';
+import type { DetailCoastVertex } from './detail-coast-types';
 
-export const DETAIL_TERRAIN_SHADER_VERSION = 'final-q8-pieces-gl2-relief-v1';
+export const DETAIL_TERRAIN_SHADER_VERSION = 'final-q8-pieces-gl2-shared-light-v2';
 
-/** CPU oracle for the shader's physical slope contract and future GPU colour
- * probes. This is not a fallback renderer or evidence of GPU execution. */
+const displayLight = (gx: number, gy: number) => 1 + Math.max(-.13, Math.min(.13, Math.atan((gx + gy) / 40) / (Math.PI / 2) * .13));
+type SideLights = readonly [land: number, sea: number];
+/** Display-only oracle. The geographic sampler, source heights and clipped
+ * geometry stay authoritative; this does not replace any pick/height path. */
+function lightCrossing(a: DetailCoastVertex, b: DetailCoastVertex): DetailCoastVertex {
+  if (a.coverageQ === 0) return a;
+  if (b.coverageQ === 0) return b;
+  if (a.xQ > b.xQ || a.xQ === b.xQ && a.yQ > b.yQ) [a, b] = [b, a];
+  const numerator = 512 * Math.abs(a.coverageQ), denominator = Math.abs(a.coverageQ - b.coverageQ);
+  const offset = Math.max(1, Math.min(511, Math.floor((2 * numerator + denominator) / (2 * denominator))));
+  return { xQ: a.xQ + Math.sign(b.xQ - a.xQ) * offset, yQ: a.yQ + Math.sign(b.yQ - a.yQ) * offset, coverageQ: 0, heightMeters: 0 };
+}
+/** Each node has an independent light on each side. Opposite-domain heights
+ * never enter a slope: an axis stops at the actual quantized zero crossing. */
+export function detailTerrainNodeLights(node: DetailCoastVertex, west: DetailCoastVertex, east: DetailCoastVertex, north: DetailCoastVertex, south: DetailCoastVertex): SideLights {
+  const light = (land: boolean) => {
+    const inside = (point: DetailCoastVertex) => land ? point.coverageQ >= 0 : point.coverageQ <= 0;
+    if (!inside(node)) return 1;
+    const sameSide = (point: DetailCoastVertex) => inside(point) ? point : lightCrossing(node, point);
+    const w = sameSide(west), e = sameSide(east), n = sameSide(north), s = sameSide(south);
+    const gx = e.xQ === w.xQ ? 0 : 256 * (e.heightMeters - w.heightMeters) / (e.xQ - w.xQ);
+    const gy = s.yQ === n.yQ ? 0 : 256 * (s.heightMeters - n.heightMeters) / (s.yQ - n.yQ);
+    return displayLight(gx, gy);
+  };
+  return [light(true), light(false)];
+}
+/** Bounded CPU reference for GPU probes: twelve unique source nodes at most,
+ * independent of mesh origin, page boundaries and which source fan is hit. */
+export function detailTerrainCellLighting(sampleNode: (x: number, y: number) => DetailCoastVertex, column: number, row: number) {
+  if (!Number.isInteger(column) || !Number.isInteger(row) || column < 0 || row < 0 || column > 2047 || row > 2047) throw new Error('细地形光照格坐标无效。');
+  const samples = new Map<number, DetailCoastVertex>();
+  const read = (x: number, y: number) => {
+    x = Math.max(0, Math.min(2048, x)); y = Math.max(0, Math.min(2048, y));
+    const key = y * 2049 + x, known = samples.get(key); if (known) return known;
+    const node = sampleNode(x, y); samples.set(key, node); return node;
+  };
+  const coordinates = [[column, row], [column + 1, row], [column + 1, row + 1], [column, row + 1]];
+  const nodes = coordinates.map(([x, y]) => read(x, y));
+  const lights = coordinates.map(([x, y], i) => detailTerrainNodeLights(nodes[i], read(x - 1, y), read(x + 1, y), read(x, y - 1), read(x, y + 1)));
+  const same = (a: DetailCoastVertex, b: DetailCoastVertex) => a.xQ === b.xQ && a.yQ === b.yQ;
+  return {
+    sampledNodes: samples.size,
+    lightAt(vertex: DetailCoastVertex, land: boolean): number {
+      const side = land ? 0 : 1, corner = nodes.findIndex(node => same(vertex, node));
+      if (corner >= 0) return lights[corner][side];
+      for (const [a, b] of [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2]]) {
+        if (nodes[a].coverageQ * nodes[b].coverageQ >= 0 || !same(vertex, lightCrossing(nodes[a], nodes[b]))) continue;
+        return lights[(land ? nodes[a].coverageQ > 0 : nodes[a].coverageQ < 0) ? a : b][side];
+      }
+      throw new Error('光照点必须属于实际细格的源角点或规范裁切交点。');
+    },
+  };
+}
+
+/** Analytic derivative of the authoritative height piece. Display lighting now
+ * interpolates shared node lights; this derivative remains an independent
+ * physical-height oracle, not a claim of GPU execution or display continuity. */
 export function detailTerrainPieceRelief(a: { xQ: number; yQ: number; heightMeters: number }, b: typeof a, c: typeof a) {
   const abx = b.xQ - a.xQ, aby = b.yQ - a.yQ, acx = c.xQ - a.xQ, acy = c.yQ - a.yQ;
   const area = abx * acy - aby * acx;
@@ -76,7 +132,7 @@ uniform sampler2D uDetailLandLut;
 uniform sampler2D uDetailSeaLut;
 out vec4 finalColor;
 
-struct FineVertex { ivec2 q; int coverage; int height; };
+struct FineVertex { ivec2 q; int coverage; int height; vec2 lights; };
 vec4 fetchPage(int page, ivec2 address) {
   if (page == 0) return texelFetch(uDetailPage0, address, 0);
   if (page == 1) return texelFetch(uDetailPage1, address, 0);
@@ -93,7 +149,11 @@ FineVertex nodeAt(ivec2 node, ivec2 localQ) {
   int page = index / 1048576;
   int texel = index - page * 1048576;
   ivec4 bytes = ivec4(floor(fetchPage(page, ivec2(texel % 1024, texel / 1024)) * 255.0 + 0.5));
-  return FineVertex(localQ, signed16(bytes.r, bytes.g), signed16(bytes.b, bytes.a));
+  return FineVertex(localQ, signed16(bytes.r, bytes.g), signed16(bytes.b, bytes.a), vec2(1.0));
+}
+FineVertex neighbourAt(ivec2 node, ivec2 localQ, FineVertex boundary) {
+  if (any(lessThan(node, ivec2(0))) || any(greaterThan(node, ivec2(2048)))) return boundary;
+  return nodeAt(node, localQ);
 }
 int areaQ(ivec2 a, ivec2 b, ivec2 c) {
   ivec2 ab = b - a, ac = c - a;
@@ -114,9 +174,28 @@ FineVertex crossing(FineVertex a, FineVertex b) {
   // Max numerator expression is 33,618,942: signed highp int is exact.
   // Both operands are positive, so integer division equals CPU floor.
   int offset = clamp((2 * numerator + denominator) / (2 * denominator), 1, 511);
-  return FineVertex(a.q + sign(difference) * offset, 0, 0);
+  // Each side uses its own source endpoint's shared light. The canonical
+  // edge gives exactly the same pair from either incident cell/fan.
+  vec2 lights = vec2(a.coverage > 0 ? a.lights.x : b.lights.x, a.coverage < 0 ? a.lights.y : b.lights.y);
+  return FineVertex(a.q + sign(difference) * offset, 0, 0, lights);
 }
 bool inside(FineVertex vertex, bool land) { return land ? vertex.coverage >= 0 : vertex.coverage <= 0; }
+FineVertex sameSideNode(FineVertex node, FineVertex neighbour, bool land) {
+  if (inside(neighbour, land)) return neighbour;
+  return crossing(node, neighbour);
+}
+float nodeLight(FineVertex node, FineVertex west, FineVertex east, FineVertex north, FineVertex south, bool land) {
+  if (!inside(node, land)) return 1.0;
+  FineVertex w = sameSideNode(node, west, land), e = sameSideNode(node, east, land);
+  FineVertex n = sameSideNode(node, north, land), s = sameSideNode(node, south, land);
+  float gx = e.q.x == w.q.x ? 0.0 : 256.0 * float(e.height - w.height) / float(e.q.x - w.q.x);
+  float gy = s.q.y == n.q.y ? 0.0 : 256.0 * float(s.height - n.height) / float(s.q.y - n.q.y);
+  float slope = atan((gx + gy) / 40.0) / 1.5707963267948966;
+  return 1.0 + clamp(slope * 0.13, -0.13, 0.13);
+}
+vec2 nodeLights(FineVertex node, FineVertex west, FineVertex east, FineVertex north, FineVertex south) {
+  return vec2(nodeLight(node, west, east, north, south, true), nodeLight(node, west, east, north, south, false));
+}
 int clipped(FineVertex triangle[3], bool land, out FineVertex polygon[6]) {
   FineVertex raw[6]; int count = 0;
   for (int edge = 0; edge < 3; edge++) {
@@ -133,41 +212,44 @@ int clipped(FineVertex triangle[3], bool land, out FineVertex polygon[6]) {
   }
   return kept;
 }
-bool triangleHit(FineVertex a, FineVertex b, FineVertex c, vec2 target, out float height, out vec2 gradient) {
-  gradient = vec2(0.0);
+bool triangleHit(FineVertex a, FineVertex b, FineVertex c, bool land, vec2 target, out float height, out float light) {
+  light = 1.0;
   int area = areaQ(a.q, b.q, c.q);
   if (area <= 0) return false;
   vec2 aq = vec2(a.q), bq = vec2(b.q), cq = vec2(c.q);
   if (crossAt(aq, bq, target) < 0.0 || crossAt(bq, cq, target) < 0.0 || crossAt(cq, aq, target) < 0.0) return false;
   height = (crossAt(target, bq, cq) * float(a.height) + crossAt(aq, target, cq) * float(b.height) + crossAt(aq, bq, target) * float(c.height)) / float(area);
-  // The very same canonical clipped piece supplies its analytic height plane.
-  // q is local Q8; multiply by 256 for metres per world unit, not per Q8 unit.
-  vec2 ab = bq - aq, ac = cq - aq;
-  float dhb = float(b.height - a.height), dhc = float(c.height - a.height);
-  gradient = 256.0 * vec2(dhb * ac.y - dhc * ab.y, ab.x * dhc - ac.x * dhb) / float(area);
+  // Only display light is reconstructed continuously. Height above remains
+  // the exact canonical clipped height plane, including one-Q8 slivers.
+  float la = land ? a.lights.x : a.lights.y, lb = land ? b.lights.x : b.lights.y, lc = land ? c.lights.x : c.lights.y;
+  light = (crossAt(target, bq, cq) * la + crossAt(aq, target, cq) * lb + crossAt(aq, bq, target) * lc) / float(area);
   return true;
 }
-bool pieceHit(FineVertex triangle[3], bool land, vec2 target, out float height, out vec2 gradient) {
+bool pieceHit(FineVertex triangle[3], bool land, vec2 target, out float height, out float light) {
   bool allLand = triangle[0].coverage >= 0 && triangle[1].coverage >= 0 && triangle[2].coverage >= 0;
   // The all-zero source triangle is entirely land and emits no sea piece.
-  if (allLand) return land && triangleHit(triangle[0], triangle[1], triangle[2], target, height, gradient);
+  if (allLand) return land && triangleHit(triangle[0], triangle[1], triangle[2], land, target, height, light);
   FineVertex polygon[6]; int count = clipped(triangle, land, polygon);
   for (int index = 1; index < 5; index++) {
     if (index + 1 >= count) break;
-    if (triangleHit(polygon[0], polygon[index], polygon[index + 1], target, height, gradient)) return true;
+    if (triangleHit(polygon[0], polygon[index], polygon[index + 1], land, target, height, light)) return true;
   }
   return false;
 }
-bool zeroHit(FineVertex triangle[3], vec2 target) {
+bool zeroHit(FineVertex triangle[3], vec2 target, out float light) {
+  light = 1.0;
   for (int edge = 0; edge < 3; edge++) {
     FineVertex a = triangle[edge], b = triangle[(edge + 1) % 3];
-    if (a.coverage == 0 && all(equal(vec2(a.q), target))) return true;
+    if (a.coverage == 0 && all(equal(vec2(a.q), target))) { light = a.lights.x; return true; }
     if (a.coverage == 0 && b.coverage == 0 && crossAt(vec2(a.q), vec2(b.q), target) == 0.0
-      && all(greaterThanEqual(target, vec2(min(a.q, b.q)))) && all(lessThanEqual(target, vec2(max(a.q, b.q))))) return true;
+      && all(greaterThanEqual(target, vec2(min(a.q, b.q)))) && all(lessThanEqual(target, vec2(max(a.q, b.q))))) {
+      float t = a.q.x != b.q.x ? (target.x - float(a.q.x)) / float(b.q.x - a.q.x) : (target.y - float(a.q.y)) / float(b.q.y - a.q.y);
+      light = mix(a.lights.x, b.lights.x, t); return true;
+    }
   }
   return false;
 }
-void writeResult(bool land, float height, vec2 gradient) {
+void writeResult(bool land, float height, float light) {
   if (uDetailDiagnostic == 1) {
     // RGB24: bit 23 is land; lower 23 bits encode (metres+12000)*256.
     // Alpha is always opaque so ordinary premultiplied-alpha output preserves
@@ -178,10 +260,8 @@ void writeResult(bool land, float height, vec2 gradient) {
     return;
   }
   float normalized = clamp((height + (land ? 0.0 : 12000.0)) / 12000.0, 0.0, 1.0);
-  // Match terrain-material's fixed NW light at fine step=2. The original
-  // 0.87..1.13 LUT contrast stays bounded even on one-Q8 coastal slivers.
-  float slope = atan((gradient.x + gradient.y) / 40.0) / 1.5707963267948966;
-  float light = 1.0 + clamp(slope * 0.13, -0.13, 0.13);
+  // Same bounded physical palette; only the shared display-light field is
+  // interpolated. Sea and land continue to use separate material sources.
   float normalizedLight = clamp((light - 0.87) / 0.26, 0.0, 1.0);
   vec2 uv = vec2((0.5 + normalized * 1200.0) / 1201.0, (0.5 + normalizedLight * 32.0) / 33.0);
   finalColor = land ? texture(uDetailLandLut, uv) : texture(uDetailSeaLut, uv);
@@ -198,14 +278,24 @@ void main() {
   if (cell.y == 2048) { cell.y = 2047; target.y = 512.0; }
   FineVertex nw = nodeAt(cell, ivec2(0, 0)), ne = nodeAt(cell + ivec2(1, 0), ivec2(512, 0));
   FineVertex se = nodeAt(cell + ivec2(1, 1), ivec2(512, 512)), sw = nodeAt(cell + ivec2(0, 1), ivec2(0, 512));
+  // Twelve unique reads total: the four real corners plus eight axis-neighbours.
+  // No page format change, full-world light texture or extra source allocation.
+  FineVertex nwW = neighbourAt(cell + ivec2(-1, 0), ivec2(-512, 0), nw), nwN = neighbourAt(cell + ivec2(0, -1), ivec2(0, -512), nw);
+  FineVertex neN = neighbourAt(cell + ivec2(1, -1), ivec2(512, -512), ne), neE = neighbourAt(cell + ivec2(2, 0), ivec2(1024, 0), ne);
+  FineVertex seE = neighbourAt(cell + ivec2(2, 1), ivec2(1024, 512), se), seS = neighbourAt(cell + ivec2(1, 2), ivec2(512, 1024), se);
+  FineVertex swS = neighbourAt(cell + ivec2(0, 2), ivec2(0, 1024), sw), swW = neighbourAt(cell + ivec2(-1, 1), ivec2(-512, 512), sw);
+  nw.lights = nodeLights(nw, nwW, ne, nwN, sw);
+  ne.lights = nodeLights(ne, nw, neE, neN, se);
+  se.lights = nodeLights(se, sw, seE, ne, seS);
+  sw.lights = nodeLights(sw, swW, se, nw, swS);
   FineVertex upper[3] = FineVertex[3](nw, ne, se);
   FineVertex lower[3] = FineVertex[3](nw, se, sw);
   float height = 0.0;
-  vec2 gradient = vec2(0.0);
+  float light = 1.0;
   // Match CPU's complete land pass, zero-edge pass, then complete sea pass.
-  if (pieceHit(upper, true, target, height, gradient) || pieceHit(lower, true, target, height, gradient)) { writeResult(true, height, gradient); return; }
-  if (zeroHit(upper, target) || zeroHit(lower, target)) { writeResult(true, 0.0, vec2(0.0)); return; }
-  if (pieceHit(upper, false, target, height, gradient) || pieceHit(lower, false, target, height, gradient)) { writeResult(false, height, gradient); return; }
+  if (pieceHit(upper, true, target, height, light) || pieceHit(lower, true, target, height, light)) { writeResult(true, height, light); return; }
+  if (zeroHit(upper, target, light) || zeroHit(lower, target, light)) { writeResult(true, 0.0, light); return; }
+  if (pieceHit(upper, false, target, height, light) || pieceHit(lower, false, target, height, light)) { writeResult(false, height, light); return; }
   // Uncovered output is explicitly invalid, never an invented sea fallback.
   finalColor = vec4(0.0);
 }

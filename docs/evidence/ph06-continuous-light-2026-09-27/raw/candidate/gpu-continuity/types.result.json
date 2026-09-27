@@ -1,0 +1,12 @@
+{
+  "name": "types",
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\typecheck.mjs"
+  ],
+  "startedAt": "2026-09-27T11:33:29.516Z",
+  "endedAt": "2026-09-27T11:33:34.465Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null
+}

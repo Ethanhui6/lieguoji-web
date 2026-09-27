@@ -1,0 +1,10 @@
+{
+  "unitFiles": [
+    "src/world/detail-terrain-light.test.ts",
+    "src/world/detail-terrain-shader.test.ts",
+    "src/world/detail-terrain-pages.test.ts",
+    "src/world/detail-terrain-backend.test.ts"
+  ],
+  "reuse": "preview10 32/34 selected checks and unchanged 908-world scope preserved in ph06-natural-repair evidence. No game simulation or generator code changed. Isolated actual GPU candidate evidence binds exact shader bytes; actual product views checked separately.",
+  "cloudWrites": false
+}

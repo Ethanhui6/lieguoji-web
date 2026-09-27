@@ -1,0 +1,19 @@
+{
+  "name": "lint",
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "node_modules/eslint/bin/eslint.js",
+    "--no-ignore",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\src\\world\\detail-terrain-shader.ts",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\src\\world\\detail-terrain-light.test.ts",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\gpu-harness.ts",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\run.mjs",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\typecheck.mjs",
+    "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-continuous-light-staging\\vitest.config.mjs"
+  ],
+  "startedAt": "2026-09-27T11:33:27.961Z",
+  "endedAt": "2026-09-27T11:33:29.515Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null
+}

@@ -96,7 +96,7 @@ export class AtlasWorkerRuntime {
   private durableControl(active: Active) { return { onProgress: this.control(active).onProgress }; }
   private async openStorageSession(active: Active, root: AtlasStoredRoot) {
     active.timing.partialReasons.push('storage-session-open-or-reopen');
-    const session = await storage.getAtlasStorage(root.domain === 'atlas-draft-v2' ? 2 : 1).openAtlasStorageSession(root.draftId, active.durable ? this.durableControl(active) : this.control(active));
+    const session = await storage.getAtlasStorage(root.domain === 'atlas-draft-v3' ? 3 : root.domain === 'atlas-draft-v2' ? 2 : 1).openAtlasStorageSession(root.draftId, active.durable ? this.durableControl(active) : this.control(active));
     if (!session || session.currentRootDigest !== root.rootDigest) { session?.close(); throw new Error('草稿持久根在载入时已变化，请刷新后重新读取。'); }
     return session;
   }
@@ -180,14 +180,15 @@ export class AtlasWorkerRuntime {
   }
   private async execute(active: Active, operation: AtlasOperation, payload: Uint8Array) {
     if (!operation || typeof operation !== 'object') throw new Error('草稿操作格式无效。');
-    if (operation.atlasFormat !== undefined && operation.atlasFormat !== 1 && operation.atlasFormat !== 2) throw new Error('未知草稿格式，未选择其他数据库。');
+    if (operation.atlasFormat !== undefined && operation.atlasFormat !== 1 && operation.atlasFormat !== 2 && operation.atlasFormat !== 3) throw new Error('未知草稿格式，未选择其他数据库。');
     const control = this.control(active), database = storage.getAtlasStorage(operation.atlasFormat ?? this.session?.format ?? 1);
     if (this.generationSession?.pending && !['generation-confirm', 'generation-discard', 'receipt', 'list'].includes(operation.type)) throw new Error('请先确认或取消生成预览。');
     if (this.constraintsSession?.pending && !['constraints-confirm', 'constraints-discard', 'receipt', 'list'].includes(operation.type)) throw new Error('请先确认或取消区域锁预览。');
     if (operation.type === 'list') { this.post(active.id, 'complete', { operation: 'list', entries: await database.listAtlasDrafts(control) }); return; }
     if (operation.type === 'receipt') { this.post(active.id, 'complete', { operation: 'receipt', receipt: await database.findAtlasReceipt(operation.draftId, operation.commandId, control) }); return; }
     if (operation.type === 'create') {
-      const data = await (database.format === 2 ? createGenerationDraft : createAtlasDraft)({ ...operation.options, draftId: operation.draftId }, control);
+      const options = { ...operation.options, draftId: operation.draftId };
+      const data = await (database.format === 1 ? createAtlasDraft(options, control) : createGenerationDraft(options, control, database.format));
       const receipt = await this.persist(active, data, operation.commandId, crypto.randomUUID(), null);
       const nextStorage = await this.openStorageSession(active, receipt.root);
       try { const session = await OwnedAtlasSession.open(data, receipt.rootDigest, this.durableControl(active)); await this.initialize(active, session, receipt.root, false, nextStorage); }
@@ -200,7 +201,7 @@ export class AtlasWorkerRuntime {
       try {
         const handle = operation.source === 'current' ? nextStorage?.handle : await database.openAtlasDraft(operation.draftId, { ...control, source: 'backup' });
         if (!handle) throw new Error('没有找到该草稿存档。');
-        const data = (handle.manifest.version === 2 ? { manifest: handle.manifest, blocks: new Map(), locks: new Map() } : { manifest: handle.manifest, blocks: new Map() }) as AtlasDocument; let cursor: number | null = 0;
+        const data = (handle.manifest.version !== 1 ? { manifest: handle.manifest, blocks: new Map(), locks: new Map() } : { manifest: handle.manifest, blocks: new Map() }) as AtlasDocument; let cursor: number | null = 0;
         while (cursor !== null) {
           const page: AtlasBlockPage = nextStorage ? await nextStorage.readPage(cursor, control) : await database.readAtlasBlockPage(handle, cursor, control);
           for (const block of page.blocks) { const key = blockKey(block.layer, block.bx, block.by); if (data.blocks.has(key)) throw new Error('存档分页出现重复块。'); data.blocks.set(key, block); }
@@ -223,9 +224,11 @@ export class AtlasWorkerRuntime {
       if (operation.candidateId !== c.candidateId || operation.previewDigest !== c.previewDigest || operation.expectedRevision !== c.expectedRevision || operation.expectedRootDigest !== c.expectedRootDigest) throw new Error('已提交区域锁的重复确认与原候选不一致。');
       this.post(active.id, 'complete', { operation: 'constraints-receipt', receipt: structuredClone(completed.receipt) }); return;
     }
-    if (operation.type === 'generation-copy' || operation.type === 'fork' && this.session.format === 2) {
+    if (operation.type === 'generation-copy' || operation.type === 'fork' && this.session.format !== 1) {
       const source = this.session.snapshot(), head = this.session.head;
-      const data = await createGenerationCopy(source, { format: 'lieguoji-atlas-copy-origin', version: 1, sourceFormat: source.manifest.version, sourceDraftId: head.draftId, sourceSlot: this.sourceSlot, sourceManifestDigest: head.manifestDigest, sourceManifestRevision: head.revision, observedRootDigest: this.root.rootDigest }, { draftId: operation.draftId, name: operation.name }, control);
+      const format = operation.type === 'generation-copy' ? operation.targetFormat ?? 2 : this.session.format;
+      if (format !== 2 && format !== 3) throw new Error('创世副本目标格式无效。');
+      const data = await createGenerationCopy(source, { format: 'lieguoji-atlas-copy-origin', version: 1, sourceFormat: source.manifest.version, sourceDraftId: head.draftId, sourceSlot: this.sourceSlot, sourceManifestDigest: head.manifestDigest, sourceManifestRevision: head.revision, observedRootDigest: this.root.rootDigest }, { draftId: operation.draftId, name: operation.name, format }, control);
       const receipt = await this.persist(active, data, operation.commandId, crypto.randomUUID(), null), nextStorage = await this.openStorageSession(active, receipt.root);
       try { await this.initialize(active, await OwnedAtlasSession.open(data, receipt.rootDigest, this.durableControl(active)), receipt.root, false, nextStorage); }
       catch (error) { nextStorage.close(); throw error; } return;

@@ -73,6 +73,32 @@ beforeEach(() => { globalThis.indexedDB = new IDBFactory(); LoopWorker.instances
 afterEach(async () => { clients.splice(0).forEach(value => value.close()); await nextTask(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('atlas Worker durable authority with real binary transport and isolated IDB', () => {
+  it('creates, edits, restores and forks v3 in its own domain through actual packet validation', async () => {
+    const c = client({ format: 3 }), initial = await c.create(createOptions);
+    expect(initial.data.manifest).toMatchObject({ version: 3, surface: { kind: 'land-mask-fan-v1', coordinateScale: 256 } });
+    const edited = await c.edit(elevation(500), '绘制一处岛屿');
+    expect(edited.head.revision).toBe(1);
+    expect((await storage.getAtlasStorage(3).openAtlasDraft(initial.head.draftId))?.root.domain).toBe('atlas-draft-v3');
+    expect(await storage.getAtlasStorage(2).openAtlasDraft(initial.head.draftId)).toBeNull();
+    expect((await client({ format: 3 }).restore(initial.head.draftId)).data).toEqual(edited.data);
+    const forked = await c.fork('自然海岸独立副本');
+    expect(forked.data.manifest).toMatchObject({ version: 3, origin: { sourceFormat: 3, sourceDraftId: initial.head.draftId } });
+    expect(forked.head.draftId).not.toBe(initial.head.draftId);
+    expect(forked.data.blocks).toEqual(edited.data.blocks);
+    expect(LoopWorker.instances.flatMap(w => w.packets).every(p => p.bytes <= ATLAS_PACKET_LIMIT)).toBe(true);
+  }, 30000);
+
+  it('copies v2 explicitly into v3 without changing the old root and rejects an implicit downgrade', async () => {
+    const c = client({ format: 2 }), original = await c.create(createOptions);
+    const source = await storage.getAtlasStorage(2).openAtlasDraft(original.head.draftId);
+    const next = await c.generationCopy('连续海岸副本', 3);
+    expect(next.data.manifest).toMatchObject({ version: 3, origin: { sourceFormat: 2, sourceDraftId: original.head.draftId } });
+    expect(next.data.blocks).toEqual(original.data.blocks);
+    expect(await storage.getAtlasStorage(2).openAtlasDraft(original.head.draftId)).toEqual(source);
+    await expect(c.generationCopy('不能降格')).rejects.toThrow();
+    expect((await storage.getAtlasStorage(3).openAtlasDraft(next.head.draftId))?.root.currentManifest).toBe(next.head.manifestDigest);
+  }, 30000);
+
   it('rejects an unknown restore source before opening any storage path', async () => {
     const open = vi.spyOn(storageV1, 'openAtlasStorageSession'), backup = vi.spyOn(storageV1, 'openAtlasDraft');
     let deliver!: (body: unknown) => void;
@@ -634,7 +660,7 @@ describe('PH06 constraints through real Worker transport and IDB', () => {
 
   it('refuses v1 and read-only lock edits without creating or modifying their storage domains', async () => {
     const legacy = client(), old = await legacy.create(createOptions), oldBytes = await databaseSnapshot(1), requests = LoopWorker.instances[0].packets.length;
-    await expect(legacy.previewConstraints({ column: 0, row: 0, columns: 1, rows: 1 }, 1, 'set')).rejects.toThrow('第二版');
+    await expect(legacy.previewConstraints({ column: 0, row: 0, columns: 1, rows: 1 }, 1, 'set')).rejects.toThrow('请先打开可编辑的创世草稿。');
     expect(LoopWorker.instances[0].packets).toHaveLength(requests); expect(await databaseSnapshot(1)).toEqual(oldBytes);
     expect((await indexedDB.databases()).map(db => db.name)).not.toContain('lieguoji-atlas-drafts-v2');
     const c = client({ format: 2 }), fresh = await c.create(createOptions); await c.edit(elevation(600), '创建备份'); await c.restore(fresh.head.draftId, 'backup');

@@ -24,9 +24,9 @@ export interface Metrics {
   lod: string; cellPixels: number; gridVisible: boolean; completedFrameSequence: number; displaySource: string;
   acceptedRevision: number; committedRevision: number; displayRevision: number;
 }
-export async function saved(page: Page, draftId: string): Promise<SavedSnapshot> {
-  return page.evaluate(id => new Promise<SavedSnapshot>((resolve, reject) => {
-    const request = indexedDB.open('lieguoji-atlas-drafts-v2', 1);
+export async function saved(page: Page, draftId: string, format: 2 | 3 = 2): Promise<SavedSnapshot> {
+  return page.evaluate(({ id, format }) => new Promise<SavedSnapshot>((resolve, reject) => {
+    const request = indexedDB.open(`lieguoji-atlas-drafts-v${format}`, 1);
     request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const db = request.result, tx = db.transaction(['roots', 'manifests'], 'readonly'); let result: SavedSnapshot;
@@ -42,12 +42,12 @@ export async function saved(page: Page, draftId: string): Promise<SavedSnapshot>
       };
       tx.oncomplete = () => { db.close(); resolve(result); }; tx.onabort = () => { db.close(); reject(tx.error ?? new Error('Missing saved draft')); };
     };
-  }), draftId);
+  }), { id: draftId, format });
 }
-export async function databaseDigest(page: Page) {
-  return page.evaluate(async () => {
+export async function databaseDigest(page: Page, format: 2 | 3 = 2) {
+  return page.evaluate(async format => {
     const rows = await new Promise<{ store: string; keys?: IDBValidKey[]; values?: unknown[] }[]>((resolve, reject) => {
-      const request = indexedDB.open('lieguoji-atlas-drafts-v2', 1);
+      const request = indexedDB.open(`lieguoji-atlas-drafts-v${format}`, 1);
       request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result, names = [...db.objectStoreNames].sort(), tx = db.transaction(names, 'readonly'), values = names.map(store => ({ store })) as { store: string; keys?: IDBValidKey[]; values?: unknown[] }[];
@@ -60,12 +60,12 @@ export async function databaseDigest(page: Page) {
     });
     const bytes = new TextEncoder().encode(JSON.stringify(rows, (_key, value) => value instanceof Uint8Array ? [...value] : value));
     return { bytes: bytes.length, sha256: [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('') };
-  });
+  }, format);
 }
 export async function geography(page: Page, manifest: SavedManifest): Promise<Geography> {
-  return page.evaluate(async ({ spec, refs }) => {
+  return page.evaluate(async ({ spec, refs, format }) => {
     const records = await new Promise<{ key: string; hash: string; bytes: Uint8Array }[]>((resolve, reject) => {
-      const request = indexedDB.open('lieguoji-atlas-drafts-v2', 1);
+      const request = indexedDB.open(`lieguoji-atlas-drafts-v${format}`, 1);
       request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result, tx = db.transaction('blocks', 'readonly'), records: { key: string; hash: string; bytes: Uint8Array }[] = [];
@@ -117,7 +117,7 @@ export async function geography(page: Page, manifest: SavedManifest): Promise<Ge
     for (const layer of layers) for (let by = 0; by < spec.rows / 32; by++) for (let bx = 0; bx < spec.columns / 32; bx++) if (!seenKeys.has(`${layer}:${bx}:${by}`)) throw new Error('Incomplete full geography');
     if (vertexSeen.some(value => value !== 1) || cellSeen.some(value => value !== 1) || records.length !== 4 * (spec.columns / 32) * (spec.rows / 32)) throw new Error('Missing real cells/vertices');
     return { heights: [...heights], xyQ: [...xyQ], verifiedBlocks: records.length };
-  }, { spec: manifest.spec, refs: manifest.blockRefs });
+  }, { spec: manifest.spec, refs: manifest.blockRefs, format: manifest.version === 3 ? 3 : 2 });
 }
 
 export async function audit(page: Page): Promise<Audit> {

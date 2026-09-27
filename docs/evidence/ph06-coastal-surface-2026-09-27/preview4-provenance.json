@@ -1,0 +1,96 @@
+{
+  "commit": "147702e8c87e529f75b399f61503f58c9ea85e11",
+  "buildPath": "docs/evidence/ph06-continuous-2026-09-27/build.json",
+  "buildSha256": "c096754324425cc86e6fc3b9e81839362f8853c8d35ae14b3d1708f060d8b427",
+  "generators": {
+    "macroGenerator": {
+      "sha256": "8a93d4eec5d43838c219d5be4ed0254b8b3b5a62576d5bc867d6f2c02f1ddaa1",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/macro.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "landformGenerator": {
+      "sha256": "8279d38e99ca772e9146ebef115c0f41dd13409a2ff850aa2e9b5e1b4a5b554b",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/landforms.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "islandGenerator": {
+      "sha256": "8c4fb730d7f3f6320d6c812a2a7955bdf14ef804c34f8aeca3cf3a097647881b",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/islands.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "coastGenerator": {
+      "sha256": "bc540fd8c1e9a41efdfa2e22fdee766bbf5dc13ae8a94347a1d9f1bd29022c9c",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/coast.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "shapeGenerator": {
+      "sha256": "80bc0c4e4281509035a93c08816b6a52d3ce561b4356e34deca9b0a0382fc99f",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/shape.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "oceanGenerator": {
+      "sha256": "946c6b2dc875138db50d61bf88e8cae8e5ea058587f172ace75db2a3bf80f448",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/ocean.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    }
+  },
+  "verified": true
+}

@@ -1,0 +1,17 @@
+{
+  "delta": [
+    ".autopilot/ph06/coastal-checks/browser-recheck.config.ts",
+    ".autopilot/ph06/coastal-checks/browser-recheck.mjs",
+    "tests/atlas-coastal-surface.spec.ts"
+  ],
+  "removed": [
+    ".autopilot/ph06/coastal-checks/repair.mjs"
+  ],
+  "productSourceUnchanged": true,
+  "distUnchanged": true,
+  "rechecked": [
+    "coastal-entry",
+    "coastal-copy"
+  ],
+  "reason": "Entry test now opens the existing World panel before using its visible control; copy notice assertion matches actual text. No assertions about identity, format, storage bytes or reload are removed."
+}

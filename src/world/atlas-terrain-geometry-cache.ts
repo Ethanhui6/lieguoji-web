@@ -6,6 +6,10 @@ export const ATLAS_TERRAIN_GEOMETRY_ENTRY_LIMIT = 128;
 export const ATLAS_TERRAIN_GEOMETRY_QUAD_LIMIT = 131072;
 /** At most five vertices (position + UV) and twelve uint32 indices per quad. */
 export const ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD = 128;
+/** Four source triangles; clipping each creates at most three triangles.
+ * Separate triangle vertices use 16 bytes (position/UV), and indices 4 each.
+ * The global byte budget stays at the original 128 * quadLimit. */
+export const ATLAS_COASTAL_BUFFER_BYTES_PER_QUAD = 720;
 export interface AtlasTerrainBufferMetrics { bytes: number; vertices: number; triangles: number; shoreSegments: number }
 export type AtlasRetainedTerrain = Container & { terrainBuffers?: AtlasTerrainBufferMetrics };
 export type AtlasTerrainGeometrySpec = {
@@ -13,6 +17,7 @@ export type AtlasTerrainGeometrySpec = {
   blockKey: BlockKey;
   bounds: AtlasAabb;
   dependencies: { key: BlockKey; hash: string }[];
+  coastal?: boolean;
 };
 type Entry = { spec: AtlasTerrainGeometrySpec; graphics: AtlasRetainedTerrain; quads: number; buffers: AtlasTerrainBufferMetrics; used: number };
 const contains = (outer: AtlasAabb, inner: AtlasAabb) => outer.minX <= inner.minX && outer.minY <= inner.minY && outer.maxX >= inner.maxX && outer.maxY >= inner.maxY;
@@ -56,7 +61,7 @@ export class AtlasTerrainGeometryCache {
   get(spec: AtlasTerrainGeometrySpec, refs: ReadonlyMap<BlockKey, string>) {
     if (this.failure) throw this.failure;
     const entry = this.entries.get(spec.blockKey);
-    if (entry && entry.spec.atlasId === spec.atlasId && contains(entry.spec.bounds, spec.bounds) && entry.spec.dependencies.every(ref => refs.get(ref.key) === ref.hash)) {
+    if (entry && entry.spec.atlasId === spec.atlasId && !!entry.spec.coastal === !!spec.coastal && contains(entry.spec.bounds, spec.bounds) && entry.spec.dependencies.every(ref => refs.get(ref.key) === ref.hash)) {
       entry.used = ++this.clock; this.hits++; return entry.graphics;
     }
     this.misses++;
@@ -82,13 +87,15 @@ export class AtlasTerrainGeometryCache {
     const bounds = spec.bounds;
     if (![bounds.minX, bounds.minY, bounds.maxX, bounds.maxY].every(Number.isFinite) || bounds.minX > bounds.maxX || bounds.minY > bounds.maxY
       || !spec.dependencies.length || spec.dependencies.some(ref => !ref.hash)) throw new Error('地形几何缓存范围或依赖无效。');
-    while (this.entries.size + this.reservedEntries + 1 > this.entryLimit || this.liveQuads + this.reservedQuads + quads > this.quadLimit) {
+    const reservedBytes = factory ? quads * (spec.coastal ? ATLAS_COASTAL_BUFFER_BYTES_PER_QUAD : ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD) : 0;
+    const byteLimit = this.quadLimit * ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD;
+    if (reservedBytes > byteLimit) throw new Error('单块连续地表超过保留缓冲字节预算。');
+    while (this.entries.size + this.reservedEntries + 1 > this.entryLimit || this.liveQuads + this.reservedQuads + quads > this.quadLimit || this.bufferBytes + this.reservedBufferBytes + reservedBytes > byteLimit) {
       let oldest: Entry | undefined;
       for (const entry of this.entries.values()) if (!oldest || entry.used < oldest.used) oldest = entry;
       if (!oldest) throw new Error('地形几何缓存无法在预算内分配。');
       this.release(oldest.spec.blockKey, true);
     }
-    const reservedBytes = factory ? quads * ATLAS_TERRAIN_BUFFER_BYTES_PER_QUAD : 0;
     this.reservedBufferBytes += reservedBytes;
     this.peakBufferBytes = Math.max(this.peakBufferBytes, this.bufferBytes + this.reservedBufferBytes);
     this.reservedEntries++; this.reservedQuads += quads; this.peakQuads = Math.max(this.peakQuads, this.liveQuads + this.reservedQuads);
@@ -98,8 +105,8 @@ export class AtlasTerrainGeometryCache {
       build(graphics);
       const buffers = { ...(graphics.terrainBuffers ?? { bytes: 0, vertices: 0, triangles: 0, shoreSegments: 0 }) };
       if (!Object.values(buffers).every(value => Number.isSafeInteger(value) && value >= 0) || buffers.bytes > reservedBytes
-        || buffers.vertices > quads * 5 || buffers.triangles > quads * 4 || buffers.shoreSegments > quads * 4) throw new Error('连续地形缓冲超出实际地格的资源上限。');
-      this.entries.set(spec.blockKey, { spec: { atlasId: spec.atlasId, blockKey: spec.blockKey, bounds: { ...bounds }, dependencies: spec.dependencies.map(ref => ({ ...ref })) }, graphics, quads, buffers, used: ++this.clock });
+        || buffers.vertices > quads * (spec.coastal ? 36 : 5) || buffers.triangles > quads * (spec.coastal ? 12 : 4) || buffers.shoreSegments > quads * 4) throw new Error('连续地形缓冲超出实际地格的资源上限。');
+      this.entries.set(spec.blockKey, { spec: { atlasId: spec.atlasId, blockKey: spec.blockKey, bounds: { ...bounds }, dependencies: spec.dependencies.map(ref => ({ ...ref })), coastal: spec.coastal }, graphics, quads, buffers, used: ++this.clock });
       this.bufferBytes += buffers.bytes; this.reservedBufferBytes -= reservedBytes; this.vertices += buffers.vertices; this.triangles += buffers.triangles;
       this.shoreSegments += buffers.shoreSegments;
       this.liveQuads += quads; this.reservedQuads -= quads; this.reservedEntries--;

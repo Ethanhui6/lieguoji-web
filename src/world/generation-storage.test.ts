@@ -7,7 +7,7 @@ import { encodeAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey } from './gen
 import { ATLAS_DRAFTS_DB, ATLAS_GENERATION_DB, ATLAS_STORAGE_LIMIT, atlasStorageLogicalBytes, getAtlasStorage, openAtlasDraft, type AtlasStoredRoot } from './storage';
 
 const control = { yieldTask: async () => {} }, api = getAtlasStorage(2), stores = ['blocks', 'manifests', 'roots', 'preparations', 'receipts', 'meta'];
-let base: AtlasGenerationDocument;
+let base: AtlasGenerationDocument<2>;
 beforeAll(async () => { base = await createGenerationDraft({ size: 128, seed: 'ph06-format-storage-synthetic', name: 'PH06纯合成锁与原子故障样本' }, control); }, 30000);
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -20,21 +20,21 @@ async function locked() {
   const data = cloneAtlasDocument(base), lock: AtlasCellLockBlock = { format: 'lieguoji-atlas-cell-locks', version: 1, bx: 1, by: 0, flags: new Uint8Array(1024) };
   lock.flags[31 * 32] = 3; data.locks.set(lockKey(1, 0), lock); data.manifest.constraints.lockRefs.push({ bx: 1, by: 0, hash: await hashAtlasCellLockBlock(lock) }); return data;
 }
-async function prepare(data: AtlasGenerationDocument, root: AtlasStoredRoot | null = null, includeLocks = true) {
+async function prepare(data: AtlasGenerationDocument<2>, root: AtlasStoredRoot | null = null, includeLocks = true) {
   const prep = await api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: data.manifest, expectedRoot: root }, control);
   const contents: (AtlasBlock | AtlasCellLockBlock)[] = [...data.blocks.values(), ...(includeLocks ? data.locks.values() : [])];
   for (let i = 0; i < contents.length; i += 16) await api.stageAtlasBlocks(prep.preparationId, contents.slice(i, i + 16), control);
   return prep;
 }
-async function publish(data: AtlasGenerationDocument = base, root: AtlasStoredRoot | null = null) { return api.commitAtlasPreparation((await prepare(data, root)).preparationId, control); }
+async function publish(data: AtlasGenerationDocument<2> = base, root: AtlasStoredRoot | null = null) { return api.commitAtlasPreparation((await prepare(data, root)).preparationId, control); }
 async function restored(id: string, source: 'current' | 'backup' = 'current') {
   const handle = await api.openAtlasDraft(id, { ...control, source }); if (!handle) throw new Error('missing synthetic');
-  const data: AtlasGenerationDocument = { manifest: handle.manifest, blocks: new Map(), locks: new Map() }; let cursor: number | null = 0;
+  const data: AtlasGenerationDocument<2> = { manifest: handle.manifest, blocks: new Map(), locks: new Map() }; let cursor: number | null = 0;
   do { const page = await api.readAtlasBlockPage(handle, cursor, control); expect(page.encodedBytes).toBeLessThanOrEqual(512 * 1024); expect(page.locks).toBeDefined(); for (const block of page.blocks) data.blocks.set(`${block.layer}:${block.bx}:${block.by}`, block); for (const lock of page.locks!) data.locks.set(lockKey(lock.bx, lock.by), lock); cursor = page.nextCursor; } while (cursor !== null);
   await verifyAtlasDocument(data, control); return { handle, data };
 }
-async function edit(data: AtlasGenerationDocument, cell = 0) { const next = cloneAtlasDocument(data), selected = getCellLayerSlot(next, 'elevation', cell); selected.block.values[selected.slot]++; next.manifest.blockRefs.find(r => r.key === selected.key)!.hash = await hashBlock(selected.block); next.manifest.revision++; return next; }
-const local = (data: AtlasGenerationDocument, root: AtlasStoredRoot, keys: BlockKey[] = ['elevation:0:0']) => ({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: data.manifest, expectedRoot: root, dirtyBlocks: keys.map(key => data.blocks.get(key)!) });
+async function edit(data: AtlasGenerationDocument<2>, cell = 0) { const next = cloneAtlasDocument(data), selected = getCellLayerSlot(next, 'elevation', cell); selected.block.values[selected.slot]++; next.manifest.blockRefs.find(r => r.key === selected.key)!.hash = await hashBlock(selected.block); next.manifest.revision++; return next; }
+const local = (data: AtlasGenerationDocument<2>, root: AtlasStoredRoot, keys: BlockKey[] = ['elevation:0:0']) => ({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: data.manifest, expectedRoot: root, dirtyBlocks: keys.map(key => data.blocks.get(key)!) });
 
 describe('PH06 closed v2 storage, complete lock references and unchanged v1 database', () => {
   it('selects only the explicit known database, keeps v1 defaults and never migrates the same identity', async () => {
@@ -43,7 +43,7 @@ describe('PH06 closed v2 storage, complete lock references and unchanged v1 data
     const before = await snapshot(ATLAS_DRAFTS_DB); expect(await api.openAtlasDraft(base.manifest.draftId, control)).toBeNull(); await publish();
     expect((await openAtlasDraft(base.manifest.draftId, control))!.manifest.version).toBe(1); expect((await api.openAtlasDraft(base.manifest.draftId, control))!.manifest.version).toBe(2); expect(await snapshot(ATLAS_DRAFTS_DB)).toEqual(before);
     expect((await old.readAtlasBlockPage((await old.openAtlasDraft(base.manifest.draftId, control))!, 0, control)).locks).toBeUndefined();
-    expect(() => getAtlasStorage(3 as 2)).toThrow('未知'); await expect(api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: legacy.manifest as never, expectedRoot: null }, control)).rejects.toThrow('请求无效');
+    expect(() => getAtlasStorage(4 as 2)).toThrow('未知'); await expect(api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: legacy.manifest as never, expectedRoot: null }, control)).rejects.toThrow('请求无效');
   });
 
   it('does not publish a missing referenced lock, then pages, accounts and raw-exports its exact bytes', async () => {

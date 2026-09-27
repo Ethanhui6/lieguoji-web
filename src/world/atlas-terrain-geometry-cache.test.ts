@@ -15,6 +15,16 @@ const subset = (value: AtlasTerrainGeometrySpec): AtlasTerrainGeometrySpec => ({
 beforeEach(() => { gpu.create.mockReset(); gpu.destroy.mockReset(); });
 
 describe('retained terrain Graphics ownership and real coverage', () => {
+  it('budgets clipped coast triangles within the original byte cap and refuses cross-contract reuse', () => {
+    const cache = new AtlasTerrainGeometryCache(2, 10), first = { ...spec(), coastal: true }, second = { ...spec(1), coastal: true };
+    const resource = () => ({ destroy: vi.fn(), terrainBuffers: { bytes: 720, vertices: 36, triangles: 12, shoreSegments: 4 } }) as unknown as AtlasRetainedTerrain;
+    const a = resource(); cache.create(first, 1, () => undefined, () => a);
+    expect(cache.stats()).toMatchObject({ surfaceMeshBufferByteLimit: 1280, surfaceMeshBufferBytes: 720 });
+    cache.create(second, 1, () => undefined, resource); expect(a.destroy).toHaveBeenCalledTimes(1);
+    expect(cache.stats()).toMatchObject({ entries: 1, surfaceMeshBufferBytes: 720, peakSurfaceMeshBufferBytes: 720, evictions: 1 });
+    expect(cache.get({ ...second, coastal: false }, refs(second))).toBeUndefined();
+    expect(cache.stats().surfaceMeshBufferBytes).toBe(0);
+  });
   it('charges actual surface buffers and bounds both mesh topology and real shore segments', () => {
     const cache = new AtlasTerrainGeometryCache(2, 3), destroy = vi.fn();
     const resource = { destroy, terrainBuffers: { bytes: 128, vertices: 5, triangles: 4, shoreSegments: 2 } } as unknown as AtlasRetainedTerrain;

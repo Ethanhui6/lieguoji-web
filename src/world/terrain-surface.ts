@@ -1,5 +1,6 @@
 import { getCellLayerSlot, validateSpec, type AtlasGeographyView } from './model';
 import { cellNeighbors, cellVertexIds, getVertexPositionQ, incidentCellIds } from './topology';
+import { buildCoastalSurface, COASTAL_COORDINATE_SCALE, isCoastalSurface, type CoastalSurface, type CoastalVertex } from './coastal-surface';
 
 /** Display-only, world-coordinate triangles. These buffers own their memory;
  * they are never written into authoritative geometry, elevations or saves. */
@@ -9,7 +10,7 @@ export interface TerrainSurfaceMesh {
   lights: Float32Array;
   indices: Uint32Array;
 }
-export interface TerrainSurface { land: TerrainSurfaceMesh; sea: TerrainSurfaceMesh }
+export interface TerrainSurface { land: TerrainSurfaceMesh; sea: TerrainSurfaceMesh; coastal?: CoastalSurface }
 interface Point { x: number; y: number }
 interface CellSample extends Point { height: number; corners: number[]; light?: number }
 interface CornerSample extends Point { height: number; light: number }
@@ -96,6 +97,23 @@ export function buildTerrainSurface(data: AtlasGeographyView, cellIds: readonly 
   }
   function append(mesh: MeshBuilder, sample: CornerSample) {
     const index = mesh.heights.length; mesh.positions.push(sample.x, sample.y); mesh.heights.push(sample.height); mesh.lights.push(sample.light); return index;
+  }
+  if (isCoastalSurface(data)) {
+    const surface = buildCoastalSurface(data, ids);
+    const sample = (vertex: CoastalVertex, land: boolean): CornerSample => ({
+      x: vertex.xQ6 / COASTAL_COORDINATE_SCALE, y: vertex.yQ6 / COASTAL_COORDINATE_SCALE, height: vertex.heightMeters,
+      light: vertex.coverageQ === 0 ? 1 : vertex.anchor.kind === 'center' ? lightAt(vertex.anchor.id) : cornerAt(vertex.anchor.id, land).light,
+    });
+    for (const cell of surface.cells) for (const [isLand, triangles] of [[true, cell.land], [false, cell.sea]] as const) {
+      const mesh = isLand ? land : sea;
+      for (const triangle of triangles) {
+        // These are the same fixed-point pieces used by picking and area.
+        // No display-only contour or second triangulation is introduced here.
+        const a = append(mesh, sample(triangle[0], isLand)), b = append(mesh, sample(triangle[1], isLand)), c = append(mesh, sample(triangle[2], isLand));
+        mesh.indices.push(a, b, c);
+      }
+    }
+    return { land: finish(land), sea: finish(sea), coastal: surface };
   }
   for (const id of ids) {
     const cell = cellAt(id), isLand = cell.height >= 0, mesh = isLand ? land : sea;

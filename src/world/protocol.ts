@@ -123,7 +123,7 @@ export type AtlasOperation = (
   | { type: 'fork'; name?: string; draftId: string; commandId: string }
   | { type: 'list' }
   | { type: 'receipt'; draftId: string; commandId: string }
-  | { type: 'generation-copy'; draftId: string; commandId: string; name?: string }
+  | { type: 'generation-copy'; draftId: string; commandId: string; name?: string; targetFormat?: 2 | 3 }
   | { type: 'generation-preview'; commandId: string; expectedRevision: number; expectedRootDigest: string; recipe: GenerationRecipe; scope: GenerationScope }
   | ({ type: 'generation-confirm' } & GenerationConfirm)
   | { type: 'generation-discard'; candidateId: string }

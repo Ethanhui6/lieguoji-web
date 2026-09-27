@@ -1,0 +1,1137 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\playwright\\cli.js",
+      "test",
+      "--config=.autopilot/ph06/coastal-checks/browser.config.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\browser.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/coastal-checks/wording-recheck/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-coastal-surface.spec.ts",
+          "atlas-shape.spec.ts",
+          "atlas-rendering.spec.ts"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/coastal-checks/wording-recheck/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-coastal-surface.spec.ts",
+          "atlas-shape.spec.ts",
+          "atlas-rendering.spec.ts"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/coastal-checks/wording-recheck/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-coastal-surface.spec.ts",
+          "atlas-shape.spec.ts",
+          "atlas-rendering.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck/results.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck/html-report"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "atlas-coastal-surface.spec.ts",
+      "file": "atlas-coastal-surface.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 41688,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T04:58:51.665Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "coastal-pixel-and-pick.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJwcm9iZSI6IHsKICAgICJpZCI6IDEyODk1LAogICAgImxhbmQiOiB7CiAgICAgICJ4IjogMTUyOC4wMzUxNTYyNSwKICAgICAgInkiOiA4MDcuODc4OTA2MjUKICAgIH0sCiAgICAic2VhIjogewogICAgICAieCI6IDE1MjAuOTEzMDg1OTM3NSwKICAgICAgInkiOiA4MDEuNDY3MzgyODEyNQogICAgfQogIH0sCiAgImNvbG9ycyI6IFsKICAgIFsKICAgICAgMTkyLAogICAgICAxODcsCiAgICAgIDEzNSwKICAgICAgMjU1CiAgICBdLAogICAgWwogICAgICAxNDcsCiAgICAgIDE5MCwKICAgICAgMTc5LAogICAgICAyNTUKICAgIF0KICBdLAogICJiZWZvcmVSZWxvYWQiOiB7CiAgICAicmVxdWVzdElkIjogImNiM2ZkYmUxLTdjNjYtNDc3Zi04YTEyLTg2ZWRkYTlmMjAwNCIsCiAgICAib2siOiB0cnVlLAogICAgIm1hbmlmZXN0RGlnZXN0IjogIjc1ZjdiZWQ2MGMzNmRiZTA3MmZlZTg5MTY5MTlkMTY5YjM1MjRlZjhlYjk5NzVmZDU4MDhjYzFmZTQ3NzFkOGIiLAogICAgImRyYWZ0SWQiOiAiYXRsYXMtMWIxYzQ2ODctMjViYy00MTY2LWEyNDQtNTFmNmI2YzI2MWU0IiwKICAgICJhdGxhc0lkIjogImdlby04MGRjZDgzYi01NDY3LTRhZGMtYjY0OS0yMzI1MjY4ZjI1Y2EiLAogICAgInJldmlzaW9uIjogMSwKICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NiwKICAgICJkaXNwbGF5IjogewogICAgICAic291cmNlIjogImNvbW1pdHRlZCIsCiAgICAgICJtYW5pZmVzdERpZ2VzdCI6ICI3NWY3YmVkNjBjMzZkYmUwNzJmZWU4OTE2OTE5ZDE2OWIzNTI0ZWY4ZWI5OTc1ZmQ1ODA4Y2MxZmU0NzcxZDhiIiwKICAgICAgInJldmlzaW9uIjogMSwKICAgICAgInZlcnNpb24iOiAzLAogICAgICAidmVyaWZpZWRCbG9ja3MiOiAyNTYKICAgIH0KICB9Cn0="
+                    },
+                    {
+                      "name": "coastal-restored-pixels.json",
+                      "contentType": "application/json",
+                      "body": "eyJjb2xvcnMiOltbMTkyLDE4NywxMzUsMjU1XSxbMTQ3LDE5MCwxNzksMjU1XV0sInJlc3RvcmVkQ29sb3JzIjpbWzE5MiwxODcsMTM1LDI1NV0sWzE0NywxOTAsMTc5LDI1NV1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-74917660623ead656be4",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 94,
+          "column": 1
+        },
+        {
+          "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 90151,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 54,
+                        "line": 144
+                      },
+                      "message": "Error: locator.click: Test timeout of 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^大世界草稿/ })\u001b[22m\n\n\n  142 | test('[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版', async ({ page }) => {\n  143 |   test.setTimeout(90000); await page.goto('/');\n> 144 |   await page.getByRole('button', { name: /^大世界草稿/ }).click(); await ready(page, 'empty');\n      |                                                      ^\n  145 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n  146 |   await page.getByLabel('大世界地理规模', { exact: true }).selectOption('128'); await button(page, '新建空白海洋草稿'); await ready(page);\n  147 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:144:54"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T04:59:33.552Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-desktop-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-34a602240fd85953a70f",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10079,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                      "column": 47,
+                      "line": 156
+                    },
+                    "snippet": "  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 47,
+                        "line": 156
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n\n  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:01:04.568Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                    "column": 47,
+                    "line": 156
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-407675f0b223e09cdbb9",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 152,
+          "column": 1
+        },
+        {
+          "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 42090,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:02:30.639Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "coastal-pixel-and-pick.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJwcm9iZSI6IHsKICAgICJpZCI6IDEyODk1LAogICAgImxhbmQiOiB7CiAgICAgICJ4IjogMTUyOC4wMzUxNTYyNSwKICAgICAgInkiOiA4MDcuODc4OTA2MjUKICAgIH0sCiAgICAic2VhIjogewogICAgICAieCI6IDE1MjAuOTEzMDg1OTM3NSwKICAgICAgInkiOiA4MDEuNDY3MzgyODEyNQogICAgfQogIH0sCiAgImNvbG9ycyI6IFsKICAgIFsKICAgICAgMTkyLAogICAgICAxODcsCiAgICAgIDEzNSwKICAgICAgMjU1CiAgICBdLAogICAgWwogICAgICAxNDcsCiAgICAgIDE5MCwKICAgICAgMTc5LAogICAgICAyNTUKICAgIF0KICBdLAogICJiZWZvcmVSZWxvYWQiOiB7CiAgICAicmVxdWVzdElkIjogIjg0NzgzNTFhLTM2ODMtNDEyMS1iODc3LTYxNjg1M2ZjZTMxNCIsCiAgICAib2siOiB0cnVlLAogICAgIm1hbmlmZXN0RGlnZXN0IjogIjViZDliOGQ0YzJmNzQwMDdmNjUxNjUxYjFiZGRiZDQ1Yjg3OTQ2NDA1MDhhNmE5ZjMzOGU2NjY2OTg1MDlhOTMiLAogICAgImRyYWZ0SWQiOiAiYXRsYXMtMjA1ZmUwNWMtMDg5NC00NzkxLTk3ZmItMTM4ZTk2NzU4OGQ0IiwKICAgICJhdGxhc0lkIjogImdlby1lYTIzZjNkZi0yNjA2LTQyNWYtYWQ4Zi0wODE3ZTNlOTlhZGQiLAogICAgInJldmlzaW9uIjogMSwKICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NiwKICAgICJkaXNwbGF5IjogewogICAgICAic291cmNlIjogImNvbW1pdHRlZCIsCiAgICAgICJtYW5pZmVzdERpZ2VzdCI6ICI1YmQ5YjhkNGMyZjc0MDA3ZjY1MTY1MWIxYmRkYmQ0NWI4Nzk0NjQwNTA4YTZhOWYzMzhlNjY2Njk4NTA5YTkzIiwKICAgICAgInJldmlzaW9uIjogMSwKICAgICAgInZlcnNpb24iOiAzLAogICAgICAidmVyaWZpZWRCbG9ja3MiOiAyNTYKICAgIH0KICB9Cn0="
+                    },
+                    {
+                      "name": "coastal-restored-pixels.json",
+                      "contentType": "application/json",
+                      "body": "eyJjb2xvcnMiOltbMTkyLDE4NywxMzUsMjU1XSxbMTQ3LDE5MCwxNzksMjU1XV0sInJlc3RvcmVkQ29sb3JzIjpbWzE5MiwxODcsMTM1LDI1NV0sWzE0NywxOTAsMTc5LDI1NV1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-c9405e6304122b801526",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 94,
+          "column": 1
+        },
+        {
+          "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 90189,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 54,
+                        "line": 144
+                      },
+                      "message": "Error: locator.click: Test timeout of 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^大世界草稿/ })\u001b[22m\n\n\n  142 | test('[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版', async ({ page }) => {\n  143 |   test.setTimeout(90000); await page.goto('/');\n> 144 |   await page.getByRole('button', { name: /^大世界草稿/ }).click(); await ready(page, 'empty');\n      |                                                      ^\n  145 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n  146 |   await page.getByLabel('大世界地理规模', { exact: true }).selectOption('128'); await button(page, '新建空白海洋草稿'); await ready(page);\n  147 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:144:54"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:03:12.898Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-mobile-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-mobile-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-mobile-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-3f2518d4d465ac2db96c",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 9926,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                      "column": 47,
+                      "line": 156
+                    },
+                    "snippet": "  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 47,
+                        "line": 156
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n\n  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:04:43.957Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-mobile-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-mobile-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-mobile-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                    "column": 47,
+                    "line": 156
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-7c1fe371b8dcdbdc2667",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 152,
+          "column": 1
+        },
+        {
+          "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 45548,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:06:10.600Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "coastal-pixel-and-pick.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJwcm9iZSI6IHsKICAgICJpZCI6IDEyODk1LAogICAgImxhbmQiOiB7CiAgICAgICJ4IjogMTUyOC4wMzUxNTYyNSwKICAgICAgInkiOiA4MDcuODc4OTA2MjUKICAgIH0sCiAgICAic2VhIjogewogICAgICAieCI6IDE1MjAuOTEzMDg1OTM3NSwKICAgICAgInkiOiA4MDEuNDY3MzgyODEyNQogICAgfQogIH0sCiAgImNvbG9ycyI6IFsKICAgIFsKICAgICAgMTkyLAogICAgICAxODcsCiAgICAgIDEzNSwKICAgICAgMjU1CiAgICBdLAogICAgWwogICAgICAxNDcsCiAgICAgIDE5MCwKICAgICAgMTc5LAogICAgICAyNTUKICAgIF0KICBdLAogICJiZWZvcmVSZWxvYWQiOiB7CiAgICAicmVxdWVzdElkIjogIjIwZWRjNmFiLTBlMDctNDIzNi05MTBmLWZiYmE2OGQ4NmI4MCIsCiAgICAib2siOiB0cnVlLAogICAgIm1hbmlmZXN0RGlnZXN0IjogIjc1MTViZmM5NDEzYjJlMGZjYTdmNjhhMTQ5ZjhjYWJiZGFlMmI0Y2QxZWJlNDE4N2FmMDRjOTQ0MTIyYzFiMmMiLAogICAgImRyYWZ0SWQiOiAiYXRsYXMtZjA1NjdjM2MtNDlhNC00YTA4LWI4ZmYtNTk5ZGY3OGJhM2ExIiwKICAgICJhdGxhc0lkIjogImdlby04NGY4YTQ4Ni02OTQyLTQ5NDYtYjE5Yi0wNzk1OTM3MDRjMGUiLAogICAgInJldmlzaW9uIjogMSwKICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NiwKICAgICJkaXNwbGF5IjogewogICAgICAic291cmNlIjogImNvbW1pdHRlZCIsCiAgICAgICJtYW5pZmVzdERpZ2VzdCI6ICI3NTE1YmZjOTQxM2IyZTBmY2E3ZjY4YTE0OWY4Y2FiYmRhZTJiNGNkMWViZTQxODdhZjA0Yzk0NDEyMmMxYjJjIiwKICAgICAgInJldmlzaW9uIjogMSwKICAgICAgInZlcnNpb24iOiAzLAogICAgICAidmVyaWZpZWRCbG9ja3MiOiAyNTYKICAgIH0KICB9Cn0="
+                    },
+                    {
+                      "name": "coastal-restored-pixels.json",
+                      "contentType": "application/json",
+                      "body": "eyJjb2xvcnMiOltbMTkyLDE4NywxMzUsMjU1XSxbMTQ3LDE5MCwxNzksMjU1XV0sInJlc3RvcmVkQ29sb3JzIjpbWzE5MiwxODcsMTM1LDI1NV0sWzE0NywxOTAsMTc5LDI1NV1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-52b9fd718cd0b8b9672e",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 94,
+          "column": 1
+        },
+        {
+          "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 90248,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 54,
+                        "line": 144
+                      },
+                      "message": "Error: locator.click: Test timeout of 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^大世界草稿/ })\u001b[22m\n\n\n  142 | test('[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版', async ({ page }) => {\n  143 |   test.setTimeout(90000); await page.goto('/');\n> 144 |   await page.getByRole('button', { name: /^大世界草稿/ }).click(); await ready(page, 'empty');\n      |                                                      ^\n  145 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n  146 |   await page.getByLabel('大世界地理规模', { exact: true }).selectOption('128'); await button(page, '新建空白海洋草稿'); await ready(page);\n  147 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:144:54"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:06:56.337Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-tablet-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-tablet-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coa-4928c-y-工坊入口默认进入自然海岸新世界，刷新链接保持第三版-tablet-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-2f983383b636f9843ba9",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10184,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                      "column": 47,
+                      "line": 156
+                    },
+                    "snippet": "  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                        "column": 47,
+                        "line": 156
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('alertdialog')\nExpected substring: \u001b[32m\"海陆面积会变化\"\u001b[39m\nReceived string:    \u001b[31m\"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('alertdialog') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('alertdialog')\u001b[22m\n\u001b[2m    14 × locator resolved to <dialog open=\"\" aria-modal=\"true\" role=\"alertdialog\" aria-labelledby=\"_r_2_\" class=\"confirm-modal native-dialog \">…</dialog>\u001b[22m\n\u001b[2m       - unexpected value \"创建自然海岸副本？使用新的海陆轮廓规则建立独立副本。已有陆地采样和高程保留，沿岸地块的陆海面积会变化；原草稿不会改写。取消创建自然海岸副本\"\u001b[22m\n\n\n  154 |   const old = await create(page, 2, '保留的旧海岸'), oldUrl = page.url(), oldState = await saved(page, old), oldDb = await databaseDigest(page);\n  155 |   await panel(page, '创世'); await button(page, '创建自然海岸副本');\n> 156 |   await expect(page.getByRole('alertdialog')).toContainText('海陆面积会变化');\n      |                                               ^\n  157 |   await page.getByRole('alertdialog').getByRole('button', { name: '创建自然海岸副本', exact: true }).click(); await ready(page);\n  158 |   await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');\n  159 |   expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts:156:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:08:27.311Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-tablet-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-tablet-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\coastal-checks\\wording-recheck\\test-results\\atlas-coastal-surface--coastal-copy-旧地图显式另存自然海岸副本，原库与原链接保持不变-tablet-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-coastal-surface.spec.ts",
+                    "column": 47,
+                    "line": 156
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e2ecd1ea8a011e4b732-3c686c5370c48acede14",
+          "file": "atlas-coastal-surface.spec.ts",
+          "line": 152,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "atlas-rendering.spec.ts",
+      "file": "atlas-rendering.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8937,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:01:15.654Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "context-baseline-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEzNzYsCiAgImhlaWdodCI6IDg4OCwKICAiZnJhbWVTZXF1ZW5jZSI6IDQ2LAogICJzaGEyNTYiOiAiZTU3Njc4OTZhNDg2ZWJmNmM3NTA1MjI4Zjc5ZWZkZTg2YjAzYTkyZGYxNjZiMjg3ODg5ODc0MTllN2JlNWNkNCIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogOTk3NSwKICAgICJvY2VhbiI6IDYyNjgwNCwKICAgICJiYWNrZ3JvdW5kIjogNTgxODg4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IG51bGwKfQ=="
+                    },
+                    {
+                      "name": "context-restoration-1-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEzNzYsCiAgImhlaWdodCI6IDg4OCwKICAiZnJhbWVTZXF1ZW5jZSI6IDU4LAogICJzaGEyNTYiOiAiZTU3Njc4OTZhNDg2ZWJmNmM3NTA1MjI4Zjc5ZWZkZTg2YjAzYTkyZGYxNjZiMjg3ODg5ODc0MTllN2JlNWNkNCIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogOTk3NSwKICAgICJvY2VhbiI6IDYyNjgwNCwKICAgICJiYWNrZ3JvdW5kIjogNTgxODg4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-1-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEzNzYsCiAgImhlaWdodCI6IDg4OCwKICAiY2hhbmdlZFBpeGVscyI6IDE2LAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDE1Cn0="
+                    },
+                    {
+                      "name": "context-restoration-2-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEzNzYsCiAgImhlaWdodCI6IDg4OCwKICAiZnJhbWVTZXF1ZW5jZSI6IDcwLAogICJzaGEyNTYiOiAiZTU3Njc4OTZhNDg2ZWJmNmM3NTA1MjI4Zjc5ZWZkZTg2YjAzYTkyZGYxNjZiMjg3ODg5ODc0MTllN2JlNWNkNCIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogOTk3NSwKICAgICJvY2VhbiI6IDYyNjgwNCwKICAgICJiYWNrZ3JvdW5kIjogNTgxODg4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-2-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEzNzYsCiAgImhlaWdodCI6IDg4OCwKICAiY2hhbmdlZFBpeGVscyI6IDE2LAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDE1Cn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "498457a1a254a3afc4ab-85debb16c6c35d504e0f",
+          "file": "atlas-rendering.spec.ts",
+          "line": 398,
+          "column": 1
+        },
+        {
+          "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9742,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:04:54.847Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "context-baseline-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDgyNCwKICAiaGVpZ2h0IjogMTM5NiwKICAiZnJhbWVTZXF1ZW5jZSI6IDQ3LAogICJzaGEyNTYiOiAiYmNkMmQ3ZTllZDdiOGZiYWU5NzdjMjcyY2U3Y2FjY2Y1OGU2NDkxMWRjMTI2MmQ1ZTg2Yzk5Njc4ZmQ5YmMzZiIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogODQxNSwKICAgICJvY2VhbiI6IDUzODc2NCwKICAgICJiYWNrZ3JvdW5kIjogNTk2NzY4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IG51bGwKfQ=="
+                    },
+                    {
+                      "name": "context-restoration-1-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDgyNCwKICAiaGVpZ2h0IjogMTM5NiwKICAiZnJhbWVTZXF1ZW5jZSI6IDU5LAogICJzaGEyNTYiOiAiYmNkMmQ3ZTllZDdiOGZiYWU5NzdjMjcyY2U3Y2FjY2Y1OGU2NDkxMWRjMTI2MmQ1ZTg2Yzk5Njc4ZmQ5YmMzZiIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogODQxNSwKICAgICJvY2VhbiI6IDUzODc2NCwKICAgICJiYWNrZ3JvdW5kIjogNTk2NzY4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-1-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEwODIsCiAgImhlaWdodCI6IDE4MzIsCiAgImNoYW5nZWRQaXhlbHMiOiAwLAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKfQ=="
+                    },
+                    {
+                      "name": "context-restoration-2-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDgyNCwKICAiaGVpZ2h0IjogMTM5NiwKICAiZnJhbWVTZXF1ZW5jZSI6IDcxLAogICJzaGEyNTYiOiAiYmNkMmQ3ZTllZDdiOGZiYWU5NzdjMjcyY2U3Y2FjY2Y1OGU2NDkxMWRjMTI2MmQ1ZTg2Yzk5Njc4ZmQ5YmMzZiIsCiAgImNvbG9ycyI6IHsKICAgICJsYW5kIjogODQxNSwKICAgICJvY2VhbiI6IDUzODc2NCwKICAgICJiYWNrZ3JvdW5kIjogNTk2NzY4CiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-2-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDEwODIsCiAgImhlaWdodCI6IDE4MzIsCiAgImNoYW5nZWRQaXhlbHMiOiAwLAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "498457a1a254a3afc4ab-450a0a6ce709ac6d9ce4",
+          "file": "atlas-rendering.spec.ts",
+          "line": 398,
+          "column": 1
+        },
+        {
+          "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11409,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:08:38.438Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "context-baseline-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDE2MjAsCiAgImhlaWdodCI6IDE4NzgsCiAgImZyYW1lU2VxdWVuY2UiOiA0NiwKICAic2hhMjU2IjogImNlYjY5MjJiYzk4Y2E1OGQ1MjczOWY4NWVhNWY4OGI4NGY4NzM2OTlmMmY2YzJkYTlmYzkyMmNkYTdjYTU5YzgiLAogICJjb2xvcnMiOiB7CiAgICAibGFuZCI6IDMyOTI0LAogICAgIm9jZWFuIjogMjA4NjY2NiwKICAgICJiYWNrZ3JvdW5kIjogOTEwNzYwCiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IG51bGwKfQ=="
+                    },
+                    {
+                      "name": "context-restoration-1-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDE2MjAsCiAgImhlaWdodCI6IDE4NzgsCiAgImZyYW1lU2VxdWVuY2UiOiA1OCwKICAic2hhMjU2IjogImNlYjY5MjJiYzk4Y2E1OGQ1MjczOWY4NWVhNWY4OGI4NGY4NzM2OTlmMmY2YzJkYTlmYzkyMmNkYTdjYTU5YzgiLAogICJjb2xvcnMiOiB7CiAgICAibGFuZCI6IDMyOTI0LAogICAgIm9jZWFuIjogMjA4NjY2NiwKICAgICJiYWNrZ3JvdW5kIjogOTEwNzYwCiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-1-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDE2MjAsCiAgImhlaWdodCI6IDE4NzgsCiAgImNoYW5nZWRQaXhlbHMiOiAwLAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKfQ=="
+                    },
+                    {
+                      "name": "context-restoration-2-full-framebuffer",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDE2MjAsCiAgImhlaWdodCI6IDE4NzgsCiAgImZyYW1lU2VxdWVuY2UiOiA3MCwKICAic2hhMjU2IjogImNlYjY5MjJiYzk4Y2E1OGQ1MjczOWY4NWVhNWY4OGI4NGY4NzM2OTlmMmY2YzJkYTlmYzkyMmNkYTdjYTU5YzgiLAogICJjb2xvcnMiOiB7CiAgICAibGFuZCI6IDMyOTI0LAogICAgIm9jZWFuIjogMjA4NjY2NiwKICAgICJiYWNrZ3JvdW5kIjogOTEwNzYwCiAgfSwKICAibm9uT3BhcXVlUGl4ZWxzIjogMCwKICAiZGlmZmVyZW5jZSI6IHsKICAgICJjaGFuZ2VkUGl4ZWxzIjogMCwKICAgICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKICB9Cn0="
+                    },
+                    {
+                      "name": "context-restoration-2-pixel-difference",
+                      "contentType": "application/json",
+                      "body": "ewogICJ3aWR0aCI6IDE2MjAsCiAgImhlaWdodCI6IDE4NzgsCiAgImNoYW5nZWRQaXhlbHMiOiAwLAogICJtYXhDaGFubmVsRGlmZmVyZW5jZSI6IDAKfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "498457a1a254a3afc4ab-3bcb4bafb2b8a773a90c",
+          "file": "atlas-rendering.spec.ts",
+          "line": 398,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "atlas-shape.spec.ts",
+      "file": "atlas-shape.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 44932,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:01:24.798Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-native-drawing-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiAyOTIuMDA1NDYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNzgxLjY1NzgzNjkxNDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA3ODEuNjU3ODM2OTE0MDYyNSwKICAgICJ5IjogMzcwLjA1MjMzNzY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiAzNzAuMDUyMzM3NjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjI1LjU2NDA4NjkxNDA2MjUsCiAgICAieSI6IDQ0OC4wOTkyMTI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA5MDguNDg0MDA4Nzg5MDYyNSwKICAgICJ5IjogNDQ4LjA5OTIxMjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDkwOC40ODQwMDg3ODkwNjI1LAogICAgInkiOiA0NzkuMzE3OTYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjI1LjU2NDA4NjkxNDA2MjUsCiAgICAieSI6IDQ3OS4zMTc5NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA2MjUuNTY0MDg2OTE0MDYyNSwKICAgICJ5IjogNjIzLjcwNDcxMTkxNDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiA2MjMuNzA0NzExOTE0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNTI4LjAwNTQ5MzE2NDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNTI4LjAwNTQ5MzE2NDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA1MjguMDA1NDkzMTY0MDYyNSwKICAgICJ5IjogMjkyLjAwNTQ2MjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDc4MS42NTc4MzY5MTQwNjI1LAogICAgInkiOiAyOTIuMDA1NDYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNzgxLjY1NzgzNjkxNDA2MjUsCiAgICAieSI6IDM3MC4wNTIzMzc2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA2MjUuNTY0MDg2OTE0MDYyNSwKICAgICJ5IjogMzcwLjA1MjMzNzY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiA0NDguMDk5MjEyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogOTA4LjQ4NDAwODc4OTA2MjUsCiAgICAieSI6IDQ0OC4wOTkyMTI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA5MDguNDg0MDA4Nzg5MDYyNSwKICAgICJ5IjogNDc5LjMxNzk2MjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiA0NzkuMzE3OTYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjI1LjU2NDA4NjkxNDA2MjUsCiAgICAieSI6IDYyMy43MDQ3MTE5MTQwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA1MjguMDA1NDkzMTY0MDYyNSwKICAgICJ5IjogNjIzLjcwNDcxMTkxNDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiAyOTIuMDA1NDYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiAyOTIuMDA1NDYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMAogIH0KXQ=="
+                    },
+                    {
+                      "name": "shape-independent-persistence.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJmaXJzdCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiN2VjODQzOWYtNTA3Mi00MjkxLWEzZDMtZDBiNTc3NGE0NWYxIiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiNTVlMjA5Mzk0YjlkZDg1OWM4YjMwMzBjMGMzNWQ4NWRkOTE5ZDk4MTQxMzVmNTE2MDgwNDlhYzA3ZjBlNWVmNCIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy1hZWI4OGEyNS00YTkwLTRiNmYtYmE4ZC04NzJhYTUxZmRiNjIiLAogICAgImF0bGFzSWQiOiAiZ2VvLWQyNjA5MjQ0LTMwOTQtNDFlMS1hNTUzLTBkOTE3M2JiMTZlZiIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogImMxODk0OTRhNjgyYzBhNGFiY2Y0Y2U5YWM0NDVlMDQxYzA4Mzc1Yzk5OTZmZTQwMTY3YzZjYjZlZTBmY2U3MGMiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNlY29uZCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiMDY0N2Q1NGEtNGE0Yy00MGRkLWIzMzgtNDkwZjFlYjIxN2Q1IiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiNTVlMjA5Mzk0YjlkZDg1OWM4YjMwMzBjMGMzNWQ4NWRkOTE5ZDk4MTQxMzVmNTE2MDgwNDlhYzA3ZjBlNWVmNCIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy1hZWI4OGEyNS00YTkwLTRiNmYtYmE4ZC04NzJhYTUxZmRiNjIiLAogICAgImF0bGFzSWQiOiAiZ2VvLWQyNjA5MjQ0LTMwOTQtNDFlMS1hNTUzLTBkOTE3M2JiMTZlZiIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogImMxODk0OTRhNjgyYzBhNGFiY2Y0Y2U5YWM0NDVlMDQxYzA4Mzc1Yzk5OTZmZTQwMTY3YzZjYjZlZTBmY2U3MGMiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNoYXBlIjogewogICAgImFyZWFRMiI6IDE4MjQ5NTAxNDMxOCwKICAgICJjaGFuZ2VkU2VhIjogNDM2MCwKICAgICJtaW5IZWlnaHQiOiAtMTAwLAogICAgIm1heEhlaWdodCI6IDExMTksCiAgICAiY29tcG9uZW50U2l6ZXMiOiBbCiAgICAgIDU0NDAKICAgIF0KICB9LAogICJjb250cm9sUG9pbnRzIjogWwogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDIzMDQwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogNTYzMjAwLAogICAgICAieVEiOiAyMzA0MDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDU2MzIwMCwKICAgICAgInlRIjogMzMyODAwCiAgICB9LAogICAgewogICAgICAieFEiOiAzNTg0MDAsCiAgICAgICJ5USI6IDMzMjgwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0MzUyMDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDcyOTYwMCwKICAgICAgInlRIjogNDM1MjAwCiAgICB9LAogICAgewogICAgICAieFEiOiA3Mjk2MDAsCiAgICAgICJ5USI6IDQ3NjE2MAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0NzYxNjAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDM1ODQwMCwKICAgICAgInlRIjogNjY1NjAwCiAgICB9LAogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDY2NTYwMAogICAgfQogIF0sCiAgInNvdXJjZUZpbmdlcnByaW50IjogImFmNzI5NGY5MWVlMmMxYjFjM2U4NzNjYWFmNGM5OTg5NmYxYjQzMzE4Y2RmNmRmYTg0NzAwMGUxZGUxN2E4MGIiLAogICJ1bmNoYW5nZWROb25IZWlnaHRMYXllcnMiOiB0cnVlLAogICJyZXN0b3JlZE9yaWdpbmFsQWZ0ZXJVbmRvIjogdHJ1ZSwKICAiYmFzZWxpbmVEYXRhYmFzZSI6IHsKICAgICJieXRlcyI6IDU1NjMzODIsCiAgICAic2hhMjU2IjogImQ1ODZhYTljNGQxMzY1NzBhY2E5Mzk5YzcyYjA4ZGU0NzBhOGJjOTdmYTk0YzQwM2ZlMDhlMDM4NDU5ZjkyMDUiCiAgfSwKICAibGltaXRhdGlvbnMiOiAiQnJvd3NlciBtb2JpbGUvdGFibGV0IGVtdWxhdGlvbiBpcyBub3QgcGh5c2ljYWwtZGV2aWNlIG9yIHVzZXIgdmlzdWFsIGFjY2VwdGFuY2UuIgp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-a8ceca3e709f956dadf7",
+          "file": "atlas-shape.spec.ts",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20059,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:02:09.741Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-trusted-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDY2NC41ODc1MjQ0MTQwNjI1LAogICAgInkiOiA0MDkuMDc1Nzc1MTQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjY1LjU4NzUyNDQxNDA2MjUsCiAgICAieSI6IDQxMC4wNzU3NzUxNDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjY1LjU4NzUyNDQxNDA2MjUsCiAgICAieSI6IDQxMC4wNzU3NzUxNDY0ODQ0LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA1NDcuNTE3MjExOTE0MDYyNSwKICAgICJ5IjogMzExLjUxNzE4MTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDg5OC43MjgxNDk0MTQwNjI1LAogICAgInkiOiA2MDQuMTkyOTkzMTY0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogODk4LjcyODE0OTQxNDA2MjUsCiAgICAieSI6IDMxMS41MTcxODEzOTY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA1NDcuNTE3MjExOTE0MDYyNSwKICAgICJ5IjogNjA0LjE5Mjk5MzE2NDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDU0Ny41MTcyMTE5MTQwNjI1LAogICAgInkiOiAzMTEuNTE3MTgxMzk2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDU0Ny41MTcyMTE5MTQwNjI1LAogICAgInkiOiAzMTEuNTE3MTgxMzk2NDg0NCwKICAgICJidXR0b25zIjogMAogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogNjgzLjYxMDk2MTkxNDA2MjUsCiAgICAieSI6IDQ2Ny42MTA5MzEzOTY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA2NzMuNjEwOTYxOTE0MDYyNSwKICAgICJ5IjogNDU3LjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDczMy42MTA5NjE5MTQwNjI1LAogICAgInkiOiA0NzcuNjEwOTMxMzk2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogNzY4LjYxMDk2MTkxNDA2MjUsCiAgICAieSI6IDQ4Mi42MTA5MzEzOTY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA2MzguNjEwOTYxOTE0MDYyNSwKICAgICJ5IjogNDUyLjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA2MzguNjEwOTYxOTE0MDYyNSwKICAgICJ5IjogNDUyLjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA3NjguNjEwOTYxOTE0MDYyNSwKICAgICJ5IjogNDgyLjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiAzODkuNTY0MDU2Mzk2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNzIzLjEyMjY4MDY2NDA2MjUsCiAgICAieSI6IDM4OS41NjQwNTYzOTY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA3MjMuMTIyNjgwNjY0MDYyNSwKICAgICJ5IjogNDY3LjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA3MjMuMTIyNjgwNjY0MDYyNSwKICAgICJ5IjogNDY3LjYxMDkzMTM5NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiAzODkuNTY0MDU2Mzk2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogNzAzLjYxMDk2MTkxNDA2MjUsCiAgICAieSI6IDQwOS4wNzU3NzUxNDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA3NDIuNjM0Mzk5NDE0MDYyNSwKICAgICJ5IjogNDQ4LjA5OTIxMjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA3NDIuNjM0Mzk5NDE0MDYyNSwKICAgICJ5IjogNDQ4LjA5OTIxMjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiAyOTIuMDA1NDYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNzgxLjY1NzgzNjkxNDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA3ODEuNjU3ODM2OTE0MDYyNSwKICAgICJ5IjogMzcwLjA1MjMzNzY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDYyNS41NjQwODY5MTQwNjI1LAogICAgInkiOiAzNzAuMDUyMzM3NjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjI1LjU2NDA4NjkxNDA2MjUsCiAgICAieSI6IDQ0OC4wOTkyMTI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA5MDguNDg0MDA4Nzg5MDYyNSwKICAgICJ5IjogNDQ4LjA5OTIxMjY0NjQ4NDQsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDkwOC40ODQwMDg3ODkwNjI1LAogICAgInkiOiA0NzkuMzE3OTYyNjQ2NDg0NCwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNjI1LjU2NDA4NjkxNDA2MjUsCiAgICAieSI6IDQ3OS4zMTc5NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAibW91c2UiLAogICAgIngiOiA2MjUuNTY0MDg2OTE0MDYyNSwKICAgICJ5IjogNjIzLjcwNDcxMTkxNDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJtb3VzZSIsCiAgICAieCI6IDUyOC4wMDU0OTMxNjQwNjI1LAogICAgInkiOiA2MjMuNzA0NzExOTE0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNTI4LjAwNTQ5MzE2NDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogIm1vdXNlIiwKICAgICJ4IjogNTI4LjAwNTQ5MzE2NDA2MjUsCiAgICAieSI6IDI5Mi4wMDU0NjI2NDY0ODQ0LAogICAgImJ1dHRvbnMiOiAwCiAgfQpd"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-195992013171b4f4b02b",
+          "file": "atlas-shape.spec.ts",
+          "line": 174,
+          "column": 1
+        },
+        {
+          "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 44844,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:05:04.798Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-native-drawing-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjE5Ljc2MDE2MjM1MzUxNTYyLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjE5Ljc2MDE2MjM1MzUxNTYyLAogICAgInkiOiAzNTMuMjg1NTUyOTc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTQ3LjMzODI4NzM1MzUxNTYyLAogICAgInkiOiAzNTMuMjg1NTUyOTc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTQ3LjMzODI4NzM1MzUxNTYyLAogICAgInkiOiAzODkuNDk2NDkwNDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjc4LjYwMjkzNTc5MTAxNTYsCiAgICAieSI6IDM4OS40OTY0OTA0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyNzguNjAyOTM1NzkxMDE1NiwKICAgICJ5IjogNDAzLjk4MDg2NTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogNDAzLjk4MDg2NTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogNDcwLjk3MTA5OTg1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiA0NzAuOTcxMDk5ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTAyLjA3NDYwNzg0OTEyMTEsCiAgICAieSI6IDMxNy4wNzQ2MTU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTAyLjA3NDYwNzg0OTEyMTEsCiAgICAieSI6IDMxNy4wNzQ2MTU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMDIuMDc0NjA3ODQ5MTIxMSwKICAgICJ5IjogMzE3LjA3NDYxNTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIxOS43NjAxNjIzNTM1MTU2MiwKICAgICJ5IjogMzE3LjA3NDYxNTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIxOS43NjAxNjIzNTM1MTU2MiwKICAgICJ5IjogMzUzLjI4NTU1Mjk3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogMzUzLjI4NTU1Mjk3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogMzg5LjQ5NjQ5MDQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI3OC42MDI5MzU3OTEwMTU2LAogICAgInkiOiAzODkuNDk2NDkwNDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjc4LjYwMjkzNTc5MTAxNTYsCiAgICAieSI6IDQwMy45ODA4NjU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxNDcuMzM4Mjg3MzUzNTE1NjIsCiAgICAieSI6IDQwMy45ODA4NjU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxNDcuMzM4Mjg3MzUzNTE1NjIsCiAgICAieSI6IDQ3MC45NzEwOTk4NTM1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMDIuMDc0NjA3ODQ5MTIxMSwKICAgICJ5IjogNDcwLjk3MTA5OTg1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMAogIH0KXQ=="
+                    },
+                    {
+                      "name": "shape-independent-persistence.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJmaXJzdCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiM2U5NWJjNDYtM2Q2Zi00NDAwLWIyMzUtZjgxMTFmZjZjYzhkIiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiMzlkOGFhODU5NTg0MjMzZTEwYzNmODQ3YWQxYWE0OGY3NmI2MmViZDg4ZjUyNmM0YWQ5YWQ0ZjY2MGJiYmExNyIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy0wZDhlZjI1Yy05MTcxLTRkZTAtYTVlNy1iMjhiYzEzZTRkMTUiLAogICAgImF0bGFzSWQiOiAiZ2VvLTU1ZTU2MmFiLWRhMGEtNGM1Yy05Yjg1LTRmOTdiNmE5MGQxMSIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogIjczYWRiY2ZiMDVkZjZjMzlmNjc5M2ZjOWM4ZGM3MzA2M2Y2MmNlNTZhMmY5NzE3NDE2ZjU4Y2IxY2E5NTJlODYiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNlY29uZCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiNzE2MDQzOTQtZGMyNS00ZTcxLTkzYWYtMDhkM2UxNDJiYjJjIiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiMzlkOGFhODU5NTg0MjMzZTEwYzNmODQ3YWQxYWE0OGY3NmI2MmViZDg4ZjUyNmM0YWQ5YWQ0ZjY2MGJiYmExNyIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy0wZDhlZjI1Yy05MTcxLTRkZTAtYTVlNy1iMjhiYzEzZTRkMTUiLAogICAgImF0bGFzSWQiOiAiZ2VvLTU1ZTU2MmFiLWRhMGEtNGM1Yy05Yjg1LTRmOTdiNmE5MGQxMSIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogIjczYWRiY2ZiMDVkZjZjMzlmNjc5M2ZjOWM4ZGM3MzA2M2Y2MmNlNTZhMmY5NzE3NDE2ZjU4Y2IxY2E5NTJlODYiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNoYXBlIjogewogICAgImFyZWFRMiI6IDE4MjQ5NTAxNDMxOCwKICAgICJjaGFuZ2VkU2VhIjogNDM2MCwKICAgICJtaW5IZWlnaHQiOiAtMTAwLAogICAgIm1heEhlaWdodCI6IDExMTksCiAgICAiY29tcG9uZW50U2l6ZXMiOiBbCiAgICAgIDU0NDAKICAgIF0KICB9LAogICJjb250cm9sUG9pbnRzIjogWwogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDIzMDQwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogNTYzMjAwLAogICAgICAieVEiOiAyMzA0MDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDU2MzIwMCwKICAgICAgInlRIjogMzMyODAwCiAgICB9LAogICAgewogICAgICAieFEiOiAzNTg0MDAsCiAgICAgICJ5USI6IDMzMjgwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0MzUyMDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDcyOTYwMCwKICAgICAgInlRIjogNDM1MjAwCiAgICB9LAogICAgewogICAgICAieFEiOiA3Mjk2MDAsCiAgICAgICJ5USI6IDQ3NjE2MAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0NzYxNjAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDM1ODQwMCwKICAgICAgInlRIjogNjY1NjAwCiAgICB9LAogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDY2NTYwMAogICAgfQogIF0sCiAgInNvdXJjZUZpbmdlcnByaW50IjogImFmNzI5NGY5MWVlMmMxYjFjM2U4NzNjYWFmNGM5OTg5NmYxYjQzMzE4Y2RmNmRmYTg0NzAwMGUxZGUxN2E4MGIiLAogICJ1bmNoYW5nZWROb25IZWlnaHRMYXllcnMiOiB0cnVlLAogICJyZXN0b3JlZE9yaWdpbmFsQWZ0ZXJVbmRvIjogdHJ1ZSwKICAiYmFzZWxpbmVEYXRhYmFzZSI6IHsKICAgICJieXRlcyI6IDU1NjMzODUsCiAgICAic2hhMjU2IjogIjRlNWQwYjMzZjNmMDRkYzUyNWM5ZjZmNGE0NDdkODAyYzQ5ZjZkMmQyNDNmNDAxZDk2MzdiNmYxNzkxZGU2NTMiCiAgfSwKICAibGltaXRhdGlvbnMiOiAiQnJvd3NlciBtb2JpbGUvdGFibGV0IGVtdWxhdGlvbiBpcyBub3QgcGh5c2ljYWwtZGV2aWNlIG9yIHVzZXIgdmlzdWFsIGFjY2VwdGFuY2UuIgp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-1adee3a182f7879e9045",
+          "file": "atlas-shape.spec.ts",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20008,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:05:49.653Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-trusted-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE2NS40NDM3NTYxMDM1MTU2MiwKICAgICJ5IjogMzcxLjM5MTAyMTcyODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE2Ni40NDM3NTYxMDM1MTU2MiwKICAgICJ5IjogMzcyLjM5MTAyMTcyODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxNjYuNDQzNzU2MTAzNTE1NjIsCiAgICAieSI6IDM3Mi4zOTEwMjE3Mjg1MTU2LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMTEuMTI3MzQyMjI0MTIxMSwKICAgICJ5IjogMzI2LjEyNzM0OTg1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI3NC4wNzY1Njg2MDM1MTU2LAogICAgInkiOiA0NjEuOTE4MzY1NDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjc0LjA3NjU2ODYwMzUxNTYsCiAgICAieSI6IDMyNi4xMjczNDk4NTM1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMTEuMTI3MzQyMjI0MTIxMSwKICAgICJ5IjogNDYxLjkxODM2NTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDExMS4xMjczNDIyMjQxMjExLAogICAgInkiOiAzMjYuMTI3MzQ5ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDExMS4xMjczNDIyMjQxMjExLAogICAgInkiOiAzMjYuMTI3MzQ5ODUzNTE1NiwKICAgICJidXR0b25zIjogMAogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTYzLjU0OTIyNDg1MzUxNTYyLAogICAgInkiOiAzOTguNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTUzLjU0OTIyNDg1MzUxNTYyLAogICAgInkiOiAzODguNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjEzLjU0OTIyNDg1MzUxNTYyLAogICAgInkiOiA0MDguNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjQ4LjU0OTIyNDg1MzUxNTYyLAogICAgInkiOiA0MTMuNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTE4LjU0OTIxNzIyNDEyMTEsCiAgICAieSI6IDM4My41NDkyMjQ4NTM1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTE4LjU0OTIxNzIyNDEyMTEsCiAgICAieSI6IDM4My41NDkyMjQ4NTM1MTU2LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjQ4LjU0OTIyNDg1MzUxNTYyLAogICAgInkiOiA0MTMuNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMAogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTQ3LjMzODI4NzM1MzUxNTYyLAogICAgInkiOiAzNjIuMzM4Mjg3MzUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTkyLjYwMTk1OTIyODUxNTYyLAogICAgInkiOiAzNjIuMzM4Mjg3MzUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMTkyLjYwMTk1OTIyODUxNTYyLAogICAgInkiOiAzOTguNTQ5MjI0ODUzNTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE5Mi42MDE5NTkyMjg1MTU2MiwKICAgICJ5IjogMzk4LjU0OTIyNDg1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogMzYyLjMzODI4NzM1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE4My41NDkyMjQ4NTM1MTU2MiwKICAgICJ5IjogMzcxLjM5MTAyMTcyODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMS42NTQ2OTM2MDM1MTU2MiwKICAgICJ5IjogMzg5LjQ5NjQ5MDQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMDEuNjU0NjkzNjAzNTE1NjIsCiAgICAieSI6IDM4OS40OTY0OTA0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMDIuMDc0NjA3ODQ5MTIxMSwKICAgICJ5IjogMzE3LjA3NDYxNTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIxOS43NjAxNjIzNTM1MTU2MiwKICAgICJ5IjogMzE3LjA3NDYxNTQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIxOS43NjAxNjIzNTM1MTU2MiwKICAgICJ5IjogMzUzLjI4NTU1Mjk3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogMzUzLjI4NTU1Mjk3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDE0Ny4zMzgyODczNTM1MTU2MiwKICAgICJ5IjogMzg5LjQ5NjQ5MDQ3ODUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI3OC42MDI5MzU3OTEwMTU2LAogICAgInkiOiAzODkuNDk2NDkwNDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjc4LjYwMjkzNTc5MTAxNTYsCiAgICAieSI6IDQwMy45ODA4NjU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxNDcuMzM4Mjg3MzUzNTE1NjIsCiAgICAieSI6IDQwMy45ODA4NjU0Nzg1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxNDcuMzM4Mjg3MzUzNTE1NjIsCiAgICAieSI6IDQ3MC45NzEwOTk4NTM1MTU2LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAxMDIuMDc0NjA3ODQ5MTIxMSwKICAgICJ5IjogNDcwLjk3MTA5OTg1MzUxNTYsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDEwMi4wNzQ2MDc4NDkxMjExLAogICAgInkiOiAzMTcuMDc0NjE1NDc4NTE1NiwKICAgICJidXR0b25zIjogMAogIH0KXQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-90985332e67f07467c8c",
+          "file": "atlas-shape.spec.ts",
+          "line": 174,
+          "column": 1
+        },
+        {
+          "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 49494,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:08:50.082Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-native-drawing-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMC42ODA2NjQwNjI1LAogICAgInkiOiAzMzcuMTgwNjY0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogNDMyLjA1MjczNDM3NSwKICAgICJ5IjogMzM3LjE4MDY2NDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDQzMi4wNTI3MzQzNzUsCiAgICAieSI6IDQwOC4zNzIwNzAzMTI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyODkuNjY5OTIxODc1LAogICAgInkiOiA0MDguMzcyMDcwMzEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNDc5LjU2MzQ3NjU2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDU0Ny43Mzg3Njk1MzEyNSwKICAgICJ5IjogNDc5LjU2MzQ3NjU2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDU0Ny43Mzg3Njk1MzEyNSwKICAgICJ5IjogNTA4LjA0MDAzOTA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI4OS42Njk5MjE4NzUsCiAgICAieSI6IDUwOC4wNDAwMzkwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyODkuNjY5OTIxODc1LAogICAgInkiOiA2MzkuNzQ0MTQwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMDAuNjgwNjY0MDYyNSwKICAgICJ5IjogNjM5Ljc0NDE0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjAwLjY4MDY2NDA2MjUsCiAgICAieSI6IDMzNy4xODA2NjQwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjAwLjY4MDY2NDA2MjUsCiAgICAieSI6IDMzNy4xODA2NjQwNjI1LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMDAuNjgwNjY0MDYyNSwKICAgICJ5IjogMzM3LjE4MDY2NDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDQzMi4wNTI3MzQzNzUsCiAgICAieSI6IDMzNy4xODA2NjQwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA0MzIuMDUyNzM0Mzc1LAogICAgInkiOiA0MDguMzcyMDcwMzEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNDA4LjM3MjA3MDMxMjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI4OS42Njk5MjE4NzUsCiAgICAieSI6IDQ3OS41NjM0NzY1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1NDcuNzM4NzY5NTMxMjUsCiAgICAieSI6IDQ3OS41NjM0NzY1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1NDcuNzM4NzY5NTMxMjUsCiAgICAieSI6IDUwOC4wNDAwMzkwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyODkuNjY5OTIxODc1LAogICAgInkiOiA1MDguMDQwMDM5MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNjM5Ljc0NDE0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjAwLjY4MDY2NDA2MjUsCiAgICAieSI6IDYzOS43NDQxNDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMC42ODA2NjQwNjI1LAogICAgInkiOiAzMzcuMTgwNjY0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMC42ODA2NjQwNjI1LAogICAgInkiOiAzMzcuMTgwNjY0MDYyNSwKICAgICJidXR0b25zIjogMAogIH0KXQ=="
+                    },
+                    {
+                      "name": "shape-independent-persistence.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJmaXJzdCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiMDJmNjFiNWItZGJkNi00MGFhLWE0NGEtNGEzMmJlYjBhNjBhIiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiYzhjMTc0MzlhOTc3MWZhNzZlM2Y2MWRkOWFlNGFiMGNiY2E1NjlkZmFiNThjMDc2ODMwMzdiYWZiM2E4YzQ3YyIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy1kOGM1NjA4OS05NzNkLTQ1NmItOThlMi0zYjZkYjdlYWFiMmMiLAogICAgImF0bGFzSWQiOiAiZ2VvLTlkZjA3Y2IxLTY4ZTktNDA5YS1hN2JmLTZlZjA1NTI2OTNmYSIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogIjNjODRlNTBiNmJmYjFkZTk0Yjc2MjFmYTFiOWMzYzY0Yjg1NGE2M2M1ODBlYTkyY2I3MzFmODhkMjBkMGNlZmMiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNlY29uZCI6IHsKICAgICJyZXF1ZXN0SWQiOiAiYWZkOTUzM2YtNzU5Yi00NWM0LTg5MjAtMzBlOWY0MDg0MmRjIiwKICAgICJvayI6IHRydWUsCiAgICAibWFuaWZlc3REaWdlc3QiOiAiYzhjMTc0MzlhOTc3MWZhNzZlM2Y2MWRkOWFlNGFiMGNiY2E1NjlkZmFiNThjMDc2ODMwMzdiYWZiM2E4YzQ3YyIsCiAgICAiZHJhZnRJZCI6ICJhdGxhcy1kOGM1NjA4OS05NzNkLTQ1NmItOThlMi0zYjZkYjdlYWFiMmMiLAogICAgImF0bGFzSWQiOiAiZ2VvLTlkZjA3Y2IxLTY4ZTktNDA5YS1hN2JmLTZlZjA1NTI2OTNmYSIsCiAgICAicmV2aXNpb24iOiAwLAogICAgInZlcmlmaWVkQmxvY2tzIjogMjU2LAogICAgImRpc3BsYXkiOiB7CiAgICAgICJzb3VyY2UiOiAiZ2VuZXJhdGlvbi1wcmV2aWV3IiwKICAgICAgIm1hbmlmZXN0RGlnZXN0IjogIjNjODRlNTBiNmJmYjFkZTk0Yjc2MjFmYTFiOWMzYzY0Yjg1NGE2M2M1ODBlYTkyY2I3MzFmODhkMjBkMGNlZmMiLAogICAgICAicmV2aXNpb24iOiAxLAogICAgICAidmVyc2lvbiI6IDIsCiAgICAgICJ2ZXJpZmllZEJsb2NrcyI6IDI1NgogICAgfQogIH0sCiAgInNoYXBlIjogewogICAgImFyZWFRMiI6IDE4MjQ5NTAxNDMxOCwKICAgICJjaGFuZ2VkU2VhIjogNDM2MCwKICAgICJtaW5IZWlnaHQiOiAtMTAwLAogICAgIm1heEhlaWdodCI6IDExMTksCiAgICAiY29tcG9uZW50U2l6ZXMiOiBbCiAgICAgIDU0NDAKICAgIF0KICB9LAogICJjb250cm9sUG9pbnRzIjogWwogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDIzMDQwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogNTYzMjAwLAogICAgICAieVEiOiAyMzA0MDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDU2MzIwMCwKICAgICAgInlRIjogMzMyODAwCiAgICB9LAogICAgewogICAgICAieFEiOiAzNTg0MDAsCiAgICAgICJ5USI6IDMzMjgwMAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0MzUyMDAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDcyOTYwMCwKICAgICAgInlRIjogNDM1MjAwCiAgICB9LAogICAgewogICAgICAieFEiOiA3Mjk2MDAsCiAgICAgICJ5USI6IDQ3NjE2MAogICAgfSwKICAgIHsKICAgICAgInhRIjogMzU4NDAwLAogICAgICAieVEiOiA0NzYxNjAKICAgIH0sCiAgICB7CiAgICAgICJ4USI6IDM1ODQwMCwKICAgICAgInlRIjogNjY1NjAwCiAgICB9LAogICAgewogICAgICAieFEiOiAyMzA0MDAsCiAgICAgICJ5USI6IDY2NTYwMAogICAgfQogIF0sCiAgInNvdXJjZUZpbmdlcnByaW50IjogImFmNzI5NGY5MWVlMmMxYjFjM2U4NzNjYWFmNGM5OTg5NmYxYjQzMzE4Y2RmNmRmYTg0NzAwMGUxZGUxN2E4MGIiLAogICJ1bmNoYW5nZWROb25IZWlnaHRMYXllcnMiOiB0cnVlLAogICJyZXN0b3JlZE9yaWdpbmFsQWZ0ZXJVbmRvIjogdHJ1ZSwKICAiYmFzZWxpbmVEYXRhYmFzZSI6IHsKICAgICJieXRlcyI6IDU1NjMzNzYsCiAgICAic2hhMjU2IjogIjI4NGZhNjRmYjliMGY3N2RiYTQ2YmQ3Y2E2YWFmZDVjZjllNzMyMDMzMzQwY2MxMmEyMzk1NTAyNTkyN2NkMjQiCiAgfSwKICAibGltaXRhdGlvbnMiOiAiQnJvd3NlciBtb2JpbGUvdGFibGV0IGVtdWxhdGlvbiBpcyBub3QgcGh5c2ljYWwtZGV2aWNlIG9yIHVzZXIgdmlzdWFsIGFjY2VwdGFuY2UuIgp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-f75ae7637063c2561314",
+          "file": "atlas-shape.spec.ts",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 22376,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T05:09:39.587Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "shape-trusted-input.json",
+                      "contentType": "application/json",
+                      "body": "WwogIHsKICAgICJ0eXBlIjogInBvaW50ZXJkb3duIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDMyNS4yNjU2MjUsCiAgICAieSI6IDQ0My45Njc3NzM0Mzc1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAzMjYuMjY1NjI1LAogICAgInkiOiA0NDQuOTY3NzczNDM3NSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDMyNi4yNjU2MjUsCiAgICAieSI6IDQ0NC45Njc3NzM0Mzc1LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMTguNDc4NTE1NjI1LAogICAgInkiOiAzNTQuOTc4NTE1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1MzguODM5ODQzNzUsCiAgICAieSI6IDYyMS45NDYyODkwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1MzguODM5ODQzNzUsCiAgICAieSI6IDM1NC45Nzg1MTU2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIxOC40Nzg1MTU2MjUsCiAgICAieSI6IDYyMS45NDYyODkwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMTguNDc4NTE1NjI1LAogICAgInkiOiAzNTQuOTc4NTE1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVydXAiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjE4LjQ3ODUxNTYyNSwKICAgICJ5IjogMzU0Ljk3ODUxNTYyNSwKICAgICJidXR0b25zIjogMAogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMzQwLjg2MTMyODEyNSwKICAgICJ5IjogNDk3LjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMzMwLjg2MTMyODEyNSwKICAgICJ5IjogNDg3LjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMzkwLjg2MTMyODEyNSwKICAgICJ5IjogNTA3LjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogNDI1Ljg2MTMyODEyNSwKICAgICJ5IjogNTEyLjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjk1Ljg2MTMyODEyNSwKICAgICJ5IjogNDgyLjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI5NS44NjEzMjgxMjUsCiAgICAieSI6IDQ4Mi4zNjEzMjgxMjUsCiAgICAiYnV0dG9ucyI6IDAKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA0MjUuODYxMzI4MTI1LAogICAgInkiOiA1MTIuMzYxMzI4MTI1LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyODkuNjY5OTIxODc1LAogICAgInkiOiA0MjYuMTY5OTIxODc1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAzNzguNjU5MTc5Njg3NSwKICAgICJ5IjogNDI2LjE2OTkyMTg3NSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMzc4LjY1OTE3OTY4NzUsCiAgICAieSI6IDQ5Ny4zNjEzMjgxMjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAzNzguNjU5MTc5Njg3NSwKICAgICJ5IjogNDk3LjM2MTMyODEyNSwKICAgICJidXR0b25zIjogMAogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcmRvd24iLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNDI2LjE2OTkyMTg3NSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMzYwLjg2MTMyODEyNSwKICAgICJ5IjogNDQzLjk2Nzc3MzQzNzUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDM5Ni40NTcwMzEyNSwKICAgICJ5IjogNDc5LjU2MzQ3NjU2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJ1cCIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAzOTYuNDU3MDMxMjUsCiAgICAieSI6IDQ3OS41NjM0NzY1NjI1LAogICAgImJ1dHRvbnMiOiAwCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVyZG93biIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyMDAuNjgwNjY0MDYyNSwKICAgICJ5IjogMzM3LjE4MDY2NDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDQzMi4wNTI3MzQzNzUsCiAgICAieSI6IDMzNy4xODA2NjQwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA0MzIuMDUyNzM0Mzc1LAogICAgInkiOiA0MDguMzcyMDcwMzEyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNDA4LjM3MjA3MDMxMjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDI4OS42Njk5MjE4NzUsCiAgICAieSI6IDQ3OS41NjM0NzY1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1NDcuNzM4NzY5NTMxMjUsCiAgICAieSI6IDQ3OS41NjM0NzY1NjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiA1NDcuNzM4NzY5NTMxMjUsCiAgICAieSI6IDUwOC4wNDAwMzkwNjI1LAogICAgImJ1dHRvbnMiOiAxCiAgfSwKICB7CiAgICAidHlwZSI6ICJwb2ludGVybW92ZSIsCiAgICAidHJ1c3RlZCI6IHRydWUsCiAgICAicG9pbnRlclR5cGUiOiAidG91Y2giLAogICAgIngiOiAyODkuNjY5OTIxODc1LAogICAgInkiOiA1MDguMDQwMDM5MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjg5LjY2OTkyMTg3NSwKICAgICJ5IjogNjM5Ljc0NDE0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcm1vdmUiLAogICAgInRydXN0ZWQiOiB0cnVlLAogICAgInBvaW50ZXJUeXBlIjogInRvdWNoIiwKICAgICJ4IjogMjAwLjY4MDY2NDA2MjUsCiAgICAieSI6IDYzOS43NDQxNDA2MjUsCiAgICAiYnV0dG9ucyI6IDEKICB9LAogIHsKICAgICJ0eXBlIjogInBvaW50ZXJtb3ZlIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMC42ODA2NjQwNjI1LAogICAgInkiOiAzMzcuMTgwNjY0MDYyNSwKICAgICJidXR0b25zIjogMQogIH0sCiAgewogICAgInR5cGUiOiAicG9pbnRlcnVwIiwKICAgICJ0cnVzdGVkIjogdHJ1ZSwKICAgICJwb2ludGVyVHlwZSI6ICJ0b3VjaCIsCiAgICAieCI6IDIwMC42ODA2NjQwNjI1LAogICAgInkiOiAzMzcuMTgwNjY0MDYyNSwKICAgICJidXR0b25zIjogMAogIH0KXQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ea3061f538285e642fc7-bc30c3659839736695ef",
+          "file": "atlas-shape.spec.ts",
+          "line": 174,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-27T04:58:51.036Z",
+    "duration": 671209.222,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

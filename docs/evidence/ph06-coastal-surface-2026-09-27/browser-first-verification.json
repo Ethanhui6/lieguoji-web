@@ -1,0 +1,256 @@
+{
+  "startedAt": "2026-09-27T04:58:29.450Z",
+  "completedAt": "2026-09-27T05:10:02.455Z",
+  "buildExit": 0,
+  "browserExit": 1,
+  "buildSha256": "0ea1d390111d836e99ab639961c5c8bb30f39b198869dddbd9cfb89449465bf8",
+  "sourceFiles": 249,
+  "sourceStable": true,
+  "distStable": true,
+  "coverage": true,
+  "passed": false,
+  "stats": {
+    "startTime": "2026-09-27T04:58:51.036Z",
+    "duration": 671209.222,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 41688
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+      "project": "desktop-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "duration": 90151
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+      "project": "desktop-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "duration": 10079
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 42090
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+      "project": "mobile-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "duration": 90189
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+      "project": "mobile-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "duration": 9926
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取与画面一致，保存刷新和GPU恢复",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 45548
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版",
+      "project": "tablet-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "duration": 90248
+        }
+      ]
+    },
+    {
+      "file": "atlas-coastal-surface.spec.ts",
+      "title": "[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变",
+      "project": "tablet-chromium",
+      "status": "unexpected",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "duration": 10184
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8937
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9742
+        }
+      ]
+    },
+    {
+      "file": "atlas-rendering.spec.ts",
+      "title": "[atlas-gpu] 两次真实WebGL丢失恢复保持地图像素、相机、选择与主备，卸载释放受管理纹理",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11409
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 44932
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 20059
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 44844
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 20008
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘大陆：真实闭合凹湾笔迹自动预览，取消无写，再画保存，刷新恢复和原会话撤销",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 49494
+        }
+      ]
+    },
+    {
+      "file": "atlas-shape.spec.ts",
+      "title": "手绘边界：短笔和交叉拒绝，双指中断绘制仍可缩放，Escape与浏览切换不写入且下一笔无残留",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 22376
+        }
+      ]
+    }
+  ]
+}

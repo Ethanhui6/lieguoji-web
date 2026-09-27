@@ -353,7 +353,7 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
   prepareReplacement(raw: T, commandId: string, reason: string, control?: AtlasEditControl) { return this.#prepareReplacement(raw, commandId, reason, false, control); }
   async prepareConstraints(raw: AtlasConstraintEdit, control?: AtlasEditControl): Promise<PreparedAtlasConstraints> {
     if (this.#preparing || this.#candidates.size || this.#replacement) throw new Error('已有一笔编辑等待完成或取消。');
-    if (!isGenerationDocument(this.#data)) throw new Error('区域锁需要第二版草稿。');
+    if (!isGenerationDocument(this.#data)) throw new Error('区域锁需要生成版本草稿。');
     if (!generationExact(raw, ['format', 'version', 'draftId', 'commandId', 'expectedRevision', 'expectedRootDigest', 'rectangle', 'mask', 'action'])
       || raw.format !== 'lieguoji-atlas-constraint-edit' || raw.version !== 1 || typeof raw.commandId !== 'string' || !COMMAND.test(raw.commandId)
       || raw.draftId !== this.#data.manifest.draftId || raw.expectedRevision !== this.#data.manifest.revision || raw.expectedRootDigest !== this.#rootDigest

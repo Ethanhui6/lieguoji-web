@@ -1,0 +1,10 @@
+{
+  "scenarios": 18,
+  "expectedPerProject": {
+    "desktop-chromium": 6,
+    "mobile-chromium": 6,
+    "tablet-chromium": 6
+  },
+  "scope": "Three v3 coast/copy/entry scenarios, two legacy v2 hand-drawing regressions, and the existing v1 double GPU-recovery regression on three browser form factors.",
+  "limitation": "Browser emulation, not real devices or user visual acceptance. V3 uses authoritative clipped sea/land pieces; v1/v2 retain their saved cell-edge semantics. PH06-T4 performance/cancel suite is deferred."
+}

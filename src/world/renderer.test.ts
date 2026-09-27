@@ -5,8 +5,9 @@ import { cloneAtlasDraft, createAtlasDraft, encodeBlock, encodeManifest, getCell
 import { cellVertexIds, getCellQuad, getVertexPositionQ, incidentCellIds, vertexIdAt } from './topology';
 import { AtlasTextureCache, type AtlasTextureSpec } from './atlas-texture-cache';
 import { cloneGenerationDocument, createGenerationDraft, encodeGenerationManifest } from './generation-format';
-import { hashAtlasManifest, type AtlasGenerationDocument } from './atlas-format';
+import { hashAtlasManifest, type AtlasGenerationDocument, type AtlasGeographyView } from './atlas-format';
 import { TERRAIN_LUT_PIXELS } from './terrain-mesh';
+import { COASTAL_COORDINATE_SCALE, getCoastalCellSurface } from './coastal-surface';
 
 // Only the browser/GPU boundary is replaced. The source, shared geometry and
 // spatial index are the production 128² atlas, never a benchmark fixture.
@@ -122,6 +123,34 @@ const dispatch = (target: EventTarget, type: string, fields: object = {}) => tar
 async function flushFrames() { for (let i = 0; i < 5; i++) { await vi.runAllTimersAsync(); tick(); await Promise.resolve(); } }
 
 describe('production camera, cache and GPU lifecycle', () => {
+  it('rejects same-draft version or surface changes before reusing or changing live caches', async () => {
+    const h = await generationRenderer(), before = h.renderer.metrics();
+    const crossVersion = { ...generationSource, manifest: { ...generationSource.manifest, revision: generationSource.manifest.revision + 1, version: 3 as const, surface: { kind: 'land-mask-fan-v1' as const, coordinateScale: 256 as const } } };
+    await expect(h.renderer.accept(crossVersion, { dirtyKeys: [], changedVertexIds: [], affectedCellIds: [] })).rejects.toThrow('同一草稿不能更换');
+    expect(h.renderer.metrics()).toEqual(before); expect(h.fatal).not.toHaveBeenCalled();
+    const newDraft = await createGenerationDraft({ size: 128, seed: 'immutable-surface', name: '显式新地表' }, { yieldTask: async () => {} }, 3);
+    const accepted = h.renderer.accept(newDraft); await flushFrames(); await accepted;
+    const current = h.renderer.metrics(), altered = { ...newDraft, manifest: { ...newDraft.manifest, revision: 1, surface: { kind: 'future-surface', coordinateScale: 256 } } } as unknown as AtlasGeographyView;
+    await expect(h.renderer.accept(altered, { dirtyKeys: [], changedVertexIds: [], affectedCellIds: [] })).rejects.toThrow('权威地表合同');
+    expect(h.renderer.metrics()).toEqual(current); expect(h.fatal).not.toHaveBeenCalled();
+  });
+  it('renders v3 clipped coast pieces and picks sea inside a land-center editable quad', async () => {
+    const data = await createGenerationDraft({ size: 128, seed: 'renderer-real-coast', name: '海陆点拾取' }, { yieldTask: async () => {} }, 3);
+    const id = 8256, height = getCellLayerSlot(data, 'elevation', id); height.block.values[height.slot] = 650;
+    data.manifest.blockRefs.find(ref => ref.key === height.key)!.hash = await hashBlock(height.block);
+    const h = newRenderer(); await h.renderer.init(); const accepted = h.renderer.accept(data); await flushFrames(); await accepted;
+    h.renderer.focusCell(id); h.renderer.zoom(8); tick();
+    const cell = getCoastalCellSurface(data, id), triangle = cell.sea[0], camera = h.renderer.metrics().camera;
+    expect(cell.land.length).toBeGreaterThan(0); expect(cell.sea.length).toBeGreaterThan(0);
+    const x = triangle.reduce((sum, point) => sum + point.xQ6, 0) / (3 * COASTAL_COORDINATE_SCALE), y = triangle.reduce((sum, point) => sum + point.yQ6, 0) / (3 * COASTAL_COORDINATE_SCALE);
+    const clientX = camera.x + x * camera.scale, clientY = camera.y + y * camera.scale, canvas = canvasOf(h);
+    dispatch(canvas, 'pointerdown', { pointerId: 1, button: 0, clientX, clientY }); dispatch(canvas, 'pointerup', { pointerId: 1, clientX, clientY });
+    expect(h.pick).toHaveBeenLastCalledWith(id, expect.objectContaining({ cellId: id, land: false }));
+    expect(h.pick.mock.calls.at(-1)![1].height).toBeLessThan(0); expect(h.renderer.metrics().selected).toBe(id);
+    expect(pixi.targetDraw.mock.calls.some(([draw]) => draw.meshes.some((mesh: { positions: Float32Array }) => mesh.positions.some(value => !Number.isInteger(value * 256))))).toBe(true);
+    const stats = h.renderer.metrics().geometryCache; expect(stats.surfaceMeshBufferBytes).toBeLessThanOrEqual(stats.surfaceMeshBufferByteLimit); expect(stats.shoreSegments).toBeGreaterThan(0);
+    expect(h.fatal).not.toHaveBeenCalled();
+  });
   it('uses visible 8-cell texture cores for near detail while retaining logical geometry and both budgets', async () => {
     const h = await loadedRenderer(); pixi.textureCreate.mockClear(); pixi.cropCreate.mockClear(); pixi.targetDraw.mockClear();
     h.renderer.zoom(16); tick();

@@ -129,7 +129,7 @@ function fieldScore(site: Site, xQ: number, yQ: number, coastal: number) {
 export async function generateMacro(input: GenerationInput, control?: GenerationControl): Promise<GenerationOutput> {
   control?.signal?.throwIfAborted();
   if (!validateMacroRecipe(input.recipe) || !validateGenerationScope(input.scope) || input.scope.kind !== 'world') throw new Error('未知生成配方、指纹或尚未实现的生成范围。');
-  if (input.base.manifest.version !== 2 || input.base.manifest.constraints.lockRefs.length || input.base.locks.size) throw new Error('首版整图生成仅支持已核验且没有区域锁的 v2 草稿。');
+  if (input.base.manifest.version !== 2 && input.base.manifest.version !== 3 || input.base.manifest.constraints.lockRefs.length || input.base.locks.size) throw new Error('整图生成仅支持已核验且没有区域锁的创世草稿。');
   const { base, recipe } = input, parameters = recipe.parameters, batch = batchSize(control), spec = base.manifest.spec;
   const size = spec.columns, total = size * size, seed = seedHash(recipe.seed), sites = sitesFor(seed, parameters.majorContinents);
   const measured = await measureGeography(base, control), { areaQ2, xyQ, worldAreaQ2 } = measured;

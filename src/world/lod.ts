@@ -110,7 +110,7 @@ export function collectAtlasLabelCandidates(options: AtlasLabelCandidateOptions)
     const world = quadCentroid(getCellQuad(data, cellId));
     const screen = worldToScreen(camera, world);
     if (!onScreen(screen, viewport)) return;
-    candidates.push({ cellId, elevationMeters, selected, world, screen, text: labelText(cellId, elevationMeters, selected, lod) });
+    candidates.push({ cellId, elevationMeters, selected, world, screen, text: (data.manifest.version === 3 ? '采样中心 · ' : '') + labelText(cellId, elevationMeters, selected, lod) });
   };
   // ID zero is a real selection; the reserved sample is counted even when offscreen.
   if (selectedCellId !== null) inspect(selectedCellId, true);

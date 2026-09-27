@@ -9,6 +9,7 @@ import { generateIslands, type IslandOutput } from './generation/islands';
 import { generateCoast, type CoastOutput } from './generation/coast';
 import { generateShape, type ShapeOutput } from './generation/shape';
 import { generateOcean, type OceanOutput } from './generation/ocean';
+import { inspectCoastalGeneration } from './coastal-generation';
 import { OwnedAtlasSession, type PreparedAtlasReplacement } from './transactions';
 
 export interface GenerationPreviewInfo extends PreparedAtlasReplacement {
@@ -25,7 +26,7 @@ export const generationScopeDigest = (scope: GenerationScope) => {
   return generationDigest(new TextEncoder().encode(generationCanonical(scope)));
 };
 export const generationLockDigest = (data: AtlasDocument) => {
-  if (!isGenerationDocument(data)) throw new Error('生成需要独立第二版草稿。');
+  if (!isGenerationDocument(data)) throw new Error('生成需要独立的创世草稿。');
   return hashAtlasLockSet(data.manifest.constraints, data.manifest.spec);
 };
 export const generationPreviewDigest = (p: Omit<GenerationPreviewInfo, 'previewDigest'>) => digest([p.candidateId, p.commandId, p.baseRevision, p.baseRootDigest, p.baseManifestDigest, p.revision, p.manifestDigest, p.reason, p.recipeDigest, p.scopeDigest, p.lockSetDigest, p.summary]);
@@ -40,7 +41,7 @@ export class AtlasGenerationSession {
     if (!validateGenerationRecipe(rawRecipe) || !validateGenerationScope(rawScope)) throw new Error('生成配方或范围版本不受支持。');
     const recipe = structuredClone(rawRecipe), scope = structuredClone(rawScope), head = this.session.head;
     if (head.revision !== expectedRevision || head.rootDigest !== expectedRootDigest) throw new Error('生成基线已变化，请重新打开草稿。');
-    const base = await this.session.snapshotAsync(control); if (!isGenerationDocument(base)) throw new Error('请先创建第二版草稿，或明确复制旧草稿后生成。');
+    const base = await this.session.snapshotAsync(control); if (!isGenerationDocument(base)) throw new Error('请先创建创世草稿，或明确复制旧草稿后生成。');
     if (!validateGenerationOperation(recipe, scope, base.manifest.spec)) throw new Error('生成范围越界或该操作尚不支持局部范围；大陆重建与岛链使用整图，山系盆地和海岸可选择局部。');
     if (recipe.generator.id === 'macro-landmass' && base.locks.size) throw new Error('重建大陆需要未锁定的整张地图；保留海岸时请选择山系与盆地生成。');
     const recipeDigest = await generationRecipeDigest(recipe), scopeDigest = await generationScopeDigest(scope), lockSetDigest = await generationLockDigest(base);
@@ -76,6 +77,13 @@ export class AtlasGenerationSession {
     // them would repeat a synchronous full-world pass. prepareReplacement
     // still takes its own complete buffer copy and verifies every hash/quad.
     const next = { manifest: structuredClone(base.manifest), blocks: new Map(output.blocks), locks: new Map(base.locks) };
+    if (next.manifest.version === 3) {
+      const measured = await inspectCoastalGeneration(base, next, scope, control);
+      summary.landAreaQ2 = measured.landAreaQ2; summary.worldAreaQ2 = measured.worldAreaQ2;
+      for (const nested of [summary.landforms, summary.islands, summary.coast]) if (nested) {
+        nested.landAreaQ2 = measured.landAreaQ2; nested.worldAreaQ2 = measured.worldAreaQ2;
+      }
+    }
     await yieldAtlas(control, '整理候选分层引用', next.blocks.size, next.blocks.size);
     for (let start = 0; start < next.manifest.blockRefs.length; start += 8) {
       const end = Math.min(start + 8, next.manifest.blockRefs.length);

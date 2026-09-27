@@ -1,0 +1,22 @@
+{
+  "observedAt": "2026-09-27T05:12:07.544Z",
+  "tool": "Codex in-app browser via actual UI",
+  "old": {
+    "id": "atlas-d1e901ea-241a-49a2-81b4-60bf5ed0e1cf",
+    "version": 2,
+    "revision": 3
+  },
+  "copy": {
+    "id": "atlas-5fa3eb44-f9e4-461f-9297-30fab36fa12a",
+    "version": 3,
+    "revision": 0,
+    "url": "http://127.0.0.1:4173/?atlas=atlas-5fa3eb44-f9e4-461f-9297-30fab36fa12a&atlas-format=3"
+  },
+  "reloaded": true,
+  "consoleErrors": [],
+  "views": [
+    "full view 14%",
+    "32%"
+  ],
+  "limitation": "UI smoke only. Stored-byte isolation is covered separately by browser tests. Natural visual requirement remains unmet."
+}

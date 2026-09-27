@@ -2,7 +2,7 @@ import type { AtlasBlock } from './model';
 import type { AtlasCellLockBlock, AtlasFormat, AtlasManifestFor } from './generation-contract';
 
 export interface AtlasStoredRoot {
-  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1' | 'atlas-draft-v2';
+  format: 'lieguoji-atlas-root'; version: 1; domain: 'atlas-draft-v1' | 'atlas-draft-v2' | 'atlas-draft-v3';
   draftId: string; revision: number; currentManifest: string; backupManifest: string | null;
   lastCommitId: string; rootDigest: string;
 }

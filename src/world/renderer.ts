@@ -13,13 +13,14 @@ import { atlasLodPolicy, resolveAtlasLod, type AtlasLod } from './lod';
 import { AtlasLabelLayer, emptyAtlasLabelMetrics } from './atlas-label-layer';
 import { buildTerrainSurface } from './terrain-surface';
 import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './terrain-mesh';
+import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type CoastalPick } from './coastal-surface';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
 export type AtlasGraphicsState = 'ready' | 'lost' | 'restoring';
 export interface AtlasOutlinePoint { xQ: number; yQ: number }
 export type AtlasRendererOptions = {
-  onPick: (cellId: number) => void; onCamera?: (camera: AtlasCamera) => void; onFatal: (error: Error) => void;
+  onPick: (cellId: number, surface?: CoastalPick) => void; onCamera?: (camera: AtlasCamera) => void; onFatal: (error: Error) => void;
   onProgress?: (progress: { stage: string; completed: number; total: number }) => void;
   onGraphicsState?: (state: AtlasGraphicsState) => void;
   onOutline?: (points: AtlasOutlinePoint[]) => void;
@@ -227,7 +228,7 @@ export class AtlasRenderer {
       if (spec.layer === 'terrain') {
         const logical = this.specFor(spec.blockKey, 'terrain', spec.density);
         const geometryBounds = { minX: logical.sampleX, minY: logical.sampleY, maxX: logical.sampleX + logical.pixelWidth / logical.density, maxY: logical.sampleY + logical.pixelHeight / logical.density };
-        const geometrySpec = { atlasId: this.data!.manifest.atlasId, blockKey: spec.blockKey, bounds: geometryBounds, dependencies: spec.dependencies.map(key => ({ key, hash: this.refs.get(key)! })) };
+        const geometrySpec = { atlasId: this.data!.manifest.atlasId, blockKey: spec.blockKey, bounds: geometryBounds, dependencies: spec.dependencies.map(key => ({ key, hash: this.refs.get(key)! })), coastal: isCoastalSurface(this.data!) };
         const retained = this.terrainGeometry.get(geometrySpec, this.refs);
         if (retained) scratch = retained;
         else {
@@ -242,7 +243,11 @@ export class AtlasRenderer {
             // Only actual sea/land shared edges receive a shore line. The
             // world rectangle is never treated as an invented coastline.
             let shores = 0;
-            for (const id of ids) {
+            if (sampled.coastal) {
+              for (const cell of sampled.coastal.cells) for (const segment of cell.shore) if (segment.ownerCellId === cell.cellId) {
+                graphics.poly([segment.a.xQ6 / COASTAL_COORDINATE_SCALE, segment.a.yQ6 / COASTAL_COORDINATE_SCALE, segment.b.xQ6 / COASTAL_COORDINATE_SCALE, segment.b.yQ6 / COASTAL_COORDINATE_SCALE], false); shores++;
+              }
+            } else for (const id of ids) {
               if (height(id) < 0) continue;
               const x = id % columns, y = Math.floor(id / columns);
               let quad: ReturnType<typeof getCellQuad> | undefined;
@@ -317,6 +322,13 @@ export class AtlasRenderer {
     this.assertReady();
     if (this.displayBusy()) throw new Error('地图画面仍在接收，请等待本次结果。');
     if (delta && this.displaySource === 'generation-preview') throw new Error('生成预览只能通过完整持久结果确认，请先确认或取消预览。');
+    const previous = this.committed?.data.manifest ?? this.data?.manifest, candidate = data.manifest;
+    const surfaceKey = (manifest: AtlasGeographyView['manifest']) => manifest.surface === undefined ? '' : JSON.stringify([manifest.surface.kind, manifest.surface.coordinateScale]);
+    if (previous?.draftId === candidate.draftId && (previous.version !== candidate.version || surfaceKey(previous) !== surfaceKey(candidate))) {
+      // Check before touching the live view or cache. The same immutable
+      // blocks may have a different coast meaning only in an explicit new draft.
+      throw new Error('同一草稿不能更换格式或权威地表合同，请打开显式创建的独立副本。');
+    }
     const pending = new AbortController(); this.pendingAcceptance = pending; this.clearPointers(); this.acceptingData = data; this.acceptanceRepaints = new Set(); this.labels?.hide();
     try {
       const fresh = !this.data || this.data.manifest.draftId !== data.manifest.draftId || this.data.manifest.atlasId !== data.manifest.atlasId;
@@ -705,8 +717,13 @@ export class AtlasRenderer {
       if (!this.pointers.size) this.outlineGestureBlocked = false;
       if (completed) { this.requestDraw(); this.callbacks.onOutline?.(completed); }
       if (tap && this.index) {
-        const point = local(event), result = this.index.pick(screenToWorld(this.camera, point));
-        if (result.cellId !== null) { this.select(result.cellId); this.callbacks.onPick(result.cellId); }
+        const point = screenToWorld(this.camera, local(event)), result = this.index.pick(point);
+        if (result.cellId !== null) {
+          const surface = this.data && isCoastalSurface(this.data) ? pickCoastalSurface(this.data, result.cellId, point) : undefined;
+          if (surface === null) throw new Error('权威海岸拾取未覆盖真实地块。');
+          this.select(result.cellId);
+          if (surface) this.callbacks.onPick(result.cellId, surface); else this.callbacks.onPick(result.cellId);
+        }
       }
     };
     canvas.addEventListener('pointerup', event => end(event, false), { signal }); canvas.addEventListener('pointercancel', event => end(event, true), { signal });

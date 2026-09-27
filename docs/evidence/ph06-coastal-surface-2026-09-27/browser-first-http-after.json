@@ -1,0 +1,120 @@
+{
+  "checkedAt": "2026-09-27T05:10:02.408Z",
+  "url": "http://127.0.0.1:4173/build.json",
+  "httpStatus": 200,
+  "buildSha256": "0ea1d390111d836e99ab639961c5c8bb30f39b198869dddbd9cfb89449465bf8",
+  "matchesDist": true,
+  "build": {
+    "version": "0.5.0-preview.5",
+    "commit": "17f9f333b964674f84e66a68ac09003c81d93e14",
+    "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+    "macroGenerator": {
+      "sha256": "d35b227d2ec6679eb7dd19d67ffba98507cb1aa69fc20da8bd59352411eb71f9",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/macro.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "landformGenerator": {
+      "sha256": "2f6524296661565fa9a72c2e01715cbc1d3d672ad686f4dd9941f12a70a22ad7",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/landforms.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "islandGenerator": {
+      "sha256": "58c86dd827c6d8d446574259831a5158f2e89f4f6bb1dc2aacafb63fe74f754b",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/islands.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "coastGenerator": {
+      "sha256": "9199825d85036545bb2f39be0a19a5bd7b9d524a2762ed366a0985d596652587",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/coast.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "shapeGenerator": {
+      "sha256": "af7294f91ee2c1b1c3e873caaf4c99896f1b43318cdf6dfa847000e1de17a80b",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/shape.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "oceanGenerator": {
+      "sha256": "f9d991f78b279b89346a849ffdc8c4c5b85e37e21d9fb4eb483437c787a43001",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/ocean.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "rules": "0.2.0",
+    "supportedRules": [
+      "0.1.0",
+      "0.2.0"
+    ],
+    "entry": "world-studio",
+    "scenarios": [
+      "custom-world",
+      "test-continent"
+    ]
+  }
+}

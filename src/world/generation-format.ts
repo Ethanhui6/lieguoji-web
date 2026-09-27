@@ -1,22 +1,28 @@
 import { cloneBlock, createAtlasDraft, getBlock, hashBlock, validateAtlasGeography, validateAtlasGeographyAsync, validateGeographyManifestFields, yieldAtlas, type AtlasControl, type AtlasCreateOptions } from './model';
 import { cloneAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, validateAtlasCellLockBlock } from './generation-locks';
-import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateCopyOrigin, validateGenerationOperation, type AtlasDraftManifestV2, type AtlasGenerationDocument } from './generation-contract';
+import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateAtlasSurface, validateCopyOrigin, validateGenerationOperation, type AtlasGenerationManifest, type AtlasGenerationDocument } from './generation-contract';
 
 const encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', { fatal: true });
-export function validateGenerationManifest(raw: unknown): raw is AtlasDraftManifestV2 {
+export function validateGenerationManifest(raw: unknown): raw is AtlasGenerationManifest {
   try {
-    if (!generationExact(raw, ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs', 'origin', 'constraints', 'generation']) || raw.version !== 2 || !validateGeographyManifestFields(raw)) return false;
+    if (!raw || typeof raw !== 'object') return false;
+    const descriptor = Object.getOwnPropertyDescriptor(raw, 'version');
+    if (!descriptor || !('value' in descriptor) || descriptor.value !== 2 && descriptor.value !== 3) return false;
+    const fields = ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs', 'origin', 'constraints', 'generation'];
+    if (descriptor.value === 3) fields.push('surface');
+    if (!generationExact(raw, fields) || raw.version === 3 && !validateAtlasSurface(raw.surface) || !validateGeographyManifestFields(raw)) return false;
     const value = raw as Record<string, unknown> & typeof raw;
     if (value.origin !== null && !validateCopyOrigin(value.origin) || !validateAtlasConstraints(value.constraints, raw.spec) || !generationExact(value.generation, ['format', 'version', 'lastApplied']) || value.generation.format !== 'lieguoji-atlas-generation' || value.generation.version !== 1) return false;
+    if (raw.version === 2 && value.origin !== null && (value.origin as { sourceFormat: number }).sourceFormat === 3) return false;
     const last = value.generation.lastApplied;
     return last === null || generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) && validateGenerationOperation(last.recipe, last.scope, raw.spec, 'storage') && generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
   } catch { return false; }
 }
-export function encodeGenerationManifest(manifest: AtlasDraftManifestV2): Uint8Array {
+export function encodeGenerationManifest(manifest: AtlasGenerationManifest): Uint8Array {
   if (!validateGenerationManifest(manifest)) throw new Error('生成草稿 manifest、配方、锁或来源版本无效。');
   return encoder.encode(generationCanonical(manifest));
 }
-export function decodeGenerationManifest(bytes: Uint8Array): AtlasDraftManifestV2 {
+export function decodeGenerationManifest(bytes: Uint8Array): AtlasGenerationManifest {
   if (!(bytes instanceof Uint8Array) || !(bytes.buffer instanceof ArrayBuffer) || bytes.length > 16 * 1024 * 1024) throw new Error('生成草稿 manifest 编码超限。');
   let raw: unknown; try { raw = JSON.parse(decoder.decode(bytes)); } catch { throw new Error('生成草稿 manifest 不是有效 UTF-8／JSON。'); }
   if (!validateGenerationManifest(raw)) throw new Error('生成草稿格式、配方或锁版本不兼容。');
@@ -24,7 +30,7 @@ export function decodeGenerationManifest(bytes: Uint8Array): AtlasDraftManifestV
   if (canonical.length !== bytes.length || canonical.some((v, i) => v !== bytes[i])) throw new Error('生成草稿 manifest 非规范编码。');
   return raw;
 }
-export function hashGenerationManifest(manifest: AtlasDraftManifestV2): Promise<string> { return generationDigest(encodeGenerationManifest(manifest)); }
+export function hashGenerationManifest(manifest: AtlasGenerationManifest): Promise<string> { return generationDigest(encodeGenerationManifest(manifest)); }
 export function generationEnvelope(raw: unknown): raw is AtlasGenerationDocument {
   if (!generationExact(raw, ['manifest', 'blocks', 'locks']) || !validateGenerationManifest(raw.manifest)) return false;
   for (const map of [raw.blocks, raw.locks]) if (!(map instanceof Map) || Object.getPrototypeOf(map) !== Map.prototype || Reflect.ownKeys(map).length !== 0) return false;
@@ -69,7 +75,12 @@ export async function cloneVerifiedGenerationDocument(raw: AtlasGenerationDocume
   await yieldAtlas(control, '复制生成草稿分层与锁', owned.blocks.size + owned.locks.size, owned.blocks.size + owned.locks.size);
   await verifyGenerationDocument(owned, control); return owned;
 }
-export async function createGenerationDraft(options: AtlasCreateOptions, control?: AtlasControl): Promise<AtlasGenerationDocument> {
+export function createGenerationDraft(options: AtlasCreateOptions, control?: AtlasControl): Promise<AtlasGenerationDocument<2>>;
+export function createGenerationDraft<F extends 2 | 3>(options: AtlasCreateOptions, control: AtlasControl | undefined, format: F): Promise<AtlasGenerationDocument<F>>;
+export async function createGenerationDraft(options: AtlasCreateOptions, control?: AtlasControl, format: 2 | 3 = 2): Promise<AtlasGenerationDocument> {
+  if (format !== 2 && format !== 3) throw new Error('未知 Atlas 地表版本，未创建草稿。');
   const base = await createAtlasDraft(options, control);
-  return { manifest: { ...base.manifest, version: 2, origin: null, constraints: { format: 'lieguoji-atlas-constraints', version: 1, lockCodec: 'cell-lock-mask-v1', lockRefs: [] }, generation: { format: 'lieguoji-atlas-generation', version: 1, lastApplied: null } }, blocks: base.blocks, locks: new Map() };
+  const common = { ...base.manifest, origin: null, constraints: { format: 'lieguoji-atlas-constraints' as const, version: 1 as const, lockCodec: 'cell-lock-mask-v1' as const, lockRefs: [] }, generation: { format: 'lieguoji-atlas-generation' as const, version: 1 as const, lastApplied: null } };
+  const manifest: AtlasGenerationManifest = format === 2 ? { ...common, version: 2 } : { ...common, version: 3, surface: { kind: 'land-mask-fan-v1', coordinateScale: 256 } };
+  return { manifest, blocks: base.blocks, locks: new Map() };
 }

@@ -97,25 +97,25 @@ export class AtlasClient {
   receipt(draftId: string, commandId: string) { return this.request<AtlasCommitReceipt | null>({ type: 'receipt', draftId, commandId, atlasFormat: this.format }); }
   undo() { return this.request<AtlasClientView | AtlasEditResult>({ type: 'undo', commandId: `edit-${crypto.randomUUID()}` }); }
   fork(name?: string) { return this.request<AtlasClientView>({ type: 'fork', ...(name === undefined ? {} : { name }), draftId: `atlas-${crypto.randomUUID()}`, commandId: `edit-${crypto.randomUUID()}` }); }
-  generationCopy(name?: string) { return this.request<AtlasClientView>({ type: 'generation-copy', ...(name === undefined ? {} : { name }), draftId: 'atlas-' + crypto.randomUUID(), commandId: 'edit-' + crypto.randomUUID() }); }
+  generationCopy(name?: string, targetFormat: 2 | 3 = 2) { return this.request<AtlasClientView>({ type: 'generation-copy', targetFormat, ...(name === undefined ? {} : { name }), draftId: 'atlas-' + crypto.randomUUID(), commandId: 'edit-' + crypto.randomUUID() }); }
   previewGeneration(recipe: GenerationRecipe, scope: GenerationScope = { kind: 'world' }) {
-    const h = this.verifiedHead; if (!h || h.readOnly || this.format !== 2) return Promise.reject(new Error('请先打开可编辑的第二版草稿。'));
-    return this.request<AtlasGenerationPreview>({ type: 'generation-preview', commandId: 'edit-' + crypto.randomUUID(), expectedRevision: h.revision, expectedRootDigest: h.rootDigest, recipe, scope, atlasFormat: 2 });
+    const h = this.verifiedHead; if (!h || h.readOnly || this.format === 1) return Promise.reject(new Error('请先打开可编辑的创世草稿。'));
+    return this.request<AtlasGenerationPreview>({ type: 'generation-preview', commandId: 'edit-' + crypto.randomUUID(), expectedRevision: h.revision, expectedRootDigest: h.rootDigest, recipe, scope, atlasFormat: this.format });
   }
   confirmGeneration() {
     const p = this.verifiedGeneration; if (!p) return Promise.reject(new Error('尚无可确认的生成预览。'));
-    return this.request<AtlasClientView>({ type: 'generation-confirm', candidateId: p.candidateId, commandId: p.commandId, previewDigest: p.previewDigest, expectedRevision: p.baseRevision, expectedRootDigest: p.baseRootDigest, atlasFormat: 2 });
+    return this.request<AtlasClientView>({ type: 'generation-confirm', candidateId: p.candidateId, commandId: p.commandId, previewDigest: p.previewDigest, expectedRevision: p.baseRevision, expectedRootDigest: p.baseRootDigest, atlasFormat: this.format });
   }
-  discardGeneration() { const p = this.verifiedGeneration; if (!p) return Promise.reject(new Error('尚无可取消的生成预览。')); return this.request<null>({ type: 'generation-discard', candidateId: p.candidateId, atlasFormat: 2 }); }
+  discardGeneration() { const p = this.verifiedGeneration; if (!p) return Promise.reject(new Error('尚无可取消的生成预览。')); return this.request<null>({ type: 'generation-discard', candidateId: p.candidateId, atlasFormat: this.format }); }
   previewConstraints(rectangle: AtlasCellRectangle, mask: 1 | 2 | 3, action: 'set' | 'clear') {
-    const h = this.verifiedHead; if (!h || h.readOnly || this.format !== 2) return Promise.reject(new Error('请先打开可编辑的第二版草稿。'));
-    return this.request<AtlasConstraintsPreview>({ type: 'constraints-preview', atlasFormat: 2, command: { format: 'lieguoji-atlas-constraint-edit', version: 1, draftId: h.draftId, commandId: 'edit-' + crypto.randomUUID(), expectedRevision: h.revision, expectedRootDigest: h.rootDigest, rectangle, mask, action } });
+    const h = this.verifiedHead; if (!h || h.readOnly || this.format === 1) return Promise.reject(new Error('请先打开可编辑的创世草稿。'));
+    return this.request<AtlasConstraintsPreview>({ type: 'constraints-preview', atlasFormat: this.format, command: { format: 'lieguoji-atlas-constraint-edit', version: 1, draftId: h.draftId, commandId: 'edit-' + crypto.randomUUID(), expectedRevision: h.revision, expectedRootDigest: h.rootDigest, rectangle, mask, action } });
   }
   confirmConstraints() {
     const p = this.verifiedConstraints; if (!p) return Promise.reject(new Error('尚无可确认的区域锁预览。'));
-    return this.request<AtlasClientView>({ type: 'constraints-confirm', candidateId: p.candidateId, commandId: p.commandId, previewDigest: p.previewDigest, expectedRevision: p.baseRevision, expectedRootDigest: p.baseRootDigest, atlasFormat: 2 });
+    return this.request<AtlasClientView>({ type: 'constraints-confirm', candidateId: p.candidateId, commandId: p.commandId, previewDigest: p.previewDigest, expectedRevision: p.baseRevision, expectedRootDigest: p.baseRootDigest, atlasFormat: this.format });
   }
-  discardConstraints() { const p = this.verifiedConstraints; if (!p) return Promise.reject(new Error('尚无可取消的区域锁预览。')); return this.request<null>({ type: 'constraints-discard', candidateId: p.candidateId, atlasFormat: 2 }); }
+  discardConstraints() { const p = this.verifiedConstraints; if (!p) return Promise.reject(new Error('尚无可取消的区域锁预览。')); return this.request<null>({ type: 'constraints-discard', candidateId: p.candidateId, atlasFormat: this.format }); }
   private editCommand(patch: AtlasPatch, reason: string, expected?: { revision: number; rootDigest: string }) {
     if (this.fatal) throw this.fatal;
     if (this.pending) throw new Error('上一笔草稿操作尚未完成。');
@@ -127,7 +127,8 @@ export class AtlasClient {
   async preview(patch: AtlasPatch, reason: string) { return this.request<AtlasPreview>({ type: 'preview' }, this.editCommand(patch, reason)); }
   async edit(patch: AtlasPatch, reason: string, expected?: { revision: number; rootDigest: string }) { return this.request<AtlasEditResult>({ type: 'edit' }, this.editCommand(patch, reason, expected)); }
   private async checkRoot(raw: unknown): Promise<AtlasStoredRoot> {
-    const database = getAtlasStorage(object(raw) && raw.domain === 'atlas-draft-v2' ? 2 : 1);
+    if (!object(raw) || !['atlas-draft-v1', 'atlas-draft-v2', 'atlas-draft-v3'].includes(String(raw.domain))) throw new Error('持久根领域未知，未读取其他格式。');
+    const database = getAtlasStorage(raw.domain === 'atlas-draft-v3' ? 3 : raw.domain === 'atlas-draft-v2' ? 2 : 1);
     if (!database.validateAtlasRoot(raw) || await database.hashAtlasRoot(raw) !== raw.rootDigest) throw new Error('持久根格式或完整摘要无效。');
     return structuredClone(raw);
   }
@@ -148,7 +149,7 @@ export class AtlasClient {
   }
   private async receivedDocument(init: Init, pending: Pending): Promise<AtlasDocument> {
     if (!init.manifest || init.offset !== init.bytes.length || init.blocks.size !== init.header.blockCount || init.locks.size !== (init.header.lockCount ?? 0)) throw new Error('地图内容尚未接收完整。');
-    const data: AtlasDocument = init.manifest.version === 2 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks } : { manifest: init.manifest, blocks: init.blocks };
+    const data: AtlasDocument = init.manifest.version !== 1 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks } : { manifest: init.manifest, blocks: init.blocks };
     await verifyAtlasDocument(data, { onProgress: progress => { if (this.fatal || this.pending !== pending) throw this.fatal ?? new Error('地图接收已终止。'); this.options.onProgress?.({ ...progress, stage: '接收端' + progress.stage }); } }); return data;
   }
   private async checkGenerationBinding(p: GenerationPreviewInfo, op: Extract<AtlasOperation, { type: 'generation-preview' }>, data?: AtlasDocument) {
@@ -212,8 +213,8 @@ export class AtlasClient {
           if (body.kind !== undefined && body.kind !== 'durable' || !['create', 'restore', 'fork', 'generation-copy', 'generation-confirm', 'constraints-confirm', 'undo'].includes(pending.operation.type)) throw new Error('未知持久显示来源。');
           const root = await this.checkRoot(body.root), head = this.checkHead(body.head, root), op = pending.operation;
           const expectedId = 'draftId' in op ? op.draftId : this.verifiedHead?.draftId;
-          const expectedFormat = op.type === 'generation-copy' ? 2 : op.atlasFormat ?? this.format;
-          if (expectedId !== head.draftId || root.domain !== (expectedFormat === 2 ? 'atlas-draft-v2' : 'atlas-draft-v1') || op.type === 'restore' && (op.source === 'backup') !== head.readOnly || op.type !== 'restore' && head.readOnly) throw new Error('初始化来源或草稿身份与请求不一致。');
+          const expectedFormat = op.type === 'generation-copy' ? op.targetFormat ?? 2 : op.atlasFormat ?? this.format;
+          if (expectedId !== head.draftId || root.domain !== `atlas-draft-v${expectedFormat}` || op.type === 'restore' && (op.source === 'backup') !== head.readOnly || op.type !== 'restore' && head.readOnly) throw new Error('初始化来源或草稿身份与请求不一致。');
           if (op.type === 'generation-confirm' && (!this.verifiedGeneration || root.lastCommitId !== op.commandId || root.currentManifest !== this.verifiedGeneration.manifestDigest || root.backupManifest !== this.verifiedHead?.manifestDigest)) throw new Error('持久结果未绑定已显示的候选。');
           if (op.type === 'constraints-confirm' && (!this.verifiedConstraints || root.lastCommitId !== op.commandId || root.currentManifest !== this.verifiedConstraints.manifestDigest || root.backupManifest !== this.verifiedHead?.manifestDigest)) throw new Error('持久结果未绑定已显示的区域锁候选。');
           stateHeader = { kind: 'durable', head, root, manifestLength: body.manifestLength as number, blockCount: body.blockCount as number, lockCount: (body.lockCount as number | undefined) ?? 0 };
@@ -225,10 +226,10 @@ export class AtlasClient {
         init.bytes.set(payload, init.offset); init.offset += payload.length;
         if (init.offset === init.bytes.length) {
           init.manifest = decodeAtlasManifest(init.bytes);
-          const requiredFormat = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' || init.header.root.domain === 'atlas-draft-v2' ? 2 : 1;
+          const requiredFormat = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' ? this.format : init.header.root.domain === 'atlas-draft-v3' ? 3 : init.header.root.domain === 'atlas-draft-v2' ? 2 : 1;
           if (init.manifest.version !== requiredFormat) throw new Error('地图版本与持久领域或预览来源不符。');
           const expected = init.header.kind === 'generation-preview' || init.header.kind === 'constraints-preview' ? { ...this.verifiedHead!, revision: init.header.preview.revision, manifestDigest: init.header.preview.manifestDigest } : init.header.head;
-          if (await hashAtlasManifest(init.manifest) !== expected.manifestDigest || init.manifest.draftId !== expected.draftId || init.manifest.atlasId !== expected.atlasId || init.manifest.name !== expected.name || init.manifest.revision !== expected.revision || init.manifest.blockRefs.length !== init.header.blockCount || (init.manifest.version === 2 ? init.manifest.constraints.lockRefs.length : 0) !== (init.header.lockCount ?? 0)) throw new Error('草稿manifest与已核验来源不符。');
+          if (await hashAtlasManifest(init.manifest) !== expected.manifestDigest || init.manifest.draftId !== expected.draftId || init.manifest.atlasId !== expected.atlasId || init.manifest.name !== expected.name || init.manifest.revision !== expected.revision || init.manifest.blockRefs.length !== init.header.blockCount || (init.manifest.version !== 1 ? init.manifest.constraints.lockRefs.length : 0) !== (init.header.lockCount ?? 0)) throw new Error('草稿manifest与已核验来源不符。');
         }
       } else if (header.type === 'block') {
         const init = pending.init;
@@ -238,7 +239,7 @@ export class AtlasClient {
         init.blocks.set(reference.key, block);
       } else if (header.type === 'lock') {
         const init = pending.init;
-        if (!init?.manifest || init.manifest.version !== 2 || init.blocks.size !== init.header.blockCount || !object(body) || body.index !== init.locks.size) throw new Error('锁附件顺序或格式无效。');
+        if (!init?.manifest || init.manifest.version === 1 || init.blocks.size !== init.header.blockCount || !object(body) || body.index !== init.locks.size) throw new Error('锁附件顺序或格式无效。');
         const ref = init.manifest.constraints.lockRefs[init.locks.size], lock = decodeAtlasCellLockBlock(payload, init.manifest.spec);
         if (!ref || body.key !== lockKey(ref.bx, ref.by) || lock.bx !== ref.bx || lock.by !== ref.by || await hashAtlasCellLockBlock(lock) !== ref.hash) throw new Error('锁附件身份或摘要无效。');
         init.locks.set(body.key as string, lock);
@@ -246,7 +247,7 @@ export class AtlasClient {
         if (!['edit', 'undo'].includes(pending.operation.type) || !this.verified || !this.verifiedHead || pending.init || pending.delta || !object(body)) throw new Error('增量缺少已核验基线。');
         const delta = decodeAtlasEditMessage(payload); if (delta.format !== 'lieguoji-atlas-delta') throw new Error('成功响应不是编辑增量。');
         const root = await this.checkRoot(body.root), head = this.checkHead(body.head, root);
-        if (root.domain !== (this.verified.manifest.version === 2 ? 'atlas-draft-v2' : 'atlas-draft-v1') || root.lastCommitId !== delta.commandId || root.rootDigest !== delta.rootDigest || root.currentManifest !== delta.manifestDigest || root.backupManifest !== this.verifiedHead.manifestDigest || head.readOnly
+        if (root.domain !== `atlas-draft-v${this.verified.manifest.version}` || root.lastCommitId !== delta.commandId || root.rootDigest !== delta.rootDigest || root.currentManifest !== delta.manifestDigest || root.backupManifest !== this.verifiedHead.manifestDigest || head.readOnly
           || head.draftId !== delta.draftId || head.revision !== delta.revision || head.atlasId !== this.verified.manifest.atlasId || head.name !== this.verified.manifest.name
           || delta.commandId !== this.lastIdentity?.commandId) throw new Error('持久根未绑定此编辑增量。');
         pending.nextData = await applyAtlasDelta(this.verified, this.verifiedHead.rootDigest, delta); pending.delta = delta; pending.nextHead = head; pending.nextRoot = root;

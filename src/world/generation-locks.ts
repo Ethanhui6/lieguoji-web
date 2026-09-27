@@ -1,6 +1,8 @@
 import { blockKey, encodeBlock, getCellLayerSlot, getVertexSlot, validateSpec, type AtlasGridSpec } from './model';
 import { cellVertexIds, incidentCellIds } from './topology';
-import { generationCanonical, generationDigest, generationExact, generationInt, validateAtlasConstraints, type AtlasCellLockBlock, type AtlasConstraints, type AtlasDocument, type AtlasGenerationDocument, type LockKey } from './generation-contract';
+import { generationCanonical, generationDigest, generationExact, generationInt, validateAtlasConstraints, validateAtlasSurface, type AtlasCellLockBlock, type AtlasConstraints, type AtlasDocument, type AtlasGenerationDocument, type LockKey } from './generation-contract';
+import { buildCoastalSurface } from './coastal-surface';
+import { assertCoastalCellProtection } from './coastal-generation';
 
 export const LOCK_COAST = 1, LOCK_ELEVATION = 2;
 export function lockKey(bx: number, by: number): LockKey {
@@ -42,13 +44,32 @@ export function atlasCellLockFlags(data: AtlasGenerationDocument, cellId: number
   const block = data.locks.get(lockKey(bx, by)); if (!block || !validateAtlasCellLockBlock(block, spec)) throw new Error('受引用地块锁缺失或损坏。');
   return block.flags[row % 32 * 32 + column % 32];
 }
+/** One ring includes every shared-corner sign and neighboring-center weight
+ * affected by a source sample/vertex edit. The caller supplies actual changes. */
+export function atlasCoastalAffectedCellIds(spec: AtlasGridSpec, cellIds: Iterable<number>, vertexIds: Iterable<number>): number[] {
+  const sources = new Set(cellIds), result = new Set<number>();
+  for (const vertex of vertexIds) for (const cell of incidentCellIds(spec, vertex)) sources.add(cell);
+  for (const cell of sources) {
+    if (!generationInt(cell, 0, spec.columns * spec.rows - 1)) throw new Error('细海岸影响地块越界。');
+    const column = cell % spec.columns, row = Math.floor(cell / spec.columns);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const x = column + dx, y = row + dy;
+      if (x >= 0 && y >= 0 && x < spec.columns && y < spec.rows) result.add(y * spec.columns + x);
+    }
+  }
+  return [...result].sort((a, b) => a - b);
+}
 /** Only for verified, privately owned v2 documents. Validation/hashing at the
  * caller establishes both complete envelopes; this guard independently keeps
  * every actual geography byte and all non-constraint manifest fields fixed.
  * It does not authorize an ordinary geography edit to change any lock. */
 export function assertAtlasConstraintsOnly(base: AtlasDocument, next: AtlasDocument): void {
-  if (base.manifest.version !== 2 || next.manifest.version !== 2 || !('locks' in base) || !('locks' in next)) throw new Error('纯锁事务仅支持已有第二版草稿。');
+  if (base.manifest.version !== 2 && base.manifest.version !== 3 || next.manifest.version !== 2 && next.manifest.version !== 3 || base.manifest.version !== next.manifest.version || !('locks' in base) || !('locks' in next)) throw new Error('纯锁事务仅支持同版已有生成草稿。');
   const fields = ['format', 'version', 'kind', 'draftId', 'atlasId', 'name', 'seed', 'revision', 'spec', 'catalogs', 'blockRefs', 'origin', 'constraints', 'generation'];
+  if (base.manifest.version === 3) {
+    fields.push('surface');
+    if (!validateAtlasSurface(base.manifest.surface) || next.manifest.version !== 3 || !validateAtlasSurface(next.manifest.surface)) throw new Error('纯锁事务不能改变权威地表合同。');
+  }
   if (!generationExact(base.manifest, fields) || !generationExact(next.manifest, fields)
     || !generationInt(base.manifest.revision, 0, Number.MAX_SAFE_INTEGER - 1) || next.manifest.revision !== base.manifest.revision + 1
     || generationCanonical({ ...base.manifest, revision: 0, constraints: null }) !== generationCanonical({ ...next.manifest, revision: 0, constraints: null })) throw new Error('纯锁事务不能改变地理引用、身份、名称、目录、来源或生成历史，且修订必须递增一。');
@@ -70,8 +91,10 @@ export function assertAtlasConstraintsOnly(base: AtlasDocument, next: AtlasDocum
 export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocument, changedCellIds?: Iterable<number>, changedVertexIds?: Iterable<number>): void {
   if (base.manifest.version !== next.manifest.version) throw new Error('普通编辑不能切换草稿格式。');
   if (base.manifest.version === 1) return;
+  if (base.manifest.version !== 2 && base.manifest.version !== 3) throw new Error('未知权威地表格式，普通编辑已保护。');
+  if (base.manifest.version === 3 && (next.manifest.version !== 3 || !validateAtlasSurface(base.manifest.surface) || !validateAtlasSurface(next.manifest.surface) || generationCanonical(base.manifest.surface) !== generationCanonical(next.manifest.surface))) throw new Error('普通编辑不能改变权威地表合同。');
   if (base.manifest.draftId !== next.manifest.draftId || base.manifest.atlasId !== next.manifest.atlasId || generationCanonical(base.manifest.spec) !== generationCanonical(next.manifest.spec)) throw new Error('原草稿操作不能更换地理身份或规格。');
-  if (!('locks' in base) || !('locks' in next) || next.manifest.version !== 2 || generationCanonical(base.manifest.origin) !== generationCanonical(next.manifest.origin) || generationCanonical(base.manifest.constraints) !== generationCanonical(next.manifest.constraints)) throw new Error('普通编辑不能改变来源或锁集合。');
+  if (!('locks' in base) || !('locks' in next) || generationCanonical(base.manifest.origin) !== generationCanonical(next.manifest.origin) || generationCanonical(base.manifest.constraints) !== generationCanonical(next.manifest.constraints)) throw new Error('普通编辑不能改变来源或锁集合。');
   if (!validateAtlasConstraints(base.manifest.constraints, base.manifest.spec) || base.locks.size !== base.manifest.constraints.lockRefs.length || next.locks.size !== next.manifest.constraints.lockRefs.length) throw new Error('地块锁集合缺失或含额外数据。');
   for (const ref of base.manifest.constraints.lockRefs) {
     const key = lockKey(ref.bx, ref.by), a = base.locks.get(key), b = next.locks.get(key);
@@ -83,7 +106,7 @@ export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocume
     const column = cellId % spec.columns, row = Math.floor(cellId / spec.columns);
     return base.locks.get(lockKey(Math.floor(column / 32), Math.floor(row / 32)))?.flags[row % 32 * 32 + column % 32] ?? 0;
   };
-  const cells = changedCellIds ?? Array.from({ length: base.manifest.spec.columns * base.manifest.spec.rows }, (_, i) => i), vertices = new Set(changedVertexIds);
+  const cells = changedCellIds === undefined ? Array.from({ length: base.manifest.spec.columns * base.manifest.spec.rows }, (_, i) => i) : [...changedCellIds], vertices = new Set(changedVertexIds);
   for (const cellId of cells) {
     const flags = flagsAt(cellId); if (!flags) continue;
     const a = getCellLayerSlot(base, 'elevation', cellId), b = getCellLayerSlot(next, 'elevation', cellId), before = a.block.values[a.slot], after = b.block.values[b.slot];
@@ -94,5 +117,15 @@ export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocume
     if (!incidentCellIds(base.manifest.spec, vertexId).some(id => flagsAt(id) & LOCK_COAST)) continue;
     const a = getVertexSlot(base, vertexId), b = getVertexSlot(next, vertexId);
     if (a.block.xyQ[a.slot * 2] !== b.block.xyQ[b.slot * 2] || a.block.xyQ[a.slot * 2 + 1] !== b.block.xyQ[b.slot * 2 + 1]) throw new Error('共享顶点关联受保护海岸，不能移动。');
+  }
+  if (base.manifest.version === 3) {
+    const affected = changedCellIds === undefined ? cells : atlasCoastalAffectedCellIds(base.manifest.spec, cells, vertices);
+    const protectedCells = affected.filter(cell => flagsAt(cell) !== 0);
+    // Same bounded reconstruction and comparison used at generation preview.
+    // Neighbor edits can move a locked cell's coast without changing its center.
+    for (let offset = 0; offset < protectedCells.length; offset += 256) {
+      const ids = protectedCells.slice(offset, offset + 256), before = buildCoastalSurface(base, ids).cells, after = buildCoastalSurface(next, ids).cells;
+      for (let index = 0; index < ids.length; index++) assertCoastalCellProtection(before[index], after[index], flagsAt(ids[index]));
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { blockKey, decodeBlock, encodeBlock, UNASSIGNED, type AtlasBlock, type BlockKey } from './model';
 import { decodeAtlasManifest, encodeAtlasManifest, validateAtlasDocumentAsync, validateAtlasManifest, type AtlasDocument, type AtlasManifest, type AtlasFormat, type AtlasCellLockBlock, type AtlasGenerationDocument } from './atlas-format';
-import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, decodeAtlasCellLockBlock, encodeAtlasCellLockBlock, lockKey } from './generation-locks';
+import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, atlasCoastalAffectedCellIds, decodeAtlasCellLockBlock, encodeAtlasCellLockBlock, lockKey } from './generation-locks';
 import { cellVertexIds, incidentCellIds, validateLocalGeometry, vertexOwnerBlock } from './topology';
 import type { AtlasBlockPage, AtlasCatalogEntry, AtlasCommitReceipt, AtlasLocalCommitRequest, AtlasPreparation, AtlasPrepareRequest, AtlasReadHandle, AtlasStorageControl, AtlasStorageTiming, AtlasStoredRoot } from './storage-types';
 export type * from './storage-types';
@@ -133,20 +133,20 @@ export function atlasStorageLogicalBytes(value: unknown): number {
 const entryBytes = (key: string, value: unknown) => encoder.encode(key).length + atlasStorageLogicalBytes(value);
 
 function createStorageInstance(format: AtlasFormat) {
-const DOMAIN = format === 1 ? 'atlas-draft-v1' : 'atlas-draft-v2';
-const DATABASE = format === 1 ? ATLAS_DRAFTS_DB : ATLAS_GENERATION_DB;
+const DOMAIN = STORAGE_FORMATS[format].domain;
+const DATABASE = STORAGE_FORMATS[format].database;
 const validateManifest = (raw: unknown): raw is AtlasManifest => validateAtlasManifest(raw) && raw.version === format;
 const encodeManifest = (manifest: AtlasManifest) => { if (!validateManifest(manifest)) throw new Error('Atlas manifest 与固定存储格式不符。'); return encodeAtlasManifest(manifest); };
 const decodeManifest = (bytes: Uint8Array) => { const manifest = decodeAtlasManifest(bytes); if (!validateManifest(manifest)) throw new Error('Atlas manifest 与固定存储格式不符。'); return manifest; };
 type ContentRef = { key: string; hash: string; kind: 'block' | 'lock' };
 function contentRefs(manifest: AtlasManifest): ContentRef[] {
   const refs: ContentRef[] = manifest.blockRefs.map(ref => ({ ...ref, kind: 'block' }));
-  if (manifest.version === 2) for (const ref of manifest.constraints.lockRefs) refs.push({ key: lockKey(ref.bx, ref.by), hash: ref.hash, kind: 'lock' });
+  if (manifest.version !== 1) for (const ref of manifest.constraints.lockRefs) refs.push({ key: lockKey(ref.bx, ref.by), hash: ref.hash, kind: 'lock' });
   return refs;
 }
 function decodeContent(value: BlobRecord, ref: ContentRef, manifest: AtlasManifest) {
   if (ref.kind === 'lock') {
-    if (format !== 2) throw new Error('旧格式不能接受地块锁附件。');
+    if (format === 1) throw new Error('旧格式不能接受地块锁附件。');
     const lock = decodeAtlasCellLockBlock(value.bytes, manifest.spec);
     if (lockKey(lock.bx, lock.by) !== ref.key) throw new Error('地块锁身份与引用不符。');
     return lock;
@@ -275,7 +275,7 @@ function assertCodec(record: BlobRecord) {
     let value: unknown; try { value = JSON.parse(decoder.decode(record.bytes)); } catch { throw new Error('Atlas manifest 编码损坏，原数据保留。'); }
     if (!record || !validateManifest(value)) throw new Error('Atlas manifest 格式、领域或未来版本不兼容。');
   } else if (record.kind === 'lock') {
-    if (format !== 2) throw new Error('Atlas 旧格式不能接受锁附件。');
+    if (format === 1) throw new Error('Atlas 旧格式不能接受锁附件。');
     decodeAtlasCellLockBlock(record.bytes);
   } else {
     const b = record.bytes;
@@ -320,9 +320,9 @@ async function rootContents(db: IDBDatabase, root: AtlasStoredRoot, control?: At
     const manifest = await verifiedManifest(get(manifests, 'manifests', digest));
     if (manifest.draftId !== root.draftId || digest === root.currentManifest && manifest.revision !== root.revision || digest === root.backupManifest && manifest.revision >= root.revision) throw new Error('Atlas 主备身份或修订关系无效。');
     const content = await readContent(db, manifest, control); rows.push(...content.rows); pairReferencedBytes += content.referencedBytes;
-    // The immutable raw snapshots always remain protected. Only a v2 final
+    // The immutable raw snapshots always remain protected. Only a generation-format final
     // commit needs decoded current geography to compare its locked values.
-    if (retainCurrent && format === 2 && digest === root.currentManifest) documents.set(digest, content.data);
+    if (retainCurrent && format !== 1 && digest === root.currentManifest) documents.set(digest, content.data);
   }
   return { rows: [...new Map(rows.map(row => [queryKey(row), row])).values()], pairReferencedBytes, documents };
 }
@@ -432,10 +432,10 @@ async function stageAtlasBlocks(preparationId: string, input: (AtlasBlock | Atla
 async function commitAtlasPreparation(preparationId: string, control?: AtlasStorageControl): Promise<AtlasCommitReceipt> {
   return commitPrepared(preparationId, 'geography', control);
 }
-/** Explicit v2-only operation; no caller-supplied bypass flag exists. Ordinary
+/** Explicit generation-format operation; no caller-supplied bypass flag exists. Ordinary
  * commits continue to require unchanged locks, including staged candidates. */
 async function commitAtlasConstraintsPreparation(preparationId: string, control?: AtlasStorageControl): Promise<AtlasCommitReceipt> {
-  if (format !== 2) throw new Error('纯锁事务仅支持已有第二版草稿。');
+  if (format === 1) throw new Error('纯锁事务仅支持已有生成版本草稿。');
   return commitPrepared(preparationId, 'constraints', control);
 }
 async function commitPrepared(preparationId: string, mode: 'geography' | 'constraints', control?: AtlasStorageControl): Promise<AtlasCommitReceipt> {
@@ -443,10 +443,10 @@ async function commitPrepared(preparationId: string, mode: 'geography' | 'constr
   try {
     abort(control); const fixed = await readPreparation(db, preparationId), prep = fixed.prep;
     // A replay is still a constraints operation only if it was based on an
-    // existing v2 root. It cannot turn a create/geography receipt into a lock
+    // existing generation root. It cannot turn a create/geography receipt into a lock
     // operation merely by selecting this public entry point.
     const constraintsBase = mode === 'constraints' ? await readRoot(db, prep.draftId) : null;
-    if (mode === 'constraints' && (format !== 2 || !prep.expectedRoot || !constraintsBase?.root)) throw new Error('纯锁事务必须基于已有第二版主档，不能创建新档。');
+    if (mode === 'constraints' && (format === 1 || !prep.expectedRoot || !constraintsBase?.root)) throw new Error('纯锁事务必须基于已有生成版本主档，不能创建新档。');
     const [receiptRow] = await read(db, [{ store: 'receipts', key: preparationId }]);
     if (receiptRow.present) {
       const receipt = receiptRecord(receiptRow.value, preparationId); if (receipt.requestDigest !== prep.requestDigest || receipt.candidateId !== prep.candidateId) throw new Error('Atlas commandId 回执绑定冲突。'); await verifyReceipt(receipt);
@@ -460,14 +460,14 @@ async function commitPrepared(preparationId: string, mode: 'geography' | 'constr
     }
     if (await requestDigest(prep) !== prep.requestDigest) throw new Error('Atlas 准备请求摘要不符。');
     const base = constraintsBase ?? await readRoot(db, prep.draftId), protectedRows: Snapshot[] = [fixed.row, base.row];
-    const baseContents = base.root ? await rootContents(db, base.root, control, format === 2) : null;
+    const baseContents = base.root ? await rootContents(db, base.root, control, format !== 1) : null;
     if (baseContents) protectedRows.push(...baseContents.rows);
     if (!equal(base.root, prep.expectedRoot)) throw new Error('Atlas 完整根 CAS 冲突，未覆盖。');
     const [manifestRow] = await read(db, [{ store: 'manifests', key: prep.manifestDigest }]), manifest = await verifiedManifest(manifestRow);
     if (manifest.draftId !== prep.draftId || manifest.revision !== prep.revision || (base.root ? manifest.revision !== base.root.revision + 1 : manifest.revision !== 0)) throw new Error('Atlas 候选身份或修订不符。');
     const candidate = await readContent(db, manifest, control); protectedRows.push(manifestRow, ...candidate.rows);
     if (mode === 'constraints') assertAtlasConstraintsOnly(baseContents!.documents.get(base.root!.currentManifest)!, candidate.data);
-    else if (base.root && baseContents && format === 2) assertAtlasLocksPreserved(baseContents.documents.get(base.root.currentManifest)!, candidate.data);
+    else if (base.root && baseContents && format !== 1) assertAtlasLocksPreserved(baseContents.documents.get(base.root.currentManifest)!, candidate.data);
     const root: AtlasStoredRoot = { format: 'lieguoji-atlas-root', version: 1, domain: DOMAIN, draftId: prep.draftId, revision: prep.revision, currentManifest: prep.manifestDigest, backupManifest: base.root?.currentManifest ?? null, lastCommitId: prep.commandId, rootDigest: '0'.repeat(64) };
     root.rootDigest = await hashAtlasRoot(root);
     let backupBytes = 0;
@@ -532,7 +532,7 @@ async function readAtlasBlockPage(handle: AtlasReadHandle, cursor = 0, control?:
     const all = contentRefs(manifest), refs = all.slice(cursor, cursor + 16); abort(control); const rows = await read(db, refs.map(ref => ({ store: 'blocks', key: ref.hash }))), blocks: AtlasBlock[] = [], locks: AtlasCellLockBlock[] = []; let encodedBytes = 0;
     for (const ref of refs) { const row = get(rows, 'blocks', ref.hash); if (!row.present) throw new Error('Atlas 固定版本缺块。'); const value = blob(row.value, ref.kind, ref.hash); assertCodec(value); if (await hash(value.bytes) !== ref.hash) throw new Error('Atlas 页面块摘要不符。'); const decoded = decodeContent(value, ref, manifest); if (decoded.format === 'lieguoji-atlas-cell-locks') locks.push(decoded); else blocks.push(decoded); encodedBytes += value.bytes.length + encoder.encode(ref.key).length + 128; }
     if (encodedBytes > ATLAS_STORAGE_PAGE_BYTES) throw new Error('Atlas 固定分片超过 512 KiB。');
-    return { blocks, ...(format === 2 ? { locks } : {}), nextCursor: cursor + refs.length < all.length ? cursor + refs.length : null, encodedBytes };
+    return { blocks, ...(format !== 1 ? { locks } : {}), nextCursor: cursor + refs.length < all.length ? cursor + refs.length : null, encodedBytes };
   } finally { db.close(); }
 }
 
@@ -571,7 +571,7 @@ class AtlasStorageSession {
     if (token !== sessionToken) throw new Error('Atlas 核验能力不能从外部缓存构造。');
     this.#db = db; this.#root = root; this.#rows = rows;
     this.#manifest = decodeManifest(blob(get(rows, 'manifests', root.currentManifest).value, 'manifest', root.currentManifest).bytes);
-    if (this.#manifest.version === 2) for (const ref of this.#manifest.constraints.lockRefs) this.#locks.set(lockKey(ref.bx, ref.by), decodeAtlasCellLockBlock(blob(get(rows, 'blocks', ref.hash).value, 'lock', ref.hash).bytes, this.#manifest.spec));
+    if (this.#manifest.version !== 1) for (const ref of this.#manifest.constraints.lockRefs) this.#locks.set(lockKey(ref.bx, ref.by), decodeAtlasCellLockBlock(blob(get(rows, 'blocks', ref.hash).value, 'lock', ref.hash).bytes, this.#manifest.spec));
     db.onversionchange = () => this.close();
   }
   static async open(draftId: string, control?: AtlasStorageControl): Promise<AtlasStorageSession | null> {
@@ -606,7 +606,7 @@ class AtlasStorageSession {
     }
     if (encodedBytes > ATLAS_STORAGE_PAGE_BYTES) throw new Error('Atlas 固定分片超过 512 KiB。');
     await checkpoint(control, '读取已核验固定分片', cursor + refs.length, all.length);
-    return { blocks, ...(format === 2 ? { locks } : {}), nextCursor: cursor + refs.length < all.length ? cursor + refs.length : null, encodedBytes };
+    return { blocks, ...(format !== 1 ? { locks } : {}), nextCursor: cursor + refs.length < all.length ? cursor + refs.length : null, encodedBytes };
   }
   async commitLocal(input: AtlasLocalCommitRequest, control?: AtlasStorageControl): Promise<AtlasCommitReceipt> {
     const observer = control?.onTiming, timing = observer ? new LocalTiming() : undefined;
@@ -634,7 +634,7 @@ class AtlasStorageSession {
     const copied = input.dirtyBlocks.map(block => { const bytes = encodeBlock(block), decoded = decodeBlock(bytes, manifest.spec); return { key: blockKey(decoded.layer, decoded.bx, decoded.by), bytes, decoded }; });
     if (copied.reduce((sum, value) => sum + value.bytes.length + encoder.encode(value.key).length + 128, manifestBytes.length + encodeAtlasRoot(expectedRoot).length + id.length + candidateId.length) > ATLAS_STORAGE_PAGE_BYTES) throw new AtlasStorageFallbackError('Atlas 局部候选超过 512 KiB，须分段准备。');
     if (manifest.draftId !== this.#manifest.draftId || manifest.atlasId !== this.#manifest.atlasId || !equal(manifest.spec, this.#manifest.spec) || !equal(manifest.catalogs, this.#manifest.catalogs)) throw new AtlasStorageFallbackError('Atlas 身份、规格或目录发生变化，须完整校验。');
-    if (manifest.version === 2 && (this.#manifest.version !== 2 || !equal(manifest.origin, this.#manifest.origin) || !equal(manifest.constraints, this.#manifest.constraints) || !equal(manifest.generation, this.#manifest.generation))) throw new Error('Atlas 普通局部编辑不能改变来源、锁或生成记录。');
+    if (manifest.version !== 1 && (this.#manifest.version === 1 || manifest.version !== this.#manifest.version || !equal(manifest.version === 3 ? manifest.surface : null, this.#manifest.version === 3 ? this.#manifest.surface : null) || !equal(manifest.origin, this.#manifest.origin) || !equal(manifest.constraints, this.#manifest.constraints) || !equal(manifest.generation, this.#manifest.generation))) throw new Error('Atlas 普通局部编辑不能改变来源、锁或生成记录。');
     const manifestDigest = await hash(manifestBytes), digest = await requestDigest({ candidateId, commandId, draftId: manifest.draftId, manifestDigest, expectedRoot });
     if (!equal(expectedRoot, this.#root)) {
       const prior = await findAtlasReceipt(manifest.draftId, commandId, control);
@@ -677,13 +677,27 @@ class AtlasStorageSession {
       if (!decoded.has(key)) { const ref = newRefs.get(key)!; decoded.set(key, decodeBlock(blob(get(this.#rows, 'blocks', ref).value, 'block', ref).bytes, manifest.spec)); }
     }
     validateLocalGeometry({ manifest, blocks: decoded }, [...changedVertices]);
-    if (manifest.version === 2 && this.#manifest.version === 2 && manifest.constraints.lockRefs.length) {
+    if (manifest.version !== 1 && this.#manifest.version !== 1 && manifest.constraints.lockRefs.length) {
       // Only cells/owners in this actual delta are decoded; verified lock bytes
       // remain private in the capability and still participate in final raw CAS.
       for (const cellId of changedCells) {
         const key = blockKey('elevation', Math.floor(cellId % manifest.spec.columns / 32), Math.floor(Math.floor(cellId / manifest.spec.columns) / 32));
         if (!beforeDecoded.has(key)) { const ref = oldRefs.get(key)!; beforeDecoded.set(key, decodeBlock(blob(get(this.#rows, 'blocks', ref).value, 'block', ref).bytes, manifest.spec)); }
         if (!decoded.has(key)) decoded.set(key, beforeDecoded.get(key)!);
+      }
+      if (manifest.version === 3) {
+        const affected = atlasCoastalAffectedCellIds(manifest.spec, changedCells, changedVertices);
+        const dependencies = atlasCoastalAffectedCellIds(manifest.spec, affected, []), needed = new Set<BlockKey>();
+        for (const cell of dependencies) {
+          needed.add(blockKey('elevation', Math.floor(cell % manifest.spec.columns / 32), Math.floor(Math.floor(cell / manifest.spec.columns) / 32)));
+          for (const vertex of cellVertexIds(manifest.spec, cell)) {
+            const owner = vertexOwnerBlock(manifest.spec, vertex); needed.add(blockKey('geometry', owner.bx, owner.by));
+          }
+        }
+        for (const key of needed) {
+          if (!beforeDecoded.has(key)) { const ref = oldRefs.get(key)!; beforeDecoded.set(key, decodeBlock(blob(get(this.#rows, 'blocks', ref).value, 'block', ref).bytes, manifest.spec)); }
+          if (!decoded.has(key)) decoded.set(key, beforeDecoded.get(key)!);
+        }
       }
       const base: AtlasGenerationDocument = { manifest: this.#manifest, blocks: beforeDecoded, locks: this.#locks }, next: AtlasGenerationDocument = { manifest, blocks: decoded, locks: this.#locks };
       assertAtlasLocksPreserved(base, next, changedCells, changedVertices);
@@ -767,7 +781,13 @@ return { format, domain: DOMAIN, database: DATABASE, validateAtlasRoot, encodeAt
 }
 
 export const ATLAS_GENERATION_DB = 'lieguoji-atlas-drafts-v2';
-const v1 = createStorageInstance(1), v2 = createStorageInstance(2);
+export const ATLAS_SURFACE_DB = 'lieguoji-atlas-drafts-v3';
+const STORAGE_FORMATS = {
+  1: { domain: 'atlas-draft-v1', database: ATLAS_DRAFTS_DB },
+  2: { domain: 'atlas-draft-v2', database: ATLAS_GENERATION_DB },
+  3: { domain: 'atlas-draft-v3', database: ATLAS_SURFACE_DB },
+} as const;
+const v1 = createStorageInstance(1), v2 = createStorageInstance(2), v3 = createStorageInstance(3);
 export type AtlasStorageSession = Awaited<ReturnType<typeof v1.openAtlasStorageSession>> & {};
 type Instance = ReturnType<typeof createStorageInstance>;
 export type AtlasStorageApi<F extends AtlasFormat = AtlasFormat> = Omit<Instance, 'openAtlasDraft' | 'readAtlasBlockPage' | 'prepareAtlasCommit'> & {
@@ -776,8 +796,9 @@ export type AtlasStorageApi<F extends AtlasFormat = AtlasFormat> = Omit<Instance
  prepareAtlasCommit(input: AtlasPrepareRequest<F>, control?: AtlasStorageControl): Promise<AtlasPreparation>;
 };
 export function getAtlasStorage<F extends AtlasFormat>(format: F): AtlasStorageApi<F> {
- if (format !== 1 && format !== 2) throw new Error('未知 Atlas 存储格式，未访问其他库。');
- return (format === 1 ? v1 : v2) as AtlasStorageApi<F>;
+ if (format !== 1 && format !== 2 && format !== 3) throw new Error('未知 Atlas 存储格式，未访问其他库。');
+ const instances = { 1: v1, 2: v2, 3: v3 };
+ return instances[format] as AtlasStorageApi<F>;
 }
 export const { validateAtlasRoot, encodeAtlasRoot, hashAtlasRoot, verifyAtlasRoot, stageAtlasBlocks, commitAtlasPreparation, findAtlasReceipt, listAtlasDrafts, openAtlasStorageSession, exportAtlasRawBackup, AtlasStorageSession } = v1;
 export const openAtlasDraft = v1.openAtlasDraft as AtlasStorageApi<1>['openAtlasDraft'];

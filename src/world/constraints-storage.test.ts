@@ -8,7 +8,7 @@ import { COAST_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { ATLAS_GENERATION_DB, ATLAS_STORAGE_LIMIT, getAtlasStorage, type AtlasStoredRoot } from './storage';
 
 const control = { yieldTask: async () => {} }, api = getAtlasStorage(2), stores = ['blocks', 'manifests', 'roots', 'preparations', 'receipts', 'meta'];
-let base: AtlasGenerationDocument;
+let base: AtlasGenerationDocument<2>;
 beforeAll(async () => { base = await createGenerationDraft({ size: 128, seed: 'ph06-constraints-atomic-synthetic', name: '纯合成锁事务测试' }, control); });
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -16,7 +16,7 @@ async function database() { return new Promise<IDBDatabase>((resolve, reject) =>
 async function raw(store: string, key: string): Promise<unknown> { const db = await database(); try { return await new Promise((resolve, reject) => { const tx = db.transaction(store, 'readonly'), r = tx.objectStore(store).get(key); tx.oncomplete = () => resolve(r.result); tx.onabort = () => reject(tx.error); }); } finally { db.close(); } }
 async function put(store: string, key: string, value: unknown) { const db = await database(); try { await new Promise<void>((resolve, reject) => { const tx = db.transaction(store, 'readwrite'); tx.objectStore(store).put(value, key); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); } finally { db.close(); } }
 async function snapshot() { const db = await database(); try { return await new Promise((resolve, reject) => { const tx = db.transaction(stores, 'readonly'), rows = stores.map(name => ({ name, keys: tx.objectStore(name).getAllKeys(), values: tx.objectStore(name).getAll() })); tx.oncomplete = () => resolve(rows.map(row => ({ name: row.name, keys: row.keys.result, values: row.values.result }))); tx.onabort = () => reject(tx.error); }); } finally { db.close(); } }
-async function prepare(data: AtlasGenerationDocument, root: AtlasStoredRoot | null, extra: AtlasBlock[] = []) {
+async function prepare(data: AtlasGenerationDocument<2>, root: AtlasStoredRoot | null, extra: AtlasBlock[] = []) {
   const prep = await api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: data.manifest, expectedRoot: root }, control);
   // Reuse the existing immutable geography already in the same database. Only
   // new lock/explicit changed-block bytes need staging for a pure-lock change.
@@ -25,7 +25,7 @@ async function prepare(data: AtlasGenerationDocument, root: AtlasStoredRoot | nu
   return prep;
 }
 async function publish(data = base, root: AtlasStoredRoot | null = null, extra: AtlasBlock[] = []) { return api.commitAtlasPreparation((await prepare(data, root, extra)).preparationId, control); }
-async function flags(data: AtlasGenerationDocument, flag: number) {
+async function flags(data: AtlasGenerationDocument<2>, flag: number) {
   const next = cloneAtlasDocument(data); next.manifest.revision++;
   const block: AtlasCellLockBlock = { format: 'lieguoji-atlas-cell-locks', version: 1, bx: 1, by: 0, flags: new Uint8Array(1024) }; block.flags[31 * 32] = flag;
   next.locks.clear(); next.manifest.constraints.lockRefs = [];
@@ -34,11 +34,11 @@ async function flags(data: AtlasGenerationDocument, flag: number) {
 }
 async function restored(source: 'current' | 'backup' = 'current') {
   const handle = await api.openAtlasDraft(base.manifest.draftId, { ...control, source }); if (!handle) throw new Error('missing synthetic fixture');
-  const data: AtlasGenerationDocument = { manifest: handle.manifest, blocks: new Map(), locks: new Map() }; let cursor: number | null = 0;
+  const data: AtlasGenerationDocument<2> = { manifest: handle.manifest, blocks: new Map(), locks: new Map() }; let cursor: number | null = 0;
   do { const page = await api.readAtlasBlockPage(handle, cursor, control); for (const block of page.blocks) data.blocks.set(`${block.layer}:${block.bx}:${block.by}`, block); for (const lock of page.locks ?? []) data.locks.set(lockKey(lock.bx, lock.by), lock); cursor = page.nextCursor; } while (cursor !== null);
   await verifyAtlasDocument(data, control); return { handle, data };
 }
-async function historicalGeneration(data: AtlasGenerationDocument, root: AtlasStoredRoot) {
+async function historicalGeneration(data: AtlasGenerationDocument<2>, root: AtlasStoredRoot) {
   const next = cloneAtlasDocument(data); next.manifest.revision++;
   next.manifest.generation.lastApplied = { recipe: { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'coast-smoothing', version: 1, fingerprint: COAST_GENERATOR_FINGERPRINT }, parameters: { strengthPermille: 500, iterations: 2 } }, scope: { kind: 'world' }, baseManifestDigest: root.currentManifest, baseRootDigest: root.rootDigest, baseRevision: data.manifest.revision, lockSetDigest: await hashAtlasLockSet(data.manifest.constraints, data.manifest.spec), appliedRevision: next.manifest.revision };
   return next;
@@ -60,15 +60,15 @@ describe('PH06 explicit pure-constraints atomic persistence', () => {
 
   it('keeps ordinary commits strict, permits initial locks through ordinary creation, and limits the dedicated entry to existing v2 roots', async () => {
     const initial = await flags(base, 3); initial.manifest.revision = 0;
-    const p = await prepare(initial, null), staged = await snapshot(); await expect(api.commitAtlasConstraintsPreparation(p.preparationId, control)).rejects.toThrow('已有第二版主档'); expect(await snapshot()).toEqual(staged);
+    const p = await prepare(initial, null), staged = await snapshot(); await expect(api.commitAtlasConstraintsPreparation(p.preparationId, control)).rejects.toThrow('已有生成版本主档'); expect(await snapshot()).toEqual(staged);
     const created = await api.commitAtlasPreparation(p.preparationId, control), unlocked = await flags(initial, 0), next = await prepare(unlocked, created.root), before = await snapshot();
     await expect(api.commitAtlasPreparation(next.preparationId, control)).rejects.toThrow('锁集合'); expect(await snapshot()).toEqual(before);
-    await expect(api.commitAtlasConstraintsPreparation(p.preparationId, control)).rejects.toThrow('已有第二版主档'); expect(await snapshot()).toEqual(before);
+    await expect(api.commitAtlasConstraintsPreparation(p.preparationId, control)).rejects.toThrow('已有生成版本主档'); expect(await snapshot()).toEqual(before);
     const old = getAtlasStorage(1), legacy = await createAtlasDraft({ size: 128, seed: 'v1-remains-separate', name: '旧格式纯合成' }, control);
     const v1 = await old.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: legacy.manifest, expectedRoot: null }, control), blocks = [...legacy.blocks.values()];
     for (let i = 0; i < blocks.length; i += 16) await old.stageAtlasBlocks(v1.preparationId, blocks.slice(i, i + 16), control);
     const receipt = await old.commitAtlasPreparation(v1.preparationId, control), open = vi.spyOn(indexedDB, 'open');
-    await expect(old.commitAtlasConstraintsPreparation(v1.preparationId, control)).rejects.toThrow('第二版'); expect(open).not.toHaveBeenCalled(); open.mockRestore();
+    await expect(old.commitAtlasConstraintsPreparation(v1.preparationId, control)).rejects.toThrow('生成版本'); expect(open).not.toHaveBeenCalled(); open.mockRestore();
     expect((await old.openAtlasDraft(legacy.manifest.draftId, control))!.root).toEqual(receipt.root); expect(await snapshot()).toEqual(before);
   });
 

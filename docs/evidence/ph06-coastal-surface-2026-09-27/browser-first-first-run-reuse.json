@@ -1,0 +1,16 @@
+{
+  "first": ".autopilot/ph06/coastal-checks/first",
+  "unitFirst": {
+    "passed": 1210,
+    "failed": 1,
+    "total": 1211,
+    "files": 67,
+    "durationSeconds": 406.75
+  },
+  "delta": [
+    ".autopilot/ph06/coastal-checks/repair.mjs",
+    "src/world/atlas.worker.test.ts"
+  ],
+  "removed": [],
+  "reason": "Only the obsolete v1 rejection message assertion was corrected; all product source bytes remain identical. The complete failed scenario is rerun, not skipped. First failure and remaining 1210 passing cases are preserved and reused."
+}

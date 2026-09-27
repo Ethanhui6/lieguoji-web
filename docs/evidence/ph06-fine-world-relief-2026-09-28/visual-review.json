@@ -1,0 +1,32 @@
+{
+  "version": "0.5.0-preview.20",
+  "buildJsonSha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018",
+  "reviewedByRoot": true,
+  "reviewedDevices": [
+    "desktop-chromium",
+    "mobile-chromium",
+    "tablet-chromium"
+  ],
+  "reviewedScreenshots": [
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+    "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+    "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png"
+  ],
+  "observations": [
+    "根实际查看桌面中景158%、近景532%及细岸1135%截图：旧粗格色块不是当前主视觉，但细岸近景仍能看到有限采样折线，不能称无限精度。黄色方框是选中粗模拟单元的提示，不等于真实海岸边界。",
+    "山体脊宽更细且数据真实保存，但仍像平滑S形绳带；两条细支脊像刻线，沿主轴的模板感明显，缺少自然山地内部的分叉谷脊。这批工程改善未达到自然视觉目标。",
+    "远景岛陆的海岸蓝色光带过强，内陆仍空，地貌区段变化不足。两陆测试故意采用同轮廓、同种子做追加保护，不能把它当作多种自然大陆展示。",
+    "手机仿真中景已实际查看，保存修订4可见、工具与底部导航可用；相同平滑山带问题仍然存在，仿真不替代真机。",
+    "平板仿真中景已实际查看，布局与保存修订4可见；山体的光滑模板感同样存在。"
+  ],
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false,
+  "recordedAt": "2026-09-27T21:13:28.982Z"
+}

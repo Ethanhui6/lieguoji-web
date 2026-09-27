@@ -1,0 +1,25 @@
+{
+  "frozen": true,
+  "productionSourceFrozen": true,
+  "rootUnifiedRoundOwnsSubsequentValidation": true,
+  "finalFineWorldCaseCount": 7,
+  "targetedPassed": 29,
+  "hashes": {
+    "README.md": "6f90e31258221837c05832094ea91e1adb0b5c07f8e5ee1beda7e5ed7dae0bfb",
+    "before-detail-fine-world-relief.test.ts": "da8b53835e9676b9dfaba07538ea374c68dc18af542dc1e5e8740a9ce89391c1",
+    "before-detail-natural-relief.ts": "83cf27c58cd38bbfbe01e7c2487416cc219b21366d07895302b0b7fc72c5851a",
+    "before-detail-orography.ts": "11703b6c7bc4949a80b7ba6439fc9bed654cb73f0ec70359e97b9d07926cd863",
+    "density-before-supports.json": "da692b753c9854738bfcc3bb22837e4430518ca8dbeca0d93303a1ae2fa64a6e",
+    "density-before.json": "79267572145386b4de968bd61938755d2c54ae86991f01b8e39f95e55c345808",
+    "diagnostic-first.test-source.txt": "86c95d79238dbfbf2ac1a77f75cf676ececb039207f9567db06f501a5bca00e4",
+    "diagnostic-orography.ts": "70dd42f4ac5248b37effaf5aa970602ac399054b73bbd1ec24c433d3ec79586a",
+    "diagnostic-result.json": "51e24aac0ec681b88638446513ae1464b8c1461834771260e2c3b2d0d885a006",
+    "diagnostic-support-result.json": "391641f3fe52ad44b8af7139c38be1dd9fdfa0807e02bab7ada68fe56eec1734",
+    "diagnostic.config.ts": "ef631601fc3f9f9add3e62cf66ac5b19854a801daa5865f5fade1216a307f399",
+    "diagnostic.test.ts": "0c1bda3ed9656bf5dbe19756426b66c943bce77f0a2fb55d6f77bc284f74b6cc",
+    "index-sizing.json": "3a3eb16deef05f113b8c0c71c0544ff1dad51a44ae5ab67eb3a37b10c883279c",
+    "regression-before.json": "8cf8b8c8d857de581c97b737a9986bdd66566452e41cc1fe7f8f76f1efa240be",
+    "targeted-after.json": "ebec8e48bb9b6b8ca6288b227d648b5abeb4154b6226ac3dbe9743b0fb0d8e4f",
+    "verification.json": "cb9ca0954f0d0e5d3369631263c94aecb9ea2ad1e3dd7fcf0d36e0059a6cf82a"
+  }
+}

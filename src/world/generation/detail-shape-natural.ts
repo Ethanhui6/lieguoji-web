@@ -285,7 +285,7 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
     if ((id + 1) % batch === 0) await checkpoint(control, 'classify-natural-reference', id + 1, total);
   }
   const relief = await createNaturalRelief({ seed, size, centersQ: centers, land: landSamples, coastDistanceQ: coastDistances,
-    reliefMeters: recipe.reliefMeters, shelfWidthWorld: recipe.shelfWidthWorld,
+    reliefMeters: recipe.reliefMeters, shelfWidthWorld: recipe.shelfWidthWorld, heightPlanning: 'fine-world',
     isLand: (xQ, yQ) => pickDetailCoastSurface(temporaryField, { x: xQ / 256, y: yQ / 256 })!.land }, batch, control);
   for (let id = 0; id < total; id++) {
     const x = centers[id * 2], y = centers[id * 2 + 1], land = landSamples[id] === 1;

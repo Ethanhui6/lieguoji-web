@@ -1,0 +1,154 @@
+{
+  "purpose": "Test-only independent preview18 relief oracle; never imported by production entry points.",
+  "upstreamCommit": "d742a6e917c723bf22f31768efa00b268f48d5b0",
+  "upstreamVersion": "0.5.0-preview.18",
+  "originalPathPrefix": "src/world/generation/",
+  "originalFiles": {
+    "detail-natural-relief.ts": {
+      "sha256": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+      "bytes": 15879
+    },
+    "detail-orography.ts": {
+      "sha256": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+      "bytes": 22619
+    },
+    "seed.ts": {
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "bytes": 3564
+    },
+    "detail-curved-ridge.ts": {
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "bytes": 17154
+    },
+    "detail-shape.ts": {
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "bytes": 31690
+    }
+  },
+  "fixtureFiles": {
+    "detail-natural-relief.ts": {
+      "copy": "byte-exact complete original",
+      "originalSha256": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+      "fixtureSha256": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc"
+    },
+    "detail-orography.ts": {
+      "copy": "byte-exact complete original",
+      "originalSha256": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+      "fixtureSha256": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120"
+    },
+    "seed.ts": {
+      "copy": "selected exact original declarations; only header and indicated import added",
+      "addedImport": null,
+      "originalSha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "fixtureSha256": "a05e66765648343ae49ba738a0821b4485b091075e8d71d8dcf39077b873baeb",
+      "declarations": [
+        {
+          "symbols": [
+            "FIELD_Q"
+          ],
+          "startLine": 2,
+          "endLine": 2,
+          "exactDeclarationSha256": "687a21189695abadd84bd590729be238f197c8eb38c9dfef6761d2d505bdb4aa"
+        },
+        {
+          "symbols": [
+            "roundRatio"
+          ],
+          "startLine": 4,
+          "endLine": 4,
+          "exactDeclarationSha256": "89eada0a82e6cc9490830efb5875f5ec34908bc62860411c644e3ad8b67709ac"
+        },
+        {
+          "symbols": [
+            "mix32"
+          ],
+          "startLine": 5,
+          "endLine": 9,
+          "exactDeclarationSha256": "a5a9ed960624c857fd7fee628f5d176c4a8a26fbc22bd1ffe8f7a6a04efe62de"
+        },
+        {
+          "symbols": [
+            "hashAt"
+          ],
+          "startLine": 19,
+          "endLine": 21,
+          "exactDeclarationSha256": "c7a2a90e9742098006820f9e518d10650c5f0f7c1be9bde6425bae2121ff5091"
+        },
+        {
+          "symbols": [
+            "smoothQ"
+          ],
+          "startLine": 22,
+          "endLine": 24,
+          "exactDeclarationSha256": "810d0765e3ae8e9b41f9b5bc6ab592b1bf488ca8b6df6dadf2c24d6ee4d9ad28"
+        },
+        {
+          "symbols": [
+            "noiseQ12"
+          ],
+          "startLine": 26,
+          "endLine": 33,
+          "exactDeclarationSha256": "8e0118c4e3843134934e27ac378faaac05344fe91fbce666abef02f35b07ba0f"
+        },
+        {
+          "symbols": [
+            "integerSqrt"
+          ],
+          "startLine": 35,
+          "endLine": 41,
+          "exactDeclarationSha256": "4fcc02ac94b57821969a6e86fe8928c93f72d600b249d59ef6508952f48ccf36"
+        }
+      ]
+    },
+    "detail-curved-ridge.ts": {
+      "copy": "selected exact original declarations; only header and indicated import added",
+      "addedImport": "import { FIELD_Q } from './seed';",
+      "originalSha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "fixtureSha256": "885cae4199523eaf9a582c844254cc2a24190651addea9271c697d5cd73ca8fc",
+      "declarations": [
+        {
+          "symbols": [
+            "boundCurvedRelief"
+          ],
+          "startLine": 220,
+          "endLine": 223,
+          "exactDeclarationSha256": "baedb6e11e941a8608be8549158c1dc6abb8efa45dd63daca735d0412c0ed5eb"
+        }
+      ]
+    },
+    "detail-shape.ts": {
+      "copy": "selected exact original declarations; only header and indicated import added",
+      "addedImport": null,
+      "originalSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "fixtureSha256": "01f666d8ff486b868010c759365b14bdd32bbad693fb341cfeafa88c492e2911",
+      "declarations": [
+        {
+          "symbols": [
+            "DetailShapeControl"
+          ],
+          "startLine": 32,
+          "endLine": 36,
+          "exactDeclarationSha256": "4a4f0fa62256c45093f6afec74da5050a3b5fcd2181b5a03e591348bf2044956"
+        }
+      ]
+    }
+  },
+  "sourceTest": {
+    "stagingPath": ".autopilot/ph06/fine-world-relief-staging/fine-world-relief.test.ts",
+    "stagingSha256": "d48d5cdf36301e5b4dc7aa9c0b5e2ee45c383778b9a0ef41e83d2d58e95bf27c",
+    "promotedPath": "src/world/generation/detail-fine-world-relief.test.ts",
+    "promotedSha256": "da8b53835e9676b9dfaba07538ea374c68dc18af542dc1e5e8740a9ce89391c1",
+    "changes": [
+      "production import paths",
+      "fixed independent preview18 oracle import",
+      "remove afterAll and measurement file writes",
+      "remove candidate qualifier only; preserve all six cases and assertions"
+    ]
+  },
+  "notes": [
+    "Two core algorithms are exact copies of committed preview18 and match staging baseline SHA.",
+    "Selected helper declarations are copied from the same commit without expression or algorithm edits.",
+    "No runtime import from fixture to production; dependencies resolve entirely within this test fixture.",
+    "No test/build/renderer execution performed during promotion."
+  ]
+}

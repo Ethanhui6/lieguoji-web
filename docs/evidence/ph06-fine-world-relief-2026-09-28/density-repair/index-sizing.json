@@ -1,0 +1,26 @@
+{
+  "sameActualSupportCount": 499,
+  "bins": [
+    {
+      "sizeWorld": 64,
+      "totalBuckets": 4096,
+      "nonemptyBuckets": 30,
+      "maxCandidates": 202,
+      "references": 1892
+    },
+    {
+      "sizeWorld": 32,
+      "totalBuckets": 16384,
+      "nonemptyBuckets": 92,
+      "maxCandidates": 151,
+      "references": 4198
+    },
+    {
+      "sizeWorld": 16,
+      "totalBuckets": 65536,
+      "nonemptyBuckets": 315,
+      "maxCandidates": 108,
+      "references": 11629
+    }
+  ]
+}

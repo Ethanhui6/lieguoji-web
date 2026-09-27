@@ -1,13 +1,18 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import { audit, metrics, saved, databaseDigest } from './helpers/atlas-shape-readonly';
 import type { AtlasRenderer } from '../src/world/renderer';
 
-// Staged for tests/atlas-add-detail-coast.spec.ts. Imports intentionally target
-// that final location. No app generator/geometry code runs in this observer.
+// Read-only durable observation; no generator/geometry implementation runs here.
 const studio = (p: Page) => p.getByTestId('atlas-studio');
 const ready = (p: Page, state = 'ready') => expect(studio(p)).toHaveAttribute('data-atlas-state', state, { timeout: 120000 });
-const click = (p: Page, name: string) => p.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
-const panel = (p: Page, name: '地图' | '创世' | '编辑') => p.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name, exact: true }).click();
+async function activate(locator: Locator, touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
+const click = (p: Page, name: string, touch: boolean) => activate(p.getByRole('button', { name, exact: true }).filter({ visible: true }), touch);
+const panel = (p: Page, name: '地图' | '创世' | '编辑', touch: boolean) => activate(p.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name, exact: true }), touch);
+async function committed(p: Page, revision: number) {
+  await expect(studio(p)).toHaveAttribute('data-atlas-revision', String(revision), { timeout: 120000 });
+  await expect(studio(p)).toHaveAttribute('data-atlas-display', 'committed');
+  await expect(preview(p)).toHaveCount(0); await ready(p);
+}
 const preview = (p: Page) => p.getByRole('region', { name: '大陆生成预览' });
 type XY = { x: number; y: number };
 type Probe = XY & { cellId: number; minimumHeight: number; maximumHeight: number };
@@ -42,7 +47,7 @@ async function gesture(p: Page, points: XY[], touch: boolean) {
   }
 }
 async function draw(p: Page, points: XY[], touch: boolean, rejected = false) {
-  await click(p, '画大陆'); await click(p, '全图'); await frameReady(p);
+  await click(p, '画大陆', touch); await click(p, '全图', touch); await frameReady(p);
   await expect(studio(p)).toHaveAttribute('data-atlas-tool', 'outline');
   await gesture(p, await screen(p, [...points, points[0]]), touch);
   if (rejected) {
@@ -144,12 +149,16 @@ async function durableField(p: Page, id: string) {
     // First contour (including roughness/islands) is left of 1800. This region
     // extends beyond its 2.5-step compact Hbase support. The second is >2400.
     const leftColumns = Math.floor(1900 / step), protectedHeights: number[] = [];
-    for (let y = 0; y < rows.manifest.spec.rows; y++) for (let x = 0; x < leftColumns; x++) protectedHeights.push(coarse[y * rows.manifest.spec.columns + x]);
+    let highest = { cellId: 0, height: -12000 };
+    for (let y = 0; y < rows.manifest.spec.rows; y++) for (let x = 0; x < leftColumns; x++) {
+      const cellId = y * rows.manifest.spec.columns + x, height = coarse[cellId];
+      protectedHeights.push(height); if (height > highest.height) highest = { cellId, height };
+    }
     return { refs: rows.manifest.detailCoast.refs, sampledTiles, landTiles,
       geometryRefs: rows.manifest.blockRefs.filter(r => r.key.startsWith('geometry:')),
       firstRegionHeightSha256: await digest(new Uint8Array(new Int32Array(protectedHeights).buffer)),
       farSea: [[3800, 500], [3700, 3300], [500, 3500]].map(([x, y]) => coarse[Math.floor(y / step) * rows.manifest.spec.columns + Math.floor(x / step)]),
-      firstRegionSamples: protectedHeights.length, probe: { land: pair[1].land!, sea: pair[1].sea! } };
+      firstRegionSamples: protectedHeights.length, highest, probe: { land: pair[1].land!, sea: pair[1].sea! } };
   }, id);
 }
 type DurableField = Awaited<ReturnType<typeof durableField>>;
@@ -161,8 +170,8 @@ function firstContinentPreserved(first: DurableField, next: DurableField) {
   expect(next.firstRegionHeightSha256).toBe(first.firstRegionHeightSha256);
 }
 async function observePoint(p: Page, point: Probe, kind: 'land' | 'sea', touch: boolean) {
-  await panel(p, '编辑'); await p.getByLabel('定位地块编号', { exact: true }).fill(String(point.cellId)); await click(p, '定位');
-  await panel(p, '地图'); await frameReady(p);
+  await panel(p, '编辑', touch); await p.getByLabel('定位地块编号', { exact: true }).fill(String(point.cellId)); await click(p, '定位', touch);
+  await panel(p, '地图', touch); await frameReady(p);
   const box = (await p.getByTestId('atlas-canvas').boundingBox())!, q = (await screen(p, [point]))[0];
   const center = { x: box.x + box.width * .5, y: box.y + box.height * .55 }, end = { x: 2 * center.x - q.x, y: 2 * center.y - q.y };
   const movement = Array.from({ length: 9 }, (_, i) => ({ x: center.x + (end.x - center.x) * i / 8, y: center.y + (end.y - center.y) * i / 8 }));
@@ -178,10 +187,10 @@ async function observePoint(p: Page, point: Probe, kind: 'land' | 'sea', touch: 
   return { kind, world: { x: point.x, y: point.y }, screen: target, text, expectedHeightRange: [point.minimumHeight, point.maximumHeight] };
 }
 async function observeFirstCoast(p: Page, field: DurableField, touch: boolean) {
-  await panel(p, '地图'); await click(p, '全图'); await frameReady(p);
+  await panel(p, '地图', touch); await click(p, '全图', touch); await frameReady(p);
   const box = (await p.getByTestId('atlas-canvas').boundingBox())!, maximum = Math.min(box.width, box.height) / 4096 * .9 * 80, target = Math.min(8, maximum);
   for (let i = 0; i < 16 && (await metrics(p)).camera.scale < target - 1e-9; i++) {
-    const before = (await metrics(p)).camera.scale; await click(p, '放大大世界地图'); await frameReady(p); expect((await metrics(p)).camera.scale).toBeGreaterThan(before);
+    const before = (await metrics(p)).camera.scale; await click(p, '放大大世界地图', touch); await frameReady(p); expect((await metrics(p)).camera.scale).toBeGreaterThan(before);
   }
   expect((await metrics(p)).camera.scale).toBeGreaterThanOrEqual(target - 1e-9);
   return [await observePoint(p, field.probe.land, 'land', touch), await observePoint(p, field.probe.sea, 'sea', touch)];
@@ -195,17 +204,17 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   const build = await response.json() as { version: string; commit?: string; naturalDetailGenerator?: { sha256: string }; addNaturalDetailGenerator?: { sha256: string } };
   expect(build.addNaturalDetailGenerator?.sha256, 'Requires the actual natural-v2 build; preview.8 only registered v1').toMatch(/^[a-f0-9]{64}$/);
   expect(build.naturalDetailGenerator?.sha256).toMatch(/^[a-f0-9]{64}$/);
-  const touch = info.project.name !== 'desktop-chromium', errors: string[] = [];
+  const touch = !!info.project.use.hasTouch, errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message)); page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto('/?atlas=new&atlas-format=4'); await ready(page, 'empty');
   await page.getByLabel('大世界草稿名称', { exact: true }).fill('两片山海 · 原生追加');
   await page.getByLabel('大世界生成种子', { exact: true }).fill('fine-native-additive');
-  await page.getByLabel('大世界地理规模', { exact: true }).selectOption('256'); await click(page, '新建空白海洋草稿'); await ready(page);
+  await page.getByLabel('大世界地理规模', { exact: true }).selectOption('256'); await click(page, '新建空白海洋草稿', touch); await ready(page);
   const id = (await studio(page).getAttribute('data-atlas-id'))!;
-  await panel(page, '创世'); await expect(page.getByLabel('大陆地形风格', { exact: true })).toHaveValue('2');await expect(page.getByLabel('主要湾岬变化', { exact: true })).toHaveValue('96');
+  await panel(page, '创世', touch); await expect(page.getByLabel('大陆地形风格', { exact: true })).toHaveValue('2');await expect(page.getByLabel('主要湾岬变化', { exact: true })).toHaveValue('96');
   await page.getByLabel('地貌种子', { exact: true }).fill('fine-native-additive');
   await page.getByLabel('近岸岛链', { exact: true }).selectOption('0');
-  await draw(page, firstContour, touch); await click(page, '确认生成并保存'); await ready(page);
+  await draw(page, firstContour, touch); await click(page, '确认生成并保存', touch); await committed(page, 1);
   const first = await saved(page, id, 4), firstField = await durableField(page, id);
   expect(first.root.revision).toBe(1); expect(first.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'shape-detail-landmass', version: 2, fingerprint: build.naturalDetailGenerator!.sha256 });
   expect(first.manifest.generation.lastApplied?.recipe.parameters).toMatchObject({coastStructureWorld:96});expect(firstField.farSea.every(value=>value < -1000)).toBe(true);expect(new Set(firstField.farSea).size).toBeGreaterThan(1);
@@ -213,20 +222,20 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
 
   await draw(page, secondContour, touch); const secondPreview = await audit(page);
   await expect(preview(page)).toContainText('本次新增陆地'); expect(await saved(page, id, 4)).toEqual(first); expect(await databaseDigest(page, 4)).toEqual(beforePreview);
-  await panel(page, '地图'); await frameReady(page); await page.screenshot({ path: info.outputPath('second-continent-preview.png'), fullPage: true });
-  await panel(page, '创世'); await click(page, '确认生成并保存'); await ready(page);
+  await panel(page, '地图', touch); await frameReady(page); await page.screenshot({ path: info.outputPath('second-continent-preview.png'), fullPage: true });
+  await panel(page, '创世', touch); await click(page, '确认生成并保存', touch); await committed(page, 2);
   const second = await saved(page, id, 4), secondField = await durableField(page, id);
   expect(second.root).toMatchObject({ revision: 2, currentManifest: secondPreview.display.manifestDigest, backupManifest: first.root.currentManifest });
   expect(second.manifest.generation.lastApplied?.recipe.generator).toEqual({ id: 'add-detail-landmass', version: 2, fingerprint: build.addNaturalDetailGenerator!.sha256 });
   firstContinentPreserved(firstField, secondField); expect(secondField.refs.length).toBeGreaterThan(firstField.refs.length);
 
   // Undo before navigation/reload, while the real transaction history exists.
-  await click(page, '撤销大世界编辑'); await ready(page);
+  await click(page, '撤销大世界编辑', touch); await committed(page, 3);
   const undone = await saved(page, id, 4), undoneField = await durableField(page, id);
   expect(undone.root).toMatchObject({ revision: 3, backupManifest: second.root.currentManifest });
   expect(undone.manifest.blockRefs).toEqual(first.manifest.blockRefs); expect(undone.manifest.generation.lastApplied).toEqual(first.manifest.generation.lastApplied);
   expect(undoneField).toEqual(firstField);
-  await draw(page, secondContour, touch); await click(page, '确认生成并保存'); await ready(page);
+  await draw(page, secondContour, touch); await click(page, '确认生成并保存', touch); await committed(page, 4);
   const repeated = await saved(page, id, 4), repeatedField = await durableField(page, id);
   expect(repeated.root).toMatchObject({ revision: 4, backupManifest: undone.root.currentManifest });
   firstContinentPreserved(firstField, repeatedField); expect(repeatedField).toEqual(secondField);
@@ -234,10 +243,17 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   await page.reload(); await ready(page); expect(await saved(page, id, 4)).toEqual(repeated); expect(await durableField(page, id)).toEqual(repeatedField);
   expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 4, revision: 4, manifestDigest: repeated.root.currentManifest });
   const restoredPicks = await observeFirstCoast(page, firstField, touch);
-  await panel(page, '地图'); await frameReady(page); await page.screenshot({ path: info.outputPath('restored-coast-close.png'), fullPage: true });
-  await panel(page, '地图'); await click(page, '全图'); await frameReady(page); await page.screenshot({ path: info.outputPath('two-continents-restored.png'), fullPage: true });
+  await panel(page, '地图', touch); await frameReady(page); await page.screenshot({ path: info.outputPath('restored-coast-close.png'), fullPage: true });
+  await panel(page, '地图', touch); await click(page, '全图', touch); await frameReady(page); await page.screenshot({ path: info.outputPath('two-continents-restored.png'), fullPage: true });
+  // Inspect the real first continent's highest stored coarse cell, not a
+  // decorative showcase. Screenshots are observation, not visual acceptance.
+  expect(firstField.highest.height).toBeGreaterThan(0);
+  await panel(page, '编辑', touch); await page.getByLabel('定位地块编号', { exact: true }).fill(String(firstField.highest.cellId)); await click(page, '定位', touch);
+  await panel(page, '地图', touch); await frameReady(page); await page.screenshot({ path: info.outputPath('saved-mountain-mid.png'), fullPage: true });
+  for (let i = 0; i < 3; i++) { await click(page, '放大大世界地图', touch); await frameReady(page); }
+  await page.screenshot({ path: info.outputPath('saved-mountain-near.png'), fullPage: true });
 
-  await panel(page, '创世');
+  await panel(page, '创世', touch);
   await expect(page.getByLabel('地貌种子', { exact: true })).toHaveValue('fine-native-additive');
   await expect(page.getByLabel('近岸岛链', { exact: true })).toHaveValue('0');await expect(page.getByLabel('大陆地形风格', { exact: true })).toHaveValue('2');await expect(page.getByLabel('主要湾岬变化', { exact: true })).toHaveValue('96');
   const beforeOverlap = await databaseDigest(page, 4); await draw(page, firstContour, touch, true);

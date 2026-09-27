@@ -1,15 +1,17 @@
 # 列国纪当前续接
 
-更新：2026-09-27T20:41:44.844Z。先核实际Git、源码与dist；本批原件见下，旧证据保留。
+更新：2026-09-27T21:13:29.383Z。先核实际Git、源码与dist；旧证据保留。
 
 ## 当前状态
 
-- 分支codex/ph06-world-generation；记录时HEAD d742a6e917c723bf22f31768efa00b268f48d5b0。preview.19本批已检查待本地提交，最终提交以git log与.autopilot/checkpoint.json核实。
-- 实际0.5.0-preview.19，build.json SHA256 5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3。221/221首轮与101/101修复检查、三端原生绘图/保存/流向/取消/刷新通过；[本批记录](evidence/2026-09-28-ph07-flow-view.md)与[原件](evidence/ph07-flow-view-2026-09-28/verification.json)。手机首轮失败已保留，不以重试通过消失。
+- 分支codex/ph06-world-generation；检查基于HEAD ef52727aa984a2c22ac6b622475427da61cccaed加本批修改。preview.20已检查待本地提交，最终提交以git log与.autopilot/checkpoint.json核实。
+- 实际0.5.0-preview.20，build.json SHA256 71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018。137/137相关检查与三端完整原生绘图/追加/撤销/刷新通过；[本批记录](evidence/2026-09-28-ph06-fine-world-relief.md)。首轮小大陆密度失败保留。
 - PH06-T3/T4保持in_progress，PH07及T1为in_progress且PH07→PH06依赖未改。自然视觉、用户视觉、真机、整体PH和性能未完成。
 - 新Atlas尚无国家、行政区、城市、首都、军队与战争。旧0.4工坊/测试战役独立，不能冒称新版已有。
 
 ## 最新实证
+
+preview.20接入细山脊高程与真实18历史恢复。旧默认/local逐值保留；小大陆密度错误已修复。自然视觉仍未通过，真实中近景与所有失败见本批归档。19流向与触摸修复记录如下。
 
 preview.19已接入真实地形流向。来源为保存的细高程，实际相邻下坡路径可取景、取消与刷新重算；完全不写地理根或存档。此功能仍是有界只读查看，不是完整河网或蓄水。三端本轮通过，见上方报告；18的下方结果只作为原地形基线。
 
@@ -29,13 +31,13 @@ preview.19已接入真实地形流向。来源为保存的细高程，实际相�
 
 - 细海陆绘制、生成预览/确认/取消、追加/撤销/保存恢复已有；局部细高程编辑和非零锁1/2/3的三端旧实证见[preview.14](evidence/2026-09-28-ph06-continuous-relief.md)。不可误用preview10旧审计称接口不存在。
 - [preview.16](evidence/2026-09-28-ph06-coast-scale.md)三端通过是旧基线；[preview.17](evidence/2026-09-28-ph06-branching-relief.md)113/113但数值图视觉拒绝、无17浏览器。13旧超时、15拓扑失败及所有历史原件保留。
-- 17真实生成闭包73原件已冻结于evidence/ph06-preview17-generator-history-2026-09-28；原捕获时sourceIsHead=false/browserExecuted=false不改写。未来修改生成闭包前先保留真实18闭包。
+- 17真实生成闭包73原件已冻结于evidence/ph06-preview17-generator-history-2026-09-28；原捕获时sourceIsHead=false/browserExecuted=false不改写。18真实闭包现已冻结并在20检查通过；下次生成器修改前先冻结实际20闭包。
 - PH07内核见[工程入口](evidence/2026-09-28-ph07-engineering-entry.md)和[内核记录](evidence/2026-09-28-ph07-hydrology-kernel.md)。当前新增真实Owned快照提取、只读Worker/bridge路径和地图显示；所有数据从当前保存地形读取，无地理修订/数据库写入。快照11项与内核16项正常导入通过；19统一检查与真实三端浏览器已通过，仍不算完整河网。
-- 下一批先处理用户指出的宽软山体：新大陆使用真实细高程尺度，保留旧世界/局部模式与现有山脉连接；候选在.autopilot/ph06/fine-world-relief-staging，尚未提升。然后继续跨页流域接续、真实水量/河湖及版本化持久层。国家行政城市军队仍依主计划，不堆空面板。
+- preview.20细山脊已接入并检查；下一批沿岸分区候选在.autopilot/ph06/regional-coast-staging，仅候选且未提升。还须消除固定S形山系观感，保持真实高程/细岸/旧存档。随后继续跨页流域、真实水量/河湖与版本化持久层；国家行政城市军队仍依主计划，不堆空面板。
 
 - 跨页边界候选已暂存于.autopilot/ph07/boundary-staging，ready-manifest SHA256 248f67e6477660e03e66961a47da5f19d39f079d79f67e4e5fdc7c99d9e3f7cc。14/14有界合成单元通过；首轮两项类型诊断修复为字面量as const后lint/类型通过，实际编译JS逐字节相同，复用原14项。生产未接入、没有完整receiver/河网/湖水量。后续从现有Owned快照按core+halo提取固定来源2—4页，先验预算，不新增公开raw snapshot。
 - 独立owned-v2修订加入必要Worker owner守卫、无密集分配的预检与真实Owned两页提取；27/27（原14+新13）、lint/类型通过，首轮测试接线失败保留。ready SHA256 3e89c7d2c9515a33d9b742c90afbebc130880a91d1f5b5715efb339d110c193f；真实Owned测试为小范围，128²仅预算检查。仍未接生产、没有全域receiver或密集性能验收。
-- preview18真实闭包已在.autopilot/ph06/v4-preview18-history-staging冻结，ready SHA256 86e7b8e602dfdd5c15c032445a8edf473976e86e743a315dc0c0664c11f37425。d742的47份Git源字节匹配18当时源清单，11闭包/engine匹配原18构建444d8380…；原build.commit=05f566ea…未改写。下一次生成器改动先据此接正确历史身份，不能覆盖旧闭包。
+- preview18真实闭包已在.autopilot/ph06/v4-preview18-history-staging冻结，ready SHA256 86e7b8e602dfdd5c15c032445a8edf473976e86e743a315dc0c0664c11f37425。d742的47份Git源字节匹配18当时源清单，11闭包/engine匹配原18构建444d8380…；原build.commit=05f566ea…未改写。本批已接正确存储历史，137项检查含该兼容验证；原冻结闭包未改。
 
 用户/V4§14允许不依赖人工验收的工程继续，不能把PH06主观视觉扩大为全部PH07纯代码的前置。依赖完成、最终视觉/真机和发布验收仍保持，不能因“独立工程”标记PH完成。
 
@@ -43,4 +45,4 @@ preview.19已接入真实地形流向。来源为保存的细高程，实际相�
 
 仓库Ethanhui6/lieguoji-web，Pages lieguoji-web；唯一原生Git链main生产、其他分支预览。旧站https://lieguoji-web.pages.dev/未更新。9月24一次预览例外已消耗，全部PH与必要验收前禁止任何push、远程PR/Issue/Milestone和部署，不绕过pre-push。只本地，CI文件不代表云端通过。
 
-旧世界/历史/真实存档不改写；自建/测试不自动转正式CANON。编辑与模拟分离、旧规则兼容、未来锁写/多标签保护继续。没有新的登录或秘密需求。IAB本次真实创建“长岬内海 · 细地形创作”，以36点鼠标轮廓生成25.47%陆地，确认修订1并刷新恢复；实际地址http://127.0.0.1:4173/?atlas=atlas-e0aa8c2d-3abc-4a12-88ff-c76b43fe2581&atlas-format=4。创建用18产物；本轮已在19真实刷新恢复修订1。该人工试玩页尚未点选流向，流向实证来自上述三端隔离浏览器。山脉仍过于平滑，原草稿未改。
+旧世界/历史/真实存档不改写；自建/测试不自动转正式CANON。编辑与模拟分离、旧规则兼容、未来锁写/多标签保护继续。没有新的登录或秘密需求。IAB本次真实创建“长岬内海 · 细地形创作”，以36点鼠标轮廓生成25.47%陆地，确认修订1并刷新恢复；实际地址http://127.0.0.1:4173/?atlas=atlas-e0aa8c2d-3abc-4a12-88ff-c76b43fe2581&atlas-format=4。创建用18产物；本轮已在20真实刷新恢复修订1。该人工试玩页尚未点选流向，流向实证来自上述三端隔离浏览器。山脉仍过于平滑，原草稿未改。

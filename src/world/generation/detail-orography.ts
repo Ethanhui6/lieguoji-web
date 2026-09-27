@@ -1,17 +1,19 @@
-import { FIELD_Q, hashAt, integerSqrt } from './seed';
+import { FIELD_Q, hashAt, integerSqrt, noiseQ12 } from './seed';
 import type { DetailShapeControl } from './detail-shape';
 
 type Point = { xQ: number; yQ: number };
 export interface OrographyAnchor extends Point { widthQ: number; peakQ: number }
 export interface OrographyChain {
   group: number; leeQ: number; seed: number; sampleStepQ: number;
+  /** Omitted retains existing coarse-compatible/local cross sections. */
+  crossSection?: 'fine-world';
   /** Group zero is the trunk. Every branch starts at an accepted trunk anchor. */
   anchors: readonly OrographyAnchor[];
 }
 type Probe = Point & { tx: number; ty: number; arc: number };
 type ArcAnchor = OrographyAnchor & { arc: number };
 export interface OrographyProfilePoint { arcQ: number; strength: number; widthScale: number; kind: 'end' | 'peak' | 'saddle' }
-type Run = { group: number; leeQ: number; seed: number; sampleStepQ: number; points: Probe[]; anchors: ArcAnchor[]; length: number; parentRun?: number; parentHeight: number; rootPeak: number; profile: OrographyProfilePoint[] };
+type Run = { group: number; leeQ: number; seed: number; sampleStepQ: number; crossSection?: 'fine-world'; points: Probe[]; anchors: ArcAnchor[]; length: number; parentRun?: number; parentHeight: number; rootPeak: number; profile: OrographyProfilePoint[] };
 type Span = {
   a: Point; b: Point; widthQ: number; peakQ: number; group: number;
   widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number;
@@ -19,7 +21,7 @@ type Span = {
 };
 type Support = Point & { tx: number; ty: number; alongQ: number; widthQ: number; crestQ: number; foothillShare: number; valleyOffset: number; peakQ: number; weight: number; leeQ: number; valleyDepth: number; valleySide: number; run: number; arc: number };
 type Ends = { first: Probe; last: Probe; fadeQ: number; branch: boolean };
-const WORLD_Q = 4096 * 256, BUCKET_Q = 64 * 256, BUCKETS = 64;
+const WORLD_Q = 4096 * 256, BUCKET_Q = 64 * 256, FINE_BUCKET_Q = 32 * 256;
 export const OROGRAPHY_LIMITS = { chains: 3, anchors: 17, spans: 14, nodes: 4096, indexReferences: 262144, bucketCandidates: 192, curveProbePoints: 131072 } as const;
 export const OROGRAPHY_UNION = { power: 64, epsilonQ: 1e-6, maximumRuns: 10 } as const;
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
@@ -134,9 +136,10 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
   // Reject oversized source arrays before copying their contents. The normal
   // planner already respects these caps; helper callers get the same bound.
   if (rawChains.reduce((sum, c) => sum + c.anchors.length, 0) > OROGRAPHY_LIMITS.anchors || rawChains.some(c => c.anchors.length > (c.group ? 4 : 9))) throw new Error('山系锚点预算无效。');
-  const chains = rawChains.map(c => ({ group: c.group, leeQ: c.leeQ, seed: c.seed, sampleStepQ: c.sampleStepQ, anchors: c.anchors.map(p => ({ ...p })) }));
+  const chains = rawChains.map(c => ({ group: c.group, leeQ: c.leeQ, seed: c.seed, sampleStepQ: c.sampleStepQ, crossSection: c.crossSection, anchors: c.anchors.map(p => ({ ...p })) }));
   if (chains.reduce((sum, c) => sum + c.anchors.length, 0) > OROGRAPHY_LIMITS.anchors || chains.some((c, i) => c.group !== i)) throw new Error('山系主支关系或锚点预算无效。');
   for (const chain of chains) {
+    if (chain.crossSection !== undefined && chain.crossSection !== 'fine-world' || chain.crossSection === 'fine-world' && chain.sampleStepQ !== 512) throw new Error('山系细高程规划模式无效。');
     if (![-1, 1].includes(chain.leeQ) || !Number.isInteger(chain.seed) || !Number.isInteger(chain.sampleStepQ) || chain.sampleStepQ < 512 || chain.sampleStepQ > 32 * 256 || chain.anchors.length > (chain.group ? 4 : 9)) throw new Error('山系锚点或采样规格无效。');
     for (const p of chain.anchors) if (![p.xQ, p.yQ, p.widthQ, p.peakQ].every(Number.isInteger) || p.xQ < 0 || p.yQ < 0 || p.xQ > WORLD_Q || p.yQ > WORLD_Q || p.widthQ < 4 * 256 || p.widthQ > 512 * 256 || p.peakQ < 0 || p.peakQ > FIELD_Q) throw new Error('山系私有锚点无效。');
   }
@@ -174,7 +177,7 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
       }
       if (!clear) { rejectedSpans++; run = undefined; failed = true; if (chain.group) break; continue; }
       if (!run) {
-        run = { group: chain.group, leeQ: chain.leeQ, seed: chain.seed, sampleStepQ: chain.sampleStepQ, points: [], anchors: [{ ...a, arc: 0 }], length: 0,
+        run = { group: chain.group, leeQ: chain.leeQ, seed: chain.seed, sampleStepQ: chain.sampleStepQ, crossSection: chain.crossSection, points: [], anchors: [{ ...a, arc: 0 }], length: 0,
           parentRun: parent ? runs.indexOf(parent) : undefined, parentHeight: 0, rootPeak: 0, profile: [] };
         pendingRuns.push(run);
       }
@@ -240,22 +243,35 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
       // Hbase sampling. Small/local spurs retain the original narrow crest
       // and low foothill relationship, with a smooth transition in metres.
       const landformScale = smooth((widthQ - 128 * 256) / (128 * 256));
+      // Fine world ranges keep broad low foothills but a narrower, physically
+      // sampled crest. Smooth seeded width variation changes actual heights;
+      // the land-probed centreline and support budget remain unchanged.
+      const fine = run.crossSection === 'fine-world';
+      const variation = fine ? noiseQ12(run.seed, 7300, Math.round(arc), 0, 64 * 256) / FIELD_Q : 0;
+      const crestQ = fine ? Math.max(3 * run.sampleStepQ, Math.min(40 * 256, widthQ * (.17 + .025 * variation)))
+        : Math.min(widthQ * .62, Math.max(1.5 * run.sampleStepQ, widthQ * (.24 + .22 * landformScale)));
       nodes.push({ xQ: pa.xQ + (pb.xQ - pa.xQ) * t, yQ: pa.yQ + (pb.yQ - pa.yQ) * t, tx, ty, widthQ,
-        crestQ: Math.min(widthQ * .62, Math.max(1.5 * run.sampleStepQ, widthQ * (.24 + .22 * landformScale))), alongQ,
-        foothillShare: .24 + .18 * landformScale, valleyOffset: .48 + .16 * landformScale,
+        crestQ: Math.min(widthQ * .62, crestQ), alongQ,
+        foothillShare: fine ? .18 : .24 + .18 * landformScale, valleyOffset: fine ? .46 : .48 + .16 * landformScale,
         peakQ: profile(run, arc) * endProfile(arc), weight: 35 * ds / (32 * alongQ), leeQ: run.leeQ,
         valleyDepth: run.group ? .98 * 16 * fraction * fraction * (1 - fraction) ** 2 : 0, valleySide: run.leeQ, run: runId, arc });
       if (++work % batch === 0) await checkpoint('sample-branching-ribbons', nodes.length, OROGRAPHY_LIMITS.nodes);
     }
   }
-  const buckets: number[][] = Array.from({ length: BUCKETS ** 2 }, () => []); let references = 0, maximumBucketCandidates = 0;
+  // A 64-world bucket over-collects narrow fine supports at main/branch joins.
+  // Split only the fine-world index: geometry, contribution order and query /
+  // reference limits stay unchanged. This uses at most 128^2 bucket slots
+  // (legacy/local: 64^2); the bounded extra array overhead is not zero.
+  const bucketQ = chains.some(chain => chain.crossSection === 'fine-world') ? FINE_BUCKET_Q : BUCKET_Q;
+  const bucketCount = WORLD_Q / bucketQ;
+  const buckets: number[][] = Array.from({ length: bucketCount ** 2 }, () => []); let references = 0, maximumBucketCandidates = 0;
   for (const [id, node] of nodes.entries()) {
     const width = node.widthQ * 1.15;
     const rx = Math.abs(node.tx) * node.alongQ + Math.abs(node.ty) * width, ry = Math.abs(node.ty) * node.alongQ + Math.abs(node.tx) * width;
-    const left = Math.max(0, Math.floor((node.xQ - rx) / BUCKET_Q)), right = Math.min(BUCKETS - 1, Math.floor((node.xQ + rx) / BUCKET_Q));
-    const top = Math.max(0, Math.floor((node.yQ - ry) / BUCKET_Q)), bottom = Math.min(BUCKETS - 1, Math.floor((node.yQ + ry) / BUCKET_Q));
+    const left = Math.max(0, Math.floor((node.xQ - rx) / bucketQ)), right = Math.min(bucketCount - 1, Math.floor((node.xQ + rx) / bucketQ));
+    const top = Math.max(0, Math.floor((node.yQ - ry) / bucketQ)), bottom = Math.min(bucketCount - 1, Math.floor((node.yQ + ry) / bucketQ));
     for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
-      const bucket = buckets[y * BUCKETS + x]; bucket.push(id); maximumBucketCandidates = Math.max(maximumBucketCandidates, bucket.length);
+      const bucket = buckets[y * bucketCount + x]; bucket.push(id); maximumBucketCandidates = Math.max(maximumBucketCandidates, bucket.length);
       if (++references > OROGRAPHY_LIMITS.indexReferences || bucket.length > OROGRAPHY_LIMITS.bucketCandidates) throw new Error('山系局部密度超出有界查询预算。');
     }
     if (++work % batch === 0) await checkpoint('index-branching-orography', id + 1, nodes.length);
@@ -263,7 +279,7 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
   const spatial = buckets.map(bucket => Uint16Array.from(bucket)), masses = new Float64Array(runs.length), gates = new Float64Array(runs.length);
   const sample = (xQ: number, yQ: number) => {
     if (!Number.isFinite(xQ) || !Number.isFinite(yQ) || xQ < 0 || yQ < 0 || xQ > WORLD_Q || yQ > WORLD_Q) throw new Error('山系查询坐标无效。');
-    const bucket = spatial[Math.min(BUCKETS - 1, Math.floor(yQ / BUCKET_Q)) * BUCKETS + Math.min(BUCKETS - 1, Math.floor(xQ / BUCKET_Q))];
+    const bucket = spatial[Math.min(bucketCount - 1, Math.floor(yQ / bucketQ)) * bucketCount + Math.min(bucketCount - 1, Math.floor(xQ / bucketQ))];
     masses.fill(0);
     for (let run = 0; run < runs.length; run++) gates[run] = endpointWeight(ends[run], xQ, yQ);
     for (const id of bucket) { const node = nodes[id]; masses[node.run] += contribution(node, xQ, yQ) * gates[node.run]; }

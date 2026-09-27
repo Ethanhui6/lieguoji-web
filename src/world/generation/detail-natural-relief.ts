@@ -4,6 +4,11 @@ import { boundCurvedRelief } from './detail-curved-ridge';
 import { createOrographyField, planOrographyProfile, type OrographyAnchor, type OrographyChain } from './detail-orography';
 
 type Point = { xQ: number; yQ: number };
+/** New world relief is written to actual 2-world fine elevations. These are
+ * physical planning scales, independent of the coarse simulation cell count.
+ * Local editing and legacy coarse-only samplers keep their existing contract. */
+export const FINE_WORLD_RELIEF_SCALE = Object.freeze({ sampleStepWorld: 2, minimumTrunkWidthWorld: 24, minimumBranchWidthWorld: 16,
+  maximumShoulderWidthWorld: 160, rollingFeatureWorld: 32, minimumInteriorWorld: 48, branchSpanWorld: 192 } as const);
 export interface NaturalRidge { a: Point; b: Point; widthQ: number; peakQ: number; group: number; widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number }
 export interface NaturalReliefSummary {
   profile: 'branching-orography-v4'; ridgeSegments: number; ridgeGroups: number;
@@ -16,6 +21,8 @@ export interface NaturalReliefInput {
   reliefMeters: number; shelfWidthWorld: number;
   /** Internal height-planning scale; never a storage format reinterpretation. */
   scaleMode?: 'world' | 'local';
+  /** Explicit only at new-world entry points that persist all fine elevations. */
+  heightPlanning?: 'fine-world';
   /** Trusted query on the private candidate's actual coverage pieces. */
   isLand: (xQ: number, yQ: number) => boolean;
 }
@@ -58,11 +65,13 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     || !Number.isInteger(batch) || batch < 64 || batch > 2048 || !Number.isInteger(input.reliefMeters) || input.reliefMeters < 200 || input.reliefMeters > 6000
     || !Number.isInteger(input.shelfWidthWorld) || input.shelfWidthWorld < 16 || input.shelfWidthWorld > 128
     || input.scaleMode !== undefined && input.scaleMode !== 'world' && input.scaleMode !== 'local') throw new Error('自然地貌私有输入规格无效。');
+  if (input.heightPlanning !== undefined && input.heightPlanning !== 'fine-world' || input.heightPlanning === 'fine-world' && input.scaleMode === 'local') throw new Error('世界细高程规划模式无效。');
+  const fineWorld = input.heightPlanning === 'fine-world';
   const centers = input.centersQ.slice(), land = input.land.slice(), coastDistance = input.coastDistanceQ.slice();
   const size = input.size, seed = input.seed, relief = input.reliefMeters, shelf = input.shelfWidthWorld, isLand = input.isLand, stepQ = 4096 * 256 / size, scaleMode = input.scaleMode ?? 'world';
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; const eligible: number[] = [];
   for (let id = 0; id < land.length; id++) {
-    if (land[id] && coastDistance[id] >= Math.min(48 * 256, stepQ * 2)) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible.push(id); }
+    if (land[id] && coastDistance[id] >= (fineWorld ? FINE_WORLD_RELIEF_SCALE.minimumInteriorWorld * 256 : Math.min(48 * 256, stepQ * 2))) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible.push(id); }
     if ((id + 1) % batch === 0) await checkpoint(control, 'plan-natural-highlands', id + 1, land.length);
   }
   const chains: OrographyChain[] = [];
@@ -70,9 +79,9 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     const horizontal = maxX - minX >= maxY - minY, longMin = horizontal ? minX : minY, longSpan = horizontal ? maxX - minX : maxY - minY;
     const shortMin = horizontal ? minY : minX, shortSpan = horizontal ? maxY - minY : maxX - minX;
     const local = scaleMode === 'local';
-    const minimumWidth = local ? 12 * 256 : 4 * stepQ;
+    const minimumWidth = local ? 12 * 256 : fineWorld ? FINE_WORLD_RELIEF_SCALE.minimumTrunkWidthWorld * 256 : 4 * stepQ;
     const count = local ? Math.max(3, Math.min(9, Math.floor(longSpan / Math.max(96 * 256, 4 * stepQ)) + 1)) : 9;
-    const footprint = local ? Math.min(shortSpan * .18, longSpan / (count - 1) * .55, 80 * 256) : Math.min(shortSpan * .45, 256 * 256);
+    const footprint = local ? Math.min(shortSpan * .18, longSpan / (count - 1) * .55, 80 * 256) : fineWorld ? Math.min(shortSpan * .25, longSpan / (count - 1) * .65, FINE_WORLD_RELIEF_SCALE.maximumShoulderWidthWorld * 256) : Math.min(shortSpan * .45, 256 * 256);
     type Target = OrographyAnchor & { point?: Point; score: number };
     let work = 0;
     const snap = async (targets: Target[]) => {
@@ -120,9 +129,9 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
         const gap = Math.min(i ? Math.hypot(p.xQ - before.xQ, p.yQ - before.yQ) : Infinity, i + 1 < trunk.length ? Math.hypot(after.xQ - p.xQ, after.yQ - p.yQ) : Infinity);
         p.widthQ = Math.round(Math.min(p.widthQ, gap * .42));
       }
-      const sampleStepQ = local ? 512 : stepQ, leeQ = hashAt(seed, 7213, 0, 0) % 2 ? 1 : -1;
-      if (trunk.length >= 3 && trunk.every(p => p.widthQ >= minimumWidth)) chains.push({ group: 0, leeQ, seed, sampleStepQ, anchors: trunk });
-      const allowBranches = local ? longSpan >= 1024 * 256 && shortSpan >= 512 * 256 : shortSpan >= 8 * stepQ;
+      const sampleStepQ = local ? 512 : fineWorld ? FINE_WORLD_RELIEF_SCALE.sampleStepWorld * 256 : stepQ, leeQ = hashAt(seed, 7213, 0, 0) % 2 ? 1 : -1;
+      if (trunk.length >= 3 && trunk.every(p => p.widthQ >= minimumWidth)) chains.push({ group: 0, leeQ, seed, sampleStepQ, ...(fineWorld ? { crossSection: 'fine-world' as const } : {}), anchors: trunk });
+      const allowBranches = local ? longSpan >= 1024 * 256 && shortSpan >= 512 * 256 : (fineWorld ? shortSpan >= FINE_WORLD_RELIEF_SCALE.branchSpanWorld * 256 : shortSpan >= 8 * stepQ);
       if (chains.length && allowBranches && trunk.length >= 5) {
         // Attach near strong sections of the same physical envelope. A fixed
         // fraction could hit a deep saddle and make both spurs barely visible.
@@ -138,7 +147,7 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
           const side = transverseRoot < shortMin + shortSpan / 2 ? 1 : -1, forward = branch ? -1 : 1;
           const branchTargets: Target[] = [], extent = shortSpan * (.32 + (hashAt(seed, 7260, branch, 0) % 61) / 1000);
           const drift = longSpan * (.14 + (hashAt(seed, 7261, branch, 0) % 71) / 1000) * forward;
-          const branchMinimum = local ? 12 * 256 : 2 * stepQ;
+          const branchMinimum = local ? 12 * 256 : fineWorld ? FINE_WORLD_RELIEF_SCALE.minimumBranchWidthWorld * 256 : 2 * stepQ;
           for (let j = 1; j <= 3; j++) {
             const fraction = j / 3, longitudinal = drift * fraction * (.7 + .3 * fraction), transverse = side * extent * fraction;
             branchTargets.push({ xQ: Math.round(root.xQ + (horizontal ? longitudinal : transverse)), yQ: Math.round(root.yQ + (horizontal ? transverse : longitudinal)),
@@ -153,7 +162,7 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
             if (along <= previousAlong) break;
             selected.push({ ...target.point, widthQ: target.widthQ, peakQ: target.peakQ }); previousAlong = along;
           }
-          if (selected.length === 4) chains.push({ group: chains.length, leeQ: side, seed, sampleStepQ, anchors: selected });
+          if (selected.length === 4) chains.push({ group: chains.length, leeQ: side, seed, sampleStepQ, ...(fineWorld ? { crossSection: 'fine-world' as const } : {}), anchors: selected });
         }
       }
     }
@@ -173,11 +182,11 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
       return Math.max(-12000, Math.min(-1, roundRatio(oldSea * rise, FIELD_Q)));
     }
     const [u, v] = rotated(xQ, yQ), lowland = 61 + roundRatio(246 * unit(noiseQ12(seed, 7230, u, v, 640 * 256)), FIELD_Q);
-    // World variations span >= four real coarse sample spacings. Local detail
-    // instead uses the existing 2-world fine elevation nodes and does not
-    // reinterpret the immutable coarse Hbase of an existing world.
+    // New world elevations and local detail both reach actual 2-world nodes.
+    // Their height scales no longer depend on the coarse simulation grid.
+    // Existing immutable Hbase sampling is not reinterpreted.
     if (backgroundLandMeters !== undefined && (!Number.isFinite(backgroundLandMeters) || backgroundLandMeters < 0 || backgroundLandMeters > 12000)) throw new Error('局部山地旧地形背景无效。');
-    const featureQ = scaleMode === 'local' ? 32 * 256 : Math.max(64 * 256, 4 * stepQ);
+    const featureQ = scaleMode === 'local' ? 32 * 256 : fineWorld ? FINE_WORLD_RELIEF_SCALE.rollingFeatureWorld * 256 : Math.max(64 * 256, 4 * stepQ);
     const rolling = roundRatio(123 * unit(noiseQ12(seed, 7231, u, v, featureQ)), FIELD_Q);
     // The real height query follows the same curves that were land-probed;
     // no later domain warp can move the ridge skeleton across that boundary.

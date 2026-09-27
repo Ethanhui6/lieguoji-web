@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "newRegressionFirstFailed": true,
+  "newFineWorldCaseCount": 7,
+  "after": {
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "suites": [
+      {
+        "file": "D:/游戏/架空地图模拟器/src/world/generation/detail-fine-world-relief.test.ts",
+        "passed": 7,
+        "elapsedMs": 664.31884765625
+      },
+      {
+        "file": "D:/游戏/架空地图模拟器/src/world/generation/detail-natural-writer.test.ts",
+        "passed": 6,
+        "elapsedMs": 9613.30322265625
+      },
+      {
+        "file": "D:/游戏/架空地图模拟器/src/world/generation/detail-orography.test.ts",
+        "passed": 16,
+        "elapsedMs": 216.398681640625
+      }
+    ]
+  },
+  "sourceFiles": {
+    "src/world/generation/detail-orography.ts": "191ce20cc291361b868e48fe920cc3fee7d86b6bdf234dd07d37c82b65b00c85",
+    "src/world/generation/detail-fine-world-relief.test.ts": "dd0f064a2b5218c9f550db73a55acb98adc01f9a03fea304ead767b9917b2054"
+  },
+  "productionNaturalReliefUnchangedByRepair": true,
+  "budgetsRaised": false,
+  "geometryChanged": false,
+  "legacyLocalIndexChanged": false,
+  "productionBuildRun": false,
+  "browserRun": false
+}

@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:9764) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [tablet-chromium] › tests\atlas-add-detail-coast.spec.ts:199:1 › [detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection (4.9m)
+
+  1 passed (4.9m)

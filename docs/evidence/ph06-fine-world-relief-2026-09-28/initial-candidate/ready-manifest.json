@@ -1,0 +1,24 @@
+{
+  "candidate": "fine-world-relief",
+  "readyForRootReview": true,
+  "productionIntegrated": false,
+  "visualAccepted": false,
+  "unitPassed": 22,
+  "sourceFilesToPromote": [
+    "src/world/generation/detail-natural-relief.ts",
+    "src/world/generation/detail-orography.ts"
+  ],
+  "hashes": {
+    "src/world/generation/detail-natural-relief.ts": "4f7cf0598389b5626eacce7fb4e473f76c8151d422e1fddff1ccf6ffa29464f4",
+    "src/world/generation/detail-orography.ts": "11703b6c7bc4949a80b7ba6439fc9bed654cb73f0ec70359e97b9d07926cd863",
+    "fine-world-relief.test.ts": "d48d5cdf36301e5b4dc7aa9c0b5e2ee45c383778b9a0ef41e83d2d58e95bf27c",
+    "vitest.config.ts": "37bd18e6a474b397e3e9ecb2af60467e19bd426f4f29e1d0441d04bc162ff871",
+    "typecheck.mjs": "e3a75d23abf7a80860f4bcbba0020abc417abef6622db75f0c074e82712f766b",
+    "check.mjs": "7c63b50bda8d1af8332e38e1ff211c943fc433d80e917458cedfc26a2f41f155",
+    "README.md": "0084edb3cdf628013482fcfd5698dde542b40c2e871038273c961de4b97dfb53",
+    "verification.json": "8c6928eb81b66f15e37f6a6ee6b6eb62a3594b71f844b6bca3a90d1961ef153c",
+    "measurements.json": "99951313e3eae8fa8c16f9d6fcd03d37dde74ac39e624b3dcde7f63a837ffe77",
+    "guard-final-tests.json": "e0c0e43ff58b9c0c4aca6b4f306387986db417b0169e198ade612a6f3f97ad4f",
+    "first-tests.json": "1e85ad99d93d7f1f153d47d08ae2f1d1ecf31c37abcebc4f2fb40dea7dc0ae72"
+  }
+}

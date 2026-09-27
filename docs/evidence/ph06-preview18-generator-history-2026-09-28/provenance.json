@@ -1,0 +1,999 @@
+{
+  "capturedAt": "2026-09-27T20:38:49.457Z",
+  "sourceCommit": "d742a6e917c723bf22f31768efa00b268f48d5b0",
+  "observedHeadAtStart": "d742a6e917c723bf22f31768efa00b268f48d5b0",
+  "observedHeadAtEnd": "d742a6e917c723bf22f31768efa00b268f48d5b0",
+  "sourceOrigin": "Only immutable Git blobs from sourceCommit; no current19 source, package or dist is used as preview18 provenance.",
+  "sourceVersion": "0.5.0-preview.18",
+  "buildCommitMetadata": "05f566ea90f22ae5aa3e7421cfa221a53b7acec9",
+  "buildSha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5",
+  "commitRelationship": "Original build names its then-current base commit 05f566ea; d742 later commits the checked preview18 source. Original build bytes and commit field are preserved.",
+  "archivedBuildPath": "docs/evidence/ph06-fine-land-belt-2026-09-28/raw/root/first/build.json",
+  "archivedBuildGitBlob": "13f1d8f171e21b74f963e1a50c338bc348076304",
+  "originalArchive": {
+    "path": "docs/evidence/ph06-fine-land-belt-2026-09-28",
+    "verificationSha256": "c24fd0a843a7a9d062663ce02e6f54cd27145a1f6399e3a8eb6a8c5b95d7be5a",
+    "inventorySha256": "bc3fc929c372e0d0ce527be19c6158a359245a25a37efe13eb17dde52ea27e18"
+  },
+  "fingerprintTools": [
+    {
+      "file": "scripts/generator-fingerprint.ts",
+      "gitBlob": "1f45533f602373c8e2e5743048201c66cba59ba9",
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "file": "scripts/engine-fingerprint.ts",
+      "gitBlob": "0a241646b5ceb3b33e53ef7a31a87eeac8a66e5b",
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    }
+  ],
+  "closures": [
+    {
+      "key": "macroGenerator",
+      "historyKey": "macro-landmass",
+      "fingerprintFunction": "fingerprintMacroGenerator",
+      "sha256": "c68e4fc8f369839b0b4bbcfb234eb07b50ab8b23b76d23b719a74f3afcf67670",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/macro.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "landformGenerator",
+      "historyKey": "landforms",
+      "fingerprintFunction": "fingerprintLandformGenerator",
+      "sha256": "0505036d62960acbf4fc287ccc2db430b5f7495265016002d3dfa02a44a36483",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/landforms.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "islandGenerator",
+      "historyKey": "island-chains",
+      "fingerprintFunction": "fingerprintIslandGenerator",
+      "sha256": "d2379635a1602bbcfcd63d7c5ba0d4ef7a0081b502ea759b11b44c845a552b6a",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/islands.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "coastGenerator",
+      "historyKey": "coast-smoothing",
+      "fingerprintFunction": "fingerprintCoastGenerator",
+      "sha256": "efc867172623671db67abab92805c70ebb38756f2723cd1f1752885be9c0867a",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/coast.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "shapeGenerator",
+      "historyKey": "shape-landmass",
+      "fingerprintFunction": "fingerprintShapeGenerator",
+      "sha256": "f65227ed15ef9a9b946320e09191e5f71782299d5130ddbcfd6371d5ef6c6f21",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/shape.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "oceanGenerator",
+      "historyKey": "ocean-floor",
+      "fingerprintFunction": "fingerprintOceanGenerator",
+      "sha256": "900a5c9cac2b8b5de299988a3f90d39d1652579af51f7955c38f97c887d97338",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/ocean.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "historyKey": "shape-detail-landmass",
+      "fingerprintFunction": "fingerprintDetailShapeGenerator",
+      "sha256": "e836e816fafa986c507258011276379d7f668cb682c439764f0f3c89dd42a5f1",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-adapter.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "historyKey": "add-detail-landmass",
+      "fingerprintFunction": "fingerprintAddDetailGenerator",
+      "sha256": "a8c34961287df9a71be6d21419af2d22e11cca21388c5e1fe0b3cf352aa1759e",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-add-adapter.ts",
+        "src/world/generation/detail-shape-add.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "historyKey": "shape-detail-landmass@2",
+      "fingerprintFunction": "fingerprintNaturalDetailGenerator",
+      "sha256": "b676535e5b938208c9270e9ca220ce85d39a6fc332f23e9534639caa0953b6e7",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-natural-outline.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape-natural-adapter.ts",
+        "src/world/generation/detail-shape-natural.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/natural-ocean-base.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "historyKey": "add-detail-landmass@2",
+      "fingerprintFunction": "fingerprintAddNaturalDetailGenerator",
+      "sha256": "e30b1d17c5897d1e1509f1cb96edc931ed487049529c1692a4f367bd2c0e8143",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-natural-outline.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape-natural-add-adapter.ts",
+        "src/world/generation/detail-shape-natural-add.ts",
+        "src/world/generation/detail-shape-natural.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "historyKey": "local-detail-relief",
+      "fingerprintFunction": "fingerprintLocalDetailReliefGenerator",
+      "sha256": "613b30cf2f5229f8eca86983949ef83e3f6a12988db3b133f32da263a0b227c5",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-local-background.ts",
+        "src/world/generation/detail-local-relief.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/local-detail-relief-adapter.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ],
+      "matchesArchivedBuild": true
+    }
+  ],
+  "closureCount": 11,
+  "generatorSourceCount": 42,
+  "engineFiles": [
+    "src/sim/core.ts",
+    "src/sim/statecraft.ts",
+    "src/sim/types.ts",
+    "src/history/core.ts",
+    "src/history/types.ts"
+  ],
+  "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+  "sources": [
+    {
+      "file": "src/history/core.ts",
+      "gitBlob": "5ca094b13a98a0c828a06654ee3c3333a7eea81d",
+      "bytes": 13976,
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf",
+      "checkedWorkingTreeSha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf",
+      "checkedByteMatch": "raw",
+      "generatorClosure": false,
+      "engine": true
+    },
+    {
+      "file": "src/history/types.ts",
+      "gitBlob": "61009cc5b57647bdec7573266f0d310fc9506a5e",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f",
+      "checkedWorkingTreeSha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f",
+      "checkedByteMatch": "raw",
+      "generatorClosure": false,
+      "engine": true
+    },
+    {
+      "file": "src/sim/core.ts",
+      "gitBlob": "23adc442a704bfd7464b08d09c30d389956c88e2",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144",
+      "checkedWorkingTreeSha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144",
+      "checkedByteMatch": "raw",
+      "generatorClosure": false,
+      "engine": true
+    },
+    {
+      "file": "src/sim/statecraft.ts",
+      "gitBlob": "5566505da2576ea93953c39ba92053b02025445c",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f",
+      "checkedWorkingTreeSha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f",
+      "checkedByteMatch": "raw",
+      "generatorClosure": false,
+      "engine": true
+    },
+    {
+      "file": "src/sim/types.ts",
+      "gitBlob": "1ca12a3a4e951ede2d2e564af8a7afc1aabc693c",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e",
+      "checkedWorkingTreeSha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e",
+      "checkedByteMatch": "raw",
+      "generatorClosure": false,
+      "engine": true
+    },
+    {
+      "file": "src/world/atlas-format.ts",
+      "gitBlob": "6a078567932b2fc359812f46c86f41d04ae0bc0c",
+      "bytes": 8219,
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "checkedWorkingTreeSha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/coastal-generation.ts",
+      "gitBlob": "5f78eeaa4238a0be710e6570e7693854ae36a7ef",
+      "bytes": 8132,
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "checkedWorkingTreeSha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/coastal-surface.ts",
+      "gitBlob": "2952b63fde36b21c3defe2fe39106f9179aac512",
+      "bytes": 13494,
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "checkedWorkingTreeSha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-base.ts",
+      "gitBlob": "1439338fa079c03aacb21e8df581523676c8134d",
+      "bytes": 1110,
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "checkedWorkingTreeSha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-codec.ts",
+      "gitBlob": "3c9fd5d920ea4b4853576dd60c75390da901ee87",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "checkedWorkingTreeSha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-field.ts",
+      "gitBlob": "ab3be0f32d8572aba6adac7ee9ca05fbfe83e690",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "checkedWorkingTreeSha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-geometry.ts",
+      "gitBlob": "cc735da117fac69393b1b27838f5a5aef42e31f5",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "checkedWorkingTreeSha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-locks.ts",
+      "gitBlob": "14cd1313d8fb0cada3ae6837258f6f8074df6cf5",
+      "bytes": 9809,
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "checkedWorkingTreeSha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/detail-coast-types.ts",
+      "gitBlob": "a209521d483cc79f7a92fcecb263985ffc3ed298",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "checkedWorkingTreeSha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation-contract.ts",
+      "gitBlob": "91a1e5d0e47887060a12e63516d8025cc7af01d9",
+      "bytes": 34413,
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "checkedWorkingTreeSha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation-format.ts",
+      "gitBlob": "c34dc0743fdb6173cabee612fe6b87e3e7e791f3",
+      "bytes": 12978,
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "checkedWorkingTreeSha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation-history.ts",
+      "gitBlob": "3b5ef5ec74d81d3aed2265459f3274087c799c48",
+      "bytes": 14406,
+      "sha256": "808fd7d66125aa938f9cfe8ea608e62e45d0c02722c71a0f7dced6ed1dfd1d42",
+      "checkedWorkingTreeSha256": "808fd7d66125aa938f9cfe8ea608e62e45d0c02722c71a0f7dced6ed1dfd1d42",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation-locks.ts",
+      "gitBlob": "ff53204c1ba197ee3faeaff629b7627baa04f4cc",
+      "bytes": 16953,
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "checkedWorkingTreeSha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/coast.ts",
+      "gitBlob": "dac0e7b3b4ffc03abe2c6dc97194e49ce4cc81c3",
+      "bytes": 16967,
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f",
+      "checkedWorkingTreeSha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-curved-ridge.ts",
+      "gitBlob": "6842c307b5c92bb72bd07eb031cb4ff50a0fc2ac",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "checkedWorkingTreeSha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-local-background.ts",
+      "gitBlob": "de22ea40cb7505cc53fc5df38efde94de17e204b",
+      "bytes": 8795,
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026",
+      "checkedWorkingTreeSha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-local-relief.ts",
+      "gitBlob": "72e0e7c3294c65230b43a0a8a7417307e0faacd8",
+      "bytes": 28182,
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050",
+      "checkedWorkingTreeSha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-natural-outline.ts",
+      "gitBlob": "7aaab9c088375fe0aa441add1666ada45b4ce2da",
+      "bytes": 24650,
+      "sha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364",
+      "checkedWorkingTreeSha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-natural-relief.ts",
+      "gitBlob": "192c1044a02d6a30fedebc41265ec8dc87c23dea",
+      "bytes": 15879,
+      "sha256": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+      "checkedWorkingTreeSha256": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-orography.ts",
+      "gitBlob": "7a7b32d11c8bbfbcff456fe78ae886bf459d291d",
+      "bytes": 22619,
+      "sha256": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+      "checkedWorkingTreeSha256": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-adapter.ts",
+      "gitBlob": "b015ba3ea2229727c272c09e1c49150d468f3fd7",
+      "bytes": 7449,
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919",
+      "checkedWorkingTreeSha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-add-adapter.ts",
+      "gitBlob": "da0b00f048a7b4131b5b80c350ab73dea9f144e6",
+      "bytes": 7553,
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2",
+      "checkedWorkingTreeSha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-add.ts",
+      "gitBlob": "a4d1d226cd2843d7a96926ab93450c452baa354c",
+      "bytes": 21310,
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "checkedWorkingTreeSha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-distance.ts",
+      "gitBlob": "8b6f118d75ff600c7a0191b82133ac01fc52e503",
+      "bytes": 17258,
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "checkedWorkingTreeSha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-height.ts",
+      "gitBlob": "bb5d12844ecbcb8d91f2bf25b149b078acb9d59e",
+      "bytes": 2672,
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "checkedWorkingTreeSha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-adapter.ts",
+      "gitBlob": "e428f6458bf5288c44a72ab1dde64167fea8b450",
+      "bytes": 8133,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "checkedWorkingTreeSha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "gitBlob": "d8c57d404b1913217d39c91ae3235bf8952583f6",
+      "bytes": 7705,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384",
+      "checkedWorkingTreeSha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add.ts",
+      "gitBlob": "50f800148c8214f74cf8842eb0b2178be0586201",
+      "bytes": 21608,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1",
+      "checkedWorkingTreeSha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.ts",
+      "gitBlob": "9bc5be12177c87a06e20806c289577085634283a",
+      "bytes": 31658,
+      "sha256": "b2c0052cbfe690785c75acb588a13ad0ab78c86bbf1b5e2d7dbaf0a1ba3fc5f5",
+      "checkedWorkingTreeSha256": "b2c0052cbfe690785c75acb588a13ad0ab78c86bbf1b5e2d7dbaf0a1ba3fc5f5",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/detail-shape.ts",
+      "gitBlob": "e33ef5001e8a0c5d03c3064ce72004bc75ee2dd8",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "checkedWorkingTreeSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/fingerprint.ts",
+      "gitBlob": "1d4f3fedb8ede18357349689761626ddea118f3c",
+      "bytes": 1159,
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "checkedWorkingTreeSha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/islands.ts",
+      "gitBlob": "85c8c2181c650da22367ea64b576a26984525fb4",
+      "bytes": 20467,
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a",
+      "checkedWorkingTreeSha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/landforms.ts",
+      "gitBlob": "2b880e9ba73e4cc17601d7aa4b13c5875d1e4421",
+      "bytes": 19225,
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221",
+      "checkedWorkingTreeSha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/local-detail-relief-adapter.ts",
+      "gitBlob": "82df42d9fb444687719cb6f8c3bae0db4409ece9",
+      "bytes": 6694,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635",
+      "checkedWorkingTreeSha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/macro.ts",
+      "gitBlob": "dc449d13c969a8e49914c1aa49d55fa2ae334d01",
+      "bytes": 19697,
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f",
+      "checkedWorkingTreeSha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/natural-ocean-base.ts",
+      "gitBlob": "3d44e380e49c7f85ff4c7d6bb5d5f895a5292b55",
+      "bytes": 4244,
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "checkedWorkingTreeSha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/ocean.ts",
+      "gitBlob": "7f7566786f6946fccc09a99cd52e08abc070dac6",
+      "bytes": 13207,
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae",
+      "checkedWorkingTreeSha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/quality.ts",
+      "gitBlob": "0b1832193d2807005f4be7c4c7cc46ffa9281703",
+      "bytes": 7319,
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "checkedWorkingTreeSha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/seed.ts",
+      "gitBlob": "0ec971ad6ff3ec4f003ba6b5e1a67776aba465ac",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "checkedWorkingTreeSha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/generation/shape.ts",
+      "gitBlob": "ae51deb67f9aa246493757957ec18bec57123a03",
+      "bytes": 13546,
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a",
+      "checkedWorkingTreeSha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/model.ts",
+      "gitBlob": "518bb29ce809d44e8c311307e26389426559dccd",
+      "bytes": 27883,
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "checkedWorkingTreeSha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    },
+    {
+      "file": "src/world/topology.ts",
+      "gitBlob": "de0e831289d084b48a50d50e5808c360b2e42583",
+      "bytes": 9633,
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "checkedWorkingTreeSha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "checkedByteMatch": "raw",
+      "generatorClosure": true,
+      "engine": false
+    }
+  ],
+  "sourceCount": 47,
+  "sourceSnapshotSha256": "f0b8a8bb6603944186bc5b504fe9e4a50d4b6b75e5fd1d23040f7b18df638e22",
+  "sourceSnapshotHashDefinition": "SHA256 UTF8 JSON.stringify(sources), sorted by file; each row includes Git blob, raw bytes and checked snapshot binding.",
+  "checkedRoot": {
+    "path": "docs/evidence/ph06-fine-land-belt-2026-09-28/raw/root/first",
+    "verificationSha256": "6d7ca75fc9e68bb72b7e00bef1ffd105a55c26e0949453b27d3130dd2a1a0774",
+    "identityVerificationSha256": "66cfd772a8437b2e72713fb0b1ba964ebee18201d36d7fe39292cde5df268354",
+    "sourceSnapshotSha256": "d7cb1e089a57ebdb2c03b9e9858690a5e4802df2e5053e3226ba0cbbd04d9b77",
+    "inheritedTechnicalPass": true,
+    "unitCases": 125,
+    "unitFiles": 18,
+    "checksRerun": false,
+    "dist": [
+      {
+        "path": "dist/assets/App-B-TSmWiq.css",
+        "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+      },
+      {
+        "path": "dist/assets/App-dVQnAhnk.js",
+        "sha256": "7b45010c3367aa70df19a8b77f581251fd1407b98521f6999c22471595b724ed"
+      },
+      {
+        "path": "dist/assets/atlas.worker-B9UjiAA1.js",
+        "sha256": "d22982731a23ba3ab7a0dea50dd93149264b8c5061303923e8d1b42ce940e848"
+      },
+      {
+        "path": "dist/assets/AtlasStudio-CLnbuEYC.css",
+        "sha256": "ca8a694bd41ea71d2c04e9330f2d2f22239f21adfe4f35c318e76947392acfb3"
+      },
+      {
+        "path": "dist/assets/AtlasStudio-D92qhfRx.js",
+        "sha256": "51a436adf63d0de962bb912e410c97c942ac554a224c4ad375aa1e305cc32698"
+      },
+      {
+        "path": "dist/assets/browserAll-QS_y100c.js",
+        "sha256": "0876cc4b8bf400c14bd043f46231f8c2da160c819a294059bd4804c822015a7e"
+      },
+      {
+        "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+        "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+      },
+      {
+        "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+        "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+      },
+      {
+        "path": "dist/assets/Geometry-IpHxCVTc.js",
+        "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+      },
+      {
+        "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+        "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+      },
+      {
+        "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+        "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+      },
+      {
+        "path": "dist/assets/index-BicVSrCJ.js",
+        "sha256": "a77153d27fdec7dd93ef11814949090ed8bf7127063509b835fbb113f27d3c7b"
+      },
+      {
+        "path": "dist/assets/index-kDA80Ugt.css",
+        "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+      },
+      {
+        "path": "dist/assets/init-B8Jnes8g.js",
+        "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+      },
+      {
+        "path": "dist/assets/init-D_km60wk.js",
+        "sha256": "adb200386f48dad8da8cf43d211b47a1f3d17d73f3018cd4358f070fd085d763"
+      },
+      {
+        "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+        "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+      },
+      {
+        "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+        "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+      },
+      {
+        "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+        "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+      },
+      {
+        "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+        "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+      },
+      {
+        "path": "dist/assets/webworkerAll-CzUAIzbb.js",
+        "sha256": "d5af934f0ee34e142135441eae0e22736a302f60aafef3c4222487637b034b6f"
+      },
+      {
+        "path": "dist/build.json",
+        "sha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5"
+      },
+      {
+        "path": "dist/favicon.svg",
+        "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+      },
+      {
+        "path": "dist/index.html",
+        "sha256": "7ab19f226a12629f1c07841648c93a8aea7336b20c1173014c3d0e05d59c2fc6"
+      },
+      {
+        "path": "dist/_headers",
+        "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+      },
+      {
+        "path": "dist/_redirects",
+        "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+      }
+    ]
+  },
+  "browserReferences": [
+    {
+      "path": "docs/evidence/ph06-fine-land-belt-2026-09-28/raw/browser/desktop-first/verification.json",
+      "sha256": "5fd918893f7f7a8270f42211dc1673f35a1a3041b14fc36f3598eee2444703ff",
+      "project": "desktop-chromium",
+      "code": 0,
+      "elapsedMs": 273488.0283,
+      "sourceAndDistStable": true,
+      "physicalDevice": false,
+      "rerun": false
+    },
+    {
+      "path": "docs/evidence/ph06-fine-land-belt-2026-09-28/raw/browser/mobile-first/verification.json",
+      "sha256": "9780e56e095b501e55b5f846cd2956b091ab011f2fb832c00f0665793ed371c0",
+      "project": "mobile-chromium",
+      "code": 0,
+      "elapsedMs": 274828.34260000003,
+      "sourceAndDistStable": true,
+      "physicalDevice": false,
+      "rerun": false
+    },
+    {
+      "path": "docs/evidence/ph06-fine-land-belt-2026-09-28/raw/browser/tablet-first/verification.json",
+      "sha256": "595aeaf0ac2fc8cf427d3f627f13a7f61fbb5bde8bfd84d71fb80ba01ebe44f6",
+      "project": "tablet-chromium",
+      "code": 0,
+      "elapsedMs": 361266.1536,
+      "sourceAndDistStable": true,
+      "physicalDevice": false,
+      "rerun": false
+    }
+  ],
+  "acceptance": {
+    "inheritedPreview18TechnicalPass": true,
+    "newBrowserRun": false,
+    "allNativeTouchSavePreviouslyVerified": false,
+    "physicalDeviceAccepted": false,
+    "naturalVisualAccepted": false,
+    "userVisualAccepted": false,
+    "phaseAccepted": false,
+    "performanceAccepted": false
+  },
+  "scope": "Immutable source/identity compatibility baseline only. No generation-history edits, recipe execution, schema changes, production tests/build/browser/commit or old-archive changes."
+}

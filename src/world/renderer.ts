@@ -13,6 +13,7 @@ import { atlasLodPolicy, resolveAtlasLod, type AtlasLod } from './lod';
 import { AtlasLabelLayer, emptyAtlasLabelMetrics } from './atlas-label-layer';
 import { buildTerrainSurface } from './terrain-surface';
 import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './terrain-mesh';
+import { TERRAIN_MATERIAL_VERSION } from './terrain-material';
 import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type CoastalPick } from './coastal-surface';
 import { ATLAS_MINIMUM_CACHE_DENSITY, ATLAS_TEXTURE_GUTTER, planAtlasRaster, type AtlasRasterQuality } from './render-density';
 import { DetailTerrainBackend, DETAIL_TERRAIN_SHARED_PIXELS } from './detail-terrain-backend';
@@ -186,7 +187,8 @@ export class AtlasRenderer {
     if (layer === 'terrain') for (let oy = Math.floor(Math.max(0, minRow - 2) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + 2) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 2) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + 2) / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
     const level = Math.log2(density);
     const surfaceIdentity = this.data!.manifest.version === 4 ? `detail-final-q8-v1/${this.detail?.data.manifest.revision ?? this.data!.manifest.revision}` : 'terrain-surface-v1';
-    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/${surfaceIdentity}/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
+    const materialIdentity = layer === 'terrain' ? `${TERRAIN_MATERIAL_VERSION}/` : '';
+    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/${surfaceIdentity}/${materialIdentity}${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
       pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
     if (!tile) return whole;
     const tileSpan = span / tile.subdivisions, tilePixels = corePixels / tile.subdivisions, tileX = worldX + tile.x * tileSpan, tileY = worldY + tile.y * tileSpan;

@@ -1,0 +1,83 @@
+{
+  "landNodes": 81042,
+  "seaNodes": 140924,
+  "zeroNodes": 242,
+  "positiveDifferences": 66087,
+  "tree": {
+    "graph": [
+      {
+        "group": 0,
+        "cells": [
+          5938,
+          5164,
+          5161,
+          5031,
+          5159,
+          5413,
+          5921
+        ]
+      },
+      {
+        "group": 1,
+        "parentGroup": 0,
+        "cells": [
+          5159,
+          5037,
+          5554
+        ]
+      }
+    ],
+    "stats": {
+      "landQueries": 16384,
+      "routeCalls": 3,
+      "routeEdgeTests": 4680,
+      "heapComparisons": 5552,
+      "candidateTests": 1260,
+      "maximumHeap": 56,
+      "typedWorkingBytes": 376832,
+      "rejectedRouteArms": 0,
+      "uniqueVertices": 9,
+      "anchorRecords": 10,
+      "spans": 8,
+      "chains": 2
+    }
+  },
+  "actualSummary": {
+    "natural": {
+      "roundedCorners": 4,
+      "outlineEdges": 12,
+      "maximumEnvelopeWorld": 16,
+      "relief": {
+        "profile": "branching-orography-v4",
+        "ridgeSegments": 8,
+        "ridgeGroups": 2,
+        "scaleMode": "world",
+        "curveRuns": 2,
+        "supportNodes": 618,
+        "maximumBucketCandidates": 156,
+        "rejectedSeaSegments": 0,
+        "minimumRidgeWidthWorld": 20.40234375,
+        "maximumRidgeWidthWorld": 123.10243606567383,
+        "minimumShelfWorld": 34,
+        "maximumShelfWorld": 96
+      }
+    },
+    "landAreaTwiceQ2": 42565436460,
+    "seaAreaTwiceQ2": 2156457819092,
+    "totalAreaTwiceQ2": 2199023255552,
+    "targetSegments": 2093,
+    "sampledTiles": 217,
+    "uniformLandTiles": 0,
+    "coarseLandSamples": 320,
+    "changedCoarseSamples": 465,
+    "islandsRequested": 0,
+    "islandsPlaced": 0,
+    "skippedIslands": [],
+    "designNodesEvaluated": 476581,
+    "outlineEdgeTests": 3389328,
+    "distanceSamples": 230400,
+    "exactTargetSegmentTests": 1498544,
+    "maximumQuerySegmentTests": 67,
+    "auditedFineCells": 71680
+  }
+}

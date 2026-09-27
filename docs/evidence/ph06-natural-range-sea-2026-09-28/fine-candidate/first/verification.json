@@ -1,0 +1,51 @@
+{
+  "passed": false,
+  "sourceStable": true,
+  "sourceBefore": {
+    "src/world/generation/detail-natural-relief.ts": "3a843b5cc4b889bc1e71b24283db345faf81cff20816bc23f46c1c9c44be6470",
+    "src/world/generation/detail-orography.ts": "aa9bf420a5839b93a3838f081dd2ec0563d54c10ba71d458ae56125bfb5e9987",
+    "src/world/generation/fine-range-tree.ts": "722b7ea1e23b13a63acdb883c1ef19a07db6df5ae5c7bc04b943ef1091995eb1",
+    "natural-ranges.test.ts": "783b03c3931ac95036e9df7ac12144175a56aa9c4cf5c6deb30ade357673c379",
+    "vitest.config.ts": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188",
+    "typecheck.mjs": "a9a97672d40468afb2bcd290010006a02de3003ca30dd9b197ee299b7bdaf6ce"
+  },
+  "sourceAfter": {
+    "src/world/generation/detail-natural-relief.ts": "3a843b5cc4b889bc1e71b24283db345faf81cff20816bc23f46c1c9c44be6470",
+    "src/world/generation/detail-orography.ts": "aa9bf420a5839b93a3838f081dd2ec0563d54c10ba71d458ae56125bfb5e9987",
+    "src/world/generation/fine-range-tree.ts": "722b7ea1e23b13a63acdb883c1ef19a07db6df5ae5c7bc04b943ef1091995eb1",
+    "natural-ranges.test.ts": "783b03c3931ac95036e9df7ac12144175a56aa9c4cf5c6deb30ade357673c379",
+    "vitest.config.ts": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188",
+    "typecheck.mjs": "a9a97672d40468afb2bcd290010006a02de3003ca30dd9b197ee299b7bdaf6ce"
+  },
+  "productionChangedDuringCheck": false,
+  "baselineProductionStillExact": true,
+  "checks": [
+    {
+      "name": "unit",
+      "exitCode": 0,
+      "elapsedMs": 2459,
+      "error": null
+    },
+    {
+      "name": "types",
+      "exitCode": 1,
+      "elapsedMs": 2977,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 1828,
+      "error": null
+    }
+  ],
+  "units": {
+    "total": 25,
+    "passed": 25,
+    "failed": 0
+  },
+  "productionIntegrated": false,
+  "buildRun": false,
+  "gpuRun": false,
+  "visualAccepted": false
+}

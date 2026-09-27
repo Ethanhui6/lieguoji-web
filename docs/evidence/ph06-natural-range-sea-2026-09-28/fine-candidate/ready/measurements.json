@@ -1,0 +1,587 @@
+{
+  "primary": {
+    "graph": [
+      {
+        "group": 0,
+        "cells": [
+          7537,
+          7515,
+          8271,
+          8256,
+          8115,
+          7847,
+          7822
+        ]
+      },
+      {
+        "group": 1,
+        "parentGroup": 0,
+        "cells": [
+          8256,
+          7232,
+          6208
+        ]
+      },
+      {
+        "group": 2,
+        "parentGroup": 0,
+        "cells": [
+          8115,
+          7226,
+          6330
+        ]
+      },
+      {
+        "group": 3,
+        "parentGroup": 0,
+        "cells": [
+          7515,
+          7006,
+          5599
+        ]
+      },
+      {
+        "group": 4,
+        "parentGroup": 0,
+        "cells": [
+          8271,
+          7375,
+          6346
+        ]
+      }
+    ],
+    "chains": [
+      {
+        "group": 0,
+        "leeQ": 1,
+        "seed": 9811,
+        "sampleStepQ": 512,
+        "crossSection": "fine-tree",
+        "anchors": [
+          {
+            "xQ": 929792,
+            "yQ": 479232,
+            "peakQ": 655,
+            "widthQ": 11796,
+            "section": {
+              "leftReachQ": 11796,
+              "rightReachQ": 8847,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1290
+            }
+          },
+          {
+            "xQ": 749568,
+            "yQ": 479232,
+            "peakQ": 3344,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 40960,
+              "rightReachQ": 37809,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1418
+            }
+          },
+          {
+            "xQ": 651264,
+            "yQ": 528384,
+            "peakQ": 3477,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 38619,
+              "rightReachQ": 39790,
+              "leftShoulderQ": 1432,
+              "rightShoulderQ": 1453
+            }
+          },
+          {
+            "xQ": 528384,
+            "yQ": 528384,
+            "peakQ": 3570,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 38684,
+              "rightReachQ": 39822,
+              "leftShoulderQ": 1434,
+              "rightShoulderQ": 1454
+            }
+          },
+          {
+            "xQ": 421888,
+            "yQ": 520192,
+            "peakQ": 1589,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 39790,
+              "rightReachQ": 38619,
+              "leftShoulderQ": 1453,
+              "rightShoulderQ": 1432
+            }
+          },
+          {
+            "xQ": 323584,
+            "yQ": 503808,
+            "peakQ": 3381,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 40960,
+              "rightReachQ": 39548,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1449
+            }
+          },
+          {
+            "xQ": 118784,
+            "yQ": 503808,
+            "peakQ": 655,
+            "widthQ": 11796,
+            "section": {
+              "leftReachQ": 11796,
+              "rightReachQ": 11796,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1475
+            }
+          }
+        ]
+      },
+      {
+        "group": 1,
+        "parentGroup": 0,
+        "leeQ": 1,
+        "seed": 9811,
+        "sampleStepQ": 512,
+        "crossSection": "fine-tree",
+        "anchors": [
+          {
+            "xQ": 528384,
+            "yQ": 528384,
+            "peakQ": 4096,
+            "widthQ": 36045,
+            "section": {
+              "leftReachQ": 36045,
+              "rightReachQ": 36045,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1475
+            }
+          },
+          {
+            "xQ": 528384,
+            "yQ": 462848,
+            "peakQ": 2253,
+            "widthQ": 36045,
+            "section": {
+              "leftReachQ": 36045,
+              "rightReachQ": 36045,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1475
+            }
+          },
+          {
+            "xQ": 528384,
+            "yQ": 397312,
+            "peakQ": 655,
+            "widthQ": 36045,
+            "section": {
+              "leftReachQ": 36045,
+              "rightReachQ": 36045,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1475
+            }
+          }
+        ]
+      },
+      {
+        "group": 2,
+        "parentGroup": 0,
+        "leeQ": 1,
+        "seed": 9811,
+        "sampleStepQ": 512,
+        "crossSection": "fine-tree",
+        "anchors": [
+          {
+            "xQ": 421888,
+            "yQ": 520192,
+            "peakQ": 4096,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 39790,
+              "rightReachQ": 40960,
+              "leftShoulderQ": 1453,
+              "rightShoulderQ": 1475
+            }
+          },
+          {
+            "xQ": 479232,
+            "yQ": 462848,
+            "peakQ": 2253,
+            "widthQ": 31539,
+            "section": {
+              "leftReachQ": 30452,
+              "rightReachQ": 32627,
+              "leftShoulderQ": 1449,
+              "rightShoulderQ": 1500
+            }
+          },
+          {
+            "xQ": 479232,
+            "yQ": 405504,
+            "peakQ": 655,
+            "widthQ": 31539,
+            "section": {
+              "leftReachQ": 31539,
+              "rightReachQ": 31539,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1475
+            }
+          }
+        ]
+      },
+      {
+        "group": 3,
+        "parentGroup": 0,
+        "leeQ": 1,
+        "seed": 9811,
+        "sampleStepQ": 512,
+        "crossSection": "fine-tree",
+        "anchors": [
+          {
+            "xQ": 749568,
+            "yQ": 479232,
+            "peakQ": 4096,
+            "widthQ": 22528,
+            "section": {
+              "leftReachQ": 22528,
+              "rightReachQ": 20795,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1418
+            }
+          },
+          {
+            "xQ": 774144,
+            "yQ": 446464,
+            "peakQ": 2253,
+            "widthQ": 22528,
+            "section": {
+              "leftReachQ": 22528,
+              "rightReachQ": 21455,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1439
+            }
+          },
+          {
+            "xQ": 782336,
+            "yQ": 356352,
+            "peakQ": 655,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 45511,
+              "rightReachQ": 36409,
+              "leftShoulderQ": 1556,
+              "rightShoulderQ": 1393
+            }
+          }
+        ]
+      },
+      {
+        "group": 4,
+        "parentGroup": 0,
+        "leeQ": 1,
+        "seed": 9811,
+        "sampleStepQ": 512,
+        "crossSection": "fine-tree",
+        "anchors": [
+          {
+            "xQ": 651264,
+            "yQ": 528384,
+            "peakQ": 4096,
+            "widthQ": 31539,
+            "section": {
+              "leftReachQ": 31539,
+              "rightReachQ": 30638,
+              "leftShoulderQ": 1475,
+              "rightShoulderQ": 1453
+            }
+          },
+          {
+            "xQ": 651264,
+            "yQ": 471040,
+            "peakQ": 2253,
+            "widthQ": 31539,
+            "section": {
+              "leftReachQ": 32627,
+              "rightReachQ": 29364,
+              "leftShoulderQ": 1500,
+              "rightShoulderQ": 1424
+            }
+          },
+          {
+            "xQ": 610304,
+            "yQ": 405504,
+            "peakQ": 655,
+            "widthQ": 40960,
+            "section": {
+              "leftReachQ": 42822,
+              "rightReachQ": 37236,
+              "leftShoulderQ": 1508,
+              "rightShoulderQ": 1408
+            }
+          }
+        ]
+      }
+    ],
+    "planning": {
+      "landQueries": 16384,
+      "routeCalls": 6,
+      "routeEdgeTests": 81392,
+      "heapComparisons": 138062,
+      "candidateTests": 84544,
+      "maximumHeap": 290,
+      "typedWorkingBytes": 376832,
+      "rejectedRouteArms": 0,
+      "uniqueVertices": 15,
+      "anchorRecords": 19,
+      "spans": 14,
+      "chains": 5
+    },
+    "field": {
+      "curveRuns": 5,
+      "supportNodes": 1370,
+      "indexReferences": 68934,
+      "maximumBucketCandidates": 123,
+      "landProbes": 6550,
+      "attachmentSupportTests": 4889,
+      "rejectedSpans": 0,
+      "rejectedBranches": 0,
+      "acceptedSpans": 14
+    }
+  },
+  "diversity": {
+    "signatures": [
+      "-1,1,1,1,-1",
+      "-1,1,-1",
+      "1,-1,1,-1,1"
+    ],
+    "headings": [
+      3.111298893671018,
+      -0.09065988720074511,
+      0.05097620707531341
+    ],
+    "curvedArms": 10,
+    "firstSeedCurvedArms": 3
+  },
+  "valleyAndConnection": {
+    "valley": {
+      "ridgeHeights": [
+        901,
+        481
+      ],
+      "valleyHeight": 147,
+      "distanceWorld": 184.40786506114955,
+      "samples": [
+        {
+          "xQ": 528384,
+          "yQ": 443213,
+          "height": 901
+        },
+        {
+          "xQ": 526085,
+          "yQ": 443749,
+          "height": 713
+        },
+        {
+          "xQ": 523787,
+          "yQ": 444286,
+          "height": 418
+        },
+        {
+          "xQ": 521488,
+          "yQ": 444822,
+          "height": 356
+        },
+        {
+          "xQ": 519189,
+          "yQ": 445358,
+          "height": 328
+        },
+        {
+          "xQ": 516891,
+          "yQ": 445894,
+          "height": 293
+        },
+        {
+          "xQ": 514592,
+          "yQ": 446431,
+          "height": 258
+        },
+        {
+          "xQ": 512293,
+          "yQ": 446967,
+          "height": 235
+        },
+        {
+          "xQ": 509994,
+          "yQ": 447503,
+          "height": 221
+        },
+        {
+          "xQ": 507696,
+          "yQ": 448039,
+          "height": 204
+        },
+        {
+          "xQ": 505397,
+          "yQ": 448576,
+          "height": 178
+        },
+        {
+          "xQ": 503098,
+          "yQ": 449112,
+          "height": 153
+        },
+        {
+          "xQ": 500800,
+          "yQ": 449648,
+          "height": 147
+        },
+        {
+          "xQ": 498501,
+          "yQ": 450184,
+          "height": 157
+        },
+        {
+          "xQ": 496202,
+          "yQ": 450721,
+          "height": 162
+        },
+        {
+          "xQ": 493904,
+          "yQ": 451257,
+          "height": 165
+        },
+        {
+          "xQ": 491605,
+          "yQ": 451793,
+          "height": 173
+        },
+        {
+          "xQ": 489306,
+          "yQ": 452329,
+          "height": 190
+        },
+        {
+          "xQ": 487007,
+          "yQ": 452866,
+          "height": 224
+        },
+        {
+          "xQ": 484709,
+          "yQ": 453402,
+          "height": 375
+        },
+        {
+          "xQ": 482410,
+          "yQ": 453938,
+          "height": 481
+        }
+      ]
+    },
+    "connections": [
+      {
+        "group": 1,
+        "parentHeight": 3561.048585301536,
+        "mass": 3561.048584301536,
+        "minimum": 3561.0485843015363,
+        "roundingAllowance": 6.325693008160613e-12,
+        "shortfall": 4.547473508864641e-13
+      },
+      {
+        "group": 2,
+        "parentHeight": 1596.4745097691748,
+        "mass": 1596.4745087691747,
+        "minimum": 1596.4745087691747,
+        "roundingAllowance": 2.8359084125802786e-12,
+        "shortfall": 0
+      },
+      {
+        "group": 3,
+        "parentHeight": 3327.7649673215874,
+        "mass": 3327.7649663215875,
+        "minimum": 3327.7649663215875,
+        "roundingAllowance": 5.911298057841896e-12,
+        "shortfall": 0
+      },
+      {
+        "group": 4,
+        "parentHeight": 3468.6396992136088,
+        "mass": 3468.63969821361,
+        "minimum": 3468.639698213609,
+        "roundingAllowance": 6.161541851336965e-12,
+        "shortfall": 0
+      }
+    ]
+  },
+  "structure": {
+    "passHeight": 1596.4745087691747,
+    "highs": [
+      3561.048584301536,
+      3363.6394530297594
+    ],
+    "asymmetricSupports": 271,
+    "maximumFlankDifference": 1181.8050509110492
+  },
+  "bay": {
+    "planned": {
+      "landQueries": 16384,
+      "routeCalls": 6,
+      "routeEdgeTests": 70400,
+      "heapComparisons": 115633,
+      "candidateTests": 80192,
+      "maximumHeap": 271,
+      "typedWorkingBytes": 376832,
+      "rejectedRouteArms": 0,
+      "uniqueVertices": 15,
+      "anchorRecords": 19,
+      "spans": 14,
+      "chains": 5
+    },
+    "accepted": {
+      "curveRuns": 5,
+      "supportNodes": 1411,
+      "indexReferences": 87965,
+      "maximumBucketCandidates": 134,
+      "landProbes": 6553,
+      "attachmentSupportTests": 5105,
+      "rejectedSpans": 0,
+      "rejectedBranches": 0,
+      "acceptedSpans": 14
+    }
+  },
+  "smallRectangle": {
+    "planned": {
+      "landQueries": 16384,
+      "routeCalls": 4,
+      "routeEdgeTests": 4808,
+      "heapComparisons": 5539,
+      "candidateTests": 1512,
+      "maximumHeap": 50,
+      "typedWorkingBytes": 376832,
+      "rejectedRouteArms": 0,
+      "uniqueVertices": 11,
+      "anchorRecords": 13,
+      "spans": 10,
+      "chains": 3
+    },
+    "accepted": {
+      "curveRuns": 3,
+      "supportNodes": 632,
+      "indexReferences": 8232,
+      "maximumBucketCandidates": 139,
+      "landProbes": 1708,
+      "attachmentSupportTests": 1092,
+      "rejectedSpans": 0,
+      "rejectedBranches": 0,
+      "acceptedSpans": 10
+    }
+  },
+  "cancelledAfterEdgeTests": 512
+}

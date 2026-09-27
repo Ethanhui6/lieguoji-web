@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-09-27T22:27:00.509Z",
+  "version": "0.5.0-preview.22",
+  "buildJsonSha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-d44d13db-0608-4b84-aed9-983a1e4f6df3&atlas-format=4",
+  "savedRevision": 1,
+  "reloadedRevision": 1,
+  "zoomPercent": 12,
+  "beforeMaterialScreenshotSha256": "dda5c0c1eb70b489b605bb325041e4afab7311c1eddace3ce8aef0b34dd6e8e7",
+  "screenshot": ".autopilot/ph06/demo22-after-ocean.png",
+  "screenshotSha256": "dbb11431832c2901446c50abc4e8971bb3fe13f5dbda49ccd8876e73ecac0a61",
+  "observedVia": "IAB native reload, visible same name/revision1/12%, screenshot inspected by root",
+  "visualObservation": "Same stored geography. Bright cyan coastal halo is substantially subdued; dark teal depth variation remains. Smooth S ridge and uniformly soft coast are unchanged physical terrain. Ocean still has broad streaks. Not natural visual acceptance.",
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

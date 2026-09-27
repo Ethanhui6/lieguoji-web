@@ -1,0 +1,202 @@
+{
+  "fineReadySha256": "8bac78867be8dbd71e04f9dc6f58e46e42d5cbbc14dfb51fc0bc518c43189bd0",
+  "finePreparedTestsSha256": "0f5e6070bee31b7a2261d82c7cb92b111bf0eacece977863137b1241cb70e9f3",
+  "finePromotions": [
+    {
+      "name": "2026-09-27T22-08-19.380Z",
+      "status": "promoted-awaiting-production-checks",
+      "at": "2026-09-27T22:08:19.394Z",
+      "manifestSha256": "0f5e6070bee31b7a2261d82c7cb92b111bf0eacece977863137b1241cb70e9f3",
+      "written": [
+        {
+          "file": "src/world/generation/detail-natural-ranges.test.ts",
+          "sha256": "b3ca393cb7271772006c4aacbe6f9fdd285a2971581d04374389cfdd70c37d97"
+        },
+        {
+          "file": "src/world/generation/detail-natural-ranges-writer.test.ts",
+          "sha256": "e72fe58d23bbd03cdca381972854b42d0b6dbc723a66fbc39eb82632ec43b7b5"
+        },
+        {
+          "file": "src/world/generation/detail-fine-world-relief.test.ts",
+          "sha256": "e85f77258da517e0c466366b1ad2367100b7d389137b5ef3c256f589dc3a7264"
+        }
+      ],
+      "guards": [
+        {
+          "file": "src/world/generation/detail-natural-relief.ts",
+          "role": "required-frozen-runtime",
+          "expected": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad",
+          "actual": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+        },
+        {
+          "file": "src/world/generation/detail-orography.ts",
+          "role": "required-frozen-runtime",
+          "expected": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3",
+          "actual": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+        },
+        {
+          "file": "src/world/generation/fine-range-tree.ts",
+          "role": "required-frozen-runtime",
+          "expected": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+          "actual": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+        },
+        {
+          "file": "src/world/generation/detail-natural-writer.test.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2",
+          "actual": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2"
+        },
+        {
+          "file": "src/world/generation/detail-orography.test.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "49c212093f04aa0c42f8a15e9c855542a05fbdd262522c50bb14797cfaf502e4",
+          "actual": "49c212093f04aa0c42f8a15e9c855542a05fbdd262522c50bb14797cfaf502e4"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/detail-curved-ridge.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "885cae4199523eaf9a582c844254cc2a24190651addea9271c697d5cd73ca8fc",
+          "actual": "885cae4199523eaf9a582c844254cc2a24190651addea9271c697d5cd73ca8fc"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/detail-natural-relief.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+          "actual": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/detail-orography.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+          "actual": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/detail-shape.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "01f666d8ff486b868010c759365b14bdd32bbad693fb341cfeafa88c492e2911",
+          "actual": "01f666d8ff486b868010c759365b14bdd32bbad693fb341cfeafa88c492e2911"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/README.md",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "2445372ed0e2ca0deca3084d6500841bf6aeb4390d2f63e7d01dee8a2029202a",
+          "actual": "2445372ed0e2ca0deca3084d6500841bf6aeb4390d2f63e7d01dee8a2029202a"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/seed.ts",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "a05e66765648343ae49ba738a0821b4485b091075e8d71d8dcf39077b873baeb",
+          "actual": "a05e66765648343ae49ba738a0821b4485b091075e8d71d8dcf39077b873baeb"
+        },
+        {
+          "file": "src/world/generation/test-fixtures/preview18-relief/SOURCE_MANIFEST.json",
+          "role": "protected-unchanged-test-or-oracle",
+          "expected": "18d4187a28743cb4e63adba7d3650fe9f2c379460c4d2ad1bcf9b9073f12df81",
+          "actual": "18d4187a28743cb4e63adba7d3650fe9f2c379460c4d2ad1bcf9b9073f12df81"
+        }
+      ],
+      "testsRun": false,
+      "runtimeWritten": false
+    }
+  ],
+  "densityRepair": {
+    "targetedPassed": false,
+    "targetedExecutedAssertions": 38,
+    "targetedExecutedPassedAssertions": 38,
+    "targetedFailure": "The writer suite did not load because the isolated harness lacked the production macro define.",
+    "interruptedHarnessRetry": "No JSON result was produced; see the original README for the Ctrl-C/exit-1 record. This is not a passing check.",
+    "recordedChecks": {
+      "first": {
+        "path": "targeted-after.json",
+        "success": false,
+        "executed": 38,
+        "passed": 38,
+        "failedCases": 0,
+        "pendingCases": 0,
+        "unloadedWriterCases": 6,
+        "failure": "__MACRO_GENERATOR_FINGERPRINT__ is not defined",
+        "config": "targeted-first-config.ts"
+      },
+      "harnessRetry": {
+        "session": 62520,
+        "status": "interrupted-after-root-stop",
+        "exitCode": 1,
+        "resultProduced": false,
+        "intendedResult": "targeted-harness-repair.json",
+        "config": "vitest.targeted.config.ts"
+      },
+      "next": "Root owns complete 306-item formal Vite configuration validation; no further child CPU checks."
+    },
+    "repairedSources": [
+      {
+        "path": "src/world/generation/detail-orography.ts",
+        "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260",
+        "bytes": 28765,
+        "role": "modified-runtime"
+      },
+      {
+        "path": "src/world/generation/detail-orography-density.test.ts",
+        "sha256": "3fc9ff0a9fef56527aece86c6dffaedb575a690fefadf2909af864c0229bea04",
+        "bytes": 5390,
+        "role": "new-one-case-regression"
+      },
+      {
+        "path": "src/world/generation/fine-range-tree.ts",
+        "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+        "bytes": 16290,
+        "role": "unchanged-runtime"
+      }
+    ],
+    "acceptanceSource": "The later complete production batch, including the added density regression.",
+    "rawManifestSha256": "eee5d9b75c6cb0e788bed36d7c4630e40735aae8dabbe851b977ca63f88eab80"
+  },
+  "seaReadySha256": "3a173fece66d89ddfc5c3250d1701bdf642a713cd1cbfedea738a3e42f9f8a8c",
+  "seaProductionOutputs": [
+    {
+      "target": "src/world/terrain-material.ts",
+      "previousSha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045",
+      "outputSha256": "0ffdd75812f0fabdd158761a215ac1083885ca0c33f8247c84a8915bdc3c0047"
+    },
+    {
+      "target": "src/world/terrain-mesh.ts",
+      "previousSha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc",
+      "outputSha256": "6d8d24f22ec331870d5884a864b38701360f60284910cbcad44b2595825e3b0e"
+    },
+    {
+      "target": "src/world/renderer.ts",
+      "previousSha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a",
+      "outputSha256": "46a2427d5dc00e29f8c4e5f6f92a9608b028fc2f56d8e6a77da63d2a0f7d5e67"
+    },
+    {
+      "target": "src/world/terrain-material.test.ts",
+      "previousSha256": "b5cd87f7647bb63f6bb9dcbaf792e390a58497e6a5e217489f2e888492227786",
+      "outputSha256": "42362d08ad3415480bf3c7fc3a2468ebe36f46e36f8c01cc0399da7d4d1c561b"
+    },
+    {
+      "target": "src/world/terrain-mesh.test.ts",
+      "previousSha256": "0fdae277926fcea97c1c9539275c4721f2f1c25b5927d269f0f5a3006ae5df56",
+      "outputSha256": "c3cb0c5784c979861017ac0f26a5002254fe9217308281d1ed56036aa38c98a2"
+    },
+    {
+      "target": "src/world/ocean-material.test.ts",
+      "previousSha256": null,
+      "outputSha256": "9bc0e4cba8bebb629bbaf1c268a2c287378348490a633bd66e4e6a0fff45ebe8"
+    },
+    {
+      "target": "src/world/ocean-material-cache.test.ts",
+      "previousSha256": null,
+      "outputSha256": "e14f4d5a8bd5f1bf49e67252302a8cd930d5dd074edec03279fabebd822c38e0"
+    },
+    {
+      "target": "src/world/renderer.test.ts",
+      "previousSha256": "6a15e60c0b2c746c6df2af90d5f0b62a9037629c29a86f8ae45f742694db5b55",
+      "outputSha256": "ad71d8576281fb866801021354d835c564cab59f0d2cf2045a2528e350a4708f"
+    },
+    {
+      "target": "src/world/test-fixtures/preview21-terrain-material.ts",
+      "previousSha256": null,
+      "outputSha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    }
+  ],
+  "note": "Candidate checks precede preparation/import rewriting; the production check scope is recorded separately. Existing world geography is unchanged by material display changes."
+}

@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "31e27620c816db33993a8ac419274c9a86c32624",
+  "buildCommitMetadata": "502164889fef2f0280b725c76538cd07df7d5e36",
+  "buildSha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+  "closureCount": 11,
+  "generatorSourceCount": 42,
+  "engineSourceCount": 5,
+  "totalSourceCount": 47,
+  "allClosuresMatchBuild": true,
+  "engineMatchesBuild": true,
+  "frozenClosuresRecomputed": true,
+  "sourceSnapshotSha256": "6c8408fe118a152b03511b05ec49c0d3ae67fffb29d0cbef47a7b1f39be09f06",
+  "evidenceFiles": 78,
+  "inventorySha256": "2263e70dcb87e53b137af91674e6a75a2e8e2a5f3a1caa68f47c8de219539a7f",
+  "productWorktreeReadForProvenance": false,
+  "checksRun": [
+    "Git blob/archive binding",
+    "11 generator source hashes",
+    "engine source hash",
+    "frozen-byte re-read"
+  ],
+  "testsRun": false,
+  "generatorsRun": false,
+  "buildRun": false,
+  "browserRun": false,
+  "productionModified": false
+}

@@ -1,0 +1,15 @@
+{
+  "format": "lieguoji-natural-range-sea-density-repair-source",
+  "version": 1,
+  "productionFrozen": true,
+  "checks": {
+    "first": { "path": "targeted-after.json", "success": false, "executed": 38, "passed": 38, "failedCases": 0, "pendingCases": 0, "unloadedWriterCases": 6, "failure": "__MACRO_GENERATOR_FINGERPRINT__ is not defined", "config": "targeted-first-config.ts" },
+    "harnessRetry": { "session": 62520, "status": "interrupted-after-root-stop", "exitCode": 1, "resultProduced": false, "intendedResult": "targeted-harness-repair.json", "config": "vitest.targeted.config.ts" },
+    "next": "Root owns complete 306-item formal Vite configuration validation; no further child CPU checks."
+  },
+  "files": [
+    { "path": "src/world/generation/detail-orography.ts", "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260", "bytes": 28765, "role": "modified-runtime" },
+    { "path": "src/world/generation/detail-orography-density.test.ts", "sha256": "3fc9ff0a9fef56527aece86c6dffaedb575a690fefadf2909af864c0229bea04", "bytes": 5390, "role": "new-one-case-regression" },
+    { "path": "src/world/generation/fine-range-tree.ts", "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089", "bytes": 16290, "role": "unchanged-runtime" }
+  ]
+}

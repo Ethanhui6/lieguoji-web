@@ -538,7 +538,7 @@ describe('production camera, cache and GPU lifecycle', () => {
     // Reconstruction does not mix the isolated land height into adjacent sea.
     // Both domains are flat here; their independently fixed material colors
     // remain exact even though they share boundary positions.
-    expect(neighbor.colors.sort()).toEqual([0x4c97a8, 0xa4b07d].sort());
+    expect(neighbor.colors.sort()).toEqual([0x51868a, 0xa4b07d].sort());
     expect(result.repaintBlockKeys.sort()).toEqual(['geometry:0:0', 'geometry:0:1', 'geometry:1:0', 'geometry:1:1']);
     for (const [crop] of pixi.cropCreate.mock.calls) {
       expect(crop.frame).toMatchObject({ x: 2, y: 2 });

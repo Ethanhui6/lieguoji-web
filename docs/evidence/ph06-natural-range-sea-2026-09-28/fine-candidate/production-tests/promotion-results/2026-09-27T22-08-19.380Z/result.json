@@ -1,0 +1,95 @@
+{
+  "status": "promoted-awaiting-production-checks",
+  "at": "2026-09-27T22:08:19.394Z",
+  "manifestSha256": "0f5e6070bee31b7a2261d82c7cb92b111bf0eacece977863137b1241cb70e9f3",
+  "written": [
+    {
+      "file": "src/world/generation/detail-natural-ranges.test.ts",
+      "sha256": "b3ca393cb7271772006c4aacbe6f9fdd285a2971581d04374389cfdd70c37d97"
+    },
+    {
+      "file": "src/world/generation/detail-natural-ranges-writer.test.ts",
+      "sha256": "e72fe58d23bbd03cdca381972854b42d0b6dbc723a66fbc39eb82632ec43b7b5"
+    },
+    {
+      "file": "src/world/generation/detail-fine-world-relief.test.ts",
+      "sha256": "e85f77258da517e0c466366b1ad2367100b7d389137b5ef3c256f589dc3a7264"
+    }
+  ],
+  "guards": [
+    {
+      "file": "src/world/generation/detail-natural-relief.ts",
+      "role": "required-frozen-runtime",
+      "expected": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad",
+      "actual": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "file": "src/world/generation/detail-orography.ts",
+      "role": "required-frozen-runtime",
+      "expected": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3",
+      "actual": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+    },
+    {
+      "file": "src/world/generation/fine-range-tree.ts",
+      "role": "required-frozen-runtime",
+      "expected": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+      "actual": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "file": "src/world/generation/detail-natural-writer.test.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2",
+      "actual": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2"
+    },
+    {
+      "file": "src/world/generation/detail-orography.test.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "49c212093f04aa0c42f8a15e9c855542a05fbdd262522c50bb14797cfaf502e4",
+      "actual": "49c212093f04aa0c42f8a15e9c855542a05fbdd262522c50bb14797cfaf502e4"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/detail-curved-ridge.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "885cae4199523eaf9a582c844254cc2a24190651addea9271c697d5cd73ca8fc",
+      "actual": "885cae4199523eaf9a582c844254cc2a24190651addea9271c697d5cd73ca8fc"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/detail-natural-relief.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc",
+      "actual": "ac23c0324063b457477b00879791cef50ce2591b5f521e26ec3b928833da6bcc"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/detail-orography.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120",
+      "actual": "fca6fce571cad213b383d8fd986088a29897d2bf68823425bb3654f1f3df3120"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/detail-shape.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "01f666d8ff486b868010c759365b14bdd32bbad693fb341cfeafa88c492e2911",
+      "actual": "01f666d8ff486b868010c759365b14bdd32bbad693fb341cfeafa88c492e2911"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/README.md",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "2445372ed0e2ca0deca3084d6500841bf6aeb4390d2f63e7d01dee8a2029202a",
+      "actual": "2445372ed0e2ca0deca3084d6500841bf6aeb4390d2f63e7d01dee8a2029202a"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/seed.ts",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "a05e66765648343ae49ba738a0821b4485b091075e8d71d8dcf39077b873baeb",
+      "actual": "a05e66765648343ae49ba738a0821b4485b091075e8d71d8dcf39077b873baeb"
+    },
+    {
+      "file": "src/world/generation/test-fixtures/preview18-relief/SOURCE_MANIFEST.json",
+      "role": "protected-unchanged-test-or-oracle",
+      "expected": "18d4187a28743cb4e63adba7d3650fe9f2c379460c4d2ad1bcf9b9073f12df81",
+      "actual": "18d4187a28743cb4e63adba7d3650fe9f2c379460c4d2ad1bcf9b9073f12df81"
+    }
+  ],
+  "testsRun": false,
+  "runtimeWritten": false
+}

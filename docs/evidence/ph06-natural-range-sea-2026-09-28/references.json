@@ -1,0 +1,197 @@
+{
+  "preview21History": [
+    {
+      "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/build.json",
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/provenance.json",
+      "sha256": "d4abff9f719b6fc92023ab66f88a99ad2ce5aa498ed1a1affe1925b74116677c",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/inventory.json",
+      "sha256": "2263e70dcb87e53b137af91674e6a75a2e8e2a5f3a1caa68f47c8de219539a7f",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/storage-integration-files.sha256.json",
+      "sha256": "048a265f0ba7e28a94f61e0a998967ee46e45cf44a64360720848ffb924af3fe",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/storage-integration-verification.json",
+      "sha256": "dc7ee9469715736f8b6c778216bc45cbcb01a4e382fa99744c55733370a98b72",
+      "copied": false
+    }
+  ],
+  "omitted": [
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/atlas-format.ts",
+      "sha256": "e6f6d9325fb03cb7602fe280b3876749cfffc4cf0e16189ab7e3426428d155b7",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/atlas-label-layer.ts",
+      "sha256": "6201f1e15b3263e8eedb682eadea948967bba04398126eed0b31fc650826aa94",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "sha256": "6be2e2b402bc70958b7e62a97c29f5fb67c5bd23ba4f77f2853a78d2d6e97fc6",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/atlas-texture-cache.ts",
+      "sha256": "762a90752d51c3182a4ef096cff45d6f0a21a37d7bdb97fa61d964941d70ece4",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/camera.ts",
+      "sha256": "3ed6514b213aa3b2a5ad3aa9eaea46c4ac2f1f8e54cc6ca949ffdcaf33d2f2a5",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/coastal-surface.ts",
+      "sha256": "e7e8e1b8eecdae7f0e28383398fae5745d8f45edebb8b636b243b433165f5d27",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/detail-terrain-backend.ts",
+      "sha256": "49b094f361a7a016b3fc30ae526a49e9ba2d065c0bdd48422413335e932edc2c",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/generation-contract.ts",
+      "sha256": "92f612af014ecaf8bd563b1799a025dafa52b6232dfcbdab21279f586cf9475d",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/generation-format.ts",
+      "sha256": "1a724f9fca736a7fa7c1d82c1ebb735c30483546065ded58078ba3628ee11167",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/hydrology-trace.ts",
+      "sha256": "66a85182c675900e38e97135fdfee81599ab08f3f12dd968b96e47c37cbc1bd6",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/lod.ts",
+      "sha256": "dc5a4aae5fe77a0b53475479dbcaddf14d53683c96f6769faeaa04fe981d949e",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/model.ts",
+      "sha256": "0b4b3449950e2deb3a99f8014587f0d61d4ba2dc53a787c7d7cf6989c80931b9",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/render-density.ts",
+      "sha256": "46a48b9265e3a8d961339bcf6c7c1c03d6969c74d06591e450180d7f8c8aed62",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/spatial-index.ts",
+      "sha256": "52c75b4133365cba02fbcefb3a3e112295061ca8ea0977884505c8136c6d5e08",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/terrain-surface.ts",
+      "sha256": "f850520aa8fb25fdc15d4692b99da1f0f812ad3a0e4c8ec63d01edbed960f87d",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/topology.ts",
+      "sha256": "b7eba1d43dcd7c4866b625697093f2bfca38983d938dde6a1250706caea6e426",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/atlas-format.ts",
+      "sha256": "e6f6d9325fb03cb7602fe280b3876749cfffc4cf0e16189ab7e3426428d155b7",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/atlas-label-layer.ts",
+      "sha256": "6201f1e15b3263e8eedb682eadea948967bba04398126eed0b31fc650826aa94",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "sha256": "6be2e2b402bc70958b7e62a97c29f5fb67c5bd23ba4f77f2853a78d2d6e97fc6",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/atlas-texture-cache.ts",
+      "sha256": "762a90752d51c3182a4ef096cff45d6f0a21a37d7bdb97fa61d964941d70ece4",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/camera.ts",
+      "sha256": "3ed6514b213aa3b2a5ad3aa9eaea46c4ac2f1f8e54cc6ca949ffdcaf33d2f2a5",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/coastal-surface.ts",
+      "sha256": "e7e8e1b8eecdae7f0e28383398fae5745d8f45edebb8b636b243b433165f5d27",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/detail-terrain-backend.ts",
+      "sha256": "49b094f361a7a016b3fc30ae526a49e9ba2d065c0bdd48422413335e932edc2c",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/generation-contract.ts",
+      "sha256": "92f612af014ecaf8bd563b1799a025dafa52b6232dfcbdab21279f586cf9475d",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/generation-format.ts",
+      "sha256": "1a724f9fca736a7fa7c1d82c1ebb735c30483546065ded58078ba3628ee11167",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/hydrology-trace.ts",
+      "sha256": "66a85182c675900e38e97135fdfee81599ab08f3f12dd968b96e47c37cbc1bd6",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/lod.ts",
+      "sha256": "dc5a4aae5fe77a0b53475479dbcaddf14d53683c96f6769faeaa04fe981d949e",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/model.ts",
+      "sha256": "0b4b3449950e2deb3a99f8014587f0d61d4ba2dc53a787c7d7cf6989c80931b9",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/render-density.ts",
+      "sha256": "46a48b9265e3a8d961339bcf6c7c1c03d6969c74d06591e450180d7f8c8aed62",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/spatial-index.ts",
+      "sha256": "52c75b4133365cba02fbcefb3a3e112295061ca8ea0977884505c8136c6d5e08",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/terrain-surface.ts",
+      "sha256": "f850520aa8fb25fdc15d4692b99da1f0f812ad3a0e4c8ec63d01edbed960f87d",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/topology.ts",
+      "sha256": "b7eba1d43dcd7c4866b625697093f2bfca38983d938dde6a1250706caea6e426",
+      "reason": "Staging bridge/ancillary source; actual production dependencies are retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/natural-range-sea-checks/gpu-vite-cache",
+      "reason": "Vite execution cache is not original result evidence."
+    }
+  ],
+  "fineEvidenceBoundary": "Repair-2 captured the seven listed candidate/harness sources and before/after hashes of the two baseline production relief modules. Other real writer dependencies were not contemporaneously snapshotted. Do not treat supplemental files or static dependency lists as a tested whole-product closure.",
+  "note": "Raw logs/results/source bytes are not rewritten or truncated. No expanded trace, proxy tree or earlier full history archive is duplicated."
+}

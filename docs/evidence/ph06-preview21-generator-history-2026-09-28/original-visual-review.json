@@ -1,0 +1,27 @@
+{
+  "version": "0.5.0-preview.21",
+  "buildJsonSha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+  "reviewedByRoot": true,
+  "reviewedDevices": ["desktop-chromium", "mobile-chromium", "tablet-chromium"],
+  "reviewedScreenshots": [
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+    "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+    "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+    "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png"
+  ],
+  "priorComparedScreenshot": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+  "observations": [
+    "根实际比较同一两轮廓/seed/20%镜头的20与21桌面测试图：21湾岬变化集中在局部，西侧较安静、东侧有分簇凹入，整圈小凸起减少；当前整体轮廓依然圆软，不能把减少重复起伏写成自然大陆已达标。两块相同陆地是有意的追加保护测试，不是多样性展示。",
+    "21实际桌面158%中景、手机72%和平板142%中景仍明确出现S形山带和两根长直支脊，内陆缺少分叉谷地和其他地貌。新海岸通过旧规划的陆形输入间接改变新大陆的山带走向，但没有解决这个模板问题。",
+    "21实际1135%细岸图不再是整张粗模拟格色块，海岸依然存在有限采样折线。黄色框是被选粗模拟格，不能把它称为海陆边界，也不能声称任意放大无限精度。",
+    "浅海仍是一圈强青蓝亮带；21中景右侧海域有明显向外扇形/斜向暗纹。材质和真实陆架高程的各自贡献尚未做数值归因，不能声称调色即能消除。没有增加装饰水纹或假河线。",
+    "三端截图都显示实际保存修订4；桌面与触摸操作流程分别在真实浏览器执行通过。手机和平板为仿真，不替代真实设备或用户主观验收。"
+  ],
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

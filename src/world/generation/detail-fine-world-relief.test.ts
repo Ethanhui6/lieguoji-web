@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createNaturalRelief, FINE_WORLD_RELIEF_SCALE } from './detail-natural-relief';
 import { createNaturalRelief as createBaseline } from './test-fixtures/preview18-relief/detail-natural-relief';
-import { createOrographyField, OROGRAPHY_LIMITS, type OrographyChain } from './detail-orography';
+import { createOrographyField, OROGRAPHY_LIMITS, FINE_TREE_OROGRAPHY_LIMITS, type OrographyChain } from './detail-orography';
 import * as orographyModule from './detail-orography';
 import { seedHash } from './seed';
 
@@ -40,11 +40,20 @@ function exhaustiveFineHeight(field: Awaited<ReturnType<typeof createOrographyFi
   const masses = field.ends.map(() => 0);
   for (const n of field.supports) {
     const dx = xQ - n.xQ, dy = yQ - n.yQ, transverse = -dx * n.ty + dy * n.tx;
-    const factor = 1 + .15 * n.leeQ * (2 * ease(.5 + 2 * transverse / n.widthQ) - 1);
-    const shoulder = transverse / (n.widthQ * factor), crest = transverse / (n.crestQ * factor);
+    let shape: number;
+    if (n.section) {
+      // Independent direct evaluation of actual tree side data; no production
+      // contribution/union helper or spatial index is called by this oracle.
+      const reach = transverse < 0 ? n.section.leftReachQ : n.section.rightReachQ;
+      const shoulderShare = (transverse < 0 ? n.section.leftShoulderQ : n.section.rightShoulderQ) / 4096;
+      shape = (1 - shoulderShare) * compact(transverse / n.crestQ) + shoulderShare * compact(transverse / reach);
+    } else {
+      const factor = 1 + .15 * n.leeQ * (2 * ease(.5 + 2 * transverse / n.widthQ) - 1);
+      const shoulder = transverse / (n.widthQ * factor), crest = transverse / (n.crestQ * factor);
+      const cut = n.valleyDepth * compact((shoulder - n.valleySide * n.valleyOffset) / .14);
+      shape = (1 - n.foothillShare) * compact(crest) + n.foothillShare * compact(shoulder) * (1 - cut);
+    }
     const along = (dx * n.tx + dy * n.ty) / n.alongQ;
-    const cut = n.valleyDepth * compact((shoulder - n.valleySide * n.valleyOffset) / .14);
-    const shape = (1 - n.foothillShare) * compact(crest) + n.foothillShare * compact(shoulder) * (1 - cut);
     const end = field.ends[n.run];
     const start = (xQ - end.first.xQ) * end.first.tx + (yQ - end.first.yQ) * end.first.ty;
     const finish = (end.last.xQ - xQ) * end.last.tx + (end.last.yQ - yQ) * end.last.ty;
@@ -94,17 +103,27 @@ describe('fine world relief physical planning', () => {
     for (const [x, y] of [[0, 0], [4096, 0], [0, 4096], [4096, 4096]]) expect(field.sample(q(x), q(y)).massQ).toBe(0);
   });
 
-  it('keeps measured crest scale stable across 128, 256 and 512 coarse grids while allowing different anchors', async () => {
+  it('keeps the same real ridge tree and measured crest scale across 128, 256 and 512 coarse grids', async () => {
     const measures: ReturnType<typeof highSection>[] = [];
+    const graphs: NonNullable<Relief['rangeTree']>['graph'][] = [];
     for (const size of [128, 256, 512] as const) {
       const relief = await createNaturalRelief(worldInput(size), 2048, control);
       expect(relief.summary.scaleMode).toBe('world');
-      expect(relief.summary.ridgeGroups).toBe(3);
+      expect(relief.rangeTree).toBeDefined();
+      const graph = relief.rangeTree!.graph;
+      // At least the previous three real groups, with every planned tree arm
+      // accepted; the exact layout must also survive coarse-grid changes.
+      expect(relief.summary.ridgeGroups).toBeGreaterThanOrEqual(3);
+      expect(relief.summary.ridgeGroups).toBeLessThanOrEqual(FINE_TREE_OROGRAPHY_LIMITS.chains);
+      expect(relief.summary.ridgeGroups).toBe(graph.length);
+      expect(relief.curveStats.rejectedBranches).toBe(0);
+      graphs.push(graph);
       expect(relief.curveStats.supportNodes).toBeLessThanOrEqual(OROGRAPHY_LIMITS.nodes);
       expect(relief.curveStats.maximumBucketCandidates).toBeLessThanOrEqual(OROGRAPHY_LIMITS.bucketCandidates);
       expect(relief.summary.maximumRidgeWidthWorld).toBeLessThanOrEqual(FINE_WORLD_RELIEF_SCALE.maximumShoulderWidthWorld * 1.15);
       measures.push(highSection(relief));
     }
+    expect(graphs[1]).toEqual(graphs[0]); expect(graphs[2]).toEqual(graphs[0]);
     const widths = measures.map(m => m.halfWidth), peaks = measures.map(m => m.maximum);
     expect(Math.max(...widths) / Math.min(...widths)).toBeLessThan(1.25);
     expect(Math.max(...peaks) / Math.min(...peaks)).toBeLessThan(1.25);
@@ -133,8 +152,12 @@ describe('fine world relief physical planning', () => {
       if (point.arc >= firstPeak && point.arc <= lastPeak) expect(relief.physicalHeight(point.xQ, point.yQ, true, q(120), -6000)).toBeGreaterThan(600);
     }
     for (const branch of relief.curves.filter(c => c.group !== 0)) {
-      const root = branch.points[0];
-      expect(trunk.points.some(p => p.xQ === root.xQ && p.yQ === root.yQ)).toBe(true);
+      const root = branch.points[0], planned = relief.rangeTree!.graph.find(c => c.group === branch.group);
+      expect(planned?.parentGroup).toBeDefined();
+      expect(planned!.parentGroup).toBeLessThan(branch.group);
+      const parent = relief.curves.find(c => c.group === planned!.parentGroup);
+      expect(parent).toBeDefined();
+      expect(parent!.points.some(p => p.xQ === root.xQ && p.yQ === root.yQ)).toBe(true);
       expect(branch.rootPeakQ).toBeGreaterThan(0);
       expect(branch.rootPeakQ).toBeLessThan(branch.parentHeightQ);
       for (const p of branch.points) expect(input.isLand(p.xQ, p.yQ)).toBe(true);

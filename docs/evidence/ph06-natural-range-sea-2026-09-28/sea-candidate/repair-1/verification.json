@@ -1,0 +1,137 @@
+{
+  "round": "repair-1",
+  "results": [
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "-p",
+        ".autopilot\\ph06\\ocean-material-staging\\tsconfig.json"
+      ],
+      "code": 0,
+      "milliseconds": 3765,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-material.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-mesh.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\renderer.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-material.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-mesh.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material-cache.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\renderer.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\vitest.config.ts"
+      ],
+      "code": 0,
+      "milliseconds": 2179,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--configLoader",
+        "runner",
+        "--config",
+        ".autopilot\\ph06\\ocean-material-staging\\vitest.config.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-material.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-mesh.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material-cache.test.ts",
+        ".autopilot\\ph06\\ocean-material-staging\\src\\world\\renderer.test.ts",
+        "src/world/detail-terrain-shader.test.ts",
+        "src/world/detail-terrain-light.test.ts",
+        "src/world/detail-terrain-pages.test.ts",
+        "src/world/detail-terrain-backend.test.ts",
+        "src/world/renderer-detail-reuse.test.ts",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile.json=.autopilot\\ph06\\ocean-material-staging\\checks\\repair-1\\unit.json"
+      ],
+      "code": 0,
+      "milliseconds": 102075,
+      "logSha256": "739405aa6c96ffcb7645ebdecd405d8c4be4e9c46afb8cad8877e56e8862de52"
+    }
+  ],
+  "selectedTests": [
+    ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-material.test.ts",
+    ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-mesh.test.ts",
+    ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material.test.ts",
+    ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material-cache.test.ts",
+    ".autopilot\\ph06\\ocean-material-staging\\src\\world\\renderer.test.ts",
+    "src/world/detail-terrain-shader.test.ts",
+    "src/world/detail-terrain-light.test.ts",
+    "src/world/detail-terrain-pages.test.ts",
+    "src/world/detail-terrain-backend.test.ts",
+    "src/world/renderer-detail-reuse.test.ts"
+  ],
+  "sourceStable": true,
+  "dependenciesStable": true,
+  "identitiesUnchanged": true,
+  "testFiles": [
+    {
+      "file": "src\\world\\detail-terrain-backend.test.ts",
+      "status": "passed",
+      "tests": 4
+    },
+    {
+      "file": "src\\world\\detail-terrain-light.test.ts",
+      "status": "passed",
+      "tests": 6
+    },
+    {
+      "file": "src\\world\\detail-terrain-pages.test.ts",
+      "status": "passed",
+      "tests": 10
+    },
+    {
+      "file": "src\\world\\detail-terrain-shader.test.ts",
+      "status": "passed",
+      "tests": 14
+    },
+    {
+      "file": "src\\world\\renderer-detail-reuse.test.ts",
+      "status": "passed",
+      "tests": 9
+    },
+    {
+      "file": ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material-cache.test.ts",
+      "status": "passed",
+      "tests": 2
+    },
+    {
+      "file": ".autopilot\\ph06\\ocean-material-staging\\src\\world\\ocean-material.test.ts",
+      "status": "passed",
+      "tests": 4
+    },
+    {
+      "file": ".autopilot\\ph06\\ocean-material-staging\\src\\world\\renderer.test.ts",
+      "status": "passed",
+      "tests": 83
+    },
+    {
+      "file": ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-material.test.ts",
+      "status": "passed",
+      "tests": 3
+    },
+    {
+      "file": ".autopilot\\ph06\\ocean-material-staging\\src\\world\\terrain-mesh.test.ts",
+      "status": "passed",
+      "tests": 5
+    }
+  ],
+  "testsObserved": 140,
+  "testsPassed": 140,
+  "testsFailed": 0,
+  "candidatePassed": true,
+  "productionPromoted": false,
+  "productionBuild": false,
+  "gpuRun": false,
+  "visualAccepted": false,
+  "cloudWrites": false
+}

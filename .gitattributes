@@ -64,3 +64,6 @@ docs/evidence/ph06-fine-world-relief-2026-09-28/** -text
 docs/evidence/ph06-preview20-generator-history-2026-09-28/** -text
 docs/evidence/ph06-regional-coast-2026-09-28/** -text
 src/world/generation/test-fixtures/preview20-coast/** -text
+docs/evidence/ph06-preview21-generator-history-2026-09-28/** -text
+docs/evidence/ph06-natural-range-sea-2026-09-28/** -text
+src/world/test-fixtures/preview21-terrain-material.ts -text

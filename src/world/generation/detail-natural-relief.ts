@@ -2,6 +2,7 @@ import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, smoothQ } from './s
 import type { DetailShapeControl } from './detail-shape';
 import { boundCurvedRelief } from './detail-curved-ridge';
 import { createOrographyField, planOrographyProfile, type OrographyAnchor, type OrographyChain } from './detail-orography';
+import { planFineRangeTree } from './fine-range-tree';
 
 type Point = { xQ: number; yQ: number };
 /** New world relief is written to actual 2-world fine elevations. These are
@@ -58,7 +59,8 @@ export function naturalRidgeContribution(ridge: NaturalRidge, xQ: number, yQ: nu
 
 /** Builds a bounded real height profile. No drainage, erosion or decorative
  * river claim. Only its resulting coarse/fine elevations are persisted.
- * At most 17 actual anchors: one trunk and up to two attached branches.
+ * Legacy/local: at most 17 anchors, one trunk and two attached branches.
+ * Fine-world tree: explicit independent 15-vertex / 19-record / 14-edge caps.
  * Source buffers are privately copied before the first yield. */
 export async function createNaturalRelief(input: NaturalReliefInput, batch: number, control?: DetailShapeControl) {
   if (![128, 256, 512].includes(input.size) || input.centersQ.length !== input.size ** 2 * 2 || input.land.length !== input.size ** 2 || input.coastDistanceQ.length !== input.size ** 2
@@ -74,8 +76,9 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     if (land[id] && coastDistance[id] >= (fineWorld ? FINE_WORLD_RELIEF_SCALE.minimumInteriorWorld * 256 : Math.min(48 * 256, stepQ * 2))) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible.push(id); }
     if ((id + 1) % batch === 0) await checkpoint(control, 'plan-natural-highlands', id + 1, land.length);
   }
-  const chains: OrographyChain[] = [];
-  if (eligible.length >= 3) {
+  const finePlan = fineWorld ? await planFineRangeTree({ seed, isLand }, batch, control) : undefined;
+  const chains: OrographyChain[] = finePlan?.chains ?? [];
+  if (!fineWorld && eligible.length >= 3) {
     const horizontal = maxX - minX >= maxY - minY, longMin = horizontal ? minX : minY, longSpan = horizontal ? maxX - minX : maxY - minY;
     const shortMin = horizontal ? minY : minX, shortSpan = horizontal ? maxY - minY : maxX - minX;
     const local = scaleMode === 'local';
@@ -203,5 +206,6 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
   return { physicalHeight, shelfWidthAt, coastRiseAt, summary,
     /** Copies for numerical evidence; changing them cannot alter the sampler. */
     ridges: ridges.map(r => ({ ...r, a: { ...r.a }, b: { ...r.b } })),
-    curves: curved.curves, curveStats: curved.stats };
+    curves: curved.curves, curveStats: curved.stats,
+    ...(finePlan ? { rangeTree: { graph: finePlan.graph, stats: finePlan.stats } } : {}) };
 }

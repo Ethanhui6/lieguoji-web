@@ -1,0 +1,221 @@
+{
+  "recordedAt": "2026-09-27T22:31:19.883Z",
+  "version": "0.5.0-preview.22",
+  "buildJsonSha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+  "name": "长岬内海 · 分叉山系",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-329f6a97-78f7-4512-a2b7-4e92e4b5daf9&atlas-format=4",
+  "seed": "长岬内海-20260928",
+  "size": 256,
+  "outlineScreenPoints": [
+    [
+      305,
+      160
+    ],
+    [
+      333,
+      181
+    ],
+    [
+      364,
+      171
+    ],
+    [
+      380,
+      198
+    ],
+    [
+      411,
+      198
+    ],
+    [
+      430,
+      219
+    ],
+    [
+      453,
+      225
+    ],
+    [
+      450,
+      252
+    ],
+    [
+      473,
+      280
+    ],
+    [
+      466,
+      310
+    ],
+    [
+      436,
+      333
+    ],
+    [
+      445,
+      363
+    ],
+    [
+      425,
+      385
+    ],
+    [
+      412,
+      361
+    ],
+    [
+      417,
+      337
+    ],
+    [
+      396,
+      321
+    ],
+    [
+      376,
+      332
+    ],
+    [
+      354,
+      323
+    ],
+    [
+      335,
+      344
+    ],
+    [
+      321,
+      369
+    ],
+    [
+      331,
+      396
+    ],
+    [
+      315,
+      431
+    ],
+    [
+      291,
+      453
+    ],
+    [
+      261,
+      449
+    ],
+    [
+      244,
+      467
+    ],
+    [
+      219,
+      449
+    ],
+    [
+      215,
+      422
+    ],
+    [
+      188,
+      424
+    ],
+    [
+      163,
+      406
+    ],
+    [
+      177,
+      382
+    ],
+    [
+      154,
+      363
+    ],
+    [
+      174,
+      343
+    ],
+    [
+      145,
+      318
+    ],
+    [
+      167,
+      294
+    ],
+    [
+      162,
+      266
+    ],
+    [
+      188,
+      262
+    ],
+    [
+      204,
+      239
+    ],
+    [
+      237,
+      246
+    ],
+    [
+      263,
+      225
+    ],
+    [
+      274,
+      198
+    ],
+    [
+      293,
+      194
+    ],
+    [
+      305,
+      160
+    ]
+  ],
+  "parameters": {
+    "coastStructure": 96,
+    "coastRoughness": 16,
+    "shelf": 72,
+    "relief": 2400,
+    "islandChains": 1,
+    "islandsPerChain": 3
+  },
+  "savedRevision": 1,
+  "reloadedRevision": 1,
+  "preview": {
+    "landPercent": 22.09,
+    "heightMinimum": -5897,
+    "heightMaximum": 2046
+  },
+  "screenshots": [
+    {
+      "path": ".autopilot/ph06/demo22-full.png",
+      "sha256": "8f7fc381a0d68542ca67592f2d6ff224ca69da31a711a7ce6539ceb1ed30bf20"
+    },
+    {
+      "path": ".autopilot/ph06/demo22-mid.png",
+      "sha256": "38ead042ac0bbcb57c4a9241851c3e1b6f0b7e35c7a3b3cbed63211ed99548b9"
+    },
+    {
+      "path": ".autopilot/ph06/demo22-ridge.png",
+      "sha256": "f5814df46900083093f2487537856b6a9d1ad5362a38580600ef0afd17e442f6"
+    }
+  ],
+  "views": [
+    "12% restored full map",
+    "40% central inlet",
+    "40% ridge junction after native drag"
+  ],
+  "visualObservation": "Branch geometry is changed from the old S curve, but it remains a narrow smooth road/tube network at full and middle view. Inland broad terrain is still empty, sea streaks persist, coast mostly soft. Ocean cyan halo is subdued. Natural appearance is not accepted. No countries/admin/cities/troops/war in new Atlas.",
+  "source": "Native IAB mouse drawing and button confirmation, saved and reloaded through visible UI. Same screen viewport/outline/seed/parameters as21; distinct draft.",
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

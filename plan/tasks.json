@@ -757,7 +757,9 @@
         "docs/evidence/2026-09-28-ph06-fine-world-relief.md",
         "docs/evidence/ph06-fine-world-relief-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph06-regional-coast.md",
-        "docs/evidence/ph06-regional-coast-2026-09-28/verification.json"
+        "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
+        "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
+        "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
       ],
       "workItems": [
         {
@@ -847,7 +849,9 @@
             "docs/evidence/2026-09-28-ph06-fine-world-relief.md",
             "docs/evidence/ph06-fine-world-relief-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-regional-coast.md",
-            "docs/evidence/ph06-regional-coast-2026-09-28/verification.json"
+            "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
+            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
           ]
         },
         {
@@ -896,7 +900,9 @@
             "docs/evidence/2026-09-28-ph06-fine-world-relief.md",
             "docs/evidence/ph06-fine-world-relief-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-regional-coast.md",
-            "docs/evidence/ph06-regional-coast-2026-09-28/verification.json"
+            "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
+            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
           ]
         }
       ],

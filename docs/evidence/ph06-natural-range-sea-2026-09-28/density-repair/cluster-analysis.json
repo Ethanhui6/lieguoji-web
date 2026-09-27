@@ -1,0 +1,217 @@
+{
+  "totalNodes": 819,
+  "originalFailure": {
+    "supportId": 708,
+    "bucketX": 41,
+    "bucketY": 43,
+    "references": 28282,
+    "candidates": 193,
+    "perRun": {
+      "0": 107,
+      "1": 19,
+      "2": 41,
+      "3": 26,
+      "4": 0
+    }
+  },
+  "chains": [
+    {
+      "group": 0,
+      "anchors": [
+        {
+          "x": 1968,
+          "y": 1040,
+          "width": 46.078125
+        },
+        {
+          "x": 1872,
+          "y": 1136,
+          "width": 39.35546875
+        },
+        {
+          "x": 1808,
+          "y": 1168,
+          "width": 39.35546875
+        },
+        {
+          "x": 1616,
+          "y": 1360,
+          "width": 140.80078125
+        },
+        {
+          "x": 1360,
+          "y": 1360,
+          "width": 124.44921875
+        },
+        {
+          "x": 1200,
+          "y": 1520,
+          "width": 124.44921875
+        },
+        {
+          "x": 1040,
+          "y": 1680,
+          "width": 46.078125
+        }
+      ]
+    },
+    {
+      "group": 1,
+      "parentGroup": 0,
+      "anchors": [
+        {
+          "x": 1616,
+          "y": 1360,
+          "width": 141.89453125
+        },
+        {
+          "x": 1360,
+          "y": 1328,
+          "width": 141.89453125
+        },
+        {
+          "x": 1168,
+          "y": 1136,
+          "width": 115.19921875
+        }
+      ]
+    },
+    {
+      "group": 2,
+      "parentGroup": 0,
+      "anchors": [
+        {
+          "x": 1360,
+          "y": 1360,
+          "width": 137.4609375
+        },
+        {
+          "x": 1168,
+          "y": 1200,
+          "width": 102.625
+        },
+        {
+          "x": 1072,
+          "y": 1040,
+          "width": 46.078125
+        }
+      ]
+    },
+    {
+      "group": 3,
+      "parentGroup": 0,
+      "anchors": [
+        {
+          "x": 1200,
+          "y": 1520,
+          "width": 105.6015625
+        },
+        {
+          "x": 1200,
+          "y": 1328,
+          "width": 99.5625
+        },
+        {
+          "x": 1072,
+          "y": 1200,
+          "width": 69.12109375
+        }
+      ]
+    },
+    {
+      "group": 4,
+      "parentGroup": 0,
+      "anchors": [
+        {
+          "x": 1808,
+          "y": 1168,
+          "width": 123.19921875
+        },
+        {
+          "x": 1584,
+          "y": 1168,
+          "width": 49.78125
+        },
+        {
+          "x": 1520,
+          "y": 1104,
+          "width": 49.78125
+        }
+      ]
+    }
+  ],
+  "alternatives": [
+    {
+      "stepWorld": 32,
+      "oriented": false,
+      "references": 31271,
+      "nonEmptyBuckets": 468,
+      "maximumCandidates": 193,
+      "maximumBucket": {
+        "x": 41,
+        "y": 43,
+        "perRun": {
+          "0": 107,
+          "1": 19,
+          "2": 41,
+          "3": 26,
+          "4": 0
+        }
+      }
+    },
+    {
+      "stepWorld": 16,
+      "oriented": false,
+      "references": 105622,
+      "nonEmptyBuckets": 1762,
+      "maximumCandidates": 180,
+      "maximumBucket": {
+        "x": 82,
+        "y": 87,
+        "perRun": {
+          "0": 103,
+          "1": 16,
+          "2": 35,
+          "3": 26,
+          "4": 0
+        }
+      }
+    },
+    {
+      "stepWorld": 32,
+      "oriented": true,
+      "references": 19441,
+      "nonEmptyBuckets": 389,
+      "maximumCandidates": 116,
+      "maximumBucket": {
+        "x": 38,
+        "y": 43,
+        "perRun": {
+          "0": 50,
+          "1": 11,
+          "2": 37,
+          "3": 18,
+          "4": 0
+        }
+      }
+    },
+    {
+      "stepWorld": 16,
+      "oriented": true,
+      "references": 58981,
+      "nonEmptyBuckets": 1445,
+      "maximumCandidates": 99,
+      "maximumBucket": {
+        "x": 86,
+        "y": 91,
+        "perRun": {
+          "0": 90,
+          "1": 9,
+          "2": 0,
+          "3": 0,
+          "4": 0
+        }
+      }
+    }
+  ]
+}

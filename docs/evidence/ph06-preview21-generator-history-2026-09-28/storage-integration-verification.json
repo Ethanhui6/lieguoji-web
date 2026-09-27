@@ -1,0 +1,105 @@
+{
+  "recordedAt": "2026-09-27T22:07:59.608Z",
+  "status": "scoped-storage-history-passed-awaiting-parent-product-integration",
+  "originalSourceCommit": "31e27620c816db33993a8ac419274c9a86c32624",
+  "originalBuildCommit": "502164889fef2f0280b725c76538cd07df7d5e36",
+  "originalBuildSha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+  "frozenReadySha256": "80579d5ed0999eabd05e0bb3ae49617c58c126928979ca1dee94add884f1176c",
+  "additions": [
+    {
+      "namespace": "macro-landmass",
+      "fingerprint": "967562939564daa90fa012519b981b1e42b3fa7d74c2de7c24731c00a5826e88",
+      "buildKey": "macroGenerator"
+    },
+    {
+      "namespace": "landforms",
+      "fingerprint": "f1a6cee151793229b82bd8ca04a1b50df00ae7d732c3655b8f5cc2cec29b7019",
+      "buildKey": "landformGenerator"
+    },
+    {
+      "namespace": "island-chains",
+      "fingerprint": "f3ee235d1f1c05b8c199e4c66bc048a2459ee27be1e09a7acff9844fd8a53ef8",
+      "buildKey": "islandGenerator"
+    },
+    {
+      "namespace": "coast-smoothing",
+      "fingerprint": "35ec29070414e05d1bfd54f4d9f33cb7838a119859b38d34311f04d3276f74dd",
+      "buildKey": "coastGenerator"
+    },
+    {
+      "namespace": "shape-landmass",
+      "fingerprint": "23c20df32b30901bb0ba1a134eb51702ffab2a575e46e5623beb50a323f64ec0",
+      "buildKey": "shapeGenerator"
+    },
+    {
+      "namespace": "ocean-floor",
+      "fingerprint": "617e5e9ca8517661e870c32c915afd4201f2a35710896b3c9061511151d96d08",
+      "buildKey": "oceanGenerator"
+    },
+    {
+      "namespace": "shape-detail-landmass",
+      "fingerprint": "d20d7c48f748a706403404b74ef2e448f679d18d75b662c351f8f3bfb5910e82",
+      "buildKey": "detailShapeGenerator"
+    },
+    {
+      "namespace": "add-detail-landmass",
+      "fingerprint": "8519245bbc6e2aee5c2fcca47e3719540d1fe148751725380933d0ae44154325",
+      "buildKey": "addDetailGenerator"
+    },
+    {
+      "namespace": "shape-detail-landmass@2",
+      "fingerprint": "070c0d308eaa6cb79d6ddf6e16ae69f94856a69e0a6876991449aef872125cfa",
+      "buildKey": "naturalDetailGenerator"
+    },
+    {
+      "namespace": "add-detail-landmass@2",
+      "fingerprint": "9ddd7ae1f6cd516d5583bfa416b2a848b7bad404733b8ef3ddc2887d1cfc32d1",
+      "buildKey": "addNaturalDetailGenerator"
+    },
+    {
+      "namespace": "local-detail-relief",
+      "fingerprint": "2264d336bf7c5b5bc74c3efdd1e85a790824e9bc6fbc9bb30daed9c4f9e0a525",
+      "buildKey": "localDetailReliefGenerator"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "src/world/generation-history.ts",
+      "sha256": "da0822a61d7f4e619b504266d8eea5ebe75c72929330ecf4f872d962478bc1fa"
+    },
+    {
+      "path": "src/world/generation-preview21-history.test.ts",
+      "sha256": "4d791043eedd469d9a3a88d053551fbd672df4b7f70f9228476640623c897798"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "e583b2a400e738ef497ebee91757c3accb159d510cb79c8dd8ccffbf9ccf9a00"
+    }
+  ],
+  "allExistingHistoryPreserved": true,
+  "historyScope": "storage/read only; execution and namespace guards unchanged",
+  "checks": {
+    "path": "docs/evidence/ph06-preview21-generator-history-2026-09-28/storage-checks/first/verification.json",
+    "sha256": "666a826278bd67b19913458fc056a3607cb430ac3817d8320e22a1a2c5558124",
+    "lint": true,
+    "types": true,
+    "unit": {
+      "success": true,
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0,
+      "files": 1
+    },
+    "firstAttemptPassed": true
+  },
+  "originalFrozenFilesPreserved": true,
+  "originalPreview21MetadataUnchanged": true,
+  "fullProductChecksRun": false,
+  "buildRun": false,
+  "browserRun": false,
+  "committed": false,
+  "naturalVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false
+}

@@ -1,0 +1,3268 @@
+{
+  "files": [
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/after.json",
+      "path": "browser/desktop/after.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/.last-run.json",
+      "path": "browser/desktop/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "bytes": 187337,
+      "sha256": "2b3f8de9af04f9c77396c9a1d7bcafaeb710c854f7e2dbf7e448ff7d063a6f46"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "bytes": 395153,
+      "sha256": "1e55784988102bd599f7c45c3da958bd4a85853021f1f481bb7c255cb38c518a"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "bytes": 286131,
+      "sha256": "0f01253a946634d09ae76fa3c9230f862472c7c091db1836da9817030c7b497a"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "bytes": 189455,
+      "sha256": "2ee4fe54cd15a0ebcd49dc34ba74c53e40a431798f12f07207def0eebba881cc"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "bytes": 188458,
+      "sha256": "f62792685a64aaa5a6021179288d45a647cbbe49128b74639968c7d1b32771ff"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/atlas-add-detail-coast.spec.ts",
+      "path": "browser/desktop/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/base-playwright.config.ts",
+      "path": "browser/desktop/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/before.json",
+      "path": "browser/desktop/before.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/build.json",
+      "path": "browser/desktop/build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/playwright.config.ts",
+      "path": "browser/desktop/playwright.config.ts",
+      "bytes": 754,
+      "sha256": "0d985a2329710d707041a4595cf061dddee63ff44ae713ed282e954ee202f38e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/prerequisite-verification.json",
+      "path": "browser/desktop/prerequisite-verification.json",
+      "bytes": 12672,
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/results.json",
+      "path": "browser/desktop/results.json",
+      "bytes": 166790,
+      "sha256": "64310079ab5e1295cc75b87b1f0e21ddf7971f88b644c176ab74a97dad590ab7"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/run.log",
+      "path": "browser/desktop/run.log",
+      "bytes": 407,
+      "sha256": "f57f50d21a9a446c7535a7aa8407846522480b8efed9809bd37619c82ff8fea0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/run.mjs",
+      "path": "browser/desktop/run.mjs",
+      "bytes": 6847,
+      "sha256": "93516f83abd41dff38701aa6a63356844eb54a86bd7c3227495d4bd177212868"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/desktop/verification.json",
+      "path": "browser/desktop/verification.json",
+      "bytes": 13672,
+      "sha256": "a8482a7c90d3662554f4a8e14fd7518e0313358dc39f21001a056d0b52f705cb"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/after.json",
+      "path": "browser/mobile/after.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/.last-run.json",
+      "path": "browser/mobile/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "bytes": 192799,
+      "sha256": "c1594f84eb3cdcc865a19985585783cc576cdbe8e736fc7cadc3eb3e513b722a"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "bytes": 514071,
+      "sha256": "11792889d08e191fe843d062e60ac7a64251a59c82732c3b3eef76b8af2ef4d0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "bytes": 397541,
+      "sha256": "fd1e35b44840f43647f42d07635a51cf46d78164d9f192be555a8d17928ff6de"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "bytes": 270325,
+      "sha256": "218b0c41db45b36a96469cdbcf3a4eb239fa970dc7d4e1acf128145250e236a1"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "bytes": 263758,
+      "sha256": "a5df8757fb182a3a84692b623ef844fc342612dd840c3fa612d65d089a9c0fd7"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/atlas-add-detail-coast.spec.ts",
+      "path": "browser/mobile/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/base-playwright.config.ts",
+      "path": "browser/mobile/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/before.json",
+      "path": "browser/mobile/before.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/build.json",
+      "path": "browser/mobile/build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/playwright.config.ts",
+      "path": "browser/mobile/playwright.config.ts",
+      "bytes": 754,
+      "sha256": "0d985a2329710d707041a4595cf061dddee63ff44ae713ed282e954ee202f38e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/prerequisite-verification.json",
+      "path": "browser/mobile/prerequisite-verification.json",
+      "bytes": 12672,
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/results.json",
+      "path": "browser/mobile/results.json",
+      "bytes": 166819,
+      "sha256": "a9881bdc4d7033767b373d4434eafd84d4a435bbe6fe2f835372d5a3665fcf44"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/run.log",
+      "path": "browser/mobile/run.log",
+      "bytes": 406,
+      "sha256": "b24d9b4d32c9c4919f93767b3f1b899322b09b65ff6794ccfea3e7d47e4102fe"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/run.mjs",
+      "path": "browser/mobile/run.mjs",
+      "bytes": 6847,
+      "sha256": "93516f83abd41dff38701aa6a63356844eb54a86bd7c3227495d4bd177212868"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/mobile/verification.json",
+      "path": "browser/mobile/verification.json",
+      "bytes": 13668,
+      "sha256": "95478ae9057f32917464e4f86624b7578e59e6f269d3336cd78cae007300f611"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/playwright.config.ts",
+      "path": "browser/playwright.config.ts",
+      "bytes": 754,
+      "sha256": "0d985a2329710d707041a4595cf061dddee63ff44ae713ed282e954ee202f38e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/run.mjs",
+      "path": "browser/run.mjs",
+      "bytes": 6847,
+      "sha256": "93516f83abd41dff38701aa6a63356844eb54a86bd7c3227495d4bd177212868"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/after.json",
+      "path": "browser/tablet/after.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/.last-run.json",
+      "path": "browser/tablet/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "bytes": 280976,
+      "sha256": "6c54ed538a81f3f8a5f10ad71ec53f6d45db0273822b781a3ab96b32ab7412bd"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "bytes": 694597,
+      "sha256": "82f8dc44cb4f3dc5863c0abcc1071d609db92df155c76ded699310e8139b5afd"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "bytes": 556228,
+      "sha256": "b14d99c52b59b9ad24d8327d2b1a9f13a0d36ce75bf341124e345b4b2916f284"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "bytes": 408255,
+      "sha256": "ba89cba828f3b041038076df608bf6088921346a9b30450f321bc15117a30248"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "bytes": 403149,
+      "sha256": "e07d4b5afd0ab1b7a65432db5482d0459c1ba44b377ca6c1fa3ff5069e9ebff6"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/atlas-add-detail-coast.spec.ts",
+      "path": "browser/tablet/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/base-playwright.config.ts",
+      "path": "browser/tablet/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/before.json",
+      "path": "browser/tablet/before.json",
+      "bytes": 59538,
+      "sha256": "cc30299842bf986242ab940d3dd2a5abb20025430fb5ac9f199af6983bcc5105"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/build.json",
+      "path": "browser/tablet/build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/playwright.config.ts",
+      "path": "browser/tablet/playwright.config.ts",
+      "bytes": 754,
+      "sha256": "0d985a2329710d707041a4595cf061dddee63ff44ae713ed282e954ee202f38e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/prerequisite-verification.json",
+      "path": "browser/tablet/prerequisite-verification.json",
+      "bytes": 12672,
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/results.json",
+      "path": "browser/tablet/results.json",
+      "bytes": 166811,
+      "sha256": "c887159df8c829b3565bb6b212ea1d5e8ffc651845d4bd5eb789ff4f29569681"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/run.log",
+      "path": "browser/tablet/run.log",
+      "bytes": 406,
+      "sha256": "8f71c9b2a8ded0786e8d9ae3cb2dd0cb98564f7de13951f5c7eb6fa0ac632def"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/run.mjs",
+      "path": "browser/tablet/run.mjs",
+      "bytes": 6847,
+      "sha256": "93516f83abd41dff38701aa6a63356844eb54a86bd7c3227495d4bd177212868"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-browser/tablet/verification.json",
+      "path": "browser/tablet/verification.json",
+      "bytes": 13661,
+      "sha256": "5c2714268be27f2442810a8fa718c9784a60f6e536415d2bd7a7d1c03ecbfa4b"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/actual-contributions.json",
+      "path": "density-repair/actual-contributions.json",
+      "bytes": 341,
+      "sha256": "fbec7e26fb68a0aa173d601dc1280b3ce7d2f476f7ca5ce276211d7dc6ce68ff"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/actual-contributions.mjs",
+      "path": "density-repair/actual-contributions.mjs",
+      "bytes": 1541,
+      "sha256": "3452d79be8800a635ab87a07a065b2b2b27603402268c9bf9aab223af707681d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/analyze-cluster.mjs",
+      "path": "density-repair/analyze-cluster.mjs",
+      "bytes": 2466,
+      "sha256": "81701929e551a4ff5686242a6b49a7e011a001ec86ee60c686746a840479eb8c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/before-manifest.json",
+      "path": "density-repair/before-manifest.json",
+      "bytes": 471,
+      "sha256": "87606fc9206a99d16ae9492b53462d89537ba00b43434c03e847568e68738b84"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/before/src/world/generation/detail-natural-relief.ts",
+      "path": "density-repair/before/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/before/src/world/generation/detail-orography.ts",
+      "path": "density-repair/before/src/world/generation/detail-orography.ts",
+      "bytes": 27737,
+      "sha256": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/before/src/world/generation/fine-range-tree.ts",
+      "path": "density-repair/before/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/before/src/world/generation/regional-coast-field.test.ts",
+      "path": "density-repair/before/src/world/generation/regional-coast-field.test.ts",
+      "bytes": 5541,
+      "sha256": "4890a3cf0065b62358709301a8c6bf9c9bdd52a04ddcc59a504321fc2a8bb493"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/cluster-analysis.json",
+      "path": "density-repair/cluster-analysis.json",
+      "bytes": 3810,
+      "sha256": "0032291297a940ee75082ed39e4b4b85257f2329c27f01f748fed94e933e5e97"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/cluster-before.json",
+      "path": "density-repair/cluster-before.json",
+      "bytes": 729305,
+      "sha256": "dc2115ddfa52a055d33630d206c919065d578fd577921e1b272f2de066a0862e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/diagnose.test.ts",
+      "path": "density-repair/diagnose.test.ts",
+      "bytes": 1605,
+      "sha256": "a5dad994ff9a733bb50500b70feba151152d774c4a01d895962f651d1ff0f84d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/diagnostic.json",
+      "path": "density-repair/diagnostic.json",
+      "bytes": 976,
+      "sha256": "1d6a916472af8e59b3d293211c0b96cfb96f6b4687b4cbd1408f0df8f35eb846"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/diagnostic/detail-orography.ts",
+      "path": "density-repair/diagnostic/detail-orography.ts",
+      "bytes": 28056,
+      "sha256": "c90829ce5399b94efcd1bfbafb062fcb0a9647d8e281d49db44a0015372a0e8d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/first-unit.json",
+      "path": "density-repair/first-unit.json",
+      "bytes": 136245,
+      "sha256": "6fc292571352508639b5df85814b7c0852325c6fcda5157ecfa24b6e1ad42370"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/first-unit.log",
+      "path": "density-repair/first-unit.log",
+      "bytes": 112,
+      "sha256": "4d59213c3ca5ed25621f08907dc9269d30b61166e255580f1bb23dd62dad3653"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/first-verification.json",
+      "path": "density-repair/first-verification.json",
+      "bytes": 8172,
+      "sha256": "3b111ce1aaf638caa0093215f5dd7d1c5b61fc209fd968d0de1100e5faffdceb"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/prepare-diagnostic.mjs",
+      "path": "density-repair/prepare-diagnostic.mjs",
+      "bytes": 2711,
+      "sha256": "b73b1ac912bde51441bbd22343353b570e65ecb82d1b53ad3e3022fdd8ffc4d1"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/README.md",
+      "path": "density-repair/README.md",
+      "bytes": 5168,
+      "sha256": "57de7d4be606b9482cceb5067b8cbd1a254fcd385ff9e072772409ae8097683d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/source-manifest.json",
+      "path": "density-repair/source-manifest.json",
+      "bytes": 1291,
+      "sha256": "eee5d9b75c6cb0e788bed36d7c4630e40735aae8dabbe851b977ca63f88eab80"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/targeted-after.json",
+      "path": "density-repair/targeted-after.json",
+      "bytes": 17444,
+      "sha256": "edcf1b22c9ccde31aeee75903526014480e5d8c6c27645da70a02dbb937b4082"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/targeted-first-config.ts",
+      "path": "density-repair/targeted-first-config.ts",
+      "bytes": 517,
+      "sha256": "b6e9b36f5423f2f8f6659ac300b083444ed41272bab1ab3f24db8b74162fb896"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/vitest.diagnostic.config.ts",
+      "path": "density-repair/vitest.diagnostic.config.ts",
+      "bytes": 893,
+      "sha256": "191527da973375d4f09918ddaae5379de4656b684284b598fda7c3090474e59b"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-density-repair/vitest.targeted.config.ts",
+      "path": "density-repair/vitest.targeted.config.ts",
+      "bytes": 602,
+      "sha256": "bc75f48a22232f55d923503d2bd4d4e68797506a55adfcca4a3af935dbd8687d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/lint.log",
+      "path": "fine-candidate/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/measurements.json",
+      "path": "fine-candidate/first/measurements.json",
+      "bytes": 10215,
+      "sha256": "74fb60b9f70692bee836112340fab2a370e9d3a8537770bf4136985573b90364"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/natural-ranges.test.ts",
+      "path": "fine-candidate/first/source/natural-ranges.test.ts",
+      "bytes": 12612,
+      "sha256": "783b03c3931ac95036e9df7ac12144175a56aa9c4cf5c6deb30ade357673c379"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/src/world/generation/detail-natural-relief.ts",
+      "path": "fine-candidate/first/source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17683,
+      "sha256": "3a843b5cc4b889bc1e71b24283db345faf81cff20816bc23f46c1c9c44be6470"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/src/world/generation/detail-orography.ts",
+      "path": "fine-candidate/first/source/src/world/generation/detail-orography.ts",
+      "bytes": 27630,
+      "sha256": "aa9bf420a5839b93a3838f081dd2ec0563d54c10ba71d458ae56125bfb5e9987"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/src/world/generation/fine-range-tree.ts",
+      "path": "fine-candidate/first/source/src/world/generation/fine-range-tree.ts",
+      "bytes": 15115,
+      "sha256": "722b7ea1e23b13a63acdb883c1ef19a07db6df5ae5c7bc04b943ef1091995eb1"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/typecheck.mjs",
+      "path": "fine-candidate/first/source/typecheck.mjs",
+      "bytes": 1571,
+      "sha256": "a9a97672d40468afb2bcd290010006a02de3003ca30dd9b197ee299b7bdaf6ce"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/source/vitest.config.ts",
+      "path": "fine-candidate/first/source/vitest.config.ts",
+      "bytes": 1193,
+      "sha256": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/types.log",
+      "path": "fine-candidate/first/types.log",
+      "bytes": 453,
+      "sha256": "d761df8707d52109e6ff4162ed9b559ea432f863fe786f02e2c5b790f8847db9"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/unit.json",
+      "path": "fine-candidate/first/unit.json",
+      "bytes": 11265,
+      "sha256": "9310e3396eef9a2dd439e1ddf140c5da1cd4286564030c6134c3279bb7b67be6"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/unit.log",
+      "path": "fine-candidate/first/unit.log",
+      "bytes": 117,
+      "sha256": "c39670a5a74cd6ec7760b09eaf004f07b067824f270aa2e341db62450b06ebd7"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/first/verification.json",
+      "path": "fine-candidate/first/verification.json",
+      "bytes": 1926,
+      "sha256": "d0e9143717463e37d7d6310780ab11e8ff87127d3c2e3a30a343ff41499fa507"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/before/src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "fine-candidate/production-tests/before/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 12556,
+      "sha256": "dd0f064a2b5218c9f550db73a55acb98adc01f9a03fea304ead767b9917b2054"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/manifest.json",
+      "path": "fine-candidate/production-tests/manifest.json",
+      "bytes": 3139,
+      "sha256": "0f5e6070bee31b7a2261d82c7cb92b111bf0eacece977863137b1241cb70e9f3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/prepare.mjs",
+      "path": "fine-candidate/production-tests/prepare.mjs",
+      "bytes": 8560,
+      "sha256": "2b7d8530aa66c14b1f2bae0254408c01509b7a6d4456ef762c7d43929f10f1cc"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/files/src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "fine-candidate/production-tests/prepared/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 14052,
+      "sha256": "e85f77258da517e0c466366b1ad2367100b7d389137b5ef3c256f589dc3a7264"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/files/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "path": "fine-candidate/production-tests/prepared/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "bytes": 4308,
+      "sha256": "e72fe58d23bbd03cdca381972854b42d0b6dbc723a66fbc39eb82632ec43b7b5"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/files/src/world/generation/detail-natural-ranges.test.ts",
+      "path": "fine-candidate/production-tests/prepared/src/world/generation/detail-natural-ranges.test.ts",
+      "bytes": 14527,
+      "sha256": "b3ca393cb7271772006c4aacbe6f9fdd285a2971581d04374389cfdd70c37d97"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/promote.mjs",
+      "path": "fine-candidate/production-tests/promote.mjs",
+      "bytes": 4075,
+      "sha256": "55e2248713f81ab1e1f79d9ca9a4a7530ad6534df7b66db10dbb84b5f946aaf4"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/promotion-results/2026-09-27T22-08-19.380Z/before/src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "fine-candidate/production-tests/promotion-results/2026-09-27T22-08-19.380Z/before/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 12556,
+      "sha256": "dd0f064a2b5218c9f550db73a55acb98adc01f9a03fea304ead767b9917b2054"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/promotion-results/2026-09-27T22-08-19.380Z/result.json",
+      "path": "fine-candidate/production-tests/promotion-results/2026-09-27T22-08-19.380Z/result.json",
+      "bytes": 4454,
+      "sha256": "108b154d7e029c3c4d4f2592d06ef74a225d2ec2b3ae55e6367a4171af0a366f"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/production-tests/README.md",
+      "path": "fine-candidate/production-tests/README.md",
+      "bytes": 6694,
+      "sha256": "9f357f4580eef1121c2a230ad3eb2383cea5451cb100ab30062467665a4f1eb8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/lint.log",
+      "path": "fine-candidate/ready/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/manifest.json",
+      "path": "fine-candidate/ready/manifest.json",
+      "bytes": 7457,
+      "sha256": "8bac78867be8dbd71e04f9dc6f58e46e42d5cbbc14dfb51fc0bc518c43189bd0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/measurements.json",
+      "path": "fine-candidate/ready/measurements.json",
+      "bytes": 13379,
+      "sha256": "7011014a12f2e7189f4207aa5bf36ba58ff2005524c02d9cd9ccc832d7efa33e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/postcheck-dependencies/src/world/generation/detail-curved-ridge.ts",
+      "path": "fine-candidate/ready/postcheck-dependencies/src/world/generation/detail-curved-ridge.ts",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/postcheck-dependencies/src/world/generation/seed.ts",
+      "path": "fine-candidate/ready/postcheck-dependencies/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/natural-ranges.test.ts",
+      "path": "fine-candidate/ready/source/natural-ranges.test.ts",
+      "bytes": 15762,
+      "sha256": "c10544153785995c18727df87b9a3b0328946780a1db889e5b6b827813e98ff3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/natural-writer.test.ts",
+      "path": "fine-candidate/ready/source/natural-writer.test.ts",
+      "bytes": 4725,
+      "sha256": "70718563d597aa73009517362c9f032caa6f4761eb6d6cfe49e3dd4e9fda46d8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/src/world/generation/detail-natural-relief.ts",
+      "path": "fine-candidate/ready/source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/src/world/generation/detail-orography.ts",
+      "path": "fine-candidate/ready/source/src/world/generation/detail-orography.ts",
+      "bytes": 27737,
+      "sha256": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/src/world/generation/fine-range-tree.ts",
+      "path": "fine-candidate/ready/source/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/typecheck.mjs",
+      "path": "fine-candidate/ready/source/typecheck.mjs",
+      "bytes": 1596,
+      "sha256": "42cc5ad494f9409108f604a05b056cacf285a000dbd852492ba8cfa197d4f067"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/source/vitest.config.ts",
+      "path": "fine-candidate/ready/source/vitest.config.ts",
+      "bytes": 1193,
+      "sha256": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/types.log",
+      "path": "fine-candidate/ready/types.log",
+      "bytes": 61,
+      "sha256": "2f1b4dedb42090c48feda0eae5f37bbf0a80f9dac71374c804614db8f696de70"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/unit.json",
+      "path": "fine-candidate/ready/unit.json",
+      "bytes": 12334,
+      "sha256": "1fa79ac8036c405ef3c6b49066d0a5940f5dfa3b4c194bd6670dc469d2533a9e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/unit.log",
+      "path": "fine-candidate/ready/unit.log",
+      "bytes": 120,
+      "sha256": "dc11d5cc5504b364179fa31c1e57ca4eeb88b052e95a62a4e6e3aabe65c9e0a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/verification.json",
+      "path": "fine-candidate/ready/verification.json",
+      "bytes": 2121,
+      "sha256": "57730dce8e775e61249f39a599eb13e04e9770f3779823af844a14ad1af75828"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/ready/writer-measurements.json",
+      "path": "fine-candidate/ready/writer-measurements.json",
+      "bytes": 1918,
+      "sha256": "c06004d84ca2ecccb4f5957d981bee9928480dbaa5a16c30b90dd6b4a67007ab"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/baseline-manifest.json",
+      "path": "fine-candidate/recording/baseline-manifest.json",
+      "bytes": 193,
+      "sha256": "c0350a7952066bf114f14c605ca36a8f6521859e19d79390c7858335e6a8099c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/check.mjs",
+      "path": "fine-candidate/recording/check.mjs",
+      "bytes": 3603,
+      "sha256": "3c3c84d5c1e89e54ab205e46e02dd55a6ec6741a2cf7a3e36cab0eff60866718"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/freeze.mjs",
+      "path": "fine-candidate/recording/freeze.mjs",
+      "bytes": 5227,
+      "sha256": "1e32611740c6d745d18ffa40eaafe0c6c90d33f1758de637daead4af00020ac6"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/integration-review.md",
+      "path": "fine-candidate/recording/integration-review.md",
+      "bytes": 2538,
+      "sha256": "ec8f4ab429637afb86b75323f3d1173366412e9c12774427b267284ff6115c73"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/README.md",
+      "path": "fine-candidate/recording/README.md",
+      "bytes": 9837,
+      "sha256": "8f12adb0e02038a3f7c1a9ede4c985db8f9d02680d8afcd90632b0e3b28609b5"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/lint.log",
+      "path": "fine-candidate/repair-1/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/measurements.json",
+      "path": "fine-candidate/repair-1/measurements.json",
+      "bytes": 10251,
+      "sha256": "9b84f39ab16957ef9348f97985bab988821ee9d614bf36b7490ba545a5956854"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/natural-ranges.test.ts",
+      "path": "fine-candidate/repair-1/source/natural-ranges.test.ts",
+      "bytes": 15214,
+      "sha256": "03b161004d797ec330cbe494ae90e2ac4352d21ce9143bf9020060df7b5a8de0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/natural-writer.test.ts",
+      "path": "fine-candidate/repair-1/source/natural-writer.test.ts",
+      "bytes": 4725,
+      "sha256": "70718563d597aa73009517362c9f032caa6f4761eb6d6cfe49e3dd4e9fda46d8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/src/world/generation/detail-natural-relief.ts",
+      "path": "fine-candidate/repair-1/source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/src/world/generation/detail-orography.ts",
+      "path": "fine-candidate/repair-1/source/src/world/generation/detail-orography.ts",
+      "bytes": 27737,
+      "sha256": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/src/world/generation/fine-range-tree.ts",
+      "path": "fine-candidate/repair-1/source/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/typecheck.mjs",
+      "path": "fine-candidate/repair-1/source/typecheck.mjs",
+      "bytes": 1596,
+      "sha256": "42cc5ad494f9409108f604a05b056cacf285a000dbd852492ba8cfa197d4f067"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/source/vitest.config.ts",
+      "path": "fine-candidate/repair-1/source/vitest.config.ts",
+      "bytes": 1193,
+      "sha256": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/types.log",
+      "path": "fine-candidate/repair-1/types.log",
+      "bytes": 61,
+      "sha256": "2f1b4dedb42090c48feda0eae5f37bbf0a80f9dac71374c804614db8f696de70"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/unit.json",
+      "path": "fine-candidate/repair-1/unit.json",
+      "bytes": 12751,
+      "sha256": "9120ab5ea0d3df1d41b212b824a85a822b5996484265478486294d003f88742f"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/unit.log",
+      "path": "fine-candidate/repair-1/unit.log",
+      "bytes": 120,
+      "sha256": "254e3784dfe8c90425a67aafbe881ceadd0e6cc4db24da6c39d0b421bec33eca"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/verification.json",
+      "path": "fine-candidate/repair-1/verification.json",
+      "bytes": 2122,
+      "sha256": "3b195375504cec7a357a803be492d21ccb10d559b6cdb088b669c8b2aad3e5b0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-1/writer-measurements.json",
+      "path": "fine-candidate/repair-1/writer-measurements.json",
+      "bytes": 1918,
+      "sha256": "c06004d84ca2ecccb4f5957d981bee9928480dbaa5a16c30b90dd6b4a67007ab"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/lint.log",
+      "path": "fine-candidate/repair-2/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/measurements.json",
+      "path": "fine-candidate/repair-2/measurements.json",
+      "bytes": 13379,
+      "sha256": "7011014a12f2e7189f4207aa5bf36ba58ff2005524c02d9cd9ccc832d7efa33e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/natural-ranges.test.ts",
+      "path": "fine-candidate/repair-2/source/natural-ranges.test.ts",
+      "bytes": 15762,
+      "sha256": "c10544153785995c18727df87b9a3b0328946780a1db889e5b6b827813e98ff3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/natural-writer.test.ts",
+      "path": "fine-candidate/repair-2/source/natural-writer.test.ts",
+      "bytes": 4725,
+      "sha256": "70718563d597aa73009517362c9f032caa6f4761eb6d6cfe49e3dd4e9fda46d8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/src/world/generation/detail-natural-relief.ts",
+      "path": "fine-candidate/repair-2/source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/src/world/generation/detail-orography.ts",
+      "path": "fine-candidate/repair-2/source/src/world/generation/detail-orography.ts",
+      "bytes": 27737,
+      "sha256": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/src/world/generation/fine-range-tree.ts",
+      "path": "fine-candidate/repair-2/source/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/typecheck.mjs",
+      "path": "fine-candidate/repair-2/source/typecheck.mjs",
+      "bytes": 1596,
+      "sha256": "42cc5ad494f9409108f604a05b056cacf285a000dbd852492ba8cfa197d4f067"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/source/vitest.config.ts",
+      "path": "fine-candidate/repair-2/source/vitest.config.ts",
+      "bytes": 1193,
+      "sha256": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/types.log",
+      "path": "fine-candidate/repair-2/types.log",
+      "bytes": 61,
+      "sha256": "2f1b4dedb42090c48feda0eae5f37bbf0a80f9dac71374c804614db8f696de70"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/unit.json",
+      "path": "fine-candidate/repair-2/unit.json",
+      "bytes": 12334,
+      "sha256": "1fa79ac8036c405ef3c6b49066d0a5940f5dfa3b4c194bd6670dc469d2533a9e"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/unit.log",
+      "path": "fine-candidate/repair-2/unit.log",
+      "bytes": 120,
+      "sha256": "dc11d5cc5504b364179fa31c1e57ca4eeb88b052e95a62a4e6e3aabe65c9e0a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/verification.json",
+      "path": "fine-candidate/repair-2/verification.json",
+      "bytes": 2121,
+      "sha256": "57730dce8e775e61249f39a599eb13e04e9770f3779823af844a14ad1af75828"
+    },
+    {
+      "source": ".autopilot/ph06/natural-ranges-staging/checks/repair-2/writer-measurements.json",
+      "path": "fine-candidate/repair-2/writer-measurements.json",
+      "bytes": 1918,
+      "sha256": "c06004d84ca2ecccb4f5957d981bee9928480dbaa5a16c30b90dd6b4a67007ab"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/after.json",
+      "path": "gpu/gpu-first/after.json",
+      "bytes": 58884,
+      "sha256": "160a5606e2f51552fd48454ffde4dc766bfd8333828d48931008f37e8329dcfe"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/before.json",
+      "path": "gpu/gpu-first/before.json",
+      "bytes": 59472,
+      "sha256": "c4b10579e0de84b211f486c31bd0cef251cf44f740641c584472e9af59c3c495"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/gpu-harness.html",
+      "path": "gpu/gpu-first/gpu-harness.html",
+      "bytes": 220,
+      "sha256": "622fdddf725bf379ee4772481d1492fcc3ae5dae9d6fca7c62cb86deb73752e4"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/gpu-harness.png",
+      "path": "gpu/gpu-first/gpu-harness.png",
+      "bytes": 6433,
+      "sha256": "82d8f7cb7a82f6bcc6a47e0f2352ab9899b2362ef9f65a0c9808c13f0e6399a3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/gpu-harness.ts",
+      "path": "gpu/gpu-first/gpu-harness.ts",
+      "bytes": 15154,
+      "sha256": "f132467f88d789f4ed69564e44ba82768c586f271fad8cd29e874fbffcac1394"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/gpu.mjs",
+      "path": "gpu/gpu-first/gpu.mjs",
+      "bytes": 3829,
+      "sha256": "5009a10fb8fb453cd81afdac7fdef0d2356691ed84bb92a69600c93498d90dc0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/gpu.raw.json",
+      "path": "gpu/gpu-first/gpu.raw.json",
+      "bytes": 196499,
+      "sha256": "a14afd2a94ea252bdeb02e131a7ba4111c5b70df476ae997c2b11e5c86cf2589"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-first/verification.json",
+      "path": "gpu/gpu-first/verification.json",
+      "bytes": 503,
+      "sha256": "3fb84ecc7152e51761b38e7a3d0c7ae48241b782a9576ad25dba10b34b5acfeb"
+    },
+    {
+      "source": ".autopilot/ph06/demo21-before-ocean.png",
+      "path": "observations/demo21-before-ocean.png",
+      "bytes": 27200,
+      "sha256": "dda5c0c1eb70b489b605bb325041e4afab7311c1eddace3ce8aef0b34dd6e8e7"
+    },
+    {
+      "source": ".autopilot/ph06/demo21.json",
+      "path": "observations/demo21.json",
+      "bytes": 2813,
+      "sha256": "ff9356c06c4af5cbaa47ac959ba9d5ab1398def44cc7f5566cd407284f3df02d"
+    },
+    {
+      "source": ".autopilot/ph06/demo22-after-ocean.json",
+      "path": "observations/demo22-after-ocean.json",
+      "bytes": 1140,
+      "sha256": "7111fcaea7db41240d66f48f13d58970b3d1a78af50e933ea99eb81884ce56ba"
+    },
+    {
+      "source": ".autopilot/ph06/demo22-after-ocean.png",
+      "path": "observations/demo22-after-ocean.png",
+      "bytes": 26764,
+      "sha256": "dbb11431832c2901446c50abc4e8971bb3fe13f5dbda49ccd8876e73ecac0a61"
+    },
+    {
+      "source": ".autopilot/ph06/demo22-full.png",
+      "path": "observations/demo22-full.png",
+      "bytes": 26985,
+      "sha256": "8f7fc381a0d68542ca67592f2d6ff224ca69da31a711a7ce6539ceb1ed30bf20"
+    },
+    {
+      "source": ".autopilot/ph06/demo22-mid.png",
+      "path": "observations/demo22-mid.png",
+      "bytes": 25016,
+      "sha256": "38ead042ac0bbcb57c4a9241851c3e1b6f0b7e35c7a3b3cbed63211ed99548b9"
+    },
+    {
+      "source": ".autopilot/ph06/demo22-ridge.png",
+      "path": "observations/demo22-ridge.png",
+      "bytes": 26207,
+      "sha256": "f5814df46900083093f2487537856b6a9d1ad5362a38580600ef0afd17e442f6"
+    },
+    {
+      "source": ".autopilot/ph06/demo22.json",
+      "path": "observations/demo22.json",
+      "bytes": 3393,
+      "sha256": "d1a926073d3ce08e42d7413ed44bec989f522e4e191764a92b7a35551ea97ea3"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-next.md",
+      "path": "recording/ocean-material-next.md",
+      "bytes": 15045,
+      "sha256": "2492c76bd8a253420736656efe0f3fa107683a0dcbb2d59255c32ef002334ead"
+    },
+    {
+      "source": ".autopilot/ph06/prepare-natural-range-sea-archive.mjs",
+      "path": "recording/prepare-natural-range-sea-archive.mjs",
+      "bytes": 38561,
+      "sha256": "aa6c9da160afc0b223778132e846af6b6fb35768d195cf0cbd83c40526d2ad4a"
+    },
+    {
+      "source": ".autopilot/ph06/prepare-natural-range-sea-checks.mjs",
+      "path": "recording/prepare-natural-range-sea-checks.mjs",
+      "bytes": 3188,
+      "sha256": "680a05ec5c4e51fdd709beeb66e4e8fdfe9ebf0fe8174a39a481eaa75424b7fb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/engine-fingerprint.mjs",
+      "path": "sea-candidate/first/engine-fingerprint.mjs",
+      "bytes": 3431,
+      "sha256": "c5b055de1732c63b854b433fa9e4a90b7c69729df44b26faef3b03875d7b720b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/generator-fingerprint.mjs",
+      "path": "sea-candidate/first/generator-fingerprint.mjs",
+      "bytes": 4838,
+      "sha256": "5c88592295d9fbe43812944ae4b993f5d142b920c7fdcce587491d239e4ab6fc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/identity-after.json",
+      "path": "sea-candidate/first/identity-after.json",
+      "bytes": 36517,
+      "sha256": "b187a78556f937255d149da54994017ffc73363638df758d85728dc825917152"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/identity-before.json",
+      "path": "sea-candidate/first/identity-before.json",
+      "bytes": 36517,
+      "sha256": "b187a78556f937255d149da54994017ffc73363638df758d85728dc825917152"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/lint.log",
+      "path": "sea-candidate/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/package-lock.json",
+      "path": "sea-candidate/first/production-sources/package-lock.json",
+      "bytes": 140963,
+      "sha256": "41ff987198e9d38ae04ecfe496627521280a86bb0d6d71872d34b6340ab40222"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/package.json",
+      "path": "sea-candidate/first/production-sources/package.json",
+      "bytes": 1720,
+      "sha256": "b58f72558ed9b3779316aba074ba0991e418a63b1e752ba33f36fd7be4f2b03e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/scripts/engine-fingerprint.ts",
+      "path": "sea-candidate/first/production-sources/scripts/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/scripts/generator-fingerprint.ts",
+      "path": "sea-candidate/first/production-sources/scripts/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/history/core.ts",
+      "path": "sea-candidate/first/production-sources/src/history/core.ts",
+      "bytes": 13976,
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/history/types.ts",
+      "path": "sea-candidate/first/production-sources/src/history/types.ts",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/sim/core.ts",
+      "path": "sea-candidate/first/production-sources/src/sim/core.ts",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/sim/statecraft.ts",
+      "path": "sea-candidate/first/production-sources/src/sim/statecraft.ts",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/sim/types.ts",
+      "path": "sea-candidate/first/production-sources/src/sim/types.ts",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/atlas-format.ts",
+      "path": "sea-candidate/first/production-sources/src/world/atlas-format.ts",
+      "bytes": 8219,
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/atlas-label-layer.ts",
+      "path": "sea-candidate/first/production-sources/src/world/atlas-label-layer.ts",
+      "bytes": 10913,
+      "sha256": "7320927e89a5c4520f62c5d9ad80a6dd959d8ebeb56d5c99a8e6d513f9396ffc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "path": "sea-candidate/first/production-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "bytes": 8744,
+      "sha256": "82861ce43bf4574e1b3aff77c7a5ff3d7f4f37d38661ec56e5985def635494d5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/atlas-texture-cache.ts",
+      "path": "sea-candidate/first/production-sources/src/world/atlas-texture-cache.ts",
+      "bytes": 11398,
+      "sha256": "00906ca7c8de80a9b825cfaedc2ea275954ccd5713676d74e790c33b2200abd8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/camera.ts",
+      "path": "sea-candidate/first/production-sources/src/world/camera.ts",
+      "bytes": 4917,
+      "sha256": "ff2b58f223bef0ac30c10fc2d646a76d051d45947fd5d09c574a547d6ad8fe38"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/coastal-generation.ts",
+      "path": "sea-candidate/first/production-sources/src/world/coastal-generation.ts",
+      "bytes": 8132,
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/coastal-surface.ts",
+      "path": "sea-candidate/first/production-sources/src/world/coastal-surface.ts",
+      "bytes": 13494,
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-base.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-base.ts",
+      "bytes": 1110,
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-codec.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-codec.ts",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-field.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-field.ts",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-geometry.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-geometry.ts",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-locks.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-locks.ts",
+      "bytes": 9809,
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-coast-types.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-coast-types.ts",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-backend.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-backend.test.ts",
+      "bytes": 9265,
+      "sha256": "f0326a878112ba0b9c80190bf22488381f44dc16a62d52ee7cf07ad1d8fda0e1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-backend.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-backend.ts",
+      "bytes": 12346,
+      "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-light.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-light.test.ts",
+      "bytes": 8749,
+      "sha256": "5c7af39398d381926b9278ddc471443138e351e56242d893d635b404c74fc1d7"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-pages.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-pages.test.ts",
+      "bytes": 6684,
+      "sha256": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-pages.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-pages.ts",
+      "bytes": 7227,
+      "sha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-shader.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-shader.test.ts",
+      "bytes": 8168,
+      "sha256": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/detail-terrain-shader.ts",
+      "path": "sea-candidate/first/production-sources/src/world/detail-terrain-shader.ts",
+      "bytes": 23992,
+      "sha256": "6dc8017930eac3fcbac210e5c025538a36c53b32878b594ef43f43b3a63209cb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation-contract.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation-contract.ts",
+      "bytes": 34413,
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation-format.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation-format.ts",
+      "bytes": 12978,
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation-history.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation-history.ts",
+      "bytes": 16674,
+      "sha256": "82b278ff4aaa06b4105749d7318a9905c15c30034222fd08584607abe0f1b0be"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation-locks.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation-locks.ts",
+      "bytes": 16953,
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/coast.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/coast.ts",
+      "bytes": 16967,
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-curved-ridge.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-curved-ridge.ts",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-local-background.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-local-background.ts",
+      "bytes": 8795,
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-local-relief.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-local-relief.ts",
+      "bytes": 28182,
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-natural-outline.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-natural-outline.ts",
+      "bytes": 33219,
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-natural-relief.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17402,
+      "sha256": "83cf27c58cd38bbfbe01e7c2487416cc219b21366d07895302b0b7fc72c5851a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-orography.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-orography.ts",
+      "bytes": 24085,
+      "sha256": "191ce20cc291361b868e48fe920cc3fee7d86b6bdf234dd07d37c82b65b00c85"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-adapter.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-adapter.ts",
+      "bytes": 7449,
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-add-adapter.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-add-adapter.ts",
+      "bytes": 7553,
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-add.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-add.ts",
+      "bytes": 21310,
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-distance.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-distance.ts",
+      "bytes": 17258,
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-height.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-height.ts",
+      "bytes": 2672,
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-natural-adapter.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-natural-adapter.ts",
+      "bytes": 8133,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "bytes": 7705,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-natural-add.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-natural-add.ts",
+      "bytes": 21608,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape-natural.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape-natural.ts",
+      "bytes": 31682,
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/detail-shape.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/detail-shape.ts",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/fingerprint.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/fingerprint.ts",
+      "bytes": 1159,
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/islands.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/islands.ts",
+      "bytes": 20467,
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/landforms.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/landforms.ts",
+      "bytes": 19225,
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/local-detail-relief-adapter.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/local-detail-relief-adapter.ts",
+      "bytes": 6694,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/macro.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/macro.ts",
+      "bytes": 19697,
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/natural-ocean-base.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/natural-ocean-base.ts",
+      "bytes": 4244,
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/ocean.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/ocean.ts",
+      "bytes": 13207,
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/quality.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/quality.ts",
+      "bytes": 7319,
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/seed.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/generation/shape.ts",
+      "path": "sea-candidate/first/production-sources/src/world/generation/shape.ts",
+      "bytes": 13546,
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/hydrology-kernel.ts",
+      "path": "sea-candidate/first/production-sources/src/world/hydrology-kernel.ts",
+      "bytes": 16087,
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/hydrology-snapshot.ts",
+      "path": "sea-candidate/first/production-sources/src/world/hydrology-snapshot.ts",
+      "bytes": 7849,
+      "sha256": "4714df66da76e24bb3b503397b10946e8dad6c79d0e417d466ab1c8a5d3d63fa"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/hydrology-trace.ts",
+      "path": "sea-candidate/first/production-sources/src/world/hydrology-trace.ts",
+      "bytes": 11750,
+      "sha256": "58876cd98fec8a4f6a164329617725ae9ac317da5bfa0fb0cf96e66ef583dff3"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/lod.ts",
+      "path": "sea-candidate/first/production-sources/src/world/lod.ts",
+      "bytes": 12445,
+      "sha256": "1320c0e2eae539b2cf8251b67701eb449bf2a3a57016bc272f17eb3c17deb2b8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/model.ts",
+      "path": "sea-candidate/first/production-sources/src/world/model.ts",
+      "bytes": 27883,
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/render-density.ts",
+      "path": "sea-candidate/first/production-sources/src/world/render-density.ts",
+      "bytes": 4349,
+      "sha256": "203e87210b0dd0b6d867370bc9a8d0cd0e807bac934e260a60045a5e4370f7d0"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/renderer-detail-reuse.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/renderer-detail-reuse.test.ts",
+      "bytes": 19449,
+      "sha256": "d2b677d6caadd720c31298bf2fd08d8e8bcfa4a34484e052a885a983a635d05c"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/renderer.test.ts",
+      "path": "sea-candidate/first/production-sources/src/world/renderer.test.ts",
+      "bytes": 86673,
+      "sha256": "6a15e60c0b2c746c6df2af90d5f0b62a9037629c29a86f8ae45f742694db5b55"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/renderer.ts",
+      "path": "sea-candidate/first/production-sources/src/world/renderer.ts",
+      "bytes": 70873,
+      "sha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/spatial-index.ts",
+      "path": "sea-candidate/first/production-sources/src/world/spatial-index.ts",
+      "bytes": 15660,
+      "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/terrain-material.ts",
+      "path": "sea-candidate/first/production-sources/src/world/terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/terrain-mesh.ts",
+      "path": "sea-candidate/first/production-sources/src/world/terrain-mesh.ts",
+      "bytes": 4817,
+      "sha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/terrain-surface.ts",
+      "path": "sea-candidate/first/production-sources/src/world/terrain-surface.ts",
+      "bytes": 9045,
+      "sha256": "8554a9721e51a155f575f8121ecef451652a9ecdc6842f73a07a2113d960e053"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/topology.ts",
+      "path": "sea-candidate/first/production-sources/src/world/topology.ts",
+      "bytes": 9633,
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/src/world/transactions.ts",
+      "path": "sea-candidate/first/production-sources/src/world/transactions.ts",
+      "bytes": 41601,
+      "sha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/tsconfig.json",
+      "path": "sea-candidate/first/production-sources/tsconfig.json",
+      "bytes": 417,
+      "sha256": "eea9bb82bd3abcc9597674179cfa2e71b4ff1f3ae1af396c24d49d79ae3aee16"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/production-sources/vite.config.ts",
+      "path": "sea-candidate/first/production-sources/vite.config.ts",
+      "bytes": 4061,
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/scope.json",
+      "path": "sea-candidate/first/scope.json",
+      "bytes": 803,
+      "sha256": "18e75c36464466bc9e720b9bad1becdf74f50ebb1201f8032b853aed212097e1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/source-after.json",
+      "path": "sea-candidate/first/source-after.json",
+      "bytes": 4219,
+      "sha256": "01996d994ff8aa4a76eaba6901085a590d2b1d571796c2d0ce9b05ab9ff048c1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/source-before.json",
+      "path": "sea-candidate/first/source-before.json",
+      "bytes": 4219,
+      "sha256": "01996d994ff8aa4a76eaba6901085a590d2b1d571796c2d0ce9b05ab9ff048c1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/baseline/preview21-renderer.ts",
+      "path": "sea-candidate/first/staged-sources/baseline/preview21-renderer.ts",
+      "bytes": 70873,
+      "sha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/baseline/preview21-terrain-material.ts",
+      "path": "sea-candidate/first/staged-sources/baseline/preview21-terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/baseline/preview21-terrain-mesh.ts",
+      "path": "sea-candidate/first/staged-sources/baseline/preview21-terrain-mesh.ts",
+      "bytes": 4817,
+      "sha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/check.mjs",
+      "path": "sea-candidate/first/staged-sources/check.mjs",
+      "bytes": 6980,
+      "sha256": "1bc3a40dfc1e6dd286cd42d46085308079fd0227e25ca5aaa7ced1844cbe97d7"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/prepare.mjs",
+      "path": "sea-candidate/first/staged-sources/prepare.mjs",
+      "bytes": 4102,
+      "sha256": "85e7801ef3e0b525158668d9848785377e767da1eee4344a22edb2e637beae80"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/README.md",
+      "path": "sea-candidate/first/staged-sources/README.md",
+      "bytes": 3144,
+      "sha256": "6998b153706c0f9abd93a84aa7777b0849ba759a5ed43206c4c0785215641949"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/ready-manifest.json",
+      "path": "sea-candidate/first/staged-sources/ready-manifest.json",
+      "bytes": 8612,
+      "sha256": "eb3b4f470bede689bb902b8ce462743731794cd18ace221a54de5c348d6b932e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/ocean-material-cache.test.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/ocean-material-cache.test.ts",
+      "bytes": 3700,
+      "sha256": "e14f4d5a8bd5f1bf49e67252302a8cd930d5dd074edec03279fabebd822c38e0"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/ocean-material.test.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/ocean-material.test.ts",
+      "bytes": 5229,
+      "sha256": "e370d4259fc70d7936f9d8d8cd2e2adece17ebdf4bb05d8910ed17d04545bff5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/renderer.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/renderer.ts",
+      "bytes": 71043,
+      "sha256": "46a2427d5dc00e29f8c4e5f6f92a9608b028fc2f56d8e6a77da63d2a0f7d5e67"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/terrain-material.test.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/terrain-material.test.ts",
+      "bytes": 1722,
+      "sha256": "42362d08ad3415480bf3c7fc3a2468ebe36f46e36f8c01cc0399da7d4d1c561b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/terrain-material.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/terrain-material.ts",
+      "bytes": 2819,
+      "sha256": "b7ea46ff6465cf029b97032e0b4735fc8faaf1c66df471a57f61131fbf76e874"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/terrain-mesh.test.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/terrain-mesh.test.ts",
+      "bytes": 4860,
+      "sha256": "c3cb0c5784c979861017ac0f26a5002254fe9217308281d1ed56036aa38c98a2"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/src/world/terrain-mesh.ts",
+      "path": "sea-candidate/first/staged-sources/src/world/terrain-mesh.ts",
+      "bytes": 4778,
+      "sha256": "6d8d24f22ec331870d5884a864b38701360f60284910cbcad44b2595825e3b0e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/tsconfig.json",
+      "path": "sea-candidate/first/staged-sources/tsconfig.json",
+      "bytes": 114,
+      "sha256": "d23557c561d9992e998a5ea83ee5038671baae20cec07fdea5ed24f46961fe22"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/staged-sources/vitest.config.ts",
+      "path": "sea-candidate/first/staged-sources/vitest.config.ts",
+      "bytes": 1842,
+      "sha256": "8639de3e60f3c371c7f6917b9d8c0aaae7eabe661f77bf8dcb1aef1f39bd5c29"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/tools/engine-fingerprint.ts",
+      "path": "sea-candidate/first/tools/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/tools/generator-fingerprint.ts",
+      "path": "sea-candidate/first/tools/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/types.log",
+      "path": "sea-candidate/first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/unit.json",
+      "path": "sea-candidate/first/unit.json",
+      "bytes": 62006,
+      "sha256": "a582802551753fd07c5d2711605fafc7ad1b10bcecb4a5732b75db175308f320"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/unit.log",
+      "path": "sea-candidate/first/unit.log",
+      "bytes": 12721,
+      "sha256": "7fd04ba5352288b491ab374f2f208f0eec267d9f6929549a14ac347e85606f41"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/first/verification.json",
+      "path": "sea-candidate/first/verification.json",
+      "bytes": 4698,
+      "sha256": "973b4ba698eb6faf8378ebe25a54462e160c0eab34018bdc54e151700b517577"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/baseline/preview21-terrain-material.ts",
+      "path": "sea-candidate/ready/baseline/preview21-terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/check.mjs",
+      "path": "sea-candidate/ready/check.mjs",
+      "bytes": 6980,
+      "sha256": "1bc3a40dfc1e6dd286cd42d46085308079fd0227e25ca5aaa7ced1844cbe97d7"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/finalize.mjs",
+      "path": "sea-candidate/ready/finalize.mjs",
+      "bytes": 5329,
+      "sha256": "cf87339dfd36738adb22417e4b5732714e973ef57ec30d4f9cb52dc57ad6e567"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/prepare.mjs",
+      "path": "sea-candidate/ready/prepare.mjs",
+      "bytes": 4110,
+      "sha256": "fc776f102e15e459e7031ae938485d1a8fc67fc19bd712580f284f41df88eb8f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/promote.mjs",
+      "path": "sea-candidate/ready/promote.mjs",
+      "bytes": 3276,
+      "sha256": "8c0a78acd8767ba36588b7ff19377b7997cebd21001d88f2dfe32fcb4e09b549"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/README.md",
+      "path": "sea-candidate/ready/README.md",
+      "bytes": 4906,
+      "sha256": "a29b8fdbdd667fff49f288d93499d49a008353c9b57002dbacd00e864d23303e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/ready-manifest.json",
+      "path": "sea-candidate/ready/ready-manifest.json",
+      "bytes": 29029,
+      "sha256": "3a173fece66d89ddfc5c3250d1701bdf642a713cd1cbfedea738a3e42f9f8a8c"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/ocean-material-cache.test.ts",
+      "path": "sea-candidate/ready/src/world/ocean-material-cache.test.ts",
+      "bytes": 3700,
+      "sha256": "e14f4d5a8bd5f1bf49e67252302a8cd930d5dd074edec03279fabebd822c38e0"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/ocean-material.test.ts",
+      "path": "sea-candidate/ready/src/world/ocean-material.test.ts",
+      "bytes": 5229,
+      "sha256": "e370d4259fc70d7936f9d8d8cd2e2adece17ebdf4bb05d8910ed17d04545bff5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/renderer.test.ts",
+      "path": "sea-candidate/ready/src/world/renderer.test.ts",
+      "bytes": 86673,
+      "sha256": "ad71d8576281fb866801021354d835c564cab59f0d2cf2045a2528e350a4708f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/renderer.ts",
+      "path": "sea-candidate/ready/src/world/renderer.ts",
+      "bytes": 71043,
+      "sha256": "46a2427d5dc00e29f8c4e5f6f92a9608b028fc2f56d8e6a77da63d2a0f7d5e67"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/terrain-material.test.ts",
+      "path": "sea-candidate/ready/src/world/terrain-material.test.ts",
+      "bytes": 1722,
+      "sha256": "42362d08ad3415480bf3c7fc3a2468ebe36f46e36f8c01cc0399da7d4d1c561b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/terrain-material.ts",
+      "path": "sea-candidate/ready/src/world/terrain-material.ts",
+      "bytes": 3594,
+      "sha256": "0ffdd75812f0fabdd158761a215ac1083885ca0c33f8247c84a8915bdc3c0047"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/terrain-mesh.test.ts",
+      "path": "sea-candidate/ready/src/world/terrain-mesh.test.ts",
+      "bytes": 4860,
+      "sha256": "c3cb0c5784c979861017ac0f26a5002254fe9217308281d1ed56036aa38c98a2"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/src/world/terrain-mesh.ts",
+      "path": "sea-candidate/ready/src/world/terrain-mesh.ts",
+      "bytes": 4778,
+      "sha256": "6d8d24f22ec331870d5884a864b38701360f60284910cbcad44b2595825e3b0e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/tsconfig.json",
+      "path": "sea-candidate/ready/tsconfig.json",
+      "bytes": 114,
+      "sha256": "d23557c561d9992e998a5ea83ee5038671baae20cec07fdea5ed24f46961fe22"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/vitest.config.ts",
+      "path": "sea-candidate/ready/vitest.config.ts",
+      "bytes": 1850,
+      "sha256": "80d51ed7226c853a5c585acb32204d570c295129c1b2d55db9fd218375c11005"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/engine-fingerprint.mjs",
+      "path": "sea-candidate/repair-1/engine-fingerprint.mjs",
+      "bytes": 3431,
+      "sha256": "c5b055de1732c63b854b433fa9e4a90b7c69729df44b26faef3b03875d7b720b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/generator-fingerprint.mjs",
+      "path": "sea-candidate/repair-1/generator-fingerprint.mjs",
+      "bytes": 4838,
+      "sha256": "5c88592295d9fbe43812944ae4b993f5d142b920c7fdcce587491d239e4ab6fc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/identity-after.json",
+      "path": "sea-candidate/repair-1/identity-after.json",
+      "bytes": 36377,
+      "sha256": "da554ec485458a44efb53e1f59eb36af6d2179a99d6b7353807685b150f8ef56"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/identity-before.json",
+      "path": "sea-candidate/repair-1/identity-before.json",
+      "bytes": 36377,
+      "sha256": "da554ec485458a44efb53e1f59eb36af6d2179a99d6b7353807685b150f8ef56"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/lint.log",
+      "path": "sea-candidate/repair-1/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/package-lock.json",
+      "path": "sea-candidate/repair-1/production-sources/package-lock.json",
+      "bytes": 140963,
+      "sha256": "41ff987198e9d38ae04ecfe496627521280a86bb0d6d71872d34b6340ab40222"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/package.json",
+      "path": "sea-candidate/repair-1/production-sources/package.json",
+      "bytes": 1720,
+      "sha256": "b58f72558ed9b3779316aba074ba0991e418a63b1e752ba33f36fd7be4f2b03e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/scripts/engine-fingerprint.ts",
+      "path": "sea-candidate/repair-1/production-sources/scripts/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/scripts/generator-fingerprint.ts",
+      "path": "sea-candidate/repair-1/production-sources/scripts/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/history/core.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/history/core.ts",
+      "bytes": 13976,
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/history/types.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/history/types.ts",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/sim/core.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/sim/core.ts",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/sim/statecraft.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/sim/statecraft.ts",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/sim/types.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/sim/types.ts",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/atlas-format.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/atlas-format.ts",
+      "bytes": 8219,
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/atlas-label-layer.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/atlas-label-layer.ts",
+      "bytes": 10913,
+      "sha256": "7320927e89a5c4520f62c5d9ad80a6dd959d8ebeb56d5c99a8e6d513f9396ffc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/atlas-terrain-geometry-cache.ts",
+      "bytes": 8744,
+      "sha256": "82861ce43bf4574e1b3aff77c7a5ff3d7f4f37d38661ec56e5985def635494d5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/atlas-texture-cache.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/atlas-texture-cache.ts",
+      "bytes": 11398,
+      "sha256": "00906ca7c8de80a9b825cfaedc2ea275954ccd5713676d74e790c33b2200abd8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/camera.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/camera.ts",
+      "bytes": 4917,
+      "sha256": "ff2b58f223bef0ac30c10fc2d646a76d051d45947fd5d09c574a547d6ad8fe38"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/coastal-generation.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/coastal-generation.ts",
+      "bytes": 8132,
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/coastal-surface.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/coastal-surface.ts",
+      "bytes": 13494,
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-base.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-base.ts",
+      "bytes": 1110,
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-codec.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-codec.ts",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-field.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-field.ts",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-geometry.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-geometry.ts",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-locks.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-locks.ts",
+      "bytes": 9809,
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-coast-types.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-coast-types.ts",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-backend.test.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-backend.test.ts",
+      "bytes": 9265,
+      "sha256": "f0326a878112ba0b9c80190bf22488381f44dc16a62d52ee7cf07ad1d8fda0e1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-backend.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-backend.ts",
+      "bytes": 12346,
+      "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-light.test.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-light.test.ts",
+      "bytes": 8749,
+      "sha256": "5c7af39398d381926b9278ddc471443138e351e56242d893d635b404c74fc1d7"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-pages.test.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-pages.test.ts",
+      "bytes": 6684,
+      "sha256": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-pages.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-pages.ts",
+      "bytes": 7227,
+      "sha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-shader.test.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-shader.test.ts",
+      "bytes": 8168,
+      "sha256": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/detail-terrain-shader.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/detail-terrain-shader.ts",
+      "bytes": 23992,
+      "sha256": "6dc8017930eac3fcbac210e5c025538a36c53b32878b594ef43f43b3a63209cb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation-contract.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation-contract.ts",
+      "bytes": 34413,
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation-format.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation-format.ts",
+      "bytes": 12978,
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation-history.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation-history.ts",
+      "bytes": 16674,
+      "sha256": "82b278ff4aaa06b4105749d7318a9905c15c30034222fd08584607abe0f1b0be"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation-locks.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation-locks.ts",
+      "bytes": 16953,
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/coast.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/coast.ts",
+      "bytes": 16967,
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-curved-ridge.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-curved-ridge.ts",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-local-background.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-local-background.ts",
+      "bytes": 8795,
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-local-relief.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-local-relief.ts",
+      "bytes": 28182,
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-natural-outline.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-natural-outline.ts",
+      "bytes": 33219,
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-natural-relief.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17402,
+      "sha256": "83cf27c58cd38bbfbe01e7c2487416cc219b21366d07895302b0b7fc72c5851a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-orography.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-orography.ts",
+      "bytes": 24085,
+      "sha256": "191ce20cc291361b868e48fe920cc3fee7d86b6bdf234dd07d37c82b65b00c85"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-adapter.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-adapter.ts",
+      "bytes": 7449,
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-add-adapter.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-add-adapter.ts",
+      "bytes": 7553,
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-add.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-add.ts",
+      "bytes": 21310,
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-distance.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-distance.ts",
+      "bytes": 17258,
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-height.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-height.ts",
+      "bytes": 2672,
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-natural-adapter.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-natural-adapter.ts",
+      "bytes": 8133,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "bytes": 7705,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-natural-add.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-natural-add.ts",
+      "bytes": 21608,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape-natural.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape-natural.ts",
+      "bytes": 31682,
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/detail-shape.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/detail-shape.ts",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/fingerprint.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/fingerprint.ts",
+      "bytes": 1159,
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/islands.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/islands.ts",
+      "bytes": 20467,
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/landforms.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/landforms.ts",
+      "bytes": 19225,
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/local-detail-relief-adapter.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/local-detail-relief-adapter.ts",
+      "bytes": 6694,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/macro.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/macro.ts",
+      "bytes": 19697,
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/natural-ocean-base.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/natural-ocean-base.ts",
+      "bytes": 4244,
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/ocean.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/ocean.ts",
+      "bytes": 13207,
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/quality.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/quality.ts",
+      "bytes": 7319,
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/seed.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/generation/shape.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/generation/shape.ts",
+      "bytes": 13546,
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/hydrology-kernel.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/hydrology-kernel.ts",
+      "bytes": 16087,
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/hydrology-snapshot.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/hydrology-snapshot.ts",
+      "bytes": 7849,
+      "sha256": "4714df66da76e24bb3b503397b10946e8dad6c79d0e417d466ab1c8a5d3d63fa"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/hydrology-trace.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/hydrology-trace.ts",
+      "bytes": 11750,
+      "sha256": "58876cd98fec8a4f6a164329617725ae9ac317da5bfa0fb0cf96e66ef583dff3"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/lod.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/lod.ts",
+      "bytes": 12445,
+      "sha256": "1320c0e2eae539b2cf8251b67701eb449bf2a3a57016bc272f17eb3c17deb2b8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/model.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/model.ts",
+      "bytes": 27883,
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/render-density.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/render-density.ts",
+      "bytes": 4349,
+      "sha256": "203e87210b0dd0b6d867370bc9a8d0cd0e807bac934e260a60045a5e4370f7d0"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/renderer-detail-reuse.test.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/renderer-detail-reuse.test.ts",
+      "bytes": 19449,
+      "sha256": "d2b677d6caadd720c31298bf2fd08d8e8bcfa4a34484e052a885a983a635d05c"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/renderer.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/renderer.ts",
+      "bytes": 70873,
+      "sha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/spatial-index.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/spatial-index.ts",
+      "bytes": 15660,
+      "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/terrain-material.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/terrain-mesh.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/terrain-mesh.ts",
+      "bytes": 4817,
+      "sha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/terrain-surface.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/terrain-surface.ts",
+      "bytes": 9045,
+      "sha256": "8554a9721e51a155f575f8121ecef451652a9ecdc6842f73a07a2113d960e053"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/topology.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/topology.ts",
+      "bytes": 9633,
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/src/world/transactions.ts",
+      "path": "sea-candidate/repair-1/production-sources/src/world/transactions.ts",
+      "bytes": 41601,
+      "sha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/tsconfig.json",
+      "path": "sea-candidate/repair-1/production-sources/tsconfig.json",
+      "bytes": 417,
+      "sha256": "eea9bb82bd3abcc9597674179cfa2e71b4ff1f3ae1af396c24d49d79ae3aee16"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/production-sources/vite.config.ts",
+      "path": "sea-candidate/repair-1/production-sources/vite.config.ts",
+      "bytes": 4061,
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/scope.json",
+      "path": "sea-candidate/repair-1/scope.json",
+      "bytes": 847,
+      "sha256": "1331bf6159559fb4691ffb5b328e463d32c156aca5bcf4eb77bcfbe1002b307d"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/source-after.json",
+      "path": "sea-candidate/repair-1/source-after.json",
+      "bytes": 4351,
+      "sha256": "30a0372f20ce6793fedc77e639187f9e07f3c2aeef067df656fef5f6b59592df"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/source-before.json",
+      "path": "sea-candidate/repair-1/source-before.json",
+      "bytes": 4351,
+      "sha256": "30a0372f20ce6793fedc77e639187f9e07f3c2aeef067df656fef5f6b59592df"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/baseline/preview21-renderer.ts",
+      "path": "sea-candidate/repair-1/staged-sources/baseline/preview21-renderer.ts",
+      "bytes": 70873,
+      "sha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/baseline/preview21-terrain-material.ts",
+      "path": "sea-candidate/repair-1/staged-sources/baseline/preview21-terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/baseline/preview21-terrain-mesh.ts",
+      "path": "sea-candidate/repair-1/staged-sources/baseline/preview21-terrain-mesh.ts",
+      "bytes": 4817,
+      "sha256": "a58f5d37bf0c016b745d74c4bdda5e4ff30c3f889574d20323d464ff8a2cc5dc"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/check.mjs",
+      "path": "sea-candidate/repair-1/staged-sources/check.mjs",
+      "bytes": 6980,
+      "sha256": "1bc3a40dfc1e6dd286cd42d46085308079fd0227e25ca5aaa7ced1844cbe97d7"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/prepare.mjs",
+      "path": "sea-candidate/repair-1/staged-sources/prepare.mjs",
+      "bytes": 4110,
+      "sha256": "fc776f102e15e459e7031ae938485d1a8fc67fc19bd712580f284f41df88eb8f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/README.md",
+      "path": "sea-candidate/repair-1/staged-sources/README.md",
+      "bytes": 3934,
+      "sha256": "a00a377805fe81481ef577e2158294d79d15fd4898e8580015a3daab62efb78b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/ready-manifest.json",
+      "path": "sea-candidate/repair-1/staged-sources/ready-manifest.json",
+      "bytes": 8877,
+      "sha256": "a5154f12f374f04f11f62f351adb5750f4b4a785cc42f84b4e45f3b2e35efeeb"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/ocean-material-cache.test.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/ocean-material-cache.test.ts",
+      "bytes": 3700,
+      "sha256": "e14f4d5a8bd5f1bf49e67252302a8cd930d5dd074edec03279fabebd822c38e0"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/ocean-material.test.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/ocean-material.test.ts",
+      "bytes": 5229,
+      "sha256": "e370d4259fc70d7936f9d8d8cd2e2adece17ebdf4bb05d8910ed17d04545bff5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/renderer.test.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/renderer.test.ts",
+      "bytes": 86673,
+      "sha256": "ad71d8576281fb866801021354d835c564cab59f0d2cf2045a2528e350a4708f"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/renderer.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/renderer.ts",
+      "bytes": 71043,
+      "sha256": "46a2427d5dc00e29f8c4e5f6f92a9608b028fc2f56d8e6a77da63d2a0f7d5e67"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/terrain-material.test.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/terrain-material.test.ts",
+      "bytes": 1722,
+      "sha256": "42362d08ad3415480bf3c7fc3a2468ebe36f46e36f8c01cc0399da7d4d1c561b"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/terrain-material.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/terrain-material.ts",
+      "bytes": 3594,
+      "sha256": "0ffdd75812f0fabdd158761a215ac1083885ca0c33f8247c84a8915bdc3c0047"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/terrain-mesh.test.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/terrain-mesh.test.ts",
+      "bytes": 4860,
+      "sha256": "c3cb0c5784c979861017ac0f26a5002254fe9217308281d1ed56036aa38c98a2"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/src/world/terrain-mesh.ts",
+      "path": "sea-candidate/repair-1/staged-sources/src/world/terrain-mesh.ts",
+      "bytes": 4778,
+      "sha256": "6d8d24f22ec331870d5884a864b38701360f60284910cbcad44b2595825e3b0e"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/tsconfig.json",
+      "path": "sea-candidate/repair-1/staged-sources/tsconfig.json",
+      "bytes": 114,
+      "sha256": "d23557c561d9992e998a5ea83ee5038671baae20cec07fdea5ed24f46961fe22"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/staged-sources/vitest.config.ts",
+      "path": "sea-candidate/repair-1/staged-sources/vitest.config.ts",
+      "bytes": 1850,
+      "sha256": "80d51ed7226c853a5c585acb32204d570c295129c1b2d55db9fd218375c11005"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/tools/engine-fingerprint.ts",
+      "path": "sea-candidate/repair-1/tools/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/tools/generator-fingerprint.ts",
+      "path": "sea-candidate/repair-1/tools/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/types.log",
+      "path": "sea-candidate/repair-1/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/unit.json",
+      "path": "sea-candidate/repair-1/unit.json",
+      "bytes": 60326,
+      "sha256": "9366817f759003ea13ceea82a71588786ea0cc238ba5e474f8ba2a3b217649a8"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/unit.log",
+      "path": "sea-candidate/repair-1/unit.log",
+      "bytes": 10718,
+      "sha256": "739405aa6c96ffcb7645ebdecd405d8c4be4e9c46afb8cad8877e56e8862de52"
+    },
+    {
+      "source": ".autopilot/ph06/ocean-material-staging/checks/repair-1/verification.json",
+      "path": "sea-candidate/repair-1/verification.json",
+      "bytes": 4915,
+      "sha256": "b8b3a29fb596b64529a9aedec0a42830f84c5c8be0c1510bd4061d98d609b85c"
+    },
+    {
+      "source": "package-lock.json",
+      "path": "source/package-lock.json",
+      "bytes": 140963,
+      "sha256": "323baecef3541b909a1bf87e43a861a5e74aa45091cc21f00d74183c921aed02"
+    },
+    {
+      "source": "package.json",
+      "path": "source/package.json",
+      "bytes": 1720,
+      "sha256": "2e359aed4754006c7ba1827f82f6d33ac05fd3a7c25216cd10e067ddd9edb2dd"
+    },
+    {
+      "source": "scripts/engine-fingerprint.ts",
+      "path": "source/scripts/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "source": "scripts/generator-fingerprint.ts",
+      "path": "source/scripts/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "source": "src/history/core.ts",
+      "path": "source/src/history/core.ts",
+      "bytes": 13976,
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+    },
+    {
+      "source": "src/history/types.ts",
+      "path": "source/src/history/types.ts",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "source": "src/sim/core.ts",
+      "path": "source/src/sim/core.ts",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "source": "src/sim/statecraft.ts",
+      "path": "source/src/sim/statecraft.ts",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "source": "src/sim/types.ts",
+      "path": "source/src/sim/types.ts",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "source": "src/world/atlas-format.ts",
+      "path": "source/src/world/atlas-format.ts",
+      "bytes": 8219,
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "source": "src/world/atlas-label-layer.ts",
+      "path": "source/src/world/atlas-label-layer.ts",
+      "bytes": 10913,
+      "sha256": "7320927e89a5c4520f62c5d9ad80a6dd959d8ebeb56d5c99a8e6d513f9396ffc"
+    },
+    {
+      "source": "src/world/atlas-terrain-geometry-cache.ts",
+      "path": "source/src/world/atlas-terrain-geometry-cache.ts",
+      "bytes": 8744,
+      "sha256": "82861ce43bf4574e1b3aff77c7a5ff3d7f4f37d38661ec56e5985def635494d5"
+    },
+    {
+      "source": "src/world/atlas-texture-cache.ts",
+      "path": "source/src/world/atlas-texture-cache.ts",
+      "bytes": 11398,
+      "sha256": "00906ca7c8de80a9b825cfaedc2ea275954ccd5713676d74e790c33b2200abd8"
+    },
+    {
+      "source": "src/world/camera.ts",
+      "path": "source/src/world/camera.ts",
+      "bytes": 4917,
+      "sha256": "ff2b58f223bef0ac30c10fc2d646a76d051d45947fd5d09c574a547d6ad8fe38"
+    },
+    {
+      "source": "src/world/coastal-generation.ts",
+      "path": "source/src/world/coastal-generation.ts",
+      "bytes": 8132,
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc"
+    },
+    {
+      "source": "src/world/coastal-surface.ts",
+      "path": "source/src/world/coastal-surface.ts",
+      "bytes": 13494,
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092"
+    },
+    {
+      "source": "src/world/detail-add-history.test.ts",
+      "path": "source/src/world/detail-add-history.test.ts",
+      "bytes": 6106,
+      "sha256": "e476027e7945aa309d7f3c04153bc747f5cb6853e11381672413ba19b544a0d6"
+    },
+    {
+      "source": "src/world/detail-add-integration.test.ts",
+      "path": "source/src/world/detail-add-integration.test.ts",
+      "bytes": 10490,
+      "sha256": "739ff36d9420c2c40ddb0e936eed41f008db8faf1efe72d49452165ee9020ec2"
+    },
+    {
+      "source": "src/world/detail-coast-base.ts",
+      "path": "source/src/world/detail-coast-base.ts",
+      "bytes": 1110,
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "source": "src/world/detail-coast-codec.ts",
+      "path": "source/src/world/detail-coast-codec.ts",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "source": "src/world/detail-coast-field.ts",
+      "path": "source/src/world/detail-coast-field.ts",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "source": "src/world/detail-coast-geometry.ts",
+      "path": "source/src/world/detail-coast-geometry.ts",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "source": "src/world/detail-coast-locks.test.ts",
+      "path": "source/src/world/detail-coast-locks.test.ts",
+      "bytes": 15599,
+      "sha256": "0e275eb25291dc7f68bc973bc7cb83a9d10217544712d5ec85a0404fe3ab8cb1"
+    },
+    {
+      "source": "src/world/detail-coast-locks.ts",
+      "path": "source/src/world/detail-coast-locks.ts",
+      "bytes": 9809,
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "source": "src/world/detail-coast-types.ts",
+      "path": "source/src/world/detail-coast-types.ts",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "source": "src/world/detail-local-relief-session.test.ts",
+      "path": "source/src/world/detail-local-relief-session.test.ts",
+      "bytes": 9381,
+      "sha256": "9f99e058e0882e461b6253710fc62325a90db57e45c3e82647a2a9f93c13779d"
+    },
+    {
+      "source": "src/world/detail-natural-history.test.ts",
+      "path": "source/src/world/detail-natural-history.test.ts",
+      "bytes": 6658,
+      "sha256": "6260f93917cefd95a0459ba384de62fedd5b69704da78e732698487e33f07f71"
+    },
+    {
+      "source": "src/world/detail-natural-integration.test.ts",
+      "path": "source/src/world/detail-natural-integration.test.ts",
+      "bytes": 10094,
+      "sha256": "4104e1e04e938a5af36b1d83452f80ce5f5f4dccdc3d841297b1720a5e3cff9a"
+    },
+    {
+      "source": "src/world/detail-preview16-history.test.ts",
+      "path": "source/src/world/detail-preview16-history.test.ts",
+      "bytes": 15064,
+      "sha256": "f4a9d9ee68a2d37ce3d71ea561c916376570179403c6c8dff64dd5d43946ffa8"
+    },
+    {
+      "source": "src/world/detail-preview17-history.test.ts",
+      "path": "source/src/world/detail-preview17-history.test.ts",
+      "bytes": 16343,
+      "sha256": "16ce4a34c8837391ff1f49171a4f72497160a0b50ce7e38f9e32918ca8a4409d"
+    },
+    {
+      "source": "src/world/detail-terrain-backend.test.ts",
+      "path": "source/src/world/detail-terrain-backend.test.ts",
+      "bytes": 9265,
+      "sha256": "f0326a878112ba0b9c80190bf22488381f44dc16a62d52ee7cf07ad1d8fda0e1"
+    },
+    {
+      "source": "src/world/detail-terrain-backend.ts",
+      "path": "source/src/world/detail-terrain-backend.ts",
+      "bytes": 12346,
+      "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b"
+    },
+    {
+      "source": "src/world/detail-terrain-light.test.ts",
+      "path": "source/src/world/detail-terrain-light.test.ts",
+      "bytes": 8749,
+      "sha256": "5c7af39398d381926b9278ddc471443138e351e56242d893d635b404c74fc1d7"
+    },
+    {
+      "source": "src/world/detail-terrain-pages.test.ts",
+      "path": "source/src/world/detail-terrain-pages.test.ts",
+      "bytes": 6684,
+      "sha256": "7807436f29398976b4eb0c4bda5545e6ba156c72c2cd1c067d0b0a5e746da981"
+    },
+    {
+      "source": "src/world/detail-terrain-pages.ts",
+      "path": "source/src/world/detail-terrain-pages.ts",
+      "bytes": 7227,
+      "sha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+    },
+    {
+      "source": "src/world/detail-terrain-shader.test.ts",
+      "path": "source/src/world/detail-terrain-shader.test.ts",
+      "bytes": 8168,
+      "sha256": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    },
+    {
+      "source": "src/world/detail-terrain-shader.ts",
+      "path": "source/src/world/detail-terrain-shader.ts",
+      "bytes": 23992,
+      "sha256": "6dc8017930eac3fcbac210e5c025538a36c53b32878b594ef43f43b3a63209cb"
+    },
+    {
+      "source": "src/world/generation-contract.ts",
+      "path": "source/src/world/generation-contract.ts",
+      "bytes": 34413,
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "source": "src/world/generation-format.ts",
+      "path": "source/src/world/generation-format.ts",
+      "bytes": 12978,
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "source": "src/world/generation-history.ts",
+      "path": "source/src/world/generation-history.ts",
+      "bytes": 17808,
+      "sha256": "da0822a61d7f4e619b504266d8eea5ebe75c72929330ecf4f872d962478bc1fa"
+    },
+    {
+      "source": "src/world/generation-locks.ts",
+      "path": "source/src/world/generation-locks.ts",
+      "bytes": 16953,
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "source": "src/world/generation-preview18-history.test.ts",
+      "path": "source/src/world/generation-preview18-history.test.ts",
+      "bytes": 12729,
+      "sha256": "187bf383ade64805f5c608f6f41a389d6c03646489d138264af60c6d78453ad3"
+    },
+    {
+      "source": "src/world/generation-preview20-history.test.ts",
+      "path": "source/src/world/generation-preview20-history.test.ts",
+      "bytes": 13128,
+      "sha256": "22f7d639c4f3f51ff3f6bc784a91704140c70450c544d0505ff8f80d6fc16de8"
+    },
+    {
+      "source": "src/world/generation-preview21-history.test.ts",
+      "path": "source/src/world/generation-preview21-history.test.ts",
+      "bytes": 13165,
+      "sha256": "4d791043eedd469d9a3a88d053551fbd672df4b7f70f9228476640623c897798"
+    },
+    {
+      "source": "src/world/generation/coast.ts",
+      "path": "source/src/world/generation/coast.ts",
+      "bytes": 16967,
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f"
+    },
+    {
+      "source": "src/world/generation/detail-curved-ridge.test.ts",
+      "path": "source/src/world/generation/detail-curved-ridge.test.ts",
+      "bytes": 11461,
+      "sha256": "b210f809bb8bff8f6cb0888a239ae74576a192c85f0e89c36ef3409b39bbe256"
+    },
+    {
+      "source": "src/world/generation/detail-curved-ridge.ts",
+      "path": "source/src/world/generation/detail-curved-ridge.ts",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "source": "src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "source/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 14052,
+      "sha256": "e85f77258da517e0c466366b1ad2367100b7d389137b5ef3c256f589dc3a7264"
+    },
+    {
+      "source": "src/world/generation/detail-local-background.test.ts",
+      "path": "source/src/world/generation/detail-local-background.test.ts",
+      "bytes": 5985,
+      "sha256": "5fdf7a06e78d7989f6f36ad59a4c211a9740923c192c6c640b0406d521f9e899"
+    },
+    {
+      "source": "src/world/generation/detail-local-background.ts",
+      "path": "source/src/world/generation/detail-local-background.ts",
+      "bytes": 8795,
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026"
+    },
+    {
+      "source": "src/world/generation/detail-local-relief.test.ts",
+      "path": "source/src/world/generation/detail-local-relief.test.ts",
+      "bytes": 15070,
+      "sha256": "d7601626bf0191b697af716ca8a7bbad07fb6d74a96551363395c555a0d043d5"
+    },
+    {
+      "source": "src/world/generation/detail-local-relief.ts",
+      "path": "source/src/world/generation/detail-local-relief.ts",
+      "bytes": 28182,
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050"
+    },
+    {
+      "source": "src/world/generation/detail-natural-coast-plan.test.ts",
+      "path": "source/src/world/generation/detail-natural-coast-plan.test.ts",
+      "bytes": 10244,
+      "sha256": "e4c492b14be49b82774e4bb98cd870f874910383c5c3b0ff6e09e5f84fd78513"
+    },
+    {
+      "source": "src/world/generation/detail-natural-outline.ts",
+      "path": "source/src/world/generation/detail-natural-outline.ts",
+      "bytes": 33219,
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d"
+    },
+    {
+      "source": "src/world/generation/detail-natural-ranges-writer.test.ts",
+      "path": "source/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "bytes": 4308,
+      "sha256": "e72fe58d23bbd03cdca381972854b42d0b6dbc723a66fbc39eb82632ec43b7b5"
+    },
+    {
+      "source": "src/world/generation/detail-natural-ranges.test.ts",
+      "path": "source/src/world/generation/detail-natural-ranges.test.ts",
+      "bytes": 14527,
+      "sha256": "b3ca393cb7271772006c4aacbe6f9fdd285a2971581d04374389cfdd70c37d97"
+    },
+    {
+      "source": "src/world/generation/detail-natural-relief.ts",
+      "path": "source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "source": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "path": "source/src/world/generation/detail-natural-visual-repair.test.ts",
+      "bytes": 13041,
+      "sha256": "3e78a3c0eeb5835faa187e63e447e9e8d5ee0165cc617fbcb132c418e606edf0"
+    },
+    {
+      "source": "src/world/generation/detail-natural-writer.test.ts",
+      "path": "source/src/world/generation/detail-natural-writer.test.ts",
+      "bytes": 10947,
+      "sha256": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2"
+    },
+    {
+      "source": "src/world/generation/detail-orography-density.test.ts",
+      "path": "source/src/world/generation/detail-orography-density.test.ts",
+      "bytes": 5390,
+      "sha256": "3fc9ff0a9fef56527aece86c6dffaedb575a690fefadf2909af864c0229bea04"
+    },
+    {
+      "source": "src/world/generation/detail-orography.test.ts",
+      "path": "source/src/world/generation/detail-orography.test.ts",
+      "bytes": 22679,
+      "sha256": "49c212093f04aa0c42f8a15e9c855542a05fbdd262522c50bb14797cfaf502e4"
+    },
+    {
+      "source": "src/world/generation/detail-orography.ts",
+      "path": "source/src/world/generation/detail-orography.ts",
+      "bytes": 28765,
+      "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260"
+    },
+    {
+      "source": "src/world/generation/detail-shape-adapter.ts",
+      "path": "source/src/world/generation/detail-shape-adapter.ts",
+      "bytes": 7449,
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919"
+    },
+    {
+      "source": "src/world/generation/detail-shape-add-adapter.ts",
+      "path": "source/src/world/generation/detail-shape-add-adapter.ts",
+      "bytes": 7553,
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2"
+    },
+    {
+      "source": "src/world/generation/detail-shape-add.test.ts",
+      "path": "source/src/world/generation/detail-shape-add.test.ts",
+      "bytes": 9482,
+      "sha256": "ac5f37b506f3124789bbf9805cc8ed5202d2cb1939aeebbe5165077c51a5f45f"
+    },
+    {
+      "source": "src/world/generation/detail-shape-add.ts",
+      "path": "source/src/world/generation/detail-shape-add.ts",
+      "bytes": 21310,
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8"
+    },
+    {
+      "source": "src/world/generation/detail-shape-distance.ts",
+      "path": "source/src/world/generation/detail-shape-distance.ts",
+      "bytes": 17258,
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "source": "src/world/generation/detail-shape-height.ts",
+      "path": "source/src/world/generation/detail-shape-height.ts",
+      "bytes": 2672,
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "source": "src/world/generation/detail-shape-natural-adapter.ts",
+      "path": "source/src/world/generation/detail-shape-natural-adapter.ts",
+      "bytes": 8133,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92"
+    },
+    {
+      "source": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "path": "source/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "bytes": 7705,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384"
+    },
+    {
+      "source": "src/world/generation/detail-shape-natural-add.ts",
+      "path": "source/src/world/generation/detail-shape-natural-add.ts",
+      "bytes": 21608,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "source": "src/world/generation/detail-shape-natural.test.ts",
+      "path": "source/src/world/generation/detail-shape-natural.test.ts",
+      "bytes": 18508,
+      "sha256": "097df157773c7fb0c260ccf00f03b6fb9656b7dc8d6217c11362fd7bc5e4ff3e"
+    },
+    {
+      "source": "src/world/generation/detail-shape-natural.ts",
+      "path": "source/src/world/generation/detail-shape-natural.ts",
+      "bytes": 31682,
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f"
+    },
+    {
+      "source": "src/world/generation/detail-shape.ts",
+      "path": "source/src/world/generation/detail-shape.ts",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "source": "src/world/generation/fine-range-tree.ts",
+      "path": "source/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "source": "src/world/generation/fingerprint.test.ts",
+      "path": "source/src/world/generation/fingerprint.test.ts",
+      "bytes": 2837,
+      "sha256": "c7f283ed20496a36741fb7b29dd6a8f77452c9dd4d741f25f306d95e406ca2e4"
+    },
+    {
+      "source": "src/world/generation/fingerprint.ts",
+      "path": "source/src/world/generation/fingerprint.ts",
+      "bytes": 1159,
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "source": "src/world/generation/islands.ts",
+      "path": "source/src/world/generation/islands.ts",
+      "bytes": 20467,
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a"
+    },
+    {
+      "source": "src/world/generation/landforms.ts",
+      "path": "source/src/world/generation/landforms.ts",
+      "bytes": 19225,
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221"
+    },
+    {
+      "source": "src/world/generation/local-detail-relief-adapter.ts",
+      "path": "source/src/world/generation/local-detail-relief-adapter.ts",
+      "bytes": 6694,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "source": "src/world/generation/macro.ts",
+      "path": "source/src/world/generation/macro.ts",
+      "bytes": 19697,
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f"
+    },
+    {
+      "source": "src/world/generation/natural-ocean-base.ts",
+      "path": "source/src/world/generation/natural-ocean-base.ts",
+      "bytes": 4244,
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8"
+    },
+    {
+      "source": "src/world/generation/ocean.ts",
+      "path": "source/src/world/generation/ocean.ts",
+      "bytes": 13207,
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae"
+    },
+    {
+      "source": "src/world/generation/quality.ts",
+      "path": "source/src/world/generation/quality.ts",
+      "bytes": 7319,
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    },
+    {
+      "source": "src/world/generation/regional-coast-field.test.ts",
+      "path": "source/src/world/generation/regional-coast-field.test.ts",
+      "bytes": 5541,
+      "sha256": "4890a3cf0065b62358709301a8c6bf9c9bdd52a04ddcc59a504321fc2a8bb493"
+    },
+    {
+      "source": "src/world/generation/regional-coast-plan.test.ts",
+      "path": "source/src/world/generation/regional-coast-plan.test.ts",
+      "bytes": 6130,
+      "sha256": "f5e98befe5549b1da24d0e31b26b83b88f160de9816fcd18fa8eb8a0b541986b"
+    },
+    {
+      "source": "src/world/generation/seed.ts",
+      "path": "source/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "source": "src/world/generation/shape.ts",
+      "path": "source/src/world/generation/shape.ts",
+      "bytes": 13546,
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a"
+    },
+    {
+      "source": "src/world/hydrology-kernel.ts",
+      "path": "source/src/world/hydrology-kernel.ts",
+      "bytes": 16087,
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "source": "src/world/hydrology-snapshot.ts",
+      "path": "source/src/world/hydrology-snapshot.ts",
+      "bytes": 7849,
+      "sha256": "4714df66da76e24bb3b503397b10946e8dad6c79d0e417d466ab1c8a5d3d63fa"
+    },
+    {
+      "source": "src/world/hydrology-trace.ts",
+      "path": "source/src/world/hydrology-trace.ts",
+      "bytes": 11750,
+      "sha256": "58876cd98fec8a4f6a164329617725ae9ac317da5bfa0fb0cf96e66ef583dff3"
+    },
+    {
+      "source": "src/world/lod.ts",
+      "path": "source/src/world/lod.ts",
+      "bytes": 12445,
+      "sha256": "1320c0e2eae539b2cf8251b67701eb449bf2a3a57016bc272f17eb3c17deb2b8"
+    },
+    {
+      "source": "src/world/model.ts",
+      "path": "source/src/world/model.ts",
+      "bytes": 27883,
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "source": "src/world/ocean-material-cache.test.ts",
+      "path": "source/src/world/ocean-material-cache.test.ts",
+      "bytes": 3700,
+      "sha256": "e14f4d5a8bd5f1bf49e67252302a8cd930d5dd074edec03279fabebd822c38e0"
+    },
+    {
+      "source": "src/world/ocean-material.test.ts",
+      "path": "source/src/world/ocean-material.test.ts",
+      "bytes": 5230,
+      "sha256": "9bc0e4cba8bebb629bbaf1c268a2c287378348490a633bd66e4e6a0fff45ebe8"
+    },
+    {
+      "source": "src/world/regional-coast-storage.test.ts",
+      "path": "source/src/world/regional-coast-storage.test.ts",
+      "bytes": 6967,
+      "sha256": "2ca86bb961bbcadeb17819ca989801484138b6396d30319f97bb972fd6b3acf7"
+    },
+    {
+      "source": "src/world/render-density.ts",
+      "path": "source/src/world/render-density.ts",
+      "bytes": 4349,
+      "sha256": "203e87210b0dd0b6d867370bc9a8d0cd0e807bac934e260a60045a5e4370f7d0"
+    },
+    {
+      "source": "src/world/renderer-detail-reuse.test.ts",
+      "path": "source/src/world/renderer-detail-reuse.test.ts",
+      "bytes": 19449,
+      "sha256": "d2b677d6caadd720c31298bf2fd08d8e8bcfa4a34484e052a885a983a635d05c"
+    },
+    {
+      "source": "src/world/renderer.test.ts",
+      "path": "source/src/world/renderer.test.ts",
+      "bytes": 86673,
+      "sha256": "ad71d8576281fb866801021354d835c564cab59f0d2cf2045a2528e350a4708f"
+    },
+    {
+      "source": "src/world/renderer.ts",
+      "path": "source/src/world/renderer.ts",
+      "bytes": 71043,
+      "sha256": "46a2427d5dc00e29f8c4e5f6f92a9608b028fc2f56d8e6a77da63d2a0f7d5e67"
+    },
+    {
+      "source": "src/world/spatial-index.ts",
+      "path": "source/src/world/spatial-index.ts",
+      "bytes": 15660,
+      "sha256": "5ee407033405d3405ee32a2af35db04c25e8f2f6ac581e9059d80a627ffb0adb"
+    },
+    {
+      "source": "src/world/terrain-material.test.ts",
+      "path": "source/src/world/terrain-material.test.ts",
+      "bytes": 1722,
+      "sha256": "42362d08ad3415480bf3c7fc3a2468ebe36f46e36f8c01cc0399da7d4d1c561b"
+    },
+    {
+      "source": "src/world/terrain-material.ts",
+      "path": "source/src/world/terrain-material.ts",
+      "bytes": 3594,
+      "sha256": "0ffdd75812f0fabdd158761a215ac1083885ca0c33f8247c84a8915bdc3c0047"
+    },
+    {
+      "source": "src/world/terrain-mesh.test.ts",
+      "path": "source/src/world/terrain-mesh.test.ts",
+      "bytes": 4860,
+      "sha256": "c3cb0c5784c979861017ac0f26a5002254fe9217308281d1ed56036aa38c98a2"
+    },
+    {
+      "source": "src/world/terrain-mesh.ts",
+      "path": "source/src/world/terrain-mesh.ts",
+      "bytes": 4778,
+      "sha256": "6d8d24f22ec331870d5884a864b38701360f60284910cbcad44b2595825e3b0e"
+    },
+    {
+      "source": "src/world/terrain-surface.ts",
+      "path": "source/src/world/terrain-surface.ts",
+      "bytes": 9045,
+      "sha256": "8554a9721e51a155f575f8121ecef451652a9ecdc6842f73a07a2113d960e053"
+    },
+    {
+      "source": "src/world/test-fixtures/preview21-terrain-material.ts",
+      "path": "source/src/world/test-fixtures/preview21-terrain-material.ts",
+      "bytes": 1892,
+      "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045"
+    },
+    {
+      "source": "src/world/topology.ts",
+      "path": "source/src/world/topology.ts",
+      "bytes": 9633,
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb"
+    },
+    {
+      "source": "src/world/transactions.ts",
+      "path": "source/src/world/transactions.ts",
+      "bytes": 41601,
+      "sha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc"
+    },
+    {
+      "source": "tests/atlas-add-detail-coast.spec.ts",
+      "path": "source/tests/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "source": "tsconfig.json",
+      "path": "source/tsconfig.json",
+      "bytes": 417,
+      "sha256": "eea9bb82bd3abcc9597674179cfa2e71b4ff1f3ae1af396c24d49d79ae3aee16"
+    },
+    {
+      "source": "vite.config.ts",
+      "path": "source/vite.config.ts",
+      "bytes": 4061,
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/baseline-build.json",
+      "path": "unified/baseline-build.json",
+      "bytes": 9456,
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/identity-verification.json",
+      "path": "unified/first/identity-verification.json",
+      "bytes": 416,
+      "sha256": "a4cd72b0f756dce6c16f50dd02a22be79427d7e3bce8560c7d7fc678a2d6da82"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/lint.log",
+      "path": "unified/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/plan.log",
+      "path": "unified/first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/pre-run-build.json",
+      "path": "unified/first/pre-run-build.json",
+      "bytes": 9456,
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/prior-build.json",
+      "path": "unified/first/prior-build.json",
+      "bytes": 9456,
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/scope.json",
+      "path": "unified/first/scope.json",
+      "bytes": 4305,
+      "sha256": "a7ccd9328eeb794e831f9ecf70df2b7cea26f40d36bcb4f6ab5b96bf613a43a9"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/source-after.json",
+      "path": "unified/first/source-after.json",
+      "bytes": 52090,
+      "sha256": "f655eab9e10b1c46e7f6f7a564830cb4191f3938f7b450f7718031cfea0e68be"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/source-before.json",
+      "path": "unified/first/source-before.json",
+      "bytes": 52090,
+      "sha256": "f655eab9e10b1c46e7f6f7a564830cb4191f3938f7b450f7718031cfea0e68be"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/types.log",
+      "path": "unified/first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/unit.json",
+      "path": "unified/first/unit.json",
+      "bytes": 136245,
+      "sha256": "6fc292571352508639b5df85814b7c0852325c6fcda5157ecfa24b6e1ad42370"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/unit.log",
+      "path": "unified/first/unit.log",
+      "bytes": 112,
+      "sha256": "4d59213c3ca5ed25621f08907dc9269d30b61166e255580f1bb23dd62dad3653"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/first/verification.json",
+      "path": "unified/first/verification.json",
+      "bytes": 8172,
+      "sha256": "3b111ce1aaf638caa0093215f5dd7d1c5b61fc209fd968d0de1100e5faffdceb"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-harness.html",
+      "path": "unified/gpu-harness.html",
+      "bytes": 220,
+      "sha256": "622fdddf725bf379ee4772481d1492fcc3ae5dae9d6fca7c62cb86deb73752e4"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu-harness.ts",
+      "path": "unified/gpu-harness.ts",
+      "bytes": 15154,
+      "sha256": "f132467f88d789f4ed69564e44ba82768c586f271fad8cd29e874fbffcac1394"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/gpu.mjs",
+      "path": "unified/gpu.mjs",
+      "bytes": 3829,
+      "sha256": "5009a10fb8fb453cd81afdac7fdef0d2356691ed84bb92a69600c93498d90dc0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/prepare-gpu.mjs",
+      "path": "unified/prepare-gpu.mjs",
+      "bytes": 688,
+      "sha256": "69427c81abf93ade64fb15142226a54cd3e5124e3c51ce1f631d1b46a875b9e8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/build.json",
+      "path": "unified/repair-1/build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/build.log",
+      "path": "unified/repair-1/build.log",
+      "bytes": 1866,
+      "sha256": "f90694f7f510c3cc9da193287707a6e65a91fe7d9006d24ab02a493db685a90f"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/dist-audit.log",
+      "path": "unified/repair-1/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/identity-verification.json",
+      "path": "unified/repair-1/identity-verification.json",
+      "bytes": 31479,
+      "sha256": "f4856ad0a7e5708745174b7a0adad0ab6f24d7ffa445138c8a7d101ded45c984"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/lint.log",
+      "path": "unified/repair-1/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/plan.log",
+      "path": "unified/repair-1/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/pre-run-build.json",
+      "path": "unified/repair-1/pre-run-build.json",
+      "bytes": 9456,
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/prior-build.json",
+      "path": "unified/repair-1/prior-build.json",
+      "bytes": 9456,
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/scope.json",
+      "path": "unified/repair-1/scope.json",
+      "bytes": 4433,
+      "sha256": "ff204e77612b06d7e0df46aad17b9bcda7d384d02d40dcaf2ba5ff0e9c05c74b"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/source-after.json",
+      "path": "unified/repair-1/source-after.json",
+      "bytes": 52249,
+      "sha256": "bb3bbae4f74b48635ccc0377a8b96bd4a87c5e35b67e4b9e86f700ff57f8f7aa"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/source-before.json",
+      "path": "unified/repair-1/source-before.json",
+      "bytes": 52249,
+      "sha256": "bb3bbae4f74b48635ccc0377a8b96bd4a87c5e35b67e4b9e86f700ff57f8f7aa"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/types.log",
+      "path": "unified/repair-1/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/unit.json",
+      "path": "unified/repair-1/unit.json",
+      "bytes": 136778,
+      "sha256": "4e8ca3c18d331f3c4437866943ce465e2033097d6012c720e9f951df8540efa9"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/unit.log",
+      "path": "unified/repair-1/unit.log",
+      "bytes": 115,
+      "sha256": "2f915d8a3bae949281e2d8f2fc525995f0febc35cefcdbe33d034fc009e324fe"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/repair-1/verification.json",
+      "path": "unified/repair-1/verification.json",
+      "bytes": 12672,
+      "sha256": "16528c9783002f6252643d8eac434f477a8109bed364ff6a998079d3f2f638a0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-checks/run.mjs",
+      "path": "unified/run.mjs",
+      "bytes": 16205,
+      "sha256": "2efa71b9af39dd3d4cf717d5195e232acb05c2461039bc9aaf7b85a9721beb5c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-range-sea-visual-review.json",
+      "path": "visual-review.json",
+      "bytes": 1827,
+      "sha256": "8a5d1b4ee628faac98ba04543692b62655ab48ac727dbfb2981057219bf67836"
+    }
+  ]
+}

@@ -7,8 +7,8 @@ describe('continuous terrain material lookup and actual mesh resources', () => {
   it('has independent opaque sea and land tables, including exact flat source anchors', () => {
     const land = terrainMaterialTable('land'), sea = terrainMaterialTable('sea');
     const at = (bytes: Uint8Array, x: number, y = 16) => [...bytes.slice((y * TERRAIN_LUT_WIDTH + x) * 4, (y * TERRAIN_LUT_WIDTH + x) * 4 + 4)];
-    expect(at(land, 65)).toEqual([139, 163, 112, 255]); expect(at(sea, 1190)).toEqual([76, 151, 168, 255]);
-    expect(at(land, 0)).toEqual([178, 181, 133, 255]); expect(at(sea, 1200)).toEqual([121, 186, 192, 255]);
+    expect(at(land, 65)).toEqual([139, 163, 112, 255]); expect(at(sea, 1190)).toEqual([81, 134, 138, 255]);
+    expect(at(land, 0)).toEqual([178, 181, 133, 255]); expect(at(sea, 1200)).toEqual([97, 141, 139, 255]);
     expect(land.length + sea.length).toBe(TERRAIN_LUT_PIXELS * 4);
     for (const table of [land, sea]) for (let i = 3; i < table.length; i += 4) expect(table[i]).toBe(255);
   });

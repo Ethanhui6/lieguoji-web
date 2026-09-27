@@ -1,0 +1,11 @@
+{
+  "originalCandidates": 193,
+  "sampleGridWorld": 2,
+  "sampledPoints": 289,
+  "maximumObservedNonzeroInFailedBucket": {
+    "count": 73,
+    "xQ": 336896,
+    "yQ": 354304
+  },
+  "scope": "Observed sample maximum only, not a global continuous maximum proof. Conservative rotated-bucket maximum 116 bounds actual contributions anywhere."
+}

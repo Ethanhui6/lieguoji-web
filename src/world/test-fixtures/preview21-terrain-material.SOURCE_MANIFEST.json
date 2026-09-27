@@ -1,0 +1,8 @@
+{
+  "purpose": "Independent original preview21 land material oracle for CPU and full LUT byte preservation; never imported by production.",
+  "sourceCommit": "31e27620c816db33993a8ac419274c9a86c32624",
+  "originalPath": "src/world/terrain-material.ts",
+  "fixture": "src/world/test-fixtures/preview21-terrain-material.ts",
+  "sha256": "caab5e9e52b406b7e0d34f802a010e12f00046e59781bb999f5ca1629f150045",
+  "kind": "Complete exact original source bytes; no rewritten runtime imports"
+}

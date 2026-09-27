@@ -1,17 +1,18 @@
 # 列国纪当前续接
 
-更新：2026-09-27T21:48:03.509Z。先核实际Git、源码与dist；旧证据保留。
+更新：2026-09-27T22:45:27.643Z。先核实际Git、源码与dist；旧证据保留。
 
 ## 当前状态
 
+- 本地preview.22已完成306/306、计划/lint/类型/构建/dist/11闭包、生产GPU及三端浏览器；实际build SHA256 517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2，原build.commit=d651bcc9502d5afe31fef80d0a17b9a9988bc819。尚待本地提交；[本批记录](evidence/2026-09-28-ph06-natural-range-sea.md)。真实山脉仍管状，自然视觉失败；PH状态不变。
 - 分支codex/ph06-world-generation；preview.21游戏源码已本地提交31e27620c816db33993a8ac419274c9a86c32624。原build.commit=502164889fef2f0280b725c76538cd07df7d5e36如实保留；最新文档提交以git log核实。
-- 实际0.5.0-preview.21，build.json SHA256 639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761。149/149相关检查、三端真实鼠标/触摸绘图保存与刷新通过；[本批记录](evidence/2026-09-28-ph06-regional-coast.md)。自然视觉仍失败，全部候选失败原件保留。
+- preview.21为上一批已提交历史基线；149/149和旧三端证据只描述21。当前实际dist与IAB为上方22，旧存档在22读取恢复修订1已实际核实。
 - PH06-T3/T4保持in_progress，PH07及T1为in_progress且PH07→PH06依赖未改。自然视觉、用户视觉、真机、整体PH和性能未完成。
 - 新Atlas尚无国家、行政区、城市、首都、军队与战争。旧0.4工坊/测试战役独立，不能冒称新版已有。
 
 ## 最新实证
 
-preview.21沿岸分区已合入，真实20历史恢复已接；11闭包全部核验，9仅历史变化/2沿岸运行时变化。三端同源同dist通过，实际大/中/近景仍有圆软大陆、S形山带和强青色浅海问题，不能称达到参考游戏体验。下述20/19记录作为历史基线保留。
+preview.22的真实全图和40%中景仍显示窄圆管状山系；海洋亮青光圈已减弱。对应原因包括固定宽度/横截面与fine-tree未应用谷地削切，不能称达到参考游戏体验。22详细失败、修复、同存档材质A/B和原生生成保存恢复证据见本批报告。下述旧记录仅作为历史基线保留。
 
 preview.20接入细山脊高程与真实18历史恢复。旧默认/local逐值保留；小大陆密度错误已修复。自然视觉仍未通过，真实中近景与所有失败见本批归档。19流向与触摸修复记录如下。
 
@@ -35,7 +36,7 @@ preview.19已接入真实地形流向。来源为保存的细高程，实际相�
 - [preview.16](evidence/2026-09-28-ph06-coast-scale.md)三端通过是旧基线；[preview.17](evidence/2026-09-28-ph06-branching-relief.md)113/113但数值图视觉拒绝、无17浏览器。13旧超时、15拓扑失败及所有历史原件保留。
 - 17真实生成闭包73原件已冻结于evidence/ph06-preview17-generator-history-2026-09-28；原捕获时sourceIsHead=false/browserExecuted=false不改写。18真实闭包现已冻结并在20检查通过。实际20闭包也已冻结于.autopilot/ph06/v4-preview20-history-staging，ready SHA256 d493528b03e19873105aa1c20e6f831983c9f0cf3dcd91a6e94ea25e234b088b：47份源码逐字节匹配最终检查，11闭包及engine重算一致，原build.commit保留ef52727；本批已接存储历史并通过5项定向及149项联合检查；原件未改。
 - PH07内核见[工程入口](evidence/2026-09-28-ph07-engineering-entry.md)和[内核记录](evidence/2026-09-28-ph07-hydrology-kernel.md)。当前新增真实Owned快照提取、只读Worker/bridge路径和地图显示；所有数据从当前保存地形读取，无地理修订/数据库写入。快照11项与内核16项正常导入通过；19统一检查与真实三端浏览器已通过，仍不算完整河网。
-- preview.21沿岸分区已接入并完成当前检查。下一批脊树在.autopilot/ph06/natural-ranges-staging隔离开发，未合入；海洋材质只读建议在.autopilot/ph06/ocean-material-next.md。实际21闭包已在.autopilot/ph06/v4-preview21-history-staging冻结（ready SHA256 80579d5ed0999eabd05e0bb3ae49617c58c126928979ca1dee94add884f1176c），47份原字节和11闭包/engine匹配，原元数据未改。下一批先接存储历史再改生成器；保留相同手绘轮廓/种子比较。随后继续跨页流域、真实河湖/版本化存储和后续国家行政城市军队，不以空面板代替。
+- preview.22山系、海洋材质及实际21存储历史已接入。下一批先冻结22实际生成闭包再改生成器，修真实山体形态并继续PH07跨页流向。国家行政城市军队尚未接入，不以空面板代替。
 
 - 跨页边界候选已暂存于.autopilot/ph07/boundary-staging，ready-manifest SHA256 248f67e6477660e03e66961a47da5f19d39f079d79f67e4e5fdc7c99d9e3f7cc。14/14有界合成单元通过；首轮两项类型诊断修复为字面量as const后lint/类型通过，实际编译JS逐字节相同，复用原14项。生产未接入、没有完整receiver/河网/湖水量。后续从现有Owned快照按core+halo提取固定来源2—4页，先验预算，不新增公开raw snapshot。
 - 独立owned-v2修订加入必要Worker owner守卫、无密集分配的预检与真实Owned两页提取；27/27（原14+新13）、lint/类型通过，首轮测试接线失败保留。ready SHA256 3e89c7d2c9515a33d9b742c90afbebc130880a91d1f5b5715efb339d110c193f；真实Owned测试为小范围，128²仅预算检查。仍未接生产、没有全域receiver或密集性能验收。

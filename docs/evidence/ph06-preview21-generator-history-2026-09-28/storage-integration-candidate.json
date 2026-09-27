@@ -1,0 +1,78 @@
+{
+  "recordedAt": "2026-09-27T22:07:38.679Z",
+  "status": "authored-awaiting-scoped-history-checks",
+  "preservedSourceCommit": "31e27620c816db33993a8ac419274c9a86c32624",
+  "originalBuildSha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+  "frozenReadySha256": "80579d5ed0999eabd05e0bb3ae49617c58c126928979ca1dee94add884f1176c",
+  "actual21ClosureCount": 11,
+  "additions": [
+    {
+      "namespace": "macro-landmass",
+      "fingerprint": "967562939564daa90fa012519b981b1e42b3fa7d74c2de7c24731c00a5826e88",
+      "buildKey": "macroGenerator"
+    },
+    {
+      "namespace": "landforms",
+      "fingerprint": "f1a6cee151793229b82bd8ca04a1b50df00ae7d732c3655b8f5cc2cec29b7019",
+      "buildKey": "landformGenerator"
+    },
+    {
+      "namespace": "island-chains",
+      "fingerprint": "f3ee235d1f1c05b8c199e4c66bc048a2459ee27be1e09a7acff9844fd8a53ef8",
+      "buildKey": "islandGenerator"
+    },
+    {
+      "namespace": "coast-smoothing",
+      "fingerprint": "35ec29070414e05d1bfd54f4d9f33cb7838a119859b38d34311f04d3276f74dd",
+      "buildKey": "coastGenerator"
+    },
+    {
+      "namespace": "shape-landmass",
+      "fingerprint": "23c20df32b30901bb0ba1a134eb51702ffab2a575e46e5623beb50a323f64ec0",
+      "buildKey": "shapeGenerator"
+    },
+    {
+      "namespace": "ocean-floor",
+      "fingerprint": "617e5e9ca8517661e870c32c915afd4201f2a35710896b3c9061511151d96d08",
+      "buildKey": "oceanGenerator"
+    },
+    {
+      "namespace": "shape-detail-landmass",
+      "fingerprint": "d20d7c48f748a706403404b74ef2e448f679d18d75b662c351f8f3bfb5910e82",
+      "buildKey": "detailShapeGenerator"
+    },
+    {
+      "namespace": "add-detail-landmass",
+      "fingerprint": "8519245bbc6e2aee5c2fcca47e3719540d1fe148751725380933d0ae44154325",
+      "buildKey": "addDetailGenerator"
+    },
+    {
+      "namespace": "shape-detail-landmass@2",
+      "fingerprint": "070c0d308eaa6cb79d6ddf6e16ae69f94856a69e0a6876991449aef872125cfa",
+      "buildKey": "naturalDetailGenerator"
+    },
+    {
+      "namespace": "add-detail-landmass@2",
+      "fingerprint": "9ddd7ae1f6cd516d5583bfa416b2a848b7bad404733b8ef3ddc2887d1cfc32d1",
+      "buildKey": "addNaturalDetailGenerator"
+    },
+    {
+      "namespace": "local-detail-relief",
+      "fingerprint": "2264d336bf7c5b5bc74c3efdd1e85a790824e9bc6fbc9bb30daed9c4f9e0a525",
+      "buildKey": "localDetailReliefGenerator"
+    }
+  ],
+  "historyFile": "src/world/generation-history.ts",
+  "historyBeforeSha256": "82b278ff4aaa06b4105749d7318a9905c15c30034222fd08584607abe0f1b0be",
+  "historyAfterSha256": "da0822a61d7f4e619b504266d8eea5ebe75c72929330ecf4f872d962478bc1fa",
+  "attributesFile": ".gitattributes",
+  "attributesBeforeSha256": "cf2a12663215e32e50ec6f5c4c564901e90a41e16ab8c11282e6dca2b9d06385",
+  "attributesAfterSha256": "e583b2a400e738ef497ebee91757c3accb159d510cb79c8dd8ccffbf9ccf9a00",
+  "originalEvidenceByteCopiesVerified": true,
+  "newTest": "src/world/generation-preview21-history.test.ts",
+  "testsExecuted": false,
+  "productBuildExecuted": false,
+  "browserExecuted": false,
+  "nextProductVersionPassed": false,
+  "note": "Whitelist entries are storage-only. Archived149 checks describe preview21; this storage integration is untested until its own checks and the parent product checks run."
+}

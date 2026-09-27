@@ -1,7 +1,7 @@
 import { BufferImageSource, Container, Mesh, MeshGeometry, Texture } from 'pixi.js';
 import type { AtlasTextureCache } from './atlas-texture-cache';
 import type { AtlasTerrainBufferMetrics } from './atlas-terrain-geometry-cache';
-import { atlasElevationColor } from './terrain-material';
+import { atlasMaterialColor, TERRAIN_MATERIAL_VERSION } from './terrain-material';
 import type { TerrainSurfaceMesh } from './terrain-surface';
 
 /** Ten-metre samples retain the physical palette's interior anchor heights.
@@ -24,10 +24,10 @@ export function terrainMaterialTable(domain: TerrainDomain): Uint8Array {
   for (let x = 0; x < TERRAIN_LUT_WIDTH; x++) {
     const height = x / (TERRAIN_LUT_WIDTH - 1) * 12000 - (domain === 'sea' ? 12000 : 0);
     // The last sea texel remains sea even though its lookup coordinate is 0.
-    const color = atlasElevationColor(domain === 'sea' ? Math.min(-Number.EPSILON, height) : height);
     for (let y = 0; y < TERRAIN_LUT_HEIGHT; y++) {
       const light = minimumLight + y / (TERRAIN_LUT_HEIGHT - 1) * lightSpan, offset = (y * TERRAIN_LUT_WIDTH + x) * 4;
-      for (let channel = 0; channel < 3; channel++) bytes[offset + channel] = Math.max(0, Math.min(255, Math.round(((color >> (16 - channel * 8)) & 255) * light)));
+      const color = atlasMaterialColor(height, light, domain);
+      for (let channel = 0; channel < 3; channel++) bytes[offset + channel] = (color >> (16 - channel * 8)) & 255;
       bytes[offset + 3] = 255;
     }
   }
@@ -35,7 +35,7 @@ export function terrainMaterialTable(domain: TerrainDomain): Uint8Array {
 }
 
 export function ensureTerrainMaterials(cache: AtlasTextureCache): Record<TerrainDomain, Texture> {
-  const table = (domain: TerrainDomain) => cache.ensureShared(`terrain-surface-lut-v1/${domain}`, TERRAIN_LUT_WIDTH, TERRAIN_LUT_HEIGHT,
+  const table = (domain: TerrainDomain) => cache.ensureShared(`terrain-surface-lut/${TERRAIN_MATERIAL_VERSION}/${domain}`, TERRAIN_LUT_WIDTH, TERRAIN_LUT_HEIGHT,
     () => new Texture({ source: new BufferImageSource({ resource: terrainMaterialTable(domain), width: TERRAIN_LUT_WIDTH, height: TERRAIN_LUT_HEIGHT,
       format: 'rgba8unorm', alphaMode: 'no-premultiply-alpha', scaleMode: 'linear', addressMode: 'clamp-to-edge',
       autoGenerateMipmaps: false, mipLevelCount: 1, autoGarbageCollect: false, resolution: 1 }) }));

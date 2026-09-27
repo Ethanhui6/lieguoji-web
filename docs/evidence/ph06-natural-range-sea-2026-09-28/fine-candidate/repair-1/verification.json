@@ -1,0 +1,53 @@
+{
+  "passed": false,
+  "sourceStable": true,
+  "sourceBefore": {
+    "src/world/generation/detail-natural-relief.ts": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad",
+    "src/world/generation/detail-orography.ts": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3",
+    "src/world/generation/fine-range-tree.ts": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+    "natural-ranges.test.ts": "03b161004d797ec330cbe494ae90e2ac4352d21ce9143bf9020060df7b5a8de0",
+    "natural-writer.test.ts": "70718563d597aa73009517362c9f032caa6f4761eb6d6cfe49e3dd4e9fda46d8",
+    "vitest.config.ts": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188",
+    "typecheck.mjs": "42cc5ad494f9409108f604a05b056cacf285a000dbd852492ba8cfa197d4f067"
+  },
+  "sourceAfter": {
+    "src/world/generation/detail-natural-relief.ts": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad",
+    "src/world/generation/detail-orography.ts": "492df75d5694b62e7fce2e0a1737b41274a547fad4658201cdf442fb527357a3",
+    "src/world/generation/fine-range-tree.ts": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089",
+    "natural-ranges.test.ts": "03b161004d797ec330cbe494ae90e2ac4352d21ce9143bf9020060df7b5a8de0",
+    "natural-writer.test.ts": "70718563d597aa73009517362c9f032caa6f4761eb6d6cfe49e3dd4e9fda46d8",
+    "vitest.config.ts": "d0a580c259d41b3f96e2e917faed24da8d73f8f21d1a0139058cca62bbd27188",
+    "typecheck.mjs": "42cc5ad494f9409108f604a05b056cacf285a000dbd852492ba8cfa197d4f067"
+  },
+  "productionChangedDuringCheck": false,
+  "baselineProductionStillExact": true,
+  "checks": [
+    {
+      "name": "unit",
+      "exitCode": 1,
+      "elapsedMs": 9818,
+      "error": null
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "elapsedMs": 2996,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 1906,
+      "error": null
+    }
+  ],
+  "units": {
+    "total": 27,
+    "passed": 26,
+    "failed": 1
+  },
+  "productionIntegrated": false,
+  "buildRun": false,
+  "gpuRun": false,
+  "visualAccepted": false
+}

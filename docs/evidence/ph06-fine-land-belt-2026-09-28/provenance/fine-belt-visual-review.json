@@ -1,0 +1,48 @@
+{
+  "recordedAt": "2026-09-27T19:23:16.990Z",
+  "buildJsonSha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5",
+  "actualViewed": [
+    {
+      "path": ".autopilot/ph06/fine-belt-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "sha256": "474e0668b6d382383a5fab11ac16f141da1269321756b9e46f7af5c2b806aed7",
+      "method": "root view_image tool"
+    },
+    {
+      "path": ".autopilot/ph06/fine-belt-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "sha256": "495b00ced04a45204e668ff4396dbf33f25c160cfe463057afa75466b2be44df",
+      "method": "root view_image tool"
+    },
+    {
+      "path": ".autopilot/ph06/fine-belt-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "sha256": "ea13e7bde88da93d21ffaf28a8f9a662b6b4a0944a9cbb7bd8eeb8b5c2b47db2",
+      "method": "root view_image tool"
+    },
+    {
+      "path": ".autopilot/ph06/fine-belt-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "sha256": "13fe4c05ab3b7a3fc655dd50dcc7738a4292382493464ed6e24254103aff722c",
+      "method": "root view_image tool"
+    },
+    {
+      "path": ".autopilot/ph06/map-chrome-browser-staging/checks/ui-first/artifacts/atlas-map-chrome-map-chrom-3cd99--one-UI-created-ocean-draft-map-chrome-responsive-chromium/phone-toolbar-grid-keyboard-focus.png",
+      "sha256": "4940fc58f10ea6d957f178954f3fb4dbd83931a2e30b1079af9e2e40f82e388d",
+      "method": "root view_image tool"
+    },
+    {
+      "path": ".autopilot/ph06/map-chrome-browser-staging/checks/ui-first/artifacts/atlas-map-chrome-map-chrom-3cd99--one-UI-created-ocean-draft-map-chrome-responsive-chromium/phone-200-percent-text-grid-keyboard-focus.png",
+      "sha256": "d44311c1360b74a4d6459eb42f0d6db949c575b91c1ce6ebf02b835ba9e9c39c",
+      "method": "root view_image tool"
+    }
+  ],
+  "observations": [
+    "The native two-continent fixture uses identical eight-point contours and seed, translated horizontally. It verifies editing isolation, not continent diversity or a complete natural world.",
+    "New explicit fine land heights and connected branching relief remove reliance on implicit coarse interpolation for newly created land. The actual full views show connected mountain bands, but the high peaks remain rounded and lowlands empty.",
+    "Desktop 1135% and mobile 724% close coast views no longer show whole coarse-cell staircase geometry. Fine two-world-node straight edges remain visible at very large zoom; this is not unlimited vector detail.",
+    "Strong cyan coastal light remains conspicuous and visually unaccepted. No river, ecosystem, nation, administrative boundary, city, troop or war is shown by these images.",
+    "The unified toolbar and compact status use less map space. Phone normal and 200%-root-font views retain labelled controls and wrap; this is responsive browser evidence, not true phone or OS font scaling acceptance."
+  ],
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false,
+  "performanceAccepted": false
+}

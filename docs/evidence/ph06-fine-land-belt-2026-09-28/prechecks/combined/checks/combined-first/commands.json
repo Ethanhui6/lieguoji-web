@@ -1,0 +1,17 @@
+{
+  "cwd": "D:\\游戏\\架空地图模拟器",
+  "executable": "C:\\Program Files\\nodejs\\node.exe",
+  "node": "v24.18.1",
+  "args": [
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    ".autopilot/ph06/v4-fine-belt-staging/vitest.config.ts",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile.json=.autopilot/ph06/v4-fine-belt-staging/checks/combined-first/unit.json"
+  ],
+  "expectedCases": 21,
+  "originalProductTestPreserved": true,
+  "noBuildNoBrowserNoGlobalChecks": true
+}

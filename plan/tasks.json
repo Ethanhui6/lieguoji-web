@@ -751,7 +751,9 @@
         "docs/evidence/2026-09-28-ph06-coast-scale.md",
         "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph06-branching-relief.md",
-        "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
+        "docs/evidence/ph06-branching-relief-2026-09-28/verification.json",
+        "docs/evidence/2026-09-28-ph06-fine-land-belt.md",
+        "docs/evidence/ph06-fine-land-belt-2026-09-28/verification.json"
       ],
       "workItems": [
         {
@@ -835,7 +837,9 @@
             "docs/evidence/2026-09-28-ph06-coast-scale.md",
             "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-branching-relief.md",
-            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
+            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-fine-land-belt.md",
+            "docs/evidence/ph06-fine-land-belt-2026-09-28/verification.json"
           ]
         },
         {
@@ -878,7 +882,9 @@
             "docs/evidence/2026-09-28-ph06-coast-scale.md",
             "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-branching-relief.md",
-            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
+            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-fine-land-belt.md",
+            "docs/evidence/ph06-fine-land-belt-2026-09-28/verification.json"
           ]
         }
       ],
@@ -888,19 +894,27 @@
       "id": "PH07",
       "title": "水文气候与资源生态",
       "phase": "PH07",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "PH06"
       ],
       "acceptance": "河流连续且有合理出口/内流说明；无上坡断流；资源非纯随机散色；手工河湖改动参与地理与通行计算。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-09-28-ph07-engineering-entry.md",
+        "docs/evidence/2026-09-28-ph07-hydrology-kernel.md",
+        "docs/evidence/ph07-hydrology-kernel-2026-09-28/verification.json"
+      ],
       "workItems": [
         {
           "id": "PH07-T1",
           "title": "流域、河网、湖泊和内流盆地",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「流域、河网、湖泊和内流盆地」，并提供本阶段对应验收事实。河流连续且有合理出口/内流说明；无上坡断流；资源非纯随机散色；手工河湖改动参与地理与通行计算。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-09-28-ph07-engineering-entry.md",
+            "docs/evidence/2026-09-28-ph07-hydrology-kernel.md",
+            "docs/evidence/ph07-hydrology-kernel-2026-09-28/verification.json"
+          ]
         },
         {
           "id": "PH07-T2",

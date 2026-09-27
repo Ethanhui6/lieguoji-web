@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { combineOrographyMasses, createOrographyField, OROGRAPHY_LIMITS, OROGRAPHY_UNION, type OrographyChain } from './detail-orography';
+import { combineOrographyMasses, createOrographyField, planOrographyProfile, OROGRAPHY_LIMITS, OROGRAPHY_UNION, type OrographyChain } from './detail-orography';
 import { createNaturalRelief } from './detail-natural-relief';
 
 const q = (world: number) => world * 256;
@@ -25,11 +25,11 @@ function exhaustive(field: Field, xQ: number, yQ: number, uncut = false) {
   for (const node of field.supports) {
     const dx = xQ - node.xQ, dy = yQ - node.yQ, u = (dx * node.tx + dy * node.ty) / node.alongQ, v = -dx * node.ty + dy * node.tx;
     const factor = 1 + .15 * node.leeQ * (2 * ease(.5 + 2 * v / node.widthQ) - 1);
-    const c = v / (node.crestQ * factor), f = v / (node.widthQ * factor), hollow = (f - .48 * node.valleySide) / .14;
+    const c = v / (node.crestQ * factor), f = v / (node.widthQ * factor), hollow = (f - node.valleyOffset * node.valleySide) / .14;
     if (Math.abs(u) >= 1 || Math.abs(f) >= 1) continue;
-    const core = Math.abs(c) < 1 ? .76 * (1 - c * c) ** 3 : 0;
+    const core = Math.abs(c) < 1 ? (1 - node.foothillShare) * (1 - c * c) ** 3 : 0;
     const cut = !uncut && Math.abs(hollow) < 1 ? node.valleyDepth * (1 - hollow * hollow) ** 3 : 0;
-    const transverse = core + .24 * (1 - f * f) ** 3 * (1 - cut);
+    const transverse = core + node.foothillShare * (1 - f * f) ** 3 * (1 - cut);
     const end = field.ends[node.run], start = (xQ - end.first.xQ) * end.first.tx + (yQ - end.first.yQ) * end.first.ty;
     const finish = (end.last.xQ - xQ) * end.last.tx + (end.last.yQ - yQ) * end.last.ty;
     masses[node.run] += node.peakQ * (1 - u * u) ** 3 * transverse * node.weight
@@ -54,6 +54,30 @@ function patchInput(local = false) {
 }
 
 describe('branching orography from actual height data', () => {
+  it('adapts a continuous nonperiodic mountain belt to physical length and preserves broad shoulders on a 16-world Hbase grid', async () => {
+    expect(planOrographyProfile(9811, q(240)).filter(p => p.kind === 'peak')).toHaveLength(1);
+    expect(planOrographyProfile(9811, q(800)).filter(p => p.kind === 'peak')).toHaveLength(2);
+    const source = ribbon(); source.sampleStepQ = q(16);
+    for (const p of source.anchors) p.widthQ = q(256);
+    const field = await createOrographyField([source], () => true, 128, control), peaks = field.curves[0].profile.filter(p => p.kind === 'peak');
+    const p = atArc(field.curves[0].points, peaks[1].arcQ);
+    // Explicit bilinear interpolation of actual 16-world grid samples. This
+    // avoids accepting detail that exists only between coarse sample nodes.
+    const coarse = (xQ: number, yQ: number) => {
+      const left = Math.floor(xQ / q(16)) * q(16), top = Math.floor(yQ / q(16)) * q(16), tx = (xQ - left) / q(16), ty = (yQ - top) / q(16);
+      return field.sample(left, top).massQ * (1 - tx) * (1 - ty) + field.sample(left + q(16), top).massQ * tx * (1 - ty)
+        + field.sample(left, top + q(16)).massQ * (1 - tx) * ty + field.sample(left + q(16), top + q(16)).massQ * tx * ty;
+    };
+    const offsets = Array.from({ length: 33 }, (_, i) => (i - 16) * 16), heights = offsets.map(y => coarse(p.xQ, p.yQ + q(y)));
+    expect(heights.filter(height => height > 1000).length * 16).toBeGreaterThanOrEqual(80);
+    expect(heights.filter(height => height > 300).length * 16).toBeGreaterThanOrEqual(176);
+    for (let arc = peaks[0].arcQ; arc <= peaks.at(-1)!.arcQ; arc += q(16)) {
+      const point = atArc(field.curves[0].points, arc);
+      expect(coarse(point.xQ, point.yQ)).toBeGreaterThan(1000);
+    }
+    expect(field.supports.some(node => node.foothillShare > .35)).toBe(true);
+  });
+
   it('uses nonperiodic physical peak spacing, retaining multiple high-prominence saddles across extra curve joins', async () => {
     const a = await createOrographyField([ribbon(2)], () => true, 64, control), b = await createOrographyField([ribbon(4)], () => true, 512, control);
     const values: number[] = [], xs: number[] = [];
@@ -71,12 +95,13 @@ describe('branching orography from actual height data', () => {
     expect(Math.max(...values) - Math.min(...values.slice(25, -25))).toBeGreaterThan(1500);
     const gaps = prominent.slice(1).map((index, i) => xs[index] - xs[prominent[i]]);
     expect(Math.max(...gaps) - Math.min(...gaps)).toBeGreaterThan(20);
-    expect(a.curves[0].events).toHaveLength(3);
-    for (let i = 1; i < a.curves[0].events.length; i++) expect(a.curves[0].events[i].centerQ - a.curves[0].events[i].radiusQ).toBeGreaterThan(a.curves[0].events[i - 1].centerQ + a.curves[0].events[i - 1].radiusQ);
+    const profile = a.curves[0].profile;
+    expect(profile.filter(p => p.kind === 'peak')).toHaveLength(4);
+    for (let i = 1; i < profile.length; i++) expect(profile[i].arcQ).toBeGreaterThan(profile[i - 1].arcQ);
   });
 
   it('keeps a narrow actual crest over a wider low foothill and fades true trunk endpoints', async () => {
-    const field = await createOrographyField([ribbon()], () => true, 128, control), peak = field.curves[0].events[1].centerQ;
+    const field = await createOrographyField([ribbon()], () => true, 128, control), peak = field.curves[0].profile.filter(p => p.kind === 'peak')[1].arcQ;
     const p = atArc(field.curves[0].points, peak), h = (offset: number) => field.sample(p.xQ, p.yQ + q(offset)).massQ;
     expect(h(0)).toBeGreaterThan(h(32) * 3);
     expect(h(70)).toBeGreaterThan(50); expect(h(150)).toBe(0);
@@ -149,8 +174,9 @@ describe('branching orography from actual height data', () => {
     expect(Math.abs(points[index - 1].ty - points[index + 1].ty)).toBeLessThan(.02);
     expect(points[index].tx).toBeCloseTo(1, 8); expect(points[index].ty).toBeCloseTo(0, 8);
     expect(Math.abs(curved.sample(q(1200) - 1, q(1300)).massQ - curved.sample(q(1200) + 1, q(1300)).massQ)).toBeLessThan(1);
-    const straight = await createOrographyField([ribbon()], () => true, 128, control), arc = straight.curves[0].events[1].centerQ, p = atArc(straight.curves[0].points, arc);
-    for (const boundary of [-32, 32]) {
+    const straight = await createOrographyField([ribbon()], () => true, 128, control), arc = straight.curves[0].profile.filter(p => p.kind === 'peak')[1].arcQ;
+    const support = straight.supports.reduce((best, n) => Math.abs(n.arc - arc) < Math.abs(best.arc - arc) ? n : best), p = support;
+    for (const boundary of [-support.widthQ / 1024, support.widthQ / 1024]) {
       const height = (delta: number) => straight.sample(p.xQ, p.yQ + q(boundary + delta)).massQ, center = height(0);
       const gap = (step: number) => Math.abs((height(step) - center) / step - (center - height(-step)) / step);
       const slope = Math.abs((height(1 / 256) - height(-1 / 256)) * 128);
@@ -211,7 +237,7 @@ describe('branching orography from actual height data', () => {
     const field = await createOrographyField([source], () => true, 64, { ...control, onProgress: () => { if (!changed) { changed = true; source.anchors[0].xQ = 0; source.anchors[1].widthQ = q(4); source.seed = 20; } } });
     expect(field.curves).toEqual(expected.curves); expect(field.supports).toEqual(expected.supports);
     const before = field.sample(q(1032), q(1024));
-    field.supports[0].peakQ = 0; field.curves[0].points[0].xQ = 0; field.curves[0].events[0].amplitude = 0; field.spans[0].a.xQ = 0;
+    field.supports[0].peakQ = 0; field.curves[0].points[0].xQ = 0; field.curves[0].profile[0].strength = 0; field.spans[0].a.xQ = 0;
     expect(field.sample(q(1032), q(1024))).toEqual(before);
   });
 

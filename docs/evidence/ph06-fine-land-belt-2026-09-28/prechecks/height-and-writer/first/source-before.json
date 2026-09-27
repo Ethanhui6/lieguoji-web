@@ -1,0 +1,78 @@
+[
+  {
+    "path": "src/world/generation/detail-shape-height.ts",
+    "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+  },
+  {
+    "path": "src/world/detail-coast-field.ts",
+    "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+  },
+  {
+    "path": "src/world/detail-coast-types.ts",
+    "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+  },
+  {
+    "path": "src/world/detail-terrain-pages.ts",
+    "sha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764"
+  },
+  {
+    "path": "src/world/detail-terrain-shader.ts",
+    "sha256": "6dc8017930eac3fcbac210e5c025538a36c53b32878b594ef43f43b3a63209cb"
+  },
+  {
+    "path": "src/world/detail-terrain-backend.ts",
+    "sha256": "d9200a2218915a9f2b21e650e38ff505f6706ff9aa23a10df419c30a6c51888b"
+  },
+  {
+    "path": "src/world/detail-coast-base.ts",
+    "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+  },
+  {
+    "path": "src/world/generation/quality.ts",
+    "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+  },
+  {
+    "path": "src/world/model.ts",
+    "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+  },
+  {
+    "path": "src/world/generation-contract.ts",
+    "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+  },
+  {
+    "path": "src/world/generation-format.ts",
+    "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+  },
+  {
+    "path": "src/world/atlas-format.ts",
+    "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+  },
+  {
+    "path": "src/world/detail-coast-locks.ts",
+    "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+  },
+  {
+    "path": "src/world/storage.ts",
+    "sha256": "46d93b707fe20b1136c8008d474e56460cdcb156bc5e710246250e1f0ba3e038"
+  },
+  {
+    "path": "docs/adr/0016-sparse-detail-coast.md",
+    "sha256": "3e3b00e38b9e2de8cb57fd390f460d5118705467674c0507cfd03607fc584526"
+  },
+  {
+    "path": "docs/adr/0018-natural-landscape-v2.md",
+    "sha256": "386be7a3eabab410d121bf0670e36ecee7228b3d6444933b494f4ec084c7c36b"
+  },
+  {
+    "path": "docs/adr/0020-local-detail-relief.md",
+    "sha256": "d89d904e67329c3781affe980d873c59e74d9870893668a327db4edcf05afbec"
+  },
+  {
+    "path": ".autopilot/ph06/preview16-ridge-grid-observation.md",
+    "sha256": "2395b82f6501ef15dbd9f9882876238701f40535e2ba4ed91e3f2a6914f1d338"
+  },
+  {
+    "path": ".autopilot/ph06/height-plane-diagnostic/probe.mjs",
+    "sha256": "02d82ad087e5622caa05e25583724fc248549e0e3a6dd8e3b7aeb18d232816b0"
+  }
+]

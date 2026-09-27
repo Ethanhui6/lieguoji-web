@@ -130,3 +130,190 @@
 .atlas-advanced { border-top: 1px solid var(--border); padding-top: 4px; }
 .atlas-advanced > summary { color: var(--text-secondary); font-size: 14px; font-weight: 600; }
 .atlas-advanced[open] > .atlas-edit-fields { padding-top: 12px; }
+
+/* Unified map tools and compact durable feedback.
+   No camera, canvas, gesture, data, or transaction behaviour is changed.
+   These scoped overrides are intentionally separable for parent review. */
+.atlas-studio[data-chrome="map-first"] {
+  --radius-control: 10px;
+  --radius-panel: 18px;
+  --shadow-panel: 0 8px 28px #092b401c, 0 1px 3px #092b4010;
+  font-family: var(--font-sans);
+}
+.atlas-studio[data-chrome="map-first"] .workbench-header {
+  min-height: 64px;
+  gap: 8px;
+  padding-block: max(6px, env(safe-area-inset-top)) 6px;
+}
+.atlas-studio[data-chrome="map-first"] .workbench-identity { gap: 10px; }
+.atlas-studio[data-chrome="map-first"] .workbench-identity h1 {
+  font-size: var(--font-title);
+  letter-spacing: -.025em;
+}
+.atlas-studio[data-chrome="map-first"] .mode-label {
+  padding: 2px 0;
+  background: transparent;
+  border-radius: 0;
+}
+.atlas-studio[data-chrome="map-first"] .workbench-header > button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 8px;
+}
+.atlas-studio[data-chrome="map-first"] .workbench-nav { gap: 6px; padding-top: 10px; }
+.atlas-studio[data-chrome="map-first"] .workbench-nav-item {
+  min-height: 56px;
+  margin-inline: 2px;
+  padding-block: 6px;
+  border-radius: 10px;
+}
+.atlas-studio[data-chrome="map-first"] .workbench-nav-item[aria-pressed="true"] {
+  border-color: var(--selected-outline);
+  box-shadow: none;
+}
+
+/* One quiet material, two real control groups. Neither group is hidden.
+   Native wrapping/scrolling remains available for large text and short screens. */
+.atlas-studio[data-chrome="map-first"] .atlas-tool-shelf {
+  position: absolute;
+  z-index: 6;
+  top: 12px;
+  left: max(12px, env(safe-area-inset-left));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  width: max-content;
+  max-width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
+  max-height: 40%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-panel);
+  box-shadow: 0 2px 10px #092b4018;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-tool-shelf .atlas-toolbar {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-tool-shelf button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 9px;
+  font-size: var(--font-control);
+  line-height: 1.4;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-brush-toolbar button { gap: 6px; }
+.atlas-studio[data-chrome="map-first"] .atlas-zoom-controls > span {
+  min-width: 44px;
+  padding-inline: 4px;
+  margin-left: auto;
+  font-size: var(--font-caption);
+}
+.atlas-studio[data-chrome="map-first"] .atlas-tool-shelf button:focus-visible,
+.atlas-studio[data-chrome="map-first"] .workbench-nav-item:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-tool-shelf button:active:not(:disabled) {
+  background: var(--selected-bg);
+  color: var(--selected-text);
+}
+
+/* Durable status is concise, permanent, and still readable. Actual problems,
+   progress, cancellation and recovery retain the full interactive feedback. */
+.atlas-studio[data-chrome="map-first"] .atlas-status {
+  width: max-content;
+  max-width: min(560px, calc(100% - 24px));
+  left: max(12px, env(safe-area-inset-left));
+  bottom: 12px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-panel);
+  box-shadow: 0 2px 8px #092b4014;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-status .inspector-feedback { width: auto; padding: 0; }
+.atlas-studio[data-chrome="map-first"] .atlas-status .inspector-notice {
+  min-height: 44px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+}
+.atlas-studio[data-chrome="map-first"] .atlas-status .inspector-notice > span { min-width: min(12rem, 100%); }
+.atlas-studio[data-chrome="map-first"] .atlas-status[data-feedback="alert"] {
+  width: min(560px, calc(100% - 24px));
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.atlas-studio[data-chrome="map-first"] .atlas-status[data-feedback="recovery"] {
+  width: min(560px, calc(100% - 24px));
+  border-color: var(--warning);
+  background: var(--warning-bg);
+}
+.atlas-studio[data-chrome="map-first"] .atlas-status button { min-width: 44px; min-height: 44px; }
+.atlas-studio[data-chrome="map-first"] .atlas-drawing-hint { white-space: normal; text-align: center; font-size: var(--font-caption); }
+
+@media (max-width: 899px), (max-width: 1279px) and (orientation: portrait) {
+  .atlas-studio[data-chrome="map-first"] .workbench-identity {
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .atlas-studio[data-chrome="map-first"] .workbench-identity h1 { width: 100%; max-width: none; }
+  .atlas-studio[data-chrome="map-first"] .workbench-header > button {
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 6px;
+    font-size: var(--font-caption);
+  }
+  .atlas-studio[data-chrome="map-first"] .workbench-header > button span { display: inline; }
+  .atlas-studio[data-chrome="map-first"] .workbench-nav { gap: 2px; padding-top: 4px; }
+  .atlas-studio[data-chrome="map-first"] .workbench-nav-item { margin-inline: 0; }
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf { flex-direction: column; align-items: stretch; gap: 2px; }
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf .atlas-brush-toolbar {
+    padding-top: 3px;
+    border-top: 1px solid var(--border);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf,
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf button { animation: none; transition: none; }
+}
+@media (prefers-contrast: more) {
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf,
+  .atlas-studio[data-chrome="map-first"] .atlas-status { border-width: 2px; box-shadow: none; }
+}
+@media (forced-colors: active) {
+  .atlas-studio[data-chrome="map-first"] .atlas-tool-shelf,
+  .atlas-studio[data-chrome="map-first"] .atlas-status {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+  .atlas-studio[data-chrome="map-first"] [aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: -3px; }
+  .atlas-studio[data-chrome="map-first"] button:disabled { color: GrayText; }
+  .atlas-studio[data-chrome="map-first"] :focus-visible { outline-color: Highlight; }
+}

@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "status": "isolated-precheck-passed-not-promoted",
+  "targets": [
+    {
+      "target": "src/world/generation/detail-shape-natural.ts",
+      "candidate": ".autopilot/ph06/height-plane-diagnostic/writer-staging/src/world/generation/detail-shape-natural.ts",
+      "baselineSha256": "11259248bec27fbed7aa13eafb6d1950817dbee1314a61fd36be7371b69b6e63",
+      "candidateSha256": "b2c0052cbfe690785c75acb588a13ad0ab78c86bbf1b5e2d7dbaf0a1ba3fc5f5"
+    },
+    {
+      "target": "src/world/generation/detail-natural-writer.test.ts",
+      "candidate": ".autopilot/ph06/height-plane-diagnostic/writer-staging/regression/src/world/generation/detail-natural-writer.test.ts",
+      "baselineSha256": null,
+      "candidateSha256": "bf9e7d6ad8b7975dec76707e875410d460849c8efc4693bc1758133b370dd048"
+    }
+  ],
+  "stageOnlyComparisonTest": {
+    "path": ".autopilot/ph06/height-plane-diagnostic/writer-staging/src/world/generation/detail-natural-writer.test.ts",
+    "sha256": "dedcead42d37518afbfb85b130c45c1bcff3db16481f48eb2f361081a1988adf",
+    "mayPromote": false
+  },
+  "keyReads": [
+    {
+      "path": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "sha256": "9afed003612e843b9df90960375b9a732dbba90ad803f9a182b7174ddc183d5e"
+    },
+    {
+      "path": "src/world/generation/detail-orography.ts",
+      "sha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "path": "src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    }
+  ],
+  "evidence": {
+    "initialConfigFailure": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/first/verification.json",
+    "baselineComparison": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/defines-fixed/verification.json",
+    "productionRegression": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/regression/verification.json",
+    "actualModuleLoads": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/regression/actual-loaded-sha.json",
+    "cost": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/defines-fixed/writer-cost.json",
+    "oldLandRefs": ".autopilot/ph06/height-plane-diagnostic/writer-staging/checks/defines-fixed/old-land-refs.json"
+  },
+  "checks": [
+    {
+      "testSet": "staging actual old/new writer",
+      "passed": 7,
+      "total": 7
+    },
+    {
+      "testSet": "normal-import permanent regression",
+      "passed": 6,
+      "total": 6
+    }
+  ],
+  "combinedWithCurvedCandidate": false,
+  "performanceAcceptance": false,
+  "visualAcceptance": false,
+  "productionAcceptance": false
+}

@@ -45,7 +45,7 @@ describe('independent natural-v2 real geography kernel', () => {
     expect(world.summary.sampledTiles).toBeLessThan(4096); expect(world.summary.landAreaTwiceQ2 + world.summary.seaAreaTwiceQ2).toBe(2 * (4096 * 256) ** 2);
   });
 
-  it('stores recomputed target distance and exact saturated Hbase joins, never raw structural noise', async () => {
+  it('stores recomputed target distance and exact saturated sea Hbase joins, with explicit fine land', async () => {
     const index = await buildDetailShapeDistanceIndex({ coordinates: world.targetCoast, segmentCount: world.summary.targetSegments }, { yieldControl: noWait });
     const restored = createDetailShapeBaseSampler(source.size, source.centersQ, world.coarseElevations.buffer as ArrayBuffer); let samples = 0, saturated = 0;
     for (const tile of world.detailCoast.values()) if (tile.mode === 'samples') {
@@ -53,10 +53,14 @@ describe('independent natural-v2 real geography kernel', () => {
       for (let slot = 0; slot < layout.count; slot += 127) {
         const x = (layout.startX + slot % layout.width) * 512, y = (layout.startY + Math.floor(slot / layout.width)) * 512, c = tile.coverageQ[slot];
         expect(index.sample(x, y, c < 0 ? -1 : 1).coverageQ).toBe(c); samples++;
-        if (Math.abs(c) === 32767) { const h = Math.round(restored(x, y)); expect(tile.elevationMeters[slot]).toBe(c > 0 ? Math.max(0, h) : Math.min(-1, h)); saturated++; }
+        // New land retains the actual physical fine field; the writer regression
+        // checks every positive node against that field. The old implicit
+        // sampler and saturated sea join retain their existing exact contract.
+        if (c === -32767) { const h = Math.round(restored(x, y)); expect(tile.elevationMeters[slot]).toBe(Math.min(-1, h)); saturated++; }
       }
     }
     expect(samples).toBeGreaterThan(50); expect(saturated).toBeGreaterThan(0);
+    expect([...world.detailCoast.values()].every(tile => tile.mode === 'samples')).toBe(true);
   });
 
   it('keeps the generated main shore a single closed non-branching component', () => {

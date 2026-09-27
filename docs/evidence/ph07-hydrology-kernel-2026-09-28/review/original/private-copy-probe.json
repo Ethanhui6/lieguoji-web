@@ -1,0 +1,31 @@
+{
+  "source": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\hydrology-kernel-staging\\src\\hydrology-kernel.ts",
+  "sourceSha256": "4be70639685b22e53f3d4b95d8785e75d59122501a377397cfa5f8839e2d1671",
+  "sourceUnchanged": true,
+  "nodeVersion": "v24.18.1",
+  "nodes": 9,
+  "normal": {
+    "landNodes": 9,
+    "coverageAliased": false,
+    "groundAliased": false
+  },
+  "overriddenInstanceSlice": {
+    "callbackMutation": true,
+    "landNodes": 0,
+    "coverageAliased": true,
+    "groundAliased": true,
+    "resultCoverage": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ]
+  },
+  "privateCaptureBroken": true,
+  "scope": "9-node direct runtime repro only; no full tests, benchmark or production modification"
+}

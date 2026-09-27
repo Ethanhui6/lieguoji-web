@@ -10,14 +10,14 @@ export interface OrographyChain {
 }
 type Probe = Point & { tx: number; ty: number; arc: number };
 type ArcAnchor = OrographyAnchor & { arc: number };
-type PeakEvent = { centerQ: number; radiusQ: number; amplitude: number };
-type Run = { group: number; leeQ: number; seed: number; sampleStepQ: number; points: Probe[]; anchors: ArcAnchor[]; length: number; parentRun?: number; parentHeight: number; rootPeak: number; events: PeakEvent[] };
+export interface OrographyProfilePoint { arcQ: number; strength: number; widthScale: number; kind: 'end' | 'peak' | 'saddle' }
+type Run = { group: number; leeQ: number; seed: number; sampleStepQ: number; points: Probe[]; anchors: ArcAnchor[]; length: number; parentRun?: number; parentHeight: number; rootPeak: number; profile: OrographyProfilePoint[] };
 type Span = {
   a: Point; b: Point; widthQ: number; peakQ: number; group: number;
   widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number;
   run: number; arcAQ: number; arcBQ: number;
 };
-type Support = Point & { tx: number; ty: number; alongQ: number; widthQ: number; crestQ: number; peakQ: number; weight: number; leeQ: number; valleyDepth: number; valleySide: number; run: number; arc: number };
+type Support = Point & { tx: number; ty: number; alongQ: number; widthQ: number; crestQ: number; foothillShare: number; valleyOffset: number; peakQ: number; weight: number; leeQ: number; valleyDepth: number; valleySide: number; run: number; arc: number };
 type Ends = { first: Probe; last: Probe; fadeQ: number; branch: boolean };
 const WORLD_Q = 4096 * 256, BUCKET_Q = 64 * 256, BUCKETS = 64;
 export const OROGRAPHY_LIMITS = { chains: 3, anchors: 17, spans: 14, nodes: 4096, indexReferences: 262144, bucketCandidates: 192, curveProbePoints: 131072 } as const;
@@ -67,21 +67,35 @@ function hermite(a: Point, b: Point, ta: Point, tb: Point, t: number) {
   return { xQ: Math.round(coordinate(a.xQ, b.xQ, ta.xQ, tb.xQ)), yQ: Math.round(coordinate(a.yQ, b.yQ, ta.yQ, tb.yQ)), tx: tx / norm, ty: ty / norm };
 }
 
-/** Disjoint, unequal physical arc intervals; no harmonic or repeated wavelength. */
-function eventsFor(run: Run): PeakEvent[] {
-  const zones = run.length < 384 * 256 ? [[.13, .84]] : [[.035, .235], [.285, .525], [.725, .975]];
-  return zones.map(([left, right], i) => {
-    const shift = .35 + (hashAt(run.seed, 7290, i, 0) % 301) / 1000;
-    const center = left + (right - left) * shift;
-    return { centerQ: center * run.length, radiusQ: Math.min(center - left, right - center) * run.length * .94, amplitude: .52 + (hashAt(run.seed, 7291, i, 0) % 111) / 1000 };
-  });
+/** Continuous physical ridge envelope. Every interval joins a peak, saddle or
+ * foothill; no baseline gaps between three predetermined isolated events. */
+export function planOrographyProfile(seed: number, lengthQ: number): OrographyProfilePoint[] {
+  if (!Number.isInteger(seed) || !Number.isFinite(lengthQ) || lengthQ <= 0) throw new Error('山带纵向尺度无效。');
+  const peaks = lengthQ < 384 * 256 ? 1 : Math.max(2, Math.min(4, Math.round(lengthQ / (420 * 256))));
+  const gaps = Array.from({ length: peaks + 1 }, (_, i) => i === 0 || i === peaks
+    ? .5 + (hashAt(seed, 7290, i, 0) % 301) / 1000 : .85 + (hashAt(seed, 7290, i, 0) % 1101) / 1000);
+  const sum = gaps.reduce((total, value) => total + value, 0), positions: number[] = []; let distance = 0;
+  for (let i = 0; i < peaks; i++) { distance += gaps[i]; positions.push(lengthQ * distance / sum); }
+  const profile: OrographyProfilePoint[] = [{ arcQ: 0, strength: .24, widthScale: .7, kind: 'end' }];
+  for (let i = 0; i < peaks; i++) {
+    if (i) profile.push({ arcQ: positions[i - 1] + (positions[i] - positions[i - 1]) * (.36 + (hashAt(seed, 7292, i, 0) % 281) / 1000),
+      strength: .32 + (hashAt(seed, 7293, i, 0) % 101) / 1000, widthScale: .88 + (hashAt(seed, 7294, i, 0) % 121) / 1000, kind: 'saddle' });
+    profile.push({ arcQ: positions[i], strength: .91 + (hashAt(seed, 7291, i, 0) % 91) / 1000,
+      widthScale: .82 + (hashAt(seed, 7295, i, 0) % 181) / 1000, kind: 'peak' });
+  }
+  profile.push({ arcQ: lengthQ, strength: .24, widthScale: .7, kind: 'end' });
+  return profile;
+}
+function profileAt(run: Run, arc: number) {
+  let index = 1; while (index + 1 < run.profile.length && run.profile[index].arcQ < arc) index++;
+  const a = run.profile[index - 1], b = run.profile[index], t = (arc - a.arcQ) / (b.arcQ - a.arcQ);
+  return { strength: blend(a.strength, b.strength, t), widthScale: blend(a.widthScale, b.widthScale, t) };
 }
 function profile(run: Run, arc: number): number {
-  if (run.group) return run.rootPeak * (1 - .83 * smooth(arc / run.length));
-  let value = .34;
-  for (const event of run.events) value += event.amplitude * compact((arc - event.centerQ) / event.radiusQ);
-  return Math.max(...run.anchors.map(p => p.peakQ)) * value;
+  if (run.group) return run.rootPeak * (1 - .74 * smooth(arc / run.length));
+  return Math.max(...run.anchors.map(p => p.peakQ)) * profileAt(run, arc).strength;
 }
+const widthScaleAt = (run: Run, arc: number) => run.group ? 1 - .08 * smooth(arc / run.length) : profileAt(run, arc).widthScale;
 function endpointWeight(ends: Ends, xQ: number, yQ: number) {
   const start = (xQ - ends.first.xQ) * ends.first.tx + (yQ - ends.first.yQ) * ends.first.ty;
   const finish = (ends.last.xQ - xQ) * ends.last.tx + (ends.last.yQ - yQ) * ends.last.ty;
@@ -102,11 +116,11 @@ function contribution(node: Support, xQ: number, yQ: number): number {
   const signed = Math.max(-1, Math.min(1, across / (node.widthQ / 4))), side = signed * (1.5 - .5 * signed * signed);
   const sideWidth = 1 + .15 * node.leeQ * side, width = node.widthQ * sideWidth, crest = node.crestQ * sideWidth;
   if (Math.abs(across) >= width) return 0;
-  const foothill = .24 * compact(across / width);
+  const foothill = node.foothillShare * compact(across / width);
   // A finite branch-side hollow lowers the real foothill field. It does not
   // draw a river, carve below the supplied background or claim drainage.
-  const hollow = node.valleyDepth * compact((across / width - node.valleySide * .48) / .14);
-  const crossSection = .76 * compact(across / crest) + foothill * (1 - hollow);
+  const hollow = node.valleyDepth * compact((across / width - node.valleySide * node.valleyOffset) / .14);
+  const crossSection = (1 - node.foothillShare) * compact(across / crest) + foothill * (1 - hollow);
   // Separable ribbon: along support does not squeeze the transverse section
   // into an ellipse. Both compact edges, side width and gates are at least C1.
   return node.peakQ * compact(along) * crossSection * node.weight;
@@ -161,7 +175,7 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
       if (!clear) { rejectedSpans++; run = undefined; failed = true; if (chain.group) break; continue; }
       if (!run) {
         run = { group: chain.group, leeQ: chain.leeQ, seed: chain.seed, sampleStepQ: chain.sampleStepQ, points: [], anchors: [{ ...a, arc: 0 }], length: 0,
-          parentRun: parent ? runs.indexOf(parent) : undefined, parentHeight: 0, rootPeak: 0, events: [] };
+          parentRun: parent ? runs.indexOf(parent) : undefined, parentHeight: 0, rootPeak: 0, profile: [] };
         pendingRuns.push(run);
       }
       const arcAQ = run.length;
@@ -177,7 +191,7 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
     }
     // No detached continuation of a branch beyond a rejected inlet crossing.
     if (chain.group && failed) { rejectedBranches++; continue; }
-    for (const r of pendingRuns) { r.events = r.group ? [] : eventsFor(r); runs.push(r); }
+    for (const r of pendingRuns) { r.profile = r.group ? [] : planOrographyProfile(r.seed, r.length); runs.push(r); }
     spans.push(...pendingSpans);
     if (spans.length > OROGRAPHY_LIMITS.spans) throw new Error('山系实际曲段超出预算。');
     if (runs.length > OROGRAPHY_UNION.maximumRuns) throw new Error('山系有效曲链超出预算。');
@@ -199,13 +213,15 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
       if (!(height > 0) || !Number.isFinite(height)) throw new Error('支脊缺少有效的主脊实际连接高程。');
       run.parentHeight = height; run.rootPeak = .82 * Math.min(FIELD_Q, height);
     }
-    const narrowest = Math.min(...run.anchors.map(a => a.widthQ)), along = .35 * narrowest;
+    const narrowest = Math.min(...run.anchors.map(a => a.widthQ)) * (run.group ? .92 : .7), along = .35 * narrowest;
     const count = Math.max(1, Math.ceil(run.length / Math.max(256, along / 4))), ds = run.length / count;
     if (nodes.length + count > OROGRAPHY_LIMITS.nodes) throw new Error('山系高度节点超出有界预算。');
     const endFade = endFadeOf(run);
     ends[runId] = endsOf(run);
     const endProfile = (arc: number) => smooth(Math.min(run.group ? Infinity : arc, run.length - arc) / endFade);
     for (const span of spans.filter(s => s.run === runId)) {
+      const a = run.anchors.find(p => p.arc === span.arcAQ)!, b = run.anchors.find(p => p.arc === span.arcBQ)!;
+      span.widthAQ = a.widthQ * widthScaleAt(run, a.arc); span.widthBQ = b.widthQ * widthScaleAt(run, b.arc); span.widthQ = Math.max(span.widthAQ, span.widthBQ);
       span.peakAQ = profile(run, span.arcAQ) * endProfile(span.arcAQ); span.peakBQ = profile(run, span.arcBQ) * endProfile(span.arcBQ);
       span.peakQ = Math.max(span.peakAQ, span.peakBQ, profile(run, (span.arcAQ + span.arcBQ) / 2));
     }
@@ -219,9 +235,14 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
       let tx = pa.tx + (pb.tx - pa.tx) * t, ty = pa.ty + (pb.ty - pa.ty) * t, norm = Math.hypot(tx, ty);
       if (norm < 1e-9) { tx = pb.xQ - pa.xQ; ty = pb.yQ - pa.yQ; norm = Math.hypot(tx, ty); }
       tx /= norm; ty /= norm;
-      const widthQ = blend(a.widthQ, b.widthQ, u), alongQ = .35 * widthQ, fraction = arc / run.length;
+      const widthQ = blend(a.widthQ, b.widthQ, u) * widthScaleAt(run, arc), alongQ = .35 * widthQ, fraction = arc / run.length;
+      // Broad regional ranges have wide shoulders which survive 16-world
+      // Hbase sampling. Small/local spurs retain the original narrow crest
+      // and low foothill relationship, with a smooth transition in metres.
+      const landformScale = smooth((widthQ - 128 * 256) / (128 * 256));
       nodes.push({ xQ: pa.xQ + (pb.xQ - pa.xQ) * t, yQ: pa.yQ + (pb.yQ - pa.yQ) * t, tx, ty, widthQ,
-        crestQ: Math.min(widthQ * .55, Math.max(1.5 * run.sampleStepQ, widthQ * .24)), alongQ,
+        crestQ: Math.min(widthQ * .62, Math.max(1.5 * run.sampleStepQ, widthQ * (.24 + .22 * landformScale))), alongQ,
+        foothillShare: .24 + .18 * landformScale, valleyOffset: .48 + .16 * landformScale,
         peakQ: profile(run, arc) * endProfile(arc), weight: 35 * ds / (32 * alongQ), leeQ: run.leeQ,
         valleyDepth: run.group ? .98 * 16 * fraction * fraction * (1 - fraction) ** 2 : 0, valleySide: run.leeQ, run: runId, arc });
       if (++work % batch === 0) await checkpoint('sample-branching-ribbons', nodes.length, OROGRAPHY_LIMITS.nodes);
@@ -257,5 +278,5 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
   const stats = { curveRuns: runs.length, supportNodes: nodes.length, indexReferences: references, maximumBucketCandidates, landProbes: probes, attachmentSupportTests, rejectedSpans, rejectedBranches, acceptedSpans: spans.length };
   return { sample, stats, spans: spans.map(span => ({ ...span, a: { ...span.a }, b: { ...span.b } })), supports: nodes.map(node => ({ ...node })),
     ends: ends.map(end => ({ ...end, first: { ...end.first }, last: { ...end.last } })),
-    curves: runs.map(run => ({ group: run.group, points: run.points.map(point => ({ ...point })), events: run.events.map(event => ({ ...event })), rootPeakQ: run.rootPeak, parentHeightQ: run.parentHeight })) };
+    curves: runs.map(run => ({ group: run.group, points: run.points.map(point => ({ ...point })), profile: run.profile.map(point => ({ ...point })), rootPeakQ: run.rootPeak, parentHeightQ: run.parentHeight })) };
 }

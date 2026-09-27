@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "status": "frozen-tested-pure-kernel-ready-for-review",
+  "productionEdited": false,
+  "ph07T1Complete": false,
+  "head": "05f566ea90f22ae5aa3e7421cfa221a53b7acec9",
+  "files": [
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/src/hydrology-kernel.ts",
+      "sha256": "4be70639685b22e53f3d4b95d8785e75d59122501a377397cfa5f8839e2d1671"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/src/hydrology-kernel.test.ts",
+      "sha256": "b2d13428db7b7fbf362b7d81c78ac0578222df839a00022d1df2e395f9de9f98"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/DESIGN.md",
+      "sha256": "5ed8c157a198d3393761cfc7b4aec1a05bd1b20e980b0aa16201d6787949b944"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/README.md",
+      "sha256": "570d722df4adabab86dbd79bb060529dc31a68f501b1f8183c8604ee7544c29c"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/run.mjs",
+      "sha256": "367755f5fcb6d521adf04595b977757a0ece184949fee617efbe3690d32b77ad"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/vitest.config.ts",
+      "sha256": "1992393b8cf69afa5185c535ab8ea912e4e6130973990a197be2bec6b5a14413"
+    },
+    {
+      "path": ".autopilot/ph07/hydrology-kernel-staging/tsconfig.json",
+      "sha256": "588c5edfe5f6db0fce687796935420d04ba822931659d389beb85d50bbabdf77"
+    }
+  ],
+  "stableProductionImports": [
+    {
+      "path": "src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "path": "src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    }
+  ],
+  "newModuleHasProductionBaseline": false,
+  "verification": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/verification.json",
+  "verificationSha256": "06306f602a5a06b331f7765020ab3f504cfa8b946d597b0fb43be7231c326aee",
+  "checks": {
+    "kernelTypes": "PASS",
+    "unitTotal": 14,
+    "unitPassed": 14,
+    "retries": 0,
+    "sourceUnchanged": true
+  },
+  "budgets": {
+    "nodes": 262144,
+    "side": 512,
+    "typedArrayBytesPerNode": 48,
+    "maximumTypedArrayBytes": 12582912,
+    "operations": "64*N+1024"
+  },
+  "notRun": [
+    "production snapshot extraction",
+    "Worker integration",
+    "full-project checks",
+    "build",
+    "browser",
+    "persistence",
+    "real-world hydrology",
+    "performance",
+    "real-device"
+  ],
+  "deferred": [
+    "actual lake water",
+    "basin spill and merge",
+    "cross-patch stitching",
+    "runoff-driven river geometry",
+    "UI and save schema"
+  ]
+}

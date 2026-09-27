@@ -1,0 +1,20 @@
+{
+  "format": "lieguoji-ui-staging",
+  "version": 1,
+  "status": "candidate-unvalidated",
+  "createdAt": "2026-09-27T18:20:34.6594076Z",
+  "head": "72fd76591d1258515b72f5b50058bb142c6e1520",
+  "branch": "codex/ph06-world-generation",
+  "scope": "Only AtlasStudio layout markup and scoped CSS; no production promotion",
+  "sources": [
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "sha256": "5cab4301f60091978d9d39e42ee5392708c34f2d099b9693f8407dcf4991182e"
+    },
+    {
+      "path": "src/editor/atlas-studio.css",
+      "sha256": "87138aef8f1ede52f7d53a924e46b2f3ec450e4e586fd4efcdaa4d85815ad9c7"
+    }
+  ],
+  "validation": "NOT_RUN: parent requested production/browser/CPU freeze"
+}

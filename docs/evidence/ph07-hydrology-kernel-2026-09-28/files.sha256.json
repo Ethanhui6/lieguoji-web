@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "root": "docs/evidence/ph07-hydrology-kernel-2026-09-28",
+  "files": [
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/DESIGN.md",
+      "path": "checks/fine-drainage-first/candidate-snapshot/DESIGN.md",
+      "bytes": 5470,
+      "sha256": "5ed8c157a198d3393761cfc7b4aec1a05bd1b20e980b0aa16201d6787949b944"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/run.mjs",
+      "path": "checks/fine-drainage-first/candidate-snapshot/run.mjs",
+      "bytes": 3733,
+      "sha256": "367755f5fcb6d521adf04595b977757a0ece184949fee617efbe3690d32b77ad"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/src/hydrology-kernel.test.ts",
+      "path": "checks/fine-drainage-first/candidate-snapshot/src/hydrology-kernel.test.ts",
+      "bytes": 14824,
+      "sha256": "b2d13428db7b7fbf362b7d81c78ac0578222df839a00022d1df2e395f9de9f98"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/src/hydrology-kernel.ts",
+      "path": "checks/fine-drainage-first/candidate-snapshot/src/hydrology-kernel.ts",
+      "bytes": 15689,
+      "sha256": "4be70639685b22e53f3d4b95d8785e75d59122501a377397cfa5f8839e2d1671"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/tsconfig.json",
+      "path": "checks/fine-drainage-first/candidate-snapshot/tsconfig.json",
+      "bytes": 281,
+      "sha256": "588c5edfe5f6db0fce687796935420d04ba822931659d389beb85d50bbabdf77"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/candidate-snapshot/vitest.config.ts",
+      "path": "checks/fine-drainage-first/candidate-snapshot/vitest.config.ts",
+      "bytes": 235,
+      "sha256": "1992393b8cf69afa5185c535ab8ea912e4e6130973990a197be2bec6b5a14413"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/commands.json",
+      "path": "checks/fine-drainage-first/commands.json",
+      "bytes": 861,
+      "sha256": "8fbafc95a0f12769865dcd6db3ce2bd766bcc8c5c5d0ef7b0afcbc84e0c95df5"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/README-before-private-copy-review.md",
+      "path": "checks/fine-drainage-first/README-before-private-copy-review.md",
+      "bytes": 5102,
+      "sha256": "570d722df4adabab86dbd79bb060529dc31a68f501b1f8183c8604ee7544c29c"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/ready-before-private-copy-review.json",
+      "path": "checks/fine-drainage-first/ready-before-private-copy-review.json",
+      "bytes": 3028,
+      "sha256": "b0f0d44fa32c3c759664493b2d6943b1cf6ce92b73ab804501fc2a0b12d37aad"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/source-after.json",
+      "path": "checks/fine-drainage-first/source-after.json",
+      "bytes": 1655,
+      "sha256": "d765f0276261b39a9a5a4e97a3b8925b195cfc7beaf63e3b966ed96aa25bcb3d"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/source-before.json",
+      "path": "checks/fine-drainage-first/source-before.json",
+      "bytes": 1655,
+      "sha256": "d765f0276261b39a9a5a4e97a3b8925b195cfc7beaf63e3b966ed96aa25bcb3d"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/types-exit.json",
+      "path": "checks/fine-drainage-first/types-exit.json",
+      "bytes": 61,
+      "sha256": "a78745754ada089b9d63c045f562e69e55ad9e7b313e8d8683efc4ae9786897b"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/types.log",
+      "path": "checks/fine-drainage-first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/unit-exit.json",
+      "path": "checks/fine-drainage-first/unit-exit.json",
+      "bytes": 70,
+      "sha256": "eb80d8ff1974584ccfde9c882ede1494408d69e851e359f70606cd6b38a1d999"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/unit.json",
+      "path": "checks/fine-drainage-first/unit.json",
+      "bytes": 6420,
+      "sha256": "0afd85533538fe5102bb5042994cf0c675b69bb94e566f6825833a109780b06e"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/unit.log",
+      "path": "checks/fine-drainage-first/unit.log",
+      "bytes": 559,
+      "sha256": "0addbd9af8c672f43811c49189b5661a4bb1722cb2f25071e56a9596723f539a"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/verification.json",
+      "path": "checks/fine-drainage-first/verification.json",
+      "bytes": 460,
+      "sha256": "06306f602a5a06b331f7765020ab3f504cfa8b946d597b0fb43be7231c326aee"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/DESIGN.md",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/DESIGN.md",
+      "bytes": 5470,
+      "sha256": "5ed8c157a198d3393761cfc7b4aec1a05bd1b20e980b0aa16201d6787949b944"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/run.mjs",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/run.mjs",
+      "bytes": 3733,
+      "sha256": "b469637e1563d93c6f7a4c29b543e602fcafd8824ea4368e63972e354b6664a3"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/src/hydrology-kernel.test.ts",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/src/hydrology-kernel.test.ts",
+      "bytes": 17469,
+      "sha256": "2f6b7530d11cbede9fe68aa194c794b9e61b23557d1a7b63a1dd6dfe49380cb0"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/src/hydrology-kernel.ts",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/src/hydrology-kernel.ts",
+      "bytes": 16087,
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/tsconfig.json",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/tsconfig.json",
+      "bytes": 281,
+      "sha256": "588c5edfe5f6db0fce687796935420d04ba822931659d389beb85d50bbabdf77"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/candidate-snapshot/vitest.config.ts",
+      "path": "checks/intrinsic-private-copy-fix/candidate-snapshot/vitest.config.ts",
+      "bytes": 235,
+      "sha256": "1992393b8cf69afa5185c535ab8ea912e4e6130973990a197be2bec6b5a14413"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/commands.json",
+      "path": "checks/intrinsic-private-copy-fix/commands.json",
+      "bytes": 868,
+      "sha256": "006f0a716214cb1ec32f881a91f04b3a4258ad6030d531952de9a733e91e2fb3"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/source-after.json",
+      "path": "checks/intrinsic-private-copy-fix/source-after.json",
+      "bytes": 1655,
+      "sha256": "f6f8e4af37590b504ec7554a2f680573f32f625580d2a207b746e24f66f48e19"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/source-before.json",
+      "path": "checks/intrinsic-private-copy-fix/source-before.json",
+      "bytes": 1655,
+      "sha256": "f6f8e4af37590b504ec7554a2f680573f32f625580d2a207b746e24f66f48e19"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/types-exit.json",
+      "path": "checks/intrinsic-private-copy-fix/types-exit.json",
+      "bytes": 61,
+      "sha256": "ad340b80dc0b66781bb5e759235a30ea9681bdf37282058147df51d76fe7a90c"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/types.log",
+      "path": "checks/intrinsic-private-copy-fix/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/unit-exit.json",
+      "path": "checks/intrinsic-private-copy-fix/unit-exit.json",
+      "bytes": 61,
+      "sha256": "c4255fed70b5a6aa6085aa233ab58805bc71d7fd665f5b63b919bd446b2a9517"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/unit.json",
+      "path": "checks/intrinsic-private-copy-fix/unit.json",
+      "bytes": 7247,
+      "sha256": "52a11af8e0f5e37578ba344de01c3a47f7dbc7fc8c7bd0b2c69d68fa862562aa"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/unit.log",
+      "path": "checks/intrinsic-private-copy-fix/unit.log",
+      "bytes": 566,
+      "sha256": "6c5f60f346c4fd66a1a78e1456fd893ee249bf53e94bb6a64ea96569ae10851f"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/checks/intrinsic-private-copy-fix/verification.json",
+      "path": "checks/intrinsic-private-copy-fix/verification.json",
+      "bytes": 451,
+      "sha256": "dabd8257b1f6dda746d47bcdba6815b88ce55c011234841450d1ab52f522db57"
+    },
+    {
+      "source": "package-lock.json",
+      "path": "dependencies/package-lock.json",
+      "bytes": 140963,
+      "sha256": "1434c60b92f1855dd176f337a81269af44a8cfc796680b60d2bf7356aa90b8aa"
+    },
+    {
+      "source": "src/world/detail-coast-codec.ts",
+      "path": "dependencies/src/world/detail-coast-codec.ts",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "source": "src/world/detail-coast-field.ts",
+      "path": "dependencies/src/world/detail-coast-field.ts",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "source": "src/world/detail-coast-geometry.ts",
+      "path": "dependencies/src/world/detail-coast-geometry.ts",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "source": "src/world/detail-coast-types.ts",
+      "path": "dependencies/src/world/detail-coast-types.ts",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-review/archive.mjs",
+      "path": "provenance/archive.mjs",
+      "bytes": 14299,
+      "sha256": "d0a776c82d826ccff40d5ed7378e7ad7528ed87c282db06f898e015037a98028"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-review/private-copy-probe.json",
+      "path": "review/original/private-copy-probe.json",
+      "bytes": 767,
+      "sha256": "579d708dc0c3ce0a6caff05939815ac12132f37a0262799506ce29fb4c66c825"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-review/private-copy-probe.mjs",
+      "path": "review/original/private-copy-probe.mjs",
+      "bytes": 1986,
+      "sha256": "d2b02c9c1b79819920e87167524a8207c071d14bd86165e708600b39ecde6d60"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-review/REVIEW.md",
+      "path": "review/original/REVIEW.md",
+      "bytes": 5121,
+      "sha256": "d3950d531886e3622a4eabb4e6427fda67d014f2331d1ff72922737fe216a30f"
+    },
+    {
+      "source": null,
+      "path": "review/PRIVATE_COPY_CLOSURE.md",
+      "bytes": 2245,
+      "sha256": "fbff3a8c8c8cb6c8e7eaad529cc0eb8fb8f09be7430d1dac870cf92ff9ffa955"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/DESIGN.md",
+      "path": "source/DESIGN.md",
+      "bytes": 5470,
+      "sha256": "5ed8c157a198d3393761cfc7b4aec1a05bd1b20e980b0aa16201d6787949b944"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/PRIVATE_COPY_CORRECTION.md",
+      "path": "source/PRIVATE_COPY_CORRECTION.md",
+      "bytes": 2311,
+      "sha256": "17a21ec6c53c091cfd5c174fac9522ab7a9982412b2536fb256a546faf0c2a47"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/README.md",
+      "path": "source/README.md",
+      "bytes": 5702,
+      "sha256": "73632f321e16ad086cd06f52f36d29f88a26e3b614ef8095712c9038bf0b98f9"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/ready-manifest.json",
+      "path": "source/ready-manifest.json",
+      "bytes": 3438,
+      "sha256": "d6e742cf8b07f556b1a0f72b3627942711902a86e86925b2542bf77d253b78bd"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/run.mjs",
+      "path": "source/run.mjs",
+      "bytes": 3733,
+      "sha256": "b469637e1563d93c6f7a4c29b543e602fcafd8824ea4368e63972e354b6664a3"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/src/hydrology-kernel.test.ts",
+      "path": "source/src/hydrology-kernel.test.ts",
+      "bytes": 17469,
+      "sha256": "2f6b7530d11cbede9fe68aa194c794b9e61b23557d1a7b63a1dd6dfe49380cb0"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/src/hydrology-kernel.ts",
+      "path": "source/src/hydrology-kernel.ts",
+      "bytes": 16087,
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/tsconfig.json",
+      "path": "source/tsconfig.json",
+      "bytes": 281,
+      "sha256": "588c5edfe5f6db0fce687796935420d04ba822931659d389beb85d50bbabdf77"
+    },
+    {
+      "source": ".autopilot/ph07/hydrology-kernel-staging/vitest.config.ts",
+      "path": "source/vitest.config.ts",
+      "bytes": 235,
+      "sha256": "1992393b8cf69afa5185c535ab8ea912e4e6130973990a197be2bec6b5a14413"
+    }
+  ],
+  "copiedFiles": 50,
+  "copiedBytes": 362593,
+  "excludedSelfDescribingFiles": [
+    "files.sha256.json",
+    "verification.json"
+  ]
+}

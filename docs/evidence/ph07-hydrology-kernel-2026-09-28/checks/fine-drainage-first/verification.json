@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "executions": [
+    {
+      "name": "types",
+      "code": 0,
+      "durationMs": 562.6975
+    },
+    {
+      "name": "unit",
+      "code": 0,
+      "durationMs": 1564.4279000000001
+    }
+  ],
+  "unit": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "pending": 0
+  },
+  "sourceUnchanged": true,
+  "retries": 0,
+  "stageOnly": true,
+  "productionAcceptance": false,
+  "performanceAcceptance": false,
+  "ph07T1Complete": false
+}

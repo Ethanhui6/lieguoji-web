@@ -1,7 +1,7 @@
 import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, smoothQ } from './seed';
 import type { DetailShapeControl } from './detail-shape';
 import { boundCurvedRelief } from './detail-curved-ridge';
-import { createOrographyField, type OrographyAnchor, type OrographyChain } from './detail-orography';
+import { createOrographyField, planOrographyProfile, type OrographyAnchor, type OrographyChain } from './detail-orography';
 
 type Point = { xQ: number; yQ: number };
 export interface NaturalRidge { a: Point; b: Point; widthQ: number; peakQ: number; group: number; widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number }
@@ -72,7 +72,7 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     const local = scaleMode === 'local';
     const minimumWidth = local ? 12 * 256 : 4 * stepQ;
     const count = local ? Math.max(3, Math.min(9, Math.floor(longSpan / Math.max(96 * 256, 4 * stepQ)) + 1)) : 9;
-    const footprint = local ? Math.min(shortSpan * .18, longSpan / (count - 1) * .55, 80 * 256) : Math.min(shortSpan * .42, 224 * 256);
+    const footprint = local ? Math.min(shortSpan * .18, longSpan / (count - 1) * .55, 80 * 256) : Math.min(shortSpan * .45, 256 * 256);
     type Target = OrographyAnchor & { point?: Point; score: number };
     let work = 0;
     const snap = async (targets: Target[]) => {
@@ -89,11 +89,22 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     // Tiny/narrow eligible patches deliberately retain only the lowland base.
     if (footprint >= minimumWidth && longSpan >= minimumWidth * 4 && shortSpan >= minimumWidth * 2) {
       const targets: Target[] = [];
+      // A few broad, unequally spaced turns define real geography. They are
+      // land-probed below, not a post-sampling warp or display texture.
+      const bendSign = hashAt(seed, 7200, 0, 0) % 2 ? 1 : -1;
+      const bendKnots = [
+        { at: 0, value: ((hashAt(seed, 7201, 0, 0) % 501) / 1000 - .25) * bendSign },
+        { at: .25 + (hashAt(seed, 7201, 1, 0) % 101) / 1000, value: (.75 + (hashAt(seed, 7202, 1, 0) % 251) / 1000) * bendSign },
+        { at: .64 + (hashAt(seed, 7201, 2, 0) % 121) / 1000, value: -(.6 + (hashAt(seed, 7202, 2, 0) % 301) / 1000) * bendSign },
+        { at: 1, value: ((hashAt(seed, 7201, 3, 0) % 501) / 1000 - .25) * bendSign },
+      ];
       for (let j = 0; j < count; j++) {
         const fraction = j / (count - 1), along = .045 + .91 * fraction;
-        const bend = noiseQ12(seed, 7200, Math.round(fraction * 1408 * 256), 0, 512 * 256);
-        const longitudinal = Math.round(longMin + longSpan * along), transverse = Math.round(shortMin + shortSpan / 2 + shortSpan * bend / (5 * FIELD_Q));
-        const widthQ = Math.round(Math.max(minimumWidth, footprint * (.62 + (hashAt(seed, 7210, 0, j) % 381) / 1000)));
+        let bendIndex = 1; while (bendIndex + 1 < bendKnots.length && bendKnots[bendIndex].at < fraction) bendIndex++;
+        const a = bendKnots[bendIndex - 1], b = bendKnots[bendIndex], t = (fraction - a.at) / (b.at - a.at);
+        const bend = a.value + (b.value - a.value) * t * t * (3 - 2 * t);
+        const longitudinal = Math.round(longMin + longSpan * along), transverse = Math.round(shortMin + shortSpan / 2 + shortSpan * .2 * bend);
+        const widthQ = Math.round(Math.max(minimumWidth, footprint * (.78 + (hashAt(seed, 7210, 0, j) % 221) / 1000)));
         targets.push({ ...(horizontal ? { xQ: longitudinal, yQ: transverse } : { xQ: transverse, yQ: longitudinal }), widthQ, peakQ: FIELD_Q, score: Infinity });
       }
       await snap(targets);
@@ -113,18 +124,28 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
       if (trunk.length >= 3 && trunk.every(p => p.widthQ >= minimumWidth)) chains.push({ group: 0, leeQ, seed, sampleStepQ, anchors: trunk });
       const allowBranches = local ? longSpan >= 1024 * 256 && shortSpan >= 512 * 256 : shortSpan >= 8 * stepQ;
       if (chains.length && allowBranches && trunk.length >= 5) {
+        // Attach near strong sections of the same physical envelope. A fixed
+        // fraction could hit a deep saddle and make both spurs barely visible.
+        // Chord lengths only choose candidate anchors: the helper establishes
+        // actual parent height on the fully land-checked Hermite curve.
+        const arcs = [0]; for (let i = 1; i < trunk.length; i++) arcs.push(arcs[i - 1] + Math.hypot(trunk[i].xQ - trunk[i - 1].xQ, trunk[i].yQ - trunk[i - 1].yQ));
+        const peaks = planOrographyProfile(seed, arcs.at(-1)!).filter(p => p.kind === 'peak'), usedRoots = new Set<number>();
         for (let branch = 0; branch < 2; branch++) {
-          const root = trunk[Math.round((trunk.length - 1) * (branch ? .72 : .27))], side = leeQ * (branch ? -1 : 1), forward = branch ? -1 : 1;
-          const branchTargets: Target[] = [], extent = shortSpan * (.26 + (hashAt(seed, 7260, branch, 0) % 61) / 1000);
-          const drift = longSpan * (.09 + (hashAt(seed, 7261, branch, 0) % 71) / 1000) * forward;
+          const peak = peaks[branch ? peaks.length - 1 : 0]; let rootIndex = -1, rootDistance = Infinity;
+          for (let i = 1; i + 1 < trunk.length; i++) if (!usedRoots.has(i) && Math.abs(arcs[i] - peak.arcQ) < rootDistance) { rootDistance = Math.abs(arcs[i] - peak.arcQ); rootIndex = i; }
+          if (rootIndex < 0) continue; usedRoots.add(rootIndex);
+          const root = trunk[rootIndex], transverseRoot = horizontal ? root.yQ : root.xQ;
+          const side = transverseRoot < shortMin + shortSpan / 2 ? 1 : -1, forward = branch ? -1 : 1;
+          const branchTargets: Target[] = [], extent = shortSpan * (.32 + (hashAt(seed, 7260, branch, 0) % 61) / 1000);
+          const drift = longSpan * (.14 + (hashAt(seed, 7261, branch, 0) % 71) / 1000) * forward;
           const branchMinimum = local ? 12 * 256 : 2 * stepQ;
           for (let j = 1; j <= 3; j++) {
             const fraction = j / 3, longitudinal = drift * fraction * (.7 + .3 * fraction), transverse = side * extent * fraction;
             branchTargets.push({ xQ: Math.round(root.xQ + (horizontal ? longitudinal : transverse)), yQ: Math.round(root.yQ + (horizontal ? transverse : longitudinal)),
-              widthQ: Math.round(Math.max(branchMinimum, root.widthQ * (.72 - .36 * fraction))), peakQ: FIELD_Q, score: Infinity });
+              widthQ: Math.round(Math.max(branchMinimum, root.widthQ * (.9 - .36 * fraction))), peakQ: FIELD_Q, score: Infinity });
           }
           await snap(branchTargets);
-          const selected: OrographyAnchor[] = [{ ...root, widthQ: Math.round(Math.max(branchMinimum, root.widthQ * .72)) }];
+          const selected: OrographyAnchor[] = [{ ...root, widthQ: Math.round(Math.max(branchMinimum, root.widthQ * .9)) }];
           const targetEnd = branchTargets.at(-1)!, dx = targetEnd.xQ - root.xQ, dy = targetEnd.yQ - root.yQ; let previousAlong = 0;
           for (const target of branchTargets) {
             if (!target.point || target.score > Math.max(2 * stepQ, target.widthQ) ** 2) break;

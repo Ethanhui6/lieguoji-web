@@ -1,0 +1,29 @@
+{
+  "executable": "C:\\Program Files\\nodejs\\node.exe",
+  "version": "v24.18.1",
+  "cwd": "D:\\游戏\\架空地图模拟器",
+  "commands": [
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--project",
+        ".autopilot/ph07/hydrology-kernel-staging/tsconfig.json"
+      ]
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        ".autopilot/ph07/hydrology-kernel-staging/vitest.config.ts",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile.json=.autopilot/ph07/hydrology-kernel-staging/checks/fine-drainage-first/unit.json"
+      ]
+    }
+  ],
+  "expectedTests": 14,
+  "scope": "isolated kernel; only four actual stable production coast imports captured; no production or browser/build acceptance"
+}

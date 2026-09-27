@@ -1,0 +1,21 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../../../vite.config" without a file extension (.autopilot/ph06/height-plane-diagnostic/writer-staging/vitest.config.ts:5:18). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/height-plane-diagnostic/writer-staging/src/world/generation/detail-natural-writer.test.ts (7 tests) 12365ms
+   ✓ new natural land writes true fine height without reinterpreting v4 (5)
+     ✓ roundtrips explicit samples through unchanged codec and keeps old implicit sampler reads byte-for-byte 1522ms
+     ✓ preserves ownership and deterministic fine bytes across batch boundaries and source mutation 2347ms
+     ✓ cancels within the actual expanded fine-height work without publishing or mutating input 701ms
+   ✓ unchanged real additive protection consumes the fine writer (2)
+     ✓ retains the old locked continent encoded bytes, all old coarse controls and sampled height after add/codec 3795ms
+     ✓ rejects actual locked sea converted to new land without weakening the existing lock guard 1535ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  02:57:37
+   Duration  12.99s (tests 97%, transform 3%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/height-plane-diagnostic/writer-staging/checks/defines-fixed/unit.json

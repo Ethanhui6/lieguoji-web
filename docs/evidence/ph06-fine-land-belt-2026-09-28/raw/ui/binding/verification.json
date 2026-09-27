@@ -1,0 +1,16 @@
+{
+  "name": "ui-first",
+  "code": 0,
+  "durationMs": 47809.2578,
+  "sourceAndDistStable": true,
+  "passed": true,
+  "buildJsonSha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5",
+  "actualVersion": "0.5.0-preview.18",
+  "resultDir": ".autopilot/ph06/map-chrome-browser-staging/checks/ui-first",
+  "resultsSha256": "49643be4b3c5549c1b0f6003c2a4c7a9eb8d16eff9f4a53a7eb85995d3c80409",
+  "retries": 0,
+  "physicalDevice": false,
+  "userVisualAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

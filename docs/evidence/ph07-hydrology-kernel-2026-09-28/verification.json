@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "scope": "PH07 bounded pure kernel first slice; original defect retained and repaired",
+  "kernelTests": {
+    "status": "passed",
+    "passed": 16,
+    "total": 16,
+    "typesPassed": true,
+    "actualNewPrivateCopyRegressionsPassed": 2,
+    "repeatedOriginalTestsNotAddedToUniqueTotal": true
+  },
+  "rounds": [
+    {
+      "name": "fine-drainage-first",
+      "unitPassed": 14,
+      "unitTotal": 14,
+      "typeExitCode": 0,
+      "sourceUnchanged": true,
+      "retries": 0,
+      "originalVerificationSha256": "06306f602a5a06b331f7765020ab3f504cfa8b946d597b0fb43be7231c326aee"
+    },
+    {
+      "name": "intrinsic-private-copy-fix",
+      "unitPassed": 16,
+      "unitTotal": 16,
+      "typeExitCode": 0,
+      "sourceUnchanged": true,
+      "retries": 0,
+      "originalVerificationSha256": "dabd8257b1f6dda746d47bcdba6815b88ce55c011234841450d1ab52f522db57"
+    }
+  ],
+  "originalReview": {
+    "privateCopyBugReproduced": true,
+    "nodes": 9,
+    "originalKernelSha256": "4be70639685b22e53f3d4b95d8785e75d59122501a377397cfa5f8839e2d1671",
+    "sourceUnchanged": true,
+    "originalEvidenceRetained": true
+  },
+  "privateCopyFinding": {
+    "status": "closed-in-reviewed-candidate",
+    "basis": "read-only intrinsic-copy diff plus actual 16/16 raw assertions and matching source hashes",
+    "originalProbeRerunAfterFix": false
+  },
+  "finalKernelSha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742",
+  "finalTestSha256": "2f6b7530d11cbede9fe68aa194c794b9e61b23557d1a7b63a1dd6dfe49380cb0",
+  "finalReadySha256": "d6e742cf8b07f556b1a0f72b3627942711902a86e86925b2542bf77d253b78bd",
+  "archiveIntegrity": {
+    "copiedFiles": 50,
+    "copiedBytes": 362593,
+    "payloadFiles": 51,
+    "ledgerSha256": "cdf3a7fbbc79221b8e822767c0e921997e47613abd27a9c7d9a23f7e584eb5ae",
+    "everyCopyHashVerified": true,
+    "everyRunSnapshotHashVerified": true,
+    "existingDifferentTargetsOverwritten": false
+  },
+  "plainTextLogs": [
+    {
+      "path": "checks/fine-drainage-first/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "contentReview": "empty type output or synthetic test names/counts; original bytes retained"
+    },
+    {
+      "path": "checks/fine-drainage-first/unit.log",
+      "sha256": "0addbd9af8c672f43811c49189b5661a4bb1722cb2f25071e56a9596723f539a",
+      "bytes": 559,
+      "contentReview": "empty type output or synthetic test names/counts; original bytes retained"
+    },
+    {
+      "path": "checks/intrinsic-private-copy-fix/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "contentReview": "empty type output or synthetic test names/counts; original bytes retained"
+    },
+    {
+      "path": "checks/intrinsic-private-copy-fix/unit.log",
+      "sha256": "6c5f60f346c4fd66a1a78e1456fd893ee249bf53e94bb6a64ea96569ae10851f",
+      "bytes": 566,
+      "contentReview": "empty type output or synthetic test names/counts; original bytes retained"
+    }
+  ],
+  "productionConnected": false,
+  "phaseAccepted": false,
+  "ph07T1Complete": false,
+  "fullProjectChecked": false,
+  "browserChecked": false,
+  "realDeviceChecked": false,
+  "performanceAccepted": false,
+  "archiveOperationRanTests": false,
+  "limitations": [
+    "No production extraction adapter or Worker command",
+    "No persistence or UI",
+    "No full-world/cross-patch flow",
+    "Sample counts are not runoff, discharge, area or water volume",
+    "Spill candidates are not actual lake water",
+    "No complete playable rivers claim"
+  ]
+}

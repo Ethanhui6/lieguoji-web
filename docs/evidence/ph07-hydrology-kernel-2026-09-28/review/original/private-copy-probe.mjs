@@ -1,0 +1,16 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+const source=resolve('.autopilot/ph07/hydrology-kernel-staging/src/hydrology-kernel.ts');
+const output=resolve('.autopilot/ph07/hydrology-kernel-review');
+const hash=()=>createHash('sha256').update(readFileSync(source)).digest('hex');
+const before=hash();const {buildHydrologyKernel}=await import(pathToFileURL(source).href);
+const input=()=>({originColumn:128,originRow:256,columns:3,rows:3,coverageQ:new Int16Array(9).fill(1),groundMeters:new Int16Array(9).fill(100)});
+const base=input(), reference=await buildHydrologyKernel(base,{}, {yieldControl:async()=>{}});
+const aliased=input();aliased.coverageQ.slice=()=>aliased.coverageQ;aliased.groundMeters.slice=()=>aliased.groundMeters;
+let callbackMutation=false;
+const result=await buildHydrologyKernel(aliased,{}, {yieldControl:async()=>{},onProgress:phase=>{if(phase==='capture'){callbackMutation=true;aliased.coverageQ.fill(-1);aliased.groundMeters.fill(-2);}}});
+const proof={source,sourceSha256:before,sourceUnchanged:before===hash(),nodeVersion:process.version,nodes:9,normal:{landNodes:reference.stats.landNodes,coverageAliased:reference.coverageQ===base.coverageQ,groundAliased:reference.groundMeters===base.groundMeters},overriddenInstanceSlice:{callbackMutation,landNodes:result.stats.landNodes,coverageAliased:result.coverageQ===aliased.coverageQ,groundAliased:result.groundMeters===aliased.groundMeters,resultCoverage:[...result.coverageQ]},privateCaptureBroken:result.stats.landNodes!==reference.stats.landNodes&&result.coverageQ===aliased.coverageQ,scope:'9-node direct runtime repro only; no full tests, benchmark or production modification'};
+writeFileSync(`${output}/private-copy-probe.json`,JSON.stringify(proof,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify(proof));
+if(!proof.privateCaptureBroken||!proof.sourceUnchanged)process.exitCode=1;

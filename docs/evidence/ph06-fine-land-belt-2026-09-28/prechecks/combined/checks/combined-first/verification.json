@@ -1,0 +1,23 @@
+{
+  "execution": {
+    "code": 0,
+    "durationMs": 8184.092900000001
+  },
+  "unit": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "pending": 0
+  },
+  "sourceUnchanged": true,
+  "originalProductTestPreserved": true,
+  "loadedCandidateHashes": true,
+  "actualProductImportUsesCandidate": true,
+  "passed": true,
+  "retries": 0,
+  "numericalEvidenceDirectory": ".autopilot/ph06/v4-fine-belt-staging/checks/combined-first",
+  "stageOnly": true,
+  "productionAcceptance": false,
+  "visualAcceptance": false,
+  "performanceAcceptance": false
+}

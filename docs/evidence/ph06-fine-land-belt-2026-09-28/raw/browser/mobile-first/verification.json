@@ -1,0 +1,46 @@
+{
+  "name": "mobile-first",
+  "project": "mobile-chromium",
+  "rootRound": "first",
+  "checkedRound": ".autopilot/ph06/fine-belt-checks/first",
+  "args": [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config=.autopilot/ph06/fine-belt-checks/playwright.config.ts",
+    "--project=mobile-chromium"
+  ],
+  "code": 0,
+  "signal": null,
+  "startedAt": "2026-09-27T19:12:24.147Z",
+  "completedAt": "2026-09-27T19:16:58.977Z",
+  "elapsedMs": 274828.34260000003,
+  "passed": true,
+  "sourceAndDistStable": true,
+  "buildJsonSha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5",
+  "buildSameAfter": true,
+  "rootReceiptStable": true,
+  "rootVerificationSha256": "6d7ca75fc9e68bb72b7e00bef1ffd105a55c26e0949453b27d3130dd2a1a0774",
+  "identityVerificationSha256": "66cfd772a8437b2e72713fb0b1ba964ebee18201d36d7fe39292cde5df268354",
+  "sourceSnapshotSha256": "d7cb1e089a57ebdb2c03b9e9858690a5e4802df2e5053e3226ba0cbbd04d9b77",
+  "actualRootAssertions": 125,
+  "actualClosuresRecomputed": 11,
+  "spec": "tests/atlas-add-detail-coast.spec.ts",
+  "specSha256": "982e80b83c158d97b9fe5f504f41a8bc8e81c361157fb9d929b5ef97628adaf2",
+  "reportPassed": true,
+  "timeoutMs": 450000,
+  "retries": 0,
+  "traceMode": "on",
+  "traces": [
+    {
+      "path": ".autopilot/ph06/fine-belt-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/trace.zip",
+      "sha256": "4231f2093dea7844a53b187e1f5438b70011a9882a7e4cf7f406a6b13aad2753"
+    }
+  ],
+  "observationOverhead": "Trace is enabled on successful and failed runs. These timings include tracing overhead and do not establish whole-product performance acceptance.",
+  "physicalDevice": false,
+  "naturalVisualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

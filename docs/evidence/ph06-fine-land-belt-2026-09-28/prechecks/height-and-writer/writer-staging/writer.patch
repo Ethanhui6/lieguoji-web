@@ -1,0 +1,45 @@
+diff --git a/src/world/generation/detail-shape-natural.ts b/.autopilot/ph06/height-plane-diagnostic/writer-staging/src/world/generation/detail-shape-natural.ts
+index 4fce02c..9bc5be1 100644
+--- a/src/world/generation/detail-shape-natural.ts
++++ b/.autopilot/ph06/height-plane-diagnostic/writer-staging/src/world/generation/detail-shape-natural.ts
+@@ -293,18 +293,33 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
+     if ((id + 1) % batch === 0) await checkpoint(control, 'write-coarse-reference', id + 1, total);
+   }
+   const sampleBaseElevation = createDetailShapeBaseSampler(size, centers.buffer as ArrayBuffer, coarseHeights.buffer as ArrayBuffer); let elevated = 0;
+-  for (const tile of detailCoast.values()) if (tile.mode === 'samples') {
+-    const layout = detailCoastOwnerLayout(tile.bx, tile.by);
++  // Only this newly generated component gets explicit fine land elevations.
++  // Existing v4 readers, implicit old tiles and the Hbase sampler stay unchanged.
++  const elevationNodeTotal = [...detailCoast.values()].reduce((sum, tile) => sum + detailCoastOwnerLayout(tile.bx, tile.by).count, 0);
++  for (const [key, originalTile] of detailCoast) {
++    const layout = detailCoastOwnerLayout(originalTile.bx, originalTile.by);
++    const tile = originalTile.mode === 'samples' ? originalTile : {
++      ...originalTile, mode: 'samples' as const,
++      coverageQ: new Int16Array(layout.count).fill(DETAIL_DISTANCE_LIMIT_Q),
++      elevationMeters: new Int16Array(layout.count),
++    };
++    if (originalTile.mode === 'land') { detailCoast.set(key, tile); sampledTiles++; uniformLandTiles--; }
+     for (let slot = 0; slot < layout.count; slot++) {
+       const x = (layout.startX + slot % layout.width) * STEP_Q, y = (layout.startY + Math.floor(slot / layout.width)) * STEP_Q, coverage = tile.coverageQ[slot];
+       if (coverage === 0) tile.elevationMeters[slot] = 0;
+-      else {
+-        const land = coverage > 0, baseHeight = sampleBaseElevation(x, y), blend = smoothQ(roundRatio(Math.abs(coverage) * FIELD_Q, DETAIL_DISTANCE_LIMIT_Q));
+-        const nearHeight = relief.physicalHeight(x, y, land, Math.abs(coverage), land ? -1 : originalBase(x, y));
++      else if (coverage > 0) {
++        // Positive coverage is the exact target-coast distance quantized to Q8,
++        // capped at 32767. The physical profile's coast rise is at most 36 world
++        // units, so saturated interior values are already fully inland. Do not
++        // blend this actual fine height back into reconstructed coarse Hbase.
++        tile.elevationMeters[slot] = relief.physicalHeight(x, y, true, coverage, -1);
++      } else {
++        const baseHeight = sampleBaseElevation(x, y), blend = smoothQ(roundRatio(Math.abs(coverage) * FIELD_Q, DETAIL_DISTANCE_LIMIT_Q));
++        const nearHeight = relief.physicalHeight(x, y, false, Math.abs(coverage), originalBase(x, y));
+         const height = Math.round((nearHeight * (FIELD_Q - blend) + baseHeight * blend) / FIELD_Q);
+-        tile.elevationMeters[slot] = land ? Math.max(0, height) : Math.min(-1, height);
++        tile.elevationMeters[slot] = Math.min(-1, height);
+       }
+-      if (++elevated % batch === 0) await checkpoint(control, 'write-continuous-heights', elevated, written);
++      if (++elevated % batch === 0) await checkpoint(control, 'write-continuous-heights', elevated, elevationNodeTotal);
+     }
+   }
+   // Private candidate audit avoids re-cloning the whole field before yielding.

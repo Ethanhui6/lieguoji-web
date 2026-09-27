@@ -1,0 +1,19 @@
+{
+  "passed": false,
+  "code": 1,
+  "tests": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "pending": 0
+  },
+  "candidateLoaded": true,
+  "baselineLoaded": true,
+  "additiveUsesCandidate": true,
+  "sourceUnchanged": true,
+  "stageOnly": true,
+  "combinedWithCurvedCandidate": false,
+  "visualAcceptance": false,
+  "performanceAcceptance": false,
+  "productionAcceptance": false
+}

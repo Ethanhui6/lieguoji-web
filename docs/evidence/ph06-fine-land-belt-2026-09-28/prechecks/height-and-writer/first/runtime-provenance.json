@@ -1,0 +1,32 @@
+[
+  {
+    "original": "src/world/generation/detail-shape-height.ts",
+    "output": "runtime/detail-shape-height.mjs",
+    "sourceSha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+    "emittedSha256": "a43c1f9cc7334d7faac28ba53b662cf46df72bd2495a853d3808b70f28e2d34c"
+  },
+  {
+    "original": "src/world/detail-coast-field.ts",
+    "output": "runtime/detail-coast-field.mjs",
+    "sourceSha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+    "emittedSha256": "b2850d3ed261fc89d51a7c2b747e3c8dcca40d1345f33f0555fa5c1f51fc220d"
+  },
+  {
+    "original": "src/world/detail-coast-types.ts",
+    "output": "runtime/detail-coast-types.mjs",
+    "sourceSha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+    "emittedSha256": "adda6c826a3dffaf21d1b24ad64cfee9269e85ca566d53e65393f8effd47fa60"
+  },
+  {
+    "original": "src/world/detail-terrain-pages.ts",
+    "output": "runtime/detail-terrain-pages.mjs",
+    "sourceSha256": "a402ab959cdfcb3ee0a047d0bfe7201d1944bff8c2f1b817a0a40da6fc478764",
+    "emittedSha256": "c6abf56afab95bed7c023d47657aaa38ed0695f8b4ce59d8c801ba4449d16816"
+  },
+  {
+    "original": "src/world/detail-terrain-shader.ts",
+    "output": "runtime/shader-cpu-oracle.mjs",
+    "sourceSha256": "5037b1b67eff5e5f958e2def6bc9c201ac786d562ffc77063007a81ab360591d",
+    "emittedSha256": "1e43cf2e94b425235e28cf38c6f7763a3f28f7b18fa0465c2d008fa65a56a660"
+  }
+]

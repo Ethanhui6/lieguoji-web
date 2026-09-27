@@ -1,0 +1,7 @@
+{
+  "command": "C:\\Program Files\\nodejs\\node.exe",
+  "args": [
+    ".autopilot/ph06/v4-private-ingress-staging/static-check.mjs"
+  ],
+  "cwd": "D:\\游戏\\架空地图模拟器"
+}

@@ -1,0 +1,8 @@
+{
+  "url": "http://127.0.0.1:4173/build.json",
+  "status": 200,
+  "matches": true,
+  "servedSha256": "30b9e2a558e0bf922bf54a75e08d2a3f200db57005e3143614698a6c7d9f58da",
+  "localSha256": "30b9e2a558e0bf922bf54a75e08d2a3f200db57005e3143614698a6c7d9f58da",
+  "checkedAt": "2026-09-27T10:04:59.0490627Z"
+}

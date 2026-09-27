@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-27T07:28:45.753Z",
+  "stagingOnly": true,
+  "owned": [
+    "src/world/detail-coast-locks.ts",
+    "src/world/detail-coast-locks.test.ts",
+    "src/world/generation-locks.ts",
+    "src/world/storage.ts",
+    "src/world/transactions.ts"
+  ],
+  "relatedTypeDiagnostics": [],
+  "lint": [],
+  "pass": true
+}

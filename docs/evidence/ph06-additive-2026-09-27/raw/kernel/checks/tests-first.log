@@ -1,0 +1,25 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts [ .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts ]
+Error: Cannot find module '../detail-coast-geometry' imported from D:/游戏/架空地图模拟器/.autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts
+ ❯ .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts:2:1
+      1| import { beforeAll, describe, expect, it } from 'vitest';
+      2| import { buildDetailCoastSurface, pickDetailCoastSurface, summarizeDet…
+       | ^
+      3| import { sampleDetailCoastNode } from '../detail-coast-field';
+      4| import { decodeDetailCoastTile, encodeDetailCoastTile } from '../detai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  15:16:33
+   Duration  434ms (worker 97%, environment 3%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/v4-additive-staging/checks/tests-first.json

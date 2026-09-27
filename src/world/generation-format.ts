@@ -1,6 +1,6 @@
 import { cloneBlock, createAtlasDraft, getBlock, hashBlock, validateAtlasGeography, validateAtlasGeographyAsync, validateGeographyManifestFields, yieldAtlas, type AtlasControl, type AtlasCreateOptions } from './model';
 import { cloneAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, validateAtlasCellLockBlock } from './generation-locks';
-import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, validateDetailShapeRecipe, validateCopyOrigin, validateGenerationOperation, type AtlasGenerationManifest, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type AtlasDraftManifestV4 } from './generation-contract';
+import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, validateDetailShapeRecipe, validateAddDetailRecipe, validateCopyOrigin, validateGenerationOperation, type AtlasGenerationManifest, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type AtlasDraftManifestV4 } from './generation-contract';
 import { cloneDetailCoastTiles, hashDetailCoastTile, validateDetailCoastTile } from './detail-coast-codec';
 import { detailCoastKey } from './detail-coast-types';
 
@@ -21,7 +21,8 @@ export function validateGenerationManifest(raw: unknown): raw is AtlasGeneration
     const last = value.generation.lastApplied;
     if (last === null) return true;
     if (!generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) || !validateGenerationOperation(last.recipe, last.scope, raw.spec, 'storage')) return false;
-    if (raw.version === 4 ? !validateDetailShapeRecipe(last.recipe, raw.spec, 'storage') : validateDetailShapeRecipe(last.recipe, raw.spec, 'storage')) return false;
+    const detailedRecipe = validateDetailShapeRecipe(last.recipe, raw.spec, 'storage') || validateAddDetailRecipe(last.recipe, raw.spec, 'storage');
+    if ((raw.version === 4) !== detailedRecipe) return false;
     return generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
   } catch { return false; }
 }

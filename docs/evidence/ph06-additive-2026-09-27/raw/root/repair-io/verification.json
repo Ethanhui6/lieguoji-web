@@ -1,0 +1,66 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T09:57:47.254Z",
+      "finishedAt": "2026-09-27T09:57:47.425Z",
+      "elapsedMs": 169.2733,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T09:57:47.426Z",
+      "finishedAt": "2026-09-27T09:57:54.971Z",
+      "elapsedMs": 7545.0166,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T09:57:54.972Z",
+      "finishedAt": "2026-09-27T09:58:06.313Z",
+      "elapsedMs": 11341.7479,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/atlas-worker-stage-pages.test.ts",
+        "src/world/detail-private-ingress.test.ts",
+        "src/world/atlas.worker.test.ts",
+        "src/world/bridge.test.ts",
+        "src/world/detail-coast-transport.test.ts",
+        "src/world/generation-receiver.test.ts",
+        "src/world/constraints-receiver.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/additive-checks/repair-io/unit.json"
+      ],
+      "startedAt": "2026-09-27T09:58:06.313Z",
+      "finishedAt": "2026-09-27T10:02:44.066Z",
+      "elapsedMs": 277752.6671,
+      "exitCode": 1,
+      "signal": null
+    }
+  ],
+  "sourceStable": true,
+  "dist": null,
+  "scope": "Actual affected generator/storage/session/transport/shader unit + global static + local build; no browser/performance/full-game claim",
+  "cloudWrites": false
+}

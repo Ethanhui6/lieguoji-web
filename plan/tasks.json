@@ -798,7 +798,10 @@
             "docs/evidence/2026-09-27-ph06-fine-foundation.md",
             "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json",
             "docs/evidence/2026-09-27-ph06-fine-integration.md",
-            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json"
+            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json",
+            "docs/adr/0017-additive-fine-landmass.md",
+            "docs/evidence/2026-09-27-ph06-additive.md",
+            "docs/evidence/ph06-additive-2026-09-27/verification.json"
           ]
         },
         {
@@ -815,7 +818,10 @@
             "docs/evidence/2026-09-27-ph06-fine-foundation.md",
             "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json",
             "docs/evidence/2026-09-27-ph06-fine-integration.md",
-            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json"
+            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json",
+            "docs/adr/0017-additive-fine-landmass.md",
+            "docs/evidence/2026-09-27-ph06-additive.md",
+            "docs/evidence/ph06-additive-2026-09-27/verification.json"
           ]
         }
       ],

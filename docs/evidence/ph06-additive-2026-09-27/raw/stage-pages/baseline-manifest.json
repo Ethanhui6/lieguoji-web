@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-09-27T09:50:36.8693357Z",
+  "scope": "staging-only; no checks executed",
+  "files": [
+    {
+      "path": "src/world/atlas.worker.ts",
+      "sha256": "2e61d7acd71eea6ad7476c2ecd154ea886cc70a1a48ab4530c3753c890068ffc"
+    }
+  ]
+}

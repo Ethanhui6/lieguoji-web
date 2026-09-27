@@ -1,0 +1,15 @@
+{
+  "name": "desktop-first",
+  "project": "desktop-chromium",
+  "args": [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config=.autopilot/ph06/additive-checks/playwright.config.ts",
+    "--project=desktop-chromium"
+  ],
+  "code": 1,
+  "signal": null,
+  "elapsedMs": 459364.53520000004,
+  "sourceAndDistStable": true,
+  "physicalDevice": false
+}

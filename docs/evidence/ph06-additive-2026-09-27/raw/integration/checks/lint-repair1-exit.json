@@ -1,0 +1,7 @@
+{
+  "command": "npx eslint .autopilot/ph06/v4-additive-integration-staging/src/editor/AtlasStudio.tsx",
+  "exitCode": 0,
+  "started": "2026-09-27T17:15:16.1111981+08:00",
+  "finished": "2026-09-27T17:15:18.4902604+08:00",
+  "seconds": 2.3790623
+}

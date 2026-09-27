@@ -1,0 +1,15 @@
+import ts from 'typescript';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+const root=process.cwd(),stage=path.resolve('.autopilot/ph06/v4-relief-staging'),names=['src/world/detail-terrain-shader.ts','src/world/detail-terrain-shader.test.ts'];
+const first=JSON.parse(fs.readFileSync(path.join(stage,'first-verification.json'),'utf8'));
+const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+for(const file of first.after)if(hash(file.path)!==file.production||hash(path.join(stage,file.path))!==file.staged)throw new Error('Checked source changed');
+const config=ts.readConfigFile(path.join(root,'tsconfig.json'),ts.sys.readFile),options=ts.parseJsonConfigFileContent(config.config,ts.sys,root).options;
+const overlay=new Map(names.map(name=>[path.resolve(name),path.join(stage,name)])),host=ts.createCompilerHost(options),read=host.readFile.bind(host);
+host.readFile=name=>read(overlay.get(path.resolve(name))??name);
+const start=performance.now(),program=ts.createProgram({rootNames:[path.resolve('src/vite-env.d.ts'),...names.map(name=>path.resolve(name))],options,host});
+const diagnostics=ts.getPreEmitDiagnostics(program).map(d=>({file:d.file?.fileName,line:d.file&&d.start!==undefined?d.file.getLineAndCharacterOfPosition(d.start).line+1:null,message:ts.flattenDiagnosticMessageText(d.messageText,'\n')}));
+const result={scope:'scoped virtual-overlay type recheck only; declaration environment repaired, shader/test unchanged',elapsedMs:performance.now()-start,diagnostics,exitCode:diagnostics.length?1:0,reusedUnit:'first-unit.json',reusedLint:'first-verification.json',unitRerun:false,source:first.after};
+fs.writeFileSync(path.join(stage,'types-recheck.json'),JSON.stringify(result,null,2),{flag:'wx'});console.log(JSON.stringify(result,null,2));process.exitCode=result.exitCode;

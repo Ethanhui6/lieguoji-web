@@ -1,0 +1,7 @@
+{
+  "command": "npx vitest run --config .autopilot/ph06/v4-additive-integration-staging/vitest.integration.config.ts --reporter=default --reporter=json --outputFile.json=.autopilot/ph06/v4-additive-integration-staging/checks/tests-first.json",
+  "exitCode": 0,
+  "started": "2026-09-27T17:14:16.3820654+08:00",
+  "finished": "2026-09-27T17:14:32.1077366+08:00",
+  "seconds": 15.7256712
+}

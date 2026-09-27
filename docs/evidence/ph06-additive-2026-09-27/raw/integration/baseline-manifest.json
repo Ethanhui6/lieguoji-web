@@ -1,0 +1,98 @@
+{
+  "createdAt": "2026-09-27T07:36:56.217Z",
+  "stagingOnly": true,
+  "sources": [
+    {
+      "path": "src/world/generation-contract.ts",
+      "source": "production",
+      "productionSha256": "0111dab13df34d15532a8133c64ec584501b79576a8291e2685ff69baca5f5de",
+      "initialStagedSha256": "0111dab13df34d15532a8133c64ec584501b79576a8291e2685ff69baca5f5de"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "source": "production",
+      "productionSha256": "0b816b6d18f25fac2a6041fb86ce830eff4dadb1d28ef9f5d5c065e5f4893380",
+      "initialStagedSha256": "0b816b6d18f25fac2a6041fb86ce830eff4dadb1d28ef9f5d5c065e5f4893380"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "source": "production",
+      "productionSha256": "5418c5cf36b2d5fc947d67cd43537db1c32f49b0033c3dd24b341d4bec7cf4e4",
+      "initialStagedSha256": "5418c5cf36b2d5fc947d67cd43537db1c32f49b0033c3dd24b341d4bec7cf4e4"
+    },
+    {
+      "path": "src/world/generation-history.ts",
+      "source": "production",
+      "productionSha256": "07b25d17050f0c1f0b1163ca60462c0bf5d2df86cc2e80c525fd5bf8c31d1a56",
+      "initialStagedSha256": "07b25d17050f0c1f0b1163ca60462c0bf5d2df86cc2e80c525fd5bf8c31d1a56"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "source": "production",
+      "productionSha256": "e5b0f6fd8fad84ac9ab9f8f61153cdf56fd9dbac7adc56bd2dd33e98b4dc43bb",
+      "initialStagedSha256": "e5b0f6fd8fad84ac9ab9f8f61153cdf56fd9dbac7adc56bd2dd33e98b4dc43bb"
+    },
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "source": "production",
+      "productionSha256": "83b8a7437a7c72bb65fce1891d78bdbd8b127e7b9d65c918d747610b916fd19e",
+      "initialStagedSha256": "83b8a7437a7c72bb65fce1891d78bdbd8b127e7b9d65c918d747610b916fd19e"
+    },
+    {
+      "path": "vite.config.ts",
+      "source": "production",
+      "productionSha256": "1904981f0ff5bc1f1104c2fa8db383303a865c56900d0e41e4cb55d910704543",
+      "initialStagedSha256": "1904981f0ff5bc1f1104c2fa8db383303a865c56900d0e41e4cb55d910704543"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "source": "production",
+      "productionSha256": "fa5dbb2928406408f7111e2a5cf42336b429cbdc1ff822eb337c10b1e6cf3d92",
+      "initialStagedSha256": "fa5dbb2928406408f7111e2a5cf42336b429cbdc1ff822eb337c10b1e6cf3d92"
+    },
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "source": "production",
+      "productionSha256": "ed2e75f150923aa8ee757cdffb4cf6a0f003f218f3924f088df36ed44c514a53",
+      "initialStagedSha256": "ed2e75f150923aa8ee757cdffb4cf6a0f003f218f3924f088df36ed44c514a53"
+    },
+    {
+      "path": "src/editor/DetailCoastPanel.tsx",
+      "source": "production",
+      "productionSha256": "963a4337a3ec8c5443eeff584831c46567543fd7ed41f29457373f4d29f26066",
+      "initialStagedSha256": "963a4337a3ec8c5443eeff584831c46567543fd7ed41f29457373f4d29f26066"
+    },
+    {
+      "path": "src/world/detail-coast-locks.ts",
+      "source": ".autopilot/ph06/v4-lock-staging/src/world/detail-coast-locks.ts",
+      "productionSha256": null,
+      "initialStagedSha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "path": "src/world/generation-locks.ts",
+      "source": ".autopilot/ph06/v4-lock-staging/src/world/generation-locks.ts",
+      "productionSha256": "b105c1477d27a7614f4c1cdb0a2fd5e026bef482fa206ffdbc48c6bb6cbe8f74",
+      "initialStagedSha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "path": "src/world/transactions.ts",
+      "source": ".autopilot/ph06/v4-lock-staging/src/world/transactions.ts",
+      "productionSha256": "120d618bffb73e83dc297a28599228def84c379593c41b4754358172edbb9943",
+      "initialStagedSha256": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789"
+    },
+    {
+      "path": "src/world/storage.ts",
+      "source": ".autopilot/ph06/v4-lock-staging/src/world/storage.ts",
+      "productionSha256": "e1a71ba074e8a9f0d5743ae0daf07afb64fecab6de5e5f444a7c8a5f2c98ef4f",
+      "initialStagedSha256": "46d93b707fe20b1136c8008d474e56460cdcb156bc5e710246250e1f0ba3e038"
+    },
+    {
+      "path": "src/world/generation/detail-shape-add.ts",
+      "source": ".autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.ts",
+      "productionSha256": null,
+      "initialStagedSha256": "615e68f17430bfbdcc2e31d1078e71387dcd47129e0b9afac2ae5567474c153c"
+    }
+  ],
+  "frozenFirstKernelSha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697",
+  "lockReady": ".autopilot/ph06/v4-lock-staging/ready-manifest.json"
+}

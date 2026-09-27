@@ -1,0 +1,6 @@
+{
+  "unitFiles": [
+    "src/world/atlas-worker-stage-pages.test.ts"
+  ],
+  "unchangedScopeReused": "Original preview.8 first run 602 tests reused outside this Worker page/private ingress repair; UI recipe restoration is verified in the browser. No whole-game or performance claim."
+}

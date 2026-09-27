@@ -2,7 +2,21 @@ import { GlProgram, Shader, UniformGroup, type TextureSource } from 'pixi.js';
 import { detailTerrainPageLayout, detailTerrainSourceLedger } from './detail-terrain-pages';
 import { TERRAIN_LUT_WIDTH, TERRAIN_LUT_HEIGHT, TERRAIN_LUT_PIXELS } from './terrain-mesh';
 
-export const DETAIL_TERRAIN_SHADER_VERSION = 'final-q8-pieces-gl2-v1';
+export const DETAIL_TERRAIN_SHADER_VERSION = 'final-q8-pieces-gl2-relief-v1';
+
+/** CPU oracle for the shader's physical slope contract and future GPU colour
+ * probes. This is not a fallback renderer or evidence of GPU execution. */
+export function detailTerrainPieceRelief(a: { xQ: number; yQ: number; heightMeters: number }, b: typeof a, c: typeof a) {
+  const abx = b.xQ - a.xQ, aby = b.yQ - a.yQ, acx = c.xQ - a.xQ, acy = c.yQ - a.yQ;
+  const area = abx * acy - aby * acx;
+  if (area <= 0) return { gradient: { x: 0, y: 0 }, light: 1 };
+  const dhb = b.heightMeters - a.heightMeters, dhc = c.heightMeters - a.heightMeters;
+  const x = 256 * (dhb * acy - dhc * aby) / area, y = 256 * (abx * dhc - acx * dhb) / area;
+  // Existing NW light at the actual fine-node step 2:
+  // (east-west + south-north) / max(160, step*16) = (gx+gy)/40.
+  const slope = Math.atan((x + y) / 40) / (Math.PI / 2);
+  return { gradient: { x, y }, light: 1 + Math.max(-.13, Math.min(.13, slope * .13)) };
+}
 export interface DetailTerrainGlCapabilities {
   webGL2: boolean; contextLost: boolean; maxTextureSize: number; fragmentTextureUnits: number;
   fragmentFloatPrecision: number; fragmentIntRangeMin: number; fragmentIntRangeMax: number;
@@ -119,22 +133,28 @@ int clipped(FineVertex triangle[3], bool land, out FineVertex polygon[6]) {
   }
   return kept;
 }
-bool triangleHit(FineVertex a, FineVertex b, FineVertex c, vec2 target, out float height) {
+bool triangleHit(FineVertex a, FineVertex b, FineVertex c, vec2 target, out float height, out vec2 gradient) {
+  gradient = vec2(0.0);
   int area = areaQ(a.q, b.q, c.q);
   if (area <= 0) return false;
   vec2 aq = vec2(a.q), bq = vec2(b.q), cq = vec2(c.q);
   if (crossAt(aq, bq, target) < 0.0 || crossAt(bq, cq, target) < 0.0 || crossAt(cq, aq, target) < 0.0) return false;
   height = (crossAt(target, bq, cq) * float(a.height) + crossAt(aq, target, cq) * float(b.height) + crossAt(aq, bq, target) * float(c.height)) / float(area);
+  // The very same canonical clipped piece supplies its analytic height plane.
+  // q is local Q8; multiply by 256 for metres per world unit, not per Q8 unit.
+  vec2 ab = bq - aq, ac = cq - aq;
+  float dhb = float(b.height - a.height), dhc = float(c.height - a.height);
+  gradient = 256.0 * vec2(dhb * ac.y - dhc * ab.y, ab.x * dhc - ac.x * dhb) / float(area);
   return true;
 }
-bool pieceHit(FineVertex triangle[3], bool land, vec2 target, out float height) {
+bool pieceHit(FineVertex triangle[3], bool land, vec2 target, out float height, out vec2 gradient) {
   bool allLand = triangle[0].coverage >= 0 && triangle[1].coverage >= 0 && triangle[2].coverage >= 0;
   // The all-zero source triangle is entirely land and emits no sea piece.
-  if (allLand) return land && triangleHit(triangle[0], triangle[1], triangle[2], target, height);
+  if (allLand) return land && triangleHit(triangle[0], triangle[1], triangle[2], target, height, gradient);
   FineVertex polygon[6]; int count = clipped(triangle, land, polygon);
   for (int index = 1; index < 5; index++) {
     if (index + 1 >= count) break;
-    if (triangleHit(polygon[0], polygon[index], polygon[index + 1], target, height)) return true;
+    if (triangleHit(polygon[0], polygon[index], polygon[index + 1], target, height, gradient)) return true;
   }
   return false;
 }
@@ -147,7 +167,7 @@ bool zeroHit(FineVertex triangle[3], vec2 target) {
   }
   return false;
 }
-void writeResult(bool land, float height) {
+void writeResult(bool land, float height, vec2 gradient) {
   if (uDetailDiagnostic == 1) {
     // RGB24: bit 23 is land; lower 23 bits encode (metres+12000)*256.
     // Alpha is always opaque so ordinary premultiplied-alpha output preserves
@@ -158,8 +178,12 @@ void writeResult(bool land, float height) {
     return;
   }
   float normalized = clamp((height + (land ? 0.0 : 12000.0)) / 12000.0, 0.0, 1.0);
-  // Exactly the existing physical-height palette at light=1; no invented noise.
-  vec2 uv = vec2((0.5 + normalized * 1200.0) / 1201.0, 0.5);
+  // Match terrain-material's fixed NW light at fine step=2. The original
+  // 0.87..1.13 LUT contrast stays bounded even on one-Q8 coastal slivers.
+  float slope = atan((gradient.x + gradient.y) / 40.0) / 1.5707963267948966;
+  float light = 1.0 + clamp(slope * 0.13, -0.13, 0.13);
+  float normalizedLight = clamp((light - 0.87) / 0.26, 0.0, 1.0);
+  vec2 uv = vec2((0.5 + normalized * 1200.0) / 1201.0, (0.5 + normalizedLight * 32.0) / 33.0);
   finalColor = land ? texture(uDetailLandLut, uv) : texture(uDetailSeaLut, uv);
 }
 void main() {
@@ -177,10 +201,11 @@ void main() {
   FineVertex upper[3] = FineVertex[3](nw, ne, se);
   FineVertex lower[3] = FineVertex[3](nw, se, sw);
   float height = 0.0;
+  vec2 gradient = vec2(0.0);
   // Match CPU's complete land pass, zero-edge pass, then complete sea pass.
-  if (pieceHit(upper, true, target, height) || pieceHit(lower, true, target, height)) { writeResult(true, height); return; }
-  if (zeroHit(upper, target) || zeroHit(lower, target)) { writeResult(true, 0.0); return; }
-  if (pieceHit(upper, false, target, height) || pieceHit(lower, false, target, height)) { writeResult(false, height); return; }
+  if (pieceHit(upper, true, target, height, gradient) || pieceHit(lower, true, target, height, gradient)) { writeResult(true, height, gradient); return; }
+  if (zeroHit(upper, target) || zeroHit(lower, target)) { writeResult(true, 0.0, vec2(0.0)); return; }
+  if (pieceHit(upper, false, target, height, gradient) || pieceHit(lower, false, target, height, gradient)) { writeResult(false, height, gradient); return; }
   // Uncovered output is explicitly invalid, never an invented sea fallback.
   finalColor = vec4(0.0);
 }

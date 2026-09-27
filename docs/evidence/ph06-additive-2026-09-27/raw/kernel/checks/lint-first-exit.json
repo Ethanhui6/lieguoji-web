@@ -1,0 +1,7 @@
+{
+  "command": "npx eslint .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.ts .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts .autopilot/ph06/v4-additive-staging/vitest.config.ts",
+  "exitCode": 0,
+  "started": "2026-09-27T15:17:08.5732856+08:00",
+  "finished": "2026-09-27T15:17:11.0935277+08:00",
+  "seconds": 2.5202421
+}

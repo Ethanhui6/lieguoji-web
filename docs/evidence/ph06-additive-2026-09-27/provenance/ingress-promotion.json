@@ -1,0 +1,22 @@
+{
+  "source": "v4-private-ingress-staging",
+  "checks": "4/4 staging and narrow lint/types passed; final production checks pending",
+  "files": [
+    {
+      "path": "src/world/bridge.ts",
+      "stagedPath": ".autopilot/ph06/v4-private-ingress-staging/src/world/bridge.ts",
+      "sha256": "17aa39ac8e090d402f16f3db7c930e0b821865e38c0ace0d9a9a31dcedbbd658",
+      "productionBaselineSha256": "413834ec234a995fa13f04e670f760b2407c42f7e57f18d35093217f0b3e83cf",
+      "newFile": false
+    },
+    {
+      "path": "src/world/detail-private-ingress.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-private-ingress-staging/src/world/detail-private-ingress.test.ts",
+      "sha256": "b8153875199858d6a7ef60bfd9140a812e692599f474e10e04e007d934b4ba8d",
+      "productionBaselineSha256": null,
+      "newFile": true
+    }
+  ],
+  "at": "2026-09-27T09:52:54.8706491Z",
+  "cloudWrites": false
+}

@@ -1,0 +1,7 @@
+{
+  "command": "npx eslint .autopilot/ph06/v4-additive-integration-staging/src .autopilot/ph06/v4-additive-integration-staging/scripts/generator-fingerprint.ts .autopilot/ph06/v4-additive-integration-staging/vite.config.ts .autopilot/ph06/v4-additive-integration-staging/vitest.integration.config.ts",
+  "exitCode": 0,
+  "started": "2026-09-27T17:13:38.8870013+08:00",
+  "finished": "2026-09-27T17:13:43.3729403+08:00",
+  "seconds": 4.485939
+}

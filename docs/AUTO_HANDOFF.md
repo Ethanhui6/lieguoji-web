@@ -1,10 +1,22 @@
+# 当前续接：preview.8 已保存真实检查点，自然地形与调度修复接入中
+
+2026-09-27 18:29（香港）：游戏基础HEAD `337afb7d57af48f480d92f76ba14240aa18c5807`；最新本地提交以Git为准。preview.8追加大陆、精确细锁、坡向光照、私有接收副本和512KiB分页已实际构建。PH06-T3/T4保持in_progress；无push、远程写入或部署。
+
+- 正式证据 `docs/evidence/2026-09-27-ph06-additive.md`，原始179文件在 `docs/evidence/ph06-additive-2026-09-27/`。归档完整，178个清单SHA独立复核；allRequiredPassed=false如实保留三端未全过。
+- 组合610唯一相关单元有通过证据；不是一次全量执行。最后全局lint/类型/构建/25产物审计通过。分页初始样例失败、桌面首轮超时与全部修复/复用来源均保留。
+- 桌面修复后完整原生流程PASS（415475ms）；手机/平板仿真仍在450秒总限触发FAIL（分别末尾重叠计算、刷新后的近岸帧等待）。两仿真有并行区间，不能作设备性能比较；不提高限时、不删断言。
+- `.autopilot/ph06/v4-natural-integration-staging/ready-manifest.json` 已冻结：17文件、5文件29增量及自然4/海床2依赖，旧@1不改。自然内核10/10+窄静态通过；完整接线/海床仍未跑。首片@2生成真实区域海床，追加保留已有世界；源历史8closure/30文件已匹配真实preview8。
+- 当前在准备私有Worker任务调度修复，以减少分批间定时等待。候选 `.autopilot/ph06/v4-worker-scheduling-staging/`；静态/单测/机制探针必须核终态，不能把计划或暂存当已通过。接下来将自然地形与该修复一起构建，重新验证原生流程；仍在同一PH06工作中。
+- 新Atlas仍无国家/行政区/城市/军队战争；自然视觉、真机、密集公开快照响应及其余PH未完成。旧0.4能力不能当作已接入本世界。不得因本检查点提升PH状态。
+- 本地新建URL `http://127.0.0.1:4173/?atlas=new&atlas-format=4`，18:04已核HTTP200与dist一致，后续先核服务实际存活。仓库仍Ethanhui6/lieguoji-web、Pages lieguoji-web，唯一原生Git链，旧站保留。
+---
 # 当前续接：第四版细海岸三端流程已通过，继续追加大陆与地貌呈现
 
-2026-09-27：当前基础 HEAD 90df824648472ffcb723a127d158509034707bfd（最新提交以 Git 为准），实际本地 dist 为 0.5.0-preview.7。v4 可从 `http://127.0.0.1:4173/?atlas=new&atlas-format=4` 新建；原首页入口暂仍 v3。PH06-T3/T4 保持 in_progress；未推送、未部署。
+2026-09-27：当前本地游戏提交 337afb7d57af48f480d92f76ba14240aa18c5807（构建基础 HEAD 为 90df824648472ffcb723a127d158509034707bfd；最新提交以 Git 为准），实际本地 dist 为 0.5.0-preview.7。v4 可从 `http://127.0.0.1:4173/?atlas=new&atlas-format=4` 新建；原首页入口暂仍 v3。PH06-T3/T4 保持 in_progress；未推送、未部署。
 
 - v4 独立存储、内容哈希、Worker第三流、纯锁事务与备份恢复已接入；旧 v1–3 原语义和实际 preview.6 历史指纹保留。
 - 全局类型/lint通过；基础143唯一场景、存储21唯一场景经明确测试样例修复取得通过证据；自然内核22、shader/pages18首轮通过。真实GPU一致性使用SwiftShader，非硬件/性能验收。完整原始失败、范围和指纹见 docs/evidence/2026-09-27-ph06-fine-foundation.md。
-- 新配方、真实 renderer/cache、首片大陆 UI 已接入生产源码，尚待本批本地提交。`.autopilot/ph06/fine-integration-checks/`：world 单元 839/839 首轮通过；后续取消/恢复等待者修复的 backend 4/4、全局 lint/类型/构建/25产物审计通过。不是新跑全游戏单元或性能验收。
+- 新配方、真实 renderer/cache、首片大陆 UI 已接入生产源码并保存于本地提交 337afb7。`.autopilot/ph06/fine-integration-checks/`：world 单元 839/839 首轮通过；后续取消/恢复等待者修复的 backend 4/4、全局 lint/类型/构建/25产物审计通过。不是新跑全游戏单元或性能验收。
 - 桌面首轮点选失败的真实坐标为 (-2.058,-461.479)，位于屏幕外；只修测试真实相机构图及各视口合法缩放目标后，desktop-reframe、mobile-first、tablet-first 各1/1通过，实际288.699/274.823/294.388秒，源码与 dist 前后稳定。共3个环境、4次执行、零自动重试；已覆盖生成/取消/重画/确认、独立细数据校验、海陆近景点选、GPU恢复和刷新。手机/平板是浏览器仿真，非真机。
 - 正式证据 `docs/evidence/2026-09-27-ph06-fine-integration.md`，原始结果/首轮失败/前后清单/截图在 `docs/evidence/ph06-fine-integration-2026-09-27/`。本地 build.json SHA256 `4ba3aa857f368749b778a603b3171db98870110f34a21d9afa9c68f227d9825f`，25个产物逐项指纹已核对。归档脚本末尾打印变量错误退出1，目录已完整写入，独立86文件SHA复核通过；该步骤失败单独保留，未覆盖或伪造通过。
 - IAB 手工绘制“山海新卷 · 细海岸试玩”已实际确认保存并刷新为修订1，控制台错误为空：`http://127.0.0.1:4173/?atlas=atlas-ea3c5857-01d8-4efd-8367-6bec1f8b8e26&atlas-format=4`。它只存在于该浏览器的本地库；这是UI烟测，非真机或用户视觉验收。续接先验证4173进程/HTTP，不能假定常驻。

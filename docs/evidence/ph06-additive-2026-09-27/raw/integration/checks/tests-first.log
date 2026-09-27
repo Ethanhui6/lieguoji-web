@@ -1,0 +1,21 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/generator-fingerprint" without a file extension (.autopilot/ph06/v4-additive-integration-staging/vitest.integration.config.ts:4:31). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/v4-additive-integration-staging/src/world/detail-add-integration.test.ts (3 tests) 12047ms
+   ✓ independent additive recipe through actual private session and storage (3)
+     ✓ confirms first and second land, restores all bytes, previews a third and undoes only the second 6232ms
+     ✓ derives complete true locks, preserves a locked old continent and rejects overlap without source writes 1150ms
+     ✓ retains preview cancellation, CAS rejection and old-format execution boundaries 4322ms
+ ✓ .autopilot/ph06/v4-additive-integration-staging/src/world/detail-add-history.test.ts (3 tests) 605ms
+   ✓ actual preview.7 identities before independent additive execution (3)
+     ✓ recomputes the seven archived runtime closures and verifies every captured source hash 431ms
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  17:14:18
+   Duration  13.94s (tests 93%, transform 4%, import 3%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/v4-additive-integration-staging/checks/tests-first.json

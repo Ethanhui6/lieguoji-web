@@ -109,11 +109,36 @@ export class AtlasWorkerRuntime {
     try {
       const preparation = await database.prepareAtlasCommit({ candidateId, commandId, manifest: data.manifest, expectedRoot }, control);
       const blocks = [...data.blocks.values(), ...(isGenerationDocument(data) ? data.locks.values() : []), ...(isDetailCoastDocument(data) ? data.detailCoast.values() : [])];
-      for (let i = 0; i < blocks.length; i += 8) {
-        await database.stageAtlasBlocks(preparation.preparationId, blocks.slice(i, i + 8), control);
-        control.onProgress({ stage: '准备不可变草稿块', completed: Math.min(i + 8, blocks.length), total: blocks.length });
-        await new Promise<void>(resolve => setTimeout(resolve, 0)); control.signal.throwIfAborted();
+      const encoder = new TextEncoder(), pageBaseBytes = encoder.encode(preparation.preparationId).length;
+      let page: typeof blocks = [], pageBytes = pageBaseBytes, staged = 0, sinceYield = 0;
+      const checkpoint = async (stage: string, completed: number) => {
+        control.onProgress({ stage, completed, total: blocks.length });
+        await new Promise<void>(resolve => setTimeout(resolve, 0)); control.signal.throwIfAborted(); sinceYield = 0;
+      };
+      const stagePage = async () => {
+        if (!page.length) return;
+        control.signal.throwIfAborted();
+        await database.stageAtlasBlocks(preparation.preparationId, page, control);
+        staged += page.length; page = []; pageBytes = pageBaseBytes;
+        await checkpoint('准备不可变草稿块', staged);
+      };
+      for (let i = 0; i < blocks.length; i++) {
+        control.signal.throwIfAborted();
+        const block = blocks[i];
+        // The same encoded byte/key/envelope account as storage's public page
+        // boundary. A private candidate cannot change while packing yields.
+        const item = block.format === 'lieguoji-detail-coast-tile'
+          ? { key: detailCoastKey(block.bx, block.by), bytes: encodeDetailCoastTile(block) }
+          : block.format === 'lieguoji-atlas-cell-locks'
+            ? { key: lockKey(block.bx, block.by), bytes: encodeAtlasCellLockBlock(block) }
+            : { key: blockKey(block.layer, block.bx, block.by), bytes: encodeBlock(block) };
+        const itemBytes = item.bytes.length + encoder.encode(item.key).length + 128;
+        if (pageBaseBytes + itemBytes > storage.ATLAS_STORAGE_PAGE_BYTES) throw new Error('Atlas 单项准备超过 512 KiB，未发布草稿。');
+        if (pageBytes + itemBytes > storage.ATLAS_STORAGE_PAGE_BYTES) await stagePage();
+        page.push(block); pageBytes += itemBytes; sinceYield++;
+        if (sinceYield === 16) await checkpoint('编码不可变草稿页', i + 1);
       }
+      await stagePage();
       const receipt = await (mode === 'constraints' ? database.commitAtlasConstraintsPreparation : database.commitAtlasPreparation)(preparation.preparationId, control);
       active.durable = true; return receipt;
     } catch (error) {

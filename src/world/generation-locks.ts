@@ -1,10 +1,11 @@
-import { blockKey, encodeBlock, getCellLayerSlot, getVertexSlot, validateSpec, type AtlasGridSpec } from './model';
+import { blockKey, encodeBlock, getCellLayerSlot, getVertexSlot, validateSpec, type AtlasControl, type AtlasGridSpec } from './model';
 import { cellVertexIds, incidentCellIds } from './topology';
 import { generationCanonical, generationDigest, generationExact, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, type AtlasCellLockBlock, type AtlasConstraints, type AtlasDocument, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type LockKey } from './generation-contract';
 import { encodeDetailCoastTile } from './detail-coast-codec';
 import { detailCoastKey } from './detail-coast-types';
 import { buildCoastalSurface } from './coastal-surface';
 import { assertCoastalCellProtection } from './coastal-generation';
+import { assertOwnedDetailCoastLocksPreserved } from './detail-coast-locks';
 
 export const LOCK_COAST = 1, LOCK_ELEVATION = 2;
 export function lockKey(bx: number, by: number): LockKey {
@@ -112,8 +113,8 @@ function assertDetailBytesEqual(base: AtlasDocument, next: AtlasDocument): void 
     if (x.length !== y.length || x.some((value, i) => value !== y[i])) throw new Error('本操作不能修改实际细海岸数据。');
   }
 }
-/** Baselines are verified/owned; optional IDs bound ordinary edit work to its delta. */
-export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocument, changedCellIds?: Iterable<number>, changedVertexIds?: Iterable<number>): void {
+/** Common identity/lock checks; no piece reconstruction or async work here. */
+function assertAtlasLockIdentity(base: AtlasDocument, next: AtlasDocument): void {
   if (base.manifest.version !== next.manifest.version) throw new Error('普通编辑不能切换草稿格式。');
   if (base.manifest.version === 1) return;
   if (base.manifest.version !== 2 && base.manifest.version !== 3 && base.manifest.version !== 4) throw new Error('未知权威地表格式，普通编辑已保护。');
@@ -126,6 +127,23 @@ export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocume
     const key = lockKey(ref.bx, ref.by), a = base.locks.get(key), b = next.locks.get(key);
     if (!a || !b || a !== b && (!validateAtlasCellLockBlock(a, base.manifest.spec) || !validateAtlasCellLockBlock(b, next.manifest.spec) || a.flags.some((v, i) => v !== b.flags[i]))) throw new Error('锁内容变化或缺失，必须明确解锁事务。');
   }
+}
+/** Whole-replacement boundary only. Both OwnedAtlasSession and final storage
+ * call this after complete private ingestion/hash verification. A public
+ * caller cannot skip validation or provide an authorization boolean. */
+export async function assertAtlasReplacementLocksPreserved(base: AtlasDocument, next: AtlasDocument, control?: AtlasControl): Promise<void> {
+  control?.signal?.throwIfAborted();
+  if (base.manifest.version !== 4) { assertAtlasLocksPreserved(base, next); return; }
+  assertAtlasLockIdentity(base, next);
+  if (!('detailCoast' in base) || !('detailCoast' in next) || next.manifest.version !== 4) throw new Error('细海岸完整替换缺少私有内容。');
+  await assertOwnedDetailCoastLocksPreserved(base as AtlasDetailCoastDocument, next as AtlasDetailCoastDocument, control);
+}
+/** Baselines are verified/owned; optional IDs bound ordinary edit work to its delta.
+ * Unsupported v4 local edits keep the conservative synchronous boundary. */
+export function assertAtlasLocksPreserved(base: AtlasDocument, next: AtlasDocument, changedCellIds?: Iterable<number>, changedVertexIds?: Iterable<number>): void {
+  assertAtlasLockIdentity(base, next);
+  if (base.manifest.version === 1) return;
+  if (!('locks' in base) || !('locks' in next)) throw new Error('地块锁内容缺失。');
   if (base.manifest.constraints.lockRefs.length === 0) return;
   if (base.manifest.version === 4) {
     // Until local fine-field lock dependency evaluation is wired, a locked v4

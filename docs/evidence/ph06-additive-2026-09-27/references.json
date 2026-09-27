@@ -1,0 +1,56 @@
+[
+  {
+    "path": "docs/adr/0016-sparse-detail-coast.md",
+    "bytes": 5934,
+    "sha256": "3e3b00e38b9e2de8cb57fd390f460d5118705467674c0507cfd03607fc584526",
+    "copied": false
+  },
+  {
+    "path": "docs/adr/0017-additive-fine-landmass.md",
+    "bytes": 3120,
+    "sha256": "9d1f93cd200795d23a414236dcd1f28f02fb9b5c4e8d105a527b1c4130ca62ea",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/verification.json",
+    "bytes": 5611,
+    "sha256": "d932788297398b561d26c58d0e0b5d1121eb064202f2cb65d11809d952e90da0",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-first.json",
+    "bytes": 8481891,
+    "sha256": "00f2a9cb494b84d7725c5e5ea955462a5b654e5e24bc6e2089c6950cc920916c",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/gpu-supplement.json",
+    "bytes": 48633,
+    "sha256": "9a020f5f80e379b9f736dc494d635eb8153a75ae00022e94e6587fe82a194e87",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-fine-integration-2026-09-27/verification.json",
+    "bytes": 12726,
+    "sha256": "58b11eb41f1073ada29b4b86930bf8c50992a4880e7c4e3378bf33324ddfe4cf",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-fine-integration-2026-09-27/inventory.json",
+    "bytes": 39454,
+    "sha256": "108313ecf12be65f1f41005cb4254ebade01ae9e5fbe1541b1b7b4d87f43daa8",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-preview7-generator-history-2026-09-27/build.json",
+    "bytes": 4250,
+    "sha256": "4ba3aa857f368749b778a603b3171db98870110f34a21d9afa9c68f227d9825f",
+    "copied": false
+  },
+  {
+    "path": "docs/evidence/ph06-preview7-generator-history-2026-09-27/provenance.json",
+    "bytes": 9796,
+    "sha256": "a07e77a2afe55ea48665db9cf35c5c80796c202af2df4de1ef5bf3e525b52024",
+    "copied": false
+  }
+]

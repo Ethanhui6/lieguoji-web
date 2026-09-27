@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-09-27T10:18:19.2150005Z",
+  "isolatedStorageContexts": true,
+  "scope": "Correctness only; concurrent emulations, no performance or physical-device acceptance",
+  "sharedDist": "0.5.0-preview.8",
+  "runs": [
+    "mobile-first",
+    "tablet-first"
+  ],
+  "isolatedBrowserProcesses": true
+}

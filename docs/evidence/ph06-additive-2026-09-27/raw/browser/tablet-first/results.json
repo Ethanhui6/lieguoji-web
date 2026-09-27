@@ -1,0 +1,198 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config=.autopilot/ph06/additive-checks/playwright.config.ts",
+      "--project=tablet-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\additive-checks\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/additive-checks/tablet-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-add-detail-coast.spec.ts"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/additive-checks/tablet-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-add-detail-coast.spec.ts"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph06/additive-checks/tablet-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-add-detail-coast.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\additive-checks\\tablet-first\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": true,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "atlas-add-detail-coast.spec.ts",
+      "file": "atlas-add-detail-coast.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "[detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 450000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 455476,
+                  "error": {
+                    "message": "Error: Test timeout of 450000ms exceeded",
+                    "stack": "Error: Test timeout of 450000ms exceeded\n    at frameReady (D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:21:27)\n    at observeFirstCoast (D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:183:86)\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:233:25",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts",
+                      "column": 27,
+                      "line": 21
+                    },
+                    "snippet": "  19 |     const m = await metrics(p) as ReturnType<AtlasRenderer['metrics']>;\n  20 |     return m.completedFrameSequence === m.frameSequence && m.gpu.state === 'ready';\n> 21 |   }, { timeout: 120000 }).toBe(true);\n     |                           ^\n  22 | }\n  23 | async function screen(p: Page, points: XY[]) {\n  24 |   const box = (await p.getByTestId('atlas-canvas').boundingBox())!, frame = await metrics(p);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts",
+                        "column": 27,
+                        "line": 21
+                      },
+                      "message": "Error: Test timeout of 450000ms exceeded\n\n  19 |     const m = await metrics(p) as ReturnType<AtlasRenderer['metrics']>;\n  20 |     return m.completedFrameSequence === m.frameSequence && m.gpu.state === 'ready';\n> 21 |   }, { timeout: 120000 }).toBe(true);\n     |                           ^\n  22 | }\n  23 | async function screen(p: Page, points: XY[]) {\n  24 |   const box = (await p.getByTestId('atlas-canvas').boundingBox())!, frame = await metrics(p);\n    at frameReady (D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:21:27)\n    at observeFirstCoast (D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:183:86)\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts:233:25"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T10:18:10.255Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\additive-checks\\tablet-first\\artifacts\\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\additive-checks\\tablet-first\\artifacts\\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\additive-checks\\tablet-first\\artifacts\\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\atlas-add-detail-coast.spec.ts",
+                    "column": 27,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c8ec8554b8e7f300a0d5-2147a3c88cd0aa58ce0e",
+          "file": "atlas-add-detail-coast.spec.ts",
+          "line": 189,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-27T10:18:09.657Z",
+    "duration": 460298.161,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

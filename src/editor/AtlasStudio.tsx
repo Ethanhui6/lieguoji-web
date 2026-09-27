@@ -1,8 +1,8 @@
 import { isGenerationDocument, type AtlasFormat } from '../world/atlas-format';
-import { validateCellRectangle, type GenerationRecipe, type GenerationScope, type AtlasCellRectangle } from '../world/generation-contract';
+import { validateCellRectangle, validateDetailShapeRecipe, validateAddDetailRecipe, type GenerationRecipe, type GenerationScope, type AtlasCellRectangle } from '../world/generation-contract';
 import { atlasCellLockFlags } from '../world/generation-locks';
 import { getCoastalCellSurface } from '../world/coastal-surface';
-import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT } from '../world/generation/fingerprint';
+import { MACRO_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT, ADD_DETAIL_GENERATOR_FINGERPRINT } from '../world/generation/fingerprint';
 import { useEffect, useId, useRef, useState } from 'react';
 import { AtlasClient } from '../world/bridge';
 import type { AtlasClientView, AtlasDraftList, AtlasGenerationPreview, AtlasConstraintsPreview, AtlasEditResult, AtlasPreview, AtlasProgress } from '../world/protocol';
@@ -85,6 +85,15 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
         setShapeRoughness(next.data.manifest.version === 3 ? 96 : 32); setShapeShelf(128);
         if (next.data.manifest.version === 4) { setTerrainOperation('shape'); setLocalGeneration(false); setShowLockRegion(false); }
       }
+      // Opening a saved world restores the player's last applied controls. A
+      // normal confirmation/undo in this session must not reset unsaved choices.
+      if (viewRef.current?.head.draftId !== next.head.draftId && next.data.manifest.version === 4) {
+        const recipe = next.data.manifest.generation.lastApplied?.recipe;
+        if (validateDetailShapeRecipe(recipe, next.data.manifest.spec, 'storage') || validateAddDetailRecipe(recipe, next.data.manifest.spec, 'storage')) {
+          setTerrainSeed(recipe.seed); setShapeRoughness(recipe.parameters.coastRoughnessWorld);
+          setShapeShelf(recipe.parameters.shelfWidthWorld); setRelief(recipe.parameters.reliefMeters); setDetailIslands(recipe.parameters.islandChainCount);
+        } else setTerrainSeed(next.data.manifest.seed);
+      }
       viewRef.current = next; setView(next); setSurfacePick(null); setPending(null); generationPreviewRef.current = null; setGenerationPreview(null); constraintsPreviewRef.current = null; setConstraintsPreview(null);
       const selectedId = selectedRef.current;
       if (selectedId !== null && selectedId < next.data.manifest.spec.columns ** 2) {
@@ -158,7 +167,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   }, []);
 
   const data = generationPreview?.data ?? constraintsPreview?.data ?? view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, graphicsLocked = graphicsState !== 'ready', locked = busy || !ready || !!fatal || readOnly || graphicsLocked || !!generationPreview || !!constraintsPreview;
-  const fine = (data?.manifest.version ?? initialFormat) === 4, detailAlreadyDrawn = data?.manifest.version === 4 && data.manifest.generation.lastApplied !== null;
+  const fine = (data?.manifest.version ?? initialFormat) === 4, detailAlreadyDrawn = view?.data.manifest.version === 4 && (view.data.manifest.generation.lastApplied !== null || view.data.manifest.detailCoast.refs.length > 0);
   const regionValid = !!spec && validateCellRectangle(region, spec), supportsLocal = terrainOperation === 'landforms' || terrainOperation === 'coast';
   useEffect(() => {
     if (!ready || fatal || graphicsLocked) return;
@@ -255,7 +264,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     await accept(next, start, performance.now()); await refreshList(); setShapeRoughness(96); setSection(null);
   }
   function beginOutline() {
-    if (locked || !view || view.data.manifest.version === 1 || fine && detailAlreadyDrawn) return;
+    if (locked || !view || view.data.manifest.version === 1) return;
     clearPreview(); setOutline([]); setTerrainOperation('shape'); setSection(null); setDrawing(true);
     rendererRef.current?.showOutline([]); setStatus('按住鼠标或单指画大陆轮廓，松开后自动生成预览。轮廓会自动闭合；双指可缩放与平移。');
   }
@@ -266,8 +275,16 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   };
   async function previewTerrain(shapePoints = outline) {
     clearPreview();
+    if (fine) {
+      if (shapePoints.length < 3 || new Set(shapePoints.map(point => `${point.xQ}:${point.yQ}`)).size < 3) throw new Error('请画出至少三个不同的点，围成一片大陆；松手后轮廓会自动闭合。');
+      const margin = (shapeRoughness + 4) * 256;
+      if (shapePoints.some(point => point.xQ < margin || point.yQ < margin || point.xQ > 4096 * 256 - margin || point.yQ > 4096 * 256 - margin)) throw new Error('轮廓太靠近地图边缘。请向地图中央移一些，在边缘留出海水，也为海湾变化留出空间。');
+    }
+    const fineParameters = { pointsQ: shapePoints.map(p => ({ ...p })), coastRoughnessWorld: shapeRoughness, reliefMeters: relief, shelfWidthWorld: shapeShelf, islandChainCount: detailIslands, islandsPerChain: 3 };
     const recipe: GenerationRecipe = fine
-      ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-detail-landmass', version: 1, fingerprint: DETAIL_SHAPE_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { pointsQ: shapePoints.map(p => ({ ...p })), coastRoughnessWorld: shapeRoughness, reliefMeters: relief, shelfWidthWorld: shapeShelf, islandChainCount: detailIslands, islandsPerChain: 3 } }
+      ? detailAlreadyDrawn
+        ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'add-detail-landmass', version: 1, fingerprint: ADD_DETAIL_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: fineParameters }
+        : { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-detail-landmass', version: 1, fingerprint: DETAIL_SHAPE_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: fineParameters }
       : terrainOperation === 'shape'
       ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-landmass', version: 1, fingerprint: SHAPE_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { pointsQ: shapePoints.map(p => ({ ...p })), coastRoughnessWorld: shapeRoughness, coastWavelengthWorld: 192, reliefMeters: relief, shelfWidthWorld: shapeShelf } }
       : terrainOperation === 'ocean'
@@ -278,7 +295,10 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       : terrainOperation === 'islands' ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'island-chains', version: 1, fingerprint: ISLAND_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { chainCount, islandsPerChain, radiusWorld: islandRadius, reliefMeters: relief } }
       : { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'coast-smoothing', version: 1, fingerprint: COAST_GENERATOR_FINGERPRINT }, parameters: { strengthPermille: coastStrength, iterations: coastIterations } };
     const scope: GenerationScope = localGeneration && supportsLocal ? { kind: 'cell-rectangle', ...region, transitionCells } : { kind: 'world' };
-    const next = await clientRef.current!.previewGeneration(recipe, scope);
+    const next = await clientRef.current!.previewGeneration(recipe, scope).catch(error => {
+      if (fine && explain(error).includes('生成配方或范围版本不受支持')) throw new Error('轮廓或参数暂不符合生成要求。请让轮廓围成一片区域、不交叉，在地图边缘留出海水，并检查起伏与近海宽度范围。');
+      throw error;
+    });
     let cancelled = false; let cancellation: Promise<void> | null = null;
     cancelGenerationDisplay.current = () => {
       cancelled = true;
@@ -295,7 +315,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     await clientRef.current!.discardGeneration(); await rendererRef.current!.clearGenerationPreview(); generationPreviewRef.current = null; setGenerationPreview(null); setSurfacePick(null); setStatus('已取消生成，恢复原草稿。');
   }
   async function confirmTerrain() {
-    const start = performance.now(), next = await clientRef.current!.confirmGeneration(); await accept(next, start, performance.now()); await refreshList(); setStatus(fine ? '大陆已保存。可以缩放探索、刷新恢复，或撤销后重新绘制。' : '生成地形已保存，可以继续手工编辑或撤销。');
+    const start = performance.now(), next = await clientRef.current!.confirmGeneration(); await accept(next, start, performance.now()); await refreshList(); setOutline([]); rendererRef.current?.showOutline([]); setDrawing(false); setStatus(fine ? '这片大陆已保存。可以继续在海面画新大陆，或撤销刚才的生成。' : '生成地形已保存，可以继续手工编辑或撤销。');
   }
   async function previewLocks() {
     clearPreview(); const next = await clientRef.current!.previewConstraints(region, lockMask, lockAction);
@@ -373,7 +393,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const graphicsMessage = graphicsState === 'lost' ? '图形连接暂时中断，草稿仍保留；恢复画面后可继续编辑。' : graphicsState === 'restoring' ? '正在恢复地图画面，草稿与当前视角保持不变。' : '';
   const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${progress.stage} · ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
 
-  const finePanel = <DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} busy={busy || graphicsLocked || !!fatal} outlinePoints={outline.length} seed={terrainSeed} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} onSeed={setTerrainSeed} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} preview={generatedSummary ?? null} />;
+  const finePanel = <DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} busy={busy || graphicsLocked || !!fatal} outlinePoints={outline.length} seed={terrainSeed} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} onSeed={setTerrainSeed} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} preview={generatedSummary ? { ...generatedSummary, addedLandAreaQ2: generatedSummary.detailAdd?.addedLandAreaTwiceQ2 } : null} />;
   const editPanel = <div className="atlas-panel-content">
     <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy || graphicsLocked}>定位</button></form>
     {selected !== null && data && <>
@@ -399,7 +419,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{constraintsPreview ? '区域锁预览 · 尚未保存' : generationPreview ? '生成预览 · 尚未保存' : readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
     <div className="workbench-stage"><div className="workbench-map atlas-map" ref={hostRef} />
       <div className="context-toolbar atlas-toolbar"><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="放大大世界地图" onClick={() => rendererRef.current?.zoom(1.5)}>＋</button><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="缩小大世界地图" onClick={() => rendererRef.current?.zoom(1 / 1.5)}>−</button><button disabled={!view || !!fatal || graphicsLocked || busy} onClick={() => rendererRef.current?.fit()}>全图</button><span data-testid="atlas-zoom">{Math.round(cameraScale * 100)}%</span><small>拖动浏览 · 双指缩放 · 点选查看</small></div>
-      {view && <div className="atlas-brush-toolbar" role="toolbar" aria-label="地图创作工具"><button aria-label="浏览地图" aria-pressed={!drawing} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setDrawing(false); setStatus('拖动浏览，轻点查看地块。'); }}><Icon name="map" /><span>浏览</span></button><button aria-label="画大陆" aria-pressed={drawing} disabled={locked || view.data.manifest.version === 1 || fine && detailAlreadyDrawn} onClick={drawing ? () => { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } : beginOutline}><Icon name="brush" /><span>{drawing ? '退出绘制' : '画大陆'}</span></button><button aria-label="显示地块网格" title="在近景显示可编辑地块边界" aria-pressed={showGrid} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setShowGrid(value => !value); setStatus(showGrid ? '已隐藏网格，选中地块仍有轮廓。' : '近景网格已开启，放大后显示地块边界。'); }}><Icon name="grid" /><span>网格</span></button></div>}
+      {view && <div className="atlas-brush-toolbar" role="toolbar" aria-label="地图创作工具"><button aria-label="浏览地图" aria-pressed={!drawing} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setDrawing(false); setStatus('拖动浏览，轻点查看地块。'); }}><Icon name="map" /><span>浏览</span></button><button aria-label="画大陆" aria-pressed={drawing} disabled={locked || view.data.manifest.version === 1} onClick={drawing ? () => { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } : beginOutline}><Icon name="brush" /><span>{drawing ? '退出绘制' : '画大陆'}</span></button><button aria-label="显示地块网格" title="在近景显示可编辑地块边界" aria-pressed={showGrid} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setShowGrid(value => !value); setStatus(showGrid ? '已隐藏网格，选中地块仍有轮廓。' : '近景网格已开启，放大后显示地块边界。'); }}><Icon name="grid" /><span>网格</span></button></div>}
       {drawing && <div className="atlas-drawing-hint" role="status">画出大陆轮廓 · 松开自动生成</div>}
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
       {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? '大陆与地貌' : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={feedback}>{section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}

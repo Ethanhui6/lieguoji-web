@@ -1,0 +1,36 @@
+{
+  "recordedAt": "2026-09-27T17:29:07.1793717+08:00",
+  "stagingOnly": true,
+  "source": ".autopilot/ph06/v4-additive-integration-staging/browser/atlas-add-detail-coast.spec.ts",
+  "target": "tests/atlas-add-detail-coast.spec.ts",
+  "sha256": "16cec8f1ddff7b5a0e00aa267c8b4c09d7d53fd62275e3e6ff5de3f49f23a854",
+  "expectedSteps": ".autopilot/ph06/v4-additive-integration-staging/browser/README.md",
+  "expectedStepsSha256": "aa896b2a6f8f4f0d105e503d204c14b3d920c796a6cfd92f112187b046507f15",
+  "actualBrowserRuns": 0,
+  "buildRuns": 0,
+  "productionModifiedByThisTask": false,
+  "staticCheck": {
+    "diagnostics": 0,
+    "evidence": "Transcription of actual tool result; no separate raw log was saved",
+    "wallSeconds": 0.3859447,
+    "exitCode": 0,
+    "scope": "TypeScript syntax parse only; future-path imports unresolved, no semantic type check"
+  },
+  "scenarios": 1,
+  "expectedProjects": [
+    "desktop-chromium",
+    "mobile-chromium",
+    "tablet-chromium"
+  ],
+  "expectedGenerationAttemptsPerProject": 4,
+  "existingProductionMirrorsModified": false,
+  "precondition": "Actual newly served build.json includes addDetailGenerator.sha256; old preview.7 cannot satisfy",
+  "pending": [
+    "Root static validation",
+    "Root actual build",
+    "Desktop native UI acceptance",
+    "Mobile and tablet browser emulation",
+    "Physical devices",
+    "Natural visual acceptance"
+  ]
+}

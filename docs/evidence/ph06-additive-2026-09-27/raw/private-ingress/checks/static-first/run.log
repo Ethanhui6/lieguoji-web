@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-09-27T09:50:33.222Z",
+  "stagingOnly": true,
+  "owned": [
+    "src/world/bridge.ts",
+    "src/world/detail-private-ingress.test.ts"
+  ],
+  "relatedTypeDiagnostics": [],
+  "lint": [],
+  "pass": true
+}

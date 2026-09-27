@@ -7,7 +7,7 @@ import {
   type AtlasBlock, type BlockKey,
 } from './model';
 import { cloneAtlasDocument, cloneVerifiedAtlasDocument, encodeAtlasManifest, hashAtlasManifest, isGenerationDocument, type AtlasDocument, type AtlasManifest } from './atlas-format';
-import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, encodeAtlasCellLockBlock, hashAtlasCellLockBlock, hashAtlasLockSet, lockKey } from './generation-locks';
+import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, assertAtlasReplacementLocksPreserved, encodeAtlasCellLockBlock, hashAtlasCellLockBlock, hashAtlasLockSet, lockKey } from './generation-locks';
 import { generationExact, generationInt, validateCellRectangle, type AtlasCellRectangle } from './generation-contract';
 import { cellBlock, incidentCellIds, validateLocalGeometry } from './topology';
 
@@ -412,7 +412,8 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
       const base = source.manifest, next = data.manifest;
       if (next.version !== base.version || next.draftId !== base.draftId || next.atlasId !== base.atlasId || next.revision !== base.revision + 1 || !Number.isSafeInteger(next.revision)
         || next.name !== base.name || next.seed !== base.seed || JSON.stringify(next.spec) !== JSON.stringify(base.spec) || JSON.stringify(next.catalogs) !== JSON.stringify(base.catalogs)) throw new Error('完整候选改变了固定身份或未绑定当前修订。');
-      if (mode === 'constraints') assertAtlasConstraintsOnly(source, data); else assertAtlasLocksPreserved(source, data);
+      if (mode === 'constraints') assertAtlasConstraintsOnly(source, data); else await assertAtlasReplacementLocksPreserved(source, data, control);
+      checkSource();
       let retainedBytes = 0;
       if (!undo) {
         const blocks = [...source.blocks.values()], locks = 'locks' in source ? [...source.locks.values()] : [], detailCoast = isDetailCoastDocument(source) ? [...source.detailCoast.values()] : [], total = 1 + blocks.length + locks.length + detailCoast.length;

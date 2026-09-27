@@ -1,0 +1,95 @@
+{
+  "scope": "staging shader CPU contract tests plus scoped virtual-overlay types/owned lint only; no GPU, build or performance claim",
+  "unit": {
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "--config=.autopilot/ph06/v4-relief-staging/vitest.config.ts",
+      "--reporter=default",
+      "--reporter=json",
+      "--outputFile=D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\v4-relief-staging\\first-unit.json"
+    ],
+    "exitCode": 0,
+    "signal": null,
+    "elapsedMs": 1557.6174
+  },
+  "diagnosticBodyUnchanged": true,
+  "heightExpressionUnchanged": true,
+  "types": [
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 2,
+      "message": "Cannot find name '__MACRO_GENERATOR_FINGERPRINT__'. Did you mean 'MACRO_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 3,
+      "message": "Cannot find name '__LANDFORM_GENERATOR_FINGERPRINT__'. Did you mean 'LANDFORM_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 4,
+      "message": "Cannot find name '__ISLAND_GENERATOR_FINGERPRINT__'. Did you mean 'ISLAND_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 5,
+      "message": "Cannot find name '__COAST_GENERATOR_FINGERPRINT__'. Did you mean 'COAST_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 6,
+      "message": "Cannot find name '__SHAPE_GENERATOR_FINGERPRINT__'. Did you mean 'SHAPE_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 7,
+      "message": "Cannot find name '__OCEAN_GENERATOR_FINGERPRINT__'. Did you mean 'OCEAN_GENERATOR_FINGERPRINT'?"
+    },
+    {
+      "file": "D:/游戏/架空地图模拟器/src/world/generation/fingerprint.ts",
+      "line": 8,
+      "message": "Cannot find name '__DETAIL_SHAPE_GENERATOR_FINGERPRINT__'. Did you mean 'DETAIL_SHAPE_GENERATOR_FINGERPRINT'?"
+    }
+  ],
+  "lint": [
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\detail-terrain-shader.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    },
+    {
+      "filePath": "D:\\游戏\\架空地图模拟器\\src\\world\\detail-terrain-shader.test.ts",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    }
+  ],
+  "before": [
+    {
+      "path": "src/world/detail-terrain-shader.ts",
+      "production": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92",
+      "staged": "ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.test.ts",
+      "production": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5",
+      "staged": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    }
+  ],
+  "after": [
+    {
+      "path": "src/world/detail-terrain-shader.ts",
+      "production": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92",
+      "staged": "ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05"
+    },
+    {
+      "path": "src/world/detail-terrain-shader.test.ts",
+      "production": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5",
+      "staged": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    }
+  ],
+  "productionAndStagingUnchanged": true
+}

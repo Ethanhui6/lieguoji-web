@@ -1,0 +1,13 @@
+[96m.autopilot/ph06/v4-additive-integration-staging/src/editor/AtlasStudio.tsx[0m:[93m274[0m:[93m11[0m - [91merror[0m[90m TS2322: [0mType '{ format: "lieguoji-atlas-recipe"; version: 1; generator: { id: "add-detail-landmass"; version: 1; fingerprint: string; } | { id: "shape-detail-landmass"; version: 1; fingerprint: string; }; seed: string; parameters: { ...; }; } | ... 5 more ... | { ...; }' is not assignable to type 'GenerationRecipe'.
+  Type '{ format: "lieguoji-atlas-recipe"; version: 1; generator: { id: "add-detail-landmass"; version: 1; fingerprint: string; } | { id: "shape-detail-landmass"; version: 1; fingerprint: string; }; seed: string; parameters: { ...; }; }' is not assignable to type 'GenerationRecipe'.
+    Type '{ format: "lieguoji-atlas-recipe"; version: 1; generator: { id: "add-detail-landmass"; version: 1; fingerprint: string; } | { id: "shape-detail-landmass"; version: 1; fingerprint: string; }; seed: string; parameters: { ...; }; }' is not assignable to type 'AddDetailRecipe'.
+      Types of property 'generator' are incompatible.
+        Type '{ id: "add-detail-landmass"; version: 1; fingerprint: string; } | { id: "shape-detail-landmass"; version: 1; fingerprint: string; }' is not assignable to type '{ id: "add-detail-landmass"; version: 1; fingerprint: string; }'.
+          Type '{ id: "shape-detail-landmass"; version: 1; fingerprint: string; }' is not assignable to type '{ id: "add-detail-landmass"; version: 1; fingerprint: string; }'.
+            Types of property 'id' are incompatible.
+              Type '"shape-detail-landmass"' is not assignable to type '"add-detail-landmass"'.
+
+[7m274[0m     const recipe: GenerationRecipe = fine
+[7m   [0m [91m          ~~~~~~[0m
+
+{"diagnostics":1,"rootFiles":19,"scope":"Only integration staging mirrors and their transitive imports; not a full project build"}

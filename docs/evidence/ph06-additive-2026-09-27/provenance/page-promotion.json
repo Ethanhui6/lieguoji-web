@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "src/world/atlas.worker.ts",
+      "stagedSha256": "00c6d9c6dcc70dd837b38ad80dfca359d1c0aa3dd021a369b062bf1fd7acf3d4",
+      "bytes": 33348,
+      "baselineSha256": "2e61d7acd71eea6ad7476c2ecd154ea886cc70a1a48ab4530c3753c890068ffc",
+      "productionExists": true
+    },
+    {
+      "path": "src/world/atlas-worker-stage-pages.test.ts",
+      "stagedSha256": "788f9164144d903418249b66e5916b94819cd5e9c131f4346bc8d9c8a2e68f3b",
+      "bytes": 10842,
+      "baselineSha256": null,
+      "productionExists": false
+    }
+  ],
+  "testsRunBeforePromotion": false,
+  "promotedAt": "2026-09-27T09:57:46.6363472Z"
+}

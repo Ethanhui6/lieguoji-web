@@ -1,11 +1,11 @@
 import { cloneDetailCoastTile, decodeDetailCoastTile, hashDetailCoastTile } from './detail-coast-codec';
 import { detailCoastKey, type DetailCoastKey, type DetailCoastTile } from './detail-coast-types';
-import { cloneVerifiedAtlasDocument, decodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
+import { decodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
 import { decodeAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, atlasCellLockFlags, assertAtlasConstraintsOnly } from './generation-locks';
 import { constraintsPreviewDigest, type ConstraintsPreviewInfo } from './constraints-session';
 import { generationRecipeDigest, generationScopeDigest, generationLockDigest, generationPreviewDigest, type GenerationPreviewInfo } from './generation-session';
 import { validateCellRectangle, type GenerationRecipe, type GenerationScope, type AtlasCellLockBlock, type AtlasCellRectangle } from './generation-contract';
-import { cloneBlock, decodeBlock, hashBlock, type AtlasCreateOptions, type BlockKey } from './model';
+import { cloneBlock, decodeBlock, hashBlock, type AtlasCreateOptions } from './model';
 import { affectedGeometryCells } from './topology';
 import { applyAtlasDelta } from './delta';
 import { decodeAtlasEditMessage, encodeAtlasEditMessage, type AtlasEditCommand, type AtlasEditDelta, type AtlasPatch } from './transactions';
@@ -154,6 +154,37 @@ export class AtlasClient {
     const data: AtlasDocument = init.manifest.version === 4 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks, detailCoast: init.detailCoast } : init.manifest.version !== 1 ? { manifest: init.manifest, blocks: init.blocks, locks: init.locks } : { manifest: init.manifest, blocks: init.blocks };
     await verifyAtlasDocument(data, { onProgress: progress => { if (this.fatal || this.pending !== pending) throw this.fatal ?? new Error('地图接收已终止。'); this.options.onProgress?.({ ...progress, stage: '接收端' + progress.stage }); } }); return data;
   }
+  /** Only receives this client's decoded, fully verified private maps, after
+   * durable/preview binding. No caller-owned document enters this copy path.
+   * Keep the public ingress validator unchanged; expose independent buffers in
+   * batches without synchronously taking ownership of the same whole map again. */
+  private async copyReceivedView(source: AtlasDocument, pending: Pending): Promise<AtlasDocument> {
+    const check = () => { if (this.fatal || this.pending !== pending) throw this.fatal ?? new Error('地图接收已终止。'); };
+    const checkpoint = async (stage: string, completed: number, total: number) => {
+      check(); this.options.onProgress?.({ stage, completed, total }); check();
+      await new Promise<void>(resolve => setTimeout(resolve, 0)); check();
+    };
+    check();
+    const manifest = structuredClone(source.manifest), blocks: AtlasDocument['blocks'] = new Map();
+    let copied = 0;
+    for (const [key, block] of source.blocks) {
+      blocks.set(key, cloneBlock(block)); copied++;
+      if (copied % 16 === 0 || copied === source.blocks.size) await checkpoint('创建接收端独立地图视图', copied, source.blocks.size);
+    }
+    if (!isGenerationDocument(source)) { check(); return { manifest, blocks } as AtlasDocument; }
+    const locks = new Map<string, AtlasCellLockBlock>(); copied = 0;
+    for (const [key, lock] of source.locks) {
+      locks.set(key, structuredClone(lock)); copied++;
+      if (copied % 16 === 0 || copied === source.locks.size) await checkpoint('创建接收端独立区域锁视图', copied, source.locks.size);
+    }
+    if (!isDetailCoastDocument(source)) { check(); return { manifest, blocks, locks } as AtlasDocument; }
+    const detailCoast = new Map<DetailCoastKey, DetailCoastTile>(); copied = 0;
+    for (const [key, tile] of source.detailCoast) {
+      detailCoast.set(key, cloneDetailCoastTile(tile)); copied++;
+      if (copied % 16 === 0 || copied === source.detailCoast.size) await checkpoint('创建独立细海岸视图', copied, source.detailCoast.size);
+    }
+    check(); return { manifest, blocks, locks, detailCoast } as AtlasDocument;
+  }
   private async checkGenerationBinding(p: GenerationPreviewInfo, op: Extract<AtlasOperation, { type: 'generation-preview' }>, data?: AtlasDocument) {
     const h = this.verifiedHead, base = this.verified;
     if (!h || !base || !isGenerationDocument(base) || h.readOnly || p.commandId !== op.commandId || p.baseRevision !== h.revision || p.baseRevision !== op.expectedRevision || p.baseRootDigest !== h.rootDigest || p.baseRootDigest !== op.expectedRootDigest || p.baseManifestDigest !== h.manifestDigest || p.revision !== h.revision + 1 || typeof p.candidateId !== 'string' || !/^[0-9a-f-]{36}$/.test(p.candidateId) || !/^[0-9a-f]{64}$/.test(p.manifestDigest) || p.recipeDigest !== await generationRecipeDigest(op.recipe) || p.scopeDigest !== await generationScopeDigest(op.scope) || p.recipeDigest !== await generationRecipeDigest(p.recipe) || p.scopeDigest !== await generationScopeDigest(p.scope) || p.lockSetDigest !== await generationLockDigest(base) || p.previewDigest !== await generationPreviewDigest(p)) throw new Error('生成预览没有绑定原图、输入或输出。');
@@ -301,12 +332,14 @@ export class AtlasClient {
       const init = pending.init;
       if (pending.operation.type !== 'constraints-preview' || init?.header.kind !== 'constraints-preview' || !object(body.preview) || JSON.stringify(body.preview) !== JSON.stringify(init.header.preview)) throw new Error('区域锁完成回执与流头不符。');
       const data = await this.receivedDocument(init, pending); await this.checkConstraintsBinding(init.header.preview, pending.operation, data);
-      result = { data: await cloneVerifiedAtlasDocument(data, { onProgress: progress => this.options.onProgress?.(progress) }), preview: structuredClone(init.header.preview), metrics: this.metrics(pending, body.metrics) }; this.verifiedConstraints = structuredClone(init.header.preview); this.constraintsPreview = result;
+      const publicData = await this.copyReceivedView(data, pending); if (this.fatal || this.pending !== pending) return;
+      result = { data: publicData, preview: structuredClone(init.header.preview), metrics: this.metrics(pending, body.metrics) }; this.verifiedConstraints = structuredClone(init.header.preview); this.constraintsPreview = result;
     } else if (body.operation === 'generation-preview') {
       const init = pending.init;
       if (pending.operation.type !== 'generation-preview' || init?.header.kind !== 'generation-preview' || !object(body.preview) || JSON.stringify(body.preview) !== JSON.stringify(init.header.preview)) throw new Error('生成完成回执与流头不符。');
       const data = await this.receivedDocument(init, pending); await this.checkGenerationBinding(init.header.preview, pending.operation, data);
-      result = { data: await cloneVerifiedAtlasDocument(data, { onProgress: progress => this.options.onProgress?.(progress) }), preview: structuredClone(init.header.preview), metrics: this.metrics(pending, body.metrics) }; this.verifiedGeneration = structuredClone(init.header.preview); this.generationPreview = result;
+      const publicData = await this.copyReceivedView(data, pending); if (this.fatal || this.pending !== pending) return;
+      result = { data: publicData, preview: structuredClone(init.header.preview), metrics: this.metrics(pending, body.metrics) }; this.verifiedGeneration = structuredClone(init.header.preview); this.generationPreview = result;
     } else if (body.operation === 'preview') {
       if (pending.operation.type !== 'preview' || !object(body.preview)) throw new Error('编辑预览响应不符。');
       result = { ...body.preview, metrics: this.metrics(pending, body.metrics) } as unknown as AtlasPreview;
@@ -321,30 +354,18 @@ export class AtlasClient {
       if (this.fatal || this.pending !== pending) return;
       pending.verificationMs += performance.now() - started;
       const previous = this.view, dirtyKeys = pending.delta?.blockRefs.map(ref => ref.key);
-      const blocks = dirtyKeys && previous ? new Map(previous.data.blocks) : new Map<BlockKey, ReturnType<typeof cloneBlock>>();
-      const copiedKeys = dirtyKeys ?? [...pending.nextData.blocks.keys()];
-      for (let index = 0; index < copiedKeys.length; index++) {
-        const key = copiedKeys[index]; blocks.set(key, cloneBlock(pending.nextData.blocks.get(key)!));
-        if (!dirtyKeys && ((index + 1) % 16 === 0 || index + 1 === copiedKeys.length)) {
-          this.options.onProgress?.({ stage: '创建接收端独立地图视图', completed: index + 1, total: copiedKeys.length });
-          await new Promise<void>(resolve => setTimeout(resolve, 0));
-          if (this.fatal || this.pending !== pending) return;
-        }
-      }
-      const detailCoast = new Map<DetailCoastKey, DetailCoastTile>();
-      if (isDetailCoastDocument(pending.nextData)) {
-        let count = 0;
-        for (const [key, tile] of pending.nextData.detailCoast) {
-          detailCoast.set(key, cloneDetailCoastTile(tile)); count++;
-          if (count % 16 === 0 || count === pending.nextData.detailCoast.size) {
-            this.options.onProgress?.({ stage: '创建独立细海岸视图', completed: count, total: pending.nextData.detailCoast.size });
-            await new Promise<void>(resolve => setTimeout(resolve, 0));
-            if (this.fatal || this.pending !== pending) return;
-          }
-        }
-      }
+      let publicData: AtlasDocument;
+      if (dirtyKeys && previous) {
+        // Preserve the existing bounded legacy delta path. v4 never arrives as
+        // a local delta; every full durable/preview view uses the private copy.
+        const blocks = new Map(previous.data.blocks);
+        for (const key of dirtyKeys) blocks.set(key, cloneBlock(pending.nextData.blocks.get(key)!));
+        publicData = { ...pending.nextData, manifest: structuredClone(pending.nextData.manifest), blocks,
+          ...(isGenerationDocument(pending.nextData) ? { locks: structuredClone(pending.nextData.locks) } : {}) } as AtlasDocument;
+      } else publicData = await this.copyReceivedView(pending.nextData, pending);
+      if (this.fatal || this.pending !== pending) return;
       this.verified = pending.nextData; this.verifiedHead = structuredClone(head);
-      this.view = { data: { ...this.verified, manifest: structuredClone(this.verified.manifest), blocks, ...(isGenerationDocument(this.verified) ? { locks: structuredClone(this.verified.locks) } : {}), ...(isDetailCoastDocument(this.verified) ? { detailCoast } : {}) } as AtlasDocument, head: structuredClone(head), metrics: this.metrics(pending, body.metrics) };
+      this.view = { data: publicData, head: structuredClone(head), metrics: this.metrics(pending, body.metrics) };
       this.format = this.verified.manifest.version; this.generationPreview = null; this.verifiedGeneration = null;
       this.constraintsPreview = null; this.verifiedConstraints = null;
       result = this.view;

@@ -1,0 +1,100 @@
+{
+  "recordedAt": "2026-09-27T15:19:14.0990699+08:00",
+  "scope": "Staging-only independent additive kernel; no production promotion or game entry integration",
+  "files": [
+    {
+      "path": ".autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.ts",
+      "sha256": "615e68f17430bfbdcc2e31d1078e71387dcd47129e0b9afac2ae5567474c153c"
+    },
+    {
+      "path": ".autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts",
+      "sha256": "ac5f37b506f3124789bbf9805cc8ed5202d2cb1939aeebbe5165077c51a5f45f"
+    },
+    {
+      "path": "src/world/generation/detail-shape.ts",
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "path": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "path": "src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "path": "src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "path": "src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "path": "src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    }
+  ],
+  "checks": [
+    {
+      "command": "npx vitest run --config .autopilot/ph06/v4-additive-staging/vitest.config.ts --reporter=default --reporter=json --outputFile.json=.autopilot/ph06/v4-additive-staging/checks/tests-first.json",
+      "exitCode": 1,
+      "started": "2026-09-27T15:16:32.2444133+08:00",
+      "finished": "2026-09-27T15:16:34.3385113+08:00",
+      "seconds": 2.094098
+    },
+    {
+      "command": "npx vitest run --config .autopilot/ph06/v4-additive-staging/vitest.config.ts --reporter=default --reporter=json --outputFile.json=.autopilot/ph06/v4-additive-staging/checks/tests-repair1.json",
+      "exitCode": 0,
+      "started": "2026-09-27T15:16:50.4839983+08:00",
+      "finished": "2026-09-27T15:16:54.8947512+08:00",
+      "seconds": 4.4107529
+    },
+    {
+      "command": "npx eslint .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.ts .autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts .autopilot/ph06/v4-additive-staging/vitest.config.ts",
+      "exitCode": 0,
+      "started": "2026-09-27T15:17:08.5732856+08:00",
+      "finished": "2026-09-27T15:17:11.0935277+08:00",
+      "seconds": 2.5202421
+    },
+    {
+      "command": "node .autopilot/ph06/v4-additive-staging/checks/typecheck.mjs",
+      "exitCode": 0,
+      "started": "2026-09-27T15:18:06.2018479+08:00",
+      "finished": "2026-09-27T15:18:08.6488525+08:00",
+      "seconds": 2.4470046
+    }
+  ],
+  "firstFailure": {
+    "scope": "staging test resolver",
+    "testsExecuted": 0,
+    "reason": "Windows importer slash normalization mismatch prevented production dependency resolution",
+    "fix": "Normalize importer and staging root separators in staging-only Vitest config",
+    "sourceKernelChanged": false,
+    "rawLog": "tests-first.log",
+    "rawJson": "tests-first.json"
+  },
+  "latestTests": {
+    "passed": 8,
+    "failed": 0,
+    "rawLog": "tests-repair1.log",
+    "rawJson": "tests-repair1.json"
+  },
+  "limitations": [
+    "Caller must derive complete locks and private geography from a fully verified v4 document; this kernel is not an untrusted Atlas decoder.",
+    "Coverage explicitly inherits old components and new target samples; no global exact union-SDF claim.",
+    "Close/touching/overlapping continents are conservatively rejected.",
+    "No recipe registration/session/UI/persistence integration in this batch.",
+    "No global lint/type/build/browser or phone performance acceptance.",
+    "Native synchronous snapshot copy is bounded and reports sourceBytesCopied; dense takeover and worst per-query responsiveness still need integration measurements."
+  ],
+  "productionModifiedByThisSubtask": false
+}

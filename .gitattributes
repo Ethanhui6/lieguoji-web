@@ -33,3 +33,6 @@ docs/evidence/playtest-2026-09-24/** -text whitespace=cr-at-eol,-blank-at-eol,-b
 docs/evidence/ph06-zoom-density-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph06-fine-coast-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph06-fine-integration-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+
+docs/evidence/ph06-preview7-generator-history-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/ph06-additive-2026-09-27/** -text

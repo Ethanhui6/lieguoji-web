@@ -1,0 +1,20 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../../vite.config" without a file extension (.autopilot/ph06/v4-lock-staging/vitest.config.ts:4:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/v4-lock-staging/src/world/detail-coast-locks.test.ts (16 tests) 5427ms
+   ✓ v4 exact fine lock replacement guard (16)
+     ✓ allows a distant new land tile and distant coarse height while preserving the locked true field 785ms
+     ✓ rejects changed real coast under mask 1 without locking unrelated heights 313ms
+     ✓ bounds retained meshes, reports actual checked cells and cancels without mutating either snapshot 621ms
+     ✓ uses the same fine guard in owned replacement and permits restoring the previous locked field 467ms
+     ✓ rechecks the verified private field at final storage commit and leaves current/backup untouched on failure 955ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  15:31:19
+   Duration  6.22s (tests 91%, transform 7%, import 2%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/v4-lock-staging/checks/first/results.json

@@ -2,7 +2,7 @@ import { blockKey, decodeBlock, encodeBlock, UNASSIGNED, validateAtlasGeographyA
 import { decodeDetailCoastTile, encodeDetailCoastTile } from './detail-coast-codec';
 import { detailCoastKey, type DetailCoastKey, type DetailCoastTile } from './detail-coast-types';
 import { decodeAtlasManifest, encodeAtlasManifest, validateAtlasDocumentAsync, validateAtlasManifest, type AtlasDocument, type AtlasManifest, type AtlasFormat, type AtlasCellLockBlock, type AtlasGenerationDocument } from './atlas-format';
-import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, atlasCoastalAffectedCellIds, decodeAtlasCellLockBlock, encodeAtlasCellLockBlock, lockKey } from './generation-locks';
+import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, assertAtlasReplacementLocksPreserved, atlasCoastalAffectedCellIds, decodeAtlasCellLockBlock, encodeAtlasCellLockBlock, lockKey } from './generation-locks';
 import { cellVertexIds, incidentCellIds, validateLocalGeometry, vertexOwnerBlock } from './topology';
 import type { AtlasBlockPage, AtlasCatalogEntry, AtlasCommitReceipt, AtlasLocalCommitRequest, AtlasPreparation, AtlasPrepareRequest, AtlasReadHandle, AtlasStorageControl, AtlasStorageTiming, AtlasStoredRoot } from './storage-types';
 export type * from './storage-types';
@@ -514,7 +514,7 @@ async function commitPrepared(preparationId: string, mode: 'geography' | 'constr
     if (manifest.draftId !== prep.draftId || manifest.revision !== prep.revision || (base.root ? manifest.revision !== base.root.revision + 1 : manifest.revision !== 0)) throw new Error('Atlas 候选身份或修订不符。');
     const candidate = await readContent(db, manifest, control); protectedRows.push(manifestRow, ...candidate.rows);
     if (mode === 'constraints') assertAtlasConstraintsOnly(baseContents!.documents.get(base.root!.currentManifest)!, candidate.data);
-    else if (base.root && baseContents && format !== 1) assertAtlasLocksPreserved(baseContents.documents.get(base.root.currentManifest)!, candidate.data);
+    else if (base.root && baseContents && format !== 1) await assertAtlasReplacementLocksPreserved(baseContents.documents.get(base.root.currentManifest)!, candidate.data, control);
     const root: AtlasStoredRoot = { format: 'lieguoji-atlas-root', version: 1, domain: DOMAIN, draftId: prep.draftId, revision: prep.revision, currentManifest: prep.manifestDigest, backupManifest: base.root?.currentManifest ?? null, lastCommitId: prep.commandId, rootDigest: '0'.repeat(64) };
     root.rootDigest = await hashAtlasRoot(root);
     let backupBytes = 0;

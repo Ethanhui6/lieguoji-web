@@ -1,0 +1,166 @@
+{
+  "at": "2026-09-27T09:28:18.352Z",
+  "files": [
+    {
+      "target": "src/world/generation-contract.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation-contract.ts",
+      "baseline": "0111dab13df34d15532a8133c64ec584501b79576a8291e2685ff69baca5f5de",
+      "expected": "c67bc8f8a097eef0ae77ce1d19d691e9d7d4970d62b6c315659e93ffae040738",
+      "promotedSha256": "c67bc8f8a097eef0ae77ce1d19d691e9d7d4970d62b6c315659e93ffae040738"
+    },
+    {
+      "target": "src/world/generation-format.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation-format.ts",
+      "baseline": "0b816b6d18f25fac2a6041fb86ce830eff4dadb1d28ef9f5d5c065e5f4893380",
+      "expected": "216332c924ea613263d7da749861f70a7f39fbfd466cbb549d515e340d921997",
+      "promotedSha256": "216332c924ea613263d7da749861f70a7f39fbfd466cbb549d515e340d921997"
+    },
+    {
+      "target": "src/world/generation-session.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation-session.ts",
+      "baseline": "5418c5cf36b2d5fc947d67cd43537db1c32f49b0033c3dd24b341d4bec7cf4e4",
+      "expected": "0b01a265795fbc43f43c70d928c417fde769782e58c44137431f68ecb79a5b74",
+      "promotedSha256": "0b01a265795fbc43f43c70d928c417fde769782e58c44137431f68ecb79a5b74"
+    },
+    {
+      "target": "src/world/generation-history.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation-history.ts",
+      "baseline": "07b25d17050f0c1f0b1163ca60462c0bf5d2df86cc2e80c525fd5bf8c31d1a56",
+      "expected": "c4817c30c71fbcc299689a7d55923e199e8151fc8e31661106555c0e66695e79",
+      "promotedSha256": "c4817c30c71fbcc299689a7d55923e199e8151fc8e31661106555c0e66695e79"
+    },
+    {
+      "target": "src/world/generation/fingerprint.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation/fingerprint.ts",
+      "baseline": "e5b0f6fd8fad84ac9ab9f8f61153cdf56fd9dbac7adc56bd2dd33e98b4dc43bb",
+      "expected": "7c5a6a27ffd4244720b0374421d348682f7b23e8147618d72917f3af79bd1ca2",
+      "promotedSha256": "7c5a6a27ffd4244720b0374421d348682f7b23e8147618d72917f3af79bd1ca2"
+    },
+    {
+      "target": "scripts/generator-fingerprint.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/scripts/generator-fingerprint.ts",
+      "baseline": "83b8a7437a7c72bb65fce1891d78bdbd8b127e7b9d65c918d747610b916fd19e",
+      "expected": "8a70cdd527896418ff1f8c75f8caf26d8d1af109c7f78a17c882df9d74df63ac",
+      "promotedSha256": "8a70cdd527896418ff1f8c75f8caf26d8d1af109c7f78a17c882df9d74df63ac"
+    },
+    {
+      "target": "vite.config.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/vite.config.ts",
+      "baseline": "1904981f0ff5bc1f1104c2fa8db383303a865c56900d0e41e4cb55d910704543",
+      "expected": "f82c409ca4fab6efbb59fac03041086a232ad178a876438e7243b70ca09bb5b8",
+      "promotedSha256": "f82c409ca4fab6efbb59fac03041086a232ad178a876438e7243b70ca09bb5b8"
+    },
+    {
+      "target": "src/vite-env.d.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/vite-env.d.ts",
+      "baseline": "fa5dbb2928406408f7111e2a5cf42336b429cbdc1ff822eb337c10b1e6cf3d92",
+      "expected": "3105655dee59a0ac3523eebf44ac85320e62fb876c8ea672bf4068b98c19be70",
+      "promotedSha256": "3105655dee59a0ac3523eebf44ac85320e62fb876c8ea672bf4068b98c19be70"
+    },
+    {
+      "target": "src/editor/AtlasStudio.tsx",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/editor/AtlasStudio.tsx",
+      "baseline": "ed2e75f150923aa8ee757cdffb4cf6a0f003f218f3924f088df36ed44c514a53",
+      "expected": "c267a0b737c7cae259a3e2b33788f09e3d97bf7dfda0f6f4bfdd488134e7ff95",
+      "promotedSha256": "c267a0b737c7cae259a3e2b33788f09e3d97bf7dfda0f6f4bfdd488134e7ff95"
+    },
+    {
+      "target": "src/editor/DetailCoastPanel.tsx",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/editor/DetailCoastPanel.tsx",
+      "baseline": "963a4337a3ec8c5443eeff584831c46567543fd7ed41f29457373f4d29f26066",
+      "expected": "34c88694b689564596437f3b8c6ec377ea017242379de34bb5699bafeecde4b1",
+      "promotedSha256": "34c88694b689564596437f3b8c6ec377ea017242379de34bb5699bafeecde4b1"
+    },
+    {
+      "target": "src/world/detail-coast-locks.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/detail-coast-locks.ts",
+      "baseline": null,
+      "expected": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "promotedSha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "target": "src/world/generation-locks.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation-locks.ts",
+      "baseline": "b105c1477d27a7614f4c1cdb0a2fd5e026bef482fa206ffdbc48c6bb6cbe8f74",
+      "expected": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "promotedSha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "target": "src/world/transactions.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/transactions.ts",
+      "baseline": "120d618bffb73e83dc297a28599228def84c379593c41b4754358172edbb9943",
+      "expected": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789",
+      "promotedSha256": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789"
+    },
+    {
+      "target": "src/world/storage.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/storage.ts",
+      "baseline": "e1a71ba074e8a9f0d5743ae0daf07afb64fecab6de5e5f444a7c8a5f2c98ef4f",
+      "expected": "46d93b707fe20b1136c8008d474e56460cdcb156bc5e710246250e1f0ba3e038",
+      "promotedSha256": "46d93b707fe20b1136c8008d474e56460cdcb156bc5e710246250e1f0ba3e038"
+    },
+    {
+      "target": "src/world/generation/detail-shape-add.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation/detail-shape-add.ts",
+      "baseline": null,
+      "expected": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8",
+      "promotedSha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8"
+    },
+    {
+      "target": "src/world/generation/detail-shape-add-adapter.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/generation/detail-shape-add-adapter.ts",
+      "baseline": null,
+      "expected": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2",
+      "promotedSha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2"
+    },
+    {
+      "target": "src/world/detail-add-integration.test.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/detail-add-integration.test.ts",
+      "baseline": null,
+      "expected": "739ff36d9420c2c40ddb0e936eed41f008db8faf1efe72d49452165ee9020ec2",
+      "promotedSha256": "739ff36d9420c2c40ddb0e936eed41f008db8faf1efe72d49452165ee9020ec2"
+    },
+    {
+      "target": "src/world/detail-add-history.test.ts",
+      "source": ".autopilot/ph06/v4-additive-integration-staging/src/world/detail-add-history.test.ts",
+      "baseline": null,
+      "expected": "f817394ffa5dbb5b44fdb86b33fb3ad9c9d326d9fb5a5dd1d45e95ccb60f354d",
+      "promotedSha256": "e476027e7945aa309d7f3c04153bc747f5cb6853e11381672413ba19b544a0d6"
+    },
+    {
+      "target": "src/world/detail-coast-locks.test.ts",
+      "source": ".autopilot/ph06/v4-lock-staging/src/world/detail-coast-locks.test.ts",
+      "baseline": null,
+      "expected": "0e275eb25291dc7f68bc973bc7cb83a9d10217544712d5ec85a0404fe3ab8cb1",
+      "promotedSha256": "0e275eb25291dc7f68bc973bc7cb83a9d10217544712d5ec85a0404fe3ab8cb1"
+    },
+    {
+      "target": "src/world/generation/detail-shape-add.test.ts",
+      "source": ".autopilot/ph06/v4-additive-staging/src/world/generation/detail-shape-add.test.ts",
+      "baseline": null,
+      "expected": "ac5f37b506f3124789bbf9805cc8ed5202d2cb1939aeebbe5165077c51a5f45f",
+      "promotedSha256": "ac5f37b506f3124789bbf9805cc8ed5202d2cb1939aeebbe5165077c51a5f45f"
+    },
+    {
+      "target": "src/world/detail-terrain-shader.ts",
+      "source": ".autopilot/ph06/v4-relief-staging/src/world/detail-terrain-shader.ts",
+      "baseline": "df421bf2a79ebbc8ffd300a0ce3b89aedc691c1318596a71bba880cf8f0e0f92",
+      "expected": "ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05",
+      "promotedSha256": "ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05"
+    },
+    {
+      "target": "src/world/detail-terrain-shader.test.ts",
+      "source": ".autopilot/ph06/v4-relief-staging/src/world/detail-terrain-shader.test.ts",
+      "baseline": "ce181131af6b4ea64f1ceedb31ec7bdde615c1ec1583ef059c488ae3bb0b19c5",
+      "expected": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8",
+      "promotedSha256": "d464b1182a9a794b195c03a854fbd333ff81568d14e0f56c5744518bc31074f8"
+    }
+  ],
+  "historyTarget": "docs/evidence/ph06-preview7-generator-history-2026-09-27",
+  "historySources": 27,
+  "historyBuildSha256": "4ba3aa857f368749b778a603b3171db98870110f34a21d9afa9c68f227d9825f",
+  "explicitAdaptation": "Only history-test evidence URL changed after exact promotion; immutable history copied byte-for-byte.",
+  "version": "0.5.0-preview.8",
+  "checkedInGame": false,
+  "cloudWrites": false
+}

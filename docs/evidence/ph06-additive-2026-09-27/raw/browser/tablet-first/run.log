@@ -1,0 +1,41 @@
+
+Running 1 test using 1 worker
+
+(node:27008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [tablet-chromium] › tests\atlas-add-detail-coast.spec.ts:189:1 › [detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection (7.6m)
+
+
+  1) [tablet-chromium] › tests\atlas-add-detail-coast.spec.ts:189:1 › [detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection 
+
+    Error: Test timeout of 450000ms exceeded
+
+      19 |     const m = await metrics(p) as ReturnType<AtlasRenderer['metrics']>;
+      20 |     return m.completedFrameSequence === m.frameSequence && m.gpu.state === 'ready';
+    > 21 |   }, { timeout: 120000 }).toBe(true);
+         |                           ^
+      22 | }
+      23 | async function screen(p: Page, points: XY[]) {
+      24 |   const box = (await p.getByTestId('atlas-canvas').boundingBox())!, frame = await metrics(p);
+        at frameReady (D:\游戏\架空地图模拟器\tests\atlas-add-detail-coast.spec.ts:21:27)
+        at observeFirstCoast (D:\游戏\架空地图模拟器\tests\atlas-add-detail-coast.spec.ts:183:86)
+        at D:\游戏\架空地图模拟器\tests\atlas-add-detail-coast.spec.ts:233:25
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph06\additive-checks\tablet-first\artifacts\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph06\additive-checks\tablet-first\artifacts\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph06\additive-checks\tablet-first\artifacts\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph06\additive-checks\tablet-first\artifacts\atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: [tablet-chromium] › tests\atlas-add-detail-coast.spec.ts (7.6m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [tablet-chromium] › tests\atlas-add-detail-coast.spec.ts:189:1 › [detail-v4-add] two native contours, protected first coast, same-session undo, reload and overlap rejection 

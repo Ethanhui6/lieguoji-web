@@ -93,7 +93,7 @@
 | 首次浏览器源文件集合/内容与 dist 集合/内容前后一致 | **通过；249 个源文件、25 个 dist 产物稳定** | `browser-first-source-before/after-*.json`、`browser-first-dist-before/after.json`；`sourceStable:true`、`distStable:true` |
 | 六个 entry/copy 完整场景定向复查 | **6/6 通过，exit 0**；61,179.141 毫秒，0 retry | `browser-recheck-results.json`、`browser-recheck-verification.json`、`browser-recheck-selection.json`；桌面/移动/平板各 2 |
 | 两轮产品与产物是否一致 | **全部产品源码、25 个 dist 产物相同** | `browser-recheck-scope-reuse.json`、两轮源文件及 dist 前后清单，汇总 `sourceProductUnchanged:true`、`distUnchanged:true`；仅入口/copy 两处测试脚本修复 |
-| 当前本地构建身份 | **已核两轮实际响应** | 归档 `build.json`；版本 `0.5.0-preview.5`，构建记录基准提交 `17f9f333b964674f84e66a68ac09003c81d93e14` 加冻结工作区；`build.json` SHA-256 `0ea1d390111d836e99ab639961c5c8bb30f39b198869dddbd9cfb89449465bf8`；不声称工作区已提交 |
+| 当前本地构建身份 | **已核两轮实际响应** | 归档 `build.json`；版本 `0.5.0-preview.5`，构建记录基准提交 `17f9f333b964674f84e66a68ac09003c81d93e14` 加冻结工作区；`build.json` SHA-256 `0ea1d390111d836e99ab639961c5c8bb30f39b198869dddbd9cfb89449465bf8`；随后游戏代码本地提交为 `08a69c23795727dc520885d824426c50d03c7e99`，不改写历史构建元数据，未推送 |
 
 表中归档文件均位于 `docs/evidence/ph06-coastal-surface-2026-09-27/`；原始日志仍按汇总 JSON 内的 `.autopilot/ph06/coastal-checks/` 路径保留。
 

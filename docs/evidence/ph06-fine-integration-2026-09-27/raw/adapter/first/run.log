@@ -1,0 +1,23 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/generation/detail-shape-adapter.test.ts (8 tests) 4844ms
+   ✓ registered empty-v4 detail-shape adapter (8)
+     ✓ produces complete persisted hashes, real clipped area and editable coarse heights while preserving every nonheight byte 789ms
+     ✓ owns both input recipe and actual geography before the first yield 1717ms
+     ✓ rejects actual old formats, old land, explicit fine content, entities and locks instead of trusting absence flags 369ms
+     ✓ cancels real generation without mutating the caller or returning partial content 882ms
+ ✓ src/world/detail-generation-session.test.ts (5 tests) 13760ms
+   ✓ v4 exact private generation preview, durable receipt and restore (5)
+     ✓ binds real fine area and recipe, keeps preview private, confirms exact identity, restores bytes and undoes the full candidate 4681ms
+     ✓ discards a completed preview and cancels actual fine hashing without a partial candidate or DB write 1815ms
+     ✓ rejects old recipes in v4 and rejects the new fine recipe in both old generation formats 1202ms
+     ✓ refuses a second mainland after the persisted first generation and leaves all fine references untouched 3433ms
+     ✓ keeps final storage CAS authoritative if another full candidate commits after the preview 2545ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  15:09:33
+   Duration  14.77s (tests 93%, transform 4%, import 3%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/detail-adapter-checks/first/results.json

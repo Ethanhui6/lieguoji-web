@@ -1,20 +1,21 @@
 import { hashAtlasManifest, isGenerationDocument, isDetailCoastDocument, type AtlasDocument } from './atlas-format';
 import { hashBlock, yieldAtlas, type AtlasControl } from './model';
 import { hashAtlasLockSet } from './generation-locks';
-import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
-import type { GenerationRecipe, GenerationScope } from './generation-contract';
+import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateDetailShapeRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
+import type { AtlasGenerationDocument, GenerationRecipe, GenerationScope } from './generation-contract';
 import { generateMacro, type GenerationOutput } from './generation/macro';
 import { generateLandforms, type LandformOutput } from './generation/landforms';
 import { generateIslands, type IslandOutput } from './generation/islands';
 import { generateCoast, type CoastOutput } from './generation/coast';
 import { generateShape, type ShapeOutput } from './generation/shape';
 import { generateOcean, type OceanOutput } from './generation/ocean';
+import { generateDetailShapeAtlas, type DetailShapeAdapterOutput } from './generation/detail-shape-adapter';
 import { inspectCoastalGeneration } from './coastal-generation';
 import { OwnedAtlasSession, type PreparedAtlasReplacement } from './transactions';
 
 export interface GenerationPreviewInfo extends PreparedAtlasReplacement {
   recipe: GenerationRecipe; scope: GenerationScope; recipeDigest: string; scopeDigest: string; lockSetDigest: string;
-  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape']; ocean?: OceanOutput['summary']['ocean'] }; previewDigest: string;
+  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape']; ocean?: OceanOutput['summary']['ocean']; detailShape?: DetailShapeAdapterOutput['summary']['detailShape'] }; previewDigest: string;
 }
 export interface GenerationConfirm {
   candidateId: string; commandId: string; previewDigest: string; expectedRevision: number; expectedRootDigest: string;
@@ -42,12 +43,18 @@ export class AtlasGenerationSession {
     const recipe = structuredClone(rawRecipe), scope = structuredClone(rawScope), head = this.session.head;
     if (head.revision !== expectedRevision || head.rootDigest !== expectedRootDigest) throw new Error('生成基线已变化，请重新打开草稿。');
     const base = await this.session.snapshotAsync(control); if (!isGenerationDocument(base)) throw new Error('请先创建创世草稿，或明确复制旧草稿后生成。');
-    if (isDetailCoastDocument(base)) throw new Error('第四版细海岸生成器尚未接通；旧生成器不能修改或丢弃细海岸。');
+    if (isDetailCoastDocument(base) !== validateDetailShapeRecipe(recipe, base.manifest.spec)) throw new Error('第四版只支持独立细大陆配方；旧版本不能执行细海岸生成，旧生成器不能修改第四版。');
     if (!validateGenerationOperation(recipe, scope, base.manifest.spec)) throw new Error('生成范围越界或该操作尚不支持局部范围；大陆重建与岛链使用整图，山系盆地和海岸可选择局部。');
     if (recipe.generator.id === 'macro-landmass' && base.locks.size) throw new Error('重建大陆需要未锁定的整张地图；保留海岸时请选择山系与盆地生成。');
     const recipeDigest = await generationRecipeDigest(recipe), scopeDigest = await generationScopeDigest(scope), lockSetDigest = await generationLockDigest(base);
-    let output: Pick<GenerationOutput, 'blocks' | 'summary'>;
-    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape' | 'ocean'> = {}, reason: string;
+    let output: Pick<GenerationOutput, 'blocks' | 'summary'>, next: AtlasGenerationDocument;
+    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape' | 'ocean' | 'detailShape'> = {}, reason: string;
+    if (validateDetailShapeRecipe(recipe, base.manifest.spec)) {
+      const result = await generateDetailShapeAtlas({ base, recipe }, control);
+      output = { blocks: result.data.blocks, summary: result.summary }; next = result.data;
+      details = { detailShape: structuredClone(result.summary.detailShape) }; reason = '按手绘轮廓生成真实细海岸大陆';
+    } else {
+    if (isDetailCoastDocument(base)) throw new Error('旧生成器不能修改第四版细海岸。');
     if (validateMacroRecipe(recipe)) {
       output = await generateMacro({ base, recipe, scope }, control ?? {}); reason = '根据种子生成大陆与高程';
     } else if (validateLandformRecipe(recipe)) {
@@ -66,6 +73,8 @@ export class AtlasGenerationSession {
       const result = await generateCoast({ base, parameters: recipe.parameters, scope }, control ?? {});
       output = result; details = { coast: structuredClone(result.summary) }; reason = '细化真实海岸共享顶点';
     } else throw new Error('生成配方尚未实现或轮廓无效。');
+    next = { manifest: structuredClone(base.manifest), blocks: new Map(output.blocks), locks: new Map(base.locks) };
+    }
     const summary: GenerationPreviewInfo['summary'] = {
       changedCellCount: output.summary.changedCellCount, landAreaQ2: output.summary.landAreaQ2,
       worldAreaQ2: output.summary.worldAreaQ2, majorComponentCount: output.summary.majorComponentCount,
@@ -73,12 +82,11 @@ export class AtlasGenerationSession {
       ...details,
     };
     control?.signal?.throwIfAborted();
-    // base and generator output belong only to this invocation. Copy metadata
-    // and map shells here; copying/revalidating all base buffers only to discard
-    // them would repeat a synchronous full-world pass. prepareReplacement
-    // still takes its own complete buffer copy and verifies every hash/quad.
-    const next = { manifest: structuredClone(base.manifest), blocks: new Map(output.blocks), locks: new Map(base.locks) };
-    if (next.manifest.version === 3) {
+    // Legacy candidates retain private map shells; detailed candidates already
+    // carry their complete independently owned fine fields and references.
+    // prepareReplacement still takes its own complete buffer copy and verifies
+    // every hash/quad before the candidate can reach the confirmation boundary.
+    if (!isDetailCoastDocument(next) && next.manifest.version === 3 && !isDetailCoastDocument(base)) {
       const measured = await inspectCoastalGeneration(base, next, scope, control);
       summary.landAreaQ2 = measured.landAreaQ2; summary.worldAreaQ2 = measured.worldAreaQ2;
       for (const nested of [summary.landforms, summary.islands, summary.coast]) if (nested) {
@@ -97,7 +105,11 @@ export class AtlasGenerationSession {
       await yieldAtlas(control, '核验候选地理块', end, next.manifest.blockRefs.length);
     }
     next.manifest.revision = head.revision + 1;
-    next.manifest.generation.lastApplied = { recipe, scope, baseManifestDigest: head.manifestDigest, baseRootDigest: head.rootDigest, baseRevision: head.revision, lockSetDigest, appliedRevision: next.manifest.revision };
+    const provenance = { baseManifestDigest: head.manifestDigest, baseRootDigest: head.rootDigest, baseRevision: head.revision, lockSetDigest, appliedRevision: next.manifest.revision };
+    if (isDetailCoastDocument(next)) {
+      if (!validateDetailShapeRecipe(recipe, next.manifest.spec) || scope.kind !== 'world') throw new Error('细大陆来源记录与第四版候选不一致。');
+      next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
+    } else next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
     const prepared = await this.session.prepareReplacement(next, commandId, reason, control);
     try {
       const partial = { ...prepared, recipe, scope, recipeDigest, scopeDigest, lockSetDigest, summary };

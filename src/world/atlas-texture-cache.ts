@@ -44,35 +44,54 @@ export class AtlasTextureCache {
   }
   stats() {
     return { pixels: this.pixels + this.reserved, livePixels: this.pixels, reservedPixels: this.reserved, peakPixels: this.peakPixels,
-      sharedPixels: [...this.shared.values()].reduce((sum, entry) => sum + entry.pixels, 0), sharedEntries: this.shared.size, sharedCreated: this.sharedCreated, sharedDestroyed: this.sharedDestroyed,
+      sharedPixels: [...new Set(this.shared.values())].reduce((sum, entry) => sum + entry.pixels, 0), sharedEntries: new Set(this.shared.values()).size, sharedBindings: this.shared.size, sharedCreated: this.sharedCreated, sharedDestroyed: this.sharedDestroyed,
       budgetPixels: this.budgetPixels, entries: this.entries.size, created: this.created, destroyed: this.destroyed, hits: this.hits, misses: this.misses, evictions: this.evictions, releaseFailures: this.releaseFailures };
   }
   has(key: string) { return this.entries.has(key); }
   canReserve(pixels: number, protectedKeys: ReadonlySet<string>) {
     const retained = [...this.entries.values()].filter(entry => protectedKeys.has(entry.spec.key)).reduce((sum, entry) => sum + entry.pixels, 0);
-    const shared = [...this.shared.values()].reduce((sum, entry) => sum + entry.pixels, 0);
+    const shared = [...new Set(this.shared.values())].reduce((sum, entry) => sum + entry.pixels, 0);
     return Number.isSafeInteger(pixels) && pixels > 0 && retained + shared + this.reserved + pixels <= this.budgetPixels;
   }
   /** Small material tables are pinned while any retained mesh can reference them.
    * Their sources use the same total pixel ledger as render targets. */
-  ensureShared(key: string, width: number, height: number, create: () => Texture): Texture {
+  ensureShared(key: string, width: number, height: number, create: () => Texture, protectedKeys = new Set(this.entries.keys())): Texture {
     if (this.failure) throw this.failure;
     const existing = this.shared.get(key); if (existing) return existing.texture;
     if (![width, height].every(value => Number.isSafeInteger(value) && value > 0)) throw new Error('共享材质纹理尺寸无效。');
     const pixels = width * height;
     if (!Number.isSafeInteger(pixels)) throw new Error('共享材质纹理像素数量溢出。');
-    this.reserve(pixels, new Set(this.entries.keys()));
-    let texture: Texture | undefined;
+    this.reserve(pixels, protectedKeys);
+    let texture: Texture | undefined, ownsSource = true, borrowedWrapper = false;
     try {
-      texture = create(); this.sharedCreated++;
-      if (texture.source.pixelWidth * texture.source.pixelHeight !== pixels) throw new Error('共享材质纹理尺寸与像素账不一致。');
+      texture = create();
+      const alias = [...this.shared.values()].find(entry => entry.texture.source === texture!.source);
+      const targetAlias = [...this.entries.values()].some(entry => entry.texture.source === texture!.source);
+      ownsSource = !alias && !targetAlias;
+      borrowedWrapper = texture === alias?.texture;
+      if (ownsSource) this.sharedCreated++;
+      if (texture.source.pixelWidth !== width || texture.source.pixelHeight !== height || targetAlias) throw new Error('共享材质纹理尺寸或所有权与像素账不一致。');
+      if (alias) {
+        // A second Texture wrapper is not a second GPU source. Keep one owner
+        // and return its canonical wrapper; never release that source twice.
+        if (texture !== alias.texture) texture.destroy(false);
+        this.shared.set(key, alias); this.reserved -= pixels; return alias.texture;
+      }
       this.shared.set(key, { texture, pixels }); this.reserved -= pixels; this.pixels += pixels;
       return texture;
     } catch (error) {
-      try { if (texture) { texture.destroy(true); this.sharedDestroyed++; } this.reserved -= pixels; }
+      try { if (texture && !borrowedWrapper) { texture.destroy(ownsSource); if (ownsSource) this.sharedDestroyed++; } this.reserved -= pixels; }
       catch (releaseError) { this.releaseFailures++; this.failure = releaseError instanceof Error ? releaseError : new Error(String(releaseError)); }
       throw error;
     }
+  }
+  /** Caller must destroy every borrowing mesh/shader before dropping its key.
+   * Multiple keys for one source share a single charge and release owner. */
+  releaseShared(key: string): void {
+    const entry = this.shared.get(key); if (!entry) return;
+    if ([...this.shared].some(([other, value]) => other !== key && value === entry)) { this.shared.delete(key); return; }
+    try { entry.texture.destroy(true); this.shared.delete(key); this.pixels -= entry.pixels; this.sharedDestroyed++; }
+    catch (error) { this.releaseFailures++; this.failure ??= error instanceof Error ? error : new Error(String(error)); throw this.failure; }
   }
   get(key: string) { const entry = this.entries.get(key); if (entry) { entry.used = ++this.clock; this.hits++; } return entry; }
   forEach(visit: (entry: AtlasTextureEntry) => void) { this.entries.forEach(visit); }
@@ -151,10 +170,7 @@ export class AtlasTextureCache {
   clear() {
     let failure: unknown;
     try { this.releaseAll([...this.entries.keys()]); } catch (error) { failure = error; }
-    for (const [key, entry] of this.shared) {
-      try { entry.texture.destroy(true); this.shared.delete(key); this.pixels -= entry.pixels; this.sharedDestroyed++; }
-      catch (error) { this.releaseFailures++; this.failure ??= error instanceof Error ? error : new Error(String(error)); failure ??= this.failure; }
-    }
+    for (const key of [...this.shared.keys()]) try { this.releaseShared(key); } catch (error) { failure ??= error; }
     if (failure) throw failure;
   }
 }

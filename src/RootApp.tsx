@@ -15,7 +15,7 @@ const Game=lazy(()=>import('./App'));
 const AtlasStudio=lazy(()=>import('./editor/AtlasStudio'));
 
 const runFromUrl=()=>{const id=new URLSearchParams(window.location.search).get('world');return id&&/^run-[a-z0-9-]{1,55}$/.test(id)?id:'';};
-const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??'',format:!query.has('atlas-format')||query.get('atlas-format')==='1'?1 as const:query.get('atlas-format')==='2'?2 as const:query.get('atlas-format')==='3'?3 as const:null};};
+const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??'',format:!query.has('atlas-format')||query.get('atlas-format')==='1'?1 as const:query.get('atlas-format')==='2'?2 as const:query.get('atlas-format')==='3'?3 as const:query.get('atlas-format')==='4'?4 as const:null};};
 const initialScreen=()=>new URLSearchParams(window.location.search).has('atlas')?'atlas':runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
 export default function RootApp(){
  const [screen,setScreen]=useState<'studio'|'demo'|'simulation'|'atlas'>(initialScreen);

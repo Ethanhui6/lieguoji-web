@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Matrix } from 'pixi.js';
+import { Application, Container, Graphics, Matrix, type WebGLRenderer } from 'pixi.js';
 import 'pixi.js/unsafe-eval';
 import type { BlockKey } from './model';
 import { hashAtlasManifest, verifyAtlasDocument, type AtlasGeographyView } from './atlas-format';
@@ -15,6 +15,7 @@ import { buildTerrainSurface } from './terrain-surface';
 import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './terrain-mesh';
 import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type CoastalPick } from './coastal-surface';
 import { ATLAS_MINIMUM_CACHE_DENSITY, ATLAS_TEXTURE_GUTTER, planAtlasRaster, type AtlasRasterQuality } from './render-density';
+import { DetailTerrainBackend, DETAIL_TERRAIN_SHARED_PIXELS } from './detail-terrain-backend';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
@@ -43,6 +44,7 @@ export class AtlasRenderer {
   private readonly gridLayer = new Container();
   private readonly cache = new AtlasTextureCache();
   private readonly terrainGeometry = new AtlasTerrainGeometryCache();
+  private detail?: DetailTerrainBackend;
   private refs = new Map<BlockKey, string>();
   // This is world-content invalidation, not a texture-entry flag. It survives
   // eviction, density changes and GPU loss until the core is actually visible.
@@ -162,7 +164,8 @@ export class AtlasRenderer {
     for (let oy = Math.floor(Math.max(0, minRow - materialRing - 1) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + materialRing) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - materialRing - 1) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + materialRing) / 32); ox++) dependencies.push(this.geometryKey(ox, oy));
     if (layer === 'terrain') for (let oy = Math.floor(Math.max(0, minRow - 2) / 32); oy <= Math.floor(Math.min(spec.rows - 1, maxRow + 2) / 32); oy++) for (let ox = Math.floor(Math.max(0, minCol - 2) / 32); ox <= Math.floor(Math.min(spec.columns - 1, maxCol + 2) / 32); ox++) dependencies.push(`elevation:${ox}:${oy}`);
     const level = Math.log2(density);
-    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/terrain-surface-v1/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
+    const surfaceIdentity = this.data!.manifest.version === 4 ? `detail-final-q8-v1/${this.data!.manifest.revision}` : 'terrain-surface-v1';
+    const whole: AtlasTextureSpec = { key: `${this.data!.manifest.atlasId}/${surfaceIdentity}/${key}/${layer}/${level}/${dependencies.map(key => this.refs.get(key)).join('/')}`, blockKey: key, layer, level,
       pixelWidth, pixelHeight, worldX, worldY, sampleX, sampleY, density, core: { x: gutter, y: gutter, width: corePixels, height: corePixels }, dependencies };
     if (!tile) return whole;
     const tileSpan = span / tile.subdivisions, tilePixels = corePixels / tile.subdivisions, tileX = worldX + tile.x * tileSpan, tileY = worldY + tile.y * tileSpan;
@@ -187,7 +190,7 @@ export class AtlasRenderer {
     const grid = this.gridRequested && atlasLodPolicy(this.lod, this.viewport().width).gridVisible;
     const plan = planAtlasRaster({ logicalSpan: span, scale: this.camera.scale, resolution: this.app.renderer.resolution, bounds,
       cores: keys.map(key => { const [, bx, by] = key.split(':'); return { bx: Number(bx), by: Number(by) }; }),
-      layers: grid ? 2 : 1, budgetPixels: this.cache.budgetPixels, sharedPixels: TERRAIN_LUT_PIXELS });
+      layers: grid ? 2 : 1, budgetPixels: this.cache.budgetPixels, sharedPixels: this.data.manifest.version === 4 ? DETAIL_TERRAIN_SHARED_PIXELS : TERRAIN_LUT_PIXELS });
     const { ranges, ...quality } = plan; this.rasterQuality = quality;
     const specs: AtlasTextureSpec[] = [];
     for (const range of ranges) for (let y = range.firstY; y <= range.lastY; y++) for (let x = range.firstX; x <= range.lastX; x++) {
@@ -218,7 +221,17 @@ export class AtlasRenderer {
     const entry = this.cache.ensure(spec, target => {
       const bounds = { minX: spec.sampleX, minY: spec.sampleY, maxX: spec.sampleX + spec.pixelWidth / spec.density, maxY: spec.sampleY + spec.pixelHeight / spec.density };
       let scratch: Container;
-      if (spec.layer === 'terrain') {
+      if (spec.layer === 'terrain' && this.data!.manifest.version === 4) {
+        if (!this.detail?.gpuReady) throw new Error('真实细地表后端尚未准备完整。');
+        const logical = this.specFor(spec.blockKey, 'terrain', spec.density);
+        const geometryBounds = { minX: logical.sampleX, minY: logical.sampleY, maxX: logical.sampleX + logical.pixelWidth / logical.density, maxY: logical.sampleY + logical.pixelHeight / logical.density };
+        const geometrySpec = { atlasId: this.data!.manifest.atlasId, blockKey: spec.blockKey, bounds: geometryBounds, dependencies: spec.dependencies.map(key => ({ key, hash: this.refs.get(key)! })) };
+        const origin = { xQ: logical.worldX * 256, yQ: logical.worldY * 256 };
+        scratch = this.terrainGeometry.get(geometrySpec, this.refs) ?? this.terrainGeometry.create(geometrySpec, 1, () => undefined, () => this.detail!.createMesh(geometryBounds, origin));
+        // One real cell-reconstruction shader is shared across sequential RT
+        // submissions. Its origin belongs to this mesh's local position buffer.
+        this.detail.setDrawOrigin(origin);
+      } else if (spec.layer === 'terrain') {
         const logical = this.specFor(spec.blockKey, 'terrain', spec.density);
         const geometryBounds = { minX: logical.sampleX, minY: logical.sampleY, maxX: logical.sampleX + logical.pixelWidth / logical.density, maxY: logical.sampleY + logical.pixelHeight / logical.density };
         const geometrySpec = { atlasId: this.data!.manifest.atlasId, blockKey: spec.blockKey, bounds: geometryBounds, dependencies: spec.dependencies.map(key => ({ key, hash: this.refs.get(key)! })), coastal: isCoastalSurface(this.data!) };
@@ -293,6 +306,23 @@ export class AtlasRenderer {
     const repainted = new Set<BlockKey>();
     for (;;) {
       check(); if (!recovering && this.graphicsState !== 'ready') await this.waitForGraphics(signal); check();
+      const preparationEpoch = this.contextEpoch, preparationData = this.data;
+      if (this.data?.manifest.version === 4) {
+        try {
+          const data = this.data;
+          if (!this.detail) this.detail = new DetailTerrainBackend(data);
+          const detail = this.detail;
+          if (detail.data !== data) throw new Error('细地表快照与当前显示不一致。');
+          const control = { signal, check, onProgress: (progress: { stage: string; completed: number; total: number }) => { check(); this.callbacks.onProgress?.(progress); } };
+          await detail.prepare(control); check();
+          if (preparationEpoch !== this.contextEpoch || preparationData !== this.data || (!recovering && this.graphicsState !== 'ready')) continue;
+          if (!('gl' in this.app.renderer)) throw new Error('第四版真实细地表需要 WebGL2 后端。');
+          await detail.installGpu(this.app.renderer as WebGLRenderer, this.cache, { ...control, check: () => { check(); if (preparationEpoch !== this.contextEpoch || preparationData !== this.data) throw new DOMException('细地表上下文或快照已变化。', 'AbortError'); } });
+          check();
+        } catch (error) { check(); if (preparationEpoch === this.contextEpoch && preparationData === this.data) throw error; }
+        if (preparationEpoch !== this.contextEpoch) { if (recovering) throw new Error('图形恢复已被更新的上下文取代。'); continue; }
+        if (preparationData !== this.data) continue;
+      }
       let start = performance.now();
       const epoch = this.contextEpoch, data = this.data, plan = this.visiblePlan(), specs = plan.specs.filter(spec => !this.cache.has(spec.key)), keys = [...new Set(specs.map(spec => spec.blockKey))], protectedKeys = new Set(plan.specs.map(spec => spec.key));
       let interrupted = false, batchPainted = new Set<BlockKey>();
@@ -315,12 +345,11 @@ export class AtlasRenderer {
   }
   /** Returns only after submitting the committed state and a frame opportunity. */
   async accept(data: AtlasGeographyView, delta?: AtlasRenderDelta) {
-    if (data.manifest.version === 4) throw new Error('第四版细海岸显示后端尚未接通，未使用旧地块画面替代。');
     this.assertReady();
     if (this.displayBusy()) throw new Error('地图画面仍在接收，请等待本次结果。');
     if (delta && this.displaySource === 'generation-preview') throw new Error('生成预览只能通过完整持久结果确认，请先确认或取消预览。');
     const previous = this.committed?.data.manifest ?? this.data?.manifest, candidate = data.manifest;
-    const surfaceKey = (manifest: AtlasGeographyView['manifest']) => manifest.surface === undefined ? '' : JSON.stringify([manifest.surface.kind, manifest.surface.coordinateScale]);
+    const surfaceKey = (manifest: AtlasGeographyView['manifest']) => manifest.surface === undefined ? '' : JSON.stringify(manifest.surface);
     if (previous?.draftId === candidate.draftId && (previous.version !== candidate.version || surfaceKey(previous) !== surfaceKey(candidate))) {
       // Check before touching the live view or cache. The same immutable
       // blocks may have a different coast meaning only in an explicit new draft.
@@ -329,8 +358,11 @@ export class AtlasRenderer {
     const pending = new AbortController(); this.pendingAcceptance = pending; this.clearPointers(); this.acceptingData = data; this.acceptanceRepaints = new Set(); this.labels?.hide();
     try {
       const fresh = !this.data || this.data.manifest.draftId !== data.manifest.draftId || this.data.manifest.atlasId !== data.manifest.atlasId;
-      const preserveCamera = !fresh && this.displaySource === 'generation-preview';
-      const fullRepaint = fresh || !delta;
+      const preserveCamera = !fresh && (this.displaySource === 'generation-preview' || data.manifest.version === 4);
+      // Fine changes and Hbase changes require one coherent new source set.
+      // A coarse-only delta cannot prove which fine nodes remained unchanged.
+      const fullRepaint = fresh || !delta || data.manifest.version === 4;
+      if (!fresh && delta && data.manifest.revision !== this.data!.manifest.revision + 1) throw new Error('地图增量修订不连续，请恢复已保存草稿。');
       if (fullRepaint) {
         const index = await createSpatialIndexAsync(data, {
           signal: pending.signal,
@@ -338,7 +370,7 @@ export class AtlasRenderer {
           yieldTask: async () => { await new Promise<void>(resolve => setTimeout(resolve, 0)); this.assertAcceptance(pending); },
         });
         this.assertAcceptance(pending); if (this.graphicsState !== 'ready') await this.waitForGraphics(); this.assertAcceptance(pending); this.index = index;
-        this.terrainGeometry.clear(); this.cache.clear(); this.deferredDirtyCores.clear();
+        this.releaseDisplayResources(); this.deferredDirtyCores.clear();
         this.data = data; this.previewCells = []; this.previewVertices.clear(); this.lod = undefined;
         if (!preserveCamera) { this.selected = null; this.camera = fitCamera(this.worldSize(), this.viewport()); }
       } else {
@@ -349,7 +381,7 @@ export class AtlasRenderer {
       }
       this.displaySource = 'committed';
       this.refs = new Map(data.manifest.blockRefs.map(ref => [ref.key, ref.hash]));
-      if (delta) {
+      if (delta && data.manifest.version !== 4) {
         const changed = new Set(delta.dirtyKeys); this.deferDirtyDependencies(changed); this.cache.invalidateDependencies(changed); this.terrainGeometry.invalidateDependencies(changed);
       }
       this.previewCells = []; this.previewVertices.clear(); this.previewRevision++;
@@ -367,7 +399,6 @@ export class AtlasRenderer {
   /** Display a verified owned candidate without changing the durable baseline.
    * The bridge/Worker still own recipe, lock, root and confirmation validation. */
   async showGenerationPreview(data: AtlasGeographyView) {
-    if (data.manifest.version === 4) throw new Error('第四版细海岸预览显示尚未接通。');
     this.assertReady();
     if (this.displayBusy()) throw new Error('地图画面仍在接收，请等待本次结果。');
     const committed = this.committed;
@@ -421,12 +452,23 @@ export class AtlasRenderer {
   }
   private switchDisplayedData(data: AtlasGeographyView, index: SpatialIndex, source: 'committed' | 'generation-preview') {
     if (this.data !== data || this.index !== index) {
-      this.terrainGeometry.clear(); this.cache.clear(); this.deferredDirtyCores.clear(); this.data = data; this.index = index;
+      this.releaseDisplayResources(); this.deferredDirtyCores.clear(); this.data = data; this.index = index;
       this.refs = new Map(data.manifest.blockRefs.map(ref => [ref.key, ref.hash]));
     }
     this.displaySource = source; this.previewCells = []; this.previewVertices.clear(); this.previewRevision++; this.labels?.hide(); this.clearPointers();
   }
+  /** Drop borrowing meshes before their shader and source owners. On context
+   * loss only the complete derived CPU pages remain, with their own byte ledger. */
+  private releaseDisplayResources(preserveDetailCpu = false) {
+    let failure: unknown;
+    try { this.terrainGeometry.clear(); } catch (error) { failure = error; }
+    try { if (preserveDetailCpu) this.detail?.releaseGpu(); else this.detail?.destroy(); } catch (error) { failure ??= error; }
+    if (!preserveDetailCpu) this.detail = undefined;
+    try { this.cache.clear(); } catch (error) { failure ??= error; }
+    if (failure) throw failure;
+  }
   metrics() { return { ...this.measured, repaintBlockKeys: [...this.measured.repaintBlockKeys], camera: { ...this.camera }, viewport: { width: this.app.screen?.width ?? 0, height: this.app.screen?.height ?? 0, resolution: this.initialized ? this.app.renderer.resolution : 1 }, gpu: { state: this.graphicsState, epoch: this.contextEpoch }, cache: this.cache.stats(), geometryCache: this.terrainGeometry.stats(), selected: this.selected, destroyed: this.destroyed, fatal: !!this.failure,
+    detailSurface: this.detail?.metrics() ?? null,
     displaySource: this.displaySource, displayRevision: this.data?.manifest.revision ?? null, displayVersion: this.data?.manifest.version ?? null,
     committedRevision: this.committed?.data.manifest.revision ?? null, displayCorrectFrameAt: this.displayCorrectFrameAt,
     lod: this.lod ?? 'far', cellPixels: this.data ? this.camera.scale * this.data.manifest.spec.width / this.data.manifest.spec.columns : 0,
@@ -540,6 +582,9 @@ export class AtlasRenderer {
   }
   private draw(ensure = true, recovering = false, started = performance.now(), batchRepainted = 0, allowAcceptanceLabels = false) {
     if (!this.initialized || this.destroyed || this.failure || (this.graphicsState !== 'ready' && !recovering)) return;
+    // Resize/camera callbacks can arrive during cooperative preparation. Never
+    // render an incomplete fine snapshot or substitute legacy geometry.
+    if (this.data?.manifest.version === 4 && !this.detail?.gpuReady) ensure = false;
     this.scene.position.set(this.camera.x, this.camera.y); this.scene.scale.set(this.camera.scale);
     if (this.index && this.data) {
       const { specs, keys } = this.visiblePlan(), visible = new Set(specs.map(spec => spec.key)), repainted = new Set<BlockKey>();
@@ -551,7 +596,7 @@ export class AtlasRenderer {
     this.app.renderer.render(this.app.stage);
     // Natural-coast worlds show sampling labels only with their explicit
     // geography grid. Legacy worlds keep the original PH05 label behavior.
-    const showSamplingLabels = this.data && (!isCoastalSurface(this.data) || this.gridRequested);
+    const showSamplingLabels = this.data && ((!isCoastalSurface(this.data) && this.data.manifest.version !== 4) || this.gridRequested);
     if (this.data && this.lod && showSamplingLabels && ensure && (!this.displayBusy() || allowAcceptanceLabels)) this.labels?.update({ data: this.data, camera: this.camera, viewport: this.viewport(), lod: this.lod, selectedCellId: this.selected });
     else this.labels?.hide();
     this.callbacks.onCamera?.({ ...this.camera });
@@ -639,7 +684,7 @@ export class AtlasRenderer {
         const promise = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
         void promise.catch(() => undefined); this.recovery = { promise, resolve, reject };
       }
-      this.terrainGeometry.clear(); this.cache.clear(); this.callbacks.onGraphicsState?.('lost'); this.emitMetrics();
+      this.releaseDisplayResources(true); this.callbacks.onGraphicsState?.('lost'); this.emitMetrics();
     } catch (error) { this.fail(error); }
   }
   private async waitForGraphics(signal?: AbortSignal) {
@@ -721,7 +766,9 @@ export class AtlasRenderer {
       if (tap && this.index) {
         const point = screenToWorld(this.camera, local(event)), result = this.index.pick(point);
         if (result.cellId !== null) {
-          const surface = this.data && isCoastalSurface(this.data) ? pickCoastalSurface(this.data, result.cellId, point) : undefined;
+          const fine = this.data?.manifest.version === 4 ? this.detail!.pick(point) : undefined;
+          const surface = fine ? { cellId: result.cellId, land: fine.land, height: fine.height, fineCellId: fine.fineCellId }
+            : this.data && isCoastalSurface(this.data) ? pickCoastalSurface(this.data, result.cellId, point) : fine === null ? null : undefined;
           if (surface === null) throw new Error('权威海岸拾取未覆盖真实地块。');
           this.select(result.cellId);
           if (surface) this.callbacks.onPick(result.cellId, surface); else this.callbacks.onPick(result.cellId);
@@ -748,8 +795,7 @@ export class AtlasRenderer {
     this.drawnOutline = undefined; this.drawnSelection = undefined; this.drawnPreview = undefined;
     if (this.initialized) {
       this.clearPointers();
-      try { this.terrainGeometry.clear(); } catch (error) { this.fail(error); }
-      try { this.cache.clear(); } catch (error) { this.fail(error); }
+      try { this.releaseDisplayResources(); } catch (error) { this.fail(error); }
       finally {
         try { this.emitMetrics(); this.app.destroy(true, { children: true }); }
         finally {

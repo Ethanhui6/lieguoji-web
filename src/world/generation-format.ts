@@ -1,6 +1,6 @@
 import { cloneBlock, createAtlasDraft, getBlock, hashBlock, validateAtlasGeography, validateAtlasGeographyAsync, validateGeographyManifestFields, yieldAtlas, type AtlasControl, type AtlasCreateOptions } from './model';
 import { cloneAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, validateAtlasCellLockBlock } from './generation-locks';
-import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, validateCopyOrigin, validateGenerationOperation, type AtlasGenerationManifest, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type AtlasDraftManifestV4 } from './generation-contract';
+import { generationCanonical, generationDigest, generationExact, generationHash, generationInt, validateAtlasConstraints, validateAtlasSurface, validateAtlasDetailCoastSurface, validateAtlasDetailCoastManifest, validateDetailShapeRecipe, validateCopyOrigin, validateGenerationOperation, type AtlasGenerationManifest, type AtlasGenerationDocument, type AtlasDetailCoastDocument, type AtlasDraftManifestV4 } from './generation-contract';
 import { cloneDetailCoastTiles, hashDetailCoastTile, validateDetailCoastTile } from './detail-coast-codec';
 import { detailCoastKey } from './detail-coast-types';
 
@@ -19,8 +19,10 @@ export function validateGenerationManifest(raw: unknown): raw is AtlasGeneration
     if (value.origin !== null && !validateCopyOrigin(value.origin) || !validateAtlasConstraints(value.constraints, raw.spec) || !generationExact(value.generation, ['format', 'version', 'lastApplied']) || value.generation.format !== 'lieguoji-atlas-generation' || value.generation.version !== 1) return false;
     if (value.origin !== null && (raw.version === 4 || (value.origin as { sourceFormat: number }).sourceFormat > raw.version)) return false;
     const last = value.generation.lastApplied;
-    if (raw.version === 4) return last === null;
-    return last === null || generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) && validateGenerationOperation(last.recipe, last.scope, raw.spec, 'storage') && generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
+    if (last === null) return true;
+    if (!generationExact(last, ['recipe', 'scope', 'baseManifestDigest', 'baseRootDigest', 'baseRevision', 'lockSetDigest', 'appliedRevision']) || !validateGenerationOperation(last.recipe, last.scope, raw.spec, 'storage')) return false;
+    if (raw.version === 4 ? !validateDetailShapeRecipe(last.recipe, raw.spec, 'storage') : validateDetailShapeRecipe(last.recipe, raw.spec, 'storage')) return false;
+    return generationHash(last.baseManifestDigest) && generationHash(last.baseRootDigest) && generationHash(last.lockSetDigest) && generationInt(last.baseRevision, 0, Number.MAX_SAFE_INTEGER - 1) && last.appliedRevision === last.baseRevision + 1 && generationInt(last.appliedRevision, 1, raw.revision);
   } catch { return false; }
 }
 export function encodeGenerationManifest(manifest: AtlasGenerationManifest): Uint8Array {

@@ -1,0 +1,14 @@
+{
+  "command": "C:\\Program Files\\nodejs\\node.exe",
+  "args": [
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/world/detail-coast-transport.test.ts",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile=D:\\游戏\\架空地图模拟器\\.autopilot\\ph06\\detail-adapter-checks\\transport-first\\results.json",
+    "-t",
+    "generates the registered fine recipe through actual Worker preview"
+  ],
+  "cwd": "D:\\游戏\\架空地图模拟器"
+}

@@ -43,7 +43,7 @@ describe('PH06 closed v2 storage, complete lock references and unchanged v1 data
     const before = await snapshot(ATLAS_DRAFTS_DB); expect(await api.openAtlasDraft(base.manifest.draftId, control)).toBeNull(); await publish();
     expect((await openAtlasDraft(base.manifest.draftId, control))!.manifest.version).toBe(1); expect((await api.openAtlasDraft(base.manifest.draftId, control))!.manifest.version).toBe(2); expect(await snapshot(ATLAS_DRAFTS_DB)).toEqual(before);
     expect((await old.readAtlasBlockPage((await old.openAtlasDraft(base.manifest.draftId, control))!, 0, control)).locks).toBeUndefined();
-    expect(() => getAtlasStorage(4 as 2)).toThrow('未知'); await expect(api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: legacy.manifest as never, expectedRoot: null }, control)).rejects.toThrow('请求无效');
+    expect(() => getAtlasStorage(5 as 2)).toThrow('未知'); await expect(api.prepareAtlasCommit({ candidateId: crypto.randomUUID(), commandId: `edit-${crypto.randomUUID()}`, manifest: legacy.manifest as never, expectedRoot: null }, control)).rejects.toThrow('请求无效');
   });
 
   it('does not publish a missing referenced lock, then pages, accounts and raw-exports its exact bytes', async () => {

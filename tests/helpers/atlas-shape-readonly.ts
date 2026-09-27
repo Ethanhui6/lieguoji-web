@@ -24,7 +24,7 @@ export interface Metrics {
   lod: string; cellPixels: number; gridVisible: boolean; completedFrameSequence: number; displaySource: string;
   acceptedRevision: number; committedRevision: number; displayRevision: number;
 }
-export async function saved(page: Page, draftId: string, format: 2 | 3 = 2): Promise<SavedSnapshot> {
+export async function saved(page: Page, draftId: string, format: 2 | 3 | 4 = 2): Promise<SavedSnapshot> {
   return page.evaluate(({ id, format }) => new Promise<SavedSnapshot>((resolve, reject) => {
     const request = indexedDB.open(`lieguoji-atlas-drafts-v${format}`, 1);
     request.onupgradeneeded = () => request.transaction!.abort(); request.onerror = () => reject(request.error);
@@ -44,7 +44,7 @@ export async function saved(page: Page, draftId: string, format: 2 | 3 = 2): Pro
     };
   }), { id: draftId, format });
 }
-export async function databaseDigest(page: Page, format: 2 | 3 = 2) {
+export async function databaseDigest(page: Page, format: 2 | 3 | 4 = 2) {
   return page.evaluate(async format => {
     const rows = await new Promise<{ store: string; keys?: IDBValidKey[]; values?: unknown[] }[]>((resolve, reject) => {
       const request = indexedDB.open(`lieguoji-atlas-drafts-v${format}`, 1);

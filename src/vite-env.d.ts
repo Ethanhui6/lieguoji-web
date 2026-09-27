@@ -7,3 +7,4 @@ declare const __ISLAND_GENERATOR_FINGERPRINT__: string;
 declare const __COAST_GENERATOR_FINGERPRINT__: string;
 declare const __SHAPE_GENERATOR_FINGERPRINT__: string;
 declare const __OCEAN_GENERATOR_FINGERPRINT__: string;
+declare const __DETAIL_SHAPE_GENERATOR_FINGERPRINT__: string;

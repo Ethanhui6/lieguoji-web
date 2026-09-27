@@ -1,0 +1,13 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/detail-coast-transport.test.ts (8 tests | 7 skipped) 29581ms
+   ✓ v4 fine coast through actual Worker, framed packets and isolated IndexedDB (8)
+     ✓ generates the registered fine recipe through actual Worker preview, durable confirmation and a fresh complete third-stream restore 29504ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 7 skipped (8)
+   Start at  15:11:14
+   Duration  30.56s (tests 97%, transform 2%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/detail-adapter-checks/transport-first/results.json

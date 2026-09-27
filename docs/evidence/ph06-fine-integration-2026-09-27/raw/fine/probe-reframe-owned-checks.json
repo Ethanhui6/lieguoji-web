@@ -1,0 +1,26 @@
+{
+  "provenance": "actual tool completion recorded by executing subagent; empty logs are not used as success evidence",
+  "file": {
+    "path": "tests/atlas-detail-coast.spec.ts",
+    "sha256": "1a71731b816c6e5666ed3ce01b51b1384f4d6b90ab6bb314c2cce5f146294446"
+  },
+  "checks": [
+    {
+      "command": ["node", "node_modules/eslint/bin/eslint.js", "tests/atlas-detail-coast.spec.ts"],
+      "exitCode": 0,
+      "observedCompletion": "exec_command chunk 2f6c70; output eslint exit=0",
+      "elapsedSeconds": 2.7469528,
+      "log": "probe-reframe-lint.log"
+    },
+    {
+      "command": ["node", "node_modules/typescript/bin/tsc", "--noEmit"],
+      "exitCode": 0,
+      "observedCompletion": "write_stdin session 59148, chunk de2175; output tsc exit=0",
+      "elapsedSeconds": null,
+      "log": "probe-reframe-types.log"
+    }
+  ],
+  "sourceFrozenAfterChecks": true,
+  "browserRunByThisSubagent": false,
+  "buildRunByThisSubagent": false
+}

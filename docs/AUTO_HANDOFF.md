@@ -1,12 +1,16 @@
-# 当前续接：第四版细海岸基础已接入，实际生成与画面仍在接线
+# 当前续接：第四版细海岸三端流程已通过，继续追加大陆与地貌呈现
 
-2026-09-27：当前基础 HEAD 5e4624a8bcfb49a97cd024753c1d39006fc3a700（最新提交以 Git 为准）。既有可玩 dist 仍为 0.5.0-preview.6；新增 v4 尚无游戏入口。PH06-T3/T4 保持 in_progress；未推送、未部署。
+2026-09-27：当前基础 HEAD 90df824648472ffcb723a127d158509034707bfd（最新提交以 Git 为准），实际本地 dist 为 0.5.0-preview.7。v4 可从 `http://127.0.0.1:4173/?atlas=new&atlas-format=4` 新建；原首页入口暂仍 v3。PH06-T3/T4 保持 in_progress；未推送、未部署。
 
 - v4 独立存储、内容哈希、Worker第三流、纯锁事务与备份恢复已接入；旧 v1–3 原语义和实际 preview.6 历史指纹保留。
 - 全局类型/lint通过；基础143唯一场景、存储21唯一场景经明确测试样例修复取得通过证据；自然内核22、shader/pages18首轮通过。真实GPU一致性使用SwiftShader，非硬件/性能验收。完整原始失败、范围和指纹见 docs/evidence/2026-09-27-ph06-fine-foundation.md。
-- 正在 .autopilot/ph06/v4-adapter-staging 与 v4-renderer-staging 接新版配方/session及真实renderer/cache；需baseline核对后提升、受影响检查、构建与实际浏览器保存恢复。旧renderer目前明确拒绝v4，未用v3假显示。
-- 追加第二片大陆、精确fine锁依赖、密集公开快照首yield耗时、自然视觉/真机仍未完成。国家/行政区/城市/军队与战争仍未接入Atlas。
-- 本地旧版本入口 http://127.0.0.1:4173/?atlas=new&atlas-format=3 （续接须验证进程）。全PH发布锁仍保持，无账号授权阻塞本地工作。
+- 新配方、真实 renderer/cache、首片大陆 UI 已接入生产源码，尚待本批本地提交。`.autopilot/ph06/fine-integration-checks/`：world 单元 839/839 首轮通过；后续取消/恢复等待者修复的 backend 4/4、全局 lint/类型/构建/25产物审计通过。不是新跑全游戏单元或性能验收。
+- 桌面首轮点选失败的真实坐标为 (-2.058,-461.479)，位于屏幕外；只修测试真实相机构图及各视口合法缩放目标后，desktop-reframe、mobile-first、tablet-first 各1/1通过，实际288.699/274.823/294.388秒，源码与 dist 前后稳定。共3个环境、4次执行、零自动重试；已覆盖生成/取消/重画/确认、独立细数据校验、海陆近景点选、GPU恢复和刷新。手机/平板是浏览器仿真，非真机。
+- 正式证据 `docs/evidence/2026-09-27-ph06-fine-integration.md`，原始结果/首轮失败/前后清单/截图在 `docs/evidence/ph06-fine-integration-2026-09-27/`。本地 build.json SHA256 `4ba3aa857f368749b778a603b3171db98870110f34a21d9afa9c68f227d9825f`，25个产物逐项指纹已核对。归档脚本末尾打印变量错误退出1，目录已完整写入，独立86文件SHA复核通过；该步骤失败单独保留，未覆盖或伪造通过。
+- IAB 手工绘制“山海新卷 · 细海岸试玩”已实际确认保存并刷新为修订1，控制台错误为空：`http://127.0.0.1:4173/?atlas=atlas-ea3c5857-01d8-4efd-8367-6bec1f8b8e26&atlas-format=4`。它只存在于该浏览器的本地库；这是UI烟测，非真机或用户视觉验收。续接先验证4173进程/HTTP，不能假定常驻。
+- 第二片大陆在 `.autopilot/ph06/v4-additive-integration-staging/ready-manifest.json` 已冻结：18目标，6项接线单测首轮通过，类型窄检经记录修复通过；尚未提升。精确 fine 锁 `.autopilot/ph06/v4-lock-staging/ready-manifest.json` 16/16暂存单测通过，其测试需一并提升；追加内核原8项测试也须随实现保留。旧 preview.7 七种实际闭包已在追加暂存区保存来源，接下一批前核实真实指纹与 baseline，保护旧存档。
+- `.autopilot/ph06/v4-relief-staging/ready-manifest.json` 为真实裁片坡向光照两个镜像，CPU14项通过、静态检查按记录修复通过，GPU另核；不能把暂存色彩实现当成实际画面或视觉验收。下一批提升追加/锁与光照前先取得本批本地提交，再统一相关检查、构建和真实第二筆操作。
+- 密集公开快照首 yield 耗时、自然大陆长直边/地貌层次与真机仍未完成。国家/行政区/城市/军队与战争仍未接入 Atlas。全 PH 发布锁保持，无账号授权阻塞本地工作。
 
 ---
 

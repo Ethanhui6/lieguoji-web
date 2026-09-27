@@ -738,7 +738,9 @@
         "docs/evidence/2026-09-27-ph06-ocean.md",
         "docs/adr/0015-authoritative-coastal-surface.md",
         "docs/evidence/2026-09-27-ph06-coastal-surface.md",
-        "docs/evidence/ph06-coastal-surface-2026-09-27/verification.json"
+        "docs/evidence/ph06-coastal-surface-2026-09-27/verification.json",
+        "docs/evidence/2026-09-27-ph06-fine-integration.md",
+        "docs/evidence/ph06-fine-integration-2026-09-27/verification.json"
       ],
       "workItems": [
         {
@@ -794,7 +796,9 @@
             "docs/evidence/2026-09-27-ph06-zoom-and-completion.md",
             "docs/evidence/ph06-zoom-density-2026-09-27/verification.json",
             "docs/evidence/2026-09-27-ph06-fine-foundation.md",
-            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json"
+            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json",
+            "docs/evidence/2026-09-27-ph06-fine-integration.md",
+            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json"
           ]
         },
         {
@@ -809,7 +813,9 @@
             "docs/evidence/2026-09-27-ph06-zoom-and-completion.md",
             "docs/evidence/ph06-zoom-density-2026-09-27/verification.json",
             "docs/evidence/2026-09-27-ph06-fine-foundation.md",
-            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json"
+            "docs/evidence/ph06-fine-coast-2026-09-27/foundation-verification.json",
+            "docs/evidence/2026-09-27-ph06-fine-integration.md",
+            "docs/evidence/ph06-fine-integration-2026-09-27/verification.json"
           ]
         }
       ],
@@ -2043,7 +2049,7 @@
     "M5",
     "M6"
   ],
-  "phaseState": "PH00—PH04已完成；PH05-T1/T2相机与按需分块缓存实施中。全部PH及真机/视觉验收完成前禁止推送、远程写入和发布。",
+  "phaseState": "PH00—PH05已完成；PH06-T3/T4细海岸与生成编辑闭环实施中，自然视觉与真机验收未通过。全部PH及真机/视觉验收完成前禁止推送、远程写入和发布。",
   "programme": {
     "version": "V4",
     "title": "列国纪原创独立PWA完整沙盒",

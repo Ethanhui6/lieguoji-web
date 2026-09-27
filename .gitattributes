@@ -32,3 +32,4 @@ docs/evidence/playtest-2026-09-24/** -text whitespace=cr-at-eol,-blank-at-eol,-b
 # PH06 raw repair reports keep the exact bytes referenced by their inventory.
 docs/evidence/ph06-zoom-density-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/ph06-fine-coast-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/ph06-fine-integration-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

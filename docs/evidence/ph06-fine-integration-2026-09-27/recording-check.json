@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-27T09:23:04.082Z",
+  "archiveCommand": "node .autopilot/ph06/record-fine-integration.mjs",
+  "firstExitCode": 1,
+  "firstToolChunk": "fc61e7",
+  "error": "ReferenceError: buildJsonSha256 is not defined in final console.log after inventory.json was written",
+  "independentVerification": {
+    "exitCode": 0,
+    "toolChunk": "c038e9",
+    "matchedFiles": 86
+  },
+  "recovery": "No overwrite or rerun. Independently verified every archived file hash and size; fixed only final console variable for future use. Corrected manual-smoke causal interpretation to unproven without modifying original test evidence.",
+  "rawTestReportsChanged": false
+}

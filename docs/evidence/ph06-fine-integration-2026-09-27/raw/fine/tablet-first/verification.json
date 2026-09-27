@@ -1,0 +1,15 @@
+{
+  "name": "tablet-first",
+  "project": "tablet-chromium",
+  "args": [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config=.autopilot/ph06/fine-integration-checks/playwright.config.ts",
+    "--project=tablet-chromium"
+  ],
+  "code": 0,
+  "signal": null,
+  "elapsedMs": 294388.2529,
+  "sourceAndDistStable": true,
+  "physicalDevice": false
+}

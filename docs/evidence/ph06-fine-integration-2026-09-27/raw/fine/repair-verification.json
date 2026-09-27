@@ -1,0 +1,138 @@
+{
+  "scope": "Affected world engine tests plus actual local build; other unchanged sim/editor tests reused, no full-game or performance PASS",
+  "checks": [
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "signal": null,
+      "elapsedMs": 7222.4026
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "signal": null,
+      "elapsedMs": 10044.860700000001
+    },
+    {
+      "name": "unit",
+      "exitCode": 0,
+      "signal": null,
+      "elapsedMs": 3994.5527
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "signal": null,
+      "elapsedMs": 1520.7281000000003
+    },
+    {
+      "name": "dist-audit",
+      "exitCode": 0,
+      "signal": null,
+      "elapsedMs": 97.53199999999924
+    }
+  ],
+  "sourceStable": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-Mx8DUUjh.js",
+      "sha256": "73caab6992f933288d96c31949324f3b27191b3e9c1e2fc12284fd79e897a432"
+    },
+    {
+      "path": "dist/assets/atlas.worker-CIqLRlrz.js",
+      "sha256": "62b2a1e34c4b6cf9af755d8a563e010b39e2a08872f7c46b55614a6c2656f1cd"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BggvROi5.css",
+      "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-C5mYNOY3.js",
+      "sha256": "89b6ec9202849d40d9b77b16567732373be6c0205bd8cffe28731829b16bc57f"
+    },
+    {
+      "path": "dist/assets/browserAll-CYyd2RKK.js",
+      "sha256": "4c563998001ab1226afa6d05a5dbd06eb169129bd1024f9f4af6d992d30fe046"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-0hrSgPYm.js",
+      "sha256": "c1bf6725c02af0d267b255b21531f4bc4bfea0e05d9d622c3d51f30a94ce626d"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-DPjrrMCh.js",
+      "sha256": "e27b238ab766e7247b1558461298cf6d0ee145a06a675d79f23717fd9adc7fa4"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-BPd-ppYT.js",
+      "sha256": "41fb039839caa798fa71bdb42164617fb26c85ce82791e11fa8820b65d2936b7"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "4ba3aa857f368749b778a603b3171db98870110f34a21d9afa9c68f227d9825f"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "c9be2be40ca4bef8bf83ef4fe01cbc18f848e84bc9a8b5936eb0f6593cad64f7"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

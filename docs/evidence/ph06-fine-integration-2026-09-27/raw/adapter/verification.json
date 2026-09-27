@@ -1,0 +1,79 @@
+{
+  "scope": "adapter/session and one real Worker correctness flow only; no build/browser/performance acceptance",
+  "uniqueScenarios": 14,
+  "executions": 14,
+  "adapterSession": {
+    "selected": 13,
+    "passed": 13,
+    "failed": 0,
+    "exitCode": 0,
+    "wallMs": 16017.8514,
+    "sourceUnchanged": true,
+    "raw": "first/results.json",
+    "log": "first/run.log"
+  },
+  "workerTransport": {
+    "selected": 1,
+    "passed": 1,
+    "failed": 0,
+    "unselected": 7,
+    "exitCode": 0,
+    "wallMs": 31844.3628,
+    "sourceUnchanged": true,
+    "raw": "transport-first/results.json",
+    "log": "transport-first/run.log"
+  },
+  "firstAttempt": true,
+  "productRepairs": 0,
+  "ownedLintExitCode": 0,
+  "files": [
+    {
+      "path": "src/world/generation-contract.ts",
+      "sha256": "0111dab13df34d15532a8133c64ec584501b79576a8291e2685ff69baca5f5de"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "sha256": "0b816b6d18f25fac2a6041fb86ce830eff4dadb1d28ef9f5d5c065e5f4893380"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "sha256": "5418c5cf36b2d5fc947d67cd43537db1c32f49b0033c3dd24b341d4bec7cf4e4"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "sha256": "e5b0f6fd8fad84ac9ab9f8f61153cdf56fd9dbac7adc56bd2dd33e98b4dc43bb"
+    },
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "sha256": "83b8a7437a7c72bb65fce1891d78bdbd8b127e7b9d65c918d747610b916fd19e"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "1904981f0ff5bc1f1104c2fa8db383303a865c56900d0e41e4cb55d910704543"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "fa5dbb2928406408f7111e2a5cf42336b429cbdc1ff822eb337c10b1e6cf3d92"
+    },
+    {
+      "path": "src/world/generation/detail-shape-adapter.ts",
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919"
+    },
+    {
+      "path": "src/world/generation/detail-shape-adapter.test.ts",
+      "sha256": "b8cf23995584aad502116034a1a36534acf6b3709507addb370c522cadd8c051"
+    },
+    {
+      "path": "src/world/detail-generation-session.test.ts",
+      "sha256": "76b48ec3e36f24e471afcf980486bdeb1a6e7c1712735053ee616a08cfbd0626"
+    },
+    {
+      "path": "src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "path": "src/world/detail-coast-transport.test.ts",
+      "sha256": "1dfdbcfa835b36d2a179e59d6a21d9bdf2c8ae23a157c82323b6289ebb7fb064"
+    }
+  ]
+}

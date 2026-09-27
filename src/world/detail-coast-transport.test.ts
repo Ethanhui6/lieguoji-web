@@ -8,8 +8,9 @@ import { hashDetailCoastTile, encodeDetailCoastTile } from './detail-coast-codec
 import { detailCoastKey, detailCoastOwnerLayout, type DetailCoastTile } from './detail-coast-types';
 import { getAtlasStorage } from './storage';
 import { ATLAS_PACKET_LIMIT, decodeAtlasPacket, encodeAtlasPacket } from './protocol';
-import { SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
-import { validateShapeRecipe, type ShapeRecipe } from './generation-contract';
+import { DETAIL_SHAPE_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { validateDetailShapeRecipe, validateShapeRecipe, type DetailShapeRecipe, type ShapeRecipe } from './generation-contract';
+import { encodeBlock } from './model';
 
 type Fault = 'count' | 'index' | 'key' | 'hash' | 'duplicate' | null;
 class LoopWorker {
@@ -71,6 +72,28 @@ beforeEach(() => { globalThis.indexedDB = new IDBFactory(); LoopWorker.instances
 afterEach(async () => { clients.splice(0).forEach(value => value.close()); await new Promise(resolve => setTimeout(resolve, 0)); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('v4 fine coast through actual Worker, framed packets and isolated IndexedDB', () => {
+  it('generates the registered fine recipe through actual Worker preview, durable confirmation and a fresh complete third-stream restore', async () => {
+    const c = client(), initial = await c.create({ size: 128, seed: 'fine-worker-generation', name: '真实细海岸Worker生成' }), api = getAtlasStorage(4), before = await api.exportAtlasRawBackup(initial.head.draftId);
+    const recipe: DetailShapeRecipe = { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-detail-landmass', version: 1, fingerprint: DETAIL_SHAPE_GENERATOR_FINGERPRINT }, seed: 'fine-worker-real-outline',
+      parameters: { pointsQ: [[1200, 1200], [1300, 1200], [1300, 1300], [1260, 1300], [1260, 1240], [1230, 1240], [1230, 1300], [1200, 1300]].map(([x, y]) => ({ xQ: x * 256, yQ: y * 256 })), coastRoughnessWorld: 5, reliefMeters: 1800, shelfWidthWorld: 96, islandChainCount: 0, islandsPerChain: 3 } };
+    expect(validateDetailShapeRecipe(recipe)).toBe(true);
+    const preview = await c.previewGeneration(recipe);
+    if (!isDetailCoastDocument(preview.data)) throw new Error('Expected real v4 generation candidate');
+    const candidate = structuredClone(preview.data), count = candidate.manifest.detailCoast.refs.length;
+    expect(count).toBeGreaterThan(0); expect(candidate.detailCoast.size).toBe(count); expect(preview.preview.recipe).toEqual(recipe); expect(preview.preview.summary.landAreaQ2).toBeGreaterThan(0);
+    expect(preview.preview.summary.detailShape?.componentBasis).toBe('coarse-center-4-neighbor'); expect(candidate.manifest.generation.lastApplied?.recipe).toEqual(recipe);
+    expect(c.current!.head.revision).toBe(0); expect(await api.exportAtlasRawBackup(initial.head.draftId)).toEqual(before);
+    const worker = LoopWorker.instances.at(-1)!; expect(worker.packets.filter(packet => packet.type === 'detail-coast')).toHaveLength(count);
+    const confirmed = await c.confirmGeneration(); expect(confirmed.head.revision).toBe(1); expect(confirmed.data).toEqual(candidate);
+    for (const [key, block] of initial.data.blocks) if (block.layer !== 'elevation') expect(encodeBlock(confirmed.data.blocks.get(key)!)).toEqual(encodeBlock(block));
+    const fresh = client(), restored = await fresh.restore(initial.head.draftId); expect(restored.head.rootDigest).toBe(confirmed.head.rootDigest); expect(restored.data).toEqual(candidate);
+    if (!isDetailCoastDocument(restored.data)) throw new Error('Expected restored fine authority');
+    for (const ref of restored.data.manifest.detailCoast.refs) expect(await hashDetailCoastTile(restored.data.detailCoast.get(detailCoastKey(ref.bx, ref.by))!)).toBe(ref.hash);
+    expect((await api.openAtlasDraft(initial.head.draftId))!.manifest.generation.lastApplied?.recipe).toEqual(recipe);
+    const packets = LoopWorker.instances.flatMap(item => item.packets); expect(packets.filter(packet => packet.type === 'detail-coast')).toHaveLength(3 * count); expect(packets.every(packet => packet.length <= ATLAS_PACKET_LIMIT)).toBe(true);
+    for (const format of [1, 2, 3] as const) expect(await getAtlasStorage(format).openAtlasDraft(initial.head.draftId)).toBeNull();
+  }, 40000);
+
   it('creates an explicit v4 domain and refuses unsupported old mutation/copy paths without changing its root', async () => {
     const c = client(), initial = await c.create({ size: 128, seed: 'empty-detail-world', name: '空白细海岸' });
     expect(isDetailCoastDocument(initial.data)).toBe(true);

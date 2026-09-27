@@ -1,0 +1,260 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T18:01:06.049Z",
+      "finishedAt": "2026-09-27T18:01:06.227Z",
+      "elapsedMs": 176.9771,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T18:01:06.228Z",
+      "finishedAt": "2026-09-27T18:01:13.680Z",
+      "elapsedMs": 7452.0317,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T18:01:13.680Z",
+      "finishedAt": "2026-09-27T18:01:26.222Z",
+      "elapsedMs": 12541.820800000001,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/detail-natural-coast-plan.test.ts",
+        "src/world/generation/detail-shape-natural.test.ts",
+        "src/world/generation/detail-natural-visual-repair.test.ts",
+        "src/world/detail-natural-integration.test.ts",
+        "src/world/detail-natural-history.test.ts",
+        "src/world/detail-preview15-history.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "src/world/generation/detail-shape-add.test.ts",
+        "src/world/detail-add-integration.test.ts",
+        "src/world/detail-add-history.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/coast-scale-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T18:01:26.222Z",
+      "finishedAt": "2026-09-27T18:01:56.378Z",
+      "elapsedMs": 30156.0692,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T18:01:56.379Z",
+      "finishedAt": "2026-09-27T18:01:58.009Z",
+      "elapsedMs": 1630.5164000000004,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T18:01:58.009Z",
+      "finishedAt": "2026-09-27T18:01:58.105Z",
+      "elapsedMs": 95.94800000000396,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "unit": {
+    "available": true,
+    "files": [
+      {
+        "path": "src/world/detail-add-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-add-integration.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-integration.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/detail-preview15-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-shape-add.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-shape-natural.test.ts",
+        "assertions": 13
+      },
+      {
+        "path": "src/world/generation/fingerprint.test.ts",
+        "assertions": 3
+      }
+    ],
+    "scopeMatches": true,
+    "knownCountsMatch": true,
+    "total": 53,
+    "passedAssertions": 53,
+    "failedAssertions": 0,
+    "pendingAssertions": 0,
+    "passed": true
+  },
+  "sourceStable": true,
+  "allCommandsPassed": true,
+  "passed": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-DGUCBAbR.js",
+      "sha256": "3d074a61119c9a9099dec52630956b5d0bd013bb7e8215808d9288763ddb56ac"
+    },
+    {
+      "path": "dist/assets/atlas.worker-CH81RPbN.js",
+      "sha256": "d7dbc21ab0857a5b968b549235d78ab37ac2f4dc86c98768c59a000ebae95382"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-B67lFH17.js",
+      "sha256": "5337d6d905fd0f319b725ba94492a6ad4dd6e7ad27a26c2344b1d2623d1bce22"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BggvROi5.css",
+      "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+    },
+    {
+      "path": "dist/assets/browserAll-hJwg1Zsc.js",
+      "sha256": "42e56aeedefe888cc1be2b7f119af713d68882d149531e3a2a2c4b7e2d90a822"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-DdBIN180.js",
+      "sha256": "58cbe6e1f5b2dec43a4e6070ecd2c71b3fe05fb372da7c806b6bab242fb3905c"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-CcSG4noy.js",
+      "sha256": "fabcee9f892b38b90ff16b427e828f908e8d6ff93f4975da9fbe3e8a566679fc"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-az3_g7fJ.js",
+      "sha256": "625e3dfeb83260f8b2823b28d514d25910b82f7029990d65956be2758b39a670"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "337918bb4f705c0431c49ff5c123542377cd98ca4a945043d868ea1e317c8dc8"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "buildJsonSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+  "engineUnchanged": true,
+  "generatorIdentityVerified": true,
+  "identityVerificationSha256": "76ed0a5a16cc2a1dd8c23da9e68378a826f1ea033e9930817bc67db15d758d9c",
+  "classificationCounts": {
+    "history-only": 9,
+    "non-history-runtime-change": 2
+  },
+  "scope": "Affected coast-scale data, addition and stored compatibility checks only; not natural visual, performance, physical device, PH or cloud acceptance.",
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

@@ -1,0 +1,91 @@
+{
+  "recordedAt": "2026-09-27T18:25:36.717Z",
+  "head": "a909afd76dbbd05755a12ed8922c09cf5fec1bf7",
+  "priorArchive": "docs/evidence/ph06-coast-scale-2026-09-28",
+  "priorBuildSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+  "version": "0.5.0-preview.17",
+  "files": [
+    {
+      "source": ".autopilot/ph06/v4-preview16-history-staging/src/world/generation-history.ts",
+      "target": "src/world/generation-history.ts",
+      "beforeSha256": "0c030fef9f6e4f58f33003bbe2f8bc6de35460cf18943dc3414bc3c418a33c31",
+      "afterSha256": "bab4861fab561231c98130d752f43616664ced14b20acf3350b488b9b3788fdd"
+    },
+    {
+      "source": ".autopilot/ph06/v4-preview16-history-staging/src/world/detail-preview16-history.test.ts",
+      "target": "src/world/detail-preview16-history.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "f4a9d9ee68a2d37ce3d71ea561c916376570179403c6c8dff64dd5d43946ffa8"
+    },
+    {
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "target": "src/world/generation/detail-natural-relief.ts",
+      "beforeSha256": "6542372a94a18f937736bf31950737f9d590fd36644faaa25a6eeb7a834cc055",
+      "afterSha256": "9afed003612e843b9df90960375b9a732dbba90ad803f9a182b7174ddc183d5e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.ts",
+      "target": "src/world/generation/detail-orography.ts",
+      "beforeSha256": null,
+      "afterSha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821"
+    },
+    {
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.test.ts",
+      "target": "src/world/generation/detail-orography.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "67bd0da80a3a0df01180a51ddff74efe4d97a03309f5185fe5bd6935cdd26861"
+    }
+  ],
+  "stageIdentities": [
+    {
+      "path": ".autopilot/ph06/v4-preview16-history-staging/ready-manifest.json",
+      "sha256": "7aa1629c5a4d5a459250bcdfe63adf2560677743aa97e38aedb2231cba1f4147"
+    },
+    {
+      "path": ".autopilot/ph06/v4-branching-relief-staging/ready-manifest.json",
+      "sha256": "d455d305e543a31ab1eaa9aa8d24e2f8450708df7528a1c7995f0fc55d7a9523"
+    }
+  ],
+  "history": {
+    "source": ".autopilot/ph06/v4-preview16-history-staging/evidence/preview16",
+    "target": "docs/evidence/ph06-preview16-generator-history-2026-09-28",
+    "buildSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+    "sourceSnapshotSha256": "03bed455185d324988bcbc86284cf5a108d291aa63e563892730839fb2174562",
+    "closureCount": 11,
+    "sourceFiles": 41,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "classificationCounts": {
+      "history-only": 9,
+      "non-history-runtime-change": 2
+    },
+    "distCount": 25,
+    "archiveFiles": 53,
+    "inventorySha256": "75afbb3695e09d024894f56f14479fcb8030f08f8bfd2cbc666862310e069808",
+    "provenanceSha256": "631761a83124e54950447ffa98feb94b7e04e8b95c80c9406cb43f056f453d06"
+  },
+  "promoted": true,
+  "checksRun": [],
+  "checksStillRequired": true,
+  "priorBrowserExecuted": true,
+  "browserFinals": [
+    {
+      "project": "desktop-chromium",
+      "directory": "raw/browser/desktop-first",
+      "verificationSha256": "81ed09c354523c5382ad3d5b291de3afcf4214b0536955d537590abc0ecd0468"
+    },
+    {
+      "project": "mobile-chromium",
+      "directory": "raw/browser/mobile-first",
+      "verificationSha256": "d87c2ac4501e03c5b131588683880aaf82a1c7224229a59670b9ee7183c1ae09"
+    },
+    {
+      "project": "tablet-chromium",
+      "directory": "raw/browser/tablet-first",
+      "verificationSha256": "e3070dd4ff98635c1ad80515456687d5c7c74afbc8cee29f0415009d9c42cd6f"
+    }
+  ],
+  "naturalVisualAccepted": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

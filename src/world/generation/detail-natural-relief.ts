@@ -1,12 +1,12 @@
 import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, smoothQ } from './seed';
 import type { DetailShapeControl } from './detail-shape';
-import { boundCurvedRelief, createCurvedRidgeField } from './detail-curved-ridge';
-import type { RidgeChain } from './detail-curved-ridge';
+import { boundCurvedRelief } from './detail-curved-ridge';
+import { createOrographyField, type OrographyAnchor, type OrographyChain } from './detail-orography';
 
 type Point = { xQ: number; yQ: number };
 export interface NaturalRidge { a: Point; b: Point; widthQ: number; peakQ: number; group: number; widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number }
 export interface NaturalReliefSummary {
-  profile: 'continuous-arclength-ridges-v3'; ridgeSegments: number; ridgeGroups: number;
+  profile: 'branching-orography-v4'; ridgeSegments: number; ridgeGroups: number;
   rejectedSeaSegments: number; minimumRidgeWidthWorld: number; maximumRidgeWidthWorld: number;
   minimumShelfWorld: number; maximumShelfWorld: number;
   scaleMode: 'world' | 'local'; curveRuns: number; supportNodes: number; maximumBucketCandidates: number;
@@ -51,7 +51,7 @@ export function naturalRidgeContribution(ridge: NaturalRidge, xQ: number, yQ: nu
 
 /** Builds a bounded real height profile. No drainage, erosion or decorative
  * river claim. Only its resulting coarse/fine elevations are persisted.
- * At most 19 planning anchors; bounded curve supports and spatial queries.
+ * At most 17 actual anchors: one trunk and up to two attached branches.
  * Source buffers are privately copied before the first yield. */
 export async function createNaturalRelief(input: NaturalReliefInput, batch: number, control?: DetailShapeControl) {
   if (![128, 256, 512].includes(input.size) || input.centersQ.length !== input.size ** 2 * 2 || input.land.length !== input.size ** 2 || input.coastDistanceQ.length !== input.size ** 2
@@ -60,70 +60,84 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     || input.scaleMode !== undefined && input.scaleMode !== 'world' && input.scaleMode !== 'local') throw new Error('自然地貌私有输入规格无效。');
   const centers = input.centersQ.slice(), land = input.land.slice(), coastDistance = input.coastDistanceQ.slice();
   const size = input.size, seed = input.seed, relief = input.reliefMeters, shelf = input.shelfWidthWorld, isLand = input.isLand, stepQ = 4096 * 256 / size, scaleMode = input.scaleMode ?? 'world';
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, eligible = 0;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; const eligible: number[] = [];
   for (let id = 0; id < land.length; id++) {
-    if (land[id] && coastDistance[id] >= Math.min(48 * 256, stepQ * 2)) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible++; }
+    if (land[id] && coastDistance[id] >= Math.min(48 * 256, stepQ * 2)) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible.push(id); }
     if ((id + 1) % batch === 0) await checkpoint(control, 'plan-natural-highlands', id + 1, land.length);
   }
-  const chains: RidgeChain[] = [];
-  if (eligible >= 3) {
+  const chains: OrographyChain[] = [];
+  if (eligible.length >= 3) {
     const horizontal = maxX - minX >= maxY - minY, longMin = horizontal ? minX : minY, longSpan = horizontal ? maxX - minX : maxY - minY;
     const shortMin = horizontal ? minY : minX, shortSpan = horizontal ? maxY - minY : maxX - minX;
-    const anchors: { target: Point; point?: Point; score: number; group: number; widthQ: number; peakQ: number }[] = [];
     const local = scaleMode === 'local';
-    // A local range is sampled at real 2-world fine nodes. Its width and chain
-    // count come from eligible land, rather than squeezing three world ridges
-    // into every small selection. Very narrow input yields no mountain chain.
     const minimumWidth = local ? 12 * 256 : 4 * stepQ;
-    const groups = local ? (longSpan >= 1024 * 256 && shortSpan >= 512 * 256 ? 2 : 1) : (shortSpan >= 8 * stepQ ? 3 : 1);
-    for (let group = 0; group < groups; group++) {
-      const count = local ? Math.max(3, Math.min(group ? 5 : 7, Math.floor(longSpan / Math.max(96 * 256, 4 * stepQ)) + 1)) : group === 0 ? 9 : 5, side = group === 1 ? -1 : 1;
-      const localWidth = Math.min(shortSpan * (group ? .11 : .16), longSpan / (count - 1) * .42, 80 * 256);
-      if (local && localWidth < minimumWidth) continue;
-      for (let j = 0; j < count; j++) {
-        const tQ = roundRatio(j * FIELD_Q, count - 1);
-        const start = group === 0 ? 328 : group === 1 ? 164 : 1638, span = group === 0 ? 3440 : group === 1 ? 2294 : 2130;
-        const alongQ = start + roundRatio(tQ * span, FIELD_Q);
-        const bend = noiseQ12(seed, 7200 + group, roundRatio(tQ * 1408 * 256, FIELD_Q), 0, 512 * 256);
-        const branch = group === 0 ? 0 : roundRatio(side * shortSpan * (1229 + roundRatio((FIELD_Q - tQ) * 410, FIELD_Q)), FIELD_Q * 4);
-        const longitudinal = longMin + roundRatio(longSpan * alongQ, FIELD_Q), transverse = shortMin + Math.floor(shortSpan / 2) + branch + roundRatio(shortSpan * bend, 4 * FIELD_Q);
-        const widthQ = local ? Math.round(Math.max(minimumWidth, localWidth * (.72 + (hashAt(seed, 7210, group, j) % 281) / 1000)))
-          : Math.max(minimumWidth, (group === 0 ? 88 : 60) * 256 + (hashAt(seed, 7210, group, j) % 113) * 256);
-        const peakQ = (group === 0 ? 3686 : 2130) + hashAt(seed, 7211, group, j) % 410;
-        anchors.push({ target: horizontal ? { xQ: longitudinal, yQ: transverse } : { xQ: transverse, yQ: longitudinal }, score: Infinity, group, widthQ, peakQ });
-      }
-    }
+    const count = local ? Math.max(3, Math.min(9, Math.floor(longSpan / Math.max(96 * 256, 4 * stepQ)) + 1)) : 9;
+    const footprint = local ? Math.min(shortSpan * .18, longSpan / (count - 1) * .55, 80 * 256) : Math.min(shortSpan * .42, 224 * 256);
+    type Target = OrographyAnchor & { point?: Point; score: number };
     let work = 0;
-    for (let id = 0; id < land.length; id++) {
-      if (land[id] && coastDistance[id] >= Math.min(48 * 256, stepQ * 2)) {
+    const snap = async (targets: Target[]) => {
+      // At most 15 target searches over the finite private eligible list.
+      for (const id of eligible) {
         const point = { xQ: centers[id * 2], yQ: centers[id * 2 + 1] };
-        for (const anchor of anchors) {
-          const score = (point.xQ - anchor.target.xQ) ** 2 + (point.yQ - anchor.target.yQ) ** 2;
-          if (score < anchor.score) { anchor.score = score; anchor.point = point; }
-          if (++work % batch === 0) await checkpoint(control, 'anchor-natural-ridges', work, land.length + eligible * anchors.length);
+        for (const target of targets) {
+          const distance = (point.xQ - target.xQ) ** 2 + (point.yQ - target.yQ) ** 2;
+          if (distance < target.score) { target.score = distance; target.point = point; }
+          if (++work % batch === 0) await checkpoint(control, 'anchor-branching-orography', work, eligible.length * 15);
         }
       }
-      if (++work % batch === 0) await checkpoint(control, 'anchor-natural-ridges', work, land.length + eligible * anchors.length);
-    }
-    for (let group = 0; group < groups; group++) {
-      const selected: RidgeChain['anchors'][number][] = []; let previousAlong = -Infinity;
-      for (const anchor of anchors.filter(a => a.group === group)) {
-        if (!anchor.point) continue;
-        const along = horizontal ? anchor.point.xQ : anchor.point.yQ;
-        // Nearest-land snapping must not fold the ordered chain back on itself.
-        if (along <= previousAlong) continue;
-        selected.push({ ...anchor.point, widthQ: anchor.widthQ, peakQ: anchor.peakQ }); previousAlong = along;
+    };
+    // Tiny/narrow eligible patches deliberately retain only the lowland base.
+    if (footprint >= minimumWidth && longSpan >= minimumWidth * 4 && shortSpan >= minimumWidth * 2) {
+      const targets: Target[] = [];
+      for (let j = 0; j < count; j++) {
+        const fraction = j / (count - 1), along = .045 + .91 * fraction;
+        const bend = noiseQ12(seed, 7200, Math.round(fraction * 1408 * 256), 0, 512 * 256);
+        const longitudinal = Math.round(longMin + longSpan * along), transverse = Math.round(shortMin + shortSpan / 2 + shortSpan * bend / (5 * FIELD_Q));
+        const widthQ = Math.round(Math.max(minimumWidth, footprint * (.62 + (hashAt(seed, 7210, 0, j) % 381) / 1000)));
+        targets.push({ ...(horizontal ? { xQ: longitudinal, yQ: transverse } : { xQ: transverse, yQ: longitudinal }), widthQ, peakQ: FIELD_Q, score: Infinity });
       }
-      if (local) for (let i = 0; i < selected.length; i++) {
-        const p = selected[i], before = selected[Math.max(0, i - 1)], after = selected[Math.min(selected.length - 1, i + 1)];
-        const spacing = Math.min(i ? Math.hypot(p.xQ - before.xQ, p.yQ - before.yQ) : Infinity, i + 1 < selected.length ? Math.hypot(after.xQ - p.xQ, after.yQ - p.yQ) : Infinity);
-        p.widthQ = Math.round(Math.min(p.widthQ, spacing * .42));
+      await snap(targets);
+      const trunk: OrographyAnchor[] = []; let previous = -Infinity;
+      for (const target of targets) {
+        if (!target.point || target.score > Math.max(2 * stepQ, footprint) ** 2) continue;
+        const along = horizontal ? target.point.xQ : target.point.yQ;
+        if (along <= previous) continue;
+        trunk.push({ ...target.point, widthQ: target.widthQ, peakQ: target.peakQ }); previous = along;
       }
-      // Do not silently widen a ridge across a narrow allowed patch.
-      if (selected.length >= 3 && selected.every(p => p.widthQ >= minimumWidth)) chains.push({ group, leeQ: hashAt(seed, 7213, group, 0) % 2 ? 1 : -1, profileSeed: seed, fitArcWidth: local, anchors: selected });
+      if (local) for (let i = 0; i < trunk.length; i++) {
+        const p = trunk[i], before = trunk[Math.max(0, i - 1)], after = trunk[Math.min(trunk.length - 1, i + 1)];
+        const gap = Math.min(i ? Math.hypot(p.xQ - before.xQ, p.yQ - before.yQ) : Infinity, i + 1 < trunk.length ? Math.hypot(after.xQ - p.xQ, after.yQ - p.yQ) : Infinity);
+        p.widthQ = Math.round(Math.min(p.widthQ, gap * .42));
+      }
+      const sampleStepQ = local ? 512 : stepQ, leeQ = hashAt(seed, 7213, 0, 0) % 2 ? 1 : -1;
+      if (trunk.length >= 3 && trunk.every(p => p.widthQ >= minimumWidth)) chains.push({ group: 0, leeQ, seed, sampleStepQ, anchors: trunk });
+      const allowBranches = local ? longSpan >= 1024 * 256 && shortSpan >= 512 * 256 : shortSpan >= 8 * stepQ;
+      if (chains.length && allowBranches && trunk.length >= 5) {
+        for (let branch = 0; branch < 2; branch++) {
+          const root = trunk[Math.round((trunk.length - 1) * (branch ? .72 : .27))], side = leeQ * (branch ? -1 : 1), forward = branch ? -1 : 1;
+          const branchTargets: Target[] = [], extent = shortSpan * (.26 + (hashAt(seed, 7260, branch, 0) % 61) / 1000);
+          const drift = longSpan * (.09 + (hashAt(seed, 7261, branch, 0) % 71) / 1000) * forward;
+          const branchMinimum = local ? 12 * 256 : 2 * stepQ;
+          for (let j = 1; j <= 3; j++) {
+            const fraction = j / 3, longitudinal = drift * fraction * (.7 + .3 * fraction), transverse = side * extent * fraction;
+            branchTargets.push({ xQ: Math.round(root.xQ + (horizontal ? longitudinal : transverse)), yQ: Math.round(root.yQ + (horizontal ? transverse : longitudinal)),
+              widthQ: Math.round(Math.max(branchMinimum, root.widthQ * (.72 - .36 * fraction))), peakQ: FIELD_Q, score: Infinity });
+          }
+          await snap(branchTargets);
+          const selected: OrographyAnchor[] = [{ ...root, widthQ: Math.round(Math.max(branchMinimum, root.widthQ * .72)) }];
+          const targetEnd = branchTargets.at(-1)!, dx = targetEnd.xQ - root.xQ, dy = targetEnd.yQ - root.yQ; let previousAlong = 0;
+          for (const target of branchTargets) {
+            if (!target.point || target.score > Math.max(2 * stepQ, target.widthQ) ** 2) break;
+            const along = (target.point.xQ - root.xQ) * dx + (target.point.yQ - root.yQ) * dy;
+            if (along <= previousAlong) break;
+            selected.push({ ...target.point, widthQ: target.widthQ, peakQ: target.peakQ }); previousAlong = along;
+          }
+          if (selected.length === 4) chains.push({ group: chains.length, leeQ: side, seed, sampleStepQ, anchors: selected });
+        }
+      }
     }
   }
-  const curved = await createCurvedRidgeField(chains, isLand, batch, control), ridges = curved.spans;
+  const curved = await createOrographyField(chains, isLand, batch, control), ridges = curved.spans;
   const shelfBase = Math.min(112, shelf);
   const shelfWidthAt = (xQ: number, yQ: number) => {
     const [u, v] = rotated(xQ, yQ), region = unit(noiseQ12(seed, 7220, u, v, 512 * 256));
@@ -144,16 +158,15 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     if (backgroundLandMeters !== undefined && (!Number.isFinite(backgroundLandMeters) || backgroundLandMeters < 0 || backgroundLandMeters > 12000)) throw new Error('局部山地旧地形背景无效。');
     const featureQ = scaleMode === 'local' ? 32 * 256 : Math.max(64 * 256, 4 * stepQ);
     const rolling = roundRatio(123 * unit(noiseQ12(seed, 7231, u, v, featureQ)), FIELD_Q);
-    const weather = 2867 + roundRatio(1229 * unit(noiseQ12(seed, 7234, u, v, featureQ)), FIELD_Q);
     // The real height query follows the same curves that were land-probed;
     // no later domain warp can move the ridge skeleton across that boundary.
-    const highland = curved.sample(xQ, yQ).massQ * weather / FIELD_Q;
+    const highland = curved.sample(xQ, yQ).massQ;
     const rise = smoothQ(roundRatio(distanceQ * FIELD_Q, coastRiseAt(xQ, yQ) * 256));
     const meters = backgroundLandMeters === undefined ? relief * boundCurvedRelief(lowland + rolling + highland) / FIELD_Q
       : backgroundLandMeters + relief * boundCurvedRelief(highland) / FIELD_Q;
     return Math.max(0, Math.min(backgroundLandMeters === undefined ? relief : 12000, Math.round(meters * rise / FIELD_Q)));
   };
-  const summary: NaturalReliefSummary = { profile: 'continuous-arclength-ridges-v3', ridgeSegments: ridges.length, ridgeGroups: new Set(ridges.map(r => r.group)).size,
+  const summary: NaturalReliefSummary = { profile: 'branching-orography-v4', ridgeSegments: ridges.length, ridgeGroups: new Set(ridges.map(r => r.group)).size,
     scaleMode, curveRuns: curved.stats.curveRuns, supportNodes: curved.stats.supportNodes, maximumBucketCandidates: curved.stats.maximumBucketCandidates,
     rejectedSeaSegments: curved.stats.rejectedSpans, minimumRidgeWidthWorld: ridges.length ? Math.min(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 3482 / FIELD_Q / 256 : 0,
     maximumRidgeWidthWorld: ridges.length ? Math.max(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 4710 / FIELD_Q / 256 : 0, minimumShelfWorld: Math.max(16, Math.round(shelfBase * 1434 / FIELD_Q)), maximumShelfWorld: shelfBase };

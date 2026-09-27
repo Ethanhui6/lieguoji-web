@@ -1,0 +1,393 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T18:36:01.533Z",
+  "files": [
+    {
+      "path": "raw/root/first/identity-verification.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/identity-verification.json",
+      "bytes": 416,
+      "sha256": "00be70aa7ae80e770419ce0d8300ef266712f82fdec47e7e1388b81fc88c8b18"
+    },
+    {
+      "path": "raw/root/first/lint.log",
+      "source": ".autopilot/ph06/branching-relief-checks/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/first/plan.log",
+      "source": ".autopilot/ph06/branching-relief-checks/first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "raw/root/first/pre-run-build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/pre-run-build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "raw/root/first/prior-build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/prior-build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "raw/root/first/scope.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/scope.json",
+      "bytes": 2032,
+      "sha256": "828a474985ede2c0a75ae2a7fa4063aa5c35634c7352e2ab97ac49f81547d7e8"
+    },
+    {
+      "path": "raw/root/first/source-after.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/source-after.json",
+      "bytes": 46334,
+      "sha256": "bd01b0b288074b12917f51e51c4f78615e88ed77af99e0848cd426ba5370119f"
+    },
+    {
+      "path": "raw/root/first/source-before.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/source-before.json",
+      "bytes": 46334,
+      "sha256": "bd01b0b288074b12917f51e51c4f78615e88ed77af99e0848cd426ba5370119f"
+    },
+    {
+      "path": "raw/root/first/types.log",
+      "source": ".autopilot/ph06/branching-relief-checks/first/types.log",
+      "bytes": 115,
+      "sha256": "3901760b6d7e81e7c14d87b3a37d4b749c60e0e2496e297fcf1f5d6c3d7822f7"
+    },
+    {
+      "path": "raw/root/first/verification.json",
+      "source": ".autopilot/ph06/branching-relief-checks/first/verification.json",
+      "bytes": 1679,
+      "sha256": "6c55b1548305deb4760f4aef29e1ecbc84a48eaf2af7c26d88c8bb5d1e60551d"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/build.json",
+      "bytes": 9456,
+      "sha256": "c96ba4db34112dd6d3c23a8d5b103847d2c7d0b84701481b636fc9515f1f3b0e"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/build.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/build.log",
+      "bytes": 1866,
+      "sha256": "614643b713ed6d415061df34ddb77c07a6b3262d9fb5e6cff3533a0700d0eef1"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/dist-audit.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/identity-verification.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/identity-verification.json",
+      "bytes": 30351,
+      "sha256": "afa5d8c42b9670c79e1127c8ac77e0a0e78be94f454e0d4fae7ab7cc77f8c105"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/lint.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/plan.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/pre-run-build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/pre-run-build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/prior-build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/prior-build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/scope.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/scope.json",
+      "bytes": 2049,
+      "sha256": "5f928896e95462525df9f8ce1129178e0107a4335f645950695fdb915a561a1d"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/source-after.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/source-after.json",
+      "bytes": 46334,
+      "sha256": "e245eb2b831b4a041e260ecfc5145834927c5505c972168b1c7bd93d7aa27ffb"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/source-before.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/source-before.json",
+      "bytes": 46334,
+      "sha256": "e245eb2b831b4a041e260ecfc5145834927c5505c972168b1c7bd93d7aa27ffb"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/types.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/unit.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/unit.json",
+      "bytes": 51620,
+      "sha256": "83bf3806a258f7aebdffdb45c883869543ab7d6ef8b6b9741d1783a754fda986"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/unit.log",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/unit.log",
+      "bytes": 128,
+      "sha256": "69453e2650650ba87e0ddc26811c0a905c1232e5ddb00ee78a1bb5c4d386a800"
+    },
+    {
+      "path": "raw/root/numeric-scale-type-fix/verification.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/verification.json",
+      "bytes": 9207,
+      "sha256": "8725b1e2d2d86bb8f76c6d86d48144b597b6982de1c11d3336c7abf745be7030"
+    },
+    {
+      "path": "runners/run.mjs",
+      "source": ".autopilot/ph06/branching-relief-checks/run.mjs",
+      "bytes": 14342,
+      "sha256": "9ec770615040832a9a273d0225ccc03929bf41f7aa1d0cfdeab90d00c6e44fe4"
+    },
+    {
+      "path": "runners/browser.mjs",
+      "source": ".autopilot/ph06/branching-relief-checks/browser.mjs",
+      "bytes": 9853,
+      "sha256": "0013f28e7eb4befdd2c85c4bfaf307dd84ca5c64414fcc2ad298441b066992b8"
+    },
+    {
+      "path": "runners/playwright.config.ts",
+      "source": ".autopilot/ph06/branching-relief-checks/playwright.config.ts",
+      "bytes": 666,
+      "sha256": "858da0cc51e557a9e82c7201c8305e54419edefc34b009de6674e4719a8ca806"
+    },
+    {
+      "path": "runners/baseline-build.json",
+      "source": ".autopilot/ph06/branching-relief-checks/baseline-build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499"
+    },
+    {
+      "path": "provenance/branching-relief-promotion.json",
+      "source": ".autopilot/ph06/branching-relief-promotion.json",
+      "bytes": 3872,
+      "sha256": "3db9271aa142bb68dc4d848be9ddf3cbcf9770eaddeeb3455226f363ae2e0d59"
+    },
+    {
+      "path": "provenance/promote-branching-relief.mjs",
+      "source": ".autopilot/ph06/promote-branching-relief.mjs",
+      "bytes": 10689,
+      "sha256": "dcb9325291cbf9bd700799e45807c9bdee15e11718645d24cd2e2aec632a4931"
+    },
+    {
+      "path": "provenance/branching-relief-review.md",
+      "source": ".autopilot/ph06/branching-relief-review.md",
+      "bytes": 14090,
+      "sha256": "2c6a2e92007ea638c8004aa95ec811473fccbed8ef144aa8dd5e64b00dbfb3da"
+    },
+    {
+      "path": "provenance/record-preview17-visual.mjs",
+      "source": ".autopilot/ph06/record-preview17-visual.mjs",
+      "bytes": 4171,
+      "sha256": "08fe0bc654f62fd016232c31e6d53cc9686bcddcae9abebf266bbb9bc98d5c57"
+    },
+    {
+      "path": "provenance/archive-branching-iteration.mjs",
+      "source": ".autopilot/ph06/archive-branching-iteration.mjs",
+      "bytes": 23031,
+      "sha256": "187710628a948f9b5f94bf6cca011b6cc20a73effa8685b8f93615543dc7775e"
+    },
+    {
+      "path": "preparation/v4-branching-relief-staging/ready-manifest.json",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/ready-manifest.json",
+      "bytes": 3295,
+      "sha256": "d455d305e543a31ab1eaa9aa8d24e2f8450708df7528a1c7995f0fc55d7a9523"
+    },
+    {
+      "path": "preparation/v4-branching-relief-staging/ready-manifest.before-review.json",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/ready-manifest.before-review.json",
+      "bytes": 2588,
+      "sha256": "93231e7afc402e293ef37fe9007aa1443f508eac72745c4c49697d3e5c70b985"
+    },
+    {
+      "path": "preparation/v4-branching-relief-staging/README.md",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/README.md",
+      "bytes": 9795,
+      "sha256": "5ec366e5e55f5ef3b1c012db2c8dfb00a960730244e211c0765004ece919b05e"
+    },
+    {
+      "path": "preparation/v4-branching-relief-staging/REVIEW_CORRECTIONS.md",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/REVIEW_CORRECTIONS.md",
+      "bytes": 3174,
+      "sha256": "f43948dcc0ef7425e3b50597e2c5b207d5745346433132e9a384846d8cad6254"
+    },
+    {
+      "path": "preparation/v4-preview16-history-staging/ready-manifest.json",
+      "source": ".autopilot/ph06/v4-preview16-history-staging/ready-manifest.json",
+      "bytes": 3921,
+      "sha256": "7aa1629c5a4d5a459250bcdfe63adf2560677743aa97e38aedb2231cba1f4147"
+    },
+    {
+      "path": "preparation/v4-preview16-history-staging/README.md",
+      "source": ".autopilot/ph06/v4-preview16-history-staging/README.md",
+      "bytes": 2661,
+      "sha256": "32104b03691fdf5bca0b8a887e4a5c09fee5534492066abb460506d9c95c9663"
+    },
+    {
+      "path": "preparation/promoted/src/world/generation-history.ts",
+      "source": ".autopilot/ph06/v4-preview16-history-staging/src/world/generation-history.ts",
+      "bytes": 13155,
+      "sha256": "bab4861fab561231c98130d752f43616664ced14b20acf3350b488b9b3788fdd"
+    },
+    {
+      "path": "preparation/promoted/src/world/detail-preview16-history.test.ts",
+      "source": ".autopilot/ph06/v4-preview16-history-staging/src/world/detail-preview16-history.test.ts",
+      "bytes": 15064,
+      "sha256": "f4a9d9ee68a2d37ce3d71ea561c916376570179403c6c8dff64dd5d43946ffa8"
+    },
+    {
+      "path": "preparation/promoted/src/world/generation/detail-natural-relief.ts",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "bytes": 13974,
+      "sha256": "9afed003612e843b9df90960375b9a732dbba90ad803f9a182b7174ddc183d5e"
+    },
+    {
+      "path": "preparation/promoted/src/world/generation/detail-orography.ts",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.ts",
+      "bytes": 20317,
+      "sha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821"
+    },
+    {
+      "path": "preparation/promoted/src/world/generation/detail-orography.test.ts",
+      "source": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.test.ts",
+      "bytes": 20623,
+      "sha256": "67bd0da80a3a0df01180a51ddff74efe4d97a03309f5185fe5bd6935cdd26861"
+    },
+    {
+      "path": "source/root-type-fix/src/world/generation/detail-orography.ts",
+      "source": "src/world/generation/detail-orography.ts",
+      "bytes": 20325,
+      "sha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c"
+    },
+    {
+      "path": "numeric/numeric-scale-type-fix/actual-256-height-field.json",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.json",
+      "bytes": 891837,
+      "sha256": "611601262ed224565300278b0835a221041019e1d7317367846c5b5653811618"
+    },
+    {
+      "path": "numeric/numeric-scale-type-fix/actual-256-height-field.png",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.png",
+      "bytes": 21980,
+      "sha256": "514501f698d1d7e0a55d370464e4a0247eba11874bd34e3ea7e628676a115b40"
+    },
+    {
+      "path": "numeric/numeric-scale-type-fix/actual-256-height-field.svg",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.svg",
+      "bytes": 5151250,
+      "sha256": "97ef2fe3990aa9a427d2e8287c40467a730c6cc04ad0b80869f40d1f8cba0057"
+    },
+    {
+      "path": "numeric/numeric-comparison.json",
+      "source": ".autopilot/ph06/branching-relief-checks/numeric-comparison.json",
+      "bytes": 1566,
+      "sha256": "e5f9ca991515f53a2949ce1b2797d79a680805bf7f2dec650fc5063e4c0597f5"
+    },
+    {
+      "path": "provenance/root-correction.json",
+      "source": ".autopilot/ph06/branching-relief-checks/root-correction.json",
+      "bytes": 615,
+      "sha256": "737ea3b694acc5a14fcd6d838fb82522ece26098f62c575106542e3d43a71e3d"
+    },
+    {
+      "path": "observations/visual-review.json",
+      "source": ".autopilot/ph06/branching-relief-checks/visual-review.json",
+      "bytes": 1741,
+      "sha256": "5c4d31bc5ed0c1bbee20a1382debe3cef544d52fd52c1c4f3adca8a84ba86e09"
+    },
+    {
+      "path": "verification.json",
+      "generated": true,
+      "bytes": 9170,
+      "sha256": "5464aebb2151504b32e9f20238597854a6683aa7ae5806706525faee35bcc8db"
+    },
+    {
+      "path": "root-type-correction.json",
+      "generated": true,
+      "bytes": 490,
+      "sha256": "82ec42471880e6ed91553ee18e8432e9be5a929e9a84505149b296184945ad11"
+    },
+    {
+      "path": "references.json",
+      "generated": true,
+      "bytes": 1930,
+      "sha256": "db9ced80aeea49ba89af25862d7b6a21ae02cacb93ef4c874d9b6b7934f13bd0"
+    },
+    {
+      "path": "README.md",
+      "generated": true,
+      "bytes": 767,
+      "sha256": "46bf616b07cab8d5bf89558b9ee231c88719b6ab2801ef55f8f9bc703a01b93a"
+    }
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
+      "bytes": 38352,
+      "sha256": "35084abd6d32131189be444d8e227a8b6ee0e3c55372b0537172771424f2cb8d",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-coast-scale-2026-09-28/inventory.json",
+      "bytes": 22530,
+      "sha256": "8f59e46d6f375b61e19e21c110caf85c7f9fc51ff91155bd1e22039a257be25d",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview16-generator-history-2026-09-28/build.json",
+      "bytes": 9327,
+      "sha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview16-generator-history-2026-09-28/provenance.json",
+      "bytes": 39594,
+      "sha256": "631761a83124e54950447ffa98feb94b7e04e8b95c80c9406cb43f056f453d06",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview16-generator-history-2026-09-28/inventory.json",
+      "bytes": 9495,
+      "sha256": "75afbb3695e09d024894f56f14479fcb8030f08f8bfd2cbc666862310e069808",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.json",
+      "bytes": 895486,
+      "sha256": "0a5f55b24f7edb76e48e44625138f59eedbe0978b5ec6668c254a86a75e74d93",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.png",
+      "bytes": 27117,
+      "sha256": "3b69ead66857ffefce202a0a7322779f5cd43a3308d8044fc776fd28102f6e6c",
+      "copied": false
+    },
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.svg",
+      "bytes": 5148830,
+      "sha256": "412268cd157fe58b0f74f62abc886e9f9fc30e9bf36b0cd4cefd90bfb5f6c106",
+      "copied": false
+    }
+  ],
+  "excludesSelf": true
+}

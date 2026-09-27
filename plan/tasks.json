@@ -749,7 +749,9 @@
         "docs/evidence/2026-09-28-ph06-asymmetric-coast.md",
         "docs/evidence/ph06-asymmetric-coast-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph06-coast-scale.md",
-        "docs/evidence/ph06-coast-scale-2026-09-28/verification.json"
+        "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
+        "docs/evidence/2026-09-28-ph06-branching-relief.md",
+        "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
       ],
       "workItems": [
         {
@@ -831,7 +833,9 @@
             "docs/evidence/2026-09-28-ph06-asymmetric-coast.md",
             "docs/evidence/ph06-asymmetric-coast-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-coast-scale.md",
-            "docs/evidence/ph06-coast-scale-2026-09-28/verification.json"
+            "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-branching-relief.md",
+            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
           ]
         },
         {
@@ -872,7 +876,9 @@
             "docs/evidence/2026-09-28-ph06-asymmetric-coast.md",
             "docs/evidence/ph06-asymmetric-coast-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-coast-scale.md",
-            "docs/evidence/ph06-coast-scale-2026-09-28/verification.json"
+            "docs/evidence/ph06-coast-scale-2026-09-28/verification.json",
+            "docs/evidence/2026-09-28-ph06-branching-relief.md",
+            "docs/evidence/ph06-branching-relief-2026-09-28/verification.json"
           ]
         }
       ],

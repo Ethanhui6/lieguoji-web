@@ -1,0 +1,36 @@
+{
+  "unitFiles": [
+    "src/world/generation/detail-curved-ridge.test.ts",
+    "src/world/generation/detail-orography.test.ts",
+    "src/world/generation/detail-local-background.test.ts",
+    "src/world/generation/detail-local-relief.test.ts",
+    "src/world/detail-local-relief-session.test.ts",
+    "src/world/detail-coast-locks.test.ts",
+    "src/world/generation/detail-natural-coast-plan.test.ts",
+    "src/world/generation/detail-shape-natural.test.ts",
+    "src/world/generation/detail-natural-visual-repair.test.ts",
+    "src/world/detail-natural-integration.test.ts",
+    "src/world/detail-natural-history.test.ts",
+    "src/world/detail-preview16-history.test.ts",
+    "src/world/generation/fingerprint.test.ts",
+    "src/world/generation/detail-shape-add.test.ts",
+    "src/world/detail-add-integration.test.ts",
+    "src/world/detail-add-history.test.ts"
+  ],
+  "knownCaseCounts": {
+    "src/world/generation/detail-curved-ridge.test.ts": 10,
+    "src/world/generation/detail-local-background.test.ts": 6,
+    "src/world/generation/detail-local-relief.test.ts": 10,
+    "src/world/detail-local-relief-session.test.ts": 3,
+    "src/world/detail-coast-locks.test.ts": 16,
+    "src/world/generation/detail-natural-coast-plan.test.ts": 8,
+    "src/world/generation/detail-shape-natural.test.ts": 13,
+    "src/world/generation/detail-natural-visual-repair.test.ts": 5,
+    "src/world/detail-preview16-history.test.ts": 5,
+    "src/world/generation/detail-orography.test.ts": 15
+  },
+  "numericEvidenceLabel": "branching-first",
+  "scope": "Branching relief: curved ridges, new orography, natural and additive generation, local background/height/locks, stored history and identity. Sixteen affected files; original thresholds and every failed round are retained.",
+  "inheritedNotRerun": "Prior preview16 three-device additive technical results remain bound historical evidence only. Changed relief needs its own numerical and product acceptance; this runner grants no browser or visual acceptance.",
+  "cloudWrites": false
+}

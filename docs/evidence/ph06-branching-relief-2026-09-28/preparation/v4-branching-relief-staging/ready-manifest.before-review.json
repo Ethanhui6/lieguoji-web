@@ -1,0 +1,51 @@
+{
+  "recordedAt": "2026-09-27T17:58:48.4630729Z",
+  "status": "static-ready-for-root-review-and-integrated-checks",
+  "tested": false,
+  "productionChangedByThisAgent": false,
+  "baseHead": "72fd76591d1258515b72f5b50058bb142c6e1520",
+  "files": [
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "baselineSha256": "6542372a94a18f937736bf31950737f9d590fd36644faaa25a6eeb7a834cc055",
+      "sha256": "9afed003612e843b9df90960375b9a732dbba90ad803f9a182b7174ddc183d5e"
+    },
+    {
+      "path": "src/world/generation/detail-orography.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.ts",
+      "baselineSha256": null,
+      "sha256": "271a9e87beb75a2d2e567fe336a4a11b5f094cf35631e99524692ce08d9759ea"
+    },
+    {
+      "path": "src/world/generation/detail-orography.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.test.ts",
+      "baselineSha256": null,
+      "sha256": "b6b09110e7a6bec6a86ae671c73b31e96c2c77985e2a2347bce45604b4f57703"
+    }
+  ],
+  "authoredNewTests": 12,
+  "preservedThresholdSources": [
+    {
+      "path": "src/world/generation/detail-curved-ridge.test.ts",
+      "sha256": "b210f809bb8bff8f6cb0888a239ae74576a192c85f0e89c36ef3409b39bbe256"
+    },
+    {
+      "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "sha256": "20925e333cb3d6248d7e664f8ee96231d68186d789fde178ba2bd1545c8be48d"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.test.ts",
+      "sha256": "0b95185a4b7470f4d851ef6d2df3d0cf763d0aa2eee0e6d41f1a46716aebbccc"
+    }
+  ],
+  "checks": [],
+  "readmeSha256": "95eb99ada883fd03044478fe3f32ef7e6c13478d45b1a5c69433a02759c1c41c",
+  "notes": [
+    "One trunk and up to two attached declining branches, separable crest and foothill height supports, finite true side valleys, nonperiodic physical peak events.",
+    "All original numerical thresholds and original tests remain unchanged.",
+    "No source generation, unit or browser tests, type check, lint or build executed by this agent.",
+    "No coast, renderer, sampler, local kernel, schema, recipe or fingerprint edit; new helper needs normal dependency fingerprint inclusion when root promotes.",
+    "Candidate naturalness and persistence-scale visibility are unverified. Same-coast saved-height and product-view comparison required."
+  ]
+}

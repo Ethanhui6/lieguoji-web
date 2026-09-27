@@ -1,0 +1,188 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T18:36:01.533Z",
+  "head": "a909afd76dbbd05755a12ed8922c09cf5fec1bf7",
+  "version": "0.5.0-preview.17",
+  "buildJsonSha256": "c96ba4db34112dd6d3c23a8d5b103847d2c7d0b84701481b636fc9515f1f3b0e",
+  "archiveComplete": true,
+  "rootTechnicalPassed": true,
+  "technicalPassed": true,
+  "allRequiredPassed": false,
+  "browserExecuted": false,
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "allAccepted": false,
+  "cloudWrites": false,
+  "scope": "Visually rejected intermediate preview17. Corrected root113 and actual build passed. Product browser workflows deliberately not executed after numerical image rejection; technicalPassed covers root checks only.",
+  "root": {
+    "round": "numeric-scale-type-fix",
+    "passed": true,
+    "assertions": 113,
+    "files": 16,
+    "distFiles": 25,
+    "sourceStable": true,
+    "verificationSha256": "8725b1e2d2d86bb8f76c6d86d48144b597b6982de1c11d3336c7abf745be7030",
+    "identitySha256": "afa5d8c42b9670c79e1127c8ac77e0a0e78be94f454e0d4fae7ab7cc77f8c105",
+    "identityClassifications": {
+      "history-only": 8,
+      "non-history-runtime-change": 3
+    }
+  },
+  "originalFailure": {
+    "round": "first",
+    "passed": false,
+    "verificationSha256": "6c55b1548305deb4760f4aef29e1ecbc84a48eaf2af7c26d88c8bb5d1e60551d",
+    "failure": "TS2322: scale inferred as literal0.000001",
+    "unitExecuted": false,
+    "buildExecuted": false
+  },
+  "rootTypeCorrection": {
+    "path": "src/world/generation/detail-orography.ts",
+    "beforeSha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821",
+    "afterSha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c",
+    "changedSnapshotPaths": [
+      "src/world/generation/detail-orography.ts"
+    ],
+    "exactChange": "let scale = OROGRAPHY_UNION.epsilonQ; -> let scale: number = OROGRAPHY_UNION.epsilonQ;",
+    "runtimeFormulaChanged": false,
+    "originalStagingBytesPreserved": true,
+    "originalRecord": {
+      "recordedAt": "2026-09-27T18:31:46.600Z",
+      "source": "src/world/generation/detail-orography.ts",
+      "beforeSha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821",
+      "afterSha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c",
+      "failure": ".autopilot/ph06/branching-relief-checks/first/types.log",
+      "reason": "TS2322: as-const epsilon inferred a numeric literal; root added explicit number annotation only. Runtime algorithm and all acceptance assertions unchanged.",
+      "testedIn": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/verification.json"
+    }
+  },
+  "identity": {
+    "passed": true,
+    "buildJsonSha256": "c96ba4db34112dd6d3c23a8d5b103847d2c7d0b84701481b636fc9515f1f3b0e",
+    "priorBuildSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+    "sourceSnapshotSha256": "e245eb2b831b4a041e260ecfc5145834927c5505c972168b1c7bd93d7aa27ffb",
+    "engineUnchanged": true,
+    "orographyIncluded": true
+  },
+  "numeric": {
+    "sameRecipe": true,
+    "comparison": {
+      "recordedAt": "2026-09-27T18:31:46.596Z",
+      "sameRecipe": true,
+      "sameTargetCoast": true,
+      "sameLandArea": true,
+      "sameSeaArea": true,
+      "before": {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/coast-scale-first/actual-256-height-field.json",
+        "sha256": "0a5f55b24f7edb76e48e44625138f59eedbe0978b5ec6668c254a86a75e74d93",
+        "relief": {
+          "profile": "continuous-arclength-ridges-v3",
+          "ridgeSegments": 16,
+          "ridgeGroups": 3,
+          "scaleMode": "world",
+          "curveRuns": 3,
+          "supportNodes": 277,
+          "maximumBucketCandidates": 129,
+          "rejectedSeaSegments": 0,
+          "minimumRidgeWidthWorld": 54.40625,
+          "maximumRidgeWidthWorld": 210.43212890625,
+          "minimumShelfWorld": 25,
+          "maximumShelfWorld": 72
+        }
+      },
+      "after": {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.json",
+        "sha256": "611601262ed224565300278b0835a221041019e1d7317367846c5b5653811618",
+        "relief": {
+          "profile": "branching-orography-v4",
+          "ridgeSegments": 14,
+          "ridgeGroups": 3,
+          "scaleMode": "world",
+          "curveRuns": 3,
+          "supportNodes": 164,
+          "maximumBucketCandidates": 71,
+          "rejectedSeaSegments": 0,
+          "minimumRidgeWidthWorld": 43.39482879638672,
+          "maximumRidgeWidthWorld": 257.3220920562744,
+          "minimumShelfWorld": 25,
+          "maximumShelfWorld": 72
+        }
+      },
+      "scope": "Same one actual unit-produced fixture; not browser or all seeds acceptance",
+      "naturalVisualAccepted": false
+    },
+    "producer": "src/world/generation/detail-natural-visual-repair.test.ts",
+    "sourceSha256": "20925e333cb3d6248d7e664f8ee96231d68186d789fde178ba2bd1545c8be48d",
+    "producedDuringActualUnitCommand": true,
+    "files": [
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.json",
+        "sha256": "611601262ed224565300278b0835a221041019e1d7317367846c5b5653811618"
+      },
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.png",
+        "sha256": "514501f698d1d7e0a55d370464e4a0247eba11874bd34e3ea7e628676a115b40"
+      },
+      {
+        "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.svg",
+        "sha256": "97ef2fe3990aa9a427d2e8287c40467a730c6cc04ad0b80869f40d1f8cba0057"
+      }
+    ],
+    "productScreenshot": false
+  },
+  "visual": {
+    "required": true,
+    "complete": true,
+    "bound": true,
+    "accepted": false,
+    "decision": "rejected-for-natural-visual",
+    "productScreenshots": false,
+    "observation": {
+      "recordedAt": "2026-09-27T18:31:46.600Z",
+      "buildJsonSha256": "c96ba4db34112dd6d3c23a8d5b103847d2c7d0b84701481b636fc9515f1f3b0e",
+      "scope": "Root actually viewed the current and prior numerical height-field PNG via view_image; these are actual generated coarse/fine-data diagnostics, NOT browser screenshots. No preview17 product browser was executed.",
+      "observations": [
+        "Current actual image replaces broad round hill groups with a thin continuous main band and three isolated bright high points. Two weaker branches are visible, but remain slender and weak at this persisted-data scale.",
+        "The result is still too schematic and sparse to meet the requested natural mountain systems; the actual image remains visually rejected despite all113 technical assertions passing.",
+        "The original recipe,3382 target coast segments and all land/sea areas match the preview16 numerical fixture exactly. This narrow comparison isolates the changed terrain field from a different coastline or seed.",
+        "No product UI screenshots, real camera/DPR/cache-density observations, phone/device results, rivers, nations, cities or warfare are newly established by this diagnostic."
+      ],
+      "screenshots": [
+        {
+          "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.png",
+          "sha256": "514501f698d1d7e0a55d370464e4a0247eba11874bd34e3ea7e628676a115b40",
+          "kind": "actual-numerical-diagnostic-not-product-screenshot"
+        }
+      ],
+      "accepted": false,
+      "naturalVisualAccepted": false,
+      "visualAccepted": false,
+      "userAccepted": false,
+      "phaseAccepted": false,
+      "physicalDeviceAccepted": false,
+      "performanceAccepted": false,
+      "browserExecuted": false
+    }
+  },
+  "priorEvidence": {
+    "preview16": "docs/evidence/ph06-coast-scale-2026-09-28",
+    "frozenHistory": "docs/evidence/ph06-preview16-generator-history-2026-09-28",
+    "referencedOnly": true,
+    "priorBrowserResultsAreNotPreview17Results": true
+  },
+  "unresolved": [
+    "Actual numerical terrain image remains visually unacceptable; see original negative observations.",
+    "No changed-version product browser workflow executed; final terrain and UI iteration requires its own actual three-device checks.",
+    "User, whole-natural, physical-device, performance and PH acceptance remain open."
+  ],
+  "notes": [
+    "Original failed first round and unavailable identity/unit/build outcome preserved verbatim.",
+    "Corrected source differs from reviewed staging only by the explicit number annotation; both original staging and actual checked helper are retained.",
+    "Candidate static review and authored tests are not retrospectively described as executed. Actual corrected root unit.json supplies113 assertions.",
+    "No inferred browser pass, inherited browser acceptance, uploaded dist, private save or credential is included. Archive exit0 denotes copying/hash integrity only."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-09-27T18:31:46.600Z",
+  "buildJsonSha256": "c96ba4db34112dd6d3c23a8d5b103847d2c7d0b84701481b636fc9515f1f3b0e",
+  "scope": "Root actually viewed the current and prior numerical height-field PNG via view_image; these are actual generated coarse/fine-data diagnostics, NOT browser screenshots. No preview17 product browser was executed.",
+  "observations": [
+    "Current actual image replaces broad round hill groups with a thin continuous main band and three isolated bright high points. Two weaker branches are visible, but remain slender and weak at this persisted-data scale.",
+    "The result is still too schematic and sparse to meet the requested natural mountain systems; the actual image remains visually rejected despite all113 technical assertions passing.",
+    "The original recipe,3382 target coast segments and all land/sea areas match the preview16 numerical fixture exactly. This narrow comparison isolates the changed terrain field from a different coastline or seed.",
+    "No product UI screenshots, real camera/DPR/cache-density observations, phone/device results, rivers, nations, cities or warfare are newly established by this diagnostic."
+  ],
+  "screenshots": [
+    {
+      "path": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/branching-numeric-scale-type-fix/actual-256-height-field.png",
+      "sha256": "514501f698d1d7e0a55d370464e4a0247eba11874bd34e3ea7e628676a115b40",
+      "kind": "actual-numerical-diagnostic-not-product-screenshot"
+    }
+  ],
+  "accepted": false,
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "browserExecuted": false
+}

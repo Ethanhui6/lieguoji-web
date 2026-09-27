@@ -1,15 +1,15 @@
 # 列国纪当前续接
 
-更新：2026-09-27T18:24:13.275Z。先核实际Git、源码、dist及终态，不从历史候选重新提升。此前完整续接日志保存在本地Git历史（本次基础提交 72fd76591d1258515b72f5b50058bb142c6e1520），各批实际证据仍保留；本文件只维护当前可操作状态。
+更新：2026-09-27T18:33:35.126Z。以本文件当前状态及实际终态为准；下方preview.16实证是已提交基线，不是preview.17结果。
 
 ## 当前状态
 
-- 分支：codex/ph06-world-generation。记录时HEAD：72fd76591d1258515b72f5b50058bb142c6e1520，preview.16产品/文档待本地提交；提交后以git log和.autopilot/checkpoint.json为准，不把记录时HEAD当作全部源码。
-- 当前源码/真实dist：0.5.0-preview.16；build.json SHA256：967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499。本地4173预览为测试服务器，下一批构建会切换产物。
-- PH00—PH05保留既定工程状态；PH06-T3/T4仍in_progress。53/53相关单元与静态/构建检查、三端真实追加流程通过，但自然/用户视觉、真机、整体PH及性能均未通过。
+- 分支：codex/ph06-world-generation；实际HEAD a909afd76dbbd05755a12ed8922c09cf5fec1bf7。preview.16已本地提交；preview.17五目标及旧16真实历史已提升，尚未提交。
+- 当前源码0.5.0-preview.17，真实dist 0.5.0-preview.16，build.json SHA256 967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499。root first 状态：root_failed_repair_required；证据 .autopilot/ph06/branching-relief-checks/first/verification.json。
+- PH00—PH05保留既定工程状态；PH06-T3/T4仍in_progress。preview.17相关113/113与静态/构建通过，但实际数值图拒绝、未执行17产品浏览器；preview.16三端是独立旧基线。自然/用户视觉、真机、整体PH及性能均未通过。
 - 新Atlas未实现国家、行政区、城市、首都、军队与战争。旧0.4工坊和测试战役仍独立保留，不能冒称新版接入。
 
-## 最新实证
+## 已提交preview.16基线实证
 
 [preview.16海岸尺度报告](evidence/2026-09-28-ph06-coast-scale.md)与[全部原件](evidence/ph06-coast-scale-2026-09-28/verification.json)。
 
@@ -30,12 +30,12 @@
 
 ## 下一批及明确所有权
 
-1. 根核查最新终态并本地提交preview.16；无push。
-2. 主支山系候选：.autopilot/ph06/v4-branching-relief-staging/ready-manifest.json。修复后ready d455d305e543a31ab1eaa9aa8d24e2f8450708df7528a1c7995f0fc55d7a9523；旧ready93231无效。15新测试仅编写未执行，原阈值保留。新L64合成防主脊凹陷，真端点拒绝及实际父场根高限制，独立静态复审未发现新明确阻断；仍不等于图像或运行合格。
-3. 已准备promote-branching-relief.mjs和branching-relief-checks/run.mjs，只有在此16终态/归档/原件不变后由根提升5目标和真实16历史，升17再统一执行。新orography依正常运行时import自动进入三实际生成闭包，不手填指纹。数值标签branching-first。
+1. preview.16已本地提交；preview.17已实际113/113与构建通过、数值图视觉拒绝，原类型失败和修复结果完整归档，本版不执行三端浏览器。先保存本地提交，再等隔离山带改良候选的真实数值预检。
+2. 原主支山系已正式接入并检查；报告见evidence/2026-09-28-ph06-branching-relief.md。新改良候选在.autopilot/ph06/v4-orography-visual-fix-staging，仅staging；作者已获准进行有界数值预检，原阈值不变，不能冒充生产检查。
+3. preview.17旧历史已冻结于v4-preview17-history-staging（11闭包、42源、73原件）；捕获时sourceIsHead=false和browserExecuted=false为真实历史，不能改写。后续地貌变更前必须核ready并保留这些原件；待候选数值图达标后与界面一起接入新版本再统一浏览器。
 4. 界面候选在v4-map-chrome-staging，由game_ui仅写镜像/准备记录，生产未接入。缩放/绘制/状态排布保持可达，不能用隐藏功能或改相机假装放大世界。完成山系检查后再决定提升与受影响验证。
 
-当前根平板终态已核；没有需要用户输入的登录或秘密。IAB最后实际枚举无标签，旧已存草稿链接和旧tab编号只作历史，不声称当前打开。不要改写或删除用户真实档；需要试玩只另建测试草稿。
+preview.16三端终态已核，preview.17仍须自己的实际证据；没有需要用户输入的登录或秘密。IAB最后实际枚举无标签，旧已存草稿链接和旧tab编号只作历史，不声称当前打开。不要改写或删除用户真实档；需要试玩只另建测试草稿。
 
 ## 不变边界
 

@@ -1,0 +1,11 @@
+{
+  "path": "src/world/generation/detail-orography.ts",
+  "beforeSha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821",
+  "afterSha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c",
+  "changedSnapshotPaths": [
+    "src/world/generation/detail-orography.ts"
+  ],
+  "exactChange": "let scale = OROGRAPHY_UNION.epsilonQ; -> let scale: number = OROGRAPHY_UNION.epsilonQ;",
+  "runtimeFormulaChanged": false,
+  "originalStagingBytesPreserved": true
+}

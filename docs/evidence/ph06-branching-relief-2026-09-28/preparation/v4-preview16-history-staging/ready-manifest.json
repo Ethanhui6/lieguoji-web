@@ -1,0 +1,114 @@
+{
+  "frozenAt": "2026-09-27T18:10:45.767Z",
+  "stagingOnly": true,
+  "productionModified": false,
+  "files": [
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview16-history-staging/src/world/generation-history.ts",
+      "baselineSha256": "0c030fef9f6e4f58f33003bbe2f8bc6de35460cf18943dc3414bc3c418a33c31",
+      "sha256": "bab4861fab561231c98130d752f43616664ced14b20acf3350b488b9b3788fdd",
+      "baselineMatches": true,
+      "mode": "mirror"
+    },
+    {
+      "path": "src/world/detail-preview16-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview16-history-staging/src/world/detail-preview16-history.test.ts",
+      "baselineSha256": null,
+      "sha256": "f4a9d9ee68a2d37ce3d71ea561c916376570179403c6c8dff64dd5d43946ffa8",
+      "baselineMatches": true,
+      "mode": "new"
+    }
+  ],
+  "evidence": {
+    "source": ".autopilot/ph06/v4-preview16-history-staging/evidence/preview16",
+    "target": "docs/evidence/ph06-preview16-generator-history-2026-09-28",
+    "buildSha256": "967acb893a12067f6ebc434fbdf4fbff14576dcb1132ba522f529281b30d2499",
+    "sourceSnapshotSha256": "03bed455185d324988bcbc86284cf5a108d291aa63e563892730839fb2174562",
+    "closureCount": 11,
+    "sourceFiles": 41,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "classificationCounts": {
+      "history-only": 9,
+      "non-history-runtime-change": 2
+    },
+    "distCount": 25,
+    "archiveFiles": 53,
+    "inventorySha256": "75afbb3695e09d024894f56f14479fcb8030f08f8bfd2cbc666862310e069808",
+    "provenanceSha256": "631761a83124e54950447ffa98feb94b7e04e8b95c80c9406cb43f056f453d06"
+  },
+  "sourceIdentity": {
+    "version": "0.5.0-preview.16",
+    "actualHead": "72fd76591d1258515b72f5b50058bb142c6e1520",
+    "baseCommit": "72fd76591d1258515b72f5b50058bb142c6e1520",
+    "sourceIsHead": false,
+    "closureSourceMatchesHead": false,
+    "rootResultFormat": "verification.json + identity-verification.json",
+    "rootPassed": true,
+    "identityIndependentlyRecomputed": true,
+    "previousFailureReferenced": true,
+    "browserObservation": [
+      {
+        "project": "desktop-chromium",
+        "directory": ".autopilot/ph06/coast-scale-checks/desktop-first",
+        "status": "pending",
+        "terminalEvidenceCopied": false
+      },
+      {
+        "project": "mobile-chromium",
+        "directory": ".autopilot/ph06/coast-scale-checks/mobile-first",
+        "status": "not-started",
+        "terminalEvidenceCopied": false
+      },
+      {
+        "project": "tablet-chromium",
+        "directory": ".autopilot/ph06/coast-scale-checks/tablet-first",
+        "status": "not-started",
+        "terminalEvidenceCopied": false
+      }
+    ]
+  },
+  "acceptance": {
+    "localTechnicalPassed": true,
+    "browserRun": true,
+    "browserAccepted": false,
+    "naturalVisualAccepted": false,
+    "userAccepted": false,
+    "phaseAccepted": false,
+    "performanceAccepted": false,
+    "physicalDeviceAccepted": false
+  },
+  "checks": {
+    "run": [],
+    "unitCasesWritten": 5,
+    "testsUnexecuted": true,
+    "provenanceCaptureOnly": true
+  },
+  "references": [
+    {
+      "path": "capture.mjs",
+      "sha256": "f4998a7a600bf33cf8ffd144d912186c67b4a5b9c14f18f8898c884571710627"
+    },
+    {
+      "path": "prepare-test.mjs",
+      "sha256": "fe7152c5e46000db126c86d4c226a8cd453631ab79bdab5e9090fedc2ccdf2a1"
+    },
+    {
+      "path": "record-ready.mjs",
+      "sha256": "f3c87417afe907dd6e9dbaf6305a4116c92eceedf2ebf794021280b43e8e97a9"
+    },
+    {
+      "path": "capture-result.json",
+      "sha256": "e2edea6639eee6728b23340ead47d01b03c613731778725bc2947074e4ba8b29"
+    },
+    {
+      "path": "baseline-manifest.json",
+      "sha256": "00a27dd590c949e953b71a3c6099bb0e88eaf01113b9fd2778ffc1464d938429"
+    },
+    {
+      "path": "README.md",
+      "sha256": "32104b03691fdf5bca0b8a887e4a5c09fee5534492066abb460506d9c95c9663"
+    }
+  ]
+}

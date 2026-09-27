@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-09-27T18:11:29.3879108Z",
+  "status": "static-corrected-ready-for-independent-rereview-and-integrated-checks",
+  "tested": false,
+  "productionChangedByThisAgent": false,
+  "baseHead": "72fd76591d1258515b72f5b50058bb142c6e1520",
+  "supersedesManifestSha256": "93231e7afc402e293ef37fe9007aa1443f508eac72745c4c49697d3e5c70b985",
+  "supersededManifestPath": ".autopilot/ph06/v4-branching-relief-staging/ready-manifest.before-review.json",
+  "files": [
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-natural-relief.ts",
+      "baselineSha256": "6542372a94a18f937736bf31950737f9d590fd36644faaa25a6eeb7a834cc055",
+      "sha256": "9afed003612e843b9df90960375b9a732dbba90ad803f9a182b7174ddc183d5e"
+    },
+    {
+      "path": "src/world/generation/detail-orography.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.ts",
+      "baselineSha256": null,
+      "sha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821"
+    },
+    {
+      "path": "src/world/generation/detail-orography.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-branching-relief-staging/src/world/generation/detail-orography.test.ts",
+      "baselineSha256": null,
+      "sha256": "67bd0da80a3a0df01180a51ddff74efe4d97a03309f5185fe5bd6935cdd26861"
+    }
+  ],
+  "authoredNewTests": 15,
+  "preservedThresholdSources": [
+    {
+      "path": "src/world/generation/detail-curved-ridge.test.ts",
+      "sha256": "b210f809bb8bff8f6cb0888a239ae74576a192c85f0e89c36ef3409b39bbe256"
+    },
+    {
+      "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "sha256": "20925e333cb3d6248d7e664f8ee96231d68186d789fde178ba2bd1545c8be48d"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.test.ts",
+      "sha256": "24d8d8ebee11ce00d57c05beba3f2b9cb97c0f12898df6a0dcb8986d95bbc33b"
+    }
+  ],
+  "checks": [],
+  "readmeSha256": "5ec366e5e55f5ef3b1c012db2c8dfb00a960730244e211c0765004ece919b05e",
+  "correctionNotesSha256": "f43948dcc0ef7425e3b50597e2c5b207d5745346433132e9a384846d8cad6254",
+  "originalReview": ".autopilot/ph06/branching-relief-review.md",
+  "notes": [
+    "Original frozen candidate invalidated after two concrete static findings; original hashes retained in before-review manifest.",
+    "Replaced nonmonotone weighted mean with stable epsilon-regularized L64 union; actual parent-only versus two-run section and explicit uplift cap regressions authored.",
+    "Reject true-end/tapered parent roots; bound child root by actual prepared parent supports with the real gate; attachment probes capped at 8192 and cancellable.",
+    "Original numerical product thresholds and original tests remain unchanged.",
+    "No source generation, unit or browser tests, type check, lint or build executed by this agent.",
+    "No coast, renderer, sampler, local kernel, schema, recipe or fingerprint edit; new helper needs normal dependency fingerprint inclusion when root promotes.",
+    "Candidate naturalness and persistence-scale visibility remain unverified; independent static rereview and integrated evidence required."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "recordedAt": "2026-09-27T18:31:46.600Z",
+  "source": "src/world/generation/detail-orography.ts",
+  "beforeSha256": "4f16b61a9238b070124953792159531fb87bcb7dd55c8c0e145e7b7407e4e821",
+  "afterSha256": "3bf9c9063359a350a3308c9590f9b2cc1028a33552d292eb53129158f7da4c1c",
+  "failure": ".autopilot/ph06/branching-relief-checks/first/types.log",
+  "reason": "TS2322: as-const epsilon inferred a numeric literal; root added explicit number annotation only. Runtime algorithm and all acceptance assertions unchanged.",
+  "testedIn": ".autopilot/ph06/branching-relief-checks/numeric-scale-type-fix/verification.json"
+}

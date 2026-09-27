@@ -68,3 +68,7 @@ export function fingerprintNaturalDetailGenerator(read = (file: string) => readF
 export function fingerprintAddNaturalDetailGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
   return fingerprintGenerator('src/world/generation/detail-shape-natural-add-adapter.ts', 'add-detail-landmass-v2', read);
 }
+
+export function fingerprintLocalDetailReliefGenerator(read = (file: string) => readFileSync(file, 'utf8')) {
+  return fingerprintGenerator('src/world/generation/local-detail-relief-adapter.ts', 'local-detail-relief', read);
+}

@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-09-27T12:04:50.826Z",
+  "status": "ready-for-integration-checks",
+  "checksRun": false,
+  "files": [
+    {
+      "path": "src/world/generation-contract.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/vite-env.d.ts",
+      "sha256": "4ad9749a584f94b84d0c054c009c83efbcc8f41eaa19369bcdbbebbf1d3fd5bb"
+    },
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/scripts/generator-fingerprint.ts",
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "path": "vite.config.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/vite.config.ts",
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-session.ts",
+      "sha256": "02b14763eef0b5fb54b4300d872b5886d26e05ad169b3e01cfacd99f49a5aef3"
+    },
+    {
+      "path": "src/world/generation/local-detail-relief-adapter.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation/local-detail-relief-adapter.ts",
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "path": "src/world/detail-local-relief-session.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/detail-local-relief-session.test.ts",
+      "sha256": "9f99e058e0882e461b6253710fc62325a90db57e45c3e82647a2a9f93c13779d"
+    }
+  ],
+  "independentIntegrationReview": {
+    "path": ".autopilot/ph06/local-relief-integration-review.md",
+    "sha256": "fee8d8c21e341a90cb902029de00918a061ee855ac025da75dcc1ad2b67d6280"
+  },
+  "scope": "Root static review completed. Kernel independent review still proceeding; this permits local checks, not acceptance or cloud publication."
+}

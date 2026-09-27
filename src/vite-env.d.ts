@@ -11,3 +11,5 @@ declare const __DETAIL_SHAPE_GENERATOR_FINGERPRINT__: string;
 declare const __ADD_DETAIL_GENERATOR_FINGERPRINT__: string;
 declare const __NATURAL_DETAIL_GENERATOR_FINGERPRINT__: string;
 declare const __ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT__: string;
+
+declare const __LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT__: string;

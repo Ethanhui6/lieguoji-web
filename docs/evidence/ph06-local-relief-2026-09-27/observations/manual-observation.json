@@ -1,0 +1,83 @@
+{
+  "recordedAt": "2026-09-27T12:19:20.923Z",
+  "buildJsonSha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305",
+  "version": "0.5.0-preview.12",
+  "browser": "Codex IAB Chromium",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "zoom": "14%",
+  "baselineRevision": 1,
+  "confirmedRevision": 2,
+  "restoredRevision": 2,
+  "seed": "群岬北岭-01",
+  "reliefMeters": 3200,
+  "selection": {
+    "method": "two native map corner clicks",
+    "width": 45,
+    "height": 30,
+    "transitionCells": 2,
+    "cornersScreen": [
+      [
+        620,
+        245
+      ],
+      [
+        720,
+        310
+      ]
+    ]
+  },
+  "preview": {
+    "changedNodes": 82829,
+    "raisedNodes": 71143,
+    "loweredNodes": 11686,
+    "changedTiles": 96
+  },
+  "observed": [
+    "Saved preview11 draft loaded in preview12 without migration prompt",
+    "Selected existing real land and opened local relief",
+    "Native two-corner range selection changed the actual range",
+    "Preview displayed real node delta and visible terrain change",
+    "Confirmed generated terrain and saved revision 2",
+    "Reload restored revision 2 with same visible terrain",
+    "Reopened panel restored seed, 3200m, 45x30 range and transition2"
+  ],
+  "manualCancelAttempt": {
+    "at": "2026-09-27T12:12:15.244Z",
+    "result": "missed operation window: operation completed before Cancel operation could match; no_matches/deadline observed",
+    "accepted": false,
+    "latencyMeasurement": false
+  },
+  "consoleWarningsAndErrors": [],
+  "scopeLimits": [
+    "Manual undo and successful cancellation not exercised; terminal product browser tests cover those functional paths",
+    "No nonzero locks added in this manual flow",
+    "Native IAB activity overlapped late mobile and early tablet functional testing; durations are not performance benchmarks",
+    "No user visual or real-device acceptance"
+  ],
+  "screenshots": [
+    {
+      "file": "manual-before.png",
+      "sha256": "9ea37319b818f587c01f3e7d6ae4ae0eaf5deb21f9bf5c83f9758ddba361ba21"
+    },
+    {
+      "file": "manual-preview.png",
+      "sha256": "31ef25c7e8abbf620a61c424572a21561eee979ec3394febca2bbc8b959e9ff1"
+    },
+    {
+      "file": "manual-after.png",
+      "sha256": "225927ffca1605f34caba922c61d48b6289aa4b9b4359f55a34ea4d9d6f7a798"
+    },
+    {
+      "file": "manual-restored.png",
+      "sha256": "6b9d14e76e20dc2a9829572d6b507297707fc3055d27eb144269d229f62db538"
+    },
+    {
+      "file": "manual-restored-controls.png",
+      "sha256": "852cdbe80c8d8db31f35a320b8bf0109cca55f6e5ebacff64efdf9f2c5abc09c"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-09-27T11:58:27.8623364Z",
+  "status": "written-unchecked",
+  "productionUnchanged": true,
+  "files": [
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/AtlasStudio.tsx",
+      "baselineSha256": "39bdaeafce96a9e92f67dd05d0b8e89484c7c4cfb76413ba95906c733f9517ad",
+      "sha256": "31779d354a1861faebc1bb3894eef121b61362c86883b6d28f69739aacbcc5ba"
+    },
+    {
+      "path": "src/editor/LocalReliefPanel.tsx",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/LocalReliefPanel.tsx",
+      "baselineSha256": null,
+      "sha256": "b5bab5941471973e822708d4ff848550d94a3d614ca43c03defdade98d36a390"
+    },
+    {
+      "path": "src/editor/local-relief-controls.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/local-relief-controls.ts",
+      "baselineSha256": null,
+      "sha256": "d8367c8ee72ca7e9c147a10b21adba2a96465d437042ed5d7c68755b719b3578"
+    },
+    {
+      "path": "src/editor/local-relief-controls.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/local-relief-controls.test.ts",
+      "baselineSha256": null,
+      "sha256": "e51a9e14f1c0b9f3368f793402d32a27feb9efcd85f84b16693b11e4cbfcf03c"
+    }
+  ],
+  "testsWritten": 6,
+  "checksRun": [],
+  "dependencies": [
+    "LocalDetailReliefRecipe",
+    "validateLocalDetailReliefRecipe(raw,mode)",
+    "LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT",
+    "GenerationPreviewInfo.summary.detailLocalRelief",
+    "new adapter/session full candidate path"
+  ],
+  "browserAuthor": "surface_format",
+  "scope": "v4 local-relief UI only; existing Worker candidate, confirm, cancel, undo paths reused",
+  "remaining": [
+    "Root controlled promotion with contract/adapter/session",
+    "Unified static/helper and real UI checks",
+    "No geography safety or performance claim"
+  ]
+}

@@ -1,4 +1,24 @@
-# 当前续接：preview.11 近岸连续光照通过限定检查，完整自然视觉仍未通过
+# 当前续接：preview.12 局部山地编辑保存恢复通过，自然视觉仍未通过
+
+2026-09-27T12:21:53.245Z 检查点：当前基础HEAD `f49da8377985ef041a56dde7f995b2c8af018b3b`；preview.12源码及以下证据待本地提交，提交后以本文件顶端补记和git核实为准。实际build.json SHA `72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305`，4173 HTTP200一致。新11生成器含局部山地真实闭包，engineFingerprint未变；旧preview.11十闭包/37源码已原字节冻结。
+
+局部山地16目标已正式提升并实际测试，不能根据下方旧时间块重新提升。八文件59/59、计划/全局lint/类型/构建/25产物审计通过；真实产品三端atlas-local-relief.spec均首轮通过：桌面228822.3123ms、手机232426.3794ms、平板280668.6642ms，均0重试、源与dist稳定。它们是功能耗时，不是性能或真机证据。root没有正在运行的检查。
+
+IAB实际已存大陆修订1→两点45×30、过渡2、种子“群岬北岭-01”、3200m→真实82,829细节点改变→确认修订2→刷新恢复地形/参数；console warn/error为空。一次手工运行取消错过窗口，记录失败，不算取消延迟通过。新世界自动测试为空锁集，不能替代非零锁保护验证。
+
+[完整报告](evidence/2026-09-27-ph06-local-relief.md)和[80文件原始证据](evidence/ph06-local-relief-2026-09-27/verification.json)归档，inventory79项，pending0，allRequiredPassed/localReliefWorkflowAccepted为true，自然视觉/用户/PH/性能/真机均false。真实新Atlas仍无国家、行政区、城市、军队战争。山脉仍折线、局部鼓包，需要修算法；PH06-T3/T4继续in_progress。
+
+下一批：先核并提升 `.autopilot/ph06/v4-lock-ui-staging/` 的真实保护入口和 `v4-owned-snapshot-staging/` 私有分批snapshot；配套 `v4-lock-relief-browser-staging/` 实测非零1/2/3锁、局部山地、单bit解除、混合撤销恢复。候选当前仅准备，未提升/运行；自然山形下一步只读定位在natural-relief-next-review.md。保持原响应预算，不用功能完成宣称性能验收。
+
+本地已存试玩：`http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4`（当前IAB tab2，修订2）。tab1旧未保存预览仍保留，勿擅自刷新/确认/丢弃。仓库Ethanhui6/lieguoji-web；Pages lieguoji-web，唯一原生Git链main生产/其他分支预览；实际旧站 https://lieguoji-web.pages.dev/ 未更新，未执行云端查询或写入。本批无需新增授权；完整发布门保持。
+
+---
+
+# 前一检查点：preview.11 近岸连续光照通过限定检查，完整自然视觉仍未通过
+
+2026-09-27T12:07:58Z 最新在做：局部山地16目标已提升到源码并实际构建preview.12，尚未提交。根 `.autopilot/ph06/local-relief-checks/first/` 八文件59/59、计划、全局lint/类型、构建和25产物审计通过，源码稳定、引擎指纹未变；实际11个生成器含新local配方。`dist/build.json` SHA为 `72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305`，4173 HTTP200匹配。桌面原生局部生成闭环运行中，手机/平板及手工实图待验；不能从单元绿灯认定功能全部通过。preview.11原件十闭包/37文件已完整保存 `docs/evidence/ph06-preview11-generator-history-2026-09-27/`。当前本地HEAD仍 `f49da8377985ef041a56dde7f995b2c8af018b3b`；无push或部署。续接以实际terminal verification为准，不覆盖运行目录重试。
+
+2026-09-27T11:55:54Z 后续：preview.11代码与95文件光照证据已本地提交 `f49da8377985ef041a56dde7f995b2c8af018b3b`。实际dist仍是下述构建，未重建或云写。下一批PH06-T4“框选已有陆地，仅重生成局部山地”正在 `.autopilot/ph06/v4-local-relief-{staging,integration-staging,ui-staging}` 分工暂存；尚未提升或测试，不能当作已可用。当前已保存的IAB tab2回到14%全图；原tab1未保存预览继续保留，不擅自确认/丢弃/刷新。
 
 2026-09-27T11:46:09.677Z（UTC）归档检查点：基础HEAD `cc3dbf64e545328d2d4ed852e20128668fd2be4a`；本批preview.11产品与记录仍为未提交变更，不能把HEAD单独当作完整源码身份。实际 `dist/build.json` SHA256为 `eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7`。源码、25项构建产物及三端执行前后绑定通过；10个生成器闭包和 `engineFingerprint` 与preview.10逐项相同。未push、未部署，原GitHub/Pages发布链未改。
 

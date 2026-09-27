@@ -20,6 +20,8 @@ import './atlas-studio.css';
 import { DetailCoastPanel } from './DetailCoastPanel';
 import { makeDetailCoastRecipe, restoreDetailCoastControls } from './detail-coast-controls';
 import { atlasGenerationProgressLabel } from './atlas-generation-progress';
+import { LocalReliefPanel } from './LocalReliefPanel';
+import { canStartLocalRelief, localReliefScope, localReliefSelectionStep, makeLocalReliefRecipe, nearbyLocalReliefRectangle, restoreLocalReliefControls, LOCAL_RELIEF_DEFAULT_TRANSITION } from './local-relief-controls';
 
 type Props = {
   initialDraftId?: string; initialSource?: 'current' | 'backup'; expectedManifest?: string; initialFormat?: AtlasFormat | null;
@@ -47,6 +49,9 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const [generationPreview, setGenerationPreview] = useState<AtlasGenerationPreview | null>(null), generationPreviewRef = useRef<AtlasGenerationPreview | null>(null);
   const [constraintsPreview, setConstraintsPreview] = useState<AtlasConstraintsPreview | null>(null), constraintsPreviewRef = useRef<AtlasConstraintsPreview | null>(null);
   const [localGeneration, setLocalGeneration] = useState(false), [showLockRegion, setShowLockRegion] = useState(false);
+  const [fineOperation, setFineOperation] = useState<'draw' | 'local-relief'>('draw');
+  const [localSelecting, setLocalSelecting] = useState(false), localSelectionRef = useRef<{ active: boolean; anchor: number | null }>({ active: false, anchor: null });
+  const [localReliefSeed, setLocalReliefSeed] = useState('山地-01'), [localReliefMeters, setLocalReliefMeters] = useState(2400);
   const [region, setRegion] = useState<AtlasCellRectangle>({ column: 32, row: 32, columns: 64, rows: 64 }), [transitionCells, setTransitionCells] = useState(4);
   const [lockMask, setLockMask] = useState<1 | 2 | 3>(3), [lockAction, setLockAction] = useState<'set' | 'clear'>('set');
   const cancelGenerationDisplay = useRef<(() => Promise<void>) | null>(null);
@@ -68,6 +73,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const [cameraScale, setCameraScale] = useState(1), titleId = useId();
 
   function clearPreview() { setPending(null); if (ready && !fatal) rendererRef.current?.showPreview([]); }
+  function stopLocalSelection() { localSelectionRef.current = { active: false, anchor: null }; setLocalSelecting(false); }
   function lockDisplay(error: unknown) {
     const message = `地图未能正确显示，已停止继续编辑。已提交的草稿仍保留，请刷新并恢复。${explain(error)}`;
     clientRef.current?.fail(new Error(message));
@@ -81,7 +87,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     try {
       // Painting now yields: discard old-world selection before input can run
       // against a smaller new atlas between two batches.
-      if (viewRef.current?.head.draftId !== next.head.draftId) { selectedRef.current = null; setSelected(null); setVertexId(null); }
+      if (viewRef.current?.head.draftId !== next.head.draftId) { stopLocalSelection(); selectedRef.current = null; setSelected(null); setVertexId(null); }
       const rendered = await renderer.accept(next.data, delta);
       if (!live.current || generation.current !== ticket) return;
       if (viewRef.current?.data.manifest.version !== next.data.manifest.version) {
@@ -91,7 +97,12 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       // Opening a saved world restores the player's last applied controls. A
       // normal confirmation/undo in this session must not reset unsaved choices.
       if (viewRef.current?.head.draftId !== next.head.draftId && next.data.manifest.version === 4) {
-        const recipe = next.data.manifest.generation.lastApplied?.recipe;
+        const applied = next.data.manifest.generation.lastApplied, recipe = applied?.recipe;
+        const restoredLocal = restoreLocalReliefControls(recipe, applied?.scope, next.data.manifest.spec);
+        if (restoredLocal) {
+          setFineOperation('local-relief'); setLocalReliefSeed(restoredLocal.seed); setLocalReliefMeters(restoredLocal.reliefMeters);
+          setRegion(restoredLocal.rectangle); setTransitionCells(restoredLocal.transitionCells); setLocalGeneration(true); setShowLockRegion(false);
+        } else { setFineOperation('draw'); setLocalGeneration(false); }
         const restored = restoreDetailCoastControls(recipe, next.data.manifest.seed);
         setDetailVersion(restored.version); setCoastStructure(restored.structure); setTerrainSeed(restored.seed);
         setShapeRoughness(restored.roughness); setShapeShelf(restored.shelf); setRelief(restored.relief);
@@ -111,6 +122,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   }
   async function run(action: () => Promise<void>) {
     if (busyRef.current || fatal || rendererRef.current?.metrics().gpu.state !== 'ready') return;
+    stopLocalSelection();
     const ticket = generation.current;
     busyRef.current = true; setBusy(true); setError('');
     try { await action(); }
@@ -133,6 +145,22 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       onPick: (id, surface) => {
         if (!current()) return;
         if (busyRef.current) { renderer.select(selectedRef.current); return; }
+        const selection = localSelectionRef.current, actual = viewRef.current;
+        if (selection.active && actual?.data.manifest.version === 4) {
+          const result = localReliefSelectionStep(selection.anchor, id, surface ?? null, actual.data.manifest.spec);
+          if (result.kind === 'rejected') { renderer.select(selectedRef.current); setStatus(result.message); return; }
+          selectedRef.current = id; setSelected(id); setSurfacePick(surface ?? null); setLocate(String(id)); setPending(null); renderer.showPreview([]);
+          if (result.kind === 'anchor') {
+            localSelectionRef.current = { active: true, anchor: result.anchor };
+            setStatus('已选第一角。再点范围的对角位置；拖动浏览与双指缩放仍可使用。');
+          } else {
+            setRegion(result.rectangle); stopLocalSelection(); setSection('generate');
+            setStatus('范围已选好。检查蓝色外框与过渡带，调整起伏后再预览。');
+          }
+          // Selection uses existing trusted tap picking. Do not focusCell here:
+          // even focusCell(id, false) moves the camera between the two corners.
+          return;
+        }
         selectedRef.current = id; setSelected(id); setSurfacePick(surface ?? null); setLocate(String(id)); setPending(null); renderer.showPreview([]);
         const data = generationPreviewRef.current?.data ?? constraintsPreviewRef.current?.data ?? viewRef.current?.data; if (data) setVertexId(cellVertexIds(data.manifest.spec, id)[0]);
         renderer.focusCell(id, false); setSection(generationPreviewRef.current || constraintsPreviewRef.current ? 'generate' : 'edit');
@@ -162,6 +190,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     })().catch(failure => { if (current()) { setError(explain(failure)); setStatus('草稿未能打开，原始数据未被覆盖。'); setSection('world'); } }).finally(() => { if (current()) { busyRef.current = false; setBusy(false); setProgress(null); } });
     return () => {
       if (generation.current === ticket) live.current = false;
+      localSelectionRef.current = { active: false, anchor: null };
       client.close(); renderer.destroy();
       if (clientRef.current === client) clientRef.current = null;
       if (rendererRef.current === renderer) rendererRef.current = null;
@@ -171,7 +200,8 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
 
   const data = generationPreview?.data ?? constraintsPreview?.data ?? view?.data, spec = data?.manifest.spec, readOnly = view?.head.readOnly ?? false, graphicsLocked = graphicsState !== 'ready', locked = busy || !ready || !!fatal || readOnly || graphicsLocked || !!generationPreview || !!constraintsPreview;
   const fine = (data?.manifest.version ?? initialFormat) === 4, detailAlreadyDrawn = view?.data.manifest.version === 4 && (view.data.manifest.generation.lastApplied !== null || view.data.manifest.detailCoast.refs.length > 0);
-  const regionValid = !!spec && validateCellRectangle(region, spec), supportsLocal = terrainOperation === 'landforms' || terrainOperation === 'coast';
+  const regionValid = !!spec && validateCellRectangle(region, spec), supportsLocal = fine ? fineOperation === 'local-relief' : terrainOperation === 'landforms' || terrainOperation === 'coast';
+  const localScope = spec ? localReliefScope(region, transitionCells, spec) : null;
   useEffect(() => {
     if (!ready || fatal || graphicsLocked) return;
     rendererRef.current?.setOutlineMode(drawing && !locked && !!view && view.data.manifest.version !== 1);
@@ -180,10 +210,11 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     if (ready && !fatal && !graphicsLocked) rendererRef.current?.setGridVisible(showGrid);
   }, [showGrid, ready, fatal, graphicsLocked]);
   useEffect(() => {
-    if (!drawing) return;
-    const cancel = (event: KeyboardEvent) => { if (event.key === 'Escape') { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } };
+    if (!drawing && !localSelecting) return;
+    const cancel = (event: KeyboardEvent) => { if (event.key === 'Escape') { if (localSelectionRef.current.active) { stopLocalSelection(); setSection('generate'); setStatus('已取消范围选择，草稿保持原样。'); } else { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } } };
     window.addEventListener('keydown', cancel); return () => window.removeEventListener('keydown', cancel);
-  }, [drawing]);
+  }, [drawing, localSelecting]);
+  useEffect(() => { if (localSelecting && (busy || !ready || fatal || graphicsLocked || readOnly)) stopLocalSelection(); }, [localSelecting, busy, ready, fatal, graphicsLocked, readOnly]);
   const selectedFlags = data && isGenerationDocument(data) && selected !== null ? atlasCellLockFlags(data, selected) : 0;
   useEffect(() => {
     if (!ready || fatal || graphicsLocked) return;
@@ -268,8 +299,19 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   }
   function beginOutline() {
     if (locked || !view || view.data.manifest.version === 1) return;
-    clearPreview(); setOutline([]); setTerrainOperation('shape'); setSection(null); setDrawing(true);
+    stopLocalSelection(); setFineOperation('draw'); setLocalGeneration(false); clearPreview(); setOutline([]); setTerrainOperation('shape'); setSection(null); setDrawing(true);
     rendererRef.current?.showOutline([]); setStatus('按住鼠标或单指画大陆轮廓，松开后自动生成预览。轮廓会自动闭合；双指可缩放与平移。');
+  }
+  function beginLocalRelief() {
+    if (locked || !fine || !spec || !canStartLocalRelief(selected, surfacePick)) return;
+    stopLocalSelection(); clearPreview(); setDrawing(false); setFineOperation('local-relief'); setLocalGeneration(true); setShowLockRegion(false);
+    setRegion(nearbyLocalReliefRectangle(selected!, spec)); setTransitionCells(LOCAL_RELIEF_DEFAULT_TRANSITION); setSection('generate');
+    setStatus('已框出点击位置附近的范围。可重新选择两个对角位置；确认范围后再预览山地。');
+  }
+  function beginLocalRangeSelection() {
+    if (locked || !fine || !view) return;
+    setDrawing(false); localSelectionRef.current = { active: true, anchor: null }; setLocalSelecting(true); setSection(null);
+    setStatus('先点一处已有陆地作为第一角，再点对角位置选择矩形范围。选择不会修改草稿。');
   }
   outlineCallback.current = points => {
     if (busyRef.current || locked || !view || view.data.manifest.version === 1) return;
@@ -278,7 +320,9 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   };
   async function previewTerrain(shapePoints = outline) {
     clearPreview();
-    const recipe: GenerationRecipe = fine
+    const recipe: GenerationRecipe = fine && fineOperation === 'local-relief'
+      ? makeLocalReliefRecipe(localReliefSeed, localReliefMeters)
+      : fine
       ? makeDetailCoastRecipe({ version: detailVersion, seed: terrainSeed, structure: coastStructure, roughness: shapeRoughness, shelf: shapeShelf, relief, islands: detailIslands, islandsPerChain: detailIslandCount }, shapePoints, detailAlreadyDrawn)
       : terrainOperation === 'shape'
       ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'shape-landmass', version: 1, fingerprint: SHAPE_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { pointsQ: shapePoints.map(p => ({ ...p })), coastRoughnessWorld: shapeRoughness, coastWavelengthWorld: 192, reliefMeters: relief, shelfWidthWorld: shapeShelf } }
@@ -289,9 +333,10 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       : terrainOperation === 'landforms' ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'landforms', version: 1, fingerprint: LANDFORM_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { mountainRanges, basins, reliefMeters: relief } }
       : terrainOperation === 'islands' ? { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'island-chains', version: 1, fingerprint: ISLAND_GENERATOR_FINGERPRINT }, seed: terrainSeed, parameters: { chainCount, islandsPerChain, radiusWorld: islandRadius, reliefMeters: relief } }
       : { format: 'lieguoji-atlas-recipe', version: 1, generator: { id: 'coast-smoothing', version: 1, fingerprint: COAST_GENERATOR_FINGERPRINT }, parameters: { strengthPermille: coastStrength, iterations: coastIterations } };
-    const scope: GenerationScope = localGeneration && supportsLocal ? { kind: 'cell-rectangle', ...region, transitionCells } : { kind: 'world' };
+    if (fine && fineOperation === 'local-relief' && !localScope) throw new Error('山地选区越界或过窄，请调整范围与过渡带。不会改为整图生成。');
+    const scope: GenerationScope = fine && fineOperation === 'local-relief' ? localScope! : localGeneration && supportsLocal ? { kind: 'cell-rectangle', ...region, transitionCells } : { kind: 'world' };
     const next = await clientRef.current!.previewGeneration(recipe, scope).catch(error => {
-      if (fine && explain(error).includes('生成配方或范围版本不受支持')) throw new Error('轮廓或参数暂不符合生成要求。请让轮廓围成一片区域、不交叉，在地图边缘留出海水，并检查起伏与近海宽度范围。');
+      if (fine && fineOperation === 'draw' && explain(error).includes('生成配方或范围版本不受支持')) throw new Error('轮廓或参数暂不符合生成要求。请让轮廓围成一片区域、不交叉，在地图边缘留出海水，并检查起伏与近海宽度范围。');
       throw error;
     });
     let cancelled = false; let cancellation: Promise<void> | null = null;
@@ -310,7 +355,8 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     await clientRef.current!.discardGeneration(); await rendererRef.current!.clearGenerationPreview(); generationPreviewRef.current = null; setGenerationPreview(null); setSurfacePick(null); setStatus('已取消生成，恢复原草稿。');
   }
   async function confirmTerrain() {
-    const start = performance.now(), next = await clientRef.current!.confirmGeneration(); await accept(next, start, performance.now()); await refreshList(); setOutline([]); rendererRef.current?.showOutline([]); setDrawing(false); setStatus(fine ? '这片大陆已保存。可以继续在海面画新大陆，或撤销刚才的生成。' : '生成地形已保存，可以继续手工编辑或撤销。');
+    const localRelief = generationPreview?.preview.recipe.generator.id === 'local-detail-relief';
+    const start = performance.now(), next = await clientRef.current!.confirmGeneration(); await accept(next, start, performance.now()); await refreshList(); setOutline([]); rendererRef.current?.showOutline([]); setDrawing(false); setStatus(localRelief ? '局部山地已保存，可以继续选择其他范围，或撤销刚才的生成。' : fine ? '这片大陆已保存。可以继续在海面画新大陆，或撤销刚才的生成。' : '生成地形已保存，可以继续手工编辑或撤销。');
   }
   async function previewLocks() {
     clearPreview(); const next = await clientRef.current!.previewConstraints(region, lockMask, lockAction);
@@ -386,14 +432,17 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     </>}
   </div>;
   const graphicsMessage = graphicsState === 'lost' ? '图形连接暂时中断，草稿仍保留；恢复画面后可继续编辑。' : graphicsState === 'restoring' ? '正在恢复地图画面，草稿与当前视角保持不变。' : '';
-  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${atlasGenerationProgressLabel(progress.stage)} · 本步 ${progress.completed}/${progress.total}` : status)}</span>{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
+  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${atlasGenerationProgressLabel(progress.stage)} · 本步 ${progress.completed}/${progress.total}` : status)}</span>{localSelecting && !busy && <button onClick={() => { stopLocalSelection(); setSection('generate'); setStatus('已取消范围选择，草稿保持原样。'); }}>取消选择范围</button>}{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
 
-  const finePanel = <DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} busy={busy || graphicsLocked || !!fatal} outlinePoints={outline.length} seed={terrainSeed} version={detailVersion} structure={coastStructure} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} islandsPerChain={detailIslandCount} onSeed={setTerrainSeed} onVersion={value => { setDetailVersion(value); if (value === 2 && detailVersion === 1) setCoastStructure(96); }} onStructure={setCoastStructure} onIslandsPerChain={setDetailIslandCount} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} preview={generatedSummary ? { ...generatedSummary, addedLandAreaQ2: generatedSummary.detailNaturalAdd?.addedLandAreaTwiceQ2 ?? generatedSummary.detailAdd?.addedLandAreaTwiceQ2 } : null} />;
+  const savedLocalScope = generationPreview?.preview.scope.kind === 'cell-rectangle' ? generationPreview.preview.scope : null;
+  const finePanel = fineOperation === 'local-relief' && spec
+    ? <LocalReliefPanel locked={locked} busy={busy || graphicsLocked || !!fatal} readOnly={readOnly} seed={localReliefSeed} reliefMeters={localReliefMeters} rectangle={savedLocalScope ?? region} transitionCells={savedLocalScope?.transitionCells ?? transitionCells} maxColumns={spec.columns} maxRows={spec.rows} validScope={!!localScope} preview={generatedSummary?.detailLocalRelief ?? null} onSeed={setLocalReliefSeed} onRelief={setLocalReliefMeters} onRectangle={setRegion} onTransition={setTransitionCells} onChooseRange={beginLocalRangeSelection} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} onDrawMode={() => { stopLocalSelection(); setFineOperation('draw'); setLocalGeneration(false); setStatus('已返回画大陆，草稿保持原样。'); }}/>
+    : <DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} busy={busy || graphicsLocked || !!fatal} outlinePoints={outline.length} seed={terrainSeed} version={detailVersion} structure={coastStructure} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} islandsPerChain={detailIslandCount} onSeed={setTerrainSeed} onVersion={value => { setDetailVersion(value); if (value === 2 && detailVersion === 1) setCoastStructure(96); }} onStructure={setCoastStructure} onIslandsPerChain={setDetailIslandCount} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} preview={generatedSummary ? { ...generatedSummary, addedLandAreaQ2: generatedSummary.detailNaturalAdd?.addedLandAreaTwiceQ2 ?? generatedSummary.detailAdd?.addedLandAreaTwiceQ2 } : null} />;
   const editPanel = <div className="atlas-panel-content">
     <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy || graphicsLocked}>定位</button></form>
     {selected !== null && data && <>
       <dl className="atlas-cell-details"><div><dt>地块</dt><dd>#{selected}</dd></div><div><dt>坐标</dt><dd>{center?.x.toFixed(2)}，{center?.y.toFixed(2)}</dd></div><div><dt>{selectedSurface || fine ? '采样中心高程' : '高程'}</dt><dd data-testid="atlas-selected-height">{selectedHeight} 米</dd></div><div><dt>保护</dt><dd>{selectedFlags & 1 ? '海岸锁定' : '海岸可编辑'} · {selectedFlags & 2 ? '高程锁定' : '高程可编辑'}</dd></div><div><dt>地表</dt><dd>{selectedSurface ? `陆地 ${(100 * selectedSurface.landAreaQ2 / selectedSurface.totalAreaQ2).toFixed(1)}% · 海域 ${(100 * selectedSurface.seaAreaQ2 / selectedSurface.totalAreaQ2).toFixed(1)}%` : fine ? '以点击位置为准' : selectedHeight! < 0 ? '海洋' : '陆地'}</dd></div>{surfacePick && surfacePick.cellId === selected && <div><dt>点击位置</dt><dd data-testid="atlas-picked-surface" data-land={surfacePick.land ? 'land' : 'sea'}>{surfacePick.land ? '陆地' : '海域'} · {Math.round(surfacePick.height)} 米</dd></div>}<div><dt>模拟区</dt><dd>{getSimRegion(data, selected) ?? '未分配'}</dd></div><div><dt>行政叶</dt><dd>{getAdminLeaf(data, selected) ?? '未分配'}</dd></div></dl>
-      {fine ? <p className="atlas-help">点击位置显示这片细海岸的实际海陆与高程。局部地形笔刷正在开发；当前可在创世预览中确认或撤销整片大陆。</p> : readOnly ? <p className="atlas-help">这份备份只供查看。请在草稿面板创建独立副本后继续编辑。</p> : <fieldset className="atlas-edit-fields" disabled={locked}>
+      {fine ? <><p className="atlas-help">点击位置显示真实海陆与高程。点一处已有陆地，可以选择附近范围，单独重新生成山地。</p>{readOnly ? <p className="atlas-help">这份备份仅供查看，打开当前草稿后才能修改。</p> : <><button className="atlas-primary" disabled={locked || !canStartLocalRelief(selected, surfacePick)} onClick={beginLocalRelief}>仅重生成山地</button>{!canStartLocalRelief(selected, surfacePick) && <p className="atlas-help">请在地图上点一处真实陆地；仅按地块编号选择不能确定点击处的海陆。</p>}</>}</> : readOnly ? <p className="atlas-help">这份备份只供查看。请在草稿面板创建独立副本后继续编辑。</p> : <fieldset className="atlas-edit-fields" disabled={locked}>
         <div className="atlas-segmented" aria-label="地理编辑方式"><button aria-pressed={mode === 'elevation'} onClick={() => { clearPreview(); setMode('elevation'); }}>高程</button><button aria-pressed={mode === 'vertex'} onClick={() => { clearPreview(); setMode('vertex'); }}>共享顶点</button></div>
         {mode === 'elevation' ? <><label className="atlas-field">调整为高程（米）<input aria-label="目标高程（米）" type="number" min={-12000} max={12000} step={10} value={height} onChange={event => { clearPreview(); setHeight(Number(event.target.value)); }} /></label><label className="atlas-field">局部范围<select aria-label="高程编辑范围" value={range} onChange={event => { clearPreview(); setRange(Number(event.target.value)); }}><option value={1}>1 个地块</option><option value={8}>8 × 8 地块</option><option value={32}>32 × 32 地块</option></select></label><p className="atlas-help">以选中地块为中心，实际影响 {cells.length} / {range * range} 个地块{cells.length < range * range ? '，已在世界边缘裁切' : ''}。高程低于 0 米显示为海洋。</p></> : <><label className="atlas-field">共享顶点<select aria-label="共享顶点" value={vertexId ?? ''} onChange={event => { clearPreview(); setVertexId(Number(event.target.value)); }}>{vertices.map(id => <option key={id} value={id}>顶点 #{id}</option>)}</select></label><div className="atlas-two-fields"><label className="atlas-field">东西位移<input aria-label="顶点东西位移" type="number" step={.25} value={moveX} onChange={event => { clearPreview(); setMoveX(Number(event.target.value)); }} /></label><label className="atlas-field">南北位移<input aria-label="顶点南北位移" type="number" step={.25} value={moveY} onChange={event => { clearPreview(); setMoveY(Number(event.target.value)); }} /></label></div><p className="atlas-help">单位为世界坐标。共享顶点的小幅移动会同时改变所有相邻地块；越界或退化的几何会被拒绝。</p></>}
         {!pending && <button className="atlas-primary" disabled={locked} onClick={() => void run(prepare)}>预览地理编辑</button>}
@@ -410,17 +459,17 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     <details className="world-metadata"><summary>草稿身份与版本</summary><p>生产草稿格式 v{view?.data.manifest.version ?? initialFormat} · 地理编辑阶段，不是社会推演存档。</p>{view && <><p>草稿 {view.head.draftId}</p><p>地理 {view.head.atlasId}</p><p>内容摘要 {view.head.manifestDigest}</p></>}<p>构建 {__BUILD_SHA__}</p></details>
     <button className="atlas-return" disabled={busy} onClick={onBack}>返回原世界工坊</button>
   </div>;
-  return <main className="atlas-studio workbench" data-mode="atlas" data-atlas-progress-stage={progress?.stage ?? ''} data-atlas-progress-completed={progress?.completed ?? ''} data-atlas-progress-total={progress?.total ?? ''} data-atlas-tool={drawing ? 'outline' : 'browse'} data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-format={view?.data.manifest.version ?? initialFormat ?? 'unknown'} data-atlas-display={constraintsPreview ? 'constraints-preview' : generationPreview ? 'generation-preview' : 'committed'} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
+  return <main className="atlas-studio workbench" data-mode="atlas" data-atlas-progress-stage={progress?.stage ?? ''} data-atlas-progress-completed={progress?.completed ?? ''} data-atlas-progress-total={progress?.total ?? ''} data-atlas-tool={drawing ? 'outline' : localSelecting ? 'region' : 'browse'} data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-format={view?.data.manifest.version ?? initialFormat ?? 'unknown'} data-atlas-display={constraintsPreview ? 'constraints-preview' : generationPreview ? 'generation-preview' : 'committed'} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
     <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{constraintsPreview ? '区域锁预览 · 尚未保存' : generationPreview ? '生成预览 · 尚未保存' : readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
     <div className="workbench-stage"><div className="workbench-map atlas-map" ref={hostRef} />
       <div className="context-toolbar atlas-toolbar"><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="放大大世界地图" onClick={() => rendererRef.current?.zoom(1.5)}>＋</button><button disabled={!view || !!fatal || graphicsLocked || busy} aria-label="缩小大世界地图" onClick={() => rendererRef.current?.zoom(1 / 1.5)}>−</button><button disabled={!view || !!fatal || graphicsLocked || busy} onClick={() => rendererRef.current?.fit()}>全图</button><span data-testid="atlas-zoom">{Math.round(cameraScale * 100)}%</span><small>拖动浏览 · 双指缩放 · 点选查看</small></div>
-      {view && <div className="atlas-brush-toolbar" role="toolbar" aria-label="地图创作工具"><button aria-label="浏览地图" aria-pressed={!drawing} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setDrawing(false); setStatus('拖动浏览，轻点查看地块。'); }}><Icon name="map" /><span>浏览</span></button><button aria-label="画大陆" aria-pressed={drawing} disabled={locked || view.data.manifest.version === 1} onClick={drawing ? () => { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } : beginOutline}><Icon name="brush" /><span>{drawing ? '退出绘制' : '画大陆'}</span></button><button aria-label="显示地块网格" title="在近景显示可编辑地块边界" aria-pressed={showGrid} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setShowGrid(value => !value); setStatus(showGrid ? '已隐藏网格，选中地块仍有轮廓。' : '近景网格已开启，放大后显示地块边界。'); }}><Icon name="grid" /><span>网格</span></button></div>}
+      {view && <div className="atlas-brush-toolbar" role="toolbar" aria-label="地图创作工具"><button aria-label="浏览地图" aria-pressed={!drawing} disabled={busy || !!fatal || graphicsLocked} onClick={() => { stopLocalSelection(); setDrawing(false); setStatus('拖动浏览，轻点查看地块。'); }}><Icon name="map" /><span>浏览</span></button><button aria-label="画大陆" aria-pressed={drawing} disabled={locked || view.data.manifest.version === 1} onClick={drawing ? () => { setDrawing(false); setStatus('已退出手绘，草稿保持原样。'); } : beginOutline}><Icon name="brush" /><span>{drawing ? '退出绘制' : '画大陆'}</span></button><button aria-label="显示地块网格" title="在近景显示可编辑地块边界" aria-pressed={showGrid} disabled={busy || !!fatal || graphicsLocked} onClick={() => { setShowGrid(value => !value); setStatus(showGrid ? '已隐藏网格，选中地块仍有轮廓。' : '近景网格已开启，放大后显示地块边界。'); }}><Icon name="grid" /><span>网格</span></button></div>}
       {drawing && <div className="atlas-drawing-hint" role="status">画出大陆轮廓 · 松开自动生成</div>}
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
       {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? '大陆与地貌' : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={feedback}>{section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}
       {!section && <div className="workbench-status atlas-status">{feedback}</div>}
     </div>
-    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { setDrawing(false); setSection(item.id); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
+    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { stopLocalSelection(); setDrawing(false); setSection(item.id); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
     {confirmation && <ModalDialog titleId={titleId} locked={busy} onDismiss={() => setConfirmation(null)}><h2 id={titleId}>{confirmation.title}</h2><p>{confirmation.detail}</p><div className="confirm-actions"><button autoFocus disabled={busy} onClick={() => setConfirmation(null)}>取消</button><button disabled={busy} className="atlas-primary" onClick={() => { const action = confirmation.action; setConfirmation(null); void run(action); }}>{confirmation.button}</button></div></ModalDialog>}
   </main>;
 }

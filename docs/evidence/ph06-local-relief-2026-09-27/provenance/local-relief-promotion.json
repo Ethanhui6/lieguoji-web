@@ -1,0 +1,108 @@
+{
+  "promotedAt": "2026-09-27T12:04:51.422Z",
+  "files": [
+    {
+      "path": "src/world/generation-contract.ts",
+      "baselineSha256": "0b23c1a41660e01238c4a1becbd76fe2aa1acc955ec2fcab2f176271cb7fbf7a",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "baselineSha256": "2cdbc3f2f020570e24c019bd616c1853b2b5338ab7778e73ab92fda902dd5865",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "baselineSha256": "eaf417f807375d43083280f9fa91b274a62fba70b82880ac4623d2b0ac382f12",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "baselineSha256": "3d5feb93e641efc44773d84ef872c8f3094774af026fb7af2b5086fcd909b57f",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/vite-env.d.ts",
+      "sha256": "4ad9749a584f94b84d0c054c009c83efbcc8f41eaa19369bcdbbebbf1d3fd5bb"
+    },
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "baselineSha256": "e4f84c756aab7246165bbdeb8315a2196d1983e0128d0803c07ba495b8ccced5",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/scripts/generator-fingerprint.ts",
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "path": "vite.config.ts",
+      "baselineSha256": "16a769e6639073063adcbfcaac40bd760dffe23a0f572512785d6367981d5226",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/vite.config.ts",
+      "sha256": "827257c06d55aa86618042ea0de7bffd43e561b90e00bcfc8adea84478595ff8"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "baselineSha256": "52baff388b3698b713c451d48a157a69b8cd389fea64fea661233b3f7b56668e",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-session.ts",
+      "sha256": "02b14763eef0b5fb54b4300d872b5886d26e05ad169b3e01cfacd99f49a5aef3"
+    },
+    {
+      "path": "src/world/generation/local-detail-relief-adapter.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation/local-detail-relief-adapter.ts",
+      "baselineSha256": null,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "path": "src/world/detail-local-relief-session.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/detail-local-relief-session.test.ts",
+      "baselineSha256": null,
+      "sha256": "9f99e058e0882e461b6253710fc62325a90db57e45c3e82647a2a9f93c13779d"
+    },
+    {
+      "path": "src/world/generation/detail-local-relief.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-staging/src/world/generation/detail-local-relief.ts",
+      "baselineSha256": null,
+      "sha256": "d9093a36db7e897c05794789755020b4cee70aca2ebc39a43737fab89cfc54ae"
+    },
+    {
+      "path": "src/world/generation/detail-local-relief.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-staging/src/world/generation/detail-local-relief.test.ts",
+      "baselineSha256": null,
+      "sha256": "09ac8155422cdc50f691c9f7e3c698c9db3c8ca2c888aee0c3fd99b9875c6c07"
+    },
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/AtlasStudio.tsx",
+      "baselineSha256": "39bdaeafce96a9e92f67dd05d0b8e89484c7c4cfb76413ba95906c733f9517ad",
+      "sha256": "31779d354a1861faebc1bb3894eef121b61362c86883b6d28f69739aacbcc5ba"
+    },
+    {
+      "path": "src/editor/LocalReliefPanel.tsx",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/LocalReliefPanel.tsx",
+      "baselineSha256": null,
+      "sha256": "b5bab5941471973e822708d4ff848550d94a3d614ca43c03defdade98d36a390"
+    },
+    {
+      "path": "src/editor/local-relief-controls.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/local-relief-controls.ts",
+      "baselineSha256": null,
+      "sha256": "d8367c8ee72ca7e9c147a10b21adba2a96465d437042ed5d7c68755b719b3578"
+    },
+    {
+      "path": "src/editor/local-relief-controls.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-ui-staging/src/editor/local-relief-controls.test.ts",
+      "baselineSha256": null,
+      "sha256": "e51a9e14f1c0b9f3368f793402d32a27feb9efcd85f84b16693b11e4cbfcf03c"
+    },
+    {
+      "path": "tests/atlas-local-relief.spec.ts",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-browser-staging/tests/atlas-local-relief.spec.ts",
+      "baselineSha256": null,
+      "targetAbsent": true,
+      "sha256": "da962c18ddde147f812b0893a62d3cc82670eb7e91c8d1755bb54a9037c421b9",
+      "bytes": 20652
+    }
+  ],
+  "priorVersion": "0.5.0-preview.11",
+  "version": "0.5.0-preview.12",
+  "checksRun": false,
+  "visualAccepted": false,
+  "cloudWrites": false
+}

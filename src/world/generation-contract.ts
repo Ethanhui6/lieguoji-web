@@ -1,7 +1,7 @@
 import type { AtlasBlock, AtlasDetailCoastManifest, AtlasDetailCoastSurfaceContract, AtlasDraftData, AtlasDraftManifest, AtlasGridSpec, AtlasSurfaceContract, BlockKey } from './model';
 import type { DetailCoastKey, DetailCoastTile } from './detail-coast-types';
 import { ATLAS_COORDINATE_SCALE, ATLAS_WORLD_UNITS, validateSpec } from './model';
-import { NATURAL_DETAIL_GENERATOR_FINGERPRINT, ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT, ADD_DETAIL_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
+import { LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT, NATURAL_DETAIL_GENERATOR_FINGERPRINT, ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT, COAST_GENERATOR_FINGERPRINT, DETAIL_SHAPE_GENERATOR_FINGERPRINT, ADD_DETAIL_GENERATOR_FINGERPRINT, ISLAND_GENERATOR_FINGERPRINT, LANDFORM_GENERATOR_FINGERPRINT, MACRO_GENERATOR_FINGERPRINT, OCEAN_GENERATOR_FINGERPRINT, SHAPE_GENERATOR_FINGERPRINT } from './generation/fingerprint';
 import { isStoredGeneratorFingerprint } from './generation-history';
 
 export type AtlasFormat = 1 | 2 | 3 | 4;
@@ -77,7 +77,12 @@ export interface NaturalDetailRecipe extends Omit<DetailShapeRecipe, 'generator'
 export interface AddNaturalDetailRecipe extends Omit<NaturalDetailRecipe, 'generator'> {
   generator: { id: 'add-detail-landmass'; version: 2; fingerprint: string };
 }
-export type GenerationRecipe = MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe | OceanRecipe | DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe;
+export interface LocalDetailReliefRecipe {
+  format: 'lieguoji-atlas-recipe'; version: 1;
+  generator: { id: 'local-detail-relief'; version: 1; fingerprint: string };
+  seed: string; parameters: { reliefMeters: number };
+}
+export type GenerationRecipe = LocalDetailReliefRecipe | MacroRecipe | LandformRecipe | IslandRecipe | CoastRecipe | ShapeRecipe | OceanRecipe | DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe;
 /** Stored provenance may name an audited old implementation; execution may not. */
 export type GenerationValidationMode = 'execute' | 'storage';
 export interface AtlasCellRectangle { column: number; row: number; columns: number; rows: number }
@@ -87,7 +92,10 @@ export interface LastGeneration {
   recipe: GenerationRecipe; scope: GenerationScope; baseManifestDigest: string; baseRootDigest: string;
   baseRevision: number; lockSetDigest: string; appliedRevision: number;
 }
-export interface LastDetailGeneration extends Omit<LastGeneration, 'recipe' | 'scope'> { recipe: DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe; scope: { kind: 'world' } }
+export type LastDetailGeneration = Omit<LastGeneration, 'recipe' | 'scope'> & (
+  { recipe: DetailShapeRecipe | AddDetailRecipe | NaturalDetailRecipe | AddNaturalDetailRecipe; scope: { kind: 'world' } }
+  | { recipe: LocalDetailReliefRecipe; scope: Extract<GenerationScope, { kind: 'cell-rectangle' }> }
+);
 export interface AtlasDraftManifestV2 extends Omit<AtlasDraftManifest, 'version'> {
   version: 2; origin: AtlasCopyOrigin | null; constraints: AtlasConstraints;
   generation: { format: 'lieguoji-atlas-generation'; version: 1; lastApplied: LastGeneration | null };
@@ -169,9 +177,18 @@ export function validateLandformRecipe(raw: unknown, mode: GenerationValidationM
     return generationInt(p.mountainRanges, 0, 8) && generationInt(p.basins, 0, 8) && generationInt(p.reliefMeters, 200, 6000) && generationInt(p.mountainRanges + p.basins, 1, 12);
   } catch { return false; }
 }
+export function validateLocalDetailReliefRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is LocalDetailReliefRecipe {
+  try {
+    return generationExact(raw, ['format', 'version', 'generator', 'seed', 'parameters']) && raw.format === 'lieguoji-atlas-recipe' && raw.version === 1
+      && typeof raw.seed === 'string' && !!raw.seed.trim() && raw.seed.length <= 120
+      && generationExact(raw.generator, ['id', 'version', 'fingerprint']) && raw.generator.id === 'local-detail-relief' && raw.generator.version === 1
+      && acceptsGeneratorFingerprint('local-detail-relief', raw.generator.fingerprint, LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT, mode)
+      && generationExact(raw.parameters, ['reliefMeters']) && generationInt(raw.parameters.reliefMeters, 200, 6000);
+  } catch { return false; }
+}
 /** Closed registration: adding a recipe requires an implemented codec and source fingerprint. */
 export function validateGenerationRecipe(raw: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): raw is GenerationRecipe {
-  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode) || validateOceanRecipe(raw, spec, mode) || validateDetailShapeRecipe(raw, spec, mode) || validateAddDetailRecipe(raw, spec, mode) || validateNaturalDetailRecipe(raw, spec, mode) || validateAddNaturalDetailRecipe(raw, spec, mode);
+  return validateMacroRecipe(raw, mode) || validateLandformRecipe(raw, mode) || validateIslandRecipe(raw, mode) || validateCoastRecipe(raw, mode) || validateShapeRecipe(raw, spec, mode) || validateOceanRecipe(raw, spec, mode) || validateDetailShapeRecipe(raw, spec, mode) || validateAddDetailRecipe(raw, spec, mode) || validateNaturalDetailRecipe(raw, spec, mode) || validateAddNaturalDetailRecipe(raw, spec, mode) || validateLocalDetailReliefRecipe(raw, mode);
 }
 export function validateIslandRecipe(raw: unknown, mode: GenerationValidationMode = 'execute'): raw is IslandRecipe {
   try {
@@ -340,7 +357,9 @@ export function validateGenerationScope(raw: unknown, spec?: AtlasGridSpec): raw
 }
 export function validateGenerationOperation(recipe: unknown, scope: unknown, spec?: AtlasGridSpec, mode: GenerationValidationMode = 'execute'): boolean {
   return validateGenerationRecipe(recipe, spec, mode) && validateGenerationScope(scope, spec)
-    && (scope.kind === 'world' || recipe.generator.id === 'landforms' || recipe.generator.id === 'coast-smoothing');
+    && (recipe.generator.id === 'local-detail-relief'
+      ? scope.kind === 'cell-rectangle' && scope.transitionCells >= 1
+      : scope.kind === 'world' || recipe.generator.id === 'landforms' || recipe.generator.id === 'coast-smoothing');
 }
 export function encodeMacroRecipe(recipe: MacroRecipe): Uint8Array {
   if (!validateMacroRecipe(recipe)) throw new Error('生成配方、参数或实现指纹不兼容。');

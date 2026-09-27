@@ -1,0 +1,68 @@
+{
+  "frozenAt": "2026-09-27T11:56:41.086Z",
+  "stagingOnly": true,
+  "productionModified": false,
+  "files": [
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview11-history-staging/src/world/generation-history.ts",
+      "baselineSha256": "a7bdf0045358e6b61f8f11fb51aeaabdd6736e874ac49a3b55eb86242bbae29e",
+      "sha256": "eed814617461c88b5b80427e93564a70e0dd31bb0362bc0eb8b2fb3e4bd6774a",
+      "baselineMatches": true,
+      "mode": "mirror"
+    },
+    {
+      "path": "src/world/detail-preview11-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview11-history-staging/src/world/detail-preview11-history.test.ts",
+      "baselineSha256": null,
+      "sha256": "2f2a40416f5e1701226f8f946cbd3160e14b006c104847d71e9e04edd49c0df6",
+      "baselineMatches": true,
+      "mode": "new"
+    }
+  ],
+  "evidence": {
+    "source": ".autopilot/ph06/v4-preview11-history-staging/evidence/preview11",
+    "target": "docs/evidence/ph06-preview11-generator-history-2026-09-27",
+    "buildSha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7",
+    "sourceSnapshotSha256": "d57059774d14255bd85921935f5326288a9fc05dcd4b7f690ff129eb0114355c",
+    "closureCount": 10,
+    "sourceFiles": 37,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "allTenGeneratorsAndEngineEqualPreview10": true,
+    "distCount": 25,
+    "archiveFiles": 41,
+    "inventorySha256": "40d4ed46ef71f12b4fb3d650ca5ce9411e60067af99b368413c453b60da2a2fd",
+    "provenanceSha256": "53466c4bf0f7b1c5691dfbc25e56b5f13c825e12779e47744863db8c9a58db01"
+  },
+  "sourceIdentity": {
+    "version": "0.5.0-preview.11",
+    "actualHead": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+    "baseCommit": "cc3dbf64e545328d2d4ed852e20128668fd2be4a",
+    "sourceIsHead": true,
+    "closureSourceMatchesHead": true
+  },
+  "checks": {
+    "run": [],
+    "unitCasesWritten": 4,
+    "provenanceCaptureOnly": true
+  },
+  "references": [
+    {
+      "path": "capture.mjs",
+      "sha256": "db63bd4ee35cd7ff84af0ef10be08ed84487b5434b3864747b6f3f6fe51eebd8"
+    },
+    {
+      "path": "capture-result.json",
+      "sha256": "090f7bb061a1054c040aa4b9dc6f41cb7e9730ff0b74353a5fab4d9eebee09ab"
+    },
+    {
+      "path": "baseline-manifest.json",
+      "sha256": "7197fc37fb74eb873ee50818ca77353053c678fa7567c411892b8b1656535006"
+    },
+    {
+      "path": "README.md",
+      "sha256": "942ee447998e82bdc47f1a9287b56cf4d1122d4a41283238cbc3cdf5446cd24f"
+    }
+  ]
+}

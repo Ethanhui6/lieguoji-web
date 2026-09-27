@@ -1,7 +1,7 @@
 import { hashAtlasManifest, isGenerationDocument, isDetailCoastDocument, type AtlasDocument } from './atlas-format';
 import { hashBlock, yieldAtlas, type AtlasControl } from './model';
 import { hashAtlasLockSet } from './generation-locks';
-import { encodeGenerationRecipe, generationCanonical, generationDigest, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateDetailShapeRecipe, validateAddDetailRecipe, validateNaturalDetailRecipe, validateAddNaturalDetailRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
+import { encodeGenerationRecipe, generationCanonical, generationDigest, validateLocalDetailReliefRecipe, validateMacroRecipe, validateLandformRecipe, validateIslandRecipe, validateShapeRecipe, validateOceanRecipe, validateCoastRecipe, validateDetailShapeRecipe, validateAddDetailRecipe, validateNaturalDetailRecipe, validateAddNaturalDetailRecipe, validateGenerationRecipe, validateGenerationScope, validateGenerationOperation } from './generation-contract';
 import type { AtlasGenerationDocument, GenerationRecipe, GenerationScope } from './generation-contract';
 import { generateMacro, type GenerationOutput } from './generation/macro';
 import { generateLandforms, type LandformOutput } from './generation/landforms';
@@ -13,12 +13,13 @@ import { generateDetailShapeAtlas, type DetailShapeAdapterOutput } from './gener
 import { generateAddDetailAtlas, type AddDetailAdapterOutput } from './generation/detail-shape-add-adapter';
 import { generateNaturalDetailAtlas, type NaturalDetailAdapterOutput } from './generation/detail-shape-natural-adapter';
 import { generateAddNaturalDetailAtlas, type AddNaturalDetailAdapterOutput } from './generation/detail-shape-natural-add-adapter';
+import { generateLocalDetailReliefAtlas, type LocalDetailReliefAdapterOutput } from './generation/local-detail-relief-adapter';
 import { inspectCoastalGeneration } from './coastal-generation';
 import { OwnedAtlasSession, type PreparedAtlasReplacement } from './transactions';
 
 export interface GenerationPreviewInfo extends PreparedAtlasReplacement {
   recipe: GenerationRecipe; scope: GenerationScope; recipeDigest: string; scopeDigest: string; lockSetDigest: string;
-  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape']; ocean?: OceanOutput['summary']['ocean']; detailShape?: DetailShapeAdapterOutput['summary']['detailShape']; detailAdd?: AddDetailAdapterOutput['summary']['detailAdd']; detailNatural?: NaturalDetailAdapterOutput['summary']['detailNatural']; detailNaturalAdd?: AddNaturalDetailAdapterOutput['summary']['detailNaturalAdd'] }; previewDigest: string;
+  summary: GenerationOutput['summary'] & { landforms?: LandformOutput['summary']; islands?: IslandOutput['summary']; coast?: CoastOutput['summary']; shape?: ShapeOutput['summary']['shape']; ocean?: OceanOutput['summary']['ocean']; detailShape?: DetailShapeAdapterOutput['summary']['detailShape']; detailAdd?: AddDetailAdapterOutput['summary']['detailAdd']; detailNatural?: NaturalDetailAdapterOutput['summary']['detailNatural']; detailNaturalAdd?: AddNaturalDetailAdapterOutput['summary']['detailNaturalAdd']; detailLocalRelief?: LocalDetailReliefAdapterOutput['summary']['detailLocalRelief'] }; previewDigest: string;
 }
 export interface GenerationConfirm {
   candidateId: string; commandId: string; previewDigest: string; expectedRevision: number; expectedRootDigest: string;
@@ -46,13 +47,17 @@ export class AtlasGenerationSession {
     const recipe = structuredClone(rawRecipe), scope = structuredClone(rawScope), head = this.session.head;
     if (head.revision !== expectedRevision || head.rootDigest !== expectedRootDigest) throw new Error('生成基线已变化，请重新打开草稿。');
     const base = await this.session.snapshotAsync(control); if (!isGenerationDocument(base)) throw new Error('请先创建创世草稿，或明确复制旧草稿后生成。');
-    if (isDetailCoastDocument(base) !== (validateDetailShapeRecipe(recipe, base.manifest.spec) || validateAddDetailRecipe(recipe, base.manifest.spec) || validateNaturalDetailRecipe(recipe, base.manifest.spec) || validateAddNaturalDetailRecipe(recipe, base.manifest.spec))) throw new Error('第四版只支持独立细大陆配方；旧版本不能执行细海岸生成，旧生成器不能修改第四版。');
+    if (isDetailCoastDocument(base) !== (validateDetailShapeRecipe(recipe, base.manifest.spec) || validateAddDetailRecipe(recipe, base.manifest.spec) || validateNaturalDetailRecipe(recipe, base.manifest.spec) || validateAddNaturalDetailRecipe(recipe, base.manifest.spec) || validateLocalDetailReliefRecipe(recipe))) throw new Error('第四版只支持细大陆与局部细地形配方；旧版本不能执行细海岸生成，旧生成器不能修改第四版。');
     if (!validateGenerationOperation(recipe, scope, base.manifest.spec)) throw new Error('生成范围越界或该操作尚不支持局部范围；大陆重建与岛链使用整图，山系盆地和海岸可选择局部。');
     if (recipe.generator.id === 'macro-landmass' && base.locks.size) throw new Error('重建大陆需要未锁定的整张地图；保留海岸时请选择山系与盆地生成。');
     const recipeDigest = await generationRecipeDigest(recipe), scopeDigest = await generationScopeDigest(scope), lockSetDigest = await generationLockDigest(base);
     let output: Pick<GenerationOutput, 'blocks' | 'summary'>, next: AtlasGenerationDocument;
-    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape' | 'ocean' | 'detailShape' | 'detailAdd' | 'detailNatural' | 'detailNaturalAdd'> = {}, reason: string;
-    if (validateAddNaturalDetailRecipe(recipe, base.manifest.spec)) {
+    let details: Pick<GenerationPreviewInfo['summary'], 'landforms' | 'islands' | 'coast' | 'shape' | 'ocean' | 'detailShape' | 'detailAdd' | 'detailNatural' | 'detailNaturalAdd' | 'detailLocalRelief'> = {}, reason: string;
+    if (validateLocalDetailReliefRecipe(recipe)) {
+      const result = await generateLocalDetailReliefAtlas({ base, recipe, scope }, control);
+      output = { blocks: result.data.blocks, summary: result.summary }; next = result.data;
+      details = { detailLocalRelief: structuredClone(result.summary.detailLocalRelief) }; reason = '保留海岸与锁区，重生成选区内的真实山地';
+    } else if (validateAddNaturalDetailRecipe(recipe, base.manifest.spec)) {
       const result = await generateAddNaturalDetailAtlas({ base, recipe }, control);
       output = { blocks: result.data.blocks, summary: result.summary }; next = result.data;
       details = { detailNaturalAdd: structuredClone(result.summary.detailNaturalAdd) }; reason = '保留已有山河，追加自然湾岬与山脉大陆';
@@ -122,8 +127,13 @@ export class AtlasGenerationSession {
     next.manifest.revision = head.revision + 1;
     const provenance = { baseManifestDigest: head.manifestDigest, baseRootDigest: head.rootDigest, baseRevision: head.revision, lockSetDigest, appliedRevision: next.manifest.revision };
     if (isDetailCoastDocument(next)) {
-      if ((!validateDetailShapeRecipe(recipe, next.manifest.spec) && !validateAddDetailRecipe(recipe, next.manifest.spec) && !validateNaturalDetailRecipe(recipe, next.manifest.spec) && !validateAddNaturalDetailRecipe(recipe, next.manifest.spec)) || scope.kind !== 'world') throw new Error('细大陆来源记录与第四版候选不一致。');
-      next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
+      if (validateLocalDetailReliefRecipe(recipe)) {
+        if (scope.kind !== 'cell-rectangle' || !validateGenerationOperation(recipe, scope, next.manifest.spec)) throw new Error('局部细地形来源范围不一致。');
+        next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
+      } else {
+        if ((!validateDetailShapeRecipe(recipe, next.manifest.spec) && !validateAddDetailRecipe(recipe, next.manifest.spec) && !validateNaturalDetailRecipe(recipe, next.manifest.spec) && !validateAddNaturalDetailRecipe(recipe, next.manifest.spec)) || scope.kind !== 'world') throw new Error('细大陆来源记录与第四版候选不一致。');
+        next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
+      }
     } else next.manifest.generation.lastApplied = { recipe, scope, ...provenance };
     const prepared = await this.session.prepareReplacement(next, commandId, reason, control);
     try {

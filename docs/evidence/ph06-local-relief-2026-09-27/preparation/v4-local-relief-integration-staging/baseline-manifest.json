@@ -1,0 +1,40 @@
+{
+  "createdAt": "2026-09-27T11:50:20.366Z",
+  "files": [
+    {
+      "path": "src/world/generation-contract.ts",
+      "baselineSha256": "0b23c1a41660e01238c4a1becbd76fe2aa1acc955ec2fcab2f176271cb7fbf7a",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-contract.ts"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "baselineSha256": "2cdbc3f2f020570e24c019bd616c1853b2b5338ab7778e73ab92fda902dd5865",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-format.ts"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "baselineSha256": "eaf417f807375d43083280f9fa91b274a62fba70b82880ac4623d2b0ac382f12",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation/fingerprint.ts"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "baselineSha256": "3d5feb93e641efc44773d84ef872c8f3094774af026fb7af2b5086fcd909b57f",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/vite-env.d.ts"
+    },
+    {
+      "path": "scripts/generator-fingerprint.ts",
+      "baselineSha256": "e4f84c756aab7246165bbdeb8315a2196d1983e0128d0803c07ba495b8ccced5",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/scripts/generator-fingerprint.ts"
+    },
+    {
+      "path": "vite.config.ts",
+      "baselineSha256": "16a769e6639073063adcbfcaac40bd760dffe23a0f572512785d6367981d5226",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/vite.config.ts"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "baselineSha256": "52baff388b3698b713c451d48a157a69b8cd389fea64fea661233b3f7b56668e",
+      "stagedPath": ".autopilot/ph06/v4-local-relief-integration-staging/src/world/generation-session.ts"
+    }
+  ]
+}

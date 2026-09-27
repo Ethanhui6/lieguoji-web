@@ -1,0 +1,195 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T12:04:59.446Z",
+      "finishedAt": "2026-09-27T12:04:59.664Z",
+      "elapsedMs": 213.58399999999997,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T12:04:59.665Z",
+      "finishedAt": "2026-09-27T12:05:07.302Z",
+      "elapsedMs": 7636.5877,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T12:05:07.302Z",
+      "finishedAt": "2026-09-27T12:05:18.095Z",
+      "elapsedMs": 10793.463499999998,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/detail-local-relief.test.ts",
+        "src/world/detail-local-relief-session.test.ts",
+        "src/editor/local-relief-controls.test.ts",
+        "src/world/detail-preview11-history.test.ts",
+        "src/world/generation-contract.test.ts",
+        "src/world/generation-format.test.ts",
+        "src/world/detail-generation-session.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/local-relief-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T12:05:18.095Z",
+      "finishedAt": "2026-09-27T12:05:34.814Z",
+      "elapsedMs": 16718.3807,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T12:05:34.814Z",
+      "finishedAt": "2026-09-27T12:05:36.533Z",
+      "elapsedMs": 1719.1174000000028,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T12:05:36.533Z",
+      "finishedAt": "2026-09-27T12:05:36.614Z",
+      "elapsedMs": 80.44600000000355,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "sourceStable": true,
+  "generatorAndEngineUnchanged": false,
+  "engineUnchanged": true,
+  "newGeneratorRecorded": true,
+  "passed": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-D5PICEvE.js",
+      "sha256": "adc6fa361c05f21e3953b606189bb3305602e7e830e8dfaa85fb57b4f25a3421"
+    },
+    {
+      "path": "dist/assets/atlas.worker-DIQl5yH6.js",
+      "sha256": "c0ca23ce9a0b1b7c19771939772ac6ecb84f600c3924291f9c26173c9d60f3ac"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BggvROi5.css",
+      "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-CM7ipo3K.js",
+      "sha256": "5978f94cc8d1cfe0b7803787dd680763b8c5dee381de83a757bffd420657a2e3"
+    },
+    {
+      "path": "dist/assets/browserAll-Bifn0mM2.js",
+      "sha256": "963a3adf46de595401590c602971b8437171941a1034d7a7ecb97942c5726aff"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-DW9elOBa.js",
+      "sha256": "4d89747ef345a8486256cdc093238b3a94aeea7a5971e70aec7eb567046581fd"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-JgFPU4zg.js",
+      "sha256": "1fe054fc67b9629274d3cd97921697e2427a2f43bc20693fd518013472015234"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-DYei_f21.js",
+      "sha256": "0878be14c1d84bcf6e3cb26d944fa060d1168e490c1bfbb12fa16bc0f09143a4"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "4b315650336f6f62aa38063bba214aa63c143eec00d13b9ca6e46445274ef5c9"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "scope": "Local relief operation technical scope only; no whole natural quality, performance, physical device, PH or cloud acceptance",
+  "cloudWrites": false
+}

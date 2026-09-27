@@ -1,0 +1,2055 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T12:19:50.412Z",
+  "headAtRecording": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+  "archiveComplete": true,
+  "technicalPassed": true,
+  "allRequiredPassed": true,
+  "localReliefWorkflowAccepted": true,
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "allAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false,
+  "acceptanceScope": "Actual bounded local-relief editing workflow only. No overall natural geography, PH, user, physical-device, performance or cloud acceptance.",
+  "rootRuns": [
+    {
+      "name": "first",
+      "source": ".autopilot/ph06/local-relief-checks/first",
+      "kind": "root",
+      "v": {
+        "results": [
+          {
+            "name": "plan",
+            "args": [
+              "scripts/check-plan.mjs"
+            ],
+            "startedAt": "2026-09-27T12:04:59.446Z",
+            "finishedAt": "2026-09-27T12:04:59.664Z",
+            "elapsedMs": 213.58399999999997,
+            "exitCode": 0,
+            "signal": null
+          },
+          {
+            "name": "lint",
+            "args": [
+              "node_modules/eslint/bin/eslint.js",
+              "src",
+              "tests",
+              "scripts"
+            ],
+            "startedAt": "2026-09-27T12:04:59.665Z",
+            "finishedAt": "2026-09-27T12:05:07.302Z",
+            "elapsedMs": 7636.5877,
+            "exitCode": 0,
+            "signal": null
+          },
+          {
+            "name": "types",
+            "args": [
+              "node_modules/typescript/bin/tsc",
+              "--noEmit"
+            ],
+            "startedAt": "2026-09-27T12:05:07.302Z",
+            "finishedAt": "2026-09-27T12:05:18.095Z",
+            "elapsedMs": 10793.463499999998,
+            "exitCode": 0,
+            "signal": null
+          },
+          {
+            "name": "unit",
+            "args": [
+              "node_modules/vitest/vitest.mjs",
+              "run",
+              "src/world/generation/detail-local-relief.test.ts",
+              "src/world/detail-local-relief-session.test.ts",
+              "src/editor/local-relief-controls.test.ts",
+              "src/world/detail-preview11-history.test.ts",
+              "src/world/generation-contract.test.ts",
+              "src/world/generation-format.test.ts",
+              "src/world/detail-generation-session.test.ts",
+              "src/world/generation/fingerprint.test.ts",
+              "--reporter=json",
+              "--outputFile=.autopilot/ph06/local-relief-checks/first/unit.json"
+            ],
+            "startedAt": "2026-09-27T12:05:18.095Z",
+            "finishedAt": "2026-09-27T12:05:34.814Z",
+            "elapsedMs": 16718.3807,
+            "exitCode": 0,
+            "signal": null
+          },
+          {
+            "name": "build",
+            "args": [
+              "node_modules/vite/bin/vite.js",
+              "build"
+            ],
+            "startedAt": "2026-09-27T12:05:34.814Z",
+            "finishedAt": "2026-09-27T12:05:36.533Z",
+            "elapsedMs": 1719.1174000000028,
+            "exitCode": 0,
+            "signal": null
+          },
+          {
+            "name": "dist-audit",
+            "args": [
+              "scripts/check-dist.mjs"
+            ],
+            "startedAt": "2026-09-27T12:05:36.533Z",
+            "finishedAt": "2026-09-27T12:05:36.614Z",
+            "elapsedMs": 80.44600000000355,
+            "exitCode": 0,
+            "signal": null
+          }
+        ],
+        "sourceStable": true,
+        "generatorAndEngineUnchanged": false,
+        "engineUnchanged": true,
+        "newGeneratorRecorded": true,
+        "passed": true,
+        "dist": [
+          {
+            "path": "dist/assets/App-B-TSmWiq.css",
+            "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+          },
+          {
+            "path": "dist/assets/App-D5PICEvE.js",
+            "sha256": "adc6fa361c05f21e3953b606189bb3305602e7e830e8dfaa85fb57b4f25a3421"
+          },
+          {
+            "path": "dist/assets/atlas.worker-DIQl5yH6.js",
+            "sha256": "c0ca23ce9a0b1b7c19771939772ac6ecb84f600c3924291f9c26173c9d60f3ac"
+          },
+          {
+            "path": "dist/assets/AtlasStudio-BggvROi5.css",
+            "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+          },
+          {
+            "path": "dist/assets/AtlasStudio-CM7ipo3K.js",
+            "sha256": "5978f94cc8d1cfe0b7803787dd680763b8c5dee381de83a757bffd420657a2e3"
+          },
+          {
+            "path": "dist/assets/browserAll-Bifn0mM2.js",
+            "sha256": "963a3adf46de595401590c602971b8437171941a1034d7a7ecb97942c5726aff"
+          },
+          {
+            "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+            "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+          },
+          {
+            "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+            "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+          },
+          {
+            "path": "dist/assets/Geometry-IpHxCVTc.js",
+            "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+          },
+          {
+            "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+            "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+          },
+          {
+            "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+            "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+          },
+          {
+            "path": "dist/assets/index-DW9elOBa.js",
+            "sha256": "4d89747ef345a8486256cdc093238b3a94aeea7a5971e70aec7eb567046581fd"
+          },
+          {
+            "path": "dist/assets/index-kDA80Ugt.css",
+            "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+          },
+          {
+            "path": "dist/assets/init-B8Jnes8g.js",
+            "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+          },
+          {
+            "path": "dist/assets/init-JgFPU4zg.js",
+            "sha256": "1fe054fc67b9629274d3cd97921697e2427a2f43bc20693fd518013472015234"
+          },
+          {
+            "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+            "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+          },
+          {
+            "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+            "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+          },
+          {
+            "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+            "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+          },
+          {
+            "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+            "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+          },
+          {
+            "path": "dist/assets/webworkerAll-DYei_f21.js",
+            "sha256": "0878be14c1d84bcf6e3cb26d944fa060d1168e490c1bfbb12fa16bc0f09143a4"
+          },
+          {
+            "path": "dist/build.json",
+            "sha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305"
+          },
+          {
+            "path": "dist/favicon.svg",
+            "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+          },
+          {
+            "path": "dist/index.html",
+            "sha256": "4b315650336f6f62aa38063bba214aa63c143eec00d13b9ca6e46445274ef5c9"
+          },
+          {
+            "path": "dist/_headers",
+            "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+          },
+          {
+            "path": "dist/_redirects",
+            "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+          }
+        ],
+        "scope": "Local relief operation technical scope only; no whole natural quality, performance, physical device, PH or cloud acceptance",
+        "cloudWrites": false
+      },
+      "raw": "raw/root/first",
+      "build": {
+        "version": "0.5.0-preview.12",
+        "commit": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+        "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+        "macroGenerator": {
+          "sha256": "cb07d148661335384c51d45f17f8dd8e36627232d4c423761afdc3225645740a",
+          "files": [
+            "src/world/generation-contract.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/macro.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "landformGenerator": {
+          "sha256": "325eee51fd847038641503d1d6d5349a625fda9b5234002b5824722c7fe26339",
+          "files": [
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/landforms.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "islandGenerator": {
+          "sha256": "89e64b6dacd026a8c2cd724721e1fcb5a57f99ff96b4d55d778ef6ab43eea99a",
+          "files": [
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/islands.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "coastGenerator": {
+          "sha256": "da865f7890ffade7ca226848f06adbf9e9ced8c4cce13b69b3557b16793d1e64",
+          "files": [
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/coast.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "shapeGenerator": {
+          "sha256": "50f341abbde122828c456d232cd64c90cf68538ecf8a08a6002ad3288519c650",
+          "files": [
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/generation/shape.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "oceanGenerator": {
+          "sha256": "fd72072fe734bd4bfb0ca1bac5fd0f81142dc6b85c1edc932c4b387af372055b",
+          "files": [
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/ocean.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "detailShapeGenerator": {
+          "sha256": "fe36d7d1caa97ae8656aba375b48ff5ad4777f11a0e359eb07ac49a18ad2433d",
+          "files": [
+            "src/world/atlas-format.ts",
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-adapter.ts",
+            "src/world/generation/detail-shape-distance.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/detail-shape.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "addDetailGenerator": {
+          "sha256": "55bf7bb644982ee5f80b102f84509df98142b5b4780c3b595c8a85572e73c6a4",
+          "files": [
+            "src/world/atlas-format.ts",
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-shape-add-adapter.ts",
+            "src/world/generation/detail-shape-add.ts",
+            "src/world/generation/detail-shape-distance.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/detail-shape.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "naturalDetailGenerator": {
+          "sha256": "ba7007fb3a46c7804c3a4c2fdd00dd76d408676f97aea209941bfb778d32f44a",
+          "files": [
+            "src/world/atlas-format.ts",
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-natural-outline.ts",
+            "src/world/generation/detail-natural-relief.ts",
+            "src/world/generation/detail-shape-distance.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/detail-shape-natural-adapter.ts",
+            "src/world/generation/detail-shape-natural.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/natural-ocean-base.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "addNaturalDetailGenerator": {
+          "sha256": "a130aa70124289d51dac731930ed737fdbd07dec07db3f25beb96e928f7fe7bf",
+          "files": [
+            "src/world/atlas-format.ts",
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-natural-outline.ts",
+            "src/world/generation/detail-natural-relief.ts",
+            "src/world/generation/detail-shape-distance.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/detail-shape-natural-add-adapter.ts",
+            "src/world/generation/detail-shape-natural-add.ts",
+            "src/world/generation/detail-shape-natural.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "localDetailReliefGenerator": {
+          "sha256": "849dae980c2d98b6f0180bcee4372dec037ab13514902e54af5096ba62558f90",
+          "files": [
+            "src/world/atlas-format.ts",
+            "src/world/coastal-generation.ts",
+            "src/world/coastal-surface.ts",
+            "src/world/detail-coast-base.ts",
+            "src/world/detail-coast-codec.ts",
+            "src/world/detail-coast-field.ts",
+            "src/world/detail-coast-geometry.ts",
+            "src/world/detail-coast-locks.ts",
+            "src/world/detail-coast-types.ts",
+            "src/world/generation-contract.ts",
+            "src/world/generation-format.ts",
+            "src/world/generation-history.ts",
+            "src/world/generation-locks.ts",
+            "src/world/generation/detail-local-relief.ts",
+            "src/world/generation/detail-natural-relief.ts",
+            "src/world/generation/detail-shape-distance.ts",
+            "src/world/generation/detail-shape-height.ts",
+            "src/world/generation/fingerprint.ts",
+            "src/world/generation/local-detail-relief-adapter.ts",
+            "src/world/generation/quality.ts",
+            "src/world/generation/seed.ts",
+            "src/world/model.ts",
+            "src/world/topology.ts"
+          ]
+        },
+        "rules": "0.2.0",
+        "supportedRules": [
+          "0.1.0",
+          "0.2.0"
+        ],
+        "entry": "world-studio",
+        "scenarios": [
+          "custom-world",
+          "test-continent"
+        ]
+      },
+      "unit": {
+        "available": true,
+        "counts": {
+          "total": 59,
+          "passed": 59,
+          "failed": 0,
+          "pending": 0,
+          "failedSuites": 0
+        },
+        "observed": 59,
+        "passed": true
+      },
+      "scope": {
+        "unitFiles": [
+          "src/world/generation/detail-local-relief.test.ts",
+          "src/world/detail-local-relief-session.test.ts",
+          "src/editor/local-relief-controls.test.ts",
+          "src/world/detail-preview11-history.test.ts",
+          "src/world/generation-contract.test.ts",
+          "src/world/generation-format.test.ts",
+          "src/world/detail-generation-session.test.ts",
+          "src/world/generation/fingerprint.test.ts"
+        ],
+        "reuse": "New local relief kernel/session/UI/history and existing contract/format/detailed session/fingerprint checks. Existing rendering and game rules are unchanged; their archived preview11 and prior checks are reused only for those unchanged scopes. Not a whole-world suite or whole-PH acceptance.",
+        "cloudWrites": false
+      },
+      "stable": true,
+      "correctUnitScope": true,
+      "engineUnchanged": true,
+      "localGeneratorPresent": true,
+      "generatorAndEngineUnchanged": false,
+      "passed": true
+    }
+  ],
+  "latestRoot": "first",
+  "browsers": {
+    "runs": [
+      {
+        "name": "desktop-first",
+        "source": ".autopilot/ph06/local-relief-checks/desktop-first",
+        "kind": "browser",
+        "v": {
+          "name": "desktop-first",
+          "project": "desktop-chromium",
+          "args": [
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=.autopilot/ph06/local-relief-checks/playwright.config.ts",
+            "--project=desktop-chromium"
+          ],
+          "code": 0,
+          "signal": null,
+          "elapsedMs": 228822.3123,
+          "sourceAndDistStable": true,
+          "physicalDevice": false
+        },
+        "raw": "raw/browser/desktop-first",
+        "build": {
+          "version": "0.5.0-preview.12",
+          "commit": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+          "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+          "macroGenerator": {
+            "sha256": "cb07d148661335384c51d45f17f8dd8e36627232d4c423761afdc3225645740a",
+            "files": [
+              "src/world/generation-contract.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/macro.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "landformGenerator": {
+            "sha256": "325eee51fd847038641503d1d6d5349a625fda9b5234002b5824722c7fe26339",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/landforms.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "islandGenerator": {
+            "sha256": "89e64b6dacd026a8c2cd724721e1fcb5a57f99ff96b4d55d778ef6ab43eea99a",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/islands.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "coastGenerator": {
+            "sha256": "da865f7890ffade7ca226848f06adbf9e9ced8c4cce13b69b3557b16793d1e64",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/coast.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "shapeGenerator": {
+            "sha256": "50f341abbde122828c456d232cd64c90cf68538ecf8a08a6002ad3288519c650",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/shape.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "oceanGenerator": {
+            "sha256": "fd72072fe734bd4bfb0ca1bac5fd0f81142dc6b85c1edc932c4b387af372055b",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/ocean.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "detailShapeGenerator": {
+            "sha256": "fe36d7d1caa97ae8656aba375b48ff5ad4777f11a0e359eb07ac49a18ad2433d",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-adapter.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addDetailGenerator": {
+            "sha256": "55bf7bb644982ee5f80b102f84509df98142b5b4780c3b595c8a85572e73c6a4",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-add-adapter.ts",
+              "src/world/generation/detail-shape-add.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "naturalDetailGenerator": {
+            "sha256": "ba7007fb3a46c7804c3a4c2fdd00dd76d408676f97aea209941bfb778d32f44a",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-adapter.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/natural-ocean-base.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addNaturalDetailGenerator": {
+            "sha256": "a130aa70124289d51dac731930ed737fdbd07dec07db3f25beb96e928f7fe7bf",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-add-adapter.ts",
+              "src/world/generation/detail-shape-natural-add.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "localDetailReliefGenerator": {
+            "sha256": "849dae980c2d98b6f0180bcee4372dec037ab13514902e54af5096ba62558f90",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-local-relief.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/local-detail-relief-adapter.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "rules": "0.2.0",
+          "supportedRules": [
+            "0.1.0",
+            "0.2.0"
+          ],
+          "entry": "world-studio",
+          "scenarios": [
+            "custom-world",
+            "test-continent"
+          ]
+        },
+        "report": {
+          "stats": {
+            "startTime": "2026-09-27T12:05:59.823Z",
+            "duration": 227990.543,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "tests": [
+            {
+              "file": "atlas-local-relief.spec.ts",
+              "project": "desktop-chromium",
+              "title": "[detail-v4-local-relief] native saved continent, land selection, private cancel, real height edit, undo and reload",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "retry": 0,
+                  "duration": 226818
+                }
+              ]
+            }
+          ],
+          "passed": true
+        },
+        "stable": true,
+        "correctSpec": true,
+        "passed": true
+      },
+      {
+        "name": "mobile-first",
+        "source": ".autopilot/ph06/local-relief-checks/mobile-first",
+        "kind": "browser",
+        "v": {
+          "name": "mobile-first",
+          "project": "mobile-chromium",
+          "args": [
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=.autopilot/ph06/local-relief-checks/playwright.config.ts",
+            "--project=mobile-chromium"
+          ],
+          "code": 0,
+          "signal": null,
+          "elapsedMs": 232426.3794,
+          "sourceAndDistStable": true,
+          "physicalDevice": false
+        },
+        "raw": "raw/browser/mobile-first",
+        "build": {
+          "version": "0.5.0-preview.12",
+          "commit": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+          "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+          "macroGenerator": {
+            "sha256": "cb07d148661335384c51d45f17f8dd8e36627232d4c423761afdc3225645740a",
+            "files": [
+              "src/world/generation-contract.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/macro.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "landformGenerator": {
+            "sha256": "325eee51fd847038641503d1d6d5349a625fda9b5234002b5824722c7fe26339",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/landforms.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "islandGenerator": {
+            "sha256": "89e64b6dacd026a8c2cd724721e1fcb5a57f99ff96b4d55d778ef6ab43eea99a",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/islands.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "coastGenerator": {
+            "sha256": "da865f7890ffade7ca226848f06adbf9e9ced8c4cce13b69b3557b16793d1e64",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/coast.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "shapeGenerator": {
+            "sha256": "50f341abbde122828c456d232cd64c90cf68538ecf8a08a6002ad3288519c650",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/shape.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "oceanGenerator": {
+            "sha256": "fd72072fe734bd4bfb0ca1bac5fd0f81142dc6b85c1edc932c4b387af372055b",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/ocean.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "detailShapeGenerator": {
+            "sha256": "fe36d7d1caa97ae8656aba375b48ff5ad4777f11a0e359eb07ac49a18ad2433d",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-adapter.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addDetailGenerator": {
+            "sha256": "55bf7bb644982ee5f80b102f84509df98142b5b4780c3b595c8a85572e73c6a4",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-add-adapter.ts",
+              "src/world/generation/detail-shape-add.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "naturalDetailGenerator": {
+            "sha256": "ba7007fb3a46c7804c3a4c2fdd00dd76d408676f97aea209941bfb778d32f44a",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-adapter.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/natural-ocean-base.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addNaturalDetailGenerator": {
+            "sha256": "a130aa70124289d51dac731930ed737fdbd07dec07db3f25beb96e928f7fe7bf",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-add-adapter.ts",
+              "src/world/generation/detail-shape-natural-add.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "localDetailReliefGenerator": {
+            "sha256": "849dae980c2d98b6f0180bcee4372dec037ab13514902e54af5096ba62558f90",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-local-relief.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/local-detail-relief-adapter.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "rules": "0.2.0",
+          "supportedRules": [
+            "0.1.0",
+            "0.2.0"
+          ],
+          "entry": "world-studio",
+          "scenarios": [
+            "custom-world",
+            "test-continent"
+          ]
+        },
+        "report": {
+          "stats": {
+            "startTime": "2026-09-27T12:09:58.251Z",
+            "duration": 231659.182,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "tests": [
+            {
+              "file": "atlas-local-relief.spec.ts",
+              "project": "mobile-chromium",
+              "title": "[detail-v4-local-relief] native saved continent, land selection, private cancel, real height edit, undo and reload",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "retry": 0,
+                  "duration": 230464
+                }
+              ]
+            }
+          ],
+          "passed": true
+        },
+        "stable": true,
+        "correctSpec": true,
+        "passed": true
+      },
+      {
+        "name": "tablet-first",
+        "source": ".autopilot/ph06/local-relief-checks/tablet-first",
+        "kind": "browser",
+        "v": {
+          "name": "tablet-first",
+          "project": "tablet-chromium",
+          "args": [
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=.autopilot/ph06/local-relief-checks/playwright.config.ts",
+            "--project=tablet-chromium"
+          ],
+          "code": 0,
+          "signal": null,
+          "elapsedMs": 280668.6642,
+          "sourceAndDistStable": true,
+          "physicalDevice": false
+        },
+        "raw": "raw/browser/tablet-first",
+        "build": {
+          "version": "0.5.0-preview.12",
+          "commit": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+          "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+          "macroGenerator": {
+            "sha256": "cb07d148661335384c51d45f17f8dd8e36627232d4c423761afdc3225645740a",
+            "files": [
+              "src/world/generation-contract.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/macro.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "landformGenerator": {
+            "sha256": "325eee51fd847038641503d1d6d5349a625fda9b5234002b5824722c7fe26339",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/landforms.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "islandGenerator": {
+            "sha256": "89e64b6dacd026a8c2cd724721e1fcb5a57f99ff96b4d55d778ef6ab43eea99a",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/islands.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "coastGenerator": {
+            "sha256": "da865f7890ffade7ca226848f06adbf9e9ced8c4cce13b69b3557b16793d1e64",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/coast.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "shapeGenerator": {
+            "sha256": "50f341abbde122828c456d232cd64c90cf68538ecf8a08a6002ad3288519c650",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/shape.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "oceanGenerator": {
+            "sha256": "fd72072fe734bd4bfb0ca1bac5fd0f81142dc6b85c1edc932c4b387af372055b",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/ocean.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "detailShapeGenerator": {
+            "sha256": "fe36d7d1caa97ae8656aba375b48ff5ad4777f11a0e359eb07ac49a18ad2433d",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-adapter.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addDetailGenerator": {
+            "sha256": "55bf7bb644982ee5f80b102f84509df98142b5b4780c3b595c8a85572e73c6a4",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-add-adapter.ts",
+              "src/world/generation/detail-shape-add.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "naturalDetailGenerator": {
+            "sha256": "ba7007fb3a46c7804c3a4c2fdd00dd76d408676f97aea209941bfb778d32f44a",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-adapter.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/natural-ocean-base.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addNaturalDetailGenerator": {
+            "sha256": "a130aa70124289d51dac731930ed737fdbd07dec07db3f25beb96e928f7fe7bf",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-add-adapter.ts",
+              "src/world/generation/detail-shape-natural-add.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "localDetailReliefGenerator": {
+            "sha256": "849dae980c2d98b6f0180bcee4372dec037ab13514902e54af5096ba62558f90",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-local-relief.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/local-detail-relief-adapter.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "rules": "0.2.0",
+          "supportedRules": [
+            "0.1.0",
+            "0.2.0"
+          ],
+          "entry": "world-studio",
+          "scenarios": [
+            "custom-world",
+            "test-continent"
+          ]
+        },
+        "report": {
+          "stats": {
+            "startTime": "2026-09-27T12:14:21.996Z",
+            "duration": 279872.436,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "tests": [
+            {
+              "file": "atlas-local-relief.spec.ts",
+              "project": "tablet-chromium",
+              "title": "[detail-v4-local-relief] native saved continent, land selection, private cancel, real height edit, undo and reload",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "retry": 0,
+                  "duration": 278772
+                }
+              ]
+            }
+          ],
+          "passed": true
+        },
+        "stable": true,
+        "correctSpec": true,
+        "passed": true
+      }
+    ],
+    "final": [
+      {
+        "project": "desktop-chromium",
+        "name": "desktop-first",
+        "status": "passed",
+        "bound": true,
+        "currentProductDifferences": [],
+        "passed": true
+      },
+      {
+        "project": "mobile-chromium",
+        "name": "mobile-first",
+        "status": "passed",
+        "bound": true,
+        "currentProductDifferences": [],
+        "passed": true
+      },
+      {
+        "project": "tablet-chromium",
+        "name": "tablet-first",
+        "status": "passed",
+        "bound": true,
+        "currentProductDifferences": [],
+        "passed": true
+      }
+    ]
+  },
+  "binding": {
+    "buildJsonSha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305",
+    "build": {
+      "version": "0.5.0-preview.12",
+      "commit": "f49da8377985ef041a56dde7f995b2c8af018b3b",
+      "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+      "macroGenerator": {
+        "sha256": "cb07d148661335384c51d45f17f8dd8e36627232d4c423761afdc3225645740a",
+        "files": [
+          "src/world/generation-contract.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/macro.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "landformGenerator": {
+        "sha256": "325eee51fd847038641503d1d6d5349a625fda9b5234002b5824722c7fe26339",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/landforms.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "islandGenerator": {
+        "sha256": "89e64b6dacd026a8c2cd724721e1fcb5a57f99ff96b4d55d778ef6ab43eea99a",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/islands.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "coastGenerator": {
+        "sha256": "da865f7890ffade7ca226848f06adbf9e9ced8c4cce13b69b3557b16793d1e64",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/coast.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "shapeGenerator": {
+        "sha256": "50f341abbde122828c456d232cd64c90cf68538ecf8a08a6002ad3288519c650",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/generation/shape.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "oceanGenerator": {
+        "sha256": "fd72072fe734bd4bfb0ca1bac5fd0f81142dc6b85c1edc932c4b387af372055b",
+        "files": [
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/ocean.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "detailShapeGenerator": {
+        "sha256": "fe36d7d1caa97ae8656aba375b48ff5ad4777f11a0e359eb07ac49a18ad2433d",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-adapter.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "addDetailGenerator": {
+        "sha256": "55bf7bb644982ee5f80b102f84509df98142b5b4780c3b595c8a85572e73c6a4",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-shape-add-adapter.ts",
+          "src/world/generation/detail-shape-add.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "naturalDetailGenerator": {
+        "sha256": "ba7007fb3a46c7804c3a4c2fdd00dd76d408676f97aea209941bfb778d32f44a",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-natural-outline.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape-natural-adapter.ts",
+          "src/world/generation/detail-shape-natural.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/natural-ocean-base.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "addNaturalDetailGenerator": {
+        "sha256": "a130aa70124289d51dac731930ed737fdbd07dec07db3f25beb96e928f7fe7bf",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-natural-outline.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/detail-shape-natural-add-adapter.ts",
+          "src/world/generation/detail-shape-natural-add.ts",
+          "src/world/generation/detail-shape-natural.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "localDetailReliefGenerator": {
+        "sha256": "849dae980c2d98b6f0180bcee4372dec037ab13514902e54af5096ba62558f90",
+        "files": [
+          "src/world/atlas-format.ts",
+          "src/world/coastal-generation.ts",
+          "src/world/coastal-surface.ts",
+          "src/world/detail-coast-base.ts",
+          "src/world/detail-coast-codec.ts",
+          "src/world/detail-coast-field.ts",
+          "src/world/detail-coast-geometry.ts",
+          "src/world/detail-coast-locks.ts",
+          "src/world/detail-coast-types.ts",
+          "src/world/generation-contract.ts",
+          "src/world/generation-format.ts",
+          "src/world/generation-history.ts",
+          "src/world/generation-locks.ts",
+          "src/world/generation/detail-local-relief.ts",
+          "src/world/generation/detail-natural-relief.ts",
+          "src/world/generation/detail-shape-distance.ts",
+          "src/world/generation/detail-shape-height.ts",
+          "src/world/generation/fingerprint.ts",
+          "src/world/generation/local-detail-relief-adapter.ts",
+          "src/world/generation/quality.ts",
+          "src/world/generation/seed.ts",
+          "src/world/model.ts",
+          "src/world/topology.ts"
+        ]
+      },
+      "rules": "0.2.0",
+      "supportedRules": [
+        "0.1.0",
+        "0.2.0"
+      ],
+      "entry": "world-studio",
+      "scenarios": [
+        "custom-world",
+        "test-continent"
+      ]
+    },
+    "buildMatches": true,
+    "currentSourceDifferences": [],
+    "currentDistDifferences": [],
+    "extraDistFiles": [],
+    "generatorCount": 11,
+    "engineUnchanged": true,
+    "newLocalGeneratorRecorded": true,
+    "priorPreview11CaptureBound": true,
+    "priorHistoryIssues": [],
+    "distCount": 25
+  },
+  "manual": {
+    "observation": {
+      "recordedAt": "2026-09-27T12:19:20.923Z",
+      "buildJsonSha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305",
+      "version": "0.5.0-preview.12",
+      "browser": "Codex IAB Chromium",
+      "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "zoom": "14%",
+      "baselineRevision": 1,
+      "confirmedRevision": 2,
+      "restoredRevision": 2,
+      "seed": "群岬北岭-01",
+      "reliefMeters": 3200,
+      "selection": {
+        "method": "two native map corner clicks",
+        "width": 45,
+        "height": 30,
+        "transitionCells": 2,
+        "cornersScreen": [
+          [
+            620,
+            245
+          ],
+          [
+            720,
+            310
+          ]
+        ]
+      },
+      "preview": {
+        "changedNodes": 82829,
+        "raisedNodes": 71143,
+        "loweredNodes": 11686,
+        "changedTiles": 96
+      },
+      "observed": [
+        "Saved preview11 draft loaded in preview12 without migration prompt",
+        "Selected existing real land and opened local relief",
+        "Native two-corner range selection changed the actual range",
+        "Preview displayed real node delta and visible terrain change",
+        "Confirmed generated terrain and saved revision 2",
+        "Reload restored revision 2 with same visible terrain",
+        "Reopened panel restored seed, 3200m, 45x30 range and transition2"
+      ],
+      "manualCancelAttempt": {
+        "at": "2026-09-27T12:12:15.244Z",
+        "result": "missed operation window: operation completed before Cancel operation could match; no_matches/deadline observed",
+        "accepted": false,
+        "latencyMeasurement": false
+      },
+      "consoleWarningsAndErrors": [],
+      "scopeLimits": [
+        "Manual undo and successful cancellation not exercised; terminal product browser tests cover those functional paths",
+        "No nonzero locks added in this manual flow",
+        "Native IAB activity overlapped late mobile and early tablet functional testing; durations are not performance benchmarks",
+        "No user visual or real-device acceptance"
+      ],
+      "screenshots": [
+        {
+          "file": "manual-before.png",
+          "sha256": "9ea37319b818f587c01f3e7d6ae4ae0eaf5deb21f9bf5c83f9758ddba361ba21"
+        },
+        {
+          "file": "manual-preview.png",
+          "sha256": "31ef25c7e8abbf620a61c424572a21561eee979ec3394febca2bbc8b959e9ff1"
+        },
+        {
+          "file": "manual-after.png",
+          "sha256": "225927ffca1605f34caba922c61d48b6289aa4b9b4359f55a34ea4d9d6f7a798"
+        },
+        {
+          "file": "manual-restored.png",
+          "sha256": "6b9d14e76e20dc2a9829572d6b507297707fc3055d27eb144269d229f62db538"
+        },
+        {
+          "file": "manual-restored-controls.png",
+          "sha256": "852cdbe80c8d8db31f35a320b8bf0109cca55f6e5ebacff64efdf9f2c5abc09c"
+        }
+      ]
+    },
+    "issues": []
+  },
+  "visual": {
+    "observation": {
+      "recordedAt": "2026-09-27T12:19:20.923Z",
+      "buildJsonSha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305",
+      "localReliefWorkflowAccepted": true,
+      "naturalVisualAccepted": false,
+      "visualAccepted": false,
+      "physicalDeviceAccepted": false,
+      "performanceAccepted": false,
+      "phaseAccepted": false,
+      "cloudWrites": false,
+      "observation": "Actual existing-land two-corner selection, real height preview, confirm/save and reload verified. Added northern ridges are visible with same coast. Terrain remains lumpy/angular and visually coarse; continent shape and mountain naturalness do not yet meet the requested Fantasy Map Simulator feel. New Atlas still has no nations, administration, cities, armies or war."
+    },
+    "bound": true
+  },
+  "pending": [],
+  "excluded": [
+    ".autopilot/ph06/local-relief-checks/desktop-first/artifacts/.last-run.json",
+    ".autopilot/ph06/local-relief-checks/mobile-first/artifacts/.last-run.json",
+    ".autopilot/ph06/local-relief-checks/tablet-first/artifacts/.last-run.json"
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-preview11-generator-history-2026-09-27/build.json",
+      "bytes": 8199,
+      "sha256": "eaf3025970c2d241a285ecec9f3ab1c1427176410f276262a03e4db6a64222e7",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview11-generator-history-2026-09-27/provenance.json",
+      "bytes": 23501,
+      "sha256": "53466c4bf0f7b1c5691dfbc25e56b5f13c825e12779e47744863db8c9a58db01",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview11-generator-history-2026-09-27/inventory.json",
+      "bytes": 7362,
+      "sha256": "40d4ed46ef71f12b4fb3d650ca5ce9411e60067af99b368413c453b60da2a2fd",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-continuous-light-2026-09-27/verification.json",
+      "bytes": 129967,
+      "sha256": "08d074e0ba79e84652604415b06880a213695a6036d9597c86ac975f4e045df1",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-continuous-light-2026-09-27/inventory.json",
+      "bytes": 27252,
+      "sha256": "a79092002a0a27c9ba28512f2f45552868772ab4080825c15d82b5e9d299aca5",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/2026-09-27-ph06-continuous-light.md",
+      "bytes": 5982,
+      "sha256": "7850004d15d2acab2b81c5595860ea33c1f9652163bc8984ac1f266da7b613c8",
+      "copied": false
+    }
+  ],
+  "notes": [
+    "All terminal failures are retained; later passes never overwrite an earlier run. A live directory is pending and is not copied.",
+    "First root currently selects eight files; counts come from actual Vitest assertions. Staging written/unchecked counts are not passed executions or additional unique tests.",
+    "The new local generator makes eleven build identities. Old ten hashes may change because actual contract/history dependencies changed; engine equality and exact verified preview11 provenance remain required.",
+    "Three required browser runs must actually name atlas-local-relief.spec.ts. Ancillary legacy/entry/additive runs remain raw evidence without replacing the required local workflow.",
+    "No old evidence bundle, source mirror, dist payload, browser save, authentication data, cache or hidden live trace fragments are copied.",
+    "An empty preserved lock set does not prove populated-lock conflicts; actual browser observation records its lock count.",
+    "Source/GPU/correctness tests and runner durations do not imply visual, physical-device, performance or whole-PH acceptance."
+  ]
+}

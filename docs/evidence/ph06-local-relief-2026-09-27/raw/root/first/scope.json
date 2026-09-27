@@ -1,0 +1,14 @@
+{
+  "unitFiles": [
+    "src/world/generation/detail-local-relief.test.ts",
+    "src/world/detail-local-relief-session.test.ts",
+    "src/editor/local-relief-controls.test.ts",
+    "src/world/detail-preview11-history.test.ts",
+    "src/world/generation-contract.test.ts",
+    "src/world/generation-format.test.ts",
+    "src/world/detail-generation-session.test.ts",
+    "src/world/generation/fingerprint.test.ts"
+  ],
+  "reuse": "New local relief kernel/session/UI/history and existing contract/format/detailed session/fingerprint checks. Existing rendering and game rules are unchanged; their archived preview11 and prior checks are reused only for those unchanged scopes. Not a whole-world suite or whole-PH acceptance.",
+  "cloudWrites": false
+}

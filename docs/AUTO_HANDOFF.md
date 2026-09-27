@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-- 本地preview.22已完成306/306、计划/lint/类型/构建/dist/11闭包、生产GPU及三端浏览器；实际build SHA256 517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2，原build.commit=d651bcc9502d5afe31fef80d0a17b9a9988bc819。尚待本地提交；[本批记录](evidence/2026-09-28-ph06-natural-range-sea.md)。真实山脉仍管状，自然视觉失败；PH状态不变。
+- 本地preview.22已完成306/306、计划/lint/类型/构建/dist/11闭包、生产GPU及三端浏览器；实际build SHA256 517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2，原build.commit=d651bcc9502d5afe31fef80d0a17b9a9988bc819。已本地提交5aadcba21f13ed101c5983fd4e97ce16f8206f55；[本批记录](evidence/2026-09-28-ph06-natural-range-sea.md)。真实山脉仍管状，自然视觉失败；PH状态不变。
 - 分支codex/ph06-world-generation；preview.21游戏源码已本地提交31e27620c816db33993a8ac419274c9a86c32624。原build.commit=502164889fef2f0280b725c76538cd07df7d5e36如实保留；最新文档提交以git log核实。
 - preview.21为上一批已提交历史基线；149/149和旧三端证据只描述21。当前实际dist与IAB为上方22，旧存档在22读取恢复修订1已实际核实。
 - PH06-T3/T4保持in_progress，PH07及T1为in_progress且PH07→PH06依赖未改。自然视觉、用户视觉、真机、整体PH和性能未完成。
@@ -53,3 +53,11 @@ preview.19已接入真实地形流向。来源为保存的细高程，实际相�
 当前IAB另保留20新生成的独立试玩草稿“长岬内海 · 新细山脊”：http://127.0.0.1:4173/?atlas=atlas-e64a6198-446a-4f23-b139-c5079531102f&atlas-format=4。实际鼠标41点轮廓、22.51%陆地、-5897至2123米，真实确认后刷新显示修订1；旧18草稿仍在且已于20恢复验证。它只展示当前地理创作，山系模板感未验收；没有国家/行政/战争。细节记录在.autopilot/ph06/demo20.json（本机测试元信息，不导出存档）。
 
 当前IAB21独立草稿“长岬内海 · 分区海岸”：http://127.0.0.1:4173/?atlas=atlas-d44d13db-0608-4b84-aed9-983a1e4f6df3&atlas-format=4。与20同41点原生鼠标轮廓、种子及参数，实际预览22.09%陆地、-5897至2128米；确认保存后真实刷新显示修订1。此前20草稿也已在21真实恢复，未改写。截图.autopilot/ph06/demo21-before-ocean.png用于下一批同保存地形/视野的海洋材质对照。当前仍S形管状山脉、亮青岸带，视觉未通过；国家行政城市战争仍未实现。
+
+preview.22当前IAB独立草稿：
+http://127.0.0.1:4173/?atlas=atlas-329f6a97-78f7-4512-a2b7-4e92e4b5daf9&atlas-format=4
+同手绘输入的实际预览为22.09%陆地、-5897至2046米，保存并刷新修订1。新山系仍管状，不能称自然视觉通过。
+
+实际22源码已在.autopilot/ph06/v4-preview22-history-staging冻结：48份原字节（43生成器+5模拟引擎），11闭包及engine重算一致，inventory SHA256 d213742b9254abff675bec475ad8e72f0c3563ecb60ea83a350019586c3f0620，sourceCommit为5aadcba，原build.commit保留d651bcc。尚未接下一版本存储历史。
+
+PH07 receiver隔离候选在.autopilot/ph07/receiver-staging/checks/first由root实际检查：16/16、类型和lint通过，未接生产/完整河网/存储。下一批山体候选在.autopilot/ph06/ridge-landform-staging；只依据实际高度图和产品图判断视觉，当前22失败图保留。

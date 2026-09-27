@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-27T10:52:00.467Z",
+  "baselineHead": "d17fc9bb3411226836343821e42792568b7a22c1",
+  "stagingOnly": true,
+  "productionModifiedByThisTask": false,
+  "status": "candidate-awaiting-authorized-checks",
+  "freeze": true,
+  "files": [
+    {
+      "path": "src/world/transactions.ts",
+      "stagedSha256": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d",
+      "baselineSha256": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789",
+      "productionExists": true
+    },
+    {
+      "path": "src/world/detail-owned-replacement-copy.test.ts",
+      "stagedSha256": "c68438c16a9df461861d09c3fa2bd35fda5538da15c6208f49c06580f3b264f6",
+      "baselineSha256": null,
+      "productionExists": false
+    }
+  ],
+  "supportingFiles": [
+    {
+      "path": "README.md",
+      "sha256": "673ae3d9a7dd4e036c473be65f66cb59bacc2c4a77d8436d0379b095584902f3"
+    },
+    {
+      "path": "transactions.baseline.ts.txt",
+      "sha256": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789"
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "a35260a86641481ab612be89170dd8a5d13479ec59c750b6a0025fd3a2fe1e57"
+    },
+    {
+      "path": "finalize-manifest.mjs",
+      "sha256": "ab34b1cca4b5095cee59e677dfb0f8972d51a540644e07384e56adb6d907371f"
+    }
+  ],
+  "readDependencies": [
+    {
+      "path": "src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "path": "src/world/generation-format.ts",
+      "sha256": "2cdbc3f2f020570e24c019bd616c1853b2b5338ab7778e73ab92fda902dd5865"
+    },
+    {
+      "path": "src/world/generation-contract.ts",
+      "sha256": "0b23c1a41660e01238c4a1becbd76fe2aa1acc955ec2fcab2f176271cb7fbf7a"
+    },
+    {
+      "path": "src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "path": "src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "path": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "src/world/cooperative-ownership.test.ts",
+      "sha256": "71fcd6753fca00af96cff9936ea6124d337981380032b1a6cd5b51ad7c128a06"
+    },
+    {
+      "path": "src/world/detail-private-ingress.test.ts",
+      "sha256": "b8153875199858d6a7ef60bfd9140a812e692599f474e10e04e007d934b4ba8d"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "16a769e6639073063adcbfcaac40bd760dffe23a0f572512785d6367981d5226"
+    }
+  ],
+  "scope": {
+    "runtimeMethods": [
+      "OwnedAtlasSession.replacementDocumentAsync"
+    ],
+    "maximumCopiedItemsPerBatch": 16,
+    "publicRawIngressUnchanged": true,
+    "fullVerificationRetained": true,
+    "candidateAndSourceGuardsRetained": true,
+    "storageAndDurableSemanticsUnchanged": true
+  },
+  "checks": {
+    "staticReview": "manual source/diff review only",
+    "lint": "not_run",
+    "typecheck": "not_run",
+    "unit": "not_run",
+    "browser": "not_run",
+    "performance": "not_run",
+    "writtenTestCases": 8,
+    "passedTestCases": null,
+    "productionBaselineUnchangedAtFinalization": true
+  },
+  "limitations": [
+    "No runtime or performance acceptance claimed.",
+    "No Owned dispose API exists; candidate invalidation tests use discard/publish/replacement.",
+    "33 sampled tiles cover batching only; 4096-tile actual Worker measurement remains pending.",
+    "Public raw dense synchronous ownership is unchanged.",
+    "Synthetic Owned publication receipt is not an IDB commit test."
+  ]
+}

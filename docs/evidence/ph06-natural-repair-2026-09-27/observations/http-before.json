@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-09-27T11:13:25.358Z",
+  "url": "http://127.0.0.1:4173/build.json",
+  "status": 200,
+  "version": "0.5.0-preview.10",
+  "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35",
+  "matchesDist": true
+}

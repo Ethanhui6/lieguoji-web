@@ -26,6 +26,72 @@ async function checkpoint(control: DetailShapeControl | undefined, phase: string
   control?.signal?.throwIfAborted();
 }
 
+/** Remove only sub-Q8 sampling jitter on an otherwise straight run. The
+ * maximum removed deviation is two Q8 units (1/128 world), not a smoothing
+ * tolerance measured in world cells. Real corners, necks and bay ends remain.
+ * Zero-variation callers keep their literal source rather than using this. */
+export async function simplifyNaturalSampling(points: readonly NaturalPointQ[], batch: number, control?: DetailShapeControl) {
+  const source = points.map(point => ({ ...point })), retained = source.map((_, index) => index); let work = 0, changed = true;
+  while (changed && retained.length > 3) {
+    changed = false;
+    for (let i = retained.length - 1; i >= 0 && retained.length > 3; i--) {
+      const before = retained[(i + retained.length - 1) % retained.length], after = retained[(i + 1) % retained.length], a = source[before], b = source[after];
+      const dx = b.xQ - a.xQ, dy = b.yQ - a.yQ, length2 = dx * dx + dy * dy, tolerance = 2 * integerSqrt(length2); let safe = length2 > 0;
+      // Check every original point in the merged run. Repeated removal must
+      // not accumulate two-Q tolerances and erase a shallow real feature.
+      for (let k = (before + 1) % source.length; safe && k !== after; k = (k + 1) % source.length) {
+        const p = source[k], dot = (p.xQ - a.xQ) * dx + (p.yQ - a.yQ) * dy;
+        safe = dot > 0 && dot < length2 && Math.abs(cross(a, b, p)) <= tolerance;
+        if (++work > MAX_VALIDATION_WORK) throw new Error('自然轮廓采样整理工作超出上限，原图未改变。');
+        if (work % batch === 0) await checkpoint(control, 'simplify-natural-sampling', work, MAX_VALIDATION_WORK);
+      }
+      if (safe) { retained.splice(i, 1); changed = true; }
+    }
+  }
+  await checkpoint(control, 'simplify-natural-sampling', work, work);
+  return retained.map(index => source[index]);
+}
+
+/** True facing features, rather than all nearby fragments of the same shore.
+ * A connector must face both segments: a local vertex normal cone or within
+ * asin(1/3) of its normal (also protecting gently tapering channels). Parallel overlap
+ * is included explicitly: endpoint-only tests miss a 12-world U-shaped bay.
+ * Returned separation still receives the conservative quarter-distance cap. */
+export function naturalFacingSeparation(points: readonly NaturalPointQ[], i: number, j: number): number | null {
+  const count = points.length, a = points[i], b = points[(i + 1) % count], c = points[j], d = points[(j + 1) % count];
+  const normalAt = (edge: number, t: number, vx: number, vy: number) => {
+    const first = points[edge], last = points[(edge + 1) % count];
+    if (t > 0 && t < Q20) {
+      const dx = last.xQ - first.xQ, dy = last.yQ - first.yQ;
+      return Math.abs(vx * dx + vy * dy) <= (2 + integerSqrt(vx * vx + vy * vy) / 3) * integerSqrt(dx * dx + dy * dy);
+    }
+    const id = t === 0 ? edge : (edge + 1) % count, p = points[id];
+    const inCone = [points[(id + count - 1) % count], points[(id + 1) % count]].every(q => {
+      const dx = q.xQ - p.xQ, dy = q.yQ - p.yQ;
+      return vx * dx + vy * dy <= 2 * integerSqrt(dx * dx + dy * dy);
+    });
+    const dx = last.xQ - first.xQ, dy = last.yQ - first.yQ;
+    return inCone || Math.abs(vx * dx + vy * dy) <= (2 + integerSqrt(vx * vx + vy * vy) / 3) * integerSqrt(dx * dx + dy * dy);
+  };
+  let best = Infinity;
+  const candidate = (edge: number, other: number, t: number) => {
+    const p = points[edge], q = points[(edge + 1) % count], u = points[other], v = points[(other + 1) % count];
+    const x = p.xQ + roundRatio((q.xQ - p.xQ) * t, Q20), y = p.yQ + roundRatio((q.yQ - p.yQ) * t, Q20);
+    const projection = distance({ a: u, b: v, length: 0, arc: 0 }, x, y);
+    const ex = u.xQ + roundRatio((v.xQ - u.xQ) * projection.t, Q20) - x, ey = u.yQ + roundRatio((v.yQ - u.yQ) * projection.t, Q20) - y;
+    if (normalAt(edge, t, ex, ey) && normalAt(other, projection.t, -ex, -ey)) best = Math.min(best, projection.distance);
+  };
+  candidate(i, j, 0); candidate(i, j, Q20); candidate(j, i, 0); candidate(j, i, Q20);
+  candidate(i, j, Q20 / 2); candidate(j, i, Q20 / 2);
+  const dx = b.xQ - a.xQ, dy = b.yQ - a.yQ, length2 = dx * dx + dy * dy;
+  if (dx * (d.yQ - c.yQ) - dy * (d.xQ - c.xQ) === 0) {
+    const t1 = ((c.xQ - a.xQ) * dx + (c.yQ - a.yQ) * dy) / length2, t2 = ((d.xQ - a.xQ) * dx + (d.yQ - a.yQ) * dy) / length2;
+    const lo = Math.max(0, Math.min(t1, t2)), hi = Math.min(1, Math.max(t1, t2));
+    if (lo < hi) candidate(i, j, Math.round((lo + hi) / 2 * Q20));
+  }
+  return Number.isFinite(best) ? best : null;
+}
+
 /** Consumes the kernel's privately owned, already validated source contour and
  * its non-adjacent-feature caps. Local quadratic corners stay inside the source
  * cap; the remaining cap is reserved for actual structural bay/cape movement.
@@ -144,8 +210,15 @@ export async function roundAndIndexNaturalOutline(input: { points: readonly Natu
 /** Periodic along the complete shoreline, independent of source point density.
  * Knot indices wrap at the same arc origin; the closure has no noise seam. */
 export function naturalArcField(seed: number, tag: number, arcQ: number, perimeterQ: number, wavelengthWorld: number) {
-  const count = Math.max(3, Math.ceil(perimeterQ / (wavelengthWorld * 256))), scaled = ((arcQ % perimeterQ + perimeterQ) % perimeterQ) / perimeterQ * count;
+  const count = Math.max(4, Math.ceil(perimeterQ / (wavelengthWorld * 256) / 2) * 2);
+  // Alternating unequal lobes guarantee both bays and capes rather than a
+  // low-amplitude same-sign shrink of the original polygon. A seed-specific
+  // phase and nonlinear within-period coordinate avoid alignment to its sides.
+  const phase = hashAt(seed, tag + 90, 0, 0) % FIELD_Q;
+  const wrapped = ((arcQ % perimeterQ + perimeterQ) % perimeterQ) / perimeterQ * count + phase / FIELD_Q;
+  const scaled = wrapped % count;
   const knot = Math.floor(scaled), t = smoothQ(Math.floor((scaled - knot) * FIELD_Q));
-  const a = hashAt(seed, tag, knot, 0) % (2 * FIELD_Q + 1) - FIELD_Q, b = hashAt(seed, tag, (knot + 1) % count, 0) % (2 * FIELD_Q + 1) - FIELD_Q;
+  const value = (id: number) => (id % 2 ? -1 : 1) * (2253 + hashAt(seed, tag, id, 0) % 1844);
+  const a = value(knot), b = value((knot + 1) % count);
   return a + roundRatio((b - a) * t, FIELD_Q);
 }

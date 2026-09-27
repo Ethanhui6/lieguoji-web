@@ -1,0 +1,12 @@
+{
+  "recordedAt": "2026-09-27T11:13:10.1986604Z",
+  "kind": "runner-preflight-aborted",
+  "command": "node .autopilot/ph06/natural-repair-checks/run.mjs first",
+  "exitCode": 1,
+  "error": "Missing selected test: src/world/generation-session.test.ts",
+  "testsStarted": false,
+  "buildStarted": false,
+  "remedy": "Correct selected file to actual src/world/detail-generation-session.test.ts and run a new preflight-repair evidence directory.",
+  "oldEvidenceOverwritten": false,
+  "acceptance": "No test result. This is a runner path error; it is not a game test failure or a PASS."
+}

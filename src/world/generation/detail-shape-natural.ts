@@ -4,7 +4,7 @@ import { buildDetailCoastSurface, pickDetailCoastSurface } from '../detail-coast
 import { detailCoastKey, detailCoastOwnerLayout, type DetailCoastKey, type DetailCoastTile, type DetailCoastTiles } from '../detail-coast-types';
 import { buildDetailShapeDistanceIndex, DETAIL_DISTANCE_LIMIT_Q, DETAIL_DISTANCE_MAX_SEGMENTS, type DetailShapeDistanceIndex } from './detail-shape-distance';
 import { createDetailShapeBaseSampler } from './detail-shape-height';
-import { roundAndIndexNaturalOutline, naturalArcField } from './detail-natural-outline';
+import { roundAndIndexNaturalOutline, naturalArcField, naturalFacingSeparation, simplifyNaturalSampling } from './detail-natural-outline';
 import { createNaturalRelief, type NaturalReliefSummary } from './detail-natural-relief';
 import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, seedHash, smoothQ } from './seed';
 
@@ -99,15 +99,20 @@ function intersects(a: Point, b: Point, c: Point, d: Point) {
   return abC === 0 && onSegment(a, b, c) || abD === 0 && onSegment(a, b, d) || cdA === 0 && onSegment(c, d, a) || cdB === 0 && onSegment(c, d, b) || (abC < 0 && abD > 0 || abC > 0 && abD < 0) && (cdA < 0 && cdB > 0 || cdA > 0 && cdB < 0);
 }
 interface LongEdge { a: Point; b: Point; length: number; arc: number }
-function pointDistance(a: Point, b: Point, x: number, y: number) {
-  const dx = b.xQ - a.xQ, dy = b.yQ - a.yQ, dot = (x - a.xQ) * dx + (y - a.yQ) * dy, length2 = dx * dx + dy * dy;
-  const t = Math.max(0, Math.min(Q20, Math.floor(dot / length2 * Q20 + .5)));
-  if (dot >= 0 && dot <= length2 && dx * (y - a.yQ) - dy * (x - a.xQ) === 0) return { distance: 0, t };
-  const px = a.xQ + roundRatio(dx * t, Q20), py = a.yQ + roundRatio(dy * t, Q20);
-  return { distance: integerSqrt((x - px) ** 2 + (y - py) ** 2), t };
-}
 async function prepareOutline(recipe: NaturalDetailShapeRecipe, batch: number, control: DetailShapeControl | undefined, counters: { outlineEdgeTests: number }) {
-  const points = recipe.pointsQ, count = points.length, edges: LongEdge[] = []; let perimeter = 0, area2 = 0, work = 0;
+  // Validate the literal input first. Simplification is never a way to accept
+  // self-contacting input that the original polygon validator would reject.
+  const original = recipe.pointsQ;
+  for (let i = 0, work = 0; i < original.length; i++) {
+    const previous = original[(i + original.length - 1) % original.length], a = original[i], b = original[(i + 1) % original.length];
+    if (cross(previous, a, b) === 0 && (previous.xQ - a.xQ) * (b.xQ - a.xQ) + (previous.yQ - a.yQ) * (b.yQ - a.yQ) > 0) throw new Error('手绘轮廓不能沿原边折回。');
+    for (let j = i + 1; j < original.length; j++) {
+    if (j !== i + 1 && !(i === 0 && j === original.length - 1) && intersects(original[i], original[(i + 1) % original.length], original[j], original[(j + 1) % original.length])) throw new Error('手绘轮廓不能自交或接触非相邻边。');
+    if (++work % batch === 0) await checkpoint(control, 'validate-source-outline', work, original.length * (original.length - 1) / 2);
+    }
+  }
+  const points = recipe.coastStructureWorld + recipe.coastRoughnessWorld > 0 ? await simplifyNaturalSampling(original, batch, control) : original;
+  const count = points.length, edges: LongEdge[] = []; let perimeter = 0, area2 = 0, work = 0;
   for (let i = 0; i < count; i++) {
     const a = points[i], b = points[(i + 1) % count], previous = points[(i + count - 1) % count];
     if (cross(previous, a, b) === 0 && (previous.xQ - a.xQ) * (b.xQ - a.xQ) + (previous.yQ - a.yQ) * (b.yQ - a.yQ) > 0) throw new Error('手绘轮廓不能沿原边折回。');
@@ -121,11 +126,9 @@ async function prepareOutline(recipe: NaturalDetailShapeRecipe, batch: number, c
   if (!Number.isSafeInteger(area2) || Math.abs(area2) < 2 * 64 * 256 ** 2) throw new Error('首个大陆轮廓的面积需要至少 64 world²。');
   const roughness = (recipe.coastStructureWorld + recipe.coastRoughnessWorld) * 256, edgeCaps = new Int32Array(count).fill(roughness); work = 0;
   if (roughness) for (let i = 0; i < count; i++) for (let j = i + 1; j < count; j++) {
-    const a = edges[i], b = edges[j], arc = Math.min(Math.abs(a.arc - b.arc), perimeter - Math.abs(a.arc - b.arc));
-    const dot = (a.b.xQ - a.a.xQ) * (b.b.xQ - b.a.xQ) + (a.b.yQ - a.a.yQ) * (b.b.yQ - b.a.yQ);
-    if (j !== i + 1 && !(i === 0 && j === count - 1) && !(arc < (8 * (recipe.coastStructureWorld + recipe.coastRoughnessWorld) + 16) * 256 && dot >= 0)) {
-      const distance = Math.min(pointDistance(a.a, a.b, b.a.xQ, b.a.yQ).distance, pointDistance(a.a, a.b, b.b.xQ, b.b.yQ).distance, pointDistance(b.a, b.b, a.a.xQ, a.a.yQ).distance, pointDistance(b.a, b.b, a.b.xQ, a.b.yQ).distance);
-      edgeCaps[i] = Math.min(edgeCaps[i], Math.floor(distance / 4)); edgeCaps[j] = Math.min(edgeCaps[j], Math.floor(distance / 4));
+    if (j !== i + 1 && !(i === 0 && j === count - 1)) {
+      const distance = naturalFacingSeparation(points, i, j);
+      if (distance !== null) { edgeCaps[i] = Math.min(edgeCaps[i], Math.max(0, Math.floor(distance / 4) - 2)); edgeCaps[j] = Math.min(edgeCaps[j], Math.max(0, Math.floor(distance / 4) - 2)); }
     }
     if (++work % batch === 0) await checkpoint(control, 'protect-outline-features', work, count * (count - 1) / 2);
   }
@@ -180,7 +183,7 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
     if (budget > 0 && nearest.distance <= budget * 256 + STEP_Q && nearest.edge >= 0) {
       const id = nearest.edge, amplitude = outline.caps[id] + roundRatio((outline.caps[(id + 1) % outline.caps.length] - outline.caps[id]) * nearest.t, Q20);
       const arc = outline.edges[id].arc + roundRatio(outline.edges[id].length * nearest.t, Q20);
-      const structural = roundRatio(3 * naturalArcField(seed, 7111, arc, outline.perimeter, 768) + naturalArcField(seed, 7112, arc, outline.perimeter, 320), 4);
+      const structural = roundRatio(2 * naturalArcField(seed, 7111, arc, outline.perimeter, 768) + 3 * naturalArcField(seed, 7112, arc, outline.perimeter, 320), 5);
       const u = roundRatio(3 * x - 4 * y, 5), v = roundRatio(4 * x + 3 * y, 5);
       const detail = roundRatio(3 * noiseQ12(seed, 7113, u, v, 48 * 256) + noiseQ12(seed, 7114, u, v, 12 * 256), 4);
       value += roundRatio(amplitude * (recipe.coastStructureWorld * structural + recipe.coastRoughnessWorld * detail), budget * FIELD_Q);

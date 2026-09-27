@@ -234,6 +234,7 @@ test('[detail-v4-add] two native contours, protected first coast, same-session u
   await page.reload(); await ready(page); expect(await saved(page, id, 4)).toEqual(repeated); expect(await durableField(page, id)).toEqual(repeatedField);
   expect((await audit(page)).display).toMatchObject({ source: 'committed', version: 4, revision: 4, manifestDigest: repeated.root.currentManifest });
   const restoredPicks = await observeFirstCoast(page, firstField, touch);
+  await panel(page, '地图'); await frameReady(page); await page.screenshot({ path: info.outputPath('restored-coast-close.png'), fullPage: true });
   await panel(page, '地图'); await click(page, '全图'); await frameReady(page); await page.screenshot({ path: info.outputPath('two-continents-restored.png'), fullPage: true });
 
   await panel(page, '创世');

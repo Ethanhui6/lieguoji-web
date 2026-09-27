@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-09-27T11:18:29.748Z",
+  "buildJsonSha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35",
+  "version": "0.5.0-preview.10",
+  "cloudWrites": false,
+  "name": "群岬长陆 · 地貌修复试玩",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4",
+  "surface": "Codex in-app browser, separate tab 2",
+  "actions": [
+    "Create empty format4 world via UI with default standard 65536 coarse samples.",
+    "Native mouse stroke through 50 observed-screen points with asymmetric bays and peninsulas.",
+    "Actual candidate UI: land area 27.43%, elevations -5664 to 2235 m.",
+    "Confirm generation and save using UI; reload and observe revision1 saved."
+  ],
+  "warningAndErrorLogEntries": [],
+  "screenshot": {
+    "path": "manual-continent-restored.png",
+    "sha256": "862dcf0c1c7c1c68920060d2f199cf8545a90bd0670a7be72eabc96075487317"
+  },
+  "originalUserTab": "Tab1 prior unsaved preview retained; not refreshed, saved or discarded.",
+  "limitations": [
+    "This manual operation overlapped desktop/mobile checks in places; no duration or performance claim.",
+    "Single generated seed and single actual manual map are not general natural quality proof.",
+    "Browser-local save data was not exported to evidence."
+  ]
+}

@@ -1,0 +1,16 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../../vite.config" without a file extension (.autopilot/ph06/v4-natural-visual-repair-staging/vitest.config.ts:4:18). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/v4-natural-visual-repair-staging/src/world/generation/detail-natural-visual-repair.test.ts (4 tests) 7026ms
+   ✓ actual geography visual repair contracts (4)
+     ✓ does not change actual coastline/height bytes merely because straight gesture edges contain more input samples 4196ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  19:04:41
+   Duration  7.45s (tests 97%, transform 2%, import 1%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/unit.json

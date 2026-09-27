@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "name": "typecheck",
+      "code": 0,
+      "durationMs": 3357.5882
+    },
+    {
+      "name": "lint",
+      "code": 0,
+      "durationMs": 1651.4347999999995
+    },
+    {
+      "name": "unit",
+      "code": 0,
+      "durationMs": 19974.1399
+    }
+  ],
+  "unit": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "pending": 0
+  },
+  "sourceUnchanged": true,
+  "passed": true,
+  "retries": 0,
+  "numericalEvidenceDirectory": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first",
+  "noPerformanceAcceptance": true
+}

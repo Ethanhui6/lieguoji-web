@@ -2,7 +2,7 @@ import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, smoothQ } from './s
 import type { DetailShapeControl } from './detail-shape';
 
 type Point = { xQ: number; yQ: number };
-interface Ridge { a: Point; b: Point; widthQ: number; peakQ: number; group: number }
+export interface NaturalRidge { a: Point; b: Point; widthQ: number; peakQ: number; group: number; widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number }
 export interface NaturalReliefSummary {
   profile: 'regional-ridges-lowlands-v2'; ridgeSegments: number; ridgeGroups: number;
   rejectedSeaSegments: number; minimumRidgeWidthWorld: number; maximumRidgeWidthWorld: number;
@@ -21,11 +21,26 @@ async function checkpoint(control: DetailShapeControl | undefined, phase: string
 }
 const rotated = (x: number, y: number): [number, number] => [roundRatio(3 * x - 4 * y, 5), roundRatio(4 * x + 3 * y, 5)];
 const unit = (value: number) => Math.floor((value + FIELD_Q) / 2);
-function distanceToSegment(a: Point, b: Point, x: number, y: number) {
+function projectSegment(a: Point, b: Point, x: number, y: number) {
   const dx = b.xQ - a.xQ, dy = b.yQ - a.yQ, length2 = dx * dx + dy * dy;
   const t = Math.max(0, Math.min(1, ((x - a.xQ) * dx + (y - a.yQ) * dy) / length2));
   const px = Math.round(a.xQ + dx * t), py = Math.round(a.yQ + dy * t);
-  return integerSqrt((x - px) ** 2 + (y - py) ** 2);
+  return { distance: integerSqrt((x - px) ** 2 + (y - py) ** 2), tQ: Math.round(t * FIELD_Q), perpendicularQ: roundRatio(dx * (y - a.yQ) - dy * (x - a.xQ), integerSqrt(length2)) };
+}
+
+/** Real height support, separately testable at finite segment endpoints. */
+export function naturalRidgeContribution(ridge: NaturalRidge, xQ: number, yQ: number, stepQ: number): number {
+  const projected = projectSegment(ridge.a, ridge.b, xQ, yQ), t = smoothQ(projected.tQ);
+  let width = ridge.widthAQ + roundRatio((ridge.widthBQ - ridge.widthAQ) * t, FIELD_Q);
+  // A binary side switch is continuous on the interior crest (d=0), but NOT
+  // beyond a finite segment endpoint where d>0. Blend the side coefficient
+  // through signed transverse distance so both endpoint extensions stay C0.
+  const lean = Math.max(-FIELD_Q, Math.min(FIELD_Q, roundRatio(projected.perpendicularQ * FIELD_Q, Math.max(stepQ, width / 4))));
+  width = roundRatio(width * (FIELD_Q + roundRatio(614 * ridge.leeQ * lean, FIELD_Q)), FIELD_Q);
+  if (projected.distance >= width) return 0;
+  const peak = ridge.peakAQ + roundRatio((ridge.peakBQ - ridge.peakAQ) * t, FIELD_Q);
+  const slope = FIELD_Q - roundRatio(projected.distance * FIELD_Q, width);
+  return roundRatio(peak * slope * slope, FIELD_Q * FIELD_Q);
 }
 
 /** Builds a bounded real height profile. No drainage, erosion or decorative
@@ -43,21 +58,28 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     if (land[id] && coastDistance[id] >= Math.min(48 * 256, stepQ * 2)) { const x = centers[id * 2], y = centers[id * 2 + 1]; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); eligible++; }
     if ((id + 1) % batch === 0) await checkpoint(control, 'plan-natural-highlands', id + 1, land.length);
   }
-  const ridges: Ridge[] = []; let rejectedSeaSegments = 0;
+  const ridges: NaturalRidge[] = []; let rejectedSeaSegments = 0;
   if (eligible >= 3) {
     const horizontal = maxX - minX >= maxY - minY, longMin = horizontal ? minX : minY, longSpan = horizontal ? maxX - minX : maxY - minY;
     const shortMin = horizontal ? minY : minX, shortSpan = horizontal ? maxY - minY : maxX - minX;
-    const anchors: { target: Point; point?: Point; score: number; group: number; order: number }[] = [];
-    // A long central spine and two shorter, off-axis chains. Their seed-stable
-    // bend is specified in world coordinates, not aligned to sample rows.
+    const anchors: { target: Point; point?: Point; score: number; group: number; order: number; widthQ: number; peakQ: number }[] = [];
+    // Staggered mountain groups: their ends are foothills, alternating interior
+    // anchors are peaks and saddles, and width is shared at each join. No
+    // constant-height capsule or fixed symmetric fork is present in the field.
     for (let group = 0; group < 3; group++) {
       const count = group === 0 ? 9 : 5, side = group === 1 ? -1 : 1;
       for (let j = 0; j < count; j++) {
-        const tQ = roundRatio(j * FIELD_Q, count - 1), alongQ = group === 0 ? 410 + roundRatio(tQ * 3276, FIELD_Q) : 1024 + roundRatio(tQ * 2048, FIELD_Q);
-        const bend = noiseQ12(seed, 7200 + group, roundRatio(tQ * 1024 * 256, FIELD_Q), 0, 512 * 256);
-        const branch = group === 0 ? 0 : roundRatio(side * shortSpan * (FIELD_Q - tQ), 3 * FIELD_Q);
-        const longitudinal = longMin + roundRatio(longSpan * alongQ, FIELD_Q), transverse = shortMin + Math.floor(shortSpan / 2) + branch + roundRatio(shortSpan * bend, 7 * FIELD_Q);
-        anchors.push({ target: horizontal ? { xQ: longitudinal, yQ: transverse } : { xQ: transverse, yQ: longitudinal }, score: Infinity, group, order: j });
+        const tQ = roundRatio(j * FIELD_Q, count - 1);
+        const start = group === 0 ? 328 : group === 1 ? 164 : 1638, span = group === 0 ? 3440 : group === 1 ? 2294 : 2130;
+        const alongQ = start + roundRatio(tQ * span, FIELD_Q);
+        const bend = noiseQ12(seed, 7200 + group, roundRatio(tQ * 1408 * 256, FIELD_Q), 0, 512 * 256);
+        const branch = group === 0 ? 0 : roundRatio(side * shortSpan * (1229 + roundRatio((FIELD_Q - tQ) * 410, FIELD_Q)), FIELD_Q * 4);
+        const longitudinal = longMin + roundRatio(longSpan * alongQ, FIELD_Q), transverse = shortMin + Math.floor(shortSpan / 2) + branch + roundRatio(shortSpan * bend, 4 * FIELD_Q);
+        const widthQ = Math.max(4 * stepQ, (group === 0 ? 88 : 60) * 256 + (hashAt(seed, 7210, group, j) % 113) * 256);
+        const peakQ = j === 0 || j === count - 1 ? 0 : j % 2 === 1
+          ? (group === 0 ? 3686 : 2130) + hashAt(seed, 7211, group, j) % 410
+          : (group === 0 ? 1720 : 819) + hashAt(seed, 7212, group, j) % 492;
+        anchors.push({ target: horizontal ? { xQ: longitudinal, yQ: transverse } : { xQ: transverse, yQ: longitudinal }, score: Infinity, group, order: j, widthQ, peakQ });
       }
     }
     let work = 0;
@@ -83,9 +105,8 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
         if (++work % batch === 0) await checkpoint(control, 'check-natural-ridges', index, anchors.length);
       }
       if (!clear) { rejectedSeaSegments++; continue; }
-      const widthQ = Math.max(4 * stepQ, (b.group === 0 ? 100 : 64) * 256 + (hashAt(seed, 7210, b.group, b.order) % 65) * 256);
-      const peakQ = b.group === 0 ? 2458 + hashAt(seed, 7211, b.group, b.order) % 1229 : 1229 + hashAt(seed, 7212, b.group, b.order) % 820;
-      ridges.push({ a: { ...a.point }, b: { ...b.point }, widthQ, peakQ, group: b.group });
+      ridges.push({ a: { ...a.point }, b: { ...b.point }, widthQ: Math.max(a.widthQ, b.widthQ), peakQ: Math.max(a.peakQ, b.peakQ), group: b.group,
+        widthAQ: a.widthQ, widthBQ: b.widthQ, peakAQ: a.peakQ, peakBQ: b.peakQ, leeQ: hashAt(seed, 7213, b.group, 0) % 2 ? 1 : -1 });
     }
   }
   await checkpoint(control, 'check-natural-ridges', ridges.length, ridges.length);
@@ -103,20 +124,29 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
       return Math.max(-12000, Math.min(-1, roundRatio(oldSea * rise, FIELD_Q)));
     }
     const [u, v] = rotated(xQ, yQ), lowland = 61 + roundRatio(246 * unit(noiseQ12(seed, 7230, u, v, 640 * 256)), FIELD_Q);
-    const rolling = roundRatio(82 * unit(noiseQ12(seed, 7231, u, v, Math.max(96 * 256, 4 * stepQ))), FIELD_Q);
+    // Every added wavelength is >= four real coarse sample spacings. These
+    // variations survive persisted Hbase reconstruction instead of aliasing
+    // sub-sample fake detail into the inland surface.
+    const featureQ = Math.max(64 * 256, 4 * stepQ);
+    const rolling = roundRatio(123 * unit(noiseQ12(seed, 7231, u, v, featureQ)), FIELD_Q);
+    const warpQ = Math.min(24 * 256, stepQ);
+    const wx = xQ + roundRatio(warpQ * noiseQ12(seed, 7232, u, v, Math.max(224 * 256, 8 * stepQ)), FIELD_Q);
+    const wy = yQ + roundRatio(warpQ * noiseQ12(seed, 7233, u, v, Math.max(224 * 256, 8 * stepQ)), FIELD_Q);
+    const weather = 2867 + roundRatio(1229 * unit(noiseQ12(seed, 7234, u, v, featureQ)), FIELD_Q);
     let highland = 0;
     for (const ridge of ridges) {
-      const d = distanceToSegment(ridge.a, ridge.b, xQ, yQ); if (d >= ridge.widthQ) continue;
-      const profile = smoothQ(FIELD_Q - roundRatio(d * FIELD_Q, ridge.widthQ));
-      highland = Math.max(highland, roundRatio(ridge.peakQ * profile * profile, FIELD_Q * FIELD_Q));
+      // (1-d/w)^2 has a finite one-sided slope at d=0. Smoothstep there
+      // previously created broad, level pipe tops along every entire segment.
+      const mass = naturalRidgeContribution(ridge, wx, wy, stepQ);
+      highland = Math.max(highland, roundRatio(mass * weather, FIELD_Q));
     }
     const rise = smoothQ(roundRatio(distanceQ * FIELD_Q, coastRiseAt(xQ, yQ) * 256));
     const profile = Math.min(FIELD_Q, lowland + rolling + highland);
     return Math.max(0, Math.min(relief, roundRatio(relief * profile * rise, FIELD_Q * FIELD_Q)));
   };
   const summary: NaturalReliefSummary = { profile: 'regional-ridges-lowlands-v2', ridgeSegments: ridges.length, ridgeGroups: new Set(ridges.map(r => r.group)).size,
-    rejectedSeaSegments, minimumRidgeWidthWorld: ridges.length ? Math.min(...ridges.map(r => r.widthQ)) / 256 : 0,
-    maximumRidgeWidthWorld: ridges.length ? Math.max(...ridges.map(r => r.widthQ)) / 256 : 0, minimumShelfWorld: Math.max(16, Math.round(shelfBase * 1434 / FIELD_Q)), maximumShelfWorld: shelfBase };
+    rejectedSeaSegments, minimumRidgeWidthWorld: ridges.length ? Math.min(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 3482 / FIELD_Q / 256 : 0,
+    maximumRidgeWidthWorld: ridges.length ? Math.max(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 4710 / FIELD_Q / 256 : 0, minimumShelfWorld: Math.max(16, Math.round(shelfBase * 1434 / FIELD_Q)), maximumShelfWorld: shelfBase };
   return { physicalHeight, shelfWidthAt, coastRiseAt, summary,
     /** Copies for numerical evidence; changing them cannot alter the sampler. */
     ridges: ridges.map(r => ({ ...r, a: { ...r.a }, b: { ...r.b } })) };

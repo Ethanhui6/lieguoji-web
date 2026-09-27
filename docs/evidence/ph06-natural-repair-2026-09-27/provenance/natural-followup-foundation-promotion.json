@@ -1,0 +1,55 @@
+{
+  "promotedAt": "2026-09-27T10:54:14.542Z",
+  "files": [
+    {
+      "path": "src/world/transactions.ts",
+      "stagedSha256": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d",
+      "baselineSha256": "f8df63985e443d77b87c43a0eff9ef90034b258a118f3f6fdcccf5acb4114789",
+      "productionExists": true,
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/src/world/transactions.ts",
+      "expected": "368f02ea7cfee00ea5285daa27d016dceec9d0db690b60dc86ba251f59121e3d"
+    },
+    {
+      "path": "src/world/detail-owned-replacement-copy.test.ts",
+      "stagedSha256": "c68438c16a9df461861d09c3fa2bd35fda5538da15c6208f49c06580f3b264f6",
+      "baselineSha256": null,
+      "productionExists": false,
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/src/world/detail-owned-replacement-copy.test.ts",
+      "expected": "c68438c16a9df461861d09c3fa2bd35fda5538da15c6208f49c06580f3b264f6"
+    },
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview9-history-staging/src/world/generation-history.ts",
+      "baselineSha256": "f1f14d77874075db2aa5db11280695293271e73a2eea36d7e2938ce7321dd72d",
+      "sha256": "a7bdf0045358e6b61f8f11fb51aeaabdd6736e874ac49a3b55eb86242bbae29e",
+      "baselineMatches": true,
+      "mode": "mirror",
+      "source": ".autopilot/ph06/v4-preview9-history-staging/src/world/generation-history.ts",
+      "expected": "a7bdf0045358e6b61f8f11fb51aeaabdd6736e874ac49a3b55eb86242bbae29e"
+    },
+    {
+      "path": "src/world/detail-preview9-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview9-history-staging/src/world/detail-preview9-history.test.ts",
+      "baselineSha256": null,
+      "sha256": "ede5d346f2af1e5e4cc273260bc66c7e622224b35f810efb2a4060c14a6c9eb7",
+      "baselineMatches": true,
+      "mode": "new",
+      "source": ".autopilot/ph06/v4-preview9-history-staging/src/world/detail-preview9-history.test.ts",
+      "expected": "ede5d346f2af1e5e4cc273260bc66c7e622224b35f810efb2a4060c14a6c9eb7"
+    }
+  ],
+  "history": {
+    "source": ".autopilot/ph06/v4-preview9-history-staging/evidence/preview9",
+    "target": "docs/evidence/ph06-preview9-generator-history-2026-09-27",
+    "buildSha256": "40878f8033531cc5f069c055486992e1a6119517b3845de684fc149a948dde67",
+    "sourceSnapshotSha256": "7bebca5a6ee023a7c1baac7b2b50a3ccf8fd7b39b679394539af00fe0d737357",
+    "closureCount": 10,
+    "sourceFiles": 37,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "inventorySha256": "6507019d9d52e2b8c40afd8149f53f5e567f06ceddcd82356acfa1940d040a7b",
+    "provenanceSha256": "eb5b0c8ffa102bbfdb1906ecbe49b58b85052cde724c6e31c0e6efb6eb26bd2c"
+  },
+  "cloudWrites": false,
+  "checksRun": false
+}

@@ -1,0 +1,1041 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-27T11:27:01.897Z",
+  "files": [
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/lint.log",
+      "dest": "raw/foundation/foundation-first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/plan.log",
+      "dest": "raw/foundation/foundation-first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/scope.json",
+      "dest": "raw/foundation/foundation-first/scope.json",
+      "bytes": 469,
+      "sha256": "16f30e765a60612e791c61fd78335b689dfb0b1e5c9bbbc57a2d042bc4426fda"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/source-after.json",
+      "dest": "raw/foundation/foundation-first/source-after.json",
+      "bytes": 42164,
+      "sha256": "726e2ac137748621aca792bcbbeba4f205730414304b95dcfd97a90814e64883"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/source-before.json",
+      "dest": "raw/foundation/foundation-first/source-before.json",
+      "bytes": 42164,
+      "sha256": "726e2ac137748621aca792bcbbeba4f205730414304b95dcfd97a90814e64883"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/types.log",
+      "dest": "raw/foundation/foundation-first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/unit.json",
+      "dest": "raw/foundation/foundation-first/unit.json",
+      "bytes": 15779,
+      "sha256": "ebb6212409197f7a5d919c992780341dc63b5515cfe09b83ecbf88c0b4d493c2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/unit.log",
+      "dest": "raw/foundation/foundation-first/unit.log",
+      "bytes": 120,
+      "sha256": "9d7c3d40798405d9ef4602682f9b1f5757246d69dcf58f4f09af9df03c28ab47"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation-first/verification.json",
+      "dest": "raw/foundation/foundation-first/verification.json",
+      "bytes": 1795,
+      "sha256": "38205ac118dfffb137b49e2785e6fc201993514a0613120bc7255a94d731db49"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/build.json",
+      "dest": "raw/root/preflight-repair/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/build.log",
+      "dest": "raw/root/preflight-repair/build.log",
+      "bytes": 1866,
+      "sha256": "a827fea3eac65e1b053b74476bbacee2cdd3633e62849b321ff69ee362a58685"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/dist-audit.log",
+      "dest": "raw/root/preflight-repair/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/lint.log",
+      "dest": "raw/root/preflight-repair/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/plan.log",
+      "dest": "raw/root/preflight-repair/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/scope.json",
+      "dest": "raw/root/preflight-repair/scope.json",
+      "bytes": 681,
+      "sha256": "cd8fafda1982a17fe2cb07181dcbb999adbebe7464568a8dc9d9a296ba946020"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/source-after.json",
+      "dest": "raw/root/preflight-repair/source-after.json",
+      "bytes": 42327,
+      "sha256": "170ec3cbef73e5a0e32b98b3846aa59e56dbff53a52b79c2c0feb5a7dfc61410"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/source-before.json",
+      "dest": "raw/root/preflight-repair/source-before.json",
+      "bytes": 42327,
+      "sha256": "170ec3cbef73e5a0e32b98b3846aa59e56dbff53a52b79c2c0feb5a7dfc61410"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/types.log",
+      "dest": "raw/root/preflight-repair/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/unit.json",
+      "dest": "raw/root/preflight-repair/unit.json",
+      "bytes": 16254,
+      "sha256": "0b277e7491b7e4962c0c83f2a6763b65d100c1161c7ae58d1db30614af9dd541"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/unit.log",
+      "dest": "raw/root/preflight-repair/unit.log",
+      "bytes": 120,
+      "sha256": "cec929d4e58a6106fde2123eb80756e262365322e1a7b68b6e72856692e51be1"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/preflight-repair/verification.json",
+      "dest": "raw/root/preflight-repair/verification.json",
+      "bytes": 6110,
+      "sha256": "8520f30688dc4fd171826c5689c12c57bcac3c069b761c2483702d324769febe"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/first/preflight-aborted.json",
+      "dest": "raw/preflight-aborted/first/preflight-aborted.json",
+      "bytes": 585,
+      "sha256": "bfee3f538e4408c1adcf7cf15ff4c3055810e47864f5ae0c63c8b4c68db88abd"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/after.json",
+      "dest": "raw/browser/desktop-first/after.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "bytes": 288753,
+      "sha256": "900774dbaf19ca20d846b3030ba628db72c7710172b6f0d0a9a9fdf236a8e468"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "bytes": 319407,
+      "sha256": "42b3042f44b48975a959432d983084710ff02162be6261b316c229c07e183016"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "dest": "raw/browser/desktop-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "bytes": 318694,
+      "sha256": "0a4eaea9fb9c20e8c80c5c1dd272dde4199c48c27eba5866ff8c4946b1863112"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/before.json",
+      "dest": "raw/browser/desktop-first/before.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/build.json",
+      "dest": "raw/browser/desktop-first/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/results.json",
+      "dest": "raw/browser/desktop-first/results.json",
+      "bytes": 167911,
+      "sha256": "1d22a5fba73748e07c712cd299289f0f588c30676774f18fa44eedea41760685"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/run.log",
+      "dest": "raw/browser/desktop-first/run.log",
+      "bytes": 407,
+      "sha256": "e8b1a9edc8212e112f48e61c08aee3c7975b5bdf240ad4f41bc66b7356409231"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/desktop-first/verification.json",
+      "dest": "raw/browser/desktop-first/verification.json",
+      "bytes": 360,
+      "sha256": "4a7f2a8414b6d2b1d5f128336b303ce7aeb2751cb42712901f446206664e4e09"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/after.json",
+      "dest": "raw/browser/mobile-first/after.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "bytes": 244319,
+      "sha256": "5c7b58ea48e6261365014acc690af811d67c4db3711066af90ddf6965aa905e6"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "bytes": 427469,
+      "sha256": "1c3a6df16e09d5093d888b85562e7dfd79fdf0fc59c039e17fba9112cb628b22"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "dest": "raw/browser/mobile-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "bytes": 419665,
+      "sha256": "cc70970195f26e7e9ca1b874832e74cd51969e10509b710af9206126d8684dea"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/before.json",
+      "dest": "raw/browser/mobile-first/before.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/build.json",
+      "dest": "raw/browser/mobile-first/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/results.json",
+      "dest": "raw/browser/mobile-first/results.json",
+      "bytes": 167940,
+      "sha256": "92745675d8f8327a6e8b8586c772306c22168c823e8ad246c9e7198e99e37dcb"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/run.log",
+      "dest": "raw/browser/mobile-first/run.log",
+      "bytes": 406,
+      "sha256": "1d8afd7d1cd472ef40ce209908db25a3870458f5e1b91c4592f8d6da28e8f21c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/mobile-first/verification.json",
+      "dest": "raw/browser/mobile-first/verification.json",
+      "bytes": 357,
+      "sha256": "021b78dfe44d00a22689b20ce464a21ea17ca6c066f752fd491d8910a288d183"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/after.json",
+      "dest": "raw/browser/tablet-first/after.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "bytes": 340993,
+      "sha256": "c492214d38934b2db9d3b13b1b261b2977c3eeb6a906e45717f1f36790cd8fc4"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "bytes": 758748,
+      "sha256": "f57e618b4237534b328a2630540fbc9755017fb26d07d36588965b3c7dd52324"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "dest": "raw/browser/tablet-first/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "bytes": 753289,
+      "sha256": "3a8c836045809dd1d23ab5e7d1843debfe7d10b2b2cec7f47a34be212439952c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/before.json",
+      "dest": "raw/browser/tablet-first/before.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/build.json",
+      "dest": "raw/browser/tablet-first/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/results.json",
+      "dest": "raw/browser/tablet-first/results.json",
+      "bytes": 167948,
+      "sha256": "a9bfc9318d648c1a75e188e0b5b7bd75e1ff8c60dc6589d12c6fb155a4e815be"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/run.log",
+      "dest": "raw/browser/tablet-first/run.log",
+      "bytes": 406,
+      "sha256": "c002115550e064c9e07033a2cb4eed8ba1573259163ad41738a23537436fdfa2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/tablet-first/verification.json",
+      "dest": "raw/browser/tablet-first/verification.json",
+      "bytes": 357,
+      "sha256": "eb5d11fbb119bfe0c3849acf6644f99b2216abdf1dfaa38d1ab622cd28990afe"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/after.json",
+      "dest": "raw/browser/entry-first/after.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/before.json",
+      "dest": "raw/browser/entry-first/before.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/build.json",
+      "dest": "raw/browser/entry-first/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/results.json",
+      "dest": "raw/browser/entry-first/results.json",
+      "bytes": 4417,
+      "sha256": "b33f664b1b26f0c2aa58c0b15ffbf3cc82a67e2a37ba0b6d2720365f67ce5bfb"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/run.log",
+      "dest": "raw/browser/entry-first/run.log",
+      "bytes": 389,
+      "sha256": "efd6d64f623dcef39dfb12e24205767aff9b7d0f1f23b5c65eb28d1fd58f9417"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/entry-first/verification.json",
+      "dest": "raw/browser/entry-first/verification.json",
+      "bytes": 357,
+      "sha256": "72e2441ea76e47ccac7fee310117416102507141840151829097c122de11c842"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/after.json",
+      "dest": "raw/browser/legacy-first/after.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-first-preview.png",
+      "dest": "raw/browser/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-first-preview.png",
+      "bytes": 167363,
+      "sha256": "82f49fbeb0341a18fe7e292fb4f28039c8a6b19c33fc7c31afdf39638db04005"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-shore.png",
+      "dest": "raw/browser/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-shore.png",
+      "bytes": 103661,
+      "sha256": "08bc7b9c81af153e08a319dc177f58ec48bb377105afab3a7999ec417b7a2199"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-world.png",
+      "dest": "raw/browser/legacy-first/artifacts/atlas-detail-coast--detail-b430e-cks-reload-and-GPU-recovery-desktop-chromium/fine-world.png",
+      "bytes": 169060,
+      "sha256": "90bfe2df35d0588300a2e01c3c52f9c1e5e9a3ddd5f2b66b101ea96387ff5bb1"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/before.json",
+      "dest": "raw/browser/legacy-first/before.json",
+      "bytes": 43535,
+      "sha256": "d5564192cd2c4659cadece77e9756d16e06acfc4e28b0d98420311a20f2231a2"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/build.json",
+      "dest": "raw/browser/legacy-first/build.json",
+      "bytes": 8199,
+      "sha256": "63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/results.json",
+      "dest": "raw/browser/legacy-first/results.json",
+      "bytes": 182244,
+      "sha256": "60dc390472c316b896e616633161d9801cecf709f69246d15d4c39fc255738e3"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/run.log",
+      "dest": "raw/browser/legacy-first/run.log",
+      "bytes": 394,
+      "sha256": "a8a6c97d52b1455b2b952f33d233afbab6697c0bb9a4850ac064561f6fac1fe7"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/legacy-first/verification.json",
+      "dest": "raw/browser/legacy-first/verification.json",
+      "bytes": 358,
+      "sha256": "fef2a9801b8bfd80d0a1cc628c2954f8384b229e7fd7c817348c7238f4497f33"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/actual-256-height-field.json",
+      "dest": "raw/visual-candidate/first/actual-256-height-field.json",
+      "bytes": 881390,
+      "sha256": "af89e18561fec23a36cc9a70714fadb55b17839641137f02699a63d96be94014"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/actual-256-height-field.png",
+      "dest": "raw/visual-candidate/first/actual-256-height-field.png",
+      "bytes": 23685,
+      "sha256": "1342a637bdbdd89b1ae751c9eaa6bf1c0b68062eaf431b920f7d6c69c50438b2"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/actual-256-height-field.svg",
+      "dest": "raw/visual-candidate/first/actual-256-height-field.svg",
+      "bytes": 5144377,
+      "sha256": "f8364d054ddf6578730237a43b5f574ca58f6c28d939c74cb0cd8106c3c20cf5"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/commands.json",
+      "dest": "raw/visual-candidate/first/commands.json",
+      "bytes": 1283,
+      "sha256": "719ba0ef2e321927090d49393baea881b87ff75fb77aec2c66ef475b9ac26a67"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/lint-exit.json",
+      "dest": "raw/visual-candidate/first/lint-exit.json",
+      "bytes": 70,
+      "sha256": "4d6adcb231fc00d3956fe532f4603d4a0644528d3a17c34937735d9f4c069922"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/lint.log",
+      "dest": "raw/visual-candidate/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/source-after.json",
+      "dest": "raw/visual-candidate/first/source-after.json",
+      "bytes": 34323,
+      "sha256": "e6780e2f259d7e21b678e495bd665f25ebf4a6801c4241a11b3c33fb299c29ce"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/source-before.json",
+      "dest": "raw/visual-candidate/first/source-before.json",
+      "bytes": 34323,
+      "sha256": "e6780e2f259d7e21b678e495bd665f25ebf4a6801c4241a11b3c33fb299c29ce"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/typecheck-exit.json",
+      "dest": "raw/visual-candidate/first/typecheck-exit.json",
+      "bytes": 66,
+      "sha256": "35b2b825a0178c5b120b56f975a92000c12e85cf01f7d7051db08af5bb352358"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/typecheck.log",
+      "dest": "raw/visual-candidate/first/typecheck.log",
+      "bytes": 111,
+      "sha256": "17015e65a7238e2c81480c91f0ce05cbca1b0a677634f4b3e2180f9a5c1d447e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/unit-exit.json",
+      "dest": "raw/visual-candidate/first/unit-exit.json",
+      "bytes": 62,
+      "sha256": "50381c5c7c2a74a2ec3a3ecee438c4c47e655198645e4fa9b5e48434a246b3e7"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/unit.json",
+      "dest": "raw/visual-candidate/first/unit.json",
+      "bytes": 6887,
+      "sha256": "2cfe210515dfac5db06a7c4a4b4b5aaa170dcbc66973d7b4f16e41f081bb0a0d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/unit.log",
+      "dest": "raw/visual-candidate/first/unit.log",
+      "bytes": 1515,
+      "sha256": "cc7539c3999a82147801c43374ff74b2ac33f20a68ecf2894f69bd201fcad8a0"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/first/verification.json",
+      "dest": "raw/visual-candidate/first/verification.json",
+      "bytes": 562,
+      "sha256": "de1735108cee351b289372f33dc34b6253c669bda04f12c6d1a786ebaf23c9ea"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/actual-256-height-field.json",
+      "dest": "raw/visual-candidate/revision2/actual-256-height-field.json",
+      "bytes": 886289,
+      "sha256": "dceff7bc621385ee43bacc6ed5487358666c7e1a153967403c2d92035efee536"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/actual-256-height-field.png",
+      "dest": "raw/visual-candidate/revision2/actual-256-height-field.png",
+      "bytes": 25676,
+      "sha256": "29a86331435408ff7a1b1e9f0e49998e12285fb39dad4783d98eaa35bb28fdd3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/actual-256-height-field.svg",
+      "dest": "raw/visual-candidate/revision2/actual-256-height-field.svg",
+      "bytes": 5144221,
+      "sha256": "8b93384a21f7492722d33dcb3cb8c60aa121de6ce2ebb2e480ac43182a2c8948"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/commands.json",
+      "dest": "raw/visual-candidate/revision2/commands.json",
+      "bytes": 1287,
+      "sha256": "c92650604f69f4b38b24f1724b1d27cc4c8e2beb231c8da9fa111ea3c8aa5865"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/lint-exit.json",
+      "dest": "raw/visual-candidate/revision2/lint-exit.json",
+      "bytes": 70,
+      "sha256": "a3c8887c9fbec562f873373bac90894f8857d05388f499d709819610bc8b256d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/lint.log",
+      "dest": "raw/visual-candidate/revision2/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/source-after.json",
+      "dest": "raw/visual-candidate/revision2/source-after.json",
+      "bytes": 34323,
+      "sha256": "871f4b607566df85a1ba168221a0a38b39a5d93016eeda77c33ed6f85170762c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/source-before.json",
+      "dest": "raw/visual-candidate/revision2/source-before.json",
+      "bytes": 34323,
+      "sha256": "871f4b607566df85a1ba168221a0a38b39a5d93016eeda77c33ed6f85170762c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/typecheck-exit.json",
+      "dest": "raw/visual-candidate/revision2/typecheck-exit.json",
+      "bytes": 66,
+      "sha256": "f661017633f8af39f49690c6b026cac6783a8e3e619de968ec3c48898821f90e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/typecheck.log",
+      "dest": "raw/visual-candidate/revision2/typecheck.log",
+      "bytes": 111,
+      "sha256": "17015e65a7238e2c81480c91f0ce05cbca1b0a677634f4b3e2180f9a5c1d447e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/unit-exit.json",
+      "dest": "raw/visual-candidate/revision2/unit-exit.json",
+      "bytes": 70,
+      "sha256": "5784703cf589e76b1926b7d8a1fb762821b7cf5cdcec3e53d631a9bb7db0827b"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/unit.json",
+      "dest": "raw/visual-candidate/revision2/unit.json",
+      "bytes": 6890,
+      "sha256": "58bd89f7256766ec595bd544302e104745211bc69574df0da71605e8040ccff6"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/unit.log",
+      "dest": "raw/visual-candidate/revision2/unit.log",
+      "bytes": 1519,
+      "sha256": "ca9187a2a3824b866b37ee093baf5637fa4e2658001a91d3e5f42ae4d4b0abd7"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/revision2/verification.json",
+      "dest": "raw/visual-candidate/revision2/verification.json",
+      "bytes": 574,
+      "sha256": "b6a2554b14855a0747cae1f92ce511c7d692bd2ae3426ae75dad107dae469451"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/actual-256-height-field.json",
+      "dest": "raw/visual-candidate/output-guard/actual-256-height-field.json",
+      "bytes": 886289,
+      "sha256": "dceff7bc621385ee43bacc6ed5487358666c7e1a153967403c2d92035efee536"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/actual-256-height-field.png",
+      "dest": "raw/visual-candidate/output-guard/actual-256-height-field.png",
+      "bytes": 25676,
+      "sha256": "29a86331435408ff7a1b1e9f0e49998e12285fb39dad4783d98eaa35bb28fdd3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/actual-256-height-field.svg",
+      "dest": "raw/visual-candidate/output-guard/actual-256-height-field.svg",
+      "bytes": 5144221,
+      "sha256": "8b93384a21f7492722d33dcb3cb8c60aa121de6ce2ebb2e480ac43182a2c8948"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/commands.json",
+      "dest": "raw/visual-candidate/output-guard/commands.json",
+      "bytes": 1408,
+      "sha256": "a04bb8a24b05e817f24e8117fa43005744c4d581b0985af0d8a4b941b48511cb"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/lint-exit.json",
+      "dest": "raw/visual-candidate/output-guard/lint-exit.json",
+      "bytes": 70,
+      "sha256": "e7816f53dd04fb4806ae90e1c34ee640d2ac0bc2aed66c40dc832f2e67f490af"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/lint.log",
+      "dest": "raw/visual-candidate/output-guard/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/source-after.json",
+      "dest": "raw/visual-candidate/output-guard/source-after.json",
+      "bytes": 34323,
+      "sha256": "3721282126c905c1597c2c97bb7b37dbbf1a0e3196de2420cc96c27ebdecc8d3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/source-before.json",
+      "dest": "raw/visual-candidate/output-guard/source-before.json",
+      "bytes": 34323,
+      "sha256": "3721282126c905c1597c2c97bb7b37dbbf1a0e3196de2420cc96c27ebdecc8d3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/typecheck-exit.json",
+      "dest": "raw/visual-candidate/output-guard/typecheck-exit.json",
+      "bytes": 75,
+      "sha256": "35048db47d244384911811baa512ba0f7c15ae83664e29d958b4f995619a1814"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/typecheck.log",
+      "dest": "raw/visual-candidate/output-guard/typecheck.log",
+      "bytes": 111,
+      "sha256": "17015e65a7238e2c81480c91f0ce05cbca1b0a677634f4b3e2180f9a5c1d447e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/unit-exit.json",
+      "dest": "raw/visual-candidate/output-guard/unit-exit.json",
+      "bytes": 61,
+      "sha256": "97836d2a483fafdbcdf909d56a602f7c21ac9d7ed66594c46db7c69c9bb6ebd0"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/unit.json",
+      "dest": "raw/visual-candidate/output-guard/unit.json",
+      "bytes": 2433,
+      "sha256": "edc1b3794ba15710bdefe77499cffa18156fbb2df9a8ab52c2e800860ec3032c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/unit.log",
+      "dest": "raw/visual-candidate/output-guard/unit.log",
+      "bytes": 1007,
+      "sha256": "d6decefc9b493c3cd1541c2ff069b6590590a46f2e516346414a88c24a68d889"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/output-guard/verification.json",
+      "dest": "raw/visual-candidate/output-guard/verification.json",
+      "bytes": 575,
+      "sha256": "fc7524c8cdaea03815cb81719397bce9b74db1a108a8386e2e92ed18f875a2bd"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/actual-256-height-field.json",
+      "dest": "raw/visual-candidate/continuity-first/actual-256-height-field.json",
+      "bytes": 886289,
+      "sha256": "dceff7bc621385ee43bacc6ed5487358666c7e1a153967403c2d92035efee536"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/actual-256-height-field.png",
+      "dest": "raw/visual-candidate/continuity-first/actual-256-height-field.png",
+      "bytes": 25676,
+      "sha256": "29a86331435408ff7a1b1e9f0e49998e12285fb39dad4783d98eaa35bb28fdd3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/actual-256-height-field.svg",
+      "dest": "raw/visual-candidate/continuity-first/actual-256-height-field.svg",
+      "bytes": 5144221,
+      "sha256": "8b93384a21f7492722d33dcb3cb8c60aa121de6ce2ebb2e480ac43182a2c8948"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/commands.json",
+      "dest": "raw/visual-candidate/continuity-first/commands.json",
+      "bytes": 1469,
+      "sha256": "ea1687b68872bd919b4485412e1cd880c91c594d6466240fc20a8e685875203b"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/lint-exit.json",
+      "dest": "raw/visual-candidate/continuity-first/lint-exit.json",
+      "bytes": 70,
+      "sha256": "e0851dd05b94d0326e3e15e4cf195ba583c5e92160a799e31c41161d2d1ef3c1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/lint.log",
+      "dest": "raw/visual-candidate/continuity-first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/source-after.json",
+      "dest": "raw/visual-candidate/continuity-first/source-after.json",
+      "bytes": 34323,
+      "sha256": "06bdc01c40b6c982e91825b9c42f4c4e2ca9d021a1e010810045b9986943edc1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/source-before.json",
+      "dest": "raw/visual-candidate/continuity-first/source-before.json",
+      "bytes": 34323,
+      "sha256": "06bdc01c40b6c982e91825b9c42f4c4e2ca9d021a1e010810045b9986943edc1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/typecheck-exit.json",
+      "dest": "raw/visual-candidate/continuity-first/typecheck-exit.json",
+      "bytes": 66,
+      "sha256": "36aed66fc07cf1e041b826b592efeae65311842004091f58601b1d1cc80687a4"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/typecheck.log",
+      "dest": "raw/visual-candidate/continuity-first/typecheck.log",
+      "bytes": 111,
+      "sha256": "17015e65a7238e2c81480c91f0ce05cbca1b0a677634f4b3e2180f9a5c1d447e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/unit-exit.json",
+      "dest": "raw/visual-candidate/continuity-first/unit-exit.json",
+      "bytes": 61,
+      "sha256": "1e92d33864643a99752392a53a6b7b91946ba45bd8544eaf0f4796ef7b7fb228"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/unit.json",
+      "dest": "raw/visual-candidate/continuity-first/unit.json",
+      "bytes": 4133,
+      "sha256": "f14e479dbfd8dd7d81b66ca82fd1bba018766fe29f01c842081288d762ec1479"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/unit.log",
+      "dest": "raw/visual-candidate/continuity-first/unit.log",
+      "bytes": 2346,
+      "sha256": "e0405353f16090e2a47430846a71f1fa581a9e0e3a16ef80006df51070747bd1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-first/verification.json",
+      "dest": "raw/visual-candidate/continuity-first/verification.json",
+      "bytes": 571,
+      "sha256": "14de91714827337c01d2c5594235a87bc0fc88ceb2913d339fc561e415531afd"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/actual-256-height-field.json",
+      "dest": "raw/visual-candidate/continuity-repair/actual-256-height-field.json",
+      "bytes": 886298,
+      "sha256": "de659089c761597a46ab8c49fe500d158627a2f51eb9e2af566d81ee25430e91"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/actual-256-height-field.png",
+      "dest": "raw/visual-candidate/continuity-repair/actual-256-height-field.png",
+      "bytes": 25650,
+      "sha256": "30e20ef90987e047db5d4239bc7dbcafec57566a5d29a52bc36b5575e829cfa1"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/actual-256-height-field.svg",
+      "dest": "raw/visual-candidate/continuity-repair/actual-256-height-field.svg",
+      "bytes": 5144220,
+      "sha256": "513906874cf07f6a881cf5efaaea0a1bbc3699a96adab9ed7d3e7bc363cf78c9"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/commands.json",
+      "dest": "raw/visual-candidate/continuity-repair/commands.json",
+      "bytes": 1295,
+      "sha256": "e5be17f87e3f05df673dc60ab73de461af8b06df4aa679210e045e9a3f5c257b"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/lint-exit.json",
+      "dest": "raw/visual-candidate/continuity-repair/lint-exit.json",
+      "bytes": 61,
+      "sha256": "979b44dc31dcd6932a1c0cc9975b1af1b00a8d6b6569b86b2d6fabda25c04ef4"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/lint.log",
+      "dest": "raw/visual-candidate/continuity-repair/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/source-after.json",
+      "dest": "raw/visual-candidate/continuity-repair/source-after.json",
+      "bytes": 34323,
+      "sha256": "f16bfa9dcff8d863285241a4a62c6946fb61be43023892a772b691f17fb4842e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/source-before.json",
+      "dest": "raw/visual-candidate/continuity-repair/source-before.json",
+      "bytes": 34323,
+      "sha256": "f16bfa9dcff8d863285241a4a62c6946fb61be43023892a772b691f17fb4842e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/typecheck-exit.json",
+      "dest": "raw/visual-candidate/continuity-repair/typecheck-exit.json",
+      "bytes": 65,
+      "sha256": "fea7b36e1904f506c9ff186041e0d2baed282637099fd70941e2eaf724fedb23"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/typecheck.log",
+      "dest": "raw/visual-candidate/continuity-repair/typecheck.log",
+      "bytes": 111,
+      "sha256": "17015e65a7238e2c81480c91f0ce05cbca1b0a677634f4b3e2180f9a5c1d447e"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/unit-exit.json",
+      "dest": "raw/visual-candidate/continuity-repair/unit-exit.json",
+      "bytes": 62,
+      "sha256": "52dbee37befcc153b5dd9631498fec5a3b602c98aadb83e451a7271e768c0b8d"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/unit.json",
+      "dest": "raw/visual-candidate/continuity-repair/unit.json",
+      "bytes": 7272,
+      "sha256": "681b7dc58d06255735642d635f7346cf46655cb6bb89eff9742eb4b004635d2b"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/unit.log",
+      "dest": "raw/visual-candidate/continuity-repair/unit.log",
+      "bytes": 1527,
+      "sha256": "f4262b93d362f3103794e592d7a8a830a21b630126fb918426b6fa70c473f23b"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/continuity-repair/verification.json",
+      "dest": "raw/visual-candidate/continuity-repair/verification.json",
+      "bytes": 564,
+      "sha256": "ee240610fe61605aabefb5aabddb76586b6dc97bf4beb0bbdbad06b30fd5b60c"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/baseline-manifest.json",
+      "dest": "preparation/visual-candidate/baseline-manifest.json",
+      "bytes": 682,
+      "sha256": "d36111b1a72d8d9f02fdc6c33c926602499a72054319cbd40351dc9b574328ba"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/ready-manifest.json",
+      "dest": "preparation/visual-candidate/ready-manifest.json",
+      "bytes": 11449,
+      "sha256": "a09308926fcf432bcae19daceaef3525ac66b6b14534260b3cf2f5d477c83d4f"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/README.md",
+      "dest": "preparation/visual-candidate/README.md",
+      "bytes": 8955,
+      "sha256": "f7cb3696e46d0d6def259a15f0cc23262122ee8b2c931094215c3e6574024634"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/run.mjs",
+      "dest": "preparation/visual-candidate/run.mjs",
+      "bytes": 3846,
+      "sha256": "4c519224cefede74f2e950193bb4f2e0c47eda8148d9cd7aa705c6f46b39abcf"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/typecheck.mjs",
+      "dest": "preparation/visual-candidate/typecheck.mjs",
+      "bytes": 1837,
+      "sha256": "1aabf440ce9f982379ae4fdeb926351d146917cb5b3ec29a9aae840f73ae3fe7"
+    },
+    {
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/vitest.config.ts",
+      "dest": "preparation/visual-candidate/vitest.config.ts",
+      "bytes": 1225,
+      "sha256": "72f7e25933ca0c902b6b8e74057b115fd9ac1b40c82c776083305fe87474a31a"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/ready-manifest.json",
+      "dest": "preparation/owned-replacement-copy/ready-manifest.json",
+      "bytes": 3812,
+      "sha256": "3929846af0335bfe0ea6227c10f95318f273c7b40f96c2312eb4eb86b1395cee"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/README.md",
+      "dest": "preparation/owned-replacement-copy/README.md",
+      "bytes": 5661,
+      "sha256": "673ae3d9a7dd4e036c473be65f66cb59bacc2c4a77d8436d0379b095584902f3"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/vitest.config.ts",
+      "dest": "preparation/owned-replacement-copy/vitest.config.ts",
+      "bytes": 906,
+      "sha256": "a35260a86641481ab612be89170dd8a5d13479ec59c750b6a0025fd3a2fe1e57"
+    },
+    {
+      "source": ".autopilot/ph06/v4-owned-replacement-copy-staging/finalize-manifest.mjs",
+      "dest": "preparation/owned-replacement-copy/finalize-manifest.mjs",
+      "bytes": 3269,
+      "sha256": "ab34b1cca4b5095cee59e677dfb0f8972d51a540644e07384e56adb6d907371f"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/run.mjs",
+      "dest": "runners/run.mjs",
+      "bytes": 3801,
+      "sha256": "3ea680b2a35c0b0afaef54e66cd79947ee8a48f5579946cee288fbc0c77162b5"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/foundation.mjs",
+      "dest": "runners/foundation.mjs",
+      "bytes": 3391,
+      "sha256": "396f415e4fd4db0952d39e3cef7c3b9b5cbc982f05835f88057520477324c6ee"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/browser.mjs",
+      "dest": "runners/browser.mjs",
+      "bytes": 2058,
+      "sha256": "beb722cae932e3f3ef07765d5a1f638178d893f88a112b42e8d6b2fb67761b7c"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/playwright.config.ts",
+      "dest": "runners/playwright.config.ts",
+      "bytes": 717,
+      "sha256": "7e5645b967decfc8fb9e4da9a5180565afd105fe72298b8a60637f24639fc512"
+    },
+    {
+      "source": ".autopilot/ph06/archive-natural-repair.mjs",
+      "dest": "provenance/archive-natural-repair.mjs",
+      "bytes": 21885,
+      "sha256": "f183a56ffdc3b8ff9711dd5f7773ba10eda4f447ce2675b403028b3e81359c97"
+    },
+    {
+      "source": ".autopilot/ph06/natural-visual-repair-review.md",
+      "dest": "provenance/natural-visual-repair-review.md",
+      "bytes": 5519,
+      "sha256": "4ccb6caab8eb31c3559353e7ee3d066bfc20d6aee6fb0467e3fca7fc21296e35"
+    },
+    {
+      "source": ".autopilot/ph06/natural-visual-continuity-review.md",
+      "dest": "provenance/natural-visual-continuity-review.md",
+      "bytes": 4056,
+      "sha256": "5c984c5576a578231f367a7c6b5ed47c17fc80c4fe0f7d0ab2db1d944703ba07"
+    },
+    {
+      "source": ".autopilot/ph06/natural-followup-foundation-promotion.json",
+      "dest": "provenance/natural-followup-foundation-promotion.json",
+      "bytes": 2757,
+      "sha256": "42952d8a35e38fbc7f999a6df2be6ee5da3e9427859e5c50b61ca26b2c72caf8"
+    },
+    {
+      "source": ".autopilot/ph06/natural-visual-repair-promotion.json",
+      "dest": "provenance/natural-visual-repair-promotion.json",
+      "bytes": 1824,
+      "sha256": "70346d4662b617e095727e949952db2f4a5b44641fac2fe0c0821cd75aca6085"
+    },
+    {
+      "source": ".autopilot/ph06/promote-natural-followup-foundation.mjs",
+      "dest": "provenance/promote-natural-followup-foundation.mjs",
+      "bytes": 2151,
+      "sha256": "dfec1f841da35d7b2ae3b53057b5eff5bcf7664518a9fef2510c72e8b7e7c201"
+    },
+    {
+      "source": ".autopilot/ph06/promote-natural-visual-repair.mjs",
+      "dest": "provenance/promote-natural-visual-repair.mjs",
+      "bytes": 1734,
+      "sha256": "560ebe73584435f2b6fd96df462f6399d3a2462650789a59e89ac516358ee71e"
+    },
+    {
+      "source": ".autopilot/ph06/nearshore-shading-next.md",
+      "dest": "provenance/nearshore-shading-next.md",
+      "bytes": 4655,
+      "sha256": "52b2c72ce84f24e0a7c51a8c1d4f7b2bb835b9199ce29eddb48a9778e5084634"
+    },
+    {
+      "source": ".autopilot/ph06/next-playable-boundary.md",
+      "dest": "provenance/next-playable-boundary.md",
+      "bytes": 12109,
+      "sha256": "c8fae2f1c9407687343f76c15bb8a887dd8edc582b090063ea11146c14702275"
+    },
+    {
+      "source": ".autopilot/ph06/record-natural-repair-observations.mjs",
+      "dest": "provenance/record-natural-repair-observations.mjs",
+      "bytes": 2671,
+      "sha256": "e31ffddae7706ff7cf1cd722d9b569521b6e17bf160b59e42135478a13ca46e0"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/visual-first.json",
+      "dest": "observations/visual-first.json",
+      "bytes": 1368,
+      "sha256": "08aadd1142bab4682108fddb898c6c1d7ecfe27991a7853dd618ece64599b47d"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/manual-observation.json",
+      "dest": "observations/manual-observation.json",
+      "bytes": 1318,
+      "sha256": "01dfb1d3ecbf37bed0b7651c11db7b9ad6dbebcad5958b69fedbb7c47fe54257"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/manual-continent-restored.png",
+      "dest": "observations/manual-continent-restored.png",
+      "bytes": 38703,
+      "sha256": "862dcf0c1c7c1c68920060d2f199cf8545a90bd0670a7be72eabc96075487317"
+    },
+    {
+      "source": ".autopilot/ph06/natural-repair-checks/http-before.json",
+      "dest": "observations/http-before.json",
+      "bytes": 243,
+      "sha256": "b3df777abce699ebfc54763437fc5fa219927b5f7b23d4a225345c7d8c9e35ee"
+    },
+    {
+      "dest": "verification.json",
+      "generated": true,
+      "bytes": 122828,
+      "sha256": "d6e0d13068a4f82a480ada8328a1196f6e8c2e7bdd17da1332aff745b600f441"
+    },
+    {
+      "dest": "references.json",
+      "generated": true,
+      "bytes": 1447,
+      "sha256": "6733379cb7c422dcbd7b7147e1594ebc6641707dda9342d93b1e548c6919091a"
+    },
+    {
+      "dest": "README.md",
+      "generated": true,
+      "bytes": 1161,
+      "sha256": "cddef55163df477b429465749bec71f369cae479a6521a09a7078760e181e1fd"
+    }
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/ph06-preview9-generator-history-2026-09-27/build.json",
+      "bytes": 8198,
+      "sha256": "40878f8033531cc5f069c055486992e1a6119517b3845de684fc149a948dde67",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview9-generator-history-2026-09-27/provenance.json",
+      "bytes": 18988,
+      "sha256": "eb5b0c8ffa102bbfdb1906ecbe49b58b85052cde724c6e31c0e6efb6eb26bd2c",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview9-generator-history-2026-09-27/inventory.json",
+      "bytes": 7361,
+      "sha256": "6507019d9d52e2b8c40afd8149f53f5e567f06ceddcd82356acfa1940d040a7b",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-2026-09-27/verification.json",
+      "bytes": 106915,
+      "sha256": "5857cdbbdd8d9f2923077c21679e80e98a67629ec5341453c5b2f3fe5316cbd0",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-2026-09-27/inventory.json",
+      "bytes": 31046,
+      "sha256": "9bafe2be7bfdd49e03af8fed1c48758b4a6e648b1ebb83b74eec7d4ab24d9066",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-natural-2026-09-27/raw/root/first/unit.json",
+      "bytes": 400531,
+      "sha256": "89db5e3ef3fe569582cff4a9f34e09554e78ac2c163186720d75df75dbc0b6d9",
+      "copied": false
+    },
+    {
+      "path": "docs/adr/0018-natural-landscape-v2.md",
+      "bytes": 3880,
+      "sha256": "386be7a3eabab410d121bf0670e36ecee7228b3d6444933b494f4ec084c7c36b",
+      "copied": false
+    }
+  ],
+  "excludesSelf": true
+}

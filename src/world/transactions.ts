@@ -6,8 +6,8 @@ import {
   UNASSIGNED, validateBlock, yieldAtlas,
   type AtlasBlock, type BlockKey,
 } from './model';
-import { cloneAtlasDocument, cloneVerifiedAtlasDocument, encodeAtlasManifest, hashAtlasManifest, isGenerationDocument, type AtlasDocument, type AtlasManifest } from './atlas-format';
-import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, assertAtlasReplacementLocksPreserved, encodeAtlasCellLockBlock, hashAtlasCellLockBlock, hashAtlasLockSet, lockKey } from './generation-locks';
+import { cloneAtlasDocument, cloneVerifiedAtlasDocument, encodeAtlasManifest, hashAtlasManifest, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest } from './atlas-format';
+import { assertAtlasConstraintsOnly, assertAtlasLocksPreserved, assertAtlasReplacementLocksPreserved, cloneAtlasCellLockBlock, encodeAtlasCellLockBlock, hashAtlasCellLockBlock, hashAtlasLockSet, lockKey } from './generation-locks';
 import { generationExact, generationInt, validateCellRectangle, type AtlasCellRectangle } from './generation-contract';
 import { cellBlock, incidentCellIds, validateLocalGeometry } from './topology';
 
@@ -437,8 +437,45 @@ export class OwnedAtlasSession<T extends AtlasDocument = AtlasDocument> {
   async replacementDocumentAsync(candidateId: string, control?: AtlasEditControl): Promise<T> {
     abort(control);
     const candidate = this.#fullCandidate(candidateId), source = candidate.data;
-    const owned = await cloneVerifiedAtlasDocument(source, control); abort(control);
-    if (this.#fullCandidate(candidateId) !== candidate || candidate.data !== source) throw new Error('复制期间完整地图候选已变化。');
+    const check = () => {
+      abort(control);
+      if (this.#fullCandidate(candidateId) !== candidate || candidate.data !== source) throw new Error('复制期间完整地图候选已变化。');
+    };
+    // Only this already-owned private candidate may be copied across awaits.
+    // Public raw ingress still takes every caller buffer before its first await.
+    const owned = { ...source, manifest: structuredClone(source.manifest), blocks: new Map<BlockKey, AtlasBlock>() } as T;
+    if (isGenerationDocument(owned)) owned.locks = new Map();
+    if (isDetailCoastDocument(owned)) owned.detailCoast = new Map();
+    const guarded: AtlasEditControl = {
+      ...control,
+      onProgress: progress => { check(); control?.onProgress?.(progress); check(); },
+      yieldTask: async () => {
+        check();
+        if (control?.yieldTask) await control.yieldTask();
+        else await new Promise<void>(resolve => setTimeout(resolve, 0));
+        check();
+      },
+    };
+    let completed = 0;
+    for (const [key, block] of source.blocks) {
+      owned.blocks.set(key, cloneBlock(block)); completed++;
+      if (completed % 16 === 0 || completed === source.blocks.size) await checkpoint(guarded, '复制完整候选地理块', completed, source.blocks.size);
+    }
+    if (isGenerationDocument(source) && isGenerationDocument(owned)) {
+      completed = 0;
+      for (const [key, lock] of source.locks) {
+        owned.locks.set(key, cloneAtlasCellLockBlock(lock)); completed++;
+        if (completed % 16 === 0 || completed === source.locks.size) await checkpoint(guarded, '复制完整候选区域锁', completed, source.locks.size);
+      }
+    }
+    if (isDetailCoastDocument(source) && isDetailCoastDocument(owned)) {
+      completed = 0;
+      for (const [key, tile] of source.detailCoast) {
+        owned.detailCoast.set(key, cloneDetailCoastTile(tile)); completed++;
+        if (completed % 16 === 0 || completed === source.detailCoast.size) await checkpoint(guarded, '复制完整候选细海岸', completed, source.detailCoast.size);
+      }
+    }
+    check(); await verifyAtlasDocument(owned, guarded); check();
     return owned;
   }
   discardReplacement(candidateId: string) { this.#fullCandidate(candidateId); this.#replacement = undefined; }

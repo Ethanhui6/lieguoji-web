@@ -1,0 +1,10 @@
+{
+  "unitFiles": [
+    "src/world/detail-owned-replacement-copy.test.ts",
+    "src/world/detail-preview9-history.test.ts",
+    "src/world/transactions.test.ts",
+    "src/world/replacement-cooperation.test.ts",
+    "src/world/generation-receiver.test.ts"
+  ],
+  "unchangedScopeReused": "Unchanged preview9 world tests outside this natural-kernel/history/private-copy repair reuse the 908-test run. Actual selected files are listed; no whole-game or performance claim."
+}

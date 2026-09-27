@@ -1,4 +1,24 @@
-# 当前续接：preview.9 功能检查通过，实图自然视觉仍未达标，正在修地貌
+# 当前续接：preview.10 地貌修复已实际构建，近岸光照方格待修
+
+2026-09-27T11:28:45.407Z（UTC）终态补记：本批根检查、三端追加、entry与legacy均终态通过，完整166文件已归档于 `docs/evidence/ph06-natural-repair-2026-09-27/`（allRequiredPassed=true，naturalVisualAccepted=false，allAccepted=false）。平板208996ms、旧配方93649ms、入口13529ms。正式报告 `docs/evidence/2026-09-27-ph06-natural-repair.md` 已入PH06-T3/T4证据，状态仍进行中。当前根无测试进程；连续光照候选由shape_generator在独立staging编写并获准窄检查，未提升。准备审核本地提交。
+
+
+2026-09-27 19:22（香港）检查点：基础HEAD `fad11b28fa3ce43c983b839eb1526e91305999b9`；当前工作区有未提交的preview.10变更。真实dist与4173 HTTP200已比对，build.json SHA256 `63b1060d382f0b7f6185f3cba179e9e365272737aa2d733a4a9d1bbd654dcc35`。未push、未部署；PH06-T3/T4保持进行中。
+
+- preview.9实际十生成器/37源文件已在 `docs/evidence/ph06-preview9-generator-history-2026-09-27/`；历史登记与私有候选16项分批复制已提升。foundation-first 34/34与全局静态检查PASS，没有在该小轮构建。
+- 自然视觉三个内核与5项新回归已提升。独立复核发现的端点延长线高程贡献硬切先真实复现534>2 Q12，修后同2Q12阈值通过；初次失败保留。根相关32/32、计划、全局lint/类型、构建和25产物审计PASS，源稳定。runner的第一次预检写错测试路径，没有运行任何测试；改成实际detail-generation-session文件后使用新目录preflight-repair，未覆盖first记录。
+- 实际desktop-first两大陆/保护旧岸/撤销/刷新/重叠拒绝PASS171763ms；mobile-first原触摸流程PASS166948ms。tablet-first正在运行，后续entry/legacy仍待本构建复核。原450秒限未改，旧preview.8移动失败不删除。以上只认功能范围，非性能/真机验收。
+- 实图仍不够自然：简单轮廓偏规整、峰顶圆、1125%近岸约22px明暗方块。`natural-repair-checks/visual-first.json`保持visualAccepted=false。根实际另画较大不对称大陆，确认保存并刷新恢复修订1，console warning/error为空：`http://127.0.0.1:4173/?atlas=atlas-3ae16889-30f5-49ae-8ae4-0a32c1aa716e&atlas-format=4`。这是IAB本地试玩草稿，没有导出真实存档到证据。截图manual-continent-restored.png保留。
+- 已定位海面方格为每2world细三角使用常量坡向光照，非mask或height断裂。`nearshore-shading-next.md`有精确来源；下一候选在 `.autopilot/ph06/v4-continuous-light-staging/`，只改显示光照的共享节点/交点插值，尚未提升或测试；shader原基线`ee95bb492ef441a9e52d6f2ec6660deea226c01c61b84df3340c88d5191c0f05`。不改海岸、高程、拾取、页nearest数值格式、存档和缓存预算。
+- 先核各终态与新归档脚本，再保存本地提交；后续检查连续光照候选和原始GPU/mask/height一致性，实际图未过前不标PH完成。新Atlas仍无国家/行政区/城市/军队战争，旧工坊接口不可直接套入。依赖边界已查于next-playable-boundary.md，未重排阶段。原IAB tab1的未保存预览继续保留，不擅自刷新/确认/丢弃。
+
+---
+
+# 前一检查点：preview.9 功能检查通过，实图自然视觉仍未达标，正在修地貌
+
+2026-09-27 19:05（香港）续接修正（准确时间以检查JSON为准）：preview.9代码/112文件证据已本地提交 `fad11b2`，无远程写入。实际preview.9十生成器/37原件已归档 `docs/evidence/ph06-preview9-generator-history-2026-09-27/`，历史与私有replacement分批复制共4文件已提升但尚未重新构建；`.autopilot/ph06/natural-repair-checks/foundation-first/`34/34定向检查+全局lint/types/计划PASS。`tests/atlas-add-detail-coast.spec.ts`新增保存后近岸截图，原450秒限与断言未改。
+
+自然视觉候选 `v4-natural-visual-repair-staging`已有14项两轮通过和实际256采样图，但独立review又发现山脊端点不对称宽度硬切换会产生高度不连续；shape_generator正在修回归，旧ready不得直接提升，须等最终新ready。根已准备 `promote-natural-visual-repair.mjs`（未执行；将升preview.10）和 `natural-repair-checks/run.mjs`（尚未跑；只选受影响范围）。当前无根测试/浏览器进程运行。IAB tab1后来显示一份未保存预览，已保留/markHandoff，勿擅自刷新、确认或丢弃。
 
 2026-09-27 18:49（香港）：本地HEAD `d17fc9bb3411226836343821e42792568b7a22c1` 保存preview.8及真实移动端失败；工作区/实际dist已为preview.9自然v2、区域海床与Worker调度。`.autopilot/ph06/natural-checks/first/`：908/908地理及配方控制测试、计划检查、全局lint/类型、生产构建和25产物审计均PASS，源码稳定。desktop-first真实两大陆、撤销、恢复、海陆点选及重叠拒绝PASS，150965ms；entry-first首页v4/旧路径保留PASS，14349ms。legacy-first终态须核。所有这些仍不是全游戏/性能/视觉/真机验收。
 

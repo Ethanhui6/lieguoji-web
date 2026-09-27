@@ -4,7 +4,7 @@ import { buildDetailCoastSurface, pickDetailCoastSurface } from '../detail-coast
 import { detailCoastKey, detailCoastOwnerLayout, type DetailCoastKey, type DetailCoastTile, type DetailCoastTiles } from '../detail-coast-types';
 import { buildDetailShapeDistanceIndex, DETAIL_DISTANCE_LIMIT_Q, DETAIL_DISTANCE_MAX_SEGMENTS, type DetailShapeDistanceIndex } from './detail-shape-distance';
 import { createDetailShapeBaseSampler } from './detail-shape-height';
-import { roundAndIndexNaturalOutline, naturalArcField, naturalFacingSeparation, simplifyNaturalSampling } from './detail-natural-outline';
+import { roundAndIndexNaturalOutline, createNaturalCoastArcPlan, naturalFacingSeparation, simplifyNaturalSampling } from './detail-natural-outline';
 import { createNaturalRelief, type NaturalReliefSummary } from './detail-natural-relief';
 import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, seedHash, smoothQ } from './seed';
 
@@ -153,6 +153,7 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
     if ((id + 1) % batch === 0) await checkpoint(control, 'verify-empty-world', id + 1, total);
   }
   const counters = { outlineEdgeTests: 0 }, outline = await prepareOutline(recipe, batch, control, counters), seed = seedHash(`shape-detail-landmass@2\0${recipe.seed}`);
+  const coastPlan = await createNaturalCoastArcPlan({ seed, perimeterQ: outline.perimeter, structureWorld: recipe.coastStructureWorld }, batch, control);
   const islands: { x: number; y: number; radius: number; ux: number; uy: number }[] = [], skippedIslands: NaturalDetailShapeSummary['skippedIslands'] = [];
   for (let chain = 0; chain < recipe.islandChainCount; chain++) {
     const arc = hashAt(seed, 6101, chain, 0) % outline.perimeter;
@@ -182,9 +183,16 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
     const budget = recipe.coastStructureWorld + recipe.coastRoughnessWorld;
     if (budget > 0 && nearest.distance <= budget * 256 + STEP_Q && nearest.edge >= 0) {
       const id = nearest.edge, amplitude = outline.caps[id] + roundRatio((outline.caps[(id + 1) % outline.caps.length] - outline.caps[id]) * nearest.t, Q20);
-      const arc = outline.edges[id].arc + roundRatio(outline.edges[id].length * nearest.t, Q20);
-      const structural = roundRatio(2 * naturalArcField(seed, 7111, arc, outline.perimeter, 768) + 3 * naturalArcField(seed, 7112, arc, outline.perimeter, 320), 5);
-      const u = roundRatio(3 * x - 4 * y, 5), v = roundRatio(4 * x + 3 * y, 5);
+      const edge = outline.edges[id];
+      const arc = edge.arc + roundRatio(edge.length * nearest.t, Q20);
+      const structural = coastPlan.sample(arc);
+      // Roughness belongs to the shore, not to independent points inland.
+      // Sampling noise across the normal can create isolated sea holes even
+      // when no islands/lakes were requested. Keep its value fixed along the
+      // same outline normal; signed distance supplies the cross-shore change.
+      const shoreX = edge.a.xQ + roundRatio((edge.b.xQ - edge.a.xQ) * nearest.t, Q20);
+      const shoreY = edge.a.yQ + roundRatio((edge.b.yQ - edge.a.yQ) * nearest.t, Q20);
+      const u = roundRatio(3 * shoreX - 4 * shoreY, 5), v = roundRatio(4 * shoreX + 3 * shoreY, 5);
       const detail = roundRatio(3 * noiseQ12(seed, 7113, u, v, 48 * 256) + noiseQ12(seed, 7114, u, v, 12 * 256), 4);
       value += roundRatio(amplitude * (recipe.coastStructureWorld * structural + recipe.coastRoughnessWorld * detail), budget * FIELD_Q);
     }

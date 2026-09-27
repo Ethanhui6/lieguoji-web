@@ -1,0 +1,80 @@
+{
+  "frozenAt": "2026-09-27T17:32:02.516Z",
+  "stagingOnly": true,
+  "productionModified": false,
+  "files": [
+    {
+      "path": "src/world/generation-history.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview14-history-staging/src/world/generation-history.ts",
+      "baselineSha256": "f32ca028d5022a907bef47ee344758f61eb5af4becbcf46c81d090eac0830b6f",
+      "sha256": "8d17d72c7941c0af51d6471ea4fd4065d84b569b6c6194c25766dd09134e9b6a",
+      "baselineMatches": true,
+      "mode": "mirror"
+    },
+    {
+      "path": "src/world/detail-preview14-history.test.ts",
+      "stagedPath": ".autopilot/ph06/v4-preview14-history-staging/src/world/detail-preview14-history.test.ts",
+      "baselineSha256": null,
+      "sha256": "d56ac566b074c7955931b492efad440afc0fefcc48dc272753f06d67a04c03d7",
+      "baselineMatches": true,
+      "mode": "new"
+    }
+  ],
+  "evidence": {
+    "source": ".autopilot/ph06/v4-preview14-history-staging/evidence/preview14",
+    "target": "docs/evidence/ph06-preview14-generator-history-2026-09-28",
+    "buildSha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075",
+    "sourceSnapshotSha256": "a26b138d457beb331568ca7e5bd9f15a69e34414901ccacc2d1652ddd32e2027",
+    "closureCount": 11,
+    "sourceFiles": 41,
+    "allClosuresMatched": true,
+    "frozenClosuresRecomputed": true,
+    "historyOnlyCount": 8,
+    "algorithmChangedCount": 3,
+    "distCount": 25,
+    "archiveFiles": 53,
+    "inventorySha256": "923c7523663e9dfc3c8b3102d17737456fce074595118dcda7f6ac3650eb50ad",
+    "provenanceSha256": "4653ddfeca50acbcd24923d22482f86dfd8a5b452498a942bd0bb3a8e745833c"
+  },
+  "sourceIdentity": {
+    "version": "0.5.0-preview.14",
+    "actualHead": "a8eec28c85a012f7194c727b746c31db354b9f0f",
+    "baseCommit": "a8eec28c85a012f7194c727b746c31db354b9f0f",
+    "sourceIsHead": false,
+    "closureSourceMatchesHead": false,
+    "originalRootPassed": false,
+    "identityReconciliationIndependentlyRecomputed": true
+  },
+  "checks": {
+    "run": [],
+    "unitCasesWritten": 5,
+    "testsUnexecuted": true,
+    "provenanceCaptureOnly": true
+  },
+  "references": [
+    {
+      "path": "capture.mjs",
+      "sha256": "ebc1b45e365ce52cbad720816bcc607d8754c19502288b9c8e1633c105ded510"
+    },
+    {
+      "path": "prepare-test.mjs",
+      "sha256": "f6cd2507b5d7d7f8b248ce5aa68f9e1041f067a2db8c82e80663e3d67794c2c6"
+    },
+    {
+      "path": "record-ready.mjs",
+      "sha256": "baaa02269c358971215f297a17cb5b65b363aa2c165c1bba7a085becd8f49887"
+    },
+    {
+      "path": "capture-result.json",
+      "sha256": "26eddf888909066c75bcef18f0b3cac191998a75dd9a2ac8016fa4bbd5fb8e6a"
+    },
+    {
+      "path": "baseline-manifest.json",
+      "sha256": "ee03282b0a31ca78a47324066d58cf986680cd4a33e53c53deb82193ddfdd4ed"
+    },
+    {
+      "path": "README.md",
+      "sha256": "f4ac552856bbe09d19c7ec4ed049e72d985c316a7e6ff2b80ef8718fb34822fe"
+    }
+  ]
+}

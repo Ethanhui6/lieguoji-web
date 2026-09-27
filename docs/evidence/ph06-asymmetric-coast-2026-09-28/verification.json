@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-09-27T17:51:30.782Z",
+  "head": "69723a80b89fb15cd0ed4c1ea5037fa0bdd61446",
+  "version": "0.5.0-preview.15",
+  "buildJsonSha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e",
+  "archiveComplete": true,
+  "rootTechnicalPassed": true,
+  "allRequiredPassed": false,
+  "browserExecuted": false,
+  "naturalVisualAccepted": false,
+  "userAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false,
+  "scope": "Intermediate local coastline iteration. Root 52/52 and actual build verified; previous 51/52 failure retained. Product browsers deliberately not started because same-input numerical outline remains too convex. No overall acceptance.",
+  "root": {
+    "passed": true,
+    "units": 52,
+    "files": 10,
+    "distFiles": 25,
+    "sourceStable": true,
+    "identityClassifications": {
+      "history-only": 9,
+      "non-history-runtime-change": 2
+    }
+  },
+  "unresolved": [
+    "Original eight-point continent remains too rounded: unequal events alone did not produce satisfactory bay/cape morphology.",
+    "Actual saved product three-device workflow not rerun for this visually rejected intermediate.",
+    "Natural/user/device/performance and PH acceptance remain open."
+  ],
+  "fixedCause": "Independent 2D coastal noise produced a 4.368782 world-squared interior sea hole. Sampling the existing noise at the nearest original rounded shoreline projection removes off-shore oscillation; original one-component and all other checks pass without filtering target loops.",
+  "diagnostic": "Initial diagnostic configuration accidentally merged broad test include; that process was stopped, recorded as interrupted, and never counted as passed. Corrected explicit one-file diagnostic completed; production source and bound numerical originals were unchanged."
+}

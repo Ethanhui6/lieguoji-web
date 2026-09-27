@@ -207,8 +207,92 @@ export async function roundAndIndexNaturalOutline(input: { points: readonly Natu
   return { edges, caps, area2, perimeter, roundedCorners, nearest, inside };
 }
 
-/** Periodic along the complete shoreline, independent of source point density.
- * Knot indices wrap at the same arc origin; the closure has no noise seam. */
+export interface NaturalCoastFeature {
+  layer: 'regional' | 'local'; startQ: number; lengthQ: number; peakQ: number; amplitudeQ: number; leftShapeQ: number; rightShapeQ: number;
+}
+export const NATURAL_COAST_PLAN_LIMITS = { features: 48, bins: 128, references: 1024, candidates: 8 } as const;
+
+/** Plan broad bays/capes and smaller shoulder features once per private
+ * generation. Unequal physical intervals, off-center peaks and independent
+ * signs avoid harmonic scallops; the output is a real SDF displacement field,
+ * not an offset display polygon. Existing facing-shore caps still apply at
+ * the caller. All event endpoints and peak joins have zero first derivative. */
+export async function createNaturalCoastArcPlan(input: { seed: number; perimeterQ: number; structureWorld: number }, batch: number, control?: DetailShapeControl) {
+  const { seed, perimeterQ, structureWorld } = input;
+  if (!Number.isInteger(seed) || !Number.isSafeInteger(perimeterQ) || perimeterQ <= 0 || !Number.isInteger(structureWorld) || structureWorld < 0 || structureWorld > 160
+    || !Number.isInteger(batch) || batch < 64 || batch > 2048) throw new Error('自然湾岬规划参数无效。');
+  const features: NaturalCoastFeature[] = [], binCount = NATURAL_COAST_PLAN_LIMITS.bins;
+  await checkpoint(control, 'plan-natural-coast-features', 0, NATURAL_COAST_PLAN_LIMITS.features);
+  // Do not force the minimum event count into a perimeter too small for the
+  // 2-world real coast lattice. The existing literal/capped outline remains.
+  if (structureWorld > 0 && perimeterQ >= 96 * 256) {
+    const counts = [Math.max(2, Math.min(10, Math.round(perimeterQ / (900 * 256)))), perimeterQ < 384 * 256 ? 0 : Math.min(36, Math.floor(perimeterQ / (230 * 256)))];
+    for (let layer = 0; layer < 2; layer++) {
+      const count = counts[layer], items: { width: number; sign: number; id: number }[] = [];
+      for (let id = 0; id < count; id++) {
+        // A dominant bay, a substantial cape and a smaller shoulder region
+        // are shuffled into the arc; remaining signs are independently seeded.
+        const width = layer ? 450 + hashAt(seed, 7140, layer, id) % 1501
+          : id === 0 ? 1900 + hashAt(seed, 7140, layer, id) % 501
+            : id === 1 ? 1500 + hashAt(seed, 7140, layer, id) % 651
+              : id === 2 ? 600 + hashAt(seed, 7140, layer, id) % 801 : 900 + hashAt(seed, 7140, layer, id) % 1401;
+        const sign = id === 0 ? -1 : id === 1 || id === 2 ? 1 : hashAt(seed, 7141, layer, id) % 2 ? 1 : -1;
+        items.push({ width, sign, id });
+      }
+      for (let i = count - 1; i > 0; i--) { const j = hashAt(seed, 7142, layer, i) % (i + 1); [items[i], items[j]] = [items[j], items[i]]; }
+      const total = items.reduce((sum, item) => sum + item.width, 0), phase = hashAt(seed, 7143, layer, 0) % perimeterQ; let consumed = 0;
+      for (const item of items) {
+        const from = Math.round(perimeterQ * consumed / total); consumed += item.width;
+        const to = Math.round(perimeterQ * consumed / total), slot = to - from;
+        const fill = (layer ? 540 : 650) + hashAt(seed, 7144, layer, item.id) % (layer ? 281 : 241);
+        const lengthQ = Math.floor(slot * fill / 1000);
+        // Suppress, rather than amplify, sub-resolution or cramped events.
+        if (lengthQ < 16 * 256) continue;
+        const shoulder = 30 + hashAt(seed, 7145, layer, item.id) % 81;
+        const startQ = (phase + from + Math.floor(slot * shoulder / 1000)) % perimeterQ;
+        const peakQ = Math.floor(lengthQ * (280 + hashAt(seed, 7146, layer, item.id) % 441) / 1000);
+        const reach = Math.min(1, lengthQ / Math.max(1, structureWorld * 2 * 256));
+        const amplitude = layer ? 533 + hashAt(seed, 7147, layer, item.id) % 779 : 3482 + hashAt(seed, 7147, layer, item.id) % 615;
+        features.push({ layer: layer ? 'local' : 'regional', startQ, lengthQ, peakQ, amplitudeQ: item.sign * amplitude * reach,
+          leftShapeQ: hashAt(seed, 7148, layer, item.id) % 2457 - 1228, rightShapeQ: hashAt(seed, 7149, layer, item.id) % 2457 - 1228 });
+        if (features.length > NATURAL_COAST_PLAN_LIMITS.features) throw new Error('自然湾岬特征超过规划上限。');
+      }
+      await checkpoint(control, 'plan-natural-coast-features', features.length, NATURAL_COAST_PLAN_LIMITS.features);
+    }
+  }
+  const bins: number[][] = Array.from({ length: binCount }, () => []); let references = 0, maximumCandidates = 0;
+  for (let id = 0; id < features.length; id++) {
+    const feature = features[id], first = Math.floor(feature.startQ / perimeterQ * binCount), last = Math.floor((feature.startQ + feature.lengthQ) / perimeterQ * binCount);
+    for (let bin = first; bin <= last; bin++) {
+      const bucket = bins[bin % binCount]; bucket.push(id); maximumCandidates = Math.max(maximumCandidates, bucket.length);
+      if (++references > NATURAL_COAST_PLAN_LIMITS.references || bucket.length > NATURAL_COAST_PLAN_LIMITS.candidates) throw new Error('自然湾岬空间查询超过有界预算。');
+      if (references % batch === 0) await checkpoint(control, 'index-natural-coast-features', references, NATURAL_COAST_PLAN_LIMITS.references);
+    }
+  }
+  const index = bins.map(bin => Uint8Array.from(bin));
+  const ease = (value: number, shapeQ: number) => { const s = value * value * (3 - 2 * value); return s + shapeQ / FIELD_Q * s * (1 - s); };
+  const sample = (arcQ: number) => {
+    if (!Number.isFinite(arcQ)) throw new Error('自然湾岬弧长查询无效。');
+    const arc = (arcQ % perimeterQ + perimeterQ) % perimeterQ, ids = index[Math.min(binCount - 1, Math.floor(arc / perimeterQ * binCount))];
+    let regional = 0, local = 0;
+    for (const id of ids) {
+      const feature = features[id], distance = (arc - feature.startQ + perimeterQ) % perimeterQ;
+      if (distance > feature.lengthQ) continue;
+      const weight = distance <= feature.peakQ ? ease(distance / feature.peakQ, feature.leftShapeQ) : ease((feature.lengthQ - distance) / (feature.lengthQ - feature.peakQ), feature.rightShapeQ);
+      if (feature.layer === 'regional') regional += feature.amplitudeQ * weight; else local += feature.amplitudeQ * weight;
+    }
+    // Regional and local events each occupy non-overlapping physical slots.
+    // With |local|<=.321Q, r+l*(1-r²) is bounded by [-Q,Q] for |r|<=Q.
+    // Broad feature crests keep their strength; smaller shoulders cannot
+    // cancel the important bay/cape as the previous 2:3 harmonics could.
+    return regional + local * (1 - (regional / FIELD_Q) ** 2);
+  };
+  await checkpoint(control, 'index-natural-coast-features', references, references);
+  return { sample, features: features.map(feature => ({ ...feature })), stats: { features: features.length, references, maximumCandidates, bins: binCount } };
+}
+
+/** Legacy numerical oracle, retained for historic periodic-seam checks.
+ * The current natural generator uses its prebuilt feature plan instead. */
 export function naturalArcField(seed: number, tag: number, arcQ: number, perimeterQ: number, wavelengthWorld: number) {
   const count = Math.max(4, Math.ceil(perimeterQ / (wavelengthWorld * 256) / 2) * 2);
   // Alternating unequal lobes guarantee both bays and capes rather than a

@@ -59,6 +59,50 @@ describe('independent natural-v2 real geography kernel', () => {
     expect(samples).toBeGreaterThan(50); expect(saturated).toBeGreaterThan(0);
   });
 
+  it('keeps the generated main shore a single closed non-branching component', () => {
+    const target = new Uint32Array(world.targetCoast), graph = new Map<string, Set<string>>(), segments = new Set<string>();
+    for (let i = 0; i < target.length; i += 4) {
+      const a = `${target[i]}:${target[i + 1]}`, b = `${target[i + 2]}:${target[i + 3]}`, key = [a, b].sort().join('/');
+      expect(a).not.toBe(b); expect(segments.has(key)).toBe(false); segments.add(key);
+      if (!graph.has(a)) graph.set(a, new Set()); if (!graph.has(b)) graph.set(b, new Set());
+      graph.get(a)!.add(b); graph.get(b)!.add(a);
+    }
+    // These are extracted real Q8 zero segments, not planner metadata or the
+    // original polygon's validation. A branch/contact or open end must fail.
+    for (const neighbors of graph.values()) expect(neighbors.size).toBe(2);
+    const seen = new Set<string>(); let components = 0;
+    for (const start of graph.keys()) if (!seen.has(start)) {
+      components++; const pending = [start]; seen.add(start);
+      while (pending.length) for (const neighbor of graph.get(pending.pop()!)!) if (!seen.has(neighbor)) { seen.add(neighbor); pending.push(neighbor); }
+    }
+    expect(components).toBe(1);
+  });
+
+  it('produces unequal physical bay and cape widths measured from the extracted shore', () => {
+    const original = recipe().pointsQ, target = new Uint32Array(world.targetCoast), edges: { a: typeof original[number]; b: typeof original[number]; length: number; arc: number }[] = []; let perimeter = 0;
+    for (let i = 0; i < original.length; i++) { const a = original[i], b = original[(i + 1) % original.length], length = Math.hypot(b.xQ - a.xQ, b.yQ - a.yQ); edges.push({ a, b, length, arc: perimeter }); perimeter += length; }
+    const binCount = Math.ceil(perimeter / (16 * 256)), sums = new Float64Array(binCount), counts = new Uint32Array(binCount), seen = new Set<string>();
+    for (let i = 0; i < target.length; i += 2) {
+      const x = target[i], y = target[i + 1], key = `${x}:${y}`; if (seen.has(key)) continue; seen.add(key);
+      let nearest = Infinity, arc = 0, inside = false;
+      for (const { a, b, length, arc: start } of edges) {
+        const dx = b.xQ - a.xQ, dy = b.yQ - a.yQ, t = Math.max(0, Math.min(1, ((x - a.xQ) * dx + (y - a.yQ) * dy) / length ** 2));
+        const distance = Math.hypot(x - a.xQ - t * dx, y - a.yQ - t * dy);
+        if (distance < nearest) { nearest = distance; arc = start + t * length; }
+        if ((a.yQ > y) !== (b.yQ > y) && x < a.xQ + (y - a.yQ) * dx / dy) inside = !inside;
+      }
+      const bin = Math.min(binCount - 1, Math.floor(arc / perimeter * binCount)); sums[bin] += (inside ? -1 : 1) * nearest / 256; counts[bin]++;
+    }
+    // Group actual 16-world arc bins beyond the existing 24-world structural
+    // threshold. Ignore only runs shorter than 32world, not weak main bays.
+    const signs = Array.from(sums, (sum, i) => counts[i] && Math.abs(sum / counts[i]) > 24 ? Math.sign(sum) : 0), runs: { sign: number; bins: number }[] = [];
+    for (const sign of signs) { if (runs.at(-1)?.sign === sign) runs.at(-1)!.bins++; else runs.push({ sign, bins: 1 }); }
+    if (runs.length > 1 && runs[0].sign === runs.at(-1)!.sign) runs[0].bins += runs.pop()!.bins;
+    const features = runs.filter(run => run.sign !== 0 && run.bins * perimeter / binCount / 256 >= 32), widths = features.map(run => run.bins * perimeter / binCount / 256);
+    expect(features.some(f => f.sign < 0)).toBe(true); expect(features.some(f => f.sign > 0)).toBe(true);
+    expect(Math.max(...widths) - Math.min(...widths)).toBeGreaterThanOrEqual(32);
+  });
+
   it('keeps final area, shore pickup and persisted height classification after real codec recovery', async () => {
     const tiles = new Map<DetailCoastKey, DetailCoastTile>([...world.detailCoast].map(([key, tile]) => [key, decodeDetailCoastTile(encodeDetailCoastTile(tile))]));
     const field = { tiles, sampleBaseElevation: createDetailShapeBaseSampler(source.size, source.centersQ, world.coarseElevations.buffer as ArrayBuffer) };
@@ -76,6 +120,8 @@ describe('independent natural-v2 real geography kernel', () => {
     const result = await generateDetailShapeNatural({ base: base(), recipe: narrow }, { yieldControl: noWait, batchWork: 512 });
     const field = { tiles: result.detailCoast, sampleBaseElevation: result.sampleBaseElevation };
     expect(pickDetailCoastSurface(field, { x: 1274, y: 1220 })?.land).toBe(false);
+    for (let y = 1190; y <= 1244; y += 2) expect(pickDetailCoastSurface(field, { x: 1274, y })?.land).toBe(false);
+    for (let y = 1210; y <= 1240; y += 2) for (const x of [1260, 1288]) expect(pickDetailCoastSurface(field, { x, y })?.land).toBe(true);
     expect(pickDetailCoastSurface(field, { x: 1235, y: 1300 })?.land).toBe(true);
     expect(result.summary.landAreaTwiceQ2 + result.summary.seaAreaTwiceQ2).toBe(2 * (4096 * 256) ** 2);
   }, 60000);

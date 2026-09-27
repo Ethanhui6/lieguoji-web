@@ -1,0 +1,364 @@
+{
+  "files": [
+    {
+      "path": "raw/root/first/identity-verification.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/identity-verification.json",
+      "bytes": 416,
+      "sha256": "896b7332ec5097a709fb398b95468c058c2fc647a941141cb06a4148ae23e09e"
+    },
+    {
+      "path": "raw/root/first/lint.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/first/plan.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "raw/root/first/pre-run-build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/pre-run-build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "raw/root/first/prior-build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/prior-build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "raw/root/first/scope.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/scope.json",
+      "bytes": 1228,
+      "sha256": "ffda3fe7a4aed08ee65d589da74d573550f6b673453cd9ec9354319499c4a2e8"
+    },
+    {
+      "path": "raw/root/first/source-after.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/source-after.json",
+      "bytes": 45741,
+      "sha256": "5558d4d6d8db8e9841d9328056062416b5a29586df232db0caccec2e48aa72f0"
+    },
+    {
+      "path": "raw/root/first/source-before.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/source-before.json",
+      "bytes": 45741,
+      "sha256": "5558d4d6d8db8e9841d9328056062416b5a29586df232db0caccec2e48aa72f0"
+    },
+    {
+      "path": "raw/root/first/types.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/first/unit.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/unit.json",
+      "bytes": 26275,
+      "sha256": "f68341dc72b3a33cc6a25bf41969bb39d343ce19dbe533cd6032e2a953d29a9a"
+    },
+    {
+      "path": "raw/root/first/unit.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/unit.log",
+      "bytes": 111,
+      "sha256": "6150b3d05d81690fe83736e4425cff19723af688252afb1d3716dcf5b91cd81c"
+    },
+    {
+      "path": "raw/root/first/verification.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/first/verification.json",
+      "bytes": 3804,
+      "sha256": "f036dca52dbef6959e2320a825e2ce56954496ff95cdb2b9cf2e522cc10b4c28"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/build.json",
+      "bytes": 9327,
+      "sha256": "ca7fe62d32063f080795512b60f9f91a01baf49852c4fb1239d368488f91052e"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/build.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/build.log",
+      "bytes": 1866,
+      "sha256": "b7a5709cdebdeaba505e4ed6da850bbb6fd569978acafbb5882e5636099ac2f2"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/dist-audit.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/identity-verification.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/identity-verification.json",
+      "bytes": 29181,
+      "sha256": "f0d93d5ee950cc1169ec0f5631bb8c2cb3928c45a388d39f59337629c61993fb"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/lint.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/plan.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/pre-run-build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/pre-run-build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/prior-build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/prior-build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/scope.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/scope.json",
+      "bytes": 1243,
+      "sha256": "9f72e1a41e9c04d9cb37a3fe4727baf478e07645102e07c10168a28902c543ca"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/source-after.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/source-after.json",
+      "bytes": 45741,
+      "sha256": "7dc5be4d9413f826194de51227fff2d2110d445da16c133682fa3c563860e099"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/source-before.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/source-before.json",
+      "bytes": 45741,
+      "sha256": "7dc5be4d9413f826194de51227fff2d2110d445da16c133682fa3c563860e099"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/types.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/unit.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/unit.json",
+      "bytes": 24917,
+      "sha256": "889062081deb56ac4d7f358f36a833677f8584242d0494ed14989a055be2767b"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/unit.log",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/unit.log",
+      "bytes": 126,
+      "sha256": "62d24499c1da9632af175449426b9f53a5bc2ce25bb458974a0823a98c954ff5"
+    },
+    {
+      "path": "raw/root/shore-projection-fix/verification.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shore-projection-fix/verification.json",
+      "bytes": 8137,
+      "sha256": "ea6ac94821272f227a249ab79445bd4ff84178b73f36750d13021b5fc72b5fbb"
+    },
+    {
+      "path": "checks/run.mjs",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/run.mjs",
+      "bytes": 12469,
+      "sha256": "55278215574964fb1699099d5c79706a95b3e2fa71bfc47d434b689dac2b6b84"
+    },
+    {
+      "path": "checks/preparation.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/preparation.json",
+      "bytes": 1196,
+      "sha256": "8ded74e016740c385be08d2f88d850bf5b5f73c57f43dba88760f3fb10de7835"
+    },
+    {
+      "path": "checks/baseline-build.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/baseline-build.json",
+      "bytes": 9327,
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "checks/shape-comparison-first.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shape-comparison-first.json",
+      "bytes": 2299,
+      "sha256": "10aa24598616b0e03fe99e6afaeab90f61802b6c7ff8c894fc2534fc5ef46bc9"
+    },
+    {
+      "path": "checks/shape-comparison-shore-projection-fix.json",
+      "source": ".autopilot/ph06/asymmetric-coast-checks/shape-comparison-shore-projection-fix.json",
+      "bytes": 2311,
+      "sha256": "42a55f0ce6b2f3efac285500bbaf38a75d83e5591fe7332101c199d2e533fab7"
+    },
+    {
+      "path": "diagnostic/attempt2-results.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/attempt2-results.json",
+      "bytes": 1003,
+      "sha256": "1bb23bb7fd426cac58a9c7f25ba32ca221f080d6ef700f51d6fa1dba1a47876e"
+    },
+    {
+      "path": "diagnostic/attempt2-run.log",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/attempt2-run.log",
+      "bytes": 120,
+      "sha256": "250526491a40370eec26fa94ab18fe6edbaac45044e78c2b9498d8a8767be5dd"
+    },
+    {
+      "path": "diagnostic/local-design.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/local-design.json",
+      "bytes": 81766,
+      "sha256": "47c85464d7c9edeac6d577b115181e510c9fc6856af092e391b2bf39756ecd9c"
+    },
+    {
+      "path": "diagnostic/loops.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/loops.json",
+      "bytes": 252982,
+      "sha256": "42359478682b248929c41e1891677cfc75c4c26234c95358307d0e6616a00ce1"
+    },
+    {
+      "path": "diagnostic/README.md",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/README.md",
+      "bytes": 5653,
+      "sha256": "ffbdde92afae9496329a4ed84f0c1b4f41a82b05a832c9b0bea34f0d54d7f71a"
+    },
+    {
+      "path": "diagnostic/run.log",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/run.log",
+      "bytes": 382,
+      "sha256": "8cb2ea04641231956788b3d6d3af213beb8cfccf00daec4f7ff8a303f5eb219a"
+    },
+    {
+      "path": "diagnostic/source-binding.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/source-binding.json",
+      "bytes": 1021,
+      "sha256": "4c88ceee41cfc15c1b08f0be138b8841aeb37cfb05fceb7481b01570bf3bdaf4"
+    },
+    {
+      "path": "diagnostic/started.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/started.json",
+      "bytes": 1161,
+      "sha256": "af184a826114f14ad78066379f946c42ad3dc295bb935e2350db160a5177f16a"
+    },
+    {
+      "path": "diagnostic/topology.json",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/topology.json",
+      "bytes": 2099,
+      "sha256": "1725be6781ca9589b9df2b61f082a6bea1f2de5bec8a2550e7ba6d15243f7428"
+    },
+    {
+      "path": "diagnostic/topology.test.ts",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/topology.test.ts",
+      "bytes": 8333,
+      "sha256": "ef0fb4208eced3ee8db08766bbc8d146f6cabdaed44c74d0500d5026af8f3042"
+    },
+    {
+      "path": "diagnostic/vitest.config.ts",
+      "source": ".autopilot/ph06/asymmetric-topology-probe/vitest.config.ts",
+      "bytes": 266,
+      "sha256": "d868cb4a1786c8b98b15934c3f298c97e31744964bf0d93184f781c0476b8f72"
+    },
+    {
+      "path": "numeric/first/actual-256-height-field.json",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-first/actual-256-height-field.json",
+      "bytes": 883232,
+      "sha256": "828cbcebc461bfbe1ba6f756264c532907b17e032b2fdb99c34e3304e5c5cc9d"
+    },
+    {
+      "path": "numeric/first/actual-256-height-field.png",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-first/actual-256-height-field.png",
+      "bytes": 29319,
+      "sha256": "453d60d56fc2388d3c3a4d69acffc4afe0ac97cb1cc97060f4ae8bd2ea95291b"
+    },
+    {
+      "path": "numeric/first/actual-256-height-field.svg",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-first/actual-256-height-field.svg",
+      "bytes": 5154176,
+      "sha256": "2569d62d8a72266f541585064285f281985a8d13cfb254859e213f613d031e0f"
+    },
+    {
+      "path": "numeric/shore-projection-fix/actual-256-height-field.json",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-shore-projection-fix/actual-256-height-field.json",
+      "bytes": 882691,
+      "sha256": "afeab4d0086a71e321f2b4ff52da4c29647dc4c1ae77862d6e0ecf61b2fff8f9"
+    },
+    {
+      "path": "numeric/shore-projection-fix/actual-256-height-field.png",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-shore-projection-fix/actual-256-height-field.png",
+      "bytes": 29050,
+      "sha256": "8ffb488b95a7ddbd496fad8a3e9b8c5020a3e267acaba73e95ba6c9eb5649d34"
+    },
+    {
+      "path": "numeric/shore-projection-fix/actual-256-height-field.svg",
+      "source": ".autopilot/ph06/v4-natural-visual-repair-staging/checks/asymmetric-shore-projection-fix/actual-256-height-field.svg",
+      "bytes": 5153857,
+      "sha256": "5c253a89ff5645cfec70f45f2f62e6ea53c40bdbe969761c04f845729a18a24e"
+    },
+    {
+      "path": "provenance/asymmetric-coast-promotion.json",
+      "source": ".autopilot/ph06/asymmetric-coast-promotion.json",
+      "bytes": 5144,
+      "sha256": "e309af8c4ef5de2679f19e6bb8e36ac1325ef3c56f829b3b2463f668edbc1bf6"
+    },
+    {
+      "path": "provenance/asymmetric-coast-review.md",
+      "source": ".autopilot/ph06/asymmetric-coast-review.md",
+      "bytes": 9653,
+      "sha256": "a0ee386d8054a28ff6395d8cfa094b36a9330b58fc602d4cb3956f891c22516a"
+    },
+    {
+      "path": "provenance/natural-coast-next-review.md",
+      "source": ".autopilot/ph06/natural-coast-next-review.md",
+      "bytes": 10443,
+      "sha256": "02129f488e5be9bba4739ada8bc1083b966a3f40debf67e396434ec5859585a0"
+    },
+    {
+      "path": "provenance/continuous-relief-visual-followup.md",
+      "source": ".autopilot/ph06/continuous-relief-visual-followup.md",
+      "bytes": 12141,
+      "sha256": "4d051b17c157d0a963591423c88ba64d3e5fa0f2b7bfa8217a61ca57a4ec4b9c"
+    },
+    {
+      "path": "provenance/compare-asymmetric-shore.mjs",
+      "source": ".autopilot/ph06/compare-asymmetric-shore.mjs",
+      "bytes": 3418,
+      "sha256": "c9c758dea529fa3be8b8b23778eb1506aeed09023c83eb74bbbb719b4a0cd8d4"
+    },
+    {
+      "path": "provenance/archive-asymmetric-iteration.mjs",
+      "source": ".autopilot/ph06/archive-asymmetric-iteration.mjs",
+      "bytes": 5548,
+      "sha256": "2bcee6cf4711509fe112d31492f97febe917048fd5727c38f29ba8a89ff8562d"
+    },
+    {
+      "path": "preparation/v4-asymmetric-coast-staging/README.md",
+      "source": ".autopilot/ph06/v4-asymmetric-coast-staging/README.md",
+      "bytes": 7531,
+      "sha256": "0a647cbe2096e9dfc26f337377b5651241db0feffd1e85b7551247944e012701"
+    },
+    {
+      "path": "preparation/v4-asymmetric-coast-staging/ready-manifest.json",
+      "source": ".autopilot/ph06/v4-asymmetric-coast-staging/ready-manifest.json",
+      "bytes": 2495,
+      "sha256": "408f1fd6955fedd27e1c8a6b2179a3c6d098a86b36e6b23ef512162ef723d7ba"
+    },
+    {
+      "path": "preparation/v4-preview14-history-staging/README.md",
+      "source": ".autopilot/ph06/v4-preview14-history-staging/README.md",
+      "bytes": 2976,
+      "sha256": "f4ac552856bbe09d19c7ec4ed049e72d985c316a7e6ff2b80ef8718fb34822fe"
+    },
+    {
+      "path": "preparation/v4-preview14-history-staging/ready-manifest.json",
+      "source": ".autopilot/ph06/v4-preview14-history-staging/ready-manifest.json",
+      "bytes": 2886,
+      "sha256": "2744d97509a9be1498fe5a3c122a3a0ba2d681ba012d3762caef3dd64fc1ce39"
+    },
+    {
+      "path": "verification.json",
+      "source": "derived-root-record",
+      "bytes": 1885,
+      "sha256": "6931cb9c0f2e00fd2dc882b1450ebc057124b39052dab66a7fcde7ea1ebe6212"
+    }
+  ]
+}

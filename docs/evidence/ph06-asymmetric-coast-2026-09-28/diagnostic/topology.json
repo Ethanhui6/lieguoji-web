@@ -1,0 +1,91 @@
+{
+  "recordedAt": "2026-09-27T17:46:41.841Z",
+  "sourceBefore": [
+    {
+      "path": "src/world/generation/detail-shape-natural.ts",
+      "sha256": "b97fd13d7c6d463c29dbaa0539fd711657315907550834b151dbdc4a96885dde"
+    },
+    {
+      "path": "src/world/generation/detail-natural-outline.ts",
+      "sha256": "fa1cd343809c2074e6c6166c07b4ed27ea7d5ebfe7d890cebf36974867404fb6"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.test.ts",
+      "sha256": "0b95185a4b7470f4d851ef6d2df3d0cf763d0aa2eee0e6d41f1a46716aebbccc"
+    }
+  ],
+  "recipe": {
+    "format": "lieguoji-natural-shape-recipe",
+    "version": 2,
+    "seed": "regional-natural-v2",
+    "coastStructureWorld": 112,
+    "coastRoughnessWorld": 24,
+    "reliefMeters": 2200,
+    "shelfWidthWorld": 112,
+    "islandChainCount": 0,
+    "islandsPerChain": 3,
+    "pointsQ": [
+      {
+        "xQ": 281600,
+        "yQ": 281600
+      },
+      {
+        "xQ": 486400,
+        "yQ": 281600
+      },
+      {
+        "xQ": 486400,
+        "yQ": 445440
+      },
+      {
+        "xQ": 281600,
+        "yQ": 445440
+      }
+    ]
+  },
+  "targetSegments": 3859,
+  "components": 2,
+  "loops": [
+    {
+      "areaWorld2": 551134.0474472046,
+      "bbox": {
+        "minX": 992.49609375,
+        "maxX": 1908.0859375,
+        "minY": 992.6875,
+        "maxY": 1849.328125
+      },
+      "centroid": {
+        "x": 1420.2617012826936,
+        "y": 1409.5299827977487
+      },
+      "vertexCount": 3849,
+      "actualCenterLand": true,
+      "originalCenterLand": true,
+      "degrees": [
+        2
+      ],
+      "insideLargestLoop": false
+    },
+    {
+      "areaWorld2": 4.368782043457031,
+      "bbox": {
+        "minX": 1117.8984375,
+        "maxX": 1121.06640625,
+        "minY": 1380.4296875,
+        "maxY": 1382.6484375
+      },
+      "centroid": {
+        "x": 1119.3952937449974,
+        "y": 1381.5903171273558
+      },
+      "vertexCount": 10,
+      "actualCenterLand": false,
+      "originalCenterLand": true,
+      "degrees": [
+        2
+      ],
+      "insideLargestLoop": true
+    }
+  ],
+  "targetDiagnosticOnly": true
+}

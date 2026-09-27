@@ -1,0 +1,214 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T17:11:39.746Z",
+      "finishedAt": "2026-09-27T17:11:39.911Z",
+      "elapsedMs": 163.1438,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T17:11:39.912Z",
+      "finishedAt": "2026-09-27T17:11:45.748Z",
+      "elapsedMs": 5836.2967,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T17:11:45.748Z",
+      "finishedAt": "2026-09-27T17:11:53.542Z",
+      "elapsedMs": 7793.798400000001,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/detail-curved-ridge.test.ts",
+        "src/world/generation/detail-local-background.test.ts",
+        "src/world/generation/detail-local-relief.test.ts",
+        "src/world/generation/detail-natural-visual-repair.test.ts",
+        "src/world/generation/detail-shape-natural.test.ts",
+        "src/world/detail-local-relief-session.test.ts",
+        "src/world/detail-natural-integration.test.ts",
+        "src/world/detail-natural-history.test.ts",
+        "src/world/detail-preview13-history.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "src/world/renderer-detail-reuse.test.ts",
+        "src/world/renderer.test.ts",
+        "src/world/constraints-receiver.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/continuous-relief-checks/type-guard-fix/unit.json"
+      ],
+      "startedAt": "2026-09-27T17:11:53.542Z",
+      "finishedAt": "2026-09-27T17:13:26.077Z",
+      "elapsedMs": 92534.2377,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T17:13:26.077Z",
+      "finishedAt": "2026-09-27T17:13:27.500Z",
+      "elapsedMs": 1422.5850999999966,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T17:13:27.500Z",
+      "finishedAt": "2026-09-27T17:13:27.593Z",
+      "elapsedMs": 92.73760000000766,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "sourceStable": true,
+  "changedKeys": [
+    "macroGenerator",
+    "landformGenerator",
+    "islandGenerator",
+    "coastGenerator",
+    "shapeGenerator",
+    "oceanGenerator",
+    "detailShapeGenerator",
+    "addDetailGenerator",
+    "naturalDetailGenerator",
+    "addNaturalDetailGenerator",
+    "localDetailReliefGenerator"
+  ],
+  "expectedIdentityChanges": false,
+  "generatorAndEngineUnchanged": false,
+  "engineUnchanged": true,
+  "newGeneratorRecorded": true,
+  "passed": false,
+  "dist": [
+    {
+      "path": "dist/assets/App-2Dg3wBMB.js",
+      "sha256": "2af237cb5823ca6ff4624328d7e1fece712198e030a80dadabbb715944186651"
+    },
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/atlas.worker-Bcwub6kf.js",
+      "sha256": "827757f859da6d3525c4d0946a3416a745497ebe5060b4d32aec2596d2a7bcff"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-B-zCZwfE.js",
+      "sha256": "908dc2a218bd7836c4b55f7c53c562884ff3ea6207c3d86b115e1f5fa8e1ac2e"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-BggvROi5.css",
+      "sha256": "61f6cdb5242a2f32dc28dcfa164fa599919b24fd35f94c64729d84bf736e9dd3"
+    },
+    {
+      "path": "dist/assets/browserAll-Zyi0bgPX.js",
+      "sha256": "7309a8c93acd800e52e43ef5178ec0f9c1ba24cc9f0f989a90782bfbc76ebd36"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-DGPo9j24.js",
+      "sha256": "b32ab78f8959d8a2f4eab872a3a1d50eae28dea0ebe85d61105f317719d98b99"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-BQWHEwy0.js",
+      "sha256": "8c6105c40c9542a7619f6da1d69d23283225aca7478feb1e6697a33952ca86f5"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-A426oveM.js",
+      "sha256": "a43e07744ba3208528085c53321a6744f0a1419c0e3b49e8cf24e05ec124db98"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "702726d6fa956e2f647ff2fe91d9f136479aeef3888acc151c30bd0e95712075"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "1940709642f76647aca11531027472945b799880a781ac9032c399eeee18c4e1"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "scope": "Continuous relief and same-geography display technical scope only; no whole natural quality, performance, physical device, PH or cloud acceptance",
+  "cloudWrites": false
+}

@@ -1,0 +1,419 @@
+{
+  "scope": "Pure local HTML browser capability diagnostic; not product acceptance",
+  "reports": [
+    {
+      "detach": true,
+      "before": {
+        "count": "1",
+        "events": [
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 227.29999999701977
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 227.3999999910593
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 227.59999999403954
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 227.59999999403954
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 228.09999999403954
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 228.29999999701977
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 228.5
+          }
+        ]
+      },
+      "after": {
+        "count": "2",
+        "events": [
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 227.29999999701977
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 227.3999999910593
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 227.59999999403954
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 227.59999999403954
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 228.09999999403954
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 228.29999999701977
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 228.5
+          },
+          {
+            "type": "pointerdown",
+            "target": "CANVAS",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 290.79999999701977
+          },
+          {
+            "type": "touchstart",
+            "target": "CANVAS",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 290.8999999910593
+          },
+          {
+            "type": "pointerup",
+            "target": "CANVAS",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 444.8999999910593
+          },
+          {
+            "type": "touchend",
+            "target": "CANVAS",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 444.8999999910593
+          },
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 492.59999999403954
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 492.59999999403954
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 492.70000000298023
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 492.70000000298023
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 493.29999999701977
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 493.29999999701977
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 493.29999999701977
+          }
+        ]
+      }
+    },
+    {
+      "detach": false,
+      "before": {
+        "count": "1",
+        "events": [
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 131.8999999910593
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 132
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 132.09999999403954
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 132.20000000298023
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 132.5
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 132.5
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 132.70000000298023
+          }
+        ]
+      },
+      "after": {
+        "count": "2",
+        "events": [
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 131.8999999910593
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 132
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 132.09999999403954
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 132.20000000298023
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 132.5
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 132.5
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 132.70000000298023
+          },
+          {
+            "type": "pointerdown",
+            "target": "CANVAS",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 184.3999999910593
+          },
+          {
+            "type": "touchstart",
+            "target": "CANVAS",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 184.3999999910593
+          },
+          {
+            "type": "pointerup",
+            "target": "CANVAS",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 347.3999999910593
+          },
+          {
+            "type": "touchend",
+            "target": "CANVAS",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 347.3999999910593
+          },
+          {
+            "type": "pointerdown",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 397.3999999910593
+          },
+          {
+            "type": "touchstart",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 1,
+            "time": 397.3999999910593
+          },
+          {
+            "type": "pointerup",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": true,
+            "prevented": false,
+            "time": 397.5
+          },
+          {
+            "type": "touchend",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "touches": 0,
+            "time": 397.5
+          },
+          {
+            "type": "mousedown",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 397.79999999701977
+          },
+          {
+            "type": "mouseup",
+            "target": "BUTTON",
+            "trusted": true,
+            "prevented": false,
+            "time": 397.79999999701977
+          },
+          {
+            "type": "click",
+            "target": "BUTTON",
+            "trusted": true,
+            "primary": false,
+            "prevented": false,
+            "time": 397.8999999910593
+          }
+        ]
+      }
+    }
+  ]
+}

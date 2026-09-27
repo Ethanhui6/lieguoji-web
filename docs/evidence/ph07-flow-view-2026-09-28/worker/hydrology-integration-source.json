@@ -1,0 +1,30 @@
+{
+  "lintExit": 0,
+  "typeDiagnostics": 0,
+  "files": [
+    {
+      "path": "src/world/protocol.ts",
+      "sha256": "995c38e70f68b53263fe6fa0e4a3fb655a282f509b4cc91d3bc8c8e0f920edff"
+    },
+    {
+      "path": "src/world/bridge.ts",
+      "sha256": "25deadd6a022d1ad9e592656b63588e3aab4c96f8bea0d9147d77c88d5c9ca5e"
+    },
+    {
+      "path": "src/world/atlas.worker.ts",
+      "sha256": "f9335819f1fd3c348f1ff65922f5b26fee83c078d8d05268650e75be2c23f5cd"
+    },
+    {
+      "path": "src/world/hydrology-trace.ts",
+      "sha256": "58876cd98fec8a4f6a164329617725ae9ac317da5bfa0fb0cf96e66ef583dff3"
+    },
+    {
+      "path": "src/world/hydrology-trace.test.ts",
+      "sha256": "75ea5fa7c394b27f358b9749d866a0a10a096f37845fd63c3b9603378db073b1"
+    },
+    {
+      "path": "src/world/hydrology-worker.test.ts",
+      "sha256": "a83fe552dc0654ef56b72e36a1f9485e0c3468f3d12c9b7255b0540466247bae"
+    }
+  ]
+}

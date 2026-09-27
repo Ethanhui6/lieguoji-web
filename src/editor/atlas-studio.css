@@ -36,6 +36,18 @@
 .atlas-preview p { margin: 0; line-height: 1.7; font-size: var(--font-caption); }
 .atlas-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .atlas-actions > button { flex: 1; min-width: 110px; overflow-wrap: anywhere; }
+/* A preview's decision stays outside the scrollable description. Long status
+   text can scroll independently without displacing the two real actions. */
+.atlas-preview-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+.atlas-preview-actions > button { flex: 1 1 8rem; min-width: 0; min-height: 48px; overflow-wrap: anywhere; }
+.atlas-studio .inspector-actions:has(.atlas-preview-actions) { max-height: none; }
+.atlas-studio .inspector-actions:has(.atlas-preview-actions) > .inspector-feedback { flex: 0 1 auto; max-height: min(20vh, 7rem); }
+@media (max-width: 899px), (max-width: 1279px) and (orientation: portrait) {
+  .atlas-studio .context-inspector:has(.atlas-preview-actions) { min-height: min(360px, 100%); }
+}
+@media (max-height: 440px) {
+  .atlas-studio .context-inspector:has(.atlas-preview-actions) { height: calc(100% - 8px); }
+}
 .atlas-current { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .atlas-current p { margin: 0; color: var(--text-secondary); font-size: var(--font-caption); }
 .atlas-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -317,3 +329,9 @@
   .atlas-studio[data-chrome="map-first"] button:disabled { color: GrayText; }
   .atlas-studio[data-chrome="map-first"] :focus-visible { outline-color: Highlight; }
 }
+.atlas-drainage-panel {
+  padding-block: 16px;
+  border-block: 1px solid var(--border, #dce3e8);
+}
+.atlas-drainage-panel h3 { margin: 0 0 8px; }
+.atlas-drainage-panel > button { width: 100%; min-height: 44px; }

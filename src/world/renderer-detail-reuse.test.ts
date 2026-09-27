@@ -7,10 +7,11 @@ import { getCellLayerSlot, hashBlock } from './model';
 import { detailCoastOwnerLayout } from './detail-coast-types';
 import { hashDetailCoastTile } from './detail-coast-codec';
 import { AtlasTextureCache } from './atlas-texture-cache';
+import type { HydrologyTrace } from './hydrology-trace';
 
 // Real 128² source, verification, SpatialIndex and cache ownership. GPU page
 // packing/submission is replaced here; actual output and timing need browsers.
-const boundary = vi.hoisted(() => ({ prepare: vi.fn(), install: vi.fn(), release: vi.fn(), backend: vi.fn(), target: vi.fn(), label: vi.fn(), destroy: vi.fn() }));
+const boundary = vi.hoisted(() => ({ prepare: vi.fn(), install: vi.fn(), release: vi.fn(), backend: vi.fn(), target: vi.fn(), label: vi.fn(), destroy: vi.fn(), flow: vi.fn() }));
 vi.mock('pixi.js/unsafe-eval', () => ({}));
 vi.mock('pixi.js', () => {
   class Container {
@@ -18,7 +19,12 @@ vi.mock('pixi.js', () => {
     addChild(child: Container) { if (!this.children.includes(child)) this.children.push(child); return child; }
     destroy() { this.destroyed = true; }
   }
-  class Graphics extends Container { clear() { return this; } rect() { return this; } poly() { return this; } fill() { return this; } stroke() { return this; } }
+  class Graphics extends Container {
+    private points: number[] = [];
+    clear() { this.points = []; return this; } rect() { return this; }
+    poly(points: number[]) { this.points = [...points]; return this; } fill() { return this; }
+    stroke(options: { color: number; width: number }) { if (options.color === 0x9fe4ff) boundary.flow({ points: [...this.points], width: options.width }); return this; }
+  }
   class Application {
     stage = new Container(); screen = { width: 800, height: 600 }; captures = new Set<number>();
     canvas = Object.assign(new EventTarget(), { setAttribute() {}, style: {}, tabIndex: 0, getBoundingClientRect: () => ({ left: 0, top: 0 }),
@@ -84,11 +90,11 @@ const tick = () => { const pending = [...frames.values()]; frames.clear(); for (
 async function flush() { for (let i = 0; i < 8; i++) { await vi.runAllTimersAsync(); tick(); await Promise.resolve(); } }
 const dispatch = (target: EventTarget, type: string, fields: object = {}) => target.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), fields));
 async function opened() {
-  const host = { clientWidth: 800, clientHeight: 600, appendChild: vi.fn() }, fatal = vi.fn(), pick = vi.fn(), progress = vi.fn();
-  const renderer = new AtlasRenderer(host as unknown as HTMLElement, { onFatal: fatal, onPick: pick, onProgress: progress }); renderers.push(renderer);
+  const host = { clientWidth: 800, clientHeight: 600, appendChild: vi.fn() }, fatal = vi.fn(), pick = vi.fn(), progress = vi.fn(), pickPoint = vi.fn();
+  const renderer = new AtlasRenderer(host as unknown as HTMLElement, { onFatal: fatal, onPick: pick, onProgress: progress, onPickPoint: pickPoint }); renderers.push(renderer);
   await renderer.init(); const pending = renderer.accept(source); await flush(); await pending;
   const canvas = host.appendChild.mock.calls[0][0] as HTMLCanvasElement;
-  return { renderer, canvas, fatal, pick, progress };
+  return { renderer, canvas, fatal, pick, progress, pickPoint };
 }
 async function locked(revision = 1, mask = 3) {
   const next = cloneGenerationDocument(source), flags = new Uint8Array(1024); flags[33] = mask;
@@ -117,6 +123,41 @@ afterEach(() => {
 });
 
 describe('verified v4 lock-only display replacement', () => {
+  it('draws fine flow coordinates, keeps a private trace and hides it for a new revision', async () => {
+    const h = await opened();
+    const trace: HydrologyTrace = {
+      format: 'lieguoji-hydrology-trace', version: 1, algorithm: 'fine-drainage-v1',
+      source: { version: 4, draftId: source.manifest.draftId, atlasId: source.manifest.atlasId, revision: 0, manifestDigest: 'a'.repeat(64), rootDigest: 'b'.repeat(64), lockSetDigest: 'c'.repeat(64), rootBinding: 'current-owned-session-head' },
+      rectangle: { originColumn: 512, originRow: 512, columns: 32, rows: 32 }, sourceNode: { column: 528, row: 528 },
+      path: [{ column: 528, row: 528 }, { column: 527, row: 528 }, { column: 527, row: 527 }], coastPointQ: null,
+      terminal: 'depression', partial: true, contributingSamples: 1, terminalContributingSamples: 3,
+    };
+      h.renderer.showHydrologyTrace(trace);
+      expect(boundary.flow.mock.calls.at(-1)![0].points).toEqual([1056, 1056, 1054, 1056, 1054, 1054]);
+      const framed = h.renderer.metrics().camera;
+      for (const node of trace.path) {
+        expect(node.column * 2 * framed.scale + framed.x).toBeGreaterThanOrEqual(48);
+        expect(node.column * 2 * framed.scale + framed.x).toBeLessThanOrEqual(752);
+        expect(node.row * 2 * framed.scale + framed.y).toBeGreaterThanOrEqual(144);
+        expect(node.row * 2 * framed.scale + framed.y).toBeLessThanOrEqual(456);
+      }
+      trace.path[0].column = 0; h.renderer.zoom(2); tick();
+      expect(boundary.flow.mock.calls.at(-1)![0].points).toEqual([1056, 1056, 1054, 1056, 1054, 1054]);
+      const long = { ...trace, sourceNode: { column: 528, row: 528 }, rectangle: { originColumn: 512, originRow: 17, columns: 32, rows: 512 },
+        path: Array.from({ length: 512 }, (_, i) => ({ column: 528, row: 528 - i })), terminalContributingSamples: 512 };
+      h.renderer.zoom(40); tick(); h.renderer.showHydrologyTrace(long);
+      const wholePath = h.renderer.metrics().camera;
+      for (const node of long.path) {
+        expect(node.column * 2 * wholePath.scale + wholePath.x).toBeGreaterThanOrEqual(48);
+        expect(node.column * 2 * wholePath.scale + wholePath.x).toBeLessThanOrEqual(752);
+        expect(node.row * 2 * wholePath.scale + wholePath.y).toBeGreaterThanOrEqual(144);
+        expect(node.row * 2 * wholePath.scale + wholePath.y).toBeLessThanOrEqual(456);
+      }
+    const next = await locked(); boundary.flow.mockClear(); const accepted = h.renderer.accept(next); await flush(); await accepted;
+    expect(boundary.flow).not.toHaveBeenCalled();
+    expect(() => h.renderer.showHydrologyTrace(trace)).toThrow('地形已经变化'); expect(h.fatal).not.toHaveBeenCalled();
+    expect(source).toEqual(sourceSnapshot);
+  });
   it('reuses real geography and caches on lock confirm/undo while publishing new lock metadata only after a correct frame', async () => {
     const h = await opened(); h.renderer.focusCell(4257); h.renderer.setGridVisible(true); tick();
     const before = h.renderer.metrics(), next = await locked(); h.progress.mockClear(); boundary.target.mockClear(); boundary.label.mockClear();
@@ -133,6 +174,7 @@ describe('verified v4 lock-only display replacement', () => {
     const camera = after.camera, clientX = camera.x + 1057 * camera.scale, clientY = camera.y + 1057 * camera.scale;
     dispatch(h.canvas, 'pointerdown', { pointerId: 1, button: 0, clientX, clientY }); dispatch(h.canvas, 'pointerup', { pointerId: 1, clientX, clientY });
     expect(h.pick.mock.calls.at(-1)![1]).toMatchObject({ land: true, height: 260 });
+    expect(h.pickPoint.mock.calls.at(-1)![0].x).toBeCloseTo(1057); expect(h.pickPoint.mock.calls.at(-1)![0].y).toBeCloseTo(1057);
     const undo = cloneGenerationDocument(source); undo.manifest.revision = 2; await verifyAtlasDocument(undo, { yieldTask: async () => {} });
     const undone = h.renderer.accept(undo); await flush(); await undone;
     expect(h.renderer.metrics()).toMatchObject({ acceptedRevision: 2, repaintBlocks: 0 }); expect(boundary.prepare).toHaveBeenCalledTimes(1);

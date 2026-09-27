@@ -1,12 +1,12 @@
 import { Icon } from '../ui/Icon';
 
 type Props = {
-  hasWorld: boolean; alreadyDrawn: boolean; readOnly: boolean; locked: boolean; busy: boolean;
+  hasWorld: boolean; alreadyDrawn: boolean; readOnly: boolean; locked: boolean;
   outlinePoints: number; seed: string; version: 1 | 2; structure: number; roughness: number; shelf: number; relief: number; islands: number; islandsPerChain: number;
   onSeed: (value: string) => void; onRoughness: (value: number) => void; onShelf: (value: number) => void;
   onRelief: (value: number) => void; onIslands: (value: number) => void;
   onVersion: (value: 1 | 2) => void; onStructure: (value: number) => void; onIslandsPerChain: (value: number) => void;
-  onDraw: () => void; onPreview: () => void; onConfirm: () => void; onCancel: () => void;
+  onDraw: () => void; onPreview: () => void;
   preview: null | { addedLandAreaQ2?: number; landAreaQ2: number; worldAreaQ2: number; minElevationMeters: number; maxElevationMeters: number };
 };
 
@@ -18,7 +18,6 @@ export function DetailCoastPanel(p: Props) {
       <span className="atlas-eyebrow">尚未保存 · 生成预览</span><h3>{p.alreadyDrawn ? '看看要添上的这片大陆' : '看看这片新大陆'}</h3>
       <p>沿着你的轮廓生成海湾、半岛、近岸群岛和山地。可以关闭面板，放大查看海岸，再决定是否保存。</p>
       <dl className="atlas-cell-details"><div><dt>世界陆地面积</dt><dd>{(100 * p.preview.landAreaQ2 / p.preview.worldAreaQ2).toFixed(2)}%</dd></div>{p.preview.addedLandAreaQ2 !== undefined && <div><dt>本次新增陆地</dt><dd>{(100 * p.preview.addedLandAreaQ2 / p.preview.worldAreaQ2).toFixed(2)}% 世界面积</dd></div>}<div><dt>高程范围</dt><dd>{p.preview.minElevationMeters} 至 {p.preview.maxElevationMeters} 米</dd></div></dl>
-      <div className="atlas-actions"><button disabled={p.busy} onClick={p.onCancel}>取消生成</button><button className="atlas-primary" disabled={p.busy} onClick={p.onConfirm}>确认生成并保存</button></div>
     </section> : p.readOnly ? <section><h3>浏览这份备份</h3><p className="atlas-help">拖动探索、放大海岸、轻点查看真实海陆与高程。备份保持只读；返回并打开当前草稿后可以继续画大陆。</p></section> : <>
       <div className="atlas-create-intro"><span className="atlas-eyebrow">你的山海，从一笔开始</span><button className="atlas-draw-card" disabled={p.locked} onClick={p.onDraw}><Icon name="brush" size={28}/><span><strong>{p.alreadyDrawn ? '再画一片大陆' : '画一片大陆'}</strong><small>{p.alreadyDrawn ? '在海面继续绘制，保留已有山河' : '画出轮廓，让海湾与山脉自然形成'}</small></span></button></div>
       <fieldset className="atlas-edit-fields" disabled={p.locked}>

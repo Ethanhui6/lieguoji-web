@@ -16,6 +16,7 @@ import { AtlasTerrainMesh, ensureTerrainMaterials, TERRAIN_LUT_PIXELS } from './
 import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type CoastalPick } from './coastal-surface';
 import { ATLAS_MINIMUM_CACHE_DENSITY, ATLAS_TEXTURE_GUTTER, planAtlasRaster, type AtlasRasterQuality } from './render-density';
 import { DetailTerrainBackend, DETAIL_TERRAIN_SHARED_PIXELS } from './detail-terrain-backend';
+import type { HydrologyTrace } from './hydrology-trace';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
@@ -27,6 +28,7 @@ export type AtlasRendererOptions = {
   onGraphicsState?: (state: AtlasGraphicsState) => void;
   onOutline?: (points: AtlasOutlinePoint[]) => void;
   onOutlineCancel?: () => void;
+  onPickPoint?: (point: { x: number; y: number }) => void;
 };
 const ocean = 0x10283f;
 const minimumCacheDensity = ATLAS_MINIMUM_CACHE_DENSITY;
@@ -52,6 +54,10 @@ export class AtlasRenderer {
   private readonly preview = new Graphics();
   private readonly outline = new Graphics();
   private readonly freehand = new Graphics();
+  private readonly drainage = new Graphics();
+  private drainageTrace: HydrologyTrace | null = null;
+  private drainageRevision = 0;
+  private drawnDrainage?: { revision: number; scale: number; epoch: number; visible: boolean };
   private readonly terrainLayer = new Container();
   private readonly gridLayer = new Container();
   private readonly cache = new AtlasTextureCache();
@@ -117,7 +123,7 @@ export class AtlasRenderer {
     canvas.setAttribute('aria-label', '大世界草稿地图，拖动平移，双指或滚轮缩放，点选地块');
     canvas.setAttribute('data-testid', 'atlas-canvas'); canvas.tabIndex = 0; canvas.style.touchAction = 'none';
     this.host.appendChild(canvas); this.app.stage.addChild(this.scene);
-    this.scene.addChild(this.terrainLayer, this.gridLayer, this.outline, this.selection, this.preview, this.freehand);
+    this.scene.addChild(this.terrainLayer, this.gridLayer, this.outline, this.selection, this.preview, this.drainage, this.freehand);
     this.labels = new AtlasLabelLayer(this.host, () => { if (!this.destroyed && !this.failure) this.requestDraw(); });
     this.attachInput();
     this.attachDiagnostics();
@@ -535,6 +541,32 @@ export class AtlasRenderer {
       this.requestDraw();
     });
   }
+  /** Read-only, bridge-validated flow trace. No terrain or simulation state is changed. */
+  showHydrologyTrace(trace: HydrologyTrace | null) {
+    if (trace && (this.displaySource !== 'committed' || this.data?.manifest.version !== 4
+      || trace.source.draftId !== this.data.manifest.draftId || trace.source.atlasId !== this.data.manifest.atlasId
+      || trace.source.revision !== this.data.manifest.revision)) throw new Error('地形已经变化，请重新查看流向。');
+    this.guarded(() => {
+      this.drainageTrace = trace ? structuredClone(trace) : null;
+      if (trace) {
+        const points = trace.path.map(p => ({ x: p.column * 2, y: p.row * 2 }));
+        if (trace.coastPointQ) points.push({ x: trace.coastPointQ.xQ / 256, y: trace.coastPointQ.yQ / 256 });
+        const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x));
+        const minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
+        const viewport = this.viewport(), marginX = Math.min(48, viewport.width * .12);
+        // Leave space for the map tools above and the result controls below,
+        // including the two-row toolbar on a phone. Never enlarge a tiny path.
+        const top = Math.min(144, viewport.height * .25), bottom = Math.min(144, viewport.height * .25);
+        const availableHeight = viewport.height - top - bottom;
+        const { minScale, maxScale } = cameraScaleBounds(this.worldSize(), viewport);
+        const scale = Math.max(minScale, Math.min(this.camera.scale, maxScale,
+          (viewport.width - marginX * 2) / Math.max(2, maxX - minX), availableHeight / Math.max(2, maxY - minY)));
+        this.camera = centerCameraAt({ ...this.camera, scale }, { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+          { x: viewport.width / 2, y: top + availableHeight / 2 });
+      }
+      this.drainageRevision++; this.draw();
+    });
+  }
   showOutline(points: readonly AtlasOutlinePoint[]) {
     this.guarded(() => {
       const world = this.worldSize();
@@ -565,6 +597,24 @@ export class AtlasRenderer {
   private updateOverlays() {
     if (!this.data) return;
     const data = this.data, scale = this.camera.scale, epoch = this.contextEpoch, world = this.worldSize();
+    const trace = this.drainageTrace;
+    const drainageVisible = !!trace && this.displaySource === 'committed' && data.manifest.version === 4
+      && trace.source.draftId === data.manifest.draftId && trace.source.atlasId === data.manifest.atlasId && trace.source.revision === data.manifest.revision;
+    const drainage = this.drawnDrainage;
+    if (!drainage || drainage.revision !== this.drainageRevision || drainage.scale !== scale || drainage.epoch !== epoch || drainage.visible !== drainageVisible) {
+      this.drainage.clear();
+      if (trace && drainageVisible) {
+        const r = trace.rectangle;
+        this.drainage.rect(r.originColumn * 2, r.originRow * 2, (r.columns - 1) * 2, (r.rows - 1) * 2).stroke({ color: 0xa5d3ed, width: 1 / scale, alpha: .5 });
+        const points = trace.path.flatMap(p => [p.column * 2, p.row * 2]);
+        if (trace.coastPointQ) points.push(trace.coastPointQ.xQ / 256, trace.coastPointQ.yQ / 256);
+        if (points.length >= 4) this.drainage.poly(points, false).stroke({ color: 0x143851, width: 5 / scale, alpha: .85 });
+        if (points.length >= 4) this.drainage.poly(points, false).stroke({ color: 0x9fe4ff, width: 2.5 / scale });
+        const x = trace.sourceNode.column * 2, y = trace.sourceNode.row * 2, radius = 4 / scale;
+        this.drainage.rect(x - radius, y - radius, radius * 2, radius * 2).fill({ color: 0xffffff }).stroke({ color: 0x143851, width: 1.5 / scale });
+      }
+      this.drawnDrainage = { revision: this.drainageRevision, scale, epoch, visible: drainageVisible };
+    }
     const freehand = this.drawnFreehand;
     if (!freehand || freehand.revision !== this.outlineRevision || freehand.scale !== scale || freehand.epoch !== epoch) {
       this.freehand.clear();
@@ -667,6 +717,7 @@ export class AtlasRenderer {
           const manifestDigest = committed.data === data ? displayManifestDigest : await hashAtlasManifest(committed.data.manifest);
           if (this.data !== data || this.committed !== committed || this.displaySource !== source || this.displayBusy()) throw new Error('核验期间地图已经切换，请重试。');
           reply({ ok: true, manifestDigest, draftId: committed.data.manifest.draftId, atlasId: committed.data.manifest.atlasId, revision: committed.data.manifest.revision, verifiedBlocks: committed.data.blocks.size,
+            hydrologyTrace: source === 'committed' && this.drainageTrace?.source.manifestDigest === manifestDigest ? structuredClone(this.drainageTrace) : null,
             display: { source, manifestDigest: displayManifestDigest, revision: data.manifest.revision, version: data.manifest.version, verifiedBlocks: data.blocks.size } });
         } catch (error) { reply({ ok: false, error: error instanceof Error ? error.message : String(error) }); }
         finally { this.auditing = false; }
@@ -745,6 +796,14 @@ export class AtlasRenderer {
   }
   private attachInput() {
     const canvas = this.app.canvas, signal = this.listeners.signal;
+    // This surface owns pan, pinch and drawing through Pointer Events. Also
+    // consume the corresponding native touch gesture: Chromium can otherwise
+    // retain a fling after a captured stroke and swallow the next UI tap as
+    // fling cancellation, even with touch-action:none. Scope this to the canvas;
+    // inspector scrolling and normal button clicks remain browser-owned.
+    const consumeTouch = (event: TouchEvent) => { if (event.cancelable) event.preventDefault(); };
+    canvas.addEventListener('touchstart', consumeTouch, { passive: false, signal });
+    canvas.addEventListener('touchmove', consumeTouch, { passive: false, signal });
     const local = (event: PointerEvent) => { const bounds = canvas.getBoundingClientRect(); return { x: event.clientX - bounds.left, y: event.clientY - bounds.top }; };
     canvas.addEventListener('pointerdown', event => {
       if (this.failure || this.graphicsState !== 'ready' || this.displayBusy() || event.button !== 0) return;
@@ -801,6 +860,7 @@ export class AtlasRenderer {
             : this.data && isCoastalSurface(this.data) ? pickCoastalSurface(this.data, result.cellId, point) : fine === null ? null : undefined;
           if (surface === null) throw new Error('权威海岸拾取未覆盖真实地块。');
           this.select(result.cellId);
+          this.callbacks.onPickPoint?.(point);
           if (surface) this.callbacks.onPick(result.cellId, surface); else this.callbacks.onPick(result.cellId);
         }
       }

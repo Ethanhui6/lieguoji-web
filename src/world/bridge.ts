@@ -1,4 +1,5 @@
 import { cloneDetailCoastTile, decodeDetailCoastTile, hashDetailCoastTile } from './detail-coast-codec';
+import { validateHydrologyTraceRequest, validateHydrologyTrace, hydrologyHeadMatches, type HydrologyTrace, type HydrologyTraceRequest, type HydrologyTraceNode } from './hydrology-trace';
 import { detailCoastKey, type DetailCoastKey, type DetailCoastTile } from './detail-coast-types';
 import { decodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
 import { decodeAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, atlasCellLockFlags, assertAtlasConstraintsOnly } from './generation-locks';
@@ -13,7 +14,7 @@ import { getAtlasStorage } from './storage';
 import type { AtlasCommitReceipt, AtlasStoredRoot } from './storage-types';
 import { decodeAtlasPacket, encodeAtlasPacket, readAtlasComputation, type AtlasClientView, type AtlasComputationObservation, type AtlasDraftList, type AtlasEditResult, type AtlasHead, type AtlasMetrics, type AtlasOperation, type AtlasPacket, type AtlasPreview, type AtlasProgress, type AtlasStateHeader, type AtlasPreviewHeader, type AtlasGenerationPreview, type AtlasConstraintsPreview, type AtlasConstraintsHeader } from './protocol';
 
-type Result = AtlasConstraintsPreview | AtlasGenerationPreview | AtlasClientView | AtlasEditResult | AtlasPreview | AtlasDraftList | AtlasCommitReceipt | null;
+type Result = HydrologyTrace | AtlasConstraintsPreview | AtlasGenerationPreview | AtlasClientView | AtlasEditResult | AtlasPreview | AtlasDraftList | AtlasCommitReceipt | null;
 type Init = { header: AtlasStateHeader | AtlasPreviewHeader | AtlasConstraintsHeader; bytes: Uint8Array; offset: number; manifest?: AtlasManifest; blocks: AtlasDocument['blocks']; locks: Map<string, AtlasCellLockBlock>; detailCoast: Map<DetailCoastKey, DetailCoastTile> };
 type Pending = {
   id: number; operation: AtlasOperation; started: number; requestBytes: number; responseBytes: number; largestPacketBytes: number;
@@ -73,7 +74,7 @@ export class AtlasClient {
   }
   private arm(pending: Pending) {
     clearTimeout(pending.timer);
-    pending.timer = setTimeout(() => this.fail(new Error(pending.completed ? '草稿已提交，但计算诊断回执缺失；请刷新后恢复，勿重复提交。' : '草稿操作长时间无响应；提交状态未知，请刷新后查询原commandId并恢复，勿重复提交。')), this.timeoutMs);
+    pending.timer = setTimeout(() => this.fail(new Error(pending.operation.type === 'hydrology-analyze' ? '只读流向分析长时间无响应；未提交地图修改，请重新打开地图后再分析。' : pending.completed ? '草稿已提交，但计算诊断回执缺失；请刷新后恢复，勿重复提交。' : '草稿操作长时间无响应；提交状态未知，请刷新后查询原commandId并恢复，勿重复提交。')), this.timeoutMs);
   }
   private request<T extends Result>(operation: AtlasOperation, payload?: Uint8Array): Promise<T> {
     if (this.fatal) return Promise.reject(this.fatal);
@@ -100,6 +101,15 @@ export class AtlasClient {
   undo() { return this.request<AtlasClientView | AtlasEditResult>({ type: 'undo', commandId: `edit-${crypto.randomUUID()}` }); }
   fork(name?: string) { return this.request<AtlasClientView>({ type: 'fork', ...(name === undefined ? {} : { name }), draftId: `atlas-${crypto.randomUUID()}`, commandId: `edit-${crypto.randomUUID()}` }); }
   generationCopy(name?: string, targetFormat: 2 | 3 = 2) { return this.request<AtlasClientView>({ type: 'generation-copy', targetFormat, ...(name === undefined ? {} : { name }), draftId: 'atlas-' + crypto.randomUUID(), commandId: 'edit-' + crypto.randomUUID() }); }
+  analyzeHydrology(rectangle: HydrologyTraceRequest['rectangle'], sourceNode: HydrologyTraceNode): Promise<HydrologyTrace> {
+    const h = this.verifiedHead;
+    if (!h || h.readOnly || this.format !== 4) return Promise.reject(new Error('流向分析需要当前可编辑的第四版细地形草稿。'));
+    if (this.verifiedGeneration || this.verifiedConstraints) return Promise.reject(new Error('请先确认或取消地图预览，再分析已保存地形。'));
+    let request: HydrologyTraceRequest;
+    try { request = validateHydrologyTraceRequest({ expected: { draftId: h.draftId, revision: h.revision, rootDigest: h.rootDigest, manifestDigest: h.manifestDigest }, rectangle, sourceNode }); }
+    catch (error) { return Promise.reject(error); }
+    return this.request<HydrologyTrace>({ type: 'hydrology-analyze', atlasFormat: 4, ...request });
+  }
   previewGeneration(recipe: GenerationRecipe, scope: GenerationScope = { kind: 'world' }) {
     const h = this.verifiedHead; if (!h || h.readOnly || this.format === 1) return Promise.reject(new Error('请先打开可编辑的创世草稿。'));
     return this.request<AtlasGenerationPreview>({ type: 'generation-preview', commandId: 'edit-' + crypto.randomUUID(), expectedRevision: h.revision, expectedRootDigest: h.rootDigest, recipe, scope, atlasFormat: this.format });
@@ -307,7 +317,16 @@ export class AtlasClient {
     }
     if (header.type !== 'complete' && header.type !== 'timing' || !object(body)) throw new Error('未知草稿响应。');
     let result: Result;
-    if (body.operation === 'list') {
+    if (body.operation === 'hydrology-analyze') {
+      const op = pending.operation, head = this.verifiedHead, base = this.verified;
+      if (op.type !== 'hydrology-analyze' || payload.length || Object.keys(body).some(key => !['operation', 'trace'].includes(key))
+        || !head || head.readOnly || !base || !isDetailCoastDocument(base) || this.verifiedGeneration || this.verifiedConstraints
+        || !hydrologyHeadMatches(head, op.expected)) throw new Error('水文结果未绑定当前已保存地图。');
+      const trace = validateHydrologyTrace(body.trace, { expected: op.expected, rectangle: op.rectangle, sourceNode: op.sourceNode });
+      if (trace.source.atlasId !== base.manifest.atlasId || trace.source.lockSetDigest !== await generationLockDigest(base)
+        || this.verified !== base || !this.verifiedHead || !hydrologyHeadMatches(this.verifiedHead, op.expected)) throw new Error('水文来源地形或锁摘要已经变化。');
+      result = trace;
+    } else if (body.operation === 'list') {
       if (pending.operation.type !== 'list' || !Array.isArray(body.entries)) throw new Error('草稿目录响应不符。'); result = body.entries;
     } else if (body.operation === 'receipt') {
       if (pending.operation.type !== 'receipt') throw new Error('提交查询响应不符。');

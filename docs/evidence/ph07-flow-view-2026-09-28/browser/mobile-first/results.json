@@ -1,0 +1,202 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config=.autopilot/ph07/flow-browser/playwright.config.ts",
+      "--project=mobile-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\flow-browser\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph07/flow-browser/mobile-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-hydrology.spec.ts"
+        ],
+        "timeout": 450000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph07/flow-browser/mobile-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-hydrology.spec.ts"
+        ],
+        "timeout": 450000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/ph07/flow-browser/mobile-first/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "atlas-hydrology.spec.ts"
+        ],
+        "timeout": 450000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\flow-browser\\mobile-first\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": true,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "atlas-hydrology.spec.ts",
+      "file": "atlas-hydrology.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "[hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 450000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 22433,
+                  "error": {
+                    "message": "Error: page.evaluate: Error: The generated saved continent has no actual interior highland probe\n    at eval (eval at evaluate (:311:30), <anonymous>:126:23)\n    at async <anonymous>:337:30",
+                    "stack": "Error: page.evaluate: Error: The generated saved continent has no actual interior highland probe\n    at eval (eval at evaluate (:311:30), <anonymous>:126:23)\n    at async <anonymous>:337:30\n    at eval (eval at evaluate (:311:30), <anonymous>:126:23)\n    at async <anonymous>:337:30\n    at durableTerrain (D:\\游戏\\架空地图模拟器\\tests\\atlas-hydrology.spec.ts:40:12)\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-hydrology.spec.ts:145:102",
+                    "location": {
+                      "file": "eval at evaluate (:311:30), <anonymous>",
+                      "column": 23,
+                      "line": 126
+                    }
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "eval at evaluate (:311:30), <anonymous>",
+                        "column": 23,
+                        "line": 126
+                      },
+                      "message": "Error: page.evaluate: Error: The generated saved continent has no actual interior highland probe\n    at eval (eval at evaluate (:311:30), <anonymous>:126:23)\n    at async <anonymous>:337:30\n    at eval (eval at evaluate (:311:30), <anonymous>:126:23)\n    at async <anonymous>:337:30\n    at durableTerrain (D:\\游戏\\架空地图模拟器\\tests\\atlas-hydrology.spec.ts:40:12)\n    at D:\\游戏\\架空地图模拟器\\tests\\atlas-hydrology.spec.ts:145:102"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-27T19:50:29.622Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "actual-build.json",
+                      "contentType": "application/json",
+                      "body": "eyJ2ZXJzaW9uIjoiMC41LjAtcHJldmlldy4xOSIsImNvbW1pdCI6ImQ3NDJhNmU5MTdjNzIzYmYyMmYzMTc2OGVmYTAwYjI2OGY0OGQ1YjAiLCJlbmdpbmVGaW5nZXJwcmludCI6IjY1MzMzZTllZDNmY2NkNzdjNmU1YmYzMmE5YTNkMDM5NmRmMjk5MGYyYWQxZWRlN2Y5NTJhZWMxMjE3ODUxYzUiLCJtYWNyb0dlbmVyYXRvciI6eyJzaGEyNTYiOiJjNjhlNGZjOGYzNjk4MzliMGI0YmJjZmIyMzRlYjA3YjUwYWI4YjIzYjc2ZDIzYjcxOWE3NGYzYWZjZjY3NjcwIiwiZmlsZXMiOlsic3JjL3dvcmxkL2dlbmVyYXRpb24tY29udHJhY3QudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1oaXN0b3J5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZmluZ2VycHJpbnQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9tYWNyby50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL21vZGVsLnRzIiwic3JjL3dvcmxkL3RvcG9sb2d5LnRzIl19LCJsYW5kZm9ybUdlbmVyYXRvciI6eyJzaGEyNTYiOiIwNTA1MDM2ZDYyOTYwYWNiZjRmYzI4N2NjYzJkYjQzMGI1Zjc0OTUyNjUwMTYwMDJkM2RmYTAyYTQ0YTM2NDgzIiwiZmlsZXMiOlsic3JjL3dvcmxkL2NvYXN0YWwtZ2VuZXJhdGlvbi50cyIsInNyYy93b3JsZC9jb2FzdGFsLXN1cmZhY2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWJhc2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWNvZGVjLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1maWVsZC50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZ2VvbWV0cnkudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWxvY2tzLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC10eXBlcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWNvbnRyYWN0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tZm9ybWF0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24taGlzdG9yeS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWxvY2tzLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWhlaWdodC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2ZpbmdlcnByaW50LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vbGFuZGZvcm1zLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vcXVhbGl0eS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3NlZWQudHMiLCJzcmMvd29ybGQvbW9kZWwudHMiLCJzcmMvd29ybGQvdG9wb2xvZ3kudHMiXX0sImlzbGFuZEdlbmVyYXRvciI6eyJzaGEyNTYiOiJkMjM3OTYzNWExNjAyYmJjZmNkNjNkN2M1YmEwZDRlZjdhMDA4MWI1MDJlYTc1OWIxMWI0NGM4NDVhNTUyYjZhIiwiZmlsZXMiOlsic3JjL3dvcmxkL2NvYXN0YWwtZ2VuZXJhdGlvbi50cyIsInNyYy93b3JsZC9jb2FzdGFsLXN1cmZhY2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWJhc2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWNvZGVjLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1maWVsZC50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZ2VvbWV0cnkudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWxvY2tzLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC10eXBlcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWNvbnRyYWN0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tZm9ybWF0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24taGlzdG9yeS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWxvY2tzLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWhlaWdodC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2ZpbmdlcnByaW50LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vaXNsYW5kcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL21vZGVsLnRzIiwic3JjL3dvcmxkL3RvcG9sb2d5LnRzIl19LCJjb2FzdEdlbmVyYXRvciI6eyJzaGEyNTYiOiJlZmM4NjcxNzI2MjM2NzFkYjY3YWJhYjkyODA1YzcwZWJiMzg3NTZmMjcyM2NkMWYxNzUyODg1YmU5YzA4NjdhIiwiZmlsZXMiOlsic3JjL3dvcmxkL2NvYXN0YWwtZ2VuZXJhdGlvbi50cyIsInNyYy93b3JsZC9jb2FzdGFsLXN1cmZhY2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWJhc2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWNvZGVjLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1maWVsZC50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZ2VvbWV0cnkudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWxvY2tzLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC10eXBlcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWNvbnRyYWN0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tZm9ybWF0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24taGlzdG9yeS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWxvY2tzLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vY29hc3QudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtc2hhcGUtaGVpZ2h0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZmluZ2VycHJpbnQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9xdWFsaXR5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vc2VlZC50cyIsInNyYy93b3JsZC9tb2RlbC50cyIsInNyYy93b3JsZC90b3BvbG9neS50cyJdfSwic2hhcGVHZW5lcmF0b3IiOnsic2hhMjU2IjoiZjY1MjI3ZWQxNWVmOWE5Yjk0NjMyMGUwOTE5MWU1ZjcxNzgyMjk5ZDUxMzBkZGJjZmQ2MzcxZDVlZjZjNmYyMSIsImZpbGVzIjpbInNyYy93b3JsZC9jb2FzdGFsLWdlbmVyYXRpb24udHMiLCJzcmMvd29ybGQvY29hc3RhbC1zdXJmYWNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1iYXNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1jb2RlYy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZmllbGQudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWdlb21ldHJ5LnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1sb2Nrcy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtdHlwZXMudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1jb250cmFjdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWZvcm1hdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWhpc3RvcnkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1sb2Nrcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1oZWlnaHQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9maW5nZXJwcmludC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vc2hhcGUudHMiLCJzcmMvd29ybGQvbW9kZWwudHMiLCJzcmMvd29ybGQvdG9wb2xvZ3kudHMiXX0sIm9jZWFuR2VuZXJhdG9yIjp7InNoYTI1NiI6IjkwMGE1YzljYWMyYjhiNWRlMjk5OTg4YTNmOTBkMzlkMTY1MjU3OWFmNTFmNzk1NWMzOGY5N2M4ODdkOTczMzgiLCJmaWxlcyI6WyJzcmMvd29ybGQvY29hc3RhbC1nZW5lcmF0aW9uLnRzIiwic3JjL3dvcmxkL2NvYXN0YWwtc3VyZmFjZS50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtYmFzZS50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtY29kZWMudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWZpZWxkLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1nZW9tZXRyeS50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtbG9ja3MudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LXR5cGVzLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tY29udHJhY3QudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1mb3JtYXQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1oaXN0b3J5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tbG9ja3MudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtc2hhcGUtaGVpZ2h0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZmluZ2VycHJpbnQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9vY2Vhbi50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL21vZGVsLnRzIiwic3JjL3dvcmxkL3RvcG9sb2d5LnRzIl19LCJkZXRhaWxTaGFwZUdlbmVyYXRvciI6eyJzaGEyNTYiOiJlODM2ZTgxNmZhZmE5ODZjNTA3MjU4MDExMjc2Mzc5ZDdmNjY4Y2I2ODJjNDM5NzY0ZjBmM2M4OWRkNDJhNWYxIiwiZmlsZXMiOlsic3JjL3dvcmxkL2F0bGFzLWZvcm1hdC50cyIsInNyYy93b3JsZC9jb2FzdGFsLWdlbmVyYXRpb24udHMiLCJzcmMvd29ybGQvY29hc3RhbC1zdXJmYWNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1iYXNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1jb2RlYy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZmllbGQudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWdlb21ldHJ5LnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1sb2Nrcy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtdHlwZXMudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1jb250cmFjdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWZvcm1hdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWhpc3RvcnkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1sb2Nrcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1hZGFwdGVyLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWRpc3RhbmNlLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWhlaWdodC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2ZpbmdlcnByaW50LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vcXVhbGl0eS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3NlZWQudHMiLCJzcmMvd29ybGQvbW9kZWwudHMiLCJzcmMvd29ybGQvdG9wb2xvZ3kudHMiXX0sImFkZERldGFpbEdlbmVyYXRvciI6eyJzaGEyNTYiOiJhOGMzNDk2MTI4N2RmOWE3MWJlNmQyMTQxOWFmMmQyMmUxMWNjYTIxMzg4YzVlMWZlMGIzY2YzNTJhYTE3NTllIiwiZmlsZXMiOlsic3JjL3dvcmxkL2F0bGFzLWZvcm1hdC50cyIsInNyYy93b3JsZC9jb2FzdGFsLWdlbmVyYXRpb24udHMiLCJzcmMvd29ybGQvY29hc3RhbC1zdXJmYWNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1iYXNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1jb2RlYy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZmllbGQudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWdlb21ldHJ5LnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1sb2Nrcy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtdHlwZXMudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1jb250cmFjdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWZvcm1hdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWhpc3RvcnkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1sb2Nrcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1hZGQtYWRhcHRlci50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1hZGQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtc2hhcGUtZGlzdGFuY2UudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtc2hhcGUtaGVpZ2h0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZmluZ2VycHJpbnQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9xdWFsaXR5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vc2VlZC50cyIsInNyYy93b3JsZC9tb2RlbC50cyIsInNyYy93b3JsZC90b3BvbG9neS50cyJdfSwibmF0dXJhbERldGFpbEdlbmVyYXRvciI6eyJzaGEyNTYiOiJiNjc2NTM1ZTViOTM4MjA4YzkyNzBlOWNhMjIwY2U4NWQzOWE2ZmMzMzJmMjNlOTUzNDYzOWNhYTA5NTNiNmU3IiwiZmlsZXMiOlsic3JjL3dvcmxkL2F0bGFzLWZvcm1hdC50cyIsInNyYy93b3JsZC9jb2FzdGFsLWdlbmVyYXRpb24udHMiLCJzcmMvd29ybGQvY29hc3RhbC1zdXJmYWNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1iYXNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1jb2RlYy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZmllbGQudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWdlb21ldHJ5LnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1sb2Nrcy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtdHlwZXMudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1jb250cmFjdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWZvcm1hdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWhpc3RvcnkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1sb2Nrcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1jdXJ2ZWQtcmlkZ2UudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtbmF0dXJhbC1vdXRsaW5lLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLW5hdHVyYWwtcmVsaWVmLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLW9yb2dyYXBoeS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1kaXN0YW5jZS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1oZWlnaHQudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtc2hhcGUtbmF0dXJhbC1hZGFwdGVyLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLW5hdHVyYWwudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9maW5nZXJwcmludC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL25hdHVyYWwtb2NlYW4tYmFzZS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL21vZGVsLnRzIiwic3JjL3dvcmxkL3RvcG9sb2d5LnRzIl19LCJhZGROYXR1cmFsRGV0YWlsR2VuZXJhdG9yIjp7InNoYTI1NiI6ImUzMGIxZDE3YzU4OTdkMWUxNTA5ZjFjYjk2ZWRjOTMxZWQ0ODcwNDk1MjljMTY5MmE0ZjM2N2JkMmMwZTgxNDMiLCJmaWxlcyI6WyJzcmMvd29ybGQvYXRsYXMtZm9ybWF0LnRzIiwic3JjL3dvcmxkL2NvYXN0YWwtZ2VuZXJhdGlvbi50cyIsInNyYy93b3JsZC9jb2FzdGFsLXN1cmZhY2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWJhc2UudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWNvZGVjLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1maWVsZC50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZ2VvbWV0cnkudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWxvY2tzLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC10eXBlcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWNvbnRyYWN0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24tZm9ybWF0LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24taGlzdG9yeS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWxvY2tzLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLWN1cnZlZC1yaWRnZS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1uYXR1cmFsLW91dGxpbmUudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtbmF0dXJhbC1yZWxpZWYudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtb3JvZ3JhcGh5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWRpc3RhbmNlLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWhlaWdodC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1zaGFwZS1uYXR1cmFsLWFkZC1hZGFwdGVyLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLW5hdHVyYWwtYWRkLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLW5hdHVyYWwudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9maW5nZXJwcmludC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3F1YWxpdHkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9zZWVkLnRzIiwic3JjL3dvcmxkL21vZGVsLnRzIiwic3JjL3dvcmxkL3RvcG9sb2d5LnRzIl19LCJsb2NhbERldGFpbFJlbGllZkdlbmVyYXRvciI6eyJzaGEyNTYiOiI2MTNiMzBjZjJmNTIyOWY4ZWNhODY5ODM5NDllZjgzZTNmNmExMjk4OGRiM2IxMzNmMzJkYTI2M2EwYjIyN2M1IiwiZmlsZXMiOlsic3JjL3dvcmxkL2F0bGFzLWZvcm1hdC50cyIsInNyYy93b3JsZC9jb2FzdGFsLWdlbmVyYXRpb24udHMiLCJzcmMvd29ybGQvY29hc3RhbC1zdXJmYWNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1iYXNlLnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1jb2RlYy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtZmllbGQudHMiLCJzcmMvd29ybGQvZGV0YWlsLWNvYXN0LWdlb21ldHJ5LnRzIiwic3JjL3dvcmxkL2RldGFpbC1jb2FzdC1sb2Nrcy50cyIsInNyYy93b3JsZC9kZXRhaWwtY29hc3QtdHlwZXMudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1jb250cmFjdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWZvcm1hdC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uLWhpc3RvcnkudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi1sb2Nrcy50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1jdXJ2ZWQtcmlkZ2UudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtbG9jYWwtYmFja2dyb3VuZC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2RldGFpbC1sb2NhbC1yZWxpZWYudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtbmF0dXJhbC1yZWxpZWYudHMiLCJzcmMvd29ybGQvZ2VuZXJhdGlvbi9kZXRhaWwtb3JvZ3JhcGh5LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWRpc3RhbmNlLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vZGV0YWlsLXNoYXBlLWhlaWdodC50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL2ZpbmdlcnByaW50LnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vbG9jYWwtZGV0YWlsLXJlbGllZi1hZGFwdGVyLnRzIiwic3JjL3dvcmxkL2dlbmVyYXRpb24vcXVhbGl0eS50cyIsInNyYy93b3JsZC9nZW5lcmF0aW9uL3NlZWQudHMiLCJzcmMvd29ybGQvbW9kZWwudHMiLCJzcmMvd29ybGQvdG9wb2xvZ3kudHMiXX0sInJ1bGVzIjoiMC4yLjAiLCJzdXBwb3J0ZWRSdWxlcyI6WyIwLjEuMCIsIjAuMi4wIl0sImVudHJ5Ijoid29ybGQtc3R1ZGlvIiwic2NlbmFyaW9zIjpbImN1c3RvbS13b3JsZCIsInRlc3QtY29udGluZW50Il19"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\flow-browser\\mobile-first\\artifacts\\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\flow-browser\\mobile-first\\artifacts\\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\flow-browser\\mobile-first\\artifacts\\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "eval at evaluate (:311:30), <anonymous>",
+                    "column": 23,
+                    "line": 126
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "bf3ea21c5a39f1a21988-d084b3f8c2c3c61cbf30",
+          "file": "atlas-hydrology.spec.ts",
+          "line": 125,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-27T19:50:28.991Z",
+    "duration": 23660.905000000002,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

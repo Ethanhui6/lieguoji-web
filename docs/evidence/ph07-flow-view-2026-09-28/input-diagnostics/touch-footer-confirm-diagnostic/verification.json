@@ -1,0 +1,41 @@
+{
+  "status": "frozen-layout-candidate-native-click-unresolved",
+  "typesExitCode": 0,
+  "buildExitCode": 0,
+  "sourceStable": true,
+  "sources": [
+    {
+      "path": "src/editor/AtlasStudio.tsx",
+      "sha256": "f2f5b814aba0ddda98d8ad35dd3e5f24379560707cad9befd22e88439f2f9542",
+      "baselineSha256": "f9a36cbb0fbaea269f38c8277ff260452db9741e921c86d7cd20b25307126436"
+    },
+    {
+      "path": "src/editor/DetailCoastPanel.tsx",
+      "sha256": "84695f524c41a5d6a0856ad68db502fd60df079c071dd811f12390ca4abbd92c",
+      "baselineSha256": "f4dd81865cb1233d06e2d2381192fcfe1764a0977b1d586d6a8724e4d3a119f2"
+    },
+    {
+      "path": "src/editor/atlas-studio.css",
+      "sha256": "56313468835a041c9dd4df7e0c5d2ccbf3718f39041888b121ee18a22f65d5b2",
+      "baselineSha256": "0c7af529161a9737aeb29519a0109fa04c1c75e68655e9f06665a4ac954c56f2"
+    },
+    {
+      "path": "tests/atlas-hydrology.spec.ts",
+      "sha256": "30358394be401cc04337386ee1546c256eed7593656af94b409aa68eb6b1ffa0",
+      "baselineSha256": "1b13921fc3b12f4fc342765d606600ff54145dde2c6674c502f3207f30f378ce"
+    }
+  ],
+  "productSavePassed": false,
+  "actualRevision": 0,
+  "actualClickEvents": 0,
+  "formalBrowserSpecRun": false,
+  "oldFailuresPreserved": [
+    "mobile-first",
+    "mobile-save-repair"
+  ],
+  "diagnosticEvidence": ".autopilot/ph07/touch-footer-confirm-diagnostic",
+  "buildJsonSha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3",
+  "distManifestSha256": "79b7f5dfd51ddc1033e99e759d654c0bda1a385ee812264e642a880fe8ce5a57",
+  "archiveScriptSha256": "a1d618a454af5ea5ef10d81717cbc4952befb7003531ebd2ac3fe98e4e98ffaa",
+  "note": "Typecheck and diagnostic build only; original single tap still failed durable save. No touch handler workaround."
+}

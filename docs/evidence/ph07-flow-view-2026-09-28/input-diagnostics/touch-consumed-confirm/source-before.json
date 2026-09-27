@@ -1,0 +1,22 @@
+[
+  {
+    "path": "src/world/renderer.ts",
+    "sha256": "7999dc1076f85aaadf64073d009325ee676bf18734dcdd20eb22aaad0d7e000a"
+  },
+  {
+    "path": "src/editor/AtlasStudio.tsx",
+    "sha256": "f2f5b814aba0ddda98d8ad35dd3e5f24379560707cad9befd22e88439f2f9542"
+  },
+  {
+    "path": "src/editor/DetailCoastPanel.tsx",
+    "sha256": "84695f524c41a5d6a0856ad68db502fd60df079c071dd811f12390ca4abbd92c"
+  },
+  {
+    "path": "src/editor/atlas-studio.css",
+    "sha256": "56313468835a041c9dd4df7e0c5d2ccbf3718f39041888b121ee18a22f65d5b2"
+  },
+  {
+    "path": "tests/atlas-hydrology.spec.ts",
+    "sha256": "30358394be401cc04337386ee1546c256eed7593656af94b409aa68eb6b1ffa0"
+  }
+]

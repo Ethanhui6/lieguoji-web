@@ -1,0 +1,49 @@
+
+Running 1 test using 1 worker
+
+(node:5612) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [mobile-chromium] › tests\atlas-hydrology.spec.ts:140:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload (2.4m)
+
+
+  1) [mobile-chromium] › tests\atlas-hydrology.spec.ts:140:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByTestId('atlas-studio')
+    Expected: "1"
+    Received: "0"
+    Timeout:  120000ms
+
+    Call log:
+      - Expect "toHaveAttribute" getByTestId('atlas-studio') with timeout 120000ms
+      - waiting for getByTestId('atlas-studio')
+        238 × locator resolved to <main data-mode="atlas" data-selectedcell="" data-atlas-format="4" data-atlas-gpu="ready" data-chrome="map-first" data-atlas-revision="0" data-atlas-tool="browse" data-atlas-state="ready" data-atlas-flow-points="0" data-testid="atlas-studio" data-atlas-selectedcell="" data-atlas-flow-terminal="" data-atlas-progress-stage="" data-atlas-progress-total="" class="atlas-studio workbench" data-atlas-request-bytes="3646" data-atlas-progress-completed="" data-atlas-repainted-blocks="16" data-atlas-response-…>…</main>
+            - unexpected value "0"
+
+
+      160 |   // A native tap may finish before its click activates. "ready" was already
+      161 |   // true in preview, so wait for the real commit; never retry the tap.
+    > 162 |   await expect(studio(page)).toHaveAttribute('data-atlas-revision', '1', { timeout: 120000 });
+          |                              ^
+      163 |   await expect(studio(page)).toHaveAttribute('data-atlas-display', 'committed');
+      164 |   await expect(page.getByRole('region', { name: '大陆生成预览' })).toHaveCount(0); await ready(page);
+      165 |   const before = await saved(page, id, 4), beforeDb = await databaseDigest(page, 4), terrain = await durableTerrain(page, id);
+        at D:\游戏\架空地图模拟器\tests\atlas-hydrology.spec.ts:162:30
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph07\flow-browser\mobile-save-repair\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph07\flow-browser\mobile-save-repair\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph07\flow-browser\mobile-save-repair\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph07\flow-browser\mobile-save-repair\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile-chromium] › tests\atlas-hydrology.spec.ts:140:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload 

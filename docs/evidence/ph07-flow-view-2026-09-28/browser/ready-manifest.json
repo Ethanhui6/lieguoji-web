@@ -1,0 +1,27 @@
+{
+  "retries": 0,
+  "preservedOriginalFailure": "mobile-first",
+  "changes": "Await real commit/result boundaries after one native tap; assert actual complete path visibility; permit existing base tablet project",
+  "sources": [
+    {
+      "sha256": "1b13921fc3b12f4fc342765d606600ff54145dde2c6674c502f3207f30f378ce",
+      "path": "tests/atlas-hydrology.spec.ts"
+    },
+    {
+      "sha256": "070ab1d26ecdc9af6f7f2f6d9a192af7278615075f5fd5cf0c296b9308d1a86f",
+      "path": ".autopilot/ph07/flow-browser/run.mjs"
+    },
+    {
+      "sha256": "6378de47847e8e42dbeb4dc284ce4aab2a4222e16bbb12cbfab11e4188605f56",
+      "path": ".autopilot/ph07/flow-browser/playwright.config.ts"
+    },
+    {
+      "sha256": "4854fe8ff1f971018197d648e00e959b9f322c5af43f45a1ad4b5aa6627484c2",
+      "path": ".autopilot/ph07/flow-browser/README.md"
+    }
+  ],
+  "rootSchedulesGpu": true,
+  "timeoutMs": 450000,
+  "physicalDevice": false,
+  "status": "repair-authored-await-root-unified-and-browser"
+}

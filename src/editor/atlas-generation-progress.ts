@@ -1,6 +1,7 @@
 /** A label for the current step, not a guessed percentage of the whole job.
  * Keep the original stage in the view's diagnostic data attribute. */
 export function atlasGenerationProgressLabel(stage: string): string {
+  if (/hydrology|drainage|水文/i.test(stage)) return '计算地形流向';
   if (/海床|海盆|海岭|ocean|sea-floor/i.test(stage)) return '塑造海底';
   if (/山脉|低地|山系|ridge|highland|coarse-reference|continuous-heights/i.test(stage)) return '生成山脉低地';
   if (/提交|写入草稿|保存|备份|commit|persist|durable|stage-atlas|stage-block/i.test(stage)) return '保存地图';

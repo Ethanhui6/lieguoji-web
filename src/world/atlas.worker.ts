@@ -1,4 +1,7 @@
 import { encodeDetailCoastTile } from './detail-coast-codec';
+import { buildHydrologyKernel } from './hydrology-kernel';
+import { extractOwnedHydrologySnapshot } from './hydrology-snapshot';
+import { buildHydrologyTrace, hydrologyHeadMatches, validateHydrologyTraceRequest } from './hydrology-trace';
 import { detailCoastKey } from './detail-coast-types';
 import { createGenerationDraft, createGenerationCopy, encodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, type AtlasDocument } from './atlas-format';
 import { encodeAtlasCellLockBlock, lockKey } from './generation-locks';
@@ -286,6 +289,27 @@ export class AtlasWorkerRuntime {
     }
     if (operation.atlasFormat !== undefined && operation.atlasFormat !== this.session.format) throw new Error('操作格式与当前会话不符。');
     if (this.readOnly) throw new Error('备份来源为只读，请创建独立副本后继续编辑。');
+    if (operation.type === 'hydrology-analyze') {
+      if (this.session.format !== 4 || operation.atlasFormat !== 4 || payload.length || Object.keys(operation).length !== 5
+        || Object.keys(operation).some(key => !['type', 'atlasFormat', 'expected', 'rectangle', 'sourceNode'].includes(key))) throw new Error('只读流向操作的版本或消息格式无效。');
+      const request = validateHydrologyTraceRequest({ expected: operation.expected, rectangle: operation.rectangle, sourceNode: operation.sourceNode });
+      const session = this.session;
+      const check = () => {
+        control.signal.throwIfAborted();
+        if (this.session !== session || this.root?.rootDigest !== request.expected.rootDigest || !hydrologyHeadMatches(session.head, request.expected)) throw new Error('流向分析来源已变化，请重新读取当前地图。');
+      };
+      check();
+      const snapshot = await extractOwnedHydrologySnapshot(session, { expected: request.expected, rectangle: request.rectangle }, control); check();
+      const computed = await buildHydrologyKernel(snapshot.kernelInput, {}, {
+        signal: control.signal,
+        yieldControl: async () => { check(); await control.yieldTask(); check(); },
+        onProgress: (phase, completed, total) => { check(); control.onProgress({ stage: '水文计算：' + phase, completed, total }); check(); },
+      });
+      check(); const trace = buildHydrologyTrace(computed, snapshot.source, request); check();
+      // No candidate, receipt, revision or global kernel cache: this result is
+      // a bounded read of the existing private head, not a saved river system.
+      this.post(active.id, 'complete', { operation: 'hydrology-analyze', trace }); return;
+    }
     if (operation.type === 'constraints-preview') {
       let preview: ConstraintsPreviewInfo | undefined;
       try { preview = await this.constraintsSession!.preview(operation.command, control); await this.sendGenerationPreview(active, preview, 'constraints-preview'); }

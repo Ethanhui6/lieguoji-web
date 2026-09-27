@@ -1,0 +1,223 @@
+{
+  "recordedAt": "2026-09-27T20:33:59.803Z",
+  "passed": true,
+  "sourceStable": true,
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T20:32:15.863Z",
+      "completedAt": "2026-09-27T20:32:16.062Z",
+      "elapsedMs": 197.35909999999998,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T20:32:16.063Z",
+      "completedAt": "2026-09-27T20:32:24.101Z",
+      "elapsedMs": 8037.352,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T20:32:24.101Z",
+      "completedAt": "2026-09-27T20:32:35.953Z",
+      "elapsedMs": 11852.377500000002,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/renderer.test.ts",
+        "src/world/renderer-detail-reuse.test.ts",
+        "src/editor/hydrology-controls.test.ts",
+        "src/editor/atlas-operation-feedback.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph07/flow-checks/touch-framing-final/unit.json"
+      ],
+      "startedAt": "2026-09-27T20:32:35.953Z",
+      "completedAt": "2026-09-27T20:33:57.951Z",
+      "elapsedMs": 81998.0173,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T20:33:57.951Z",
+      "completedAt": "2026-09-27T20:33:59.650Z",
+      "elapsedMs": 1699.7035000000033,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T20:33:59.651Z",
+      "completedAt": "2026-09-27T20:33:59.753Z",
+      "elapsedMs": 102.15739999999641,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "unit": {
+    "total": 101,
+    "passed": 101,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "scopeMatches": true
+  },
+  "reused": {
+    "verification": ".autopilot/ph07/flow-checks/first/verification.json",
+    "sha256": "0c281ca52afc61eae93e35687304c3383c6c7de6a0a88cf12cd30a7f8c08981a",
+    "unchangedFiles": [
+      "src/world/hydrology-kernel.test.ts",
+      "src/world/hydrology-snapshot.test.ts",
+      "src/world/hydrology-trace.test.ts",
+      "src/world/hydrology-worker.test.ts",
+      "src/world/bridge.test.ts",
+      "src/world/atlas.worker.test.ts"
+    ],
+    "changedSources": [
+      "src/editor/atlas-studio.css",
+      "src/editor/AtlasStudio.tsx",
+      "src/editor/DetailCoastPanel.tsx",
+      "src/world/renderer-detail-reuse.test.ts",
+      "src/world/renderer.ts",
+      "tests/atlas-hydrology.spec.ts"
+    ],
+    "reason": "Renderer framing, fixed preview action footer and native-browser assertions changed; original221 includes unchanged kernel/snapshot/trace/Worker/bridge contracts. Re-run affected renderer/UI plus global static/build checks. Native touch results are recorded separately."
+  },
+  "version": "0.5.0-preview.19",
+  "buildJsonSha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3",
+  "priorGeneratorAndEngineIdentitiesUnchanged": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-D-NMHKWt.js",
+      "sha256": "e7ab236798183c68b0e43539aedb7fd2dbee183852ea5f3d6938bdeefc06e8f8"
+    },
+    {
+      "path": "dist/assets/atlas.worker-Dztdhx3K.js",
+      "sha256": "ef7d81d0adbe215b677fe0ec4fc783555830a9904548736cb39661e403eda878"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-CrZ1-uMA.js",
+      "sha256": "2c409df8441336fdd63f1ab83d2c4bc5aa43def2c9ea62243d042daa155cad83"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-D6OMRLqN.css",
+      "sha256": "dc5977e33b96545cacdf12a4216b0b808f63e473d06b460801759c6e59fb7836"
+    },
+    {
+      "path": "dist/assets/browserAll-DRvtDbTS.js",
+      "sha256": "05e0e8b78fb89447826527d29e4bddf6f304bd35eeb0ee6fa47d175db1fa95d8"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-CcfiSci-.js",
+      "sha256": "f29331dda812a89c863b8dfea548d812ed62248cee050544ab00ffb15df7caab"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-D0o7HxIs.js",
+      "sha256": "a709bdf599e7ecf53c43b61de4430fed2c624736c3e7e292ca5da583b41fc5e5"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-C2J5AnBM.js",
+      "sha256": "53d9932a676c6cedc69d199018280a7b7d7fc7043212b51796b7631128c5ceaa"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "5a6fc57f5ae1f12dffe609639e81b8b7ecaccb4367b0dda17e67ad12aea29b37"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "scope": "Affected local read-only hydrology/Worker/bridge/renderer contracts. Browser, natural visual, complete river systems, PH and real devices remain separate.",
+  "browserPassed": false,
+  "phaseAccepted": false,
+  "cloudWrites": false
+}

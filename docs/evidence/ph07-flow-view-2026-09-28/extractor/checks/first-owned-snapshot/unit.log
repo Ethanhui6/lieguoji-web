@@ -1,0 +1,48 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ .autopilot/ph07/hydrology-snapshot-staging/src/world/hydrology-snapshot.test.ts (11 tests | 1 failed) 2103ms
+   ❯ authoritative owned v4 hydrology snapshot (11)
+     × reads exact 2-world owners and keeps a canonical 12-world sea channel across a fine tile seam 127ms
+     ✓ uses persisted coarse-height semantics only for uniform land and omitted sea, including unique owners on seams 224ms
+     ✓ reports true crop/world edges without inventing an outlet beyond the world 168ms
+     ✓ rejects wrong identities, malformed/accessor requests and over-budget ranges before source copying 52ms
+     ✓ rejects legacy geography rather than treating coarse cells as fine hydrology nodes 81ms
+     ✓ isolates caller documents, captured requests, returned arrays and lock references across callbacks 126ms
+     ✓ cancels at 复制生成草稿分层与锁 without changing the private source 87ms
+     ✓ cancels at 水文抽取：读取实际节点所有者 without changing the private source 126ms
+     ✓ cancels at 水文抽取：采样权威细地形 without changing the private source 119ms
+     ✓ propagates callback/scheduler failure and rejects a corrupted copied tile hash 406ms
+     ✓ rejects an actual source publication after snapshot export and during sampling 446ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  03:33:27
+   Duration  2.71s (tests 85%, transform 12%, import 2%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph07/hydrology-snapshot-staging/checks/first-owned-snapshot/unit.json
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../../vite.config" without a file extension (.autopilot/ph07/hydrology-snapshot-staging/vitest.config.ts:4:18). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .autopilot/ph07/hydrology-snapshot-staging/src/world/hydrology-snapshot.test.ts > authoritative owned v4 hydrology snapshot > reads exact 2-world owners and keeps a canonical 12-world sea channel across a fine tile seam
+AssertionError: expected 3 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 3
+
+ ❯ .autopilot/ph07/hydrology-snapshot-staging/src/world/hydrology-snapshot.test.ts:61:40
+     59|       const x = 26 + i % 16, receiver = result.receiver[i];
+     60|       if (x >= 29 && x <= 34) { expect(result.drainageStatus[i]).toBe(…
+     61|       expect(result.drainageStatus[i]).toBe(HYDROLOGY_STATUS.ocean);
+       |                                        ^
+     62|       if (receiver >= 0) expect((26 + receiver % 16 < 29)).toBe(x < 29…
+     63|       const outlet = result.basins.coastXQ[result.basinId[i]] / 256; e…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

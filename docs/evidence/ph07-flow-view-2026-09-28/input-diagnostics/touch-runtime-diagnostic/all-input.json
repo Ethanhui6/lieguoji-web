@@ -1,0 +1,572 @@
+[
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 1099.2000000029802,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": true,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 1099.5,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": null,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 1099.7000000029802,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": true,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 1099.7000000029802,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": true,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 1100.4000000059605,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": true,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 1100.5,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": null,
+    "x": 206,
+    "y": 581.1500244140625
+  },
+  {
+    "kind": "input",
+    "type": "mousedown",
+    "time": 1101.6000000089407,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": null,
+    "x": 206,
+    "y": 581
+  },
+  {
+    "kind": "input",
+    "type": "mouseup",
+    "time": 1101.9000000059605,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": null,
+    "x": 206,
+    "y": 581
+  },
+  {
+    "kind": "input",
+    "type": "click",
+    "time": 1101.9000000059605,
+    "target": "BUTTON",
+    "text": "新建空白海洋草稿",
+    "primary": false,
+    "x": 206,
+    "y": 581
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 9495.40000000596,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 9495.70000000298,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 9495.70000000298,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 9495.70000000298,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 9495.90000000596,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 9495.90000000596,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 155.25,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "mousedown",
+    "time": 9496.5,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 155,
+    "y": 806
+  },
+  {
+    "kind": "input",
+    "type": "mouseup",
+    "time": 9496.60000000894,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 155,
+    "y": 806
+  },
+  {
+    "kind": "input",
+    "type": "click",
+    "time": 9496.60000000894,
+    "target": "svg",
+    "text": "",
+    "primary": false,
+    "x": 155,
+    "y": 806
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 9593.70000000298,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": true,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 9593.800000011921,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": null,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 9593.800000011921,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": true,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 9593.800000011921,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": true,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 9594,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": true,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 9594.10000000894,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": null,
+    "x": 144,
+    "y": 154.17999267578125
+  },
+  {
+    "kind": "input",
+    "type": "mousedown",
+    "time": 9594.40000000596,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": null,
+    "x": 144,
+    "y": 154
+  },
+  {
+    "kind": "input",
+    "type": "mouseup",
+    "time": 9594.70000000298,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": null,
+    "x": 144,
+    "y": 154
+  },
+  {
+    "kind": "input",
+    "type": "click",
+    "time": 9594.70000000298,
+    "target": "SPAN",
+    "text": "画大陆",
+    "primary": false,
+    "x": 144,
+    "y": 154
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 9645.10000000894,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": true,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 9645.20000000298,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": null,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 9645.20000000298,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": true,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 9645.300000011921,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": true,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 9645.300000011921,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": true,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 9645.40000000596,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": null,
+    "x": 134,
+    "y": 104.18000030517578
+  },
+  {
+    "kind": "input",
+    "type": "mousedown",
+    "time": 9645.800000011921,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": null,
+    "x": 134,
+    "y": 104
+  },
+  {
+    "kind": "input",
+    "type": "mouseup",
+    "time": 9645.90000000596,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": null,
+    "x": 134,
+    "y": 104
+  },
+  {
+    "kind": "input",
+    "type": "click",
+    "time": 9645.90000000596,
+    "target": "BUTTON",
+    "text": "全图",
+    "primary": false,
+    "x": 134,
+    "y": 104
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 9711,
+    "target": "CANVAS",
+    "text": "",
+    "primary": true,
+    "x": 79.4427719116211,
+    "y": 350.9730529785156
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 9711.40000000596,
+    "target": "CANVAS",
+    "text": "",
+    "primary": null,
+    "x": 79.4427719116211,
+    "y": 350.9730529785156
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 9743.40000000596,
+    "target": "CANVAS",
+    "text": "",
+    "primary": true,
+    "x": 106.6009750366211,
+    "y": 334.6781311035156
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 9887.10000000894,
+    "target": "CANVAS",
+    "text": "",
+    "primary": true,
+    "x": 79.4427719116211,
+    "y": 350.9730529785156
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 9893,
+    "target": "CANVAS",
+    "text": "",
+    "primary": true,
+    "x": 79.4427719116211,
+    "y": 350.9730529785156
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 9893.300000011921,
+    "target": "CANVAS",
+    "text": "",
+    "primary": null,
+    "x": 79.4427719116211,
+    "y": 350.9730529785156
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 20393.60000000894,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": true,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 20394.10000000894,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": null,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 20394.30000001192,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": true,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 20394.30000001192,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": true,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 20394.60000000894,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": true,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 20394.70000000298,
+    "target": "BUTTON",
+    "text": "确认生成并保存",
+    "primary": null,
+    "x": 302.5,
+    "y": 689.010009765625
+  },
+  {
+    "kind": "input",
+    "type": "pointerdown",
+    "time": 22110.20000000298,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "touchstart",
+    "time": 22110.40000000596,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "gotpointercapture",
+    "time": 22110.60000000894,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "pointerup",
+    "time": 22110.60000000894,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "lostpointercapture",
+    "time": 22110.70000000298,
+    "target": "svg",
+    "text": "",
+    "primary": true,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "touchend",
+    "time": 22110.70000000298,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 53.75,
+    "y": 806.219970703125
+  },
+  {
+    "kind": "input",
+    "type": "mousedown",
+    "time": 22111.20000000298,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 54,
+    "y": 806
+  },
+  {
+    "kind": "input",
+    "type": "mouseup",
+    "time": 22111.5,
+    "target": "svg",
+    "text": "",
+    "primary": null,
+    "x": 54,
+    "y": 806
+  },
+  {
+    "kind": "input",
+    "type": "click",
+    "time": 22111.5,
+    "target": "svg",
+    "text": "",
+    "primary": false,
+    "x": 54,
+    "y": 806
+  }
+]

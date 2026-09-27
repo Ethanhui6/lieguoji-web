@@ -1,0 +1,17 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph07/hydrology-snapshot-staging/src/world/hydrology-snapshot.test.ts (11 tests) 1876ms
+   ✓ authoritative owned v4 hydrology snapshot (11)
+     ✓ propagates callback/scheduler failure and rejects a corrupted copied tile hash 339ms
+     ✓ rejects an actual source publication after snapshot export and during sampling 419ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  03:33:59
+   Duration  2.40s (tests 84%, transform 13%, import 2%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph07/hydrology-snapshot-staging/checks/crop-partial-expectation-fix/unit.json
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../../vite.config" without a file extension (.autopilot/ph07/hydrology-snapshot-staging/vitest.config.ts:4:18). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.

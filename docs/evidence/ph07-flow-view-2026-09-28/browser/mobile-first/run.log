@@ -1,0 +1,34 @@
+
+Running 1 test using 1 worker
+
+(node:13740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [mobile-chromium] › tests\atlas-hydrology.spec.ts:125:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload (22.4s)
+
+
+  1) [mobile-chromium] › tests\atlas-hydrology.spec.ts:125:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload 
+
+    Error: page.evaluate: Error: The generated saved continent has no actual interior highland probe
+        at eval (eval at evaluate (:311:30), <anonymous>:126:23)
+        at async <anonymous>:337:30
+        at eval (eval at evaluate (:311:30), <anonymous>:126:23)
+        at async <anonymous>:337:30
+        at durableTerrain (D:\游戏\架空地图模拟器\tests\atlas-hydrology.spec.ts:40:12)
+        at D:\游戏\架空地图模拟器\tests\atlas-hydrology.spec.ts:145:102
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph07\flow-browser\mobile-first\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph07\flow-browser\mobile-first\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph07\flow-browser\mobile-first\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph07\flow-browser\mobile-first\artifacts\atlas-hydrology--hydrology-38b3d-on-and-deterministic-reload-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile-chromium] › tests\atlas-hydrology.spec.ts:125:1 › [hydrology-v4] native saved continent, read-only real flow, active cancellation and deterministic reload 

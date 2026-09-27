@@ -1,0 +1,33 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-coast-plan.test.ts (8 tests) 491ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts (1 test) 26042ms
+   ✓ regional candidate through actual private transaction and IndexedDB (1)
+     ✓ previews without writing, saves/restores exact terrain, cancels active work and preserves the first continent when adding another 26040ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/detail-natural-integration.test.ts (2 tests) 11084ms
+   ✓ natural first and additive v2 through existing private save protocol (2)
+     ✓ starts from actual -100 m ocean, persists regional sea floor and v2 land, adds without changing old pieces/remote sea, restores and undoes 8527ms
+     ✓ permits explicit v2 addition to a verified v1 landscape and rejects overlap without regenerating its shallow remote sea 2556ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-writer.test.ts (6 tests) 10116ms
+   ✓ new natural land writes true fine height without reinterpreting v4 (4)
+     ✓ roundtrips explicit fine samples and the unchanged persisted Hbase through the existing codec 1624ms
+     ✓ preserves ownership and deterministic fine bytes across batch boundaries and source mutation 2586ms
+     ✓ cancels within the actual expanded fine-height work without publishing or mutating input 769ms
+   ✓ unchanged real additive protection consumes the fine writer (2)
+     ✓ retains the old locked continent encoded bytes, all old coarse controls and sampled height after add/codec 2821ms
+     ✓ rejects actual locked sea converted to new land without weakening the existing lock guard 1076ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-visual-repair.test.ts (5 tests) 5965ms
+   ✓ actual geography visual repair contracts (5)
+     ✓ does not change actual coastline/height bytes merely because straight gesture edges contain more input samples 3721ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/regional-coast-field.test.ts (3 tests) 5090ms
+   ✓ regional coast actual fine-field protection (3)
+     ✓ roundtrips real coast and fine elevations without changing implicit Hbase or caller buffers 2642ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/regional-coast-plan.test.ts (3 tests) 46ms
+
+ Test Files  7 passed (7)
+      Tests  28 passed (28)
+   Start at  05:17:01
+   Duration  61.52s (tests 98%, transform 1%, import 1%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/regional-coast-staging/checks/repair-1/results.json

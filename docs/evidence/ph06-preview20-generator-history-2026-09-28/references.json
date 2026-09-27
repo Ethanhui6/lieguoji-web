@@ -1,0 +1,240 @@
+[
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/desktop/build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "16de5f45e24c8ec5f39874b73b2a40bc74154148",
+    "bytes": 9456,
+    "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/desktop/verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "a01ee3d9ccd5a5af009cd293c9f898f4bae342fc",
+    "bytes": 13518,
+    "sha256": "22adc43b179a7a4ca03b8b6ce32c3abb8e6e7a7b3b7c2870fd53f57064983087"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/mobile/build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "16de5f45e24c8ec5f39874b73b2a40bc74154148",
+    "bytes": 9456,
+    "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/mobile/verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "2fbb1b52c9bf3e31b27cf2cc70e0ddad0de2fa53",
+    "bytes": 13507,
+    "sha256": "1ebd51aa32061dea165cfc05fe307bc448f6a0c4cc6dabd68de82b05a7ee1ea2"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/tablet/build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "16de5f45e24c8ec5f39874b73b2a40bc74154148",
+    "bytes": 9456,
+    "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/browser/tablet/verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "223a63803a567d73955495dc77817376c38070d0",
+    "bytes": 13507,
+    "sha256": "578a1595457b34209f422ec27b9dec9e642d7397565138cc6eeb9bac3d176568"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "16de5f45e24c8ec5f39874b73b2a40bc74154148",
+    "bytes": 9456,
+    "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/build.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "4924a69a43a1ef440e522212de4b75fc79377248",
+    "bytes": 1866,
+    "sha256": "37bdce57a0f8202a2ece37fdcfafb7c5b6980cdfcf6da82c61ec3607dd3e18d5"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/dist-audit.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "ded1f1c6be708679b386b8986d5fc28a3fcbc5f3",
+    "bytes": 94,
+    "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/identity-verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "45a34205a8406da1eb6265b6dcaa70f7f9844563",
+    "bytes": 31249,
+    "sha256": "8b74c0eda7019451d33ddf6aa2de7d452791859d028159ff5a52977462ff91e5"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/lint.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/plan.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "32121406b9a87470fbda212853ba17d0173cec12",
+    "bytes": 128,
+    "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/pre-run-build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "01b0bce8c3dd6f220a9a6d9eb53cb0973553e065",
+    "bytes": 9456,
+    "sha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/prior-build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "13f1d8f171e21b74f963e1a50c338bc348076304",
+    "bytes": 9456,
+    "sha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/scope.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "0f4da43222d2894e82dfde0bd3fccc7074a83e44",
+    "bytes": 2516,
+    "sha256": "43c8d3050cea0c686d83993112840c8ba464bc311ec968d7161d0381540bfdc5"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/source-after.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "5abf3e3eb6a6cbe7fed3715ff81c5ab7031bfa44",
+    "bytes": 49554,
+    "sha256": "2c8f8d087bf2ac369827aa8e68144da16696de1a12a312ca91db2feb2ce6a01e"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/source-before.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "5abf3e3eb6a6cbe7fed3715ff81c5ab7031bfa44",
+    "bytes": 49554,
+    "sha256": "2c8f8d087bf2ac369827aa8e68144da16696de1a12a312ca91db2feb2ce6a01e"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/types.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/unit.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "4886d3b247ff5a0af8a6bbf18d731bdd5bb3b3e2",
+    "bytes": 63283,
+    "sha256": "ff0bb1893f40968505d9ed626eff6d44d0fb9b31ac8996e1edad21458c26f3aa"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/unit.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "71207fdf40950d5dd9763acff9a6946e6f10614f",
+    "bytes": 114,
+    "sha256": "0a35a49c64a0623ca4fe80d1f4a3e312decc12fb2a88a3fc1cf19ffc44355acd"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/density-repair/verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "c86f521c105dfa63780daedbe56e1fe7133360d4",
+    "bytes": 9859,
+    "sha256": "5665f222ddce0a8d7f5a7fd42391e0d9134c7f8275499759a3486e36e1cd4e0d"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/identity-verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "f36613d765953033c67e1a9bceeb739f17da1e10",
+    "bytes": 416,
+    "sha256": "4bfe410eef806d2139ca96c5a6f5e2c7e837f98d60a18af48aeb98a6d4ef9f00"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/lint.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/plan.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "32121406b9a87470fbda212853ba17d0173cec12",
+    "bytes": 128,
+    "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/pre-run-build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "01b0bce8c3dd6f220a9a6d9eb53cb0973553e065",
+    "bytes": 9456,
+    "sha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/prior-build.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "13f1d8f171e21b74f963e1a50c338bc348076304",
+    "bytes": 9456,
+    "sha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/scope.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "7bb1759cda57eb4eda299098a34a813c165ab5e5",
+    "bytes": 2507,
+    "sha256": "887e51a20e3a1f2e477be3d3ef652a9cad1c286da26a8e3b041baa8302a58ab2"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/source-after.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "a892df94145afb77bf5142610399a9549109f972",
+    "bytes": 49554,
+    "sha256": "bd182e7cafe61c716bbde583885e57b3073aa0f8d2229ce210af1c6f612b695b"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/source-before.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "a892df94145afb77bf5142610399a9549109f972",
+    "bytes": 49554,
+    "sha256": "bd182e7cafe61c716bbde583885e57b3073aa0f8d2229ce210af1c6f612b695b"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/types.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/unit.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "a60aad7e41998b2aaadbfb7739a9c0c57c674394",
+    "bytes": 62786,
+    "sha256": "c2026d69a318b9071982f83082a85f938e6cf87f96febbe2f87760f9ba26c779"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/unit.log",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "bf8487e758df03a3eec8f0c98bddcc26e7125389",
+    "bytes": 105,
+    "sha256": "bc0695b1eb32496634605f38c7475a3e58e89c1e7b82a58b42cb0631492a3167"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/unified/first/verification.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "93158588ca5dbc614285e6bce8137b7d5e191c52",
+    "bytes": 5529,
+    "sha256": "73f8a2c8c52c809c9242bf2e197cb15d1dba47b582f6b2b8b067b24d35dcffae"
+  },
+  {
+    "path": "docs/evidence/ph06-fine-world-relief-2026-09-28/visual-review.json",
+    "commit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+    "gitBlob": "a8f2f255a5ff3b9696562a45387ef872451c6b9d",
+    "bytes": 2300,
+    "sha256": "16347fb3bf5fbbef5b94022f5e48dc48a0b6a1f6412dd3522bdf563bdfe1d49b"
+  }
+]

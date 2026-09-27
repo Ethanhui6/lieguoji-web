@@ -1,0 +1,257 @@
+{
+  "preview20History": [
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/build.json",
+      "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/provenance.json",
+      "sha256": "0175b131c77c66ca6dac9924890a7013a5b45c82cae54e118b3a188f7f3b0caf",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/inventory.json",
+      "sha256": "2ba5c53382fe7853ffb4c00877a90d6b086cea5b41a29fd0be3c4ec57b33d0d0",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/storage-integration-files.sha256.json",
+      "sha256": "dc40a5cec36815492165e07236117b25ee6edf6afe0862df60454d4af9939bbe",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/storage-integration-verification.json",
+      "sha256": "f8dfbce36156ad0e22d9018ec9a53587eeadb11d0090cd1ce86e941252fde1e1",
+      "copied": false
+    },
+    {
+      "path": "docs/evidence/ph06-preview20-generator-history-2026-09-28/storage-checks/first/verification.json",
+      "sha256": "e9d25e7cbc61d5ad374f42cc61a79f729e8ca2cc7c450ddfb866a61796be013a",
+      "copied": false
+    }
+  ],
+  "omitted": [
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/atlas-format.ts",
+      "sha256": "2b96af46f2dc3d64ba1dcd06e2d4d84c2553dc43ab5bd48f9547c36c3279a573",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/detail-coast-base.ts",
+      "sha256": "3a38518f63a1dd098ff77c05b1e1d458dfc3c7c45e87a5c4975325c7bb5afc1c",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/detail-coast-codec.ts",
+      "sha256": "2a373bb00f008806b24bdf429b7e00f124c62cc30b7c8aa87f8193e46a69b2ed",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/detail-coast-field.ts",
+      "sha256": "3d76092e5593f94cfd5d796309ee5ee1a84d0796ea386da7a3f49e00eb0d0326",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/detail-coast-geometry.ts",
+      "sha256": "8f6d34e76e427842241a2c0a6f42593e9e37cde2cea54bff7233be19108eaacc",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/detail-coast-types.ts",
+      "sha256": "4333876fedb47e295b1c375428b7fb328cbfdd40f67b32cddfedc93e791d5f13",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation-contract.ts",
+      "sha256": "07cc4abab698855591c8385864f3cc5e2c6ec8686c1d05b60ff088ec6968011e",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation-session.ts",
+      "sha256": "4c2f9a35fac337182e0303ba9f0f1f88b231c7724e757a41ebc0537786b4a18d",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-natural-relief.ts",
+      "sha256": "8f0ff73593838c074c9ba63e0d79df32bfe5991b9dc2a535fac77600723d61fd",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape-adapter.ts",
+      "sha256": "ad8e49caa37f81a1988fa6359ff13818b6d80d2700515e73390cc58900f14bf6",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape-distance.ts",
+      "sha256": "ffc22e2ed687bc05a29c580985cc8bb1cd8fe24cb8740b227f14ead45129e0df",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape-height.ts",
+      "sha256": "11acf2061b103ec89e10fefbb60cbae7b985da50049e81936974620944d8e21f",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "sha256": "1fb0780ea3617df246a9f4c065cbc91afd2e40055be2bab110d183c4d2719e25",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "55896f99db682d2345c436560896120a03ad0df234b18ecabb9c59b7e76d9e04",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/detail-shape.ts",
+      "sha256": "2bc151e6e5c9f065934f8506ecea0c45d5e6766c56925e6f09580f14b8edc814",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/fingerprint.ts",
+      "sha256": "b4acc55b484a32602462d62d565c6f0f609c29a5c3675e94eb84f07bd5670ce5",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/natural-ocean-base.ts",
+      "sha256": "cc26877164aef767a13f9add8e55193309c35aa3b7199a5b5d2bb79751586c85",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/quality.ts",
+      "sha256": "390afde9fbee0198f9bed308af3aa3d24d1cb5fe47061cefbc4469b1a3008560",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/generation/seed.ts",
+      "sha256": "6bb5c6ba3be33b9eb63ba2a8f9f20d86dc9e2984628b2d12c579339fbc6ae14b",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/model.ts",
+      "sha256": "87c810869af3d929c6134afa615457aa10af51e8be1c38278ec6f8908c99798a",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/storage.ts",
+      "sha256": "f36d800f6c0a09ce56207bc05db09756d57f5a03918a4cadb19ba780f852af55",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/first/staged-sources/src/world/transactions.ts",
+      "sha256": "3192d600846d94a8e264718430f16d804fe12a13a9d1b18cdbb60fe0028f67fe",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/atlas-format.ts",
+      "sha256": "2b96af46f2dc3d64ba1dcd06e2d4d84c2553dc43ab5bd48f9547c36c3279a573",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/detail-coast-base.ts",
+      "sha256": "3a38518f63a1dd098ff77c05b1e1d458dfc3c7c45e87a5c4975325c7bb5afc1c",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/detail-coast-codec.ts",
+      "sha256": "2a373bb00f008806b24bdf429b7e00f124c62cc30b7c8aa87f8193e46a69b2ed",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/detail-coast-field.ts",
+      "sha256": "3d76092e5593f94cfd5d796309ee5ee1a84d0796ea386da7a3f49e00eb0d0326",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/detail-coast-geometry.ts",
+      "sha256": "8f6d34e76e427842241a2c0a6f42593e9e37cde2cea54bff7233be19108eaacc",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/detail-coast-types.ts",
+      "sha256": "4333876fedb47e295b1c375428b7fb328cbfdd40f67b32cddfedc93e791d5f13",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation-contract.ts",
+      "sha256": "07cc4abab698855591c8385864f3cc5e2c6ec8686c1d05b60ff088ec6968011e",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation-session.ts",
+      "sha256": "4c2f9a35fac337182e0303ba9f0f1f88b231c7724e757a41ebc0537786b4a18d",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-natural-relief.ts",
+      "sha256": "8f0ff73593838c074c9ba63e0d79df32bfe5991b9dc2a535fac77600723d61fd",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape-adapter.ts",
+      "sha256": "ad8e49caa37f81a1988fa6359ff13818b6d80d2700515e73390cc58900f14bf6",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape-distance.ts",
+      "sha256": "ffc22e2ed687bc05a29c580985cc8bb1cd8fe24cb8740b227f14ead45129e0df",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape-height.ts",
+      "sha256": "11acf2061b103ec89e10fefbb60cbae7b985da50049e81936974620944d8e21f",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "sha256": "1fb0780ea3617df246a9f4c065cbc91afd2e40055be2bab110d183c4d2719e25",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "55896f99db682d2345c436560896120a03ad0df234b18ecabb9c59b7e76d9e04",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/detail-shape.ts",
+      "sha256": "2bc151e6e5c9f065934f8506ecea0c45d5e6766c56925e6f09580f14b8edc814",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/fingerprint.ts",
+      "sha256": "b4acc55b484a32602462d62d565c6f0f609c29a5c3675e94eb84f07bd5670ce5",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/natural-ocean-base.ts",
+      "sha256": "cc26877164aef767a13f9add8e55193309c35aa3b7199a5b5d2bb79751586c85",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/quality.ts",
+      "sha256": "390afde9fbee0198f9bed308af3aa3d24d1cb5fe47061cefbc4469b1a3008560",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/generation/seed.ts",
+      "sha256": "6bb5c6ba3be33b9eb63ba2a8f9f20d86dc9e2984628b2d12c579339fbc6ae14b",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/model.ts",
+      "sha256": "87c810869af3d929c6134afa615457aa10af51e8be1c38278ec6f8908c99798a",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/storage.ts",
+      "sha256": "f36d800f6c0a09ce56207bc05db09756d57f5a03918a4cadb19ba780f852af55",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    },
+    {
+      "path": ".autopilot/ph06/regional-coast-staging/checks/repair-1/staged-sources/src/world/transactions.ts",
+      "sha256": "3192d600846d94a8e264718430f16d804fe12a13a9d1b18cdbb60fe0028f67fe",
+      "reason": "Staging proxy or ancillary file excluded; actual runtime closure is retained separately."
+    }
+  ],
+  "note": "No results file has been edited or truncated. No proxy tree, duplicate expanded trace or previous history archive is copied."
+}

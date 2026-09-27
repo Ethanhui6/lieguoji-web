@@ -1,0 +1,320 @@
+{
+  "recordedAt": "2026-09-27T21:13:29.286Z",
+  "archiveComplete": true,
+  "rawFileCount": 139,
+  "rawBytes": 8860726,
+  "inventorySha256": "d196c2e948d6224e0296c7d0276bb1daa77de64cc851bb165576007e11de7e9b",
+  "finalRound": "density-repair",
+  "version": "0.5.0-preview.20",
+  "buildJsonSha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018",
+  "unit": {
+    "available": true,
+    "files": [
+      {
+        "path": "src/world/detail-add-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-add-integration.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-coast-locks.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/detail-local-relief-session.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-integration.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/detail-preview16-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/detail-preview17-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation-preview18-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-curved-ridge.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-fine-world-relief.test.ts",
+        "assertions": 7
+      },
+      {
+        "path": "src/world/generation/detail-local-background.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-local-relief.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-natural-writer.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-orography.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/generation/detail-shape-add.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-shape-natural.test.ts",
+        "assertions": 13
+      },
+      {
+        "path": "src/world/generation/fingerprint.test.ts",
+        "assertions": 3
+      }
+    ],
+    "scopeMatches": true,
+    "knownCountsMatch": true,
+    "total": 137,
+    "passedAssertions": 137,
+    "failedAssertions": 0,
+    "pendingAssertions": 0,
+    "passed": true
+  },
+  "browsers": [
+    {
+      "name": "desktop",
+      "project": "desktop-chromium",
+      "passed": true,
+      "elapsedMs": 202385.316
+    },
+    {
+      "name": "mobile",
+      "project": "mobile-chromium",
+      "passed": true,
+      "elapsedMs": 204460.4001
+    },
+    {
+      "name": "tablet",
+      "project": "tablet-chromium",
+      "passed": true,
+      "elapsedMs": 296415.0902
+    }
+  ],
+  "rounds": [
+    {
+      "name": "density-repair",
+      "passed": true,
+      "unit": {
+        "available": true,
+        "files": [
+          {
+            "path": "src/world/detail-add-history.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-add-integration.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-coast-locks.test.ts",
+            "assertions": 16
+          },
+          {
+            "path": "src/world/detail-local-relief-session.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-natural-history.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-natural-integration.test.ts",
+            "assertions": 2
+          },
+          {
+            "path": "src/world/detail-preview16-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/detail-preview17-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation-preview18-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation/detail-curved-ridge.test.ts",
+            "assertions": 10
+          },
+          {
+            "path": "src/world/generation/detail-fine-world-relief.test.ts",
+            "assertions": 7
+          },
+          {
+            "path": "src/world/generation/detail-local-background.test.ts",
+            "assertions": 6
+          },
+          {
+            "path": "src/world/generation/detail-local-relief.test.ts",
+            "assertions": 10
+          },
+          {
+            "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+            "assertions": 8
+          },
+          {
+            "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation/detail-natural-writer.test.ts",
+            "assertions": 6
+          },
+          {
+            "path": "src/world/generation/detail-orography.test.ts",
+            "assertions": 16
+          },
+          {
+            "path": "src/world/generation/detail-shape-add.test.ts",
+            "assertions": 8
+          },
+          {
+            "path": "src/world/generation/detail-shape-natural.test.ts",
+            "assertions": 13
+          },
+          {
+            "path": "src/world/generation/fingerprint.test.ts",
+            "assertions": 3
+          }
+        ],
+        "scopeMatches": true,
+        "knownCountsMatch": true,
+        "total": 137,
+        "passedAssertions": 137,
+        "failedAssertions": 0,
+        "pendingAssertions": 0,
+        "passed": true
+      }
+    },
+    {
+      "name": "first",
+      "passed": false,
+      "unit": {
+        "available": true,
+        "files": [
+          {
+            "path": "src/world/detail-add-history.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-add-integration.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-coast-locks.test.ts",
+            "assertions": 16
+          },
+          {
+            "path": "src/world/detail-local-relief-session.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-natural-history.test.ts",
+            "assertions": 3
+          },
+          {
+            "path": "src/world/detail-natural-integration.test.ts",
+            "assertions": 2
+          },
+          {
+            "path": "src/world/detail-preview16-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/detail-preview17-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation-preview18-history.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation/detail-curved-ridge.test.ts",
+            "assertions": 10
+          },
+          {
+            "path": "src/world/generation/detail-fine-world-relief.test.ts",
+            "assertions": 6
+          },
+          {
+            "path": "src/world/generation/detail-local-background.test.ts",
+            "assertions": 6
+          },
+          {
+            "path": "src/world/generation/detail-local-relief.test.ts",
+            "assertions": 10
+          },
+          {
+            "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+            "assertions": 8
+          },
+          {
+            "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+            "assertions": 5
+          },
+          {
+            "path": "src/world/generation/detail-natural-writer.test.ts",
+            "assertions": 6
+          },
+          {
+            "path": "src/world/generation/detail-orography.test.ts",
+            "assertions": 16
+          },
+          {
+            "path": "src/world/generation/detail-shape-add.test.ts",
+            "assertions": 8
+          },
+          {
+            "path": "src/world/generation/detail-shape-natural.test.ts",
+            "assertions": 13
+          },
+          {
+            "path": "src/world/generation/fingerprint.test.ts",
+            "assertions": 3
+          }
+        ],
+        "scopeMatches": true,
+        "knownCountsMatch": true,
+        "total": 136,
+        "passedAssertions": 130,
+        "failedAssertions": 0,
+        "pendingAssertions": 6,
+        "passed": false
+      }
+    }
+  ],
+  "naturalVisualAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "cloudWrites": false
+}

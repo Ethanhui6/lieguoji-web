@@ -1,0 +1,330 @@
+{
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-09-27T21:33:01.815Z",
+      "finishedAt": "2026-09-27T21:33:02.035Z",
+      "elapsedMs": 219.78170000000006,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "startedAt": "2026-09-27T21:33:02.038Z",
+      "finishedAt": "2026-09-27T21:33:09.782Z",
+      "elapsedMs": 7744.544099999999,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-09-27T21:33:09.783Z",
+      "finishedAt": "2026-09-27T21:33:19.547Z",
+      "elapsedMs": 9764.5182,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation/regional-coast-plan.test.ts",
+        "src/world/generation/regional-coast-field.test.ts",
+        "src/world/regional-coast-storage.test.ts",
+        "src/world/generation-preview20-history.test.ts",
+        "src/world/generation/detail-fine-world-relief.test.ts",
+        "src/world/generation-preview18-history.test.ts",
+        "src/world/generation/detail-curved-ridge.test.ts",
+        "src/world/generation/detail-orography.test.ts",
+        "src/world/generation/detail-natural-writer.test.ts",
+        "src/world/generation/detail-local-background.test.ts",
+        "src/world/generation/detail-local-relief.test.ts",
+        "src/world/detail-local-relief-session.test.ts",
+        "src/world/detail-coast-locks.test.ts",
+        "src/world/generation/detail-natural-coast-plan.test.ts",
+        "src/world/generation/detail-shape-natural.test.ts",
+        "src/world/generation/detail-natural-visual-repair.test.ts",
+        "src/world/detail-natural-integration.test.ts",
+        "src/world/detail-natural-history.test.ts",
+        "src/world/detail-preview16-history.test.ts",
+        "src/world/detail-preview17-history.test.ts",
+        "src/world/generation/fingerprint.test.ts",
+        "src/world/generation/detail-shape-add.test.ts",
+        "src/world/detail-add-integration.test.ts",
+        "src/world/detail-add-history.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph06/regional-coast-checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T21:33:19.547Z",
+      "finishedAt": "2026-09-27T21:34:22.402Z",
+      "elapsedMs": 62855.0471,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "args": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "startedAt": "2026-09-27T21:34:22.402Z",
+      "finishedAt": "2026-09-27T21:34:23.897Z",
+      "elapsedMs": 1494.5302999999985,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "dist-audit",
+      "args": [
+        "scripts/check-dist.mjs"
+      ],
+      "startedAt": "2026-09-27T21:34:23.897Z",
+      "finishedAt": "2026-09-27T21:34:23.970Z",
+      "elapsedMs": 72.67909999999392,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "unit": {
+    "available": true,
+    "files": [
+      {
+        "path": "src/world/detail-add-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-add-integration.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-coast-locks.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/detail-local-relief-session.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-history.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/detail-natural-integration.test.ts",
+        "assertions": 2
+      },
+      {
+        "path": "src/world/detail-preview16-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/detail-preview17-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation-preview18-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation-preview20-history.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/regional-coast-storage.test.ts",
+        "assertions": 1
+      },
+      {
+        "path": "src/world/generation/detail-curved-ridge.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-fine-world-relief.test.ts",
+        "assertions": 7
+      },
+      {
+        "path": "src/world/generation/detail-local-background.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-local-relief.test.ts",
+        "assertions": 10
+      },
+      {
+        "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+        "assertions": 5
+      },
+      {
+        "path": "src/world/generation/detail-natural-writer.test.ts",
+        "assertions": 6
+      },
+      {
+        "path": "src/world/generation/detail-orography.test.ts",
+        "assertions": 16
+      },
+      {
+        "path": "src/world/generation/detail-shape-add.test.ts",
+        "assertions": 8
+      },
+      {
+        "path": "src/world/generation/detail-shape-natural.test.ts",
+        "assertions": 13
+      },
+      {
+        "path": "src/world/generation/fingerprint.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/generation/regional-coast-field.test.ts",
+        "assertions": 3
+      },
+      {
+        "path": "src/world/generation/regional-coast-plan.test.ts",
+        "assertions": 3
+      }
+    ],
+    "scopeMatches": true,
+    "knownCountsMatch": true,
+    "total": 149,
+    "passedAssertions": 149,
+    "failedAssertions": 0,
+    "pendingAssertions": 0,
+    "passed": true
+  },
+  "sourceStable": true,
+  "allCommandsPassed": true,
+  "passed": true,
+  "dist": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-CH6my5dn.js",
+      "sha256": "783510bd960d9a47cde63c312e64c33fbc3c990dab24d35f2f4510a56e39360b"
+    },
+    {
+      "path": "dist/assets/atlas.worker-CvxXA6nD.js",
+      "sha256": "c125171adda9ddc86d75aa5e5130a639ff935bc0d6cb2814b7f644b800fe70fb"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-D6OMRLqN.css",
+      "sha256": "dc5977e33b96545cacdf12a4216b0b808f63e473d06b460801759c6e59fb7836"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-S6kXYLkU.js",
+      "sha256": "52d1976ecf38cc8a74127f029bd04d2ea733ab39728b48fd8ebb28d21b840291"
+    },
+    {
+      "path": "dist/assets/browserAll-B_x3HUdh.js",
+      "sha256": "f52bb2a5675fe6b64171984adb8b1b36c0b3dbc1e6e1ad1edece149c6c2e58b0"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-Bh9rrM1I.js",
+      "sha256": "b25d58884b3cdaf091c24775c6cafb61f2125086e5ebc437d3f9e7a270d2cd7b"
+    },
+    {
+      "path": "dist/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-BdVbiXaB.js",
+      "sha256": "e69035006fa280dfe0ee46efffca1cc035f454dce0676d8f8d0e28c5a62d6dd1"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/webworkerAll-D80YOw1T.js",
+      "sha256": "06d28de35bd828025af379998b8d3a36906d630b9f7c0f76b2e24826206641aa"
+    },
+    {
+      "path": "dist/build.json",
+      "sha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "2573b03a8e9c0eace64a75d478acb8f30e5bd24692bdfabddc19b16b049becb3"
+    },
+    {
+      "path": "dist/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ],
+  "buildJsonSha256": "639ca2288c4d4ca0d3e8f21762c06be8e49678045c45c8dadfc91ec2314d7761",
+  "engineUnchanged": true,
+  "generatorIdentityVerified": true,
+  "identityVerificationSha256": "afd745a567c984dc4accefda78170edaa3fbf21323aec761886c7b3c8adafa6b",
+  "classificationCounts": {
+    "history-only": 9,
+    "non-history-runtime-change": 2
+  },
+  "scope": "Affected branching relief, natural/additive/local height and locks, stored compatibility and actual helper runtime closure checks only; not natural visual, performance, physical device, PH or cloud acceptance.",
+  "naturalVisualAccepted": false,
+  "visualAccepted": false,
+  "phaseAccepted": false,
+  "physicalDeviceAccepted": false,
+  "performanceAccepted": false,
+  "cloudWrites": false
+}

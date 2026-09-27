@@ -1,0 +1,408 @@
+{
+  "recordedAt": "2026-09-27T21:19:39.273Z",
+  "status": "candidate-cpu-passed-awaiting-review",
+  "productionPromoted": false,
+  "cpuChecksRun": true,
+  "gpuRun": false,
+  "cloudWrites": false,
+  "candidates": [
+    "src/world/generation/detail-natural-outline.ts",
+    "src/world/generation/detail-shape-natural.ts"
+  ],
+  "heightPlanningFineWorldPreserved": true,
+  "preservedRegressionFiles": [
+    {
+      "file": "src/world/generation/detail-natural-coast-plan.test.ts",
+      "sha256": "e4c492b14be49b82774e4bb98cd870f874910383c5c3b0ff6e09e5f84fd78513",
+      "unchanged": true
+    },
+    {
+      "file": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "sha256": "3e78a3c0eeb5835faa187e63e447e9e8d5ee0165cc617fbcb132c418e606edf0",
+      "unchanged": true
+    },
+    {
+      "file": "src/world/generation/detail-natural-writer.test.ts",
+      "sha256": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2",
+      "unchanged": true
+    },
+    {
+      "file": "src/world/detail-natural-integration.test.ts",
+      "sha256": "4104e1e04e938a5af36b1d83452f80ce5f5f4dccdc3d841297b1720a5e3cff9a",
+      "unchanged": true
+    }
+  ],
+  "productionBaseline": [
+    {
+      "file": "src/world/generation/detail-natural-outline.ts",
+      "sha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.ts",
+      "sha256": "ea2ea400bb65eb40abd21d86abc9b7299407ec6aea68111b3fe4a53a15396b15"
+    }
+  ],
+  "runtimeSourceOverlay": [
+    {
+      "file": "src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "staged": false
+    },
+    {
+      "file": "src/world/coastal-generation.ts",
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "staged": false
+    },
+    {
+      "file": "src/world/coastal-surface.ts",
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-locks.ts",
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "staged": false
+    },
+    {
+      "file": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation-history.ts",
+      "sha256": "a9f27eecae703c41210e4de196009de3b0d3aa781dffe0eb1df9beb11660c848",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-curved-ridge.ts",
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "staged": true
+    },
+    {
+      "file": "src/world/generation/detail-natural-relief.ts",
+      "sha256": "83cf27c58cd38bbfbe01e7c2487416cc219b21366d07895302b0b7fc72c5851a",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-orography.ts",
+      "sha256": "191ce20cc291361b868e48fe920cc3fee7d86b6bdf234dd07d37c82b65b00c85",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-adapter.ts",
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f",
+      "staged": true
+    },
+    {
+      "file": "src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/natural-ocean-base.ts",
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "staged": false
+    },
+    {
+      "file": "src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "staged": false
+    },
+    {
+      "file": "src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "staged": false
+    },
+    {
+      "file": "src/world/topology.ts",
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "staged": false
+    }
+  ],
+  "files": [
+    {
+      "path": "baseline/detail-natural-outline.ts",
+      "sha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364"
+    },
+    {
+      "path": "baseline/detail-shape.ts",
+      "sha256": "64489c3024b45b193e908b427720a5a9e6eb777cee8a434b3b2bfcbfbc868bdf"
+    },
+    {
+      "path": "baseline/seed.ts",
+      "sha256": "678e2c71079d87f3c52ef05f2fdd49a0c03d5dc5b337656d3b1b5ac096f724fe"
+    },
+    {
+      "path": "baseline.json",
+      "sha256": "f62e7ac4d1edba00710f0cfd8223fe4c2cbc5e8b1c448fbaa3e0d06f56ce4167"
+    },
+    {
+      "path": "check.mjs",
+      "sha256": "2e2888498777c8dab13773ea431f02b07eba3a78364cc6b6e46037afec8b42e7"
+    },
+    {
+      "path": "finalize.mjs",
+      "sha256": "38bc35b349f40306c96f5adcbb2a0f3d9aa8981569add7c3baf5eb50e37c3c26"
+    },
+    {
+      "path": "freeze.mjs",
+      "sha256": "7143485669a3e4909dbee1f7ad6e20c21dc68755f3aeee24e5f1f75a941fcb86"
+    },
+    {
+      "path": "prepare.mjs",
+      "sha256": "2c65f731a5114e0bf7ffa0f6b7789d8cbe58ddc7541d5992e365b3816c2bbd9f"
+    },
+    {
+      "path": "README.md",
+      "sha256": "df2f23064de352d8bfbb1e5b4062f5f9fc90ee04d0b6e7b586de8b569c1a6ed1"
+    },
+    {
+      "path": "src/world/atlas-format.ts",
+      "sha256": "2b96af46f2dc3d64ba1dcd06e2d4d84c2553dc43ab5bd48f9547c36c3279a573"
+    },
+    {
+      "path": "src/world/detail-coast-base.ts",
+      "sha256": "3a38518f63a1dd098ff77c05b1e1d458dfc3c7c45e87a5c4975325c7bb5afc1c"
+    },
+    {
+      "path": "src/world/detail-coast-codec.ts",
+      "sha256": "2a373bb00f008806b24bdf429b7e00f124c62cc30b7c8aa87f8193e46a69b2ed"
+    },
+    {
+      "path": "src/world/detail-coast-field.ts",
+      "sha256": "3d76092e5593f94cfd5d796309ee5ee1a84d0796ea386da7a3f49e00eb0d0326"
+    },
+    {
+      "path": "src/world/detail-coast-geometry.ts",
+      "sha256": "8f6d34e76e427842241a2c0a6f42593e9e37cde2cea54bff7233be19108eaacc"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "4333876fedb47e295b1c375428b7fb328cbfdd40f67b32cddfedc93e791d5f13"
+    },
+    {
+      "path": "src/world/detail-natural-integration.test.ts",
+      "sha256": "4104e1e04e938a5af36b1d83452f80ce5f5f4dccdc3d841297b1720a5e3cff9a"
+    },
+    {
+      "path": "src/world/generation/detail-natural-coast-plan.test.ts",
+      "sha256": "e4c492b14be49b82774e4bb98cd870f874910383c5c3b0ff6e09e5f84fd78513"
+    },
+    {
+      "path": "src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d"
+    },
+    {
+      "path": "src/world/generation/detail-natural-relief.ts",
+      "sha256": "8f0ff73593838c074c9ba63e0d79df32bfe5991b9dc2a535fac77600723d61fd"
+    },
+    {
+      "path": "src/world/generation/detail-natural-visual-repair.test.ts",
+      "sha256": "3e78a3c0eeb5835faa187e63e447e9e8d5ee0165cc617fbcb132c418e606edf0"
+    },
+    {
+      "path": "src/world/generation/detail-natural-writer.test.ts",
+      "sha256": "9aab02711ab80c21b3556a612a51ab392e413bf9a95a66042e1bc02baf6a42a2"
+    },
+    {
+      "path": "src/world/generation/detail-shape-adapter.ts",
+      "sha256": "ad8e49caa37f81a1988fa6359ff13818b6d80d2700515e73390cc58900f14bf6"
+    },
+    {
+      "path": "src/world/generation/detail-shape-distance.ts",
+      "sha256": "ffc22e2ed687bc05a29c580985cc8bb1cd8fe24cb8740b227f14ead45129e0df"
+    },
+    {
+      "path": "src/world/generation/detail-shape-height.ts",
+      "sha256": "11acf2061b103ec89e10fefbb60cbae7b985da50049e81936974620944d8e21f"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-add-adapter.ts",
+      "sha256": "1fb0780ea3617df246a9f4c065cbc91afd2e40055be2bab110d183c4d2719e25"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural-add.ts",
+      "sha256": "55896f99db682d2345c436560896120a03ad0df234b18ecabb9c59b7e76d9e04"
+    },
+    {
+      "path": "src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f"
+    },
+    {
+      "path": "src/world/generation/detail-shape.ts",
+      "sha256": "2bc151e6e5c9f065934f8506ecea0c45d5e6766c56925e6f09580f14b8edc814"
+    },
+    {
+      "path": "src/world/generation/fingerprint.ts",
+      "sha256": "b4acc55b484a32602462d62d565c6f0f609c29a5c3675e94eb84f07bd5670ce5"
+    },
+    {
+      "path": "src/world/generation/natural-ocean-base.ts",
+      "sha256": "cc26877164aef767a13f9add8e55193309c35aa3b7199a5b5d2bb79751586c85"
+    },
+    {
+      "path": "src/world/generation/quality.ts",
+      "sha256": "390afde9fbee0198f9bed308af3aa3d24d1cb5fe47061cefbc4469b1a3008560"
+    },
+    {
+      "path": "src/world/generation/regional-coast-field.test.ts",
+      "sha256": "4890a3cf0065b62358709301a8c6bf9c9bdd52a04ddcc59a504321fc2a8bb493"
+    },
+    {
+      "path": "src/world/generation/regional-coast-plan.test.ts",
+      "sha256": "15bb944e3a8af8f6e1619ebe2ee60f206e9a61a4c55220df5edae7378b6b9af5"
+    },
+    {
+      "path": "src/world/generation/seed.ts",
+      "sha256": "6bb5c6ba3be33b9eb63ba2a8f9f20d86dc9e2984628b2d12c579339fbc6ae14b"
+    },
+    {
+      "path": "src/world/generation-contract.ts",
+      "sha256": "07cc4abab698855591c8385864f3cc5e2c6ec8686c1d05b60ff088ec6968011e"
+    },
+    {
+      "path": "src/world/generation-session.ts",
+      "sha256": "4c2f9a35fac337182e0303ba9f0f1f88b231c7724e757a41ebc0537786b4a18d"
+    },
+    {
+      "path": "src/world/model.ts",
+      "sha256": "87c810869af3d929c6134afa615457aa10af51e8be1c38278ec6f8908c99798a"
+    },
+    {
+      "path": "src/world/regional-coast-storage.test.ts",
+      "sha256": "2ca86bb961bbcadeb17819ca989801484138b6396d30319f97bb972fd6b3acf7"
+    },
+    {
+      "path": "src/world/storage.ts",
+      "sha256": "f36d800f6c0a09ce56207bc05db09756d57f5a03918a4cadb19ba780f852af55"
+    },
+    {
+      "path": "src/world/transactions.ts",
+      "sha256": "3192d600846d94a8e264718430f16d804fe12a13a9d1b18cdbb60fe0028f67fe"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "d23557c561d9992e998a5ea83ee5038671baae20cec07fdea5ed24f46961fe22"
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "0e20827dd65c7c5d083a24fc5d62d84df7f44ca7f02170dccc881a1ff0a4eb4b"
+    }
+  ],
+  "limits": {
+    "features": 48,
+    "bins": 128,
+    "references": 1024,
+    "candidatesPerBin": 8,
+    "fineStepWorld": 2,
+    "newRegionMinimumPerimeterWorld": 2048,
+    "maximumFineNoiseDisplacementWorld": 2
+  },
+  "note": "Isolated CPU checks only. First failures and both original source snapshots retained. No renderer/build/device/cloud or natural-appearance acceptance.",
+  "actualIdentities": {
+    "natural": "30c3138cf0c1187649dcf23ff0708697722df94aabec3d4cd56eea5975c20b38",
+    "additive": "7423c9826809cf243d263c566d74ce59a057a5bdbf6518473a67a6be3fec88d9"
+  },
+  "checks": {
+    "first": {
+      "path": "checks/first/verification.json",
+      "sha256": "5af9214fccbdfc535325d60cef7c7562e2810f3906c3137bcb56df2d59b67f67",
+      "types": false,
+      "lint": false,
+      "unitPassed": 26,
+      "unitTotal": 28
+    },
+    "final": {
+      "path": "checks/repair-1/verification.json",
+      "sha256": "a3fae30db7145d6dee98dd80de1a9a649736135f087b0f35daeac5e06dd093d2",
+      "types": true,
+      "lint": true,
+      "unitPassed": 28,
+      "unitTotal": 28,
+      "testFiles": 7,
+      "sourceStable": true,
+      "identityStable": true
+    }
+  },
+  "candidateHashes": [
+    {
+      "file": "src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d"
+    },
+    {
+      "file": "src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f"
+    }
+  ],
+  "visualAccepted": false
+}

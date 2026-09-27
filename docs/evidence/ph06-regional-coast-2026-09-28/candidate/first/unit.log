@@ -1,0 +1,80 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-visual-repair.test.ts (5 tests) 5917ms
+   ✓ actual geography visual repair contracts (5)
+     ✓ does not change actual coastline/height bytes merely because straight gesture edges contain more input samples 3631ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-writer.test.ts (6 tests) 10031ms
+   ✓ new natural land writes true fine height without reinterpreting v4 (4)
+     ✓ roundtrips explicit fine samples and the unchanged persisted Hbase through the existing codec 1661ms
+     ✓ preserves ownership and deterministic fine bytes across batch boundaries and source mutation 2535ms
+     ✓ cancels within the actual expanded fine-height work without publishing or mutating input 767ms
+   ✓ unchanged real additive protection consumes the fine writer (2)
+     ✓ retains the old locked continent encoded bytes, all old coarse controls and sampled height after add/codec 2799ms
+     ✓ rejects actual locked sea converted to new land without weakening the existing lock guard 1064ms
+ ❯ .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-coast-plan.test.ts (8 tests | 1 failed) 466ms
+   ❯ nonuniform physical coast feature plan (6)
+     × has several distinct strong bay/cape scales, biased shoulders and no quarter-perimeter repetition 24ms
+     ✓ matches an exhaustive independent feature oracle at bin boundaries and stays in the requested envelope 8ms
+     ✓ has no circular seam and keeps finite first slopes continuous at event starts, peaks and ends 1ms
+     ✓ keeps source ownership and exact seed/batch results without a shared global cache 2ms
+     ✓ is independent of straight gesture sampling density and exactly disables the structural layer at zero 7ms
+     ✓ does not pack full-scale events into a tiny perimeter and rejects out-of-contract structure 2ms
+   ✓ natural coast plan actual generator entry (2)
+     ✓ retains a real tiny island and nearby sea through the actual 2-world coverage pipeline 270ms
+     ✓ cancels the actual new planning entry and preserves the original draft buffers and recipe 150ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/detail-natural-integration.test.ts (2 tests) 10705ms
+   ✓ natural first and additive v2 through existing private save protocol (2)
+     ✓ starts from actual -100 m ocean, persists regional sea floor and v2 land, adds without changing old pieces/remote sea, restores and undoes 8326ms
+     ✓ permits explicit v2 addition to a verified v1 landscape and rejects overlap without regenerating its shallow remote sea 2376ms
+ ❯ .autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts (1 test | 1 failed) 66ms
+   ❯ regional candidate through actual private transaction and IndexedDB (1)
+     × previews without writing, saves/restores exact terrain, cancels active work and preserves the first continent when adding another 64ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/regional-coast-plan.test.ts (3 tests) 47ms
+ ✓ .autopilot/ph06/regional-coast-staging/src/world/generation/regional-coast-field.test.ts (3 tests) 5398ms
+   ✓ regional coast actual fine-field protection (3)
+     ✓ roundtrips real coast and fine elevations without changing implicit Hbase or caller buffers 2768ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts > regional candidate through actual private transaction and IndexedDB > previews without writing, saves/restores exact terrain, cancels active work and preserves the first continent when adding another
+Error: Atlas commandId 无效。
+ ❯ checkCommand src/world/storage.ts:31:113
+     29| const safeInt = (v: unknown): v is number => typeof v === 'number' && …
+     30| function checkId(id: string) { if (typeof id !== 'string' || !new RegE…
+     31| function checkCommand(id: string) { if (typeof id !== 'string' || !new…
+       |                                                                                                                 ^
+     32| function checkPreparation(id: string) { if (typeof id !== 'string' || …
+     33| function abort(control?: AtlasStorageControl) { control?.signal?.throw…
+ ❯ Object.prepareAtlasCommit src/world/storage.ts:399:3
+ ❯ commit .autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts:27:26
+ ❯ .autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts:44:138
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  .autopilot/ph06/regional-coast-staging/src/world/generation/detail-natural-coast-plan.test.ts > nonuniform physical coast feature plan > has several distinct strong bay/cape scales, biased shoulders and no quarter-perimeter repetition
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/world/generation/detail-natural-coast-plan.test.ts:21:135
+     19|     expect(crests.filter(value => value > .65 * FIELD_Q).length).toBeG…
+     20|     expect(crests.filter(value => value < -.65 * FIELD_Q).length).toBe…
+     21|     expect(broad.some(f => f.lengthQ < q(request().structureWorld * 2)…
+       |                                                                                                                                       ^
+     22|     const aroundShore = [...broad].sort((a, b) => a.startQ - b.startQ);
+     23|     expect(aroundShore.some((f, i) => Math.sign(f.amplitudeQ) === Math…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 5 passed (7)
+      Tests  2 failed | 26 passed (28)
+   Start at  05:15:16
+   Duration  35.08s (tests 97%, transform 2%, import 1%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/ph06/regional-coast-staging/checks/first/results.json

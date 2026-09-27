@@ -1,0 +1,84 @@
+{
+  "frozenAt": "2026-09-27T21:22:28.6072988Z",
+  "status": "frozen-preview20-source-provenance-ready-awaiting-history-wiring",
+  "stagingOnly": true,
+  "sourceCommit": "4b387f95f5e890f20915a9ab5de4a93c058e5a62",
+  "originalBuildCommit": "ef52727aa984a2c22ac6b622475427da61cccaed",
+  "originalBuildSha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018",
+  "generatorClosures": 11,
+  "generatorSourceFiles": 42,
+  "engineSourceFiles": 5,
+  "allSourceFiles": 47,
+  "evidenceFiles": 84,
+  "sourceSnapshotSha256": "16ff262496d366845b5d93059321d3d6ad28d822b25713574afda966a042362e",
+  "inventorySha256": "2ba5c53382fe7853ffb4c00877a90d6b086cea5b41a29fd0be3c4ec57b33d0d0",
+  "all47CheckedRawBytesMatch": true,
+  "sourceAndFrozenClosureSelfCheckPassed": true,
+  "sourceIsHeadAtCapture": true,
+  "wholeWorktreeCleanAtCapture": false,
+  "separateDocumentModification": "docs/AUTO_HANDOFF.md",
+  "runtime": {
+    "node": "v24.18.1",
+    "typescript": "6.0.3"
+  },
+  "sourceOnly": true,
+  "historyMirrorPrepared": false,
+  "newTestsWritten": false,
+  "testsRun": false,
+  "generatorsRun": false,
+  "productBuildRun": false,
+  "browserRun": false,
+  "productionModified": false,
+  "existingFrozenPackagesModified": false,
+  "committed": false,
+  "files": [
+    {
+      "path": "capture.mjs",
+      "bytes": 17454,
+      "sha256": "73a3006063f5bd3c892761c52133fbfec41e1929041d080b3a5bc4716499631b"
+    },
+    {
+      "path": "verify.mjs",
+      "bytes": 6398,
+      "sha256": "4b605d70128b4c844c1bc07c64b0552f4be010c1de7a0942ca060a8daa65f43e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4051,
+      "sha256": "6efb3b7cc996c7d1f0c48b280701918cbf3cb93e3340a9fc6952a48e4b405101"
+    },
+    {
+      "path": "capture-result.json",
+      "bytes": 935,
+      "sha256": "1883a9581498cdf8795bfe3da6b1c52e16843e8eab95027e7b63a35c011a0f3c"
+    },
+    {
+      "path": "self-check.json",
+      "bytes": 811,
+      "sha256": "857479e19aa8daa1aa51c007a2f3f99fd3a893a2476c6bb0a2d83e31bd0ece59"
+    },
+    {
+      "path": "evidence/preview20/inventory.json",
+      "bytes": 14616,
+      "sha256": "2ba5c53382fe7853ffb4c00877a90d6b086cea5b41a29fd0be3c4ec57b33d0d0"
+    },
+    {
+      "path": "evidence/preview20/provenance.json",
+      "bytes": 56038,
+      "sha256": "0175b131c77c66ca6dac9924890a7013a5b45c82cae54e118b3a188f7f3b0caf"
+    },
+    {
+      "path": "evidence/preview20/build.json",
+      "bytes": 9456,
+      "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+    }
+  ],
+  "acceptance": {
+    "userVisual": false,
+    "performance": false,
+    "naturalVisual": false,
+    "phase": false,
+    "physicalDevice": false,
+    "inheritedPreview20TechnicalEvidenceOnly": true
+  }
+}

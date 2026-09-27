@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-27T21:32:41.233Z",
+  "candidateReadySha256": "ae88743bd6d384d9efac316f96a564917c7c3dd90b31c69da64a8d0b9adcd7e9",
+  "runtime": [
+    "src/world/generation/detail-natural-outline.ts",
+    "src/world/generation/detail-shape-natural.ts"
+  ],
+  "fixture": "src/world/generation/test-fixtures/preview20-coast",
+  "sourceChecked": false,
+  "productionBuilt": false,
+  "cloudWrites": false
+}

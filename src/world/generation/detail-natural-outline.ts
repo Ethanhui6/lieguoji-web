@@ -1,4 +1,4 @@
-import { FIELD_Q, hashAt, integerSqrt, roundRatio, smoothQ } from './seed';
+import { FIELD_Q, hashAt, integerSqrt, noiseQ12, roundRatio, smoothQ } from './seed';
 import type { DetailShapeControl } from './detail-shape';
 
 export type NaturalPointQ = { xQ: number; yQ: number };
@@ -210,7 +210,70 @@ export async function roundAndIndexNaturalOutline(input: { points: readonly Natu
 export interface NaturalCoastFeature {
   layer: 'regional' | 'local'; startQ: number; lengthQ: number; peakQ: number; amplitudeQ: number; leftShapeQ: number; rightShapeQ: number;
 }
+export interface NaturalCoastRegion {
+  kind: 'bay' | 'cape' | 'fractured' | 'quiet'; startQ: number; lengthQ: number; transitionQ: number;
+}
 export const NATURAL_COAST_PLAN_LIMITS = { features: 48, bins: 128, references: 1024, candidates: 8 } as const;
+
+/** Private continent-scale allocation. Regions have unequal lengths; local
+ * events belong to a region, never to each source gesture edge. Tiny contours
+ * retain the prior plan. This does not claim erosion or add ocean holes. */
+async function regionalCoastFeatures(seed: number, perimeterQ: number, control?: DetailShapeControl) {
+  const count = Math.max(6, Math.min(10, Math.round(perimeterQ / (360 * 256))));
+  const kinds: NaturalCoastRegion['kind'][] = ['bay', 'bay', 'cape', 'cape', 'fractured', 'quiet'];
+  const other: NaturalCoastRegion['kind'][] = ['bay', 'cape', 'fractured', 'quiet'];
+  while (kinds.length < count) kinds.push(other[hashAt(seed, 7310, kinds.length, 0) % other.length]);
+  const slots = kinds.map((kind, id) => ({ kind, id, weight: kind === 'bay' ? 1850 + hashAt(seed, 7311, id, 0) % 701
+    : kind === 'cape' ? 950 + hashAt(seed, 7311, id, 0) % 201
+      : kind === 'fractured' ? 1200 + hashAt(seed, 7311, id, 0) % 601 : 1300 + hashAt(seed, 7311, id, 0) % 701 }));
+  for (let i = slots.length - 1; i > 0; i--) { const j = hashAt(seed, 7312, i, 0) % (i + 1); [slots[i], slots[j]] = [slots[j], slots[i]]; }
+  const phase = hashAt(seed, 7313, 0, 0) % perimeterQ, total = slots.reduce((sum, slot) => sum + slot.weight, 0);
+  const features: NaturalCoastFeature[] = [], regions: NaturalCoastRegion[] = []; let consumed = 0, localCount = 0;
+  const append = (layer: NaturalCoastFeature['layer'], from: number, width: number, peakFraction: number, strength: number, id: number, tag: number) => {
+    const lengthQ = Math.floor(width), peakQ = Math.floor(lengthQ * peakFraction);
+    if (lengthQ < (layer === 'regional' ? 48 : 16) * 256 || peakQ <= 0 || peakQ >= lengthQ) return;
+    // A short feature cannot have a very deep needle-shaped tip. This also
+    // retains the existing finite-slope continuity contract at one Q8 step.
+    const rampWorld = Math.min(peakQ, lengthQ - peakQ) / 256;
+    const amplitudeQ = Math.sign(strength) * Math.min(Math.abs(strength) * FIELD_Q, rampWorld * rampWorld);
+    features.push({ layer, startQ: ((Math.floor(from) % perimeterQ) + perimeterQ) % perimeterQ, lengthQ, peakQ, amplitudeQ,
+      leftShapeQ: hashAt(seed, 7318 + tag, id, 0) % 2457 - 1228, rightShapeQ: hashAt(seed, 7319 + tag, id, 0) % 2457 - 1228 });
+    if (features.length > NATURAL_COAST_PLAN_LIMITS.features) throw new Error('自然湾岬特征超过规划上限。');
+  };
+  for (const slot of slots) {
+    const from = Math.round(perimeterQ * consumed / total); consumed += slot.weight;
+    const end = Math.round(perimeterQ * consumed / total), length = end - from, start = phase + from;
+    regions.push({ kind: slot.kind, startQ: start % perimeterQ, lengthQ: length, transitionQ: Math.min(48 * 256, Math.floor(length * .15)) });
+    const strength = slot.kind === 'bay' ? -(.78 + (hashAt(seed, 7314, slot.id, 0) % 171) / 1000)
+      : slot.kind === 'cape' ? .78 + (hashAt(seed, 7314, slot.id, 0) % 171) / 1000
+        : (hashAt(seed, 7314, slot.id, 1) % 2 ? 1 : -1) * (slot.kind === 'fractured' ? .18 + (hashAt(seed, 7314, slot.id, 0) % 121) / 1000 : .04 + (hashAt(seed, 7314, slot.id, 0) % 81) / 1000);
+    // Capes have narrow, resolved tips; bays occupy most of their wider slots.
+    const fill = slot.kind === 'cape' ? .84 + (hashAt(seed, 7315, slot.id, 0) % 61) / 1000 : .77 + (hashAt(seed, 7315, slot.id, 0) % 81) / 1000;
+    // A long continent's slot must not enlarge every cape with the perimeter:
+    // its narrow physical core stays resolved while the unused slot is shore.
+    const width = slot.kind === 'cape' ? Math.min(length * fill, (160 + hashAt(seed, 7339, slot.id, 0) % 25) * 256) : length * fill;
+    const margin = length - width;
+    const peak = slot.kind === 'cape' ? .46 + (hashAt(seed, 7316, slot.id, 0) % 81) / 1000 : .28 + (hashAt(seed, 7316, slot.id, 0) % 441) / 1000;
+    append('regional', start + margin * (.25 + (hashAt(seed, 7317, slot.id, 0) % 501) / 1000), width, peak, strength, slot.id, 0);
+    const wanted = slot.kind === 'fractured' ? 3 + hashAt(seed, 7330, slot.id, 0) % 3 : slot.kind === 'bay' ? 1 + hashAt(seed, 7330, slot.id, 0) % 2 : slot.kind === 'cape' ? 1 : 0;
+    const weights = Array.from({ length: wanted }, (_, i) => 500 + hashAt(seed, 7331, slot.id, i) % 1001), sum = weights.reduce((a, b) => a + b, 0);
+    const clusterLength = length * (slot.kind === 'fractured' ? .70 : .78), clusterStart = start + (length - clusterLength) * (.2 + (hashAt(seed, 7332, slot.id, 0) % 601) / 1000);
+    let used = 0;
+    for (let i = 0; i < wanted && localCount < 36; i++) {
+      const low = clusterLength * used / sum; used += weights[i]; const high = clusterLength * used / sum, span = high - low;
+      const width = slot.kind === 'fractured' ? Math.min(64 * 256, span * .76) : span * .66;
+      const positive = hashAt(seed, 7333, slot.id, i) % 2 ? 1 : -1, magnitude = slot.kind === 'fractured' ? .23 + hashAt(seed, 7334, slot.id, i) % 91 / 1000 : .10 + hashAt(seed, 7334, slot.id, i) % 121 / 1000;
+      const before = features.length;
+      append('local', clusterStart + low + (span - width) * (.2 + (hashAt(seed, 7335, slot.id, i) % 601) / 1000), width,
+        .34 + hashAt(seed, 7336, slot.id, i) % 321 / 1000, positive * magnitude, slot.id * 8 + i, 30);
+      if (features.length !== before) localCount++;
+    }
+    await checkpoint(control, 'plan-natural-coast-features', features.length, NATURAL_COAST_PLAN_LIMITS.features);
+  }
+  // Ascending starts permit a bounded lookup without allocating per-node data.
+  regions.sort((a, b) => a.startQ - b.startQ);
+  return { features, regions };
+}
 
 /** Plan broad bays/capes and smaller shoulder features once per private
  * generation. Unequal physical intervals, off-center peaks and shuffled
@@ -221,11 +284,14 @@ export async function createNaturalCoastArcPlan(input: { seed: number; perimeter
   const { seed, perimeterQ, structureWorld } = input;
   if (!Number.isInteger(seed) || !Number.isSafeInteger(perimeterQ) || perimeterQ <= 0 || !Number.isInteger(structureWorld) || structureWorld < 0 || structureWorld > 160
     || !Number.isInteger(batch) || batch < 64 || batch > 2048) throw new Error('自然湾岬规划参数无效。');
-  const features: NaturalCoastFeature[] = [], binCount = NATURAL_COAST_PLAN_LIMITS.bins;
+  const features: NaturalCoastFeature[] = [], regions: NaturalCoastRegion[] = [], binCount = NATURAL_COAST_PLAN_LIMITS.bins;
   await checkpoint(control, 'plan-natural-coast-features', 0, NATURAL_COAST_PLAN_LIMITS.features);
   // Do not force the minimum event count into a perimeter too small for the
   // 2-world real coast lattice. The existing literal/capped outline remains.
-  if (structureWorld > 0 && perimeterQ >= 96 * 256) {
+  if (structureWorld > 0 && perimeterQ >= 2048 * 256) {
+    const planned = await regionalCoastFeatures(seed, perimeterQ, control);
+    features.push(...planned.features); regions.push(...planned.regions);
+  } else if (structureWorld > 0 && perimeterQ >= 96 * 256) {
     // A normal continent needs several primary bays and capes, including
     // narrow deep ones. Shrink reach with the whole usable shore on a tiny
     // island, not with every individual event's width on a large continent.
@@ -295,8 +361,38 @@ export async function createNaturalCoastArcPlan(input: { seed: number; perimeter
     // cancel the important bay/cape as the previous 2:3 harmonics could.
     return regional + local * (1 - (regional / FIELD_Q) ** 2);
   };
+  const sampleDetail = (arcQ: number, uQ: number, vQ: number, maximumDisplacementWorld: number) => {
+    if (!Number.isFinite(arcQ) || !Number.isFinite(uQ) || !Number.isFinite(vQ) || !Number.isFinite(maximumDisplacementWorld) || maximumDisplacementWorld < 0 || maximumDisplacementWorld > 64) throw new Error('自然沿岸细节查询无效。');
+    if (!regions.length) return roundRatio(3 * noiseQ12(seed, 7113, uQ, vQ, 48 * 256) + noiseQ12(seed, 7114, uQ, vQ, 12 * 256), 4);
+    const arc = (arcQ % perimeterQ + perimeterQ) % perimeterQ;
+    let lo = 0, hi = regions.length;
+    while (lo < hi) { const middle = (lo + hi) >>> 1; if (regions[middle].startQ <= arc) lo = middle + 1; else hi = middle; }
+    const region = regions[(lo + regions.length - 1) % regions.length], distance = (arc - region.startQ + perimeterQ) % perimeterQ;
+    const phase = Math.min(1, distance / region.transitionQ, (region.lengthQ - distance) / region.transitionQ), blend = phase * phase * (3 - 2 * phase);
+    const slow = noiseQ12(seed, 7340, uQ, vQ, 96 * 256), medium = noiseQ12(seed, 7341, uQ, vQ, 24 * 256);
+    const common = .25 * (.8 * slow + .2 * medium);
+    let detail: number;
+    if (region.kind === 'bay') detail = .45 * (.8 * slow + .2 * medium);
+    else if (region.kind === 'cape') {
+      const mediumWeight = maximumDisplacementWorld > 0 ? Math.min(.55 * .65, 6 / maximumDisplacementWorld) : 0;
+      const slowWeight = maximumDisplacementWorld > 0 ? Math.min(.55 - mediumWeight, 24 / maximumDisplacementWorld) : 0;
+      detail = slowWeight * slow + mediumWeight * medium;
+    }
+    else if (region.kind === 'quiet') detail = .15 * (.9 * slow + .1 * medium);
+    else {
+      // Each detail band moves the final shoreline by at most wavelength/4:
+      // 96 -> 24, 24 -> 6, 8 -> 2 world. Reassigned fine weight cannot turn the
+      // medium band into another deep needle. Unused gain is allowed; caps
+      // still separately protect narrow facing shores and the original pen.
+      const fineWeight = maximumDisplacementWorld > 0 ? Math.min(.65, 2 / maximumDisplacementWorld) : 0;
+      const mediumWeight = maximumDisplacementWorld > 0 ? Math.min(1 - fineWeight, 6 / maximumDisplacementWorld) : 0;
+      const slowWeight = maximumDisplacementWorld > 0 ? Math.min(1 - fineWeight - mediumWeight, 24 / maximumDisplacementWorld) : 0;
+      detail = slowWeight * slow + mediumWeight * medium + fineWeight * noiseQ12(seed, 7342, uQ, vQ, 8 * 256);
+    }
+    return Math.round(common + (detail - common) * blend);
+  };
   await checkpoint(control, 'index-natural-coast-features', references, references);
-  return { sample, features: features.map(feature => ({ ...feature })), stats: { features: features.length, references, maximumCandidates, bins: binCount } };
+  return { sample, sampleDetail, features: features.map(feature => ({ ...feature })), regions: regions.map(region => ({ ...region })), stats: { features: features.length, references, maximumCandidates, bins: binCount } };
 }
 
 /** Legacy numerical oracle, retained for historic periodic-seam checks.

@@ -1,0 +1,547 @@
+{
+  "originalFrozenPackagePreserved": true,
+  "originalEvidenceFiles": 84,
+  "supportingCaptureFiles": 6,
+  "files": [
+    {
+      "path": "build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/build.json",
+      "bytes": 9456,
+      "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+    },
+    {
+      "path": "frozen-source/src/history/core.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/history/core.ts",
+      "bytes": 13976,
+      "sha256": "8f0f70def4b5d67b164ae45904b177c3826bf6872ddb1cc0e46ec25e5976cbbf"
+    },
+    {
+      "path": "frozen-source/src/history/types.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/history/types.ts",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "path": "frozen-source/src/sim/core.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/sim/core.ts",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "path": "frozen-source/src/sim/statecraft.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/sim/statecraft.ts",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "path": "frozen-source/src/sim/types.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/sim/types.ts",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "path": "frozen-source/src/world/atlas-format.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/atlas-format.ts",
+      "bytes": 8219,
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "path": "frozen-source/src/world/coastal-generation.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/coastal-generation.ts",
+      "bytes": 8132,
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc"
+    },
+    {
+      "path": "frozen-source/src/world/coastal-surface.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/coastal-surface.ts",
+      "bytes": 13494,
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-base.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-base.ts",
+      "bytes": 1110,
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-codec.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-codec.ts",
+      "bytes": 8040,
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-field.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-field.ts",
+      "bytes": 1689,
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-geometry.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-geometry.ts",
+      "bytes": 14666,
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-locks.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-locks.ts",
+      "bytes": 9809,
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b"
+    },
+    {
+      "path": "frozen-source/src/world/detail-coast-types.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/detail-coast-types.ts",
+      "bytes": 4394,
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "frozen-source/src/world/generation-contract.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation-contract.ts",
+      "bytes": 34413,
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "path": "frozen-source/src/world/generation-format.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation-format.ts",
+      "bytes": 12978,
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e"
+    },
+    {
+      "path": "frozen-source/src/world/generation-history.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation-history.ts",
+      "bytes": 15540,
+      "sha256": "a9f27eecae703c41210e4de196009de3b0d3aa781dffe0eb1df9beb11660c848"
+    },
+    {
+      "path": "frozen-source/src/world/generation-locks.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation-locks.ts",
+      "bytes": 16953,
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "path": "frozen-source/src/world/generation/coast.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/coast.ts",
+      "bytes": 16967,
+      "sha256": "58b45c9ea0ebf686914d524fd3a559563fcccfe261c824fdee1ad9fc3a35c83f"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-curved-ridge.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-curved-ridge.ts",
+      "bytes": 17154,
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-local-background.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-local-background.ts",
+      "bytes": 8795,
+      "sha256": "569e8b233b8bd633b33ac5ae0b1f840ea0a01d759ff0d45616a575008a593026"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-local-relief.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-local-relief.ts",
+      "bytes": 28182,
+      "sha256": "57da7cc4417c440436c41de84a4d370fe24e2f06eed0614f42fe1ab07f2b9050"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-natural-outline.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-natural-outline.ts",
+      "bytes": 24650,
+      "sha256": "7ef733e218d67727cee7ddf8d940e8e52b73886fa49092378085caa7f3b9a364"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-natural-relief.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17402,
+      "sha256": "83cf27c58cd38bbfbe01e7c2487416cc219b21366d07895302b0b7fc72c5851a"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-orography.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-orography.ts",
+      "bytes": 24085,
+      "sha256": "191ce20cc291361b868e48fe920cc3fee7d86b6bdf234dd07d37c82b65b00c85"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-adapter.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-adapter.ts",
+      "bytes": 7449,
+      "sha256": "8af2ee5f2f40f385574a2175fae11e3bef2b6bdd47e841f08819307a822ed919"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-add-adapter.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-add-adapter.ts",
+      "bytes": 7553,
+      "sha256": "cf34d708ea3deb1eee316ca8e64a62363939e5da8343063f4c57e4872334c0b2"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-add.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-add.ts",
+      "bytes": 21310,
+      "sha256": "dcca8160f238cbfe2daf14668b993858dc2a48841948db72af303e124b2661a8"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-distance.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-distance.ts",
+      "bytes": 17258,
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-height.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-height.ts",
+      "bytes": 2672,
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-adapter.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-natural-adapter.ts",
+      "bytes": 8133,
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-natural-add-adapter.ts",
+      "bytes": 7705,
+      "sha256": "a5caa025be0f3f2b748a9f9192df686366a22c2cfe230ec8b8ad5b2e4e694384"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural-add.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-natural-add.ts",
+      "bytes": 21608,
+      "sha256": "73420adaf66fe15c3c0d220492d28a2e77900b10895ee6c424e888a111ed33f1"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape-natural.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape-natural.ts",
+      "bytes": 31688,
+      "sha256": "ea2ea400bb65eb40abd21d86abc9b7299407ec6aea68111b3fe4a53a15396b15"
+    },
+    {
+      "path": "frozen-source/src/world/generation/detail-shape.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/detail-shape.ts",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "path": "frozen-source/src/world/generation/fingerprint.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/fingerprint.ts",
+      "bytes": 1159,
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a"
+    },
+    {
+      "path": "frozen-source/src/world/generation/islands.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/islands.ts",
+      "bytes": 20467,
+      "sha256": "d2984c7fd9bcf32fee4b1f865742dbf51e975a08c7695189fa8700ee4020047a"
+    },
+    {
+      "path": "frozen-source/src/world/generation/landforms.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/landforms.ts",
+      "bytes": 19225,
+      "sha256": "a5a6c319ded7c5b8906b31ba634bb482db96fa2032c9b9717b21d1f011393221"
+    },
+    {
+      "path": "frozen-source/src/world/generation/local-detail-relief-adapter.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/local-detail-relief-adapter.ts",
+      "bytes": 6694,
+      "sha256": "f30ed01b8da79e3e286b1ba676c8b7db3fbe4f8f26ff96c8442b5d102e4a9635"
+    },
+    {
+      "path": "frozen-source/src/world/generation/macro.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/macro.ts",
+      "bytes": 19697,
+      "sha256": "f226d6141b0fc1730a86396217d68131ef589d16ccaf2de84847b65c0e1a770f"
+    },
+    {
+      "path": "frozen-source/src/world/generation/natural-ocean-base.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/natural-ocean-base.ts",
+      "bytes": 4244,
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8"
+    },
+    {
+      "path": "frozen-source/src/world/generation/ocean.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/ocean.ts",
+      "bytes": 13207,
+      "sha256": "4a5205c0a7a36c36de817041779481f8b8bf2984b5354589a11864bb4bd1d3ae"
+    },
+    {
+      "path": "frozen-source/src/world/generation/quality.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/quality.ts",
+      "bytes": 7319,
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    },
+    {
+      "path": "frozen-source/src/world/generation/seed.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "path": "frozen-source/src/world/generation/shape.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/generation/shape.ts",
+      "bytes": 13546,
+      "sha256": "34d62cdd03f285ad55666e1ec85ca78f83019fa03ebc3c72cc589999a60c195a"
+    },
+    {
+      "path": "frozen-source/src/world/model.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/model.ts",
+      "bytes": 27883,
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "path": "frozen-source/src/world/topology.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-source/src/world/topology.ts",
+      "bytes": 9633,
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb"
+    },
+    {
+      "path": "frozen-tool/scripts/engine-fingerprint.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-tool/scripts/engine-fingerprint.ts",
+      "bytes": 3378,
+      "sha256": "3f4604b5fdbf24361af21229d66999f2e4f874f17224c1428425edec0175c7a5"
+    },
+    {
+      "path": "frozen-tool/scripts/generator-fingerprint.ts",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/frozen-tool/scripts/generator-fingerprint.ts",
+      "bytes": 4746,
+      "sha256": "cf05b382d2fab6ea6ba7cf4e9676873001547db1e8edaf89d7e380966fef8446"
+    },
+    {
+      "path": "original-archive-files.sha256.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-archive-files.sha256.json",
+      "bytes": 37477,
+      "sha256": "d196c2e948d6224e0296c7d0276bb1daa77de64cc851bb165576007e11de7e9b"
+    },
+    {
+      "path": "original-archive-verification.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-archive-verification.json",
+      "bytes": 8887,
+      "sha256": "6fb8b0977d2c06af27de38224878e354e25f93c66104118adafd750526269b92"
+    },
+    {
+      "path": "original-first/identity-verification.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/identity-verification.json",
+      "bytes": 416,
+      "sha256": "4bfe410eef806d2139ca96c5a6f5e2c7e837f98d60a18af48aeb98a6d4ef9f00"
+    },
+    {
+      "path": "original-first/lint.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "original-first/plan.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "original-first/pre-run-build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/pre-run-build.json",
+      "bytes": 9456,
+      "sha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3"
+    },
+    {
+      "path": "original-first/prior-build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/prior-build.json",
+      "bytes": 9456,
+      "sha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5"
+    },
+    {
+      "path": "original-first/scope.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/scope.json",
+      "bytes": 2507,
+      "sha256": "887e51a20e3a1f2e477be3d3ef652a9cad1c286da26a8e3b041baa8302a58ab2"
+    },
+    {
+      "path": "original-first/source-after.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/source-after.json",
+      "bytes": 49554,
+      "sha256": "bd182e7cafe61c716bbde583885e57b3073aa0f8d2229ce210af1c6f612b695b"
+    },
+    {
+      "path": "original-first/source-before.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/source-before.json",
+      "bytes": 49554,
+      "sha256": "bd182e7cafe61c716bbde583885e57b3073aa0f8d2229ce210af1c6f612b695b"
+    },
+    {
+      "path": "original-first/types.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "original-first/unit.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/unit.json",
+      "bytes": 62786,
+      "sha256": "c2026d69a318b9071982f83082a85f938e6cf87f96febbe2f87760f9ba26c779"
+    },
+    {
+      "path": "original-first/unit.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/unit.log",
+      "bytes": 105,
+      "sha256": "bc0695b1eb32496634605f38c7475a3e58e89c1e7b82a58b42cb0631492a3167"
+    },
+    {
+      "path": "original-first/verification.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-first/verification.json",
+      "bytes": 5529,
+      "sha256": "73f8a2c8c52c809c9242bf2e197cb15d1dba47b582f6b2b8b067b24d35dcffae"
+    },
+    {
+      "path": "original-visual-review.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/original-visual-review.json",
+      "bytes": 2300,
+      "sha256": "16347fb3bf5fbbef5b94022f5e48dc48a0b6a1f6412dd3522bdf563bdfe1d49b"
+    },
+    {
+      "path": "provenance.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/provenance.json",
+      "bytes": 56038,
+      "sha256": "0175b131c77c66ca6dac9924890a7013a5b45c82cae54e118b3a188f7f3b0caf"
+    },
+    {
+      "path": "references.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/references.json",
+      "bytes": 10919,
+      "sha256": "9c354d0b561a6d8b7aafd472ba5b9eea32e435c0da30c1a6b04c532ed3e2ef71"
+    },
+    {
+      "path": "source-package.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/source-package.json",
+      "bytes": 1720,
+      "sha256": "7d36820c44b65999a9ff2fe4faed7ad6b43c3e18612a811d4d31255634b59443"
+    },
+    {
+      "path": "verified-preview20/build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/build.json",
+      "bytes": 9456,
+      "sha256": "71c67dd44b5b1c3a8f75ec59cbeeea4e07c96432aa9ad0bc0179403d4999e018"
+    },
+    {
+      "path": "verified-preview20/build.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/build.log",
+      "bytes": 1866,
+      "sha256": "37bdce57a0f8202a2ece37fdcfafb7c5b6980cdfcf6da82c61ec3607dd3e18d5"
+    },
+    {
+      "path": "verified-preview20/dist-audit.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "path": "verified-preview20/identity-verification.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/identity-verification.json",
+      "bytes": 31249,
+      "sha256": "8b74c0eda7019451d33ddf6aa2de7d452791859d028159ff5a52977462ff91e5"
+    },
+    {
+      "path": "verified-preview20/lint.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "verified-preview20/plan.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "path": "verified-preview20/pre-run-build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/pre-run-build.json",
+      "bytes": 9456,
+      "sha256": "5bbb6ce970fc4c04970bf4c6c1f8dc5b9023b905543bd57fa0c5e10d79b27bf3"
+    },
+    {
+      "path": "verified-preview20/prior-build.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/prior-build.json",
+      "bytes": 9456,
+      "sha256": "444d8380a0a4a5c8a42f99c7baeb3dfc5d0ef30b303f4e8571e622f27babdcd5"
+    },
+    {
+      "path": "verified-preview20/scope.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/scope.json",
+      "bytes": 2516,
+      "sha256": "43c8d3050cea0c686d83993112840c8ba464bc311ec968d7161d0381540bfdc5"
+    },
+    {
+      "path": "verified-preview20/source-after.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/source-after.json",
+      "bytes": 49554,
+      "sha256": "2c8f8d087bf2ac369827aa8e68144da16696de1a12a312ca91db2feb2ce6a01e"
+    },
+    {
+      "path": "verified-preview20/source-before.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/source-before.json",
+      "bytes": 49554,
+      "sha256": "2c8f8d087bf2ac369827aa8e68144da16696de1a12a312ca91db2feb2ce6a01e"
+    },
+    {
+      "path": "verified-preview20/types.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "verified-preview20/unit.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/unit.json",
+      "bytes": 63283,
+      "sha256": "ff0bb1893f40968505d9ed626eff6d44d0fb9b31ac8996e1edad21458c26f3aa"
+    },
+    {
+      "path": "verified-preview20/unit.log",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/unit.log",
+      "bytes": 114,
+      "sha256": "0a35a49c64a0623ca4fe80d1f4a3e312decc12fb2a88a3fc1cf19ffc44355acd"
+    },
+    {
+      "path": "verified-preview20/verification.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/verified-preview20/verification.json",
+      "bytes": 9859,
+      "sha256": "5665f222ddce0a8d7f5a7fd42391e0d9134c7f8275499759a3486e36e1cd4e0d"
+    },
+    {
+      "path": "inventory.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/evidence/preview20/inventory.json",
+      "bytes": 14616,
+      "sha256": "2ba5c53382fe7853ffb4c00877a90d6b086cea5b41a29fd0be3c4ec57b33d0d0"
+    },
+    {
+      "path": "capture/ready-manifest.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/ready-manifest.json",
+      "bytes": 2798,
+      "sha256": "d493528b03e19873105aa1c20e6f831983c9f0cf3dcd91a6e94ea25e234b088b"
+    },
+    {
+      "path": "capture/capture.mjs",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/capture.mjs",
+      "bytes": 17454,
+      "sha256": "73a3006063f5bd3c892761c52133fbfec41e1929041d080b3a5bc4716499631b"
+    },
+    {
+      "path": "capture/verify.mjs",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/verify.mjs",
+      "bytes": 6398,
+      "sha256": "4b605d70128b4c844c1bc07c64b0552f4be010c1de7a0942ca060a8daa65f43e"
+    },
+    {
+      "path": "capture/capture-result.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/capture-result.json",
+      "bytes": 935,
+      "sha256": "1883a9581498cdf8795bfe3da6b1c52e16843e8eab95027e7b63a35c011a0f3c"
+    },
+    {
+      "path": "capture/self-check.json",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/self-check.json",
+      "bytes": 811,
+      "sha256": "857479e19aa8daa1aa51c007a2f3f99fd3a893a2476c6bb0a2d83e31bd0ece59"
+    },
+    {
+      "path": "capture/README.md",
+      "source": ".autopilot/ph06/v4-preview20-history-staging/README.md",
+      "bytes": 4051,
+      "sha256": "6efb3b7cc996c7d1f0c48b280701918cbf3cb93e3340a9fc6952a48e4b405101"
+    }
+  ]
+}

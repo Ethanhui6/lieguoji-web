@@ -1,0 +1,14 @@
+[
+  {
+    "path": "src/world/generation-history.ts",
+    "sha256": "82b278ff4aaa06b4105749d7318a9905c15c30034222fd08584607abe0f1b0be"
+  },
+  {
+    "path": "src/world/generation-preview20-history.test.ts",
+    "sha256": "22f7d639c4f3f51ff3f6bc784a91704140c70450c544d0505ff8f80d6fc16de8"
+  },
+  {
+    "path": ".gitattributes",
+    "sha256": "59a25c9ae4ab19f3020465f78f89f906166ddd9b21104de8e239b58756aaece5"
+  }
+]

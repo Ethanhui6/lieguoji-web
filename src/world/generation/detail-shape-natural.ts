@@ -193,7 +193,7 @@ export async function generateDetailShapeNatural(input: { base: EmptyDetailShape
       const shoreX = edge.a.xQ + roundRatio((edge.b.xQ - edge.a.xQ) * nearest.t, Q20);
       const shoreY = edge.a.yQ + roundRatio((edge.b.yQ - edge.a.yQ) * nearest.t, Q20);
       const u = roundRatio(3 * shoreX - 4 * shoreY, 5), v = roundRatio(4 * shoreX + 3 * shoreY, 5);
-      const detail = roundRatio(3 * noiseQ12(seed, 7113, u, v, 48 * 256) + noiseQ12(seed, 7114, u, v, 12 * 256), 4);
+      const detail = coastPlan.sampleDetail(arc, u, v, amplitude / 256 * recipe.coastRoughnessWorld / budget);
       value += roundRatio(amplitude * (recipe.coastStructureWorld * structural + recipe.coastRoughnessWorld * detail), budget * FIELD_Q);
     }
     for (let id = 0; id < islands.length; id++) {

@@ -2435,13 +2435,13 @@
         "scope": "Bounded v2 research terrain to independent editable Atlas v4; preview/cancel/save/reload/local relief/country creation passed on desktop and mobile emulation with synthetic and actual kernel export."
       }
     ],
-    "sourceCommit": null,
+    "sourceCommit": "a570fb55dd2dd42eb307beb62f98b1ba013ea2f4",
     "originalPointCoordinatesRecovered": true,
     "originalNativeAdjacencyRecovered": false,
     "previousSourceCommit": "9e6937253e5c57b3c452540c3dfcc8a5f30dace0",
     "version": "0.5.0-preview.32",
     "buildBaseCommit": "a3b2d566f45e9efb777c4272f96ccfc55077151b",
     "buildSha256": "06e9e981b889cc7eb8023abbf04f05d89fae61a8ca234b343d014276475059e9",
-    "commitNote": "Local source/evidence commit recorded in following handoff commit; build metadata retains actual base commit."
+    "commitNote": "Source and evidence committed locally; this pointer and handoff are recorded in the subsequent documentation commit."
   }
 }

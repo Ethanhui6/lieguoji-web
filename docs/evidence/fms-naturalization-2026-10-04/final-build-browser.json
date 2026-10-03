@@ -1,0 +1,11 @@
+{
+  "result": {
+    "result": {
+      "type": "string",
+      "value": "{\"commit\":\"632d7d536a8f28d731b6458bb0b2111eedb8f208\",\"version\":\"0.5.0-preview.33\",\"app\":{\"testid\":\"fms-app\",\"revision\":\"2\",\"landCells\":\"1362\",\"dirty\":\"false\",\"terrainPhase\":\"idle\",\"showOriginal\":\"false\"},\"surface\":{\"testid\":\"fms-canvas\",\"minHeight\":\"0\",\"maxHeight\":\"81\",\"riverSegments\":\"154\",\"lakeCells\":\"0\"},\"resources\":[\"http://127.0.0.1:5181/assets/FmsApp-BCTzjAYz.js\",\"http://127.0.0.1:5181/assets/FmsApp-Cgid0cFl.css\",\"http://127.0.0.1:5181/assets/terrain.worker-CVvvBpES.js\"]}"
+    }
+  },
+  "logs": [],
+  "unchangedBehaviorEvidenceReused": "production-browser.json",
+  "finalFix": "same-seed noop does not produce preview/history"
+}

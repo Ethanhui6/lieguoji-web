@@ -2499,7 +2499,7 @@
       "phaseId": "WEB-PH02",
       "status": "not_run",
       "physicalDevice": "not_run",
-      "mobileEmulation": "not_run",
+      "mobileEmulation": "partial-engineering-only",
       "userVisualAcceptance": "pending",
       "blocksExpansionTo": [
         "WEB-PH03",
@@ -2507,7 +2507,7 @@
         "WEB-PH05",
         "WEB-PH06"
       ],
-      "note": "Historical preview.33 checks do not satisfy this gate; fix drawing/terrain until accepted."
+      "note": "428x926 Chromium布局/鼠标/DOM合成触摸与本批地形操作已有工程证据；不是iPhone/WebKit实机。完整WEB-02-02和真机/用户视觉门仍未通过，不能进入国家等阶段。"
     },
     "unknowns": [
       "complete original brush workflow video",
@@ -2543,7 +2543,14 @@
       "scripts/check-v5-plan.test.mjs",
       "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
       "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
-      "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+      "docs/evidence/fms-drawing-entry-2026-10-04/verification.json",
+      "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
+      "docs/evidence/fms-naturalization-2026-10-04/browser-checks.json",
+      "docs/evidence/fms-naturalization-2026-10-04/production-browser.json",
+      "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
+      "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
+      "docs/evidence/fms-naturalization-2026-10-04/verification.json",
+      "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2709,7 +2716,15 @@
           "PH09"
         ],
         "acceptance": "保形自然化、海岸海洋与连续缩放；手机真实操作与用户视觉通过后才能扩建国家",
-        "evidence": [],
+        "evidence": [
+          "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
+          "docs/evidence/fms-naturalization-2026-10-04/browser-checks.json",
+          "docs/evidence/fms-naturalization-2026-10-04/production-browser.json",
+          "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
+          "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
+          "docs/evidence/fms-naturalization-2026-10-04/verification.json",
+          "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+        ],
         "workItems": [
           {
             "id": "WEB-02-01",
@@ -2717,9 +2732,22 @@
             "dependsOn": [
               "WEB-01-02"
             ],
-            "status": "todo",
+            "status": "in_progress",
             "acceptance": "锁主体形状，试验复用高度核，真实地貌水系且保留主要海湾/狭颈",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
+              "docs/evidence/fms-naturalization-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-naturalization-2026-10-04/production-browser.json",
+              "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
+              "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
+              "docs/evidence/fms-naturalization-2026-10-04/verification.json",
+              "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+            ],
+            "progress": "恢复Hill Add/Max与当前自然化同输入试验已记录；8文件181测试通过，真实Chromium生成/取消/确认/撤销/保存刷新与生产CSP Worker加载通过，完整证据绑定源码632d7d5。 已完成基础工程切片，但计划中的显式可调细化带和局部区域锁定尚未实现，不能将整项标done。",
+            "remaining": [
+              "显式可调海岸细化带，保护宽海湾/狭颈/长海岬/小岛的不对称样本",
+              "玩家锁定区域在换种子/重生成时保持高程不变，接入撤销/保存和候选校验"
+            ]
           },
           {
             "id": "WEB-02-02",
@@ -2729,7 +2757,11 @@
             ],
             "status": "todo",
             "acceptance": "同输入直接地形/Atlas转换对照，无接缝跳变，显示/拾取/保存一致",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
+              "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg"
+            ],
+            "progress": "前置尚未完成。已保留直接渲染与约2倍缩放的早期观察，不作为本项启动或完成证据；待WEB-02-01细化带和局部锁完成后进行同输入Atlas转换及完整海岸/海洋/缩放对照。"
           },
           {
             "id": "WEB-02-03",
@@ -2865,6 +2897,37 @@
         "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
         "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
         "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+      ],
+      "scope": "历史WEB-PH01绘图底座快照；后续自然化见naturalizationPrototype，不把此快照的false作为当前能力。"
+    },
+    "naturalizationPrototype": {
+      "sourceCommit": "e044e460438a2a8de2d7ec3bd8f06ff071a3b75f",
+      "entry": "/?fms=1",
+      "database": "lieguoji-fms-web-v1",
+      "status": "local-base-terrain-slice-verified; adjustable-band-and-region-locks-pending",
+      "algorithm": "fms-shape-preserving-relief-v1",
+      "naturalizationImplemented": true,
+      "derivedHydrology": "deterministic-static-wet-condition-drainage; not original climate/erosion",
+      "mobileViewport": "428x926 desktop Chromium; not physical iPhone or WebKit",
+      "history": "candidate isolated; confirm as one patch; cancel/undo/redo/save/reload checked",
+      "generationParametersPersisted": false,
+      "firstPlayableGatePassed": false,
+      "limitations": [
+        "sample mask preserved; interpolated coastline may move within triangles",
+        "coast/ocean and direct-versus-Atlas comparison incomplete",
+        "36864-point web topology and 1536 units are not final map scale",
+        "load/edit derived drainage currently on main thread; phone performance unmeasured",
+        "terrain heights saved; generation settings session-only; hydrology version contract required before simulation",
+        "WEB-02-01 adjustable refinement band and player-locked regions not implemented"
+      ],
+      "evidence": [
+        "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
+        "docs/evidence/fms-naturalization-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-naturalization-2026-10-04/production-browser.json",
+        "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
+        "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
+        "docs/evidence/fms-naturalization-2026-10-04/verification.json",
+        "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
       ]
     }
   }

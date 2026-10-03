@@ -90,6 +90,7 @@ docs/evidence/fms-hill-recovery-2026-10-04/** -text whitespace=cr-at-eol
 docs/evidence/fms-brush-input-2026-10-04/** -text whitespace=cr-at-eol
 docs/evidence/fms-brush-numeric-2026-10-04/** -text whitespace=cr-at-eol
 docs/evidence/fms-drawing-entry-2026-10-04/** -text whitespace=cr-at-eol
+docs/evidence/fms-naturalization-2026-10-04/** -text whitespace=cr-at-eol
 # Preserve reviewed third-party notices byte-for-byte, including their trailing newlines.
 public/terrain-licenses.txt -text whitespace=cr-at-eol,-blank-at-eof
 src/world/recovered-terrain/licenses/** -text whitespace=cr-at-eol,-blank-at-eof

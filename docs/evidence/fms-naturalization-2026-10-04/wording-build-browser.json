@@ -1,0 +1,10 @@
+{
+  "result": {
+    "result": {
+      "type": "string",
+      "value": "{\"commit\":\"e044e460438a2a8de2d7ec3bd8f06ff071a3b75f\",\"app\":{\"testid\":\"fms-app\",\"revision\":\"2\",\"landCells\":\"1362\",\"dirty\":\"false\",\"terrainPhase\":\"idle\",\"showOriginal\":\"false\"},\"surface\":{\"testid\":\"fms-canvas\",\"minHeight\":\"0\",\"maxHeight\":\"81\",\"riverSegments\":\"154\",\"lakeCells\":\"0\"},\"resources\":[\"http://127.0.0.1:5181/assets/FmsApp-DYODZnhl.js\",\"http://127.0.0.1:5181/assets/FmsApp-Cgid0cFl.css\"]}"
+    }
+  },
+  "logs": [],
+  "scope": "UI wording only; restored production world unchanged. Full behavior evidence reused from production-browser.json and final-build-browser.json."
+}

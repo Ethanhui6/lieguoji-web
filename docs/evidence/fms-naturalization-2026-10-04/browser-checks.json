@@ -1,0 +1,359 @@
+{
+  "recordedAt": "2026-10-03T19:16:48.019Z",
+  "source": "CUA Chromium browser; localhost5180; real UI plus CDP developer fault injection",
+  "viewport": {
+    "width": 428,
+    "height": 926,
+    "physicalDevice": false
+  },
+  "cases": [
+    {
+      "case": "preview-uncommitted",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "6",
+        "showOriginal": "false",
+        "terrainPhase": "preview",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "compare-original",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "6",
+        "showOriginal": "true",
+        "terrainPhase": "preview",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "0",
+        "maxHeight": "45",
+        "minHeight": "0",
+        "riverSegments": "0",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "compare-candidate",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "6",
+        "showOriginal": "false",
+        "terrainPhase": "preview",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "cancel-preview",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "6",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已取消地形预览，原地图保持不变。",
+      "surface": {
+        "lakeCells": "0",
+        "maxHeight": "45",
+        "minHeight": "0",
+        "riverSegments": "0",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "cancelled-preview-stored-check",
+      "stored": {
+        "checksum": "f73c7f66f71ae9a0560fbace32c053616fa950dd10c401829ab56098a8972c04",
+        "storedRevision": 3,
+        "revision": 6
+      }
+    },
+    {
+      "case": "regenerated-preview-stored-check",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "6",
+        "showOriginal": "false",
+        "terrainPhase": "preview",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "f73c7f66f71ae9a0560fbace32c053616fa950dd10c401829ab56098a8972c04",
+        "storedRevision": 3,
+        "revision": 6
+      }
+    },
+    {
+      "case": "confirm",
+      "app": {
+        "dirty": "true",
+        "landCells": "9985",
+        "revision": "7",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "自然地形已应用，可整步撤销。保存后刷新仍保留山地和河湖。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "f73c7f66f71ae9a0560fbace32c053616fa950dd10c401829ab56098a8972c04",
+        "storedRevision": 3,
+        "revision": 6
+      }
+    },
+    {
+      "case": "undo-naturalization",
+      "app": {
+        "dirty": "true",
+        "landCells": "9985",
+        "revision": "8",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已撤销上一笔。",
+      "surface": {
+        "lakeCells": "0",
+        "maxHeight": "45",
+        "minHeight": "0",
+        "riverSegments": "0",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "redo-naturalization",
+      "app": {
+        "dirty": "true",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已重做上一笔。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "save-naturalization",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已保存到此浏览器，刷新后可以继续。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "faa8c0ef77a532e2f2f810a079e22e25195d7e23f2d7322a3e5534a85765a0e1",
+        "storedRevision": 4,
+        "revision": 9
+      }
+    },
+    {
+      "case": "refresh-naturalization",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已恢复本机地图，可以继续绘制。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "faa8c0ef77a532e2f2f810a079e22e25195d7e23f2d7322a3e5534a85765a0e1",
+        "storedRevision": 4,
+        "revision": 9
+      }
+    },
+    {
+      "case": "cancel-running-worker",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已取消地形预览，原地图保持不变。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "faa8c0ef77a532e2f2f810a079e22e25195d7e23f2d7322a3e5534a85765a0e1",
+        "storedRevision": 4,
+        "revision": 9
+      }
+    },
+    {
+      "case": "regenerate-after-worker-cancel",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "preview",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "403",
+        "maxHeight": "83",
+        "minHeight": "0",
+        "riverSegments": "686",
+        "testid": "fms-canvas"
+      }
+    },
+    {
+      "case": "context-loss-discards-candidate",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "地形已生成。缩放查看，确认后可保存；海陆轮廓保持不变。",
+      "surface": {
+        "lakeCells": "403",
+        "maxHeight": "83",
+        "minHeight": "0",
+        "riverSegments": "686",
+        "testid": "fms-canvas"
+      },
+      "saveEnabled": true
+    },
+    {
+      "case": "context-loss-saves-only-committed",
+      "stored": {
+        "checksum": "e2947a3f7fcbef320a3ba26fc462e7d4d6fdae66ff85704753253bac138b4f06",
+        "storedRevision": 5,
+        "revision": 9
+      }
+    },
+    {
+      "case": "reload-after-preview-context-loss",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "已恢复本机地图，可以继续绘制。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "e2947a3f7fcbef320a3ba26fc462e7d4d6fdae66ff85704753253bac138b4f06",
+        "storedRevision": 5,
+        "revision": 9
+      }
+    },
+    {
+      "case": "same-seed-idempotent-no-empty-preview",
+      "app": {
+        "dirty": "false",
+        "landCells": "9985",
+        "revision": "9",
+        "showOriginal": "false",
+        "terrainPhase": "idle",
+        "testid": "fms-app"
+      },
+      "notice": "当前地形已与这些参数一致，可在绘图设置中调整种子或起伏强度。",
+      "surface": {
+        "lakeCells": "11",
+        "maxHeight": "100",
+        "minHeight": "0",
+        "riverSegments": "631",
+        "testid": "fms-canvas"
+      },
+      "stored": {
+        "checksum": "e2947a3f7fcbef320a3ba26fc462e7d4d6fdae66ff85704753253bac138b4f06",
+        "storedRevision": 5,
+        "revision": 9
+      }
+    }
+  ],
+  "runningCancellation": {
+    "observedPhase": "generating",
+    "method": "UI click followed by requestAnimationFrame cancel, through CDP"
+  },
+  "notes": [
+    "Initial two stored-summary probes returned no structured value; subsequent JSON probes recorded explicit stored checksums/revisions.",
+    "Envelope checksum includes save metadata; re-saving identical document may change it. Surface data and revision verify restored terrain.",
+    "Context-loss surface data attributes retain the last candidate while rendering is unavailable; after reload committed terrain is recomputed.",
+    "No native iOS or WebKit verification; no original-game visual equivalence."
+  ],
+  "logs": []
+}

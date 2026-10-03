@@ -15,6 +15,7 @@
 .fms-header h1 { font-size:22px;font-weight:500;letter-spacing:3px;font-family:"Songti SC",SimSun,serif; }
 .fms-kicker { font-size:10px;letter-spacing:2px;opacity:.8; }
 .fms-header button { pointer-events:auto; }
+.fms-header .fms-header-actions { display:flex;gap:8px;text-shadow:none; }
 .fms-save { display:flex;gap:10px;align-items:center;box-shadow:0 2px 8px #162f3929; }
 .fms-unsaved,.fms-saved { width:6px;height:6px;border-radius:50%;background:#987b33; }
 .fms-saved { background:#778760; }
@@ -34,6 +35,7 @@
 .fms-toolbar nav button { min-width:63px;border-color:transparent;display:flex;align-items:center;justify-content:center;gap:7px; }
 .fms-toolbar nav button[aria-pressed="true"] { background:var(--active);color:#fbf5dd;border-color:#586449; }
 .fms-toolbar nav button[aria-pressed="true"]:hover:not(:disabled) { background:#5f6c4d;color:#fbf5dd; }
+.fms-toolbar nav button[aria-pressed="true"]:disabled { opacity:1;background:#c5ccb1;color:#465139;border-color:#a7ae97; }
 .fms-toolbar nav button>span { font-size:19px;line-height:1; }
 .fms-actions { padding-left:8px;border-left:1px solid #c1c3af; }
 .fms-actions button { padding:4px;min-width:44px;border-color:transparent;font-size:24px; }
@@ -43,7 +45,18 @@
 .fms-panel-heading button { border:0;font-size:24px;padding:0;background:none; }
 .fms-settings label { display:block;margin:8px 0;font-size:13px; }
 .fms-settings output { float:right;color:var(--muted);font-variant-numeric:tabular-nums; }
-.fms-settings input { display:block;width:100%;height:38px;margin:0;accent-color:var(--active); }
+.fms-settings input { display:block;width:100%;height:44px;margin:0;accent-color:var(--active); }
+.fms-settings input:not([type="range"]) { margin-top:5px;padding:8px;border:1px solid var(--border);background:#f4f1e5;color:var(--ink);user-select:text; }
+.fms-settings fieldset { margin:12px 0 6px;padding:0 10px 4px;border:1px solid #bec1ad; }
+.fms-settings legend { padding:0 5px;font-size:12px; }
+.fms-settings { max-height:calc(100dvh - 220px);overflow-y:auto;overscroll-behavior:contain; }
+.fms-terrain-preview { width:100%;max-width:470px;margin-bottom:8px;padding:14px;background:var(--paper);border:1px solid var(--border);box-shadow:0 4px 18px #183b4355; }
+.fms-terrain-preview strong { font-weight:500; }
+.fms-terrain-preview p { margin:5px 0 12px;color:var(--muted);font-size:12px; }
+.fms-terrain-preview>div { display:flex;gap:8px;justify-content:flex-end; }
+.fms-terrain-preview button { flex:1; }
+.fms-terrain-preview .fms-confirm { background:var(--active);color:#fbf5dd; }
+.fms-terrain-preview .fms-confirm:hover:not(:disabled) { background:#5f6c4d; }
 .fms-settings p { font-size:11px;color:var(--muted);line-height:1.7; }
 @media(max-width:600px) {
  .fms-header { left:16px;right:16px;top:max(14px,env(safe-area-inset-top)); }

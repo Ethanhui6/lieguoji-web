@@ -49,6 +49,7 @@ export class FmsRenderer {
   private scene = new Container();
   private overlay = new Graphics();
   private rivers = new Graphics();
+  private protection = new Graphics();
   private surfaces = new WeakMap<Int32Array, { drainage: FmsDrainage; shade: Float32Array; relief: number }>();
   private geometry?: Geometry;
   private shader?: Shader;
@@ -96,7 +97,7 @@ export class FmsRenderer {
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
       this.bound = new Graphics().rect(0,0,doc.width,doc.height).stroke({ width: 1, color: 0xb0c1be, alpha: .25 });
-      this.scene.addChild(this.mesh, this.rivers, this.bound, this.overlay); this.worldId = doc.worldId;
+      this.scene.addChild(this.mesh, this.rivers, this.protection, this.bound, this.overlay); this.worldId = doc.worldId;
     } else if (this.geometry) {
       const buffer = this.geometry.getBuffer('aHeight'); buffer.data = Float32Array.from(doc.elevations); buffer.update();
       const shades=this.geometry.getBuffer('aShade');shades.data=surface.shade;shades.update();
@@ -113,6 +114,21 @@ export class FmsRenderer {
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
     this.canvas.dataset.riverSegments=String(surface.relief>=6?surface.drainage.riverSegments.length:0);
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
+    this.protection.clear();
+    let lockedTriangles=0;
+    const edges=new Map<string,{a:number;b:number;count:number}>(),covered=new Uint8Array(doc.points.length);
+    if(doc.terrainLocks){
+      for(let offset=0;offset<doc.triangles.length;offset+=3){
+        const ids=[doc.triangles[offset],doc.triangles[offset+1],doc.triangles[offset+2]];
+        if(!ids.every(id=>doc.terrainLocks![id]))continue;
+        lockedTriangles++;this.protection.poly(ids.flatMap(id=>doc.points[id])).fill({color:0xe8c57b,alpha:.14});
+        for(let i=0;i<3;i++){covered[ids[i]]=1;const a=Math.min(ids[i],ids[(i+1)%3]),b=Math.max(ids[i],ids[(i+1)%3]),key=`${a}:${b}`,edge=edges.get(key);if(edge)edge.count++;else edges.set(key,{a,b,count:1});}
+      }
+      for(const {a,b,count}of edges.values())if(count===1)this.protection.moveTo(...doc.points[a]).lineTo(...doc.points[b]).stroke({width:2.4,color:0xf3d293,alpha:.95});
+      doc.terrainLocks.forEach((locked,id)=>{if(locked&&!covered[id])this.protection.circle(...doc.points[id],2.4).fill({color:0xf3d293,alpha:.95});});
+    }
+    this.canvas.dataset.lockedCells=String(doc.terrainLocks?.reduce((sum,value)=>sum+value,0)??0);
+    this.canvas.dataset.lockedTriangles=String(lockedTriangles);
     this.draw();
   }
   setCamera(camera: AtlasCamera): void {

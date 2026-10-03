@@ -16,7 +16,7 @@ export function prepareFmsTerrainPreview(document: FmsDocument, candidate: {
   for (let cell = 0; cell < candidate.elevations.length; cell++) {
     const previous = document.elevations[cell], next = candidate.elevations[cell];
     if (next < 0 || next > 100 || (previous >= FMS_SEA_LEVEL) !== (next >= FMS_SEA_LEVEL)
-      || (previous > FMS_SEA_LEVEL && next === FMS_SEA_LEVEL) || (coastLocks[cell] && next !== previous)) {
+      || (previous > FMS_SEA_LEVEL && next === FMS_SEA_LEVEL) || ((coastLocks[cell] || document.terrainLocks?.[cell]) && next !== previous)) {
       throw new FmsModelError('invalid-edit', '地形预览改变了锁定的海陆轮廓，未应用。');
     }
     if (next !== previous) changes.push(Object.freeze({ cell, previous, next }));

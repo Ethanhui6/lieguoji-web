@@ -99,6 +99,19 @@ describe('isolated FMS terrain Worker client', () => {
     current().reply(response); await rejection;
     expect(doc.elevations).toEqual(Int32Array.of(45, 0, 0));
   });
+  it('freezes requested player locks and rejects a forged protected interior change', async () => {
+    const doc = fixture(); doc.elevations.fill(45); doc.version = 2; doc.terrainLocks = Uint8Array.of(1, 0, 0);
+    const instance = client(), pending = instance.naturalize(doc, options), response = success();
+    expect(response.elevations[0]).toBe(45);
+    const rejection = expect(pending).rejects.toMatchObject({ code: 'invalid-response' });
+    response.elevations[0] = 44;
+    // Keep numeric summary valid so rejection must include the lock contract.
+    const heights = Array.from(response.elevations); response.stats.changedCells = heights.filter(h => h !== 45).length;
+    response.stats.minLandHeight = Math.min(...heights); response.stats.maxLandHeight = Math.max(...heights); response.stats.meanLandHeight = heights.reduce((a,b)=>a+b,0)/3;
+    response.drainage = deriveFmsDrainage({ ...doc, elevations: response.elevations });
+    current().reply(response); await rejection;
+    expect(doc.terrainLocks).toEqual(Uint8Array.of(1,0,0));
+  });
   it.each(['error', 'messageerror', 'worker-error'] as const)('settles %s and starts a fresh Worker after failure', async fault => {
     const instance = client();
     const pending = instance.naturalize(fixture(), options), worker = current(), rejection = expect(pending).rejects.toBeInstanceOf(Error);

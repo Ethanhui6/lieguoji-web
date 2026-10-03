@@ -58,6 +58,11 @@
 .fms-terrain-preview .fms-confirm { background:var(--active);color:#fbf5dd; }
 .fms-terrain-preview .fms-confirm:hover:not(:disabled) { background:#5f6c4d; }
 .fms-settings p { font-size:11px;color:var(--muted);line-height:1.7; }
+.fms-lock-actions { display:flex;gap:8px;margin:8px 0; }
+.fms-lock-actions button { flex:1;font-size:12px;padding:6px; }
+.fms-settings .fms-upgrade-note { margin-top:6px;color:#6d542b; }
+.fms-lock-mode { align-self:stretch;display:flex;align-items:center;justify-content:space-between;background:#e5d6b3;border:1px solid #a08a60;padding:3px 8px;margin-bottom:5px; }
+.fms-lock-mode button { min-height:44px;border:0;background:transparent; }
 @media(max-width:600px) {
  .fms-header { left:16px;right:16px;top:max(14px,env(safe-area-inset-top)); }
  .fms-header h1 { font-size:20px; }

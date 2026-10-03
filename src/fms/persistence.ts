@@ -23,11 +23,12 @@ export interface FmsStoredSnapshot {
   sourceStoredRevision: number;
   storedAt: string;
   recovery: 'none' | 'backup';
+  requiresProtectionUpgrade?: true;
 }
 
 interface FmsSaveEnvelope {
   format: typeof FMS_SAVE_FORMAT;
-  version: 1;
+  version: 1 | 2;
   storedRevision: number;
   storedAt: string;
   checksum: string;
@@ -52,9 +53,9 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function rejectIncompatible(raw: unknown): void {
   if (!record(raw)) return;
-  if (('format' in raw && raw.format !== FMS_SAVE_FORMAT) || ('version' in raw && raw.version !== 1)) throw future();
+  if (('format' in raw && raw.format !== FMS_SAVE_FORMAT) || ('version' in raw && raw.version !== 1 && raw.version !== 2)) throw future();
   if (record(raw.document) && (('format' in raw.document && raw.document.format !== 'lieguoji-fms-world')
-    || ('version' in raw.document && raw.document.version !== 1))) throw future();
+    || ('version' in raw.document && raw.document.version !== 1 && raw.document.version !== 2))) throw future();
 }
 
 function validRevision(value: unknown): value is number {
@@ -86,6 +87,7 @@ async function checksum(envelope: Omit<FmsSaveEnvelope, 'checksum'>): Promise<st
       revision: document.revision, width: document.width, height: document.height,
       points: document.points, triangles: Array.from(document.triangles),
       neighbors: document.neighbors, elevations: Array.from(document.elevations),
+      ...(document.version === 2 ? { terrainLocks: Array.from(document.terrainLocks!) } : {}),
     },
   }));
   try {
@@ -97,15 +99,16 @@ async function checksum(envelope: Omit<FmsSaveEnvelope, 'checksum'>): Promise<st
 async function decodeEnvelope(raw: unknown): Promise<FmsSaveEnvelope> {
   rejectIncompatible(raw);
   const keys = ['format', 'version', 'storedRevision', 'storedAt', 'checksum', 'document'];
-  if (!record(raw) || raw.format !== FMS_SAVE_FORMAT || raw.version !== 1
+  if (!record(raw) || raw.format !== FMS_SAVE_FORMAT || (raw.version !== 1 && raw.version !== 2)
     || Object.keys(raw).length !== keys.length || Object.keys(raw).some(key => !keys.includes(key))
     || !validRevision(raw.storedRevision) || typeof raw.storedAt !== 'string'
     || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(raw.storedAt)
     || !Number.isFinite(Date.parse(raw.storedAt))
     || typeof raw.checksum !== 'string' || !/^[a-f0-9]{64}$/.test(raw.checksum)) throw corrupt();
   validateDocument(raw.document);
+  if (raw.version !== raw.document.version) throw corrupt();
   const envelope: FmsSaveEnvelope = {
-    format: FMS_SAVE_FORMAT, version: 1, storedRevision: raw.storedRevision,
+    format: FMS_SAVE_FORMAT, version: raw.version, storedRevision: raw.storedRevision,
     storedAt: raw.storedAt, checksum: raw.checksum, document: raw.document,
   };
   if (envelope.checksum !== await checksum(envelope)) throw corrupt();
@@ -135,18 +138,24 @@ async function checkSlots(raw: RawSlots): Promise<CheckedSlots> {
   return { revision: raw.revision, current, backup };
 }
 
-function openDatabase(): Promise<IDBDatabase> {
+function openDatabase(version = 1): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     let abandoned = false;
     let request: IDBOpenDBRequest;
-    try { request = indexedDB.open(FMS_DATABASE_NAME, FMS_DATABASE_VERSION); }
+    try { request = indexedDB.open(FMS_DATABASE_NAME, version); }
     catch { reject(unavailable()); return; }
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
+    request.onupgradeneeded = () => {
+      if (abandoned) { request.transaction?.abort(); return; }
+      if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
+    };
     request.onblocked = () => {
       abandoned = true;
       reject(new FmsPersistenceError('unavailable', '另一窗口阻止打开地形存档，请关闭该窗口后重试。'));
     };
-    request.onerror = () => reject(request.error?.name === 'VersionError' ? future() : unavailable());
+    request.onerror = () => {
+      if (request.error?.name === 'VersionError' && version === 1 && !abandoned) { void openDatabase(2).then(resolve, reject); return; }
+      reject(request.error?.name === 'VersionError' ? future() : unavailable());
+    };
     request.onsuccess = () => {
       const database = request.result;
       if (abandoned) { database.close(); return; }
@@ -177,11 +186,59 @@ function snapshot(envelope: FmsSaveEnvelope, revision: number, recovery: FmsStor
 /** Reads never repair slots or open any legacy game database. */
 export async function loadFmsDocument(): Promise<FmsStoredSnapshot | null> {
   const database = await openDatabase();
+  const databaseVersion = database.version;
   const raw = await readSlots(database).finally(() => database.close());
   const checked = await checkSlots(raw);
   if (checked.revision === null) return null;
-  if (checked.current) return snapshot(checked.current, checked.revision, 'none');
-  return snapshot(checked.backup!, checked.revision, 'backup');
+  const result = snapshot(checked.current ?? checked.backup!, checked.revision, checked.current ? 'none' : 'backup');
+  if (databaseVersion === 2 && result.document.version === 1) result.requiresProtectionUpgrade = true;
+  return result;
+}
+
+function writeCheckedSlots(transaction: IDBTransaction, beforeIdentity: string, checked: CheckedSlots, envelope: FmsSaveEnvelope): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const store = transaction.objectStore(STORE);
+    const current = store.get('current'), backup = store.get('backup'), firstProtection = store.get('beforeProtection'), counter = store.get('revision');
+    let failure: FmsPersistenceError | null = null;
+    counter.onsuccess = () => {
+      try {
+        rejectIncompatible(current.result); rejectIncompatible(backup.result);
+        const actual: RawSlots = { current: current.result, backup: backup.result, revision: counter.result };
+        if (JSON.stringify(actual) !== beforeIdentity) throw conflict();
+        const original = checked.current ?? checked.backup;
+        if (envelope.version === 2 && original?.version === 1 && firstProtection.result === undefined) store.put(original, 'beforeProtection');
+        if (checked.current) store.put(checked.current, 'backup');
+        store.put(envelope, 'current'); store.put(envelope.storedRevision, 'revision');
+      } catch (error) { failure = error instanceof FmsPersistenceError ? error : unavailable(); transaction.abort(); }
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = transaction.onabort = () => reject(failure ?? unavailable());
+  });
+}
+
+/** Upgrade and first protected save share a versionchange transaction. A failed
+ * CAS/write aborts both; abandoned blocked requests must never write later.
+ * DB v2 also rejects old open(name,1) clients if current loses its format header. */
+function upgradeProtectedSave(beforeIdentity: string, checked: CheckedSlots, envelope: FmsSaveEnvelope): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let abandoned = false, write: Promise<void> | undefined, failure: unknown;
+    const request = indexedDB.open(FMS_DATABASE_NAME, 2);
+    request.onblocked = () => { abandoned = true; reject(new FmsPersistenceError('unavailable', '另一窗口阻止启用地形保护，请关闭旧试玩窗口后重试。')); };
+    request.onupgradeneeded = () => {
+      if (abandoned) { request.transaction?.abort(); return; }
+      write = writeCheckedSlots(request.transaction!, beforeIdentity, checked, envelope);
+      void write.catch(error => { failure = error; });
+    };
+    request.onerror = () => reject(failure ?? (request.error?.name === 'VersionError' ? future() : unavailable()));
+    request.onsuccess = () => {
+      const db = request.result;
+      if (abandoned) { db.close(); return; }
+      db.onversionchange = () => db.close();
+      // Another compatible client may have upgraded between read and open.
+      write ??= writeCheckedSlots(db.transaction(STORE, 'readwrite'), beforeIdentity, checked, envelope);
+      void write.then(resolve, reject).finally(() => db.close());
+    };
+  });
 }
 
 /** null is create-only. Hashing finishes before the atomic CAS/backup/current transaction. */
@@ -191,7 +248,7 @@ export async function saveFmsDocument(document: FmsDocument, expectedStoredRevis
   const copy = snapshotDocument(document);
   const revision = (expectedStoredRevision ?? 0) + 1;
   const payload: Omit<FmsSaveEnvelope, 'checksum'> = {
-    format: FMS_SAVE_FORMAT, version: 1, storedRevision: revision, storedAt: new Date().toISOString(), document: copy,
+    format: FMS_SAVE_FORMAT, version: copy.version, storedRevision: revision, storedAt: new Date().toISOString(), document: copy,
   };
   const envelope: FmsSaveEnvelope = { ...payload, checksum: await checksum(payload) };
   const database = await openDatabase();
@@ -200,32 +257,12 @@ export async function saveFmsDocument(document: FmsDocument, expectedStoredRevis
     const checked = await checkSlots(before);
     if (checked.revision !== expectedStoredRevision) throw conflict();
     const previous = checked.current ?? checked.backup;
+    if (copy.version === 1 && (database.version === 2 || [before.current, before.backup].some(slot => record(slot) && (slot.version === 2 || (record(slot.document) && slot.document.version === 2))))) throw future();
     if (previous && (copy.worldId !== previous.document.worldId || copy.revision < previous.document.revision)) throw conflict();
     // Raw equality also catches concurrent writers that failed to update the CAS counter.
     const beforeIdentity = JSON.stringify(before);
-    await new Promise<void>((resolve, reject) => {
-      let transaction: IDBTransaction;
-      try { transaction = database.transaction(STORE, 'readwrite'); } catch { reject(unavailable()); return; }
-      const store = transaction.objectStore(STORE);
-      const current = store.get('current'), backup = store.get('backup'), counter = store.get('revision');
-      let failure: FmsPersistenceError | null = null;
-      counter.onsuccess = () => {
-        try {
-          rejectIncompatible(current.result);
-          rejectIncompatible(backup.result);
-          const actual: RawSlots = { current: current.result, backup: backup.result, revision: counter.result };
-          if (JSON.stringify(actual) !== beforeIdentity) throw conflict();
-          if (checked.current) store.put(checked.current, 'backup');
-          store.put(envelope, 'current');
-          store.put(revision, 'revision');
-        } catch (error) {
-          failure = error instanceof FmsPersistenceError ? error : unavailable();
-          transaction.abort();
-        }
-      };
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = transaction.onabort = () => reject(failure ?? unavailable());
-    });
+    if (copy.version === 2 && database.version === 1) { database.close(); await upgradeProtectedSave(beforeIdentity, checked, envelope); }
+    else await writeCheckedSlots(database.transaction(STORE, 'readwrite'), beforeIdentity, checked, envelope);
     return snapshot(envelope, revision, 'none');
   } finally { database.close(); }
 }

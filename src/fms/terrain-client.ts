@@ -32,18 +32,22 @@ function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Sna
     || !(doc.elevations instanceof Int32Array) || doc.elevations.length !== doc.points.length
     || !(doc.triangles instanceof Uint32Array) || doc.triangles.length > doc.points.length * 6
     || !Array.isArray(doc.neighbors) || doc.neighbors.length !== doc.points.length
+    || ![1, 2].includes(doc.version) || (doc.version === 1 && doc.terrainLocks !== undefined)
+    || (doc.version === 2 && (!(doc.terrainLocks instanceof Uint8Array) || doc.terrainLocks.length !== doc.points.length || doc.terrainLocks.some(value => value !== 0 && value !== 1)))
     || doc.neighbors.some(row => !Array.isArray(row) || row.length > 128 || row.some(cell => !integer(cell, 0, doc.points.length - 1)))
     || !exact(options, ['seed', 'strength']) || !integer(options.seed, 0, 0xffff_ffff) || !finite(options.strength, 0, 1)) {
     throw new FmsTerrainClientError('invalid-request', '地形文档、种子或自然化强度无效。');
   }
-  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks: fixedFmsCoastVertices(doc), neighbors: doc.neighbors.map(row => [...row]), options: { ...options } };
+  const coastLocks = fixedFmsCoastVertices(doc);
+  doc.terrainLocks?.forEach((value, id) => { if (value) coastLocks[id] = 1; });
+  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks, neighbors: doc.neighbors.map(row => [...row]), options: { ...options } };
 }
 
 function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsNaturalizationStats {
   const count = elevations.length;
   if (!exact(raw, ['algorithm', 'seed', 'strength', 'landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'minLandHeight', 'maxLandHeight',
     'meanLandHeight', 'meanCoastHeight', 'meanInteriorHeight', 'maxDistanceToCoast', 'fallbackBoundaryComponents', 'landMaskPreserved'])
-    || raw.algorithm !== 'fms-shape-preserving-relief-v2' || raw.seed !== source.options.seed || raw.strength !== source.options.strength || raw.landMaskPreserved !== true) return false;
+    || raw.algorithm !== 'fms-shape-preserving-relief-v3' || raw.seed !== source.options.seed || raw.strength !== source.options.strength || raw.landMaskPreserved !== true) return false;
   for (const key of ['landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'fallbackBoundaryComponents']) if (!integer(raw[key], 0, count)) return false;
   for (const key of ['minLandHeight', 'maxLandHeight', 'meanLandHeight']) if (!finite(raw[key], 0, 100)) return false;
   for (const key of ['meanCoastHeight', 'meanInteriorHeight']) if (raw[key] !== null && !finite(raw[key], 0, 100)) return false;

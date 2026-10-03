@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FmsDocument } from './model';
+import { commitFmsEdit, prepareFmsLockEdit, type FmsDocument } from './model';
 import { FMS_DATABASE_NAME, FmsPersistenceError, loadFmsDocument, saveFmsDocument } from './persistence';
 
 function document(revision = 0, height = 0): FmsDocument {
@@ -13,7 +13,7 @@ function document(revision = 0, height = 0): FmsDocument {
   };
 }
 
-async function database(version = 1): Promise<IDBDatabase> {
+async function database(version?: number): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(FMS_DATABASE_NAME, version);
     request.onupgradeneeded = () => {
@@ -50,6 +50,87 @@ async function replace(key: string, value: unknown, remove = false): Promise<voi
 
 type RawEnvelope = Record<string, unknown> & { document: FmsDocument; checksum: string; storedRevision: number; storedAt: string };
 const rawEnvelope = (value: unknown) => structuredClone(value) as RawEnvelope;
+const withLocks = (doc: FmsDocument) => commitFmsEdit(doc, prepareFmsLockEdit(doc, [{ x: 1, y: 1, radius: 1 }], true));
+async function protectionBackup(): Promise<unknown> {
+  const db = await database();
+  try { return await new Promise((resolve, reject) => { const request = db.transaction('saves', 'readonly').objectStore('saves').get('beforeProtection'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
+  finally { db.close(); }
+}
+
+describe('protected document v2 opt-in and old-client isolation', () => {
+  it('keeps ordinary v1 reads/saves on DB1, then atomically stores v2 locks with a durable v1 checkpoint', async () => {
+    const original = document(1, 45); await saveFmsDocument(original, null);
+    const old = (await slots()).current; const oldDb = await database(); expect(oldDb.version).toBe(1); oldDb.close();
+    expect((await loadFmsDocument())!.document.version).toBe(1);
+    const locked = withLocks(original); await saveFmsDocument(locked, 1);
+    const db = await database(); expect(db.version).toBe(2); db.close();
+    expect((await loadFmsDocument())!.document).toEqual(locked);
+    expect(rawEnvelope((await slots()).current).version).toBe(2);
+    expect((await slots()).backup).toEqual(old); expect(await protectionBackup()).toEqual(old);
+    const later = { ...locked, revision: locked.revision + 1, terrainLocks: locked.terrainLocks!.slice() }; later.terrainLocks[0] = 0;
+    await saveFmsDocument(later, 2);
+    expect(await protectionBackup()).toEqual(old); // The rolling backup may change, this checkpoint must not.
+    later.terrainLocks.fill(0); expect((await loadFmsDocument())!.document.terrainLocks!.some(Boolean)).toBe(true);
+  });
+  it.each(['deleted', 'versionless', 'locks-tampered'] as const)('DB2 rejects old open(name,1) even when current is %s; new recovery declares missing locks', async fault => {
+    const original = document(1, 45); await saveFmsDocument(original, null); await saveFmsDocument(withLocks(original), 1);
+    if (fault === 'deleted') await replace('current', undefined, true);
+    else if (fault === 'versionless') await replace('current', { broken: true });
+    else { const raw = rawEnvelope((await slots()).current); raw.document.terrainLocks![0] = 0; await replace('current', raw); }
+    await expect(database(1)).rejects.toMatchObject({ name: 'VersionError' });
+    const recovered = await loadFmsDocument();
+    expect(recovered).toMatchObject({ recovery: 'backup', requiresProtectionUpgrade: true, document: { version: 1 } });
+    const before = await slots();
+    await expect(saveFmsDocument({ ...original, revision: 10 }, 2)).rejects.toMatchObject({ code: 'future' });
+    expect(await slots()).toEqual(before);
+    await saveFmsDocument(withLocks(recovered!.document), 2);
+    expect((await loadFmsDocument())!.document.version).toBe(2);
+  });
+  it('protects lock bytes with checksum and recovers the prior v2 mask instead of trusting altered locks', async () => {
+    const locked = withLocks(document(1, 45)); await saveFmsDocument(locked, null);
+    await saveFmsDocument({ ...locked, revision: 3 }, 1);
+    const raw = rawEnvelope((await slots()).current); raw.document.terrainLocks!.fill(0); await replace('current', raw);
+    const recovered = await loadFmsDocument(); expect(recovered!.recovery).toBe('backup'); expect(recovered!.document.terrainLocks).toEqual(locked.terrainLocks);
+    expect(recovered!.requiresProtectionUpgrade).toBeUndefined();
+  });
+  it('archives the valid v1 backup if first opt-in starts from recovered, damaged v1 current', async () => {
+    await saveFmsDocument(document(1, 45), null); await saveFmsDocument(document(2, 60), 1);
+    const original = (await slots()).backup;
+    const broken = rawEnvelope((await slots()).current); broken.document.elevations[0] = 99; await replace('current', broken);
+    const recovered = await loadFmsDocument(); expect(recovered!.recovery).toBe('backup');
+    const locked = withLocks(recovered!.document); await saveFmsDocument(locked, 2);
+    expect(await protectionBackup()).toEqual(original);
+    await saveFmsDocument({ ...locked, revision: locked.revision + 1 }, 3);
+    expect(await protectionBackup()).toEqual(original);
+  });
+  it('rolls back both DB schema upgrade and slots if first protected save aborts', async () => {
+    const original = document(1, 45); await saveFmsDocument(original, null); const before = await slots();
+    const put = IDBObjectStore.prototype.put;
+    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function(this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
+      if (this.transaction.mode === 'versionchange' && key === 'revision') { this.transaction.abort(); throw new Error('injected protected upgrade write failure'); }
+      return put.call(this, value, key);
+    });
+    await expect(saveFmsDocument(withLocks(original), 1)).rejects.toMatchObject({ code: 'unavailable' }); vi.restoreAllMocks();
+    const db = await database(1); expect(db.version).toBe(1); db.close();
+    expect(await slots()).toEqual(before); expect(await protectionBackup()).toBeUndefined();
+  });
+  it('does not upgrade or write later after a blocked request already reported failure', async () => {
+    const original = document(1, 45); await saveFmsDocument(original, null); const before = await slots();
+    const blocker = await database(1); blocker.onversionchange = () => {};
+    await expect(saveFmsDocument(withLocks(original), 1)).rejects.toMatchObject({ code: 'unavailable' });
+    blocker.close();
+    const db = await database(1); expect(db.version).toBe(1); db.close();
+    expect(await slots()).toEqual(before); expect(await protectionBackup()).toBeUndefined();
+  });
+  it('serializes two first protected saves with the same CAS token without losing the original checkpoint', async () => {
+    const original = document(1, 45); await saveFmsDocument(original, null); const before = (await slots()).current;
+    const outcomes = await Promise.allSettled([saveFmsDocument(withLocks(original), 1), saveFmsDocument(withLocks(original), 1)]);
+    expect(outcomes.filter(x => x.status === 'fulfilled')).toHaveLength(1);
+    const rejected = outcomes.find(x => x.status === 'rejected') as PromiseRejectedResult;
+    expect(rejected.reason).toMatchObject({ code: 'conflict' });
+    expect((await loadFmsDocument())!.storedRevision).toBe(2); expect(await protectionBackup()).toEqual(before);
+  });
+});
 
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -59,7 +140,8 @@ describe('独立 FMS 地形文档存档保护', () => {
     const open = vi.spyOn(indexedDB, 'open');
     expect(await loadFmsDocument()).toBeNull();
     expect(await slots()).toEqual({ current: undefined, backup: undefined, revision: undefined });
-    expect(open.mock.calls.every(([name, version]) => name === 'lieguoji-fms-web-v1' && version === 1)).toBe(true);
+    expect(open.mock.calls.every(([name]) => name === 'lieguoji-fms-web-v1')).toBe(true);
+    expect(open.mock.calls[0]).toEqual(['lieguoji-fms-web-v1', 1]);
   });
 
   it('真实 IndexedDB 往返 typed arrays，存储计数独立于编辑计数且无对象共享', async () => {
@@ -188,10 +270,10 @@ describe('独立 FMS 地形文档存档保护', () => {
   });
 
   it('未来数据库版本不可被当前代码打开或降级', async () => {
-    const db = await database(2); db.close();
+    const db = await database(3); db.close();
     await expect(loadFmsDocument()).rejects.toMatchObject({ code: 'future' });
     await expect(saveFmsDocument(document(), null)).rejects.toMatchObject({ code: 'future' });
-    const current = await database(2); expect(current.version).toBe(2); current.close();
+    const current = await database(3); expect(current.version).toBe(3); current.close();
   });
 
   it.each([undefined, -1, 0, 0.5, NaN, Infinity, '2'])('损坏存储计数 %s 保留槽且不覆盖', async revision => {

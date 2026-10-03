@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cameraScaleBounds, fitCamera, resizeCamera, zoomCameraAt, type AtlasCamera, type CameraPoint, type CameraSize } from '../world/camera';
-import { createFmsDocument, FmsEditHistory, prepareFmsBrushEdit, prepareFmsOutlineEdit, type FmsDocument, type FmsEditPatch } from './model';
+import { createFmsDocument, FmsEditHistory, prepareFmsBrushEdit, prepareFmsLockEdit, prepareFmsOutlineEdit, type FmsDocument, type FmsEditPatch } from './model';
 import { loadFmsDocument, saveFmsDocument } from './persistence';
 import { FmsGestures } from './gestures';
 import { FmsRenderer } from './renderer';
@@ -9,12 +9,14 @@ import { prepareFmsTerrainPreview } from './terrain-preview';
 import type { FmsDrainage } from './hydrology';
 import './fms.css';
 
-type Tool = 'browse' | 'outline' | 'land' | 'sea';
+type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock';
 const tools: { id: Tool; name: string; symbol: string; help: string }[] = [
   { id:'browse',name:'浏览',symbol:'✥',help:'单指移动地图，双指缩放。' },
   { id:'outline',name:'轮廓',symbol:'◇',help:'一笔描出大陆，松手闭合。双指随时转为移动或缩放。' },
   { id:'land',name:'陆地',symbol:'▲',help:'涂出陆地，也可以把岛屿连起来。双指移动或缩放。' },
   { id:'sea',name:'海洋',symbol:'≈',help:'擦出海湾、水道或内海。双指移动或缩放。' },
+  { id:'lock',name:'保护',symbol:'▣',help:'涂抹要保留的地形。金色区域固定高程，生成与笔刷都不会改写。' },
+  { id:'unlock',name:'解锁',symbol:'□',help:'涂抹解除保护。松手后可继续修改，也可撤销解锁。' },
 ];
 interface Session {
   history: FmsEditHistory; renderer: FmsRenderer; camera: AtlasCamera; viewport: CameraSize; gestures: FmsGestures;
@@ -36,8 +38,8 @@ export default function FmsApp() {
   const terrainClient=useRef<FmsTerrainClient|null>(null), terrainAbort=useRef<AbortController|null>(null), generationToken=useRef(0);
   const editable=ready&&!busy&&!fatal&&terrainPhase==='idle', navigable=ready&&!fatal;
   const setTerrainPhase=(phase:TerrainPhase)=>{terrainPhaseRef.current=phase;setTerrainPhaseState(phase);};
-  const [stats,setStats] = useState({ revision:0,land:0,undo:false,redo:false,dirty:false,zoom:1 });
-  const refresh = (s: Session) => setStats({ revision:s.history.document.revision,land:s.history.document.elevations.reduce((n,h)=>n+(h>=20?1:0),0),undo:s.history.canUndo,redo:s.history.canRedo,dirty:s.history.document.revision!==s.savedDocumentRevision,zoom:s.camera.scale/cameraScaleBounds(s.history.document,s.viewport).fitScale });
+  const [stats,setStats] = useState({ revision:0,land:0,locked:0,version:1,undo:false,redo:false,dirty:false,zoom:1 });
+  const refresh = (s: Session) => setStats({ revision:s.history.document.revision,land:s.history.document.elevations.reduce((n,h)=>n+(h>=20?1:0),0),locked:s.history.document.terrainLocks?.reduce((n,value)=>n+value,0)??0,version:s.history.document.version,undo:s.history.canUndo,redo:s.history.canRedo,dirty:s.history.document.revision!==s.savedDocumentRevision,zoom:s.camera.scale/cameraScaleBounds(s.history.document,s.viewport).fitScale });
 
   useEffect(()=>{
     const lifetime=new AbortController(); let disposed=false, renderer:FmsRenderer|undefined, observer:ResizeObserver|undefined;
@@ -66,9 +68,11 @@ export default function FmsApp() {
           try {
             const patch=active.tool==='outline'
               ?prepareFmsOutlineEdit(s.history.document,active.points.map(p=>[p.x,p.y]),active.height)
-              :prepareFmsBrushEdit(s.history.document,{tool:active.tool==='sea'?'sea':'land',height:active.height,stamps:active.points.map(p=>({...p,radius:active.radius}))});
+              :active.tool==='lock'||active.tool==='unlock'
+                ?prepareFmsLockEdit(s.history.document,active.points.map(p=>({...p,radius:active.radius})),active.tool==='lock')
+                :prepareFmsBrushEdit(s.history.document,{tool:active.tool==='sea'?'sea':'land',height:active.height,stamps:active.points.map(p=>({...p,radius:active.radius}))});
             const result=s.history.commit(patch); s.renderer.setDocument(result);refresh(s);
-            setNotice(patch.changes.length?'这一笔已完成，可撤销；保存后可以刷新继续。':'这一笔没有改变地图。');
+            setNotice(patch.lockChanges?.length?'保护区域已更新，可撤销；保存后刷新仍保留。':patch.changes.length?'这一笔已完成，可撤销；保存后可以刷新继续。':'这一笔没有改变地图；受保护地形需先解锁。');
           } catch(error) { setNotice(messageOf(error)); }
         },
       });
@@ -100,14 +104,14 @@ export default function FmsApp() {
         if(size.width<=0||size.height<=0||(size.width===s.viewport.width&&size.height===s.viewport.height))return;
         s.gestures.interrupt();s.camera=resizeCamera(s.camera,s.viewport,size,s.history.document);s.viewport=size;s.renderer.resize(size.width,size.height);s.renderer.setCamera(s.camera);refresh(s);
       }); observer.observe(host.current!);
-      refresh(s);setReady(true);setNotice(saved?(saved.recovery==='backup'?'已从有效备份恢复。确认地图后保存可修复当前记录。':'已恢复本机地图，可以继续绘制。'):'先描一块大陆，再用陆地与海洋笔刷修改。');
+      refresh(s);setReady(true);setNotice(saved?.requiresProtectionUpgrade?'保护存档损坏，已恢复不含保护区域的旧备份。重新启用保护后才能保存。':saved?(saved.recovery==='backup'?'已从有效备份恢复。确认地图后保存可修复当前记录。':'已恢复本机地图，可以继续绘制。'):'先描一块大陆，再用陆地与海洋笔刷修改。');
     };
     void start().catch(error=>{if(!disposed){setFatal(messageOf(error));setNotice('已有存档未被覆盖。');}});
     return()=>{disposed=true;lifetime.abort();generationToken.current++;terrainAbort.current?.abort();terrainClient.current?.close();terrainClient.current=null;terrainCandidate.current=null;observer?.disconnect();session.current?.gestures.reset();session.current=null;renderer?.destroy();};
   },[]);
 
   function documentVisibility(options: { signal: AbortSignal }, reset: () => void) { document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();},options); }
-  const choose = (next:Tool) => {session.current?.gestures.interrupt();setTool(next);setNotice(tools.find(t=>t.id===next)!.help);};
+  const choose = (next:Tool) => {session.current?.gestures.interrupt();setTool(next);setNotice(tools.find(t=>t.id===next)!.help);if(next==='lock'||next==='unlock')setExpanded(false);};
   const historyAction = (redo:boolean) => {const s=session.current;if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();const doc=redo?s.history.redo():s.history.undo();s.renderer.setDocument(doc);refresh(s);setNotice(redo?'已重做上一笔。':'已撤销上一笔。');};
   const zoom = (factor:number) => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=zoomCameraAt(s.camera,factor,{x:s.viewport.width/2,y:s.viewport.height/2},s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
   const fit = () => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=fitCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
@@ -149,7 +153,7 @@ export default function FmsApp() {
     catch(error){cancelTerrain(false);setNotice(messageOf(error));}
   };
   const compareTerrain=()=>{const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate)return;s.gestures.interrupt();s.renderer.setDocument(showOriginal?candidate.document:s.history.document,showOriginal?candidate.drainage:undefined);setShowOriginal(!showOriginal);};
-  return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
+  return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
     <div className="fms-map" ref={host}/>
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button onClick={()=>void generateTerrain()} disabled={!editable||stats.land===0}>生成地形</button><button className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}>{busy?'保存中…':'保存'}<span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{notice}</div>}
@@ -163,8 +167,10 @@ export default function FmsApp() {
         <label>笔刷半径 <output>{radius}</output><input type="range" min="8" max="160" step="4" value={radius} onChange={e=>{session.current?.gestures.interrupt();setRadius(+e.target.value);}} disabled={!editable}/></label>
         <label>陆地高度 <output>{height}</output><input type="range" min="25" max="100" step="1" value={height} onChange={e=>{session.current?.gestures.interrupt();setHeight(+e.target.value);}} disabled={!editable}/></label>
         <fieldset><legend>自然地形</legend><label>地形种子<input aria-label="地形种子" inputMode="numeric" value={seed} maxLength={10} onChange={e=>setSeed(e.target.value)} disabled={!editable}/></label><label>起伏强度 <output>{Math.round(strength*100)}%</output><input type="range" min="0.2" max="1" step="0.1" value={strength} onChange={e=>setStrength(+e.target.value)} disabled={!editable}/></label></fieldset><p>双指移动或缩放 · 松手完成一笔<br/>地图仅保存在当前浏览器</p>
+        <fieldset><legend>地形保护</legend><p>金色区域固定高程，笔刷和重新生成都会避开；阴影、河流仍可能变化。</p>{stats.version===1&&<p className="fms-upgrade-note">启用并保存后，旧试玩版本无法编辑此地图；保存时保留启用前备份。</p>}<div className="fms-lock-actions"><button onClick={()=>choose('lock')} disabled={!editable}>{stats.version===1?'启用并涂抹保护':'涂抹保护'}</button><button onClick={()=>choose('unlock')} disabled={!editable||stats.locked===0}>涂抹解锁</button></div><p>{stats.locked?'已有保护区域；解锁也是可撤销的一笔。':'尚未保护任何区域。'}</p></fieldset>
       </section>}
-      <div className="fms-toolbar"><nav aria-label="地图工具">{tools.map(t=><button key={t.id} onClick={()=>choose(t.id)} aria-pressed={tool===t.id} disabled={!editable}><span aria-hidden="true">{t.symbol}</span>{t.name}</button>)}</nav>
+      {(tool==='lock'||tool==='unlock')&&<div className="fms-lock-mode"><span>{tool==='lock'?'▣ 保护笔刷':'□ 解锁笔刷'}</span><button onClick={()=>choose('browse')} disabled={!editable}>完成</button></div>}
+      <div className="fms-toolbar"><nav aria-label="地图工具">{tools.filter(t=>t.id!=='lock'&&t.id!=='unlock').map(t=><button key={t.id} onClick={()=>choose(t.id)} aria-pressed={tool===t.id} disabled={!editable}><span aria-hidden="true">{t.symbol}</span>{t.name}</button>)}</nav>
       <div className="fms-actions"><button aria-label="撤销" onClick={()=>historyAction(false)} disabled={!editable||!stats.undo}>↶</button><button aria-label="重做" onClick={()=>historyAction(true)} disabled={!editable||!stats.redo}>↷</button><button aria-label="绘图设置" aria-expanded={expanded} onClick={()=>{session.current?.gestures.interrupt();setExpanded(!expanded);}} disabled={!editable}>☷</button></div></div>
     </div>
   </main>;

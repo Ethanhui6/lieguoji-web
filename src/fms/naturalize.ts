@@ -2,7 +2,7 @@ import { FIELD_Q, hashAt, noiseQ12 } from '../world/generation/seed';
 import { assertFmsDocument, FMS_SEA_LEVEL, type FmsDocument } from './model';
 import { fixedFmsCoastVertices } from './coastline';
 
-export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v2';
+export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v3';
 export interface FmsNaturalizationOptions { seed: number; strength: number }
 export interface FmsNaturalizationStats {
   algorithm: typeof FMS_NATURALIZATION_ALGORITHM;
@@ -153,7 +153,7 @@ export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizatio
   for (let cell = 0; cell < land.length; cell += 1) {
     if (!land[cell]) continue;
     const [x, y] = doc.points[cell], distance = distances[cell];
-    if (strength > 0 && !coastLocks[cell]) {
+    if (strength > 0 && !coastLocks[cell] && !doc.terrainLocks?.[cell]) {
       const warpX = x + field(11, x, y, wavelength * 2.1) * wavelength * 0.42;
       const warpY = y + field(17, x, y, wavelength * 2.1) * wavelength * 0.42;
       const u = warpX * cos - warpY * sin, v = warpX * sin + warpY * cos;

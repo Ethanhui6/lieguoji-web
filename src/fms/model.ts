@@ -11,14 +11,15 @@ const MAX_HISTORY_CELLS = 250_000, MAX_HISTORY_STEPS = 100;
 const EPSILON = 1e-8;
 export type FmsPoint = [number, number];
 export interface FmsDocument {
-  format: 'lieguoji-fms-world'; version: 1; worldId: string; revision: number;
+  format: 'lieguoji-fms-world'; version: 1 | 2; worldId: string; revision: number;
   width: number; height: number; points: FmsPoint[]; triangles: Uint32Array;
-  neighbors: number[][]; elevations: Int32Array;
+  neighbors: number[][]; elevations: Int32Array; terrainLocks?: Uint8Array;
 }
 export interface FmsCellChange { readonly cell: number; readonly previous: number; readonly next: number }
 export interface FmsEditPatch {
   readonly worldId: string; readonly baseRevision: number; readonly label: string;
   readonly changes: readonly FmsCellChange[];
+  readonly lockChanges?: readonly FmsCellChange[];
 }
 export interface FmsBrushStamp { x: number; y: number; radius: number }
 export interface FmsBrushEdit { tool: 'land' | 'sea'; stamps: readonly FmsBrushStamp[]; height?: number }
@@ -37,13 +38,15 @@ export function assertFmsDocument(value: unknown): asserts value is FmsDocument 
   if (value === null || typeof value !== 'object' || Array.isArray(value)) fail();
   const doc = value as FmsDocument;
   const keys = ['format', 'version', 'worldId', 'revision', 'width', 'height', 'points', 'triangles', 'neighbors', 'elevations'];
+  if (doc.version === 2) keys.push('terrainLocks');
   if (Object.keys(doc).length !== keys.length || Object.keys(doc).some(key => !keys.includes(key))
-    || doc.format !== 'lieguoji-fms-world' || doc.version !== 1
+    || doc.format !== 'lieguoji-fms-world' || ![1, 2].includes(doc.version)
     || typeof doc.worldId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doc.worldId)
     || !integer(doc.revision, 0, Number.MAX_SAFE_INTEGER - 1) || !finite(doc.width) || doc.width < 1 || doc.width > 8192
     || !finite(doc.height) || doc.height < 1 || doc.height > 8192 || !Array.isArray(doc.points)
     || doc.points.length < 3 || doc.points.length > FMS_MAX_POINTS) fail();
   const count = doc.points.length;
+  if (doc.version === 2 && (!(doc.terrainLocks instanceof Uint8Array) || doc.terrainLocks.length !== count || doc.terrainLocks.some(value => value !== 0 && value !== 1))) fail();
   if (!(doc.elevations instanceof Int32Array) || doc.elevations.length !== count
     || !(doc.triangles instanceof Uint32Array) || doc.triangles.length < 3 || doc.triangles.length % 3 !== 0 || doc.triangles.length > count * 6
     || !Array.isArray(doc.neighbors) || doc.neighbors.length !== count) fail();
@@ -156,7 +159,7 @@ function targetHeight(height: number): number {
 function prepareSelection(doc: FmsDocument, selected: Set<number>, tool: 'land' | 'sea', height: number, label: string): FmsEditPatch {
   const cells = [...selected].sort((a, b) => a - b), previous = cells.map(cell => doc.elevations[cell]);
   const next = applyFmsPlaneBrush(previous, height, tool === 'land' ? 'max' : 'erase');
-  const changes = cells.flatMap((cell, index) => previous[index] === next[index] ? [] : [Object.freeze({ cell, previous: previous[index], next: next[index] })]);
+  const changes = cells.flatMap((cell, index) => previous[index] === next[index] || doc.terrainLocks?.[cell] ? [] : [Object.freeze({ cell, previous: previous[index], next: next[index] })]);
   return Object.freeze({ worldId: doc.worldId, baseRevision: doc.revision, label, changes: Object.freeze(changes) });
 }
 
@@ -164,7 +167,12 @@ function prepareSelection(doc: FmsDocument, selected: Set<number>, tool: 'land' 
 export function prepareFmsBrushEdit(doc: FmsDocument, edit: FmsBrushEdit): FmsEditPatch {
   if (!edit || !['land', 'sea'].includes(edit.tool) || !Array.isArray(edit.stamps) || edit.stamps.length > MAX_STAMPS) throw new FmsModelError('invalid-edit', '笔刷参数或笔划长度无效。');
   const height = targetHeight(edit.height ?? FMS_DEFAULT_LAND_HEIGHT);
-  for (const stamp of edit.stamps) {
+  const selected = selectFmsBrush(doc, edit.stamps);
+  return prepareSelection(doc, selected, edit.tool, height, edit.tool === 'land' ? '绘制陆地' : '擦除为海洋');
+}
+function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[]): Set<number> {
+  if (!Array.isArray(stamps) || stamps.length > MAX_STAMPS) throw new FmsModelError('invalid-edit', '笔划长度无效。');
+  for (const stamp of stamps) {
     if (!stamp || !finite(stamp.x) || !finite(stamp.y) || !finite(stamp.radius) || stamp.radius < 0.5 || stamp.radius > Math.max(doc.width, doc.height)) throw new FmsModelError('invalid-edit', '笔刷位置或半径无效。');
   }
   const selected = new Set<number>(), seen = new Set<string>(), budget = { visits: 0 };
@@ -175,8 +183,8 @@ export function prepareFmsBrushEdit(doc: FmsDocument, edit: FmsBrushEdit): FmsEd
     if (seen.has(key) || selected.size === doc.points.length) return;
     seen.add(key); stampSelection(doc, stamp, selected, budget);
   };
-  for (let i = 0; i < edit.stamps.length; i += 1) {
-    const current = edit.stamps[i], previous = edit.stamps[i - 1];
+  for (let i = 0; i < stamps.length; i += 1) {
+    const current = stamps[i], previous = stamps[i - 1];
     if (previous && insideWorld(doc, previous.x, previous.y) && insideWorld(doc, current.x, current.y)) {
       const steps = Math.ceil(Math.hypot(current.x - previous.x, current.y - previous.y) / (Math.min(previous.radius, current.radius) * 0.5));
       if (steps > MAX_STAMPS - interpolatedCount) throw new FmsModelError('work-limit', '这笔路径过长，请分成几笔再试。');
@@ -187,7 +195,24 @@ export function prepareFmsBrushEdit(doc: FmsDocument, edit: FmsBrushEdit): FmsEd
     }
     add(current);
   }
-  return prepareSelection(doc, selected, edit.tool, height, edit.tool === 'land' ? '绘制陆地' : '擦除为海洋');
+  return selected;
+}
+
+/** Explicit player action; a first nonempty lock transaction opts into v2.
+ * Expand once to whole touched render triangles, not recursively, so the
+ * highlighted interior is fixed as a surface rather than isolated samples. */
+export function prepareFmsLockEdit(doc: FmsDocument, stamps: readonly FmsBrushStamp[], locked: boolean): FmsEditPatch {
+  if (typeof locked !== 'boolean') throw new FmsModelError('invalid-edit', '地形保护模式无效。');
+  const selected = selectFmsBrush(doc, stamps), expanded = new Set(selected);
+  for (let offset = 0; offset < doc.triangles.length; offset += 3) {
+    const a = doc.triangles[offset], b = doc.triangles[offset + 1], c = doc.triangles[offset + 2];
+    if (selected.has(a) || selected.has(b) || selected.has(c)) { expanded.add(a); expanded.add(b); expanded.add(c); }
+  }
+  const lockChanges = [...expanded].sort((a, b) => a - b).flatMap(cell => {
+    const previous = doc.terrainLocks?.[cell] ?? 0, next = Number(locked);
+    return previous === next ? [] : [Object.freeze({ cell, previous, next })];
+  });
+  return Object.freeze({ worldId: doc.worldId, baseRevision: doc.revision, label: locked ? '保护地形区域' : '解除地形保护', changes: Object.freeze([]), lockChanges: Object.freeze(lockChanges) });
 }
 function intersects(a: FmsPoint, b: FmsPoint, c: FmsPoint, d: FmsPoint): boolean {
   const ac = cross(a, b, c), ad = cross(a, b, d), ca = cross(c, d, a), cb = cross(c, d, b);
@@ -227,13 +252,27 @@ export function prepareFmsOutlineEdit(doc: FmsDocument, input: readonly FmsPoint
 export function commitFmsEdit(doc: FmsDocument, patch: FmsEditPatch): FmsDocument {
   if (!patch || patch.worldId !== doc.worldId || patch.baseRevision !== doc.revision) throw new FmsModelError('revision-conflict', '这笔预览已过期，请在当前地图上重新绘制。');
   if (!integer(doc.revision, 0, Number.MAX_SAFE_INTEGER - 2) || !Array.isArray(patch.changes) || patch.changes.length > doc.points.length || typeof patch.label !== 'string' || patch.label.length > 100) throw new FmsModelError('invalid-edit', '绘图变更无效。');
+  const lockChanges = patch.lockChanges ?? [];
+  if (!Array.isArray(lockChanges) || lockChanges.length > doc.points.length || (lockChanges.length > 0 && patch.changes.length > 0)) throw new FmsModelError('invalid-edit', '高度与保护区域须分别提交。');
   const seen = new Set<number>();
   for (const change of patch.changes) {
     if (!change || !integer(change.cell, 0, doc.points.length - 1) || seen.has(change.cell) || !int32(change.previous) || !int32(change.next)) throw new FmsModelError('invalid-edit', '绘图变更包含无效地形点。');
     if (doc.elevations[change.cell] !== change.previous) throw new FmsModelError('revision-conflict', '地图已改变，这笔预览不能覆盖较新的修改。');
+    if (doc.terrainLocks?.[change.cell] && change.previous !== change.next) throw new FmsModelError('invalid-edit', '这片地形已受保护，请先解除保护。');
     seen.add(change.cell);
   }
-  if (patch.changes.length === 0) return doc;
+  const lockSeen = new Set<number>();
+  for (const change of lockChanges) {
+    if (!change || !integer(change.cell, 0, doc.points.length - 1) || lockSeen.has(change.cell) || !integer(change.previous, 0, 1) || !integer(change.next, 0, 1)) throw new FmsModelError('invalid-edit', '保护区域变更无效。');
+    if ((doc.terrainLocks?.[change.cell] ?? 0) !== change.previous) throw new FmsModelError('revision-conflict', '保护区域已变化，请重新绘制。');
+    lockSeen.add(change.cell);
+  }
+  if (patch.changes.length === 0 && lockChanges.length === 0) return doc;
+  if (lockChanges.length) {
+    const terrainLocks = doc.terrainLocks?.slice() ?? new Uint8Array(doc.points.length);
+    for (const { cell, next } of lockChanges) terrainLocks[cell] = next;
+    return { ...doc, version: 2, revision: doc.revision + 1, terrainLocks };
+  }
   const elevations = doc.elevations.slice();
   for (const { cell, next } of patch.changes) elevations[cell] = next;
   return { ...doc, revision: doc.revision + 1, elevations };
@@ -251,16 +290,17 @@ export class FmsEditHistory {
   commit(patch: FmsEditPatch): FmsDocument {
     const next = commitFmsEdit(this.current, patch);
     if (next === this.current) return this.current;
-    const owned = { ...patch, changes: patch.changes.map(change => ({ ...change })) };
+    const owned = { ...patch, changes: patch.changes.map(change => ({ ...change })), ...(patch.lockChanges ? { lockChanges: patch.lockChanges.map(change => ({ ...change })) } : {}) };
     this.past.push(owned); this.future = []; this.current = next;
-    let cells = this.past.reduce((total, entry) => total + entry.changes.length, 0);
-    while (this.past.length > MAX_HISTORY_STEPS || cells > MAX_HISTORY_CELLS) cells -= this.past.shift()!.changes.length;
+    let cells = this.past.reduce((total, entry) => total + entry.changes.length + (entry.lockChanges?.length ?? 0), 0);
+    while (this.past.length > MAX_HISTORY_STEPS || cells > MAX_HISTORY_CELLS) { const oldest = this.past.shift()!; cells -= oldest.changes.length + (oldest.lockChanges?.length ?? 0); }
     return this.current;
   }
   undo(): FmsDocument {
     const patch = this.past.at(-1);
     if (!patch) return this.current;
-    const next = commitFmsEdit(this.current, { ...patch, baseRevision: this.current.revision, changes: patch.changes.map(change => ({ cell: change.cell, previous: change.next, next: change.previous })) });
+    const reverse = (change: FmsCellChange) => ({ cell: change.cell, previous: change.next, next: change.previous });
+    const next = commitFmsEdit(this.current, { ...patch, baseRevision: this.current.revision, changes: patch.changes.map(reverse), ...(patch.lockChanges ? { lockChanges: patch.lockChanges.map(reverse) } : {}) });
     this.past.pop(); this.future.push(patch); this.current = next;
     return next;
   }

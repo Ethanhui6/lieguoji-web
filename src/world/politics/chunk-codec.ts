@@ -1,7 +1,8 @@
-import { COUNTRY_LIMITS, CountryFutureVersionError, countryArray, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, encodeCountryDocument, validateCountryDocument, type CountryDocument, type CountryTerritory } from './model';
+import { COUNTRY_LIMITS, CountryFutureVersionError, assertCountryDocumentVersions, countryArray, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, encodeCountryDocument, validateCountryDocument, type CountryDocument, type CountryTerritory } from './model';
 
 export const COUNTRY_V2_DATABASE = 'lieguoji-country-worlds-v2';
 export const COUNTRY_V3_DATABASE = 'lieguoji-country-worlds-v3';
+export const COUNTRY_V4_DATABASE = 'lieguoji-country-worlds-v4';
 export const COUNTRY_CHUNK_LIMITS = Object.freeze({ cells: 1024, pages: 256, pageBytes: 32 * 1024, manifestBytes: 256 * 1024, worldStoredBytes: 64 * 1024 * 1024 });
 export interface CountryChunkRef { pageId: number; digest: string; size: number; count: number }
 export interface CountryChunk { pageId: number; digest: string; bytes: Uint8Array }
@@ -16,9 +17,10 @@ export function decodeCountryManifest(bytes: Uint8Array): CountryManifest {
   if (!(bytes instanceof Uint8Array) || bytes.length > COUNTRY_CHUNK_LIMITS.manifestBytes) throw new Error('国家分块清单容量无效。');
   const raw: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   if (raw && typeof raw === 'object' && (raw as { version?: unknown }).version !== 2) throw new CountryFutureVersionError();
+  if (raw && typeof raw === 'object') assertCountryDocumentVersions(Object.getOwnPropertyDescriptor(raw, 'document')?.value);
   if (!countryExact(raw, ['format', 'version', 'document', 'territoryCount', 'pages']) || raw.format !== 'lieguoji-country-manifest'
     || !countryExact(raw.document, metadataKeys) || !countryInteger(raw.territoryCount, 0, COUNTRY_LIMITS.territories) || !countryArray(raw.pages, COUNTRY_CHUNK_LIMITS.pages)) throw new Error('国家分块清单字段无效。');
-  if (raw.document.version !== 2 && raw.document.version !== 3) throw new CountryFutureVersionError();
+  if (raw.document.version !== 2 && raw.document.version !== 3 && raw.document.version !== 4) throw new CountryFutureVersionError();
   let previous = -1, count = 0;
   for (const page of raw.pages) {
     if (!countryExact(page, ['pageId', 'digest', 'size', 'count']) || !countryInteger(page.pageId, 0, 255) || page.pageId <= previous || !countryHash(page.digest)
@@ -29,7 +31,8 @@ export function decodeCountryManifest(bytes: Uint8Array): CountryManifest {
   return raw as unknown as CountryManifest;
 }
 export async function encodeCountryChunks(input: CountryDocument): Promise<EncodedCountry> {
-  if (input.version !== 2 && input.version !== 3 || !validateCountryDocument(input)) throw new Error('分块国家实体或容量无效。');
+  assertCountryDocumentVersions(input);
+  if (input.version !== 2 && input.version !== 3 && input.version !== 4 || !validateCountryDocument(input)) throw new Error('分块国家实体或容量无效。');
   const document = structuredClone(input);
   const grouped = new Map<number, CountryTerritory[]>();
   for (const row of document.territories) { const id = Math.floor(row.cellId / COUNTRY_CHUNK_LIMITS.cells), rows = grouped.get(id) ?? []; rows.push(row); grouped.set(id, rows); }

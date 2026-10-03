@@ -2,6 +2,7 @@ import type { AtlasDocument } from '../atlas-format';
 import type { AtlasControl } from '../model';
 import { countryClaimCells, countryGeographySource, countryLandAt } from './geography';
 import { selectCountryPolygon } from './country-selection';
+import { institutionFieldLabels } from './institution';
 import { COUNTRY_LIMITS, countryGeometry, countryId, encodeCountryDocument, validateCountryCommand, validateCountryDocument, type CountryCommand, type CountryDocument, type CountryPoint } from './model';
 
 export interface CountryCreationIds { nationId?: string; regimeId?: string; cityId?: string }
@@ -39,6 +40,7 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
   ids = { ...ids };
   if (!validateCountryDocument(base) || !validateCountryCommand(raw)) throw new Error('国家命令或当前实体状态无效。');
   if (base.version === 1 && (raw.type === 'create-nation-shape' || raw.type === 'claim-territory-shape' || raw.type === 'release-territory-shape')) throw new Error('自由圈地需要先明确建立 v2 独立副本；旧档保持原规则。');
+  if (raw.type === 'set-institution' && base.version !== 4) throw new Error('制度编辑需要先明确创建 v4 制度副本；旧世界和原历史保持不变。');
   assertGeographySource(base, geography);
   control?.signal?.throwIfAborted();
   const command = structuredClone(raw), next = structuredClone(base);
@@ -63,7 +65,8 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
       if (next.nations.length >= COUNTRY_LIMITS.nations || !countryId(ids.regimeId, 'regime')) throw new Error('国家数量已达上限或政权身份无效。');
       const cell = cells[0], spec = geography.manifest.spec, labelAnchorQ: CountryPoint = { xQ: Math.round((cell % spec.columns + .5) * 4096 * 256 / spec.columns), yQ: Math.round((Math.floor(cell / spec.columns) + .5) * 4096 * 256 / spec.rows) };
       next.nations.push({ id: nationId, name: command.name, color: command.color.toLowerCase(), regimeId: ids.regimeId, capitalCityId: null, labelAnchorQ });
-      next.regimes.push({ id: ids.regimeId, nationId, name: `${command.name.slice(0, 76)}政权` });
+      const regime = { id: ids.regimeId, nationId, name: `${command.name.slice(0, 76)}政权` };
+      if (next.version === 4) next.regimes.push({ ...regime, institution: null }); else next.regimes.push(regime);
       description = `建立「${command.name}」，划入 ${added.length} 个地块内的实际陆地；海域保持不变。`;
     } else description = `为「${nation!.name}」增加 ${added.length} 个地块内的实际陆地。`;
     for (const cellId of added) territories.set(cellId, { cellId, legalNationId: nationId, controllingNationId: nationId });
@@ -92,6 +95,20 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
     if (!next.territories.some(t => t.legalNationId === command.nationId && !removed.has(t.cellId))) throw new Error('不能移除该国全部领土；至少保留一个实际陆地地块。');
     next.territories = next.territories.filter(t => !removed.has(t.cellId));
     description = `从「${nation!.name}」移除 ${removed.size} 个地块内的实际陆地，恢复为未分配；城市、首都与海域保持不变。`;
+  } else if (command.type === 'set-institution') {
+    if (next.version !== 4) throw new Error('制度编辑不能写入旧版国家世界。');
+    const regime = next.regimes.find(row => row.id === nation!.regimeId && row.nationId === nation!.id);
+    if (!regime) throw new Error('当前国家没有有效的政权引用。');
+    const before = institutionFieldLabels(regime.institution), after = institutionFieldLabels(command.institution), differences: string[] = [];
+    if (regime.name !== command.regimeName) differences.push(`政权名称「${regime.name}」→「${command.regimeName}」`);
+    const fields = [...new Set([...before, ...after].map(row => row.field))];
+    for (const field of fields) {
+      const oldValue = before.find(row => row.field === field)?.value ?? '未设置', newValue = after.find(row => row.field === field)?.value ?? '未设置';
+      if (oldValue !== newValue) differences.push(`${field}：${oldValue}→${newValue}`);
+    }
+    if (!differences.length) throw new Error('政权名称与制度设定没有变化，没有需要提交的内容。');
+    regime.name = command.regimeName; regime.institution = structuredClone(command.institution);
+    description = `为「${nation!.name}」更新制度设定：${differences.join('；')}。国家、政权、城市与领土身份保持不变；制度参数尚未参与继任、财政或征募结算。`;
   } else if (command.type === 'create-city') {
     if (next.cities.length >= COUNTRY_LIMITS.cities || !countryId(ids.cityId, 'city')) throw new Error('城市数量已达上限或城市身份无效。');
     const surface = await countryLandAt(geography, command.positionQ.xQ, command.positionQ.yQ, control, geometry); control?.signal?.throwIfAborted();

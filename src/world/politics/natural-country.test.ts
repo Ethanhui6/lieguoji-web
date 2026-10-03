@@ -60,8 +60,9 @@ async function legacy(version: 1 | 2, city = false) {
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); fixture.seaSeeds = new Set([2]); fixture.cityCell = 0; vi.clearAllMocks(); });
 
 describe('v3 natural country geometry is an explicit independent semantic version', () => {
-  it('routes new world preview, confirmation, city and undo checks through v3 geometry and streams document3 in layout2', async () => {
-    const runtime = new CountryRuntime(), initial = await runtime.handle({ id: 1, type: 'create', source, name: '自然国界' }) as CountryState;
+  it('routes existing v3 world preview, confirmation, city and undo checks through v3 geometry and streams document3 in layout2', async () => {
+    const runtime = new CountryRuntime(), created = await v3.createCountryWorld(await prepareCountryGeography(source), '自然国界');
+    const initial = await runtime.handle({ id: 1, type: 'open', worldId: created.document.worldId }) as CountryState;
     expect(initial.document.version).toBe(3); expect(countryGeometry(initial.document)).toBe('political-voronoi-v1');
     const expected = (state: CountryState) => ({ worldId: state.document.worldId, revision: state.document.revision, rootDigest: state.rootDigest });
     const preview = await runtime.handle({ id: 2, type: 'preview', expected: expected(initial), command: { type: 'create-nation-shape', name: '新国', color: '#446688', outlineQ } }) as CountryPreview;
@@ -103,6 +104,7 @@ describe('v3 natural country geometry is an explicit independent semantic versio
   });
   it('keeps v3 receipts and CAS atomic and rejects ordinary cross-version writes', async () => {
     const old = await legacy(2), state = await copyCountryWorldToV3(old.document.worldId, 'CAS'), next = (await applyCountryCommand(state.document, { type: 'rename-nation', nationId: state.document.nations[0].id, name: '新名' }, geo)).document, id = commandId();
+    if (next.version !== 3 || old.document.version !== 2) throw new Error('This compatibility case requires v3 and v2 worlds.');
     const [a, b] = await Promise.all([commitCountryWorld(state, next, id, 'c'.repeat(64)), commitCountryWorld(state, next, id, 'c'.repeat(64))]); expect(a).toEqual(b); expect(await commitCountryWorld(state, next, id, 'c'.repeat(64))).toEqual(a);
     await expect(commitCountryWorld(state, next, commandId(), 'd'.repeat(64))).rejects.toThrow('另一标签');
     await expect(commitCountryWorld(a, { ...next, version: 2 }, commandId(), 'd'.repeat(64))).rejects.toThrow('隐式');
@@ -114,9 +116,9 @@ describe('v3 natural country geometry is an explicit independent semantic versio
   it('never recovers across a future root/semantic version or allows document3 to enter the v2 library', async () => {
     const old = await legacy(2), state = await copyCountryWorldToV3(old.document.worldId, '未来锁'), next: CountryDocument = { ...state.document, revision: 1 };
     const saved = await commitCountryWorld(state, next, commandId(), 'd'.repeat(64)), root = await read<Root>(COUNTRY_V3_DATABASE, 'worlds', saved.document.worldId);
-    const manifest = JSON.parse(new TextDecoder().decode(root.current.bytes)); manifest.document.version = 4; root.current.bytes = countryJsonBytes(manifest); root.current.digest = await countryDigest(root.current.bytes); await overwrite(COUNTRY_V3_DATABASE, saved.document.worldId, root);
+    const manifest = JSON.parse(new TextDecoder().decode(root.current.bytes)); manifest.document.version = 5; root.current.bytes = countryJsonBytes(manifest); root.current.digest = await countryDigest(root.current.bytes); await overwrite(COUNTRY_V3_DATABASE, saved.document.worldId, root);
     await expect(openCountryWorld(saved.document.worldId)).rejects.toBeInstanceOf(CountryFutureVersionError);
-    root.version = 4; await overwrite(COUNTRY_V3_DATABASE, saved.document.worldId, root); await expect(openCountryWorld(saved.document.worldId)).rejects.toBeInstanceOf(CountryFutureVersionError);
+    root.version = 5; await overwrite(COUNTRY_V3_DATABASE, saved.document.worldId, root); await expect(openCountryWorld(saved.document.worldId)).rejects.toBeInstanceOf(CountryFutureVersionError);
     const oldRoot = await read<Root>(COUNTRY_V2_DATABASE, 'worlds', old.document.worldId), oldManifest = JSON.parse(new TextDecoder().decode(oldRoot.current.bytes)); oldManifest.document.version = 3; oldRoot.current.bytes = countryJsonBytes(oldManifest); oldRoot.current.digest = await countryDigest(oldRoot.current.bytes); await overwrite(COUNTRY_V2_DATABASE, old.document.worldId, oldRoot);
     await expect(openCountryWorld(old.document.worldId)).rejects.toBeInstanceOf(CountryFutureVersionError);
     expect(await read(COUNTRY_V2_DATABASE, 'worlds', old.document.worldId)).toEqual(oldRoot);

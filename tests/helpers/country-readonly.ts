@@ -6,7 +6,7 @@ import type { CountryDocument } from '../../src/world/politics/model';
 export async function persistedCountry(page: Page, id: string) {
   const raw = await page.evaluate(async id => {
     const databases = await indexedDB.databases();
-    for (const name of ['lieguoji-country-worlds-v3', 'lieguoji-country-worlds-v2', 'lieguoji-country-worlds-v1']) {
+    for (const name of ['lieguoji-country-worlds-v4', 'lieguoji-country-worlds-v3', 'lieguoji-country-worlds-v2', 'lieguoji-country-worlds-v1']) {
       if (!databases.some(db => db.name === name)) continue;
       const db = await new Promise<IDBDatabase>((resolve, reject) => { const r = indexedDB.open(name, 1); r.onupgradeneeded = () => r.transaction!.abort(); r.onerror = () => reject(r.error); r.onsuccess = () => resolve(r.result); });
       try {
@@ -54,6 +54,16 @@ export async function persistedCountry(page: Page, id: string) {
     }
     if (territories.length !== parsed.territoryCount) throw new Error('Incomplete stored territories');
     document = { ...parsed.document, territories };
+  }
+  if (version === 4) for (const regime of document.regimes) {
+    if (!Object.hasOwn(regime, 'institution')) throw new Error('Missing v4 institution field');
+    const value = regime.institution;
+    if (value === null) continue;
+    if (!value || Object.keys(value).sort().join(',') !== 'localAppointment,localRevenueBps,recruitment,succession,template,version'
+      || value.version !== 1 || !['central-office', 'landed-obligation', 'member-autonomy', 'custom'].includes(value.template)
+      || !['hereditary', 'election', 'appointment'].includes(value.succession) || !['central', 'local'].includes(value.localAppointment)
+      || !['standing', 'levy', 'mixed'].includes(value.recruitment) || !Number.isSafeInteger(value.localRevenueBps)
+      || value.localRevenueBps < 0 || value.localRevenueBps > 10000) throw new Error('Invalid persisted institution');
   }
   return { document, rootDigest: raw.rootDigest, documentDigest: raw.digest, geoSha256: raw.geoSha256, geoBytes: raw.geoBytes,
     geoManifestHash: hash(Uint8Array.from(raw.geoManifest)), geoSource: raw.geoSource,

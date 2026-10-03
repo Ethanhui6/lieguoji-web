@@ -1,5 +1,7 @@
 import { validateCountrySource, type CountrySource } from './geography';
+import { validateCountryInstitution, type CountryInstitution } from './institution';
 export type { CountrySource } from './geography';
+export type { CountryInstitution } from './institution';
 
 export const COUNTRY_DATABASE = 'lieguoji-country-worlds-v1';
 /** v1 keeps its original byte cap. v2 uses bounded dictionary chunks; its
@@ -7,16 +9,22 @@ export const COUNTRY_DATABASE = 'lieguoji-country-worlds-v1';
 export const COUNTRY_LIMITS = Object.freeze({ nations: 64, cities: 512, territories: 65536, commandCells: 1024, packetBytes: 512 * 1024, documentBytes: 256 * 1024, undoEntries: 20, undoBytes: 8 * 1024 * 1024 });
 export interface CountryPoint { xQ: number; yQ: number }
 export interface CountryNation { id: string; name: string; color: string; regimeId: string; capitalCityId: string | null; labelAnchorQ: CountryPoint }
-export interface CountryRegime { id: string; nationId: string; name: string }
+interface CountryRegimeBase { id: string; nationId: string; name: string }
+export interface CountryLegacyRegime extends CountryRegimeBase { institution?: never }
+export interface CountryInstitutionRegime extends CountryRegimeBase { institution: CountryInstitution | null }
+export type CountryRegime = CountryLegacyRegime | CountryInstitutionRegime;
 export interface CountryTerritory { cellId: number; legalNationId: string; controllingNationId: string }
 export interface CountryCity { id: string; nationId: string; name: string; positionQ: CountryPoint; labelAnchorQ: CountryPoint }
-export interface CountryDocument {
-  format: 'lieguoji-country-document'; version: 1 | 2 | 3; worldId: string; name: string; source: CountrySource; revision: number;
-  nations: CountryNation[]; regimes: CountryRegime[]; territories: CountryTerritory[]; cities: CountryCity[];
+interface CountryDocumentBase {
+  format: 'lieguoji-country-document'; worldId: string; name: string; source: CountrySource; revision: number;
+  nations: CountryNation[]; territories: CountryTerritory[]; cities: CountryCity[];
 }
+export type CountryDocument = CountryDocumentBase & (
+  { version: 1 | 2 | 3; regimes: CountryLegacyRegime[] } | { version: 4; regimes: CountryInstitutionRegime[] }
+);
 /** Document version owns geometry semantics; page layout alone does not. */
 export function countryGeometry(document: Pick<CountryDocument, 'version'>): 'atlas-cell-v1' | 'political-voronoi-v1' {
-  if (document.version === 3) return 'political-voronoi-v1';
+  if (document.version === 3 || document.version === 4) return 'political-voronoi-v1';
   if (document.version === 1 || document.version === 2) return 'atlas-cell-v1';
   throw new CountryFutureVersionError();
 }
@@ -33,6 +41,7 @@ export type CountryCommand =
   | { type: 'set-capital'; nationId: string; cityId: string }
   | { type: 'rename-nation'; nationId: string; name: string }
   | { type: 'rename-city'; cityId: string; name: string }
+  | { type: 'set-institution'; nationId: string; regimeName: string; institution: CountryInstitution | null }
   | { type: 'undo' };
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 export const countryId = (raw: unknown, kind: 'country' | 'nation' | 'regime' | 'city' | 'command' | 'candidate'): raw is string => typeof raw === 'string' && new RegExp(`^${kind}-${UUID}$`).test(raw);
@@ -52,7 +61,7 @@ export function countryArray(raw: unknown, max: number): raw is unknown[] {
 export const countryPoint = (raw: unknown): raw is CountryPoint => countryExact(raw, ['xQ', 'yQ']) && countryInteger(raw.xQ, 0, 4096 * 256) && countryInteger(raw.yQ, 0, 4096 * 256);
 export function validateCountryDocument(raw: unknown): raw is CountryDocument {
   if (!countryExact(raw, ['format', 'version', 'worldId', 'name', 'source', 'revision', 'nations', 'regimes', 'territories', 'cities'])
-    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 && raw.version !== 2 && raw.version !== 3 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
+    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
     || !validateCountrySource(raw.source) || !countryInteger(raw.revision, 0, Number.MAX_SAFE_INTEGER)
     || !countryArray(raw.nations, COUNTRY_LIMITS.nations) || !countryArray(raw.regimes, COUNTRY_LIMITS.nations)
     || !countryArray(raw.cities, COUNTRY_LIMITS.cities) || !countryArray(raw.territories, COUNTRY_LIMITS.territories)) return false;
@@ -63,7 +72,8 @@ export function validateCountryDocument(raw: unknown): raw is CountryDocument {
     ids.add(n.id); nations.set(n.id, n as unknown as CountryNation);
   }
   for (const r of raw.regimes) {
-    if (!countryExact(r, ['id', 'nationId', 'name']) || !countryId(r.id, 'regime') || ids.has(r.id) || !countryId(r.nationId, 'nation') || !countryName(r.name) || nations.get(r.nationId)?.regimeId !== r.id) return false;
+    if (!countryExact(r, raw.version === 4 ? ['id', 'nationId', 'name', 'institution'] : ['id', 'nationId', 'name']) || !countryId(r.id, 'regime') || ids.has(r.id) || !countryId(r.nationId, 'nation') || !countryName(r.name) || nations.get(r.nationId)?.regimeId !== r.id
+      || raw.version === 4 && r.institution !== null && !validateCountryInstitution(r.institution)) return false;
     ids.add(r.id); regimes.set(r.id, r as unknown as CountryRegime);
   }
   for (const c of raw.cities) {
@@ -94,6 +104,7 @@ export function validateCountryCommand(raw: unknown): raw is CountryCommand {
   if (type === 'set-capital') return countryExact(raw, ['type', 'nationId', 'cityId']) && countryId(raw.nationId, 'nation') && countryId(raw.cityId, 'city');
   if (type === 'rename-nation') return countryExact(raw, ['type', 'nationId', 'name']) && countryId(raw.nationId, 'nation') && countryName(raw.name);
   if (type === 'rename-city') return countryExact(raw, ['type', 'cityId', 'name']) && countryId(raw.cityId, 'city') && countryName(raw.name);
+  if (type === 'set-institution') return countryExact(raw, ['type', 'nationId', 'regimeName', 'institution']) && countryId(raw.nationId, 'nation') && countryName(raw.regimeName) && (raw.institution === null || validateCountryInstitution(raw.institution));
   return type === 'undo' && countryExact(raw, ['type']);
 }
 export const countryJsonBytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
@@ -101,6 +112,7 @@ export async function countryDigest(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer))].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 export function encodeCountryDocument(document: CountryDocument): Uint8Array {
+  assertCountryDocumentVersions(document);
   if (document.version !== 1) throw new Error('v2 国家世界必须通过分块编码保存与传送。');
   const bytes = countryJsonBytes(document);
   if (bytes.length > COUNTRY_LIMITS.documentBytes) throw new Error('本试玩档国家数据已超过 256 KiB 容量；本次不提交，也不会截断已有领土。');
@@ -108,9 +120,27 @@ export function encodeCountryDocument(document: CountryDocument): Uint8Array {
   return bytes;
 }
 export class CountryFutureVersionError extends Error { constructor() { super('这是未来版本的国家世界，当前版本禁止写入或恢复覆盖。'); this.name = 'CountryFutureVersionError'; } }
+/** Called before storage recovery and encoding. A nested future contract must
+ * never be mistaken for corrupt current bytes and downgraded to a backup. */
+export function assertCountryDocumentVersions(raw: unknown): void {
+  if (!raw || typeof raw !== 'object') return;
+  const version = Object.getOwnPropertyDescriptor(raw, 'version')?.value;
+  if (version !== undefined && ![1, 2, 3, 4].includes(version)) throw new CountryFutureVersionError();
+  const regimes: unknown = Object.getOwnPropertyDescriptor(raw, 'regimes')?.value;
+  if (!countryArray(regimes, COUNTRY_LIMITS.nations)) return;
+  for (let index = 0; index < regimes.length; index++) {
+    const regime: unknown = Object.getOwnPropertyDescriptor(regimes, String(index))?.value;
+    if (!regime || typeof regime !== 'object') continue;
+    const institution: unknown = Object.getOwnPropertyDescriptor(regime, 'institution')?.value;
+    if (!institution || typeof institution !== 'object') continue;
+    const nested = Object.getOwnPropertyDescriptor(institution, 'version')?.value;
+    if (nested !== undefined && nested !== 1) throw new CountryFutureVersionError();
+  }
+}
 export function decodeCountryDocument(bytes: Uint8Array): CountryDocument {
   if (!(bytes instanceof Uint8Array) || bytes.length > COUNTRY_LIMITS.documentBytes) throw new Error('国家世界字节容量无效。');
   const raw: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  assertCountryDocumentVersions(raw);
   if (raw && typeof raw === 'object' && (raw as { version?: unknown }).version !== 1) throw new CountryFutureVersionError();
   if (!validateCountryDocument(raw) || raw.version !== 1) throw new Error('国家世界字段或引用校验失败。');
   return raw;

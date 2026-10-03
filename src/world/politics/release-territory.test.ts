@@ -117,6 +117,7 @@ describe('release territory uses the existing authoritative whole-cell rule', ()
 
   it('rejects legacy-v1 use, malformed/self-crossing outlines and cancellation without mutating the source', async () => {
     const base = await baseDocument(3), before = structuredClone(base), command = release(base, rectangle(128, 0, 160, 32));
+    if (base.version !== 3) throw new Error('This legacy compatibility case requires a v3 world.');
     expect(validateCountryCommand(command)).toBe(true); expect(validateCountryCommand({ ...command, force: true })).toBe(false);
     expect(validateCountryCommand({ ...command, outlineQ: [{ xQ: 0.5, yQ: 0 }, { xQ: 256, yQ: 0 }, { xQ: 0, yQ: 256 }] })).toBe(false);
     await expect(applyCountryCommand({ ...base, version: 1 }, command, geography, undefined, fast)).rejects.toThrow('旧档保持原规则');

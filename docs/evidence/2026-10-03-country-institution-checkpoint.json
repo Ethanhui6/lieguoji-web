@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-03T09:00:31.464Z",
+  "baseline": "293848673cd555c127961d955112e84e80407593",
+  "branch": "codex/ph06-world-generation",
+  "version": "0.5.0-preview.29",
+  "passed": true,
+  "archiveFiles": 121,
+  "archiveBytes": 9821844,
+  "archiveIndexByteVerified": true,
+  "sourceStable": true,
+  "distStable": true,
+  "sourceSnapshotSha256": "2fdb588f1086a2f833b3d06f5687b3d95835a32021082d9eebea13395346ff6a",
+  "distSnapshotSha256": "88f6076e08c216c2dd726d81a76003e84cf1d0bd41f2378611e36f330331dd98",
+  "unit": {
+    "total": 173,
+    "passed": 173,
+    "failed": 0,
+    "reusedFrom": "checks/first (all product unchanged)",
+    "rerun": {
+      "file": "institution.test.ts",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "reason": "added corrupt-current plus future-history combinations"
+    }
+  },
+  "releasePolicy": {
+    "passed": 22,
+    "from": "checks/first"
+  },
+  "browser": [
+    {
+      "project": "desktop-chromium",
+      "passed": 2,
+      "retries": 0,
+      "physicalDevice": false
+    },
+    {
+      "project": "mobile-chromium",
+      "passed": 2,
+      "retries": 0,
+      "physicalDevice": false
+    },
+    {
+      "project": "tablet-chromium",
+      "passed": 2,
+      "retries": 0,
+      "physicalDevice": false
+    }
+  ],
+  "native": true,
+  "privacyReview": true,
+  "wholePhaseAccepted": false,
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "cloudWrites": false
+}

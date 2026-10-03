@@ -1,0 +1,81 @@
+{
+  "at": "2026-10-03T08:59:21.075Z",
+  "check": "final",
+  "buildSha256": "7d09e33ef7c4ccbfa021f3191a7076b4d6e073d68a5bb40adb324a63639a33c6",
+  "sourceSnapshotSha256": "2fdb588f1086a2f833b3d06f5687b3d95835a32021082d9eebea13395346ff6a",
+  "distSnapshotSha256": "88f6076e08c216c2dd726d81a76003e84cf1d0bd41f2378611e36f330331dd98",
+  "nativeRecordSha256": "d273b5bb52453e03e549965e0bfe7758581be9aaf88ca8d86e4e523e4d612a06",
+  "loadedAssets": [
+    {
+      "url": "http://127.0.0.1:4173/assets/index-B4lAQYK4.js",
+      "sha256": "365367ce7468d7c45e15c1cde1bef28994dd6aeb1d06f0897473c4d7a4f4cb1d"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/CountryStudio-L31S3_7R.css",
+      "sha256": "34667ef69b00bde86808ba6254f8ddd67c3dc615d1f43f7f74414649ad65f226"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/CountryStudio-BUrj74OB.js",
+      "sha256": "7a58e4b3f5c3dbc15039a46879b1a98ada9cc4229e07564ddc3504c86eb9e438"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/renderer-B4fctDvV.js",
+      "sha256": "1f4868f3036850547352ad1d918d7247a2602c5e22868498090fe1f1ca40acfd"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/init-C9fuGC4f.js",
+      "sha256": "09d1fc387ad73704ed71cf4728de5c724e19b1a66a969ebfa646aec263816913"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/browserAll-DUMpJE3h.js",
+      "sha256": "b6bd9eb07dc48af232121beacb9d0ae416c46b2989d397ad839368085558a360"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/worker-CrbWrrUe.js",
+      "sha256": "6db927cb5fd423006322570ccd9a50efa19f2753b9da8d903e201289af15c3f2"
+    }
+  ],
+  "sourceStable": true,
+  "distStable": true,
+  "passed": true,
+  "physicalDevice": false,
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "cloudWrites": false
+}

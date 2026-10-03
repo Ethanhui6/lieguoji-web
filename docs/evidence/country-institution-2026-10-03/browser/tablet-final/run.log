@@ -1,0 +1,9 @@
+
+Running 2 tests using 1 worker
+
+(node:22732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [tablet-chromium] › tests\country-world.spec.ts:52:1 › [country-world] native nations, two cities, capital, cancellation, conflict and independent reload (2.4m)
+  ok 2 [tablet-chromium] › tests\country-world.spec.ts:159:1 › [country-shape] native concave outline, cancelled candidate, chunk persistence and restored city (2.4m)
+
+  2 passed (4.8m)

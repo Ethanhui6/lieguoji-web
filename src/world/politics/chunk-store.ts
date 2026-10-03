@@ -2,11 +2,11 @@ import { COUNTRY_CHUNK_LIMITS, decodeCountryManifest, decodeCountryChunks, encod
 import { validateCountryWorldGeography } from './core';
 import type { AtlasDocument } from '../atlas-format';
 import { decodeCountryGeography, validateCountrySource, type CountryGeographyRecord, type CountrySource } from './geography';
-import { COUNTRY_LIMITS, CountryFutureVersionError, countryArray, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, validateCountryDocument,
+import { COUNTRY_LIMITS, CountryFutureVersionError, assertCountryDocumentVersions, countryArray, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, validateCountryDocument,
   type CountryDocument, type CountryListEntry, type CountryState } from './model';
 
 export interface CountryBlob { bytes: Uint8Array; digest: string }
-interface StoredWorld { format: 'lieguoji-country-root'; version: 2 | 3; worldId: string; storedChunkBytes: number; current: CountryBlob; backup: CountryBlob | null; undo: CountryBlob[]; lastCommandId: string; rootDigest: string }
+interface StoredWorld { format: 'lieguoji-country-root'; version: 2 | 3 | 4; worldId: string; storedChunkBytes: number; current: CountryBlob; backup: CountryBlob | null; undo: CountryBlob[]; lastCommandId: string; rootDigest: string }
 interface Receipt { worldId: string; commandId: string; requestDigest: string; revision: number; rootDigest: string }
 function validReceipt(raw: unknown): raw is Receipt { return countryExact(raw, ['worldId', 'commandId', 'requestDigest', 'revision', 'rootDigest']) && countryId(raw.worldId, 'country')
   && countryId(raw.commandId, 'command') && countryHash(raw.requestDigest) && countryInteger(raw.revision, 0, Number.MAX_SAFE_INTEGER) && countryHash(raw.rootDigest); }
@@ -14,7 +14,7 @@ function validReceipt(raw: unknown): raw is Receipt { return countryExact(raw, [
 /** Each instance binds database, root and semantic document version. The v2
  * page/manifest layout is shared; geometry semantics are never inferred from
  * a page hash or allowed to cross the instance's document-version gate. */
-export function createCountryChunkStore(databaseName: string, documentVersion: 2 | 3) {
+export function createCountryChunkStore(databaseName: string, documentVersion: 2 | 3 | 4) {
   const stores = ['worlds', 'geography', 'receipts', 'chunks'];
   const sameSource = (a: CountrySource, b: CountrySource) => a.draftId === b.draftId && a.revision === b.revision && a.rootDigest === b.rootDigest && a.manifestDigest === b.manifestDigest && a.atlasFormat === b.atlasFormat;
   const chunkKey = (worldId: string, digest: string) => `${worldId}:${digest}`;
@@ -87,6 +87,14 @@ export function createCountryChunkStore(databaseName: string, documentVersion: 2
   async function interpret(raw: unknown, worldId: string): Promise<{ state: CountryState; root: StoredWorld }> {
     if (!raw) throw new Error('未找到这个国家世界。');
     if (!rootShape(raw) || raw.worldId !== worldId) throw new Error('国家世界根格式或历史容量损坏，未覆盖任何数据。');
+    // Even a corrupt current blob must not hide a future institution contract
+    // in backup/undo. Preflight every parseable manifest before any fallback.
+    for (const blob of [raw.current, ...(raw.backup ? [raw.backup] : []), ...raw.undo]) {
+      try {
+        const manifest = decodeCountryManifest(blob.bytes);
+        if (manifest.document.version !== documentVersion) throw new CountryFutureVersionError();
+      } catch (error) { if (error instanceof CountryFutureVersionError) throw error; }
+    }
     try {
       const document = await documentFrom(raw.current, worldId);
       if (raw.rootDigest !== await countryDigest(countryJsonBytes(rootMetadata(raw)))) throw new Error('国家世界根摘要不一致。');
@@ -129,14 +137,21 @@ export function createCountryChunkStore(databaseName: string, documentVersion: 2
     // a check/use gap even though decoding itself is safe.
     const owned = structuredClone(record);
     const copied = copiedDocument ? structuredClone(copiedDocument) : undefined;
+    assertCountryDocumentVersions(copied);
     if (copied && copied.version > documentVersion) throw new CountryFutureVersionError();
+    if (copied && documentVersion === 4 && copied.version !== 3 && copied.version !== 4) throw new Error('制度副本只能来自 v3 自然国界世界；不能隐式改变旧版政治几何。');
     if (copied && !validateCountryDocument(copied)) throw new Error('待复制国家文档格式或版本无效。');
     if (copied && !sameSource(copied.source, owned.source)) throw new Error('复制实体与独立地理来源不一致。');
     if (!countryName(name) || !validateCountrySource(owned.source)) throw new Error('建国草稿名称或来源无效。');
     signal?.throwIfAborted(); const geography = await decodeCountryGeography(owned, { signal }); signal?.throwIfAborted();
     const worldId = `country-${crypto.randomUUID()}`, commandId = `command-${crypto.randomUUID()}`;
-    const document: CountryDocument = { format: 'lieguoji-country-document', version: documentVersion, worldId, name, source: { ...owned.source }, revision: 0, nations: [], regimes: [], territories: [], cities: [] };
-    if (copied) { document.nations = copied.nations; document.regimes = copied.regimes; document.territories = copied.territories; document.cities = copied.cities; }
+    const initial = { format: 'lieguoji-country-document' as const, worldId, name, source: { ...owned.source }, revision: 0, nations: [], territories: [], cities: [] };
+    const document: CountryDocument = documentVersion === 4 ? { ...initial, version: 4, regimes: [] } : { ...initial, version: documentVersion, regimes: [] };
+    if (copied) {
+      document.nations = copied.nations; document.territories = copied.territories; document.cities = copied.cities;
+      if (document.version === 4) document.regimes = copied.version === 4 ? copied.regimes : copied.regimes.map(regime => ({ ...regime, institution: null }));
+      else { if (copied.version === 4) throw new CountryFutureVersionError(); document.regimes = copied.regimes; }
+    }
     await validateCountryWorldGeography(document, geography, { signal });
     const encoded = await encodeCountryChunks(document), current = { bytes: encoded.bytes, digest: encoded.digest }, root = await makeRoot({ format: 'lieguoji-country-root', version: documentVersion, worldId, storedChunkBytes: encoded.chunks.reduce((sum, chunk) => sum + chunk.bytes.length, 0), current, backup: null, undo: [], lastCommandId: commandId });
     signal?.throwIfAborted(); const db = await database();
@@ -172,6 +187,7 @@ export function createCountryChunkStore(databaseName: string, documentVersion: 2
    * and its command receipt change together; no source Atlas database is read. */
   async function commitCountryWorld(expected: CountryState, next: CountryDocument, commandId: string, requestDigest: string, undo = false, signal?: AbortSignal): Promise<CountryState> {
     expected = structuredClone(expected); next = structuredClone(next);
+    assertCountryDocumentVersions(expected.document); assertCountryDocumentVersions(next);
     if (expected.document.version !== documentVersion || next.version !== documentVersion) throw new CountryFutureVersionError();
     if (expected.readOnly || !countryId(commandId, 'command') || !countryHash(requestDigest)) throw new Error('国家提交身份无效或来源只读。');
     signal?.throwIfAborted();

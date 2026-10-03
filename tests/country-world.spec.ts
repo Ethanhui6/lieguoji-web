@@ -114,7 +114,46 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   await expect(country(page)).toHaveAttribute('data-country-outline-points','0');
   await expect(page.getByLabel('国家名称',{exact:true})).toHaveValue('岚川');
   await expect(button(page,'预览移除领土')).toHaveCount(0); expect(await persisted(page,worldId)).toEqual(settled); expect(errors).toEqual([]);
-  await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
+  // Each country's institution follows the same Worker preview/commit path.
+  // Reading IndexedDB is observation only; all mutations use visible controls.
+  await press(page,'编辑国家制度',touch); await page.getByLabel('制度模板',{exact:true}).selectOption('central-office');
+  await page.getByLabel('政权名称',{exact:true}).fill('岚川中央官署'); await press(page,'预览制度变更',touch); await ready(page);
+  await expect(page.getByRole('region',{name:'建国操作预览'})).toContainText('中央官署');
+  await expect(page.getByTestId('country-overlay')).toHaveAttribute('data-country-preview','true');
+  expect(await persisted(page,worldId)).toEqual(settled);
+  await page.screenshot({path:info.outputPath('institution-preview.png'),fullPage:true});
+  await press(page,'取消预览',touch); await ready(page); expect(await persisted(page,worldId)).toEqual(settled);
+  await expect(page.getByLabel('政权名称',{exact:true})).toHaveValue('岚川中央官署');
+  await press(page,'预览制度变更',touch); await confirm(page,touch);
+  const central=await persisted(page,worldId), firstRegime=central.document.regimes.find(r=>r.nationId===firstNation)!;
+  expect(firstRegime.name).toBe('岚川中央官署'); expect(firstRegime.institution).toEqual({version:1,template:'central-office',succession:'appointment',localAppointment:'central',localRevenueBps:1500,recruitment:'standing'});
+  expect(central.document.regimes.find(r=>r.nationId===secondNation)?.institution).toBeNull();
+  await tab(page,'国家',touch); await press(page,'编辑国家制度',touch); await page.getByLabel('政权名称',{exact:true}).fill('不能串到别国的草稿');
+  await press(page,'国家 海岬',touch); await expect(page.getByLabel('政权名称',{exact:true})).toHaveCount(0);
+  await press(page,'编辑国家制度',touch); await page.getByLabel('制度模板',{exact:true}).selectOption('member-autonomy');
+  await page.getByLabel('政权名称',{exact:true}).fill('海岬自治议会');
+  for (const invalid of ['100.004','-0.004','37.255','']) {
+    await page.getByLabel('地方留税比例',{exact:true}).fill(invalid); await expect(button(page,'预览制度变更')).toBeDisabled();
+    expect(await persisted(page,worldId)).toEqual(central);
+  }
+  await page.getByLabel('地方留税比例',{exact:true}).fill('37.25');
+  await expect(page.getByLabel('制度模板',{exact:true})).toHaveValue('custom');
+  await press(page,'预览制度变更',touch); await confirm(page,touch);
+  const configured=await persisted(page,worldId), secondRegime=configured.document.regimes.find(r=>r.nationId===secondNation)!;
+  expect(secondRegime.institution).toEqual({version:1,template:'custom',succession:'election',localAppointment:'local',localRevenueBps:3725,recruitment:'mixed'});
+  expect(configured.document.regimes.find(r=>r.nationId===firstNation)).toEqual(firstRegime);
+  expect(configured.document.nations).toEqual(settled.document.nations); expect(configured.document.cities).toEqual(settled.document.cities);
+  expect(configured.document.territories).toEqual(settled.document.territories); expect(configured.geoSha256).toBe(settled.geoSha256);
+  await page.reload(); await ready(page); expect(await persisted(page,worldId)).toEqual(configured);
+  await tab(page,'国家',touch); await expect(page.getByRole('region',{name:'国家制度设定'})).toContainText('37.25%');
+  await page.screenshot({path:info.outputPath('institution-restored.png'),fullPage:true});
+  await press(page,'撤销上次操作',touch); await ready(page);
+  const undone=await persisted(page,worldId); expect(undone.document.regimes).toEqual(central.document.regimes);
+  await page.reload(); await ready(page); expect(await persisted(page,worldId)).toEqual(undone);
+  await tab(page,'国家',touch); await press(page,'国家 岚川',touch); await expect(page.getByRole('region',{name:'国家制度设定'})).toContainText('15%');
+  await expect(page.getByTestId('country-overlay')).toHaveAttribute('data-country-revision',String(undone.document.revision));
+  expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
+  await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,central,configured,undone,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
 });
 
 test('[country-shape] native concave outline, cancelled candidate, chunk persistence and restored city', async ({ page }, info) => {
@@ -139,7 +178,7 @@ test('[country-shape] native concave outline, cancelled candidate, chunk persist
   await press(page, '在这片地形上建国', touch); await expect(country(page)).toHaveAttribute('data-country-state', 'empty', { timeout: 120000 });
   await page.getByLabel('建国世界名称', { exact: true }).fill('岚海 · 自由圈地'); await press(page, '创建独立建国副本', touch); await ready(page);
   const worldId = (await country(page).getAttribute('data-country-world-id'))!, url = page.url(), before = await persisted(page, worldId);
-  expect(before.document.version).toBe(3);
+  expect(before.document.version).toBe(4);
   await tab(page, '国家', touch); await press(page, '新建国家', touch); await page.getByLabel('国家名称', { exact: true }).fill('岚海');
   await press(page, '手绘国土', touch);
   await draw(page, touch, [[700,1300],[1000,1600],[700,1600],[1000,1300],[700,1300]]); await press(page, '闭合并预览', touch);

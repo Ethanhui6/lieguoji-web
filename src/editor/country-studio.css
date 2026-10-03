@@ -62,6 +62,18 @@
 .country-facts dt { color: var(--country-muted); font-size: 13px; }
 .country-facts dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .country-id { overflow-wrap: anywhere; font: 11px/1.6 ui-monospace, monospace; }
+.country-institution { border-top: 1px solid var(--country-border); padding-top: 18px; }
+.country-institution-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.country-institution-heading > span { color: var(--country-muted); font-size: 12px; }
+.country-institution .country-institution-regime { color: var(--country-ink); font-size: 15px; overflow-wrap: anywhere; }
+.country-institution-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin: 0; }
+.country-institution-summary dt { color: var(--country-muted); font-size: 12px; margin-bottom: 4px; }
+.country-institution-summary dd { margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
+.country-institution-form { display: flex; flex-direction: column; gap: 16px; }
+.country-percent-input { display: flex; align-items: center; gap: 8px; }
+.country-percent-input input { min-width: 0; }
+.country-institution-actions { display: flex; gap: 8px; }
+.country-institution-actions button { flex: 1; padding-inline: 8px; font-size: 13px; }
 .country-studio summary { cursor: pointer; min-height: 44px; padding-block: 12px; color: var(--country-muted); font-size: 13px; }
 .country-entity-list { display: flex; flex-direction: column; border-top: 1px solid var(--country-border); }
 .country-entity-list > button { display: flex; align-items: center; gap: 10px; min-height: 52px; width: 100%; border: 0; border-bottom: 1px solid var(--country-border); border-radius: 0; background: transparent; text-align: left; }

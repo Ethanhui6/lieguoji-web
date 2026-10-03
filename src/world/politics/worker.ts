@@ -6,13 +6,14 @@ import { countryDocumentDigest } from './chunk-codec';
 import { streamCountryResult } from './transfer';
 import { COUNTRY_LIMITS, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, validateCountryCommand,
   type CountryCommand, type CountryPreview, type CountrySource, type CountryState } from './model';
-import { commitCountryWorld, copyCountryWorldToV2, copyCountryWorldToV3, countryUndoDocument, createCountryWorld, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
+import { commitCountryWorld, copyCountryWorldToV2, copyCountryWorldToV3, copyCountryWorldToV4, countryUndoDocument, createCountryWorld, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
 
 export type CountryRequest = { id: number } & (
   | { type: 'create'; source: CountrySource; name: string }
   | { type: 'open'; worldId: string }
   | { type: 'copy-to-v2'; worldId: string; name: string }
   | { type: 'copy-to-v3'; worldId: string; name: string }
+  | { type: 'copy-to-v4'; worldId: string; name: string }
   | { type: 'list' }
   | { type: 'preview'; expected: { worldId: string; revision: number; rootDigest: string }; command: CountryCommand }
   | { type: 'confirm'; candidateId: string }
@@ -25,7 +26,7 @@ export function validateCountryRequest(raw: unknown): raw is CountryRequest {
   if (!countryInteger(r.id, 1, Number.MAX_SAFE_INTEGER)) return false;
   if (r.type === 'create') return countryExact(r, ['id', 'type', 'source', 'name']) && validateCountrySource(r.source) && countryName(r.name);
   if (r.type === 'open') return countryExact(r, ['id', 'type', 'worldId']) && countryId(r.worldId, 'country');
-  if (r.type === 'copy-to-v2' || r.type === 'copy-to-v3') return countryExact(r, ['id', 'type', 'worldId', 'name']) && countryId(r.worldId, 'country') && countryName(r.name);
+  if (r.type === 'copy-to-v2' || r.type === 'copy-to-v3' || r.type === 'copy-to-v4') return countryExact(r, ['id', 'type', 'worldId', 'name']) && countryId(r.worldId, 'country') && countryName(r.name);
   if (r.type === 'list' || r.type === 'cancel-preview') return countryExact(r, ['id', 'type']);
   if (r.type === 'confirm') return countryExact(r, ['id', 'type', 'candidateId']) && countryId(r.candidateId, 'candidate');
   return r.type === 'preview' && countryExact(r, ['id', 'type', 'expected', 'command']) && countryExact(r.expected, ['worldId', 'revision', 'rootDigest'])
@@ -48,14 +49,15 @@ export class CountryRuntime {
     try {
       if (request.type === 'list') return await listCountryWorlds();
       if (request.type === 'cancel-preview') { this.candidate = null; return null; }
-      if (request.type === 'create' || request.type === 'copy-to-v2' || request.type === 'copy-to-v3') {
+      if (request.type === 'create' || request.type === 'copy-to-v2' || request.type === 'copy-to-v3' || request.type === 'copy-to-v4') {
         this.candidate = null;
         let state: CountryState;
         if (request.type === 'create') {
           const record = await prepareCountryGeography(request.source, control); check();
           control.onProgress?.({ stage: '保存独立国家世界与完整地理副本', completed: 0, total: 1 });
           state = await createCountryWorld(record, request.name, active.signal);
-        } else state = request.type === 'copy-to-v2' ? await copyCountryWorldToV2(request.worldId, request.name, active.signal) : await copyCountryWorldToV3(request.worldId, request.name, control);
+        } else state = request.type === 'copy-to-v2' ? await copyCountryWorldToV2(request.worldId, request.name, active.signal)
+          : request.type === 'copy-to-v3' ? await copyCountryWorldToV3(request.worldId, request.name, control) : await copyCountryWorldToV4(request.worldId, request.name, control);
         // A commit that already won is not undone by a late abort/closed page.
         this.state = state; this.geography = null; check();
         this.geography = await readCountryGeography(state.document.worldId); check();

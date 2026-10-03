@@ -40,6 +40,7 @@ async function read<T>(store: string, key: string, name = COUNTRY_V2_DATABASE): 
 async function write(store: string, key: string, value: unknown, name = COUNTRY_V2_DATABASE) { const database = await db(name); try { await new Promise<void>((resolve, reject) => { const tx = database.transaction(store, 'readwrite'); if (value === undefined) tx.objectStore(store).delete(key); else tx.objectStore(store).put(value, key); tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error); }); } finally { database.close(); } }
 async function small() { const state = await createCountryWorld(await prepareCountryGeography(source), '分块世界'); const next = (await applyCountryCommand(state.document, { type: 'create-nation', name: '南陆', color: '#336699', cellIds: [0, 1] }, geo)).document; return { base: state, state: await commitCountryWorld(state, next, commandId(), 'f'.repeat(64)) }; }
 function expanded(base: CountryDocument, count: number): CountryDocument {
+  if (base.version !== 2) throw new Error('This compatibility fixture requires a v2 world.');
   const nationId = `nation-${crypto.randomUUID()}`, regimeId = `regime-${crypto.randomUUID()}`;
   return { ...structuredClone(base), revision: base.revision + 1, nations: [{ id: nationId, name: '广陆', color: '#445566', regimeId, capitalCityId: null, labelAnchorQ: { xQ: 1, yQ: 1 } }], regimes: [{ id: regimeId, nationId, name: '广陆政权' }],
     territories: Array.from({ length: count }, (_, cellId) => ({ cellId, legalNationId: nationId, controllingNationId: nationId })) };

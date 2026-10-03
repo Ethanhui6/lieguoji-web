@@ -1,0 +1,4 @@
+
+> lieguoji-web@0.5.0-preview.33 typecheck
+> tsc --noEmit
+

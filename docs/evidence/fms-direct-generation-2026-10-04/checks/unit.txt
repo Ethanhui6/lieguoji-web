@@ -1,0 +1,51 @@
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ✓ src/world/terrain-import.test.ts (8 tests) 12450ms
+   ✓ verified research terrain imports create private editable Atlas-v4 geography (8)
+     ✓ creates complete real coarse and fine elevations, letterboxes without stretching, and retains no invented generation history 2943ms
+     ✓ writes Q8 world distance to the real coastline independently of its elevation scale 1652ms
+     ✓ supports shore-free all-sea/all-land squares and adds a real coast where letterboxed land meets outer sea 4688ms
+     ✓ preserves exact sea-level nodes and deterministic content for identical imported data and IDs 3097ms
+ ✓ src/world/seed-terrain-worker.test.ts (27 tests) 12922ms
+   ✓ bounded seed generation and existing atomic terrain import (27)
+     ✓ owns the request, streams bounded bytes, terminates generation before import, and only previews 2469ms
+     ✓ confirms exactly one new root and preserves an existing draft byte for byte 3404ms
+     ✓ recovers an already committed import through cancel without a second root 2789ms
+     ✓ recovers an already committed import through lost-reply without a second root 2827ms
+ ✓ src/world/detail-coast-format.test.ts (14 tests) 1410ms
+ ✓ src/world/terrain-import-worker.test.ts (23 tests) 33582ms
+   ✓ terrain import real bounded runtime and durable storage (23)
+     ✓ streams a multi-packet input and real preview, discards without root writes, and keeps an existing draft byte-identical 2958ms
+     ✓ checks confirmation candidateId in the Worker before storage access 2391ms
+     ✓ checks confirmation commandId in the Worker before storage access 2395ms
+     ✓ checks confirmation draftId in the Worker before storage access 2369ms
+     ✓ checks confirmation manifestDigest in the Worker before storage access 2392ms
+     ✓ checks confirmation sourceSha256 in the Worker before storage access 2390ms
+     ✓ saves exactly one independently identified v4 root using expectedRoot null and a verified receipt 3258ms
+     ✓ cancellation before the durable commit leaves no new root or receipt 2515ms
+     ✓ recovers the same receipt after a storage error thrown after the durable commit 2718ms
+     ✓ treats cancellation after the durable commit as a saved result 2732ms
+     ✓ recovers a committed root when the confirmation reply is lost through worker-error 2763ms
+     ✓ recovers a committed root when the confirmation reply is lost through timeout 3241ms
+     ✓ fails closed on missing-block preview response without a root 658ms
+ ✓ src/engine/fingerprint.test.ts (10 tests) 88ms
+ ✓ src/world/generation/fingerprint.test.ts (3 tests) 13ms
+ ✓ src/world/seed-terrain.test.ts (13 tests) 8302ms
+   ✓ reviewed local seed terrain (13)
+     ✓ generates and independently verifies the complete square mesh for archipelago / 421730 334ms
+     ✓ generates and independently verifies the complete square mesh for archipelago / 列国纪-验收-2 325ms
+     ✓ generates and independently verifies the complete square mesh for continents / 421730 317ms
+     ✓ generates and independently verifies the complete square mesh for continents / 列国纪-验收-2 313ms
+     ✓ generates and independently verifies the complete square mesh for highIsland / 421730 350ms
+     ✓ generates and independently verifies the complete square mesh for highIsland / 列国纪-验收-2 345ms
+     ✓ generates and independently verifies the complete square mesh for pangea / 421730 338ms
+     ✓ generates and independently verifies the complete square mesh for pangea / 列国纪-验收-2 367ms
+     ✓ is byte-deterministic across interleaved requests without reading or replacing global Math.random 5249ms
+
+ Test Files  7 passed (7)
+      Tests  98 passed (98)
+   Start at  00:44:17
+   Duration  36.10s (tests 98%, import 1%, transform 1%)
+
+JSON report written to D:/游戏/架空地图模拟器/.autopilot/fms-direct-generation/checks/unit.json

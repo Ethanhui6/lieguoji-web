@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-04",
+  "observationKind": "Native Codex in-app browser UI actions, DOM state and screenshots",
+  "url": "http://127.0.0.1:4173/?atlas=atlas-17708eca-a8dc-465b-9763-8f82a1539ca6&atlas-format=4",
+  "draftName": "群岛新纪 · 直接创世试玩",
+  "template": "archipelago",
+  "seed": "421730",
+  "confirmedSaved": true,
+  "revision": 0,
+  "reloadRestoredInFinalBuild": true,
+  "visibleRestoredStatus": "草稿已保存 · 修订 0",
+  "restoredZoomControlsEnabled": true,
+  "finalObservedEntryScript": "http://127.0.0.1:4173/assets/index-Bj6Gfonp.js",
+  "consoleErrors": [],
+  "markedDeliverable": true,
+  "screenshot": "native-restored-final.png",
+  "scopeNotes": [
+    "The initial native save exposed the creation-record lifetime defect; the map itself was already durably saved.",
+    "The final native page restored that same map after the UI repair. Fresh creation-record downloads and country creation belong to the isolated browser test report, not this native observation.",
+    "This is a local browser profile draft, not a cloud save or a physical phone/tablet acceptance."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-04",
+  "detectedIn": "First preview.33 build, native Codex in-app browser",
+  "buildSha256": "dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3",
+  "flow": "?atlas=new -> seed template dialog -> generate -> save independent draft",
+  "observedDraftId": "atlas-17708eca-a8dc-465b-9763-8f82a1539ca6",
+  "actualMapSaved": true,
+  "failure": "The conditional empty-draft entry unmounted SeedTerrainPanel after view became non-null, losing its session-local creation record and download entry.",
+  "additionalSourceReview": "An existing-draft creation panel could also unmount when switching panels, losing the same local record without a page refresh.",
+  "requiredRepair": "Own the creation record at AtlasStudio lifetime; expose it after saving and after panel switching. Cover both blank and existing draft entry paths in final browser checks.",
+  "notAClaimOfFinalPass": true
+}

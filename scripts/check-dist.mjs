@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve('dist');
-const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects']);
+const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects', 'terrain-licenses.txt']);
 const assetName = /^[A-Za-z0-9][A-Za-z0-9._-]*-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
 const files = [];
 
@@ -47,6 +47,10 @@ if (!inspect(root, 'dist').isDirectory()) reject('dist', 'build output must be a
 walk(root);
 for (const required of requiredFiles) {
   if (!files.includes(required)) reject(required, 'required game artifact is missing');
+}
+const terrainLicenses = fs.readFileSync(path.join(root, 'terrain-licenses.txt'));
+if (terrainLicenses.length > 65536 || !terrainLicenses.equals(fs.readFileSync('public/terrain-licenses.txt'))) {
+  reject('terrain-licenses.txt', 'must match the reviewed bounded public license artifact');
 }
 if (!files.some(file => /^assets\/sim\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/sim.worker-<hash>.js', 'required simulation Worker is missing');

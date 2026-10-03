@@ -2393,7 +2393,7 @@
   },
   "ownedPackageReuse": {
     "source": "User-authorized FantasyMapSimulator installation",
-    "date": "2026-10-03",
+    "date": "2026-10-04",
     "status": "in_progress",
     "evidence": [
       "docs/FMS_PACKAGE_REUSE_2026-10-03.md",
@@ -2402,7 +2402,11 @@
       "docs/evidence/fms-package-2026-10-03/source-readonly-verification.json",
       "docs/evidence/fms-terrain-import-2026-10-03/REPORT.md",
       "docs/evidence/fms-terrain-import-2026-10-03/verification.json",
-      "docs/evidence/fms-terrain-import-2026-10-03/basic-map/BASIC_MAP_REPORT.md"
+      "docs/evidence/fms-terrain-import-2026-10-03/basic-map/BASIC_MAP_REPORT.md",
+      "docs/evidence/fms-direct-generation-2026-10-04/REPORT.md",
+      "docs/evidence/fms-direct-generation-2026-10-04/PROVENANCE.md",
+      "docs/evidence/fms-direct-generation-2026-10-04/verification.json",
+      "docs/evidence/fms-direct-generation-2026-10-04/dist-review.json"
     ],
     "sourceReadOnly": true,
     "rawInstallationPublished": false,
@@ -2422,7 +2426,7 @@
       {
         "id": "FMS-TERRAIN",
         "status": "in_progress",
-        "scope": "Recovered original height kernel runs with explicit web test topology; independent Atlas v4 import works. Native Unity adjacency and direct main creation flow remain incomplete."
+        "scope": "Recovered height kernel and direct four-template creation use explicit web square topology; independent editable Atlas v4 works. Native Unity adjacency, hand-drawn contour integration and full simulation remain incomplete."
       },
       {
         "id": "FMS-BASIC-MAPS",
@@ -2433,15 +2437,21 @@
         "id": "FMS-TERRAIN-IMPORT",
         "status": "done",
         "scope": "Bounded v2 research terrain to independent editable Atlas v4; preview/cancel/save/reload/local relief/country creation passed on desktop and mobile emulation with synthetic and actual kernel export."
+      },
+      {
+        "id": "FMS-SEED-CREATION",
+        "status": "done",
+        "scope": "Four-template bundled seed generation, real preview/cancel, independent save, creation record across panel changes, edit and country creation/reload passed on desktop and mobile emulation; physical-device/user visual acceptance remains pending."
       }
     ],
     "sourceCommit": "a570fb55dd2dd42eb307beb62f98b1ba013ea2f4",
     "originalPointCoordinatesRecovered": true,
     "originalNativeAdjacencyRecovered": false,
-    "previousSourceCommit": "9e6937253e5c57b3c452540c3dfcc8a5f30dace0",
-    "version": "0.5.0-preview.32",
-    "buildBaseCommit": "a3b2d566f45e9efb777c4272f96ccfc55077151b",
-    "buildSha256": "06e9e981b889cc7eb8023abbf04f05d89fae61a8ca234b343d014276475059e9",
-    "commitNote": "Source and evidence committed locally; this pointer and handoff are recorded in the subsequent documentation commit."
+    "previousSourceCommit": "a570fb55dd2dd42eb307beb62f98b1ba013ea2f4",
+    "version": "0.5.0-preview.33",
+    "buildBaseCommit": "199f20d65cdfccff0367a9770d4516ff573e1a4c",
+    "buildSha256": "dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3",
+    "commitNote": "Source and evidence will be committed locally; the following checkpoint commit records its exact source commit without rewriting build metadata.",
+    "seedCreationInMainFlow": true
   }
 }

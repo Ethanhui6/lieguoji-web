@@ -30,6 +30,7 @@ import type { HydrologyMacroPreview } from '../world/hydrology-macro-contract';
 import { MacroHydrologyPanel } from './MacroHydrologyPanel';
 import type { CountrySource } from '../world/politics/geography';
 import { TerrainImportPanel } from './TerrainImportPanel';
+import { SeedTerrainPanel, SeedTerrainRecord, type CreationRecord } from './SeedTerrainPanel';
 
 type Props = {
   initialDraftId?: string; initialSource?: 'current' | 'backup'; expectedManifest?: string; initialFormat?: AtlasFormat | null;
@@ -46,6 +47,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const live = useRef(false), generation = useRef(0), busyRef = useRef(false), selectedRef = useRef<number | null>(null), viewRef = useRef<AtlasClientView | null>(null);
   const callbacks = useRef({ onDraftOpened }); callbacks.current = { onDraftOpened };
   const [view, setView] = useState<AtlasClientView | null>(null), [ready, setReady] = useState(false), [busy, setBusy] = useState(true);
+  const [creationRecord, setCreationRecord] = useState<CreationRecord | null>(null);
   const [error, setError] = useState(''), [fatal, setFatal] = useState(''), [status, setStatus] = useState('正在打开大世界草稿…');
   const [graphicsState, setGraphicsState] = useState<AtlasGraphicsState>('ready');
   const [progress, setProgress] = useState<AtlasProgress | null>(null), [drafts, setDrafts] = useState<(AtlasDraftList[number] & { format: AtlasFormat })[]>([]);
@@ -528,11 +530,24 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const coastPreviewActions = fine && fineOperation === 'draw' && !constraintsPreview && generatedSummary
     ? <div className="atlas-preview-actions" role="group" aria-label="大陆生成预览操作"><button disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(discardTerrain)}>取消生成</button><button className="atlas-primary" disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(confirmTerrain)}>确认生成并保存</button></div> : null;
   const savedLocalScope = generationPreview?.preview.scope.kind === 'cell-rectangle' ? generationPreview.preview.scope : null;
+  const seedCreation = <SeedTerrainPanel disabled={busy || !ready || !!fatal || graphicsLocked || !!pending || !!generationPreview || !!constraintsPreview || drawing || localSelecting || protectionSelecting} onSaved={async record => {
+    // Keep the committed receipt before restoring: opening the first map or
+    // changing inspector panels can unmount the creation entry immediately.
+    setCreationRecord(record);
+    const receipt = record.receipt;
+    let restored = false;
+    await run(async () => {
+      const start = performance.now(), next = await clientRef.current!.restore(receipt.draftId, 'current', 4);
+      if (next.head.manifestDigest !== receipt.manifestDigest) throw new Error('新世界已发生变化，请从草稿目录重新打开。');
+      await accept(next, start, performance.now()); await refreshList(); restored = true;
+    });
+    if (!restored) throw new Error('新世界已保存，但地图未能打开。请保存创世记录，关闭面板后从草稿目录恢复。');
+  }} />;
   const finePanel = (fineOperation === 'protect' || constraintsPreview) && spec
     ? <RegionProtectionPanel locked={locked} busy={busy || graphicsLocked || !!fatal} readOnly={readOnly} rectangle={protectionRegion} valid={validateCellRectangle(protectionRegion, spec)} maxColumns={spec.columns} maxRows={spec.rows} mask={lockMask} action={lockAction} preview={constraintsPreview?.preview ?? null} onRectangle={setProtectionRegion} onMask={setLockMask} onAction={setLockAction} onChooseRange={beginProtectionSelection} onPreview={() => void run(previewLocks)} onConfirm={() => void run(confirmLocks)} onCancel={() => void run(discardLocks)} onReturn={() => { stopLocalSelection(); setFineOperation(beforeProtection.current); setStatus('已返回地貌创作，山地范围和参数保持原样。'); }}/>
     : fineOperation === 'local-relief' && spec
     ? <LocalReliefPanel locked={locked} busy={busy || graphicsLocked || !!fatal} readOnly={readOnly} seed={localReliefSeed} reliefMeters={localReliefMeters} rectangle={savedLocalScope ?? region} transitionCells={savedLocalScope?.transitionCells ?? transitionCells} maxColumns={spec.columns} maxRows={spec.rows} validScope={!!localScope} preview={generatedSummary?.detailLocalRelief ?? null} onSeed={setLocalReliefSeed} onRelief={setLocalReliefMeters} onRectangle={setRegion} onTransition={setTransitionCells} onChooseRange={beginLocalRangeSelection} onPreview={() => void run(() => previewTerrain())} onConfirm={() => void run(confirmTerrain)} onCancel={() => void run(discardTerrain)} onDrawMode={() => { stopLocalSelection(); setFineOperation('draw'); setLocalGeneration(false); setStatus('已返回画大陆，草稿保持原样。'); }}/>
-    : <DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} outlinePoints={outline.length} seed={terrainSeed} version={detailVersion} structure={coastStructure} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} islandsPerChain={detailIslandCount} onSeed={setTerrainSeed} onVersion={value => { setDetailVersion(value); if (value === 2 && detailVersion === 1) setCoastStructure(96); }} onStructure={setCoastStructure} onIslandsPerChain={setDetailIslandCount} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} preview={generatedSummary ? { ...generatedSummary, addedLandAreaQ2: generatedSummary.detailNaturalAdd?.addedLandAreaTwiceQ2 ?? generatedSummary.detailAdd?.addedLandAreaTwiceQ2 } : null} />;
+    : <>{seedCreation}<DetailCoastPanel hasWorld={!!view} alreadyDrawn={detailAlreadyDrawn} readOnly={readOnly} locked={locked} outlinePoints={outline.length} seed={terrainSeed} version={detailVersion} structure={coastStructure} roughness={shapeRoughness} shelf={shapeShelf} relief={relief} islands={detailIslands} islandsPerChain={detailIslandCount} onSeed={setTerrainSeed} onVersion={value => { setDetailVersion(value); if (value === 2 && detailVersion === 1) setCoastStructure(96); }} onStructure={setCoastStructure} onIslandsPerChain={setDetailIslandCount} onRoughness={setShapeRoughness} onShelf={setShapeShelf} onRelief={setRelief} onIslands={setDetailIslands} onDraw={beginOutline} onPreview={() => void run(() => previewTerrain())} preview={generatedSummary ? { ...generatedSummary, addedLandAreaQ2: generatedSummary.detailNaturalAdd?.addedLandAreaTwiceQ2 ?? generatedSummary.detailAdd?.addedLandAreaTwiceQ2 } : null} /></>;
   const editPanel = <div className="atlas-panel-content">
     <form className="atlas-locate" onSubmit={event => { event.preventDefault(); selectById(); }}><label>定位地块<input aria-label="定位地块编号" type="number" min={0} max={spec ? spec.columns * spec.rows - 1 : 0} value={locate} onChange={event => setLocate(event.target.value)} /></label><button disabled={!data || busy || graphicsLocked}>定位</button></form>
     {selected !== null && data && <>
@@ -548,6 +563,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     {selected === null && <p className="atlas-help">轻点地图选择地块，或输入编号定位。拖动只移动视野，不会改地形。</p>}
   </div>;
   const worldPanel = <div className="atlas-panel-content">
+    {!view && seedCreation}
     <TerrainImportPanel disabled={busy || !ready || !!fatal || graphicsLocked || !!pending || !!generationPreview || !!constraintsPreview || drawing || localSelecting || protectionSelecting} onImported={async receipt => { let restored = false; await run(async () => { const start = performance.now(), next = await clientRef.current!.restore(receipt.draftId, 'current', 4); if (next.head.manifestDigest !== receipt.manifestDigest) throw new Error('导入草稿已发生变化，请从草稿目录重新打开。'); await accept(next, start, performance.now()); await refreshList(); restored = true; }); if (!restored) throw new Error('独立新草稿已保存，但地图未能打开。请保存导入记录，关闭面板后从草稿目录恢复。'); }} />
     {onOpenCountries && <section className="atlas-country-entry"><h3>在这片山海上建国</h3><p className="atlas-help">另存一份建国世界，选择国土、建立城市和首都。此刻的山海会独立保存，原地理草稿继续保留。</p>{fine && view && <button className="atlas-primary" disabled={locked || readOnly || !!pending || !!generationPreview || !!constraintsPreview} onClick={() => onOpenCountries({ draftId: view.head.draftId, revision: view.head.revision, rootDigest: view.head.rootDigest, manifestDigest: view.head.manifestDigest, atlasFormat: 4 })}>在这片地形上建国</button>}<button disabled={busy || !!fatal} onClick={() => onOpenCountries()}>已保存的建国世界</button></section>}
     {view && <section className="atlas-current"><h3>{view.head.name}</h3><p>{view.head.readOnly ? '只读备份' : '已保存草稿'} · 修订 {view.head.revision} · {view.data.manifest.spec.columns ** 2} 地块</p>{view.head.readOnly && !fine && <button className="atlas-primary" disabled={busy || !!fatal || graphicsLocked} onClick={() => setConfirmation({ title: '从备份创建独立副本？', detail: '新草稿使用独立存储身份。原主档与备份均保持不变。', button: '确认创建独立副本', action: fork })}>创建独立副本</button>}</section>}
@@ -566,7 +582,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       </div>
       {drawing && <div className="atlas-drawing-hint" role="status">画出大陆轮廓 · 松开自动生成</div>}
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
-      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'water' ? '大陆汇流' : section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? fine && fineOperation === 'protect' ? '保护区域' : '大陆与地貌' : '大世界草稿'} subtitle={section === 'water' ? '从当前地形，读懂汇合与去向' : section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={<>{section === 'generate' && coastPreviewActions}{feedback}</>}>{section === 'water' ? waterPanel : section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}
+      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'water' ? '大陆汇流' : section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? fine && fineOperation === 'protect' ? '保护区域' : '大陆与地貌' : '大世界草稿'} subtitle={section === 'water' ? '从当前地形，读懂汇合与去向' : section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={<>{section === 'generate' && coastPreviewActions}{feedback}</>}>{creationRecord && (section === 'generate' || section === 'world') && <SeedTerrainRecord record={creationRecord} />}{section === 'water' ? waterPanel : section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}
       {!section && <div className="workbench-status atlas-status" data-feedback={error || fatal ? 'alert' : graphicsLocked ? 'recovery' : busy || progress ? 'busy' : localSelecting || protectionSelecting ? 'selection' : 'status'}>{feedback}</div>}
     </div>
     <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, ...(fine ? [{ id: 'water', label: '水文', icon: 'water' } as const] : []), { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { stopLocalSelection(); setDrawing(false); setSection(item.id); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>

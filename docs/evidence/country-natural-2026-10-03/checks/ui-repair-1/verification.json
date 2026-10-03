@@ -1,0 +1,100 @@
+{
+  "at": "2026-10-03T06:54:12.273Z",
+  "head": "ac318babbef1655a6063c7205dc1fb60400b81af",
+  "version": "0.5.0-preview.27",
+  "passed": true,
+  "sourceStable": true,
+  "rounds": [
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 8173
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "elapsedMs": 13494
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "elapsedMs": 1532
+    },
+    {
+      "name": "dist",
+      "exitCode": 0,
+      "elapsedMs": 48
+    }
+  ],
+  "unit": {
+    "total": 154,
+    "passed": 154,
+    "failed": 0
+  },
+  "identity": [
+    {
+      "key": "engineFingerprint",
+      "unchanged": true
+    },
+    {
+      "key": "macroGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "landformGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "islandGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "coastGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "shapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "oceanGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "unchanged": true
+    }
+  ],
+  "buildSha256": "704377fd16e079837966ef3c44947a548f1cb54919fa1cb94886b231d61455a7",
+  "browser": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false,
+  "reused": {
+    "from": ".autopilot/country-natural/checks/repair-1",
+    "checks": [
+      "release-policy",
+      "unit"
+    ],
+    "reason": "Only CountryStudio clears stale geographic selection for v3; full lint/types/build/dist rerun, unchanged 154 unit and release-policy evidence reused; final native browser checks follow"
+  },
+  "changed": [
+    "src/editor/CountryStudio.tsx"
+  ]
+}

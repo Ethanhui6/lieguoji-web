@@ -6,6 +6,7 @@ import { COUNTRY_LIMITS, countryArray, countryExact, countryHash, countryId, cou
 export type { CountryCommand, CountryDocument, CountryListEntry, CountryPreview, CountryState, CountrySource } from './model';
 type Operation = { type: 'create'; source: CountrySource; name: string } | { type: 'open'; worldId: string } | { type: 'list' } | { type: 'cancel-preview' }
   | { type: 'copy-to-v2'; worldId: string; name: string }
+  | { type: 'copy-to-v3'; worldId: string; name: string }
   | { type: 'preview'; command: CountryCommand; expected: { worldId: string; revision: number; rootDigest: string } } | { type: 'confirm'; candidateId: string };
 interface Pending { id: number; operation: Operation; resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; settled: Promise<void>; finish: () => void }
 export interface CountryClientOptions { onProgress?: (progress: { stage: string; completed: number; total: number }) => void; timeoutMs?: number }
@@ -46,7 +47,7 @@ export class CountryClient {
       const message = raw as Record<string, unknown>;
       if (message.id !== p.id) throw new Error('国家回执属于其他操作。');
       if (message.kind === 'transfer-start') {
-        if (!countryExact(message, ['id', 'kind', 'value']) || this.transfer || !['create', 'copy-to-v2', 'open', 'confirm', 'preview'].includes(p.operation.type)) throw new Error('国家分块回执起始无效。');
+        if (!countryExact(message, ['id', 'kind', 'value']) || this.transfer || !['create', 'copy-to-v2', 'copy-to-v3', 'open', 'confirm', 'preview'].includes(p.operation.type)) throw new Error('国家分块回执起始无效。');
         this.transfer = new CountryTransferReader(message.value, p.operation.type === 'preview' ? 'preview' : 'state'); return;
       }
       if (message.kind === 'transfer-page') {
@@ -67,11 +68,12 @@ export class CountryClient {
       const value = this.transfer ? await this.transfer.finish(message.value) : message.value, op = p.operation;
       if (this.pending !== p || this.closed) return;
       this.transfer = null;
-      if (op.type === 'create' || op.type === 'copy-to-v2' || op.type === 'open' || op.type === 'confirm') {
+      if (op.type === 'create' || op.type === 'copy-to-v2' || op.type === 'copy-to-v3' || op.type === 'open' || op.type === 'confirm') {
         if (!validateCountryState(value)) throw new Error('国家状态回执字段、引用或摘要无效。');
         if (op.type === 'open' && value.document.worldId !== op.worldId
-          || op.type === 'create' && (value.document.revision !== 0 || !sameSource(value.document.source, op.source) || value.document.name !== op.name)
+          || op.type === 'create' && (value.document.version !== 3 || value.document.revision !== 0 || !sameSource(value.document.source, op.source) || value.document.name !== op.name)
           || op.type === 'copy-to-v2' && (value.document.version !== 2 || value.document.worldId === op.worldId || value.document.name !== op.name || value.document.revision !== 0)
+          || op.type === 'copy-to-v3' && (value.document.version !== 3 || value.document.worldId === op.worldId || value.document.name !== op.name || value.document.revision !== 0)
           || op.type === 'confirm' && (!this.candidate || this.candidate.candidateId !== op.candidateId || await countryDocumentDigest(value.document) !== await countryDocumentDigest(this.candidate.document))) throw new Error('国家状态回执未绑定本次操作。');
         if (this.pending !== p || this.closed) return;
         this.state = structuredClone(value); this.candidate = null;
@@ -95,6 +97,7 @@ export class CountryClient {
   }
   open(worldId: string): Promise<CountryState> { if (!countryId(worldId, 'country')) return Promise.reject(new Error('国家世界 ID 无效。')); return this.request({ type: 'open', worldId }); }
   copyToV2(worldId: string, name: string): Promise<CountryState> { if (!countryId(worldId, 'country') || !countryName(name)) return Promise.reject(new Error('旧档身份或副本名称无效。')); return this.request({ type: 'copy-to-v2', worldId, name }); }
+  copyToV3(worldId: string, name: string): Promise<CountryState> { if (!countryId(worldId, 'country') || !countryName(name)) return Promise.reject(new Error('旧档身份或自然国界副本名称无效。')); return this.request({ type: 'copy-to-v3', worldId, name }); }
   list(): Promise<CountryListEntry[]> { return this.request({ type: 'list' }); }
   preview(command: CountryCommand): Promise<CountryPreview> {
     if (!this.state || this.state.readOnly || !validateCountryCommand(command)) return Promise.reject(new Error('请打开可编辑国家世界，并提交有效命令。'));

@@ -2,7 +2,7 @@ import type { AtlasDocument } from '../atlas-format';
 import type { AtlasControl } from '../model';
 import { countryClaimCells, countryGeographySource, countryLandAt } from './geography';
 import { selectCountryPolygon } from './country-selection';
-import { COUNTRY_LIMITS, countryId, encodeCountryDocument, validateCountryCommand, validateCountryDocument, type CountryCommand, type CountryDocument, type CountryPoint } from './model';
+import { COUNTRY_LIMITS, countryGeometry, countryId, encodeCountryDocument, validateCountryCommand, validateCountryDocument, type CountryCommand, type CountryDocument, type CountryPoint } from './model';
 
 export interface CountryCreationIds { nationId?: string; regimeId?: string; cityId?: string }
 function assertGeographySource(base: CountryDocument, geography: AtlasDocument) {
@@ -15,17 +15,18 @@ function assertGeographySource(base: CountryDocument, geography: AtlasDocument) 
 export async function validateCountryWorldGeography(base: CountryDocument, geography: AtlasDocument, control?: AtlasControl): Promise<void> {
   if (!validateCountryDocument(base)) throw new Error('国家实体格式无效。');
   base = structuredClone(base);
+  const geometry = countryGeometry(base);
   assertGeographySource(base, geography); control?.signal?.throwIfAborted();
   const cells = base.territories.map(t => t.cellId), maximum = geography.manifest.spec.columns * geography.manifest.spec.rows;
   if (cells.some(cell => cell >= maximum)) throw new Error('国家领土引用超出实际地理范围。');
   for (let offset = 0; offset < cells.length; offset += COUNTRY_LIMITS.commandCells) {
-    const batch = cells.slice(offset, offset + COUNTRY_LIMITS.commandCells), land = await countryClaimCells(geography, batch, control);
+    const batch = cells.slice(offset, offset + COUNTRY_LIMITS.commandCells), land = await countryClaimCells(geography, batch, control, geometry);
     if (land.length !== batch.length || land.some((cell, i) => cell !== batch[i])) throw new Error('国家领土包含没有真实陆地的地块。');
     control?.signal?.throwIfAborted();
   }
   const territories = new Map(base.territories.map(t => [t.cellId, t]));
   for (const city of base.cities) {
-    const surface = await countryLandAt(geography, city.positionQ.xQ, city.positionQ.yQ, control), territory = territories.get(surface.cellId);
+    const surface = await countryLandAt(geography, city.positionQ.xQ, city.positionQ.yQ, control, geometry), territory = territories.get(surface.cellId);
     if (!surface.land || territory?.legalNationId !== city.nationId || territory.controllingNationId !== city.nationId) throw new Error('保存的城市不在所属国家实际陆地内。');
     control?.signal?.throwIfAborted();
   }
@@ -41,6 +42,7 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
   assertGeographySource(base, geography);
   control?.signal?.throwIfAborted();
   const command = structuredClone(raw), next = structuredClone(base);
+  const geometry = countryGeometry(next);
   if (command.type === 'undo') throw new Error('撤销必须由已验证的持久历史执行。');
   if (base.revision === Number.MAX_SAFE_INTEGER) throw new Error('国家世界修订已到上限。');
   next.revision++;
@@ -48,7 +50,7 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
   if ('nationId' in command && !nation) throw new Error('目标国家不存在。');
   let description: string;
   if (command.type === 'create-nation' || command.type === 'claim-territory' || command.type === 'create-nation-shape' || command.type === 'claim-territory-shape') {
-    const cells = 'outlineQ' in command ? (await selectCountryPolygon(geography, { source: base.source, pointsQ: command.outlineQ }, control)).cellIds : await countryClaimCells(geography, command.cellIds, control); control?.signal?.throwIfAborted();
+    const cells = 'outlineQ' in command ? (await selectCountryPolygon(geography, { source: next.source, pointsQ: command.outlineQ, geometry }, control)).cellIds : await countryClaimCells(geography, command.cellIds, control, geometry); control?.signal?.throwIfAborted();
     if (!cells.length) throw new Error('所选范围没有可划入国家的真实陆地。');
     const nationId = command.type === 'create-nation' || command.type === 'create-nation-shape' ? ids.nationId : command.nationId;
     if (!countryId(nationId, 'nation')) throw new Error('新国家身份无效。');
@@ -68,7 +70,7 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
     next.territories = [...territories.values()].sort((a, b) => a.cellId - b.cellId);
   } else if (command.type === 'create-city') {
     if (next.cities.length >= COUNTRY_LIMITS.cities || !countryId(ids.cityId, 'city')) throw new Error('城市数量已达上限或城市身份无效。');
-    const surface = await countryLandAt(geography, command.positionQ.xQ, command.positionQ.yQ, control); control?.signal?.throwIfAborted();
+    const surface = await countryLandAt(geography, command.positionQ.xQ, command.positionQ.yQ, control, geometry); control?.signal?.throwIfAborted();
     const owner = next.territories.find(t => t.cellId === surface.cellId);
     if (!surface.land || owner?.legalNationId !== command.nationId || owner.controllingNationId !== command.nationId) throw new Error('城市必须落在该国实际拥有的陆地上。');
     if (next.cities.some(c => c.positionQ.xQ === command.positionQ.xQ && c.positionQ.yQ === command.positionQ.yQ)) throw new Error('这个位置已有城市。');

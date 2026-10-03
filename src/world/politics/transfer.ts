@@ -5,7 +5,7 @@ interface TransferStart { format: 'lieguoji-country-transfer'; version: 2; resul
 interface TransferPage { index: number; digest: string; text: string }
 interface TransferEnd { format: 'lieguoji-country-transfer-end'; version: 2; digest: string; pageCount: number }
 export async function streamCountryResult(value: unknown, emit: (kind: 'transfer-start' | 'transfer-page', value: unknown) => void): Promise<unknown> {
-  if (!value || typeof value !== 'object' || !('document' in value) || (value.document as CountryDocument)?.version !== 2) return value;
+  if (!value || typeof value !== 'object' || !('document' in value) || ![2, 3].includes((value.document as CountryDocument)?.version)) return value;
   const result = value as CountryState | CountryPreview, { document, ...metadata } = result, encoded = await encodeCountryChunks(document);
   const start: TransferStart = { format: 'lieguoji-country-transfer', version: 2, resultType: 'rootDigest' in result ? 'state' : 'preview', metadata,
     manifestText: new TextDecoder().decode(encoded.bytes), digest: encoded.digest };

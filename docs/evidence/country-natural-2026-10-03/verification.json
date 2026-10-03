@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-10-03T07:13:42.924Z",
+  "files": 159,
+  "bytes": 9387783,
+  "inventorySha256": "933d98ab2fc7a9ad7935c46275714a2042f7df5084a15690abe2605596e91e7e",
+  "byteVerified": true,
+  "originalFailuresRetained": true,
+  "cloudWrites": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false
+}

@@ -6,6 +6,7 @@ import { CountryClient, type CountryState, type CountryPreview, type CountryList
 import { countryLandAt, type CountrySource } from '../world/politics/geography';
 import { readCountryGeography } from '../world/politics/storage';
 import { CountryRenderer } from '../world/politics/renderer';
+import { countryGeometry } from '../world/politics/model';
 import './country-studio.css';
 
 export type CountryStudioProps = { initialWorldId?: string; source?: CountrySource; onBack: () => void; onWorldOpened: (worldId: string) => void };
@@ -63,7 +64,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     setPanel(null); setOutlineControls(false);
   }
   function beginOutline(claim: boolean) {
-    if (locked || stateRef.current?.document.version !== 2) return;
+    if (locked || !stateRef.current || stateRef.current.document.version < 2) return;
     stopTool(); clearOutline(); setCells([]); setClaimMode(claim); setError(''); setOutlineEditing(true); setOutlineControls(false); setOutlineTool('outline-draw');
     setStatus('单指或鼠标圈出国土，双指调整视野。');
   }
@@ -91,7 +92,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   function showNation(id: string, move = false) {
     const item = (pendingRef.current?.document ?? stateRef.current?.document)?.nations.find(item => item.id === id); if (!item) return;
     stopTool(); choose(id, null); setNewNation(false); setNewCity(false); setClaimMode(false); setNationName(item.name); setNationColor(item.color); setPanel('nation');
-    if (move) focus(item.labelAnchorQ);
+    if (move) focus(overlay.current?.getNationAnchorQ(item.id) ?? item.labelAnchorQ);
   }
   function showCity(id: string, move = false) {
     const item = (pendingRef.current?.document ?? stateRef.current?.document)?.cities.find(item => item.id === id); if (!item) return;
@@ -130,7 +131,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     if (worldChanged) setCopyName(`${next.document.name.slice(0, 68)} · 升级副本`);
     setStatus(next.readOnly ? '这份世界以只读方式打开。' : next.recovered ? '已从可验证的备份恢复显示，请核对后继续。' : `已保存 · 修订 ${next.document.revision}`);
     if (!worldChanged && addedCity) { setPanel('city'); focus(addedCity.positionQ); }
-    else if (!worldChanged && addedNation) { setPanel('nation'); focus(addedNation.labelAnchorQ); }
+    else if (!worldChanged && addedNation) { setPanel('nation'); focus(overlay.current?.getNationAnchorQ(addedNation.id) ?? addedNation.labelAnchorQ); }
     else if (worldChanged) setPanel(next.document.nations.length ? null : 'nation');
     const entries = await client.current!.list(); if (current(ticket)) setWorlds(entries);
   }
@@ -178,7 +179,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   }
   async function createWorld(ticket: Ticket, api: CountryClient) { await accept(await api.create(entry.current.source!, worldName.trim()), ticket); }
   async function openWorld(id: string, ticket: Ticket, api: CountryClient) { await accept(await api.open(id), ticket); }
-  async function copyWorld(ticket: Ticket, api: CountryClient) { await accept(await api.copyToV2(stateRef.current!.document.worldId, copyName.trim()), ticket); }
+  async function copyWorld(ticket: Ticket, api: CountryClient) { await accept(await api.copyToV3(stateRef.current!.document.worldId, copyName.trim()), ticket); }
   function previewTerritory() {
     if (outlineRef.current.length) {
       const points = outlineRef.current.map(point => ({ ...point }));
@@ -197,6 +198,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   }
   pickPoint.current = point => {
     consumed.current = false; if (busyRef.current || pendingRef.current || fatal) return;
+    if (stateRef.current?.document.version === 3) renderer.current?.select(null);
     if (toolRef.current.startsWith('outline-')) {
       consumed.current = true; renderer.current?.select(null);
       if (toolRef.current === 'outline-points') {
@@ -211,7 +213,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     if (toolRef.current === 'city') {
       consumed.current = true; const positionQ = { xQ: Math.round(point.x * 256), yQ: Math.round(point.y * 256) };
       void run(async ticket => {
-        const pick = await countryLandAt(geography.current!, positionQ.xQ, positionQ.yQ);
+        const pick = await countryLandAt(geography.current!, positionQ.xQ, positionQ.yQ, undefined, countryGeometry(stateRef.current!.document));
         if (!current(ticket)) return;
         const territory = stateRef.current!.document.territories.find(item => item.cellId === pick.cellId);
         if (!pick.land || territory?.controllingNationId !== selectedRef.current.nationId) throw new Error('城市需要落在所选国家的真实陆地领土内，请重新点选。');
@@ -219,7 +221,20 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
       }); return;
     }
     const pickedCity = overlay.current?.pickCity(point);
-    if (pickedCity) { consumed.current = true; showCity(pickedCity, true); }
+    if (pickedCity) { consumed.current = true; showCity(pickedCity, true); return; }
+    // Atlas onPick describes geographic sampling cells. A v3 political region
+    // has its own shared geometry, so map browsing uses the same query as the
+    // authoritative Worker city validation instead of reusing a coarse ID.
+    if (stateRef.current?.document.version === 3) {
+      consumed.current = true;
+      void run(async ticket => {
+        const surface = await countryLandAt(geography.current!, Math.round(point.x * 256), Math.round(point.y * 256), undefined, countryGeometry(stateRef.current!.document));
+        if (!current(ticket)) return;
+        const owner = stateRef.current!.document.territories.find(t => t.cellId === surface.cellId);
+        if (surface.land && owner) showNation(owner.controllingNationId, true);
+        else { choose(null, null); setPanel(null); setStatus(surface.land ? '这片陆地尚未划入国家。' : '这里是海域。'); }
+      });
+    }
   };
   pickCell.current = (id, land) => {
     if (consumed.current) { consumed.current = false; return; }
@@ -272,20 +287,20 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   }, []);
 
   const countryPanel = <>
-    {state?.document.version === 1 && <div className="country-upgrade-note"><p>创建升级副本后，可自由圈地与建立更大的国家。原世界保留。</p><button disabled={busy || !!preview} onClick={() => setPanel('world')}>查看升级副本选项</button></div>}
+    {state && state.document.version < 3 && <div className="country-upgrade-note"><p>此世界保留原地块国界。创建自然国界副本可使用不规则共享边界，原世界保留。</p><button disabled={busy || !!preview} onClick={() => setPanel('world')}>查看升级副本选项</button></div>}
     {!newNation && <button className="country-primary" disabled={locked} onClick={() => { stopTool(); clearOutline(); setNewNation(true); setClaimMode(false); setNationName(''); setNationColor(colors[(actual?.nations.length ?? 0) % colors.length]); setCells([]); choose(null, null); }}>新建国家</button>}
     {(newNation || nation) && <section aria-label="国家设置" className="country-fields">
       <label>国家名称<input aria-label="国家名称" maxLength={60} value={nationName} disabled={locked} onChange={event => setNationName(event.target.value)} /></label>
       {(newNation || claimMode) && <label className="country-color">国家颜色<input aria-label="国家颜色" type="color" value={nationColor} disabled={locked || claimMode} onChange={event => setNationColor(event.target.value)} /></label>}
       {newNation ? <><p>圈出国家范围，按圈内地块中心划入领土，海水自动排除。</p>
-        <button className="country-primary" disabled={locked || !nationName.trim() || state?.document.version !== 2} onClick={() => beginOutline(false)}>手绘国土</button>
+        <button className="country-primary" disabled={locked || !nationName.trim() || !state || state.document.version < 2} onClick={() => beginOutline(false)}>手绘国土</button>
         <button disabled={locked || !nationName.trim()} onClick={() => beginTerritory(false)}>在地图上选择国土</button>
         {outlineQ.length > 0 && <button disabled={locked} onClick={() => { setOutlineEditing(true); setOutlineControls(true); setOutlineTool('outline-points'); }}>继续编辑轮廓</button>}
         <p data-testid="country-territory-selection">{outlineQ.length ? `轮廓 ${outlineQ.length} 个顶点 · 按地块划入` : cells.length ? `已选择 ${cells.length} 个候选地块` : '尚未选择领土'}</p>
         <button className="country-primary" disabled={locked || !cells.length && outlineQ.length < 3 || !nationName.trim()} onClick={() => void previewTerritory()}>预览建国</button></>
         : nation && <><dl className="country-facts"><div><dt>领土地块</dt><dd>{actual!.territories.filter(item => item.controllingNationId === nation.id).length}</dd></div><div><dt>首都</dt><dd>{actual!.cities.find(item => item.id === nation.capitalCityId)?.name ?? '尚未设定'}</dd></div></dl>
           <button disabled={locked || !nationName.trim() || nationName === nation.name} onClick={() => void run(ticket => previewCommand({ type: 'rename-nation', nationId: nation.id, name: nationName.trim() }, ticket))}>预览国家更名</button>
-          <button className="country-primary" disabled={locked || state?.document.version !== 2} onClick={() => beginOutline(true)}>手绘扩展领土</button>
+          <button className="country-primary" disabled={locked || !state || state.document.version < 2} onClick={() => beginOutline(true)}>手绘扩展领土</button>
           <button disabled={locked} onClick={() => beginTerritory(true)}>为此国划定领土</button>
           {claimMode && <><p data-testid="country-territory-selection">{outlineQ.length ? `轮廓 ${outlineQ.length} 个顶点 · 按地块划入` : cells.length ? `已选择 ${cells.length} 个候选地块` : '尚未选择领土'}</p>
             {outlineQ.length > 0 && <button disabled={locked} onClick={() => { setOutlineEditing(true); setOutlineTool('outline-points'); }}>继续编辑轮廓</button>}
@@ -314,9 +329,10 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   const worldPanel = <>
     {entry.current.source && !state && <section className="country-fields"><h3>把山海，变成你的列国</h3><p>创建独立建国副本，保存自己的地理、国家与城市。原地理草稿保留。</p><label>世界名称<input aria-label="建国世界名称" maxLength={80} value={worldName} disabled={busy} onChange={event => setWorldName(event.target.value)} /></label><button className="country-primary" disabled={busy || !!fatal || !worldName.trim()} onClick={() => void run(createWorld)}>创建独立建国副本</button></section>}
     {state && <section><h3>{state.document.name}</h3><p>{state.document.nations.length} 个国家 · {state.document.cities.length} 座城市 · 修订 {state.document.revision}</p><p className="country-help">领土、国家与城市在本地保存；当前是建国阶段，尚未开启战争与社会推演。</p><details><summary>世界身份</summary><p className="country-id">{state.document.worldId}</p><p className="country-id">{state.rootDigest}</p></details></section>}
-    {state?.document.version === 1 && <section className="country-fields country-upgrade-note"><h3>继续建造更大的世界</h3><p>复制地理、国家、城市与首都，开启自由圈地。原世界与原存档历史保留；新副本拥有独立保存记录。</p>
+    {state && state.document.version < 3 && <section className="country-fields country-upgrade-note"><h3>让国界离开方格</h3><p>创建独立副本，以不规则共享多边形重新解释领土范围。海陆与地形不变，国家、城市与首都身份保留。沿边归属可能变化，没有陆地的单元会排除；若城市因此越界，复制会停止并说明原因。</p><p>原世界与原历史保持原规则。新副本从修订 0 开始。</p>
       <label>副本名称<input aria-label="升级副本名称" maxLength={80} value={copyName} disabled={busy || !!preview} onChange={event => setCopyName(event.target.value)} /></label>
-      <button className="country-primary" disabled={busy || !!fatal || !!preview || state.recovered || !copyName.trim()} onClick={() => void run(copyWorld)}>创建升级副本</button>
+      <button className="country-primary" disabled={busy || !!fatal || !!preview || state.recovered || !copyName.trim()} onClick={() => void run(copyWorld)}>创建自然国界副本</button>
+      {state.document.version === 1 && <button disabled={busy || !!fatal || !!preview || state.recovered || !copyName.trim()} onClick={() => void run(async (ticket, api) => accept(await api.copyToV2(state.document.worldId, copyName.trim()), ticket))}>仅升级分块存储</button>}
       {state.recovered && <p>当前为备份恢复的只读状态，请先核对保存记录。</p>}</section>}
     <section><h3>已保存的世界</h3><div className="country-entity-list">{worlds.map(item => <button key={item.worldId} disabled={busy || !!preview} onClick={() => void run((ticket, api) => openWorld(item.worldId, ticket, api))} aria-label={`打开 ${item.name}`}><Icon name="world" /><span>{item.name}<small>{item.nationCount} 国 · {item.cityCount} 城</small></span></button>)}</div>{!worlds.length && <p className="country-help">还没有已保存的建国世界。</p>}</section>
   </>;

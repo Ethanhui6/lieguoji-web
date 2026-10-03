@@ -1,12 +1,12 @@
 import type { AtlasDocument } from '../atlas-format';
 import { generationArray, generationExact, generationInt } from '../generation-contract';
 import { yieldAtlas, type AtlasControl } from '../model';
-import { countryClaimCells, countryGeographySource, readCountryCellGeometryPage, validateCountrySource, type CountrySource } from './geography';
+import { countryClaimCells, countryGeographySource, readCountryCellGeometryPage, readCountryPoliticalCenterPage, validateCountrySource, type CountryGeometry, type CountrySource } from './geography';
 
 export interface CountryPolygonPoint { xQ: number; yQ: number }
-export interface CountryPolygonSelectionRequest { source: CountrySource; pointsQ: readonly CountryPolygonPoint[] }
+export interface CountryPolygonSelectionRequest { source: CountrySource; pointsQ: readonly CountryPolygonPoint[]; geometry?: CountryGeometry }
 export interface CountryPolygonSelection {
-  source: CountrySource; rule: 'cell-center-land-v1'; cellIds: number[];
+  source: CountrySource; rule: 'cell-center-land-v1' | 'political-seed-land-v1'; cellIds: number[];
   scannedCells: number; polygonMatchedCells: number; seaRejectedCells: number;
 }
 export const COUNTRY_SELECTION_LIMITS = Object.freeze({ vertices: 256, scannedCells: 512 * 512, selectedCells: 65536, pageCells: 1024 });
@@ -66,7 +66,9 @@ function containsCenter(points4: readonly CountryPolygonPoint[], xQ: number, yQ:
 export async function selectCountryPolygon(data: AtlasDocument, raw: CountryPolygonSelectionRequest, control?: AtlasControl): Promise<CountryPolygonSelection> {
   const guarded: AtlasControl = { signal: control?.signal, onProgress: control?.onProgress, yieldTask: control?.yieldTask };
   guarded.signal?.throwIfAborted();
-  if (!generationExact(raw, ['source', 'pointsQ']) || !validateCountrySource(raw.source)) throw new Error('圈地请求或地理来源身份无效。');
+  if (!generationExact(raw, 'geometry' in raw ? ['source', 'pointsQ', 'geometry'] : ['source', 'pointsQ']) || !validateCountrySource(raw.source)) throw new Error('圈地请求或地理来源身份无效。');
+  const geometry = raw.geometry ?? 'atlas-cell-v1';
+  if (geometry !== 'atlas-cell-v1' && geometry !== 'political-voronoi-v1') throw new Error('未知圈地几何版本。');
   const source = { ...raw.source }, outline = ownOutline(raw.pointsQ), actual = countryGeographySource(data);
   if (!sameSource(source, actual)) throw new Error('圈地轮廓与已验证地理来源身份不一致。');
   const points4 = outline.map(point => ({ xQ: point.xQ * 4, yQ: point.yQ * 4 }));
@@ -77,23 +79,25 @@ export async function selectCountryPolygon(data: AtlasDocument, raw: CountryPoly
     onProgress: progress => { guarded.signal?.throwIfAborted(); guarded.onProgress?.({ ...progress, stage: `圈地：${progress.stage}` }); guarded.signal?.throwIfAborted(); } };
   do {
     guarded.signal?.throwIfAborted();
-    const page = await readCountryCellGeometryPage(data, cursor, COUNTRY_SELECTION_LIMITS.pageCells, nestedControl);
+    const page = geometry === 'political-voronoi-v1' ? await readCountryPoliticalCenterPage(data, cursor, COUNTRY_SELECTION_LIMITS.pageCells, nestedControl)
+      : await readCountryCellGeometryPage(data, cursor, COUNTRY_SELECTION_LIMITS.pageCells, nestedControl);
     guarded.signal?.throwIfAborted();
     if (!sameSource(page.source, source) || !generationInt(page.totalCells, 1, COUNTRY_SELECTION_LIMITS.scannedCells)
       || totalCells !== null && page.totalCells !== totalCells || page.cursor !== cursor) throw new Error('圈地地理分页来源或范围不一致。');
     totalCells = page.totalCells; const count = Math.min(COUNTRY_SELECTION_LIMITS.pageCells, totalCells - cursor), end = cursor + count;
-    if (count < 1 || !(page.quadsQ instanceof Int32Array) || page.quadsQ.length !== count * 8 || page.nextCursor !== (end === totalCells ? null : end)) throw new Error('圈地地理分页不完整。');
+    const coordinates = 'centersQ' in page ? page.centersQ : page.quadsQ;
+    if (count < 1 || !(coordinates instanceof Int32Array) || coordinates.length !== count * ('centersQ' in page ? 2 : 8) || page.nextCursor !== (end === totalCells ? null : end)) throw new Error('圈地地理分页不完整。');
     const matched: number[] = [];
     for (let i = 0; i < count; i++) {
       guarded.signal?.throwIfAborted(); const offset = i * 8;
-      const x4 = page.quadsQ[offset] + page.quadsQ[offset + 2] + page.quadsQ[offset + 4] + page.quadsQ[offset + 6];
-      const y4 = page.quadsQ[offset + 1] + page.quadsQ[offset + 3] + page.quadsQ[offset + 5] + page.quadsQ[offset + 7];
+      const x4 = 'centersQ' in page ? page.centersQ[i * 2] * 4 : page.quadsQ[offset] + page.quadsQ[offset + 2] + page.quadsQ[offset + 4] + page.quadsQ[offset + 6];
+      const y4 = 'centersQ' in page ? page.centersQ[i * 2 + 1] * 4 : page.quadsQ[offset + 1] + page.quadsQ[offset + 3] + page.quadsQ[offset + 5] + page.quadsQ[offset + 7];
       if (x4 >= minX && x4 <= maxX && y4 >= minY && y4 <= maxY && containsCenter(points4, x4, y4)) matched.push(cursor + i);
       if ((i + 1) % 128 === 0) await yieldAtlas(guarded, '按地理单元中心圈地', cursor + i + 1, totalCells);
     }
     polygonMatchedCells += matched.length;
     if (matched.length) {
-      const land = await countryClaimCells(data, matched, nestedControl); guarded.signal?.throwIfAborted();
+      const land = await countryClaimCells(data, matched, nestedControl, geometry); guarded.signal?.throwIfAborted();
       const allowed = new Set(matched); let previous = cursor - 1;
       for (const id of land) { if (!generationInt(id, cursor, end - 1) || id <= previous || !allowed.has(id)) throw new Error('圈地真实陆地返回了无效地块。'); previous = id; }
       if (cellIds.length + land.length > COUNTRY_SELECTION_LIMITS.selectedCells) throw new Error('圈地真实陆地超过 65,536 个地理单元；请缩小轮廓，本次未提交任何地块。');
@@ -103,5 +107,5 @@ export async function selectCountryPolygon(data: AtlasDocument, raw: CountryPoly
     await yieldAtlas(guarded, '核验圈地实际陆地', cursor, totalCells);
   } while (cursor < totalCells!);
   guarded.signal?.throwIfAborted();
-  return { source, rule: 'cell-center-land-v1', cellIds, scannedCells: cursor, polygonMatchedCells, seaRejectedCells };
+  return { source, rule: geometry === 'political-voronoi-v1' ? 'political-seed-land-v1' : 'cell-center-land-v1', cellIds, scannedCells: cursor, polygonMatchedCells, seaRejectedCells };
 }

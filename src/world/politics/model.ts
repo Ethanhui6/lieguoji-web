@@ -11,8 +11,14 @@ export interface CountryRegime { id: string; nationId: string; name: string }
 export interface CountryTerritory { cellId: number; legalNationId: string; controllingNationId: string }
 export interface CountryCity { id: string; nationId: string; name: string; positionQ: CountryPoint; labelAnchorQ: CountryPoint }
 export interface CountryDocument {
-  format: 'lieguoji-country-document'; version: 1 | 2; worldId: string; name: string; source: CountrySource; revision: number;
+  format: 'lieguoji-country-document'; version: 1 | 2 | 3; worldId: string; name: string; source: CountrySource; revision: number;
   nations: CountryNation[]; regimes: CountryRegime[]; territories: CountryTerritory[]; cities: CountryCity[];
+}
+/** Document version owns geometry semantics; page layout alone does not. */
+export function countryGeometry(document: Pick<CountryDocument, 'version'>): 'atlas-cell-v1' | 'political-voronoi-v1' {
+  if (document.version === 3) return 'political-voronoi-v1';
+  if (document.version === 1 || document.version === 2) return 'atlas-cell-v1';
+  throw new CountryFutureVersionError();
 }
 export interface CountryState { document: CountryDocument; rootDigest: string; readOnly: boolean; recovered: boolean; undoCount: number }
 export interface CountryPreview { candidateId: string; description: string; document: CountryDocument }
@@ -45,7 +51,7 @@ export function countryArray(raw: unknown, max: number): raw is unknown[] {
 export const countryPoint = (raw: unknown): raw is CountryPoint => countryExact(raw, ['xQ', 'yQ']) && countryInteger(raw.xQ, 0, 4096 * 256) && countryInteger(raw.yQ, 0, 4096 * 256);
 export function validateCountryDocument(raw: unknown): raw is CountryDocument {
   if (!countryExact(raw, ['format', 'version', 'worldId', 'name', 'source', 'revision', 'nations', 'regimes', 'territories', 'cities'])
-    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 && raw.version !== 2 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
+    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 && raw.version !== 2 && raw.version !== 3 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
     || !validateCountrySource(raw.source) || !countryInteger(raw.revision, 0, Number.MAX_SAFE_INTEGER)
     || !countryArray(raw.nations, COUNTRY_LIMITS.nations) || !countryArray(raw.regimes, COUNTRY_LIMITS.nations)
     || !countryArray(raw.cities, COUNTRY_LIMITS.cities) || !countryArray(raw.territories, COUNTRY_LIMITS.territories)) return false;
@@ -72,7 +78,7 @@ export function validateCountryDocument(raw: unknown): raw is CountryDocument {
     previous = t.cellId; owners.add(t.legalNationId);
   }
   for (const n of nations.values()) if (!regimes.has(n.regimeId) || !owners.has(n.id) || n.capitalCityId !== null && cities.get(n.capitalCityId)?.nationId !== n.id) return false;
-  return raw.version === 2 ? countryJsonBytes({ ...raw, territories: [] }).length <= COUNTRY_LIMITS.documentBytes : countryJsonBytes(raw).length <= COUNTRY_LIMITS.documentBytes;
+  return raw.version !== 1 ? countryJsonBytes({ ...raw, territories: [] }).length <= COUNTRY_LIMITS.documentBytes : countryJsonBytes(raw).length <= COUNTRY_LIMITS.documentBytes;
 }
 export function validateCountryCommand(raw: unknown): raw is CountryCommand {
   if (!raw || typeof raw !== 'object') return false;

@@ -10,6 +10,25 @@ import { blockKey, decodeBlock, encodeBlock, yieldAtlas, type AtlasControl } fro
 import { createSpatialIndexAsync, type SpatialIndex } from '../spatial-index';
 import { getAtlasStorage, type AtlasReadHandle } from '../storage';
 import { getCellQuad } from '../topology';
+import { createCountryPoliticalMesh, type CountryPoliticalMesh } from './political-mesh';
+
+export type CountryGeometry = 'atlas-cell-v1' | 'political-voronoi-v1';
+const politicalMeshes = new WeakMap<AtlasDocument, Promise<CountryPoliticalMesh>>();
+function validGeometry(geometry: CountryGeometry) {
+  if (geometry !== 'atlas-cell-v1' && geometry !== 'political-voronoi-v1') throw new Error('未知政治几何规则，未猜测或降级。');
+}
+/** One private, fixed mesh is shared by clipping, claims and point ownership.
+ * The caller's mutable Atlas view is never the geometry authority. */
+export async function countryPoliticalMesh(data: AtlasDocument, control?: AtlasControl): Promise<CountryPoliticalMesh> {
+  const guarded = controlCopy(control); guarded.signal?.throwIfAborted();
+  let pending = politicalMeshes.get(data);
+  if (!pending) {
+    pending = (async () => createCountryPoliticalMesh(verifiedGeographies.get(data)?.data ?? await cloneVerifiedAtlasDocument(data, guarded), guarded))();
+    politicalMeshes.set(data, pending);
+  }
+  try { const mesh = await pending; guarded.signal?.throwIfAborted(); return mesh; }
+  catch (error) { if (politicalMeshes.get(data) === pending) politicalMeshes.delete(data); throw error; }
+}
 
 export interface CountrySource { draftId: string; revision: number; rootDigest: string; manifestDigest: string; atlasFormat: 4 }
 export interface CountryEncodedBlock { key: string; sha256: string; bytes: Uint8Array }
@@ -66,6 +85,13 @@ export async function readCountryCellGeometryPage(data: AtlasDocument, cursor: n
   }
   guarded.signal?.throwIfAborted();
   return { source: { ...verified.source }, totalCells, cursor, nextCursor: end === totalCells ? null : end, quadsQ };
+}
+export async function readCountryPoliticalCenterPage(data: AtlasDocument, cursor: number, limit = 1024, control?: AtlasControl) {
+  const source = countryGeographySource(data), guarded = controlCopy(control), mesh = await countryPoliticalMesh(data, guarded);
+  if (!generationInt(cursor, 0, mesh.cellCount) || !generationInt(limit, 1, 1024)) throw new Error('政治种子分页游标无效。');
+  const end = Math.min(cursor + limit, mesh.cellCount), centersQ = new Int32Array((end - cursor) * 2);
+  for (let id = cursor; id < end; id++) { guarded.signal?.throwIfAborted(); const p = mesh.centerQ(id); centersQ[(id - cursor) * 2] = p.xQ; centersQ[(id - cursor) * 2 + 1] = p.yQ; }
+  return { source, totalCells: mesh.cellCount, cursor, nextCursor: end === mesh.cellCount ? null : end, centersQ };
 }
 const typedPrototype = Object.getPrototypeOf(Uint8Array.prototype) as object;
 const typedBuffer = Object.getOwnPropertyDescriptor(typedPrototype, 'buffer')!.get!;
@@ -216,12 +242,14 @@ async function query(data: AtlasDocument, control: AtlasControl): Promise<Countr
   try { const result = await pending; control.signal?.throwIfAborted(); return result; }
   catch (error) { if (queries.get(data) === pending) queries.delete(data); throw error; }
 }
-export async function countryLandAt(data: AtlasDocument, xQ: number, yQ: number, control?: AtlasControl): Promise<{ cellId: number; height: number; land: boolean }> {
+export async function countryLandAt(data: AtlasDocument, xQ: number, yQ: number, control?: AtlasControl, geometry: CountryGeometry = 'atlas-cell-v1'): Promise<{ cellId: number; height: number; land: boolean }> {
+  validGeometry(geometry);
   if (!generationInt(xQ, 0, WORLD_Q) || !generationInt(yQ, 0, WORLD_Q)) throw new Error('建国地点需要世界范围内的整数 Q8 坐标。');
   const guarded = controlCopy(control), current = await query(data, guarded), point = { x: xQ / 256, y: yQ / 256 };
-  const coarse = current.spatial.pick(point), fine = pickDetailCoastSurface(current.field, point);
-  if (coarse.cellId === null || !fine) throw new Error('建国地点没有真实地理归属。');
-  guarded.signal?.throwIfAborted(); return { cellId: coarse.cellId, height: fine.height, land: fine.land };
+  const cellId = geometry === 'political-voronoi-v1' ? (await countryPoliticalMesh(data, guarded)).pick({ xQ, yQ }) : current.spatial.pick(point).cellId;
+  const fine = pickDetailCoastSurface(current.field, point);
+  if (cellId === null || !fine) throw new Error('建国地点没有真实地理归属。');
+  guarded.signal?.throwIfAborted(); return { cellId, height: fine.height, land: fine.land };
 }
 function positiveOverlap(a: readonly DetailCoastPointQ[], b: readonly DetailCoastPointQ[]): boolean {
   // Integer SAT projections distinguish positive area from touching exactly.
@@ -234,8 +262,8 @@ function positiveOverlap(a: readonly DetailCoastPointQ[], b: readonly DetailCoas
 }
 function clipToQuad(triangle: readonly DetailCoastPointQ[], quad: readonly DetailCoastPointQ[]): DetailCoastPointQ[] {
   let polygon = triangle.map(point => ({ xQ: point.xQ, yQ: point.yQ }));
-  for (let edge = 0; edge < 4; edge++) {
-    const a = quad[edge], b = quad[(edge + 1) % 4], next: DetailCoastPointQ[] = [];
+  for (let edge = 0; edge < quad.length; edge++) {
+    const a = quad[edge], b = quad[(edge + 1) % quad.length], next: DetailCoastPointQ[] = [];
     const distance = (point: DetailCoastPointQ) => (b.xQ - a.xQ) * (point.yQ - a.yQ) - (b.yQ - a.yQ) * (point.xQ - a.xQ);
     for (let index = 0; index < polygon.length; index++) {
       const p = polygon[index], q = polygon[(index + 1) % polygon.length], dp = distance(p), dq = distance(q);
@@ -246,16 +274,27 @@ function clipToQuad(triangle: readonly DetailCoastPointQ[], quad: readonly Detai
   }
   return polygon;
 }
-async function landPieces(current: CountryQuery, cellId: number, collect: boolean, control: AtlasControl): Promise<DetailCoastPointQ[][]> {
+function detailCellsIntersectingPoliticalPolygon(polygon: readonly DetailCoastPointQ[]): Uint32Array {
+  const left = Math.max(0, Math.ceil(Math.min(...polygon.map(p => p.xQ)) / 512) - 1), top = Math.max(0, Math.ceil(Math.min(...polygon.map(p => p.yQ)) / 512) - 1);
+  const right = Math.min(2047, Math.floor(Math.max(...polygon.map(p => p.xQ)) / 512)), bottom = Math.min(2047, Math.floor(Math.max(...polygon.map(p => p.yQ)) / 512));
+  if ((right - left + 1) * (bottom - top + 1) > COUNTRY_GEOGRAPHY_LIMITS.fineCellsPerCell) throw new Error('政治单元细海岸扫描超出预算。');
+  const cells: number[] = [];
+  for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
+    const rect = [{ xQ: x * 512, yQ: y * 512 }, { xQ: (x + 1) * 512, yQ: y * 512 }, { xQ: (x + 1) * 512, yQ: (y + 1) * 512 }, { xQ: x * 512, yQ: (y + 1) * 512 }];
+    if (positiveOverlap(polygon, rect)) cells.push(y * 2048 + x);
+  }
+  return Uint32Array.from(cells);
+}
+async function landPieces(current: CountryQuery, cellId: number, collect: boolean, control: AtlasControl, politicalPolygon?: readonly DetailCoastPointQ[]): Promise<DetailCoastPointQ[][]> {
   if (!generationInt(cellId, 0, current.data.manifest.spec.columns * current.data.manifest.spec.rows - 1)) throw new Error('建国领土地块 ID 无效。');
-  const quad = getCellQuad(current.data, cellId).map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })), candidates = detailCellsIntersectingQuad(quad);
+  const quad = politicalPolygon ?? getCellQuad(current.data, cellId).map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })), candidates = politicalPolygon ? detailCellsIntersectingPoliticalPolygon(quad) : detailCellsIntersectingQuad(quad);
   if (candidates.length > COUNTRY_GEOGRAPHY_LIMITS.fineCellsPerCell) throw new Error('建国领土细格扫描预算超限。');
   const result: DetailCoastPointQ[][] = []; let hasSea = false;
   for (let index = 0; index < candidates.length; index++) {
     control.signal?.throwIfAborted(); const id = candidates[index];
     const cell = buildDetailCoastSurface(current.field, { column: id % 2048, row: Math.floor(id / 2048), columns: 1, rows: 1 }).cells[0];
     for (const triangle of cell.land) if (positiveOverlap(triangle, quad)) {
-      if (!collect) return [quad];
+      if (!collect) return [quad.map(p => ({ ...p }))];
       result.push(clipToQuad(triangle, quad));
     }
     if (collect && !hasSea) hasSea = cell.sea.some(triangle => positiveOverlap(triangle, quad));
@@ -264,22 +303,24 @@ async function landPieces(current: CountryQuery, cellId: number, collect: boolea
   control.signal?.throwIfAborted();
   // Exact compression: only after scanning every intersecting fine cell and
   // proving no positive-area sea fragment intersects the original coarse quad.
-  return collect && result.length && !hasSea ? [quad] : result;
+  return collect && result.length && !hasSea ? [quad.map(p => ({ ...p }))] : result;
 }
-export async function countryClaimCells(data: AtlasDocument, rawIds: readonly number[], control?: AtlasControl): Promise<number[]> {
+export async function countryClaimCells(data: AtlasDocument, rawIds: readonly number[], control?: AtlasControl, geometry: CountryGeometry = 'atlas-cell-v1'): Promise<number[]> {
+  validGeometry(geometry);
   if (!Array.isArray(rawIds) || rawIds.length > COUNTRY_GEOGRAPHY_LIMITS.claimCells || !generationArray(rawIds)
     || !rawIds.every((id): id is number => generationInt(id, 0, 512 * 512 - 1))) throw new Error('建国领土单次最多 1024 个有效地块。');
   const ids = [...new Set(rawIds)].sort((a, b) => a - b), guarded = controlCopy(control); guarded.signal?.throwIfAborted();
   if (!ids.length) return [];
-  const current = await query(data, guarded), result: number[] = [];
+  const current = await query(data, guarded), result: number[] = [], mesh = geometry === 'political-voronoi-v1' ? await countryPoliticalMesh(data, guarded) : null;
   for (let index = 0; index < ids.length; index++) {
-    if ((await landPieces(current, ids[index], false, guarded)).length) result.push(ids[index]);
+    if ((await landPieces(current, ids[index], false, guarded, mesh?.cellPolygonQ(ids[index]))).length) result.push(ids[index]);
     if ((index + 1) % 16 === 0 || index + 1 === ids.length) await yieldAtlas(guarded, '核验建国领土实际陆地', index + 1, ids.length);
   }
   guarded.signal?.throwIfAborted(); return result;
 }
-export async function countryCellLandPolygons(data: AtlasDocument, cellId: number, control?: AtlasControl): Promise<readonly { xQ: number; yQ: number }[][]> {
+export async function countryCellLandPolygons(data: AtlasDocument, cellId: number, control?: AtlasControl, geometry: CountryGeometry = 'atlas-cell-v1'): Promise<readonly { xQ: number; yQ: number }[][]> {
+  validGeometry(geometry);
   if (!generationInt(cellId, 0, 512 * 512 - 1)) throw new Error('建国领土地块 ID 无效。');
   const guarded = controlCopy(control), current = await query(data, guarded);
-  return landPieces(current, cellId, true, guarded);
+  return landPieces(current, cellId, true, guarded, geometry === 'political-voronoi-v1' ? (await countryPoliticalMesh(data, guarded)).cellPolygonQ(cellId) : undefined);
 }

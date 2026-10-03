@@ -13,7 +13,7 @@ import { getCellQuad } from '../topology';
 import { validateCountryWorldGeography } from './core';
 import { validateCountryDocument, type CountryDocument } from './model';
 import { selectCountryPolygon } from './country-selection';
-import { COUNTRY_GEOGRAPHY_LIMITS, countryCellLandPolygons, countryClaimCells, countryGeographySource, countryLandAt, decodeCountryGeography,
+import { COUNTRY_GEOGRAPHY_LIMITS, countryCellLandPolygons, countryClaimCells, countryGeographySource, countryLandAt, countryPoliticalMesh, decodeCountryGeography,
   prepareCountryGeography, readCountryCellGeometryPage, validateCountrySource, type CountryGeographyRecord, type CountrySource } from './geography';
 
 const fast = { yieldTask: async () => {} }, api = getAtlasStorage(4);
@@ -63,6 +63,29 @@ async function rehash(value: CountryGeographyRecord) {
 }
 
 describe('independent original-identity country geography', () => {
+  it('v3 shares exact political clipping, point ownership and seed selection without changing sea or source geometry', async () => {
+    const data = await decodeCountryGeography(record, fast), before = structuredClone(data), mesh = await countryPoliticalMesh(data, fast);
+    for (const [x, y] of [[4, 16], [16, 16], [32, 16], [48, 16], [171, 12], [162, 27]]) {
+      const old = await countryLandAt(data, x * 256, y * 256, fast), modern = await countryLandAt(data, x * 256, y * 256, fast, 'political-voronoi-v1');
+      expect(modern.land).toBe(old.land); expect(modern.height).toBe(old.height); expect(modern.cellId).toBe(mesh.pick({ xQ: x * 256, yQ: y * 256 }));
+    }
+    const ids = [0, 1, 4, 5, 128, 129], selected = await countryClaimCells(data, ids, fast, 'political-voronoi-v1');
+    for (const id of ids) {
+      const polygons = await countryCellLandPolygons(data, id, fast, 'political-voronoi-v1');
+      expect(polygons.length > 0).toBe(selected.includes(id));
+      for (const polygon of polygons.slice(0, 24)) {
+        const point = { xQ: polygon.reduce((n, p) => n + p.xQ, 0) / polygon.length, yQ: polygon.reduce((n, p) => n + p.yQ, 0) / polygon.length };
+        expect(mesh.pick(point)).toBe(id);
+      }
+    }
+    const outline = [{ xQ: 0, yQ: 0 }, { xQ: 64 * 256, yQ: 0 }, { xQ: 64 * 256, yQ: 32 * 256 }, { xQ: 0, yQ: 32 * 256 }];
+    const selection = await selectCountryPolygon(data, { source: record.source, pointsQ: outline, geometry: 'political-voronoi-v1' }, fast);
+    expect(selection.rule).toBe('political-seed-land-v1');
+    expect(selection.cellIds).toEqual(await countryClaimCells(data, [0, 1], fast, 'political-voronoi-v1'));
+    expect(data).toEqual(before);
+    data.blocks.clear();
+    expect((await countryPoliticalMesh(data, fast)).centerQ(0)).toEqual(mesh.centerQ(0));
+  }, 30000);
   it('reads exactly current without writes and preserves original identity, locks and fine bytes independently of the source DB', async () => {
     const receipt = await publish(fixture), source = sourceOf(receipt), before = await api.exportAtlasRawBackup(source.draftId);
     const actual = await prepareCountryGeography(source, fast);

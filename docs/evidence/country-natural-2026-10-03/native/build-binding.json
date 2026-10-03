@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-03T07:11:14.664Z",
+  "check": "label-lod-repair-1",
+  "buildSha256": "704377fd16e079837966ef3c44947a548f1cb54919fa1cb94886b231d61455a7",
+  "sourceSnapshotSha256": "e6b7316e9a497e319c37c71efc4eeaacf036844ef4a27fef099fdd06ae258422",
+  "distSnapshotSha256": "4442643d5e6bb1af3e2bc8cca9785304cf4386e318d6f5d47e62dbbb692bbd1f",
+  "nativeRecordSha256": "bd5ecf5dbf6379e4635eaace80faf1e68ef2451ea60bcd009cbaeec62dd1279c",
+  "loadedAssets": [
+    {
+      "url": "http://127.0.0.1:4173/assets/index-DbtNHNZ3.js",
+      "sha256": "c5c15e277ec4dd17a813e677f92701cfe6bff3e49188d966ec521d63e91278da"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/index-kDA80Ugt.css",
+      "sha256": "5ba195ed36ef967864a634789facddc24021183160c41700a06c5aa4eb24b997"
+    },
+    {
+      "url": "http://127.0.0.1:4173/assets/CountryStudio-G4-ykuLn.css",
+      "sha256": "19bcfeeb557d1c7a316247090db9bf3aeb36d39927685bf4e350f0ab67cde405"
+    }
+  ],
+  "sourceStable": true,
+  "distStable": true,
+  "passed": true,
+  "physicalDevice": false,
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "cloudWrites": false
+}

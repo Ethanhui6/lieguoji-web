@@ -1,0 +1,34 @@
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 875 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     0.69 kB │ gzip:   0.49 kB
+dist/build.json                                     9.70 kB │ gzip:   1.20 kB
+dist/assets/replay.worker-Dvt2kBgS.js              86.98 kB
+dist/assets/sim.worker-CLe8Zpf3.js                 91.68 kB
+dist/assets/worker-DuzuTONB.js                    212.51 kB
+dist/assets/atlas.worker-D_ZIKkck.js              409.81 kB
+dist/assets/App-B-TSmWiq.css                        9.57 kB │ gzip:   1.97 kB
+dist/assets/CountryStudio-G4-ykuLn.css             11.30 kB │ gzip:   2.74 kB
+dist/assets/AtlasStudio-Csg3qmUM.css               18.12 kB │ gzip:   3.95 kB
+dist/assets/index-kDA80Ugt.css                     34.88 kB │ gzip:   7.06 kB
+dist/assets/webworkerAll-CGzh1Lh_.js                0.05 kB │ gzip:   0.05 kB
+dist/assets/getTextureBatchBindGroup-ClDkMdT3.js    0.34 kB │ gzip:   0.26 kB
+dist/assets/getPo2TextureFromSource-BzR2jfx3.js     0.46 kB │ gzip:   0.31 kB
+dist/assets/rolldown-runtime-hePW80VL.js            0.71 kB │ gzip:   0.42 kB
+dist/assets/canvasUtils-BVGwBBBn.js                 6.05 kB │ gzip:   2.04 kB
+dist/assets/BufferResource-Bk8ZSLzt.js             11.02 kB │ gzip:   2.82 kB
+dist/assets/init-B8Jnes8g.js                       15.37 kB │ gzip:   4.80 kB
+dist/assets/browserAll-DuBBrfDo.js                 42.64 kB │ gzip:  11.13 kB
+dist/assets/RenderTargetSystem-a4R96cNy.js         78.10 kB │ gzip:  21.97 kB
+dist/assets/CountryStudio-ByqfmzoG.js              99.56 kB │ gzip:  29.46 kB
+dist/assets/App-DenCg2gR.js                       107.31 kB │ gzip:  34.27 kB
+dist/assets/Geometry-IpHxCVTc.js                  109.69 kB │ gzip:  33.09 kB
+dist/assets/AtlasStudio-BBXFR6FN.js               141.35 kB │ gzip:  40.67 kB
+dist/assets/renderer-DCit8BQZ.js                  233.51 kB │ gzip:  75.27 kB
+dist/assets/init-B_-Xsx-z.js                      250.43 kB │ gzip:  72.58 kB
+dist/assets/index-Dik987vs.js                     408.64 kB │ gzip: 131.14 kB
+
+✓ built in 578ms
+

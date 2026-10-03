@@ -1,8 +1,9 @@
 import type { AtlasDocument } from '../atlas-format';
 import type { AtlasCamera } from '../camera';
 import { getCellQuad } from '../topology';
-import { countryCellLandPolygons } from './geography';
-import type { CountryDocument } from './model';
+import { countryCellLandPolygons, countryPoliticalMesh, type CountryGeometry } from './geography';
+import { countryGeometry, type CountryDocument } from './model';
+import { placeCountryLabel, pointInsideCountryLand } from './label-placement';
 import { countryChunkVisible, countryExposedSides, countryRenderBounds, countryRenderChunk, expandCountryRenderBounds, type CountryRenderBounds } from './render-chunks';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -12,7 +13,7 @@ const svg = <K extends keyof SVGElementTagNameMap>(tag: K) => document.createEle
 type Point = { x: number; y: number };
 type Mark = { element: SVGGElement; text: SVGTextElement; width: number; point: Point; nationId: string; cityId?: string };
 type PointQ = { xQ: number; yQ: number };
-type CachedLand = { path: string; polygons: number; coast: string; sides: string[]; segments: number };
+type CachedLand = { path: string; polygons: number; coast: string; sides: string[]; segments: number; inside: PointQ | null };
 type DisplayChunk = { nationId: string; bounds: CountryRenderBounds; fills: string[]; borders: string[]; cells: number };
 type RenderedChunk = { land: SVGPathElement; border: SVGPathElement; bounds: CountryRenderBounds; cells: number; visible: boolean };
 const segmentPath = (a: PointQ, b: PointQ) => `M${a.xQ / 256},${a.yQ / 256}L${b.xQ / 256},${b.yQ / 256}`;
@@ -31,7 +32,7 @@ export function countryCellOutline(polygons: readonly PointQ[][], quad: readonly
     const id = ka < kb ? `${ka}/${kb}` : `${kb}/${ka}`;
     if (edges.has(id)) edges.delete(id); else edges.set(id, { a, b });
   }
-  const sides = ['', '', '', '']; let coast = '';
+  const sides = Array<string>(quad.length).fill(''); let coast = '';
   const onLine = (point: PointQ, a: PointQ, b: PointQ) => Math.abs((b.xQ - a.xQ) * (point.yQ - a.yQ) - (b.yQ - a.yQ) * (point.xQ - a.xQ)) <= Math.hypot(b.xQ - a.xQ, b.yQ - a.yQ) * 1e-6;
   for (const { a, b } of edges.values()) {
     const side = quad.findIndex((start, index) => onLine(a, start, quad[(index + 1) % quad.length]) && onLine(b, start, quad[(index + 1) % quad.length]));
@@ -54,6 +55,8 @@ export class CountryRenderer {
   private document?: CountryDocument;
   private cache = new Map<number, CachedLand>();
   private cachedPolygons = 0;
+  private cachedGeometry: CountryGeometry = 'atlas-cell-v1';
+  private nationAnchors = new Map<string, PointQ>();
   private nationGroups = new Map<string, SVGGElement>();
   private chunks: RenderedChunk[] = [];
   private marks: Mark[] = [];
@@ -82,8 +85,8 @@ export class CountryRenderer {
     // every tiny cell; cancellation/input still regain the event loop regularly.
     let sliceStart = performance.now();
     const yieldToInput = async () => { check(); if (performance.now() - sliceStart >= 8) { await new Promise<void>(resolve => setTimeout(resolve, 0)); sliceStart = performance.now(); check(); } };
-    const sameGeography = this.geography === geography;
-    if (!sameGeography) { this.cache.clear(); this.cachedPolygons = 0; this.geography = geography; }
+    const geometryRule = countryGeometry(document), sameGeography = this.geography === geography && this.cachedGeometry === geometryRule;
+    if (!sameGeography) { this.cache.clear(); this.cachedPolygons = 0; this.geography = geography; this.cachedGeometry = geometryRule; }
     const previous = this.document;
     // Renaming, city edits and capital changes do not invalidate land geometry.
     if (sameGeography && previous && previous.worldId === document.worldId && previous.territories.length === document.territories.length
@@ -97,32 +100,35 @@ export class CountryRenderer {
     const nations = new Map(document.nations.map(nation => [nation.id, nation]));
     const owners = new Map(document.territories.map(territory => [territory.cellId, territory.controllingNationId]));
     const display = new Map<string, DisplayChunk>(), borderFragment = window.document.createDocumentFragment();
+    const insidePoints = new Map<number, PointQ | null>(), nationCells = new Map(document.nations.map(n => [n.id, [] as number[]]));
     let polygonCount = 0, borderSegments = 0, processedSegments = 0, characters = 0, completed = 0;
     try {
       this.element.setAttribute('data-render-state', 'loading');
+      const mesh = geometryRule === 'political-voronoi-v1' ? await countryPoliticalMesh(geography, { signal: pending.signal, yieldTask: yieldToInput, onProgress: this.onProgress }) : null;
       for (const territory of document.territories) {
         check(); const nation = nations.get(territory.controllingNationId);
         if (!nation) throw new Error('领土的所属国家不存在，未显示错误着色。');
-        const quad = getCellQuad(geography, territory.cellId);
+        const quad = mesh ? mesh.cellPolygonQ(territory.cellId).map(p => ({ x: p.xQ / 256, y: p.yQ / 256 })) : getCellQuad(geography, territory.cellId);
         let cached = this.cache.get(territory.cellId);
         if (!cached) {
-          const polygons = await countryCellLandPolygons(geography, territory.cellId, { signal: pending.signal, yieldTask: yieldToInput }); check();
+          const polygons = await countryCellLandPolygons(geography, territory.cellId, { signal: pending.signal, yieldTask: yieldToInput }, geometryRule); check();
           if (!polygons.length) throw new Error('领土缺少真实陆地，未把海域着色。');
           if (polygonCount + polygons.length > MAX_POLYGONS) throw new Error('政治海岸显示超过细片预算，未用粗格替代真实陆地。');
           const outline = countryCellOutline(polygons, quad.map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })));
-          cached = { polygons: polygons.length, path: polygons.map(points => points.map((point, index) => `${index ? 'L' : 'M'}${point.xQ / 256},${point.yQ / 256}`).join('') + 'Z').join(''), ...outline };
+          cached = { polygons: polygons.length, path: polygons.map(points => points.map((point, index) => `${index ? 'L' : 'M'}${point.xQ / 256},${point.yQ / 256}`).join('') + 'Z').join(''), ...outline, inside: pointInsideCountryLand(polygons) };
           while (this.cache.size && (this.cache.size >= MAX_CACHED_CELLS || this.cachedPolygons + cached.polygons > MAX_POLYGONS)) {
             const first = this.cache.keys().next().value!; this.cachedPolygons -= this.cache.get(first)!.polygons; this.cache.delete(first);
           }
           this.cache.set(territory.cellId, cached); this.cachedPolygons += cached.polygons;
         }
         polygonCount += cached.polygons;
+        insidePoints.set(territory.cellId, cached.inside); nationCells.get(nation.id)!.push(territory.cellId);
         if (polygonCount > MAX_POLYGONS) throw new Error('政治海岸显示超过细片预算，未用粗格替代真实陆地。');
         processedSegments += cached.segments;
         const { columns, rows } = geography.manifest.spec, id = territory.cellId;
-        const exposed = countryExposedSides(id, columns, rows, nation.id, owners);
+        const exposed = mesh ? mesh.sideNeighbors(id).map(neighbor => owners.get(neighbor) !== nation.id) : countryExposedSides(id, columns, rows, nation.id, owners);
         let boundary = cached.coast;
-        for (let side = 0; side < 4; side++) if (exposed[side]) boundary += cached.sides[side];
+        for (let side = 0; side < exposed.length; side++) if (exposed[side]) boundary += cached.sides[side];
         borderSegments += boundary.split('M').length - 1;
         if (borderSegments > MAX_BORDER_SEGMENTS) throw new Error('实际可见国界线超过显示预算，未截断或简化真实海岸。');
         characters += cached.path.length + boundary.length;
@@ -134,6 +140,13 @@ export class CountryRenderer {
         chunk.fills.push(cached.path); chunk.borders.push(boundary); chunk.cells++;
         if (++completed % 32 === 0) { this.element.setAttribute('data-render-completed', String(completed)); this.onProgress?.({ stage: '绘制国土与国界', completed, total: document.territories.length }); await yieldToInput(); check(); }
       }
+      const anchors = new Map<string, PointQ>();
+      for (const nation of document.nations) {
+        const placed = await placeCountryLabel({ columns: geography.manifest.spec.columns, rows: geography.manifest.spec.rows, ownedCellIds: nationCells.get(nation.id)!,
+          ...(mesh ? { neighbors: (id: number) => mesh.neighbors(id), isBoundary: (id: number) => mesh.sideNeighbors(id).some(other => other < 0 || owners.get(other) !== nation.id), centerQ: (id: number) => mesh.centerQ(id) } : {}) },
+        id => insidePoints.get(id) ?? null, { signal: pending.signal, yieldTask: yieldToInput });
+        check(); if (placed) anchors.set(nation.id, placed.pointQ);
+      }
       const chunks: RenderedChunk[] = [];
       for (const [key, chunk] of display) {
         let group = groups.get(chunk.nationId);
@@ -144,7 +157,7 @@ export class CountryRenderer {
         border.setAttribute('vector-effect', 'non-scaling-stroke'); border.setAttribute('opacity', '.85'); border.setAttribute('data-nation-border', chunk.nationId); borderFragment.append(border);
         chunks.push({ land, border, bounds: chunk.bounds, cells: chunk.cells, visible: true });
       }
-      check(); this.chunks = chunks; this.document = document; this.isPreview = preview; this.nationGroups = groups; this.land.replaceChildren(fragment);
+      check(); this.chunks = chunks; this.document = document; this.isPreview = preview; this.nationGroups = groups; this.nationAnchors = anchors; this.land.replaceChildren(fragment);
       this.borders.replaceChildren(borderFragment);
       this.element.setAttribute('data-country-world-id', document.worldId); this.element.setAttribute('data-country-revision', String(document.revision));
       this.element.setAttribute('data-country-preview', String(preview)); this.element.setAttribute('data-land-polygons', String(polygonCount));
@@ -154,6 +167,7 @@ export class CountryRenderer {
       this.element.setAttribute('data-render-chunks', String(chunks.length));
       this.element.setAttribute('data-path-characters', String(characters));
       this.element.setAttribute('data-render-state', 'ready');
+      this.element.setAttribute('data-political-geometry', geometryRule); this.element.setAttribute('data-render-completed', String(document.territories.length));
       this.onProgress?.({ stage: '绘制国土与国界', completed: document.territories.length, total: document.territories.length });
       this.rebuildLabels(); this.setSelection(this.selectedNation, this.selectedCity); this.setCamera(this.camera);
     } catch (failure) {
@@ -168,10 +182,11 @@ export class CountryRenderer {
   private rebuildLabels() {
     this.labels.replaceChildren(); this.marks = []; const document = this.document!;
     for (const nation of document.nations) {
+      const anchor = this.nationAnchors.get(nation.id); if (!anchor) continue;
       const group = svg('g'), text = svg('text'); text.textContent = nation.name;
       text.setAttribute('class', 'country-map-nation-name'); text.setAttribute('text-anchor', 'middle'); group.append(text);
-      group.setAttribute('data-nation-label', nation.id); this.labels.append(group);
-      this.marks.push({ element: group, text, width: nation.name.length * 17 + 8, point: { x: nation.labelAnchorQ.xQ / 256, y: nation.labelAnchorQ.yQ / 256 }, nationId: nation.id });
+      group.setAttribute('data-nation-label', nation.id); group.setAttribute('data-anchor-xq', String(anchor.xQ)); group.setAttribute('data-anchor-yq', String(anchor.yQ)); this.labels.append(group);
+      this.marks.push({ element: group, text, width: nation.name.length * 17 + 8, point: { x: anchor.xQ / 256, y: anchor.yQ / 256 }, nationId: nation.id });
     }
     for (const city of document.cities) {
       const nation = document.nations.find(nation => nation.id === city.nationId); if (!nation) continue;
@@ -216,7 +231,9 @@ export class CountryRenderer {
       if (offscreen) mark.text.setAttribute('visibility', 'hidden');
       if (!offscreen) visible.push({ mark, x, y });
     }
-    const priority = (mark: Mark) => mark.cityId === this.selectedCity ? 0 : !mark.cityId && mark.nationId === this.selectedNation ? 1 : mark.cityId ? 2 : 3;
+    const preferNations = camera.scale < 0.3;
+    const priority = (mark: Mark) => mark.cityId === this.selectedCity ? 0 : !mark.cityId && mark.nationId === this.selectedNation ? 1 :
+      preferNations ? (mark.cityId ? 3 : 2) : (mark.cityId ? 2 : 3);
     visible.sort((a, b) => priority(a.mark) - priority(b.mark));
     const occupied: { left: number; right: number; top: number; bottom: number }[] = [];
     for (const { mark, x, y } of visible) {
@@ -236,6 +253,8 @@ export class CountryRenderer {
     }
     return found;
   }
+
+  getNationAnchorQ(nationId: string): PointQ | null { const point = this.nationAnchors.get(nationId); return point ? { ...point } : null; }
 
   cancelPending() { this.pending?.abort(new DOMException('已取消国土绘制；请核对当前已保存状态。', 'AbortError')); }
 

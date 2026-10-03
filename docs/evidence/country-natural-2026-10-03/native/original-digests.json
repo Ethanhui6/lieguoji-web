@@ -1,0 +1,63 @@
+{
+  "before": {
+    "v1": {
+      "currentDigest": "5b29a3fed6da2d69c479983332c668ffc4890294c802bc7c355e2baea8eb0dfe",
+      "geoSha256": "de29f74fb63d148edabae14552773c3864854dfe16c486dbac048ad7535daffc",
+      "historyDigests": [
+        "e25f211f009e9330dbd6bd2e61cd08b069708c9155fcd26e7055c3d77fd1bda3",
+        "154cd12bb5e808315fd149c7a2b1e0aa06b0c719f040bc6ecc9f3221d00d261d",
+        "d6638cba353ddea8a788bb9049be3185d7a86346004542deffc46e247df5674d",
+        "76756bf71cebd5dfd9be2b6bc9bf5d87a460b09969e24b86bb7c49d66fa6e8d0",
+        "6714aed13c6e647257de5507abec97658a32207341668e058d892c3905a0e3cc",
+        "2c78c85b6212c5c3142078e6a18f20f6523337a3d9255aacc3d8582dc88191ab"
+      ],
+      "rootDigest": "1dcd6a2f66dbe9e4516f8bb88c426a6cc7e26ec60bb7e7243574a1911324fa09"
+    },
+    "v2": {
+      "worldId": "country-4c1a87a3-7f27-4e21-8bca-b1bd858fd9c0",
+      "version": 2,
+      "revision": 3,
+      "rootDigest": "e7c6261b30307952c681e2dd60466b110e361e701b382e59d199851c61ae394e",
+      "geoSha256": "de29f74fb63d148edabae14552773c3864854dfe16c486dbac048ad7535daffc",
+      "territoryCount": 11125,
+      "nationTerritoryCounts": {
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06": 517,
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1": 664,
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd": 9944
+      },
+      "pageCount": 36,
+      "allChunkHashesValid": true
+    }
+  },
+  "after": {
+    "v1": {
+      "currentDigest": "5b29a3fed6da2d69c479983332c668ffc4890294c802bc7c355e2baea8eb0dfe",
+      "geoSha256": "de29f74fb63d148edabae14552773c3864854dfe16c486dbac048ad7535daffc",
+      "historyDigests": [
+        "e25f211f009e9330dbd6bd2e61cd08b069708c9155fcd26e7055c3d77fd1bda3",
+        "154cd12bb5e808315fd149c7a2b1e0aa06b0c719f040bc6ecc9f3221d00d261d",
+        "d6638cba353ddea8a788bb9049be3185d7a86346004542deffc46e247df5674d",
+        "76756bf71cebd5dfd9be2b6bc9bf5d87a460b09969e24b86bb7c49d66fa6e8d0",
+        "6714aed13c6e647257de5507abec97658a32207341668e058d892c3905a0e3cc",
+        "2c78c85b6212c5c3142078e6a18f20f6523337a3d9255aacc3d8582dc88191ab"
+      ],
+      "rootDigest": "1dcd6a2f66dbe9e4516f8bb88c426a6cc7e26ec60bb7e7243574a1911324fa09"
+    },
+    "v2": {
+      "worldId": "country-4c1a87a3-7f27-4e21-8bca-b1bd858fd9c0",
+      "version": 2,
+      "revision": 3,
+      "rootDigest": "e7c6261b30307952c681e2dd60466b110e361e701b382e59d199851c61ae394e",
+      "geoSha256": "de29f74fb63d148edabae14552773c3864854dfe16c486dbac048ad7535daffc",
+      "territoryCount": 11125,
+      "nationTerritoryCounts": {
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06": 517,
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1": 664,
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd": 9944
+      },
+      "pageCount": 36,
+      "allChunkHashesValid": true
+    }
+  },
+  "equal": true
+}

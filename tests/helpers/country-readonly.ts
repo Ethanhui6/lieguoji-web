@@ -6,15 +6,15 @@ import type { CountryDocument } from '../../src/world/politics/model';
 export async function persistedCountry(page: Page, id: string) {
   const raw = await page.evaluate(async id => {
     const databases = await indexedDB.databases();
-    for (const name of ['lieguoji-country-worlds-v2', 'lieguoji-country-worlds-v1']) {
+    for (const name of ['lieguoji-country-worlds-v3', 'lieguoji-country-worlds-v2', 'lieguoji-country-worlds-v1']) {
       if (!databases.some(db => db.name === name)) continue;
       const db = await new Promise<IDBDatabase>((resolve, reject) => { const r = indexedDB.open(name, 1); r.onupgradeneeded = () => r.transaction!.abort(); r.onerror = () => reject(r.error); r.onsuccess = () => resolve(r.result); });
       try {
         const records = await new Promise<{ root: { current: { bytes: Uint8Array; digest: string }; rootDigest: string } | undefined; geo: { sha256: string; encodedBytes: number; manifest: Uint8Array; source: unknown }; chunks: Record<string, number[]> }>((resolve, reject) => {
-          const stores = name.endsWith('v2') ? ['worlds', 'geography', 'chunks'] : ['worlds', 'geography'];
+          const stores = !name.endsWith('v1') ? ['worlds', 'geography', 'chunks'] : ['worlds', 'geography'];
           const tx = db.transaction(stores, 'readonly'), root = tx.objectStore('worlds').get(id), geo = tx.objectStore('geography').get(id), chunks: Record<string, number[]> = {};
           root.onsuccess = () => {
-            if (name.endsWith('v2') && root.result) {
+            if (!name.endsWith('v1') && root.result) {
               const manifest = JSON.parse(new TextDecoder().decode(root.result.current.bytes));
               for (const ref of manifest.pages) { const r = tx.objectStore('chunks').get(`${id}:${ref.digest}`); r.onsuccess = () => { if (r.result) chunks[ref.digest] = Array.from(r.result as Uint8Array); }; }
             }
@@ -30,14 +30,14 @@ export async function persistedCountry(page: Page, id: string) {
   }, id);
   const bytes = Uint8Array.from(raw.bytes), hash = (value: Uint8Array) => createHash('sha256').update(value).digest('hex');
   if (hash(bytes) !== raw.digest) throw new Error('Saved political bytes do not match checksum');
-  const v2 = raw.database.endsWith('v2');
+  const v2 = !raw.database.endsWith('v1'), version = Number(raw.database.slice(-1));
   const parsed = JSON.parse(new TextDecoder().decode(bytes));
   // Independent read-only decoding keeps browser test discovery out of Vite's
   // runtime fingerprint graph, and checks persisted values without calling the
   // same production decoder that performed the writes.
   let document: CountryDocument = parsed;
   if (v2) {
-    if (parsed.format !== 'lieguoji-country-manifest' || parsed.version !== 2 || !Array.isArray(parsed.pages)) throw new Error('Invalid v2 manifest');
+    if (parsed.format !== 'lieguoji-country-manifest' || parsed.version !== 2 || parsed.document.version !== version || !Array.isArray(parsed.pages)) throw new Error('Invalid version-bound chunk manifest');
     const territories: CountryDocument['territories'] = []; let previousPage = -1, previousCell = -1;
     for (const ref of parsed.pages) {
       if (ref.pageId <= previousPage || !raw.chunks[ref.digest]) throw new Error('Missing/reordered chunk'); previousPage = ref.pageId;
@@ -57,6 +57,6 @@ export async function persistedCountry(page: Page, id: string) {
   }
   return { document, rootDigest: raw.rootDigest, documentDigest: raw.digest, geoSha256: raw.geoSha256, geoBytes: raw.geoBytes,
     geoManifestHash: hash(Uint8Array.from(raw.geoManifest)), geoSource: raw.geoSource,
-    storage: { version: v2 ? 2 : 1, manifestBytes: bytes.length, pages: v2 ? parsed.pages.length : 0,
+    storage: { version, manifestBytes: bytes.length, pages: v2 ? parsed.pages.length : 0,
       chunkBytes: Object.values(raw.chunks).reduce((sum, part) => sum + part.length, 0) } };
 }

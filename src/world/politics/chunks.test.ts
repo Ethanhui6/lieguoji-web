@@ -25,7 +25,8 @@ import { COUNTRY_DATABASE, COUNTRY_LIMITS, CountryFutureVersionError, countryDig
 import { COUNTRY_V2_DATABASE, decodeCountryChunks, decodeCountryManifest, encodeCountryChunks } from './chunk-codec';
 import { CountryTransferReader, streamCountryResult } from './transfer';
 import { createCountryWorld as createLegacy, commitCountryWorld as commitLegacy } from './storage-v1';
-import { createCountryWorld, openCountryWorld, commitCountryWorld, copyCountryWorldToV2, countryUndoDocument } from './storage';
+import { openCountryWorld, commitCountryWorld, copyCountryWorldToV2, countryUndoDocument } from './storage';
+import { createCountryWorld } from './storage-v2';
 import { applyCountryCommand } from './core';
 import { CountryRuntime } from './worker';
 
@@ -47,7 +48,8 @@ beforeEach(() => { globalThis.indexedDB = new IDBFactory(); vi.clearAllMocks(); 
 
 describe('v2 bounded country chunks and explicit v1 isolation', () => {
   it('persists and cold-opens 65,536 cells through runtime and bounded messages without a UUID-table packet', async () => {
-    const runtime = new CountryRuntime(), initial = await runtime.handle({ id: 1, type: 'create', source, name: '65k 合成地理' }) as CountryState;
+    const runtime = new CountryRuntime(), created = await createCountryWorld(await prepareCountryGeography(source), '65k 合成地理');
+    const initial = await runtime.handle({ id: 1, type: 'open', worldId: created.document.worldId }) as CountryState;
     expect(initial.document.version).toBe(2);
     const before = await read<Root>('worlds', initial.document.worldId), preview = await runtime.handle({ id: 2, type: 'preview', expected: { worldId: initial.document.worldId, revision: 0, rootDigest: initial.rootDigest }, command: { type: 'create-nation-shape', name: '全陆', color: '#336699', outlineQ } }) as CountryPreview;
     expect(preview.document.territories).toHaveLength(65536); expect(await read('worlds', initial.document.worldId)).toEqual(before);

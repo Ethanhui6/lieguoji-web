@@ -34,6 +34,15 @@ async function draw(p: Page, touch: boolean, contour = [[650,1300],[950,1120],[1
   } else { await p.mouse.move(points[0].x,points[0].y); await p.mouse.down(); try { for(const point of points.slice(1)) await p.mouse.move(point.x,point.y); } finally { await p.mouse.up(); } }
 }
 async function confirm(p: Page,touch:boolean) { await ready(p); await expect(p.getByRole('region',{name:'建国操作预览'})).toBeVisible(); await expect(button(p,'确认并保存')).toBeEnabled(); await press(p,'确认并保存',touch); await ready(p); await expect(country(p)).toHaveAttribute('data-country-display','committed'); }
+async function assertPoliticalLabels(p: Page, nationCount: number) {
+  await expect(p.getByTestId('country-overlay')).toHaveAttribute('data-political-geometry', 'political-voronoi-v1');
+  const labels = await p.getByTestId('country-overlay').evaluate(root => Array.from(root.querySelectorAll('[data-nation-label]')).map(label => {
+    const nationId = label.getAttribute('data-nation-label'), point = new DOMPoint(Number(label.getAttribute('data-anchor-xq')) / 256, Number(label.getAttribute('data-anchor-yq')) / 256);
+    const group = Array.from(root.querySelectorAll('.country-territory-layer > g')).find(g => g.getAttribute('data-nation-id') === nationId);
+    return { nationId, inside: !!group && Array.from(group.querySelectorAll('path')).some(path => path.isPointInFill(point)) };
+  }));
+  expect(labels).toHaveLength(nationCount); expect(labels.every(label => label.inside)).toBe(true);
+}
 async function territory(p:Page,a:Point,b:Point,touch:boolean) { await press(p,'在地图上选择国土',touch); await pick(p,a,touch); await pick(p,b,touch); }
 async function createCity(p:Page,name:string,point:Point,touch:boolean) {
   await tab(p,'城市',touch); await press(p,'新建城市',touch); await p.getByLabel('城市名称',{exact:true}).fill(name);
@@ -95,7 +104,7 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   await tab(page,'国家',touch); await expect(button(page,'国家 岚川')).toHaveAttribute('data-nation-id',firstNation); await expect(button(page,'国家 海岬')).toHaveAttribute('data-nation-id',secondNation);
   await tab(page,'地图',touch); await page.screenshot({path:info.outputPath('two-nations-restored.png'),fullPage:true});
   expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
-  const restored=await persisted(page,worldId);expect(restored).toEqual(settled);expect(restored.geoSha256).toBe(created.geoSha256);expect(restored.geoSource).toEqual(created.geoSource);
+  const restored=await persisted(page,worldId);expect(restored).toEqual(settled);expect(restored.geoSha256).toBe(created.geoSha256);expect(restored.geoSource).toEqual(created.geoSource); await assertPoliticalLabels(page, 2);
   await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
 });
 
@@ -121,7 +130,7 @@ test('[country-shape] native concave outline, cancelled candidate, chunk persist
   await press(page, '在这片地形上建国', touch); await expect(country(page)).toHaveAttribute('data-country-state', 'empty', { timeout: 120000 });
   await page.getByLabel('建国世界名称', { exact: true }).fill('岚海 · 自由圈地'); await press(page, '创建独立建国副本', touch); await ready(page);
   const worldId = (await country(page).getAttribute('data-country-world-id'))!, url = page.url(), before = await persisted(page, worldId);
-  expect(before.document.version).toBe(2);
+  expect(before.document.version).toBe(3);
   await tab(page, '国家', touch); await press(page, '新建国家', touch); await page.getByLabel('国家名称', { exact: true }).fill('岚海');
   await press(page, '手绘国土', touch);
   await draw(page, touch, [[700,1300],[1000,1600],[700,1600],[1000,1300],[700,1300]]); await press(page, '闭合并预览', touch);

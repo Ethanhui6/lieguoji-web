@@ -1,0 +1,89 @@
+{
+  "at": "2026-10-03T07:09:29.780Z",
+  "url": "http://127.0.0.1:4173/?country=country-89a80bd7-2e1b-4760-85f5-d6a553f171da",
+  "worldId": "country-89a80bd7-2e1b-4760-85f5-d6a553f171da",
+  "version": 3,
+  "revision": 0,
+  "copyThroughNativeUi": true,
+  "originalWorldsUnchanged": true,
+  "rootAfterReloadUnchanged": true,
+  "rootDigest": "82fc67aa63b2f97dadb3ec298ea45d4f46f666c4b1790fd473971e87b4bbd2f2",
+  "geographySha256": "de29f74fb63d148edabae14552773c3864854dfe16c486dbac048ad7535daffc",
+  "territoryCount": 11087,
+  "nationTerritoryCounts": {
+    "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06": 507,
+    "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1": 658,
+    "nation-f949af67-9009-4c1b-846b-64cc74c281bd": 9922
+  },
+  "removedNoLandTerritories": 38,
+  "nations": [
+    {
+      "id": "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+      "name": "岬湾",
+      "capitalCityId": "city-379bd6bd-026f-4c8a-bdbf-a23f92477e23"
+    },
+    {
+      "id": "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+      "name": "临川",
+      "capitalCityId": "city-f1a23601-9bbc-4729-87aa-f1c4237a63fa"
+    },
+    {
+      "id": "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+      "name": "云岚",
+      "capitalCityId": "city-5ccb5393-3e74-48de-aa84-f7a560e529ae"
+    }
+  ],
+  "cities": [
+    {
+      "id": "city-379bd6bd-026f-4c8a-bdbf-a23f92477e23",
+      "nationId": "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+      "name": "望海"
+    },
+    {
+      "id": "city-f1a23601-9bbc-4729-87aa-f1c4237a63fa",
+      "nationId": "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+      "name": "海陵"
+    },
+    {
+      "id": "city-5ccb5393-3e74-48de-aa84-f7a560e529ae",
+      "nationId": "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+      "name": "云岚城"
+    }
+  ],
+  "allChunkHashesValid": true,
+  "pageCount": 36,
+  "manifestBytes": 6380,
+  "chunkBytes": 115415,
+  "insideNativePick": "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+  "outsideNativePickStatus": "这片陆地尚未划入国家。",
+  "cityAfterReload": "city-5ccb5393-3e74-48de-aa84-f7a560e529ae",
+  "sameCityAfterReload": true,
+  "render": {
+    "data-border-segments": "8303",
+    "data-country-preview": "false",
+    "data-country-revision": "0",
+    "data-country-world-id": "country-89a80bd7-2e1b-4760-85f5-d6a553f171da",
+    "data-land-cells": "11087",
+    "data-land-polygons": "59611",
+    "data-path-characters": "5286702",
+    "data-political-geometry": "political-voronoi-v1",
+    "data-processed-segments": "90890",
+    "data-render-chunks": "228",
+    "data-render-completed": "11087",
+    "data-render-state": "ready",
+    "data-testid": "country-overlay",
+    "data-visible-cells": "5532",
+    "data-visible-chunks": "102"
+  },
+  "consoleErrorsWarnings": [],
+  "physicalDevice": false,
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false,
+  "limitations": [
+    "Borders use irregular straight shared edges, not arbitrary smooth curves or river-following borders",
+    "Cold opening still waits for full geographic clipping",
+    "Last map-pick status persists when selecting a city; minor feedback cleanup remains"
+  ]
+}

@@ -4,7 +4,7 @@
 
 ## 当前版本与试玩
 
-- 分支 codex/ph06-world-generation；本批 source/evidence 本地提交待收尾记录。基准 HEAD 为 9776c0d11b9abbb9a6fb333b8d0a211461b041d4。后续文档提交以 git log 为准。
+- 分支 codex/ph06-world-generation；本批 source/evidence 本地提交 7f1af04360e71c243e043e973039df755250776c。基准 HEAD 为 9776c0d11b9abbb9a6fb333b8d0a211461b041d4。后续文档提交以 git log 为准。
 - package 与实际 dist：0.5.0-preview.25。build.json SHA256：d37a06eef085edfa3611138c9bee05159b505d87b4a3d95fac69a2a5439eb7e0。build.commit 仍为上述基准 HEAD：构建时源码尚未提交，保留实际元数据。完整 dist 文件和源文件清单见本批证据。
 - 本机服务：http://127.0.0.1:4173/ 。本轮在运行，续接时重新核实；不承诺常驻或会话结束后继续开发。
 - [本机试玩：长岬列国 · 建国试玩](http://127.0.0.1:4173/?country=country-13d3982c-b8bf-4734-bd4d-1a36e979234e)。本轮通过应用内浏览器原生操作，从旧长岬内海另存地理，建立岬湾/临川两国、望海/海陵两城并分别定都。修订 6，刷新后两座 City ID/首都身份相同；41% 缩放后原生点回望海。元信息见 docs/evidence/2026-10-03-country-demo.json。该地址依赖同浏览器本地存储，不是云端网址。

@@ -1,0 +1,165 @@
+{
+  "recordedAt": "2026-10-03T19:48:53.135Z",
+  "sourceCommit": "193c3b410e3ab63b05ff7bbc014d76a27719bb71",
+  "startingCommit": "c88a667",
+  "contract": "fixed-linear-sea-contour-v1",
+  "maxGeometricDisplacementWorldUnits": 0,
+  "checks": [
+    {
+      "command": "npm test -- src/fms src/world/fms-native-brush.test.ts",
+      "files": 9,
+      "tests": 189,
+      "result": "passed",
+      "durationSeconds": 2.6,
+      "startedLocal": "2026-10-04 03:38:59 +08:00"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "node docs/evidence/fms-coast-preservation-2026-10-04/measure.mjs",
+      "result": "passed",
+      "initialFailure": "Virtual historical module was not TS-transpiled; corrected using installed TypeScript. No thresholds changed."
+    },
+    {
+      "command": "npx eslint docs/evidence/fms-coast-preservation-2026-10-04/measure.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed",
+      "artifacts": 38
+    },
+    {
+      "command": "node scripts/check-plan.mjs",
+      "result": "passed",
+      "output": "Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/9 work items, active WEB-PH02; release lock does not block local development"
+    }
+  ],
+  "browser": {
+    "engine": "desktop Chromium",
+    "physicalDevice": "not_run",
+    "userVisual": "pending",
+    "cases": [
+      "actual renderer same-camera neck/island comparison",
+      "actual UI seed42 generation/confirm/save/reload; 1464 contour crossings unchanged",
+      "source-bound production Worker generation/cancel; stored revision2 unchanged"
+    ],
+    "warnErrorCount": 0,
+    "liveSavedRevision": 10,
+    "liveLandCells": 9985,
+    "liveMaxHeight": 83,
+    "liveRiverSegments": 692,
+    "liveLakeCells": 403
+  },
+  "guards": {
+    "legacyPlanUnchanged": true,
+    "protectionFilesUnchanged": [
+      ".githooks/pre-push",
+      "public/_headers",
+      "docs/RELEASE_POLICY_V4.md",
+      "scripts/check-release.mjs",
+      "scripts/release-policy.mjs"
+    ],
+    "cloudWritesPerformed": false,
+    "originalInstallationReadOrExecuted": false,
+    "exclusiveWriter": "root"
+  },
+  "remaining": [
+    "explicit adjustable refinement band",
+    "player-controlled locked regions",
+    "direct/Atlas display comparison",
+    "ocean and full zoom acceptance",
+    "physical iPhone and user visual gate"
+  ],
+  "hashScope": {
+    "source": "UTF8 normalized LF, matched committed blobs",
+    "evidence": "raw bytes; -text in .gitattributes; self excluded",
+    "dist": "raw bytes local validation output"
+  },
+  "sourceHashes": {
+    "src/fms/FmsApp.tsx": "90cda2d6ec38783cbce1542d6b9a0317c1ed3093783bad41ad7d3cdbe9970f20",
+    "src/fms/coastline.test.ts": "ac4abfd5ad4b6cd018031b79064a4dc9f3394aa3477018381a58774be7b63da8",
+    "src/fms/coastline.ts": "cb9bb89b3cf457ee312d083eaad8cda75950b524d354bb6515ff70a1ea130082",
+    "src/fms/fms.css": "ab12c91bfc0e5736187335d46ac0a526495b272e4186c56174ec25ff2fc67004",
+    "src/fms/gestures.test.ts": "9a4f7fc0913cd81358f807e3d5efcb06dc0836a1ffb73dcc1cb4c2a899f43f0b",
+    "src/fms/gestures.ts": "a92a398789c922ba884a6e18bf87b8f190ff896fcfe9400dac52b19fb3093ec9",
+    "src/fms/hydrology.test.ts": "24941ac995b3ef43cf2a72cf5b5804fe172e3b199a35335c2de1066d902b246e",
+    "src/fms/hydrology.ts": "7b8a8398c78494267b2fc08d20908fcd29df97667496444c33f8585d0c8dc7b2",
+    "src/fms/model.test.ts": "5f3af8844645280e6ce37fb5aa880e0565d4cdf496c446652020af1e69a72e26",
+    "src/fms/model.ts": "acc4d4c41723358050493a63e2cccfc9a9d23548bce963bcee2b61d0b90544cf",
+    "src/fms/naturalize.test.ts": "ec31924d603193c4035e2d0bf2b0bf300fa245723230682b81412cc04b465e10",
+    "src/fms/naturalize.ts": "3756f39b115bed51afdf0e13ed38eeac7f70e587b6438839f890c0afaf0fb0d6",
+    "src/fms/persistence.test.ts": "d2841adcbfb407e767e3abec78aba614efb92a9bf3a3aba763b3326f425c43b8",
+    "src/fms/persistence.ts": "838cc1ca8db0c2db096120e88b88d9ad9879b2f65398ef288e5ad225e7ad7aea",
+    "src/fms/renderer.ts": "7dbb3dd667dbd6a184a400b96d98fd9ca2c6d043f16488bf0cdc909fddd5b3c1",
+    "src/fms/terrain-client.test.ts": "12ac4f05d8941e78959acb917f4f228e55678822e102426aeccaf2da5657dc23",
+    "src/fms/terrain-client.ts": "6aa27f0c33771ab4fd92c85fca96d02dc673f22da66f76583e088b2abac86bd4",
+    "src/fms/terrain-preview.test.ts": "96e263bbc43a4d151e79b0d0c589660de27cacdcea5b1b9d6a57bb8237151bb0",
+    "src/fms/terrain-preview.ts": "4493828204b2b4a7041485242235ff165cb1c64f83c1d7ed4b662743dbd6faae",
+    "src/fms/terrain.worker.ts": "c0742ec9268309206455e26654f16f45efc2783f33c72f363ab6a86034a82323",
+    "tests/helpers/fms-coast-metrics.ts": "e2b44ed5a3a05acff1f2401d161a12bca22ec6898fd6a2f5f81b7111db346d2e"
+  },
+  "evidenceHashes": {
+    "docs/evidence/fms-coast-preservation-2026-10-04/browser-comparison.json": "7b00d7937d175060ba6345e7b659c08c1cedc1f0fb87e178ee0cd80dabb9e0bf",
+    "docs/evidence/fms-coast-preservation-2026-10-04/COAST_CONTRACT.md": "03aab4e88b5b5fdc5c134dc8644e0e9e1355088bebc6776d0a4fe273e11fb1dc",
+    "docs/evidence/fms-coast-preservation-2026-10-04/compare.html": "d467e893fe155dd38ca9d029615580ca04c69845183fd0448dc22c9b5b7f74d5",
+    "docs/evidence/fms-coast-preservation-2026-10-04/live-browser.json": "45a6d55eff9d97427d40324ba3c9849cee3d09085c9c7d6f0dc60ef9124f8071",
+    "docs/evidence/fms-coast-preservation-2026-10-04/measure.mjs": "d03f29804b4d77ed9c9a361dce33916fa2ed5c2a4d15012a81c59bda3f5af255",
+    "docs/evidence/fms-coast-preservation-2026-10-04/measurements.json": "7b7b5d1fc0b2251cc631bc02c3bb6643f9bb6c6e8e0887620b54023fccc6f7de",
+    "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json": "894bfc36641472b80d7541cc8c769090fbc6687cb70e8600cfa704393666c3ae",
+    "docs/evidence/fms-coast-preservation-2026-10-04/renderer-comparison.png": "e63849a6cc89533adad2b259ae49bc9e8f33719651af610c82fcb0d45ff15a5c"
+  },
+  "distHashes": {
+    "dist/assets/App-B-TSmWiq.css": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+    "dist/assets/App-BVp6hGD2.js": "1d2dfab070d58ef30956daed4e137e81f162edc5b163a8eae5cdefa1eb00ef2e",
+    "dist/assets/atlas.worker-D_ZIKkck.js": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+    "dist/assets/AtlasStudio-CtV71PEf.css": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+    "dist/assets/AtlasStudio-DiPXV9xk.js": "f5c738ef707828bdc3b2e82d356740283f90bb873a5c192e235fa165c5a1297d",
+    "dist/assets/browserAll-DIHAd1Cn.js": "34d274d623ae5bf1745db0d1b090a1e5545bc74c6ed6bc097b0f64fea49ff317",
+    "dist/assets/BufferResource-Bk8ZSLzt.js": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+    "dist/assets/camera-BGXwsUH8.js": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+    "dist/assets/canvasUtils-BVGwBBBn.js": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+    "dist/assets/CountryStudio-CI970Sdu.js": "d707a41c7afb0f630cfe107b09cf8f2beb1bd1a8c3211099d24e389b11396938",
+    "dist/assets/CountryStudio-Cn5n2Zb4.css": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+    "dist/assets/delaunay-BRaUaq0z.js": "de65a57364e8da726a374b54831de9568bd7c93a01ad556204701a084f88c04d",
+    "dist/assets/FmsApp-Cgid0cFl.css": "fef129e73aa90d8bf72a3a0337e1e4f1ae59afba31c513b48adc3600c759d8a0",
+    "dist/assets/FmsApp-fP6fc77N.js": "47f2458ac0da77369dc941bac5d0e0c39eb5c70f75580ce2de1651c84784f7b0",
+    "dist/assets/Geometry-IpHxCVTc.js": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+    "dist/assets/getPo2TextureFromSource-BzR2jfx3.js": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+    "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+    "dist/assets/index-CGcnmVT3.js": "b1e232147d54421d100c0a15258fb94302ca673a883af83aab474757620e75c8",
+    "dist/assets/init-7imeKlu6.js": "60fabe2cf83bd44c25778e19b97db66c1e046a56e7b743196724fe94ce1762ec",
+    "dist/assets/init-B8Jnes8g.js": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+    "dist/assets/LegacyEntry-CA7SdR-b.js": "c55c35cb296b8691d4f50ab556447d808a87763cdec3b4317a25200d0aabc36d",
+    "dist/assets/LegacyEntry-CNvbqJOh.css": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+    "dist/assets/renderer-USDMgegI.js": "14618ece1a555416f8d0bb723d27e530dd2705846c90741adc06a82b8ba47c0c",
+    "dist/assets/RenderTargetSystem-a4R96cNy.js": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+    "dist/assets/replay.worker-Dvt2kBgS.js": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+    "dist/assets/rolldown-runtime-hePW80VL.js": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+    "dist/assets/seed-terrain.worker-DZf0eV9u.js": "f2e45461b3be6b76c6a3e10059d102e34cab7cd652033f0213493644842f6d09",
+    "dist/assets/sim.worker-CLe8Zpf3.js": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+    "dist/assets/terrain-import.worker-B9lRjsio.js": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+    "dist/assets/terrain.worker-CdpuwNTW.js": "d06b20901e357d05ba802502e4471ac6c8cab3d846c63b1dc31b07c6b70c06c9",
+    "dist/assets/webworkerAll-ReaE4d50.js": "6ed5a713c4b3d8bc8138ee02d7f34da582dbb48d1dbad4f232621bfa2e53fd38",
+    "dist/assets/worker-pjB4IGPF.js": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+    "dist/build.json": "9f0a62d5a38d77192d374ea378ae114d2cae1628d8fa82d703611e7bcea0ae51",
+    "dist/favicon.svg": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+    "dist/index.html": "71a40b6f4ba6a3b42ffcc00534251b69087dc73a5e716daeae346dda0c5662f2",
+    "dist/terrain-licenses.txt": "057596c400e1b9323cd075f92db30cbd6f5b2d189b64df904f436b29298a20b3",
+    "dist/_headers": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+    "dist/_redirects": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+  },
+  "releaseStatus": {
+    "ready": false,
+    "formalReady": false,
+    "gate": "full-release",
+    "mode": "report-only",
+    "note": "Expected locked state, not a release acceptance pass"
+  }
+}

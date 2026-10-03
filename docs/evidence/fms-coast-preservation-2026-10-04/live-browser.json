@@ -1,0 +1,27 @@
+{
+  "measurement": {
+    "result": {
+      "type": "string",
+      "value": "{\"beforeRevision\":9,\"afterRevision\":10,\"metric\":{\"crossingCount\":1464,\"candidateCrossingCount\":1464,\"missingCrossings\":0,\"maxCrossingDisplacement\":0,\"changedTriangles\":0,\"absoluteAreaChange\":0,\"landAreaBefore\":626990.2373799644,\"landAreaAfter\":626990.2373799644,\"sectionBefore\":[],\"sectionAfter\":[]},\"surface\":{\"testid\":\"fms-canvas\",\"minHeight\":\"0\",\"maxHeight\":\"83\",\"riverSegments\":\"692\",\"lakeCells\":\"403\"}}"
+    }
+  },
+  "afterReload": {
+    "app": {
+      "dirty": "false",
+      "landCells": "9985",
+      "revision": "10",
+      "showOriginal": "false",
+      "terrainPhase": "idle",
+      "testid": "fms-app"
+    },
+    "surface": {
+      "lakeCells": "403",
+      "maxHeight": "83",
+      "minHeight": "0",
+      "riverSegments": "692",
+      "testid": "fms-canvas"
+    }
+  },
+  "logs": [],
+  "scope": "Actual UI seed42 generation, confirm, save and reload; read-only document/geometry probe; temporary probe removed."
+}

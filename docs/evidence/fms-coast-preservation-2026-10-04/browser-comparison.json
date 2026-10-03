@@ -1,0 +1,35 @@
+{
+  "url": "http://127.0.0.1:5180/docs/evidence/fms-coast-preservation-2026-10-04/compare.html",
+  "result": "neck: 海岸交点 346；最大位移 0；面积 77237.0370 → 77237.0370；截线 [[264.44444444444446,275.55555555555554]] → [[264.44444444444446,275.55555555555554]]\nisland: 海岸交点 5；最大位移 0；面积 77.1605 → 77.1605；截线 [[34.44444444444444,45.55555555555556]] → [[34.44444444444444,45.55555555555556]]",
+  "canvases": [
+    {
+      "lakeCells": "0",
+      "maxHeight": "45",
+      "minHeight": "0",
+      "riverSegments": "0",
+      "testid": "fms-canvas"
+    },
+    {
+      "lakeCells": "101",
+      "maxHeight": "93",
+      "minHeight": "0",
+      "riverSegments": "79",
+      "testid": "fms-canvas"
+    },
+    {
+      "lakeCells": "0",
+      "maxHeight": "45",
+      "minHeight": "0",
+      "riverSegments": "0",
+      "testid": "fms-canvas"
+    },
+    {
+      "lakeCells": "0",
+      "maxHeight": "45",
+      "minHeight": "0",
+      "riverSegments": "0",
+      "testid": "fms-canvas"
+    }
+  ],
+  "logs": []
+}

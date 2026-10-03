@@ -1,0 +1,27 @@
+{
+  "preview": {
+    "result": {
+      "type": "string",
+      "value": "{\"commit\":\"193c3b410e3ab63b05ff7bbc014d76a27719bb71\",\"app\":{\"testid\":\"fms-app\",\"revision\":\"2\",\"landCells\":\"1362\",\"dirty\":\"false\",\"terrainPhase\":\"preview\",\"showOriginal\":\"false\"},\"surface\":{\"testid\":\"fms-canvas\",\"minHeight\":\"0\",\"maxHeight\":\"67\",\"riverSegments\":\"176\",\"lakeCells\":\"0\"},\"resources\":[\"http://127.0.0.1:5181/assets/terrain.worker-CdpuwNTW.js\"]}"
+    }
+  },
+  "cancelled": {
+    "app": {
+      "dirty": "false",
+      "landCells": "1362",
+      "revision": "2",
+      "showOriginal": "false",
+      "terrainPhase": "idle",
+      "testid": "fms-app"
+    },
+    "surface": {
+      "lakeCells": "0",
+      "maxHeight": "81",
+      "minHeight": "0",
+      "riverSegments": "154",
+      "testid": "fms-canvas"
+    }
+  },
+  "logs": [],
+  "scope": "Final production build, actual strict-CSP Worker generation and cancellation; stored production fixture unchanged."
+}

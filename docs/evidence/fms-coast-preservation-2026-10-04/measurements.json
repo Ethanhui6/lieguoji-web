@@ -1,0 +1,263 @@
+{
+  "recordedAt": "2026-10-03T19:42:01.347Z",
+  "beforeCommit": "c88a667",
+  "contract": "fixed-linear-sea-contour-v1",
+  "allowedGeometricDisplacement": 0,
+  "method": "Independent h=20 triangle clipping and edge crossings using renderer float32 positions; no coast-lock helper in measurement",
+  "excludes": [
+    "pixel-color equality",
+    "fixed shading or rivers",
+    "original FMS equivalence",
+    "physical iPhone or user visual acceptance"
+  ],
+  "sourceHashes": {
+    "src/fms/coastline.ts": "cb9bb89b3cf457ee312d083eaad8cda75950b524d354bb6515ff70a1ea130082",
+    "src/fms/naturalize.ts": "3756f39b115bed51afdf0e13ed38eeac7f70e587b6438839f890c0afaf0fb0d6",
+    "src/fms/terrain-client.ts": "6aa27f0c33771ab4fd92c85fca96d02dc673f22da66f76583e088b2abac86bd4",
+    "src/fms/terrain-preview.ts": "4493828204b2b4a7041485242235ff165cb1c64f83c1d7ed4b662743dbd6faae",
+    "src/fms/renderer.ts": "7dbb3dd667dbd6a184a400b96d98fd9ca2c6d043f16488bf0cdc909fddd5b3c1",
+    "tests/helpers/fms-coast-metrics.ts": "e2b44ed5a3a05acff1f2401d161a12bca22ec6898fd6a2f5f81b7111db346d2e"
+  },
+  "cases": [
+    {
+      "name": "island",
+      "options": {
+        "seed": 42,
+        "strength": 1
+      },
+      "points": 81,
+      "sectionX": 40,
+      "oldAlgorithm": "fms-shape-preserving-relief-v1",
+      "newAlgorithm": "fms-shape-preserving-relief-v2",
+      "old": {
+        "crossingCount": 5,
+        "candidateCrossingCount": 5,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 2.838564856376109,
+        "changedTriangles": 5,
+        "absoluteAreaChange": 45.68286635577624,
+        "landAreaBefore": 77.16049382716051,
+        "landAreaAfter": 31.477627471384267,
+        "sectionBefore": [
+          [
+            34.44444444444444,
+            45.55555555555556
+          ]
+        ],
+        "sectionAfter": [
+          [
+            36.45161290322581,
+            43.54838709677419
+          ]
+        ]
+      },
+      "current": {
+        "crossingCount": 5,
+        "candidateCrossingCount": 5,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 77.16049382716051,
+        "landAreaAfter": 77.16049382716051,
+        "sectionBefore": [
+          [
+            34.44444444444444,
+            45.55555555555556
+          ]
+        ],
+        "sectionAfter": [
+          [
+            34.44444444444444,
+            45.55555555555556
+          ]
+        ]
+      },
+      "changedInteriorVertices": 0
+    },
+    {
+      "name": "neck",
+      "options": {
+        "seed": 42,
+        "strength": 1
+      },
+      "points": 1681,
+      "sectionX": 200,
+      "oldAlgorithm": "fms-shape-preserving-relief-v1",
+      "newAlgorithm": "fms-shape-preserving-relief-v2",
+      "old": {
+        "crossingCount": 346,
+        "candidateCrossingCount": 346,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 5.028314888437664,
+        "changedTriangles": 346,
+        "absoluteAreaChange": 4989.031832915525,
+        "landAreaBefore": 77237.0370370374,
+        "landAreaAfter": 72248.00520412152,
+        "sectionBefore": [
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ],
+        "sectionAfter": [
+          [
+            267.6923076923077,
+            272.3076923076923
+          ]
+        ]
+      },
+      "current": {
+        "crossingCount": 346,
+        "candidateCrossingCount": 346,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 77237.0370370374,
+        "landAreaAfter": 77237.0370370374,
+        "sectionBefore": [
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ],
+        "sectionAfter": [
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ]
+      },
+      "changedInteriorVertices": 587
+    },
+    {
+      "name": "asymmetric",
+      "options": {
+        "seed": 42,
+        "strength": 1
+      },
+      "points": 1681,
+      "sectionX": 200,
+      "oldAlgorithm": "fms-shape-preserving-relief-v1",
+      "newAlgorithm": "fms-shape-preserving-relief-v2",
+      "old": {
+        "crossingCount": 398,
+        "candidateCrossingCount": 398,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 5.028314888437664,
+        "changedTriangles": 398,
+        "absoluteAreaChange": 5739.444262090221,
+        "landAreaBefore": 72357.40740740788,
+        "landAreaAfter": 66617.96314531713,
+        "sectionBefore": [
+          [
+            24.444444444444443,
+            35.55555555555556
+          ],
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ],
+        "sectionAfter": [
+          [
+            28,
+            32
+          ],
+          [
+            267.6923076923077,
+            272.3076923076923
+          ]
+        ]
+      },
+      "current": {
+        "crossingCount": 398,
+        "candidateCrossingCount": 398,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 72357.40740740788,
+        "landAreaAfter": 72357.40740740788,
+        "sectionBefore": [
+          [
+            24.444444444444443,
+            35.55555555555556
+          ],
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ],
+        "sectionAfter": [
+          [
+            24.444444444444443,
+            35.55555555555556
+          ],
+          [
+            264.44444444444446,
+            275.55555555555554
+          ]
+        ]
+      },
+      "changedInteriorVertices": 515
+    },
+    {
+      "name": "actual-mesh",
+      "options": {
+        "seed": 42,
+        "strength": 1
+      },
+      "points": 36864,
+      "sectionX": 750,
+      "oldAlgorithm": "fms-shape-preserving-relief-v1",
+      "newAlgorithm": "fms-shape-preserving-relief-v2",
+      "old": {
+        "crossingCount": 1362,
+        "candidateCrossingCount": 1362,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 7.346723616324363,
+        "changedTriangles": 1362,
+        "absoluteAreaChange": 21294.47028180697,
+        "landAreaBefore": 1102295.6293182536,
+        "landAreaAfter": 1081001.1590364468,
+        "sectionBefore": [
+          [
+            203.37043308079015,
+            1300.8447553795247
+          ]
+        ],
+        "sectionAfter": [
+          [
+            208.62880802490542,
+            1295.7877586416935
+          ]
+        ]
+      },
+      "current": {
+        "crossingCount": 1362,
+        "candidateCrossingCount": 1362,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 1102295.6293182536,
+        "landAreaAfter": 1102295.6293182536,
+        "sectionBefore": [
+          [
+            203.37043308079015,
+            1300.8447553795247
+          ]
+        ],
+        "sectionAfter": [
+          [
+            203.37043308079015,
+            1300.8447553795247
+          ]
+        ]
+      },
+      "changedInteriorVertices": 15871
+    }
+  ]
+}

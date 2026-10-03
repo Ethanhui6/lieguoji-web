@@ -2550,7 +2550,14 @@
       "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
       "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
       "docs/evidence/fms-naturalization-2026-10-04/verification.json",
-      "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+      "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json",
+      "docs/evidence/fms-coast-preservation-2026-10-04/COAST_CONTRACT.md",
+      "docs/evidence/fms-coast-preservation-2026-10-04/measurements.json",
+      "docs/evidence/fms-coast-preservation-2026-10-04/browser-comparison.json",
+      "docs/evidence/fms-coast-preservation-2026-10-04/renderer-comparison.png",
+      "docs/evidence/fms-coast-preservation-2026-10-04/live-browser.json",
+      "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json",
+      "docs/evidence/fms-coast-preservation-2026-10-04/verification.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2723,7 +2730,14 @@
           "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
           "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
           "docs/evidence/fms-naturalization-2026-10-04/verification.json",
-          "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+          "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json",
+          "docs/evidence/fms-coast-preservation-2026-10-04/COAST_CONTRACT.md",
+          "docs/evidence/fms-coast-preservation-2026-10-04/measurements.json",
+          "docs/evidence/fms-coast-preservation-2026-10-04/browser-comparison.json",
+          "docs/evidence/fms-coast-preservation-2026-10-04/renderer-comparison.png",
+          "docs/evidence/fms-coast-preservation-2026-10-04/live-browser.json",
+          "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json",
+          "docs/evidence/fms-coast-preservation-2026-10-04/verification.json"
         ],
         "workItems": [
           {
@@ -2741,9 +2755,16 @@
               "docs/evidence/fms-naturalization-2026-10-04/final-build-browser.json",
               "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
               "docs/evidence/fms-naturalization-2026-10-04/verification.json",
-              "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+              "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json",
+              "docs/evidence/fms-coast-preservation-2026-10-04/COAST_CONTRACT.md",
+              "docs/evidence/fms-coast-preservation-2026-10-04/measurements.json",
+              "docs/evidence/fms-coast-preservation-2026-10-04/browser-comparison.json",
+              "docs/evidence/fms-coast-preservation-2026-10-04/renderer-comparison.png",
+              "docs/evidence/fms-coast-preservation-2026-10-04/live-browser.json",
+              "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json",
+              "docs/evidence/fms-coast-preservation-2026-10-04/verification.json"
             ],
-            "progress": "恢复Hill Add/Max与当前自然化同输入试验已记录；8文件181测试通过，真实Chromium生成/取消/确认/撤销/保存刷新与生产CSP Worker加载通过，完整证据绑定源码632d7d5。 已完成基础工程切片，但计划中的显式可调细化带和局部区域锁定尚未实现，不能将整项标done。",
+            "progress": "基础自然化/水系/事务已实现；本批修复mask不变但插值海岸收缩：默认固定混合三角形全部高度与恰好20顶点，几何上限0世界单位。独立裁切/交点/细颈截线及真实浏览器存档度量通过，189测试通过。可调细化带和玩家局部区域锁仍未实现，整项in_progress。",
             "remaining": [
               "显式可调海岸细化带，保护宽海湾/狭颈/长海岬/小岛的不对称样本",
               "玩家锁定区域在换种子/重生成时保持高程不变，接入撤销/保存和候选校验"
@@ -2901,11 +2922,11 @@
       "scope": "历史WEB-PH01绘图底座快照；后续自然化见naturalizationPrototype，不把此快照的false作为当前能力。"
     },
     "naturalizationPrototype": {
-      "sourceCommit": "e044e460438a2a8de2d7ec3bd8f06ff071a3b75f",
+      "sourceCommit": "193c3b410e3ab63b05ff7bbc014d76a27719bb71",
       "entry": "/?fms=1",
       "database": "lieguoji-fms-web-v1",
       "status": "local-base-terrain-slice-verified; adjustable-band-and-region-locks-pending",
-      "algorithm": "fms-shape-preserving-relief-v1",
+      "algorithm": "fms-shape-preserving-relief-v2",
       "naturalizationImplemented": true,
       "derivedHydrology": "deterministic-static-wet-condition-drainage; not original climate/erosion",
       "mobileViewport": "428x926 desktop Chromium; not physical iPhone or WebKit",
@@ -2913,12 +2934,13 @@
       "generationParametersPersisted": false,
       "firstPlayableGatePassed": false,
       "limitations": [
-        "sample mask preserved; interpolated coastline may move within triangles",
         "coast/ocean and direct-versus-Atlas comparison incomplete",
         "36864-point web topology and 1536 units are not final map scale",
         "load/edit derived drainage currently on main thread; phone performance unmeasured",
         "terrain heights saved; generation settings session-only; hydrology version contract required before simulation",
-        "WEB-02-01 adjustable refinement band and player-locked regions not implemented"
+        "WEB-02-01 adjustable refinement band and player-locked regions not implemented",
+        "Coast geometry is fixed; shading/river colors may change and high coast rims need later visual work",
+        "Does not restore contour changes already saved by v1"
       ],
       "evidence": [
         "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
@@ -2928,6 +2950,28 @@
         "docs/evidence/fms-naturalization-2026-10-04/hill-trial.json",
         "docs/evidence/fms-naturalization-2026-10-04/verification.json",
         "docs/evidence/fms-naturalization-2026-10-04/wording-build-browser.json"
+      ]
+    },
+    "coastlineContract": {
+      "id": "fixed-linear-sea-contour-v1",
+      "sourceCommit": "193c3b410e3ab63b05ff7bbc014d76a27719bb71",
+      "mode": "fixed-coast-interior-generation",
+      "maxGeometricDisplacementWorldUnits": 0,
+      "method": "fixed source mixed triangles plus sea/exact-level vertices; all other land strictly above20",
+      "workerAndPreviewEnforced": true,
+      "pixelColorEqualityClaimed": false,
+      "currentStorageFormat": 1,
+      "oldSavesMigrated": false,
+      "physicalDevicePassed": false,
+      "userVisualAccepted": false,
+      "evidence": [
+        "docs/evidence/fms-coast-preservation-2026-10-04/COAST_CONTRACT.md",
+        "docs/evidence/fms-coast-preservation-2026-10-04/measurements.json",
+        "docs/evidence/fms-coast-preservation-2026-10-04/browser-comparison.json",
+        "docs/evidence/fms-coast-preservation-2026-10-04/renderer-comparison.png",
+        "docs/evidence/fms-coast-preservation-2026-10-04/live-browser.json",
+        "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coast-preservation-2026-10-04/verification.json"
       ]
     }
   }

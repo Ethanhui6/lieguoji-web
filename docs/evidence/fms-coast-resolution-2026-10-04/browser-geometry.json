@@ -1,0 +1,65 @@
+{
+  "label": "saved-test-map-before-this-batch",
+  "sourcePoints": 38042,
+  "candidatePoints": 40789,
+  "appliedAddedPoints": 2747,
+  "moves": 13975,
+  "stats": {
+    "algorithm": "bounded-coast-relaxation-v2",
+    "maxDisplacement": 1.193614470832847,
+    "maxComponentAreaFraction": 0.0003050550717378364,
+    "maxGradient": 0.17711480181009875,
+    "smallComponentArea": 4096,
+    "turningEnergyBefore": 621.2069966496505,
+    "turningEnergyAfter": 588.7978516999588,
+    "addedPoints": 2747
+  },
+  "referenceLandAreaError": 2.3283064365386963e-10,
+  "lockedFacePointChanges": 0,
+  "protectedPoints": 703,
+  "maxCoastDisplacement": 1.1230733491565366,
+  "missingCrossings": 0,
+  "componentCount": 3,
+  "components": [
+    {
+      "land": true,
+      "before": 299577.615515781,
+      "after": 299669.0031867719,
+      "fraction": 0.0003050550717333955
+    },
+    {
+      "land": true,
+      "before": 327853.14951973263,
+      "after": 327926.8930788098,
+      "fraction": 0.0002249286279090157
+    },
+    {
+      "land": false,
+      "before": 1731865.234964484,
+      "after": 1731700.1037344125,
+      "fraction": 0.00009534877583883272
+    }
+  ],
+  "maxComponentAreaFraction": 0.0003050550717333955,
+  "minStretch": 0.8590008805108472,
+  "maxStretch": 1.1632295798039811,
+  "flippedFaces": 0,
+  "maxFaceAreaFraction": 0.15814769198340728,
+  "sectionBefore": [
+    [
+      528.7981342380635,
+      553.4711013945107
+    ]
+  ],
+  "sectionAfter": [
+    [
+      528.7981342380635,
+      552.9347306907675
+    ]
+  ],
+  "landAreaBefore": 627430.7650355145,
+  "landAreaAfter": 627595.896265582,
+  "turningEnergyBefore": 621.2069966496617,
+  "turningEnergyAfter": 588.7978516999646,
+  "desktopMeasureMs": 5862.5683999999965
+}

@@ -2615,7 +2615,28 @@
       "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-close.png",
       "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-restored.png",
       "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json",
-      "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json"
+      "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+      "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+      "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+      "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
+      "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2853,7 +2874,28 @@
           "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-close.png",
           "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-restored.png",
           "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json",
-          "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json"
+          "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+          "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+          "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+          "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
+          "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
         ],
         "workItems": [
           {
@@ -2936,12 +2978,34 @@
               "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-close.png",
               "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-restored.png",
               "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json",
-              "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json"
+              "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+              "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+              "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+              "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
+              "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
             ],
-            "progress": "新增显式轮廓平滑：每操作0—4位移、每正面积组件2%、全局间距倍率0.8—1.2、保护面/小岛边界固定，折角无改善拒绝；修复独立细化点增锯齿、保护笔刷漏面与河口伸海短棒。313项相关测试、24组独立量测、开发及源码绑定生产CSP保存恢复通过。4/16/40倍仍见线段海岸和折角河道，WEB-02-01保持in_progress。",
+            "progress": "海岸平滑加入共享h20交点/局部细分；最终float32几何相对操作前原面前像验位移/面积/梯度，继承旧固定面，阴影可从保存网格重建。327相关测试、24组独立量测、本地源码绑定生产CSP/保存恢复通过；实际图38042→40789点并可继续画/撤销。粗层折角和水系分辨率敏感性仍在，WEB-02-01保持in_progress。",
             "remaining": [
-              "改善真实海岸轮廓分辨率与连贯性，形成自然海湾/岬角；当前移动已有点仍是短直线边，不能以折角指标或测试绿灯代替视觉验收。",
-              "面积<4096小组件边界固定已落实；细颈仍按采样支撑跳过并受每操作0.8压缩下限约束，不保证任意固定剖面宽度不变；连续操作缺少最初轮廓永久锚点，必须保持明确告知。"
+              "粗层级海岸拐角与自然海湾/岬角观感仍不足；局部加密只提供真实自由度，不能以点数、折角指标或mask代替视觉验收。",
+              "加密改变邻接与单位点汇流，需处理水系分辨率敏感性；完整主线程几何验证与派生水文的手机耗时/内存尚未测定。",
+              "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点尚未实现。固定剖面宽度并非保持不变。"
             ]
           },
           {
@@ -2956,7 +3020,7 @@
               "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
               "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg"
             ],
-            "progress": "本切片已有直接地形4/16/40倍同相机局部观察，仍未做同输入直接源/Atlas转换完整对照；WEB-02-01自然海岸观感不足，前置未完成。"
+            "progress": "本批直接网格4/16/40倍同相机对照保留；01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照。"
           },
           {
             "id": "WEB-02-03",
@@ -3096,10 +3160,10 @@
       "scope": "历史WEB-PH01绘图底座快照；后续自然化见naturalizationPrototype，不把此快照的false作为当前能力。"
     },
     "naturalizationPrototype": {
-      "sourceCommit": "fd6f8a5bf174b0de519eaf9e532e32ae74377873",
+      "sourceCommit": "f4d5f76305f87f6d4574205dcec9d03d060e70b8",
       "entry": "/?fms=1",
       "database": "lieguoji-fms-web-v1",
-      "status": "local-relaxation-surface-lock-picking-and-river-mouths-verified; natural-coast-visual-quality-open",
+      "status": "local-explicit-coast-resolution-verified; naturalness-hydrology-scale-and-phone-performance-open",
       "algorithm": "fms-shape-preserving-relief-v4",
       "naturalizationImplemented": true,
       "derivedHydrology": "deterministic-static-wet-condition-drainage; not original climate/erosion",
@@ -3181,7 +3245,28 @@
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-close.png",
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-restored.png",
         "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json",
-        "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json"
+        "docs/evidence/fms-coast-smoothing-2026-10-04/checkpoint-checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+        "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
       ]
     },
     "coastlineContract": {
@@ -3325,9 +3410,9 @@
       ]
     },
     "coastSmoothingPrototype": {
-      "sourceCommit": "fd6f8a5bf174b0de519eaf9e532e32ae74377873",
-      "algorithm": "bounded-coast-relaxation-v1",
-      "status": "local-engineering-slice-verified; naturalness-open",
+      "sourceCommit": "f4d5f76305f87f6d4574205dcec9d03d060e70b8",
+      "algorithm": "bounded-coast-relaxation-v2",
+      "status": "local-explicit-resolution-and-relaxation-verified; naturalness-open",
       "maxOffsetWorld": [
         0,
         4
@@ -3344,15 +3429,17 @@
       "basis": "current map for each operation; repeated confirmations accumulate",
       "qualityGuard": "coast turning-angle squared sum must decrease; not visual acceptance",
       "geometryPersisted": true,
-      "tests": 313,
+      "tests": 327,
       "independentCases": 24,
       "browser": {
-        "maxPointDisplacement": 1.687221372746219,
-        "maxCoastDisplacement": 1.4994885978267796,
-        "maxComponentAreaFraction": 0.000522580682715601,
+        "maxPointDisplacement": 1.193614470832847,
+        "maxCoastDisplacement": 1.1230733491565366,
+        "maxComponentAreaFraction": 0.0003050550717333955,
         "protectedFacePointChanges": 0,
-        "saveRevision": 28,
-        "storeRevision": 13,
+        "sourcePoints": 38042,
+        "savedPoints": 40789,
+        "saveRevision": 33,
+        "storeRevision": 15,
         "zoomObserved": [
           4,
           16,
@@ -3386,8 +3473,31 @@
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-4x.png",
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-before-close.png",
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-restored.png",
-        "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json"
-      ]
+        "docs/evidence/fms-coast-smoothing-2026-10-04/verification.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+        "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
+      ],
+      "previousSourceCommit": "fd6f8a5bf174b0de519eaf9e532e32ae74377873",
+      "resampleInUI": true
     },
     "riverMouthPrototype": {
       "sourceCommit": "fd6f8a5bf174b0de519eaf9e532e32ae74377873",
@@ -3399,6 +3509,49 @@
         "docs/evidence/fms-coast-smoothing-2026-10-04/COAST_SMOOTHING.md",
         "docs/evidence/fms-coast-smoothing-2026-10-04/checks.json",
         "docs/evidence/fms-coast-smoothing-2026-10-04/smooth-after-close.png"
+      ]
+    },
+    "coastResolutionPrototype": {
+      "sourceCommit": "f4d5f76305f87f6d4574205dcec9d03d060e70b8",
+      "kind": "explicit-shared-h20-edges-and-bounded-local-subdivision",
+      "status": "local-engineering-verified; first-experience-gate-open",
+      "maxPoints": 50000,
+      "midpointRounds": 3,
+      "targetCoastEdgeLength": 2,
+      "targetLengthIsNotGuaranteed": true,
+      "reference": "unrounded preimages on the original float32 rendered surface; quantization included in final budgets",
+      "fixedAreas": "determined before subdivision; incident edges not split; inherited fixed vertices",
+      "heightType": "Int32; inserted points have height20",
+      "shade": "stored-mesh deterministic bounded reconstruction; no full pixel invariance claim",
+      "hydrologyResolutionInvariant": false,
+      "mainThreadValidation": true,
+      "appliedFixtureCases": 16,
+      "unchangedIslandCases": 8,
+      "originalVisualAcceptance": false,
+      "physicalDevice": "not_run",
+      "userVisual": "pending",
+      "evidence": [
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/after-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-16x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-40x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/before-4x.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/build-check.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks-before-test-index.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/checks.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md",
+        "docs/evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs",
+        "docs/evidence/fms-coast-resolution-2026-10-04/measurements.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-preview.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
+        "docs/evidence/fms-coast-resolution-2026-10-04/verification.json"
       ]
     }
   }

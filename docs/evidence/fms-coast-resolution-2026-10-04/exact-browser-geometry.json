@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "f4d5f76305f87f6d4574205dcec9d03d060e70b8",
+  "beforeRevision": 28,
+  "afterRevision": 31,
+  "allDocumentFieldsExact": true,
+  "sourceFileSha256": "9ef429d37ad9b97498ea57dec7f4914c3a3feafea474b8ab0985e2752444c694",
+  "savedFileSha256": "66142b1ff4b891abd1d77b457168879aa8eaccab34684a1328de444fd2f5ead0",
+  "shadeSha256": "76f6771dcb19f9cfc01bcfbb6f780a13eb03654ded26486cdc4519a0bfc5afd6",
+  "sourcePoints": 38042,
+  "savedPoints": 40789
+}

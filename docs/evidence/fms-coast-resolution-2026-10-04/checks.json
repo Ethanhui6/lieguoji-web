@@ -1,0 +1,54 @@
+[
+  {
+    "name": "lint",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/eslint/bin/eslint.js",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "at": "2026-10-03T23:02:15.109Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "at": "2026-10-03T23:02:15.117Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "src/fms",
+      "src/world/fms-native-brush.test.ts"
+    ],
+    "at": "2026-10-03T23:02:15.120Z",
+    "code": 0,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  17 passed (17)\n      Tests  327 passed (327)\n   Start at  07:02:16\n   Duration  11.64s (tests 93%, import 4%, transform 3%)\n\n    Isolate  17 workers spawned · ~137ms startup each (spawn + environment, per file)\n             at least ~1.02s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  },
+  {
+    "name": "measure-lint",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/eslint/bin/eslint.js",
+      "docs/evidence/fms-coast-resolution-2026-10-04/measure.mjs"
+    ],
+    "at": "2026-10-03T23:02:15.125Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

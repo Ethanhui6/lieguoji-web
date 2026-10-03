@@ -1,0 +1,2223 @@
+{
+  "recordedAt": "2026-10-03T21:13:48.001Z",
+  "method": "Independent float32 h20 clipping with parent grouping, child orientation/coverage, original edge crossings, non-grid-aligned narrow-neck section, locked face and shading checks",
+  "sourceHashes": {
+    "src/fms/coast-refinement.ts": "4474c36049d2a1a3dc1db655b46dd7e21a3c4bdd66027b59e23fa1ad07753d32",
+    "src/fms/coast-client.ts": "5b9d3c564d103c5eeb807cf7d5888aedd6bd730e3c1a5ddf1bdd02c81b3ef1d5",
+    "src/fms/coast.worker.ts": "8f94affc8cd731bdc6ae8caf44ec7c98335cfa07c4642719b38dd5ceb9a3e97b",
+    "src/fms/model.ts": "903d06efae494ac634bdbcb67c9c8dcdbb976e11494276d482cb3565f7a6f1c0",
+    "src/fms/renderer.ts": "7269433169f38b56efeb7ade6de60d99f8dabeec5eace285f26f9f053d7b7a7d",
+    "src/fms/shading.ts": "b23b2a1651ce5700172ff2d55c8625ac3133dfb57a55603b8215b9412f694232",
+    "src/fms/naturalize.ts": "b5ce41aabbfa5652e3c0b102a46b2e81bd4f4376bba5b0e75d6fbb59ff0c60f1",
+    "tests/helpers/fms-refinement-metrics.ts": "2e33986c4ab5e4850ceae83df3b6e35d1c7a1a63c60fb287694f3493f4c91a06",
+    "tests/helpers/fms-coast-metrics.ts": "e2b44ed5a3a05acff1f2401d161a12bca22ec6898fd6a2f5f81b7111db346d2e"
+  },
+  "cases": [
+    {
+      "name": "island",
+      "sourcePoints": 81,
+      "sourceSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c",
+      "locked": 0,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 0,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77.16049382716051,
+            "landAreaAfter": 77.16049382716051,
+            "sectionBefore": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ],
+            "sectionAfter": [
+              [
+                34.44444444444444,
+                45.55555555555556
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e9735f209c981bd4a855e84a109d8063d575cbfcaecc144431c29707a9e9584c"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 5,
+        "candidateCrossingCount": 5,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 77.16049382716051,
+        "landAreaAfter": 77.16049382716051,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    },
+    {
+      "name": "neck",
+      "sourcePoints": 1681,
+      "sourceSha256": "ebaaf9bde78714f6871dd10327715ca188ebabdcfe92866a3973a09801b0d5da",
+      "locked": 41,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77237.0370370374,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "ebaaf9bde78714f6871dd10327715ca188ebabdcfe92866a3973a09801b0d5da"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.009172230154673791,
+            "maxAreaFraction": 0.0020225524902372114
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0016510009764723022,
+            "maxSeaFraction": 0.0020225524902933727,
+            "maxDisplacement": 0.009172230154673791,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77236.78929540858,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "9a710bc929d9e8f05773c89e2ec0a09a7b511c0870ac41d55e15676e304d1c5e"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10199144174023575,
+            "maxAreaFraction": 0.018358459472658566
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01835845947267107,
+            "maxSeaFraction": 0.017983627319475847,
+            "maxDisplacement": 0.10199144174023575,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77234.18029997096,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "49c8ea8dc3f73d8df4c0202b1bb63e47f97d93ef1c3aef4f38ebce73fb2f80bb"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10199144174023575,
+            "maxAreaFraction": 0.018358459472658566
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01835845947267107,
+            "maxSeaFraction": 0.017983627319475847,
+            "maxDisplacement": 0.10199144174023575,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77234.18029997096,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "49c8ea8dc3f73d8df4c0202b1bb63e47f97d93ef1c3aef4f38ebce73fb2f80bb"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77237.0370370374,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "ebaaf9bde78714f6871dd10327715ca188ebabdcfe92866a3973a09801b0d5da"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.008958604640814499,
+            "maxAreaFraction": 0.002015686035159086
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.001546020507824164,
+            "maxSeaFraction": 0.002015686035256175,
+            "maxDisplacement": 0.008958604640814499,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77236.85957696714,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "868f1970c98ada2633472cec14dfdd4d690c0e3a6726a62ad6f3416226500d2c"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09550306532493018,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017190551757929166,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09550306532493018,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77235.1350010767,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "1733c7d78ee63a97e29dcf1987272eebee34d7a2cb11275d67630bab618aafd9"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 294,
+            "skipped": 52,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09550306532493018,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 294,
+            "addedPoints": 294,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017190551757929166,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09550306532493018,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 77237.0370370374,
+            "landAreaAfter": 77235.1350010767,
+            "sectionBefore": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "1733c7d78ee63a97e29dcf1987272eebee34d7a2cb11275d67630bab618aafd9"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 790,
+        "candidateCrossingCount": 790,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 77235.1350010767,
+        "landAreaAfter": 77235.1350010767,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    },
+    {
+      "name": "asymmetric",
+      "sourcePoints": 1681,
+      "sourceSha256": "09f0689642f34e1787ff3e001552edb17e662f5ccda94f64ede9ddf143db7c64",
+      "locked": 41,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72357.40740740788,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "09f0689642f34e1787ff3e001552edb17e662f5ccda94f64ede9ddf143db7c64"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.009420609266079346,
+            "maxAreaFraction": 0.002115249633788708
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0016957092284749042,
+            "maxSeaFraction": 0.002115249633848055,
+            "maxDisplacement": 0.009420609266079346,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72356.88325976164,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "800f6c2b4a89f132fce144426b8fc51f808208199ad674b5c7871671706132fc"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10471174474000967,
+            "maxAreaFraction": 0.018848114013672153
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.018848114013618307,
+            "maxSeaFraction": 0.018804168701209416,
+            "maxDisplacement": 0.10471174474000967,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72351.65917384785,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "8b8e62d784033d05ee44fb2307c7a623ac6cd68c9ea0f65f100662ef80b435a0"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10471174474000967,
+            "maxAreaFraction": 0.018848114013672153
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.018848114013618307,
+            "maxSeaFraction": 0.018804168701209416,
+            "maxDisplacement": 0.10471174474000967,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72351.65917384785,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "8b8e62d784033d05ee44fb2307c7a623ac6cd68c9ea0f65f100662ef80b435a0"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72357.40740740788,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "09f0689642f34e1787ff3e001552edb17e662f5ccda94f64ede9ddf143db7c64"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.008958604640814499,
+            "maxAreaFraction": 0.002015686035159086
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0016043090820130836,
+            "maxSeaFraction": 0.002015686035256175,
+            "maxDisplacement": 0.008958604640814499,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72357.20160260616,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "4cd2ef2500828551197798b5631bdcadf2d9830dd737c8a8e64e250e72b25750"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09901597765121084,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017822875976557667,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09901597765121084,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72355.30457166993,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "f876ba0030a6cb7d3be748f8384740dbb354b7601748fb64d367270dace32a10"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 317,
+            "skipped": 81,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09901597765121084,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 317,
+            "addedPoints": 317,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017822875976557667,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09901597765121084,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 72357.40740740788,
+            "landAreaAfter": 72355.30457166993,
+            "sectionBefore": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                29.444444444444457,
+                35.55555555555556
+              ],
+              [
+                264.44444444444446,
+                275.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "f876ba0030a6cb7d3be748f8384740dbb354b7601748fb64d367270dace32a10"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 876,
+        "candidateCrossingCount": 876,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 72355.30457166993,
+        "landAreaAfter": 72355.30457166993,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    },
+    {
+      "name": "three-wide-island",
+      "sourcePoints": 1681,
+      "sourceSha256": "e53016facc26635fe27433f98584657a096765b37d9e1b484fbb3240dc64db8e",
+      "locked": 41,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.1728395061655,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e53016facc26635fe27433f98584657a096765b37d9e1b484fbb3240dc64db8e"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.004853995080359268,
+            "maxAreaFraction": 0.0012115478515647793
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0012115478517342303,
+            "maxSeaFraction": 0.001037216186377857,
+            "maxDisplacement": 0.004853995080359268,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.2452989743106,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.443473648746,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e38a878d7e4a0a113c341758dc269f99b5520cc563bf7ccc0616699a3db2fae2"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.05389573881643817,
+            "maxAreaFraction": 0.009701232910158546
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.00970123291014475,
+            "maxSeaFraction": 0.009218597412004238,
+            "maxDisplacement": 0.05389573881643817,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.8298462290804,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.43366532308272,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "dbad9cfdea966f279b0cf08a692da1e960f86ac77147a221ecc2100177c34e9a"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.05389573881643817,
+            "maxAreaFraction": 0.009701232910158546
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.00970123291014475,
+            "maxSeaFraction": 0.009218597412004238,
+            "maxDisplacement": 0.05389573881643817,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.8298462290804,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.43366532308272,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "dbad9cfdea966f279b0cf08a692da1e960f86ac77147a221ecc2100177c34e9a"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.1728395061655,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "e53016facc26635fe27433f98584657a096765b37d9e1b484fbb3240dc64db8e"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.0059644949578368115,
+            "maxAreaFraction": 0.001342010498044029
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0012500000001193438,
+            "maxSeaFraction": 0.001342010498192315,
+            "maxDisplacement": 0.0059644949578368115,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.2313710907329,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.4440412743133,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "16c857677af042d0738534b140e161eb664354e4b380b5991f750e754109be86"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.06195237938595175,
+            "maxAreaFraction": 0.01193008422851275
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.011151428222723352,
+            "maxSeaFraction": 0.011930084228537656,
+            "maxDisplacement": 0.06195237938595175,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.6930850935605,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.43997329108083,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "dda390fbad4832c90425ee6c84ab04ae543988f51020066410bf8b0a10499bdf"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 15,
+            "skipped": 5,
+            "budgetLimited": false,
+            "maxDisplacement": 0.06195237938595175,
+            "maxAreaFraction": 0.01193008422851275
+          },
+          "metric": {
+            "splitParents": 15,
+            "addedPoints": 15,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.011151428222723352,
+            "maxSeaFraction": 0.011930084228537656,
+            "maxDisplacement": 0.06195237938595175,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 906.1728395061655,
+            "landAreaAfter": 906.6930850935605,
+            "sectionBefore": [
+              [
+                184.44444444444446,
+                215.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                184.43997329108083,
+                215.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "dda390fbad4832c90425ee6c84ab04ae543988f51020066410bf8b0a10499bdf"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 44,
+        "candidateCrossingCount": 44,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 906.6930850935605,
+        "landAreaAfter": 906.6930850935605,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    },
+    {
+      "name": "three-wide-neck",
+      "sourcePoints": 1681,
+      "sourceSha256": "808df302e7f927c6a1e9b4ad0972578534b5ac296c5e6fa35f6c28c6f551bfbf",
+      "locked": 41,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78614.81481481518,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "808df302e7f927c6a1e9b4ad0972578534b5ac296c5e6fa35f6c28c6f551bfbf"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.009474015014023828,
+            "maxAreaFraction": 0.002131652832028402
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.0016613769529798966,
+            "maxSeaFraction": 0.0021316528322592827,
+            "maxDisplacement": 0.009474015014023828,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78614.49799231556,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44391615254847,
+                285.55495469981764
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "370e17ef9dbaff6b601056763b507ab66f292ab7789823248b8ae245d7584e9c"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10240003820198444,
+            "maxAreaFraction": 0.018927001953122104
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01843200683584898,
+            "maxSeaFraction": 0.018927001953440083,
+            "maxDisplacement": 0.10240003820198444,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78611.16428916852,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.43857558941508,
+                285.54891223410095
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "b5b5ab660f5b586bf416dfe5151a48acedbd74f0980a5a0dfa6437c3433556e8"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.10240003820198444,
+            "maxAreaFraction": 0.018927001953122104
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01843200683584898,
+            "maxSeaFraction": 0.018927001953440083,
+            "maxDisplacement": 0.10240003820198444,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78611.16428916852,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.43857558941508,
+                285.54891223410095
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "b5b5ab660f5b586bf416dfe5151a48acedbd74f0980a5a0dfa6437c3433556e8"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78614.81481481518,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "808df302e7f927c6a1e9b4ad0972578534b5ac296c5e6fa35f6c28c6f551bfbf"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.008958604640814499,
+            "maxAreaFraction": 0.002015686035159086
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.001546020507824164,
+            "maxSeaFraction": 0.002015686035256175,
+            "maxDisplacement": 0.008958604640814499,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78614.5928235703,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44405653306512,
+                285.55716416707963
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "67e639e10c26241c8314443a020a6f5cede24d136a4cb656baa4a936ff335d1f"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09550306532493018,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017190551757929166,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09550306532493018,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78612.58610419297,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44011977509822,
+                285.57345441051166
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "9192c8903c6760da5cae33670aacaba2b90098e3c4be53aab81429e497aa60f6"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 308,
+            "skipped": 30,
+            "budgetLimited": false,
+            "maxDisplacement": 0.09550306532493018,
+            "maxAreaFraction": 0.01793212890625279
+          },
+          "metric": {
+            "splitParents": 308,
+            "addedPoints": 308,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.017190551757929166,
+            "maxSeaFraction": 0.017932128906512693,
+            "maxDisplacement": 0.09550306532493018,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 78614.81481481518,
+            "landAreaAfter": 78612.58610419297,
+            "sectionBefore": [
+              [
+                254.44444444444446,
+                285.55555555555554
+              ]
+            ],
+            "sectionAfter": [
+              [
+                254.44011977509822,
+                285.57345441051166
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "9192c8903c6760da5cae33670aacaba2b90098e3c4be53aab81429e497aa60f6"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 802,
+        "candidateCrossingCount": 802,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 78612.58610419297,
+        "landAreaAfter": 78612.58610419297,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    },
+    {
+      "name": "actual-mesh",
+      "sourcePoints": 36864,
+      "sourceSha256": "344d55e48d6809f704aac7f5ac4bfb74bc74ddfb03b127d7f9cbecd111728e59",
+      "locked": 422,
+      "samples": [
+        {
+          "seed": 42,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102295.6293182536,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "344d55e48d6809f704aac7f5ac4bfb74bc74ddfb03b127d7f9cbecd111728e59"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0.009678404038336613,
+            "maxAreaFraction": 0.006391907225091215
+          },
+          "metric": {
+            "splitParents": 1147,
+            "addedPoints": 1147,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.004475382015179969,
+            "maxSeaFraction": 0.006391907237051236,
+            "maxDisplacement": 0.009678404038336613,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102296.7319590198,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.8719676947767
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "b3797c3bf40a45266bc73fe54fadd9766ffa6a45db589c786ff9908f3d127fbf"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0.13753744635406864,
+            "maxAreaFraction": 0.019408828540937378
+          },
+          "metric": {
+            "splitParents": 1147,
+            "addedPoints": 1147,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.019087150734162568,
+            "maxSeaFraction": 0.019408828540495297,
+            "maxDisplacement": 0.13753744635406864,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102304.3392063854,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.8540406967404
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "16878fcc88d4fee6fe98b488585a0a74aff3fe06891717b82b47c3315afc88c1"
+        },
+        {
+          "seed": 42,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0.13753744635406864,
+            "maxAreaFraction": 0.019408828540937378
+          },
+          "metric": {
+            "splitParents": 1147,
+            "addedPoints": 1147,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.019087150734162568,
+            "maxSeaFraction": 0.019408828540495297,
+            "maxDisplacement": 0.13753744635406864,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102304.3392063854,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.8540406967404
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "16878fcc88d4fee6fe98b488585a0a74aff3fe06891717b82b47c3315afc88c1"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0,
+            "maxAreaFraction": 0
+          },
+          "metric": {
+            "splitParents": 0,
+            "addedPoints": 0,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0,
+            "maxSeaFraction": 0,
+            "maxDisplacement": 0,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102295.6293182536,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "344d55e48d6809f704aac7f5ac4bfb74bc74ddfb03b127d7f9cbecd111728e59"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.01,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 216,
+            "budgetLimited": false,
+            "maxDisplacement": 0.009812991336415014,
+            "maxAreaFraction": 0.005374974963643017
+          },
+          "metric": {
+            "splitParents": 1146,
+            "addedPoints": 1146,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.004717591804081396,
+            "maxSeaFraction": 0.005374974898403946,
+            "maxDisplacement": 0.009812991336415014,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102295.2593633959,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.872199078271
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "2d603c1d865d227153ec1bf23cca4b539d912c1cac60802ee0fb627086bdee2a"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 0.25,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0.11172967336459065,
+            "maxAreaFraction": 0.019567635743454243
+          },
+          "metric": {
+            "splitParents": 1147,
+            "addedPoints": 1147,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01927534466676589,
+            "maxSeaFraction": 0.019567635736988918,
+            "maxDisplacement": 0.11172967336459065,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102293.1166885705,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.856583351884
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "f81f3c82be8b3ccd61e8ec6915df504638841e0611dd4f228e13da3e56558add"
+        },
+        {
+          "seed": 1337,
+          "maxOffset": 4,
+          "stats": {
+            "algorithm": "bounded-triangle-coast-detail-v1",
+            "eligible": 1147,
+            "skipped": 215,
+            "budgetLimited": false,
+            "maxDisplacement": 0.11172967336459065,
+            "maxAreaFraction": 0.019567635743454243
+          },
+          "metric": {
+            "splitParents": 1147,
+            "addedPoints": 1147,
+            "wrongOrientation": 0,
+            "unknownChildren": 0,
+            "maxCoverageError": 0,
+            "maxLandFraction": 0.01927534466676589,
+            "maxSeaFraction": 0.019567635736988918,
+            "maxDisplacement": 0.11172967336459065,
+            "originalCrossingDisplacement": 0,
+            "missingOriginalCrossings": 0,
+            "landAreaBefore": 1102295.6293182536,
+            "landAreaAfter": 1102293.1166885705,
+            "sectionBefore": [
+              [
+                199.057761455508,
+                1299.8738004689185
+              ]
+            ],
+            "sectionAfter": [
+              [
+                199.057761455508,
+                1299.856583351884
+              ]
+            ]
+          },
+          "changedLockedHeights": 0,
+          "touchedLockedFaces": 0,
+          "changedOriginalShade": 0,
+          "candidateSha256": "f81f3c82be8b3ccd61e8ec6915df504638841e0611dd4f228e13da3e56558add"
+        }
+      ],
+      "afterNaturalize": {
+        "crossingCount": 3083,
+        "candidateCrossingCount": 3083,
+        "missingCrossings": 0,
+        "maxCrossingDisplacement": 0,
+        "changedTriangles": 0,
+        "absoluteAreaChange": 0,
+        "landAreaBefore": 1102293.1166885705,
+        "landAreaAfter": 1102293.1166885705,
+        "sectionBefore": [],
+        "sectionAfter": []
+      }
+    }
+  ],
+  "limitations": [
+    "local two-ring support is not generic island-size or world-width neck detection",
+    "per-triangle displacement is conservative; no original-game equivalence or naturalness claim",
+    "hydrology rederived from sample graph; not area-weighted physical runoff",
+    "not phone/WebKit/user visual acceptance"
+  ]
+}

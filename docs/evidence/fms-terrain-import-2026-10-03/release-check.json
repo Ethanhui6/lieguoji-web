@@ -1,0 +1,11 @@
+{
+  "command": "npm run test:release",
+  "exitCode": 0,
+  "tests": 22,
+  "pass": 22,
+  "fail": 0,
+  "skipped": 0,
+  "outputKind": "Summary transcribed from current exec command result; not raw stdout",
+  "releaseLockChanged": false,
+  "cloudWritePerformed": false
+}

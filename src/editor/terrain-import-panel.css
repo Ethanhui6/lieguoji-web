@@ -1,0 +1,15 @@
+.terrain-import-dialog { width: min(1100px, 96vw); max-width: 96vw; max-height: 94dvh; padding: clamp(14px, 2vw, 24px); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.terrain-import-dialog header h2, .terrain-import-dialog header p, .terrain-import-status { margin: 0; }
+.terrain-import-dialog header p, .terrain-import-source, .terrain-import-form p { color: var(--text-secondary, #66716d); font-size: .88rem; line-height: 1.55; }
+.terrain-import-form { display: grid; gap: 14px; }
+.terrain-import-form label { display: grid; gap: 6px; }
+.terrain-import-form input { width: 100%; min-height: 44px; box-sizing: border-box; }
+.terrain-import-map { height: clamp(240px, 52dvh, 640px); min-height: 240px; flex: 0 0 auto; position: relative; overflow: hidden; border-radius: 14px; background: #193643; touch-action: none; }
+.terrain-import-map canvas { display: block; }
+.terrain-import-map-controls, .terrain-import-dialog footer { display: flex; gap: 8px; flex-wrap: wrap; }
+.terrain-import-dialog button { min-height: 44px; }
+.terrain-import-dialog footer { justify-content: flex-end; }
+.terrain-import-source { overflow-wrap: anywhere; }
+.terrain-import-status, .terrain-import-error { font-size: .9rem; line-height: 1.5; }
+.terrain-import-error { color: var(--danger, #b13c35); margin: 0; }
+@media (max-width: 600px) { .terrain-import-dialog { width: 96vw; padding: 14px; gap: 10px; } .terrain-import-map { height: 42dvh; } .terrain-import-dialog footer button { flex: 1 1 130px; } }

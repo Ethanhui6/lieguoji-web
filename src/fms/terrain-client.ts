@@ -1,6 +1,7 @@
 import type { FmsDocument } from './model';
 import type { FmsNaturalizationOptions, FmsNaturalizationStats } from './naturalize';
 import type { FmsDrainage } from './hydrology';
+import { fixedFmsCoastVertices } from './coastline';
 
 export interface FmsTerrainPreview {
   worldId: string; baseRevision: number; elevations: Int32Array;
@@ -21,7 +22,7 @@ const finite = (value: unknown, low: number, high: number): value is number => t
 const abortError = () => new DOMException('地形预览已取消，原地图未改变。', 'AbortError');
 const protocolError = () => new FmsTerrainClientError('invalid-response', '地形线程返回的数据或世界版本不一致，请重新生成。');
 const LAND_LEVEL = 20, MAX_CELLS = 50_000;
-type Snapshot = { worldId: string; revision: number; heights: Int32Array; neighbors: number[][]; options: FmsNaturalizationOptions };
+type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][]; options: FmsNaturalizationOptions };
 type Pending = { requestId: number; snapshot: Snapshot; resolve: (value: FmsTerrainPreview) => void; reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>; signal?: AbortSignal; abort: () => void };
 
@@ -35,14 +36,14 @@ function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Sna
     || !exact(options, ['seed', 'strength']) || !integer(options.seed, 0, 0xffff_ffff) || !finite(options.strength, 0, 1)) {
     throw new FmsTerrainClientError('invalid-request', '地形文档、种子或自然化强度无效。');
   }
-  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), neighbors: doc.neighbors.map(row => [...row]), options: { ...options } };
+  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks: fixedFmsCoastVertices(doc), neighbors: doc.neighbors.map(row => [...row]), options: { ...options } };
 }
 
 function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsNaturalizationStats {
   const count = elevations.length;
   if (!exact(raw, ['algorithm', 'seed', 'strength', 'landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'minLandHeight', 'maxLandHeight',
     'meanLandHeight', 'meanCoastHeight', 'meanInteriorHeight', 'maxDistanceToCoast', 'fallbackBoundaryComponents', 'landMaskPreserved'])
-    || raw.algorithm !== 'fms-shape-preserving-relief-v1' || raw.seed !== source.options.seed || raw.strength !== source.options.strength || raw.landMaskPreserved !== true) return false;
+    || raw.algorithm !== 'fms-shape-preserving-relief-v2' || raw.seed !== source.options.seed || raw.strength !== source.options.strength || raw.landMaskPreserved !== true) return false;
   for (const key of ['landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'fallbackBoundaryComponents']) if (!integer(raw[key], 0, count)) return false;
   for (const key of ['minLandHeight', 'maxLandHeight', 'meanLandHeight']) if (!finite(raw[key], 0, 100)) return false;
   for (const key of ['meanCoastHeight', 'meanInteriorHeight']) if (raw[key] !== null && !finite(raw[key], 0, 100)) return false;
@@ -50,7 +51,8 @@ function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw
   let land = 0, changed = 0, sum = 0, minimum = 100, maximum = 0;
   for (let cell = 0; cell < count; cell++) {
     const height = elevations[cell], previous = source.heights[cell], isLand = previous >= LAND_LEVEL;
-    if (height < 0 || height > 100 || (height >= LAND_LEVEL) !== isLand || (!isLand && height !== previous)) return false;
+    if (height < 0 || height > 100 || (height >= LAND_LEVEL) !== isLand
+      || (previous > LAND_LEVEL && height === LAND_LEVEL) || (source.coastLocks[cell] && height !== previous)) return false;
     if (height !== previous) changed++;
     if (isLand) { land++; sum += height; minimum = Math.min(minimum, height); maximum = Math.max(maximum, height); }
   }

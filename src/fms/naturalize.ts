@@ -1,7 +1,8 @@
 import { FIELD_Q, hashAt, noiseQ12 } from '../world/generation/seed';
 import { assertFmsDocument, FMS_SEA_LEVEL, type FmsDocument } from './model';
+import { fixedFmsCoastVertices } from './coastline';
 
-export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v1';
+export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v2';
 export interface FmsNaturalizationOptions { seed: number; strength: number }
 export interface FmsNaturalizationStats {
   algorithm: typeof FMS_NATURALIZATION_ALGORITHM;
@@ -115,9 +116,10 @@ function coastDistances(doc: FmsDocument, land: Uint8Array) {
  * Sea samples remain byte-for-byte unchanged. Mountain ranges use correlated,
  * domain-warped fields and a coast-distance envelope, never per-cell colors.
  *
- * This mask guarantee does not claim that the renderer's interpolated sea-level
- * line stays geometrically identical when adjacent land heights change. That
- * visual contour contract is a separate acceptance requirement.
+ * Mixed sea/land triangles and exact sea-level vertices retain their original
+ * heights, preserving the renderer's linear sea-level contour and land area.
+ * No coastline displacement is allowed by this generation mode. Lighting and
+ * derived water may change; the coastline contract is not pixel-color equality.
  */
 export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizationOptions): FmsNaturalizationResult {
   if (!options || typeof options !== 'object' || Array.isArray(options)
@@ -136,6 +138,7 @@ export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizatio
   }
   if (landCells === 0) throw new FmsNaturalizationError('no-land', '请先绘制一块陆地，再生成自然地形。');
   const { distances, coast, components, fallbackBoundaryComponents } = coastDistances(doc, land);
+  const coastLocks = fixedFmsCoastVertices(doc);
   const elevations = doc.elevations.slice();
   const scale = Math.min(doc.width, doc.height), spacing = Math.sqrt(doc.width * doc.height / doc.points.length);
   const coastWidth = Math.max(spacing * 1.8, scale * 0.035), wavelength = Math.max(scale * 0.2, spacing * 5);
@@ -150,7 +153,7 @@ export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizatio
   for (let cell = 0; cell < land.length; cell += 1) {
     if (!land[cell]) continue;
     const [x, y] = doc.points[cell], distance = distances[cell];
-    if (strength > 0) {
+    if (strength > 0 && !coastLocks[cell]) {
       const warpX = x + field(11, x, y, wavelength * 2.1) * wavelength * 0.42;
       const warpY = y + field(17, x, y, wavelength * 2.1) * wavelength * 0.42;
       const u = warpX * cos - warpY * sin, v = warpX * sin + warpY * cos;

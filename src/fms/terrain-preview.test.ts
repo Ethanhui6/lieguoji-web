@@ -9,12 +9,13 @@ function fixture(): FmsDocument {
 }
 describe('candidate terrain transaction', () => {
   it('preview is isolated; confirm is one undoable operation and candidate mutation cannot alter it', () => {
-    const original = fixture(), history = new FmsEditHistory(original);
-    const buffer = new Int32Array([0, 28, 80]);
+    const original = fixture(); original.elevations.fill(45);
+    const history = new FmsEditHistory(original);
+    const buffer = new Int32Array([45, 28, 80]);
     const preview = prepareFmsTerrainPreview(original, { worldId: original.worldId, baseRevision: 0, elevations: buffer });
     expect(history.document).toBe(original); expect(history.canUndo).toBe(false);
     buffer[1] = 99; expect(preview.document.elevations[1]).toBe(28);
-    expect(history.commit(preview.patch).elevations).toEqual(new Int32Array([0, 28, 80]));
+    expect(history.commit(preview.patch).elevations).toEqual(new Int32Array([45, 28, 80]));
     expect(history.undo().elevations).toEqual(original.elevations);
     expect(history.redo().elevations).toEqual(preview.document.elevations);
   });
@@ -31,5 +32,14 @@ describe('candidate terrain transaction', () => {
     const doc = fixture(), history = new FmsEditHistory(doc);
     const result = prepareFmsTerrainPreview(doc, { worldId: doc.worldId, baseRevision: 0, elevations: doc.elevations.slice() });
     expect(history.commit(result.patch)).toBe(doc); expect(history.canUndo).toBe(false);
+  });
+  it('rejects a mask-preserving coastline shift or sea-depth change before making a patch', () => {
+    const doc = fixture();
+    for (const heights of [[0, 22, 45], [19, 45, 45]]) {
+      expect(() => prepareFmsTerrainPreview(doc, { worldId: doc.worldId, baseRevision: 0, elevations: Int32Array.from(heights) })).toThrow(/轮廓/);
+    }
+    expect(doc.elevations).toEqual(Int32Array.of(0, 45, 45));
+    doc.elevations.fill(45);
+    expect(() => prepareFmsTerrainPreview(doc, { worldId: doc.worldId, baseRevision: 0, elevations: Int32Array.of(45, 20, 45) })).toThrow(/轮廓/);
   });
 });

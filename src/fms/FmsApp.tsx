@@ -135,9 +135,9 @@ export default function FmsApp() {
       const result=await client.naturalize(source,{seed:Number(seed),strength},{signal:controller.signal});
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       const prepared=prepareFmsTerrainPreview(s.history.document,result);
-      if(prepared.patch.changes.length===0){setTerrainPhase('idle');setNotice('当前地形已与这些参数一致，可在绘图设置中调整种子或起伏强度。');return;}
+      if(prepared.patch.changes.length===0){setTerrainPhase('idle');setNotice('没有可更新的内陆地形；海岸与小岛边缘保持原高程，可扩大内陆或调整参数。');return;}
       terrainCandidate.current={...prepared,drainage:result.drainage};s.renderer.setDocument(prepared.document,result.drainage);
-      setTerrainPhase('preview');setNotice('地形已生成。缩放查看，确认后可保存；保留主体海陆布局。');
+      setTerrainPhase('preview');setNotice('内陆地形已生成；海岸边界固定。缩放对照后确认，可整步撤销。');
     } catch(error) {
       if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}
     } finally {if(generationToken.current===token)terrainAbort.current=null;}

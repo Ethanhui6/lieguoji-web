@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FmsTerrainClient, type FmsTerrainRequest, type FmsTerrainResponse } from './terrain-client';
 import { runFmsTerrainRequest } from './terrain.worker';
 import type { FmsDocument } from './model';
+import { deriveFmsDrainage } from './hydrology';
 
 function fixture(): FmsDocument {
   return { format: 'lieguoji-fms-world', version: 1, worldId: '00000000-0000-4000-8000-000000000001', revision: 7,
@@ -88,6 +89,15 @@ describe('isolated FMS terrain Worker client', () => {
     if (fault === 'cycle') { response.drainage.receiver[0] = 1; response.drainage.receiver[1] = 0; response.drainage.filledElevation.fill(100); }
     if (fault === 'nonfinite') response.drainage.lakeDepth[0] = NaN;
     current().reply(response); await rejection; expect(current().terminate).toHaveBeenCalledOnce();
+  });
+  it('rejects a mask-preserving coast shift even with consistent statistics and drainage', async () => {
+    const instance = client(), doc = fixture(), pending = instance.naturalize(doc, options), response = success();
+    const rejection = expect(pending).rejects.toMatchObject({ code: 'invalid-response' });
+    response.elevations[0] = 22;
+    Object.assign(response.stats, { changedCells: 1, minLandHeight: 22, maxLandHeight: 22, meanLandHeight: 22, meanCoastHeight: 22 });
+    response.drainage = deriveFmsDrainage({ ...doc, elevations: response.elevations });
+    current().reply(response); await rejection;
+    expect(doc.elevations).toEqual(Int32Array.of(45, 0, 0));
   });
   it.each(['error', 'messageerror', 'worker-error'] as const)('settles %s and starts a fresh Worker after failure', async fault => {
     const instance = client();

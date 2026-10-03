@@ -1,4 +1,5 @@
 import { commitFmsEdit, FMS_SEA_LEVEL, FmsModelError, type FmsDocument, type FmsEditPatch } from './model';
+import { fixedFmsCoastVertices } from './coastline';
 
 /** The worker owns a candidate buffer, never the committed document. Validate
  * the complete result before making a patch; a rejected preview changes nothing. */
@@ -11,10 +12,11 @@ export function prepareFmsTerrainPreview(document: FmsDocument, candidate: {
   if (!(candidate.elevations instanceof Int32Array) || candidate.elevations.length !== document.elevations.length) {
     throw new FmsModelError('invalid-edit', '地形预览数据不完整，原地图保持不变。');
   }
-  const changes = [];
+  const changes = [], coastLocks = fixedFmsCoastVertices(document);
   for (let cell = 0; cell < candidate.elevations.length; cell++) {
     const previous = document.elevations[cell], next = candidate.elevations[cell];
-    if (next < 0 || next > 100 || (previous >= FMS_SEA_LEVEL) !== (next >= FMS_SEA_LEVEL)) {
+    if (next < 0 || next > 100 || (previous >= FMS_SEA_LEVEL) !== (next >= FMS_SEA_LEVEL)
+      || (previous > FMS_SEA_LEVEL && next === FMS_SEA_LEVEL) || (coastLocks[cell] && next !== previous)) {
       throw new FmsModelError('invalid-edit', '地形预览改变了锁定的海陆轮廓，未应用。');
     }
     if (next !== previous) changes.push(Object.freeze({ cell, previous, next }));

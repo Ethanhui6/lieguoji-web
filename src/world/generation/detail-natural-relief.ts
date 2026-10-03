@@ -12,8 +12,10 @@ export const FINE_WORLD_RELIEF_SCALE = Object.freeze({ sampleStepWorld: 2, minim
   maximumShoulderWidthWorld: 160, rollingFeatureWorld: 32, minimumInteriorWorld: 48, branchSpanWorld: 192 } as const);
 export interface NaturalRidge { a: Point; b: Point; widthQ: number; peakQ: number; group: number; widthAQ: number; widthBQ: number; peakAQ: number; peakBQ: number; leeQ: number }
 export interface NaturalReliefSummary {
-  profile: 'branching-orography-v4'; ridgeSegments: number; ridgeGroups: number;
-  rejectedSeaSegments: number; minimumRidgeWidthWorld: number; maximumRidgeWidthWorld: number;
+  profile: 'branching-orography-v4' | 'mountain-area-valleys-v1'; ridgeSegments: number; ridgeGroups: number;
+  rejectedSeaSegments: number;
+  /** Historical guide-ribbon widths, not the footprint of an area mountain. */
+  minimumRidgeWidthWorld: number; maximumRidgeWidthWorld: number;
   minimumShelfWorld: number; maximumShelfWorld: number;
   scaleMode: 'world' | 'local'; curveRuns: number; supportNodes: number; maximumBucketCandidates: number;
 }
@@ -57,8 +59,8 @@ export function naturalRidgeContribution(ridge: NaturalRidge, xQ: number, yQ: nu
   return roundRatio(peak * slope * slope, FIELD_Q * FIELD_Q);
 }
 
-/** Builds a bounded real height profile. No drainage, erosion or decorative
- * river claim. Only its resulting coarse/fine elevations are persisted.
+/** Builds a bounded real height profile. Fine worlds use a temporary valley
+ * forest to cut physical heights; no persisted river or water contract.
  * Legacy/local: at most 17 anchors, one trunk and two attached branches.
  * Fine-world tree: explicit independent 15-vertex / 19-record / 14-edge caps.
  * Source buffers are privately copied before the first yield. */
@@ -191,15 +193,16 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     if (backgroundLandMeters !== undefined && (!Number.isFinite(backgroundLandMeters) || backgroundLandMeters < 0 || backgroundLandMeters > 12000)) throw new Error('局部山地旧地形背景无效。');
     const featureQ = scaleMode === 'local' ? 32 * 256 : fineWorld ? FINE_WORLD_RELIEF_SCALE.rollingFeatureWorld * 256 : Math.max(64 * 256, 4 * stepQ);
     const rolling = roundRatio(123 * unit(noiseQ12(seed, 7231, u, v, featureQ)), FIELD_Q);
-    // The real height query follows the same curves that were land-probed;
-    // no later domain warp can move the ridge skeleton across that boundary.
+    // Actual relief uses the land-probed guide and, for new fine worlds, its
+    // area field. The caller's authoritative land/coast gate remains above.
     const highland = curved.sample(xQ, yQ).massQ;
     const rise = smoothQ(roundRatio(distanceQ * FIELD_Q, coastRiseAt(xQ, yQ) * 256));
     const meters = backgroundLandMeters === undefined ? relief * boundCurvedRelief(lowland + rolling + highland) / FIELD_Q
       : backgroundLandMeters + relief * boundCurvedRelief(highland) / FIELD_Q;
     return Math.max(0, Math.min(backgroundLandMeters === undefined ? relief : 12000, Math.round(meters * rise / FIELD_Q)));
   };
-  const summary: NaturalReliefSummary = { profile: 'branching-orography-v4', ridgeSegments: ridges.length, ridgeGroups: new Set(ridges.map(r => r.group)).size,
+  const massif = 'massif' in curved ? curved.massif : undefined;
+  const summary: NaturalReliefSummary = { profile: massif?.profile ?? 'branching-orography-v4', ridgeSegments: ridges.length, ridgeGroups: new Set(ridges.map(r => r.group)).size,
     scaleMode, curveRuns: curved.stats.curveRuns, supportNodes: curved.stats.supportNodes, maximumBucketCandidates: curved.stats.maximumBucketCandidates,
     rejectedSeaSegments: curved.stats.rejectedSpans, minimumRidgeWidthWorld: ridges.length ? Math.min(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 3482 / FIELD_Q / 256 : 0,
     maximumRidgeWidthWorld: ridges.length ? Math.max(...ridges.flatMap(r => [r.widthAQ, r.widthBQ])) * 4710 / FIELD_Q / 256 : 0, minimumShelfWorld: Math.max(16, Math.round(shelfBase * 1434 / FIELD_Q)), maximumShelfWorld: shelfBase };
@@ -207,5 +210,6 @@ export async function createNaturalRelief(input: NaturalReliefInput, batch: numb
     /** Copies for numerical evidence; changing them cannot alter the sampler. */
     ridges: ridges.map(r => ({ ...r, a: { ...r.a }, b: { ...r.b } })),
     curves: curved.curves, curveStats: curved.stats,
+    ...(massif ? { massif } : {}),
     ...(finePlan ? { rangeTree: { graph: finePlan.graph, stats: finePlan.stats } } : {}) };
 }

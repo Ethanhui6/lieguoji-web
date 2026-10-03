@@ -80,9 +80,12 @@ describe('actual fine range tree', () => {
       expect(child.parentHeightQ).toBeCloseTo(parentHeight, 6);
       expect(child.rootPeakQ).toBeGreaterThan(0); expect(child.rootPeakQ).toBeLessThan(parentHeight);
       // The independent direct sum and normalized L64 union take different floating point paths.
-      const minimum = parentHeight - 1e-6, mass = field.sample(root.xQ, root.yQ).massQ;
+      if (!('massif' in field)) throw new Error('Area relief did not execute.');
+      const minimum = parentHeight - 1e-6, mass = field.guideSample(root.xQ, root.yQ).massQ;
       const roundingAllowance = 8 * Number.EPSILON * Math.max(1, Math.abs(minimum));
       expect(mass).toBeGreaterThanOrEqual(minimum - roundingAllowance);
+      const junction = field.massif.junctions.find(j => j.childGroup === chain.group)!;
+      expect(junction.heightQ).toBe(field.sample(root.xQ, root.yQ).massQ);
     }
     const branches = field.curves.filter(c => c.group > 0);
     let valley: { ridgeHeights: number[]; valleyHeight: number; distanceWorld: number; samples: { xQ: number; yQ: number; height: number }[] } | undefined;
@@ -99,20 +102,21 @@ describe('actual fine range tree', () => {
     expect(valley).toBeDefined();
   });
 
-  it('has real lower passes between peaks and terrain-driven unequal flank heights', async () => {
+  it('retains the guide lower-pass and unequal-flank physical contract beneath the area field', async () => {
     const plan = await planFineRangeTree({ seed: 9811, isLand: ellipse }, 2048, control), field = await createOrographyField(plan.chains, ellipse, 2048, control);
     const main = field.curves.find(c => c.group === 0)!, peaks = main.profile.filter(p => p.kind === 'peak');
     expect(peaks.length).toBeGreaterThanOrEqual(2);
     const low = main.profile.filter(p => p.kind === 'saddle' && p.arcQ > peaks[0].arcQ && p.arcQ < peaks.at(-1)!.arcQ).sort((a, b) => a.strength - b.strength)[0];
     expect(low).toBeDefined();
-    const pass = atArc(main, low.arcQ), passHeight = field.sample(pass.xQ, pass.yQ).massQ;
-    const highs = [peaks[0], peaks.at(-1)!].map(p => { const at = atArc(main, p.arcQ); return field.sample(at.xQ, at.yQ).massQ; });
+    if (!('massif' in field)) throw new Error('Area relief did not execute.');
+    const pass = atArc(main, low.arcQ), passHeight = field.guideSample(pass.xQ, pass.yQ).massQ;
+    const highs = [peaks[0], peaks.at(-1)!].map(p => { const at = atArc(main, p.arcQ); return field.guideSample(at.xQ, at.yQ).massQ; });
     expect(Math.min(...highs) - passHeight).toBeGreaterThan(300);
     const asymmetric = field.supports.filter(n => Math.abs(n.section!.leftReachQ - n.section!.rightReachQ) > q(8) && n.peakQ > 1000);
     expect(asymmetric.length).toBeGreaterThan(3);
     const differences = asymmetric.map(n => {
       const offset = .45 * Math.min(n.section!.leftReachQ, n.section!.rightReachQ);
-      return Math.abs(field.sample(n.xQ - n.ty * offset, n.yQ + n.tx * offset).massQ - field.sample(n.xQ + n.ty * offset, n.yQ - n.tx * offset).massQ);
+      return Math.abs(field.guideSample(n.xQ - n.ty * offset, n.yQ + n.tx * offset).massQ - field.guideSample(n.xQ + n.ty * offset, n.yQ - n.tx * offset).massQ);
     });
     expect(Math.max(...differences)).toBeGreaterThan(100);
   });
@@ -156,9 +160,11 @@ describe('actual fine range tree', () => {
     expect(field.curves.length).toBeGreaterThanOrEqual(2);
     expect(field.stats.maximumBucketCandidates).toBeLessThanOrEqual(OROGRAPHY_LIMITS.bucketCandidates);
     expect(field.stats.indexReferences).toBeLessThanOrEqual(OROGRAPHY_LIMITS.indexReferences);
+    if (!('massif' in field)) throw new Error('Small rectangle did not execute the area field.');
     for (let y = 992; y <= 1568; y += 32) for (let x = 992; x <= 1696; x += 32) for (const d of [-1, 0, 1]) {
-      const p = field.sample(q(x) + d, q(y) + d); expect(p.massQ).toBeCloseTo(exhaustive(field, q(x) + d, q(y) + d), 7);
+      const p = field.guideSample(q(x) + d, q(y) + d); expect(p.massQ).toBeCloseTo(exhaustive(field, q(x) + d, q(y) + d), 7);
       expect(p.kernelTests).toBeLessThanOrEqual(192);
+      expect(field.sample(q(x) + d, q(y) + d).kernelTests).toBeLessThanOrEqual(192);
     }
   });
 

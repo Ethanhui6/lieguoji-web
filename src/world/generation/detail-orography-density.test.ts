@@ -49,6 +49,7 @@ it('retains every actual regional ridge contribution while removing only empty A
   try { await generateDetailShapeNatural({ base: base(), recipe: recipe() }, { batchWork: 512, yieldControl: async () => {} }); }
   finally { spy.mockRestore(); }
   expect(captured).toBeDefined(); const field = captured!;
+  if (!('massif' in field)) throw new Error('Actual regional writer did not execute the area field.');
   // The failure evidence contains these same 819 real supports and five runs.
   // Reducing branch/support count is not an acceptable density repair.
   expect(field.supports).toHaveLength(819); expect(field.curves).toHaveLength(5);
@@ -59,9 +60,12 @@ it('retains every actual regional ridge contribution while removing only empty A
   expect(field.stats.supportNodes).toBeLessThanOrEqual(4096);
   let positiveQueries = 0;
   const compare = (x: number, y: number) => {
-    const sample = field.sample(x, y), expected = exhaustive(field, x, y);
+    // This oracle protects the still-used guide index and every old support;
+    // the final area height intentionally is not a ribbon sum.
+    const sample = field.guideSample(x, y), expected = exhaustive(field, x, y);
     expect(sample.massQ).toBeCloseTo(expected, 7);
     expect(sample.kernelTests).toBeLessThanOrEqual(192);
+    expect(field.sample(x, y).kernelTests).toBeLessThanOrEqual(192);
     if (expected > 0) positiveQueries++;
   };
   // Failed cluster plus surrounding buckets: exact edges/corners, with both

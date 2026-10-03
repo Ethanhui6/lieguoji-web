@@ -1,0 +1,25 @@
+{
+  "createdAt": "2026-09-27T23:28:28.9099541Z",
+  "sourceHead": "2f2348d8147b567a2837f689025dced949d52183",
+  "scope": "two approved production additions, import-prefix-only",
+  "checksRunAfterPromotion": false,
+  "workerUiChanged": false,
+  "files": [
+    {
+      "source": ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.ts",
+      "destination": "src/world/hydrology-reader-owned.ts",
+      "sourceSha256": "1a511ba9e74a4912caefc6131c0e5541d8e712aba627114ed467fd7fdab41672",
+      "destinationSha256": "1fdba5204bb9e4238bb20b69b1ae24233b330f97dd31648f781f7ef8e2a333d1",
+      "importLinesChanged": 11,
+      "onlyImportPrefixChanged": true
+    },
+    {
+      "source": ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.test.ts",
+      "destination": "src/world/hydrology-reader-owned.test.ts",
+      "sourceSha256": "7289edd16966179e46d1bd1bc26f3f2f0ace8ac093ffed65caa56ea368bbc96a",
+      "destinationSha256": "f9a09f0e8056f1568032faaad5e1cd4b33c6ee227c2858d4034906b822d90311",
+      "importLinesChanged": 10,
+      "onlyImportPrefixChanged": true
+    }
+  ]
+}

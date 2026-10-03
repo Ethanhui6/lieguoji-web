@@ -1,0 +1,70 @@
+{
+  "label": "first",
+  "sourceStable": true,
+  "passed": false,
+  "results": [
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "-p",
+        ".autopilot/ph07/reader-staging/tsconfig.json"
+      ],
+      "startedAt": "2026-09-27T23:23:00.908Z",
+      "finishedAt": "2026-09-27T23:23:02.750Z",
+      "elapsedMs": 1839.7646,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.ts",
+        ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.test.ts",
+        ".autopilot/ph07/reader-staging/vitest.config.ts"
+      ],
+      "startedAt": "2026-09-27T23:23:02.751Z",
+      "finishedAt": "2026-09-27T23:23:04.230Z",
+      "elapsedMs": 1479.0136,
+      "exitCode": 1,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--configLoader",
+        "runner",
+        "--config",
+        ".autopilot/ph07/reader-staging/vitest.config.ts",
+        ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.test.ts",
+        "--reporter=json",
+        "--outputFile=.autopilot/ph07/reader-staging/checks/first/unit.json"
+      ],
+      "startedAt": "2026-09-27T23:23:04.230Z",
+      "finishedAt": "2026-09-27T23:23:07.648Z",
+      "elapsedMs": 3417.2242,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "unit": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "pending": 0
+  },
+  "scope": "private one-operation actual-geography reader candidate",
+  "productionPromoted": false,
+  "buildRun": false,
+  "browserRun": false,
+  "integrated94Rerun": false,
+  "publicWorkerProtocolChanged": false,
+  "fullRiverNetworkAccepted": false,
+  "phaseAccepted": false
+}

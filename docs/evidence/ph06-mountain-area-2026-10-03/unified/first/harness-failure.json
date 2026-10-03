@@ -1,0 +1,9 @@
+{
+  "command": "node .autopilot/ph06/mountain-area-checks/run.mjs first",
+  "exitCode": 1,
+  "checksStarted": false,
+  "buildStarted": false,
+  "error": "Changed renderer/material source cannot reuse preview22 evidence",
+  "diagnosis": "Harness incorrectly assumed at least 25 renderer/material files matched its prefix. The actual recorded set has 20 files, all byte-identical. No source hash mismatch occurred.",
+  "repair": "Require every explicit reused test path and all matching source hashes. Preserve this round and run a new label. No product/visual/budget threshold changed."
+}

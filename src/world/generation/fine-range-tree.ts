@@ -202,7 +202,7 @@ export async function planFineRangeTree(input: FineRangeTreeInput, batch: number
     return { widthQ: Math.round(width * Q), section: { leftReachQ: Math.round(width * leftRatio * Q), rightReachQ: Math.round(width * rightRatio * Q),
       leftShoulderQ: Math.round(FIELD_Q * (.18 + .18 * leftRatio)), rightShoulderQ: Math.round(FIELD_Q * (.18 + .18 * rightRatio)) } };
   };
-  const chains: OrographyChain[] = planned.map(chain => ({ group: chain.group, parentGroup: chain.parentGroup, leeQ: 1, seed, sampleStepQ: 512, crossSection: 'fine-tree',
+  const chains: OrographyChain[] = planned.map(chain => ({ group: chain.group, parentGroup: chain.parentGroup, leeQ: 1, seed, sampleStepQ: 512, crossSection: 'fine-tree', landform: 'area-v2',
     anchors: chain.vertices.map((v, i): OrographyAnchor => ({ ...point(v.cell), peakQ: v.peakQ,
       ...sectionAt(v.cell, chain.vertices[Math.max(0, i - 1)].cell, chain.vertices[Math.min(chain.vertices.length - 1, i + 1)].cell, chain.group !== 0) })) }));
   stats.uniqueVertices = new Set(planned.flatMap(chain => chain.vertices.map(v => v.cell))).size;

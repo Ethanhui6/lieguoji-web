@@ -1,8 +1,12 @@
 # 列国纪当前续接
 
-更新：2026-09-27T22:45:27.643Z。先核实际Git、源码与dist；旧证据保留。
+更新：2026-10-03。先核实际Git、源码与dist；旧证据保留。
 
 ## 当前状态
+
+- 10月3日续接核实：当前源码与dist为本地preview.23，宽山地区域/临时谷网高程已接入；32文件181/181、计划/lint/类型/构建/dist及11闭包检查通过，[本批证据](evidence/2026-10-03-ph06-mountain-area.md)。build SHA256 `6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f`，原build.commit `2f2348d8147b567a2837f689025dced949d52183`（构建时源码未提交，元数据不改写）；当前本地提交用git log核对。私有多页reader接入源码并通过4项，尚未接Worker/UI完整河网。
+- 23版实际三端浏览器通过：desktop199.704秒、mobile209.316秒、tablet335.577秒，原450秒预算、各零重试，同源码/dist。首个启动尝试因4173服务停止在取build阶段退出，未进入游戏测试；恢复服务后执行本轮。面状山地已可见，中近景仍偏柔、细褶密集且缺宽主谷，自然视觉/用户验收/真机/整体PH均未通过。下方22记录为历史；宽岸圆角仅隔离候选，尚未修改23源码。
+- 23原源码已冻结于`.autopilot/ph06/v4-preview23-history-staging`：49份（44生成+5engine）、11闭包、73证据，ready SHA256 `57c3c6de3a0bf4f04ad4f3dba21e6bb9b10c57b7267990aebbd7be33ae02977d`。冻结时sourceCommit=null/sourceBaseCommit=2f2348d/sourceIsHead=false如实保留；尚未接回存储历史，下一次生成器变更前必须接线。
 
 - 追加工程批次：实际preview.22的48原源码与11存储身份已接历史，5/5兼容检查通过；首轮新测试统计字段读取错误4/5及修复原件保留。双页水文receiver、Owned提取、4096节点路径已接生产源码，统一9文件94/94、全lint/类型/计划通过，见[evidence/2026-09-28-ph07-receivers.md](evidence/2026-09-28-ph07-receivers.md)。没有新Worker/界面操作，没有重新构建，dist仍为下方原22。
 - 当前山体候选peak-valley-v1在真实2-world细节点图上仍是平滑宽弧，自然视觉失败，未提升；首轮误用Hbase的粗场图已单独纠正。原件在.autopilot/ph06/ridge-landform-staging。下一area-v2仅为正在制作的面状山地/谷网候选，不能称已通过。根任务先看实际物理图，再决定产品接入与检查。

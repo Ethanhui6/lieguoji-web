@@ -23,6 +23,8 @@ it('writes the actual small rectangle tree to every real fine node and restores 
     }, { batchWork: 2048, yieldControl: async () => {} });
   } finally { spy.mockRestore(); }
   expect(physical?.rangeTree).toBeDefined();
+  expect(physical?.summary.profile).toBe('mountain-area-valleys-v1');
+  expect(physical?.massif).toBeDefined();
   expect(centers).toEqual(originalCentres); expect(heights).toEqual(originalSea); expect(tiles.size).toBe(0);
   const restored = new Map([...next!.detailCoast].map(([key, tile]) => [key, decodeDetailCoastTile(encodeDetailCoastTile(tile))]));
   let landNodes = 0, seaNodes = 0, positiveDifferences = 0;

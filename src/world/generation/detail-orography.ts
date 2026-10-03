@@ -1,5 +1,6 @@
 import { FIELD_Q, hashAt, integerSqrt, noiseQ12 } from './seed';
 import type { DetailShapeControl } from './detail-shape';
+import { createMassifField } from './terrain-massif';
 
 type Point = { xQ: number; yQ: number };
 export interface OrographySection { leftReachQ: number; rightReachQ: number; leftShoulderQ: number; rightShoulderQ: number }
@@ -8,6 +9,8 @@ export interface OrographyChain {
   group: number; leeQ: number; seed: number; sampleStepQ: number;
   /** Omitted retains existing coarse-compatible/local cross sections. */
   crossSection?: 'fine-world' | 'fine-tree';
+  /** Explicit physical area generation; not a persisted format/version. */
+  landform?: 'area-v2';
   parentGroup?: number;
   /** Group zero is the trunk. A fine-tree branch can explicitly name an
    * earlier parent; legacy branches continue to attach only to the trunk. */
@@ -147,7 +150,7 @@ function contribution(node: Support, xQ: number, yQ: number): number {
 /** Real geographic relief with bounded geometry, query and cancellation work.
  * All source capture precedes the first callback; diagnostics are copies.
  * Existing coast, storage, Hbase and local-lock kernels are deliberately absent. */
-export async function createOrographyField(rawChains: readonly OrographyChain[], isLand: (xQ: number, yQ: number) => boolean, batch: number, control?: DetailShapeControl) {
+async function createRibbonOrographyField(rawChains: readonly OrographyChain[], isLand: (xQ: number, yQ: number) => boolean, batch: number, control?: DetailShapeControl) {
   if (!Number.isInteger(batch) || batch < 64 || batch > 2048 || rawChains.length > FINE_TREE_OROGRAPHY_LIMITS.chains) throw new Error('山系工作预算无效。');
   const tree = rawChains.length > 0 && rawChains.every(c => c.crossSection === 'fine-tree');
   if (!tree && rawChains.some(c => c.crossSection === 'fine-tree')) throw new Error('细脊树不能与其他山系规划混合。');
@@ -347,4 +350,25 @@ export async function createOrographyField(rawChains: readonly OrographyChain[],
   return { sample, stats, spans: spans.map(span => ({ ...span, a: { ...span.a }, b: { ...span.b } })), supports: nodes.map(node => ({ ...node, ...(node.section ? { section: { ...node.section } } : {}) })),
     ends: ends.map(end => ({ ...end, first: { ...end.first }, last: { ...end.last } })),
     curves: runs.map(run => ({ group: run.group, points: run.points.map(point => ({ ...point })), profile: run.profile.map(point => ({ ...point })), rootPeakQ: run.rootPeak, parentHeightQ: run.parentHeight })) };
+}
+
+/** Unflagged worlds retain the old field. New fine worlds use the accepted
+ * ridge skeleton to seed a physical mountain area and generation-only valleys. */
+export async function createOrographyField(rawChains: readonly OrographyChain[], isLand: (xQ: number, yQ: number) => boolean, batch: number, control?: DetailShapeControl) {
+  const areaRequested = rawChains.some(chain => chain.landform);
+  // The guide captures inputs before its own first yield. The later area
+  // stage must use the same private values, not a caller-mutated source.
+  const chains = areaRequested ? rawChains.map(chain => ({ ...chain, anchors: chain.anchors.map(anchor => ({ ...anchor,
+    ...(anchor.section ? { section: { ...anchor.section } } : {}) })) })) : rawChains;
+  const ribbon = await createRibbonOrographyField(chains, isLand, batch, control);
+  if (!areaRequested) return ribbon;
+  if (!chains.every(chain => chain.landform === 'area-v2' && chain.crossSection === 'fine-tree')) throw new Error('面状山体不能混入旧山系路径。');
+  const accepted = new Set(ribbon.spans.flatMap(span => [`${span.a.xQ}:${span.a.yQ}`, `${span.b.xQ}:${span.b.yQ}`]));
+  const actualChains = chains.filter(chain => ribbon.curves.some(curve => curve.group === chain.group)).map(chain => ({ ...chain,
+    anchors: chain.anchors.filter(anchor => accepted.has(`${anchor.xQ}:${anchor.yQ}`)) })).filter(chain => chain.anchors.length >= 2);
+  if (!actualChains.length) return ribbon;
+  const area = await createMassifField(actualChains, isLand, ribbon.stats.landProbes, OROGRAPHY_LIMITS.curveProbePoints, batch, control);
+  return { ...ribbon, sample: area.sample, massif: area,
+    /** Internal diagnostic for the unchanged guide index, not final terrain. */
+    guideSample: ribbon.sample, stats: { ...ribbon.stats, landProbes: ribbon.stats.landProbes + area.stats.landProbes } };
 }

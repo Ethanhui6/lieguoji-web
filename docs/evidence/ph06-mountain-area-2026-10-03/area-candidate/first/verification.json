@@ -1,0 +1,25 @@
+{
+  "success": true,
+  "stable": true,
+  "results": [
+    {
+      "name": "types",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 3858
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 1941
+    },
+    {
+      "name": "physical",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 11463
+    }
+  ],
+  "scope": "Only types, target lint and one candidate three-view physical generation. Two prepared algorithm cases have NOT executed; baseline reused, no build/GPU/production acceptance."
+}

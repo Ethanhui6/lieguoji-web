@@ -1,0 +1,86 @@
+{
+  "kind": "static candidate source inventory",
+  "createdAt": "2026-09-27T23:21:39.4092295Z",
+  "sourceCommit": "2f2348d8147b567a2837f689025dced949d52183",
+  "scope": "reader-staging only",
+  "runtimeDependencies": [
+    {
+      "path": "src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4"
+    },
+    {
+      "path": "src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5"
+    },
+    {
+      "path": "src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881"
+    },
+    {
+      "path": "src/world/transactions.ts",
+      "sha256": "5ee973e9d66697b4be0dc27c521d38e37d74f81ea68e13cbc8213ce9f21838dc"
+    },
+    {
+      "path": "src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918"
+    },
+    {
+      "path": "src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860"
+    },
+    {
+      "path": "src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad"
+    },
+    {
+      "path": "src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b"
+    },
+    {
+      "path": "src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d"
+    },
+    {
+      "path": "src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8"
+    },
+    {
+      "path": "src/world/hydrology-kernel.ts",
+      "sha256": "e7f12a9fb46c6f6a456e0f46ab073c6cffe0d62541056bd97bc3ed4e30cb1742"
+    },
+    {
+      "path": "src/world/hydrology-snapshot.ts",
+      "sha256": "4714df66da76e24bb3b503397b10946e8dad6c79d0e417d466ab1c8a5d3d63fa"
+    }
+  ],
+  "candidate": [
+    {
+      "path": ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.ts",
+      "sha256": "1a511ba9e74a4912caefc6131c0e5541d8e712aba627114ed467fd7fdab41672"
+    },
+    {
+      "path": ".autopilot/ph07/reader-staging/src/world/hydrology-reader-owned.test.ts",
+      "sha256": "f1919074a2eac959e597c4e947bbec64b07e6112e187923bdbf6daabe60a6bd4"
+    },
+    {
+      "path": ".autopilot/ph07/reader-staging/tsconfig.json",
+      "sha256": "5a508887e9a6123b35e68b435de42c39f687844800cc3aa2ab25fa17b7d714e3"
+    },
+    {
+      "path": ".autopilot/ph07/reader-staging/vitest.config.ts",
+      "sha256": "eef2020c03f7dd69db88e87a1001cb00a03d42c54d926d066f7f68057ba4d7d6"
+    },
+    {
+      "path": ".autopilot/ph07/reader-staging/check.mjs",
+      "sha256": "6d7dddb0ff165942e5436fb92ef3cfc23be23fc9a2cb5b0628f7f78a35c7ebd1"
+    },
+    {
+      "path": ".autopilot/ph07/reader-staging/README.md",
+      "sha256": "fff768d271889245dbc37329698d286c858457568f07b4896c9eef0a25e416a2"
+    }
+  ],
+  "checksRun": false,
+  "productionPromoted": false,
+  "fullRiverNetworkAccepted": false,
+  "runtimeDependencyList": "direct imports plus Hbase measurement; check runner captures all actual src/scripts/config before and after"
+}

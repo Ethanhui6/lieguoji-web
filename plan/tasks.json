@@ -759,7 +759,9 @@
         "docs/evidence/2026-09-28-ph06-regional-coast.md",
         "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
-        "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
+        "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json",
+        "docs/evidence/2026-10-03-ph06-mountain-area.md",
+        "docs/evidence/ph06-mountain-area-2026-10-03/verification.json"
       ],
       "workItems": [
         {
@@ -851,7 +853,9 @@
             "docs/evidence/2026-09-28-ph06-regional-coast.md",
             "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
-            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
+            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json",
+            "docs/evidence/2026-10-03-ph06-mountain-area.md",
+            "docs/evidence/ph06-mountain-area-2026-10-03/verification.json"
           ]
         },
         {
@@ -902,7 +906,9 @@
             "docs/evidence/2026-09-28-ph06-regional-coast.md",
             "docs/evidence/ph06-regional-coast-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph06-natural-range-sea.md",
-            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json"
+            "docs/evidence/ph06-natural-range-sea-2026-09-28/verification.json",
+            "docs/evidence/2026-10-03-ph06-mountain-area.md",
+            "docs/evidence/ph06-mountain-area-2026-10-03/verification.json"
           ]
         }
       ],
@@ -924,7 +930,9 @@
         "docs/evidence/2026-09-28-ph07-flow-view.md",
         "docs/evidence/ph07-flow-view-2026-09-28/verification.json",
         "docs/evidence/2026-09-28-ph07-receivers.md",
-        "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json"
+        "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json",
+        "docs/evidence/2026-10-03-ph06-mountain-area.md",
+        "docs/evidence/ph06-mountain-area-2026-10-03/verification.json"
       ],
       "workItems": [
         {
@@ -939,7 +947,9 @@
             "docs/evidence/2026-09-28-ph07-flow-view.md",
             "docs/evidence/ph07-flow-view-2026-09-28/verification.json",
             "docs/evidence/2026-09-28-ph07-receivers.md",
-            "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json"
+            "docs/evidence/ph07-receivers-2026-09-28/integrated/first/verification.json",
+            "docs/evidence/2026-10-03-ph06-mountain-area.md",
+            "docs/evidence/ph06-mountain-area-2026-10-03/verification.json"
           ]
         },
         {

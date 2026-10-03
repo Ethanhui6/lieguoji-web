@@ -1,0 +1,1193 @@
+{
+  "recordedAt": "2026-10-03T02:34:20.709Z",
+  "files": [
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/baseline-build.json",
+      "path": "unified/baseline-build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/first/harness-failure.json",
+      "path": "unified/first/harness-failure.json",
+      "bytes": 588,
+      "sha256": "3edcb7d9b9b05a5322744a581391278018ff4f429f26b9770e29eea08811478f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/first/source-before.json",
+      "path": "unified/first/source-before.json",
+      "bytes": 55014,
+      "sha256": "704b374914b75124426e5ee116d1fe1caae8f6a966fce36e9e44c2692228cfd0"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/build.json",
+      "path": "unified/harness-repair-1/build.json",
+      "bytes": 9705,
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/build.log",
+      "path": "unified/harness-repair-1/build.log",
+      "bytes": 1866,
+      "sha256": "0f059865dcf9f182af754569bc12a9f53a4c57639ddc0157f14e12b0672b127d"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/dist-audit.log",
+      "path": "unified/harness-repair-1/dist-audit.log",
+      "bytes": 94,
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/identity-verification.json",
+      "path": "unified/harness-repair-1/identity-verification.json",
+      "bytes": 32598,
+      "sha256": "5370db19c22eb862e418e4b300e4d190297c3f338dee52d5cc65c313359a4203"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/lint.log",
+      "path": "unified/harness-repair-1/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/plan.log",
+      "path": "unified/harness-repair-1/plan.log",
+      "bytes": 128,
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/pre-run-build.json",
+      "path": "unified/harness-repair-1/pre-run-build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/prior-build.json",
+      "path": "unified/harness-repair-1/prior-build.json",
+      "bytes": 9582,
+      "sha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/reused-renderer-evidence.json",
+      "path": "unified/harness-repair-1/reused-renderer-evidence.json",
+      "bytes": 5812,
+      "sha256": "adb2c2e92cc5583f3afe7ba14a92f6a2efcff6a5712b6c47874671f35ad51916"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/scope.json",
+      "path": "unified/harness-repair-1/scope.json",
+      "bytes": 3987,
+      "sha256": "240648b62baee4785f06b002fd813c0ab4fa030b369134c82c925074896da624"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/source-after.json",
+      "path": "unified/harness-repair-1/source-after.json",
+      "bytes": 55014,
+      "sha256": "704b374914b75124426e5ee116d1fe1caae8f6a966fce36e9e44c2692228cfd0"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/source-before.json",
+      "path": "unified/harness-repair-1/source-before.json",
+      "bytes": 55014,
+      "sha256": "704b374914b75124426e5ee116d1fe1caae8f6a966fce36e9e44c2692228cfd0"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/types.log",
+      "path": "unified/harness-repair-1/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/unit.json",
+      "path": "unified/harness-repair-1/unit.json",
+      "bytes": 83894,
+      "sha256": "30f7b1445d288976038f126d6761f1f9b1e34d0dcb22198be0e784eeebb3e641"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/unit.log",
+      "path": "unified/harness-repair-1/unit.log",
+      "bytes": 119,
+      "sha256": "fbdd42ea0e7b658d3e8b58c09df425b8a9fafb0756a2d6e8d2dd8b6d29737c2b"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/harness-repair-1/verification.json",
+      "path": "unified/harness-repair-1/verification.json",
+      "bytes": 11877,
+      "sha256": "88172bbc65ce7e72e7a35fa069228a5653163ee911844f6d7adfef8b3ae99486"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-checks/run.mjs",
+      "path": "unified/run.mjs",
+      "bytes": 17152,
+      "sha256": "a139b1e2b942c30e567c9e7b558339ef599c01c35229b6d8ceb3cf8dba6806f5"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/after.json",
+      "path": "browser/desktop/after.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/.last-run.json",
+      "path": "browser/desktop/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "bytes": 188444,
+      "sha256": "02d5038367bda410fdd081419c412982486ddcff95102c3a1dca897aba9ab787"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "bytes": 426906,
+      "sha256": "f3858690a20228d3bd2a9b1731d171a8825b5424bc3e7dbdd2f49d983d8f64f6"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "bytes": 415342,
+      "sha256": "d6d5e11992fb3014b2cfc9f34641d9e186bdf9ccb59cb7d16572783a072c2b29"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "bytes": 202107,
+      "sha256": "49ba81df4b898881dc185b20af01c79f1b59614587818e8dcc114996be8c77c7"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "path": "browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "bytes": 201073,
+      "sha256": "a6810056ce9de222a504a84526fd5d7b61f9725c203038d95fd6d0be5c31223f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/atlas-add-detail-coast.spec.ts",
+      "path": "browser/desktop/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/base-playwright.config.ts",
+      "path": "browser/desktop/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/before.json",
+      "path": "browser/desktop/before.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/build.json",
+      "path": "browser/desktop/build.json",
+      "bytes": 9705,
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/playwright.config.ts",
+      "path": "browser/desktop/playwright.config.ts",
+      "bytes": 746,
+      "sha256": "ac14ab1c592382ffe7802c7d749640d7ab98e723e5adec2d64b9638643147bb8"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/prerequisite-verification.json",
+      "path": "browser/desktop/prerequisite-verification.json",
+      "bytes": 11877,
+      "sha256": "88172bbc65ce7e72e7a35fa069228a5653163ee911844f6d7adfef8b3ae99486"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/results.json",
+      "path": "browser/desktop/results.json",
+      "bytes": 166966,
+      "sha256": "6bc2824608c768bd618c87cc0a855439f92c1d555c8f024316da3c47067665d3"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/run.log",
+      "path": "browser/desktop/run.log",
+      "bytes": 407,
+      "sha256": "8d6386d6b6a97cbbbd63e19938968ba11c1566cd1e0e3b62f40f8f56a5ad7000"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/run.mjs",
+      "path": "browser/desktop/run.mjs",
+      "bytes": 6827,
+      "sha256": "8af80f47e926a8cdf8bc3199d51f6513ef21387ef4de0418f06e742645602a20"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/verification.json",
+      "path": "browser/desktop/verification.json",
+      "bytes": 13819,
+      "sha256": "66ff5ae5b11fa2a22a22d08ab1962aac864c54207b94492c4e26ff3f53c032a5"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/after.json",
+      "path": "browser/mobile/after.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/.last-run.json",
+      "path": "browser/mobile/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "bytes": 196432,
+      "sha256": "337367832203c1e94fe125d0fdf9e08b1a8c8d13bb1c4250582c8a0f6e61167e"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "bytes": 552965,
+      "sha256": "bea8933b461cbf95cba2d5d43391702024a6203ef58b1799c1539db0a346f211"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "bytes": 413009,
+      "sha256": "c7edc7333f9fdf4accceb8576f1774d0b48ef8228d69eaeb52a60a00e3032f7f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "bytes": 282381,
+      "sha256": "866b1aac2cd9274c2e673ea6140ee57e2dc461dcc1d89b30f09c88814de5b231"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "path": "browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "bytes": 275241,
+      "sha256": "cbca5507d40dcbfc1d4132929ed0e3a577f152c9ed5fa74cba672b3e030db19c"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/atlas-add-detail-coast.spec.ts",
+      "path": "browser/mobile/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/base-playwright.config.ts",
+      "path": "browser/mobile/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/before.json",
+      "path": "browser/mobile/before.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/build.json",
+      "path": "browser/mobile/build.json",
+      "bytes": 9705,
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/playwright.config.ts",
+      "path": "browser/mobile/playwright.config.ts",
+      "bytes": 746,
+      "sha256": "ac14ab1c592382ffe7802c7d749640d7ab98e723e5adec2d64b9638643147bb8"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/prerequisite-verification.json",
+      "path": "browser/mobile/prerequisite-verification.json",
+      "bytes": 11877,
+      "sha256": "88172bbc65ce7e72e7a35fa069228a5653163ee911844f6d7adfef8b3ae99486"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/results.json",
+      "path": "browser/mobile/results.json",
+      "bytes": 166995,
+      "sha256": "4aacfda785b528fb67a01adbcd6bd1739dae78125ff3f34f0e10150de44f7b29"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/run.log",
+      "path": "browser/mobile/run.log",
+      "bytes": 406,
+      "sha256": "6013e6b26da064e7f96b377ed174341525023f40127ed56c03af4892337d801c"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/run.mjs",
+      "path": "browser/mobile/run.mjs",
+      "bytes": 6827,
+      "sha256": "8af80f47e926a8cdf8bc3199d51f6513ef21387ef4de0418f06e742645602a20"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/verification.json",
+      "path": "browser/mobile/verification.json",
+      "bytes": 13815,
+      "sha256": "cb0617fe5f689e0062d6268f7c9bd7114b4c9f58db8edb0831dc91665ce3231d"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/after.json",
+      "path": "browser/tablet/after.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/.last-run.json",
+      "path": "browser/tablet/artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "bytes": 284711,
+      "sha256": "fead7a56cf5cd480272d8d07d49079c6260d34e4dd2ba926a10b672f79e1be97"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "bytes": 846537,
+      "sha256": "9ee61f05573b1fb1e9c78116e2533bfed7eae9e6ddeb1c986b071a740f154379"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "bytes": 667481,
+      "sha256": "5224c833108d5a17b4d768e46e76eeb450553a56140a45388ebd79113e47d829"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "bytes": 444435,
+      "sha256": "29fa23c7a617bbd4e4a84789fb4fe899a4acc74a2b0371f3d0eb78870b2bdaef"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "path": "browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "bytes": 439506,
+      "sha256": "e4e1be40a8ed65e731827a760f408a5c212ac154b2e86e67a2d7abb49d2d01da"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/atlas-add-detail-coast.spec.ts",
+      "path": "browser/tablet/atlas-add-detail-coast.spec.ts",
+      "bytes": 23002,
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/base-playwright.config.ts",
+      "path": "browser/tablet/base-playwright.config.ts",
+      "bytes": 799,
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/before.json",
+      "path": "browser/tablet/before.json",
+      "bytes": 62439,
+      "sha256": "184ea67077d9dbb9728c36d3976184d40b8e25238cc37a4d06e63c23adb88747"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/build.json",
+      "path": "browser/tablet/build.json",
+      "bytes": 9705,
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/playwright.config.ts",
+      "path": "browser/tablet/playwright.config.ts",
+      "bytes": 746,
+      "sha256": "ac14ab1c592382ffe7802c7d749640d7ab98e723e5adec2d64b9638643147bb8"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/prerequisite-verification.json",
+      "path": "browser/tablet/prerequisite-verification.json",
+      "bytes": 11877,
+      "sha256": "88172bbc65ce7e72e7a35fa069228a5653163ee911844f6d7adfef8b3ae99486"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/results.json",
+      "path": "browser/tablet/results.json",
+      "bytes": 166995,
+      "sha256": "dcd563453f6d95e0a630318494ce4eef6dd304ac532c37461af12dbb0f9439df"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/run.log",
+      "path": "browser/tablet/run.log",
+      "bytes": 591,
+      "sha256": "67f4b167d2ae49c6e5d971137b6960c11923475d0567c45c027beb8b51c34a8a"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/run.mjs",
+      "path": "browser/tablet/run.mjs",
+      "bytes": 6827,
+      "sha256": "8af80f47e926a8cdf8bc3199d51f6513ef21387ef4de0418f06e742645602a20"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/verification.json",
+      "path": "browser/tablet/verification.json",
+      "bytes": 13830,
+      "sha256": "1f1c522cf74b279ed41bbc024fdd1c014a84f839e6904016a6e460fe9630cf15"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "path": "observations/desktop-two-continents-restored.png",
+      "bytes": 201073,
+      "sha256": "a6810056ce9de222a504a84526fd5d7b61f9725c203038d95fd6d0be5c31223f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "path": "observations/desktop-saved-mountain-mid.png",
+      "bytes": 426906,
+      "sha256": "f3858690a20228d3bd2a9b1731d171a8825b5424bc3e7dbdd2f49d983d8f64f6"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "path": "observations/desktop-saved-mountain-near.png",
+      "bytes": 415342,
+      "sha256": "d6d5e11992fb3014b2cfc9f34641d9e186bdf9ccb59cb7d16572783a072c2b29"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "path": "observations/mobile-two-continents-restored.png",
+      "bytes": 275241,
+      "sha256": "cbca5507d40dcbfc1d4132929ed0e3a577f152c9ed5fa74cba672b3e030db19c"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "path": "observations/mobile-saved-mountain-mid.png",
+      "bytes": 552965,
+      "sha256": "bea8933b461cbf95cba2d5d43391702024a6203ef58b1799c1539db0a346f211"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "path": "observations/mobile-saved-mountain-near.png",
+      "bytes": 413009,
+      "sha256": "c7edc7333f9fdf4accceb8576f1774d0b48ef8228d69eaeb52a60a00e3032f7f"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "path": "observations/tablet-two-continents-restored.png",
+      "bytes": 439506,
+      "sha256": "e4e1be40a8ed65e731827a760f408a5c212ac154b2e86e67a2d7abb49d2d01da"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "path": "observations/tablet-saved-mountain-mid.png",
+      "bytes": 846537,
+      "sha256": "9ee61f05573b1fb1e9c78116e2533bfed7eae9e6ddeb1c986b071a740f154379"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "path": "observations/tablet-saved-mountain-near.png",
+      "bytes": 667481,
+      "sha256": "5224c833108d5a17b4d768e46e76eeb450553a56140a45388ebd79113e47d829"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/run.mjs",
+      "path": "browser/run.mjs",
+      "bytes": 6827,
+      "sha256": "8af80f47e926a8cdf8bc3199d51f6513ef21387ef4de0418f06e742645602a20"
+    },
+    {
+      "from": ".autopilot/ph06/mountain-area-browser/playwright.config.ts",
+      "path": "browser/playwright.config.ts",
+      "bytes": 746,
+      "sha256": "ac14ab1c592382ffe7802c7d749640d7ab98e723e5adec2d64b9638643147bb8"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/README.md",
+      "path": "area-source/README.md",
+      "bytes": 5095,
+      "sha256": "3fe7113d6e617755cbe4a46b7d86ced5c4f42b6bf4e0f4efc11148721b897312"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/record-final.mjs",
+      "path": "area-source/record-final.mjs",
+      "bytes": 1653,
+      "sha256": "91c794d3e7088d6211f494fbddf5533aaa6fc12defe1759ecf7fd9cb20b6990b"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "area-source/source-before/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 14052,
+      "sha256": "e85f77258da517e0c466366b1ad2367100b7d389137b5ef3c256f589dc3a7264"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "path": "area-source/source-before/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "bytes": 4308,
+      "sha256": "e72fe58d23bbd03cdca381972854b42d0b6dbc723a66fbc39eb82632ec43b7b5"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-natural-ranges.test.ts",
+      "path": "area-source/source-before/src/world/generation/detail-natural-ranges.test.ts",
+      "bytes": 14527,
+      "sha256": "b3ca393cb7271772006c4aacbe6f9fdd285a2971581d04374389cfdd70c37d97"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-natural-relief.ts",
+      "path": "area-source/source-before/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17763,
+      "sha256": "9afcd5e85d8cc78f2fdd1dbfddecaf4d327c282b7bc09266b9d3cb4f21ec83ad"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-orography-density.test.ts",
+      "path": "area-source/source-before/src/world/generation/detail-orography-density.test.ts",
+      "bytes": 5390,
+      "sha256": "3fc9ff0a9fef56527aece86c6dffaedb575a690fefadf2909af864c0229bea04"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-orography.ts",
+      "path": "area-source/source-before/src/world/generation/detail-orography.ts",
+      "bytes": 28765,
+      "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/detail-shape.ts",
+      "path": "area-source/source-before/src/world/generation/detail-shape.ts",
+      "bytes": 31690,
+      "sha256": "53425c567c4b6abb02972686ed94b2977c36f3682bb5cb70d7da571406356697"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/fine-range-tree.ts",
+      "path": "area-source/source-before/src/world/generation/fine-range-tree.ts",
+      "bytes": 16290,
+      "sha256": "8f04da2222e4eef1bf7d139e5db36e17d7b32fe5e43e4778095208030b11f089"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before/src/world/generation/seed.ts",
+      "path": "area-source/source-before/src/world/generation/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-before.json",
+      "path": "area-source/source-before.json",
+      "bytes": 1357,
+      "sha256": "3ac0f14ecd38c8813965733687a7bbdfed8e88ce381c30712341e08d4b99e5df"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-fine-world-relief.test.ts",
+      "path": "area-source/source-final/src/world/generation/detail-fine-world-relief.test.ts",
+      "bytes": 15787,
+      "sha256": "538a9d58fd20ca81af1bae6955d15685bc37e9cf13facd1c143c06d97bf60787"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "path": "area-source/source-final/src/world/generation/detail-natural-ranges-writer.test.ts",
+      "bytes": 4420,
+      "sha256": "4ff853d1c650ae0b64a81f5e9c88da81a32a7116dc9bbe0771b3e2fbbe2ee5d9"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-natural-ranges.test.ts",
+      "path": "area-source/source-final/src/world/generation/detail-natural-ranges.test.ts",
+      "bytes": 15074,
+      "sha256": "c3ef94bd30ec9c111bb7fadafe0acf6904bab7ce982d4de9521b8e04975618f7"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-natural-relief.ts",
+      "path": "area-source/source-final/src/world/generation/detail-natural-relief.ts",
+      "bytes": 17994,
+      "sha256": "2550bda4fe1d3383e72f3e6bfa349f430c587229c4e5f5b382c76d27fa189345"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-orography-density.test.ts",
+      "path": "area-source/source-final/src/world/generation/detail-orography-density.test.ts",
+      "bytes": 5709,
+      "sha256": "22d221ac1f63767070376a1b310747097a30e18a9e06178b1765ada48c38ef4a"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/detail-orography.ts",
+      "path": "area-source/source-final/src/world/generation/detail-orography.ts",
+      "bytes": 30779,
+      "sha256": "b8f10ba1d59918e54507b8fdac2a3133700b30a6516405dfcf46ca33a7c808d8"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/fine-range-tree.ts",
+      "path": "area-source/source-final/src/world/generation/fine-range-tree.ts",
+      "bytes": 16311,
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/terrain-gradient-noise.test.ts",
+      "path": "area-source/source-final/src/world/generation/terrain-gradient-noise.test.ts",
+      "bytes": 1362,
+      "sha256": "2ad1a60624172ee3e63f47e22d453b65b3cef0ebe594ed097760bcb349e304bf"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/terrain-massif.test.ts",
+      "path": "area-source/source-final/src/world/generation/terrain-massif.test.ts",
+      "bytes": 6822,
+      "sha256": "e93d849bc88687058baf837c82621ca7476068cf95cd52d7c4d4dabb922c488b"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/terrain-massif.ts",
+      "path": "area-source/source-final/src/world/generation/terrain-massif.ts",
+      "bytes": 12779,
+      "sha256": "e80d68fa77cb15ac3362416ac9d6213a1952cbc69dd50f7c32a20ec91373cc82"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/test-fixtures/preview22-orography/detail-orography.ts",
+      "path": "area-source/source-final/src/world/generation/test-fixtures/preview22-orography/detail-orography.ts",
+      "bytes": 28765,
+      "sha256": "79f9a369d50010da020d7212b86b8e8f6b16842568e89cbfe4c617bedd160260"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/test-fixtures/preview22-orography/detail-shape.ts",
+      "path": "area-source/source-final/src/world/generation/test-fixtures/preview22-orography/detail-shape.ts",
+      "bytes": 196,
+      "sha256": "234a73e27725ba3356cef11b46715d9f5b303f14f3b21fdc7581a174df9bfcb0"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/test-fixtures/preview22-orography/README.md",
+      "path": "area-source/source-final/src/world/generation/test-fixtures/preview22-orography/README.md",
+      "bytes": 732,
+      "sha256": "9fadfbcfc682a0413a4392932ae44d79c0699cecc7b05aec1880a0f3add69031"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/test-fixtures/preview22-orography/seed.ts",
+      "path": "area-source/source-final/src/world/generation/test-fixtures/preview22-orography/seed.ts",
+      "bytes": 3564,
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final/src/world/generation/test-fixtures/preview22-orography/SOURCE_MANIFEST.json",
+      "path": "area-source/source-final/src/world/generation/test-fixtures/preview22-orography/SOURCE_MANIFEST.json",
+      "bytes": 1196,
+      "sha256": "7a21bf364bcf93c5b664bac037fa637dc16a133d2443ad74811dac3cbeb5b2ce"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/production-integration/source-final.json",
+      "path": "area-source/source-final.json",
+      "bytes": 3316,
+      "sha256": "627df5d6dda53d437e6cbac9135fcfed92b5e975670142abd037212bc173b9ee"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/lint.log",
+      "path": "area-candidate/first/lint.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/physical.json",
+      "path": "area-candidate/first/physical.json",
+      "bytes": 999,
+      "sha256": "61e124d75ca3b6b6396736528deca32ae8c5fe4fc9bbefce906a09928041314a"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/physical.log",
+      "path": "area-candidate/first/physical.log",
+      "bytes": 517,
+      "sha256": "819dbed0a915dbeef38348649d309a64e9e5f913b5f988631f1f5fcf4461facb"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/area.test.ts",
+      "path": "area-candidate/first/source/area.test.ts",
+      "bytes": 4810,
+      "sha256": "6d59d97ecfb796325440750b1ff99fa02864d5e375743a28bde481b0616e2def"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/capture-input.ts",
+      "path": "area-candidate/first/source/capture-input.ts",
+      "bytes": 4781,
+      "sha256": "4c7487d11d2946c0db87664cf3fbb41c89f53791179d338cd083410d47344086"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/check-and-preview.mjs",
+      "path": "area-candidate/first/source/check-and-preview.mjs",
+      "bytes": 2833,
+      "sha256": "f6906ca258aae214067f05d7114a12ef724f210bcc8dd1289851a38b8d4ac7dc"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/physical-image.ts",
+      "path": "area-candidate/first/source/physical-image.ts",
+      "bytes": 4202,
+      "sha256": "a539ae2f341f1748123eb825baf6149e308a8ea96f6a7982c6ea3ea39e001daa"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/physical-views.json",
+      "path": "area-candidate/first/source/physical-views.json",
+      "bytes": 280,
+      "sha256": "66dc6bdb2a8959f5410442955346f4a448d57dfac183a73f86d47ef3b35184e5"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/preview.test.ts",
+      "path": "area-candidate/first/source/preview.test.ts",
+      "bytes": 4168,
+      "sha256": "73c9e929bbabba14cb64a5abbb44d13ddb6cd8a6bdcc50f3741cd8cd51245cc7"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/runtime/detail-orography.ts",
+      "path": "area-candidate/first/source/runtime/detail-orography.ts",
+      "bytes": 30212,
+      "sha256": "9c5fb6de6da5571ffbff008dde1cc1bca9a29de0b121cb14bf872773fa64e18e"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/runtime/fine-range-tree.ts",
+      "path": "area-candidate/first/source/runtime/fine-range-tree.ts",
+      "bytes": 16311,
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/runtime/terrain-massif.ts",
+      "path": "area-candidate/first/source/runtime/terrain-massif.ts",
+      "bytes": 10880,
+      "sha256": "19c108a9776b7cc183fc4bd6a44198aeb3bbf6740f8eeda955640eead7a9a7d3"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/source-binding.ts",
+      "path": "area-candidate/first/source/source-binding.ts",
+      "bytes": 2382,
+      "sha256": "1d9afdc7bc516a1290c56523e5c592961af76b946eb09940ed3f82745f6b4fe8"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/typecheck.mjs",
+      "path": "area-candidate/first/source/typecheck.mjs",
+      "bytes": 1847,
+      "sha256": "3065a0de13059eb1e23feb108846a564a6b9207231ee9ba9f30585dfd09ca513"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source/vitest.config.ts",
+      "path": "area-candidate/first/source/vitest.config.ts",
+      "bytes": 1352,
+      "sha256": "d858978f8aa576bd20af32163d62df7e6f0f3fd6770b6f098080ff133e58a712"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source-after.json",
+      "path": "area-candidate/first/source-after.json",
+      "bytes": 1498,
+      "sha256": "8e849f17aff186247cede80c0dffc4f6e8a70e73aa2336714d8484a2825fc446"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/source-before.json",
+      "path": "area-candidate/first/source-before.json",
+      "bytes": 1498,
+      "sha256": "8e849f17aff186247cede80c0dffc4f6e8a70e73aa2336714d8484a2825fc446"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/types.log",
+      "path": "area-candidate/first/types.log",
+      "bytes": 90,
+      "sha256": "3334acb3dae1640442dfc4f148c73a56fec3f98520374dbd3e5e3ef1f19fe0bb"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/first/verification.json",
+      "path": "area-candidate/first/verification.json",
+      "bytes": 568,
+      "sha256": "8474a58d0b0a19ca916e49f0f156f35e350fea4b5e957f456bc20789c343ebc3"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/lint.log",
+      "path": "area-candidate/gradient-repair-1/lint.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/physical.json",
+      "path": "area-candidate/gradient-repair-1/physical.json",
+      "bytes": 999,
+      "sha256": "22bdae3928a3a6cebf050bade9b90ea7391013c349a3ae602b1811054172c5da"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/physical.log",
+      "path": "area-candidate/gradient-repair-1/physical.log",
+      "bytes": 529,
+      "sha256": "83a0a86ca5833e257bc81e0932c5b710fc69eaa1e1d4d830242f467927f00239"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/area.test.ts",
+      "path": "area-candidate/gradient-repair-1/source/area.test.ts",
+      "bytes": 4810,
+      "sha256": "6d59d97ecfb796325440750b1ff99fa02864d5e375743a28bde481b0616e2def"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/capture-input.ts",
+      "path": "area-candidate/gradient-repair-1/source/capture-input.ts",
+      "bytes": 4781,
+      "sha256": "4c7487d11d2946c0db87664cf3fbb41c89f53791179d338cd083410d47344086"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/check-and-preview.mjs",
+      "path": "area-candidate/gradient-repair-1/source/check-and-preview.mjs",
+      "bytes": 2978,
+      "sha256": "6d1683f5482bdf56848806ac89a4ca1efce735b6a4499fb61624a7cce3f7da18"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/gradient-noise.test.ts",
+      "path": "area-candidate/gradient-repair-1/source/gradient-noise.test.ts",
+      "bytes": 1370,
+      "sha256": "ad615fb667e61785aba078cce81b7b0bbbab567767d6980e0908d227f727e76c"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/physical-image.ts",
+      "path": "area-candidate/gradient-repair-1/source/physical-image.ts",
+      "bytes": 4202,
+      "sha256": "a539ae2f341f1748123eb825baf6149e308a8ea96f6a7982c6ea3ea39e001daa"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/physical-views.json",
+      "path": "area-candidate/gradient-repair-1/source/physical-views.json",
+      "bytes": 280,
+      "sha256": "66dc6bdb2a8959f5410442955346f4a448d57dfac183a73f86d47ef3b35184e5"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/preview.test.ts",
+      "path": "area-candidate/gradient-repair-1/source/preview.test.ts",
+      "bytes": 4308,
+      "sha256": "62d4eb553f42e12625aebabd677ca8eaee2b6a521efa07fffd76141fce21d3c2"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/runtime/detail-orography.ts",
+      "path": "area-candidate/gradient-repair-1/source/runtime/detail-orography.ts",
+      "bytes": 30212,
+      "sha256": "9c5fb6de6da5571ffbff008dde1cc1bca9a29de0b121cb14bf872773fa64e18e"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/runtime/fine-range-tree.ts",
+      "path": "area-candidate/gradient-repair-1/source/runtime/fine-range-tree.ts",
+      "bytes": 16311,
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/runtime/terrain-massif.ts",
+      "path": "area-candidate/gradient-repair-1/source/runtime/terrain-massif.ts",
+      "bytes": 12779,
+      "sha256": "e80d68fa77cb15ac3362416ac9d6213a1952cbc69dd50f7c32a20ec91373cc82"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/source-binding.ts",
+      "path": "area-candidate/gradient-repair-1/source/source-binding.ts",
+      "bytes": 2408,
+      "sha256": "41554431c08e3e389d810319e16e1dad06b4fc67d0bead5475cfa16a4a350d56"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/typecheck.mjs",
+      "path": "area-candidate/gradient-repair-1/source/typecheck.mjs",
+      "bytes": 1873,
+      "sha256": "15fcbd719c6d20e297b75987340d24a02a22fb7de2c2e2778fdf0a5efff6dfdd"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source/vitest.config.ts",
+      "path": "area-candidate/gradient-repair-1/source/vitest.config.ts",
+      "bytes": 1352,
+      "sha256": "d858978f8aa576bd20af32163d62df7e6f0f3fd6770b6f098080ff133e58a712"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source-after.json",
+      "path": "area-candidate/gradient-repair-1/source-after.json",
+      "bytes": 1626,
+      "sha256": "5411e5b749cef0057221b519f1e0ee724847614b41c20847680adbdbeca8aa00"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/source-before.json",
+      "path": "area-candidate/gradient-repair-1/source-before.json",
+      "bytes": 1626,
+      "sha256": "5411e5b749cef0057221b519f1e0ee724847614b41c20847680adbdbeca8aa00"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/types.log",
+      "path": "area-candidate/gradient-repair-1/types.log",
+      "bytes": 90,
+      "sha256": "3334acb3dae1640442dfc4f148c73a56fec3f98520374dbd3e5e3ef1f19fe0bb"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/gradient-repair-1/verification.json",
+      "path": "area-candidate/gradient-repair-1/verification.json",
+      "bytes": 568,
+      "sha256": "d764586c9c0849f166777786f6a9181bc8788d9efc6eab1ccc555bbfc0107fd9"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/area.test.ts",
+      "path": "area-candidate/integration-first/source/area.test.ts",
+      "bytes": 4810,
+      "sha256": "6d59d97ecfb796325440750b1ff99fa02864d5e375743a28bde481b0616e2def"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/check-integration-first.mjs",
+      "path": "area-candidate/integration-first/source/check-integration-first.mjs",
+      "bytes": 1976,
+      "sha256": "f723289e0db933496716c8d2d8889cd68bd22717cfee67d3d44b35c8874ce871"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/gradient-noise.test.ts",
+      "path": "area-candidate/integration-first/source/gradient-noise.test.ts",
+      "bytes": 1370,
+      "sha256": "ad615fb667e61785aba078cce81b7b0bbbab567767d6980e0908d227f727e76c"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/runtime/detail-orography.ts",
+      "path": "area-candidate/integration-first/source/runtime/detail-orography.ts",
+      "bytes": 30212,
+      "sha256": "9c5fb6de6da5571ffbff008dde1cc1bca9a29de0b121cb14bf872773fa64e18e"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/runtime/fine-range-tree.ts",
+      "path": "area-candidate/integration-first/source/runtime/fine-range-tree.ts",
+      "bytes": 16311,
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/runtime/terrain-massif.ts",
+      "path": "area-candidate/integration-first/source/runtime/terrain-massif.ts",
+      "bytes": 12779,
+      "sha256": "e80d68fa77cb15ac3362416ac9d6213a1952cbc69dd50f7c32a20ec91373cc82"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source/vitest.config.ts",
+      "path": "area-candidate/integration-first/source/vitest.config.ts",
+      "bytes": 1449,
+      "sha256": "30abfb817e84862e3e6b04e59920729e852da0852a7bf9e555f35ca7b2b9162f"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/source-before.json",
+      "path": "area-candidate/integration-first/source-before.json",
+      "bytes": 899,
+      "sha256": "b83c2b5d092d530d97b5547877510008f30532513f4b36b244ceb5401a685855"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/unit.json",
+      "path": "area-candidate/integration-first/unit.json",
+      "bytes": 2190,
+      "sha256": "08b8d8b94152062e8a65383e467e65271172d4104b43b7e8e86add93583611e0"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/unit.log",
+      "path": "area-candidate/integration-first/unit.log",
+      "bytes": 525,
+      "sha256": "70b8a14c11581e94758d1e06995feb1a8427c0f815391efc4bac0a143aa76c0f"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/checks/integration-first/verification.json",
+      "path": "area-candidate/integration-first/verification.json",
+      "bytes": 98,
+      "sha256": "d40b8fc7197f09a82dd6e1c64ea7b7f63195c2f57076812a7f86247458f073b9"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/first/candidate-full-physical.png",
+      "path": "area-candidate/first/full.png",
+      "bytes": 110215,
+      "sha256": "e370f781e5076be389c0da4c07930a90067509ff5655fcfd8e24c52a4be8c30f"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/first/candidate-west-range-physical.png",
+      "path": "area-candidate/first/west-range.png",
+      "bytes": 266996,
+      "sha256": "86741231c6b68260d1968d160ff89f37c7cd069ceedc2ea04926920ec78734a6"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/first/candidate-east-range-physical.png",
+      "path": "area-candidate/first/east-range.png",
+      "bytes": 309852,
+      "sha256": "75788de951432c28ed70e8f614f696fa7b0928f414925c4d7b6fce84446efa00"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/gradient-repair-1/candidate-full-physical.png",
+      "path": "area-candidate/gradient-repair-1/full.png",
+      "bytes": 113282,
+      "sha256": "fc845e5865abad51436b46e2028709233dfe8c3f9be4797905f8bd58e8d0d712"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/gradient-repair-1/candidate-west-range-physical.png",
+      "path": "area-candidate/gradient-repair-1/west-range.png",
+      "bytes": 328649,
+      "sha256": "bd97b824f85afe55f32d25d5add63070d5c283f9118e411e505511a841316b7a"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/output/gradient-repair-1/candidate-east-range-physical.png",
+      "path": "area-candidate/gradient-repair-1/east-range.png",
+      "bytes": 373895,
+      "sha256": "cd7e6121b118619b94cc6e1d511b56eef64c302055241aec85bd877c29d89a17"
+    },
+    {
+      "from": ".autopilot/ph06/ridge-landform-staging/area-v2/GRADIENT_REPAIR.md",
+      "path": "area-candidate/GRADIENT_REPAIR.md",
+      "bytes": 2289,
+      "sha256": "9deafe709cc11d20b18ccbafbcba750d4d4c740c5e914e3212ad82cb6e74768c"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/check.mjs",
+      "path": "reader/first/candidate/check.mjs",
+      "bytes": 3840,
+      "sha256": "6d7dddb0ff165942e5436fb92ef3cfc23be23fc9a2cb5b0628f7f78a35c7ebd1"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/README.md",
+      "path": "reader/first/candidate/README.md",
+      "bytes": 6221,
+      "sha256": "fff768d271889245dbc37329698d286c858457568f07b4896c9eef0a25e416a2"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/src/world/hydrology-reader-owned.test.ts",
+      "path": "reader/first/candidate/src/world/hydrology-reader-owned.test.ts",
+      "bytes": 12403,
+      "sha256": "f1919074a2eac959e597c4e947bbec64b07e6112e187923bdbf6daabe60a6bd4"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/src/world/hydrology-reader-owned.ts",
+      "path": "reader/first/candidate/src/world/hydrology-reader-owned.ts",
+      "bytes": 11127,
+      "sha256": "1a511ba9e74a4912caefc6131c0e5541d8e712aba627114ed467fd7fdab41672"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/static-manifest.json",
+      "path": "reader/first/candidate/static-manifest.json",
+      "bytes": 3273,
+      "sha256": "3fd88c7a1148040b60451ccfdf8f0fc21a65cee866e6b6c80e12533feccf6d73"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/tsconfig.json",
+      "path": "reader/first/candidate/tsconfig.json",
+      "bytes": 163,
+      "sha256": "5a508887e9a6123b35e68b435de42c39f687844800cc3aa2ab25fa17b7d714e3"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/candidate/vitest.config.ts",
+      "path": "reader/first/candidate/vitest.config.ts",
+      "bytes": 363,
+      "sha256": "eef2020c03f7dd69db88e87a1001cb00a03d42c54d926d066f7f68057ba4d7d6"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/lint.log",
+      "path": "reader/first/lint.log",
+      "bytes": 223,
+      "sha256": "38ead6dc2e60a1a153ff937b1f41c74363628e3dd2872497dfe87273f77536f5"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/source-after.json",
+      "path": "reader/first/source-after.json",
+      "bytes": 46907,
+      "sha256": "70c2a2142d74b48f075ce6e126930d7f3270f60c5ec47d281fa01ad41bf06061"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/source-before.json",
+      "path": "reader/first/source-before.json",
+      "bytes": 46907,
+      "sha256": "70c2a2142d74b48f075ce6e126930d7f3270f60c5ec47d281fa01ad41bf06061"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/types.log",
+      "path": "reader/first/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/unit.json",
+      "path": "reader/first/unit.json",
+      "bytes": 2580,
+      "sha256": "3340e7c2cf9fb1690f3482363c7b745a0db9e16d5e86d7c6fe1e473e0d3dc440"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/unit.log",
+      "path": "reader/first/unit.log",
+      "bytes": 109,
+      "sha256": "f16cac2ac37f0b8d147e82ae9bb3e7b0f0e55297b982725a04677d35569a6e46"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/first/verification.json",
+      "path": "reader/first/verification.json",
+      "bytes": 1935,
+      "sha256": "60e48c39d277db359d019b01558c785b4cacfff504451f6832ceaf002aaa4fb1"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/check.mjs",
+      "path": "reader/repair-1/candidate/check.mjs",
+      "bytes": 3840,
+      "sha256": "6d7dddb0ff165942e5436fb92ef3cfc23be23fc9a2cb5b0628f7f78a35c7ebd1"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/README.md",
+      "path": "reader/repair-1/candidate/README.md",
+      "bytes": 6600,
+      "sha256": "36f4969a57be66de08d71872680be1c95723a0feae313743c24b87cd4d4caea4"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/src/world/hydrology-reader-owned.test.ts",
+      "path": "reader/repair-1/candidate/src/world/hydrology-reader-owned.test.ts",
+      "bytes": 12379,
+      "sha256": "7289edd16966179e46d1bd1bc26f3f2f0ace8ac093ffed65caa56ea368bbc96a"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/src/world/hydrology-reader-owned.ts",
+      "path": "reader/repair-1/candidate/src/world/hydrology-reader-owned.ts",
+      "bytes": 11127,
+      "sha256": "1a511ba9e74a4912caefc6131c0e5541d8e712aba627114ed467fd7fdab41672"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/static-manifest.json",
+      "path": "reader/repair-1/candidate/static-manifest.json",
+      "bytes": 3273,
+      "sha256": "3fd88c7a1148040b60451ccfdf8f0fc21a65cee866e6b6c80e12533feccf6d73"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/tsconfig.json",
+      "path": "reader/repair-1/candidate/tsconfig.json",
+      "bytes": 163,
+      "sha256": "5a508887e9a6123b35e68b435de42c39f687844800cc3aa2ab25fa17b7d714e3"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/candidate/vitest.config.ts",
+      "path": "reader/repair-1/candidate/vitest.config.ts",
+      "bytes": 363,
+      "sha256": "eef2020c03f7dd69db88e87a1001cb00a03d42c54d926d066f7f68057ba4d7d6"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/lint.log",
+      "path": "reader/repair-1/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/source-after.json",
+      "path": "reader/repair-1/source-after.json",
+      "bytes": 46907,
+      "sha256": "f6bf70a5ccf7956107233b23f3973252ddea6495155bfdf8a4c42b49965d3eaf"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/source-before.json",
+      "path": "reader/repair-1/source-before.json",
+      "bytes": 46907,
+      "sha256": "f6bf70a5ccf7956107233b23f3973252ddea6495155bfdf8a4c42b49965d3eaf"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/types.log",
+      "path": "reader/repair-1/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/unit.json",
+      "path": "reader/repair-1/unit.json",
+      "bytes": 2580,
+      "sha256": "a7376936641b71eeb7bf6f858a4e7ccd31744d6f6336bcced3a2df9f0ef45e11"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/unit.log",
+      "path": "reader/repair-1/unit.log",
+      "bytes": 112,
+      "sha256": "779cfbce4a08d82240758a5637961e1de5dfecd9bae104a9505b08f12c725935"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/checks/repair-1/verification.json",
+      "path": "reader/repair-1/verification.json",
+      "bytes": 1949,
+      "sha256": "e22f1b29885404fd206b11448b180c63f167d150e728656078d0b90924534126"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/ready.json",
+      "path": "reader/ready.json",
+      "bytes": 1634,
+      "sha256": "926f2f4fb48cf9a095edc138fb4c3283f4801b7113f7f581ece95e32d0fcc41a"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/promotion.json",
+      "path": "reader/promotion.json",
+      "bytes": 1121,
+      "sha256": "b23bc8b81f7c0faf3eb3332b743168e2ffcf9dde01dbdac8f7d65f1d405548f8"
+    },
+    {
+      "from": ".autopilot/ph07/reader-staging/WORKER_INTEGRATION.md",
+      "path": "reader/WORKER_INTEGRATION.md",
+      "bytes": 5307,
+      "sha256": "88c05a484b60f11b6470c92d6f6acbdb64345de5539a51480083e6398a8b3dd7"
+    }
+  ]
+}

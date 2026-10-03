@@ -90,25 +90,29 @@ describe('fine world relief physical planning', () => {
     } finally { spy.mockRestore(); }
     expect(actual).toBeDefined();
     const field = actual!;
+    if (!('massif' in field)) throw new Error('The actual small writer rectangle did not execute the area field.');
     expect(field.curves).toHaveLength(3);
     expect(field.stats.maximumBucketCandidates).toBeLessThanOrEqual(OROGRAPHY_LIMITS.bucketCandidates);
     expect(field.stats.indexReferences).toBeLessThanOrEqual(OROGRAPHY_LIMITS.indexReferences);
     // Include exact 32-world bucket edges/corners and the adjacent Q8 values;
     // the all-support oracle never performs a bucket lookup.
     for (let y = 992; y <= 1568; y += 32) for (let x = 992; x <= 1696; x += 32) for (const delta of [-1, 0, 1]) {
-      const xQ = q(x) + delta, yQ = q(y) + delta, sample = field.sample(xQ, yQ);
+      const xQ = q(x) + delta, yQ = q(y) + delta, sample = field.guideSample(xQ, yQ);
       expect(sample.massQ).toBeCloseTo(exhaustiveFineHeight(field, xQ, yQ), 7);
       expect(sample.kernelTests).toBeLessThanOrEqual(OROGRAPHY_LIMITS.bucketCandidates);
+      expect(field.sample(xQ, yQ).kernelTests).toBeLessThanOrEqual(OROGRAPHY_LIMITS.bucketCandidates);
     }
     for (const [x, y] of [[0, 0], [4096, 0], [0, 4096], [4096, 4096]]) expect(field.sample(q(x), q(y)).massQ).toBe(0);
   });
 
-  it('keeps the same real ridge tree and measured crest scale across 128, 256 and 512 coarse grids', async () => {
+  it('keeps the same real tree and physical mountain area across 128, 256 and 512 coarse grids', async () => {
     const measures: ReturnType<typeof highSection>[] = [];
     const graphs: NonNullable<Relief['rangeTree']>['graph'][] = [];
     for (const size of [128, 256, 512] as const) {
       const relief = await createNaturalRelief(worldInput(size), 2048, control);
       expect(relief.summary.scaleMode).toBe('world');
+      expect(relief.summary.profile).toBe('mountain-area-valleys-v1');
+      expect(relief.massif?.bodies.some(body => body.across > FINE_WORLD_RELIEF_SCALE.maximumShoulderWidthWorld)).toBe(true);
       expect(relief.rangeTree).toBeDefined();
       const graph = relief.rangeTree!.graph;
       // At least the previous three real groups, with every planned tree arm
@@ -127,17 +131,29 @@ describe('fine world relief physical planning', () => {
     const widths = measures.map(m => m.halfWidth), peaks = measures.map(m => m.maximum);
     expect(Math.max(...widths) / Math.min(...widths)).toBeLessThan(1.25);
     expect(Math.max(...peaks) / Math.min(...peaks)).toBeLessThan(1.25);
-    expect(Math.max(...widths)).toBeLessThan(60);
-    expect(Math.min(...peaks)).toBeGreaterThan(1500);
+    // Absolute narrow-crest limits described the retired ribbon profile.
+    // Resolution independence now covers every measured physical elevation.
+    expect(measures[1].samples).toEqual(measures[0].samples); expect(measures[2].samples).toEqual(measures[0].samples);
   });
 
-  it('changes actual fine heights and broad shoulders, beyond only lowering the minimum width', async () => {
-    const input = worldInput(128), before = await createBaseline(input, 2048, control), after = await createNaturalRelief(input, 2048, control);
+  it('writes physical mountain relief over an area outside the former guide supports', async () => {
+    const input = worldInput(128), before = await createBaseline(input, 2048, control);
+    let field: Awaited<ReturnType<typeof createOrographyField>> | undefined;
+    const original = orographyModule.createOrographyField, spy = vi.spyOn(orographyModule, 'createOrographyField').mockImplementationOnce(async (...args) => {
+      field = await original(...args); return field;
+    });
+    let after: Relief;
+    try { after = await createNaturalRelief(input, 2048, control); } finally { spy.mockRestore(); }
+    if (!field || !('massif' in field)) throw new Error('Missing actual area field.');
     const oldMeasure = highSection(before), nextMeasure = highSection(after);
-    expect(after.summary.maximumRidgeWidthWorld).toBeLessThan(before.summary.maximumRidgeWidthWorld * .8);
-    expect(nextMeasure.halfWidth).toBeLessThan(oldMeasure.halfWidth * .65);
-    expect(nextMeasure.maximum - nextMeasure.background).toBeGreaterThan(1500);
     expect(nextMeasure.samples).not.toEqual(oldMeasure.samples);
+    // True mountain height, without the lowland background, at least 240m
+    // above its foot outside all old ribbon supports over a finite area.
+    let widened = 0;
+    for (let y = 1100; y <= 3000; y += 32) for (let x = 500; x <= 3500; x += 32) if (input.isLand(q(x), q(y))) {
+      if (field.guideSample(q(x), q(y)).massQ < 1e-6 && after.physicalHeight(q(x), q(y), true, q(120), -6000, 0) > 240) widened++;
+    }
+    expect(widened).toBeGreaterThan(10);
     // Interior fine-node elevations differ even on one old coarse cell.
     const fineHeights = Array.from({ length: 17 }, (_, i) => after.physicalHeight(q(2048 + i * 2), q(2200), true, q(120), -6000));
     expect(new Set(fineHeights).size).toBeGreaterThan(4);
@@ -149,7 +165,12 @@ describe('fine world relief physical planning', () => {
     const firstPeak = trunk.profile.find(p => p.kind === 'peak')!.arcQ, lastPeak = trunk.profile.filter(p => p.kind === 'peak').at(-1)!.arcQ;
     for (const point of trunk.points) {
       expect(input.isLand(point.xQ, point.yQ)).toBe(true);
-      if (point.arc >= firstPeak && point.arc <= lastPeak) expect(relief.physicalHeight(point.xQ, point.yQ, true, q(120), -6000)).toBeGreaterThan(600);
+      if (point.arc >= firstPeak && point.arc <= lastPeak) {
+        // The guide can now cross a lower generated valley. Check actual
+        // physical continuity here; a retired crest's 600m floor is invalid.
+        const left = relief.physicalHeight(point.xQ - 1, point.yQ, true, q(120), -6000), right = relief.physicalHeight(point.xQ + 1, point.yQ, true, q(120), -6000);
+        expect(Math.abs(left - right)).toBeLessThanOrEqual(1);
+      }
     }
     for (const branch of relief.curves.filter(c => c.group !== 0)) {
       const root = branch.points[0], planned = relief.rangeTree!.graph.find(c => c.group === branch.group);
@@ -168,6 +189,8 @@ describe('fine world relief physical planning', () => {
       expect(sea).toBe(baseline.physicalHeight(q(160), q(300), false, q(distance), -6000));
     }
     expect(relief.physicalHeight(q(408), q(2048), true, 0, -6000)).toBe(0);
+    expect(relief.massif?.junctions.length).toBe(relief.curves.length - 1);
+    for (const junction of relief.massif!.junctions) expect(junction.heightQ).toBe(relief.massif!.sample(junction.xQ, junction.yQ).massQ);
   });
 
   it('preserves local-mode heights exactly and continues to cancel during real land probing', async () => {

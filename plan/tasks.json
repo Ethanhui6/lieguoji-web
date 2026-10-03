@@ -2461,7 +2461,7 @@
     "status": "in_progress",
     "source": "CODEX_AUTOPILOT_V5.md",
     "roadmap": "docs/FMS_WEB_REBUILD_PLAN.md",
-    "currentPhaseId": "WEB-PH01",
+    "currentPhaseId": "WEB-PH02",
     "reason": "用户否定当前体验及旧计划，要求按自己原作重新规划；先可绘图自然大陆与连续缩放",
     "supersedes": {
       "executionOrder": "V4",
@@ -2540,10 +2540,13 @@
       "docs/evidence/fms-brush-input-2026-10-04/scene-ui-parameters.json",
       "docs/evidence/fms-brush-numeric-2026-10-04/verification.json",
       "scripts/check-v5-plan.mjs",
-      "scripts/check-v5-plan.test.mjs"
+      "scripts/check-v5-plan.test.mjs",
+      "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+      "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+      "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
     ],
     "nextBatch": [
-      "WEB-01-01"
+      "WEB-02-01"
     ],
     "phases": [
       {
@@ -2625,7 +2628,7 @@
         "dependsOn": [
           "WEB-PH00"
         ],
-        "status": "in_progress",
+        "status": "done",
         "legacyRequirementIds": [
           "PH01",
           "PH02",
@@ -2634,7 +2637,11 @@
           "PH31"
         ],
         "acceptance": "独立可保存创世会话，轮廓/海陆笔刷/连接分离/撤销；触控不会误画",
-        "evidence": [],
+        "evidence": [
+          "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+          "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+          "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+        ],
         "workItems": [
           {
             "id": "WEB-01-01",
@@ -2643,12 +2650,15 @@
               "WEB-00-01",
               "WEB-00-02"
             ],
-            "status": "in_progress",
+            "status": "done",
             "acceptance": "原作工具语义折叠；单指绘图/双指导航；独立命名空间",
             "evidence": [
-              "docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md"
+              "docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md",
+              "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+              "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
             ],
-            "progress": "已核实RootApp提前创建旧草稿/打开旧库，独立入口需位于main惰性分流；相机/源拓扑API可复用。此项开始，UI和浏览器证据仍未实现，不标完成。"
+            "completionScope": "main惰性隔离入口、原作参照折叠工具、428x926布局；两指取消/导航为DOM合成检查，iPhone触控仍待WEB-02-03。"
           },
           {
             "id": "WEB-01-02",
@@ -2657,9 +2667,14 @@
               "WEB-01-01",
               "WEB-00-03"
             ],
-            "status": "todo",
+            "status": "done",
             "acceptance": "真实数据支持加陆擦海、连接分离、半径强度与清晰失败反馈",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+              "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+            ],
+            "completionScope": "真实高程轮廓/海陆笔刷、连接分离、半径与目标高程；网页Voronoi适配，不称原Collider等价。"
           },
           {
             "id": "WEB-01-03",
@@ -2667,11 +2682,17 @@
             "dependsOn": [
               "WEB-01-02"
             ],
-            "status": "todo",
+            "status": "done",
             "acceptance": "预览取消无残留，撤销重做、保存刷新恢复、冲突保护、旧档不变",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+              "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+            ],
+            "completionScope": "逐笔撤销重做、隔离CAS存档与备份/未来锁；浏览器保存刷新、多标签冲突及显示失效保存通过。"
           }
-        ]
+        ],
+        "completionScope": "独立绘图底座及Chromium浏览器操作检查；DOM触摸合成与真实鼠标分别记录，真机/视觉首份门保持待验。"
       },
       {
         "id": "WEB-PH02",
@@ -2679,7 +2700,7 @@
         "dependsOn": [
           "WEB-PH01"
         ],
-        "status": "todo",
+        "status": "in_progress",
         "legacyRequirementIds": [
           "PH03",
           "PH05",
@@ -2832,6 +2853,19 @@
       "until": "2026-10-04T08:00:00+08:00",
       "configurationReadBack": true,
       "note": "实际执行依赖本地Codex可用；截至已运行检查点记录结果，到期不开始新批。"
+    },
+    "drawingPrototype": {
+      "sourceCommit": "36bd1ac1f127fc48d5716ee9bbf4c902607c4bae",
+      "entry": "/?fms=1",
+      "database": "lieguoji-fms-web-v1",
+      "status": "local-drawing-foundation-verified",
+      "mobileViewport": "428x926 Chromium; synthetic DOM touch plus real mouse; not physical iPhone",
+      "naturalizationImplemented": false,
+      "evidence": [
+        "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+        "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-drawing-entry-2026-10-04/verification.json"
+      ]
     }
   }
 }

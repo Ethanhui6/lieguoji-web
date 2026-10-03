@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-03T18:52:21.483Z",
+  "result": {
+    "result": {
+      "type": "object",
+      "value": {
+        "commit": "36bd1ac1f127fc48d5716ee9bbf4c902607c4bae",
+        "stats": {
+          "dirty": "false",
+          "landCells": "1362",
+          "revision": "1",
+          "testid": "fms-app"
+        }
+      }
+    }
+  },
+  "logs": [],
+  "scope": "CSS-only selected-tool hover contrast fix; reuse unchanged drawing/storage behavior evidence"
+}

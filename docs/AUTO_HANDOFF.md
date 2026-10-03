@@ -1,54 +1,61 @@
 # 当前续接：Fantasy Map Simulator 网页重建 V5
 
-更新：2026-10-04香港时间夜间批次。先读 CODEX_AUTOPILOT_V5.md，核实Git，再读 plan/tasks.json.webRebuild。**当前顺序只认V5；旧tasks/phaseState/programme保留要求与历史，不决定下一批。** 普通本地工作每批1—3项自动接续，可恢复错误自行修复，不反复重写规划或重问已回答问题。
+更新：2026-10-04 香港时间 02:25 heartbeat 批次，约 02:50 保存检查点。每次先核实 Git，再读 CODEX_AUTOPILOT_V5.md 和 plan/tasks.json.webRebuild。当前只按 V5 执行，旧 tasks/phaseState/programme 是完整要求和历史账，不提供开发顺序。
 
-## 当前目标与执行边界
+## 当前进度与下一批
 
-- 用户目标：授权原作Fantasy Map Simulator的网页/PWA，优先忠实绘图方式、地图、配色和工具；原作风格已替代旧iOS美术方向。
-- 首份体验：空白海洋→闭合轮廓/海陆笔刷→保留主体并细化湾岬/内陆→连续缩放→修改/撤销/保存/刷新恢复。**本批完成了数值内核和参照输入基线，尚未交付这份新试玩。**
-- iPhone13ProMax、用户报告iOS27、Safari与Chrome、竖屏优先、折叠工具；小版本/构建号留待真机记录。
-- WEB-PH02首份体验门未通过前，只修绘图、地理、表现与性能，不扩建国家、行政、家族、信仰。真实手机与用户视觉确认分别保留，移动仿真和数值检查不能代替。
-- 已实际建立本线程heartbeat v5，每30分钟续接，香港时间**2026-10-04 08:00截止**；配置已回读。到期保存检查点，不开新批。调度需要本地Codex可用，不把尚未运行的批次当完成，也不声称脱离Codex后仍在后台开发。
+**WEB-PH01 的独立绘图底座已实现并通过限定工程检查；当前 WEB-PH02，下一项 WEB-02-01 保形自然化。** 不重写规划、不重复恢复已完成数值函数，不转入国家/行政/家族/信仰。
 
-## Git、旧构建与发布锁
+- 用户目标：授权原作 Fantasy Map Simulator 的网页/PWA，忠实绘图流程、原作地图与工具风格；原作风格已替代旧 iOS 美术方向。
+- 首份完整体验仍未交付：空白海洋 → 轮廓/海陆绘制 → 保留主体并细化湾岬与内陆 → 连续缩放 → 修改撤销保存恢复。当前可以手绘和恢复，但自然地形尚未接入，视觉相似度没有用户认可。
+- iPhone13ProMax、用户报告 iOS27、Safari 与 Chrome、竖屏优先、折叠工具；具体系统构建号留待真机。当前 428×926 Chromium 布局和合成触摸检查不代表真机/WebKit。
+- WEB-PH02 首份真机/用户视觉门均保持未通过；不依赖门的绘图、地理、表现和性能工程可以继续。
+- 已有 heartbeat v5 每30分钟续接，香港时间 **2026-10-04 08:00 截止**。到期先保存检查点，不开新批；执行依赖本地 Codex 可用，不把后续调度当完成。
 
-- 工作目录 D:/游戏/架空地图模拟器，分支 codex/ph06-world-generation；本批起点e9391b5，数值实现与V5检查提交 **f917dfcc52b2d355464d7c0af66eb03f98cee6b9**。随后仅补证据字节保存与交接摘要，最终checkpoint以 git log -1 --oneline 和 git status --short 核实，本文件不虚构自引用SHA。
-- 旧产品源码基准42af5433aedcb0e02cbcb1cabf88aa538f184c1a；产品/旧构建0.5.0-preview.33。本批新增纯数值模块及计划检查器，尚未更新网页入口、产品版本或dist。
-- 旧构建基准199f20d65cdfccff0367a9770d4516ff573e1a4c，build.json SHA256 dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3；旧preview.33不是已获用户认可的V5试玩。
-- 本轮本地核实remote为 https://github.com/Ethanhui6/lieguoji-web.git，core.hooksPath=.githooks。历史Pages项目lieguoji-web；唯一原生Git链main生产/其他分支预览，历史URL https://lieguoji-web.pages.dev/ 。本批没有联网核验部署或更新旧站。
-- **禁止所有push/tag、远程PR/Issue/Milestone、上传和Pages触发。** 9月24单次试玩例外已消耗；原releasePolicy/pre-push保留。V5阶段完成不自动解锁旧门，不得另建发布链。
-- 旧61任务/36PH/144子项、全部原JSON顶层字段保留；本批任务更新限于webRebuild。CANON、正式核图/正史、旧档规则和长征要求不自动通过。
+## Git、构建和发布锁
 
-## 本批实际成果
+- 项目 D:/游戏/架空地图模拟器，分支 codex/ph06-world-generation。
+- 本批起点 cbb0a68144dcee83ac0a10e01cdd86d5a113dfff；绘图源码提交 **36bd1ac1f127fc48d5716ee9bbf4c902607c4bae**。本文件和证据在后续本地 checkpoint 提交；最终 HEAD 用 git log -1 --oneline 核实，避免自引用 SHA。
+- 本地 dist 已按上述源码提交重建并用真实浏览器打开。build.json commit=36bd1ac1f127fc48d5716ee9bbf4c902607c4bae；SHA256 **38e5b2ce80c1af1f6714cc98c5e7792d3e46e1b71cfd0799ff137fec18ce3a96**。版号保留 0.5.0-preview.33，表示本地开发切片，不能冒称新正式发行。
+- 旧产品源码基准42af5433aedcb0e02cbcb1cabf88aa538f184c1a及旧发行验收保留；旧dist已被本地验证构建替换，旧云端站点未更新。
+- 本轮核实 remote=https://github.com/Ethanhui6/lieguoji-web.git，core.hooksPath=.githooks。既有 Pages 项目 lieguoji-web，唯一原生 Git 链 main 生产/其他分支预览；历史 URL https://lieguoji-web.pages.dev/ ，本批未联网核验或发布。
+- **禁止所有 push/tag、远程 PR/Issue/Milestone、上传及 Pages 触发。** 9月24单次试玩例外已消耗，releasePolicy/pre-push不变。V5阶段完成不会解锁旧全部PH门，不能另建发布链。
+- 旧61任务/36PH/144子项、除webRebuild外所有原JSON顶层字段对比本批起点保持一致；CANON、正式核图正史、旧档、长征与云端CI结果均不自动通过。
 
-1. [纯画笔数值模块](../src/world/fms-native-brush.ts)：Plane七种高程操作（含擦海高度0）、Hill邻接FIFO传播和五种高度合成。显式选区、邻接原顺序、注入随机源；不读取或改写旧世界。溢出/非法输入有明确网页防护。Plane擦海只恢复高度层，不代表行政/军队生命周期已接通。
-2. [Hill静态证据](evidence/fms-hill-recovery-2026-10-04/HILL_STATIC_RECOVERY.md)：只展开GetHeightMap及邻接getter、powf类依赖；9个手工推导/Python float32复核样例，**不是原DLL运行输出**。普通非整数幂逐位和Unity RNG状态仍未知。
-3. [单次画笔输入报告](evidence/fms-brush-input-2026-10-04/BRUSH_INPUT_REPORT.md)：原中心来自Raycast Collider的CellIndex，范围来自OverlapSphere，不能把最近点查询冒称原拾取；新增唯一SetCellAsSea叶子核实Elevation/State/Biom置0。UI中高度45、两处半径1.5/3.5只是序列化候选，活动绑定与衰减默认仍未知。
-4. [参考基线](FMS_REFERENCE_BASELINE_2026-10-04.md)：补看具名视频0:24/0:42/1:00，实际菜单画面、官方快捷键文字、静态恢复与未知分别记录。约1:01.56登录提示处停止；不无限重试。原完整撤销/缩放视频尚未观察。
-5. [V5计划检查](../scripts/check-v5-plan.mjs)接入现有plan:check：依赖/循环/证据/当前阶段及首份真机视觉门均验证；即使V5全done也不能解锁原发布门。新增test:plan进入现有build:cf检查链，未另建CI/部署链；AGENTS中旧PH顺序已纠正。
+## 本地可运行入口
 
-WEB-PH00完成的范围是**建立具名参照基线与可实现的输入输出合同**，不等于完整原作恢复。不存在必须继续全包逆向才能开始WEB-PH01的输入阻塞；未恢复行为留给具体切片与WEB-PH02对照，不虚填通过。当前转入WEB-PH01，WEB-01-01入口隔离已完成只读审查，UI代码尚未实现。
+- 开发服务本次启动于 **http://127.0.0.1:5180/?fms=1**，进程 session 65287；本地 dist 预览 **http://127.0.0.1:5181/?fms=1**，session 55887。续接要先查是否仍运行，不盲目另开占用端口；它们不是公网/手机试玩 URL。
+- 没有 ?fms=1 仍是旧世界工坊。新入口在 main 惰性分流，未先挂载 RootApp/创建旧640草稿。入口代码 src/fms/FmsApp.tsx；旧入口仅封装至 src/LegacyEntry.tsx。
+- 独立数据库 **lieguoji-fms-web-v1**。5180 验证草图最终 revision6、9985陆点；5181测试保存 revision1、1362陆点。都是本批测试数据，不是正式设定或用户真实存档。浏览器不同 origin 的存档不同，不自动迁移。
+- 旧4173保存 atlas-17708eca-a8dc-465b-9763-8f82a1539ca6未打开或覆盖；原临时服务是否还在运行须现场核实。
 
-## 实际检查
+## 本批实现和证据
 
-- 最终数值测试68/68通过，Vitest 02:11:22开始、482ms；两文件ESLint通过；项目tsc --noEmit通过。之后仅修正一条报告文件名注释，无行为改动。
-- V5检查器通过npm run test:plan再次核实11/11（151.2214ms），三个脚本ESLint通过；该命令已加入现有检查链。
-- 原发布保护测试22/22通过（6063.0208ms），动态导入未破坏原检查器最小夹具。
-- 最终任务/文档、摘要、旧字段与发布门核对见[本批verification](evidence/fms-brush-numeric-2026-10-04/verification.json)。不要拿前置63项结果覆盖后来新增擦海后的68项检查。
-- Git默认JSON换行转换会改变证据摘要，已为本批三个证据目录按项目既有方式设置字节保留；冻结原文件不重写，Git暂存内容与工作文件逐一核对。此修复不影响产品代码、数值结果或发布锁。
-- 本批无新构建、无浏览器绘图/移动仿真/真机验收、无用户视觉通过、无云端CI或部署。数值模块尚未接入入口，旧站/旧dist保持原状。
+详见 [绘图底座报告](evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md)、[浏览器状态记录](evidence/fms-drawing-entry-2026-10-04/browser-checks.json)、[源码/构建验证](evidence/fms-drawing-entry-2026-10-04/verification.json)。
 
-## 下一批直接做什么
+- 网页源拓扑与高程直接Mesh显示；轮廓、陆地、擦海真实改高程，半径/目标高度可调；不是原Unity拓扑或完整原作算法。
+- 单指绘图/平移、双指导航、第二指落工具区取消；超长、自交等明确反馈。提交前只显示笔迹预览，参数逐笔冻结。
+- 整笔撤销/重做；独立存档CAS、防损坏备份、未来版本锁写，保存后刷新恢复。撤销栈仅当前会话，不随刷新保留。
+- WebGL丢失立即锁绘图/历史/导航，保留保存；刷新可恢复。生产CSP缺少Pixi no-eval adapter的实际失败已修复，原安全策略没有修改。
+- 原作参照浅色紧凑工具、折叠高度面板，428×926无横向溢出，按钮至少44px；视觉方向仍待用户验收。
 
-1. **WEB-01-01独立入口与竖屏触控。** 在src/main.tsx建立按URL选择的惰性入口；不要只在RootApp里加screen，因为它会先生成旧640草稿并打开旧库。V5入口不触碰旧存档；独立命名空间建议lieguoji-fms-web-v1，完整事务/版本/CAS/备份在WEB-01-03落实。
-2. 复用src/world/camera.ts。源网格直接读取createTerrainTopology的points/triangles/neighbors，先绕开Atlas四百余万采样转换。该Delaunay网格明确标注为网页适配，不能称原Unity拓扑。显示、拾取和未来保存同源；半径用世界单位，每笔冻结选区/邻接顺序/种子。
-3. 按依赖进入WEB-01-02闭合轮廓和海陆笔刷、WEB-01-03撤销/独立保存，再做WEB-PH02保形自然化与连续表现。不能用四模板入口或旧640国家演示代替手绘。只放可用工具；先完成一批功能再统一检查，不反复跑未改范围。
-4. 原视频未知可随对应切片补对照，不再先做一轮宏大规划或重复已恢复GetHeightMap。需要用户真机/视觉判断时保留待验，并继续不依赖该验收的绘图优化。
+## 已执行检查及证据边界
 
-## 安装包和未知边界
+- 4文件121/121：模型10、手势6、存档37、恢复内核68；Vitest 02:40:43开始、684ms。整体lint/typecheck通过，最后仅no-eval import补丁后针对renderer ESLint通过，另修复选中工具悬停对比度并实际截图复验。
+- 本地生产构建/产物白名单通过，37个允许游戏产物；提交绑定构建重新打开，FMS chunk加载且存档恢复一致，未加载LegacyEntry。旧入口另外实测正常启动。
+- 真浏览器鼠标加陆/切水道、撤销重做、保存刷新、多标签拒绝覆盖、WebGL失效保存与恢复通过。开发与修复后的生产页控制台无warn/error。
+- 多指、轮廓、超长取消使用DOM合成PointerEvent；Input.dispatchTouchEvent工具不支持。测试临时替换pointer capture并立即还原，真实鼠标另验。没有iPhone/Safari/Chrome真机通过，没有原作运行等价证明。
+- **没有自动自然化、真实山系水系、原海洋Shader、完整LOD或最终大地图规模。** 当前平顶大陆的细锯齿/折角仍可见，保留为下一阶段问题，不包装成最终效果。
+- 本批没有云端CI、HTTPS上线验收、push或部署。原发布门仍锁定。
 
-仅只读D:/steam/steamapps/common/FantasyMapSimulator；不写安装目录、不读认证/SDK配置/envs.log/个人存档，不运行原EXE/DLL/完整recovered main。源为Windows x64 PE / Unity2021.3.36f1 / IL2CPP v29；不伪称ELF/DWARF或已有可调用hk4e-mcp。raw/dump/解析器只留ignored .autopilot/fms-audit/，不提交、不进入dist。
+## 下一批直接开发
 
-保留未知：Collider几何/完整投影、活动UI默认范围、原生拓扑、Unity随机状态、普通powf逐位、海洋Shader/LOD、拖动时序/撤销和完整模拟。网页可明确适配并对照；原实体维护不能靠只清高程宣称完成。
+1. WEB-02-01：以当前FmsDocument海陆/高程为约束，锁大轮廓、主要湾岬和狭颈，生成真实可编辑内部地貌。复用已恢复的纯高度核时保留原作证据边界；先给可取消、可确认的候选结果，接同一撤销/保存合同。
+2. 生成计算与编辑显示分离，考虑worker与取消/陈旧结果丢弃；当前笔刷主线程的桌面结果不能替代手机性能。不要把候选地图转旧Atlas再强制显示，WEB-02-02另做同输入对照。
+3. WEB-02-02再完善海岸海洋、连续缩放及显示/拾取一致性；WEB-02-03由用户真机与视觉确认。门未过只继续绘图改进。
 
-旧本地试玩存档atlas-17708eca-a8dc-465b-9763-8f82a1539ca6保留；localhost4173是否运行要实际核实。旧[引擎审查](evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md)与[前次规划保留检查](evidence/fms-web-replan-2026-10-04/verification.json)保持历史证据，不当作本批新源码验收。
+## 原作材料与历史
+
+只读指定 D:/steam/steamapps/common/FantasyMapSimulator，不写目录、不读认证/SDK/envs.log/个人存档，不运行原EXE/DLL或recovered main。raw/dump仍只在ignored .autopilot/fms-audit，不提交、不入dist。本批未继续读取安装包。
+
+已完成数值内核与参照基线见 docs/evidence/fms-brush-numeric-2026-10-04/verification.json、docs/FMS_REFERENCE_BASELINE_2026-10-04.md；不重复恢复GetHeightMap/SetCellAsSea。未知仍包括原Collider、活动UI参数、原拓扑、Unity RNG/powf逐位、海洋Shader/LOD及完整模拟。按具体绘图切片遇到的必要未知再继续有界恢复。

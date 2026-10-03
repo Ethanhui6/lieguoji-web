@@ -1,0 +1,135 @@
+{
+  "recordedAt": "2026-10-03T18:53:04.316Z",
+  "sourceCommit": "36bd1ac1f127fc48d5716ee9bbf4c902607c4bae",
+  "scope": "WEB-PH01 local drawing foundation; not WEB-PH02 first-playable acceptance",
+  "checks": {
+    "unit": {
+      "command": "npm test -- src/fms src/world/fms-native-brush.test.ts",
+      "files": 4,
+      "passed": 121,
+      "durationMs": 684,
+      "startHongKong": "2026-10-04 02:40:43"
+    },
+    "lint": "whole project passed; renderer import followed by targeted eslint pass",
+    "typecheck": "passed before no-eval-only import; unaffected type evidence reused",
+    "build": {
+      "passed": true,
+      "approvedArtifacts": 37,
+      "version": "0.5.0-preview.33",
+      "commit": "36bd1ac1f127fc48d5716ee9bbf4c902607c4bae",
+      "buildJsonSha256": "38e5b2ce80c1af1f6714cc98c5e7792d3e46e1b71cfd0799ff137fec18ce3a96"
+    },
+    "browser": "browser-checks.json; source-bound build reloaded and revision1/1362 restored; final CSS-only hover correction reloaded and screenshot verified (final-build-browser.json)",
+    "legacyPlanOutsideWebRebuildUnchanged": true,
+    "releasePolicyUnchanged": true,
+    "pushAttempted": false,
+    "cloudWrites": false,
+    "physicalDevice": "not_run",
+    "userVisualAcceptance": "pending",
+    "plan": "npm run plan:check passed: 61 legacy tasks / 36 PH / 144 items; V5 8 phases / active WEB-PH02",
+    "releaseStatus": {
+      "ready": false,
+      "formalReady": false,
+      "mode": "report-only",
+      "cloudLocked": true
+    }
+  },
+  "sourceFiles": [
+    {
+      "path": "src/main.tsx",
+      "sha256": "27ef0b8f2b21001f427990ccf962c534a880d43b83a609d94ebf5f528b5cc8d1"
+    },
+    {
+      "path": "src/LegacyEntry.tsx",
+      "sha256": "dbe5e665a73260f09dcabb9a080add59872b81a3cc4281f5be648b769db401e5"
+    },
+    {
+      "path": "src/fms/fms.css",
+      "sha256": "508a05d407db70286150f74ba24765cc8af2a60c61f9da6d5e85ed1a864fdf1e"
+    },
+    {
+      "path": "src/fms/FmsApp.tsx",
+      "sha256": "3a958840b6c6cd6076252a44312fa9048f889cfead6d974374c50bfde0fc984d"
+    },
+    {
+      "path": "src/fms/gestures.test.ts",
+      "sha256": "9a4f7fc0913cd81358f807e3d5efcb06dc0836a1ffb73dcc1cb4c2a899f43f0b"
+    },
+    {
+      "path": "src/fms/gestures.ts",
+      "sha256": "a92a398789c922ba884a6e18bf87b8f190ff896fcfe9400dac52b19fb3093ec9"
+    },
+    {
+      "path": "src/fms/model.test.ts",
+      "sha256": "5f3af8844645280e6ce37fb5aa880e0565d4cdf496c446652020af1e69a72e26"
+    },
+    {
+      "path": "src/fms/model.ts",
+      "sha256": "acc4d4c41723358050493a63e2cccfc9a9d23548bce963bcee2b61d0b90544cf"
+    },
+    {
+      "path": "src/fms/persistence.test.ts",
+      "sha256": "d2841adcbfb407e767e3abec78aba614efb92a9bf3a3aba763b3326f425c43b8"
+    },
+    {
+      "path": "src/fms/persistence.ts",
+      "sha256": "838cc1ca8db0c2db096120e88b88d9ad9879b2f65398ef288e5ad225e7ad7aea"
+    },
+    {
+      "path": "src/fms/renderer.ts",
+      "sha256": "99b6b0a9746cb3a9fcda796ae1c364fb069fb08676b7b78e4080b47561cf69e1"
+    }
+  ],
+  "protections": [
+    {
+      "path": ".githooks/pre-push",
+      "sha256": "f2ad504f705f9b2f74012fedaaaa057d139437694214a00df29964afe9bdaedf"
+    },
+    {
+      "path": "docs/RELEASE_POLICY_V4.md",
+      "sha256": "48ece30f98395835ee8c5b2460e3e13de9a75cff795eeede488d7b3ffe8cd8b7"
+    },
+    {
+      "path": "public/_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/browser-checks.json",
+      "sha256": "e34f8f3b8c683fa80c41f19d072187a0bb8546cc8930611909342f84d58ad605"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/DRAWING_ENTRY.md",
+      "sha256": "065eb5bceec3a9cf5f0f62c40004516c290b98c1ff486986505a0df37b25fb4b"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/final-build-browser.json",
+      "sha256": "99e8f1041329cb0f9ad35dbc0145442b411dd379a865da07083e09473f2228ec"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/portrait-final.jpg",
+      "sha256": "91cb0e2885e70b8e51a0de55f47c278f1e739bdb6debddf85e65d74026849b28"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/portrait-restored.jpg",
+      "sha256": "76de9045fc64af0336f37ef0c74764015519352cfdbcf7ecb69243beba472081"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/portrait-settings.jpg",
+      "sha256": "cfa42d6f942a176d6c06b2f2b76735c466dc27900165577a9157ef37aaf0d581"
+    },
+    {
+      "path": "docs/evidence/fms-drawing-entry-2026-10-04/portrait-zoom.jpg",
+      "sha256": "aa1ce54c3a28f99be568c4568841643220a42372afee5dec2f0547809399839c"
+    }
+  ],
+  "limitations": [
+    "flat hand-drawn elevations; naturalization is next",
+    "web topology and palette adapter, not original-equivalence",
+    "Chromium viewport is not physical iPhone or WebKit",
+    "gesture history not persisted across refresh",
+    "only local validation build; cloud lock unchanged"
+  ],
+  "hashScope": "Source/protection SHA-256 uses UTF-8 LF normalization; evidence and dist SHA-256 use raw bytes. Source commit includes final CSS contrast fix; unchanged numerical/type checks reused."
+}

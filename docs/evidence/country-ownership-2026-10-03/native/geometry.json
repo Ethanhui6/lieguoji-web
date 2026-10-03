@@ -1,0 +1,157 @@
+{
+  "before": {
+    "borderPathsSha256": "fd2de0347e8554350a71df4abaa5d5510b154dfdbe68a4cda90b10e92f401ba6",
+    "data": {
+      "data-border-segments": "8303",
+      "data-country-preview": "false",
+      "data-country-revision": "2",
+      "data-country-world-id": "country-903e9bd3-3b5e-43b6-9504-21228c33f87f",
+      "data-land-cells": "11087",
+      "data-land-polygons": "59611",
+      "data-path-characters": "5286702",
+      "data-political-geometry": "political-voronoi-v1",
+      "data-processed-segments": "90890",
+      "data-render-chunks": "228",
+      "data-render-completed": "11087",
+      "data-render-state": "ready",
+      "data-testid": "country-overlay",
+      "data-visible-cells": "11087",
+      "data-visible-chunks": "228"
+    },
+    "labels": [
+      [
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+        "775399.1957948839",
+        "558578.709686603"
+      ],
+      [
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+        "276499.57273214596",
+        "657749.8349754397"
+      ],
+      [
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+        "574622.649083819",
+        "332909.6415519376"
+      ]
+    ],
+    "landPathsSha256": "3e2f83a200e888a4e8cab54594a74299e6bfde8dd2414b1d0f5c18a144bcfae6"
+  },
+  "preview": {
+    "borderPathsSha256": "673279ab3ac36ab08f7f8f5d63d9dca3d2be0b46708cf0f789e4e3227924ea9d",
+    "data": {
+      "data-border-segments": "8645",
+      "data-country-ownership-view": "control",
+      "data-country-preview": "true",
+      "data-country-revision": "3",
+      "data-country-world-id": "country-903e9bd3-3b5e-43b6-9504-21228c33f87f",
+      "data-land-cells": "11087",
+      "data-land-polygons": "59611",
+      "data-path-characters": "5311906",
+      "data-political-geometry": "political-voronoi-v1",
+      "data-processed-segments": "90890",
+      "data-render-chunks": "237",
+      "data-render-completed": "11087",
+      "data-render-state": "ready",
+      "data-testid": "country-overlay",
+      "data-visible-cells": "11087",
+      "data-visible-chunks": "237"
+    },
+    "labels": [
+      [
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+        "775399.1957948839",
+        "558578.709686603"
+      ],
+      [
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+        "276499.57273214596",
+        "657749.8349754397"
+      ],
+      [
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+        "444069.65705123736",
+        "452518.5551634894"
+      ]
+    ],
+    "landPathsSha256": "d74f3e3aa8901a2b861d34de0a7bd7977413796604ebe5202dbcbb54ce7b0886"
+  },
+  "cancelled": {
+    "borderPathsSha256": "fd2de0347e8554350a71df4abaa5d5510b154dfdbe68a4cda90b10e92f401ba6",
+    "data": {
+      "data-border-segments": "8303",
+      "data-country-ownership-view": "control",
+      "data-country-preview": "false",
+      "data-country-revision": "2",
+      "data-country-world-id": "country-903e9bd3-3b5e-43b6-9504-21228c33f87f",
+      "data-land-cells": "11087",
+      "data-land-polygons": "59611",
+      "data-path-characters": "5286702",
+      "data-political-geometry": "political-voronoi-v1",
+      "data-processed-segments": "90890",
+      "data-render-chunks": "228",
+      "data-render-completed": "11087",
+      "data-render-state": "ready",
+      "data-testid": "country-overlay",
+      "data-visible-cells": "11087",
+      "data-visible-chunks": "228"
+    },
+    "labels": [
+      [
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+        "775399.1957948839",
+        "558578.709686603"
+      ],
+      [
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+        "276499.57273214596",
+        "657749.8349754397"
+      ],
+      [
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+        "574622.649083819",
+        "332909.6415519376"
+      ]
+    ],
+    "landPathsSha256": "3e2f83a200e888a4e8cab54594a74299e6bfde8dd2414b1d0f5c18a144bcfae6"
+  },
+  "afterReload": {
+    "borderPathsSha256": "fd2de0347e8554350a71df4abaa5d5510b154dfdbe68a4cda90b10e92f401ba6",
+    "data": {
+      "data-border-segments": "8303",
+      "data-country-ownership-view": "legal",
+      "data-country-preview": "false",
+      "data-country-revision": "2",
+      "data-country-world-id": "country-903e9bd3-3b5e-43b6-9504-21228c33f87f",
+      "data-land-cells": "11087",
+      "data-land-polygons": "59611",
+      "data-path-characters": "5286702",
+      "data-political-geometry": "political-voronoi-v1",
+      "data-processed-segments": "90890",
+      "data-render-chunks": "228",
+      "data-render-completed": "11087",
+      "data-render-state": "ready",
+      "data-testid": "country-overlay",
+      "data-visible-cells": "11087",
+      "data-visible-chunks": "228"
+    },
+    "labels": [
+      [
+        "nation-d506c1ac-aece-4027-977e-a1f70ca6fb06",
+        "775399.1957948839",
+        "558578.709686603"
+      ],
+      [
+        "nation-f5cf5bff-7e29-458f-942e-5c5ea63613f1",
+        "276499.57273214596",
+        "657749.8349754397"
+      ],
+      [
+        "nation-f949af67-9009-4c1b-846b-64cc74c281bd",
+        "574622.649083819",
+        "332909.6415519376"
+      ]
+    ],
+    "landPathsSha256": "3e2f83a200e888a4e8cab54594a74299e6bfde8dd2414b1d0f5c18a144bcfae6"
+  }
+}

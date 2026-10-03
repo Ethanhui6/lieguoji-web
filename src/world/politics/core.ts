@@ -41,6 +41,7 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
   if (!validateCountryDocument(base) || !validateCountryCommand(raw)) throw new Error('国家命令或当前实体状态无效。');
   if (base.version === 1 && (raw.type === 'create-nation-shape' || raw.type === 'claim-territory-shape' || raw.type === 'release-territory-shape')) throw new Error('自由圈地需要先明确建立 v2 独立副本；旧档保持原规则。');
   if (raw.type === 'set-institution' && base.version !== 4) throw new Error('制度编辑需要先明确创建 v4 制度副本；旧世界和原历史保持不变。');
+  if (raw.type === 'reassign-territory-shape' && base.version !== 4) throw new Error('归属编辑需要先明确创建 v4 制度副本；旧世界和原历史保持不变。');
   assertGeographySource(base, geography);
   control?.signal?.throwIfAborted();
   const command = structuredClone(raw), next = structuredClone(base);
@@ -95,6 +96,36 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
     if (!next.territories.some(t => t.legalNationId === command.nationId && !removed.has(t.cellId))) throw new Error('不能移除该国全部领土；至少保留一个实际陆地地块。');
     next.territories = next.territories.filter(t => !removed.has(t.cellId));
     description = `从「${nation!.name}」移除 ${removed.size} 个地块内的实际陆地，恢复为未分配；城市、首都与海域保持不变。`;
+  } else if (command.type === 'reassign-territory-shape') {
+    const target = next.nations.find(row => row.id === command.targetNationId);
+    if (!target || target.id === nation!.id) throw new Error('接收国家必须是另一个已有国家。');
+    const field = command.field === 'legal' ? 'legalNationId' : 'controllingNationId', fieldName = command.field === 'legal' ? '法理归属' : '实际控制';
+    const cells = (await selectCountryPolygon(geography, { source: next.source, pointsQ: command.outlineQ, geometry }, control)).cellIds;
+    control?.signal?.throwIfAborted();
+    const territories = new Map(next.territories.map(row => [row.cellId, row])), selected = new Set<number>();
+    for (const cellId of cells) {
+      const existing = territories.get(cellId);
+      if (!existing) continue;
+      if (existing[field] !== command.nationId) throw new Error(`圈选地块 #${cellId} 的${fieldName}不属于「${nation!.name}」；本次不会移交任何领土。`);
+      selected.add(cellId);
+    }
+    if (!selected.size) throw new Error(`圈选范围没有可移交的本国${fieldName}，没有需要提交的变化。`);
+    // The authoritative selection owns whole political cells. Check every city,
+    // including points outside the trace but inside a selected cell, and keep
+    // the existing invariant that city land is both owned and controlled by it.
+    for (const city of next.cities) {
+      const surface = await countryLandAt(geography, city.positionQ.xQ, city.positionQ.yQ, control, geometry);
+      control?.signal?.throwIfAborted();
+      const owner = territories.get(surface.cellId);
+      if (!surface.land || owner?.legalNationId !== city.nationId || owner.controllingNationId !== city.nationId) throw new Error('保存的城市不在所属国家实际陆地内，本次未移交领土。');
+      if (selected.has(surface.cellId)) {
+        const cityNation = next.nations.find(row => row.id === city.nationId)!;
+        throw new Error(`圈选地块内有${cityNation.capitalCityId === city.id ? '首都' : '城市'}「${city.name}」；城市所在整个地块受到保护，请避开该地块，本次未移交领土。`);
+      }
+    }
+    if (command.field === 'legal' && !next.territories.some(row => row.legalNationId === command.nationId && !selected.has(row.cellId))) throw new Error('不能移交该国最后的法理领土；至少保留一个实际陆地地块。');
+    next.territories = next.territories.map(row => selected.has(row.cellId) ? { ...row, [field]: target.id } : row);
+    description = `手动世界编辑：将 ${selected.size} 个地块内实际陆地的${fieldName}从「${nation!.name}」移交给「${target.name}」；${command.field === 'legal' ? '实际控制' : '法理归属'}保持不变。城市和首都所在整个地块受到保护；本次不产生战争、人口或财政结算。`;
   } else if (command.type === 'set-institution') {
     if (next.version !== 4) throw new Error('制度编辑不能写入旧版国家世界。');
     const regime = next.regimes.find(row => row.id === nation!.regimeId && row.nationId === nation!.id);

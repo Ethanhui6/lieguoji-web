@@ -25,7 +25,7 @@ export const institutionSuccessionName = (value: CountryInstitution['succession'
 export const institutionLocalAppointmentName = (value: CountryInstitution['localAppointment']): string => ({ central: '中央任命', local: '地方任命' })[value];
 export const institutionRecruitmentName = (value: CountryInstitution['recruitment']): string => ({ standing: '常备', levy: '征召', mixed: '混合' })[value];
 export function institutionFieldLabels(value: CountryInstitution | null): { field: string; value: string }[] {
-  return value === null ? [{ field: '制度', value: '尚未制定' }] : [
+  return value === null ? ['模板', '继任方式', '地方任命', '地方留收', '征募方式'].map(field => ({ field, value: '尚未制定' })) : [
     { field: '模板', value: institutionTemplateName(value.template) }, { field: '继任方式', value: institutionSuccessionName(value.succession) },
     { field: '地方任命', value: institutionLocalAppointmentName(value.localAppointment) }, { field: '地方留收', value: `${value.localRevenueBps / 100}%` },
     { field: '征募方式', value: institutionRecruitmentName(value.recruitment) },

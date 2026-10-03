@@ -4,6 +4,7 @@ import { getCellQuad } from '../topology';
 import { countryCellLandPolygons, countryPoliticalMesh, type CountryGeometry } from './geography';
 import { countryGeometry, type CountryDocument } from './model';
 import { placeCountryLabel, pointInsideCountryLand } from './label-placement';
+import { countryTerritoryOwner, type CountryOwnershipView } from './ownership-view';
 import { countryChunkVisible, countryExposedSides, countryRenderBounds, countryRenderChunk, expandCountryRenderBounds, type CountryRenderBounds } from './render-chunks';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -65,10 +66,12 @@ export class CountryRenderer {
   private selectedNation: string | null = null;
   private selectedCity: string | null = null;
   private isPreview = false;
+  private ownershipView: CountryOwnershipView = 'control';
 
   constructor(private readonly host: HTMLElement, private readonly onProgress?: (progress: { stage: string; completed: number; total: number }) => void) {
     this.element.setAttribute('class', 'country-overlay');
     this.element.setAttribute('data-testid', 'country-overlay');
+    this.element.setAttribute('data-country-ownership-view', this.ownershipView);
     this.element.setAttribute('aria-hidden', 'true');
     this.element.setAttribute('focusable', 'false');
     this.land.setAttribute('class', 'country-territory-layer');
@@ -77,7 +80,8 @@ export class CountryRenderer {
     this.element.append(this.land, this.borders, this.labels); host.append(this.element);
   }
 
-  async show(geography: AtlasDocument, document: CountryDocument, preview = false): Promise<void> {
+  async show(geography: AtlasDocument, document: CountryDocument, preview = false, view: CountryOwnershipView = 'control'): Promise<void> {
+    if (view !== 'control' && view !== 'legal') throw new Error('国家归属视图无效，未用其他归属替代显示。');
     this.pending?.abort(); const pending = new AbortController(); this.pending = pending;
     const check = () => { if (this.destroyed) throw new Error('建国地图显示已关闭。'); pending.signal.throwIfAborted(); };
     // Fine clipping already asks to yield inside each geographic cell. Share
@@ -89,16 +93,18 @@ export class CountryRenderer {
     if (!sameGeography) { this.cache.clear(); this.cachedPolygons = 0; this.geography = geography; this.cachedGeometry = geometryRule; }
     const previous = this.document;
     // Renaming, city edits and capital changes do not invalidate land geometry.
-    if (sameGeography && previous && previous.worldId === document.worldId && previous.territories.length === document.territories.length
-      && previous.territories.every((t, i) => t.cellId === document.territories[i].cellId && t.controllingNationId === document.territories[i].controllingNationId)
+    if (sameGeography && previous && this.ownershipView === view && previous.worldId === document.worldId && previous.territories.length === document.territories.length
+      && previous.territories.every((t, i) => t.cellId === document.territories[i].cellId && countryTerritoryOwner(t, view) === countryTerritoryOwner(document.territories[i], view))
       && previous.nations.length === document.nations.length && previous.nations.every((n, i) => n.id === document.nations[i].id && n.color === document.nations[i].color)) {
       this.document = document; this.isPreview = preview;
       this.element.setAttribute('data-country-revision', String(document.revision)); this.element.setAttribute('data-country-preview', String(preview));
+      this.element.setAttribute('data-country-ownership-view', view);
+      this.element.setAttribute('data-render-state', 'ready'); this.element.setAttribute('data-render-completed', String(document.territories.length));
       this.rebuildLabels(); this.setSelection(this.selectedNation, this.selectedCity); this.pending = undefined; return;
     }
     const groups = new Map<string, SVGGElement>(), fragment = window.document.createDocumentFragment();
     const nations = new Map(document.nations.map(nation => [nation.id, nation]));
-    const owners = new Map(document.territories.map(territory => [territory.cellId, territory.controllingNationId]));
+    const owners = new Map(document.territories.map(territory => [territory.cellId, countryTerritoryOwner(territory, view)]));
     const display = new Map<string, DisplayChunk>(), borderFragment = window.document.createDocumentFragment();
     const insidePoints = new Map<number, PointQ | null>(), nationCells = new Map(document.nations.map(n => [n.id, [] as number[]]));
     let polygonCount = 0, borderSegments = 0, processedSegments = 0, characters = 0, completed = 0;
@@ -106,7 +112,7 @@ export class CountryRenderer {
       this.element.setAttribute('data-render-state', 'loading');
       const mesh = geometryRule === 'political-voronoi-v1' ? await countryPoliticalMesh(geography, { signal: pending.signal, yieldTask: yieldToInput, onProgress: this.onProgress }) : null;
       for (const territory of document.territories) {
-        check(); const nation = nations.get(territory.controllingNationId);
+        check(); const nation = nations.get(countryTerritoryOwner(territory, view));
         if (!nation) throw new Error('领土的所属国家不存在，未显示错误着色。');
         const quad = mesh ? mesh.cellPolygonQ(territory.cellId).map(p => ({ x: p.xQ / 256, y: p.yQ / 256 })) : getCellQuad(geography, territory.cellId);
         let cached = this.cache.get(territory.cellId);
@@ -157,10 +163,11 @@ export class CountryRenderer {
         border.setAttribute('vector-effect', 'non-scaling-stroke'); border.setAttribute('opacity', '.85'); border.setAttribute('data-nation-border', chunk.nationId); borderFragment.append(border);
         chunks.push({ land, border, bounds: chunk.bounds, cells: chunk.cells, visible: true });
       }
-      check(); this.chunks = chunks; this.document = document; this.isPreview = preview; this.nationGroups = groups; this.nationAnchors = anchors; this.land.replaceChildren(fragment);
+      check(); this.chunks = chunks; this.document = document; this.isPreview = preview; this.ownershipView = view; this.nationGroups = groups; this.nationAnchors = anchors; this.land.replaceChildren(fragment);
       this.borders.replaceChildren(borderFragment);
       this.element.setAttribute('data-country-world-id', document.worldId); this.element.setAttribute('data-country-revision', String(document.revision));
       this.element.setAttribute('data-country-preview', String(preview)); this.element.setAttribute('data-land-polygons', String(polygonCount));
+      this.element.setAttribute('data-country-ownership-view', view);
       this.element.setAttribute('data-land-cells', String(document.territories.length));
       this.element.setAttribute('data-border-segments', String(borderSegments));
       this.element.setAttribute('data-processed-segments', String(processedSegments));

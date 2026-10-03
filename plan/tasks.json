@@ -1120,9 +1120,12 @@
         {
           "id": "PH10-T3",
           "title": "多领土岛屿与法理/实控状态",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「多领土岛屿与法理/实控状态」，并提供本阶段对应验收事实。生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-10-03-country-ownership.md",
+            "docs/evidence/country-ownership-2026-10-03/verification.json"
+          ]
         },
         {
           "id": "PH10-T4",
@@ -1131,7 +1134,9 @@
           "acceptance": "完成「国家制度模板和编辑预览」，并提供本阶段对应验收事实。生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。",
           "evidence": [
             "docs/evidence/2026-10-03-country-institution.md",
-            "docs/evidence/country-institution-2026-10-03/verification.json"
+            "docs/evidence/country-institution-2026-10-03/verification.json",
+            "docs/evidence/2026-10-03-country-ownership.md",
+            "docs/evidence/country-ownership-2026-10-03/verification.json"
           ]
         }
       ]

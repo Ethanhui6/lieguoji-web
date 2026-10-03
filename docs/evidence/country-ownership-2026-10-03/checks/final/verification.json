@@ -1,0 +1,111 @@
+{
+  "at": "2026-10-03T09:32:10.004Z",
+  "head": "b3740e9bd4996be3706084dc3270b9846f2b93ab",
+  "version": "0.5.0-preview.30",
+  "passed": true,
+  "sourceStable": true,
+  "rounds": [
+    {
+      "name": "plan",
+      "exitCode": 0,
+      "elapsedMs": 149,
+      "error": null
+    },
+    {
+      "name": "release-policy",
+      "exitCode": 0,
+      "elapsedMs": 6382,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 8708,
+      "error": null
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "elapsedMs": 11889,
+      "error": null
+    },
+    {
+      "name": "unit",
+      "exitCode": 0,
+      "elapsedMs": 78189,
+      "error": null
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "elapsedMs": 1596,
+      "error": null
+    },
+    {
+      "name": "dist",
+      "exitCode": 0,
+      "elapsedMs": 48,
+      "error": null
+    }
+  ],
+  "unit": {
+    "total": 186,
+    "passed": 186,
+    "failed": 0
+  },
+  "identity": [
+    {
+      "key": "engineFingerprint",
+      "unchanged": true
+    },
+    {
+      "key": "macroGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "landformGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "islandGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "coastGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "shapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "oceanGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "unchanged": true
+    }
+  ],
+  "buildSha256": "d8364036878203e7bd409e1e364e59dc848e1eecf7be58398b455cfe75558917",
+  "browser": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false
+}

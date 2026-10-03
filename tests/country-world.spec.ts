@@ -50,7 +50,7 @@ async function createCity(p:Page,name:string,point:Point,touch:boolean) {
 }
 
 test('[country-world] native nations, two cities, capital, cancellation, conflict and independent reload',async({page},info)=>{
-  test.setTimeout(450000);
+  test.setTimeout(600000);
   const touch=!!info.project.use.hasTouch, errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   const build=await page.request.get('/build.json'); expect(build.ok()).toBe(true); const bytes=await build.body();
@@ -153,7 +153,89 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   await tab(page,'国家',touch); await press(page,'国家 岚川',touch); await expect(page.getByRole('region',{name:'国家制度设定'})).toContainText('15%');
   await expect(page.getByTestId('country-overlay')).toHaveAttribute('data-country-revision',String(undone.document.revision));
   expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
-  await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,central,configured,undone,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
+  // Observe a real rendered land point belonging to B, clear of A's cities.
+  // The later click uses this visible geometry, never injected application state.
+  const political=page.getByTestId('country-overlay');
+  const secondLand=await political.evaluate((root,nationId)=>{
+    const group=Array.from(root.querySelectorAll('.country-territory-layer > g')).find(node=>node.getAttribute('data-nation-id')===nationId);
+    const paths=Array.from(group?.querySelectorAll<SVGGeometryElement>('path')??[]);
+    for(let y=1560;y<=1690;y+=4)for(let x=1138;x<=1252;x+=4)
+      if(paths.some(path=>path.isPointInFill(new DOMPoint(x,y))))return{x,y};
+    return null;
+  },secondNation);
+  expect(secondLand).not.toBeNull();
+  const secondCells=undone.document.territories.filter(row=>row.legalNationId===secondNation);
+  expect(secondCells.length).toBeGreaterThan(1); expect(undone.document.cities.every(city=>city.nationId!==secondNation)).toBe(true);
+  await press(page,'国家 海岬',touch); await press(page,'调整领土归属',touch);
+  await page.getByLabel('调整归属类型',{exact:true}).selectOption('control'); await page.getByLabel('归属目标国家',{exact:true}).selectOption(firstNation);
+  await press(page,'手绘调整归属',touch); await ready(page); await press(page,'全图',touch);
+  await draw(page,touch,[[1105,1400],[1290,1400],[1290,1740],[1105,1740],[1105,1400]]); await press(page,'闭合并预览',touch); await ready(page);
+  await expect(page.getByRole('region',{name:'建国操作预览'})).toContainText(/实际控制从「海岬」移交给「岚川」/);
+  await expect(page.getByRole('region',{name:'建国操作预览'})).toContainText('手动世界编辑');
+  await expect(political).toHaveAttribute('data-country-ownership-view','control');
+  expect(await persisted(page,worldId)).toEqual(undone);
+  await page.screenshot({path:info.outputPath('ownership-preview.png'),fullPage:true});
+  await press(page,'取消预览',touch); await ready(page); expect(await persisted(page,worldId)).toEqual(undone);
+  // A cancelled command retains its draft, but viewing the other map does not
+  // change that command. Re-preview must return to its actual edited field.
+  const cameraBeforeCancelledView=(await metrics(page)).camera;
+  await press(page,'法理',touch); await ready(page); await expect(political).toHaveAttribute('data-country-ownership-view','legal');
+  expect((await metrics(page)).camera).toEqual(cameraBeforeCancelledView); expect(await persisted(page,worldId)).toEqual(undone);
+  await press(page,'预览归属调整',touch); await ready(page);
+  await expect(country(page)).toHaveAttribute('data-country-ownership-view','control');
+  await expect(political).toHaveAttribute('data-country-ownership-view','control'); await expect(political).toHaveAttribute('data-country-preview','true');
+  expect(await persisted(page,worldId)).toEqual(undone); await confirm(page,touch);
+  const controlled=await persisted(page,worldId);
+  expect(controlled.document).toEqual({...undone.document,revision:undone.document.revision+1,territories:undone.document.territories.map(row=>row.controllingNationId===secondNation?{...row,controllingNationId:firstNation}:row)});
+  expect(controlled.geoSha256).toBe(undone.geoSha256); expect(controlled.geoSource).toEqual(undone.geoSource);
+  await assertPoliticalLabels(page,1); await expect(country(page)).toHaveAttribute('data-country-nation-count','2');
+  await tab(page,'国家',touch); await press(page,'国家 海岬',touch);
+  await expect(page.getByTestId('country-control-count')).toHaveText('0'); await expect(page.getByTestId('country-legal-count')).toHaveText(String(secondCells.length));
+  await tab(page,'地图',touch); await press(page,'全图',touch);
+  // At whole-world phone scale, this land lies in a city's 44px touch target.
+  // Use the real zoom controls before requesting a separate territory pick.
+  if(info.project.name==='mobile-chromium') { await press(page,'放大建国地图',touch); await press(page,'放大建国地图',touch); }
+  await pick(page,secondLand!,touch); await ready(page);
+  await expect(country(page)).toHaveAttribute('data-country-selected-nation',firstNation);
+  await expect(page.getByRole('status')).toContainText('此地法理归属「海岬」，实际控制「岚川」。');
+  await tab(page,'地图',touch); await page.screenshot({path:info.outputPath('control-view.png'),fullPage:true});
+  const controlCamera=(await metrics(page)).camera;
+  await press(page,'法理',touch); await ready(page); await assertPoliticalLabels(page,2);
+  await expect(country(page)).toHaveAttribute('data-country-ownership-view','legal'); await expect(political).toHaveAttribute('data-country-ownership-view','legal');
+  expect((await metrics(page)).camera).toEqual(controlCamera); expect(await persisted(page,worldId)).toEqual(controlled);
+  await pick(page,secondLand!,touch); await ready(page); await expect(country(page)).toHaveAttribute('data-country-selected-nation',secondNation);
+  await expect(page.getByRole('status')).toContainText('此地法理归属「海岬」，实际控制「岚川」。');
+  await tab(page,'地图',touch); await page.screenshot({path:info.outputPath('legal-view.png'),fullPage:true});
+  const legalCamera=(await metrics(page)).camera;
+  await press(page,'实控',touch); await ready(page); await assertPoliticalLabels(page,1);
+  expect((await metrics(page)).camera).toEqual(legalCamera); expect(await persisted(page,worldId)).toEqual(controlled);
+  await press(page,'法理',touch); await ready(page); await assertPoliticalLabels(page,2);
+  expect((await metrics(page)).camera).toEqual(legalCamera); expect(await persisted(page,worldId)).toEqual(controlled);
+  // B retains legal land after handing over a subset; its already-transferred
+  // actual control and the complete entity table must stay unchanged.
+  await tab(page,'国家',touch); await press(page,'国家 海岬',touch); await press(page,'调整领土归属',touch);
+  await page.getByLabel('调整归属类型',{exact:true}).selectOption('legal'); await page.getByLabel('归属目标国家',{exact:true}).selectOption(firstNation);
+  await press(page,'手绘调整归属',touch); await ready(page); await press(page,'全图',touch);
+  await draw(page,touch,[[1130,1430],[1260,1430],[1260,1540],[1130,1540],[1130,1430]]); await press(page,'闭合并预览',touch); await ready(page);
+  await expect(page.getByRole('region',{name:'建国操作预览'})).toContainText(/法理归属从「海岬」移交给「岚川」/);
+  expect(await persisted(page,worldId)).toEqual(controlled); await confirm(page,touch);
+  const legallySplit=await persisted(page,worldId), transferredLegal=legallySplit.document.territories.filter((row,index)=>row.legalNationId!==controlled.document.territories[index].legalNationId);
+  expect(transferredLegal.length).toBeGreaterThan(0); expect(transferredLegal.length).toBeLessThan(secondCells.length);
+  expect(transferredLegal.every(row=>row.legalNationId===firstNation&&controlled.document.territories.find(before=>before.cellId===row.cellId)?.legalNationId===secondNation)).toBe(true);
+  expect(legallySplit.document.territories.map(row=>[row.cellId,row.controllingNationId])).toEqual(controlled.document.territories.map(row=>[row.cellId,row.controllingNationId]));
+  expect(legallySplit.document.nations).toEqual(undone.document.nations); expect(legallySplit.document.regimes).toEqual(undone.document.regimes); expect(legallySplit.document.cities).toEqual(undone.document.cities);
+  expect(legallySplit.geoSha256).toBe(undone.geoSha256); expect(legallySplit.geoSource).toEqual(undone.geoSource);
+  await page.reload(); await ready(page); expect(await persisted(page,worldId)).toEqual(legallySplit);
+  await expect(country(page)).toHaveAttribute('data-country-ownership-view','legal'); await expect(political).toHaveAttribute('data-country-ownership-view','legal'); await assertPoliticalLabels(page,2);
+  await press(page,'撤销上次操作',touch); await ready(page);
+  const legalUndone=await persisted(page,worldId); expect(legalUndone.document).toEqual({...controlled.document,revision:legallySplit.document.revision+1});
+  await press(page,'撤销上次操作',touch); await ready(page);
+  const ownershipRestored=await persisted(page,worldId); expect(ownershipRestored.document).toEqual({...undone.document,revision:undone.document.revision+4});
+  await page.reload(); await ready(page); expect(await persisted(page,worldId)).toEqual(ownershipRestored);
+  await tab(page,'地图',touch); await press(page,'全图',touch); await assertPoliticalLabels(page,2);
+  await page.screenshot({path:info.outputPath('ownership-restored.png'),fullPage:true});
+  expect(ownershipRestored.geoSha256).toBe(undone.geoSha256); expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
+  await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,central,configured,undone,controlled,legallySplit,legalUndone,ownershipRestored,secondLand,controlCamera,legalCamera,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
 });
 
 test('[country-shape] native concave outline, cancelled candidate, chunk persistence and restored city', async ({ page }, info) => {

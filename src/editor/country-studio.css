@@ -31,6 +31,9 @@
 .country-map-tools { position: absolute; top: 12px; left: 12px; display: flex; align-items: center; padding: 4px; border-radius: 16px; background: var(--country-panel); border: 1px solid var(--country-border); box-shadow: var(--country-shadow); z-index: 3; }
 .country-map-tools button { min-width: 44px; border: 0; background: transparent; }
 .country-map-tools span { color: var(--country-muted); font-size: 12px; min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+.country-view-switch { display: flex; border-left: 1px solid var(--country-border); margin-left: 2px; padding-left: 4px; }
+.country-view-switch button[aria-pressed="true"] { background: var(--country-selected); color: var(--country-blue); font-weight: 650; }
+.country-ownership { border-top: 1px solid var(--country-border); padding-top: 18px; }
 .country-pick-bar { position: absolute; top: 78px; left: 12px; right: 12px; width: fit-content; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 14px; border-radius: 14px; color: #fff; background: #12364cef; box-shadow: var(--country-shadow); z-index: 3; }
 .country-pick-bar span { font-size: 13px; line-height: 1.5; }
 .country-pick-bar button { flex-shrink: 0; background: #f9fbfd; color: #183647; }

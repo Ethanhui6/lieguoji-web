@@ -1,5 +1,6 @@
 import { validateCountrySource, type CountrySource } from './geography';
 import { validateCountryInstitution, type CountryInstitution } from './institution';
+import { validateCountryPolygonOutline } from './country-selection';
 export type { CountrySource } from './geography';
 export type { CountryInstitution } from './institution';
 
@@ -37,6 +38,7 @@ export type CountryCommand =
   | { type: 'create-nation-shape'; name: string; color: string; outlineQ: CountryPoint[] }
   | { type: 'claim-territory-shape'; nationId: string; outlineQ: CountryPoint[] }
   | { type: 'release-territory-shape'; nationId: string; outlineQ: CountryPoint[] }
+  | { type: 'reassign-territory-shape'; nationId: string; targetNationId: string; field: 'legal' | 'control'; outlineQ: CountryPoint[] }
   | { type: 'create-city'; nationId: string; name: string; positionQ: CountryPoint }
   | { type: 'set-capital'; nationId: string; cityId: string }
   | { type: 'rename-nation'; nationId: string; name: string }
@@ -98,6 +100,8 @@ export function validateCountryCommand(raw: unknown): raw is CountryCommand {
   const outline = (value: unknown) => countryArray(value, 256) && value.length >= 3 && value.every(countryPoint);
   if (type === 'create-nation-shape') return countryExact(raw, ['type', 'name', 'color', 'outlineQ']) && countryName(raw.name) && typeof raw.color === 'string' && /^#[a-fA-F0-9]{6}$/.test(raw.color) && outline(raw.outlineQ);
   if (type === 'claim-territory-shape' || type === 'release-territory-shape') return countryExact(raw, ['type', 'nationId', 'outlineQ']) && countryId(raw.nationId, 'nation') && outline(raw.outlineQ);
+  if (type === 'reassign-territory-shape') return countryExact(raw, ['type', 'nationId', 'targetNationId', 'field', 'outlineQ']) && countryId(raw.nationId, 'nation') && countryId(raw.targetNationId, 'nation')
+    && raw.nationId !== raw.targetNationId && (raw.field === 'legal' || raw.field === 'control') && validateCountryPolygonOutline(raw.outlineQ);
   if (type === 'create-nation') return countryExact(raw, ['type', 'name', 'color', 'cellIds']) && countryName(raw.name) && typeof raw.color === 'string' && /^#[a-fA-F0-9]{6}$/.test(raw.color) && cells(raw.cellIds);
   if (type === 'claim-territory') return countryExact(raw, ['type', 'nationId', 'cellIds']) && countryId(raw.nationId, 'nation') && cells(raw.cellIds);
   if (type === 'create-city') return countryExact(raw, ['type', 'nationId', 'name', 'positionQ']) && countryId(raw.nationId, 'nation') && countryName(raw.name) && countryPoint(raw.positionQ);

@@ -279,36 +279,68 @@ export function commitFmsEdit(doc: FmsDocument, patch: FmsEditPatch): FmsDocumen
 }
 
 /** Per-session history only; document persistence is independently managed. */
+type FmsHistoryEntry = { kind:'patch'; patch:FmsEditPatch } | { kind:'document'; before:FmsDocument; after:FmsDocument };
+const MAX_HISTORY_BYTES = 64 * 1024 * 1024;
+function documentHistoryBytes(doc:FmsDocument):number {
+  // Conservative payload/array accounting, not a claim about a JS engine's heap.
+  return doc.points.length*160 + doc.neighbors.reduce((n,row)=>n+row.length*16,0)
+    + doc.triangles.byteLength + doc.elevations.byteLength + (doc.terrainLocks?.byteLength??0);
+}
+function historyCost(entry:FmsHistoryEntry) {
+  if(entry.kind==='document')return {cells:entry.before.points.length+entry.after.points.length,bytes:documentHistoryBytes(entry.before)+documentHistoryBytes(entry.after)};
+  const cells=entry.patch.changes.length+(entry.patch.lockChanges?.length??0);
+  return {cells,bytes:cells*80+256};
+}
 export class FmsEditHistory {
   private current: FmsDocument;
-  private past: FmsEditPatch[] = [];
-  private future: FmsEditPatch[] = [];
+  private past: FmsHistoryEntry[] = [];
+  private future: FmsHistoryEntry[] = [];
   constructor(document: FmsDocument) { assertFmsDocument(document); this.current = document; }
   get document(): FmsDocument { return this.current; }
   get canUndo(): boolean { return this.past.length > 0; }
   get canRedo(): boolean { return this.future.length > 0; }
+  private trim():void {
+    const total=this.past.reduce((sum,entry)=>{const cost=historyCost(entry);return {cells:sum.cells+cost.cells,bytes:sum.bytes+cost.bytes};},{cells:0,bytes:0});
+    while(this.past.length>MAX_HISTORY_STEPS||total.cells>MAX_HISTORY_CELLS||total.bytes>MAX_HISTORY_BYTES){const cost=historyCost(this.past.shift()!);total.cells-=cost.cells;total.bytes-=cost.bytes;}
+  }
+  /** Only a verified whole-mesh candidate may enter here. Own both snapshots;
+   * keep version monotonic when later undo crosses the v1 -> v2 lock opt-in. */
+  replaceDocument(candidate:FmsDocument,baseRevision:number):FmsDocument {
+    if(baseRevision!==this.current.revision||candidate.worldId!==this.current.worldId||candidate.revision!==baseRevision+1
+      ||candidate.width!==this.current.width||candidate.height!==this.current.height||candidate.version<this.current.version)throw new FmsModelError('revision-conflict','地图已变化，请重新预览海岸。');
+    assertFmsDocument(candidate);
+    const before=structuredClone(this.current),after=structuredClone(candidate);
+    this.past.push({kind:'document',before,after});this.future=[];this.current=structuredClone(after);this.trim();return this.current;
+  }
+  private restore(snapshot:FmsDocument):FmsDocument {
+    const next=structuredClone(snapshot),revision=this.current.revision+1;
+    if(this.current.version===2&&next.version===1){next.version=2;next.terrainLocks=new Uint8Array(next.points.length);}
+    next.revision=revision;assertFmsDocument(next);return next;
+  }
   commit(patch: FmsEditPatch): FmsDocument {
     const next = commitFmsEdit(this.current, patch);
     if (next === this.current) return this.current;
     const owned = { ...patch, changes: patch.changes.map(change => ({ ...change })), ...(patch.lockChanges ? { lockChanges: patch.lockChanges.map(change => ({ ...change })) } : {}) };
-    this.past.push(owned); this.future = []; this.current = next;
-    let cells = this.past.reduce((total, entry) => total + entry.changes.length + (entry.lockChanges?.length ?? 0), 0);
-    while (this.past.length > MAX_HISTORY_STEPS || cells > MAX_HISTORY_CELLS) { const oldest = this.past.shift()!; cells -= oldest.changes.length + (oldest.lockChanges?.length ?? 0); }
+    this.past.push({kind:'patch',patch:owned}); this.future = []; this.current = next;this.trim();
     return this.current;
   }
   undo(): FmsDocument {
-    const patch = this.past.at(-1);
-    if (!patch) return this.current;
+    const entry = this.past.at(-1);
+    if (!entry) return this.current;
+    if(entry.kind==='document'){const next=this.restore(entry.before);this.past.pop();this.future.push(entry);this.current=next;return next;}
+    const patch=entry.patch;
     const reverse = (change: FmsCellChange) => ({ cell: change.cell, previous: change.next, next: change.previous });
     const next = commitFmsEdit(this.current, { ...patch, baseRevision: this.current.revision, changes: patch.changes.map(reverse), ...(patch.lockChanges ? { lockChanges: patch.lockChanges.map(reverse) } : {}) });
-    this.past.pop(); this.future.push(patch); this.current = next;
+    this.past.pop(); this.future.push(entry); this.current = next;
     return next;
   }
   redo(): FmsDocument {
-    const patch = this.future.at(-1);
-    if (!patch) return this.current;
+    const entry = this.future.at(-1);
+    if (!entry) return this.current;
+    if(entry.kind==='document'){const next=this.restore(entry.after);this.future.pop();this.past.push(entry);this.current=next;return next;}
+    const patch=entry.patch;
     const next = commitFmsEdit(this.current, { ...patch, baseRevision: this.current.revision });
-    this.future.pop(); this.past.push(patch); this.current = next;
+    this.future.pop(); this.past.push(entry); this.current = next;
     return next;
   }
 }

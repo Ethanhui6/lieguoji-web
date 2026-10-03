@@ -4,6 +4,7 @@ import 'pixi.js/unsafe-eval';
 import type { AtlasCamera, CameraPoint } from '../world/camera';
 import type { FmsDocument } from './model';
 import { deriveFmsDrainage, type FmsDrainage } from './hydrology';
+import { deriveFmsShade } from './shading';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; no texture tiles, invented rivers, or generated decoration.
@@ -50,7 +51,8 @@ export class FmsRenderer {
   private overlay = new Graphics();
   private rivers = new Graphics();
   private protection = new Graphics();
-  private surfaces = new WeakMap<Int32Array, { drainage: FmsDrainage; shade: Float32Array; relief: number }>();
+  private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
+  private meshDocument?: Pick<FmsDocument,'points'|'triangles'|'width'|'height'>;
   private geometry?: Geometry;
   private shader?: Shader;
   private destroyed = false;
@@ -71,23 +73,17 @@ export class FmsRenderer {
   setDocument(doc: FmsDocument, drainage?: FmsDrainage): void {
     if (this.destroyed) return;
     let surface=this.surfaces.get(doc.elevations);
-    if(!surface){
-      const shade=new Float32Array(doc.points.length);let low=100,high=0;
+    if(!surface||surface.points!==doc.points||surface.neighbors!==doc.neighbors){
+      const shade=deriveFmsShade(doc);let low=100,high=0;
       for(let cell=0;cell<doc.points.length;cell++){
-        const h=doc.elevations[cell];shade[cell]=1;
+        const h=doc.elevations[cell];
         if(h<20)continue;low=Math.min(low,h);high=Math.max(high,h);
-        const [x,y]=doc.points[cell];let gx=0,gy=0,count=0;
-        for(const neighbor of doc.neighbors[cell]){
-          if(doc.elevations[neighbor]<20)continue;
-          const dx=doc.points[neighbor][0]-x,dy=doc.points[neighbor][1]-y,d2=dx*dx+dy*dy;
-          if(d2<=0)continue;const dh=doc.elevations[neighbor]-h;gx+=dh*dx/d2;gy+=dh*dy/d2;count++;
-        }
-        if(count){gx=gx/count*4;gy=gy/count*4;const light=(1+gx*.48+gy*.6)/Math.hypot(gx,gy,1)/1.26;shade[cell]=Math.max(.65,Math.min(1.13,.65+light*.48));}
       }
-      surface={drainage:drainage??deriveFmsDrainage(doc),shade,relief:Math.max(0,high-low)};
+      surface={points:doc.points,neighbors:doc.neighbors,drainage:drainage??deriveFmsDrainage(doc),shade,relief:Math.max(0,high-low)};
       this.surfaces.set(doc.elevations,surface);
     }
-    if (this.worldId !== doc.worldId) {
+    if (this.worldId !== doc.worldId || this.meshDocument?.points!==doc.points || this.meshDocument?.triangles!==doc.triangles
+      || this.meshDocument?.width!==doc.width || this.meshDocument?.height!==doc.height) {
       this.clearMesh();
       const positions = new Float32Array(doc.points.length * 2);
       doc.points.forEach((p, i) => { positions[i * 2] = p[0]; positions[i * 2 + 1] = p[1]; });
@@ -97,7 +93,7 @@ export class FmsRenderer {
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
       this.bound = new Graphics().rect(0,0,doc.width,doc.height).stroke({ width: 1, color: 0xb0c1be, alpha: .25 });
-      this.scene.addChild(this.mesh, this.rivers, this.protection, this.bound, this.overlay); this.worldId = doc.worldId;
+      this.scene.addChild(this.mesh, this.rivers, this.protection, this.bound, this.overlay); this.worldId = doc.worldId;this.meshDocument=doc;
     } else if (this.geometry) {
       const buffer = this.geometry.getBuffer('aHeight'); buffer.data = Float32Array.from(doc.elevations); buffer.update();
       const shades=this.geometry.getBuffer('aShade');shades.data=surface.shade;shades.update();
@@ -111,6 +107,7 @@ export class FmsRenderer {
       this.rivers.moveTo(a[0],a[1]).lineTo(b[0],b[1]).stroke({width,color:0x527f88,alpha:.9,cap:'round'});
     }
     this.canvas.dataset.minHeight=String(Math.min(...doc.elevations));
+    this.canvas.dataset.pointCount=String(doc.points.length);this.canvas.dataset.triangleCount=String(doc.triangles.length/3);
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
     this.canvas.dataset.riverSegments=String(surface.relief>=6?surface.drainage.riverSegments.length:0);
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
@@ -153,7 +150,7 @@ export class FmsRenderer {
   private draw(): void { if(this.initialized&&!this.destroyed&&!this.contextLost) this.app.render(); }
   private clearMesh(): void {
     this.mesh?.destroy(); this.bound?.destroy(); this.geometry?.destroy(true); this.shader?.destroy(true);
-    this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;
+    this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;this.meshDocument=undefined;
   }
   destroy(): void { if(this.destroyed)return; this.destroyed=true; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

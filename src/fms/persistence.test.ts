@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { commitFmsEdit, prepareFmsLockEdit, type FmsDocument } from './model';
+import { commitFmsEdit, FmsEditHistory, prepareFmsLockEdit, type FmsDocument } from './model';
+import { coastFixture } from '../../tests/helpers/fms-coast-metrics';
+import { prepareFmsCoastPreview, refineFmsCoast } from './coast-refinement';
 import { FMS_DATABASE_NAME, FmsPersistenceError, loadFmsDocument, saveFmsDocument } from './persistence';
 
 function document(revision = 0, height = 0): FmsDocument {
@@ -58,6 +60,15 @@ async function protectionBackup(): Promise<unknown> {
 }
 
 describe('protected document v2 opt-in and old-client isolation', () => {
+  it('saves and restores refined geometry on DB1, then preserves that v1 mesh through two protected DB2 saves and undo', async()=>{
+    const original=coastFixture('neck'),options={seed:1337,maxOffset:4},candidate=prepareFmsCoastPreview(original,refineFmsCoast(original,options),options);
+    await saveFmsDocument(candidate,null);expect((await loadFmsDocument())!.document).toEqual(candidate);const v1=(await slots()).current;
+    const history=new FmsEditHistory(original);history.replaceDocument(candidate,0);
+    history.commit(prepareFmsLockEdit(history.document,[{x:100,y:100,radius:20}],true));await saveFmsDocument(history.document,1);
+    history.undo();history.undo();expect(history.document.version).toBe(2);expect(history.document.points).toEqual(original.points);
+    await saveFmsDocument(history.document,2);expect(await protectionBackup()).toEqual(v1);expect((await loadFmsDocument())!.document).toEqual(history.document);
+    history.redo();history.redo();await saveFmsDocument(history.document,3);expect((await loadFmsDocument())!.document).toEqual(history.document);expect(await protectionBackup()).toEqual(v1);
+  });
   it('keeps ordinary v1 reads/saves on DB1, then atomically stores v2 locks with a durable v1 checkpoint', async () => {
     const original = document(1, 45); await saveFmsDocument(original, null);
     const old = (await slots()).current; const oldDb = await database(); expect(oldDb.version).toBe(1); oldDb.close();

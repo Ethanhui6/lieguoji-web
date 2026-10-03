@@ -5,6 +5,7 @@ import { commitFmsEdit, FmsEditHistory, prepareFmsLockEdit, type FmsDocument } f
 import { coastFixture } from '../../tests/helpers/fms-coast-metrics';
 import { prepareFmsCoastPreview, refineFmsCoast } from './coast-refinement';
 import { prepareFmsCoastSmoothPreview, smoothFmsCoast } from './coast-smoothing';
+import { deriveFmsShade } from './shading';
 import { FMS_DATABASE_NAME, FmsPersistenceError, loadFmsDocument, saveFmsDocument } from './persistence';
 
 function document(revision = 0, height = 0): FmsDocument {
@@ -61,14 +62,15 @@ async function protectionBackup(): Promise<unknown> {
 }
 
 describe('protected document v2 opt-in and old-client isolation', () => {
-  it('saves a smoothed mesh, restores exact positions and protection, and persists undo/redo without changing the v1 archive',async()=>{
+  it.each([false,true])('saves a smoothed mesh (resample=%s), restores exact positions and protection, and persists undo/redo without changing the v1 archive',async resample=>{
     const source=coastFixture('asymmetric'),first=await saveFmsDocument(source,null),history=new FmsEditHistory(source);
     history.commit(prepareFmsLockEdit(source,[{x:100,y:90,radius:12}],true));
-    const beforeSmooth=structuredClone(history.document),options={maxOffset:4};
+    const beforeSmooth=structuredClone(history.document),options={maxOffset:4,...(resample?{resample:true as const}:{})};
     const result=smoothFmsCoast(history.document,options);expect(result.moves.length).toBeGreaterThan(0);
     const smoothed=structuredClone(history.replaceDocument(prepareFmsCoastSmoothPreview(history.document,result,options),history.document.revision));
     const saved=await saveFmsDocument(history.document,first.storedRevision),restored=await loadFmsDocument();
     expect(restored!.document).toEqual(smoothed);
+    expect(deriveFmsShade(restored!.document)).toEqual(deriveFmsShade(smoothed));
     const undo=history.undo();expect(undo.points).toEqual(beforeSmooth.points);const undoSaved=await saveFmsDocument(undo,saved.storedRevision);
     expect((await loadFmsDocument())!.document.points).toEqual(beforeSmooth.points);
     const redo=history.redo();expect(redo.points).toEqual(smoothed.points);await saveFmsDocument(redo,undoSaved.storedRevision);

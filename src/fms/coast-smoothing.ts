@@ -1,23 +1,25 @@
 import { assertFmsDocument, FmsModelError, type FmsDocument, type FmsPoint } from './model';
+import { resolveFmsCoast } from './coast-resolution';
 
-export const FMS_COAST_SMOOTHING='bounded-coast-relaxation-v1';
-export interface FmsCoastSmoothOptions { maxOffset:number }
+export const FMS_COAST_SMOOTHING='bounded-coast-relaxation-v2';
+export interface FmsCoastSmoothOptions { maxOffset:number; resample?:true }
 export interface FmsCoastSmoothResult {
   worldId:string; baseRevision:number; options:FmsCoastSmoothOptions; moves:{cell:number;point:FmsPoint}[];
-  stats:{algorithm:typeof FMS_COAST_SMOOTHING;maxDisplacement:number;maxComponentAreaFraction:number;maxGradient:number;smallComponentArea:number;turningEnergyBefore:number;turningEnergyAfter:number};
+  stats:{algorithm:typeof FMS_COAST_SMOOTHING;maxDisplacement:number;maxComponentAreaFraction:number;maxGradient:number;smallComponentArea:number;turningEnergyBefore:number;turningEnergyAfter:number;addedPoints:number};
 }
 const AREA_LIMIT=.02,GRADIENT_LIMIT=.2,SMALL_AREA=4096,EPS=1e-8;
 const cross=(a:FmsPoint,b:FmsPoint,c:FmsPoint)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
 const dist=(a:FmsPoint,b:FmsPoint)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
 const fail=()=>new FmsModelError('invalid-edit','海岸平滑未满足几何保护要求，原地图未改变。');
 export function validFmsCoastSmoothOptions(raw:unknown):raw is FmsCoastSmoothOptions{
-  return !!raw&&typeof raw==='object'&&!Array.isArray(raw)&&Object.keys(raw).length===1&&Object.hasOwn(raw,'maxOffset')
+  return !!raw&&typeof raw==='object'&&!Array.isArray(raw)&&Object.keys(raw).every(k=>k==='maxOffset'||k==='resample')&&Object.hasOwn(raw,'maxOffset')
+    &&(!Object.hasOwn(raw,'resample')||(raw as FmsCoastSmoothOptions).resample===true)
     &&typeof (raw as FmsCoastSmoothOptions).maxOffset==='number'&&Number.isFinite((raw as FmsCoastSmoothOptions).maxOffset)
     &&(raw as FmsCoastSmoothOptions).maxOffset>=0&&(raw as FmsCoastSmoothOptions).maxOffset<=4;
 }
 interface Face { ids:number[]; area:number; landFraction:number; landComponent:number; seaComponent:number }
 interface Node {point:FmsPoint;sites:[number,number][];next:Set<number>}
-interface Source { points:FmsPoint[]; faces:Face[]; components:Float64Array; fixed:Uint8Array;nodes:Node[] }
+interface Source { points:FmsPoint[]; faces:Face[]; components:Float64Array; fixed:Uint8Array;nodes:Node[];addedPoints:number }
 
 function landFraction(points:FmsPoint[],heights:number[],area:number):number{
   const polygon:FmsPoint[]=[];
@@ -29,9 +31,9 @@ function landFraction(points:FmsPoint[],heights:number[],area:number):number{
 /** A connected, orientable manifold disk with a once-covered rectangular
  * boundary and strictly positive oriented faces has degree one. This verifies
  * the global source-embedding precondition, not just each triangle in isolation. */
-function sourceGeometry(doc:FmsDocument):Source{
+function sourceGeometry(doc:FmsDocument,reference?:FmsPoint[]):Source{
   assertFmsDocument(doc);if(doc.elevations.some(h=>h<0||h>100))throw fail();
-  const points=doc.points.map(p=>p.map(Math.fround) as FmsPoint),n=points.length,incident:number[][]=Array.from({length:n},()=>[]);
+  const points=reference??doc.points.map(p=>p.map(Math.fround) as FmsPoint),n=points.length,incident:number[][]=Array.from({length:n},()=>[]);
   const edges=new Map<string,{a:number;b:number;count:number;balance:number;faces:number[]}>(),faces:Face[]=[],fixed=new Uint8Array(n);
   for(let t=0;t<doc.triangles.length;t+=3){
     const ids=Array.from(doc.triangles.slice(t,t+3)),signed=cross(points[ids[0]],points[ids[1]],points[ids[2]]);if(!Number.isFinite(signed)||Math.abs(signed)<=EPS||signed*cross(doc.points[ids[0]],doc.points[ids[1]],doc.points[ids[2]])<=0)throw fail();
@@ -90,7 +92,21 @@ function sourceGeometry(doc:FmsDocument):Source{
     const small=(face.landComponent>=0&&components[face.landComponent]<SMALL_AREA)||(face.seaComponent>=0&&components[face.seaComponent]<SMALL_AREA);
     if(face.ids.some(i=>doc.terrainLocks?.[i])||(mixed&&face.ids.some(i=>!support[i]))||(coast&&small))face.ids.forEach(i=>fixed[i]=1);}
   for(const node of nodes)if(node.next.size!==2)node.sites.forEach(([i])=>fixed[i]=1);
-  return {points,faces,components,fixed,nodes};
+  return {points,faces,components,fixed,nodes,addedPoints:0};
+}
+/** Shared preparation for generation, untrusted-response validation and
+ * independent geometric audits. Reference points are deliberately unrounded. */
+export function prepareFmsCoastSmoothGeometry(original:FmsDocument,options:FmsCoastSmoothOptions){
+  if(!validFmsCoastSmoothOptions(options))throw fail();
+  const base=sourceGeometry(original);
+  if(!options.resample||options.maxOffset===0)return {doc:original,source:base,interpolation:[] as [number,number,number][]};
+  const {document:doc,reference,interpolation}=resolveFmsCoast(original,base.fixed);
+  if(doc===original)return {doc,source:base,interpolation};
+  // Certify final positions against preimages on the old rendered surface.
+  // This includes float32 subdivision error in displacement/area/gradient.
+  const source=sourceGeometry(doc,reference);source.addedPoints=doc.points.length-original.points.length;
+  for(let i=0;i<original.points.length;i++)if(base.fixed[i])source.fixed[i]=1;
+  return {doc,source,interpolation};
 }
 function faceGradient(source:FmsPoint[],candidate:FmsPoint[],ids:number[]):number{
   const [a,b,c]=ids.map(i=>source[i]),[da,db,dc]=ids.map(i=>[Math.fround(candidate[i][0])-source[i][0],Math.fround(candidate[i][1])-source[i][1]]),D=cross(a,b,c);
@@ -111,18 +127,18 @@ function metrics(source:Source,points:FmsPoint[]):FmsCoastSmoothResult['stats']{
       const ax=a[0]-p[0],ay=a[1]-p[1],bx=b[0]-p[0],by=b[1]-p[1],length=Math.hypot(ax,ay)*Math.hypot(bx,by);
       if(length)value+=Math.acos(Math.max(-1,Math.min(1,-(ax*bx+ay*by)/length)))**2;});return value;
   };
-  return {algorithm:FMS_COAST_SMOOTHING,maxDisplacement,maxComponentAreaFraction,maxGradient,smallComponentArea:SMALL_AREA,turningEnergyBefore:energy(source.points),turningEnergyAfter:energy(rounded)};
+  return {algorithm:FMS_COAST_SMOOTHING,maxDisplacement,maxComponentAreaFraction,maxGradient,smallComponentArea:SMALL_AREA,turningEnergyBefore:energy(source.points),turningEnergyAfter:energy(rounded),addedPoints:source.addedPoints};
 }
 /** A separate, explicitly chosen operation. Per connected land/sea component
  * area is bounded by 2%; displacement gradient norm <= .2 bounds compression
  * and shear. This is NOT the previous per-parent-face microdetail contract. */
-export function smoothFmsCoast(doc:FmsDocument,options:FmsCoastSmoothOptions):FmsCoastSmoothResult{
-  if(!validFmsCoastSmoothOptions(options))throw fail();const source=sourceGeometry(doc),n=doc.points.length;
+export function smoothFmsCoast(original:FmsDocument,options:FmsCoastSmoothOptions):FmsCoastSmoothResult{
+  if(!validFmsCoastSmoothOptions(options))throw fail();const {doc,source,interpolation}=prepareFmsCoastSmoothGeometry(original,options),n=doc.points.length;
   const empty=()=>({worldId:doc.worldId,baseRevision:doc.revision,options:{...options},moves:[],stats:metrics(source,doc.points)});
   if(options.maxOffset===0||!source.nodes.length)return empty();
-  const weights=new Float64Array(n),delta:FmsPoint[]=Array.from({length:n},()=>[0,0]),radius=Math.sqrt(doc.width*doc.height/n)*2;
+  const weights=new Float64Array(n),delta:FmsPoint[]=Array.from({length:n},()=>[0,0]),targets:FmsPoint[]=[],radius=Math.sqrt(doc.width*doc.height/n)*2;
   for(let index=0;index<source.nodes.length;index++){
-    const node=source.nodes[index];if(node.next.size!==2)continue;let x=node.point[0],y=node.point[1],weight=1;
+    const node=source.nodes[index];targets[index]=[0,0];if(node.next.size!==2)continue;let x=node.point[0],y=node.point[1],weight=1;
     for(let next of node.next){let previous=index,arc=0;for(let step=0;step<30;step++){
       const current=source.nodes[next];arc+=dist(current.point,source.nodes[previous].point);if(arc>radius*2||current.next.size!==2||next===index)break;
       const w=Math.exp(-3*(arc/radius)**2);x+=current.point[0]*w;y+=current.point[1]*w;weight+=w;
@@ -131,6 +147,7 @@ export function smoothFmsCoast(doc:FmsDocument,options:FmsCoastSmoothOptions):Fm
     // Keep a common field when changing the user's bound. Clamping each node
     // to a different radius first can create extra bends at low settings.
     if(length>4){dx*=4/length;dy*=4/length;}
+    targets[index]=[dx,dy];
     for(const[i,w]of node.sites){delta[i][0]+=dx*w;delta[i][1]+=dy*w;weights[i]+=w;}
   }
   for(let i=0;i<n;i++){
@@ -138,7 +155,30 @@ export function smoothFmsCoast(doc:FmsDocument,options:FmsCoastSmoothOptions):Fm
     if(weights[i]){delta[i][0]/=weights[i];delta[i][1]/=weights[i];}
   }
   let field=delta;
-  for(let pass=0;pass<8;pass++){const next=field.map(v=>[...v] as FmsPoint);for(let i=0;i<n;i++){
+  if(options.resample){
+    // Graph diffusion across thin newly split faces assigns unrelated motion
+    // to spatially adjacent vertices. Use one compact C2 spatial field, then
+    // scale it uniformly; per-vertex gradient damping introduces new zigzags.
+    const size=radius*2,buckets=new Map<string,number[]>(),fixedBuckets=new Map<string,number[]>();
+    const insert=(map:Map<string,number[]>,p:FmsPoint,i:number)=>{const key=`${Math.floor(p[0]/size)}:${Math.floor(p[1]/size)}`,row=map.get(key)??[];row.push(i);map.set(key,row);};
+    source.nodes.forEach((node,i)=>insert(buckets,node.point,i));source.points.forEach((p,i)=>{if(source.fixed[i])insert(fixedBuckets,p,i);});
+    field=source.points.map((p,i)=>{
+      if(source.fixed[i])return [0,0];let x=0,y=0,weight=1,nearest=size;const cx=Math.floor(p[0]/size),cy=Math.floor(p[1]/size);
+      for(let bx=cx-1;bx<=cx+1;bx++)for(let by=cy-1;by<=cy+1;by++){
+        const key=`${bx}:${by}`;for(const j of buckets.get(key)??[]){const d=dist(p,source.nodes[j].point)/size;if(d>=1)continue;const w=(1-d*d)**3;x+=targets[j][0]*w;y+=targets[j][1]*w;weight+=w;}
+        for(const j of fixedBuckets.get(key)??[])nearest=Math.min(nearest,dist(p,source.points[j]));
+      }
+      const f=Math.min(1,nearest/radius),fade=f*f*(3-2*f);return [x/weight*fade,y/weight*fade];
+    });
+    // Retain the useful broad relaxation from the coarse surface. Transport
+    // it exactly to child preimages, then add a smaller continuous fine field.
+    // The combined FINAL field still passes the same original-map budgets.
+    const broad=smoothFmsCoast(original,{maxOffset:options.maxOffset}),transport:FmsPoint[]=original.points.map(()=>[0,0]);
+    for(const move of broad.moves)transport[move.cell]=[move.point[0]-source.points[move.cell][0],move.point[1]-source.points[move.cell][1]];
+    for(const[a,b,t]of interpolation)transport.push([transport[a][0]*(1-t)+transport[b][0]*t,transport[a][1]*(1-t)+transport[b][1]*t]);
+    field=field.map((p,i)=>source.fixed[i]?[0,0]:[transport[i][0]*.85+p[0]*.15,transport[i][1]*.85+p[1]*.15]);
+  }
+  for(let pass=0;pass<(options.resample?0:8);pass++){const next=field.map(v=>[...v] as FmsPoint);for(let i=0;i<n;i++){
     if(source.fixed[i]){next[i]=[0,0];continue;}if(weights[i])continue;const row=doc.neighbors[i];
     next[i]=[row.reduce((sum,j)=>sum+field[j][0],0)/row.length*.9,row.reduce((sum,j)=>sum+field[j][1],0)/row.length*.9];}field=next;}
   if(field.every(v=>v[0]===0&&v[1]===0))return empty();
@@ -160,9 +200,10 @@ export function smoothFmsCoast(doc:FmsDocument,options:FmsCoastSmoothOptions):Fm
   };
   let accepted=false;
   for(let pass=0;pass<150;pass++){
-    points=proposal();const reduce=new Uint8Array(n);let violations=0;
-    for(const face of source.faces)if(faceGradient(source.points,points,face.ids)>GRADIENT_LIMIT){violations++;face.ids.forEach(i=>reduce[i]=1);}
+    points=proposal();const reduce=new Uint8Array(n);let violations=0,maxGradient=0;
+    for(const face of source.faces){const gradient=faceGradient(source.points,points,face.ids);maxGradient=Math.max(maxGradient,gradient);if(gradient>GRADIENT_LIMIT){violations++;face.ids.forEach(i=>reduce[i]=1);}}
     if(!violations){accepted=true;break;}
+    if(options.resample){const factor=Math.min(.8,.19/maxGradient);for(let i=0;i<n;i++)scales[i]*=factor;continue;}
     for(const[i,knot]of knots)if(reduce[i])knot.ids.forEach(j=>reduce[j]=1);
     for(let i=0;i<n;i++)if(reduce[i])scales[i]*=.8;
   }
@@ -173,10 +214,11 @@ export function smoothFmsCoast(doc:FmsDocument,options:FmsCoastSmoothOptions):Fm
   const moves=points.flatMap((point,cell)=>point[0]===doc.points[cell][0]&&point[1]===doc.points[cell][1]?[]:[{cell,point:[...point] as FmsPoint}]);
   return {worldId:doc.worldId,baseRevision:doc.revision,options:{...options},moves,stats};
 }
-export function prepareFmsCoastSmoothPreview(doc:FmsDocument,raw:FmsCoastSmoothResult,options:FmsCoastSmoothOptions):FmsDocument{
-  if(!validFmsCoastSmoothOptions(options)||!raw||Object.keys(raw).length!==5||raw.worldId!==doc.worldId||raw.baseRevision!==doc.revision||!validFmsCoastSmoothOptions(raw.options)
-    ||raw.options.maxOffset!==options.maxOffset||!Array.isArray(raw.moves)||raw.moves.length>doc.points.length)throw fail();
-  const source=sourceGeometry(doc),points=doc.points.map(p=>[...p] as FmsPoint),seen=new Set<number>();
+export function prepareFmsCoastSmoothPreview(original:FmsDocument,raw:FmsCoastSmoothResult,options:FmsCoastSmoothOptions):FmsDocument{
+  if(!validFmsCoastSmoothOptions(options)||!raw||Object.keys(raw).length!==5||raw.worldId!==original.worldId||raw.baseRevision!==original.revision||!validFmsCoastSmoothOptions(raw.options)
+    ||raw.options.maxOffset!==options.maxOffset||raw.options.resample!==options.resample||!Array.isArray(raw.moves))throw fail();
+  const {doc,source}=prepareFmsCoastSmoothGeometry(original,options);if(raw.moves.length>doc.points.length)throw fail();
+  const points=doc.points.map(p=>[...p] as FmsPoint),seen=new Set<number>();
   for(const move of raw.moves){if(!move||Object.keys(move).length!==2||!Number.isInteger(move.cell)||move.cell<0||move.cell>=points.length||seen.has(move.cell)||source.fixed[move.cell]
     ||!Array.isArray(move.point)||move.point.length!==2||move.point.some(v=>!Number.isFinite(v)||v!==Math.fround(v)))throw fail();
     seen.add(move.cell);points[move.cell]=[...move.point];}
@@ -184,6 +226,6 @@ export function prepareFmsCoastSmoothPreview(doc:FmsDocument,raw:FmsCoastSmoothR
   for(const face of source.faces)if(cross(doc.points[face.ids[0]],doc.points[face.ids[1]],doc.points[face.ids[2]])*cross(points[face.ids[0]],points[face.ids[1]],points[face.ids[2]])<=0)throw fail();
   if(!raw.stats||Object.keys(raw.stats).length!==Object.keys(stats).length||Object.keys(stats).some(key=>raw.stats[key as keyof typeof stats]!==stats[key as keyof typeof stats])
     ||stats.maxDisplacement>options.maxOffset||stats.maxComponentAreaFraction>AREA_LIMIT||stats.maxGradient>GRADIENT_LIMIT||(seen.size>0&&stats.turningEnergyAfter>=stats.turningEnergyBefore))throw fail();
-  if(!seen.size)return doc;
+  if(!seen.size)return original;
   const candidate={...doc,points,revision:doc.revision+1};assertFmsDocument(candidate);return candidate;
 }

@@ -22,8 +22,8 @@ function area(polygon: Vertex[]): number {
   for (let i = 0; i < polygon.length; i++) { const a = polygon[i], b = polygon[(i + 1) % polygon.length]; sum += a[0] * b[1] - b[0] * a[1]; }
   return Math.abs(sum) * .5;
 }
-export function linearCoastMetrics(doc: FmsDocument, heights = doc.elevations, sectionX?: number) {
-  const vertices: Vertex[] = doc.points.map(([x, y], i) => [Math.fround(x), Math.fround(y), heights[i]]);
+export function linearCoastMetrics(doc: FmsDocument, heights = doc.elevations, sectionX?: number, round = true) {
+  const vertices: Vertex[] = doc.points.map(([x, y], i) => [round?Math.fround(x):x, round?Math.fround(y):y, heights[i]]);
   const crossings = new Map<string, readonly [number, number]>(), triangleAreas: number[] = [], intervals: [number, number][] = [];
   for (let offset = 0; offset < doc.triangles.length; offset += 3) {
     const ids = Array.from(doc.triangles.slice(offset, offset + 3)), polygon = clippedTriangle(ids.map(id => vertices[id]));

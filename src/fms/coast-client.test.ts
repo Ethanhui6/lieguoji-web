@@ -17,11 +17,11 @@ const worker=()=>WorkerDouble.all.at(-1)!;
 beforeEach(()=>{WorkerDouble.all=[];vi.stubGlobal('Worker',WorkerDouble);});
 afterEach(()=>{clients.splice(0).forEach(c=>c.close());vi.unstubAllGlobals();vi.useRealTimers();vi.restoreAllMocks();});
 describe('coast Worker lifecycle and owned preview',()=>{
-  it('routes the distinct smoothing operation and refuses a response for the other mode',async()=>{
-    const doc=coastFixture('neck'),original=structuredClone(doc),c=client(),pending=c.smooth(doc,{maxOffset:4});
+  it.each([false,true])('routes smoothing (resample=%s) and refuses a response for the other mode',async resample=>{
+    const chosen={maxOffset:4,...(resample?{resample:true as const}:{})},doc=coastFixture('neck'),original=structuredClone(doc),c=client(),pending=c.smooth(doc,chosen);
     expect(worker().messages[0].kind).toBe('smooth-coast');doc.elevations.fill(0);worker().reply();const answer=await pending;
-    expect(answer.result.moves.length).toBeGreaterThan(0);expect(answer.document.elevations).toEqual(original.elevations);expect(answer.document.points.length).toBe(original.points.length);
-    const next=c.smooth(original,{maxOffset:4}),reject=expect(next).rejects.toThrow();
+    expect(answer.result.moves.length).toBeGreaterThan(0);expect(answer.document.elevations.slice(0,original.points.length)).toEqual(original.elevations);expect(answer.document.points.length).toBe(original.points.length+answer.result.stats.addedPoints);
+    const next=c.smooth(original,chosen),reject=expect(next).rejects.toThrow();
     const response=runFmsCoastRequest(worker().messages.at(-1));worker().reply({...response,kind:'refined-coast'});await reject;
   });
   it('cancels smoothing without a late completion, then switches safely to microdetail',async()=>{

@@ -23,5 +23,17 @@ export function deriveFmsShade(doc:FmsDocument):Float32Array{
     const wa=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(y-c[1]))/total,wb=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/total,wc=1-wa-wb;
     if(Math.min(wa,wb,wc)<0)continue;shade[cell]=wa*shade[row[0]]+wb*shade[row[1]]+wc*shade[row[2]];
   }
+  // Explicit sea-level edges have more than one h20 neighbor. Reconstruct a
+  // bounded, deterministic coast shade from the stored mesh on every load;
+  // treating every inserted vertex as shade=1 creates a false bright ribbon.
+  const edgeKnots=doc.neighbors.flatMap((row,i)=>doc.elevations[i]===20&&row.some(j=>doc.elevations[j]===20)?[i]:[]);
+  for(let pass=0;pass<24&&edgeKnots.length;pass++){
+    const next=new Float32Array(shade);
+    for(const i of edgeKnots){let sum=0,weight=0;for(const j of doc.neighbors[i]){
+      const distance=Math.hypot(doc.points[i][0]-doc.points[j][0],doc.points[i][1]-doc.points[j][1]);
+      if(distance<=0)continue;const w=1/distance;sum+=shade[j]*w;weight+=w;
+    }if(weight)next[i]=sum/weight;}
+    for(const i of edgeKnots)shade[i]=next[i];
+  }
   return shade;
 }

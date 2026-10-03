@@ -33,6 +33,7 @@
 .fms-toolbar nav,.fms-actions { display:flex;gap:3px;align-items:stretch; }
 .fms-toolbar nav button { min-width:63px;border-color:transparent;display:flex;align-items:center;justify-content:center;gap:7px; }
 .fms-toolbar nav button[aria-pressed="true"] { background:var(--active);color:#fbf5dd;border-color:#586449; }
+.fms-toolbar nav button[aria-pressed="true"]:hover:not(:disabled) { background:#5f6c4d;color:#fbf5dd; }
 .fms-toolbar nav button>span { font-size:19px;line-height:1; }
 .fms-actions { padding-left:8px;border-left:1px solid #c1c3af; }
 .fms-actions button { padding:4px;min-width:44px;border-color:transparent;font-size:24px; }

@@ -34,11 +34,11 @@ function minimumSpillSurfaces(doc: FmsDocument, terminals: number[]): number[] {
 
 /** Kahn's independent upstream elimination proves acyclicity and recomputes conservation. */
 function checkConservation(doc: FmsDocument, drainage: FmsDrainage): void {
-  const count = doc.points.length, upstream = new Uint32Array(count), flow = new Uint32Array(count);
+  const count = doc.points.length, upstream = new Uint32Array(count), flow = drainage.runoff.slice();
   let edgesValid = true, descends = true, seaValid = true;
   for (let source = 0; source < count; source += 1) {
     const target = drainage.receiver[source], land = doc.elevations[source] >= FMS_SEA_LEVEL;
-    flow[source] = land ? 1 : 0;
+    if (!land) expect(flow[source]).toBe(0);
     if (target !== -1) {
       edgesValid &&= target !== source && doc.neighbors[source].includes(target);
       descends &&= drainage.filledElevation[target] <= drainage.filledElevation[source];
@@ -55,8 +55,8 @@ function checkConservation(doc: FmsDocument, drainage: FmsDrainage): void {
     if (--upstream[target] === 0) queue.push(target);
   }
   expect({ edgesValid, descends, seaValid, visited: queue.length }).toEqual({ edgesValid: true, descends: true, seaValid: true, visited: count });
-  expect(drainage.accumulation).toEqual(Float32Array.from(flow));
-  expect(drainage.stats.seaDischarge + drainage.stats.endorheicDischarge).toBe(drainage.stats.landCells);
+  flow.forEach((value, i) => expect(drainage.accumulation[i]).toBeCloseTo(value, 7));
+  expect(drainage.stats.seaDischarge + drainage.stats.endorheicDischarge).toBeCloseTo(drainage.stats.landArea, 6);
   expect(drainage.riverSegments.every(([source, target]) => drainage.receiver[source] === target
     && drainage.accumulation[source] >= drainage.stats.minCatchment && doc.elevations[source] >= FMS_SEA_LEVEL
     && drainage.lakeDepth[source] <= 0.5 && doc.elevations[target] <= doc.elevations[source])).toBe(true);
@@ -65,27 +65,28 @@ function checkConservation(doc: FmsDocument, drainage: FmsDrainage): void {
 describe('FMS height-derived static runoff', () => {
   it('routes two actual tributaries through a confluence to sea with exact catchment totals', () => {
     const doc = strip(), before = structuredClone(doc);
-    const drainage = deriveFmsDrainage(doc, { minCatchment: 2 });
+    const drainage = deriveFmsDrainage(doc, { minCatchment: .8 });
     // Cells 4 and 5 feed 3, then 1, then sea 0. Cell 2 has its own coastal outlet.
     expect([...drainage.receiver]).toEqual([-1, 0, 0, 1, 3, 3]);
-    expect([...drainage.accumulation]).toEqual([5, 4, 1, 3, 1, 1]);
+    [1.92, 1 + .21 + 1/6, .21 + 1/3, 1, 1/3, 1/6].forEach((value, i) => expect(drainage.accumulation[i]).toBeCloseTo(value, 12));
     expect(drainage.riverSegments).toEqual([[1, 0], [3, 1]]);
-    expect(drainage.stats).toEqual({ cellCount: 6, landCells: 5, seaCells: 1, connectedComponents: 1,
-      endorheicBasins: 0, filledLandCells: 0, maxLakeDepth: 0, minCatchment: 2,
-      riverSegmentCount: 2, seaDischarge: 5, endorheicDischarge: 0, maxAccumulation: 5 });
+    expect(drainage.stats).toMatchObject({ algorithm: 'land-area-runoff-v2', cellCount: 6, landCells: 5, seaCells: 1, connectedComponents: 1,
+      endorheicBasins: 0, filledLandCells: 0, maxLakeDepth: 0, minCatchment: .8,
+      riverSegmentCount: 2, endorheicDischarge: 0 });
+    expect(drainage.stats.landArea).toBeCloseTo(1.92, 12);
     expect(doc).toEqual(before);
     checkConservation(doc, drainage);
   });
 
   it('fills a closed depression to its lowest saddle and excludes submerged internal flow lines', () => {
     const doc = strip([0, 60, 100, 25, 30, 90]);
-    const drainage = deriveFmsDrainage(doc, { minCatchment: 1 });
+    const drainage = deriveFmsDrainage(doc, { minCatchment: .1 });
     expect([...drainage.filledElevation]).toEqual([0, 60, 100, 60, 60, 90]);
     expect([...drainage.filledElevation]).toEqual(minimumSpillSurfaces(doc, [0]));
     expect([...drainage.lakeDepth]).toEqual([0, 0, 0, 35, 30, 0]);
     expect([...doc.elevations]).toEqual([0, 60, 100, 25, 30, 90]);
     expect(drainage.riverSegments).toEqual([[1, 0], [2, 0], [5, 3]]);
-    expect(drainage.stats).toMatchObject({ filledLandCells: 2, maxLakeDepth: 35, seaDischarge: 5 });
+    expect(drainage.stats).toMatchObject({ filledLandCells: 2, maxLakeDepth: 35 });
     checkConservation(doc, drainage);
   });
 
@@ -106,7 +107,9 @@ describe('FMS height-derived static runoff', () => {
     const original = deriveFmsDrainage(doc, { minCatchment: 1 });
     const reordered = { ...doc, neighbors: doc.neighbors.map(neighbors => [...neighbors].reverse()),
       triangles: Uint32Array.of(5, 4, 3, 4, 3, 2, 3, 2, 1, 2, 1, 0) };
-    expect(deriveFmsDrainage(reordered, { minCatchment: 1 })).toEqual(original);
+    const rearranged = deriveFmsDrainage(reordered, { minCatchment: 1 });
+    expect(rearranged.receiver).toEqual(original.receiver);
+    rearranged.accumulation.forEach((value, i) => expect(value).toBeCloseTo(original.accumulation[i], 12));
     expect(deriveFmsDrainage(doc, { minCatchment: 1 })).toEqual(original);
     checkConservation(doc, original);
   });
@@ -118,7 +121,7 @@ describe('FMS height-derived static runoff', () => {
     expect([...drainage.filledElevation]).toEqual([...doc.elevations]);
     expect([...drainage.lakeDepth]).toEqual([0, 0, 0, 0, 0, 0]);
     expect(drainage.riverSegments).toEqual([]);
-    expect(drainage.stats).toMatchObject({ landCells: 0, seaCells: 6, endorheicBasins: 0, minCatchment: 8,
+    expect(drainage.stats).toMatchObject({ landCells: 0, seaCells: 6, endorheicBasins: 0, minCatchment: 512,
       seaDischarge: 0, endorheicDischarge: 0, maxAccumulation: 0 });
     checkConservation(doc, drainage);
   });
@@ -126,9 +129,9 @@ describe('FMS height-derived static runoff', () => {
   it('keeps an entirely continental mesh endorheic instead of inventing an off-map sea outlet', () => {
     const doc = strip([80, 70, 90, 25, 60, 100]), drainage = deriveFmsDrainage(doc, { minCatchment: 1 });
     expect([...drainage.receiver].flatMap((target, source) => target === -1 ? [source] : [])).toEqual([3]);
-    expect(drainage.accumulation[3]).toBe(6);
+    expect(drainage.accumulation[3]).toBeCloseTo(2, 12);
     expect(drainage.stats).toMatchObject({ landCells: 6, seaCells: 0, endorheicBasins: 1,
-      seaDischarge: 0, endorheicDischarge: 6 });
+      seaDischarge: 0 });
     expect([...drainage.filledElevation]).toEqual(minimumSpillSurfaces(doc, [3]));
     checkConservation(doc, drainage);
     const flat = strip([20, 20, 20, 20, 20, 20]), sameHeight = deriveFmsDrainage(flat, { minCatchment: 1 });
@@ -141,14 +144,15 @@ describe('FMS height-derived static runoff', () => {
     const doc = mesh([[0, 0], [1, 0], [0, 1], [5, 5], [6, 5], [5, 6]], [0, 1, 2, 3, 4, 5], [0, 30, 40, 60, 25, 70]);
     const drainage = deriveFmsDrainage(doc, { minCatchment: 1 });
     expect([...drainage.receiver]).toEqual([-1, 0, 0, 4, -1, 4]);
-    expect([...drainage.accumulation]).toEqual([2, 1, 1, 1, 3, 1]);
+    const firstArea = .5 * (1 - (20/30) * (20/40));
+    [firstArea, firstArea/2, firstArea/2, 1/6, .5, 1/6].forEach((value, i) => expect(drainage.accumulation[i]).toBeCloseTo(value, 12));
     expect(drainage.stats).toMatchObject({ connectedComponents: 2, endorheicBasins: 1, landCells: 5,
-      seaDischarge: 2, endorheicDischarge: 3 });
+      endorheicDischarge: .5 });
     checkConservation(doc, drainage);
   });
 
   it('uses catchment threshold only for visibility, never to alter receivers or physical accumulation', () => {
-    const doc = strip(), fine = deriveFmsDrainage(doc, { minCatchment: 1 }), major = deriveFmsDrainage(doc, { minCatchment: 4 });
+    const doc = strip(), fine = deriveFmsDrainage(doc, { minCatchment: .1 }), major = deriveFmsDrainage(doc, { minCatchment: 1.2 });
     expect(major.receiver).toEqual(fine.receiver);
     expect(major.accumulation).toEqual(fine.accumulation);
     expect(major.filledElevation).toEqual(fine.filledElevation);
@@ -167,13 +171,13 @@ describe('FMS height-derived static runoff', () => {
     checkConservation(doc, drainage);
   });
 
-  it.each([0, -1, 1.5, NaN, Infinity, 50_001])('rejects invalid catchment threshold %s', minCatchment => {
-    expect(() => deriveFmsDrainage(strip(), { minCatchment })).toThrow('汇水阈值');
+  it.each([0, -1, NaN, Infinity, 8192 ** 2 + 1])('rejects invalid catchment threshold %s', minCatchment => {
+    expect(() => deriveFmsDrainage(strip(), { minCatchment })).toThrow('汇水面积阈值');
   });
 
   it('rejects malformed options and input geometry before attempting a traversal', () => {
     for (const options of [null, [], { decorativeRivers: 5 }])
-      expect(() => deriveFmsDrainage(strip(), options as FmsDrainageOptions)).toThrow('汇水阈值');
+      expect(() => deriveFmsDrainage(strip(), options as FmsDrainageOptions)).toThrow('汇水面积阈值');
     const doc = strip();
     for (const invalid of [null, { ...doc, version: 2 }, { ...doc, elevations: new Float32Array(6) },
       { ...doc, triangles: new Uint32Array([0, 1, 99]) }, { ...doc, neighbors: doc.neighbors.map(() => []) }])
@@ -192,7 +196,7 @@ describe('FMS height-derived static runoff', () => {
     expect(drainage.stats.landCells).toBeGreaterThan(10_000);
     expect(drainage.stats.seaCells).toBeGreaterThan(1_000);
     expect(drainage.riverSegments.length).toBeGreaterThan(0);
-    expect(drainage.stats.minCatchment).toBe(Math.max(8, Math.ceil(drainage.stats.landCells * 0.003)));
+    expect(drainage.stats.minCatchment).toBe(Math.max(512, drainage.stats.landArea * 0.003));
     expect(doc.elevations).toEqual(original);
     checkConservation(doc, drainage);
   }, 15_000);

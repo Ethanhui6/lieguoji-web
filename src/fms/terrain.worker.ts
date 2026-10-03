@@ -25,7 +25,7 @@ if (typeof self !== 'undefined' && typeof document === 'undefined') {
     const response = runFmsTerrainRequest(event.data);
     // Only owned output arrays are transferred; input is a separate structured clone.
     const transfer = response.kind === 'naturalized' ? [response.elevations.buffer, response.drainage.receiver.buffer,
-      response.drainage.accumulation.buffer, response.drainage.filledElevation.buffer, response.drainage.lakeDepth.buffer] : [];
+      response.drainage.runoff.buffer, response.drainage.accumulation.buffer, response.drainage.filledElevation.buffer, response.drainage.lakeDepth.buffer] : [];
     self.postMessage(response, { transfer });
   };
 }

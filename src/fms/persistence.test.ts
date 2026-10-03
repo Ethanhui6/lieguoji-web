@@ -6,6 +6,7 @@ import { coastFixture } from '../../tests/helpers/fms-coast-metrics';
 import { prepareFmsCoastPreview, refineFmsCoast } from './coast-refinement';
 import { prepareFmsCoastSmoothPreview, smoothFmsCoast } from './coast-smoothing';
 import { deriveFmsShade } from './shading';
+import { deriveFmsDrainage } from './hydrology';
 import { FMS_DATABASE_NAME, FmsPersistenceError, loadFmsDocument, saveFmsDocument } from './persistence';
 
 function document(revision = 0, height = 0): FmsDocument {
@@ -71,8 +72,10 @@ describe('protected document v2 opt-in and old-client isolation', () => {
     const saved=await saveFmsDocument(history.document,first.storedRevision),restored=await loadFmsDocument();
     expect(restored!.document).toEqual(smoothed);
     expect(deriveFmsShade(restored!.document)).toEqual(deriveFmsShade(smoothed));
+    expect(deriveFmsDrainage(restored!.document)).toEqual(deriveFmsDrainage(smoothed));
     const undo=history.undo();expect(undo.points).toEqual(beforeSmooth.points);const undoSaved=await saveFmsDocument(undo,saved.storedRevision);
     expect((await loadFmsDocument())!.document.points).toEqual(beforeSmooth.points);
+    expect(deriveFmsDrainage((await loadFmsDocument())!.document)).toEqual(deriveFmsDrainage(beforeSmooth));
     const redo=history.redo();expect(redo.points).toEqual(smoothed.points);await saveFmsDocument(redo,undoSaved.storedRevision);
     expect((await loadFmsDocument())!.document).toEqual(redo);
     const db=await database();const archive=await new Promise<{document:FmsDocument}>(resolve=>{const tx=db.transaction('saves','readonly'),request=tx.objectStore('saves').get('beforeProtection');tx.oncomplete=()=>resolve(request.result);});db.close();

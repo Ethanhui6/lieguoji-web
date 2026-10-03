@@ -114,6 +114,10 @@ export class FmsRenderer {
     this.canvas.dataset.riverGraphSegments=String(surface.drainage.riverSegments.length);
     this.canvas.dataset.riverMouths=String(riverLines.filter(line=>line.mouth).length);
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
+    this.canvas.dataset.drainageAlgorithm=surface.drainage.stats.algorithm;
+    this.canvas.dataset.landArea=String(surface.drainage.stats.landArea);
+    this.canvas.dataset.catchmentArea=String(surface.drainage.stats.minCatchment);
+    this.canvas.dataset.totalDischarge=String(surface.drainage.stats.seaDischarge+surface.drainage.stats.endorheicDischarge);
     this.protection.clear();
     let lockedTriangles=0;
     const edges=new Map<string,{a:number;b:number;count:number}>(),covered=new Uint8Array(doc.points.length);

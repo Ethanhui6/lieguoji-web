@@ -1,8 +1,9 @@
-import type { FmsDocument } from './model';
+import { assertFmsDocument, type FmsDocument } from './model';
 import type { FmsNaturalizationOptions, FmsNaturalizationStats } from './naturalize';
 import type { FmsDrainage } from './hydrology';
 import { fixedFmsCoastVertices } from './coastline';
 import { FMS_DEFAULT_COASTAL_WIDTH, fmsCoastalWidthWorld, validFmsNaturalizationOptions } from './terrain-options';
+import { defaultFmsCatchmentArea, deriveFmsRunoff, FMS_DRAINAGE_ALGORITHM } from './runoff';
 
 export interface FmsTerrainPreview {
   worldId: string; baseRevision: number; elevations: Int32Array;
@@ -23,11 +24,13 @@ const finite = (value: unknown, low: number, high: number): value is number => t
 const abortError = () => new DOMException('地形预览已取消，原地图未改变。', 'AbortError');
 const protocolError = () => new FmsTerrainClientError('invalid-response', '地形线程返回的数据或世界版本不一致，请重新生成。');
 const LAND_LEVEL = 20, MAX_CELLS = 50_000;
-type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][]; coastalWidthWorld: number; options: FmsNaturalizationOptions };
+type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][];
+  points: FmsDocument['points']; triangles: Uint32Array; coastalWidthWorld: number; options: FmsNaturalizationOptions };
 type Pending = { requestId: number; snapshot: Snapshot; resolve: (value: FmsTerrainPreview) => void; reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>; signal?: AbortSignal; abort: () => void };
 
 function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Snapshot {
+  try { assertFmsDocument(doc); } catch { throw new FmsTerrainClientError('invalid-request', '地形文档无效。'); }
   if (!doc || typeof doc.worldId !== 'string' || !integer(doc.revision, 0, Number.MAX_SAFE_INTEGER - 1)
     || !Array.isArray(doc.points) || !integer(doc.points.length, 3, MAX_CELLS)
     || !(doc.elevations instanceof Int32Array) || doc.elevations.length !== doc.points.length
@@ -42,6 +45,7 @@ function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Sna
   const coastLocks = fixedFmsCoastVertices(doc);
   doc.terrainLocks?.forEach((value, id) => { if (value) coastLocks[id] = 1; });
   return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks, neighbors: doc.neighbors.map(row => [...row]),
+    points: doc.points.map(p => [...p]), triangles: doc.triangles.slice(),
     coastalWidthWorld: fmsCoastalWidthWorld(doc.width, doc.height, doc.points.length, options.coastalWidth ?? FMS_DEFAULT_COASTAL_WIDTH), options: { ...options } };
 }
 
@@ -69,22 +73,33 @@ function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw
 
 function validDrainage(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsDrainage {
   const count = elevations.length;
-  if (!exact(raw, ['receiver', 'accumulation', 'filledElevation', 'lakeDepth', 'riverSegments', 'stats'])
-    || !(raw.receiver instanceof Int32Array) || !(raw.accumulation instanceof Float32Array)
+  if (!exact(raw, ['receiver', 'runoff', 'accumulation', 'filledElevation', 'lakeDepth', 'riverSegments', 'stats'])
+    || !(raw.receiver instanceof Int32Array) || !(raw.accumulation instanceof Float64Array) || !(raw.runoff instanceof Float64Array)
     || !(raw.filledElevation instanceof Float64Array) || !(raw.lakeDepth instanceof Float32Array)
-    || [raw.receiver, raw.accumulation, raw.filledElevation, raw.lakeDepth].some(array => array.length !== count)
+    || [raw.receiver, raw.runoff, raw.accumulation, raw.filledElevation, raw.lakeDepth].some(array => array.length !== count)
     || !Array.isArray(raw.riverSegments) || raw.riverSegments.length > count) return false;
-  const { receiver, accumulation, filledElevation, lakeDepth, stats } = raw;
+  const { receiver, runoff, accumulation, filledElevation, lakeDepth, stats } = raw;
   const statKeys = ['cellCount', 'landCells', 'seaCells', 'connectedComponents', 'endorheicBasins', 'filledLandCells', 'maxLakeDepth', 'minCatchment', 'riverSegmentCount', 'seaDischarge', 'endorheicDischarge', 'maxAccumulation'];
-  if (!exact(stats, statKeys) || !integer(stats.minCatchment, 1, MAX_CELLS)) return false;
-  for (const key of statKeys) if (!finite(stats[key], 0, key === 'maxLakeDepth' ? 2_147_483_647 : MAX_CELLS)) return false;
+  if (!exact(stats, [...statKeys, 'algorithm', 'landArea']) || stats.algorithm !== FMS_DRAINAGE_ALGORITHM) return false;
+  const expectedRunoff = deriveFmsRunoff({ points: source.points, triangles: source.triangles, elevations });
+  const landArea = expectedRunoff.reduce((sum, value) => sum + value, 0);
+  const near = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+  if (!finite(stats.landArea, 0, 8192 ** 2) || !near(stats.landArea, landArea)
+    || stats.minCatchment !== defaultFmsCatchmentArea(landArea)) return false;
+  const areaKeys = ['minCatchment', 'seaDischarge', 'endorheicDischarge', 'maxAccumulation'];
+  for (const key of statKeys) {
+    if (areaKeys.includes(key)) { if (!finite(stats[key], 0, 8192 ** 2)) return false; }
+    else if (!integer(stats[key], 0, key === 'maxLakeDepth' ? 2_147_483_647 : MAX_CELLS)) return false;
+  }
   let land = 0, seaDischarge = 0, endorheicDischarge = 0, maximum = 0;
   for (let cell = 0; cell < count; cell++) {
     const next = receiver[cell], isLand = elevations[cell] >= LAND_LEVEL;
     if (!integer(next, -1, count - 1) || next === cell || (next >= 0 && !source.neighbors[cell].includes(next))
-      || !integer(accumulation[cell], 0, count) || !finite(filledElevation[cell], elevations[cell], 2_147_483_647)
+      || !finite(accumulation[cell], 0, landArea + 1e-6) || !finite(runoff[cell], 0, landArea + 1e-6)
+      || !near(runoff[cell], expectedRunoff[cell]) || !finite(filledElevation[cell], elevations[cell], 2_147_483_647)
       || !finite(lakeDepth[cell], 0, 2_147_483_647)
-      || (next >= 0 && filledElevation[next] > filledElevation[cell])) return false;
+      || (next >= 0 && filledElevation[next] > filledElevation[cell])
+      || lakeDepth[cell] !== (isLand ? Math.fround(filledElevation[cell] - elevations[cell]) : 0)) return false;
     if (isLand) { land++; if (next === -1) endorheicDischarge += accumulation[cell]; }
     else { if (next !== -1 || lakeDepth[cell] !== 0) return false; seaDischarge += accumulation[cell]; }
     maximum = Math.max(maximum, accumulation[cell]);
@@ -98,6 +113,26 @@ function validDrainage(raw: unknown, elevations: Int32Array, source: Snapshot): 
     cell = start;
     while (cell >= 0 && state[cell] === 1) { state[cell] = 2; cell = receiver[cell]; }
   }
+  // A conserved graph could still be forged into isolated land terminals.
+  // Sea-connected components have no land root; landlocked ones have exactly
+  // their lowest (stable-id tie break) vertex as a terminal.
+  const seen = new Uint8Array(count); let components = 0;
+  for (let start = 0; start < count; start++) if (!seen[start]) {
+    components++; const stack = [start], members: number[] = []; seen[start] = 1;
+    let hasSea = false, lowest = start;
+    while (stack.length) {
+      const cell = stack.pop()!; members.push(cell);
+      if (elevations[cell] < LAND_LEVEL) hasSea = true;
+      if (elevations[cell] < elevations[lowest] || (elevations[cell] === elevations[lowest] && cell < lowest)) lowest = cell;
+      for (const next of source.neighbors[cell]) if (!seen[next]) { seen[next] = 1; stack.push(next); }
+    }
+    for (const cell of members) if (elevations[cell] >= LAND_LEVEL && (receiver[cell] === -1) !== (!hasSea && cell === lowest)) return false;
+  }
+  if (stats.connectedComponents !== components) return false;
+  // Local balances reject forged tributary totals even if outlet sums match.
+  const expectedFlow = expectedRunoff.slice();
+  for (let cell = 0; cell < count; cell++) if (receiver[cell] >= 0) expectedFlow[receiver[cell]] += accumulation[cell];
+  for (let cell = 0; cell < count; cell++) if (!near(expectedFlow[cell], accumulation[cell])) return false;
   const riverSources = new Set<number>();
   for (const pair of raw.riverSegments) {
     if (!Array.isArray(pair) || pair.length !== 2 || !integer(pair[0], 0, count - 1) || !integer(pair[1], 0, count - 1)
@@ -105,9 +140,16 @@ function validDrainage(raw: unknown, elevations: Int32Array, source: Snapshot): 
       || accumulation[pair[0]] < stats.minCatchment || riverSources.has(pair[0])) return false;
     riverSources.add(pair[0]);
   }
+  let filledLandCells = 0, maxLakeDepth = 0, roots = 0;
+  for (let cell = 0; cell < count; cell++) if (elevations[cell] >= LAND_LEVEL) {
+    if (lakeDepth[cell] > 0) { filledLandCells++; maxLakeDepth = Math.max(maxLakeDepth, lakeDepth[cell]); }
+    if (receiver[cell] === -1) roots++;
+    if ((receiver[cell] >= 0 && lakeDepth[cell] <= .5 && accumulation[cell] >= stats.minCatchment) !== riverSources.has(cell)) return false;
+  }
   return stats.cellCount === count && stats.landCells === land && stats.seaCells === count - land
+    && stats.filledLandCells === filledLandCells && stats.maxLakeDepth === maxLakeDepth && stats.endorheicBasins === roots
     && stats.riverSegmentCount === raw.riverSegments.length && stats.seaDischarge === seaDischarge
-    && stats.endorheicDischarge === endorheicDischarge && seaDischarge + endorheicDischarge === land && stats.maxAccumulation === maximum;
+    && stats.endorheicDischarge === endorheicDischarge && near(seaDischarge + endorheicDischarge, landArea) && stats.maxAccumulation === maximum;
 }
 
 /** One in-flight candidate per client; failures replace only this client's Worker. No persistence. */

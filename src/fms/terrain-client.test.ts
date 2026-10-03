@@ -36,6 +36,28 @@ beforeEach(() => { WorkerDouble.instances = []; vi.stubGlobal('Worker', WorkerDo
 afterEach(() => { clients.splice(0).forEach(value => value.close()); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('isolated FMS terrain Worker client', () => {
+  it('rejects fake closed terminals that conserve every local balance and outlet total',async()=>{
+    const doc=fixture(),pending=client().naturalize(doc,options),response=success(),rejection=expect(pending).rejects.toMatchObject({code:'invalid-response'});
+    const d=response.drainage;d.receiver.fill(-1);d.accumulation=d.runoff.slice();d.filledElevation=Float64Array.from(response.elevations);d.lakeDepth.fill(0);d.riverSegments=[];
+    Object.assign(d.stats,{endorheicBasins:d.stats.landCells,endorheicDischarge:d.stats.landArea,seaDischarge:0,maxAccumulation:Math.max(...d.runoff),filledLandCells:0,maxLakeDepth:0,riverSegmentCount:0});
+    current().reply(response);await rejection;
+  });
+  it.each(['local-source','internal-flow','units','typed-array','threshold','missing-river'] as const)('rejects forged area runoff %s',async fault=>{
+    const doc=fixture();doc.width=1000;doc.height=1000;doc.points=[[0,0],[1000,0],[0,1000]];
+    const pending=client().naturalize(doc,options),response=success(),rejection=expect(pending).rejects.toMatchObject({code:'invalid-response'});
+    const d=response.drainage;
+    if(fault==='local-source')d.runoff[0]+=1;
+    if(fault==='internal-flow'){d.accumulation[0]-=1; /* Keep outlet and summary totals unchanged. */}
+    if(fault==='units')Object.assign(d.stats,{algorithm:'land-cells-v1'});
+    if(fault==='typed-array')Object.assign(d,{accumulation:Float32Array.from(d.accumulation)});
+    if(fault==='threshold')d.stats.minCatchment*=2;
+    if(fault==='missing-river'){expect(d.riverSegments.length).toBeGreaterThan(0);d.riverSegments=[];d.stats.riverSegmentCount=0;}
+    current().reply(response);await rejection;
+  });
+  it('validates runoff against owned request geometry even if caller geometry is later mutated',async()=>{
+    const doc=fixture(),pending=client().naturalize(doc,options);doc.points[1][0]=5;doc.triangles[1]=2;
+    current().reply();expect((await pending).drainage.stats.landArea).toBeCloseTo(50*(25/45)**2,10);
+  });
   it('binds the chosen coastal width before sending and validates its response echo', async () => {
     const requested={...options,coastalWidth:.12}, instance=client();
     const pending=instance.naturalize(fixture(),requested), worker=current();
@@ -58,7 +80,8 @@ describe('isolated FMS terrain Worker client', () => {
     expect(worker.postMessage.mock.calls[0]).toHaveLength(1);
     expect(worker.messages[0].document.elevations.buffer).not.toBe(doc.elevations.buffer);
     worker.reply(); const result = await first;
-    expect(result).toMatchObject({ worldId: doc.worldId, baseRevision: 7, stats: { landMaskPreserved: true, landCells: 1 }, drainage: { stats: { landCells: 1, seaDischarge: 1 } } });
+    expect(result).toMatchObject({ worldId: doc.worldId, baseRevision: 7, stats: { landMaskPreserved: true, landCells: 1 }, drainage: { stats: { landCells: 1, algorithm: 'land-area-runoff-v2' } } });
+    expect(result.drainage.stats.seaDischarge).toBeCloseTo(50 * (25/45) ** 2, 10);
     expect(doc).toEqual(original); expect(doc.elevations.byteLength).toBe(12); expect(doc.triangles.byteLength).toBe(12);
     const second = instance.naturalize({ ...doc, revision: 8 }, { ...options, seed: 43 }); worker.reply();
     expect(await second).toMatchObject({ baseRevision: 8, stats: { seed: 43 } });

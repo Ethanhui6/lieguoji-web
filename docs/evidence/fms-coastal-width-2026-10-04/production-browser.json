@@ -1,0 +1,28 @@
+{
+  "time": "2026-10-03T20:36:26.307Z",
+  "origin": "http://127.0.0.1:5181",
+  "preview": {
+    "seed": 1337,
+    "strength": 1,
+    "coastalWidth": 0.2,
+    "workerReady": true,
+    "cancelled": true
+  },
+  "restored": {
+    "buildCommit": "28445d420772925aa800737ff530d3fd256375ca",
+    "legacyResources": [],
+    "storage": {
+      "backupVersion": 1,
+      "checkpointDocumentRevision": 2,
+      "checkpointVersion": 1,
+      "checksum": "d69deaf68e526d74277fc10562f5d69bebabcfac70d884509d43bd879a37ce69",
+      "databaseVersion": 2,
+      "documentRevision": 3,
+      "documentVersion": 2,
+      "locked": 371,
+      "revision": 4
+    }
+  },
+  "storedChecksumUnchangedSincePriorBatch": true,
+  "warningsAndErrors": []
+}

@@ -1,0 +1,54 @@
+{
+  "time": "2026-10-03T20:35:05.339Z",
+  "origin": "http://127.0.0.1:5180",
+  "device": "desktop Chromium CDP 428x926; keyboard range input; not physical iPhone",
+  "before": {
+    "locked": 590,
+    "revision": 16,
+    "storedRevision": 9
+  },
+  "comparison": {
+    "seed": 1337,
+    "strength": 1,
+    "widths": [
+      0.01,
+      0.12
+    ],
+    "sameSourceRevision": 16,
+    "sameCamera": true,
+    "narrowCancelledBeforeWide": true
+  },
+  "confirmedUndoRedoSave": {
+    "changed": 8418,
+    "coast": {
+      "absoluteAreaChange": 0,
+      "candidateCrossingCount": 1464,
+      "changedTriangles": 0,
+      "crossingCount": 1464,
+      "landAreaAfter": 626990.2373799644,
+      "landAreaBefore": 626990.2373799644,
+      "maxCrossingDisplacement": 0,
+      "missingCrossings": 0,
+      "sectionAfter": [],
+      "sectionBefore": []
+    },
+    "expectedElevationsEqual": true,
+    "height": 926,
+    "locked": 590,
+    "lockedChanges": 0,
+    "revision": 19,
+    "scrollWidth": 428,
+    "storedRevision": 10,
+    "version": 2,
+    "width": 428
+  },
+  "restored": {
+    "dirty": "false",
+    "locked": "590",
+    "revision": "19",
+    "version": "2"
+  },
+  "parameterAfterReload": 3.5,
+  "parametersSessionOnlyDisclosed": true,
+  "warningsAndErrors": []
+}

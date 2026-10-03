@@ -2507,7 +2507,7 @@
         "WEB-PH05",
         "WEB-PH06"
       ],
-      "note": "428x926 Chromium布局、真实鼠标锁定/解锁/自然化/保存刷新已有工程证据；前批DOM合成触摸记录保留。不是iPhone/WebKit实机。WEB-02-01细化带、WEB-02-02和真机/用户视觉门仍未通过，不扩建国家。"
+      "note": "沿海低地宽度与锁区已通过428x926桌面Chromium实际操作和几何测量；不是iPhone/WebKit。WEB-02-01海岸几何细化、WEB-02-02和真机/用户视觉门未过，不能扩建国家。"
     },
     "unknowns": [
       "complete original brush workflow video",
@@ -2565,7 +2565,17 @@
       "docs/evidence/fms-region-locks-2026-10-04/protected-terrain-zoom.png",
       "docs/evidence/fms-region-locks-2026-10-04/settings-portrait.png",
       "docs/evidence/fms-region-locks-2026-10-04/old-client-save-refused.png",
-      "docs/evidence/fms-region-locks-2026-10-04/verification.json"
+      "docs/evidence/fms-region-locks-2026-10-04/verification.json",
+      "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+      "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+      "docs/evidence/fms-coastal-width-2026-10-04/measurements.json",
+      "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json",
+      "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json",
+      "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png",
+      "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png",
+      "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png",
+      "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png",
+      "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2753,7 +2763,17 @@
           "docs/evidence/fms-region-locks-2026-10-04/protected-terrain-zoom.png",
           "docs/evidence/fms-region-locks-2026-10-04/settings-portrait.png",
           "docs/evidence/fms-region-locks-2026-10-04/old-client-save-refused.png",
-          "docs/evidence/fms-region-locks-2026-10-04/verification.json"
+          "docs/evidence/fms-region-locks-2026-10-04/verification.json",
+          "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+          "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+          "docs/evidence/fms-coastal-width-2026-10-04/measurements.json",
+          "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json",
+          "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json",
+          "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png",
+          "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png",
+          "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png",
+          "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png",
+          "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
         ],
         "workItems": [
           {
@@ -2786,11 +2806,21 @@
               "docs/evidence/fms-region-locks-2026-10-04/protected-terrain-zoom.png",
               "docs/evidence/fms-region-locks-2026-10-04/settings-portrait.png",
               "docs/evidence/fms-region-locks-2026-10-04/old-client-save-refused.png",
-              "docs/evidence/fms-region-locks-2026-10-04/verification.json"
+              "docs/evidence/fms-region-locks-2026-10-04/verification.json",
+              "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+              "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+              "docs/evidence/fms-coastal-width-2026-10-04/measurements.json",
+              "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json",
+              "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png",
+              "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png",
+              "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png",
+              "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png",
+              "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
             ],
-            "progress": "已接通玩家保护/解锁笔刷，真实高程约束贯穿画笔/轮廓/自然化/Worker/候选，整笔历史、保存恢复及旧客户端拒写已验证。默认插值海岸位移仍为0；207项相关测试及实际浏览器通过。显式可调细化带仍未实现，整项in_progress。",
+            "progress": "玩家锁/保存恢复已实现，补齐DB1主槽损坏或缺失×归档无或已有的四路径二次v2保存回归。新增1%—20%沿海内陆低地过渡宽度，默认与v3兼容；32组几何/锁定量测和实际浏览器通过，232相关测试通过。该控件不等于海湾/岬角几何细化，后者仍待实现，整项in_progress。",
             "remaining": [
-              "显式可调海岸细化带，保护宽海湾/狭颈/长海岬/小岛的不对称样本；每种模式量化可见海岸位移上限"
+              "海湾/岬角的有界几何细化及显式细化范围；沿海内陆低地宽度不能代替此项。保留默认0位移，新模式须量化实际轮廓位移、面积和细颈约束，并保持玩家锁。"
             ]
           },
           {
@@ -2805,7 +2835,7 @@
               "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
               "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg"
             ],
-            "progress": "前置尚未完成。约2倍绘图/锁区截图只是早期观察，不作为本项启动或完成证据；待WEB-02-01可调细化带完成，再进行同输入Atlas转换及完整海岸/海洋/缩放对照。"
+            "progress": "WEB-02-01仍缺海岸几何细化，沿海低地宽度已可调但不是替代。1倍/2倍浏览器截图属前置工程观察；完成前置后再做同输入直接地形/Atlas及完整海岸海洋/缩放对照。"
           },
           {
             "id": "WEB-02-03",
@@ -2945,11 +2975,11 @@
       "scope": "历史WEB-PH01绘图底座快照；后续自然化见naturalizationPrototype，不把此快照的false作为当前能力。"
     },
     "naturalizationPrototype": {
-      "sourceCommit": "5f5608839132d1d52cd8dfe8a0174f192cc1c68c",
+      "sourceCommit": "28445d420772925aa800737ff530d3fd256375ca",
       "entry": "/?fms=1",
       "database": "lieguoji-fms-web-v1",
-      "status": "local-terrain-and-player-lock-slice-verified; adjustable-band-pending",
-      "algorithm": "fms-shape-preserving-relief-v3",
+      "status": "local-terrain-locks-and-inland-coastal-width-verified; coastline-geometry-refinement-pending",
+      "algorithm": "fms-shape-preserving-relief-v4",
       "naturalizationImplemented": true,
       "derivedHydrology": "deterministic-static-wet-condition-drainage; not original climate/erosion",
       "mobileViewport": "428x926 desktop Chromium; not physical iPhone or WebKit",
@@ -2961,7 +2991,7 @@
         "36864-point web topology and 1536 units are not final map scale",
         "load/edit derived drainage currently on main thread; phone performance unmeasured",
         "terrain heights saved; generation settings session-only; hydrology version contract required before simulation",
-        "WEB-02-01 explicit adjustable refinement band not implemented; player region locks now implemented",
+        "WEB-02-01 coastline geometry refinement still pending; inland lowland width is implemented separately",
         "Coast geometry is fixed; shading/river colors may change and high coast rims need later visual work",
         "Does not restore contour changes already saved by v1"
       ],
@@ -2980,7 +3010,17 @@
         "docs/evidence/fms-region-locks-2026-10-04/protected-terrain-zoom.png",
         "docs/evidence/fms-region-locks-2026-10-04/settings-portrait.png",
         "docs/evidence/fms-region-locks-2026-10-04/old-client-save-refused.png",
-        "docs/evidence/fms-region-locks-2026-10-04/verification.json"
+        "docs/evidence/fms-region-locks-2026-10-04/verification.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+        "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+        "docs/evidence/fms-coastal-width-2026-10-04/measurements.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
       ]
     },
     "coastlineContract": {
@@ -3004,7 +3044,7 @@
         "docs/evidence/fms-coast-preservation-2026-10-04/production-browser.json",
         "docs/evidence/fms-coast-preservation-2026-10-04/verification.json"
       ],
-      "compatibleSourceCommit": "5f5608839132d1d52cd8dfe8a0174f192cc1c68c"
+      "compatibleSourceCommit": "28445d420772925aa800737ff530d3fd256375ca"
     },
     "regionLockPrototype": {
       "sourceCommit": "5f5608839132d1d52cd8dfe8a0174f192cc1c68c",
@@ -3028,6 +3068,42 @@
         "docs/evidence/fms-region-locks-2026-10-04/settings-portrait.png",
         "docs/evidence/fms-region-locks-2026-10-04/old-client-save-refused.png",
         "docs/evidence/fms-region-locks-2026-10-04/verification.json"
+      ],
+      "recoveryMatrixSourceCommit": "28445d420772925aa800737ff530d3fd256375ca",
+      "recoveryMatrix": "DB1 damaged/missing current x absent/existing beforeProtection; first v2 and second v2 rolling replacement explicitly verified",
+      "recoveryMatrixEvidence": [
+        "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+        "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
+      ]
+    },
+    "coastalWidthPrototype": {
+      "sourceCommit": "28445d420772925aa800737ff530d3fd256375ca",
+      "kind": "inland-relief-envelope-not-contour-refinement",
+      "defaultFraction": 0.035,
+      "allowedFraction": [
+        0.01,
+        0.2
+      ],
+      "effectiveWidth": "max(1.8*sqrt(width*height/points),min(width,height)*fraction)",
+      "parametersPersisted": false,
+      "coastGeometryDisplacement": 0,
+      "playerLockHeightChanges": 0,
+      "defaultV3NumericallyEqual": true,
+      "comparisonCases": 32,
+      "status": "local-engineering-verified",
+      "physicalDevice": "not_run",
+      "userVisual": "pending",
+      "evidence": [
+        "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md",
+        "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+        "docs/evidence/fms-coastal-width-2026-10-04/measurements.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json",
+        "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png",
+        "docs/evidence/fms-coastal-width-2026-10-04/verification.json"
       ]
     }
   }

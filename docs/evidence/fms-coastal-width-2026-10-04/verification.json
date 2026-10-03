@@ -1,0 +1,201 @@
+{
+  "recordedAt": "2026-10-03T20:41:37.307Z",
+  "sourceCommit": "28445d420772925aa800737ff530d3fd256375ca",
+  "startingCommit": "25d1c43",
+  "checks": [
+    {
+      "command": "npm test -- src/fms/persistence.test.ts",
+      "tests": 49,
+      "files": 1,
+      "result": "passed",
+      "startedLocal": "2026-10-04 04:25:39 +08:00",
+      "durationSeconds": 0.383
+    },
+    {
+      "command": "npm test -- src/fms src/world/fms-native-brush.test.ts",
+      "tests": 232,
+      "files": 11,
+      "result": "passed",
+      "startedLocal": "2026-10-04 04:30:50 +08:00",
+      "durationSeconds": 2.93
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "node docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+      "result": "passed",
+      "cases": 32,
+      "defaultVsV3EqualCases": 4
+    },
+    {
+      "command": "npx eslint docs/evidence/fms-coastal-width-2026-10-04/measure.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed",
+      "artifacts": 38
+    },
+    {
+      "command": "node scripts/check-plan.mjs",
+      "result": "passed",
+      "output": "Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/9 work items, active WEB-PH02; release lock does not block local development"
+    }
+  ],
+  "recoveryRegression": {
+    "productionFixPreviouslyCommitted": "5f5608839132d1d52cd8dfe8a0174f192cc1c68c",
+    "chosenPrevious": "checked.current ?? checked.backup",
+    "faults": [
+      "DB1 damaged current",
+      "DB1 missing current"
+    ],
+    "archiveStates": [
+      "absent",
+      "earlier valid v1 exists"
+    ],
+    "sequences": 4,
+    "firstProtectedSaveVerified": true,
+    "secondV2RollingReplacementVerified": true,
+    "existingArchiveUnchanged": true,
+    "casAtomicFailureAndNoLateWriteTestsRetained": true
+  },
+  "browser": {
+    "device": "desktop Chromium 428x926 CDP; keyboard/mouse",
+    "actualSavedRevision": 19,
+    "actualStoredRevision": 10,
+    "sourceRevision": 16,
+    "sourceSeed": 1337,
+    "coastalWidth": 0.12,
+    "changedCells": 8418,
+    "lockedCells": 590,
+    "lockedHeightChanges": 0,
+    "coastCrossings": 1464,
+    "coastDisplacement": 0,
+    "triangleAreaDelta": 0,
+    "historySaveReload": true,
+    "production20PercentWorkerCancelReload": true,
+    "warnErrorCount": 0,
+    "physicalDevice": "not_run",
+    "userVisual": "pending"
+  },
+  "guards": {
+    "legacyPlanUnchanged": true,
+    "protectedFilesUnchanged": [
+      ".githooks/pre-push",
+      "public/_headers",
+      "docs/RELEASE_POLICY_V4.md",
+      "scripts/check-release.mjs",
+      "scripts/release-policy.mjs",
+      "src/fms/persistence.ts"
+    ],
+    "cloudWritesPerformed": false,
+    "originalInstallationReadOrExecuted": false,
+    "exclusiveWriter": "root",
+    "readOnlyReviews": [
+      "recovery-matrix",
+      "inland-coastal-width-contract"
+    ]
+  },
+  "release": {
+    "ready": false,
+    "formalReady": false,
+    "gate": "full-release",
+    "cloudWritesAllowed": false,
+    "blockerCount": 636
+  },
+  "remaining": [
+    "actual coastline geometry refinement and explicitly bounded refinement band",
+    "direct/Atlas comparison and ocean/continuous zoom",
+    "physical iPhone and user visual gate"
+  ],
+  "hashScope": {
+    "source": "normalized LF matching committed blobs",
+    "evidence": "raw bytes (-text); self excluded",
+    "dist": "local validation build raw bytes"
+  },
+  "sourceHashes": {
+    "src/fms/coastal-width.test.ts": "c7be874b5a3fa5145ff3ae97faa45babae458e6b87c703b609ca51516178c15c",
+    "src/fms/coastline.test.ts": "ac4abfd5ad4b6cd018031b79064a4dc9f3394aa3477018381a58774be7b63da8",
+    "src/fms/coastline.ts": "cb9bb89b3cf457ee312d083eaad8cda75950b524d354bb6515ff70a1ea130082",
+    "src/fms/fms.css": "6b3adc3f7a955cd149f8fbbe1c02422f9b3ab55f88a9f168a8f1cf54442a0c3a",
+    "src/fms/FmsApp.tsx": "7dd6c21c10afb56b545ee3b4af66d0b2d157cda3a094bae4ed46b04f5298a4a2",
+    "src/fms/gestures.test.ts": "9a4f7fc0913cd81358f807e3d5efcb06dc0836a1ffb73dcc1cb4c2a899f43f0b",
+    "src/fms/gestures.ts": "a92a398789c922ba884a6e18bf87b8f190ff896fcfe9400dac52b19fb3093ec9",
+    "src/fms/hydrology.test.ts": "24941ac995b3ef43cf2a72cf5b5804fe172e3b199a35335c2de1066d902b246e",
+    "src/fms/hydrology.ts": "7b8a8398c78494267b2fc08d20908fcd29df97667496444c33f8585d0c8dc7b2",
+    "src/fms/locks.test.ts": "a915f0d8609f18f4dca10844358670ccd311014e07c9e2f1fc6a1d636405c6ab",
+    "src/fms/model.test.ts": "5f3af8844645280e6ce37fb5aa880e0565d4cdf496c446652020af1e69a72e26",
+    "src/fms/model.ts": "0c4ed5b6d5ad568d295c20a0b8de42edd09b2966b85f9b1ced4b99a673a385cf",
+    "src/fms/naturalize.test.ts": "ec31924d603193c4035e2d0bf2b0bf300fa245723230682b81412cc04b465e10",
+    "src/fms/naturalize.ts": "b5ce41aabbfa5652e3c0b102a46b2e81bd4f4376bba5b0e75d6fbb59ff0c60f1",
+    "src/fms/persistence.test.ts": "b60625c6d376093ae90ca05f499a108dde0d3108ebfd158193bb24eb4a6eedae",
+    "src/fms/persistence.ts": "8c1657c57df2b466e56228850dc2aa2d97ea591bf8321c479b11fec2412748f6",
+    "src/fms/renderer.ts": "5c406ad480009f817bed761c306f9192040f2cbe6a01635d45b1999e324dd7ca",
+    "src/fms/terrain-client.test.ts": "558fbc3ab3ee228a4ced7bf97d1eec306d38124887cf6b412461a11fe4a3ea36",
+    "src/fms/terrain-client.ts": "3aa75d013a70a87c5c523fb63a1064866a540d687850003be6cac7cc47f2e1ad",
+    "src/fms/terrain-options.ts": "3d3366752dfb7638f2f9b67cdd9419d011538698f51d9eeb108b5ee838b8cd15",
+    "src/fms/terrain-preview.test.ts": "96e263bbc43a4d151e79b0d0c589660de27cacdcea5b1b9d6a57bb8237151bb0",
+    "src/fms/terrain-preview.ts": "89e86c2969c2bd4248570523a7660be203a7b59594c161e066de6d8fd7cf8ece",
+    "src/fms/terrain.worker.ts": "c0742ec9268309206455e26654f16f45efc2783f33c72f363ab6a86034a82323",
+    "src/world/fms-native-brush.ts": "42d64a6a718c07138b07014c8b0c6d7ec5bd7b20f5750f62796492dcfca65af5",
+    "src/world/fms-native-brush.test.ts": "991638d43d98432e9442295e1dab113bdd86da787307b504f95273e79fd06b96",
+    "tests/helpers/fms-coast-metrics.ts": "e2b44ed5a3a05acff1f2401d161a12bca22ec6898fd6a2f5f81b7111db346d2e"
+  },
+  "evidenceHashes": {
+    "docs/evidence/fms-coastal-width-2026-10-04/browser-checks.json": "a4dca4ace7e34ac759fc1b3bb3799ecaeee528233a131c98fa8c4c5adc012ec5",
+    "docs/evidence/fms-coastal-width-2026-10-04/COASTAL_WIDTH.md": "50c2d1a70d5c51d0fc63d40e4c717f973c33cebc21c5f67a52656284c619852f",
+    "docs/evidence/fms-coastal-width-2026-10-04/lowland-1-percent.png": "ab2ec2da0c6c9da26240764366dd9724953b0f4dc4b34d7e13d1d507e720de34",
+    "docs/evidence/fms-coastal-width-2026-10-04/lowland-12-percent.png": "5f093884200e11d435e4b6afd5c12d2fbce1fa7697a848a4166f644089214bfd",
+    "docs/evidence/fms-coastal-width-2026-10-04/measure.mjs": "d6dc4bc752ea2a1066d57bf0912167d8a842d2bbd0e8e98736d625f0dca2fcc1",
+    "docs/evidence/fms-coastal-width-2026-10-04/measurements.json": "385b437583ddbeea1f688ff2bd9765a384762eed8bb9c8c2e84c8bf45a19704b",
+    "docs/evidence/fms-coastal-width-2026-10-04/production-browser.json": "bee53b569ce813db1438a00f2107e49925873b27c62e8008f66bb530c8ad0326",
+    "docs/evidence/fms-coastal-width-2026-10-04/production-preview-20-percent.png": "b26c1dde15d4bbd5b4b675eeeadef76c905531a89148abd56e5a25c1cdfa0bfa",
+    "docs/evidence/fms-coastal-width-2026-10-04/width-settings.png": "165c905e58fac8737eb6815f920679b7554ac8180bff8c30e164873fb500b908"
+  },
+  "distHashes": {
+    "dist/_headers": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+    "dist/_redirects": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+    "dist/assets/App-B-TSmWiq.css": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+    "dist/assets/App-BE6sZksc.js": "4774f29058b9259f857c21b39602ddb7b4e81882d2b487fd1096207de590a8b3",
+    "dist/assets/AtlasStudio-CtV71PEf.css": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+    "dist/assets/AtlasStudio-XLoG0iKj.js": "e617fe05765f9878514fb45a182eb90429d4cc80fe55ca6a7d161278412e0352",
+    "dist/assets/BufferResource-Bk8ZSLzt.js": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+    "dist/assets/CountryStudio-Cn5n2Zb4.css": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+    "dist/assets/CountryStudio-oubUB-4G.js": "0eb3c51cdb4bc7f9be58079ec875a175d63c3db1a5b813f6363127dda5321741",
+    "dist/assets/FmsApp-CfIRmV51.js": "304c37547f516d006c9a255eb37c568f8bc66b27deaf5cd990dac8388a38ceed",
+    "dist/assets/FmsApp-mNm1UOP0.css": "b20ad00eafc1f004155d526734f8277d09e333caac94c05c6d5d163fa04ae118",
+    "dist/assets/Geometry-IpHxCVTc.js": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+    "dist/assets/LegacyEntry-CNvbqJOh.css": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+    "dist/assets/LegacyEntry-DGcd_Fid.js": "85e97ad8284388caf81a987249a6df5a6368005b1e708af8138e6b12ffb22d55",
+    "dist/assets/RenderTargetSystem-a4R96cNy.js": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+    "dist/assets/atlas.worker-D_ZIKkck.js": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+    "dist/assets/browserAll-CU1SiXtS.js": "2bd7fd293834cebd64b30f469a7fe793252f7bf4613035079983cb84cf603e10",
+    "dist/assets/camera-BGXwsUH8.js": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+    "dist/assets/canvasUtils-BVGwBBBn.js": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+    "dist/assets/delaunay-BRaUaq0z.js": "de65a57364e8da726a374b54831de9568bd7c93a01ad556204701a084f88c04d",
+    "dist/assets/getPo2TextureFromSource-BzR2jfx3.js": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+    "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+    "dist/assets/index-544rwESa.js": "f28cb78f8cdfa34fe39190c9c632ec8cbd9ffec5545ac7e08dce0fd17728b99b",
+    "dist/assets/init-B8Jnes8g.js": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+    "dist/assets/init-gHltJ-_Y.js": "f672273b7aeced2e93641a2c3cc1c9dec954a259a66a384e0866846e201978af",
+    "dist/assets/renderer-C9_5TwUM.js": "a29f65cc6c6863f9ce03e3c0f299c177e55d728066e1213095422d766b3a3418",
+    "dist/assets/replay.worker-Dvt2kBgS.js": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+    "dist/assets/rolldown-runtime-hePW80VL.js": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+    "dist/assets/seed-terrain.worker-DZf0eV9u.js": "f2e45461b3be6b76c6a3e10059d102e34cab7cd652033f0213493644842f6d09",
+    "dist/assets/sim.worker-CLe8Zpf3.js": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+    "dist/assets/terrain-import.worker-B9lRjsio.js": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+    "dist/assets/terrain.worker-Cs0rv54K.js": "80192d489c57a556543b33b2b934ceed1f4949383a6497ae2dcca302b90a7f18",
+    "dist/assets/webworkerAll-DK7-hSJs.js": "94853ab1de4b1b62fc9a9abcd4e7aa399497c851c70af049ec0bed796fe1f660",
+    "dist/assets/worker-pjB4IGPF.js": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+    "dist/build.json": "6e4972e9616ff055eed58fee6d0ad5e84696232ed2982435880ede3d451290cf",
+    "dist/favicon.svg": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+    "dist/index.html": "86ff86293de277c43f1551b259f10c47ea1c88cd88ea7640416e72a8bb25cea2",
+    "dist/terrain-licenses.txt": "057596c400e1b9323cd075f92db30cbd6f5b2d189b64df904f436b29298a20b3"
+  }
+}

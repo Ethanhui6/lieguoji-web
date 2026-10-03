@@ -1,0 +1,324 @@
+{
+  "schema": "lieguoji-fms-bounded-static-audit",
+  "version": 1,
+  "createdAt": "2026-10-03T17:34:22.231542+00:00",
+  "status": "STATIC_EVIDENCE_ONLY_NOT_BEHAVIOR_PARITY",
+  "scope": {
+    "nativeMethodBodiesAnalyzed": 3,
+    "recursiveCalleeDisassembly": false,
+    "originalGameOrDllExecuted": false,
+    "puertsOrRecoveredMainExecuted": false,
+    "installDirectoryWritten": false,
+    "personalSavesOrAuthenticationOrSdkConfigurationRead": false,
+    "rawCodeOrDumpOrResourceEnvelopeConstantsIncluded": false,
+    "cloudOperations": false
+  },
+  "source": {
+    "path": "D:/steam/steamapps/common/FantasyMapSimulator/GameAssembly.dll",
+    "bytes": 53442048,
+    "sha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+    "sha256Before": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+    "sha256After": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+    "unchanged": true
+  },
+  "existingIndexes": [
+    {
+      "path": "ignored/binary/dump/script.json",
+      "bytes": 82370596,
+      "sha256": "907eb47a0d4a175e393a3497a2b1d4e67f57c2d4d9e0dfeecb53799ce21acf7f"
+    },
+    {
+      "path": "ignored/binary/dump/dump.cs",
+      "bytes": 26373629,
+      "sha256": "6d1e6af6f75a7ccde7547e329eea7d375ed649a58ffb5a48a3db6221552ed9f1"
+    }
+  ],
+  "tools": {
+    "existingDumperOutputVersion": "Il2CppDumper 6.7.46; not rerun in this audit",
+    "capstoneVersion": "5.0.7",
+    "parser": {
+      "path": "ignored/binary/brush-static/audit-brush.py",
+      "bytes": 5745,
+      "sha256": "3af42ee5062b2f294c2447930eb622352be7875aa51e1691ad8583addecd5727"
+    },
+    "addressValidation": "PE section mapping plus .pdata range cross-check",
+    "genericResolution": "MethodInfo references used where available; shared-address first names are not assumed to be actual targets"
+  },
+  "functions": [
+    {
+      "name": "PlayerController$$DrawMapHeightLogic",
+      "rva": "0x439a50",
+      "indexedEndExclusive": "0x439df0",
+      "runtimeFunctionEndExclusive": "0x439de9",
+      "instructionEndExclusive": "0x439de9",
+      "fileOffset": "0x438050",
+      "indexedSpanBytes": 928,
+      "indexedSpanSha256": "c2e71b6df066aeaf77a5941acf7240b08f08d3ba291719af67fd10e7f70a4e83",
+      "decodedInstructionCount": 235,
+      "selectedResolvedDirectCalls": [
+        {
+          "callSiteRva": "0x439ac5",
+          "targetRva": "0x439df0",
+          "name": "PlayerController$$DrawMapHeight"
+        },
+        {
+          "callSiteRva": "0x439bb0",
+          "targetRva": "0x6badc0",
+          "name": "World$$InverseVoronoiTransformPoint"
+        },
+        {
+          "callSiteRva": "0x439bdd",
+          "targetRva": "0x6b4e30",
+          "name": "World$$GetCellIndex"
+        }
+      ],
+      "directCallToRadiusWrapper": false,
+      "localDisassemblySha256": "fc9ff73d1b6134b52492875be6d6d93f7498714c710b08dda95cb7e958f7cb60",
+      "rawDisassemblyCommitted": false
+    },
+    {
+      "name": "PlayerController$$DrawMapHeight",
+      "rva": "0x439df0",
+      "indexedEndExclusive": "0x43c200",
+      "runtimeFunctionEndExclusive": "0x43c1f4",
+      "instructionEndExclusive": "0x43c1d8",
+      "fileOffset": "0x4383f0",
+      "indexedSpanBytes": 9232,
+      "indexedSpanSha256": "b2741571ae4f69751b666a3604e8a3022769fa88157f7674e02a56df486fceff",
+      "decodedInstructionCount": 1900,
+      "selectedResolvedDirectCalls": [
+        {
+          "callSiteRva": "0x43a0cd",
+          "targetRva": "0x4487a0",
+          "name": "PlayerController$$TriggerDelayedRedraw"
+        },
+        {
+          "callSiteRva": "0x43a1d9",
+          "targetRva": "0x6badc0",
+          "name": "World$$InverseVoronoiTransformPoint"
+        },
+        {
+          "callSiteRva": "0x43a223",
+          "targetRva": "0x54d6b0",
+          "name": "SliderValueConnector$$get_Value"
+        },
+        {
+          "callSiteRva": "0x43a241",
+          "targetRva": "0x47f030",
+          "name": "BrushManager$$GetCurrentBrushRadius"
+        },
+        {
+          "callSiteRva": "0x43a278",
+          "targetRva": "0x6badc0",
+          "name": "World$$InverseVoronoiTransformPoint"
+        },
+        {
+          "callSiteRva": "0x43a29f",
+          "targetRva": "0x6b4e30",
+          "name": "World$$GetCellIndex"
+        },
+        {
+          "callSiteRva": "0x43a2f2",
+          "targetRva": "0x235e9d0",
+          "name": "UnityEngine.Physics$$Raycast"
+        },
+        {
+          "callSiteRva": "0x43a3a0",
+          "targetRva": "0x235d7c0",
+          "name": "UnityEngine.Physics$$OverlapSphere"
+        },
+        {
+          "callSiteRva": "0x43a654",
+          "targetRva": "0x448850",
+          "name": "PlayerController$$TriggerRedrawProvinceBorder"
+        },
+        {
+          "callSiteRva": "0x43a715",
+          "targetRva": "0x38bc80",
+          "name": "HeightMapGenerator$$GetHeightMap"
+        },
+        {
+          "callSiteRva": "0x43b221",
+          "targetRva": "0x6c2290",
+          "name": "World$$SetCellAsSea"
+        },
+        {
+          "callSiteRva": "0x43b2b4",
+          "targetRva": "0x6bbde0",
+          "name": "World$$MarkFeatureDataDirty"
+        },
+        {
+          "callSiteRva": "0x43b4ff",
+          "targetRva": "0x6c8630",
+          "name": "World$$UpdateDrawProvince"
+        },
+        {
+          "callSiteRva": "0x43b65a",
+          "targetRva": "0x5d2b30",
+          "name": "State$$MarkStateBorderDirty"
+        },
+        {
+          "callSiteRva": "0x43b940",
+          "targetRva": "0x6c7ad0",
+          "name": "World$$UpdateCityIcon"
+        },
+        {
+          "callSiteRva": "0x43bb9b",
+          "targetRva": "0x6c87d0",
+          "name": "World$$UpdateLandProvince"
+        },
+        {
+          "callSiteRva": "0x43be24",
+          "targetRva": "0x46ea80",
+          "name": "ProvinceManager$$RecalculateFeatureDict"
+        },
+        {
+          "callSiteRva": "0x43be2b",
+          "targetRva": "0x489fe0",
+          "name": "BurgsAndStateGenerator$$FilterProvinceCells"
+        },
+        {
+          "callSiteRva": "0x43befc",
+          "targetRva": "0x805740",
+          "name": "Pathfinding.ArmyPathfinding$$RecalculateProvinceNeighborDistancesAsync"
+        },
+        {
+          "callSiteRva": "0x43bf31",
+          "targetRva": "0x6c2760",
+          "name": "World$$SetDrawProvinceMode"
+        }
+      ],
+      "directCallToRadiusWrapper": false,
+      "localDisassemblySha256": "965cf1198e692c928e51152a754b352b42a9a684a2b3b261cf1a829f5033e778",
+      "rawDisassemblyCommitted": false
+    },
+    {
+      "name": "World$$GetCellIndexInRadius",
+      "rva": "0x6b4ca0",
+      "indexedEndExclusive": "0x6b4e30",
+      "runtimeFunctionEndExclusive": "0x6b4e24",
+      "instructionEndExclusive": "0x6b4e24",
+      "fileOffset": "0x6b32a0",
+      "indexedSpanBytes": 400,
+      "indexedSpanSha256": "4f2c261dd515eb0eb7d4d0d8e4091caaaefc701a31cf98b493fe50c09829dfe8",
+      "decodedInstructionCount": 81,
+      "selectedResolvedDirectCalls": [
+        {
+          "callSiteRva": "0x6b4dc8",
+          "targetRva": "0x789130",
+          "name": "DataStructures.ViliWonka.KDTree.KDQuery$$Radius"
+        }
+      ],
+      "directCallToRadiusWrapper": false,
+      "localDisassemblySha256": "c0a9fb7964ef8eeb079b149e28e1c127455e6542f6a3b1544c56f3be2d25bfc2",
+      "rawDisassemblyCommitted": false
+    }
+  ],
+  "confirmed": [
+    {
+      "id": "B01",
+      "claim": "DrawMapHeightLogic directly calls DrawMapHeight only on its drawing/height-action branch.",
+      "anchors": [
+        "0x439A93",
+        "0x439A98",
+        "0x439AC5"
+      ]
+    },
+    {
+      "id": "B02",
+      "claim": "Neither analyzed PlayerController function directly calls GetCellIndexInRadius; DrawMapHeight selects Collider objects with Physics.OverlapSphere.",
+      "anchors": [
+        "0x43A2F2",
+        "0x43A3A0",
+        "0x43A4A7",
+        "0x43A4F9"
+      ]
+    },
+    {
+      "id": "B03",
+      "claim": "Brush height comes from BrushHeightSlider; radius comes from GetCurrentBrushRadius; both callee internals remain unexamined.",
+      "anchors": [
+        "0x43A211",
+        "0x43A223",
+        "0x43A241"
+      ]
+    },
+    {
+      "id": "B04",
+      "claim": "Hill branch delegates per-cell contributions to native HeightMapGenerator.GetHeightMap; its method body is outside scope.",
+      "anchors": [
+        "0x43A6E4",
+        "0x43A707",
+        "0x43A715"
+      ]
+    },
+    {
+      "id": "B05",
+      "claim": "Elevation list writes and seven Plane-mode branches are visible; summarized arithmetic is in the report.",
+      "anchors": [
+        "0x43A8BF",
+        "0x43AC3B",
+        "0x43AE06",
+        "0x43AE91",
+        "0x43C1D8"
+      ]
+    },
+    {
+      "id": "B06",
+      "claim": "Runtime sealevel crossing triggers feature dirty marking. Separate biome fallback and province/border updates also exist.",
+      "anchors": [
+        "0x43A6D3",
+        "0x43AC95",
+        "0x43B1BE",
+        "0x43B2B4",
+        "0x43B417",
+        "0x43B4FF",
+        "0x43B563"
+      ]
+    },
+    {
+      "id": "B07",
+      "claim": "Erase has additional province, city and army writes plus pathfinding refresh; full downstream behavior is not reconstructed.",
+      "anchors": [
+        "0x43B572",
+        "0x43BA85",
+        "0x43BAB7",
+        "0x43BB1B",
+        "0x43BBE0",
+        "0x43BEA9",
+        "0x43BEFC"
+      ]
+    },
+    {
+      "id": "B08",
+      "claim": "Radius wrapper bounds-checks finite x/y against Width/Height, returns an empty list for outside points, otherwise passes r unchanged to a KDQuery.",
+      "anchors": [
+        "0x6B4D02",
+        "0x6B4D13",
+        "0x6B4D30",
+        "0x6B4D93",
+        "0x6B4DC8",
+        "0x6B4DF6"
+      ]
+    }
+  ],
+  "inferences": [
+    "The brush appears to edit an existing fine cell graph and to maintain local drawing and simulation references; runtime performance and visible smoothness are unmeasured."
+  ],
+  "unknown": [
+    "Collider geometry and correspondence to map cells",
+    "Exact camera projection and zoom-to-radius mapping",
+    "Native Hill falloff/propagation/randomness",
+    "UI constraints on shape and mode combinations",
+    "Stroke interpolation/throttling/undo",
+    "Shader/ocean/coast rendering",
+    "Full erase/army/pathfinding lifecycle and callee side effects",
+    "Behavioral equivalence with original execution"
+  ],
+  "report": {
+    "path": "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
+    "bytes": 8974,
+    "sha256": "ca825b30bf286052365f8c78b02216ee67f5aab8e102dc905e60316d72b52283"
+  },
+  "scratchIgnoredVerifiedBy": "git check-ignore on parser, analysis.json and DrawMapHeight disassembly"
+}

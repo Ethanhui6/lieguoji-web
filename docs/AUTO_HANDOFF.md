@@ -1,43 +1,45 @@
-# 列国纪当前续接
+# 当前续接：Fantasy Map Simulator 网页重建 V5
 
-更新：2026-10-04。先核Git、源码、dist、端口和当前浏览器状态；plan/tasks.json为任务状态源，普通本地开发每批1—3项自动推进。
+更新2026-10-04。先读根目录 CODEX_AUTOPILOT_V5.md 和 docs/FMS_WEB_REBUILD_PLAN.md，当前状态只认 plan/tasks.json.webRebuild。用户要求重做旧计划；本轮不是继续旧PH06扩展，也不是已交付新的游戏版本。普通本地工作每批1—3项自动推进，必要产品问题分批问，不重问已回答内容。
 
-## 当前版本与授权
+## 当前目标与用户确认
 
-- 分支codex/ph06-world-generation；本批源码/证据提交 **42af5433aedcb0e02cbcb1cabf88aa538f184c1a**。最终HEAD以git log为准，源码提交与随后记录指针的文档提交分开。
-- 产品/构建 **0.5.0-preview.33**；build.json SHA256 **dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3**；真实构建基准 **199f20d65cdfccff0367a9770d4516ff573e1a4c**，不改写为之后的提交。新生成器recovered-height-square-v1：bc2eb3f4319ff9bf6d21c59faced9b75bca0f5c727cc8f6591493863d154915f。完整源码/32产物/浏览器响应摘要已绑定。
-- 用户已授权只读分析自己的D:/steam/steamapps/common/FantasyMapSimulator并在本项目适配；不运行原游戏或完整recovered main，不读取认证/SDK配置、envs.log或个人存档。原安装目录本批无写入；raw/dump仍ignored。
-- 已核本地remote为https://github.com/Ethanhui6/lieguoji-web.git，core.hooksPath=.githooks。Pages历史项目lieguoji-web，唯一原生Git链main生产/其余分支预览。本批无云端访问/写入。**全PH发布门仍锁定，9月24例外已消耗；禁止所有push、远端PR/Issue/Milestone/上传/Pages触发。**
-- 没有需要登录、App或秘密输入的工程阻塞；本地版本未声称线上更新。
+- 把用户自己的Fantasy Map Simulator做成网页/PWA，优先忠实还原画地图方式、地图表现、配色、按钮和菜单。原作风格覆盖旧iOS设计方向。
+- 第一份试玩：闭合轮廓＋陆地/海洋笔刷；保留大陆主体，只细化湾岬和内陆自然地形；连续缩放；可反复改、撤销、保存、刷新恢复。尚未实现并验收这份新合同。
+- iPhone13ProMax、用户报告**iOS27**、Safari与Chrome、**竖屏优先，工具收入可展开菜单**。具体小版本/构建号真机测试时再记；移动仿真不能代真机。
+- WEB-PH00—07为新执行顺序，WEB-PH02是首个用户体验门；未通过前修绘图/地理/表现，暂停继续堆国家/家族/信仰面板。完整范围未删除：不同国家制度、手工/自动行政区、城市首都、兵种战争、家族信仰、历史和PWA仍在后续阶段。
 
-## 本批实际完成
+## Git、旧版本与发布
 
-1. **直接模板创世。** 创世面板和初始草稿入口可选群岛、多大陆、高山大岛、联合大陆及种子，生成真实预览后取消或独立保存，不再要求研究页导出/手动导入。
-2. **确定性生成与连续地形。** 最小纯TypeScript适配保留原高度操作和Alea数值顺序；网页方形抖动点网1536×1536、36,864点/72,962三角，完整映射4096×4096世界，避免旧3:2输入居中造成上下内部海带。网页邻接不冒称原Unity拓扑。classic-v1只用于测试，原群岛421730的高度/拓扑摘要逐字一致。
-3. **真实保存和后续编辑。** 有界生成Worker完成后释放，再复用原严格转换/原子保存链，仍是独立Atlas v4、origin:null、generation.lastApplied:null。预览取消不写库，旧草稿不变；保存后下载创世记录、切面板保留记录、刷新恢复、局部山地修改、建立独立国家并再次恢复均有实际证据。
+- 分支 codex/ph06-world-generation。重规划前HEAD **bd07208d31349862f7da788eaefc991089ba6f2d**，旧产品源码基准 **42af5433aedcb0e02cbcb1cabf88aa538f184c1a**。本轮提交以git log最新V5 checkpoint为准，文档不写虚构自引用SHA。
+- 旧产品/构建 **0.5.0-preview.33**，构建基准 **199f20d65cdfccff0367a9770d4516ff573e1a4c**，build.json SHA256 **dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3**。本轮没有改产品代码、版本或dist；旧检查不是V5通过。
+- 本地remote已核为 https://github.com/Ethanhui6/lieguoji-web.git；hooksPath=.githooks。Pages历史项目lieguoji-web，唯一原生Git链main生产/其他分支预览，历史地址 https://lieguoji-web.pages.dev/ 。本轮没有联网核验部署、访问账户或云端写入，不能声称旧站已更新。
+- **所有push/tag/远端PR/Issue/Milestone/上传/Pages触发仍禁止。** 9月24单次试玩例外已消耗；旧releasePolicy、旧全部任务与pre-push原样保留。V5阶段改名不能解锁，最后逐项对照全部旧要求和新合同后正式修订门。
+- 旧61任务/36PH/144子项及全部原JSON顶层字段语义原样保留；仅追加webRebuild。旧phaseState/programme描述历史，不是当前排期。未删旧源码、历史或存档。
 
-已修复首次保存和切换面板时下载记录丢失：record提升到AtlasStudio会话状态，在恢复地图前接收持久回执。“创世”和“草稿”共享下载入口。记录目前为会话资料，刷新/离开地理创作前需下载；地图本身持久保存。完整原脚本和第三方Unity组件不进产品，6份相关许可/notice保留在public/terrain-licenses.txt。
+## 本轮实际工作
 
-## 本地试玩与材料
+1. 用户选择落盘；新增V5执行指令、8阶段计划和首轮9项任务，更新AGENTS/README/ROADMAP入口。WEB-00-01完成；WEB-00-02与WEB-00-03仍进行中；所有新试玩/真机/用户视觉结果均未通过。
+2. 现有引擎只读审查确认：手绘轮廓与复用高度核未接通、旧陆块相接保护限制塑形、源地形细节和转换/材质必须分开比较、预览全量准备影响响应。证据见 [EXISTING_ENGINE_AUDIT.md](evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md)。
+3. 已寻找公开原作演示。观察官方两个短片尾帧及B站描图教学的部分片段；B站约1:46出现登录提示，未继续，不能当成完整画笔观察。清楚记录 [参考基线](FMS_REFERENCE_BASELINE_2026-10-04.md)，未下载/转载媒体到产品。
+4. 按用户图片方法做了真实的三函数静态试验：DrawMapHeightLogic→DrawMapHeight确认；原选区走Raycast/OverlapSphere的Collider集合，没有直接调用GetCellIndexInRadius；局部高度算术、海陆变化和若干实体维护调用已证实。自然Hill分支依赖**HeightMapGenerator.GetHeightMap RVA 0x38BC80**，仍未展开。见 [BRUSH_STATIC_AUDIT.md](evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md) 与 [manifest](evidence/fms-web-replan-2026-10-04/brush-static-manifest.json)。静态证据不是网页行为等价。
 
-- 当前本地游戏<http://127.0.0.1:4173/>。应用内浏览器已保留 **[群岛新纪 · 直接创世试玩](http://127.0.0.1:4173/?atlas=atlas-17708eca-a8dc-465b-9763-8f82a1539ca6&atlas-format=4)**，修订0，最终构建刷新恢复通过；存档属于该浏览器本地IndexedDB。
-- [原生最终画面](evidence/fms-direct-generation-2026-10-04/native-restored-final.png)、[本批报告](evidence/fms-direct-generation-2026-10-04/REPORT.md)、[来源许可](evidence/fms-direct-generation-2026-10-04/PROVENANCE.md)、[核验记录](evidence/fms-direct-generation-2026-10-04/verification.json)、[产物审查](evidence/fms-direct-generation-2026-10-04/dist-review.json)。
-- 旧preview.32原生草稿atlas-846eb56f-3d54-4c23-aa5d-ff6c5b1c1eb7及所有旧地图保留。旧手工导入链继续可用。
-- ignored原研究源.autopilot/fms-audit/import/archipelago-research.json SHA256 b36eab44e1652df57c5ac5f152ec76ae62c27326fa3734c514e2d49bf19a01ac；高度491e2fb4a7242724ee0462b965657f8d43581f67e47a4ef1430a5cbab3eb59a4；拓扑ede5a394c6957c7eef5f7fd31061732ec3708491d2015e5061057f395e2072cf。不要重新恢复已查明内容。
-- BasicMap中立点位仍在.autopilot/fms-audit/binary/basic-map/。四图高程全0、国家/城市为空，未保存邻接或明确边界；点序188×106/231×130/267×150/377×212仅为坐标推断，不能作为原参数。原完整372,646字节main与7文化命名包见[FMS总记录](FMS_PACKAGE_REUSE_2026-10-03.md)。
-- 旧研究页4175本批未作为交付入口重新核验；现在通过主游戏入口即可生成。续接先核端口，服务不保证会话外常驻。
+## 安装包与工具边界
 
-## 验证与未完成
+- 授权只读 D:/steam/steamapps/common/FantasyMapSimulator；不写安装目录，不读认证、SDK配置、envs.log或个人存档。未运行原作EXE/DLL或完整recovered main。源GameAssembly读取前后摘要一致。
+- 实际为Windows x64 PE / Unity2021.3.36f1 / IL2CPP v29。已有Il2CppDumper6.7.46、Capstone、UnityPy；没有已确认可调用hk4e-mcp。用户截图的ELF/DWARF流程只能借用方法，不能伪称已照其工具运行。
+- 已恢复高度模块与四模板仍可复用；原始main、loader材料、完整dump和临时解析器仍ignored。BasicMap四文件只证实坐标点，高程全0、没有原生邻接；不能把它们认作完整大陆。
+- 已有恢复报告在 .autopilot/fms-audit/binary/recovered/；本轮临时静态试验在 .autopilot/fms-audit/binary/brush-static/。不重复全包解密/扫描，不复制raw到docs或dist。详情仍见 [包复用记录](FMS_PACKAGE_REUSE_2026-10-03.md)。
 
-- 全量lint、类型、计划、构建及32文件dist白名单通过；98相关单元、22发布门检查、2条完整浏览器流程通过（桌面/手机仿真各1，零重试/零跳过）。浏览器0页面/控制台错误、0HTTP写请求，实际JS/CSS与最终产物逐件匹配。原生最终恢复零控制台错误。
-- 本批没有全仓全部历史单元/e2e重跑、云端CI、真实手机/平板或用户视觉验收。旧引擎与11生成器身份完全保持；新身份独立新增。98单元在核心冻结后运行；最后UI生命周期修复由新lint/类型/build/e2e覆盖。
-- 只新增完成局部记录FMS-SEED-CREATION。原61任务/36PH/144子项及原25任务摘要保留，FMS-TERRAIN仍in_progress，PH06/PH10仍未整体验收。
-- 手绘轮廓与恢复内核的结合、原Unity拓扑、完整行政/城市/外交/战争/家族/信仰模拟未完成。自然大陆/自然海洋与用户视觉仍待验收，不能将新截图和数值测试写成用户认可。
+## 下一批，按新计划推进
 
-## 下一批
+1. WEB-00-02：补原作实际画陆擦海、半径/强度、菜单、撤销与连续缩放的可见参照。优先已有 [基本操作视频](https://www.bilibili.com/video/BV1d9YTeREpR/) 或官方频道；已看的不足保持未知，不要求用户凭记忆填链接。需要原作进程对照时单独界定运行/保存写入范围。
+2. WEB-00-03：只展开GetHeightMap这一直接依赖，恢复Hill数值传播；选区集合显式输入，先做有界数值fixture。Collider与网页多边形对应未知，不用圆内点查询冒称原行为。原始方法没恢复时，不把四模板新增当画笔恢复。
+3. 满足上述合同后执行WEB-01-01—03：独立本地创世入口/存储，原作风格竖屏折叠工具、轮廓和海陆笔刷、逐笔撤销保存。先源码地形直接渲染与Atlas转换对照，不强制走旧420万点转换；最终保存校验和旧档保护保持。
 
-1. 将手绘海陆轮廓作为约束接到已验证地形内核：保护玩家形状、仅对允许区域细化海岸/山地，仍先预览后确认、可取消且旧地图不变。
-2. 基于已恢复BasicMap坐标明确重建边界/邻接的实验方案，与现网页抖动点网对照，不静默填点/降采样、不声称原生拓扑等价。
-3. 按依赖继续PH09/PH10与PH11—14国家行政/城市实体；已有命名、政体、信仰、兵种素材不能代替真实模拟消费者，不堆空面板。
+## 检查与未通过
 
-CANON正式设定、核图、正史、真机和用户视觉仍独立待验。旧v1/v2/v3和旧历史不静默迁移。会话结束后不会继续后台开发；下次核实本地状态后从此接续。
+- 本轮只做计划/文档和静态分析。计划保留检查、引用/依赖/旧字段完整性与发布锁状态证据写入 [verification.json](evidence/fms-web-replan-2026-10-04/verification.json)；最终以文件结果为准。没有必要重跑旧游戏全套检查或构建，新网页数值fixture和浏览器/真机尚未执行。
+- 旧preview.33检查和浏览器结果保存在 docs/evidence/fms-direct-generation-2026-10-04/；旧试玩存档atlas-17708eca-a8dc-465b-9763-8f82a1539ca6继续保留。旧localhost4173是否运行要续接时核实，不承诺常驻，不能当新V5试玩。
+- 第一体验门、原作完整画笔/拓扑/海洋渲染、真机与用户视觉均未通过。CANON正式设定、正式核图/正史、旧档规则和原长征要求独立保留。
+- 目前没有需要登录或秘密输入才能继续的本地工程阻塞。会话结束后不在后台继续开发；下次按本记录核实状态后接续。

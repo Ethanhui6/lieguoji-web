@@ -2453,5 +2453,336 @@
     "buildSha256": "dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3",
     "commitNote": "Source and evidence committed locally; this pointer and handoff are recorded in the subsequent documentation checkpoint. Build metadata retains its actual earlier HEAD.",
     "seedCreationInMainFlow": true
+  },
+  "webRebuild": {
+    "version": "V5",
+    "active": true,
+    "date": "2026-10-04",
+    "status": "in_progress",
+    "source": "CODEX_AUTOPILOT_V5.md",
+    "roadmap": "docs/FMS_WEB_REBUILD_PLAN.md",
+    "currentPhaseId": "WEB-PH00",
+    "reason": "用户否定当前体验及旧计划，要求按自己原作重新规划；先可绘图自然大陆与连续缩放",
+    "supersedes": {
+      "executionOrder": "V4",
+      "visualDirection": "original-FMS-instead-of-iOS-style",
+      "legacyStatusesRetained": true,
+      "releasePolicyUnchanged": true
+    },
+    "baseline": {
+      "head": "bd07208d31349862f7da788eaefc991089ba6f2d",
+      "sourceCommit": "42af5433aedcb0e02cbcb1cabf88aa538f184c1a",
+      "version": "0.5.0-preview.33",
+      "userExperienceAccepted": false
+    },
+    "confirmed": {
+      "product": "Fantasy Map Simulator web/PWA",
+      "sourceMode": "authorized-installation-read-only",
+      "input": [
+        "closed-outline",
+        "land-brush",
+        "sea-brush"
+      ],
+      "generation": "preserve-large-silhouette-refine-coasts-and-interior",
+      "device": "iPhone 13 Pro Max",
+      "browsers": [
+        "Safari",
+        "Chrome"
+      ],
+      "orientation": "portrait-first",
+      "controls": "original-style-expandable-tool-menu",
+      "visualDirection": "faithful-original-map-colors-buttons-menus",
+      "os": "iOS 27",
+      "osSource": "user-reported; exact minor/build to record during physical test"
+    },
+    "firstPlayableGate": {
+      "phaseId": "WEB-PH02",
+      "status": "not_run",
+      "physicalDevice": "not_run",
+      "mobileEmulation": "not_run",
+      "userVisualAcceptance": "pending",
+      "blocksExpansionTo": [
+        "WEB-PH03",
+        "WEB-PH04",
+        "WEB-PH05",
+        "WEB-PH06"
+      ],
+      "note": "Historical preview.33 checks do not satisfy this gate; fix drawing/terrain until accepted."
+    },
+    "unknowns": [
+      "complete original brush workflow video",
+      "native topology",
+      "original ocean shaders",
+      "original rendering LOD",
+      "complete original simulation rules"
+    ],
+    "release": {
+      "mode": "local_only",
+      "cloudWritesAllowed": false,
+      "existingGateRetained": true,
+      "phaseRenameDoesNotUnlock": true,
+      "finalRequirementReconciliationRequired": true
+    },
+    "legacyScopeNote": "Old 61 tasks and all 144 PH work items retain their state/dependencies/evidence. Phase mapping covers requirements, not acceptance equivalence. Original M5/canon/device gates remain.",
+    "evidence": [
+      "CODEX_AUTOPILOT_V5.md",
+      "docs/FMS_WEB_REBUILD_PLAN.md",
+      "docs/FMS_REFERENCE_BASELINE_2026-10-04.md",
+      "docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md",
+      "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
+      "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json"
+    ],
+    "nextBatch": [
+      "WEB-00-02",
+      "WEB-00-03"
+    ],
+    "phases": [
+      {
+        "id": "WEB-PH00",
+        "title": "原作与材料基线",
+        "dependsOn": [],
+        "status": "in_progress",
+        "legacyRequirementIds": [
+          "PH00"
+        ],
+        "acceptance": "产品选择、原作操作参照及一次画笔输入输出合同明确；静态与实机证据分开",
+        "evidence": [],
+        "workItems": [
+          {
+            "id": "WEB-00-01",
+            "title": "产品合同与旧计划接续",
+            "dependsOn": [],
+            "status": "done",
+            "acceptance": "用户已回答选项、阶段、旧要求与云端冻结均落盘",
+            "evidence": [
+              "CODEX_AUTOPILOT_V5.md",
+              "docs/FMS_WEB_REBUILD_PLAN.md"
+            ]
+          },
+          {
+            "id": "WEB-00-02",
+            "title": "原作画图与视觉参照",
+            "dependsOn": [
+              "WEB-00-01"
+            ],
+            "status": "in_progress",
+            "acceptance": "具名片段覆盖画陆擦海、参数、生成、撤销、连续缩放和菜单；不足列未知",
+            "evidence": [
+              "docs/FMS_REFERENCE_BASELINE_2026-10-04.md"
+            ]
+          },
+          {
+            "id": "WEB-00-03",
+            "title": "一次画笔数值合同",
+            "dependsOn": [
+              "WEB-00-01"
+            ],
+            "status": "in_progress",
+            "acceptance": "限定函数静态证据、选择点和高度变化的最小fixture；没有原作运行对照不称等价",
+            "evidence": [
+              "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
+              "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json"
+            ],
+            "progress": "三个函数静态调用/局部高程算术已核实；自然Hill形状和数值fixture未完成，原作运行/网页行为未验"
+          }
+        ]
+      },
+      {
+        "id": "WEB-PH01",
+        "title": "竖屏自由绘图",
+        "dependsOn": [
+          "WEB-PH00"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH01",
+          "PH02",
+          "PH04",
+          "PH08",
+          "PH31"
+        ],
+        "acceptance": "独立可保存创世会话，轮廓/海陆笔刷/连接分离/撤销；触控不会误画",
+        "evidence": [],
+        "workItems": [
+          {
+            "id": "WEB-01-01",
+            "title": "独立入口与竖屏触控",
+            "dependsOn": [
+              "WEB-00-01",
+              "WEB-00-02"
+            ],
+            "status": "todo",
+            "acceptance": "原作工具语义折叠；单指绘图/双指导航；独立命名空间",
+            "evidence": []
+          },
+          {
+            "id": "WEB-01-02",
+            "title": "闭合轮廓与海陆笔刷",
+            "dependsOn": [
+              "WEB-01-01",
+              "WEB-00-03"
+            ],
+            "status": "todo",
+            "acceptance": "真实数据支持加陆擦海、连接分离、半径强度与清晰失败反馈",
+            "evidence": []
+          },
+          {
+            "id": "WEB-01-03",
+            "title": "逐笔撤销与隔离保存",
+            "dependsOn": [
+              "WEB-01-02"
+            ],
+            "status": "todo",
+            "acceptance": "预览取消无残留，撤销重做、保存刷新恢复、冲突保护、旧档不变",
+            "evidence": []
+          }
+        ]
+      },
+      {
+        "id": "WEB-PH02",
+        "title": "自然地形与连续地图",
+        "dependsOn": [
+          "WEB-PH01"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH03",
+          "PH05",
+          "PH06",
+          "PH07",
+          "PH09"
+        ],
+        "acceptance": "保形自然化、海岸海洋与连续缩放；手机真实操作与用户视觉通过后才能扩建国家",
+        "evidence": [],
+        "workItems": [
+          {
+            "id": "WEB-02-01",
+            "title": "轮廓约束自然化",
+            "dependsOn": [
+              "WEB-01-02"
+            ],
+            "status": "todo",
+            "acceptance": "锁主体形状，试验复用高度核，真实地貌水系且保留主要海湾/狭颈",
+            "evidence": []
+          },
+          {
+            "id": "WEB-02-02",
+            "title": "海岸海洋与缩放对照",
+            "dependsOn": [
+              "WEB-02-01"
+            ],
+            "status": "todo",
+            "acceptance": "同输入直接地形/Atlas转换对照，无接缝跳变，显示/拾取/保存一致",
+            "evidence": []
+          },
+          {
+            "id": "WEB-02-03",
+            "title": "第一份手机体验门",
+            "dependsOn": [
+              "WEB-02-02",
+              "WEB-01-03"
+            ],
+            "status": "todo",
+            "acceptance": "iPhone13ProMax Safari和Chrome真实绘图保存恢复；用户认可方向，性能单列",
+            "evidence": []
+          }
+        ]
+      },
+      {
+        "id": "WEB-PH03",
+        "title": "国家与城市",
+        "dependsOn": [
+          "WEB-PH02"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH10",
+          "PH11",
+          "PH12",
+          "PH13",
+          "PH14"
+        ],
+        "acceptance": "手动自动建国定都、各国行政树与区划、真实城市近景与保存引用",
+        "evidence": [],
+        "workItems": []
+      },
+      {
+        "id": "WEB-PH04",
+        "title": "看海与战争",
+        "dependsOn": [
+          "WEB-PH03"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH15",
+          "PH16",
+          "PH17",
+          "PH23",
+          "PH24",
+          "PH25",
+          "PH26",
+          "PH27"
+        ],
+        "acceptance": "可解释发展外交编军行军补给交战撤退占领闭环；后续人物/信仰接入后复验全系统",
+        "evidence": [],
+        "workItems": []
+      },
+      {
+        "id": "WEB-PH05",
+        "title": "人物家族信仰",
+        "dependsOn": [
+          "WEB-PH04"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH18",
+          "PH19",
+          "PH20",
+          "PH21",
+          "PH22"
+        ],
+        "acceptance": "人物职务、谱系继承、信仰由模拟实际消费并影响国家地方，无空面板",
+        "evidence": [],
+        "workItems": []
+      },
+      {
+        "id": "WEB-PH06",
+        "title": "长期世界与PWA",
+        "dependsOn": [
+          "WEB-PH05"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH28",
+          "PH29",
+          "PH30",
+          "PH32",
+          "PH33"
+        ],
+        "acceptance": "历史分支、完整内容、长局保存离线更新与三端整合；正式CANON独立待验",
+        "evidence": [],
+        "workItems": []
+      },
+      {
+        "id": "WEB-PH07",
+        "title": "完整验收与发行准备",
+        "dependsOn": [
+          "WEB-PH06"
+        ],
+        "status": "todo",
+        "legacyRequirementIds": [
+          "PH34",
+          "PH35"
+        ],
+        "acceptance": "完整旧要求逐项复核、本地检查真机用户验收；不自动解锁旧发布门；云端另验",
+        "evidence": [],
+        "workItems": []
+      }
+    ],
+    "nextRecoveryTarget": {
+      "name": "HeightMapGenerator.GetHeightMap",
+      "rva": "0x38BC80",
+      "reason": "原生自然Hill画笔的直接依赖；现有JS模板不是这一函数"
+    }
   }
 }

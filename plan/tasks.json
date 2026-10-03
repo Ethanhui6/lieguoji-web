@@ -2421,6 +2421,7 @@
         "status": "in_progress",
         "scope": "Recovered original height kernel works in local browser Worker; original Unity topology/Atlas import still incomplete"
       }
-    ]
+    ],
+    "sourceCommit": "9e6937253e5c57b3c452540c3dfcc8a5f30dace0"
   }
 }

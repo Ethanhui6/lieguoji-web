@@ -4,7 +4,7 @@
 
 ## 当前版本与授权
 
-- 分支 codex/ph06-world-generation；本批源/evidence提交完成后以git log核实。实际构建基准 ce55cd54591f08b17770f707011a76be030a612d。产品 package/dist 0.5.0-preview.31；build.json SHA256 fb038c1e60d2626b55d969f2d76cf1b086e5a9a12c7a33d22d8ba31076675cf1。不能将build.commit改写成后来提交。
+- 分支 codex/ph06-world-generation；本批源码/证据提交 9e6937253e5c57b3c452540c3dfcc8a5f30dace0；本续接记录随后单独提交，最终HEAD以git log为准。实际构建基准 ce55cd54591f08b17770f707011a76be030a612d。产品 package/dist 0.5.0-preview.31；build.json SHA256 fb038c1e60d2626b55d969f2d76cf1b086e5a9a12c7a33d22d8ba31076675cf1。不能将build.commit改写成后来提交。
 - 2026-10-03用户声明 D:/steam/steamapps/common/FantasyMapSimulator 是自己的Steam作品，授权只读分析和网页复用，并答复“先从当前安装包继续分析”。AGENTS已记录该例外；不再以旧参考游戏禁复制规则拒绝本次授权范围。第三方模块仍记录实际来源。
 - 仅本项目与该明确安装目录；原目录不写，envs.log、SDK/认证配置和个人存档不读。32个审计源文件结束摘要与开始一致。
 - remote当前只读核实为 https://github.com/Ethanhui6/lieguoji-web.git。Pages历史配置 lieguoji-web，唯一原生Git链：main生产/其他分支预览。本批没有云端写入或重新验云端。

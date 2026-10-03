@@ -461,5 +461,12 @@
     "Height kernel research is not Atlas integration or original gameplay equivalence",
     "Original Unity topology and BasicMap geography not recovered",
     "No remote writes or deployment"
-  ]
+  ],
+  "sourceCommit": "9e6937253e5c57b3c452540c3dfcc8a5f30dace0",
+  "stagedByteVerification": {
+    "evidence": 49,
+    "sourceFiles": 11,
+    "distFiles": 29,
+    "passed": true
+  }
 }

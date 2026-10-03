@@ -5,6 +5,7 @@ import type { AtlasCamera, CameraPoint } from '../world/camera';
 import type { FmsDocument } from './model';
 import { deriveFmsDrainage, type FmsDrainage } from './hydrology';
 import { deriveFmsShade } from './shading';
+import { clipFmsRiverSegments } from './river-geometry';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; no texture tiles, invented rivers, or generated decoration.
@@ -101,15 +102,17 @@ export class FmsRenderer {
     }
     this.rivers.clear();
     // Flat brush plateaus have sheet runoff, not an implied incised river network.
-    if(surface.relief>=6)for(const [from,to] of surface.drainage.riverSegments){
-      const a=doc.points[from],b=doc.points[to];
+    const riverLines=surface.relief>=6?clipFmsRiverSegments(doc,surface.drainage.riverSegments):[];
+    for(const {from,a,b,mouth} of riverLines){
       const width=Math.min(5,1.8+Math.log2(Math.max(1,surface.drainage.accumulation[from]/surface.drainage.stats.minCatchment))*.55);
-      this.rivers.moveTo(a[0],a[1]).lineTo(b[0],b[1]).stroke({width,color:0x527f88,alpha:.9,cap:'round'});
+      this.rivers.moveTo(a[0],a[1]).lineTo(b[0],b[1]).stroke({width,color:0x527f88,alpha:.9,cap:mouth?'butt':'round'});
     }
     this.canvas.dataset.minHeight=String(Math.min(...doc.elevations));
     this.canvas.dataset.pointCount=String(doc.points.length);this.canvas.dataset.triangleCount=String(doc.triangles.length/3);
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
-    this.canvas.dataset.riverSegments=String(surface.relief>=6?surface.drainage.riverSegments.length:0);
+    this.canvas.dataset.riverSegments=String(riverLines.length);
+    this.canvas.dataset.riverGraphSegments=String(surface.drainage.riverSegments.length);
+    this.canvas.dataset.riverMouths=String(riverLines.filter(line=>line.mouth).length);
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
     this.protection.clear();
     let lockedTriangles=0;

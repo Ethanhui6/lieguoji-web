@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitFmsEdit, FmsEditHistory, prepareFmsLockEdit, type FmsDocument } from './model';
 import { coastFixture } from '../../tests/helpers/fms-coast-metrics';
 import { prepareFmsCoastPreview, refineFmsCoast } from './coast-refinement';
+import { prepareFmsCoastSmoothPreview, smoothFmsCoast } from './coast-smoothing';
 import { FMS_DATABASE_NAME, FmsPersistenceError, loadFmsDocument, saveFmsDocument } from './persistence';
 
 function document(revision = 0, height = 0): FmsDocument {
@@ -60,6 +61,21 @@ async function protectionBackup(): Promise<unknown> {
 }
 
 describe('protected document v2 opt-in and old-client isolation', () => {
+  it('saves a smoothed mesh, restores exact positions and protection, and persists undo/redo without changing the v1 archive',async()=>{
+    const source=coastFixture('asymmetric'),first=await saveFmsDocument(source,null),history=new FmsEditHistory(source);
+    history.commit(prepareFmsLockEdit(source,[{x:100,y:90,radius:12}],true));
+    const beforeSmooth=structuredClone(history.document),options={maxOffset:4};
+    const result=smoothFmsCoast(history.document,options);expect(result.moves.length).toBeGreaterThan(0);
+    const smoothed=structuredClone(history.replaceDocument(prepareFmsCoastSmoothPreview(history.document,result,options),history.document.revision));
+    const saved=await saveFmsDocument(history.document,first.storedRevision),restored=await loadFmsDocument();
+    expect(restored!.document).toEqual(smoothed);
+    const undo=history.undo();expect(undo.points).toEqual(beforeSmooth.points);const undoSaved=await saveFmsDocument(undo,saved.storedRevision);
+    expect((await loadFmsDocument())!.document.points).toEqual(beforeSmooth.points);
+    const redo=history.redo();expect(redo.points).toEqual(smoothed.points);await saveFmsDocument(redo,undoSaved.storedRevision);
+    expect((await loadFmsDocument())!.document).toEqual(redo);
+    const db=await database();const archive=await new Promise<{document:FmsDocument}>(resolve=>{const tx=db.transaction('saves','readonly'),request=tx.objectStore('saves').get('beforeProtection');tx.oncomplete=()=>resolve(request.result);});db.close();
+    expect(archive.document).toEqual(source);
+  });
   it('saves and restores refined geometry on DB1, then preserves that v1 mesh through two protected DB2 saves and undo', async()=>{
     const original=coastFixture('neck'),options={seed:1337,maxOffset:4},candidate=prepareFmsCoastPreview(original,refineFmsCoast(original,options),options);
     await saveFmsDocument(candidate,null);expect((await loadFmsDocument())!.document).toEqual(candidate);const v1=(await slots()).current;

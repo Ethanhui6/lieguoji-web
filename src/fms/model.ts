@@ -91,6 +91,7 @@ interface GeometryCache {
   width: number; height: number; triangles: Uint32Array; neighbors: number[][];
   delaunay: Delaunay<FmsPoint>; voronoi: ReturnType<Delaunay<FmsPoint>['voronoi']>;
   polygons: Map<number, FmsPoint[]>;
+  rendered?: { points: FmsPoint[]; buckets: number[][] | null; columns: number; rows: number };
 }
 // Document geometry is owned immutable data across revisions. Never serialize this cache.
 const geometryCaches = new WeakMap<FmsPoint[], GeometryCache>();
@@ -152,6 +153,41 @@ function stampSelection(doc: FmsDocument, stamp: FmsBrushStamp, selected: Set<nu
     for (const neighbor of geometry.delaunay.neighbors(cell)) if (!seen.has(neighbor)) { seen.add(neighbor); queue.push(neighbor); }
   }
 }
+/** Protection follows the stored, rendered triangles, including moved vertices
+ * and inserted coast knots. A newly computed Delaunay is not this surface. */
+function stampSurfaceSelection(doc: FmsDocument, stamp: FmsBrushStamp, selected: Set<number>, budget: { visits: number }): void {
+  if (!insideWorld(doc, stamp.x, stamp.y)) return;
+  const geometry = geometryFor(doc);
+  if (!geometry.rendered) {
+    const points = doc.points.map(p => p.map(Math.fround) as FmsPoint), pitch = 2 * Math.sqrt(doc.width * doc.height / (doc.triangles.length / 3));
+    const columns = Math.max(1, Math.min(256, Math.ceil(doc.width / pitch))), rows = Math.max(1, Math.min(256, Math.ceil(doc.height / pitch)));
+    let buckets: number[][] | null = Array.from({ length: columns * rows }, () => []), entries = 0;
+    for (let offset = 0; offset < doc.triangles.length; offset += 3) {
+      const face = Array.from(doc.triangles.slice(offset, offset + 3), i => points[i]);
+      const x0 = Math.max(0, Math.min(columns - 1, Math.floor(Math.min(...face.map(p => p[0])) / doc.width * columns)));
+      const x1 = Math.max(0, Math.min(columns - 1, Math.floor(Math.max(...face.map(p => p[0])) / doc.width * columns)));
+      const y0 = Math.max(0, Math.min(rows - 1, Math.floor(Math.min(...face.map(p => p[1])) / doc.height * rows)));
+      const y1 = Math.max(0, Math.min(rows - 1, Math.floor(Math.max(...face.map(p => p[1])) / doc.height * rows)));
+      entries += (x1 - x0 + 1) * (y1 - y0 + 1);
+      if (entries > MAX_SELECTION_VISITS) { buckets = null; break; }
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) buckets[y * columns + x].push(offset);
+    }
+    geometry.rendered = { points, buckets, columns, rows };
+  }
+  const { points, buckets, columns, rows } = geometry.rendered;
+  const visit = (offset: number) => {
+    if (++budget.visits > MAX_SELECTION_VISITS) throw new FmsModelError('work-limit', '这笔绘制范围过大，请分成几笔再试。');
+    const ids = Array.from(doc.triangles.slice(offset, offset + 3));
+    if (circleIntersectsPolygon(stamp, ids.map(i => points[i]))) ids.forEach(i => selected.add(i));
+  };
+  if (!buckets) { for (let offset = 0; offset < doc.triangles.length; offset += 3) visit(offset); return; }
+  const x0 = Math.max(0, Math.floor((stamp.x - stamp.radius) / doc.width * columns)), x1 = Math.min(columns - 1, Math.floor((stamp.x + stamp.radius) / doc.width * columns));
+  const y0 = Math.max(0, Math.floor((stamp.y - stamp.radius) / doc.height * rows)), y1 = Math.min(rows - 1, Math.floor((stamp.y + stamp.radius) / doc.height * rows));
+  const seen = new Set<number>();
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) for (const offset of buckets[y * columns + x]) {
+    if (!seen.has(offset)) { seen.add(offset); visit(offset); }
+  }
+}
 function targetHeight(height: number): number {
   if (!integer(height, FMS_SEA_LEVEL, 100)) throw new FmsModelError('invalid-edit', '陆地高度须为20至100之间的整数。');
   return height;
@@ -170,7 +206,7 @@ export function prepareFmsBrushEdit(doc: FmsDocument, edit: FmsBrushEdit): FmsEd
   const selected = selectFmsBrush(doc, edit.stamps);
   return prepareSelection(doc, selected, edit.tool, height, edit.tool === 'land' ? '绘制陆地' : '擦除为海洋');
 }
-function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[]): Set<number> {
+function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[], surface = false): Set<number> {
   if (!Array.isArray(stamps) || stamps.length > MAX_STAMPS) throw new FmsModelError('invalid-edit', '笔划长度无效。');
   for (const stamp of stamps) {
     if (!stamp || !finite(stamp.x) || !finite(stamp.y) || !finite(stamp.radius) || stamp.radius < 0.5 || stamp.radius > Math.max(doc.width, doc.height)) throw new FmsModelError('invalid-edit', '笔刷位置或半径无效。');
@@ -181,7 +217,7 @@ function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[]): Set
     if (++interpolatedCount > MAX_STAMPS) throw new FmsModelError('work-limit', '这笔路径过长，请分成几笔再试。');
     const key = `${stamp.x},${stamp.y},${stamp.radius}`;
     if (seen.has(key) || selected.size === doc.points.length) return;
-    seen.add(key); stampSelection(doc, stamp, selected, budget);
+    seen.add(key); (surface ? stampSurfaceSelection : stampSelection)(doc, stamp, selected, budget);
   };
   for (let i = 0; i < stamps.length; i += 1) {
     const current = stamps[i], previous = stamps[i - 1];
@@ -199,16 +235,12 @@ function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[]): Set
 }
 
 /** Explicit player action; a first nonempty lock transaction opts into v2.
- * Expand once to whole touched render triangles, not recursively, so the
- * highlighted interior is fixed as a surface rather than isolated samples. */
+ * Select whole triangles intersecting the brush, without replacing the stored
+ * surface by a nearest-site tessellation. */
 export function prepareFmsLockEdit(doc: FmsDocument, stamps: readonly FmsBrushStamp[], locked: boolean): FmsEditPatch {
   if (typeof locked !== 'boolean') throw new FmsModelError('invalid-edit', '地形保护模式无效。');
-  const selected = selectFmsBrush(doc, stamps), expanded = new Set(selected);
-  for (let offset = 0; offset < doc.triangles.length; offset += 3) {
-    const a = doc.triangles[offset], b = doc.triangles[offset + 1], c = doc.triangles[offset + 2];
-    if (selected.has(a) || selected.has(b) || selected.has(c)) { expanded.add(a); expanded.add(b); expanded.add(c); }
-  }
-  const lockChanges = [...expanded].sort((a, b) => a - b).flatMap(cell => {
+  const selected = selectFmsBrush(doc, stamps, true);
+  const lockChanges = [...selected].sort((a, b) => a - b).flatMap(cell => {
     const previous = doc.terrainLocks?.[cell] ?? 0, next = Number(locked);
     return previous === next ? [] : [Object.freeze({ cell, previous, next })];
   });

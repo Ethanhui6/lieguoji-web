@@ -8,6 +8,16 @@ const stamps = [{ x: 120, y: 290, radius: 18 }];
 const protectedDoc = () => { const doc = coastFixture('asymmetric'); return commitFmsEdit(doc, prepareFmsLockEdit(doc, stamps, true)); };
 
 describe('player terrain protection', () => {
+  it('protects the actual face under a brush on a non-Delaunay stored mesh',()=>{
+    const doc={...coastFixture('island'),width:80,height:80,points:[[0,0],[80,0],[80,80],[0,20]] as [number,number][],
+      triangles:new Uint32Array([0,1,2,0,2,3]),neighbors:[[1,2,3],[0,2],[0,1,3],[0,2]],elevations:new Int32Array([45,45,45,0])};
+    assertFmsDocument(doc);
+    const locked=commitFmsEdit(doc,prepareFmsLockEdit(doc,[{x:30,y:28,radius:8}],true));
+    // Old nearest-site selection found only D (id3), leaving B under this brush unlocked.
+    expect([0,1,2].every(i=>locked.terrainLocks![i]===1)).toBe(true);
+    const unlocked=commitFmsEdit(locked,prepareFmsLockEdit(locked,[{x:30,y:28,radius:8}],false));
+    expect(unlocked.terrainLocks!.some(Boolean)).toBe(false);
+  });
   it('requires an actual lock edit for v2; preparing/cancelling/empty unlock keeps v1 untouched', () => {
     const doc = coastFixture('asymmetric'), original = structuredClone(doc), patch = prepareFmsLockEdit(doc, stamps, true);
     expect(patch.lockChanges!.length).toBeGreaterThan(0); expect(doc).toEqual(original);

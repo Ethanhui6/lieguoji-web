@@ -1,4 +1,5 @@
 import { refineFmsCoast } from './coast-refinement';
+import { smoothFmsCoast } from './coast-smoothing';
 import type { FmsCoastRequest, FmsCoastResponse } from './coast-client';
 
 export function runFmsCoastRequest(raw:unknown):FmsCoastResponse{
@@ -8,7 +9,9 @@ export function runFmsCoastRequest(raw:unknown):FmsCoastResponse{
   const baseRevision=typeof value.document?.revision==='number'?value.document.revision:-1;
   try{
     if(Object.keys(value).length!==4||!['kind','requestId','document','options'].every(key=>Object.hasOwn(value,key))
-      ||value.kind!=='refine-coast'||requestId<=0||!value.document||!value.options)throw new Error('海岸细化请求无效。');
+      ||!['refine-coast','smooth-coast'].includes(value.kind??'')||requestId<=0||!value.document||!value.options)throw new Error('海岸细化请求无效。');
+    if(value.kind==='smooth-coast')return {kind:'smoothed-coast',requestId,result:smoothFmsCoast(value.document,value.options)};
+    if(value.kind!=='refine-coast')throw new Error('未知海岸操作。');
     return {kind:'refined-coast',requestId,result:refineFmsCoast(value.document,value.options)};
   }catch(error){return {kind:'error',requestId,worldId,baseRevision,message:error instanceof Error?error.message.slice(0,500):'海岸细化失败，原地图未改变。'};}
 }

@@ -17,6 +17,18 @@ const worker=()=>WorkerDouble.all.at(-1)!;
 beforeEach(()=>{WorkerDouble.all=[];vi.stubGlobal('Worker',WorkerDouble);});
 afterEach(()=>{clients.splice(0).forEach(c=>c.close());vi.unstubAllGlobals();vi.useRealTimers();vi.restoreAllMocks();});
 describe('coast Worker lifecycle and owned preview',()=>{
+  it('routes the distinct smoothing operation and refuses a response for the other mode',async()=>{
+    const doc=coastFixture('neck'),original=structuredClone(doc),c=client(),pending=c.smooth(doc,{maxOffset:4});
+    expect(worker().messages[0].kind).toBe('smooth-coast');doc.elevations.fill(0);worker().reply();const answer=await pending;
+    expect(answer.result.moves.length).toBeGreaterThan(0);expect(answer.document.elevations).toEqual(original.elevations);expect(answer.document.points.length).toBe(original.points.length);
+    const next=c.smooth(original,{maxOffset:4}),reject=expect(next).rejects.toThrow();
+    const response=runFmsCoastRequest(worker().messages.at(-1));worker().reply({...response,kind:'refined-coast'});await reject;
+  });
+  it('cancels smoothing without a late completion, then switches safely to microdetail',async()=>{
+    const c=client(),pending=c.smooth(coastFixture('neck'),{maxOffset:4}),old=worker(),late=old.onmessage!,raw=runFmsCoastRequest(old.messages[0]);
+    const rejected=expect(pending).rejects.toMatchObject({name:'AbortError'});c.cancel();await rejected;
+    const next=c.refine(coastFixture('neck'),options);late({data:raw} as MessageEvent);worker().reply();expect((await next).result.splits.length).toBeGreaterThan(0);
+  });
   it('returns a validated full mesh, owns input snapshot, reuses a healthy Worker and never transfers source',async()=>{
     const doc=coastFixture('neck'),original=structuredClone(doc),chosen={...options},c=client(),pending=c.refine(doc,chosen);
     doc.elevations.fill(0);chosen.maxOffset=0;worker().reply();const answer=await pending;

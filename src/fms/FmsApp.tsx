@@ -7,6 +7,7 @@ import { FmsRenderer } from './renderer';
 import { FmsTerrainClient } from './terrain-client';
 import { FmsCoastClient } from './coast-client';
 import { prepareFmsCoastPreview, type FmsCoastResult, type FmsCoastOptions } from './coast-refinement';
+import { prepareFmsCoastSmoothPreview, type FmsCoastSmoothResult, type FmsCoastSmoothOptions } from './coast-smoothing';
 import { prepareFmsTerrainPreview } from './terrain-preview';
 import type { FmsDrainage } from './hydrology';
 import { FMS_DEFAULT_COASTAL_WIDTH, FMS_MIN_COASTAL_WIDTH, FMS_MAX_COASTAL_WIDTH } from './terrain-options';
@@ -28,7 +29,8 @@ interface Session {
 interface Stroke { points: CameraPoint[]; tool: Tool; radius: number; height: number }
 type TerrainPhase = 'idle' | 'generating' | 'preview';
 type TerrainCandidate = { kind:'terrain'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; coastalWidth:number }
-  | { kind:'coast'; document:FmsDocument; result:FmsCoastResult; options:FmsCoastOptions };
+  | { kind:'coast'; document:FmsDocument; result:FmsCoastResult; options:FmsCoastOptions }
+  | { kind:'smooth'; document:FmsDocument; result:FmsCoastSmoothResult; options:FmsCoastSmoothOptions };
 const messageOf = (error: unknown) => error instanceof Error ? error.message : '这次操作未能完成，地图保持原样。';
 
 export default function FmsApp() {
@@ -39,7 +41,7 @@ export default function FmsApp() {
   const busyRef=useRef(false), renderUnavailable=useRef(false);
   const [terrainPhase,setTerrainPhaseState]=useState<TerrainPhase>('idle'), [seed,setSeed]=useState('1337'), [strength,setStrength]=useState(1), [showOriginal,setShowOriginal]=useState(false);
   const [coastalWidth,setCoastalWidth]=useState(FMS_DEFAULT_COASTAL_WIDTH);
-  const [coastOffset,setCoastOffset]=useState(0),[generationKind,setGenerationKind]=useState<'terrain'|'coast'>('terrain');
+  const [coastOffset,setCoastOffset]=useState(0),[generationKind,setGenerationKind]=useState<'terrain'|'coast'|'smooth'>('terrain');
   const terrainPhaseRef=useRef<TerrainPhase>('idle'), terrainCandidate=useRef<TerrainCandidate|null>(null);
   const terrainClient=useRef<FmsTerrainClient|null>(null), terrainAbort=useRef<AbortController|null>(null), generationToken=useRef(0);
   const coastClient=useRef<FmsCoastClient|null>(null);
@@ -172,14 +174,27 @@ export default function FmsApp() {
     const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate||renderUnavailable.current)return;
     s.gestures.interrupt();
     try {
-      const doc=candidate.kind==='terrain'?s.history.commit(candidate.patch):s.history.replaceDocument(prepareFmsCoastPreview(s.history.document,candidate.result,candidate.options),s.history.document.revision);
+      const doc=candidate.kind==='terrain'?s.history.commit(candidate.patch):s.history.replaceDocument(candidate.kind==='coast'?prepareFmsCoastPreview(s.history.document,candidate.result,candidate.options):prepareFmsCoastSmoothPreview(s.history.document,candidate.result,candidate.options),s.history.document.revision);
       s.renderer.setDocument(doc,candidate.kind==='terrain'?candidate.drainage:undefined);terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);refresh(s);
-      setNotice(candidate.kind==='terrain'?'自然地形已应用，可整步撤销。保存后刷新仍保留山地和河湖。':'海岸细化已应用，可整步撤销；保存后刷新保留实际轮廓。重调这次细化请先撤销。');
+      setNotice(candidate.kind==='terrain'?'自然地形已应用，可整步撤销。保存后刷新仍保留山地和河湖。':candidate.kind==='smooth'?'海岸轮廓已平滑，可整步撤销；保存后刷新保留实际位置。每次确认以当前地图为基准。':'海岸细化已应用，可整步撤销；保存后刷新保留实际轮廓。重调这次细化请先撤销。');
     }
     catch(error){cancelTerrain(false);setNotice(messageOf(error));}
   };
   const compareTerrain=()=>{const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate)return;s.gestures.interrupt();s.renderer.setDocument(showOriginal?candidate.document:s.history.document,showOriginal&&candidate.kind==='terrain'?candidate.drainage:undefined);setShowOriginal(!showOriginal);};
   const coastCandidate=terrainCandidate.current?.kind==='coast'?terrainCandidate.current:null;
+  const smoothCandidate=terrainCandidate.current?.kind==='smooth'?terrainCandidate.current:null;
+  const generateSmooth=async()=>{
+    const s=session.current;if(!s||!editable||coastOffset===0)return;
+    s.gestures.interrupt();setExpanded(false);setShowOriginal(false);setGenerationKind('smooth');setTerrainPhase('generating');setNotice('正在平滑海岸折角并检查形状约束，可以随时取消。');
+    const token=++generationToken.current,controller=new AbortController(),options={maxOffset:coastOffset};terrainAbort.current=controller;
+    try{
+      const client=coastClient.current??(coastClient.current=new FmsCoastClient()),preview=await client.smooth(s.history.document,options,{signal:controller.signal});
+      if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
+      if(!preview.result.moves.length){setTerrainPhase('idle');setNotice('当前限制内没有能改善折角的平滑结果；地图保持原样。');return;}
+      terrainCandidate.current={kind:'smooth',...preview,options};s.renderer.setDocument(preview.document);setTerrainPhase('preview');setNotice('轮廓平滑已预览；对照海湾与岬角后确认。本次以当前地图为基准。');
+    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}}
+    finally{if(generationToken.current===token)terrainAbort.current=null;}
+  };
   return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
     <div className="fms-map" ref={host}/>
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button onClick={()=>void generateTerrain()} disabled={!editable||stats.land===0}>生成地形</button><button className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}>{busy?'保存中…':'保存'}<span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
@@ -189,12 +204,12 @@ export default function FmsApp() {
     <div className="fms-zoom" aria-label="地图视角"><button onClick={()=>zoom(1.4)} disabled={!navigable} aria-label="放大">＋</button><button onClick={fit} disabled={!navigable} aria-label="查看全图">⌖</button><button onClick={()=>zoom(1/1.4)} disabled={!navigable} aria-label="缩小">−</button><output>{stats.zoom.toFixed(1)}×</output></div>
     <div className="fms-bottom">
       <div className="fms-status" role="status" aria-live="polite">{ready?notice:''}</div>
-      {terrainPhase!=='idle'&&<section className="fms-terrain-preview" aria-label={generationKind==='coast'?'海岸细化预览':'自然地形预览'}><strong>{terrainPhase==='generating'?(generationKind==='coast'?'海岸细化中…':'山地与河湖生成中…'):showOriginal?'正在对照原地图':generationKind==='coast'?'海岸细化预览':'自然地形预览'}</strong><p>{terrainPhase==='generating'?'原地图仍被保留。':coastCandidate?`${coastCandidate.result.splits.length} 段 · 最大偏移 ${coastCandidate.result.stats.maxDisplacement.toFixed(3)} 地图单位（上限 ${coastCandidate.options.maxOffset}）${coastCandidate.result.stats.budgetLimited?' · 已达地图点数上限':''}`:`沿海低地宽度 ${Math.round((terrainCandidate.current?.kind==='terrain'?terrainCandidate.current.coastalWidth:coastalWidth)*1000)/10}% · 海岸线固定。`}</p>{coastCandidate&&<p>局部海陆面积各变化不超过 2%；保护区跳过。河流与阴影会重新计算。</p>}<p>单指移动、双指缩放；确认前不会保存。</p><div><button onClick={()=>cancelTerrain()}>取消</button>{terrainPhase==='preview'&&<><button onClick={compareTerrain}>{showOriginal?'查看地形':'查看原图'}</button><button className="fms-confirm" onClick={confirmTerrain}>{generationKind==='coast'?'确认海岸':'确认地形'}</button></>}</div></section>}
+      {terrainPhase!=='idle'&&<section className="fms-terrain-preview" aria-label={generationKind==='smooth'?'轮廓平滑预览':generationKind==='coast'?'海岸细化预览':'自然地形预览'}><strong>{terrainPhase==='generating'?(generationKind==='smooth'?'轮廓平滑中…':generationKind==='coast'?'海岸细化中…':'山地与河湖生成中…'):showOriginal?'正在对照原地图':generationKind==='smooth'?'轮廓平滑预览':generationKind==='coast'?'海岸细化预览':'自然地形预览'}</strong><p>{terrainPhase==='generating'?'原地图仍被保留。':smoothCandidate?`最大偏移 ${smoothCandidate.result.stats.maxDisplacement.toFixed(3)} 地图单位（上限 ${smoothCandidate.options.maxOffset}）· 单块面积最大变化 ${(smoothCandidate.result.stats.maxComponentAreaFraction*100).toFixed(3)}%`:coastCandidate?`${coastCandidate.result.splits.length} 段 · 最大偏移 ${coastCandidate.result.stats.maxDisplacement.toFixed(3)} 地图单位（上限 ${coastCandidate.options.maxOffset}）${coastCandidate.result.stats.budgetLimited?' · 已达地图点数上限':''}`:`沿海低地宽度 ${Math.round((terrainCandidate.current?.kind==='terrain'?terrainCandidate.current.coastalWidth:coastalWidth)*1000)/10}% · 海岸线固定。`}</p>{coastCandidate&&<p>局部海陆面积各变化不超过 2%；保护区跳过。河流与阴影会重新计算。</p>}{smoothCandidate&&<p>每块陆地、水域总面积变化 ≤2%，任意两点间距缩短 ≤20%。小岛边界与支撑不足的细部跳过；保护面固定。每次相对当前地图，连续确认会累积。</p>}<p>单指移动、双指缩放；确认前不会保存。</p><div><button onClick={()=>cancelTerrain()}>取消</button>{terrainPhase==='preview'&&<><button onClick={compareTerrain}>{showOriginal?'查看地形':'查看原图'}</button><button className="fms-confirm" onClick={confirmTerrain}>{generationKind==='smooth'?'确认平滑':generationKind==='coast'?'确认海岸':'确认地形'}</button></>}</div></section>}
       {expanded&&<section className="fms-settings" aria-label="绘图设置"><div className="fms-panel-heading"><h2>高度编辑</h2><button aria-label="收起绘图设置" onClick={()=>setExpanded(false)}>×</button></div>
         <label>笔刷半径 <output>{radius}</output><input type="range" min="8" max="160" step="4" value={radius} onChange={e=>{session.current?.gestures.interrupt();setRadius(+e.target.value);}} disabled={!editable}/></label>
         <label>陆地高度 <output>{height}</output><input type="range" min="25" max="100" step="1" value={height} onChange={e=>{session.current?.gestures.interrupt();setHeight(+e.target.value);}} disabled={!editable}/></label>
         <fieldset><legend>自然地形</legend><label>地形种子<input aria-label="地形种子" inputMode="numeric" value={seed} maxLength={10} onChange={e=>setSeed(e.target.value)} disabled={!editable}/></label><label>起伏强度 <output>{Math.round(strength*100)}%</output><input type="range" min="0.2" max="1" step="0.1" value={strength} onChange={e=>setStrength(+e.target.value)} disabled={!editable}/></label><label>沿海低地宽度 <output>{Math.round(coastalWidth*1000)/10}%</output><input aria-label="沿海低地宽度" type="range" min={FMS_MIN_COASTAL_WIDTH*100} max={FMS_MAX_COASTAL_WIDTH*100} step="0.5" value={coastalWidth*100} onChange={e=>setCoastalWidth(+e.target.value/100)} disabled={!editable}/></label><p>按地图短边比例调整内陆过渡，不移动海岸线；保护区高程不变。生成参数仅用于本次会话，保存的是实际地形。</p></fieldset><p>双指移动或缩放 · 松手完成一笔<br/>地图仅保存在当前浏览器</p>
-        <fieldset><legend>海岸细化</legend><label>最大偏移 <output>{coastOffset===0?'固定海岸':`${coastOffset} 地图单位`}</output><input aria-label="海岸细化最大偏移" type="range" min="0" max="4" step="0.25" value={coastOffset} onChange={e=>setCoastOffset(+e.target.value)} disabled={!editable}/></label><p>只在边缘加入细小弯折，实际偏移还受局部海陆面积 2% 上限限制。保护区及支撑不足的狭小区域跳过。</p><button onClick={()=>void generateCoast()} disabled={!editable||stats.land===0||coastOffset===0}>预览海岸细化</button><p>使用上方地形种子，已细化段不重复叠加。本次会话可撤销重调；刷新后需用笔刷修改海岸。</p></fieldset>
+        <fieldset><legend>海岸形状</legend><label>最大偏移 <output>{coastOffset===0?'固定海岸':`${coastOffset} 地图单位`}</output><input aria-label="海岸细化最大偏移" type="range" min="0" max="4" step="0.25" value={coastOffset} onChange={e=>setCoastOffset(+e.target.value)} disabled={!editable}/></label><p>轮廓平滑减轻折角；每块陆地、水域总面积变化 ≤2%，间距缩短 ≤20%。每次相对当前地图，多次确认会累积。保护面、面积小于 4096 平方地图单位的岛屿与水域边界、支撑不足的细部固定。</p><button onClick={()=>void generateSmooth()} disabled={!editable||stats.land===0||coastOffset===0}>预览轮廓平滑</button><p>海岸细化只加入细小弯折，受每个原三角面内海陆面积各 2% 上限约束。保护区及支撑不足的细部跳过。</p><button onClick={()=>void generateCoast()} disabled={!editable||stats.land===0||coastOffset===0}>预览海岸细化</button><p>细化使用上方种子，已细化段不重复叠加。两种操作都可整步撤销，确认后仍需保存。</p></fieldset>
         <fieldset><legend>地形保护</legend><p>金色区域固定高程，笔刷、重新生成与海岸细化都会避开；阴影、河流仍可能变化。</p>{stats.version===1&&<p className="fms-upgrade-note">启用并保存后，旧试玩版本无法编辑此地图；保存时保留启用前备份。</p>}<div className="fms-lock-actions"><button onClick={()=>choose('lock')} disabled={!editable}>{stats.version===1?'启用并涂抹保护':'涂抹保护'}</button><button onClick={()=>choose('unlock')} disabled={!editable||stats.locked===0}>涂抹解锁</button></div><p>{stats.locked?'已有保护区域；解锁也是可撤销的一笔。':'尚未保护任何区域。'}</p></fieldset>
       </section>}
       {(tool==='lock'||tool==='unlock')&&<div className="fms-lock-mode"><span>{tool==='lock'?'▣ 保护笔刷':'□ 解锁笔刷'}</span><button onClick={()=>choose('browse')} disabled={!editable}>完成</button></div>}

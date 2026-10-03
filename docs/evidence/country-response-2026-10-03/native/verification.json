@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-03T08:14:23.023Z",
+  "check": "land-fast-path-1",
+  "finalReadyMs": 50449.20000000298,
+  "previousReadyMs": 83314.30000001192,
+  "geometryUnchanged": true,
+  "currentWorldUnchanged": true,
+  "originalWorldsUnchanged": true,
+  "allChunkHashesValid": true,
+  "consoleErrorsWarnings": [],
+  "physicalDevice": false,
+  "cloudWrites": false
+}

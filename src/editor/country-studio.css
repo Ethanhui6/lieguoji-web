@@ -72,6 +72,7 @@
 .country-color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0003; flex-shrink: 0; }
 .country-feedback { position: absolute; left: 12px; bottom: 12px; max-width: min(550px, calc(100% - 24px)); display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: 14px; color: var(--country-ink); background: var(--country-panel); font-size: 12px; line-height: 1.55; z-index: 3; box-shadow: var(--country-shadow); }
 .country-feedback[role="alert"] { border: 1px solid #b34f50; color: #842e35; }
+.country-studio button.country-destructive { color: #a43639; border-color: #dbaeb0; }
 .country-studio[data-country-tool^="outline-"] .country-feedback { top: 78px; bottom: auto; max-width: calc(100% - 24px); z-index: 5; }
 .country-studio[data-country-tool^="outline-"][data-country-state="ready"] .country-feedback[role="status"] { top: 78px; bottom: auto; width: fit-content; max-width: calc(100% - 24px); padding: 6px 10px; line-height: 1.4; box-shadow: none; pointer-events: none; }
 .country-feedback > div { min-width: 0; flex: 1; }
@@ -102,5 +103,6 @@
 @media (max-height: 550px) { .country-studio { grid-template-rows: 54px minmax(0, 1fr) 56px; } .country-inspector { max-height: calc(100% - 6px); } .country-inspector ~ .country-feedback { display: none; } }
 [data-theme="dark"] .country-studio { --country-ink: #e6f0f7; --country-muted: #adc0d0; --country-panel: #192b39; --country-border: #3c5365; --country-blue: #196ec5; --country-selected: #20415f; }
 [data-theme="dark"] .country-inspector input, [data-theme="dark"] .country-inspector select { background: #132532; }
+[data-theme="dark"] .country-studio button.country-destructive { color: #ffb8b8; border-color: #af7275; }
 @media (prefers-contrast: more) { .country-studio { --country-border: #526c7e; } .country-feedback { border: 1px solid currentColor; } }
 @media (forced-colors: active) { .country-studio button[aria-pressed="true"] { outline: 2px solid Highlight; } .country-map-tools, .country-inspector, .country-confirm { border: 1px solid CanvasText; } }

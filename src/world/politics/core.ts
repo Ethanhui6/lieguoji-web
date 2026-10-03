@@ -38,7 +38,7 @@ export function makeCountryCreationIds(command: CountryCommand): CountryCreation
 export async function applyCountryCommand(base: CountryDocument, raw: CountryCommand, geography: AtlasDocument, ids: CountryCreationIds = makeCountryCreationIds(raw), control?: AtlasControl): Promise<{ document: CountryDocument; description: string }> {
   ids = { ...ids };
   if (!validateCountryDocument(base) || !validateCountryCommand(raw)) throw new Error('国家命令或当前实体状态无效。');
-  if (base.version === 1 && (raw.type === 'create-nation-shape' || raw.type === 'claim-territory-shape')) throw new Error('自由圈地需要先明确建立 v2 独立副本；旧档保持原规则。');
+  if (base.version === 1 && (raw.type === 'create-nation-shape' || raw.type === 'claim-territory-shape' || raw.type === 'release-territory-shape')) throw new Error('自由圈地需要先明确建立 v2 独立副本；旧档保持原规则。');
   assertGeographySource(base, geography);
   control?.signal?.throwIfAborted();
   const command = structuredClone(raw), next = structuredClone(base);
@@ -68,6 +68,30 @@ export async function applyCountryCommand(base: CountryDocument, raw: CountryCom
     } else description = `为「${nation!.name}」增加 ${added.length} 个地块内的实际陆地。`;
     for (const cellId of added) territories.set(cellId, { cellId, legalNationId: nationId, controllingNationId: nationId });
     next.territories = [...territories.values()].sort((a, b) => a.cellId - b.cellId);
+  } else if (command.type === 'release-territory-shape') {
+    const cells = (await selectCountryPolygon(geography, { source: next.source, pointsQ: command.outlineQ, geometry }, control)).cellIds;
+    control?.signal?.throwIfAborted();
+    const territories = new Map(next.territories.map(t => [t.cellId, t])), removed = new Set<number>();
+    for (const cellId of cells) {
+      const existing = territories.get(cellId);
+      if (!existing) continue;
+      if (existing.legalNationId !== command.nationId || existing.controllingNationId !== command.nationId) throw new Error(`圈选范围涉及其他国家的地块 #${cellId}；本次不会移除任何领土。`);
+      removed.add(cellId);
+    }
+    if (!removed.size) throw new Error('圈选范围没有可移除的本国领土，没有需要提交的变化。');
+    // A shape chooses whole authoritative political cells, not only the drawn
+    // pixels. Protect cities even when their point lies outside the outline
+    // but their owning cell's center/seed lies inside it.
+    for (const city of next.cities) if (city.nationId === command.nationId) {
+      const surface = await countryLandAt(geography, city.positionQ.xQ, city.positionQ.yQ, control, geometry);
+      control?.signal?.throwIfAborted();
+      const owner = territories.get(surface.cellId);
+      if (!surface.land || owner?.legalNationId !== command.nationId || owner.controllingNationId !== command.nationId) throw new Error('保存的城市不在所属国家实际陆地内，本次未移除领土。');
+      if (removed.has(surface.cellId)) throw new Error(`圈选地块内有${nation!.capitalCityId === city.id ? '首都' : '城市'}「${city.name}」；请避开该地块，本次未移除领土。`);
+    }
+    if (!next.territories.some(t => t.legalNationId === command.nationId && !removed.has(t.cellId))) throw new Error('不能移除该国全部领土；至少保留一个实际陆地地块。');
+    next.territories = next.territories.filter(t => !removed.has(t.cellId));
+    description = `从「${nation!.name}」移除 ${removed.size} 个地块内的实际陆地，恢复为未分配；城市、首都与海域保持不变。`;
   } else if (command.type === 'create-city') {
     if (next.cities.length >= COUNTRY_LIMITS.cities || !countryId(ids.cityId, 'city')) throw new Error('城市数量已达上限或城市身份无效。');
     const surface = await countryLandAt(geography, command.positionQ.xQ, command.positionQ.yQ, control, geometry); control?.signal?.throwIfAborted();

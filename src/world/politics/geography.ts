@@ -222,32 +222,56 @@ export async function decodeCountryGeography(raw: unknown, control?: AtlasContro
   return data;
 }
 
-interface CountryQuery { data: AtlasDetailCoastDocument; field: DetailCoastField; spatial: SpatialIndex }
+interface CountryQuery {
+  data: AtlasDetailCoastDocument;
+  /** Land clipping uses coverage and Q8 crossings only, never these heights. */
+  field: DetailCoastField;
+  heightField?: Promise<DetailCoastField>;
+  spatial?: Promise<SpatialIndex>;
+}
 const queries = new WeakMap<AtlasDocument, Promise<CountryQuery>>();
 /** Decoded records retain their verified private snapshot; legacy direct query
- * inputs are captured and verified before yielding. Reusing the same document
- * reuses Hbase/index. Caller mutation never changes an established authority. */
+ * inputs are captured and verified before yielding. Coverage-only claims and
+ * clipping do not need a whole-world height projection or legacy spatial index.
+ * Caller mutation never changes an established authority. */
 async function query(data: AtlasDocument, control: AtlasControl): Promise<CountryQuery> {
   control.signal?.throwIfAborted(); let pending = queries.get(data);
   if (!pending) {
     pending = (async () => {
       const owned = verifiedGeographies.get(data)?.data ?? await cloneVerifiedAtlasDocument(data, control);
       if (!isDetailCoastDocument(owned)) throw new Error('建国查询只支持真实第四版细地理。');
-      const base = await extractDetailCoastBase(owned, control);
-      const field = { tiles: owned.detailCoast, sampleBaseElevation: createDetailShapeBaseSampler(base.size, base.centersQ, base.elevationsMeters) };
-      return { data: owned, field, spatial: await createSpatialIndexAsync(owned, control) };
+      // The original surface builder keeps its exact coverage/crossing rules.
+      // Its sampled-tile validation is unchanged; for uniform land/omitted sea
+      // the disposable height is irrelevant to xQ/yQ and is never returned.
+      const field = { tiles: owned.detailCoast, sampleBaseElevation: () => 0 };
+      return { data: owned, field };
     })();
     queries.set(data, pending);
   }
   try { const result = await pending; control.signal?.throwIfAborted(); return result; }
   catch (error) { if (queries.get(data) === pending) queries.delete(data); throw error; }
 }
+async function heightField(current: CountryQuery, control: AtlasControl): Promise<DetailCoastField> {
+  control.signal?.throwIfAborted();
+  const pending = current.heightField ??= (async () => {
+    const base = await extractDetailCoastBase(current.data, control);
+    return { tiles: current.data.detailCoast, sampleBaseElevation: createDetailShapeBaseSampler(base.size, base.centersQ, base.elevationsMeters) };
+  })();
+  try { const field = await pending; control.signal?.throwIfAborted(); return field; }
+  catch (error) { if (current.heightField === pending) delete current.heightField; throw error; }
+}
+async function legacySpatial(current: CountryQuery, control: AtlasControl): Promise<SpatialIndex> {
+  control.signal?.throwIfAborted();
+  const pending = current.spatial ??= createSpatialIndexAsync(current.data, control);
+  try { const spatial = await pending; control.signal?.throwIfAborted(); return spatial; }
+  catch (error) { if (current.spatial === pending) delete current.spatial; throw error; }
+}
 export async function countryLandAt(data: AtlasDocument, xQ: number, yQ: number, control?: AtlasControl, geometry: CountryGeometry = 'atlas-cell-v1'): Promise<{ cellId: number; height: number; land: boolean }> {
   validGeometry(geometry);
   if (!generationInt(xQ, 0, WORLD_Q) || !generationInt(yQ, 0, WORLD_Q)) throw new Error('建国地点需要世界范围内的整数 Q8 坐标。');
   const guarded = controlCopy(control), current = await query(data, guarded), point = { x: xQ / 256, y: yQ / 256 };
-  const cellId = geometry === 'political-voronoi-v1' ? (await countryPoliticalMesh(data, guarded)).pick({ xQ, yQ }) : current.spatial.pick(point).cellId;
-  const fine = pickDetailCoastSurface(current.field, point);
+  const cellId = geometry === 'political-voronoi-v1' ? (await countryPoliticalMesh(data, guarded)).pick({ xQ, yQ }) : (await legacySpatial(current, guarded)).pick(point).cellId;
+  const fine = pickDetailCoastSurface(await heightField(current, guarded), point);
   if (cellId === null || !fine) throw new Error('建国地点没有真实地理归属。');
   guarded.signal?.throwIfAborted(); return { cellId, height: fine.height, land: fine.land };
 }
@@ -285,25 +309,45 @@ function detailCellsIntersectingPoliticalPolygon(polygon: readonly DetailCoastPo
   }
   return Uint32Array.from(cells);
 }
-async function landPieces(current: CountryQuery, cellId: number, collect: boolean, control: AtlasControl, politicalPolygon?: readonly DetailCoastPointQ[]): Promise<DetailCoastPointQ[][]> {
-  if (!generationInt(cellId, 0, current.data.manifest.spec.columns * current.data.manifest.spec.rows - 1)) throw new Error('建国领土地块 ID 无效。');
-  const quad = politicalPolygon ?? getCellQuad(current.data, cellId).map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })), candidates = politicalPolygon ? detailCellsIntersectingPoliticalPolygon(quad) : detailCellsIntersectingQuad(quad);
+/** Original complete fine-triangle collection. This pure geometry helper does
+ * not establish source provenance or authorize claims. Kept as the coastline
+ * fallback and the exact slow reference for the all-land shortcut. */
+export async function collectCountryLandPolygons(field: DetailCoastField, quad: readonly DetailCoastPointQ[], candidates: Uint32Array, control: AtlasControl = {}): Promise<DetailCoastPointQ[][]> {
   if (candidates.length > COUNTRY_GEOGRAPHY_LIMITS.fineCellsPerCell) throw new Error('建国领土细格扫描预算超限。');
   const result: DetailCoastPointQ[][] = []; let hasSea = false;
   for (let index = 0; index < candidates.length; index++) {
     control.signal?.throwIfAborted(); const id = candidates[index];
-    const cell = buildDetailCoastSurface(current.field, { column: id % 2048, row: Math.floor(id / 2048), columns: 1, rows: 1 }).cells[0];
+    const cell = buildDetailCoastSurface(field, { column: id % 2048, row: Math.floor(id / 2048), columns: 1, rows: 1 }).cells[0];
     for (const triangle of cell.land) if (positiveOverlap(triangle, quad)) {
-      if (!collect) return [quad.map(p => ({ ...p }))];
       result.push(clipToQuad(triangle, quad));
     }
-    if (collect && !hasSea) hasSea = cell.sea.some(triangle => positiveOverlap(triangle, quad));
+    if (!hasSea) hasSea = cell.sea.some(triangle => positiveOverlap(triangle, quad));
     if ((index + 1) % 64 === 0) await yieldAtlas(control, '按真实细海岸裁剪建国领土', index + 1, candidates.length);
   }
   control.signal?.throwIfAborted();
   // Exact compression: only after scanning every intersecting fine cell and
   // proving no positive-area sea fragment intersects the original coarse quad.
-  return collect && result.length && !hasSea ? [quad.map(p => ({ ...p }))] : result;
+  return result.length && !hasSea ? [quad.map(p => ({ ...p }))] : result;
+}
+async function landPieces(current: CountryQuery, cellId: number, collect: boolean, control: AtlasControl, politicalPolygon?: readonly DetailCoastPointQ[]): Promise<DetailCoastPointQ[][]> {
+  if (!generationInt(cellId, 0, current.data.manifest.spec.columns * current.data.manifest.spec.rows - 1)) throw new Error('建国领土地块 ID 无效。');
+  const quad = politicalPolygon ?? getCellQuad(current.data, cellId).map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })), candidates = politicalPolygon ? detailCellsIntersectingPoliticalPolygon(quad) : detailCellsIntersectingQuad(quad);
+  if (candidates.length > COUNTRY_GEOGRAPHY_LIMITS.fineCellsPerCell) throw new Error('建国领土细格扫描预算超限。');
+  let hasLand = false;
+  for (let index = 0; index < candidates.length; index++) {
+    control.signal?.throwIfAborted(); const id = candidates[index];
+    const cell = buildDetailCoastSurface(current.field, { column: id % 2048, row: Math.floor(id / 2048), columns: 1, rows: 1 }).cells[0];
+    if (!hasLand) hasLand = cell.land.some(triangle => positiveOverlap(triangle, quad));
+    if (!collect && hasLand) return [quad.map(p => ({ ...p }))];
+    // Until a real sea intersection is found, only prove coverage. Interior
+    // cells no longer allocate thousands of clipped triangles just to discard
+    // them in favour of the same exact full polygon at the end. Any sea takes
+    // the untouched full collection order; no shoreline result is simplified.
+    if (collect && cell.sea.some(triangle => positiveOverlap(triangle, quad))) return collectCountryLandPolygons(current.field, quad, candidates, control);
+    if ((index + 1) % 64 === 0) await yieldAtlas(control, '按真实细海岸裁剪建国领土', index + 1, candidates.length);
+  }
+  control.signal?.throwIfAborted();
+  return hasLand ? [quad.map(p => ({ ...p }))] : [];
 }
 export async function countryClaimCells(data: AtlasDocument, rawIds: readonly number[], control?: AtlasControl, geometry: CountryGeometry = 'atlas-cell-v1'): Promise<number[]> {
   validGeometry(geometry);

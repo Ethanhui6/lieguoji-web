@@ -1052,7 +1052,9 @@
           "acceptance": "完成「分级文字、避让、手动标签位置」，并提供本阶段对应验收事实。切层不改模拟；不同缩放密度可读；名称与实体坐标分离；搜索可定位远端岛屿且返回时视口不丢。 图层与标签指向同一持久实体ID；切换缩放不能虚构新城市、国界或兵种。",
           "evidence": [
             "docs/evidence/2026-10-03-country-natural.md",
-            "docs/evidence/country-natural-2026-10-03/verification.json"
+            "docs/evidence/country-natural-2026-10-03/verification.json",
+            "docs/evidence/2026-10-03-country-response.md",
+            "docs/evidence/country-response-2026-10-03/verification.json"
           ]
         },
         {
@@ -1110,7 +1112,9 @@
             "docs/evidence/2026-10-03-country-scale.md",
             "docs/evidence/country-scale-2026-10-03/verification.json",
             "docs/evidence/2026-10-03-country-natural.md",
-            "docs/evidence/country-natural-2026-10-03/verification.json"
+            "docs/evidence/country-natural-2026-10-03/verification.json",
+            "docs/evidence/2026-10-03-country-response.md",
+            "docs/evidence/country-response-2026-10-03/verification.json"
           ]
         },
         {

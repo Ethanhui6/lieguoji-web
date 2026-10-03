@@ -1,0 +1,31 @@
+✔ a locked, unfinished programme remains a valid local plan but cannot release (3.2346ms)
+✔ every PH, subtask, readiness check and matching source permits a synthetic candidate; old blocked formal material stays independent (0.6221ms)
+✔ a done phase cannot conceal an unfinished or unproven work item (0.7019ms)
+✔ missing phases, duplicate work IDs and unknown statuses cannot shrink the acceptance scope (0.8534ms)
+✔ original task status or evidence changes fail the preserved digest (0.6225ms)
+✔ phase and subtask dependency cycles are rejected even when all involved statuses say done (1.9044ms)
+✔ unknown and unfinished dependencies cannot be approved by child evidence alone (0.9223ms)
+✔ an evidence filename is not sufficient unless the filesystem boundary has verified it (1.3867ms)
+✔ real device and visual approvals cannot be omitted, pending, or replaced with empty evidence (2.5471ms)
+✔ readiness cannot unlock modified source or replace required phases with an empty list (0.992ms)
+✔ matching source evidence cannot authorize an uncommitted or unverified working tree (1.0221ms)
+✔ the authorized playtest permits only its verified branch without completing any PH or formal gate (4.0165ms)
+✔ playtest rejects absent, pending, unknown and altered authorization or schema (2.1548ms)
+✔ playtest requires actual evidence for all three exact checks, a clean source and every valid plan invariant (5.3936ms)
+✔ playtest expires at its exact UTC deadline and rejects invalid or normalized dates (3.8755ms)
+✔ path boundary rejects outside, absolute, missing, and credential-capable candidates without reading contents (1.5675ms)
+✔ fingerprint covers changed, added and removed source, excludes only readiness, and refuses missing tracked files (742.3639ms)
+✔ CLI enforces defaults and actual target refs using an independent locked fixture (2404.5421ms)
+✔ only reviewed root npm settings bytes are permitted, remain fingerprinted, and nested or altered configs fail closed (368.9093ms)
+✔ archived log review permits only listed bytes in the two reviewed directories and fingerprints its registry (609.159ms)
+✔ filesystem evidence deletion cannot satisfy the preview gate even with a clean matching fingerprint (493.3831ms)
+✔ pre-push binds exactly accepted HEAD to the actual authorized remote ref and original repository (1518.2162ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6179.7807
+

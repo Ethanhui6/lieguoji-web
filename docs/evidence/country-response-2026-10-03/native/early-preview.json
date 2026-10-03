@@ -1,0 +1,6 @@
+{
+  "check": "selection-repair-1",
+  "summary": "确认这次变化\n\n从「云岚」移除 916 个地块内的实际陆地，恢复为未分配；城市、首都与海域保持不变。\n\n取消预览\n确认并保存",
+  "persistedSame": true,
+  "committed": false
+}

@@ -4,16 +4,18 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { createGenerationDraft, encodeAtlasManifest, isDetailCoastDocument, verifyAtlasDocument, type AtlasDetailCoastDocument } from '../atlas-format';
 import * as Base from '../detail-coast-base';
 import { hashDetailCoastTile } from '../detail-coast-codec';
+import * as Surface from '../detail-coast-geometry';
 import { detailCoastKey, detailCoastOwnerLayout } from '../detail-coast-types';
 import { generationCanonical, generationDigest } from '../generation-contract';
 import { hashAtlasCellLockBlock, lockKey } from '../generation-locks';
 import { hashBlock } from '../model';
+import * as Spatial from '../spatial-index';
 import { getAtlasStorage, type AtlasStoredRoot } from '../storage';
 import { getCellQuad } from '../topology';
 import { validateCountryWorldGeography } from './core';
 import { validateCountryDocument, type CountryDocument } from './model';
 import { selectCountryPolygon } from './country-selection';
-import { COUNTRY_GEOGRAPHY_LIMITS, countryCellLandPolygons, countryClaimCells, countryGeographySource, countryLandAt, countryPoliticalMesh, decodeCountryGeography,
+import { COUNTRY_GEOGRAPHY_LIMITS, collectCountryLandPolygons, countryCellLandPolygons, countryClaimCells, countryGeographySource, countryLandAt, countryPoliticalMesh, decodeCountryGeography,
   prepareCountryGeography, readCountryCellGeometryPage, validateCountrySource, type CountryGeographyRecord, type CountrySource } from './geography';
 
 const fast = { yieldTask: async () => {} }, api = getAtlasStorage(4);
@@ -63,6 +65,64 @@ async function rehash(value: CountryGeographyRecord) {
 }
 
 describe('independent original-identity country geography', () => {
+  it('keeps every clipping coordinate while deferring real heights and legacy point indices until needed', async () => {
+    const data = await decodeCountryGeography(record, fast), base = vi.spyOn(Base, 'extractDetailCoastBase'), spatial = vi.spyOn(Spatial, 'createSpatialIndexAsync');
+    const mesh = await countryPoliticalMesh(data, fast);
+    // Explicit sampled bay/zero edge, uniform land and omitted sea. All original
+    // coarse heights are 500, so the former full Hbase sampler returns 500.
+    // The retained original collector clips every triangle before compression;
+    // it cannot take the new early all-land proof. Compare every output vertex,
+    // polygon order and land decision rather than duplicating its clip maths.
+    const referenceField = { tiles: fixture.detailCoast, sampleBaseElevation: () => 500 };
+    const ids = [0, 1, 2, 4, 5, 128, 129, 255];
+    for (const geometry of ['atlas-cell-v1', 'political-voronoi-v1'] as const) {
+      const polygons = await Promise.all(ids.map(id => countryCellLandPolygons(data, id, fast, geometry)));
+      const claimed = await countryClaimCells(data, ids, fast, geometry);
+      const reference = await Promise.all(ids.map(async id => {
+        const quad = geometry === 'political-voronoi-v1' ? mesh.cellPolygonQ(id) : getCellQuad(fixture, id).map(p => ({ xQ: p.x * 256, yQ: p.y * 256 }));
+        // Use a conservative rectangular fine-cell cover for Voronoi cells:
+        // this deliberately does not reuse the optimized polygon candidate SAT.
+        const left = Math.max(0, Math.ceil(Math.min(...quad.map(p => p.xQ)) / 512) - 1), top = Math.max(0, Math.ceil(Math.min(...quad.map(p => p.yQ)) / 512) - 1);
+        const right = Math.min(2047, Math.floor(Math.max(...quad.map(p => p.xQ)) / 512)), bottom = Math.min(2047, Math.floor(Math.max(...quad.map(p => p.yQ)) / 512));
+        const candidates = geometry === 'atlas-cell-v1' ? Surface.detailCellsIntersectingQuad(quad)
+          : Uint32Array.from({ length: (right - left + 1) * (bottom - top + 1) }, (_, index) => (top + Math.floor(index / (right - left + 1))) * 2048 + left + index % (right - left + 1));
+        return collectCountryLandPolygons(referenceField, quad, candidates, fast);
+      }));
+      expect(polygons).toEqual(reference);
+      expect(claimed).toEqual(ids.filter((_, index) => reference[index].length > 0));
+    }
+    expect(base).not.toHaveBeenCalled(); expect(spatial).not.toHaveBeenCalled();
+    // A public-view mutation after coverage setup must not affect either lazy
+    // derived structure. v3 height reads do not need the legacy quad index.
+    data.blocks.clear(); if (isDetailCoastDocument(data)) data.detailCoast.clear();
+    const land = await countryLandAt(data, 171 * 256, 12 * 256, fast, 'political-voronoi-v1');
+    expect(land).toMatchObject({ land: true, height: 500 });
+    expect(await countryLandAt(data, 220 * 256, 12 * 256, fast, 'political-voronoi-v1')).toMatchObject({ land: false, height: -1 });
+    expect(await countryLandAt(data, 4 * 256, 16 * 256, fast, 'political-voronoi-v1')).toMatchObject({ land: true, height: 720 });
+    expect(base).toHaveBeenCalledTimes(1); expect(spatial).not.toHaveBeenCalled();
+    expect(await countryLandAt(data, 171 * 256, 12 * 256, fast)).toEqual({ cellId: 5, land: true, height: 500 });
+    expect(await countryLandAt(data, 220 * 256, 12 * 256, fast)).toEqual({ cellId: 6, land: false, height: -1 });
+    expect(base).toHaveBeenCalledTimes(1); expect(spatial).toHaveBeenCalledTimes(1);
+  }, 30000);
+
+  it('retries cancelled lazy height and legacy index setup without discarding coverage authority', async () => {
+    const data = await decodeCountryGeography(record, fast), base = vi.spyOn(Base, 'extractDetailCoastBase'), spatial = vi.spyOn(Spatial, 'createSpatialIndexAsync');
+    await countryPoliticalMesh(data, fast);
+    const heightAbort = new AbortController();
+    await expect(countryLandAt(data, 171 * 256, 12 * 256, { ...fast, signal: heightAbort.signal,
+      onProgress: progress => { if (progress.stage === '读取细海岸实际粗格重心') heightAbort.abort(); } }, 'political-voronoi-v1')).rejects.toThrow();
+    expect(heightAbort.signal.aborted).toBe(true); expect(spatial).not.toHaveBeenCalled();
+    expect(await countryClaimCells(data, [0, 1, 5], fast, 'political-voronoi-v1')).toContain(5);
+    expect(await countryLandAt(data, 171 * 256, 12 * 256, fast, 'political-voronoi-v1')).toMatchObject({ land: true, height: 500 });
+    expect(base).toHaveBeenCalledTimes(2);
+    const spatialAbort = new AbortController();
+    await expect(countryLandAt(data, 171 * 256, 12 * 256, { ...fast, signal: spatialAbort.signal,
+      onProgress: progress => { if (progress.stage === '建立地块空间索引') spatialAbort.abort(); } })).rejects.toThrow();
+    expect(spatialAbort.signal.aborted).toBe(true);
+    expect(await countryLandAt(data, 171 * 256, 12 * 256, fast)).toEqual({ cellId: 5, land: true, height: 500 });
+    expect(base).toHaveBeenCalledTimes(2); expect(spatial).toHaveBeenCalledTimes(2);
+  }, 30000);
+
   it('v3 shares exact political clipping, point ownership and seed selection without changing sea or source geometry', async () => {
     const data = await decodeCountryGeography(record, fast), before = structuredClone(data), mesh = await countryPoliticalMesh(data, fast);
     for (const [x, y] of [[4, 16], [16, 16], [32, 16], [48, 16], [171, 12], [162, 27]]) {
@@ -174,6 +234,14 @@ describe('independent original-identity country geography', () => {
     await expect(countryClaimCells(data, [1], { signal: controller.signal, ...fast,
       onProgress: progress => { if (progress.stage === '按真实细海岸裁剪建国领土') controller.abort(); } })).rejects.toThrow();
     expect(controller.signal.aborted).toBe(true); expect(await countryClaimCells(data, [1, 0], fast)).toEqual([0]);
+    const allLandAbort = new AbortController();
+    await expect(countryCellLandPolygons(data, 5, { signal: allLandAbort.signal, ...fast,
+      onProgress: progress => { if (progress.stage === '按真实细海岸裁剪建国领土') allLandAbort.abort(); } })).rejects.toThrow();
+    expect(allLandAbort.signal.aborted).toBe(true);
+    const fullQuad = getCellQuad(fixture, 5).map(p => ({ xQ: p.x * 256, yQ: p.y * 256 }));
+    expect(await countryCellLandPolygons(data, 5, fast)).toEqual([fullQuad]);
+    await expect(collectCountryLandPolygons({ tiles: fixture.detailCoast, sampleBaseElevation: () => 500 }, fullQuad,
+      new Uint32Array(COUNTRY_GEOGRAPHY_LIMITS.fineCellsPerCell + 1), fast)).rejects.toThrow('预算');
     const aborted = new AbortController(); aborted.abort();
     await expect(decodeCountryGeography(record, { signal: aborted.signal })).rejects.toThrow();
     await expect(prepareCountryGeography(record.source, { signal: aborted.signal })).rejects.toThrow();
@@ -243,7 +311,7 @@ describe('independent original-identity country geography', () => {
     ] }, fast);
     expect(selection).toEqual({ source: record.source, rule: 'cell-center-land-v1', cellIds: [0],
       scannedCells: 128 * 128, polygonMatchedCells: 2, seaRejectedCells: 1 });
-    expect(base).toHaveBeenCalledTimes(1);
+    expect(base).not.toHaveBeenCalled();
     const controller = new AbortController();
     await expect(readCountryCellGeometryPage(data, 0, 1024, { ...fast, signal: controller.signal,
       onProgress: () => controller.abort() })).rejects.toThrow();

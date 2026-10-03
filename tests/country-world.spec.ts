@@ -105,6 +105,15 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   await tab(page,'地图',touch); await page.screenshot({path:info.outputPath('two-nations-restored.png'),fullPage:true});
   expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
   const restored=await persisted(page,worldId);expect(restored).toEqual(settled);expect(restored.geoSha256).toBe(created.geoSha256);expect(restored.geoSource).toEqual(created.geoSource); await assertPoliticalLabels(page, 2);
+  // Abandon one country's removal outline, then select another country's city.
+  await tab(page,'国家',touch); await press(page,'国家 海岬',touch); await press(page,'手绘移除领土',touch); await press(page,'全图',touch);
+  await draw(page,touch,[[1150,1500],[1230,1500],[1230,1600],[1150,1600],[1150,1500]]);
+  await tab(page,'城市',touch); await page.getByLabel('城市所属国家',{exact:true}).selectOption(firstNation); await press(page,'城市 岚川城',touch); await tab(page,'国家',touch);
+  await expect(country(page)).toHaveAttribute('data-country-selected-nation',firstNation);
+  await expect(country(page)).toHaveAttribute('data-country-territory-action','create');
+  await expect(country(page)).toHaveAttribute('data-country-outline-points','0');
+  await expect(page.getByLabel('国家名称',{exact:true})).toHaveValue('岚川');
+  await expect(button(page,'预览移除领土')).toHaveCount(0); expect(await persisted(page,worldId)).toEqual(settled); expect(errors).toEqual([]);
   await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
 });
 
@@ -154,6 +163,41 @@ test('[country-shape] native concave outline, cancelled candidate, chunk persist
   await page.goto(url); await ready(page); expect(await persisted(page, worldId)).toEqual(settled);
   await tab(page, '地图', touch); await pick(page, { x: 900, y: 1400 }, touch); await expect(country(page)).toHaveAttribute('data-country-selected-city', cityId);
   await tab(page, '地图', touch); await press(page, '全图', touch); await page.screenshot({ path: info.outputPath('free-country-restored.png'), fullPage: true });
+  // Find a visibly owned land point well inside the removal outline. Its
+  // geometric centre can be sea in this concave generated coastline.
+  const releasedLand = await political.evaluate(root => {
+    const paths = Array.from(root.querySelectorAll<SVGGeometryElement>('.country-territory-layer path'));
+    for (let y = 1660; y <= 1740; y += 4) for (let x = 736; x <= 824; x += 4)
+      if (paths.some(path => path.isPointInFill(new DOMPoint(x, y)))) return { x, y };
+    return null;
+  });
+  expect(releasedLand).not.toBeNull();
+  // A stored country can shrink through the same real outline/preview pipeline.
+  // A capital in the selected area must stop the whole command before writing.
+  await tab(page, '国家', touch); await press(page, '国家 岚海', touch); await press(page, '手绘移除领土', touch); await press(page, '全图', touch);
+  await draw(page, touch, [[850,1350],[950,1350],[950,1450],[850,1450],[850,1350]]); await press(page, '闭合并预览', touch); await ready(page);
+  await expect(page.getByRole('alert')).toContainText(/城市|首都/); expect(await persisted(page, worldId)).toEqual(settled);
+  await press(page, '手绘移除领土', touch); await press(page, '全图', touch);
+  await draw(page, touch, [[700,1620],[850,1620],[850,1780],[700,1780],[700,1620]]); await press(page, '闭合并预览', touch); await ready(page);
+  await expect(page.getByRole('region', { name: '建国操作预览' })).toContainText(/移除.+恢复为未分配/);
+  expect(await persisted(page, worldId)).toEqual(settled);
+  await page.screenshot({ path: info.outputPath('release-territory-preview.png'), fullPage: true });
+  await press(page, '取消预览', touch); await ready(page); expect(await persisted(page, worldId)).toEqual(settled);
+  await press(page, '预览移除领土', touch); await confirm(page, touch);
+  const reduced = await persisted(page, worldId);
+  expect(reduced.document.territories.length).toBeLessThan(settled.document.territories.length);
+  expect(reduced.document.cities).toEqual(settled.document.cities); expect(reduced.document.nations).toEqual(settled.document.nations);
+  await page.reload(); await ready(page); expect(await persisted(page, worldId)).toEqual(reduced);
+  await tab(page, '地图', touch); await press(page, '全图', touch); await pick(page, releasedLand!, touch);
+  await expect(page.getByRole('status')).toContainText('这片陆地尚未划入国家。');
+  await pick(page, { x: 900, y: 1400 }, touch); await expect(country(page)).toHaveAttribute('data-country-selected-city', cityId);
+  await expect(page.getByRole('status')).toContainText('已选择城市「岚海城」。');
+  await press(page, '撤销上次操作', touch); await ready(page);
+  const restored = await persisted(page, worldId);
+  expect(restored.document.territories).toEqual(settled.document.territories); expect(restored.document.cities).toEqual(settled.document.cities);
+  expect(restored.document.nations).toEqual(settled.document.nations); expect(restored.document.revision).toBe(settled.document.revision + 2);
+  await page.reload(); await ready(page); expect(await persisted(page, worldId)).toEqual(restored);
+  await tab(page, '地图', touch); await press(page, '全图', touch); await page.screenshot({ path: info.outputPath('release-undone-restored.png'), fullPage: true });
   expect(await saved(page, sourceId, 4)).toEqual(sourceBefore); expect(errors).toEqual([]);
   await info.attach('native-shape-result.json', { body: Buffer.from(JSON.stringify({ worldId, sourceId, cityId, settled, sourcePreserved: true, input: touch ? 'native-touch' : 'native-mouse', errors, physicalDevice: false }, null, 2)), contentType: 'application/json' });
 });

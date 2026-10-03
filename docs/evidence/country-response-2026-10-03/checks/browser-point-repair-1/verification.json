@@ -1,0 +1,92 @@
+{
+  "at": "2026-10-03T08:17:44.392Z",
+  "head": "db14df79d64e7a77847da7447d2ed8d06103d661",
+  "version": "0.5.0-preview.28",
+  "passed": true,
+  "sourceStable": true,
+  "rounds": [
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 8391
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "elapsedMs": 13739
+    }
+  ],
+  "unit": {
+    "total": 165,
+    "passed": 165,
+    "failed": 0
+  },
+  "identity": [
+    {
+      "key": "engineFingerprint",
+      "unchanged": true
+    },
+    {
+      "key": "macroGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "landformGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "islandGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "coastGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "shapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "oceanGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "unchanged": true
+    }
+  ],
+  "buildSha256": "d2efb49994c2103fe74b7c52357867305dfe3e83b6e659f78fce441b3fe45d09",
+  "browser": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false,
+  "changed": [
+    "tests/country-world.spec.ts"
+  ],
+  "reused": {
+    "from": ".autopilot/country-response/checks/land-fast-path-1",
+    "checks": [
+      "unit",
+      "release-policy",
+      "build",
+      "dist"
+    ],
+    "reason": "Only test point discovery changed: find actual SVG land inside the removal outline instead of assuming its centre is land. Product source and build unchanged."
+  }
+}

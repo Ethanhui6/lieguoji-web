@@ -38,6 +38,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   const [nationId, setNationId] = useState<string | null>(null), [cityId, setCityId] = useState<string | null>(null);
   const [nationName, setNationName] = useState(''), [nationColor, setNationColor] = useState(colors[0]), [cityName, setCityName] = useState('');
   const [newNation, setNewNation] = useState(false), [newCity, setNewCity] = useState(false), [claimMode, setClaimMode] = useState(false);
+  const [releaseMode, setReleaseMode] = useState(false);
   const [cells, setCells] = useState<number[]>([]), [cityPosition, setCityPosition] = useState<PointQ | null>(null), [scale, setScale] = useState(1);
   const actual = preview?.document ?? state?.document, nation = actual?.nations.find(item => item.id === nationId), city = actual?.cities.find(item => item.id === cityId);
   const locked = busy || !!fatal || !!state?.readOnly || !!preview;
@@ -45,6 +46,11 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   const isPreviewOperation = () => activeKind.current === 'preview';
 
   function choose(nextNation: string | null, nextCity: string | null) {
+    if (selectedRef.current.nationId !== nextNation) {
+      clearOutline(); setCells([]); setClaimMode(false); setReleaseMode(false);
+      const target = (pendingRef.current?.document ?? stateRef.current?.document)?.nations.find(item => item.id === nextNation);
+      if (target) { setNewNation(false); setNationName(target.name); setNationColor(target.color); }
+    }
     selectedRef.current = { nationId: nextNation, cityId: nextCity }; setNationId(nextNation); setCityId(nextCity);
     overlay.current?.setSelection(nextNation, nextCity);
     const id = stateRef.current?.document.worldId;
@@ -63,13 +69,13 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     if (next !== 'outline-draw') renderer.current?.showOutline(outlineRef.current);
     setPanel(null); setOutlineControls(false);
   }
-  function beginOutline(claim: boolean) {
+  function beginOutline(claim: boolean, release = false) {
     if (locked || !stateRef.current || stateRef.current.document.version < 2) return;
-    stopTool(); clearOutline(); setCells([]); setClaimMode(claim); setError(''); setOutlineEditing(true); setOutlineControls(false); setOutlineTool('outline-draw');
-    setStatus('单指或鼠标圈出国土，双指调整视野。');
+    stopTool(); clearOutline(); setCells([]); setClaimMode(claim); setReleaseMode(release); setError(''); setOutlineEditing(true); setOutlineControls(false); setOutlineTool('outline-draw');
+    setStatus(release ? '圈出要移除的本国领土；先预览，再确认。含城市的领土会受到保护。' : '单指或鼠标圈出国土，双指调整视野。');
   }
   function cancelOutlineSelection() {
-    stopTool(); clearOutline(); setPanel('nation'); setStatus('已取消圈地，世界保持原样。');
+    stopTool(); clearOutline(); setClaimMode(false); setReleaseMode(false); setPanel('nation'); setStatus('已取消圈地，世界保持原样。');
   }
   function undoOutlinePoint() {
     setOutlineTool('outline-points'); rememberOutline(outlineRef.current.slice(0, -1)); setStatus('已撤销最后一个顶点，可继续点选。');
@@ -91,12 +97,14 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   }
   function showNation(id: string, move = false) {
     const item = (pendingRef.current?.document ?? stateRef.current?.document)?.nations.find(item => item.id === id); if (!item) return;
-    stopTool(); choose(id, null); setNewNation(false); setNewCity(false); setClaimMode(false); setNationName(item.name); setNationColor(item.color); setPanel('nation');
+    stopTool(); choose(id, null); setNewNation(false); setNewCity(false); setClaimMode(false); setReleaseMode(false); setNationName(item.name); setNationColor(item.color); setPanel('nation');
+    setError(''); setStatus(`已选择「${item.name}」。`);
     if (move) focus(overlay.current?.getNationAnchorQ(item.id) ?? item.labelAnchorQ);
   }
   function showCity(id: string, move = false) {
     const item = (pendingRef.current?.document ?? stateRef.current?.document)?.cities.find(item => item.id === id); if (!item) return;
-    stopTool(); choose(item.nationId, id); setNewCity(false); setCityName(item.name); setPanel('city');
+    stopTool(); choose(item.nationId, id); setNewNation(false); setNewCity(false); setCityName(item.name); setPanel('city');
+    setError(''); setStatus(`已选择城市「${item.name}」。`);
     if (move) focus(item.positionQ);
   }
 
@@ -125,7 +133,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     const retainedCity = next.document.cities.find(item => item.id === selected.cityId), retainedNation = next.document.nations.find(item => item.id === selected.nationId);
     const cityChoice = !worldChanged && addedCity ? addedCity : retainedCity;
     const nationChoice = cityChoice ? next.document.nations.find(item => item.id === cityChoice.nationId) : !worldChanged && addedNation ? addedNation : retainedNation ?? next.document.nations[0];
-    choose(nationChoice?.id ?? null, cityChoice?.id ?? null); setNewNation(false); setNewCity(false); setClaimMode(false);
+    choose(nationChoice?.id ?? null, cityChoice?.id ?? null); setNewNation(false); setNewCity(false); setClaimMode(false); setReleaseMode(false);
     if (nationChoice) { setNationName(nationChoice.name); setNationColor(nationChoice.color); }
     if (cityChoice) setCityName(cityChoice.name);
     if (worldChanged) setCopyName(`${next.document.name.slice(0, 68)} · 升级副本`);
@@ -183,12 +191,13 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   function previewTerritory() {
     if (outlineRef.current.length) {
       const points = outlineRef.current.map(point => ({ ...point }));
+      if (releaseMode && nationId) return run(ticket => previewCommand({ type: 'release-territory-shape', nationId, outlineQ: points }, ticket));
       return run(ticket => previewCommand(claimMode && nationId ? { type: 'claim-territory-shape', nationId, outlineQ: points } : { type: 'create-nation-shape', name: nationName.trim(), color: nationColor, outlineQ: points }, ticket));
     }
     return run(ticket => previewCommand(claimMode && nationId ? { type: 'claim-territory', nationId, cellIds: cells } : { type: 'create-nation', name: nationName.trim(), color: nationColor, cellIds: cells }, ticket));
   }
   function beginTerritory(claim: boolean) {
-    if (locked) return; stopTool(); clearOutline(); anchor.current = null; setCells([]); setClaimMode(claim); setError('');
+    if (locked) return; stopTool(); clearOutline(); anchor.current = null; setCells([]); setClaimMode(claim); setReleaseMode(false); setError('');
     toolRef.current = 'territory'; setTool('territory'); setPanel(null); setStatus('点选范围的第一角，再点对角。海域会由真实陆地边界裁去。');
     renderer.current?.showRegion(null);
   }
@@ -288,7 +297,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
 
   const countryPanel = <>
     {state && state.document.version < 3 && <div className="country-upgrade-note"><p>此世界保留原地块国界。创建自然国界副本可使用不规则共享边界，原世界保留。</p><button disabled={busy || !!preview} onClick={() => setPanel('world')}>查看升级副本选项</button></div>}
-    {!newNation && <button className="country-primary" disabled={locked} onClick={() => { stopTool(); clearOutline(); setNewNation(true); setClaimMode(false); setNationName(''); setNationColor(colors[(actual?.nations.length ?? 0) % colors.length]); setCells([]); choose(null, null); }}>新建国家</button>}
+    {!newNation && <button className="country-primary" disabled={locked} onClick={() => { stopTool(); clearOutline(); setNewNation(true); setClaimMode(false); setReleaseMode(false); setNationName(''); setNationColor(colors[(actual?.nations.length ?? 0) % colors.length]); setCells([]); choose(null, null); }}>新建国家</button>}
     {(newNation || nation) && <section aria-label="国家设置" className="country-fields">
       <label>国家名称<input aria-label="国家名称" maxLength={60} value={nationName} disabled={locked} onChange={event => setNationName(event.target.value)} /></label>
       {(newNation || claimMode) && <label className="country-color">国家颜色<input aria-label="国家颜色" type="color" value={nationColor} disabled={locked || claimMode} onChange={event => setNationColor(event.target.value)} /></label>}
@@ -302,9 +311,11 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
           <button disabled={locked || !nationName.trim() || nationName === nation.name} onClick={() => void run(ticket => previewCommand({ type: 'rename-nation', nationId: nation.id, name: nationName.trim() }, ticket))}>预览国家更名</button>
           <button className="country-primary" disabled={locked || !state || state.document.version < 2} onClick={() => beginOutline(true)}>手绘扩展领土</button>
           <button disabled={locked} onClick={() => beginTerritory(true)}>为此国划定领土</button>
-          {claimMode && <><p data-testid="country-territory-selection">{outlineQ.length ? `轮廓 ${outlineQ.length} 个顶点 · 按地块划入` : cells.length ? `已选择 ${cells.length} 个候选地块` : '尚未选择领土'}</p>
+          <button className="country-destructive" disabled={locked || !state || state.document.version < 2} onClick={() => beginOutline(true, true)}>手绘移除领土</button>
+          {claimMode && <><p data-testid="country-territory-selection">{outlineQ.length ? `轮廓 ${outlineQ.length} 个顶点 · ${releaseMode ? '移除本国领土' : '按地块划入'}` : cells.length ? `已选择 ${cells.length} 个候选地块` : '尚未选择领土'}</p>
+            {releaseMode && <p>圈中的本国领土将恢复为未分配陆地。包含城市或他国领土的操作不会保存；也不能移除国家的全部领土。</p>}
             {outlineQ.length > 0 && <button disabled={locked} onClick={() => { setOutlineEditing(true); setOutlineTool('outline-points'); }}>继续编辑轮廓</button>}
-            <button className="country-primary" disabled={locked || !cells.length && outlineQ.length < 3} onClick={() => void previewTerritory()}>预览领土调整</button></>}
+            <button className={releaseMode ? 'country-destructive' : 'country-primary'} disabled={locked || !cells.length && outlineQ.length < 3} onClick={() => void previewTerritory()}>{releaseMode ? '预览移除领土' : '预览领土调整'}</button></>}
           <button disabled={locked} onClick={() => { setPanel('city'); setNewCity(true); setCityName(''); setCityPosition(null); choose(nation.id, null); }}>在此国新建城市</button>
           <details><summary>国家身份</summary><p className="country-id" data-testid="country-selected-nation-id">{nation.id}</p></details></>}
     </section>}
@@ -338,7 +349,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   </>;
 
   return <main className="country-studio" data-testid="country-studio" data-country-state={fatal ? 'error' : busy ? 'busy' : state?.readOnly ? 'readonly' : state ? 'ready' : 'empty'} data-country-display={preview ? 'preview' : 'committed'} data-country-world-id={state?.document.worldId ?? ''} data-country-revision={state?.document.revision ?? ''} data-country-nation-count={actual?.nations.length ?? 0} data-country-city-count={actual?.cities.length ?? 0} data-country-selected-nation={nationId ?? ''} data-country-selected-city={cityId ?? ''} data-country-tool={tool} data-country-capital-city={nation?.capitalCityId ?? ''}
-    data-country-version={state?.document.version ?? ''} data-country-outline-points={outlineQ.length} data-country-cancelling={cancelling} data-country-progress-stage={progress?.stage ?? ''} data-country-progress-completed={progress?.completed ?? ''} data-country-progress-total={progress?.total ?? ''}
+    data-country-version={state?.document.version ?? ''} data-country-outline-points={outlineQ.length} data-country-territory-action={releaseMode ? 'release' : claimMode ? 'claim' : 'create'} data-country-cancelling={cancelling} data-country-progress-stage={progress?.stage ?? ''} data-country-progress-completed={progress?.completed ?? ''} data-country-progress-total={progress?.total ?? ''}
     onKeyDown={event => {
       if (!(event.target instanceof HTMLCanvasElement) || !outlineEditing || locked) return;
       if (event.key === 'Escape') { event.preventDefault(); cancelOutlineSelection(); }
@@ -350,14 +361,14 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
       {state && <div className="country-map-tools" role="group" aria-label="建国地图视图"><button aria-label="放大建国地图" disabled={busy || !!fatal} onClick={() => renderer.current?.zoom(1.5)}>＋</button><button aria-label="缩小建国地图" disabled={busy || !!fatal} onClick={() => renderer.current?.zoom(1 / 1.5)}>−</button><button disabled={busy || !!fatal} onClick={() => renderer.current?.fit()}>全图</button><span>{Math.round(scale * 100)}%</span></div>}
       {(tool === 'territory' || tool === 'city') && <div className="country-pick-bar" role="status"><span>{tool === 'territory' ? '点选两角，划定国土' : '点选本国陆地，选择城市位置'}</span><button disabled={busy} onClick={() => { stopTool(); setPanel(tool === 'territory' ? 'nation' : 'city'); setStatus('已取消选点，世界保持原样。'); }}>取消选点</button></div>}
       {outlineEditing && !preview && <section className="country-outline-tools" aria-label="国土圈绘工具">
-        <header><span>{tool === 'outline-draw' ? '画出国土轮廓' : tool === 'outline-points' ? '点选轮廓顶点' : '移动地图'}<small>{outlineQ.length} 个顶点</small></span>
+        <header><span>{tool === 'outline-draw' ? releaseMode ? '圈出要移除的国土' : '画出国土轮廓' : tool === 'outline-points' ? '点选轮廓顶点' : '移动地图'}<small>{outlineQ.length} 个顶点{releaseMode ? ' · 移除领土' : ''}</small></span>
           <button aria-label={outlineControls ? '收起圈地工具' : '展开圈地工具'} aria-expanded={outlineControls} onClick={() => setOutlineControls(value => !value)}><Icon name={outlineControls ? 'chevron-up' : 'chevron-down'} /></button></header>
         {outlineControls && <><div className="country-outline-modes" role="group" aria-label="圈地方式">
           <button disabled={locked} aria-pressed={tool === 'outline-draw'} onClick={() => setOutlineTool('outline-draw')}>手绘</button>
           <button disabled={locked} aria-pressed={tool === 'outline-points'} onClick={() => setOutlineTool('outline-points')}>逐点</button>
           <button disabled={locked} aria-pressed={tool === 'outline-move'} onClick={() => setOutlineTool('outline-move')}>移动地图</button></div>
-          <div className="country-outline-actions"><button disabled={locked || !outlineQ.length} onClick={undoOutlinePoint}>撤销一点</button><button disabled={locked} onClick={() => beginOutline(claimMode)}>重新绘制</button></div>
-          <p>按圈内地块中心划入，海水自动排除。</p></>}
+          <div className="country-outline-actions"><button disabled={locked || !outlineQ.length} onClick={undoOutlinePoint}>撤销一点</button><button disabled={locked} onClick={() => beginOutline(claimMode, releaseMode)}>重新绘制</button></div>
+          <p>{releaseMode ? '移除圈内本国领土，恢复为未分配；城市和他国领土受保护。' : '按圈内地块中心划入，海水自动排除。'}</p></>}
         <div className="country-outline-actions"><button disabled={locked} onClick={cancelOutlineSelection}>取消圈地</button><button className="country-primary" disabled={locked || outlineQ.length < 3} onClick={() => void previewTerritory()}>闭合并预览</button></div>
       </section>}
       {panel && !preview && <section className="country-inspector" data-extent={expanded ? 'reading' : 'half'} aria-label={panel === 'nation' ? '国家面板' : panel === 'city' ? '城市面板' : '世界面板'}>
@@ -370,7 +381,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
         {busy && canCancel && <button disabled={cancelling} onClick={() => void cancelRunningPreview()}>取消计算</button>}
         {(error || fatal) && state && <button onClick={() => window.location.reload()}>刷新恢复已保存世界</button>}</div>
     </div>
-    <nav className="country-nav" aria-label="建国世界工具">{([{ panel: null, name: '地图', icon: 'map' }, { panel: 'nation', name: '国家', icon: 'flag' }, { panel: 'city', name: '城市', icon: 'city' }, { panel: 'world', name: '世界', icon: 'world' }] as const).map(item => <button key={item.name} disabled={busy || !!preview || item.panel !== 'world' && !state} aria-pressed={panel === item.panel} onClick={() => { stopTool(); setPanel(item.panel); }}><Icon name={item.icon} /><span>{item.name}</span></button>)}</nav>
+    <nav className="country-nav" aria-label="建国世界工具">{([{ panel: null, name: '地图', icon: 'map' }, { panel: 'nation', name: '国家', icon: 'flag' }, { panel: 'city', name: '城市', icon: 'city' }, { panel: 'world', name: '世界', icon: 'world' }] as const).map(item => <button key={item.name} disabled={busy || !!preview || item.panel !== 'world' && !state} aria-pressed={panel === item.panel} onClick={() => { stopTool(); setPanel(item.panel); if (state) { setError(''); setStatus(state.readOnly ? '这份世界以只读方式打开。' : `已保存 · 修订 ${state.document.revision}`); } }}><Icon name={item.icon} /><span>{item.name}</span></button>)}</nav>
   </main>;
 }
 

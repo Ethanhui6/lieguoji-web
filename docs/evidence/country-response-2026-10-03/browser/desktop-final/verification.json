@@ -1,0 +1,55 @@
+{
+  "label": "desktop-final",
+  "project": "desktop-chromium",
+  "checkLabel": "land-fast-path-1",
+  "at": "2026-10-03T08:15:36.530Z",
+  "elapsedMs": 175778,
+  "passed": false,
+  "sourceStable": true,
+  "harnessStable": true,
+  "harness": [
+    {
+      "path": ".autopilot/country-response/browser.mjs",
+      "sha256": "05c1aefd6ecaf80b73e3d1602ab87a25a22128400aec2b31089aca93484f51bc"
+    },
+    {
+      "path": ".autopilot/country-response/playwright.config.ts",
+      "sha256": "618b8cf5ff590bdd19c652018c5f9bdeadfb31bab7247bafc8a5a55ae968094e"
+    }
+  ],
+  "buildSha256": "d2efb49994c2103fe74b7c52357867305dfe3e83b6e659f78fce441b3fe45d09",
+  "sourceSnapshotSha256": "a2768f99495c78883c17804d99be9c93b7ccd134ca0b30239d941611d68e630d",
+  "distSnapshotSha256": "4d28627d5dd46a8d07521da1432f7161ba98fce14558d7a36cbebd5430b08ff6",
+  "cases": [
+    {
+      "title": "[country-world] native nations, two cities, capital, cancellation, conflict and independent reload",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 71182
+        }
+      ]
+    },
+    {
+      "title": "[country-shape] native concave outline, cancelled candidate, chunk persistence and restored city",
+      "project": "desktop-chromium",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "duration": 101154
+        }
+      ]
+    }
+  ],
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "physicalDevice": false,
+  "cloudWrites": false
+}

@@ -1072,26 +1072,35 @@
       "id": "PH10",
       "title": "国家政权与制度模板",
       "phase": "PH10",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "PH09"
       ],
       "acceptance": "生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-10-03-country-world.md",
+        "docs/evidence/country-world-2026-10-03/verification.json"
+      ],
       "workItems": [
         {
           "id": "PH10-T1",
           "title": "国家、政权、统治者引用分离",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「国家、政权、统治者引用分离」，并提供本阶段对应验收事实。生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-10-03-country-world.md",
+            "docs/evidence/country-world-2026-10-03/verification.json"
+          ]
         },
         {
           "id": "PH10-T2",
           "title": "手动/自动国家、名称、颜色与原创纹章",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「手动/自动国家、名称、颜色与原创纹章」，并提供本阶段对应验收事实。生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-10-03-country-world.md",
+            "docs/evidence/country-world-2026-10-03/verification.json"
+          ]
         },
         {
           "id": "PH10-T3",
@@ -1239,20 +1248,26 @@
       "id": "PH14",
       "title": "城市治所与交通骨架",
       "phase": "PH14",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "PH13",
         "PH07"
       ],
       "acceptance": "城市落点、首都与治所合法；道路连通、港口不生成跨海陆路；容量与几何扩展事务、标签/引用保存恢复正确。真实人口和产出驱动的增长由PH15/16接入并验收，不能提前造增长动画。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/2026-10-03-country-world.md",
+        "docs/evidence/country-world-2026-10-03/verification.json"
+      ],
       "workItems": [
         {
           "id": "PH14-T1",
           "title": "村镇城市、自动择址与手动创建",
-          "status": "todo",
+          "status": "in_progress",
           "acceptance": "完成「村镇城市、自动择址与手动创建」，并提供本阶段对应验收事实。城市落点、首都与治所合法；道路连通、港口不生成跨海陆路；容量与几何扩展事务、标签/引用保存恢复正确。真实人口和产出驱动的增长由PH15/16接入并验收，不能提前造增长动画。",
-          "evidence": []
+          "evidence": [
+            "docs/evidence/2026-10-03-country-world.md",
+            "docs/evidence/country-world-2026-10-03/verification.json"
+          ]
         },
         {
           "id": "PH14-T2",

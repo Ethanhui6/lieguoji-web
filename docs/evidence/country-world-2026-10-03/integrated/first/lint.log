@@ -1,0 +1,13 @@
+
+D:\游戏\架空地图模拟器\src\editor\CountryStudio.tsx
+  192:350  error  Parsing error: '}' expected
+
+D:\游戏\架空地图模拟器\src\world\politics\core.ts
+  45:7  error  The value assigned to 'description' is not used in subsequent statements  no-useless-assignment
+
+D:\游戏\架空地图模拟器\src\world\politics\storage.ts
+  58:22  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+✖ 3 problems (3 errors, 0 warnings)
+
+

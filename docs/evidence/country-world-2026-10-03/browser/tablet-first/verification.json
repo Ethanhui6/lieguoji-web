@@ -1,0 +1,43 @@
+{
+  "label": "tablet-first",
+  "project": "tablet-chromium",
+  "checkLabel": "repair-1",
+  "at": "2026-10-03T05:03:11.160Z",
+  "elapsedMs": 71447,
+  "passed": true,
+  "sourceStable": true,
+  "harnessStable": true,
+  "harness": [
+    {
+      "path": ".autopilot/country-world/browser.mjs",
+      "sha256": "b86730e6d895f96f8d8b25d33ad6d5854a7c1fa6fd3689a357e42079f6b64c28"
+    },
+    {
+      "path": ".autopilot/country-world/playwright.config.ts",
+      "sha256": "0262cf13d9333f00124ee5d32a803943f67d847468945034b64d72a055f4ad89"
+    }
+  ],
+  "buildSha256": "d37a06eef085edfa3611138c9bee05159b505d87b4a3d95fac69a2a5439eb7e0",
+  "sourceSnapshotSha256": "b0e24afec13644313670c6a779e342ae94a89afbf11d35338c5f8582f3e18cac",
+  "distSnapshotSha256": "b26766eb5698805a9a28977c58fc57d7728f1e299e2e23ff3f84b54319615090",
+  "cases": [
+    {
+      "title": "[country-world] native nations, two cities, capital, cancellation, conflict and independent reload",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 70186
+        }
+      ]
+    }
+  ],
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "physicalDevice": false,
+  "cloudWrites": false
+}

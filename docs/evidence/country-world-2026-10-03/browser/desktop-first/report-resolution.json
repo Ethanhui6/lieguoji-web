@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "nativeTestPassed": true,
+  "browserRerun": false,
+  "collectionFailurePreserved": true,
+  "reason": "Playwright resolved the relative JSON outputFile against its config directory. The original report existed at the nested path; only collection failed.",
+  "originalPath": ".autopilot/country-world/.autopilot/country-world/browser/desktop-first/results.json",
+  "originalSha256": "5a7b68527750cdb5abe3a820362350030ba552309b321b26cc9a3b3b459cd04f",
+  "buildSha256": "d37a06eef085edfa3611138c9bee05159b505d87b4a3d95fac69a2a5439eb7e0",
+  "sourceStable": true,
+  "harnessStableAtRun": true,
+  "project": "desktop-chromium",
+  "stats": {
+    "startTime": "2026-10-03T04:56:51.046Z",
+    "duration": 62753.179,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "physicalDevice": false,
+  "cloudWrites": false
+}

@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-03T04:50:04.312Z",
+  "head": "9776c0d11b9abbb9a6fb333b8d0a211461b041d4",
+  "version": "0.5.0-preview.25",
+  "passed": false,
+  "sourceStable": true,
+  "rounds": [
+    {
+      "name": "plan",
+      "exitCode": 0,
+      "elapsedMs": 150,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "exitCode": 1,
+      "elapsedMs": 8535,
+      "error": null
+    }
+  ],
+  "unit": null,
+  "identity": null,
+  "buildSha256": null,
+  "browser": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false
+}

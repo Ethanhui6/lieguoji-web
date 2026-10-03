@@ -1,0 +1,11 @@
+{
+  "lintExit": 0,
+  "typesExit": 0,
+  "lintScope": [
+    "src/world/politics/geography.ts",
+    "src/world/politics/geography.test.ts"
+  ],
+  "sourceStable": true,
+  "checks": "Scoped two-file lint and full tsc --noEmit; no unit tests/build/browser; unified unit repair delegated to root",
+  "dependencySnapshotCount": 19
+}

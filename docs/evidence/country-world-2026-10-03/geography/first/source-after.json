@@ -1,0 +1,10 @@
+[
+  {
+    "path": "src/world/politics/geography.ts",
+    "sha256": "d09739d8d67700b9686fbb0ce79c56eca188ba74cc05d75668a2364c5f58e971"
+  },
+  {
+    "path": "src/world/politics/geography.test.ts",
+    "sha256": "ef97ad3df37fb928e3c9fff173f83773b5b7af8158e9e9f1b861c01201f4d347"
+  }
+]

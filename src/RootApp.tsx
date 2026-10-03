@@ -13,12 +13,16 @@ import type {HistoryLog,HistoryParent} from './history/types';
 import './styles.css';
 const Game=lazy(()=>import('./App'));
 const AtlasStudio=lazy(()=>import('./editor/AtlasStudio'));
+const CountryStudio=lazy(()=>import('./editor/CountryStudio'));
+import {countryEntry,countryEntryUrl} from './editor/country-entry';
+import type {CountrySource} from './world/politics/geography';
 
 const runFromUrl=()=>{const id=new URLSearchParams(window.location.search).get('world');return id&&/^run-[a-z0-9-]{1,55}$/.test(id)?id:'';};
 const atlasFromUrl=()=>{const query=new URLSearchParams(window.location.search),id=query.get('atlas');return {id:id&&/^atlas-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)?id:'',source:query.get('atlas-source')==='backup'?'backup' as const:'current' as const,manifest:query.get('atlas-manifest')??'',format:!query.has('atlas-format')||query.get('atlas-format')==='1'?1 as const:query.get('atlas-format')==='2'?2 as const:query.get('atlas-format')==='3'?3 as const:query.get('atlas-format')==='4'?4 as const:null};};
-const initialScreen=()=>new URLSearchParams(window.location.search).has('atlas')?'atlas':runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
+const initialScreen=()=>new URLSearchParams(window.location.search).has('country')?'country':new URLSearchParams(window.location.search).has('atlas')?'atlas':runFromUrl()?'simulation':window.location.pathname.startsWith('/campaign')||new URLSearchParams(window.location.search).has('demo')?'demo':'studio';
 export default function RootApp(){
- const [screen,setScreen]=useState<'studio'|'demo'|'simulation'|'atlas'>(initialScreen);
+ const [screen,setScreen]=useState<'studio'|'demo'|'simulation'|'atlas'|'country'>(initialScreen);
+ const [activeCountry,setActiveCountry]=useState(()=>({...countryEntry(window.location.search),instance:0}));
  const [workspace,setWorkspace]=useState<Workspace>(()=>({schemaVersion:1,draft:createDraft('山河-2026'),runs:[]}));
  const [loaded,setLoaded]=useState(false),[error,setError]=useState<string|null>(null),[saveStatus,setSaveStatus]=useState('正在读取草稿…');
  const [activeRun,setActiveRun]=useState(runFromUrl);
@@ -27,9 +31,10 @@ export default function RootApp(){
  const revision=useRef(0),locked=useRef(false),writing=useRef(false),dirty=useRef(false);
  useEffect(()=>{let stale=false;void loadWorkspace().then(result=>{if(stale)return;revision.current=result.revision;locked.current=false;if(result.data)setWorkspace(result.data);setSaveStatus(result.data?(result.recovered?'已恢复上一份有效草稿':'已恢复工坊草稿'):'新草稿 · 尚未保存');}).catch(err=>{if(!stale){locked.current=true;setError(String(err));setSaveStatus('原草稿已锁定保护，本局仍可导出');}}).finally(()=>{if(!stale)setLoaded(true);});return()=>{stale=true;};},[]);
  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(dirty.current){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[]);
- useEffect(()=>{const navigate=()=>{navigation.current++;setScreen(initialScreen());setActiveRun(runFromUrl());setActiveAtlas(previous=>({...atlasFromUrl(),instance:previous.instance+1}));};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
+ useEffect(()=>{const navigate=()=>{navigation.current++;setScreen(initialScreen());setActiveRun(runFromUrl());setActiveAtlas(previous=>({...atlasFromUrl(),instance:previous.instance+1}));setActiveCountry(previous=>({...countryEntry(window.location.search),instance:previous.instance+1}));};window.addEventListener('popstate',navigate);return()=>window.removeEventListener('popstate',navigate);},[]);
  const back=()=>{navigation.current++;window.history.pushState(null,'','/');setScreen('studio');};
  const demo=()=>{navigation.current++;window.history.pushState(null,'','/?demo=1');setScreen('demo');};
+ const countries=(source?:CountrySource)=>{navigation.current++;const url=countryEntryUrl(source);window.history.pushState(null,'',url);setActiveCountry(previous=>({...countryEntry(url.slice(1)),instance:previous.instance+1}));setScreen('country');};
  async function persist(next:Workspace){
   if(locked.current)throw new Error('原工坊存档无法读取，已锁定写入；请导出当前草稿，并使用兼容版本恢复。');
   if(writing.current)throw new Error('工坊正在保存，请稍候。');writing.current=true;
@@ -131,7 +136,8 @@ export default function RootApp(){
   }
   const incoming=await decodeWorkspace(raw);const next={...workspace,draft:{...incoming.draft,id:`world-${crypto.randomUUID()}`}};await persist(next);setWorkspace(next);setError(null);
  }catch(err){setError(err instanceof Error?err.message:String(err));throw err;}finally{end();}}
- if(screen==='atlas')return <Suspense fallback={<main className="loading-state"><h1>正在打开大世界草稿…</h1></main>}><AtlasStudio key={activeAtlas.instance} initialDraftId={activeAtlas.id} initialSource={activeAtlas.source} expectedManifest={activeAtlas.manifest} initialFormat={activeAtlas.format} onBack={back} onDraftOpened={(id,source,manifest,format)=>{const query=new URLSearchParams({atlas:id});if(format!==1)query.set('atlas-format',String(format));if(source==='backup'){query.set('atlas-source','backup');query.set('atlas-manifest',manifest);}window.history.replaceState(null,'',`/?${query}`);}}/></Suspense>;
+ if(screen==='country')return activeCountry.error?<main className="loading-state"><h1>无法打开建国来源</h1><p role="alert">{activeCountry.error}</p><button onClick={()=>void openAtlas()}>返回地理草稿</button></main>:<Suspense fallback={<main className="loading-state"><h1>正在打开建国世界…</h1></main>}><CountryStudio key={activeCountry.instance} initialWorldId={activeCountry.id} source={activeCountry.source} onBack={()=>void openAtlas()} onWorldOpened={id=>window.history.replaceState(null,'','/?country='+encodeURIComponent(id))}/></Suspense>;
+ if(screen==='atlas')return <Suspense fallback={<main className="loading-state"><h1>正在打开大世界草稿…</h1></main>}><AtlasStudio key={activeAtlas.instance} initialDraftId={activeAtlas.id} initialSource={activeAtlas.source} expectedManifest={activeAtlas.manifest} initialFormat={activeAtlas.format} onBack={back} onOpenCountries={countries} onDraftOpened={(id,source,manifest,format)=>{const query=new URLSearchParams({atlas:id});if(format!==1)query.set('atlas-format',String(format));if(source==='backup'){query.set('atlas-source','backup');query.set('atlas-manifest',manifest);}window.history.replaceState(null,'',`/?${query}`);}}/></Suspense>;
  if(screen==='demo'||screen==='simulation')return <div inert={operating} aria-busy={operating}><Suspense fallback={<main className="loading-state"><h1>正在打开推演地图…</h1></main>}><Game key={screen==='demo'?'test-continent':activeRun} scope={screen==='demo'?'test-continent':`custom-${activeRun}`} onBack={back} onUpgrade={screen==='simulation'?upgrade:undefined} onRecord={screen==='simulation'?record:undefined} onBranch={branch} onImportHistory={importHistory}/></Suspense></div>;
  if(!loaded)return <main className="loading-state" style={{minHeight:'100dvh'}}><h1>正在打开世界工坊</h1><p>读取地图草稿与历史世界…</p></main>;
  return <div inert={operating} aria-busy={operating}>

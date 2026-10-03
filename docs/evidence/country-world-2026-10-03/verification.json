@@ -1,0 +1,115 @@
+{
+  "at": "2026-10-03T05:05:02.855Z",
+  "version": "0.5.0-preview.25",
+  "buildSha256": "d37a06eef085edfa3611138c9bee05159b505d87b4a3d95fac69a2a5439eb7e0",
+  "sourceStable": true,
+  "unit": {
+    "total": 116,
+    "passed": 116,
+    "failed": 0
+  },
+  "browser": {
+    "desktop": {
+      "startTime": "2026-10-03T04:56:51.046Z",
+      "duration": 62753.179,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "mobile": [
+      {
+        "title": "[country-world] native nations, two cities, capital, cancellation, conflict and independent reload",
+        "project": "mobile-chromium",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 62272
+          }
+        ]
+      }
+    ],
+    "tablet": [
+      {
+        "title": "[country-world] native nations, two cities, capital, cancellation, conflict and independent reload",
+        "project": "tablet-chromium",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 70186
+          }
+        ]
+      }
+    ],
+    "allPassed": true,
+    "retries": 0,
+    "desktopCollectorFailurePreserved": true
+  },
+  "geographyAndEngineUnchanged": [
+    {
+      "key": "engineFingerprint",
+      "unchanged": true
+    },
+    {
+      "key": "macroGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "landformGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "islandGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "coastGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "shapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "oceanGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "unchanged": true
+    }
+  ],
+  "archivedFiles": 113,
+  "archivedBytes": 4095972,
+  "inventorySha256": "647995e874e81c6de15e5dfe3b7373b98d574bfe6f95a937cbf4ca359d0b501f",
+  "omitted": [],
+  "notes": [
+    "Desktop native browser test passed first time; initial JSON report path was nested. Collector failure retained, original report copied without browser rerun.",
+    "Political domain unit fixture uses a declared terrain adapter; geography suite and all browser flows use actual v4 land.",
+    "This is a manual country/city foundation, not whole PH acceptance."
+  ],
+  "physicalDevice": false,
+  "userVisualAccepted": false,
+  "cloudWrites": false,
+  "wholePhaseAccepted": false
+}

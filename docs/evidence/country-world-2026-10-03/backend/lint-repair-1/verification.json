@@ -1,0 +1,33 @@
+{
+  "scope": "Six owned backend files lint; full TypeScript diagnostic while UI fixes may be concurrent; no unit rerun",
+  "results": [
+    {
+      "name": "lint",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "node_modules/eslint/bin/eslint.js",
+        "src/world/politics/model.ts",
+        "src/world/politics/core.ts",
+        "src/world/politics/storage.ts",
+        "src/world/politics/worker.ts",
+        "src/world/politics/bridge.ts",
+        "src/world/politics/politics.test.ts"
+      ],
+      "exitCode": 0,
+      "ms": 1869,
+      "error": null
+    },
+    {
+      "name": "types",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "exitCode": 2,
+      "ms": 16752,
+      "error": null
+    }
+  ],
+  "sourceStable": true
+}

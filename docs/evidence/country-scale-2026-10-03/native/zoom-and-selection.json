@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-03T06:18:59.269Z",
+  "scalePercent": 41,
+  "render": {
+    "data-border-segments": "7998",
+    "data-country-preview": "false",
+    "data-country-revision": "3",
+    "data-country-world-id": "country-4c1a87a3-7f27-4e21-8bca-b1bd858fd9c0",
+    "data-land-cells": "11125",
+    "data-land-polygons": "60913",
+    "data-path-characters": "4051124",
+    "data-processed-segments": "70080",
+    "data-render-chunks": "228",
+    "data-render-completed": "11104",
+    "data-render-state": "ready",
+    "data-testid": "country-overlay",
+    "data-visible-cells": "5489",
+    "data-visible-chunks": "100"
+  },
+  "selectedCityId": "city-5ccb5393-3e74-48de-aa84-f7a560e529ae",
+  "expectedCityId": "city-5ccb5393-3e74-48de-aa84-f7a560e529ae",
+  "sameCitySelected": true,
+  "visualLimitation": "Inland borders still follow geographic cells and visibly form steps at 41%; precise vector frontier remains open."
+}

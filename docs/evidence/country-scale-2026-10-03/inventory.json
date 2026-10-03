@@ -1,0 +1,1136 @@
+[
+  {
+    "path": "archive.mjs",
+    "bytes": 2388,
+    "sha256": "195162c86248ca651018a5bf20dd88925d4a581052b31dd9f8c5ad2fe12461d0",
+    "source": ".autopilot/country-scale/archive.mjs"
+  },
+  {
+    "path": "backend-diagnostic-1/combined.log",
+    "bytes": 158,
+    "sha256": "3cb5a802d0d50a746196ba4a3afb1ce63cf51ec710ab4d9da9a2b594e113d837",
+    "source": ".autopilot/country-scale/backend-diagnostic-1/combined.log"
+  },
+  {
+    "path": "backend-diagnostic-1/result.json",
+    "bytes": 434,
+    "sha256": "19f8cf46e5734c571447d1c804acd6a69b35997c4ada9e61a7f2a09be6fc4d77",
+    "source": ".autopilot/country-scale/backend-diagnostic-1/result.json"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/.last-run.json",
+    "bytes": 96,
+    "sha256": "8a97fd938230b8ed94181843a1becabc85981ae855d06f49ad4f10e9d67dc621",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png",
+    "bytes": 164574,
+    "sha256": "302aae8a61cf40665356b93d5de843e2ea0e7dce4547156451d2a54d323dbb7d",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png",
+    "bytes": 172389,
+    "sha256": "a93c88a1e680baca8a76abad82fa6bd5fe5211ca13c7495194083ccd9bc2b630",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/error-context.md",
+    "bytes": 19005,
+    "sha256": "fcbbd8d1a878c68953cb6d6ca259e5d0741e7aaca4469d6824d03815a7a7e205",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/error-context.md"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/test-failed-1.png",
+    "bytes": 171351,
+    "sha256": "e17ebcb23a630fa44403eee4510a7f31b98dfe4ba5eefdb52223425af9674b22",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/test-failed-1.png"
+  },
+  {
+    "path": "browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/trace.zip",
+    "bytes": 7643148,
+    "sha256": "a70e63fcb293b110eb13fefe5cbffd784993acb453f976362c508e77d1d56b50",
+    "source": ".autopilot/country-scale/browser/desktop-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/trace.zip"
+  },
+  {
+    "path": "browser/desktop-final/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/desktop-final/browser.mjs"
+  },
+  {
+    "path": "browser/desktop-final/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/desktop-final/build.json"
+  },
+  {
+    "path": "browser/desktop-final/country-world.spec.ts",
+    "bytes": 16633,
+    "sha256": "94e07bdae9a1a70eb0cccfd807818a3b6426a5bb7807ef70c39d7e69d6b55cda",
+    "source": ".autopilot/country-scale/browser/desktop-final/country-world.spec.ts"
+  },
+  {
+    "path": "browser/desktop-final/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/desktop-final/playwright.config.ts"
+  },
+  {
+    "path": "browser/desktop-final/results.json",
+    "bytes": 114651,
+    "sha256": "817167298d797c45f6dbacaeb15bcf88dd6f35b24b75df24a8669d17bb9daba9",
+    "source": ".autopilot/country-scale/browser/desktop-final/results.json"
+  },
+  {
+    "path": "browser/desktop-final/run.log",
+    "bytes": 4488,
+    "sha256": "afba1efaf2aa4ac0f35fc19d6e062e3abade25defab21f572f53a48f7eb8bbcb",
+    "source": ".autopilot/country-scale/browser/desktop-final/run.log"
+  },
+  {
+    "path": "browser/desktop-final/verification.json",
+    "bytes": 1586,
+    "sha256": "6798a1bcee9b69f1c5485f9735ac2c8e1776ff4c5645e4ed4d9802b744650231",
+    "source": ".autopilot/country-scale/browser/desktop-final/verification.json"
+  },
+  {
+    "path": "browser/desktop-first/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "e22df5d0991eb28c09093b1e678b3fa8cd1fab48185d38e67cf79fb6e63ad5ea",
+    "source": ".autopilot/country-scale/browser/desktop-first/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/desktop-first/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/desktop-first/browser.mjs"
+  },
+  {
+    "path": "browser/desktop-first/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/desktop-first/build.json"
+  },
+  {
+    "path": "browser/desktop-first/country-world.spec.ts",
+    "bytes": 16633,
+    "sha256": "94e07bdae9a1a70eb0cccfd807818a3b6426a5bb7807ef70c39d7e69d6b55cda",
+    "source": ".autopilot/country-scale/browser/desktop-first/country-world.spec.ts"
+  },
+  {
+    "path": "browser/desktop-first/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/desktop-first/playwright.config.ts"
+  },
+  {
+    "path": "browser/desktop-first/results.json",
+    "bytes": 3926,
+    "sha256": "7f0da7abe924c473d571beb17e556aeed4f113d496c7bc58a3b16929fabdaf78",
+    "source": ".autopilot/country-scale/browser/desktop-first/results.json"
+  },
+  {
+    "path": "browser/desktop-first/run.log",
+    "bytes": 725,
+    "sha256": "06994d2b80d9cef70f121c6925e5e640952a1449f71ed4e89a2d53e8f2baa83e",
+    "source": ".autopilot/country-scale/browser/desktop-first/run.log"
+  },
+  {
+    "path": "browser/desktop-first/verification.json",
+    "bytes": 930,
+    "sha256": "45e8cddf5641ab607158d2385b2c52c6023a823cf25dc0da5ba992642e23757f",
+    "source": ".autopilot/country-scale/browser/desktop-first/verification.json"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png",
+    "bytes": 164574,
+    "sha256": "302aae8a61cf40665356b93d5de843e2ea0e7dce4547156451d2a54d323dbb7d",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png",
+    "bytes": 172389,
+    "sha256": "a93c88a1e680baca8a76abad82fa6bd5fe5211ca13c7495194083ccd9bc2b630",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/capital-relocation.png",
+    "bytes": 162857,
+    "sha256": "8646d280c98f5560c5ada05a35158bf95a3e52a44519dbe723e219420b150b14",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/capital-relocation.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/nation-preview.png",
+    "bytes": 170903,
+    "sha256": "231f7f094388cf9d4a9e87eea8e14133199b725d040a1e18ec536b229f194dfa",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/nation-preview.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/saved-capital-selected.png",
+    "bytes": 166303,
+    "sha256": "9540cea48d5f2f12c8115275f2dc43de0f9dc24840abc3cb95b4c080f31bc3bc",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/saved-capital-selected.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/two-nations-restored.png",
+    "bytes": 163649,
+    "sha256": "a20922a7faaef15bb7173a4b53782fe1247ac0fafad0451f544a1d675b108034",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/two-nations-restored.png"
+  },
+  {
+    "path": "browser/desktop-render-repair/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/browser.mjs"
+  },
+  {
+    "path": "browser/desktop-render-repair/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/build.json"
+  },
+  {
+    "path": "browser/desktop-render-repair/country-world.spec.ts",
+    "bytes": 16725,
+    "sha256": "5e5f46bd7eb1be29e02caf14675f56e493c74f22250366cf8db045d732406cdf",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/country-world.spec.ts"
+  },
+  {
+    "path": "browser/desktop-render-repair/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/playwright.config.ts"
+  },
+  {
+    "path": "browser/desktop-render-repair/results.json",
+    "bytes": 155552,
+    "sha256": "b20298df262544e12ebabf56170117fc35a11b32b653405e45a7297343a9256d",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/results.json"
+  },
+  {
+    "path": "browser/desktop-render-repair/run.log",
+    "bytes": 561,
+    "sha256": "fbdca025711f6a90d2c0800ab1f34e6618c2527eb53c9b7507758690a4459d3a",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/run.log"
+  },
+  {
+    "path": "browser/desktop-render-repair/verification.json",
+    "bytes": 1596,
+    "sha256": "cc9cf1c1e42728c3a63d3e4f4f90d531c9a066f39838760857b8de1e34e309cd",
+    "source": ".autopilot/country-scale/browser/desktop-render-repair/verification.json"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png",
+    "bytes": 164574,
+    "sha256": "302aae8a61cf40665356b93d5de843e2ea0e7dce4547156451d2a54d323dbb7d",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png",
+    "bytes": 172384,
+    "sha256": "0d2d2dc75eb7c00827d2e8c2aec32c9d3626831c0a8625c6ec5a97c7d6675885",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-desktop-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/capital-relocation.png",
+    "bytes": 162857,
+    "sha256": "8646d280c98f5560c5ada05a35158bf95a3e52a44519dbe723e219420b150b14",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/capital-relocation.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/nation-preview.png",
+    "bytes": 170903,
+    "sha256": "231f7f094388cf9d4a9e87eea8e14133199b725d040a1e18ec536b229f194dfa",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/nation-preview.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/saved-capital-selected.png",
+    "bytes": 166301,
+    "sha256": "92808c929d83e36c181d4ffd1f250efde0d0996c849f3a51e9f8d6c1f54d2141",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/saved-capital-selected.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/two-nations-restored.png",
+    "bytes": 163643,
+    "sha256": "756120e31d09dd5634d05bfd0840e3e396ac37a042c6c3cff165854da7115e0e",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium/two-nations-restored.png"
+  },
+  {
+    "path": "browser/desktop-repair-1/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/browser.mjs"
+  },
+  {
+    "path": "browser/desktop-repair-1/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/build.json"
+  },
+  {
+    "path": "browser/desktop-repair-1/country-world.spec.ts",
+    "bytes": 16633,
+    "sha256": "94e07bdae9a1a70eb0cccfd807818a3b6426a5bb7807ef70c39d7e69d6b55cda",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/country-world.spec.ts"
+  },
+  {
+    "path": "browser/desktop-repair-1/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/playwright.config.ts"
+  },
+  {
+    "path": "browser/desktop-repair-1/results.json",
+    "bytes": 155532,
+    "sha256": "79e98d29973b71fbcb1903233e73f19c06c12ea64f960d16885ef3c9b7169e3e",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/results.json"
+  },
+  {
+    "path": "browser/desktop-repair-1/run.log",
+    "bytes": 561,
+    "sha256": "5219b7f085f05d645d1a44c21b07551af287fd545fda413348e9edbfd4996b71",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/run.log"
+  },
+  {
+    "path": "browser/desktop-repair-1/verification.json",
+    "bytes": 1596,
+    "sha256": "5269a21065f34cdd14a9402054d4d0cc3d5a3ad183d94d985ad748b8832ef07c",
+    "source": ".autopilot/country-scale/browser/desktop-repair-1/verification.json"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/.last-run.json",
+    "bytes": 145,
+    "sha256": "b4c860d36d3097e85d5c465ec2af6a8dc5b803f8297bbc44d9e0fb4b5523f5b4",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/error-context.md",
+    "bytes": 18402,
+    "sha256": "d513c8d7d29df6ef3ac4c51af312611be86eb2fe43396a7e36ea52cf60c1ae95",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/error-context.md"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-outline-preview.png",
+    "bytes": 287314,
+    "sha256": "220825e7c7d5df3b26ddab45f24efd449b825eb4e2fbf121a28e2ad7c856201b",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/test-failed-1.png",
+    "bytes": 204176,
+    "sha256": "6745f0224f950d23db2e266abf5c3551667d3e98785816f6aa4ef198135c164e",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/test-failed-1.png"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/trace.zip",
+    "bytes": 15077748,
+    "sha256": "178fa12ff658ce53ca0de63ecee8466dfaeb8c7d21455daf0d93da88d7b31b90",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/trace.zip"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/error-context.md",
+    "bytes": 19005,
+    "sha256": "fcbbd8d1a878c68953cb6d6ca259e5d0741e7aaca4469d6824d03815a7a7e205",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/error-context.md"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/test-failed-1.png",
+    "bytes": 280549,
+    "sha256": "d65fd0849a569c4682107ca490d3da6a9b4355b9a71a1323be5eb36ee0948497",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/test-failed-1.png"
+  },
+  {
+    "path": "browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/trace.zip",
+    "bytes": 10760152,
+    "sha256": "38c965055399c8739dcc3aa10226e33ada3d1cd69357d0f56808108b0f2caaec",
+    "source": ".autopilot/country-scale/browser/mobile-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/trace.zip"
+  },
+  {
+    "path": "browser/mobile-final/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/mobile-final/browser.mjs"
+  },
+  {
+    "path": "browser/mobile-final/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/mobile-final/build.json"
+  },
+  {
+    "path": "browser/mobile-final/country-world.spec.ts",
+    "bytes": 16633,
+    "sha256": "94e07bdae9a1a70eb0cccfd807818a3b6426a5bb7807ef70c39d7e69d6b55cda",
+    "source": ".autopilot/country-scale/browser/mobile-final/country-world.spec.ts"
+  },
+  {
+    "path": "browser/mobile-final/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/mobile-final/playwright.config.ts"
+  },
+  {
+    "path": "browser/mobile-final/results.json",
+    "bytes": 43858,
+    "sha256": "b46c0c6809be29a8db07213a627514a1560eb0cef5e348867be0890ac0e0996e",
+    "source": ".autopilot/country-scale/browser/mobile-final/results.json"
+  },
+  {
+    "path": "browser/mobile-final/run.log",
+    "bytes": 8012,
+    "sha256": "3f952f5048a224895eb42ec47756fa8ed9a37475fb7926bccd2eac6bf4a67ab5",
+    "source": ".autopilot/country-scale/browser/mobile-final/run.log"
+  },
+  {
+    "path": "browser/mobile-final/verification.json",
+    "bytes": 1583,
+    "sha256": "373d2b1e35dc0f8a2b3693589a6845aefc35959c9f777c2504c54a7488019bfb",
+    "source": ".autopilot/country-scale/browser/mobile-final/verification.json"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-country-restored.png",
+    "bytes": 232273,
+    "sha256": "be3d2cefeab6c9d79a943a02349fe65ee201aea95c7cf22c49fb92e70c193f51",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-outline-preview.png",
+    "bytes": 287314,
+    "sha256": "220825e7c7d5df3b26ddab45f24efd449b825eb4e2fbf121a28e2ad7c856201b",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/capital-relocation.png",
+    "bytes": 217753,
+    "sha256": "a4a97de8ea131f6efdb8801aa215ddbed53b5b67d1da4677598bc57ec4af3e46",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/capital-relocation.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/nation-preview.png",
+    "bytes": 281075,
+    "sha256": "5ef9e31f883a3ba0fad867af5267e0720e54c19f68d00188cab38cdddbe20d28",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/nation-preview.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/saved-capital-selected.png",
+    "bytes": 215252,
+    "sha256": "3ac84994aa4185a66b23001f636e57243481c917a99ee1b1340795cb3079e340",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/saved-capital-selected.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/two-nations-restored.png",
+    "bytes": 218180,
+    "sha256": "4efa0bcd67b9bbdc0b4535392609af4e5d0606210cf9ce47bae97a0dbafddfd6",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium/two-nations-restored.png"
+  },
+  {
+    "path": "browser/mobile-render-repair/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/browser.mjs"
+  },
+  {
+    "path": "browser/mobile-render-repair/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/build.json"
+  },
+  {
+    "path": "browser/mobile-render-repair/country-world.spec.ts",
+    "bytes": 16725,
+    "sha256": "5e5f46bd7eb1be29e02caf14675f56e493c74f22250366cf8db045d732406cdf",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/country-world.spec.ts"
+  },
+  {
+    "path": "browser/mobile-render-repair/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/playwright.config.ts"
+  },
+  {
+    "path": "browser/mobile-render-repair/results.json",
+    "bytes": 155543,
+    "sha256": "b36c8b812332aa9531e4cfe0e674edffcc368ca165a7a1811ed683cc2ddf23cb",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/results.json"
+  },
+  {
+    "path": "browser/mobile-render-repair/run.log",
+    "bytes": 559,
+    "sha256": "9f253ec7d14cc73471807f82f5af40ed12401edc9632c2a955e99ba064c89011",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/run.log"
+  },
+  {
+    "path": "browser/mobile-render-repair/verification.json",
+    "bytes": 1592,
+    "sha256": "e7c515b46388e1be31f1d4fcfac2ec54ce9edd399f9e4ec1db1b06a26aeb1f7e",
+    "source": ".autopilot/country-scale/browser/mobile-render-repair/verification.json"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-country-restored.png",
+    "bytes": 354848,
+    "sha256": "74425837e0521449e2ff5d086a448bbf4803f5f875e79c9b607992d5e038eda2",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-outline-preview.png",
+    "bytes": 394323,
+    "sha256": "b9aedd1456ce08c8cdc889c9a9b5b6007fbf87b41d78a854155928b59332ebf5",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/capital-relocation.png",
+    "bytes": 335696,
+    "sha256": "54adaed69082a3b7b72e150cfc92b9705d42533cee5244491c244e1b221191e8",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/capital-relocation.png"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/nation-preview.png",
+    "bytes": 390776,
+    "sha256": "e8397fc98e7fcf0c057f572eced90a239b45edc7010dafef28ddcee3ca9e2d39",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/nation-preview.png"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/saved-capital-selected.png",
+    "bytes": 297524,
+    "sha256": "d7247469c6bb7d3b5d3bc5693fe23a1fea890d282ac8762978c97edb17a0ad5c",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/saved-capital-selected.png"
+  },
+  {
+    "path": "browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/two-nations-restored.png",
+    "bytes": 333900,
+    "sha256": "29a2c3a666e42755d6e4628f9d133bc6e5a3538f4bbec0817aa760bad37306a8",
+    "source": ".autopilot/country-scale/browser/tablet-final/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/two-nations-restored.png"
+  },
+  {
+    "path": "browser/tablet-final/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/tablet-final/browser.mjs"
+  },
+  {
+    "path": "browser/tablet-final/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/tablet-final/build.json"
+  },
+  {
+    "path": "browser/tablet-final/country-world.spec.ts",
+    "bytes": 16633,
+    "sha256": "94e07bdae9a1a70eb0cccfd807818a3b6426a5bb7807ef70c39d7e69d6b55cda",
+    "source": ".autopilot/country-scale/browser/tablet-final/country-world.spec.ts"
+  },
+  {
+    "path": "browser/tablet-final/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/tablet-final/playwright.config.ts"
+  },
+  {
+    "path": "browser/tablet-final/results.json",
+    "bytes": 155521,
+    "sha256": "7c1ca6aaf98e32f2779706f2a9fe1f8f90a6ddcf3a19afff12fdb11cb23760a8",
+    "source": ".autopilot/country-scale/browser/tablet-final/results.json"
+  },
+  {
+    "path": "browser/tablet-final/run.log",
+    "bytes": 559,
+    "sha256": "ecc671f38e5adb8c43bfbcc7d647b52dba172361664bda85b4d7139f8c720b84",
+    "source": ".autopilot/country-scale/browser/tablet-final/run.log"
+  },
+  {
+    "path": "browser/tablet-final/verification.json",
+    "bytes": 1580,
+    "sha256": "5893d79c17f02f033a1fceca6398898c02afd5a81e6f5058d8f8452562e8397d",
+    "source": ".autopilot/country-scale/browser/tablet-final/verification.json"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/.last-run.json"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-country-restored.png",
+    "bytes": 354848,
+    "sha256": "74425837e0521449e2ff5d086a448bbf4803f5f875e79c9b607992d5e038eda2",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-country-restored.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-outline-preview.png",
+    "bytes": 394323,
+    "sha256": "b9aedd1456ce08c8cdc889c9a9b5b6007fbf87b41d78a854155928b59332ebf5",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-sha-140da-rsistence-and-restored-city-tablet-chromium/free-outline-preview.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/capital-relocation.png",
+    "bytes": 335696,
+    "sha256": "54adaed69082a3b7b72e150cfc92b9705d42533cee5244491c244e1b221191e8",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/capital-relocation.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/nation-preview.png",
+    "bytes": 390776,
+    "sha256": "e8397fc98e7fcf0c057f572eced90a239b45edc7010dafef28ddcee3ca9e2d39",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/nation-preview.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/saved-capital-selected.png",
+    "bytes": 297524,
+    "sha256": "d7247469c6bb7d3b5d3bc5693fe23a1fea890d282ac8762978c97edb17a0ad5c",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/saved-capital-selected.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/two-nations-restored.png",
+    "bytes": 333900,
+    "sha256": "29a2c3a666e42755d6e4628f9d133bc6e5a3538f4bbec0817aa760bad37306a8",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/artifacts/country-world--country-wor-f6539-lict-and-independent-reload-tablet-chromium/two-nations-restored.png"
+  },
+  {
+    "path": "browser/tablet-render-repair/browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/browser.mjs"
+  },
+  {
+    "path": "browser/tablet-render-repair/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/build.json"
+  },
+  {
+    "path": "browser/tablet-render-repair/country-world.spec.ts",
+    "bytes": 16725,
+    "sha256": "5e5f46bd7eb1be29e02caf14675f56e493c74f22250366cf8db045d732406cdf",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/country-world.spec.ts"
+  },
+  {
+    "path": "browser/tablet-render-repair/playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/playwright.config.ts"
+  },
+  {
+    "path": "browser/tablet-render-repair/results.json",
+    "bytes": 155543,
+    "sha256": "4e96befa9f9c8e53759a90112c92c9ad41ed985fe1483eb5d1304967287272f0",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/results.json"
+  },
+  {
+    "path": "browser/tablet-render-repair/run.log",
+    "bytes": 559,
+    "sha256": "a9a4b38d1956c83fa63c089f249ef4b92e3303de64508a317747a9d864b87624",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/run.log"
+  },
+  {
+    "path": "browser/tablet-render-repair/verification.json",
+    "bytes": 1592,
+    "sha256": "f901b29fbc8fa6459f9a3e890f0c185b70015bad20d09eeb0b79e1029f5e65e7",
+    "source": ".autopilot/country-scale/browser/tablet-render-repair/verification.json"
+  },
+  {
+    "path": "browser.mjs",
+    "bytes": 3620,
+    "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef",
+    "source": ".autopilot/country-scale/browser.mjs"
+  },
+  {
+    "path": "check.mjs",
+    "bytes": 3619,
+    "sha256": "49ef4ba140a675ec9e0d3623a073603d489e87d7d5c016f0c04dbf932a01e45f",
+    "source": ".autopilot/country-scale/check.mjs"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/build.json"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/dist-files.json",
+    "bytes": 4555,
+    "sha256": "3a9ec026978ffef84f8a1825fd0dca2920c5b9df810cdde1e27b4dc8b456d21c",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/dist-files.json"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/lint.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/lint.log"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/source-after.json",
+    "bytes": 68476,
+    "sha256": "de7cbc624f70e02461b1218898ae034ad7204be0e00b6be7c29aadc651815511",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/source-after.json"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/source-before.json",
+    "bytes": 68476,
+    "sha256": "de7cbc624f70e02461b1218898ae034ad7204be0e00b6be7c29aadc651815511",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/source-before.json"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/types.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/types.log"
+  },
+  {
+    "path": "checks/browser-helper-repair-1/verification.json",
+    "bytes": 1831,
+    "sha256": "beae57bad251a1193e7a478a4b7e5a95b00df1fb2bff61c3a0ea4c323a3bece1",
+    "source": ".autopilot/country-scale/checks/browser-helper-repair-1/verification.json"
+  },
+  {
+    "path": "checks/css-repair-1/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/checks/css-repair-1/build.json"
+  },
+  {
+    "path": "checks/css-repair-1/build.log",
+    "bytes": 2167,
+    "sha256": "ec422f3eaba24f34c75ef162ae50d8a96cd0c909babd2decaa7e452f13904d7a",
+    "source": ".autopilot/country-scale/checks/css-repair-1/build.log"
+  },
+  {
+    "path": "checks/css-repair-1/dist-files.json",
+    "bytes": 4554,
+    "sha256": "fd2cb911d5218077a6bb2185c22ae9ebe427c000a193019d0a9dc1915641d302",
+    "source": ".autopilot/country-scale/checks/css-repair-1/dist-files.json"
+  },
+  {
+    "path": "checks/css-repair-1/dist.log",
+    "bytes": 95,
+    "sha256": "e458df1cca4db39e7ecddb23a36b6157f2bc7bdedb30deb6500734adf3c83a5b",
+    "source": ".autopilot/country-scale/checks/css-repair-1/dist.log"
+  },
+  {
+    "path": "checks/css-repair-1/source-after.json",
+    "bytes": 68476,
+    "sha256": "15663985e919258e35f45284c0201e372008cad68bef47bb151210ac83aa0493",
+    "source": ".autopilot/country-scale/checks/css-repair-1/source-after.json"
+  },
+  {
+    "path": "checks/css-repair-1/source-before.json",
+    "bytes": 68476,
+    "sha256": "15663985e919258e35f45284c0201e372008cad68bef47bb151210ac83aa0493",
+    "source": ".autopilot/country-scale/checks/css-repair-1/source-before.json"
+  },
+  {
+    "path": "checks/css-repair-1/verification.json",
+    "bytes": 1841,
+    "sha256": "f9e6a50a0c436f7557d0fc9586cab6497935d2a84636a0d1bb09acdd515aee7f",
+    "source": ".autopilot/country-scale/checks/css-repair-1/verification.json"
+  },
+  {
+    "path": "checks/first/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/checks/first/build.json"
+  },
+  {
+    "path": "checks/first/build.log",
+    "bytes": 2167,
+    "sha256": "4c1fc9ea4f127357cdeb87c691dd848057e2923a761a8c22b27801ef1779d4e5",
+    "source": ".autopilot/country-scale/checks/first/build.log"
+  },
+  {
+    "path": "checks/first/dist-files.json",
+    "bytes": 4555,
+    "sha256": "3a9ec026978ffef84f8a1825fd0dca2920c5b9df810cdde1e27b4dc8b456d21c",
+    "source": ".autopilot/country-scale/checks/first/dist-files.json"
+  },
+  {
+    "path": "checks/first/dist.log",
+    "bytes": 95,
+    "sha256": "e458df1cca4db39e7ecddb23a36b6157f2bc7bdedb30deb6500734adf3c83a5b",
+    "source": ".autopilot/country-scale/checks/first/dist.log"
+  },
+  {
+    "path": "checks/first/lint.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/first/lint.log"
+  },
+  {
+    "path": "checks/first/plan.log",
+    "bytes": 129,
+    "sha256": "cb6d9b54612ba1f4a0047f57624d04da914b3d03f0b0ce004dfd455c72442702",
+    "source": ".autopilot/country-scale/checks/first/plan.log"
+  },
+  {
+    "path": "checks/first/release-policy.log",
+    "bytes": 2499,
+    "sha256": "4742e9aa1f51af6351c7db413374bec735981f3e9db0db9efde761a6b9ce4338",
+    "source": ".autopilot/country-scale/checks/first/release-policy.log"
+  },
+  {
+    "path": "checks/first/source-after.json",
+    "bytes": 68477,
+    "sha256": "58a2b4e2085a40ead8ef34c3bda834a1e4a124635574dad33e4247294c7736d7",
+    "source": ".autopilot/country-scale/checks/first/source-after.json"
+  },
+  {
+    "path": "checks/first/source-before.json",
+    "bytes": 68477,
+    "sha256": "58a2b4e2085a40ead8ef34c3bda834a1e4a124635574dad33e4247294c7736d7",
+    "source": ".autopilot/country-scale/checks/first/source-before.json"
+  },
+  {
+    "path": "checks/first/types.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/first/types.log"
+  },
+  {
+    "path": "checks/first/unit.json",
+    "bytes": 60639,
+    "sha256": "1ab0fd948709e8b1dd07b1a06d50c3f54a120d06720a3fae692f14cce1051d91",
+    "source": ".autopilot/country-scale/checks/first/unit.json"
+  },
+  {
+    "path": "checks/first/unit.log",
+    "bytes": 104,
+    "sha256": "9de4af64879900dddd0d30ef69068ff68a861705159253d3429153f2c312977a",
+    "source": ".autopilot/country-scale/checks/first/unit.log"
+  },
+  {
+    "path": "checks/first/verification.json",
+    "bytes": 2045,
+    "sha256": "b9ba43eae963fce05f3ab8cf0b9c172bc28874e2b0405723c4f4feae0cdb9265",
+    "source": ".autopilot/country-scale/checks/first/verification.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/build.json",
+    "bytes": 9705,
+    "sha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/build.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/build.log",
+    "bytes": 2167,
+    "sha256": "afe465b9b1e23193ae927a35ebae20cc733cf235495e684524a8eebedc9bd283",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/build.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/dist-files.json",
+    "bytes": 4555,
+    "sha256": "58616f805b4cb1fcf5d703d9403a36dec33b1b58d4b8faf23edad7fd2d3095a7",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/dist-files.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/dist.log",
+    "bytes": 95,
+    "sha256": "e458df1cca4db39e7ecddb23a36b6157f2bc7bdedb30deb6500734adf3c83a5b",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/dist.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/lint.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/lint.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/plan.log",
+    "bytes": 129,
+    "sha256": "cb6d9b54612ba1f4a0047f57624d04da914b3d03f0b0ce004dfd455c72442702",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/plan.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/release-policy.log",
+    "bytes": 2499,
+    "sha256": "2d92d6ab8e3ec0f9c506df2edfa6a9ac31a806c2a3491bc424c2bd0cb1dd3ee7",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/release-policy.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/source-after.json",
+    "bytes": 68477,
+    "sha256": "88e6b5c06891374d355658d2669c2142ceb0849f4c7dcba14bc5295beeb7f0f4",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/source-after.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/source-before.json",
+    "bytes": 68477,
+    "sha256": "88e6b5c06891374d355658d2669c2142ceb0849f4c7dcba14bc5295beeb7f0f4",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/source-before.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/types.log",
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/types.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/unit.json",
+    "bytes": 60692,
+    "sha256": "70c34e52133311e03eb27fecdb0e4c10880582c845d21023bd9b93b194facf29",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/unit.json"
+  },
+  {
+    "path": "checks/rendering-repair-1/unit.log",
+    "bytes": 117,
+    "sha256": "195ce49939d943091e7c25b6dfca00f6bb62a414acc6e862d7bc17470908818a",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/unit.log"
+  },
+  {
+    "path": "checks/rendering-repair-1/verification.json",
+    "bytes": 2045,
+    "sha256": "294ba8aac401fa544a4bbcafc02b71771ee6a277255c10d872a9c6d623542cb4",
+    "source": ".autopilot/country-scale/checks/rendering-repair-1/verification.json"
+  },
+  {
+    "path": "native/copy-verification.json",
+    "bytes": 5247,
+    "sha256": "bd6051874b7cc2be907c439515b46ae3e8c24aaa40b4d1c161515012233e8ff6",
+    "source": ".autopilot/country-scale/native/copy-verification.json"
+  },
+  {
+    "path": "native/final-reload-verification.json",
+    "bytes": 6288,
+    "sha256": "40f920263067d366b46d20c3116ef1551aa14f4a09e50a93b63bb5b602810928",
+    "source": ".autopilot/country-scale/native/final-reload-verification.json"
+  },
+  {
+    "path": "native/final-three-nations.jpg",
+    "bytes": 28138,
+    "sha256": "e26a802f18ee832c2473ca28a8f16a14275ee3a840c100b8e9ee40c44f24170c",
+    "source": ".autopilot/country-scale/native/final-three-nations.jpg"
+  },
+  {
+    "path": "native/large-country-preview.jpg",
+    "bytes": 36736,
+    "sha256": "70b3bd10f2bdb7ee09a97305fa802d3ff57e1072ad289f2fb579f80a7b578883",
+    "source": ".autopilot/country-scale/native/large-country-preview.jpg"
+  },
+  {
+    "path": "native/outline-tools-obstruction.jpg",
+    "bytes": 32223,
+    "sha256": "88ddf248e7c2a410f0b431834dc7655deccda8ddec41a4653621c9a7d53a5b76",
+    "source": ".autopilot/country-scale/native/outline-tools-obstruction.jpg"
+  },
+  {
+    "path": "native/running-cancel.json",
+    "bytes": 70,
+    "sha256": "fc696279f09b572a661582187ae8d785fd31bec1c1282dfdf180c1d9f2fed173",
+    "source": ".autopilot/country-scale/native/running-cancel.json"
+  },
+  {
+    "path": "native/zoom-and-selection.json",
+    "bytes": 917,
+    "sha256": "8258af7b148af5111ddec5e23fe27b1bcf1e45dfe9fcb46549969df567a3440a",
+    "source": ".autopilot/country-scale/native/zoom-and-selection.json"
+  },
+  {
+    "path": "native/zoom41-border-limitation.jpg",
+    "bytes": 27936,
+    "sha256": "5c0447741d4cef3ea119b2a6acd1c99153f59ba3c5f4b46d2abe36f651b3448d",
+    "source": ".autopilot/country-scale/native/zoom41-border-limitation.jpg"
+  },
+  {
+    "path": "playwright.config.ts",
+    "bytes": 606,
+    "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd",
+    "source": ".autopilot/country-scale/playwright.config.ts"
+  },
+  {
+    "path": "preview25-build.json",
+    "bytes": 9705,
+    "sha256": "d37a06eef085edfa3611138c9bee05159b505d87b4a3d95fac69a2a5439eb7e0",
+    "source": ".autopilot/country-scale/preview25-build.json"
+  },
+  {
+    "path": "repair-css.mjs",
+    "bytes": 2749,
+    "sha256": "2309a72c4d15e5585061dc364ba746df7a6a06df5c8d2858b4150b812312e6e4",
+    "source": ".autopilot/country-scale/repair-css.mjs"
+  },
+  {
+    "path": "repair-helper.mjs",
+    "bytes": 2078,
+    "sha256": "b033de5652de94e5a2e92a95a30a8e6c8bbabc7f979ca5471b080b83206e9e3e",
+    "source": ".autopilot/country-scale/repair-helper.mjs"
+  },
+  {
+    "path": "trace-privacy-review.json",
+    "bytes": 847,
+    "sha256": "e62bcf4451d9e69f21f769e8bec7ab69bc04bbaae21fe95e0f3e5b5f47474e04",
+    "source": ".autopilot/country-scale/trace-privacy-review.json"
+  },
+  {
+    "path": "sources/package-lock.json",
+    "bytes": 140963,
+    "sha256": "c269a81126c9dc7d35b2fd2df8d5a12dae06ac8ff0396df2c26a6bf204aaf54f",
+    "source": "package-lock.json"
+  },
+  {
+    "path": "sources/package.json",
+    "bytes": 1720,
+    "sha256": "fefdc872a223e4614959cdbcf6e91329477fb0e577479659eb176c34cfedd6c3",
+    "source": "package.json"
+  },
+  {
+    "path": "sources/src/editor/CountryStudio.tsx",
+    "bytes": 39857,
+    "sha256": "67de0bbcd2ac98dd7c14b59e889059244b586181e2910699950fa4db63e69525",
+    "source": "src/editor/CountryStudio.tsx"
+  },
+  {
+    "path": "sources/src/editor/country-studio.css",
+    "bytes": 12839,
+    "sha256": "652213849f874ca291772c293aed5b22b5373e36a7d4630009bacbac1e239838",
+    "source": "src/editor/country-studio.css"
+  },
+  {
+    "path": "sources/src/world/politics/bridge.ts",
+    "bytes": 10909,
+    "sha256": "6d487b21e7dcd439e854e2e6e28ee26825f5a62c4ee24e4f0f241d2e7eb47530",
+    "source": "src/world/politics/bridge.ts"
+  },
+  {
+    "path": "sources/src/world/politics/core.ts",
+    "bytes": 9118,
+    "sha256": "ac045a9a74ef1b1673a5e6e98539c2550d5615d16e9e5bf24df835b488a20a23",
+    "source": "src/world/politics/core.ts"
+  },
+  {
+    "path": "sources/src/world/politics/geography.test.ts",
+    "bytes": 19555,
+    "sha256": "6e1a418fd294952131e5f6b0f8dcd8483df9724d17eeae5e77081b486e164512",
+    "source": "src/world/politics/geography.test.ts"
+  },
+  {
+    "path": "sources/src/world/politics/geography.ts",
+    "bytes": 23895,
+    "sha256": "2d04883d5d131cc7cdb14da69eff22b243f137abecfd44197582b8d2d56cee93",
+    "source": "src/world/politics/geography.ts"
+  },
+  {
+    "path": "sources/src/world/politics/model.ts",
+    "bytes": 11194,
+    "sha256": "ed4862300ed5922fbce6c7f123ac6551c8661a06f5fea2b064d70739d3928e47",
+    "source": "src/world/politics/model.ts"
+  },
+  {
+    "path": "sources/src/world/politics/politics.test.ts",
+    "bytes": 18986,
+    "sha256": "ed740554dad29c27ad8ebab92bbc8e8e79c664c94d75654112289ad30136a159",
+    "source": "src/world/politics/politics.test.ts"
+  },
+  {
+    "path": "sources/src/world/politics/renderer.ts",
+    "bytes": 18413,
+    "sha256": "7235ca2a1eb35c9af332e017f5312ec3f73c789b4b1231c2b8467f606614273d",
+    "source": "src/world/politics/renderer.ts"
+  },
+  {
+    "path": "sources/src/world/politics/storage.ts",
+    "bytes": 3458,
+    "sha256": "9ba759d37b8f9dde91769b7ee703f5b4f2a612e6561672547ba177d07abbe34e",
+    "source": "src/world/politics/storage.ts"
+  },
+  {
+    "path": "sources/src/world/politics/worker.ts",
+    "bytes": 9789,
+    "sha256": "65d186b07143d01fb0fe37f5260da43c4c5a685337fcfe08feee9e2d81466e68",
+    "source": "src/world/politics/worker.ts"
+  },
+  {
+    "path": "sources/src/world/renderer.ts",
+    "bytes": 74584,
+    "sha256": "dcf80a201dce47f01fe7fee96b1a8a7fbc31056f877bc6f81508604c7b0fd475",
+    "source": "src/world/renderer.ts"
+  },
+  {
+    "path": "sources/tests/country-world.spec.ts",
+    "bytes": 16725,
+    "sha256": "5e5f46bd7eb1be29e02caf14675f56e493c74f22250366cf8db045d732406cdf",
+    "source": "tests/country-world.spec.ts"
+  },
+  {
+    "path": "sources/src/world/politics/chunk-codec.ts",
+    "bytes": 7399,
+    "sha256": "4195e42a18b172d33cfd5afa35232bf4f1150c2d69af79c39c7b453f665980b9",
+    "source": "src/world/politics/chunk-codec.ts"
+  },
+  {
+    "path": "sources/src/world/politics/chunks.test.ts",
+    "bytes": 15716,
+    "sha256": "e5bbdc88131c5c1ec7b42f0bca94fa687cb08feda7247ac38c75f546850e40cc",
+    "source": "src/world/politics/chunks.test.ts"
+  },
+  {
+    "path": "sources/src/world/politics/country-selection.test.ts",
+    "bytes": 9082,
+    "sha256": "1dc911f6f6029007666ed4a67cd50d7cfb4f188a0e7494b7cccdc632b4ff8828",
+    "source": "src/world/politics/country-selection.test.ts"
+  },
+  {
+    "path": "sources/src/world/politics/country-selection.ts",
+    "bytes": 8550,
+    "sha256": "b7f6b5b0902d09e0a7f83aaed305ac238663aac9056aebea43feb0d11a1c0d7f",
+    "source": "src/world/politics/country-selection.ts"
+  },
+  {
+    "path": "sources/src/world/politics/render-chunks.test.ts",
+    "bytes": 1798,
+    "sha256": "ac7634ca723e85aea4f1cafd74d3d35f7ddba765543a53216e3c5f689521016a",
+    "source": "src/world/politics/render-chunks.test.ts"
+  },
+  {
+    "path": "sources/src/world/politics/render-chunks.ts",
+    "bytes": 1970,
+    "sha256": "421fa4e07697b65ed17e7c52608b29c3a3fa1ffcc8295fad039a7d837117952a",
+    "source": "src/world/politics/render-chunks.ts"
+  },
+  {
+    "path": "sources/src/world/politics/storage-v1.ts",
+    "bytes": 16509,
+    "sha256": "7b771d4c87edde64c996d912c82444b2fdaac460978ae2d6c8dd15ae064eaf5f",
+    "source": "src/world/politics/storage-v1.ts"
+  },
+  {
+    "path": "sources/src/world/politics/storage-v2.ts",
+    "bytes": 20113,
+    "sha256": "a1c17cbb0668cc233cbeca0748c90363462481dad34ecbabdd1419bc958f9935",
+    "source": "src/world/politics/storage-v2.ts"
+  },
+  {
+    "path": "sources/src/world/politics/transfer.ts",
+    "bytes": 4149,
+    "sha256": "d8867280bdef305e615ba3d1c252232e25be3f7c09e6e16891b8912dd080fb4d",
+    "source": "src/world/politics/transfer.ts"
+  },
+  {
+    "path": "sources/tests/helpers/country-readonly.ts",
+    "bytes": 5011,
+    "sha256": "5af3c8947731a03bb136fcc64a6446014fb978af7682b5ef2ec926cfcfff2267",
+    "source": "tests/helpers/country-readonly.ts"
+  }
+]

@@ -28,7 +28,8 @@ import { countryClaimCells, prepareCountryGeography } from './geography';
 import { COUNTRY_DATABASE, COUNTRY_LIMITS, CountryFutureVersionError, countryDigest, countryJsonBytes, decodeCountryDocument, encodeCountryDocument, validateCountryCommand, validateCountryDocument,
   type CountryCommand, type CountryDocument, type CountryPreview, type CountryState } from './model';
 import { applyCountryCommand } from './core';
-import { commitCountryWorld, countryUndoDocument, createCountryWorld, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
+import { commitCountryWorld, countryUndoDocument, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
+import { createCountryWorld } from './storage-v1';
 import { CountryRuntime, validateCountryRequest } from './worker';
 
 const source: CountrySource = { draftId: 'atlas-00000000-0000-4000-8000-000000000001', revision: 1, rootDigest: 'a'.repeat(64), manifestDigest: 'b'.repeat(64), atlasFormat: 4 };
@@ -36,7 +37,12 @@ const fresh = () => new CountryRuntime();
 const id = () => `command-${crypto.randomUUID()}`;
 const geo = { manifest: { spec: { columns: 128, rows: 128 } } } as AtlasDocument;
 let serial = 0;
-const create = async (runtime = fresh()) => ({ runtime, state: await runtime.handle({ id: ++serial, type: 'create', source, name: '山河建国测试' }) as CountryState });
+// These remain the original v1 compatibility cases. New-default v2 is tested
+// separately; legacy roots and their byte-limit semantics are not migrated.
+const create = async (runtime = fresh()) => {
+  const saved = await createCountryWorld(await prepareCountryGeography(source), '山河建国测试');
+  return { runtime, state: await runtime.handle({ id: ++serial, type: 'open', worldId: saved.document.worldId }) as CountryState };
+};
 async function preview(runtime: CountryRuntime, state: CountryState, command: CountryCommand) {
   return await runtime.handle({ id: ++serial, type: 'preview', expected: { worldId: state.document.worldId, revision: state.document.revision, rootDigest: state.rootDigest }, command }) as CountryPreview;
 }

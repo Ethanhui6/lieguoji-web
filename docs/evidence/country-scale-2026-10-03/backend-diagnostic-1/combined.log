@@ -1,0 +1,1 @@
+src/editor/CountryStudio.tsx(145,13): error TS2367: This comparison appears to be unintentional because the types '"other"' and '"preview"' have no overlap.

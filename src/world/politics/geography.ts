@@ -45,6 +45,28 @@ export function countryGeographySource(data: AtlasDocument): CountrySource {
   if (!verified) throw new Error('国家地理对象没有已验证的独立来源身份。');
   return { ...verified.source };
 }
+export interface CountryCellGeometryPage {
+  source: CountrySource; totalCells: number; cursor: number; nextCursor: number | null;
+  /** Eight Q8 coordinates per consecutive cell: top-left, top-right,
+   * bottom-right, bottom-left. This owned page is not a Worker wire packet. */
+  quadsQ: Int32Array;
+}
+/** Reads actual shared geometry from the decoded private snapshot without
+ * building Hbase or a spatial index. A page never exposes the private buffers. */
+export async function readCountryCellGeometryPage(data: AtlasDocument, cursor: number, limit = 1024, control?: AtlasControl): Promise<CountryCellGeometryPage> {
+  const verified = verifiedGeographies.get(data), guarded = controlCopy(control); guarded.signal?.throwIfAborted();
+  if (!verified) throw new Error('国家地理对象没有已验证的独立来源身份。');
+  const totalCells = verified.data.manifest.spec.columns * verified.data.manifest.spec.rows;
+  if (!generationInt(cursor, 0, totalCells) || !generationInt(limit, 1, 1024)) throw new Error('国家地理分页游标或 1024 地块上限无效。');
+  const end = Math.min(cursor + limit, totalCells), quadsQ = new Int32Array((end - cursor) * 8);
+  for (let cellId = cursor; cellId < end; cellId++) {
+    guarded.signal?.throwIfAborted(); const quad = getCellQuad(verified.data, cellId), offset = (cellId - cursor) * 8;
+    for (let point = 0; point < 4; point++) { quadsQ[offset + point * 2] = quad[point].x * 256; quadsQ[offset + point * 2 + 1] = quad[point].y * 256; }
+    if ((cellId - cursor + 1) % 128 === 0 || cellId + 1 === end) await yieldAtlas(guarded, '读取圈地真实地块几何', cellId + 1, totalCells);
+  }
+  guarded.signal?.throwIfAborted();
+  return { source: { ...verified.source }, totalCells, cursor, nextCursor: end === totalCells ? null : end, quadsQ };
+}
 const typedPrototype = Object.getPrototypeOf(Uint8Array.prototype) as object;
 const typedBuffer = Object.getOwnPropertyDescriptor(typedPrototype, 'buffer')!.get!;
 const typedOffset = Object.getOwnPropertyDescriptor(typedPrototype, 'byteOffset')!.get!;

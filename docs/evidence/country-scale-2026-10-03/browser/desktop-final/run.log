@@ -1,0 +1,53 @@
+
+Running 2 tests using 1 worker
+
+(node:16872) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop-chromium] › tests\country-world.spec.ts:43:1 › [country-world] native nations, two cities, capital, cancellation, conflict and independent reload (1.2m)
+(node:20016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [desktop-chromium] › tests\country-world.spec.ts:102:1 › [country-shape] native concave outline, cancelled candidate, chunk persistence and restored city (1.9m)
+
+
+  1) [desktop-chromium] › tests\country-world.spec.ts:43:1 › [country-world] native nations, two cities, capital, cancellation, conflict and independent reload 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByRole('button', { name: '确认并保存', exact: true }).visible()
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByRole('button', { name: '确认并保存', exact: true }).visible() with timeout 5000ms
+      - waiting for getByRole('button', { name: '确认并保存', exact: true }).visible()
+        13 × locator resolved to <button disabled class="country-primary">确认并保存</button>
+           - unexpected value "disabled"
+
+
+      68 |   await tab(page,'国家',touch); await press(page,'新建国家',touch); await page.getByLabel('国家名称',{exact:true}).fill('岚川');
+      69 |   await territory(page,{x:800,y:1300},{x:1060,y:1660},touch); await press(page,'预览建国',touch);
+    > 70 |   await expect(country(page)).toHaveAttribute('data-country-display','preview'); await expect(button(page,'确认并保存')).toBeEnabled(); await page.screenshot({path:info.outputPath('nation-preview.png'),fullPage:true});
+         |                                                                                                                     ^
+      71 |   await press(page,'取消预览',touch); await ready(page); await expect(country(page)).toHaveAttribute('data-country-nation-count','0'); await expect(country(page)).toHaveAttribute('data-country-revision','0');
+      72 |   expect(await persisted(page,worldId)).toEqual(created);
+      73 |   await press(page,'预览建国',touch); await confirm(page,touch); await expect(country(page)).toHaveAttribute('data-country-nation-count','1');
+        at D:\游戏\架空地图模拟器\tests\country-world.spec.ts:70:117
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\country-scale\browser\desktop-final\artifacts\country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\country-scale\browser\desktop-final\artifacts\country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\country-scale\browser\desktop-final\artifacts\country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\country-scale\browser\desktop-final\artifacts\country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop-chromium] › tests\country-world.spec.ts:43:1 › [country-world] native nations, two cities, capital, cancellation, conflict and independent reload 
+  1 passed (3.1m)

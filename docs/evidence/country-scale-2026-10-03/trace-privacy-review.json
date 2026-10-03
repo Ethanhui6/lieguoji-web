@@ -1,0 +1,26 @@
+[
+  {
+    "Archive": ".autopilot\\country-scale\\browser\\desktop-final\\artifacts\\country-world--country-wor-f6539-lict-and-independent-reload-desktop-chromium\\trace.zip",
+    "NetworkFiles": 2,
+    "Hosts": [
+      "127.0.0.1"
+    ],
+    "SensitiveRequestHeaders": 0
+  },
+  {
+    "Archive": ".autopilot\\country-scale\\browser\\mobile-final\\artifacts\\country-world--country-sha-140da-rsistence-and-restored-city-mobile-chromium\\trace.zip",
+    "NetworkFiles": 2,
+    "Hosts": [
+      "127.0.0.1"
+    ],
+    "SensitiveRequestHeaders": 0
+  },
+  {
+    "Archive": ".autopilot\\country-scale\\browser\\mobile-final\\artifacts\\country-world--country-wor-f6539-lict-and-independent-reload-mobile-chromium\\trace.zip",
+    "NetworkFiles": 2,
+    "Hosts": [
+      "127.0.0.1"
+    ],
+    "SensitiveRequestHeaders": 0
+  }
+]

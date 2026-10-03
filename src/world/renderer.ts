@@ -537,12 +537,12 @@ export class AtlasRenderer {
       this.draw();
     });
   }
-  setOutlineMode(enabled: boolean) {
+  setOutlineMode(enabled: boolean, ariaLabel?: string) {
     this.guarded(() => {
       if (this.outlineMode === enabled) return;
       this.clearPointers(); this.outlineMode = enabled;
       this.app.canvas.style.cursor = enabled ? 'crosshair' : '';
-      this.app.canvas.setAttribute('aria-label', enabled ? '手绘大陆轮廓，单指或鼠标绘制，双指缩放平移' : '大世界草稿地图，拖动平移，双指或滚轮缩放，点选地块');
+      this.app.canvas.setAttribute('aria-label', enabled ? ariaLabel ?? '手绘大陆轮廓，单指或鼠标绘制，双指缩放平移' : '大世界草稿地图，拖动平移，双指或滚轮缩放，点选地块');
       if (!enabled) { this.outlinePoints = []; this.outlineRevision++; }
       this.requestDraw();
     });

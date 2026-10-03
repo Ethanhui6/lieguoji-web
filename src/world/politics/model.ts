@@ -2,8 +2,8 @@ import { validateCountrySource, type CountrySource } from './geography';
 export type { CountrySource } from './geography';
 
 export const COUNTRY_DATABASE = 'lieguoji-country-worlds-v1';
-/** Entry counts are secondary validation bounds. This first playable slice's
- * 256 KiB document cap is reached sooner; it does not support 65,536 UUID rows. */
+/** v1 keeps its original byte cap. v2 uses bounded dictionary chunks; its
+ * expanded runtime table is never stored or sent as one JSON document. */
 export const COUNTRY_LIMITS = Object.freeze({ nations: 64, cities: 512, territories: 65536, commandCells: 1024, packetBytes: 512 * 1024, documentBytes: 256 * 1024, undoEntries: 20, undoBytes: 8 * 1024 * 1024 });
 export interface CountryPoint { xQ: number; yQ: number }
 export interface CountryNation { id: string; name: string; color: string; regimeId: string; capitalCityId: string | null; labelAnchorQ: CountryPoint }
@@ -11,7 +11,7 @@ export interface CountryRegime { id: string; nationId: string; name: string }
 export interface CountryTerritory { cellId: number; legalNationId: string; controllingNationId: string }
 export interface CountryCity { id: string; nationId: string; name: string; positionQ: CountryPoint; labelAnchorQ: CountryPoint }
 export interface CountryDocument {
-  format: 'lieguoji-country-document'; version: 1; worldId: string; name: string; source: CountrySource; revision: number;
+  format: 'lieguoji-country-document'; version: 1 | 2; worldId: string; name: string; source: CountrySource; revision: number;
   nations: CountryNation[]; regimes: CountryRegime[]; territories: CountryTerritory[]; cities: CountryCity[];
 }
 export interface CountryState { document: CountryDocument; rootDigest: string; readOnly: boolean; recovered: boolean; undoCount: number }
@@ -20,6 +20,8 @@ export interface CountryListEntry { worldId: string; name: string; revision: num
 export type CountryCommand =
   | { type: 'create-nation'; name: string; color: string; cellIds: number[] }
   | { type: 'claim-territory'; nationId: string; cellIds: number[] }
+  | { type: 'create-nation-shape'; name: string; color: string; outlineQ: CountryPoint[] }
+  | { type: 'claim-territory-shape'; nationId: string; outlineQ: CountryPoint[] }
   | { type: 'create-city'; nationId: string; name: string; positionQ: CountryPoint }
   | { type: 'set-capital'; nationId: string; cityId: string }
   | { type: 'rename-nation'; nationId: string; name: string }
@@ -43,7 +45,7 @@ export function countryArray(raw: unknown, max: number): raw is unknown[] {
 export const countryPoint = (raw: unknown): raw is CountryPoint => countryExact(raw, ['xQ', 'yQ']) && countryInteger(raw.xQ, 0, 4096 * 256) && countryInteger(raw.yQ, 0, 4096 * 256);
 export function validateCountryDocument(raw: unknown): raw is CountryDocument {
   if (!countryExact(raw, ['format', 'version', 'worldId', 'name', 'source', 'revision', 'nations', 'regimes', 'territories', 'cities'])
-    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
+    || raw.format !== 'lieguoji-country-document' || raw.version !== 1 && raw.version !== 2 || !countryId(raw.worldId, 'country') || !countryName(raw.name)
     || !validateCountrySource(raw.source) || !countryInteger(raw.revision, 0, Number.MAX_SAFE_INTEGER)
     || !countryArray(raw.nations, COUNTRY_LIMITS.nations) || !countryArray(raw.regimes, COUNTRY_LIMITS.nations)
     || !countryArray(raw.cities, COUNTRY_LIMITS.cities) || !countryArray(raw.territories, COUNTRY_LIMITS.territories)) return false;
@@ -70,12 +72,15 @@ export function validateCountryDocument(raw: unknown): raw is CountryDocument {
     previous = t.cellId; owners.add(t.legalNationId);
   }
   for (const n of nations.values()) if (!regimes.has(n.regimeId) || !owners.has(n.id) || n.capitalCityId !== null && cities.get(n.capitalCityId)?.nationId !== n.id) return false;
-  return countryJsonBytes(raw).length <= COUNTRY_LIMITS.documentBytes;
+  return raw.version === 2 ? countryJsonBytes({ ...raw, territories: [] }).length <= COUNTRY_LIMITS.documentBytes : countryJsonBytes(raw).length <= COUNTRY_LIMITS.documentBytes;
 }
 export function validateCountryCommand(raw: unknown): raw is CountryCommand {
   if (!raw || typeof raw !== 'object') return false;
   const type = Object.getOwnPropertyDescriptor(raw, 'type')?.value;
   const cells = (value: unknown) => countryArray(value, COUNTRY_LIMITS.commandCells) && value.length > 0 && value.every(v => countryInteger(v, 0, 512 * 512 - 1));
+  const outline = (value: unknown) => countryArray(value, 256) && value.length >= 3 && value.every(countryPoint);
+  if (type === 'create-nation-shape') return countryExact(raw, ['type', 'name', 'color', 'outlineQ']) && countryName(raw.name) && typeof raw.color === 'string' && /^#[a-fA-F0-9]{6}$/.test(raw.color) && outline(raw.outlineQ);
+  if (type === 'claim-territory-shape') return countryExact(raw, ['type', 'nationId', 'outlineQ']) && countryId(raw.nationId, 'nation') && outline(raw.outlineQ);
   if (type === 'create-nation') return countryExact(raw, ['type', 'name', 'color', 'cellIds']) && countryName(raw.name) && typeof raw.color === 'string' && /^#[a-fA-F0-9]{6}$/.test(raw.color) && cells(raw.cellIds);
   if (type === 'claim-territory') return countryExact(raw, ['type', 'nationId', 'cellIds']) && countryId(raw.nationId, 'nation') && cells(raw.cellIds);
   if (type === 'create-city') return countryExact(raw, ['type', 'nationId', 'name', 'positionQ']) && countryId(raw.nationId, 'nation') && countryName(raw.name) && countryPoint(raw.positionQ);
@@ -89,6 +94,7 @@ export async function countryDigest(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer))].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 export function encodeCountryDocument(document: CountryDocument): Uint8Array {
+  if (document.version !== 1) throw new Error('v2 国家世界必须通过分块编码保存与传送。');
   const bytes = countryJsonBytes(document);
   if (bytes.length > COUNTRY_LIMITS.documentBytes) throw new Error('本试玩档国家数据已超过 256 KiB 容量；本次不提交，也不会截断已有领土。');
   if (!validateCountryDocument(document)) throw new Error('国家世界格式或实体引用无效。');
@@ -99,7 +105,7 @@ export function decodeCountryDocument(bytes: Uint8Array): CountryDocument {
   if (!(bytes instanceof Uint8Array) || bytes.length > COUNTRY_LIMITS.documentBytes) throw new Error('国家世界字节容量无效。');
   const raw: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   if (raw && typeof raw === 'object' && (raw as { version?: unknown }).version !== 1) throw new CountryFutureVersionError();
-  if (!validateCountryDocument(raw)) throw new Error('国家世界字段或引用校验失败。');
+  if (!validateCountryDocument(raw) || raw.version !== 1) throw new Error('国家世界字段或引用校验失败。');
   return raw;
 }
 export function validateCountryState(raw: unknown): raw is CountryState {

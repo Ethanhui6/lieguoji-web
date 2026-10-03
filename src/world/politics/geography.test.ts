@@ -12,8 +12,9 @@ import { getAtlasStorage, type AtlasStoredRoot } from '../storage';
 import { getCellQuad } from '../topology';
 import { validateCountryWorldGeography } from './core';
 import { validateCountryDocument, type CountryDocument } from './model';
+import { selectCountryPolygon } from './country-selection';
 import { COUNTRY_GEOGRAPHY_LIMITS, countryCellLandPolygons, countryClaimCells, countryGeographySource, countryLandAt, decodeCountryGeography,
-  prepareCountryGeography, validateCountrySource, type CountryGeographyRecord, type CountrySource } from './geography';
+  prepareCountryGeography, readCountryCellGeometryPage, validateCountrySource, type CountryGeographyRecord, type CountrySource } from './geography';
 
 const fast = { yieldTask: async () => {} }, api = getAtlasStorage(4);
 let fixture: AtlasDetailCoastDocument, record: CountryGeographyRecord;
@@ -199,5 +200,30 @@ describe('independent original-identity country geography', () => {
     expect(countryGeographySource(beforeQuery)).toEqual(record.source);
     expect(await countryLandAt(beforeQuery, 16 * 256, 16 * 256, fast)).toEqual({ cellId: 0, height: -180, land: false });
     expect(base).toHaveBeenCalledTimes(2);
+  });
+
+  it('selects actual shared geometry and fine land from private bounded pages despite caller mutation', async () => {
+    const data = await decodeCountryGeography(record, fast), base = vi.spyOn(Base, 'extractDetailCoastBase');
+    const expected = [0, 0, 32 * 256, 0, 32 * 256, 32 * 256, 0, 32 * 256];
+    const page = await readCountryCellGeometryPage(data, 0, 2, fast);
+    expect(page.source).toEqual(record.source); expect(page.totalCells).toBe(128 * 128); expect(page.nextCursor).toBe(2);
+    expect([...page.quadsQ.slice(0, 8)]).toEqual(expected); expect(page.quadsQ.byteLength).toBe(64);
+    expect(base).not.toHaveBeenCalled(); page.quadsQ.fill(0); page.source.revision = 999;
+    expect([...(await readCountryCellGeometryPage(data, 0, 1, fast)).quadsQ]).toEqual(expected);
+    await expect(readCountryCellGeometryPage(data, 0, 1025, fast)).rejects.toThrow('1024');
+    await expect(readCountryCellGeometryPage(data, -1, 1, fast)).rejects.toThrow('游标');
+    await expect(readCountryCellGeometryPage(fixture, 0, 1, fast)).rejects.toThrow('来源身份');
+    data.blocks.clear(); data.manifest.spec.columns = 512;
+    if (isDetailCoastDocument(data)) data.detailCoast.clear();
+    const selection = await selectCountryPolygon(data, { source: { ...record.source }, pointsQ: [
+      { xQ: 0, yQ: 0 }, { xQ: 64 * 256, yQ: 0 }, { xQ: 64 * 256, yQ: 32 * 256 }, { xQ: 0, yQ: 32 * 256 },
+    ] }, fast);
+    expect(selection).toEqual({ source: record.source, rule: 'cell-center-land-v1', cellIds: [0],
+      scannedCells: 128 * 128, polygonMatchedCells: 2, seaRejectedCells: 1 });
+    expect(base).toHaveBeenCalledTimes(1);
+    const controller = new AbortController();
+    await expect(readCountryCellGeometryPage(data, 0, 1024, { ...fast, signal: controller.signal,
+      onProgress: () => controller.abort() })).rejects.toThrow();
+    expect((await readCountryCellGeometryPage(data, 128 * 128, 1, fast)).quadsQ.length).toBe(0);
   });
 });

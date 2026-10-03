@@ -1,8 +1,11 @@
 import { validateCountrySource, type CountrySource } from './geography';
+import { countryDocumentDigest } from './chunk-codec';
+import { CountryTransferReader } from './transfer';
 import { COUNTRY_LIMITS, countryArray, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, validateCountryCommand, validateCountryDocument, validateCountryState,
   type CountryCommand, type CountryListEntry, type CountryPreview, type CountryState } from './model';
 export type { CountryCommand, CountryDocument, CountryListEntry, CountryPreview, CountryState, CountrySource } from './model';
 type Operation = { type: 'create'; source: CountrySource; name: string } | { type: 'open'; worldId: string } | { type: 'list' } | { type: 'cancel-preview' }
+  | { type: 'copy-to-v2'; worldId: string; name: string }
   | { type: 'preview'; command: CountryCommand; expected: { worldId: string; revision: number; rootDigest: string } } | { type: 'confirm'; candidateId: string };
 interface Pending { id: number; operation: Operation; resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; settled: Promise<void>; finish: () => void }
 export interface CountryClientOptions { onProgress?: (progress: { stage: string; completed: number; total: number }) => void; timeoutMs?: number }
@@ -15,13 +18,15 @@ export class CountryClient {
   private state: CountryState | null = null;
   private candidate: CountryPreview | null = null;
   private closed = false;
+  private transfer: CountryTransferReader | null = null;
+  private receives: Promise<void> = Promise.resolve();
   constructor(private readonly options: CountryClientOptions = {}) {
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-    this.worker.onmessage = event => this.receive(event.data);
+    this.worker.onmessage = event => { this.receives = this.receives.then(() => this.receive(event.data)).catch(error => this.fail(error instanceof Error ? error : new Error(String(error)))); };
     this.worker.onerror = () => this.fail(new Error('国家线程中断；请重新打开草稿核对已保存状态，勿重复创建副本。'));
     this.worker.onmessageerror = () => this.fail(new Error('国家线程回执无法读取，请重新打开已保存草稿。'));
   }
-  private fail(error: Error) { const pending = this.pending; this.pending = null; this.closed = true; this.worker.terminate(); if (pending) { clearTimeout(pending.timer); pending.finish(); pending.reject(error); } }
+  private fail(error: Error) { const pending = this.pending; this.pending = null; this.transfer = null; this.closed = true; this.worker.terminate(); if (pending) { clearTimeout(pending.timer); pending.finish(); pending.reject(error); } }
   private request<T>(operation: Operation): Promise<T> {
     if (this.closed) return Promise.reject(new Error('国家线程已关闭，请重新打开。'));
     if (this.pending) return Promise.reject(new Error('国家世界正在执行操作。'));
@@ -34,12 +39,20 @@ export class CountryClient {
       try { this.worker.postMessage(body); } catch (error) { this.fail(error instanceof Error ? error : new Error(String(error))); }
     });
   }
-  private receive(raw: unknown) {
+  private async receive(raw: unknown) {
     const p = this.pending;
     try {
       if (!p || !raw || typeof raw !== 'object' || countryJsonBytes(raw).length > COUNTRY_LIMITS.packetBytes) throw new Error('国家回执没有对应请求或超过容量。');
       const message = raw as Record<string, unknown>;
       if (message.id !== p.id) throw new Error('国家回执属于其他操作。');
+      if (message.kind === 'transfer-start') {
+        if (!countryExact(message, ['id', 'kind', 'value']) || this.transfer || !['create', 'copy-to-v2', 'open', 'confirm', 'preview'].includes(p.operation.type)) throw new Error('国家分块回执起始无效。');
+        this.transfer = new CountryTransferReader(message.value, p.operation.type === 'preview' ? 'preview' : 'state'); return;
+      }
+      if (message.kind === 'transfer-page') {
+        if (!countryExact(message, ['id', 'kind', 'value']) || !this.transfer) throw new Error('国家分块回执缺少起始清单。');
+        this.transfer.append(message.value); return;
+      }
       if (message.kind === 'progress') {
         if (!countryExact(message, ['id', 'kind', 'progress']) || !countryExact(message.progress, ['stage', 'completed', 'total']) || typeof message.progress.stage !== 'string'
           || !countryInteger(message.progress.completed, 0, Number.MAX_SAFE_INTEGER) || !countryInteger(message.progress.total, 0, Number.MAX_SAFE_INTEGER)) throw new Error('国家进度格式无效。');
@@ -48,15 +61,19 @@ export class CountryClient {
       if (message.kind === 'error') {
         if (!countryExact(message, ['id', 'kind', 'message', 'name']) || typeof message.message !== 'string' || typeof message.name !== 'string') throw new Error('国家错误回执无效。');
         const error = new Error(message.message); error.name = message.name;
-        this.pending = null; clearTimeout(p.timer); p.finish(); p.reject(error); return;
+        this.pending = null; this.transfer = null; clearTimeout(p.timer); p.finish(); p.reject(error); return;
       }
       if (message.kind !== 'complete' || !countryExact(message, ['id', 'kind', 'value'])) throw new Error('国家完成回执格式无效。');
-      const value = message.value, op = p.operation;
-      if (op.type === 'create' || op.type === 'open' || op.type === 'confirm') {
+      const value = this.transfer ? await this.transfer.finish(message.value) : message.value, op = p.operation;
+      if (this.pending !== p || this.closed) return;
+      this.transfer = null;
+      if (op.type === 'create' || op.type === 'copy-to-v2' || op.type === 'open' || op.type === 'confirm') {
         if (!validateCountryState(value)) throw new Error('国家状态回执字段、引用或摘要无效。');
         if (op.type === 'open' && value.document.worldId !== op.worldId
           || op.type === 'create' && (value.document.revision !== 0 || !sameSource(value.document.source, op.source) || value.document.name !== op.name)
-          || op.type === 'confirm' && (!this.candidate || this.candidate.candidateId !== op.candidateId || JSON.stringify(value.document) !== JSON.stringify(this.candidate.document))) throw new Error('国家状态回执未绑定本次操作。');
+          || op.type === 'copy-to-v2' && (value.document.version !== 2 || value.document.worldId === op.worldId || value.document.name !== op.name || value.document.revision !== 0)
+          || op.type === 'confirm' && (!this.candidate || this.candidate.candidateId !== op.candidateId || await countryDocumentDigest(value.document) !== await countryDocumentDigest(this.candidate.document))) throw new Error('国家状态回执未绑定本次操作。');
+        if (this.pending !== p || this.closed) return;
         this.state = structuredClone(value); this.candidate = null;
       } else if (op.type === 'preview') {
         if (!countryExact(value, ['candidateId', 'description', 'document']) || !countryId(value.candidateId, 'candidate') || typeof value.description !== 'string' || value.description.length > 1000
@@ -77,6 +94,7 @@ export class CountryClient {
     return this.request({ type: 'create', source: { ...source }, name });
   }
   open(worldId: string): Promise<CountryState> { if (!countryId(worldId, 'country')) return Promise.reject(new Error('国家世界 ID 无效。')); return this.request({ type: 'open', worldId }); }
+  copyToV2(worldId: string, name: string): Promise<CountryState> { if (!countryId(worldId, 'country') || !countryName(name)) return Promise.reject(new Error('旧档身份或副本名称无效。')); return this.request({ type: 'copy-to-v2', worldId, name }); }
   list(): Promise<CountryListEntry[]> { return this.request({ type: 'list' }); }
   preview(command: CountryCommand): Promise<CountryPreview> {
     if (!this.state || this.state.readOnly || !validateCountryCommand(command)) return Promise.reject(new Error('请打开可编辑国家世界，并提交有效命令。'));

@@ -1,0 +1,93 @@
+{
+  "at": "2026-10-03T05:55:30.172Z",
+  "head": "158b23c8ce2b5abc9392471dd7ccac773df6cbfd",
+  "version": "0.5.0-preview.26",
+  "passed": true,
+  "sourceStable": true,
+  "rounds": [
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "elapsedMs": 1734
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "elapsedMs": 13837
+    }
+  ],
+  "unit": {
+    "total": 134,
+    "passed": 134,
+    "failed": 0
+  },
+  "identity": [
+    {
+      "key": "engineFingerprint",
+      "unchanged": true
+    },
+    {
+      "key": "macroGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "landformGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "islandGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "coastGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "shapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "oceanGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "detailShapeGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "naturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "addNaturalDetailGenerator",
+      "unchanged": true
+    },
+    {
+      "key": "localDetailReliefGenerator",
+      "unchanged": true
+    }
+  ],
+  "buildSha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+  "browser": false,
+  "physicalDevice": false,
+  "wholePhaseAccepted": false,
+  "cloudWrites": false,
+  "reused": {
+    "from": ".autopilot/country-scale/checks/first",
+    "checks": [
+      "plan",
+      "release-policy",
+      "unit",
+      "build",
+      "dist"
+    ],
+    "reason": "Only independent browser read-only helper changed; product source and actual dist unchanged"
+  },
+  "changed": [
+    "tests/helpers/country-readonly.ts"
+  ]
+}

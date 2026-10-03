@@ -3,14 +3,18 @@ import type { AtlasCamera } from '../camera';
 import { getCellQuad } from '../topology';
 import { countryCellLandPolygons } from './geography';
 import type { CountryDocument } from './model';
+import { countryChunkVisible, countryExposedSides, countryRenderBounds, countryRenderChunk, expandCountryRenderBounds, type CountryRenderBounds } from './render-chunks';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_CACHED_CELLS = 8192, MAX_POLYGONS = 200000, MAX_BORDER_SEGMENTS = 200000;
+const MAX_PATH_CHARACTERS = 32 * 1024 * 1024;
 const svg = <K extends keyof SVGElementTagNameMap>(tag: K) => document.createElementNS(NS, tag);
 type Point = { x: number; y: number };
 type Mark = { element: SVGGElement; text: SVGTextElement; width: number; point: Point; nationId: string; cityId?: string };
 type PointQ = { xQ: number; yQ: number };
 type CachedLand = { path: string; polygons: number; coast: string; sides: string[]; segments: number };
+type DisplayChunk = { nationId: string; bounds: CountryRenderBounds; fills: string[]; borders: string[]; cells: number };
+type RenderedChunk = { land: SVGPathElement; border: SVGPathElement; bounds: CountryRenderBounds; cells: number; visible: boolean };
 const segmentPath = (a: PointQ, b: PointQ) => `M${a.xQ / 256},${a.yQ / 256}L${b.xQ / 256},${b.yQ / 256}`;
 
 /** Cancel shared fine-triangle edges before drawing any border. Clip arithmetic
@@ -51,6 +55,7 @@ export class CountryRenderer {
   private cache = new Map<number, CachedLand>();
   private cachedPolygons = 0;
   private nationGroups = new Map<string, SVGGElement>();
+  private chunks: RenderedChunk[] = [];
   private marks: Mark[] = [];
   private pending?: AbortController;
   private destroyed = false;
@@ -58,7 +63,7 @@ export class CountryRenderer {
   private selectedCity: string | null = null;
   private isPreview = false;
 
-  constructor(private readonly host: HTMLElement) {
+  constructor(private readonly host: HTMLElement, private readonly onProgress?: (progress: { stage: string; completed: number; total: number }) => void) {
     this.element.setAttribute('class', 'country-overlay');
     this.element.setAttribute('data-testid', 'country-overlay');
     this.element.setAttribute('aria-hidden', 'true');
@@ -72,23 +77,39 @@ export class CountryRenderer {
   async show(geography: AtlasDocument, document: CountryDocument, preview = false): Promise<void> {
     this.pending?.abort(); const pending = new AbortController(); this.pending = pending;
     const check = () => { if (this.destroyed) throw new Error('建国地图显示已关闭。'); pending.signal.throwIfAborted(); };
-    if (this.geography !== geography) { this.cache.clear(); this.cachedPolygons = 0; this.geography = geography; }
+    // Fine clipping already asks to yield inside each geographic cell. Share
+    // one time slice across those calls instead of paying a clamped timer for
+    // every tiny cell; cancellation/input still regain the event loop regularly.
+    let sliceStart = performance.now();
+    const yieldToInput = async () => { check(); if (performance.now() - sliceStart >= 8) { await new Promise<void>(resolve => setTimeout(resolve, 0)); sliceStart = performance.now(); check(); } };
+    const sameGeography = this.geography === geography;
+    if (!sameGeography) { this.cache.clear(); this.cachedPolygons = 0; this.geography = geography; }
+    const previous = this.document;
+    // Renaming, city edits and capital changes do not invalidate land geometry.
+    if (sameGeography && previous && previous.worldId === document.worldId && previous.territories.length === document.territories.length
+      && previous.territories.every((t, i) => t.cellId === document.territories[i].cellId && t.controllingNationId === document.territories[i].controllingNationId)
+      && previous.nations.length === document.nations.length && previous.nations.every((n, i) => n.id === document.nations[i].id && n.color === document.nations[i].color)) {
+      this.document = document; this.isPreview = preview;
+      this.element.setAttribute('data-country-revision', String(document.revision)); this.element.setAttribute('data-country-preview', String(preview));
+      this.rebuildLabels(); this.setSelection(this.selectedNation, this.selectedCity); this.pending = undefined; return;
+    }
     const groups = new Map<string, SVGGElement>(), fragment = window.document.createDocumentFragment();
     const nations = new Map(document.nations.map(nation => [nation.id, nation]));
     const owners = new Map(document.territories.map(territory => [territory.cellId, territory.controllingNationId]));
-    const borderPaths = new Map<string, string>(), borderFragment = window.document.createDocumentFragment();
-    let polygonCount = 0, borderSegments = 0;
+    const display = new Map<string, DisplayChunk>(), borderFragment = window.document.createDocumentFragment();
+    let polygonCount = 0, borderSegments = 0, processedSegments = 0, characters = 0, completed = 0;
     try {
-      if (document.territories.length > MAX_CACHED_CELLS) throw new Error('本次政治显示超过 8,192 地块预算，已保存世界保持原样。');
+      this.element.setAttribute('data-render-state', 'loading');
       for (const territory of document.territories) {
         check(); const nation = nations.get(territory.controllingNationId);
         if (!nation) throw new Error('领土的所属国家不存在，未显示错误着色。');
+        const quad = getCellQuad(geography, territory.cellId);
         let cached = this.cache.get(territory.cellId);
         if (!cached) {
-          const polygons = await countryCellLandPolygons(geography, territory.cellId, { signal: pending.signal }); check();
+          const polygons = await countryCellLandPolygons(geography, territory.cellId, { signal: pending.signal, yieldTask: yieldToInput }); check();
           if (!polygons.length) throw new Error('领土缺少真实陆地，未把海域着色。');
           if (polygonCount + polygons.length > MAX_POLYGONS) throw new Error('政治海岸显示超过细片预算，未用粗格替代真实陆地。');
-          const outline = countryCellOutline(polygons, getCellQuad(geography, territory.cellId).map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })));
+          const outline = countryCellOutline(polygons, quad.map(point => ({ xQ: point.x * 256, yQ: point.y * 256 })));
           cached = { polygons: polygons.length, path: polygons.map(points => points.map((point, index) => `${index ? 'L' : 'M'}${point.xQ / 256},${point.yQ / 256}`).join('') + 'Z').join(''), ...outline };
           while (this.cache.size && (this.cache.size >= MAX_CACHED_CELLS || this.cachedPolygons + cached.polygons > MAX_POLYGONS)) {
             const first = this.cache.keys().next().value!; this.cachedPolygons -= this.cache.get(first)!.polygons; this.cache.delete(first);
@@ -97,33 +118,47 @@ export class CountryRenderer {
         }
         polygonCount += cached.polygons;
         if (polygonCount > MAX_POLYGONS) throw new Error('政治海岸显示超过细片预算，未用粗格替代真实陆地。');
-        borderSegments += cached.segments;
-        if (borderSegments > MAX_BORDER_SEGMENTS) throw new Error('国界线超过显示预算，未截断或简化真实海岸。');
-        const { columns, rows } = geography.manifest.spec, id = territory.cellId, column = id % columns, row = Math.floor(id / columns);
-        const neighbours = [row > 0 ? id - columns : -1, column + 1 < columns ? id + 1 : -1, row + 1 < rows ? id + columns : -1, column > 0 ? id - 1 : -1];
+        processedSegments += cached.segments;
+        const { columns, rows } = geography.manifest.spec, id = territory.cellId;
+        const exposed = countryExposedSides(id, columns, rows, nation.id, owners);
         let boundary = cached.coast;
-        for (let side = 0; side < 4; side++) if (owners.get(neighbours[side]) !== nation.id) boundary += cached.sides[side];
-        borderPaths.set(nation.id, (borderPaths.get(nation.id) ?? '') + boundary);
-        let group = groups.get(nation.id);
-        if (!group) { group = svg('g'); group.setAttribute('fill', nation.color); group.setAttribute('data-nation-id', nation.id); groups.set(nation.id, group); fragment.append(group); }
-        const path = svg('path'); path.setAttribute('d', cached.path); path.setAttribute('data-territory-cell', String(territory.cellId)); group.append(path);
+        for (let side = 0; side < 4; side++) if (exposed[side]) boundary += cached.sides[side];
+        borderSegments += boundary.split('M').length - 1;
+        if (borderSegments > MAX_BORDER_SEGMENTS) throw new Error('实际可见国界线超过显示预算，未截断或简化真实海岸。');
+        characters += cached.path.length + boundary.length;
+        if (characters > MAX_PATH_CHARACTERS) throw new Error('国土精细几何超过本机显示容量，本次候选未确认；已保存世界保留。');
+        const key = `${countryRenderChunk(id, columns)}/${nation.id}`, bounds = countryRenderBounds(quad);
+        let chunk = display.get(key);
+        if (!chunk) { chunk = { nationId: nation.id, bounds, fills: [], borders: [], cells: 0 }; display.set(key, chunk); }
+        else expandCountryRenderBounds(chunk.bounds, bounds);
+        chunk.fills.push(cached.path); chunk.borders.push(boundary); chunk.cells++;
+        if (++completed % 32 === 0) { this.element.setAttribute('data-render-completed', String(completed)); this.onProgress?.({ stage: '绘制国土与国界', completed, total: document.territories.length }); await yieldToInput(); check(); }
       }
-      for (const [id, d] of borderPaths) {
-        const path = svg('path'); path.setAttribute('d', d); path.setAttribute('fill', 'none'); path.setAttribute('stroke', nations.get(id)!.color);
-        path.setAttribute('stroke-width', '1.2'); path.setAttribute('stroke-linejoin', 'round'); path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('vector-effect', 'non-scaling-stroke'); path.setAttribute('opacity', '.85'); path.setAttribute('data-nation-border', id); borderFragment.append(path);
+      const chunks: RenderedChunk[] = [];
+      for (const [key, chunk] of display) {
+        let group = groups.get(chunk.nationId);
+        if (!group) { group = svg('g'); group.setAttribute('fill', nations.get(chunk.nationId)!.color); group.setAttribute('data-nation-id', chunk.nationId); groups.set(chunk.nationId, group); fragment.append(group); }
+        const land = svg('path'); land.setAttribute('d', chunk.fills.join('')); land.setAttribute('data-territory-chunk', key); group.append(land);
+        const border = svg('path'); border.setAttribute('d', chunk.borders.join('')); border.setAttribute('fill', 'none'); border.setAttribute('stroke', nations.get(chunk.nationId)!.color);
+        border.setAttribute('stroke-width', '1.2'); border.setAttribute('stroke-linejoin', 'round'); border.setAttribute('stroke-linecap', 'round');
+        border.setAttribute('vector-effect', 'non-scaling-stroke'); border.setAttribute('opacity', '.85'); border.setAttribute('data-nation-border', chunk.nationId); borderFragment.append(border);
+        chunks.push({ land, border, bounds: chunk.bounds, cells: chunk.cells, visible: true });
       }
-      check(); this.document = document; this.isPreview = preview; this.nationGroups = groups; this.land.replaceChildren(fragment);
+      check(); this.chunks = chunks; this.document = document; this.isPreview = preview; this.nationGroups = groups; this.land.replaceChildren(fragment);
       this.borders.replaceChildren(borderFragment);
       this.element.setAttribute('data-country-world-id', document.worldId); this.element.setAttribute('data-country-revision', String(document.revision));
       this.element.setAttribute('data-country-preview', String(preview)); this.element.setAttribute('data-land-polygons', String(polygonCount));
       this.element.setAttribute('data-land-cells', String(document.territories.length));
       this.element.setAttribute('data-border-segments', String(borderSegments));
+      this.element.setAttribute('data-processed-segments', String(processedSegments));
+      this.element.setAttribute('data-render-chunks', String(chunks.length));
+      this.element.setAttribute('data-path-characters', String(characters));
       this.element.setAttribute('data-render-state', 'ready');
+      this.onProgress?.({ stage: '绘制国土与国界', completed: document.territories.length, total: document.territories.length });
       this.rebuildLabels(); this.setSelection(this.selectedNation, this.selectedCity); this.setCamera(this.camera);
     } catch (failure) {
       if (this.pending === pending && !pending.signal.aborted && !this.destroyed) {
-        this.land.replaceChildren(); this.borders.replaceChildren(); this.labels.replaceChildren(); this.marks = []; this.nationGroups.clear(); this.document = undefined;
+        this.land.replaceChildren(); this.borders.replaceChildren(); this.labels.replaceChildren(); this.marks = []; this.chunks = []; this.nationGroups.clear(); this.document = undefined;
         this.element.setAttribute('data-render-state', 'error');
       }
       throw failure;
@@ -165,6 +200,13 @@ export class CountryRenderer {
     this.element.setAttribute('viewBox', `0 0 ${Math.max(1, width)} ${Math.max(1, height)}`);
     this.land.setAttribute('transform', `translate(${camera.x} ${camera.y}) scale(${camera.scale})`);
     this.borders.setAttribute('transform', `translate(${camera.x} ${camera.y}) scale(${camera.scale})`);
+    let visibleChunks = 0, visibleCells = 0;
+    for (const chunk of this.chunks) {
+      const visible = countryChunkVisible(chunk.bounds, camera, width, height);
+      if (visible !== chunk.visible) { chunk.land.style.display = visible ? '' : 'none'; chunk.border.style.display = visible ? '' : 'none'; chunk.visible = visible; }
+      if (visible) { visibleChunks++; visibleCells += chunk.cells; }
+    }
+    this.element.setAttribute('data-visible-chunks', String(visibleChunks)); this.element.setAttribute('data-visible-cells', String(visibleCells));
     const visible: { mark: Mark; x: number; y: number }[] = [];
     for (const mark of this.marks) {
       const x = camera.x + mark.point.x * camera.scale, y = camera.y + mark.point.y * camera.scale;
@@ -195,5 +237,7 @@ export class CountryRenderer {
     return found;
   }
 
-  destroy() { this.destroyed = true; this.pending?.abort(); this.element.remove(); this.cache.clear(); this.cachedPolygons = 0; this.marks = []; this.nationGroups.clear(); }
+  cancelPending() { this.pending?.abort(new DOMException('已取消国土绘制；请核对当前已保存状态。', 'AbortError')); }
+
+  destroy() { this.destroyed = true; this.pending?.abort(); this.element.remove(); this.cache.clear(); this.cachedPolygons = 0; this.marks = []; this.chunks = []; this.nationGroups.clear(); }
 }

@@ -2,13 +2,16 @@ import type { AtlasDocument } from '../atlas-format';
 import type { AtlasControl } from '../model';
 import { applyCountryCommand, makeCountryCreationIds, validateCountryWorldGeography, type CountryCreationIds } from './core';
 import { prepareCountryGeography, validateCountrySource } from './geography';
-import { COUNTRY_LIMITS, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, encodeCountryDocument, validateCountryCommand,
+import { countryDocumentDigest } from './chunk-codec';
+import { streamCountryResult } from './transfer';
+import { COUNTRY_LIMITS, countryDigest, countryExact, countryHash, countryId, countryInteger, countryJsonBytes, countryName, validateCountryCommand,
   type CountryCommand, type CountryPreview, type CountrySource, type CountryState } from './model';
-import { commitCountryWorld, countryUndoDocument, createCountryWorld, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
+import { commitCountryWorld, copyCountryWorldToV2, countryUndoDocument, createCountryWorld, listCountryWorlds, openCountryWorld, readCountryGeography } from './storage';
 
 export type CountryRequest = { id: number } & (
   | { type: 'create'; source: CountrySource; name: string }
   | { type: 'open'; worldId: string }
+  | { type: 'copy-to-v2'; worldId: string; name: string }
   | { type: 'list' }
   | { type: 'preview'; expected: { worldId: string; revision: number; rootDigest: string }; command: CountryCommand }
   | { type: 'confirm'; candidateId: string }
@@ -21,6 +24,7 @@ export function validateCountryRequest(raw: unknown): raw is CountryRequest {
   if (!countryInteger(r.id, 1, Number.MAX_SAFE_INTEGER)) return false;
   if (r.type === 'create') return countryExact(r, ['id', 'type', 'source', 'name']) && validateCountrySource(r.source) && countryName(r.name);
   if (r.type === 'open') return countryExact(r, ['id', 'type', 'worldId']) && countryId(r.worldId, 'country');
+  if (r.type === 'copy-to-v2') return countryExact(r, ['id', 'type', 'worldId', 'name']) && countryId(r.worldId, 'country') && countryName(r.name);
   if (r.type === 'list' || r.type === 'cancel-preview') return countryExact(r, ['id', 'type']);
   if (r.type === 'confirm') return countryExact(r, ['id', 'type', 'candidateId']) && countryId(r.candidateId, 'candidate');
   return r.type === 'preview' && countryExact(r, ['id', 'type', 'expected', 'command']) && countryExact(r.expected, ['worldId', 'revision', 'rootDigest'])
@@ -43,11 +47,14 @@ export class CountryRuntime {
     try {
       if (request.type === 'list') return await listCountryWorlds();
       if (request.type === 'cancel-preview') { this.candidate = null; return null; }
-      if (request.type === 'create') {
+      if (request.type === 'create' || request.type === 'copy-to-v2') {
         this.candidate = null;
-        const record = await prepareCountryGeography(request.source, control); check();
-        control.onProgress?.({ stage: '保存独立国家世界与完整地理副本', completed: 0, total: 1 });
-        const state = await createCountryWorld(record, request.name, active.signal);
+        let state: CountryState;
+        if (request.type === 'create') {
+          const record = await prepareCountryGeography(request.source, control); check();
+          control.onProgress?.({ stage: '保存独立国家世界与完整地理副本', completed: 0, total: 1 });
+          state = await createCountryWorld(record, request.name, active.signal);
+        } else state = await copyCountryWorldToV2(request.worldId, request.name, active.signal);
         // A commit that already won is not undone by a late abort/closed page.
         this.state = state; this.geography = null; check();
         this.geography = await readCountryGeography(state.document.worldId); check();
@@ -73,7 +80,7 @@ export class CountryRuntime {
         const result = command.type === 'undo' ? { document: await countryUndoDocument(base), description: '撤销最近一次国家编辑；实体身份和引用恢复到原来的状态。' }
           : await applyCountryCommand(base.document, command, geography, ids, control);
         if (command.type === 'undo') await validateCountryWorldGeography(result.document, geography, control);
-        check(); encodeCountryDocument(result.document);
+        check(); await countryDocumentDigest(result.document); check();
         const preview: CountryPreview = { candidateId: `candidate-${crypto.randomUUID()}`, description: result.description, document: result.document };
         const requestDigest = await countryDigest(countryJsonBytes({ base: base.rootDigest, command, ids })); check();
         this.candidate = { preview, base: structuredClone(base), command, ids, commandId: `command-${crypto.randomUUID()}`, requestDigest };
@@ -85,7 +92,7 @@ export class CountryRuntime {
         : (await applyCountryCommand(current.document, candidate.command, geography, candidate.ids, control)).document;
       if (candidate.command.type === 'undo') await validateCountryWorldGeography(next, geography, control);
       check();
-      if (await countryDigest(encodeCountryDocument(next)) !== await countryDigest(encodeCountryDocument(candidate.preview.document))) throw new Error('国家命令重验与预览不一致，未保存。');
+      if (await countryDocumentDigest(next) !== await countryDocumentDigest(candidate.preview.document)) throw new Error('国家命令重验与预览不一致，未保存。');
       check(); const state = await commitCountryWorld(current, next, candidate.commandId, candidate.requestDigest, candidate.command.type === 'undo', active.signal);
       this.state = state; this.candidate = null; return structuredClone(state);
     } finally { if (this.active === active) this.active = null; }
@@ -99,7 +106,10 @@ if (isWorker) {
   port.onmessage = event => {
     if (countryExact(event.data, ['type']) && event.data.type === 'abort') { runtime.abort(); return; }
     const id = event.data && typeof event.data === 'object' && countryInteger(event.data.id, 1, Number.MAX_SAFE_INTEGER) ? event.data.id as number : 0;
-    void runtime.handle(event.data, progress => post({ id, kind: 'progress', progress })).then(value => post({ id, kind: 'complete', value })).catch(error => {
+    void runtime.handle(event.data, progress => post({ id, kind: 'progress', progress })).then(async value => {
+      const result = await streamCountryResult(value, (kind, part) => post({ id, kind, value: part }));
+      post({ id, kind: 'complete', value: result });
+    }).catch(error => {
       post({ id, kind: 'error', message: error instanceof Error ? error.message : String(error), name: error instanceof Error ? error.name : 'Error' });
     });
   };

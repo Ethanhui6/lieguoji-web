@@ -1,0 +1,30 @@
+{
+  "label": "desktop-first",
+  "project": "desktop-chromium",
+  "checkLabel": "first",
+  "at": "2026-10-03T05:53:51.492Z",
+  "elapsedMs": 1364,
+  "passed": false,
+  "sourceStable": true,
+  "harnessStable": true,
+  "harness": [
+    {
+      "path": ".autopilot/country-scale/browser.mjs",
+      "sha256": "fdbff4d874af0b78eb61c842cc3b598ad1d8eeff8a4626ac071f1f1d1c4456ef"
+    },
+    {
+      "path": ".autopilot/country-scale/playwright.config.ts",
+      "sha256": "2368b452fb1f9aa344fa9d9242e5430988ff4977dc8856e1976eb12c468397bd"
+    }
+  ],
+  "buildSha256": "563e6818c725c15346008320288683753b518da7b5b5a3a94c2a9aa9771fa1c8",
+  "sourceSnapshotSha256": "58a2b4e2085a40ead8ef34c3bda834a1e4a124635574dad33e4247294c7736d7",
+  "distSnapshotSha256": "3a9ec026978ffef84f8a1825fd0dca2920c5b9df810cdde1e27b4dc8b456d21c",
+  "cases": [],
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "physicalDevice": false,
+  "cloudWrites": false
+}

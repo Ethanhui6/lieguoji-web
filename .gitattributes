@@ -76,3 +76,4 @@ src/world/generation/test-fixtures/preview22-orography/** -text
 docs/evidence/ph06-preview23-generator-history-2026-10-03/** -text
 docs/evidence/ph06-coast-ph07-macro-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/country-world-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/evidence/country-scale-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

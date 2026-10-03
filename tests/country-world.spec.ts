@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { metrics, saved } from './helpers/atlas-shape-readonly';
-import type { CountryDocument } from '../src/world/politics/model';
+import { persistedCountry as persisted } from './helpers/country-readonly';
 
 test.describe.configure({ retries: 0 });
 const button = (p: Page, name: string) => p.getByRole('button', { name, exact: true }).filter({ visible: true });
@@ -22,8 +22,7 @@ async function pick(p: Page, point: Point, touch: boolean) {
   expect(await p.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.getAttribute('data-testid'), q)).toBe('atlas-canvas');
   if (touch) await p.touchscreen.tap(q.x, q.y); else await p.mouse.click(q.x, q.y);
 }
-async function draw(p: Page, touch: boolean) {
-  const contour = [[650,1300],[950,1120],[1200,1260],[1440,1590],[1310,1850],[1010,1980],[760,1790],[580,1580],[650,1300]];
+async function draw(p: Page, touch: boolean, contour = [[650,1300],[950,1120],[1200,1260],[1440,1590],[1310,1850],[1010,1980],[760,1790],[580,1580],[650,1300]]) {
   const points = await Promise.all(contour.map(([x,y])=>screen(p,{x,y})));
   expect(await p.evaluate(ps=>ps.every(q=>document.elementFromPoint(q.x,q.y)?.getAttribute('data-testid')==='atlas-canvas'),points)).toBe(true);
   if (touch) {
@@ -34,22 +33,11 @@ async function draw(p: Page, touch: boolean) {
     } finally { await cdp.detach(); }
   } else { await p.mouse.move(points[0].x,points[0].y); await p.mouse.down(); try { for(const point of points.slice(1)) await p.mouse.move(point.x,point.y); } finally { await p.mouse.up(); } }
 }
-async function confirm(p: Page,touch:boolean) { await expect(p.getByRole('region',{name:'建国操作预览'})).toBeVisible(); await press(p,'确认并保存',touch); await ready(p); await expect(country(p)).toHaveAttribute('data-country-display','committed'); }
+async function confirm(p: Page,touch:boolean) { await ready(p); await expect(p.getByRole('region',{name:'建国操作预览'})).toBeVisible(); await expect(button(p,'确认并保存')).toBeEnabled(); await press(p,'确认并保存',touch); await ready(p); await expect(country(p)).toHaveAttribute('data-country-display','committed'); }
 async function territory(p:Page,a:Point,b:Point,touch:boolean) { await press(p,'在地图上选择国土',touch); await pick(p,a,touch); await pick(p,b,touch); }
 async function createCity(p:Page,name:string,point:Point,touch:boolean) {
   await tab(p,'城市',touch); await press(p,'新建城市',touch); await p.getByLabel('城市名称',{exact:true}).fill(name);
   await press(p,'在地图上选择城市位置',touch); await pick(p,point,touch); await press(p,'预览建城',touch); await confirm(p,touch);
-}
-async function persisted(p:Page,id:string) {
-  return p.evaluate(async id=>{
-    const records=await new Promise<{root:{current:{bytes:Uint8Array;digest:string};rootDigest:string};geo:{sha256:string;encodedBytes:number;manifest:Uint8Array;source:unknown}}>((resolve,reject)=>{
-      const r=indexedDB.open('lieguoji-country-worlds-v1',1);r.onupgradeneeded=()=>r.transaction!.abort();r.onerror=()=>reject(r.error);
-      r.onsuccess=()=>{const db=r.result,tx=db.transaction(['worlds','geography'],'readonly'),root=tx.objectStore('worlds').get(id),geo=tx.objectStore('geography').get(id);tx.oncomplete=()=>{db.close();resolve({root:root.result,geo:geo.result});};tx.onabort=()=>{db.close();reject(tx.error);};};
-    });
-    const hash=async(bytes:Uint8Array)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(bytes).buffer))].map(n=>n.toString(16).padStart(2,'0')).join('');
-    const digest=await hash(records.root.current.bytes);if(digest!==records.root.current.digest)throw Error('Saved political bytes do not match checksum');
-    return {document:JSON.parse(new TextDecoder().decode(records.root.current.bytes)) as CountryDocument,rootDigest:records.root.rootDigest,documentDigest:digest,geoSha256:records.geo.sha256,geoBytes:records.geo.encodedBytes,geoManifestHash:await hash(records.geo.manifest),geoSource:records.geo.source};
-  },id);
 }
 
 test('[country-world] native nations, two cities, capital, cancellation, conflict and independent reload',async({page},info)=>{
@@ -79,7 +67,7 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   await expect(country(page)).toHaveAttribute('data-country-revision','0');
   await tab(page,'国家',touch); await press(page,'新建国家',touch); await page.getByLabel('国家名称',{exact:true}).fill('岚川');
   await territory(page,{x:800,y:1300},{x:1060,y:1660},touch); await press(page,'预览建国',touch);
-  await expect(country(page)).toHaveAttribute('data-country-display','preview'); await expect(button(page,'确认并保存')).toBeEnabled(); await page.screenshot({path:info.outputPath('nation-preview.png'),fullPage:true});
+  await ready(page); await expect(country(page)).toHaveAttribute('data-country-display','preview'); await expect(button(page,'确认并保存')).toBeEnabled(); await page.screenshot({path:info.outputPath('nation-preview.png'),fullPage:true});
   await press(page,'取消预览',touch); await ready(page); await expect(country(page)).toHaveAttribute('data-country-nation-count','0'); await expect(country(page)).toHaveAttribute('data-country-revision','0');
   expect(await persisted(page,worldId)).toEqual(created);
   await press(page,'预览建国',touch); await confirm(page,touch); await expect(country(page)).toHaveAttribute('data-country-nation-count','1');
@@ -109,4 +97,54 @@ test('[country-world] native nations, two cities, capital, cancellation, conflic
   expect(await saved(page,sourceId,4)).toEqual(sourceBefore); expect(errors).toEqual([]);
   const restored=await persisted(page,worldId);expect(restored).toEqual(settled);expect(restored.geoSha256).toBe(created.geoSha256);expect(restored.geoSource).toEqual(created.geoSource);
   await info.attach('native-country-result.json',{body:Buffer.from(JSON.stringify({worldId,sourceId,firstNation,secondNation,firstCity,secondCity,revision:beforeConflict,restored,sourcePreserved:true,errors,touch,physicalDevice:false},null,2)),contentType:'application/json'});
+});
+
+test('[country-shape] native concave outline, cancelled candidate, chunk persistence and restored city', async ({ page }, info) => {
+  test.setTimeout(450000);
+  const touch = !!info.project.use.hasTouch, errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  const response = await page.request.get('/build.json'), build = await response.body(); expect(response.ok()).toBe(true);
+  if (process.env.COUNTRY_EXPECTED_BUILD_SHA256) expect(createHash('sha256').update(build).digest('hex')).toBe(process.env.COUNTRY_EXPECTED_BUILD_SHA256);
+  await info.attach('actual-build.json', { body: build, contentType: 'application/json' });
+  await page.goto('/?atlas=new&atlas-format=4'); const atlas = page.getByTestId('atlas-studio');
+  await expect(atlas).toHaveAttribute('data-atlas-state', 'empty', { timeout: 120000 });
+  await page.getByLabel('大世界草稿名称', { exact: true }).fill('自由国土 · 原生验收');
+  await page.getByLabel('大世界生成种子', { exact: true }).fill('hydrology-native-128'); await page.getByLabel('大世界地理规模', { exact: true }).selectOption('128');
+  await press(page, '新建空白海洋草稿', touch); await expect(atlas).toHaveAttribute('data-atlas-state', 'ready', { timeout: 120000 });
+  const sourceId = (await atlas.getAttribute('data-atlas-id'))!;
+  const creation = page.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name: '创世', exact: true }); if (touch) await creation.tap(); else await creation.click();
+  await page.getByLabel('地貌种子', { exact: true }).fill('hydrology-native-128'); await page.getByLabel('近岸岛链', { exact: true }).selectOption('0');
+  await press(page, '画大陆', touch); await press(page, '全图', touch); await draw(page, touch);
+  await expect(page.getByRole('region', { name: '大陆生成预览' })).toBeVisible({ timeout: 120000 }); await press(page, '确认生成并保存', touch);
+  await expect(atlas).toHaveAttribute('data-atlas-state', 'ready', { timeout: 120000 }); const sourceBefore = await saved(page, sourceId, 4);
+  const drafts = page.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name: '草稿', exact: true }); if (touch) await drafts.tap(); else await drafts.click();
+  await press(page, '在这片地形上建国', touch); await expect(country(page)).toHaveAttribute('data-country-state', 'empty', { timeout: 120000 });
+  await page.getByLabel('建国世界名称', { exact: true }).fill('岚海 · 自由圈地'); await press(page, '创建独立建国副本', touch); await ready(page);
+  const worldId = (await country(page).getAttribute('data-country-world-id'))!, url = page.url(), before = await persisted(page, worldId);
+  expect(before.document.version).toBe(2);
+  await tab(page, '国家', touch); await press(page, '新建国家', touch); await page.getByLabel('国家名称', { exact: true }).fill('岚海');
+  await press(page, '手绘国土', touch);
+  await draw(page, touch, [[700,1300],[1000,1600],[700,1600],[1000,1300],[700,1300]]); await press(page, '闭合并预览', touch);
+  await expect(page.getByRole('alert')).toContainText(/自交|退化|轮廓/); await ready(page);
+  expect(await persisted(page, worldId)).toEqual(before);
+  await press(page, '手绘国土', touch);
+  const outline = [[550,1300],[920,1100],[1260,1270],[1160,1460],[1010,1440],[1060,1760],[760,1880],[550,1600],[550,1300]];
+  await draw(page, touch, outline); await press(page, '闭合并预览', touch);
+  await expect(button(page, '确认并保存')).toBeEnabled({ timeout: 120000 });
+  expect(await persisted(page, worldId)).toEqual(before);
+  await page.screenshot({ path: info.outputPath('free-outline-preview.png'), fullPage: true });
+  await press(page, '取消预览', touch); await ready(page); expect(await persisted(page, worldId)).toEqual(before);
+  await press(page, '预览建国', touch); await confirm(page, touch);
+  const savedNation = await persisted(page, worldId); expect(savedNation.document.nations).toHaveLength(1); expect(savedNation.document.territories.length).toBeGreaterThan(100);
+  expect(savedNation.storage.pages).toBeGreaterThan(0); expect(savedNation.storage.manifestBytes).toBeLessThan(256 * 1024);
+  const political = page.getByTestId('country-overlay');
+  expect(Number(await political.getAttribute('data-render-chunks'))).toBeLessThan(savedNation.document.territories.length);
+  await createCity(page, '岚海城', { x: 900, y: 1400 }, touch); await press(page, '城市 岚海城', touch);
+  const cityId = (await button(page, '城市 岚海城').getAttribute('data-city-id'))!; await press(page, '设为首都', touch); await confirm(page, touch);
+  const settled = await persisted(page, worldId);
+  await page.goto(url); await ready(page); expect(await persisted(page, worldId)).toEqual(settled);
+  await tab(page, '地图', touch); await pick(page, { x: 900, y: 1400 }, touch); await expect(country(page)).toHaveAttribute('data-country-selected-city', cityId);
+  await tab(page, '地图', touch); await press(page, '全图', touch); await page.screenshot({ path: info.outputPath('free-country-restored.png'), fullPage: true });
+  expect(await saved(page, sourceId, 4)).toEqual(sourceBefore); expect(errors).toEqual([]);
+  await info.attach('native-shape-result.json', { body: Buffer.from(JSON.stringify({ worldId, sourceId, cityId, settled, sourcePreserved: true, input: touch ? 'native-touch' : 'native-mouse', errors, physicalDevice: false }, null, 2)), contentType: 'application/json' });
 });

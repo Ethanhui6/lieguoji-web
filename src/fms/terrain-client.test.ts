@@ -36,6 +36,22 @@ beforeEach(() => { WorkerDouble.instances = []; vi.stubGlobal('Worker', WorkerDo
 afterEach(() => { clients.splice(0).forEach(value => value.close()); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('isolated FMS terrain Worker client', () => {
+  it('binds the chosen coastal width before sending and validates its response echo', async () => {
+    const requested={...options,coastalWidth:.12}, instance=client();
+    const pending=instance.naturalize(fixture(),requested), worker=current();
+    requested.coastalWidth=.2;
+    expect(worker.messages[0].options.coastalWidth).toBe(.12);
+    worker.reply(); expect((await pending).stats.coastalWidth).toBe(.12);
+    for (const key of ['coastalWidth','coastalWidthWorld'] as const) {
+      const next=instance.naturalize(fixture(),{...options,coastalWidth:.12}), response=success();
+      const rejection=expect(next).rejects.toMatchObject({code:'invalid-response'});
+      response.stats[key]+=1; current().reply(response); await rejection;
+    }
+  });
+  it.each([0,-.1,NaN,Infinity,.201,undefined])('rejects invalid explicit coastal width %s before starting a Worker', async coastalWidth => {
+    await expect(client().naturalize(fixture(),{...options,coastalWidth})).rejects.toMatchObject({code:'invalid-request'});
+    expect(WorkerDouble.instances).toHaveLength(0);
+  });
   it('clones input without transfer or detachment, returns real relief/drainage, and reuses a healthy Worker', async () => {
     const instance = client(), doc = fixture(), original = structuredClone(doc);
     const first = instance.naturalize(doc, options), worker = current();

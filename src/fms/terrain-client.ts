@@ -2,6 +2,7 @@ import type { FmsDocument } from './model';
 import type { FmsNaturalizationOptions, FmsNaturalizationStats } from './naturalize';
 import type { FmsDrainage } from './hydrology';
 import { fixedFmsCoastVertices } from './coastline';
+import { FMS_DEFAULT_COASTAL_WIDTH, fmsCoastalWidthWorld, validFmsNaturalizationOptions } from './terrain-options';
 
 export interface FmsTerrainPreview {
   worldId: string; baseRevision: number; elevations: Int32Array;
@@ -22,7 +23,7 @@ const finite = (value: unknown, low: number, high: number): value is number => t
 const abortError = () => new DOMException('地形预览已取消，原地图未改变。', 'AbortError');
 const protocolError = () => new FmsTerrainClientError('invalid-response', '地形线程返回的数据或世界版本不一致，请重新生成。');
 const LAND_LEVEL = 20, MAX_CELLS = 50_000;
-type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][]; options: FmsNaturalizationOptions };
+type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][]; coastalWidthWorld: number; options: FmsNaturalizationOptions };
 type Pending = { requestId: number; snapshot: Snapshot; resolve: (value: FmsTerrainPreview) => void; reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>; signal?: AbortSignal; abort: () => void };
 
@@ -35,19 +36,21 @@ function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Sna
     || ![1, 2].includes(doc.version) || (doc.version === 1 && doc.terrainLocks !== undefined)
     || (doc.version === 2 && (!(doc.terrainLocks instanceof Uint8Array) || doc.terrainLocks.length !== doc.points.length || doc.terrainLocks.some(value => value !== 0 && value !== 1)))
     || doc.neighbors.some(row => !Array.isArray(row) || row.length > 128 || row.some(cell => !integer(cell, 0, doc.points.length - 1)))
-    || !exact(options, ['seed', 'strength']) || !integer(options.seed, 0, 0xffff_ffff) || !finite(options.strength, 0, 1)) {
+    || !validFmsNaturalizationOptions(options)) {
     throw new FmsTerrainClientError('invalid-request', '地形文档、种子或自然化强度无效。');
   }
   const coastLocks = fixedFmsCoastVertices(doc);
   doc.terrainLocks?.forEach((value, id) => { if (value) coastLocks[id] = 1; });
-  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks, neighbors: doc.neighbors.map(row => [...row]), options: { ...options } };
+  return { worldId: doc.worldId, revision: doc.revision, heights: doc.elevations.slice(), coastLocks, neighbors: doc.neighbors.map(row => [...row]),
+    coastalWidthWorld: fmsCoastalWidthWorld(doc.width, doc.height, doc.points.length, options.coastalWidth ?? FMS_DEFAULT_COASTAL_WIDTH), options: { ...options } };
 }
 
 function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsNaturalizationStats {
   const count = elevations.length;
   if (!exact(raw, ['algorithm', 'seed', 'strength', 'landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'minLandHeight', 'maxLandHeight',
-    'meanLandHeight', 'meanCoastHeight', 'meanInteriorHeight', 'maxDistanceToCoast', 'fallbackBoundaryComponents', 'landMaskPreserved'])
-    || raw.algorithm !== 'fms-shape-preserving-relief-v3' || raw.seed !== source.options.seed || raw.strength !== source.options.strength || raw.landMaskPreserved !== true) return false;
+    'meanLandHeight', 'meanCoastHeight', 'meanInteriorHeight', 'maxDistanceToCoast', 'fallbackBoundaryComponents', 'landMaskPreserved', 'coastalWidth', 'coastalWidthWorld'])
+    || raw.algorithm !== 'fms-shape-preserving-relief-v4' || raw.seed !== source.options.seed || raw.strength !== source.options.strength
+    || raw.coastalWidth !== (source.options.coastalWidth ?? FMS_DEFAULT_COASTAL_WIDTH) || raw.coastalWidthWorld !== source.coastalWidthWorld || raw.landMaskPreserved !== true) return false;
   for (const key of ['landCells', 'seaCells', 'changedCells', 'coastalLandCells', 'landComponents', 'fallbackBoundaryComponents']) if (!integer(raw[key], 0, count)) return false;
   for (const key of ['minLandHeight', 'maxLandHeight', 'meanLandHeight']) if (!finite(raw[key], 0, 100)) return false;
   for (const key of ['meanCoastHeight', 'meanInteriorHeight']) if (raw[key] !== null && !finite(raw[key], 0, 100)) return false;

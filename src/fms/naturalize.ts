@@ -1,12 +1,14 @@
 import { FIELD_Q, hashAt, noiseQ12 } from '../world/generation/seed';
 import { assertFmsDocument, FMS_SEA_LEVEL, type FmsDocument } from './model';
 import { fixedFmsCoastVertices } from './coastline';
+import { FMS_DEFAULT_COASTAL_WIDTH, fmsCoastalWidthWorld, validFmsNaturalizationOptions, type FmsNaturalizationOptions } from './terrain-options';
+export type { FmsNaturalizationOptions } from './terrain-options';
 
-export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v3';
-export interface FmsNaturalizationOptions { seed: number; strength: number }
+export const FMS_NATURALIZATION_ALGORITHM = 'fms-shape-preserving-relief-v4';
 export interface FmsNaturalizationStats {
   algorithm: typeof FMS_NATURALIZATION_ALGORITHM;
   seed: number; strength: number; landCells: number; seaCells: number; changedCells: number;
+  coastalWidth: number; coastalWidthWorld: number;
   coastalLandCells: number; landComponents: number; fallbackBoundaryComponents: number;
   minLandHeight: number; maxLandHeight: number; meanLandHeight: number;
   meanCoastHeight: number | null; meanInteriorHeight: number | null;
@@ -122,14 +124,11 @@ function coastDistances(doc: FmsDocument, land: Uint8Array) {
  * derived water may change; the coastline contract is not pixel-color equality.
  */
 export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizationOptions): FmsNaturalizationResult {
-  if (!options || typeof options !== 'object' || Array.isArray(options)
-    || Object.keys(options).length !== 2 || !Object.hasOwn(options, 'seed') || !Object.hasOwn(options, 'strength')
-    || !Number.isInteger(options.seed) || options.seed < 0 || options.seed > 0xffffffff
-    || !Number.isFinite(options.strength) || options.strength < 0 || options.strength > 1) {
-    throw new FmsNaturalizationError('invalid-options', '自然化参数无效：种子须为32位非负整数，强度须在0至1之间。');
+  if (!validFmsNaturalizationOptions(options)) {
+    throw new FmsNaturalizationError('invalid-options', '自然化参数无效：种子须为32位非负整数，强度须在0至1之间，沿海低地宽度须为地图短边的1%至20%。');
   }
   assertFmsDocument(doc);
-  const { seed, strength } = options, land = new Uint8Array(doc.points.length);
+  const { seed, strength } = options, coastalWidth = options.coastalWidth ?? FMS_DEFAULT_COASTAL_WIDTH, land = new Uint8Array(doc.points.length);
   let landCells = 0;
   for (let cell = 0; cell < doc.elevations.length; cell += 1) {
     const height = doc.elevations[cell];
@@ -141,7 +140,7 @@ export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizatio
   const coastLocks = fixedFmsCoastVertices(doc);
   const elevations = doc.elevations.slice();
   const scale = Math.min(doc.width, doc.height), spacing = Math.sqrt(doc.width * doc.height / doc.points.length);
-  const coastWidth = Math.max(spacing * 1.8, scale * 0.035), wavelength = Math.max(scale * 0.2, spacing * 5);
+  const coastWidth = fmsCoastalWidthWorld(doc.width, doc.height, doc.points.length, coastalWidth), wavelength = Math.max(scale * 0.2, spacing * 5);
   // Fixed Q12 lattice interpolation reuses the project's deterministic numeric
   // helper only. It does not call the old world-generation/simulation engine.
   const field = (tag: number, x: number, y: number, wave: number) => noiseQ12(seed, tag, Math.round(x * 256), Math.round(y * 256), Math.max(1, Math.round(wave * 256))) / FIELD_Q;
@@ -176,7 +175,7 @@ export function naturalizeFmsTerrain(doc: FmsDocument, options: FmsNaturalizatio
     if (coast[cell]) { coastalLandCells += 1; coastSum += height; } else interiorSum += height;
   }
   return { elevations, stats: {
-    algorithm: FMS_NATURALIZATION_ALGORITHM, seed, strength, landCells, seaCells: land.length - landCells, changedCells,
+    algorithm: FMS_NATURALIZATION_ALGORITHM, seed, strength, coastalWidth, coastalWidthWorld: coastWidth, landCells, seaCells: land.length - landCells, changedCells,
     coastalLandCells, landComponents: components, fallbackBoundaryComponents,
     minLandHeight, maxLandHeight, meanLandHeight: landSum / landCells,
     meanCoastHeight: coastalLandCells ? coastSum / coastalLandCells : null,

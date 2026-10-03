@@ -7,6 +7,7 @@ import { FmsRenderer } from './renderer';
 import { FmsTerrainClient } from './terrain-client';
 import { prepareFmsTerrainPreview } from './terrain-preview';
 import type { FmsDrainage } from './hydrology';
+import { FMS_DEFAULT_COASTAL_WIDTH, FMS_MIN_COASTAL_WIDTH, FMS_MAX_COASTAL_WIDTH } from './terrain-options';
 import './fms.css';
 
 type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock';
@@ -24,7 +25,7 @@ interface Session {
 }
 interface Stroke { points: CameraPoint[]; tool: Tool; radius: number; height: number }
 type TerrainPhase = 'idle' | 'generating' | 'preview';
-interface TerrainCandidate { patch: FmsEditPatch; document: FmsDocument; drainage: FmsDrainage }
+interface TerrainCandidate { patch: FmsEditPatch; document: FmsDocument; drainage: FmsDrainage; coastalWidth: number }
 const messageOf = (error: unknown) => error instanceof Error ? error.message : '这次操作未能完成，地图保持原样。';
 
 export default function FmsApp() {
@@ -34,6 +35,7 @@ export default function FmsApp() {
   const [ready,setReady] = useState(false), [fatal,setFatal] = useState(''), [busy,setBusy] = useState(false), [notice,setNotice] = useState('正在读取本机地图…');
   const busyRef=useRef(false), renderUnavailable=useRef(false);
   const [terrainPhase,setTerrainPhaseState]=useState<TerrainPhase>('idle'), [seed,setSeed]=useState('1337'), [strength,setStrength]=useState(1), [showOriginal,setShowOriginal]=useState(false);
+  const [coastalWidth,setCoastalWidth]=useState(FMS_DEFAULT_COASTAL_WIDTH);
   const terrainPhaseRef=useRef<TerrainPhase>('idle'), terrainCandidate=useRef<TerrainCandidate|null>(null);
   const terrainClient=useRef<FmsTerrainClient|null>(null), terrainAbort=useRef<AbortController|null>(null), generationToken=useRef(0);
   const editable=ready&&!busy&&!fatal&&terrainPhase==='idle', navigable=ready&&!fatal;
@@ -136,11 +138,11 @@ export default function FmsApp() {
     const token=++generationToken.current, source=s.history.document, controller=new AbortController();terrainAbort.current=controller;
     const client=terrainClient.current??(terrainClient.current=new FmsTerrainClient());
     try {
-      const result=await client.naturalize(source,{seed:Number(seed),strength},{signal:controller.signal});
+      const result=await client.naturalize(source,{seed:Number(seed),strength,coastalWidth},{signal:controller.signal});
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       const prepared=prepareFmsTerrainPreview(s.history.document,result);
       if(prepared.patch.changes.length===0){setTerrainPhase('idle');setNotice('没有可更新的内陆地形；海岸与小岛边缘保持原高程，可扩大内陆或调整参数。');return;}
-      terrainCandidate.current={...prepared,drainage:result.drainage};s.renderer.setDocument(prepared.document,result.drainage);
+      terrainCandidate.current={...prepared,drainage:result.drainage,coastalWidth:result.stats.coastalWidth};s.renderer.setDocument(prepared.document,result.drainage);
       setTerrainPhase('preview');setNotice('内陆地形已生成；海岸边界固定。缩放对照后确认，可整步撤销。');
     } catch(error) {
       if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}
@@ -162,11 +164,11 @@ export default function FmsApp() {
     <div className="fms-zoom" aria-label="地图视角"><button onClick={()=>zoom(1.4)} disabled={!navigable} aria-label="放大">＋</button><button onClick={fit} disabled={!navigable} aria-label="查看全图">⌖</button><button onClick={()=>zoom(1/1.4)} disabled={!navigable} aria-label="缩小">−</button><output>{stats.zoom.toFixed(1)}×</output></div>
     <div className="fms-bottom">
       <div className="fms-status" role="status" aria-live="polite">{ready?notice:''}</div>
-      {terrainPhase!=='idle'&&<section className="fms-terrain-preview" aria-label="自然地形预览"><strong>{terrainPhase==='generating'?'山地与河湖生成中…':showOriginal?'正在对照原地图':'自然地形预览'}</strong><p>{terrainPhase==='generating'?'原地图仍被保留。':'单指移动、双指缩放；确认前不会保存。'}</p><div><button onClick={()=>cancelTerrain()}>取消</button>{terrainPhase==='preview'&&<><button onClick={compareTerrain}>{showOriginal?'查看地形':'查看原图'}</button><button className="fms-confirm" onClick={confirmTerrain}>确认地形</button></>}</div></section>}
+      {terrainPhase!=='idle'&&<section className="fms-terrain-preview" aria-label="自然地形预览"><strong>{terrainPhase==='generating'?'山地与河湖生成中…':showOriginal?'正在对照原地图':'自然地形预览'}</strong><p>{terrainPhase==='generating'?'原地图仍被保留。':`沿海低地宽度 ${Math.round((terrainCandidate.current?.coastalWidth??coastalWidth)*1000)/10}% · 海岸线固定。`}</p><p>单指移动、双指缩放；确认前不会保存。</p><div><button onClick={()=>cancelTerrain()}>取消</button>{terrainPhase==='preview'&&<><button onClick={compareTerrain}>{showOriginal?'查看地形':'查看原图'}</button><button className="fms-confirm" onClick={confirmTerrain}>确认地形</button></>}</div></section>}
       {expanded&&<section className="fms-settings" aria-label="绘图设置"><div className="fms-panel-heading"><h2>高度编辑</h2><button aria-label="收起绘图设置" onClick={()=>setExpanded(false)}>×</button></div>
         <label>笔刷半径 <output>{radius}</output><input type="range" min="8" max="160" step="4" value={radius} onChange={e=>{session.current?.gestures.interrupt();setRadius(+e.target.value);}} disabled={!editable}/></label>
         <label>陆地高度 <output>{height}</output><input type="range" min="25" max="100" step="1" value={height} onChange={e=>{session.current?.gestures.interrupt();setHeight(+e.target.value);}} disabled={!editable}/></label>
-        <fieldset><legend>自然地形</legend><label>地形种子<input aria-label="地形种子" inputMode="numeric" value={seed} maxLength={10} onChange={e=>setSeed(e.target.value)} disabled={!editable}/></label><label>起伏强度 <output>{Math.round(strength*100)}%</output><input type="range" min="0.2" max="1" step="0.1" value={strength} onChange={e=>setStrength(+e.target.value)} disabled={!editable}/></label></fieldset><p>双指移动或缩放 · 松手完成一笔<br/>地图仅保存在当前浏览器</p>
+        <fieldset><legend>自然地形</legend><label>地形种子<input aria-label="地形种子" inputMode="numeric" value={seed} maxLength={10} onChange={e=>setSeed(e.target.value)} disabled={!editable}/></label><label>起伏强度 <output>{Math.round(strength*100)}%</output><input type="range" min="0.2" max="1" step="0.1" value={strength} onChange={e=>setStrength(+e.target.value)} disabled={!editable}/></label><label>沿海低地宽度 <output>{Math.round(coastalWidth*1000)/10}%</output><input aria-label="沿海低地宽度" type="range" min={FMS_MIN_COASTAL_WIDTH*100} max={FMS_MAX_COASTAL_WIDTH*100} step="0.5" value={coastalWidth*100} onChange={e=>setCoastalWidth(+e.target.value/100)} disabled={!editable}/></label><p>按地图短边比例调整内陆过渡，不移动海岸线；保护区高程不变。生成参数仅用于本次会话，保存的是实际地形。</p></fieldset><p>双指移动或缩放 · 松手完成一笔<br/>地图仅保存在当前浏览器</p>
         <fieldset><legend>地形保护</legend><p>金色区域固定高程，笔刷和重新生成都会避开；阴影、河流仍可能变化。</p>{stats.version===1&&<p className="fms-upgrade-note">启用并保存后，旧试玩版本无法编辑此地图；保存时保留启用前备份。</p>}<div className="fms-lock-actions"><button onClick={()=>choose('lock')} disabled={!editable}>{stats.version===1?'启用并涂抹保护':'涂抹保护'}</button><button onClick={()=>choose('unlock')} disabled={!editable||stats.locked===0}>涂抹解锁</button></div><p>{stats.locked?'已有保护区域；解锁也是可撤销的一笔。':'尚未保护任何区域。'}</p></fieldset>
       </section>}
       {(tool==='lock'||tool==='unlock')&&<div className="fms-lock-mode"><span>{tool==='lock'?'▣ 保护笔刷':'□ 解锁笔刷'}</span><button onClick={()=>choose('browse')} disabled={!editable}>完成</button></div>}

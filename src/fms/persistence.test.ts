@@ -93,15 +93,31 @@ describe('protected document v2 opt-in and old-client isolation', () => {
     const recovered = await loadFmsDocument(); expect(recovered!.recovery).toBe('backup'); expect(recovered!.document.terrainLocks).toEqual(locked.terrainLocks);
     expect(recovered!.requiresProtectionUpgrade).toBeUndefined();
   });
-  it('archives the valid v1 backup if first opt-in starts from recovered, damaged v1 current', async () => {
-    await saveFmsDocument(document(1, 45), null); await saveFmsDocument(document(2, 60), 1);
-    const original = (await slots()).backup;
-    const broken = rawEnvelope((await slots()).current); broken.document.elevations[0] = 99; await replace('current', broken);
-    const recovered = await loadFmsDocument(); expect(recovered!.recovery).toBe('backup');
-    const locked = withLocks(recovered!.document); await saveFmsDocument(locked, 2);
-    expect(await protectionBackup()).toEqual(original);
-    await saveFmsDocument({ ...locked, revision: locked.revision + 1 }, 3);
-    expect(await protectionBackup()).toEqual(original);
+  it.each([
+    { fault: 'damaged', archived: false }, { fault: 'missing', archived: false },
+    { fault: 'damaged', archived: true }, { fault: 'missing', archived: true },
+  ] as const)('preserves chosen v1 backup through two v2 saves: current=$fault, existing archive=$archived', async ({ fault, archived }) => {
+    await saveFmsDocument(document(1, 45), null); const earlier = (await slots()).current;
+    await saveFmsDocument(document(2, 60), 1); await saveFmsDocument(document(3, 70), 2);
+    const original = (await slots()).backup, expectedArchive = archived ? earlier : original;
+    if (archived) await replace('beforeProtection', earlier);
+    if (fault === 'missing') await replace('current', undefined, true);
+    else { const broken = rawEnvelope((await slots()).current); broken.document.elevations[0] = 99; await replace('current', broken); }
+    const db1 = await database(1); expect(db1.version).toBe(1); db1.close();
+    const recovered = await loadFmsDocument();
+    expect(recovered).toMatchObject({ recovery: 'backup', storedRevision: 3, sourceStoredRevision: 2, document: { version: 1, revision: 2 } });
+    const locked = withLocks(recovered!.document); await saveFmsDocument(locked, recovered!.storedRevision);
+    const db2 = await database(); expect(db2.version).toBe(2); db2.close();
+    expect(await protectionBackup()).toEqual(expectedArchive);
+    expect((await slots()).backup).toEqual(original);
+    const firstProtected = (await slots()).current;
+    await saveFmsDocument({ ...locked, revision: locked.revision + 1 }, 4);
+    const afterSecond = await slots();
+    expect(afterSecond.backup).toEqual(firstProtected);
+    expect(rawEnvelope(afterSecond.backup).version).toBe(2);
+    expect(afterSecond.revision).toBe(5);
+    expect(await protectionBackup()).toEqual(expectedArchive);
+    await expect(database(1)).rejects.toMatchObject({ name: 'VersionError' });
   });
   it('rolls back both DB schema upgrade and slots if first protected save aborts', async () => {
     const original = document(1, 45); await saveFmsDocument(original, null); const before = await slots();

@@ -173,8 +173,8 @@
       "bytes": 5361
     },
     "docs/AUTO_HANDOFF.md": {
-      "sha256": "ab8c4b957a31361d02d9bcf802e66a3e65f70b74da91b2f8c7a62f58b01d1264",
-      "bytes": 7693
+      "sha256": "f84d66864fc4ff8e0af77e44547ed3c513045df59c9f162f3be0d57df0e6d0b9",
+      "bytes": 8068
     },
     "docs/FMS_REFERENCE_BASELINE_2026-10-04.md": {
       "sha256": "8e616c18de49bb9682d1a854f3cf4b01839bb37cd481716b3296d530449f5b96",
@@ -199,6 +199,10 @@
     "package.json": {
       "sha256": "c22d2f4600af6601243f6f419aa8b7a5e2fec516ff12607ffd80ba0f09eb41c6",
       "bytes": 1804
+    },
+    ".gitattributes": {
+      "sha256": "bd9a8156152127bf6c98ba2e55d75fb2d53a5a39e780fdf2b4ec5c2fcdf5e9ae",
+      "bytes": 5928
     }
   },
   "checkChain": {
@@ -215,5 +219,19 @@
     "gitDiffCheck": "PASS",
     "reviewedNewFiles": 12,
     "rawDumpOrPrivateSaveIncluded": false
+  },
+  "sourceCommit": "f917dfcc52b2d355464d7c0af66eb03f98cee6b9",
+  "evidenceBytePreservation": {
+    "reason": "Git text normalization changed four CRLF JSON blobs in the initial commit. Frozen working files were retained; scoped -text attributes now preserve exact recorded bytes.",
+    "frozenWorkingFilesRewritten": false,
+    "ruleScopes": [
+      "docs/evidence/fms-hill-recovery-2026-10-04/**",
+      "docs/evidence/fms-brush-input-2026-10-04/**",
+      "docs/evidence/fms-brush-numeric-2026-10-04/**"
+    ],
+    "functionalChecksReusedBecauseExecutableCodeUnchanged": true,
+    "indexAndWorkingArtifactHashesMatch": true,
+    "verifiedArtifacts": 18,
+    "jsonContentsUnchanged": true
   }
 }

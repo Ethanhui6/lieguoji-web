@@ -12,7 +12,7 @@
 
 ## Git、旧构建与发布锁
 
-- 工作目录 D:/游戏/架空地图模拟器，分支 codex/ph06-world-generation；本批起点e9391b5。最终本地checkpoint以 git log -1 --oneline 和 git status --short 核实，本文件不虚构自引用SHA。
+- 工作目录 D:/游戏/架空地图模拟器，分支 codex/ph06-world-generation；本批起点e9391b5，数值实现与V5检查提交 **f917dfcc52b2d355464d7c0af66eb03f98cee6b9**。随后仅补证据字节保存与交接摘要，最终checkpoint以 git log -1 --oneline 和 git status --short 核实，本文件不虚构自引用SHA。
 - 旧产品源码基准42af5433aedcb0e02cbcb1cabf88aa538f184c1a；产品/旧构建0.5.0-preview.33。本批新增纯数值模块及计划检查器，尚未更新网页入口、产品版本或dist。
 - 旧构建基准199f20d65cdfccff0367a9770d4516ff573e1a4c，build.json SHA256 dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3；旧preview.33不是已获用户认可的V5试玩。
 - 本轮本地核实remote为 https://github.com/Ethanhui6/lieguoji-web.git，core.hooksPath=.githooks。历史Pages项目lieguoji-web；唯一原生Git链main生产/其他分支预览，历史URL https://lieguoji-web.pages.dev/ 。本批没有联网核验部署或更新旧站。
@@ -35,6 +35,7 @@ WEB-PH00完成的范围是**建立具名参照基线与可实现的输入输出�
 - V5检查器通过npm run test:plan再次核实11/11（151.2214ms），三个脚本ESLint通过；该命令已加入现有检查链。
 - 原发布保护测试22/22通过（6063.0208ms），动态导入未破坏原检查器最小夹具。
 - 最终任务/文档、摘要、旧字段与发布门核对见[本批verification](evidence/fms-brush-numeric-2026-10-04/verification.json)。不要拿前置63项结果覆盖后来新增擦海后的68项检查。
+- Git默认JSON换行转换会改变证据摘要，已为本批三个证据目录按项目既有方式设置字节保留；冻结原文件不重写，Git暂存内容与工作文件逐一核对。此修复不影响产品代码、数值结果或发布锁。
 - 本批无新构建、无浏览器绘图/移动仿真/真机验收、无用户视觉通过、无云端CI或部署。数值模块尚未接入入口，旧站/旧dist保持原状。
 
 ## 下一批直接做什么

@@ -1,4 +1,5 @@
 * text=auto
+.gitattributes text eol=lf
 *.ts text eol=lf
 *.tsx text eol=lf
 *.js text eol=lf
@@ -84,6 +85,10 @@ docs/evidence/country-ownership-2026-10-03/** -text whitespace=cr-at-eol,-blank-
 docs/evidence/fms-package-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/fms-terrain-import-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/evidence/fms-direct-generation-2026-10-04/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+# V5 frozen static/fixture evidence must match its recorded SHA after checkout.
+docs/evidence/fms-hill-recovery-2026-10-04/** -text whitespace=cr-at-eol
+docs/evidence/fms-brush-input-2026-10-04/** -text whitespace=cr-at-eol
+docs/evidence/fms-brush-numeric-2026-10-04/** -text whitespace=cr-at-eol
 # Preserve reviewed third-party notices byte-for-byte, including their trailing newlines.
 public/terrain-licenses.txt -text whitespace=cr-at-eol,-blank-at-eof
 src/world/recovered-terrain/licenses/** -text whitespace=cr-at-eol,-blank-at-eof

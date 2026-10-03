@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:7500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload (59.9s)
+
+  1 passed (1.0m)

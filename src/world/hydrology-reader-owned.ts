@@ -1,3 +1,4 @@
+import { MACRO_FLOW, MACRO_GRID, type HydrologyMacroGrid } from './hydrology-macro-contract';
 import { hashAtlasManifest, isDetailCoastDocument } from './atlas-format';
 import { generationExact, type AtlasDetailCoastDocument } from './generation-contract';
 import { hashAtlasLockSet } from './generation-locks';
@@ -23,6 +24,7 @@ export interface HydrologyReaderPage extends HydrologySnapshot {
 }
 export interface OwnedHydrologyReader {
   readPage: (rectangle: HydrologyNodeRectangle) => Promise<HydrologyReaderPage>;
+  readMacroGrid: () => Promise<HydrologyMacroGrid>;
   close: () => void;
 }
 const HEX = /^[a-f0-9]{64}$/, BATCH = 512;
@@ -127,5 +129,47 @@ export async function createOwnedHydrologyReader(owner: HydrologyReaderOwner, re
       };
     } catch (error) { release('invalid'); throw error; } finally { busy = false; }
   };
-  return Object.freeze({ readPage, close: () => { if (state === 'active') release('closed'); } });
+  const readMacroGrid = async (): Promise<HydrologyMacroGrid> => {
+    check();
+    // Rejected requests do no work and leave an otherwise valid reader usable.
+    // A concurrent request never poisons the already accepted in-flight page.
+    if (busy) throw new Error('水文读取器仅允许串行读取页面。');
+    const count = MACRO_FLOW.nodes;
+    if (pages + 1 > budget.maxPages || sampledNodes + count > budget.maxSampledNodes) throw new Error('水文读取器累计页面或采样预算耗尽。');
+    busy = true; pages++; sampledNodes += count;
+    try {
+      check();
+      const base = snapshot;
+      if (!base || !source || !locks) throw new Error('水文读取器私有来源已释放。');
+      let explicitFineNodes = 0, uniformLandNodes = 0, implicitSeaNodes = 0;
+      for (let index = 0; index < count; index++) {
+        const nodeOwner = detailCoastNodeOwner((index % MACRO_FLOW.side) * MACRO_FLOW.fineNodeStride, Math.floor(index / MACRO_FLOW.side) * MACRO_FLOW.fineNodeStride), tile = base.detailCoast.get(nodeOwner.key);
+        if (tile?.mode === 'samples') explicitFineNodes++; else if (tile) uniformLandNodes++; else implicitSeaNodes++;
+        if ((index + 1) % BATCH === 0 || index + 1 === count) { check(); await yieldAtlas(guarded, '宏观水文读取器：读取实际节点所有者', index + 1, count); check(); }
+      }
+      const baseSamplerPrepared = uniformLandNodes + implicitSeaNodes > 0;
+      if (baseSamplerPrepared && !sampleBaseElevation) {
+        check(); const coarse = await extractDetailCoastBase(base, guarded); check();
+        sampleBaseElevation = createDetailShapeBaseSampler(coarse.size, coarse.centersQ, coarse.elevationsMeters); check();
+        check(); await yieldAtlas(guarded, '宏观水文读取器：准备既有基础高程', coarse.size ** 2, coarse.size ** 2); check();
+      }
+      const field: DetailCoastField = { tiles: base.detailCoast, sampleBaseElevation: sampleBaseElevation ?? (() => { throw new Error('显式细节点不得回退基础高程。'); }) };
+      const coverageQ = new Int16Array(count), groundMeters = new Int16Array(count);
+      for (let index = 0; index < count; index++) {
+        const node = sampleDetailCoastNode(field, (index % MACRO_FLOW.side) * MACRO_FLOW.fineNodeStride, Math.floor(index / MACRO_FLOW.side) * MACRO_FLOW.fineNodeStride);
+        coverageQ[index] = node.coverageQ; groundMeters[index] = node.heightMeters;
+        if ((index + 1) % BATCH === 0 || index + 1 === count) { check(); await yieldAtlas(guarded, '宏观水文读取器：采样权威细地形', index + 1, count); check(); }
+      }
+      check();
+      return {
+        format: 'lieguoji-hydrology-macro-grid', version: 1, grid: { ...MACRO_GRID },
+        source: { ...source }, coverageQ, groundMeters,
+        locks: { ...locks, refs: locks.refs.map(ref => ({ ...ref })) },
+        stats: { sampledNodes: count, explicitFineNodes, uniformLandNodes, implicitSeaNodes, baseSamplerPrepared,
+          outputTypedArrayBytes: coverageQ.byteLength + groundMeters.byteLength, sourceCoarseCells: base.manifest.spec.columns * base.manifest.spec.rows },
+        operation: { sequence: pages, sampledNodes, ...budget, baseSamplerPreparations: sampleBaseElevation ? 1 : 0 },
+      };
+    } catch (error) { release('invalid'); throw error; } finally { busy = false; }
+  };
+  return Object.freeze({ readPage, readMacroGrid, close: () => { if (state === 'active') release('closed'); } });
 }

@@ -1,0 +1,37 @@
+
+Running 1 test using 1 worker
+
+(node:24812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [mobile-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload (2.9m)
+
+
+  1) [mobile-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload 
+
+    TimeoutError: page.waitForFunction: Timeout 120000ms exceeded.
+
+      182 |
+      183 |   const cancelProgressPending = observeMacroProgress(page); await press(page, '查看大陆汇流', touch);
+    > 184 |   await page.waitForFunction(() => {
+          |              ^
+      185 |     const main = document.querySelector('[data-testid="atlas-studio"]'), stage = main?.getAttribute('data-atlas-progress-stage') ?? '';
+      186 |     const completed = Number(main?.getAttribute('data-atlas-progress-completed')), total = Number(main?.getAttribute('data-atlas-progress-total'));
+      187 |     return main?.getAttribute('data-atlas-state') === 'busy' && stage === '宏观水文读取器：采样权威细地形'
+        at D:\游戏\架空地图模拟器\tests\atlas-hydrology-macro.spec.ts:184:14
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph07\macro-coast-browser\macro-mobile\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph07\macro-coast-browser\macro-mobile\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph07\macro-coast-browser\macro-mobile\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph07\macro-coast-browser\macro-mobile\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload 

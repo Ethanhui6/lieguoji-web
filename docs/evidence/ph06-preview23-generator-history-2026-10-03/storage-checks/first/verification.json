@@ -1,0 +1,80 @@
+{
+  "recordedAt": "2026-10-03T02:48:04.934Z",
+  "scope": "preview23 storage-history integration only",
+  "originalBuildSha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+  "sourceStable": true,
+  "allCommandsPassed": true,
+  "results": [
+    {
+      "name": "plan",
+      "args": [
+        "scripts/check-plan.mjs"
+      ],
+      "startedAt": "2026-10-03T02:47:44.077Z",
+      "finishedAt": "2026-10-03T02:47:44.225Z",
+      "elapsedMs": 145.5071,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src/world/generation-history.ts",
+        "src/world/generation-preview23-history.test.ts"
+      ],
+      "startedAt": "2026-10-03T02:47:44.225Z",
+      "finishedAt": "2026-10-03T02:47:45.985Z",
+      "elapsedMs": 1759.9828,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-10-03T02:47:45.985Z",
+      "finishedAt": "2026-10-03T02:48:01.521Z",
+      "elapsedMs": 15536.303600000001,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "name": "unit",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "src/world/generation-preview23-history.test.ts",
+        "--reporter=json",
+        "--outputFile=docs/evidence/ph06-preview23-generator-history-2026-10-03/storage-checks/first/unit.json"
+      ],
+      "startedAt": "2026-10-03T02:48:01.522Z",
+      "finishedAt": "2026-10-03T02:48:04.926Z",
+      "elapsedMs": 3403.8486999999986,
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "unit": {
+    "success": true,
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "pending": 0,
+    "files": 1
+  },
+  "passed": true,
+  "testsRun": true,
+  "fullProductChecksRun": false,
+  "productBuildRun": false,
+  "browserRun": false,
+  "naturalVisualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false
+}

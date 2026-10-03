@@ -1,0 +1,26 @@
+{
+  "artifacts": [
+    {
+      "path": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/trace.zip",
+      "sha256": "164320ea4ac081bb44c47bff43d57c2fed325156f91fa301882341982342f177",
+      "bytes": 7945221,
+      "absoluteLocalPath": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\macro-coast-browser\\macro-desktop-first\\artifacts\\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium\\trace.zip",
+      "run": "macro-desktop-first",
+      "group": "failed",
+      "reason": "Original local trace/video/raw binary retained in place; not copied into compact archive"
+    },
+    {
+      "path": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/trace.zip",
+      "sha256": "0d510cd938954db97f9abe39dc1f5ecd5817c13869ac6ea68e3108a7def0c87e",
+      "bytes": 11811033,
+      "absoluteLocalPath": "D:\\游戏\\架空地图模拟器\\.autopilot\\ph07\\macro-coast-browser\\macro-mobile\\artifacts\\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium\\trace.zip",
+      "run": "macro-mobile",
+      "group": "failed",
+      "reason": "Original local trace/video/raw binary retained in place; not copied into compact archive"
+    }
+  ],
+  "packetInventory": "coast-candidate/omitted-fine-packets.inventory.json",
+  "packetPayloadsCopied": 0,
+  "independentlyReplayableFineArchive": false,
+  "limitation": "Trace/video and complete generated fine packet payloads remain at original local paths. Hash inventories are not replay payloads."
+}

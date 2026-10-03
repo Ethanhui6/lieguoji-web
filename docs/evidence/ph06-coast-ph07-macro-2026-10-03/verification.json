@@ -1,0 +1,318 @@
+{
+  "recordedAt": "2026-10-03T04:01:55.327Z",
+  "archiveComplete": true,
+  "evidenceScopePassed": true,
+  "version": "0.5.0-preview.24",
+  "buildCommitMetadata": "b36565846b647a0012e1d0ef90462b1baea2bbf4",
+  "headAtArchive": "b36565846b647a0012e1d0ef90462b1baea2bbf4",
+  "sourceCommit": null,
+  "sourceIsHeadAtArchive": false,
+  "sourceMatchesBuildCommitAtArchive": false,
+  "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+  "passedCheckRound": "browser-repair-1",
+  "sourceMatchedAtArchive": true,
+  "distMatchedAtArchive": true,
+  "sourceAndDistStableDuringArchive": true,
+  "completeSourceSnapshotFiles": 399,
+  "unit": {
+    "aggregatePassedAssertions": 439,
+    "originalFirst": {
+      "total": 439,
+      "passed": 433,
+      "failed": 6,
+      "files": 55,
+      "report": "unified/first/unit.json",
+      "sha256": "3a2e97555cffc1623342756cfc42d0cb6057e692b2f4f89aba5992d69f5ac455"
+    },
+    "reusedUnchanged": {
+      "assertions": 425,
+      "files": 53,
+      "from": "unified/first/unit.json",
+      "dependencyBinding": "unified/repair-1/reused-unit-evidence.json"
+    },
+    "repairedRerun": {
+      "passed": 14,
+      "total": 14,
+      "files": 2,
+      "report": "unified/repair-1/unit.json",
+      "sha256": "4f9eb7e3cf31653984626978f524f52c351eb0c1cd28202c0c888b9ea1f36a77"
+    },
+    "uiRecheck": {
+      "newAssertions": 0,
+      "reusedAssertions": 439,
+      "report": "unified/ui-repair-1/reused-unit-evidence.json"
+    },
+    "finalBrowserOnlyRecheck": {
+      "newAssertions": 0,
+      "reusedAssertions": 439,
+      "report": "unified/browser-repair-1/reused-checks.json"
+    },
+    "sameDevelopmentBatch": true,
+    "oneFresh439AssertionRerunClaimed": false,
+    "testsRunByArchiveScript": 0
+  },
+  "commands": [
+    {
+      "name": "lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "tests/atlas-hydrology-macro.spec.ts",
+        "tests/helpers/atlas-hydrology-macro-readonly.ts"
+      ],
+      "startedAt": "2026-10-03T03:42:10.182Z",
+      "completedAt": "2026-10-03T03:42:11.889Z",
+      "elapsedMs": 1705.206,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "types",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "startedAt": "2026-10-03T03:42:11.890Z",
+      "completedAt": "2026-10-03T03:42:24.548Z",
+      "elapsedMs": 12658.3338,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "finalBrowserOnlyRecheck": true,
+  "fullProductionRecheck": {
+    "round": "ui-repair-1",
+    "commands": [
+      {
+        "name": "plan",
+        "args": [
+          "scripts/check-plan.mjs"
+        ],
+        "startedAt": "2026-10-03T03:33:28.881Z",
+        "finishedAt": "2026-10-03T03:33:29.036Z",
+        "elapsedMs": 153.55969999999996,
+        "exitCode": 0,
+        "signal": null
+      },
+      {
+        "name": "lint",
+        "args": [
+          "node_modules/eslint/bin/eslint.js",
+          "src",
+          "tests",
+          "scripts"
+        ],
+        "startedAt": "2026-10-03T03:33:29.037Z",
+        "finishedAt": "2026-10-03T03:33:36.811Z",
+        "elapsedMs": 7774.3079,
+        "exitCode": 0,
+        "signal": null
+      },
+      {
+        "name": "types",
+        "args": [
+          "node_modules/typescript/bin/tsc",
+          "--noEmit"
+        ],
+        "startedAt": "2026-10-03T03:33:36.811Z",
+        "finishedAt": "2026-10-03T03:33:49.099Z",
+        "elapsedMs": 12288.3977,
+        "exitCode": 0,
+        "signal": null
+      },
+      {
+        "name": "build",
+        "args": [
+          "node_modules/vite/bin/vite.js",
+          "build"
+        ],
+        "startedAt": "2026-10-03T03:33:49.100Z",
+        "finishedAt": "2026-10-03T03:33:50.605Z",
+        "elapsedMs": 1505.6478000000025,
+        "exitCode": 0,
+        "signal": null
+      },
+      {
+        "name": "dist-audit",
+        "args": [
+          "scripts/check-dist.mjs"
+        ],
+        "startedAt": "2026-10-03T03:33:50.605Z",
+        "finishedAt": "2026-10-03T03:33:50.655Z",
+        "elapsedMs": 49.96889999999985,
+        "exitCode": 0,
+        "signal": null
+      }
+    ],
+    "sourceSnapshotSha256": "7946859387bf6797d1df6c562de069f3b2f7c4acd19df4eec546436686b8bc1e"
+  },
+  "buildRerunInFinalRound": false,
+  "generatorIdentityVerified": true,
+  "generatorClosureCount": 11,
+  "generatorClosuresRecomputedInRound": "ui-repair-1",
+  "generatorClosureChecksRerunByFinalBrowserRepair": false,
+  "identityVerification": "unified/browser-repair-1/identity-verification.json",
+  "identityVerificationSha256": "911dc65b23e05aa274020013854c034d46bff368abafd7b1b989e7636ba3af52",
+  "classificationCounts": {
+    "history-only": 9,
+    "non-history-runtime-change": 2
+  },
+  "engineUnchanged": true,
+  "browsers": [
+    {
+      "label": "macro-desktop-final",
+      "project": "desktop-chromium",
+      "kind": "macro",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 61287.656299999995,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/macro-desktop-final/verification.json",
+      "verificationSha256": "a2685c6ab6f40c4f92f57fdad332b9a9c995e08bd40026e0c053723f819d8646"
+    },
+    {
+      "label": "macro-mobile-repair",
+      "project": "mobile-chromium",
+      "kind": "macro",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 67918.5837,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/macro-mobile-repair/verification.json",
+      "verificationSha256": "090ec199ec9781b48eeae8b8d92f9315c5fe1aa427b7a2580fc11b042ac7f0a5"
+    },
+    {
+      "label": "macro-tablet",
+      "project": "tablet-chromium",
+      "kind": "macro",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 85394.61809999999,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/macro-tablet/verification.json",
+      "verificationSha256": "26e515e7fdcf0815b2f4380155318422a357bef7daa5ca996642f5937d107e0a"
+    },
+    {
+      "label": "coast-desktop",
+      "project": "desktop-chromium",
+      "kind": "coast",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 235485.1901,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/coast-desktop/verification.json",
+      "verificationSha256": "4b40bee9f48994493939945a41c0478106bf00bbd2bdd85d55d960c52cc1baaa"
+    },
+    {
+      "label": "coast-mobile",
+      "project": "mobile-chromium",
+      "kind": "coast",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 243740.9459,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/coast-mobile/verification.json",
+      "verificationSha256": "fc36bddd002e988daabe7e1405ad1dacf5cd52e45453892974d3292a1694cc48"
+    },
+    {
+      "label": "coast-tablet",
+      "project": "tablet-chromium",
+      "kind": "coast",
+      "passed": true,
+      "checkRound": "browser-repair-1",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "elapsedMs": 334265.5562,
+      "retries": 0,
+      "timeoutMs": 450000,
+      "physicalDevice": false,
+      "verification": "browser/fresh/coast-tablet/verification.json",
+      "verificationSha256": "7e2bdf11ecac27a3554287bb17da0697e794557787db19b7a7f51158e6e84f73"
+    }
+  ],
+  "freshBrowserCases": 6,
+  "freshBrowserRetries": 0,
+  "preservedFailedBrowserRuns": [
+    {
+      "label": "macro-desktop-first",
+      "passed": false,
+      "status": "failed",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "directory": "browser/failed/macro-desktop-first"
+    },
+    {
+      "label": "macro-mobile",
+      "passed": false,
+      "status": "failed",
+      "sourceAndDistStable": true,
+      "buildJsonSha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "directory": "browser/failed/macro-mobile"
+    }
+  ],
+  "supersededBrowserRuns": [
+    {
+      "label": "macro-desktop-repair",
+      "passed": true,
+      "checkRound": "ui-repair-1",
+      "countedAsFreshAcceptance": false,
+      "directory": "browser/superseded/macro-desktop-repair"
+    }
+  ],
+  "originalCoastArchiveVerification": "coast-candidate/verification.json",
+  "originalCoastArchiveVerificationSha256": "c0320a868102a700bf2fa9566cd5f89373d0fb4ab4ac5b4da1cad6843eea7285",
+  "finePacketPayloadFilesCopied": 0,
+  "finePacketFilesInventoried": 2844,
+  "finePacketBytesNotCopied": 11694528,
+  "independentlyReplayableFineArchive": false,
+  "screenshotCount": 43,
+  "extractedOriginalJsonAttachments": 13,
+  "omittedArtifactCount": 2,
+  "inventoryFiles": 459,
+  "inventoryBytes": 38184221,
+  "inventorySha256": "4110f9aa72b624880138b052bc692b0de41d4600eb9a96afe23ddcce3c1437a3",
+  "inventoryExcludes": [
+    "files.sha256.json",
+    "verification.json"
+  ],
+  "naturalVisualAccepted": false,
+  "userVisualAccepted": false,
+  "visualAccepted": false,
+  "physicalDeviceAccepted": false,
+  "phaseAccepted": false,
+  "performanceAccepted": false,
+  "cloudAccepted": false,
+  "cloudWrites": false,
+  "persistentRiversImplemented": false,
+  "persistentLakesImplemented": false,
+  "waterQuantitySimulationImplemented": false,
+  "atlasCountriesImplemented": false,
+  "atlasAdministrativeDivisionsImplemented": false,
+  "atlasCitiesImplemented": false,
+  "atlasMilitaryImplemented": false,
+  "macroScope": "Read-only full-world fixed16 sampled drainage preview. Dry depressions are not lakes; sampled sea is not proven open ocean. Coarse edges can cross unsampled microterrain. No persistent river/lake entities or quantities.",
+  "archiveScriptRanTests": false,
+  "archiveScriptBuilt": false,
+  "archiveScriptRanBrowser": false,
+  "archiveScriptUpdatedPlan": false,
+  "archiveScriptWroteReportOrHandoff": false
+}

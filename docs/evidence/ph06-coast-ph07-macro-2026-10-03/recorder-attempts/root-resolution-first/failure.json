@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-03T04:01:21.5064211Z",
+  "evidenceSource": "Parent root reported actual first invocation tool output; not a new execution",
+  "reportedError": "Error Missing .autopilot/ph07/macro-coast-checks/first/verification.json",
+  "cause": "path.dirname(fileURLToPath(import.meta.url)) is project/.autopilot/ph07; resolving ../../.. selected D:\\游戏 instead of the project root",
+  "correction": "Resolve ../.. from the recorder's ph07 directory",
+  "originalScriptSha256": "cdd59b9a84be0eb83ab5b89a733562a5c1d4d5ede56d8b29caa8eb6617bdf894",
+  "expectedArchiveAlreadyExists": false,
+  "testsRerun": false,
+  "sourceEvidenceChanged": false
+}

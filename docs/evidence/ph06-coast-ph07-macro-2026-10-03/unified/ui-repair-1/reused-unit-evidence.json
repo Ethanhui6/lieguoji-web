@@ -1,0 +1,11 @@
+{
+  "source": ".autopilot/ph07/macro-coast-checks/repair-1",
+  "verificationSha256": "9aec68c30539422c397695d4cee8e5dd3992b85b274246df6ce134020dbeb0d9",
+  "sourceSnapshotSha256": "2514913424b74684b74811a1cdccffada61c943fb3f9e58d4192a0613eb45fc8",
+  "passedAssertions": 439,
+  "changed": [
+    "src/editor/MacroHydrologyPanel.tsx",
+    "tests/atlas-hydrology-macro.spec.ts"
+  ],
+  "exactNonUiDependenciesPreserved": true
+}

@@ -1,0 +1,604 @@
+{
+  "format": "lieguoji-independent-demo22-ui-replay",
+  "version": 1,
+  "originalIabSaveRead": false,
+  "resultInjected": false,
+  "independentPrivateContext": true,
+  "inputDemoSha256": "d1a926073d3ce08e42d7413ed44bec989f522e4e191764a92b7a35551ea97ea3",
+  "buildJsonSha256": "517215bfffe6125531d90b8540ad53f358547c3739ff63f3ca64a4c60f410be2",
+  "buildVersion": "0.5.0-preview.22",
+  "ownDraftId": "atlas-2d6a143e-b1ea-4f1e-be30-e8b3287b3e2b",
+  "ownRevision": 0,
+  "browser": "153.0.8010.12",
+  "view": {
+    "width": 620,
+    "height": 675,
+    "dpr": 1.25,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+  },
+  "bounds": {
+    "x": 0,
+    "y": 65.1875,
+    "width": 620,
+    "height": 543.1875
+  },
+  "camera": {
+    "x": 65.55999999999997,
+    "y": 27.159999999999997,
+    "scale": 0.11935546875000001
+  },
+  "createOperation": {
+    "type": "create",
+    "atlasFormat": 4,
+    "options": {
+      "size": 256,
+      "seed": "长岬内海-20260928",
+      "name": "长岬内海 · 分叉山系 · 独立重放"
+    },
+    "draftId": "atlas-2d6a143e-b1ea-4f1e-be30-e8b3287b3e2b",
+    "commandId": "edit-8a7699bd-d5ad-4197-8eac-823ed4f1c141"
+  },
+  "generationOperation": {
+    "type": "generation-preview",
+    "commandId": "edit-e8a363d7-eab3-446e-9284-ea4e774e6169",
+    "expectedRevision": 0,
+    "expectedRootDigest": "2a1dc03b8b6757327ef7c914a90f372b223efd2c24b4d153aaf0b0d9303faff1",
+    "recipe": {
+      "format": "lieguoji-atlas-recipe",
+      "version": 1,
+      "generator": {
+        "id": "shape-detail-landmass",
+        "version": 2,
+        "fingerprint": "d964b0999e6ec2a04e1c83d83d10a295a58c4cbf914181b9fc5d736e9866c923"
+      },
+      "seed": "长岬内海-20260928",
+      "parameters": {
+        "pointsQ": [
+          {
+            "xQ": 513564,
+            "yQ": 145105
+          },
+          {
+            "xQ": 573620,
+            "yQ": 190147
+          },
+          {
+            "xQ": 640110,
+            "yQ": 168698
+          },
+          {
+            "xQ": 674428,
+            "yQ": 226609
+          },
+          {
+            "xQ": 740918,
+            "yQ": 226609
+          },
+          {
+            "xQ": 781670,
+            "yQ": 271651
+          },
+          {
+            "xQ": 831002,
+            "yQ": 284520
+          },
+          {
+            "xQ": 824567,
+            "yQ": 342431
+          },
+          {
+            "xQ": 873899,
+            "yQ": 402487
+          },
+          {
+            "xQ": 858885,
+            "yQ": 466833
+          },
+          {
+            "xQ": 794540,
+            "yQ": 516164
+          },
+          {
+            "xQ": 813843,
+            "yQ": 580510
+          },
+          {
+            "xQ": 770946,
+            "yQ": 627697
+          },
+          {
+            "xQ": 743063,
+            "yQ": 576220
+          },
+          {
+            "xQ": 753787,
+            "yQ": 524744
+          },
+          {
+            "xQ": 708745,
+            "yQ": 490426
+          },
+          {
+            "xQ": 665848,
+            "yQ": 514020
+          },
+          {
+            "xQ": 618662,
+            "yQ": 494716
+          },
+          {
+            "xQ": 577909,
+            "yQ": 539758
+          },
+          {
+            "xQ": 547881,
+            "yQ": 593379
+          },
+          {
+            "xQ": 569330,
+            "yQ": 651290
+          },
+          {
+            "xQ": 535012,
+            "yQ": 726360
+          },
+          {
+            "xQ": 483536,
+            "yQ": 773547
+          },
+          {
+            "xQ": 419190,
+            "yQ": 764967
+          },
+          {
+            "xQ": 382728,
+            "yQ": 803575
+          },
+          {
+            "xQ": 329106,
+            "yQ": 764967
+          },
+          {
+            "xQ": 320527,
+            "yQ": 707056
+          },
+          {
+            "xQ": 262616,
+            "yQ": 711346
+          },
+          {
+            "xQ": 208995,
+            "yQ": 672739
+          },
+          {
+            "xQ": 239022,
+            "yQ": 621262
+          },
+          {
+            "xQ": 189691,
+            "yQ": 580510
+          },
+          {
+            "xQ": 232588,
+            "yQ": 537613
+          },
+          {
+            "xQ": 170387,
+            "yQ": 483992
+          },
+          {
+            "xQ": 217574,
+            "yQ": 432515
+          },
+          {
+            "xQ": 206850,
+            "yQ": 372459
+          },
+          {
+            "xQ": 262616,
+            "yQ": 363880
+          },
+          {
+            "xQ": 296934,
+            "yQ": 314548
+          },
+          {
+            "xQ": 367714,
+            "yQ": 329562
+          },
+          {
+            "xQ": 423480,
+            "yQ": 284520
+          },
+          {
+            "xQ": 447073,
+            "yQ": 226609
+          },
+          {
+            "xQ": 487825,
+            "yQ": 218030
+          }
+        ],
+        "coastRoughnessWorld": 16,
+        "reliefMeters": 2400,
+        "shelfWidthWorld": 72,
+        "islandChainCount": 1,
+        "islandsPerChain": 3,
+        "coastStructureWorld": 96
+      }
+    },
+    "scope": {
+      "kind": "world"
+    },
+    "atlasFormat": 4
+  },
+  "recipe": {
+    "format": "lieguoji-atlas-recipe",
+    "version": 1,
+    "generator": {
+      "id": "shape-detail-landmass",
+      "version": 2,
+      "fingerprint": "d964b0999e6ec2a04e1c83d83d10a295a58c4cbf914181b9fc5d736e9866c923"
+    },
+    "seed": "长岬内海-20260928",
+    "parameters": {
+      "pointsQ": [
+        {
+          "xQ": 513564,
+          "yQ": 145105
+        },
+        {
+          "xQ": 573620,
+          "yQ": 190147
+        },
+        {
+          "xQ": 640110,
+          "yQ": 168698
+        },
+        {
+          "xQ": 674428,
+          "yQ": 226609
+        },
+        {
+          "xQ": 740918,
+          "yQ": 226609
+        },
+        {
+          "xQ": 781670,
+          "yQ": 271651
+        },
+        {
+          "xQ": 831002,
+          "yQ": 284520
+        },
+        {
+          "xQ": 824567,
+          "yQ": 342431
+        },
+        {
+          "xQ": 873899,
+          "yQ": 402487
+        },
+        {
+          "xQ": 858885,
+          "yQ": 466833
+        },
+        {
+          "xQ": 794540,
+          "yQ": 516164
+        },
+        {
+          "xQ": 813843,
+          "yQ": 580510
+        },
+        {
+          "xQ": 770946,
+          "yQ": 627697
+        },
+        {
+          "xQ": 743063,
+          "yQ": 576220
+        },
+        {
+          "xQ": 753787,
+          "yQ": 524744
+        },
+        {
+          "xQ": 708745,
+          "yQ": 490426
+        },
+        {
+          "xQ": 665848,
+          "yQ": 514020
+        },
+        {
+          "xQ": 618662,
+          "yQ": 494716
+        },
+        {
+          "xQ": 577909,
+          "yQ": 539758
+        },
+        {
+          "xQ": 547881,
+          "yQ": 593379
+        },
+        {
+          "xQ": 569330,
+          "yQ": 651290
+        },
+        {
+          "xQ": 535012,
+          "yQ": 726360
+        },
+        {
+          "xQ": 483536,
+          "yQ": 773547
+        },
+        {
+          "xQ": 419190,
+          "yQ": 764967
+        },
+        {
+          "xQ": 382728,
+          "yQ": 803575
+        },
+        {
+          "xQ": 329106,
+          "yQ": 764967
+        },
+        {
+          "xQ": 320527,
+          "yQ": 707056
+        },
+        {
+          "xQ": 262616,
+          "yQ": 711346
+        },
+        {
+          "xQ": 208995,
+          "yQ": 672739
+        },
+        {
+          "xQ": 239022,
+          "yQ": 621262
+        },
+        {
+          "xQ": 189691,
+          "yQ": 580510
+        },
+        {
+          "xQ": 232588,
+          "yQ": 537613
+        },
+        {
+          "xQ": 170387,
+          "yQ": 483992
+        },
+        {
+          "xQ": 217574,
+          "yQ": 432515
+        },
+        {
+          "xQ": 206850,
+          "yQ": 372459
+        },
+        {
+          "xQ": 262616,
+          "yQ": 363880
+        },
+        {
+          "xQ": 296934,
+          "yQ": 314548
+        },
+        {
+          "xQ": 367714,
+          "yQ": 329562
+        },
+        {
+          "xQ": 423480,
+          "yQ": 284520
+        },
+        {
+          "xQ": 447073,
+          "yQ": 226609
+        },
+        {
+          "xQ": 487825,
+          "yQ": 218030
+        }
+      ],
+      "coastRoughnessWorld": 16,
+      "reliefMeters": 2400,
+      "shelfWidthWorld": 72,
+      "islandChainCount": 1,
+      "islandsPerChain": 3,
+      "coastStructureWorld": 96
+    }
+  },
+  "pointsQ": [
+    {
+      "xQ": 513564,
+      "yQ": 145105
+    },
+    {
+      "xQ": 573620,
+      "yQ": 190147
+    },
+    {
+      "xQ": 640110,
+      "yQ": 168698
+    },
+    {
+      "xQ": 674428,
+      "yQ": 226609
+    },
+    {
+      "xQ": 740918,
+      "yQ": 226609
+    },
+    {
+      "xQ": 781670,
+      "yQ": 271651
+    },
+    {
+      "xQ": 831002,
+      "yQ": 284520
+    },
+    {
+      "xQ": 824567,
+      "yQ": 342431
+    },
+    {
+      "xQ": 873899,
+      "yQ": 402487
+    },
+    {
+      "xQ": 858885,
+      "yQ": 466833
+    },
+    {
+      "xQ": 794540,
+      "yQ": 516164
+    },
+    {
+      "xQ": 813843,
+      "yQ": 580510
+    },
+    {
+      "xQ": 770946,
+      "yQ": 627697
+    },
+    {
+      "xQ": 743063,
+      "yQ": 576220
+    },
+    {
+      "xQ": 753787,
+      "yQ": 524744
+    },
+    {
+      "xQ": 708745,
+      "yQ": 490426
+    },
+    {
+      "xQ": 665848,
+      "yQ": 514020
+    },
+    {
+      "xQ": 618662,
+      "yQ": 494716
+    },
+    {
+      "xQ": 577909,
+      "yQ": 539758
+    },
+    {
+      "xQ": 547881,
+      "yQ": 593379
+    },
+    {
+      "xQ": 569330,
+      "yQ": 651290
+    },
+    {
+      "xQ": 535012,
+      "yQ": 726360
+    },
+    {
+      "xQ": 483536,
+      "yQ": 773547
+    },
+    {
+      "xQ": 419190,
+      "yQ": 764967
+    },
+    {
+      "xQ": 382728,
+      "yQ": 803575
+    },
+    {
+      "xQ": 329106,
+      "yQ": 764967
+    },
+    {
+      "xQ": 320527,
+      "yQ": 707056
+    },
+    {
+      "xQ": 262616,
+      "yQ": 711346
+    },
+    {
+      "xQ": 208995,
+      "yQ": 672739
+    },
+    {
+      "xQ": 239022,
+      "yQ": 621262
+    },
+    {
+      "xQ": 189691,
+      "yQ": 580510
+    },
+    {
+      "xQ": 232588,
+      "yQ": 537613
+    },
+    {
+      "xQ": 170387,
+      "yQ": 483992
+    },
+    {
+      "xQ": 217574,
+      "yQ": 432515
+    },
+    {
+      "xQ": 206850,
+      "yQ": 372459
+    },
+    {
+      "xQ": 262616,
+      "yQ": 363880
+    },
+    {
+      "xQ": 296934,
+      "yQ": 314548
+    },
+    {
+      "xQ": 367714,
+      "yQ": 329562
+    },
+    {
+      "xQ": 423480,
+      "yQ": 284520
+    },
+    {
+      "xQ": 447073,
+      "yQ": 226609
+    },
+    {
+      "xQ": 487825,
+      "yQ": 218030
+    }
+  ],
+  "base": {
+    "index": "base/index.json",
+    "seed": "长岬内海-20260928",
+    "spec": {
+      "blockCells": 32,
+      "columns": 256,
+      "coordinateScale": 256,
+      "height": 4096,
+      "kind": "shared-quad-grid-v1",
+      "rows": 256,
+      "width": 4096
+    },
+    "blocks": 256
+  },
+  "normalCancellation": true,
+  "generatedResultSaved": false,
+  "screenshotsTaken": false,
+  "cloudWrites": false,
+  "limitation": "This independently replays recorded screen points under the stated current build/layout. It is not an export or identity proof of the original IAB saved world; no original save bytes or normalized contour were read."
+}

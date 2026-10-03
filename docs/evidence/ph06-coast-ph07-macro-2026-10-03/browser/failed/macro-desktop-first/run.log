@@ -1,0 +1,49 @@
+
+Running 1 test using 1 worker
+
+(node:22436) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload (7.5m)
+
+
+  1) [desktop-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload 
+
+    Test timeout of 450000ms exceeded.
+
+    Error: locator.click: Test timeout of 450000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '取消操作', exact: true }).visible()
+        - locator resolved to <button>取消操作</button>
+      - attempting click action
+        - waiting for element to be visible, enabled and stable
+      - element was detached from the DOM, retrying
+
+
+      15 | const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+      16 | const world = (id: number): XY => ({ x: id % 257 * 16, y: Math.floor(id / 257) * 16 });
+    > 17 | async function press(p: Page, name: string, touch: boolean) { if (touch) await button(p, name).tap(); else await button(p, name).click(); }
+         |                                                                                                                                  ^
+      18 | async function section(p: Page, name: '地图' | '创世' | '编辑' | '水文', touch: boolean) {
+      19 |   const control = p.getByRole('navigation', { name: '大世界草稿工具' }).getByRole('button', { name, exact: true });
+      20 |   if (touch) await control.tap(); else await control.click();
+        at press (D:\游戏\架空地图模拟器\tests\atlas-hydrology-macro.spec.ts:17:130)
+        at D:\游戏\架空地图模拟器\tests\atlas-hydrology-macro.spec.ts:189:57
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\ph07\macro-coast-browser\macro-desktop-first\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\ph07\macro-coast-browser\macro-desktop-first\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\ph07\macro-coast-browser\macro-desktop-first\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\ph07\macro-coast-browser\macro-desktop-first\artifacts\atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: [desktop-chromium] › tests\atlas-hydrology-macro.spec.ts (7.5m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [desktop-chromium] › tests\atlas-hydrology-macro.spec.ts:124:1 › [hydrology-macro-v4] native continent, complete saved grid, branch tap, active cancellation and deterministic reload 

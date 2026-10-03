@@ -18,6 +18,8 @@ import { COASTAL_COORDINATE_SCALE, isCoastalSurface, pickCoastalSurface, type Co
 import { ATLAS_MINIMUM_CACHE_DENSITY, ATLAS_TEXTURE_GUTTER, planAtlasRaster, type AtlasRasterQuality } from './render-density';
 import { DetailTerrainBackend, DETAIL_TERRAIN_SHARED_PIXELS } from './detail-terrain-backend';
 import type { HydrologyTrace } from './hydrology-trace';
+import type { HydrologyMacroPreview } from './hydrology-macro-contract';
+import { macroPosition, macroBranchPath, pickMacroBranch } from './hydrology-macro-view';
 
 export type AtlasRenderDelta = { dirtyKeys: BlockKey[]; changedVertexIds: number[]; affectedCellIds: number[] };
 export type { AtlasCamera } from './camera';
@@ -57,6 +59,8 @@ export class AtlasRenderer {
   private readonly freehand = new Graphics();
   private readonly drainage = new Graphics();
   private drainageTrace: HydrologyTrace | null = null;
+  private macroDrainage: HydrologyMacroPreview | null = null;
+  private macroBranch: number | null = null;
   private drainageRevision = 0;
   private drawnDrainage?: { revision: number; scale: number; epoch: number; visible: boolean };
   private readonly terrainLayer = new Container();
@@ -569,6 +573,23 @@ export class AtlasRenderer {
       this.drainageRevision++; this.draw();
     });
   }
+  showMacroHydrology(preview: HydrologyMacroPreview | null, selected: number | null = null) {
+    if (preview && (this.displaySource !== 'committed' || this.data?.manifest.version !== 4
+      || preview.source.draftId !== this.data.manifest.draftId || preview.source.atlasId !== this.data.manifest.atlasId
+      || preview.source.revision !== this.data.manifest.revision)) throw new Error('地形已经变化，请重新查看大陆汇流。');
+    if (selected !== null && (!preview || !Number.isInteger(selected) || !preview.branches[selected])) throw new Error('汇流分支选择无效。');
+    this.guarded(() => { this.macroDrainage = preview ? structuredClone(preview) : null; this.macroBranch = selected; this.drainageRevision++; this.draw(); });
+  }
+  selectMacroBranch(index: number) {
+    if (!this.macroDrainage?.branches[index]) throw new Error('汇流分支不存在。');
+    this.guarded(() => { this.macroBranch = index; this.drainageRevision++; this.draw(); });
+  }
+  pickMacroHydrology(point: { x: number; y: number }): number | null {
+    const preview = this.macroDrainage;
+    if (!preview || this.displaySource !== 'committed' || preview.source.draftId !== this.data?.manifest.draftId
+      || preview.source.revision !== this.data.manifest.revision) return null;
+    return pickMacroBranch(preview, point, 12 / this.camera.scale);
+  }
   showOutline(points: readonly AtlasOutlinePoint[]) {
     this.guarded(() => {
       const world = this.worldSize();
@@ -599,13 +620,38 @@ export class AtlasRenderer {
   private updateOverlays() {
     if (!this.data) return;
     const data = this.data, scale = this.camera.scale, epoch = this.contextEpoch, world = this.worldSize();
-    const trace = this.drainageTrace;
-    const drainageVisible = !!trace && this.displaySource === 'committed' && data.manifest.version === 4
-      && trace.source.draftId === data.manifest.draftId && trace.source.atlasId === data.manifest.atlasId && trace.source.revision === data.manifest.revision;
+    const trace = this.drainageTrace, macro = this.macroDrainage;
+    const matchesDrainage = (source: HydrologyTrace['source']) => this.displaySource === 'committed' && data.manifest.version === 4
+      && source.draftId === data.manifest.draftId && source.atlasId === data.manifest.atlasId && source.revision === data.manifest.revision;
+    const traceVisible = !!trace && matchesDrainage(trace.source), macroVisible = !!macro && matchesDrainage(macro.source);
+    const drainageVisible = traceVisible || macroVisible;
     const drainage = this.drawnDrainage;
     if (!drainage || drainage.revision !== this.drainageRevision || drainage.scale !== scale || drainage.epoch !== epoch || drainage.visible !== drainageVisible) {
       this.drainage.clear();
-      if (trace && drainageVisible) {
+      if (macro && macroVisible) {
+        // Draw every supplied adjacent edge once. No smoothed curve can hide
+        // the declared 16-world sampling or jump across an omitted segment.
+        for (let i = 0; i < macro.edges.from.length; i++) {
+          const a = macroPosition(macro.edges.from[i]), b = macroPosition(macro.edges.to[i]);
+          this.drainage.moveTo(a.x, a.y).lineTo(b.x, b.y);
+        }
+        this.drainage.stroke({ color: 0x153f55, width: 3.3 / scale, alpha: .75 });
+        for (let i = 0; i < macro.edges.from.length; i++) {
+          const a = macroPosition(macro.edges.from[i]), b = macroPosition(macro.edges.to[i]);
+          this.drainage.moveTo(a.x, a.y).lineTo(b.x, b.y);
+        }
+        this.drainage.stroke({ color: 0x83d6f1, width: 1.8 / scale, alpha: .94 });
+        if (this.macroBranch !== null) {
+          const path = macroBranchPath(macro, this.macroBranch), points = path.flatMap(id => { const p = macroPosition(id); return [p.x, p.y]; });
+          if (points.length >= 4) this.drainage.poly(points, false).stroke({ color: 0xe4fbff, width: 3 / scale });
+          if (path.length) {
+            const a = macroPosition(path[0]), b = macroPosition(path.at(-1)!);
+            this.drainage.circle(a.x, a.y, 4 / scale).fill({ color: 0xffffff }).stroke({ color: 0x153f55, width: 1.5 / scale });
+            this.drainage.circle(b.x, b.y, 3 / scale).fill({ color: 0x83d6f1 }).stroke({ color: 0x153f55, width: 1.5 / scale });
+          }
+        }
+      }
+      if (trace && traceVisible) {
         const r = trace.rectangle;
         this.drainage.rect(r.originColumn * 2, r.originRow * 2, (r.columns - 1) * 2, (r.rows - 1) * 2).stroke({ color: 0xa5d3ed, width: 1 / scale, alpha: .5 });
         const points = trace.path.flatMap(p => [p.column * 2, p.row * 2]);
@@ -720,6 +766,7 @@ export class AtlasRenderer {
           if (this.data !== data || this.committed !== committed || this.displaySource !== source || this.displayBusy()) throw new Error('核验期间地图已经切换，请重试。');
           reply({ ok: true, manifestDigest, draftId: committed.data.manifest.draftId, atlasId: committed.data.manifest.atlasId, revision: committed.data.manifest.revision, verifiedBlocks: committed.data.blocks.size,
             hydrologyTrace: source === 'committed' && this.drainageTrace?.source.manifestDigest === manifestDigest ? structuredClone(this.drainageTrace) : null,
+            macroHydrology: source === 'committed' && this.macroDrainage?.source.manifestDigest === manifestDigest ? structuredClone(this.macroDrainage) : null,
             display: { source, manifestDigest: displayManifestDigest, revision: data.manifest.revision, version: data.manifest.version, verifiedBlocks: data.blocks.size } });
         } catch (error) { reply({ ok: false, error: error instanceof Error ? error.message : String(error) }); }
         finally { this.auditing = false; }

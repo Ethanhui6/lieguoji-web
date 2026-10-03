@@ -1,0 +1,2897 @@
+{
+  "recordedAt": "2026-10-03T04:01:55.298Z",
+  "excludes": [
+    "files.sha256.json",
+    "verification.json"
+  ],
+  "files": [
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/archive-first-error.json",
+      "path": "coast-candidate/archive-first-error.json",
+      "sha256": "b79b1226a2cf6163340435d949242bf57fdf99f36ad941ef34f095fc5481da06",
+      "bytes": 483
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/archive-first.mjs.txt",
+      "path": "coast-candidate/archive-first.mjs.txt",
+      "sha256": "df0607d4808e74e5b284bc79cafeaf8f54957e1683e000ce7ee61225468a8acf",
+      "bytes": 8492
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/archive.mjs",
+      "path": "coast-candidate/archive.mjs",
+      "sha256": "827ce829a54786128e348c20f7743c85be8710282c97190d3f7a5860d9b94ed1",
+      "bytes": 8548
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/files.sha256.json",
+      "path": "coast-candidate/files.sha256.json",
+      "sha256": "de6b8dfaf1dee3ca42f3cae5425950cd0115c42d83a677e5f378e4d93e66d70d",
+      "bytes": 48706
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/omitted-fine-packets.inventory.json",
+      "path": "coast-candidate/omitted-fine-packets.inventory.json",
+      "sha256": "375d2bb019d2b25a41cf8799d7dc9215f0fcda644ae63a685893cc793dda7535",
+      "bytes": 813827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/lint.log",
+      "path": "coast-candidate/original/checks/first/lint.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/outline-preview.json",
+      "path": "coast-candidate/original/checks/first/outline-preview.json",
+      "sha256": "e3c3f9b648d06290a322f34967e889499696e90863a39e3bc20a1e0d0333319a",
+      "bytes": 988
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/outline-preview.log",
+      "path": "coast-candidate/original/checks/first/outline-preview.log",
+      "sha256": "6e833606164a662c0a6d19456e8395de49388205fc35519e093547c2472239b4",
+      "bytes": 127
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/baseline/detail-natural-outline.ts",
+      "path": "coast-candidate/original/checks/first/source/baseline/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/check.mjs",
+      "path": "coast-candidate/original/checks/first/source/check.mjs",
+      "sha256": "60614b61b39263e1c2c4be043e165aa591088a56536444a1f7d226ee5bf51865",
+      "bytes": 3752
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/corners.test.ts",
+      "path": "coast-candidate/original/checks/first/source/corners.test.ts",
+      "sha256": "c5e49e4147bd363d90364f7f1b5b94d2b0ef5e4494185b36c5d25261b4d73ce7",
+      "bytes": 6176
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/geometry-proof.md",
+      "path": "coast-candidate/original/checks/first/source/geometry-proof.md",
+      "sha256": "1fbc2e7272a7f87c50458c48e1a44f631744610d058d97b3302e80c0141a5e7a",
+      "bytes": 4930
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/input.ts",
+      "path": "coast-candidate/original/checks/first/source/input.ts",
+      "sha256": "11aa81662bdc8ebab63f2fbd3ed503468b2c028ec045f6dd6bbd66d8d065fa9a",
+      "bytes": 3339
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/outline-image.ts",
+      "path": "coast-candidate/original/checks/first/source/outline-image.ts",
+      "sha256": "685c98a71f1091a68dd23cb7b14f37eca3bb8f1a794f29d637e3dcce4150429c",
+      "bytes": 2687
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/preview.test.ts",
+      "path": "coast-candidate/original/checks/first/source/preview.test.ts",
+      "sha256": "72b192961e78e8ffb660875f3df61da8882cbc53a1bed9fcdb3763fdf6788275",
+      "bytes": 2819
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/runtime/detail-natural-outline.ts",
+      "path": "coast-candidate/original/checks/first/source/runtime/detail-natural-outline.ts",
+      "sha256": "aed92cc055366879fb2b325f88225768cdb94d957b7391e48b199fc8d159170f",
+      "bytes": 34788
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/typecheck.mjs",
+      "path": "coast-candidate/original/checks/first/source/typecheck.mjs",
+      "sha256": "b2eb3554e2db0b8275f536f5ab7fd6a21159324b980a1068dbcd5b4fb998e35c",
+      "bytes": 1785
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source/vitest.config.ts",
+      "path": "coast-candidate/original/checks/first/source/vitest.config.ts",
+      "sha256": "1bd8093036c4e94476b4950e35778154963b59de885b73665692132ad5489041",
+      "bytes": 887
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source-after.json",
+      "path": "coast-candidate/original/checks/first/source-after.json",
+      "sha256": "633274cb4c4b19dabdb55892d6f8935bdddd789f29e54a7e4b567b641ad8a67b",
+      "bytes": 1848
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/source-before.json",
+      "path": "coast-candidate/original/checks/first/source-before.json",
+      "sha256": "633274cb4c4b19dabdb55892d6f8935bdddd789f29e54a7e4b567b641ad8a67b",
+      "bytes": 1848
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/types.log",
+      "path": "coast-candidate/original/checks/first/types.log",
+      "sha256": "25c8708d42f4b9049abf36109e0d0a426c1da3ed091515fe759aaa6cca8080e6",
+      "bytes": 92
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/unit.json",
+      "path": "coast-candidate/original/checks/first/unit.json",
+      "sha256": "c52473186724bf9ee7bc8980616b9a0c99d4728bf8f122e0c2efdc1b704e5ef6",
+      "bytes": 2591
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/unit.log",
+      "path": "coast-candidate/original/checks/first/unit.log",
+      "sha256": "c80f532b2b0ee2a1a387f92f506a63ca657d3380f0045610daa5293e12398e75",
+      "bytes": 116
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/checks/first/verification.json",
+      "path": "coast-candidate/original/checks/first/verification.json",
+      "sha256": "84a3e5ecf140219dbc2f6532fcb2b8177bdb838224fbe75b6ba59647c838ed4c",
+      "bytes": 690
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/baseline.json",
+      "path": "coast-candidate/original/full-checks/first/baseline.json",
+      "sha256": "29ee37c123a212fce4135d0a18e833cf3be977856d2a18034c90f66a6a3a4bd1",
+      "bytes": 1008
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/baseline.log",
+      "path": "coast-candidate/original/full-checks/first/baseline.log",
+      "sha256": "a6184778870fac147888c49b416f62f135e8ed55b54475c37b79deed66a7f692",
+      "bytes": 504
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/candidate.json",
+      "path": "coast-candidate/original/full-checks/first/candidate.json",
+      "sha256": "805da937436599e58422c2b272fb521bd5944bfbde1b467cc11525d97a7aad66",
+      "bytes": 1006
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/candidate.log",
+      "path": "coast-candidate/original/full-checks/first/candidate.log",
+      "sha256": "87fb516f3f120e1f571124a457c0527f22c97b8de492ad3b7730eb382dab009d",
+      "bytes": 505
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/lint.log",
+      "path": "coast-candidate/original/full-checks/first/lint.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/baseline/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-checks/first/source/baseline/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-binding.ts",
+      "path": "coast-candidate/original/full-checks/first/source/full-binding.ts",
+      "sha256": "b518b86cc75ca1e75dc5acd80e573f2292b2f8bc80147f9bc53b9e3685025708",
+      "bytes": 2264
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-check.mjs",
+      "path": "coast-candidate/original/full-checks/first/source/full-check.mjs",
+      "sha256": "d53a83b524aaa7a03c6091b8423eb1e10dbfa4000ef8b73273b0aae1dc1a8519",
+      "bytes": 3401
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-generation.test.ts",
+      "path": "coast-candidate/original/full-checks/first/source/full-generation.test.ts",
+      "sha256": "e57c19bbbb1479c644ef9584f9adf0e962ddf5edf1b24a9fe63b2e525ef25ca6",
+      "bytes": 8755
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-sea-image.ts",
+      "path": "coast-candidate/original/full-checks/first/source/full-sea-image.ts",
+      "sha256": "3bb5b9c7de4c234e13d8d2e369aabfa2d9ef7f0533916e2d68bb40f77b907939",
+      "bytes": 2235
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-typecheck.mjs",
+      "path": "coast-candidate/original/full-checks/first/source/full-typecheck.mjs",
+      "sha256": "59617fcc4c950d07ba5fab9cee9b8115dda0925bb8909321a4394b9e4ec97fd3",
+      "bytes": 1743
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full-views.json",
+      "path": "coast-candidate/original/full-checks/first/source/full-views.json",
+      "sha256": "3947d0b3064ac105edc5e30b9570ed4da664412eda6aaf7b52e163c17777b377",
+      "bytes": 376
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/full.vitest.config.ts",
+      "path": "coast-candidate/original/full-checks/first/source/full.vitest.config.ts",
+      "sha256": "9a7499be21c4ce228637a4954d3781afcc86287567c02d3ed4dafea5bfdccbee",
+      "bytes": 1203
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/input.ts",
+      "path": "coast-candidate/original/full-checks/first/source/input.ts",
+      "sha256": "11aa81662bdc8ebab63f2fbd3ed503468b2c028ec045f6dd6bbd66d8d065fa9a",
+      "bytes": 3339
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source/runtime/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-checks/first/source/runtime/detail-natural-outline.ts",
+      "sha256": "aed92cc055366879fb2b325f88225768cdb94d957b7391e48b199fc8d159170f",
+      "bytes": 34788
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source-after.json",
+      "path": "coast-candidate/original/full-checks/first/source-after.json",
+      "sha256": "8651e992c3a11ead716cca15b612d2255bcdf0a3f52ce83e8cc9a88680eb94b6",
+      "bytes": 1260
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/source-before.json",
+      "path": "coast-candidate/original/full-checks/first/source-before.json",
+      "sha256": "8651e992c3a11ead716cca15b612d2255bcdf0a3f52ce83e8cc9a88680eb94b6",
+      "bytes": 1260
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/types.log",
+      "path": "coast-candidate/original/full-checks/first/types.log",
+      "sha256": "c0d743b7201ae924503b6424fc684e99c0d64f0e15829f5d236e73e18d65f941",
+      "bytes": 86
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-checks/first/verification.json",
+      "path": "coast-candidate/original/full-checks/first/verification.json",
+      "sha256": "ab2ec5bcdde2f6ea3f01a979a9151c234ec34b8a82458df2f19b9bd9284844ff",
+      "bytes": 788
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/baseline-full-coverage.png",
+      "path": "coast-candidate/original/full-output/first/baseline/baseline-full-coverage.png",
+      "sha256": "6c312475e9f88bd8c4e7b5c1abccb06f3ba9bcb0354846a20f9885cbef746c8e",
+      "bytes": 4812
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/baseline-full-physical.png",
+      "path": "coast-candidate/original/full-output/first/baseline/baseline-full-physical.png",
+      "sha256": "fc845e5865abad51436b46e2028709233dfe8c3f9be4797905f8bd58e8d0d712",
+      "bytes": 113282
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/baseline-inner-sea-coverage.png",
+      "path": "coast-candidate/original/full-output/first/baseline/baseline-inner-sea-coverage.png",
+      "sha256": "df8dbd4ae75782f20d81ed6a53d2d0f4c47d9fc7cc7683c8e188e92a8c07757b",
+      "bytes": 4361
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/baseline-inner-sea-physical.png",
+      "path": "coast-candidate/original/full-output/first/baseline/baseline-inner-sea-physical.png",
+      "sha256": "66cc713f4e04c789bc762daf843315ee97a1226b83f4fba439c54ca881d0907b",
+      "bytes": 96059
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/capture.json",
+      "path": "coast-candidate/original/full-output/first/baseline/capture.json",
+      "sha256": "ab0f45bdb69d66d9aab3c6ab21a66b19d56ebe9a520d1c7a8f6ad6efd08ba5a7",
+      "bytes": 11337
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/fine/index.json",
+      "path": "coast-candidate/original/full-output/first/baseline/fine/index.json",
+      "sha256": "2ec7f8e62d32c4b1c33ed8561ba6c59409487f0fb31a4586424a2dab274f8eeb",
+      "bytes": 298352
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/outline.json",
+      "path": "coast-candidate/original/full-output/first/baseline/outline.json",
+      "sha256": "00e7bab81e1d93f45ae01480ad01590ba8c78210aea35db0f36058a5b824acd7",
+      "bytes": 45785
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/result.json",
+      "path": "coast-candidate/original/full-output/first/baseline/result.json",
+      "sha256": "661b584c546b22dfae98d64e6dc7f96d723c2ae651aa3c9410d66fc098d4a605",
+      "bytes": 42603
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/baseline/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/baseline/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-binding.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-binding.ts",
+      "sha256": "b518b86cc75ca1e75dc5acd80e573f2292b2f8bc80147f9bc53b9e3685025708",
+      "bytes": 2264
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-check.mjs",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-check.mjs",
+      "sha256": "d53a83b524aaa7a03c6091b8423eb1e10dbfa4000ef8b73273b0aae1dc1a8519",
+      "bytes": 3401
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-generation.test.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-generation.test.ts",
+      "sha256": "e57c19bbbb1479c644ef9584f9adf0e962ddf5edf1b24a9fe63b2e525ef25ca6",
+      "bytes": 8755
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-sea-image.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-sea-image.ts",
+      "sha256": "3bb5b9c7de4c234e13d8d2e369aabfa2d9ef7f0533916e2d68bb40f77b907939",
+      "bytes": 2235
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-typecheck.mjs",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-typecheck.mjs",
+      "sha256": "59617fcc4c950d07ba5fab9cee9b8115dda0925bb8909321a4394b9e4ec97fd3",
+      "bytes": 1743
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-views.json",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full-views.json",
+      "sha256": "3947d0b3064ac105edc5e30b9570ed4da664412eda6aaf7b52e163c17777b377",
+      "bytes": 376
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full.vitest.config.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/full.vitest.config.ts",
+      "sha256": "9a7499be21c4ce228637a4954d3781afcc86287567c02d3ed4dafea5bfdccbee",
+      "bytes": 1203
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/input.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/input.ts",
+      "sha256": "11aa81662bdc8ebab63f2fbd3ed503468b2c028ec045f6dd6bbd66d8d065fa9a",
+      "bytes": 3339
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/runtime/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/coast-curves-staging/runtime/detail-natural-outline.ts",
+      "sha256": "aed92cc055366879fb2b325f88225768cdb94d957b7391e48b199fc8d159170f",
+      "bytes": 34788
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/ridge-landform-staging/area-v2/capture-input.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/ridge-landform-staging/area-v2/capture-input.ts",
+      "sha256": "4c7487d11d2946c0db87664cf3fbb41c89f53791179d338cd083410d47344086",
+      "bytes": 4781
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/.autopilot/ph06/ridge-landform-staging/area-v2/physical-image.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/.autopilot/ph06/ridge-landform-staging/area-v2/physical-image.ts",
+      "sha256": "a539ae2f341f1748123eb825baf6149e308a8ea96f6a7982c6ea3ea39e001daa",
+      "bytes": 4202
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/atlas-format.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "bytes": 8219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/coastal-generation.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/coastal-generation.ts",
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "bytes": 8132
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/coastal-surface.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/coastal-surface.ts",
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "bytes": 13494
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-base.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "bytes": 1110
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-codec.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "bytes": 8040
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-field.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "bytes": 1689
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-geometry.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "bytes": 14666
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-locks.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-locks.ts",
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "bytes": 9809
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/detail-coast-types.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "bytes": 4394
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-curved-ridge.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-curved-ridge.ts",
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "bytes": 17154
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-natural-relief.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-natural-relief.ts",
+      "sha256": "2550bda4fe1d3383e72f3e6bfa349f430c587229c4e5f5b382c76d27fa189345",
+      "bytes": 17994
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-orography.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-orography.ts",
+      "sha256": "b8f10ba1d59918e54507b8fdac2a3133700b30a6516405dfcf46ca33a7c808d8",
+      "bytes": 30779
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-shape-distance.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "bytes": 17258
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-shape-height.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "bytes": 2672
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-shape-natural-adapter.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-shape-natural-adapter.ts",
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "bytes": 8133
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/detail-shape-natural.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f",
+      "bytes": 31682
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/fine-range-tree.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/fine-range-tree.ts",
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505",
+      "bytes": 16311
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/fingerprint.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "bytes": 1159
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/natural-ocean-base.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/natural-ocean-base.ts",
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "bytes": 4244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/quality.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "bytes": 7319
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/seed.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "bytes": 3564
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation/terrain-massif.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation/terrain-massif.ts",
+      "sha256": "e80d68fa77cb15ac3362416ac9d6213a1952cbc69dd50f7c32a20ec91373cc82",
+      "bytes": 12779
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation-contract.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "bytes": 34413
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation-format.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "bytes": 12978
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation-history.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation-history.ts",
+      "sha256": "177fe69d7e0f3fa1eb1bf02875b0701553f7a5be877596167d6db7f77bd5ed11",
+      "bytes": 18892
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/generation-locks.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "bytes": 16953
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/model.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "bytes": 27883
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source/src/world/topology.ts",
+      "path": "coast-candidate/original/full-output/first/baseline/source/src/world/topology.ts",
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "bytes": 9633
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source-after.json",
+      "path": "coast-candidate/original/full-output/first/baseline/source-after.json",
+      "sha256": "ecf6eecc27359625d29285e77fab33702bae938bc7b0e6296af871d18f69ccd9",
+      "bytes": 9836
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/baseline/source-before.json",
+      "path": "coast-candidate/original/full-output/first/baseline/source-before.json",
+      "sha256": "ecf6eecc27359625d29285e77fab33702bae938bc7b0e6296af871d18f69ccd9",
+      "bytes": 9836
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/candidate-full-coverage.png",
+      "path": "coast-candidate/original/full-output/first/candidate/candidate-full-coverage.png",
+      "sha256": "f4bbef77406dc15d31b15274820a71b0e15478c94d285361581d92b74e4abdde",
+      "bytes": 4687
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/candidate-full-physical.png",
+      "path": "coast-candidate/original/full-output/first/candidate/candidate-full-physical.png",
+      "sha256": "6176e61c4ddc69b2a13d90b64bb4014a4be081802a75bf5e9f90cc5d5ce3c482",
+      "bytes": 108920
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/candidate-inner-sea-coverage.png",
+      "path": "coast-candidate/original/full-output/first/candidate/candidate-inner-sea-coverage.png",
+      "sha256": "153f9adbd7fe9c46f068706584ff1aa9b533e88534e16e0c2db33378224682bf",
+      "bytes": 4388
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/candidate-inner-sea-physical.png",
+      "path": "coast-candidate/original/full-output/first/candidate/candidate-inner-sea-physical.png",
+      "sha256": "deb4a495f45337d775aa2e9f51ffacb8e1b57af3d69e0b1ea544f54483f41766",
+      "bytes": 95479
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/capture.json",
+      "path": "coast-candidate/original/full-output/first/candidate/capture.json",
+      "sha256": "ab0f45bdb69d66d9aab3c6ab21a66b19d56ebe9a520d1c7a8f6ad6efd08ba5a7",
+      "bytes": 11337
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/fine/index.json",
+      "path": "coast-candidate/original/full-output/first/candidate/fine/index.json",
+      "sha256": "c5d31912d6e5b749becf3cb4a957b748ce6510ec8776596204049fdf79e65476",
+      "bytes": 296268
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/outline.json",
+      "path": "coast-candidate/original/full-output/first/candidate/outline.json",
+      "sha256": "8b2af2e30b9c17b3fd8093c95813edb7252d4e43ad04b25e253f168ea04981d8",
+      "bytes": 104867
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/result.json",
+      "path": "coast-candidate/original/full-output/first/candidate/result.json",
+      "sha256": "8eb3a4c37d63b098fe03877455a2f101a3db0a8af330750e16cc80067c0d90b6",
+      "bytes": 42553
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/baseline/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/baseline/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-binding.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-binding.ts",
+      "sha256": "b518b86cc75ca1e75dc5acd80e573f2292b2f8bc80147f9bc53b9e3685025708",
+      "bytes": 2264
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-check.mjs",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-check.mjs",
+      "sha256": "d53a83b524aaa7a03c6091b8423eb1e10dbfa4000ef8b73273b0aae1dc1a8519",
+      "bytes": 3401
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-generation.test.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-generation.test.ts",
+      "sha256": "e57c19bbbb1479c644ef9584f9adf0e962ddf5edf1b24a9fe63b2e525ef25ca6",
+      "bytes": 8755
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-sea-image.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-sea-image.ts",
+      "sha256": "3bb5b9c7de4c234e13d8d2e369aabfa2d9ef7f0533916e2d68bb40f77b907939",
+      "bytes": 2235
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-typecheck.mjs",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-typecheck.mjs",
+      "sha256": "59617fcc4c950d07ba5fab9cee9b8115dda0925bb8909321a4394b9e4ec97fd3",
+      "bytes": 1743
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-views.json",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full-views.json",
+      "sha256": "3947d0b3064ac105edc5e30b9570ed4da664412eda6aaf7b52e163c17777b377",
+      "bytes": 376
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full.vitest.config.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/full.vitest.config.ts",
+      "sha256": "9a7499be21c4ce228637a4954d3781afcc86287567c02d3ed4dafea5bfdccbee",
+      "bytes": 1203
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/input.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/input.ts",
+      "sha256": "11aa81662bdc8ebab63f2fbd3ed503468b2c028ec045f6dd6bbd66d8d065fa9a",
+      "bytes": 3339
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/runtime/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/coast-curves-staging/runtime/detail-natural-outline.ts",
+      "sha256": "aed92cc055366879fb2b325f88225768cdb94d957b7391e48b199fc8d159170f",
+      "bytes": 34788
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/ridge-landform-staging/area-v2/capture-input.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/ridge-landform-staging/area-v2/capture-input.ts",
+      "sha256": "4c7487d11d2946c0db87664cf3fbb41c89f53791179d338cd083410d47344086",
+      "bytes": 4781
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/.autopilot/ph06/ridge-landform-staging/area-v2/physical-image.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/.autopilot/ph06/ridge-landform-staging/area-v2/physical-image.ts",
+      "sha256": "a539ae2f341f1748123eb825baf6149e308a8ea96f6a7982c6ea3ea39e001daa",
+      "bytes": 4202
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/atlas-format.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/atlas-format.ts",
+      "sha256": "5ecd51f2b63a2aabda7a9f70c587df8e102924ad3d479f644ad686bbb7ed62a4",
+      "bytes": 8219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/coastal-generation.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/coastal-generation.ts",
+      "sha256": "a63bcd408f946a50078b9844311fa4b1b65f1975841e0afa0c2eb6d0ce3bc8bc",
+      "bytes": 8132
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/coastal-surface.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/coastal-surface.ts",
+      "sha256": "89f07079f5d486c2d7d27c47d494f355a966b31ad23f76abb3713b061df85092",
+      "bytes": 13494
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-base.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-base.ts",
+      "sha256": "06b0ee4dfb00bd194a7a6b0e52b25ba328251b2067f6440012d513e6b8aa2860",
+      "bytes": 1110
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-codec.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-codec.ts",
+      "sha256": "df88c7f8b06625ab17025369c1202b6276e164085b9bb8da1da48f983f6cff58",
+      "bytes": 8040
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-field.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-field.ts",
+      "sha256": "a3232c512d245415e01919e0a46516ab451569d44ad4233d058c4eba7df088ad",
+      "bytes": 1689
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-geometry.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-geometry.ts",
+      "sha256": "96f48a325f6e732795562aa7efa629dc22fe027b1d1f1e4e49cde8862b7f7e04",
+      "bytes": 14666
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-locks.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-locks.ts",
+      "sha256": "f851e563057fd4d2efd188c7812b122475bdf92f39f5e4bc3e70f9b10863902b",
+      "bytes": 9809
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/detail-coast-types.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/detail-coast-types.ts",
+      "sha256": "b5708fdee8110c1286602f429c15732c1ea401e881ccb27fdb04ff37cf27c05b",
+      "bytes": 4394
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-curved-ridge.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-curved-ridge.ts",
+      "sha256": "3dc98b67fb6c37d3985fa1d46a29e0012b23912031ce930721f3d1821d99b42a",
+      "bytes": 17154
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-natural-outline.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-natural-outline.ts",
+      "sha256": "b52a24a7b5dfdcebfc7591c9bbdebd946640c3208bea4e3fe0d305c4a986a88d",
+      "bytes": 33219
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-natural-relief.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-natural-relief.ts",
+      "sha256": "2550bda4fe1d3383e72f3e6bfa349f430c587229c4e5f5b382c76d27fa189345",
+      "bytes": 17994
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-orography.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-orography.ts",
+      "sha256": "b8f10ba1d59918e54507b8fdac2a3133700b30a6516405dfcf46ca33a7c808d8",
+      "bytes": 30779
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-shape-distance.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-shape-distance.ts",
+      "sha256": "0f8aa620e57180dcc24498cdc1d74b39c754d23203c2565fccb03b36a25537c6",
+      "bytes": 17258
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-shape-height.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-shape-height.ts",
+      "sha256": "90c432089810b0a5f2a07e2eb6e1f7e716bd8f23fc2132fe5a88781e5904623d",
+      "bytes": 2672
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-shape-natural-adapter.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-shape-natural-adapter.ts",
+      "sha256": "c15f66757b91a2954a42f1cb9b20bf7ac5dfdf757cd99eea6a899879f22abc92",
+      "bytes": 8133
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/detail-shape-natural.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/detail-shape-natural.ts",
+      "sha256": "2ba4be7cae91f8cfaf4c44e06b1325f7541512c64854d4f8556da43512e06e2f",
+      "bytes": 31682
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/fine-range-tree.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/fine-range-tree.ts",
+      "sha256": "ce351b6412f85e3a48ee0f0d0f9965285afb58736d2fe329686fd55919c34505",
+      "bytes": 16311
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/fingerprint.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/fingerprint.ts",
+      "sha256": "01359f1e9af82572399ed724324fb6a56d9e8677316a34007be1e96b06cbe63a",
+      "bytes": 1159
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/natural-ocean-base.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/natural-ocean-base.ts",
+      "sha256": "2d2377ab11e446f7e8ff940b2935ff0f160f5118d3a26af79ed98183733ab7c8",
+      "bytes": 4244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/quality.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/quality.ts",
+      "sha256": "9d20c72d779bf1e9149e307f126a6cac012a70268e1b30bade212bc921831ea8",
+      "bytes": 7319
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/seed.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/seed.ts",
+      "sha256": "e5b06249395ff7956468ba299f3fc58dbec45e5e37c1f3a5dc91917917acfe1c",
+      "bytes": 3564
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation/terrain-massif.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation/terrain-massif.ts",
+      "sha256": "e80d68fa77cb15ac3362416ac9d6213a1952cbc69dd50f7c32a20ec91373cc82",
+      "bytes": 12779
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation-contract.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation-contract.ts",
+      "sha256": "cb95c8b09f3592d6a0123c90a984efdf57b5dbc2ed104726db2dfdfe00d61ce5",
+      "bytes": 34413
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation-format.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation-format.ts",
+      "sha256": "df3c3cc817bdf17ba9fc96c11fd8076014f91c7a4a5451c9f0853056cfc0896e",
+      "bytes": 12978
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation-history.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation-history.ts",
+      "sha256": "177fe69d7e0f3fa1eb1bf02875b0701553f7a5be877596167d6db7f77bd5ed11",
+      "bytes": 18892
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/generation-locks.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/generation-locks.ts",
+      "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881",
+      "bytes": 16953
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/model.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/model.ts",
+      "sha256": "5ca34742852333d0174444d47b85ab3ced92d7b2d968f8869a76c096e312d918",
+      "bytes": 27883
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source/src/world/topology.ts",
+      "path": "coast-candidate/original/full-output/first/candidate/source/src/world/topology.ts",
+      "sha256": "2c7d54983be5f25cc7982f1d4a045e6c7a611eee09d6efd9a72ed83acf983ccb",
+      "bytes": 9633
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source-after.json",
+      "path": "coast-candidate/original/full-output/first/candidate/source-after.json",
+      "sha256": "ecf6eecc27359625d29285e77fab33702bae938bc7b0e6296af871d18f69ccd9",
+      "bytes": 9836
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-output/first/candidate/source-before.json",
+      "path": "coast-candidate/original/full-output/first/candidate/source-before.json",
+      "sha256": "ecf6eecc27359625d29285e77fab33702bae938bc7b0e6296af871d18f69ccd9",
+      "bytes": 9836
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/full-views.json",
+      "path": "coast-candidate/original/full-views.json",
+      "sha256": "3947d0b3064ac105edc5e30b9570ed4da664412eda6aaf7b52e163c17777b377",
+      "bytes": 376
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/OBSERVED_FIRST.md",
+      "path": "coast-candidate/original/OBSERVED_FIRST.md",
+      "sha256": "431bbcb9dcba573e117995b315e9e1a1ea86e4adffde9d5ea6938b5d69f8dfb3",
+      "bytes": 1375
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/OBSERVED_FULL_FIRST.md",
+      "path": "coast-candidate/original/OBSERVED_FULL_FIRST.md",
+      "sha256": "bd838f0fa7c3c81ee09218dd2cf91ec103a557b45a849369914db77e431ce0d6",
+      "bytes": 3229
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/output/first/baseline.json",
+      "path": "coast-candidate/original/output/first/baseline.json",
+      "sha256": "57a37c8875f05408224d17cf98516a0a087a0b807bdc6971e6528da6e0948483",
+      "bytes": 44382
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/output/first/baseline.png",
+      "path": "coast-candidate/original/output/first/baseline.png",
+      "sha256": "49478f17d485bc2489e475ec2347ea2153f9b3f084da3cf31639cffa13dd5eca",
+      "bytes": 10271
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/output/first/candidate.json",
+      "path": "coast-candidate/original/output/first/candidate.json",
+      "sha256": "70f558450bdd6b65587b957778fecd4a18bd8cdcb5d0e60fcbf1be513df0ae3d",
+      "bytes": 103464
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/output/first/candidate.png",
+      "path": "coast-candidate/original/output/first/candidate.png",
+      "sha256": "fa364c62924ce03ec5d0100aebfb9fd1890570a2076ee4f35b1ea16e77c65f43",
+      "bytes": 10749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/output/first/comparison.json",
+      "path": "coast-candidate/original/output/first/comparison.json",
+      "sha256": "1276bdb272a2c64a53806709b3a43da6fdd3b6832b29aee75c9dbac165e274ca",
+      "bytes": 5127
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/promotion.json",
+      "path": "coast-candidate/original/promotion.json",
+      "sha256": "9373d097c92b844135971b573d7505ae08fc61ca3a20e6444be6d49bc8528a32",
+      "bytes": 1237
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/original/static-manifest.json",
+      "path": "coast-candidate/original/static-manifest.json",
+      "sha256": "d9ee152b5bd77d3368bb0667e59b29b8aa8706649862eb24e76bdd869550b8c2",
+      "bytes": 1567
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/coast/verification.json",
+      "path": "coast-candidate/verification.json",
+      "sha256": "c0320a868102a700bf2fa9566cd5f89373d0fb4ab4ac5b4da1cad6843eea7285",
+      "bytes": 2526
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/identity-verification.json",
+      "path": "unified/first/identity-verification.json",
+      "sha256": "879d8d27d75c2b044ee111100de24d9c982bd31b637304b621d81ee91582e83b",
+      "bytes": 416
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/lint.log",
+      "path": "unified/first/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/plan.log",
+      "path": "unified/first/plan.log",
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3",
+      "bytes": 128
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/pre-run-build.json",
+      "path": "unified/first/pre-run-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/prior-build.json",
+      "path": "unified/first/prior-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/scope.json",
+      "path": "unified/first/scope.json",
+      "sha256": "642d78787438179bf39da0515e1cfaac299e887a995df7b023ebf86132a11b52",
+      "bytes": 5204
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/source-after.json",
+      "path": "unified/first/source-after.json",
+      "sha256": "033b6f50964440d7199efb500602be3ec7a938711b1c4deeabbf38dcf7ee511d",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/source-before.json",
+      "path": "unified/first/source-before.json",
+      "sha256": "033b6f50964440d7199efb500602be3ec7a938711b1c4deeabbf38dcf7ee511d",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/types.log",
+      "path": "unified/first/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/unit.json",
+      "path": "unified/first/unit.json",
+      "sha256": "3a2e97555cffc1623342756cfc42d0cb6057e692b2f4f89aba5992d69f5ac455",
+      "bytes": 205556
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/unit.log",
+      "path": "unified/first/unit.log",
+      "sha256": "eb973df655a70e1207417f5517b3cf6dd242f81add51a05f5f3a6bd756d9268c",
+      "bytes": 106
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/first/verification.json",
+      "path": "unified/first/verification.json",
+      "sha256": "ac6565d751f0d1f26f8d41fb55a8b2055e6db441eaee4d8611a8e13e4c5ca4c4",
+      "bytes": 10976
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/worker-diagnostic-1/output.log",
+      "path": "unified/worker-diagnostic-1/output.log",
+      "sha256": "61ad008568d727dd469a8ea57670a817bbc7597e2416ef576a4e683f5962d8cb",
+      "bytes": 124858
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/worker-diagnostic-1/progress-summary.json",
+      "path": "unified/worker-diagnostic-1/progress-summary.json",
+      "sha256": "fdfbeeb507b8d99a0ddd54f01a4255ccac8aea289ca612c58868b442a3b9cb24",
+      "bytes": 20739
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/worker-diagnostic-1/unit.json",
+      "path": "unified/worker-diagnostic-1/unit.json",
+      "sha256": "4c89cf22b82387a3d73d4ae432f587e38a0408de0b23031d8284abb31c750549",
+      "bytes": 12465
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/build.json",
+      "path": "unified/repair-1/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/build.log",
+      "path": "unified/repair-1/build.log",
+      "sha256": "f3f45309a5768029fe2a9824f988cddcf526a1d2355a3649aacecd2d148a585c",
+      "bytes": 1866
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/dist-audit.log",
+      "path": "unified/repair-1/dist-audit.log",
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c",
+      "bytes": 94
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/identity-verification.json",
+      "path": "unified/repair-1/identity-verification.json",
+      "sha256": "93f09947818fa6a149df18e610f9e236065438c697a577aae2b254cf0cc31639",
+      "bytes": 30216
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/lint.log",
+      "path": "unified/repair-1/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/plan.log",
+      "path": "unified/repair-1/plan.log",
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3",
+      "bytes": 128
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/pre-run-build.json",
+      "path": "unified/repair-1/pre-run-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/prior-build.json",
+      "path": "unified/repair-1/prior-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/reused-unit-evidence.json",
+      "path": "unified/repair-1/reused-unit-evidence.json",
+      "sha256": "3c8074a598dca670701e9c5c1b42e5898e2ecd08a182658d0b3d9d5b55d64407",
+      "bytes": 3231
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/scope.json",
+      "path": "unified/repair-1/scope.json",
+      "sha256": "2680802ece46411500cca994c63d45cbf2d02ee8f35064080186c0d91f3aadb4",
+      "bytes": 915
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/source-after.json",
+      "path": "unified/repair-1/source-after.json",
+      "sha256": "2514913424b74684b74811a1cdccffada61c943fb3f9e58d4192a0613eb45fc8",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/source-before.json",
+      "path": "unified/repair-1/source-before.json",
+      "sha256": "2514913424b74684b74811a1cdccffada61c943fb3f9e58d4192a0613eb45fc8",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/types.log",
+      "path": "unified/repair-1/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/unit.json",
+      "path": "unified/repair-1/unit.json",
+      "sha256": "4f9eb7e3cf31653984626978f524f52c351eb0c1cd28202c0c888b9ea1f36a77",
+      "bytes": 7536
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/unit.log",
+      "path": "unified/repair-1/unit.log",
+      "sha256": "752b48c969aede50286002b9973c7fda8cb778071282334ad1bdcb778e9e6faf",
+      "bytes": 109
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair-1/verification.json",
+      "path": "unified/repair-1/verification.json",
+      "sha256": "9aec68c30539422c397695d4cee8e5dd3992b85b274246df6ce134020dbeb0d9",
+      "bytes": 10463
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/build.json",
+      "path": "unified/ui-repair-1/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/build.log",
+      "path": "unified/ui-repair-1/build.log",
+      "sha256": "d719c7509fdcc7e78ccfea2f9f642943e50ffa9c70baf76cba2a5d0031fbb024",
+      "bytes": 1866
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/dist-audit.log",
+      "path": "unified/ui-repair-1/dist-audit.log",
+      "sha256": "3d7c3f43b8340bf531326d319fddaec60de75fe248c2e6d729e803d21911dc9c",
+      "bytes": 94
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/identity-verification.json",
+      "path": "unified/ui-repair-1/identity-verification.json",
+      "sha256": "911dc65b23e05aa274020013854c034d46bff368abafd7b1b989e7636ba3af52",
+      "bytes": 30216
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/lint.log",
+      "path": "unified/ui-repair-1/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/plan.log",
+      "path": "unified/ui-repair-1/plan.log",
+      "sha256": "6d8dc4d4c33dc242dccf13eea2e6421549fbc7157f3e7d53e027e181379414b3",
+      "bytes": 128
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/pre-run-build.json",
+      "path": "unified/ui-repair-1/pre-run-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/prior-build.json",
+      "path": "unified/ui-repair-1/prior-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/reused-unit-evidence.json",
+      "path": "unified/ui-repair-1/reused-unit-evidence.json",
+      "sha256": "d97e512a2155f27e49af868fbf2b17c403562783d0db3a68245d6324896a5ab3",
+      "bytes": 422
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/scope.json",
+      "path": "unified/ui-repair-1/scope.json",
+      "sha256": "c440ef50729ec1285de9a8b0c0659e642ea18c04791bf3d52ce0bf4122dccffc",
+      "bytes": 918
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/source-after.json",
+      "path": "unified/ui-repair-1/source-after.json",
+      "sha256": "7946859387bf6797d1df6c562de069f3b2f7c4acd19df4eec546436686b8bc1e",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/source-before.json",
+      "path": "unified/ui-repair-1/source-before.json",
+      "sha256": "7946859387bf6797d1df6c562de069f3b2f7c4acd19df4eec546436686b8bc1e",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/types.log",
+      "path": "unified/ui-repair-1/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair-1/verification.json",
+      "path": "unified/ui-repair-1/verification.json",
+      "sha256": "42c1b73e2acf1e34839c4dd901246c7d9dda3626cd28162e1f42dd2cfc71dca9",
+      "bytes": 6929
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/build.json",
+      "path": "unified/browser-repair-1/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/identity-verification.json",
+      "path": "unified/browser-repair-1/identity-verification.json",
+      "sha256": "911dc65b23e05aa274020013854c034d46bff368abafd7b1b989e7636ba3af52",
+      "bytes": 30216
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/lint.log",
+      "path": "unified/browser-repair-1/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/reused-checks.json",
+      "path": "unified/browser-repair-1/reused-checks.json",
+      "sha256": "f5a6961fc290da6fda8de3f6a3ee84e27448f98828f56d2070c0bd82ccfd9dd6",
+      "bytes": 523
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/source-after.json",
+      "path": "unified/browser-repair-1/source-after.json",
+      "sha256": "6c2d0e86924d78cf18acdc827a2b4820d43092bceea3413a56d08d99d47be3d5",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/source-before.json",
+      "path": "unified/browser-repair-1/source-before.json",
+      "sha256": "6c2d0e86924d78cf18acdc827a2b4820d43092bceea3413a56d08d99d47be3d5",
+      "bytes": 56787
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/types.log",
+      "path": "unified/browser-repair-1/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair-1/verification.json",
+      "path": "unified/browser-repair-1/verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/run.mjs",
+      "path": "unified/run.mjs",
+      "sha256": "a04d70452ddd44d15466e0b26ae39f2330d93bb3e08608bbea60a721671088f8",
+      "bytes": 16975
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/repair.mjs",
+      "path": "unified/repair.mjs",
+      "sha256": "99308f8b59f5b46cf15ef2f9e826f356990d05a47d1761b98367630f94a7c290",
+      "bytes": 14469
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/ui-repair.mjs",
+      "path": "unified/ui-repair.mjs",
+      "sha256": "9a80f8c33067027436b7636938a6440aed993e2d1183c1ebcf1a28572ce3d4b5",
+      "bytes": 14056
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/baseline-build.json",
+      "path": "unified/baseline-build.json",
+      "sha256": "6be150d0e278ea1d6b67f27fe2c2e50599adca77c6f647d9cbe6c8d5f9277f1f",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-checks/browser-repair.mjs",
+      "path": "unified/browser-repair.mjs",
+      "sha256": "31fca57dacde45600efb989353f5f41e2d16025303ccd0b7f4e68b4656c89925",
+      "bytes": 3989
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-manifest.json",
+      "path": "macro-core/static-manifest.json",
+      "sha256": "573f2d1a12e5df124c0a7463be60419f2ebcfa77293ff1a41fa08b4b9b931c95",
+      "bytes": 5354
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promoted.json",
+      "path": "macro-core/promoted.json",
+      "sha256": "9a9bc313c9ba6a0e3bdb89d2fc34a8046298438cada0caf9e7ffad68e62e8067",
+      "bytes": 865
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/README.md",
+      "path": "macro-core/README.md",
+      "sha256": "3f2203df80289b36325f55e01c57304487d7801cbff32b1a1f27c4924fb6d439",
+      "bytes": 3707
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/prepare-reader.mjs",
+      "path": "macro-core/prepare-reader.mjs",
+      "sha256": "19094e2ad191719ad45312ffaafc88c193030e8a719760b96f41289d2cbc96da",
+      "bytes": 3013
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/prepare-promotion.mjs",
+      "path": "macro-core/prepare-promotion.mjs",
+      "sha256": "497f0cd1dfaecd3d670af0e05c77e6e6b565f5db377ed2c3b487219affa41836",
+      "bytes": 3337
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promotion/src/world/hydrology-macro-contract.ts",
+      "path": "macro-core/promotion/src/world/hydrology-macro-contract.ts",
+      "sha256": "9bdda40d3458bcc5f4f9455bb19222c054611482f9b64be6a3cb1b9a56420368",
+      "bytes": 14441
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promotion/src/world/hydrology-macro-flow.test.ts",
+      "path": "macro-core/promotion/src/world/hydrology-macro-flow.test.ts",
+      "sha256": "18fca4e5b24b5ac8378c386eaa7cff2efe2c43697f2d65117b4d29f7e1cd7a7f",
+      "bytes": 9526
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promotion/src/world/hydrology-macro-flow.ts",
+      "path": "macro-core/promotion/src/world/hydrology-macro-flow.ts",
+      "sha256": "39ec25bb868b279f393c7c391552fd338998049b0b265ddf2ba09150fcf2abfe",
+      "bytes": 11673
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promotion/src/world/hydrology-reader-owned.test.ts",
+      "path": "macro-core/promotion/src/world/hydrology-reader-owned.test.ts",
+      "sha256": "f1ca009d23897c1d3747a1dab4ede2e8438a8194ec32c4245bd02838b38d3189",
+      "bytes": 17742
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/promotion/src/world/hydrology-reader-owned.ts",
+      "path": "macro-core/promotion/src/world/hydrology-reader-owned.ts",
+      "sha256": "1979c8604c4608a728ee26ab194d790935eca481dfabda9402fe35428d008269",
+      "bytes": 14387
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/confluence/after-hydrology-macro-contract.ts",
+      "path": "macro-core/static-review/confluence/after-hydrology-macro-contract.ts",
+      "sha256": "d629de716916ec709543e330cfd25a07beeaf3e364bbe7e4169663d5bfbe55b5",
+      "bytes": 14981
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/confluence/after-hydrology-macro-flow.test.ts",
+      "path": "macro-core/static-review/confluence/after-hydrology-macro-flow.test.ts",
+      "sha256": "83c7dc3aec7084f82d36f9915650b31bf0c68f59f581761afd6a7110440a703b",
+      "bytes": 10713
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/confluence/before-hydrology-macro-contract.ts",
+      "path": "macro-core/static-review/confluence/before-hydrology-macro-contract.ts",
+      "sha256": "9bdda40d3458bcc5f4f9455bb19222c054611482f9b64be6a3cb1b9a56420368",
+      "bytes": 14441
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/confluence/before-hydrology-macro-flow.test.ts",
+      "path": "macro-core/static-review/confluence/before-hydrology-macro-flow.test.ts",
+      "sha256": "18fca4e5b24b5ac8378c386eaa7cff2efe2c43697f2d65117b4d29f7e1cd7a7f",
+      "bytes": 9526
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/confluence/review-repair.json",
+      "path": "macro-core/static-review/confluence/review-repair.json",
+      "sha256": "06031f82de1e07648e6b1248740740723fc6456a236892c459ae00c56972e4cf",
+      "bytes": 1219
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/reader-head-fixture/after-hydrology-reader-owned.test.ts",
+      "path": "macro-core/static-review/reader-head-fixture/after-hydrology-reader-owned.test.ts",
+      "sha256": "545799aaa8fdcdd3f38e8ac92c3e76beba79eadb3b4803b431ce3c8b07d9df4a",
+      "bytes": 18050
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/reader-head-fixture/before-hydrology-reader-owned.test.ts",
+      "path": "macro-core/static-review/reader-head-fixture/before-hydrology-reader-owned.test.ts",
+      "sha256": "f1ca009d23897c1d3747a1dab4ede2e8438a8194ec32c4245bd02838b38d3189",
+      "bytes": 17742
+    },
+    {
+      "from": ".autopilot/ph07/macro-flow-staging/static-review/reader-head-fixture/repair.json",
+      "path": "macro-core/static-review/reader-head-fixture/repair.json",
+      "sha256": "247155e761b8b06af2ab4a55729f72f406d085f1d42f3b5c15122fe3906466c6",
+      "bytes": 764
+    },
+    {
+      "from": ".autopilot/ph07/macro-ui-review/MacroHydrologyPanel.tsx",
+      "path": "macro-ui/MacroHydrologyPanel.tsx",
+      "sha256": "b51d63809a5fe5129833bd43efc321665f8ff2d0241167b3c5e2558c92655cee",
+      "bytes": 3746
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/run.mjs",
+      "path": "browser/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/playwright.config.ts",
+      "path": "browser/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/browser-repair-note.json",
+      "path": "browser/browser-repair-note.json",
+      "sha256": "22c29dee2451360895da0e80aa8d0aef79deafd6c8aae1710904f44fe3fb0b31",
+      "bytes": 994
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/after.json",
+      "path": "browser/fresh/macro-desktop-final/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/.last-run.json",
+      "path": "browser/fresh/macro-desktop-final/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "path": "browser/fresh/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "sha256": "a92463ac5653d1276eb4dd613dd571564a5451d9688f4242ed9baf2f20720f40",
+      "bytes": 318615
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "path": "observations/fresh/macro-desktop-final/macro-cancelled-readonly.png",
+      "sha256": "a92463ac5653d1276eb4dd613dd571564a5451d9688f4242ed9baf2f20720f40",
+      "bytes": 318615
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "browser/fresh/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "observations/fresh/macro-desktop-final/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "browser/fresh/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "sha256": "6c186128fe297301d6c105ae36faf61eef7a8be6042506d820ec2f1b8a7b2083",
+      "bytes": 345244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "observations/fresh/macro-desktop-final/macro-native-branch-details.png",
+      "sha256": "6c186128fe297301d6c105ae36faf61eef7a8be6042506d820ec2f1b8a7b2083",
+      "bytes": 345244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "path": "browser/fresh/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "sha256": "842e0f0893cdbcedcfbd919181c71692e213ab9fca45afb6c2f5ee5243b71ca6",
+      "bytes": 174744
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "path": "observations/fresh/macro-desktop-final/macro-restored-identical-network.png",
+      "sha256": "842e0f0893cdbcedcfbd919181c71692e213ab9fca45afb6c2f5ee5243b71ca6",
+      "bytes": 174744
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "browser/fresh/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "observations/fresh/macro-desktop-final/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/fresh/macro-desktop-final/atlas-hydrology-macro-readonly.ts",
+      "sha256": "c0f5e5e8204395d5f86a8614d909086ff4c4241fbbd0b452773efd8d2be9a294",
+      "bytes": 10411
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/atlas-hydrology-macro.spec.ts",
+      "path": "browser/fresh/macro-desktop-final/atlas-hydrology-macro.spec.ts",
+      "sha256": "9927ab1659779b3d4498f564ea88eda60ce9dde5058b10e349a505735d52889a",
+      "bytes": 20952
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/base-playwright.config.ts",
+      "path": "browser/fresh/macro-desktop-final/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/before.json",
+      "path": "browser/fresh/macro-desktop-final/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/build.json",
+      "path": "browser/fresh/macro-desktop-final/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/playwright.config.ts",
+      "path": "browser/fresh/macro-desktop-final/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/prerequisite-verification.json",
+      "path": "browser/fresh/macro-desktop-final/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/results.json",
+      "path": "browser/fresh/macro-desktop-final/results.json",
+      "sha256": "29ea6f3d3dec80957d4af7667c28131ab39be20f178c9cab5787057ed14f0053",
+      "bytes": 282894
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/run.log",
+      "path": "browser/fresh/macro-desktop-final/run.log",
+      "sha256": "e9cf26e0ff84b7085d1696424a21cc385fb36c4ecb37a66738de8b7cc6c196e8",
+      "bytes": 415
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/run.mjs",
+      "path": "browser/fresh/macro-desktop-final/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/verification.json",
+      "path": "browser/fresh/macro-desktop-final/verification.json",
+      "sha256": "a2685c6ab6f40c4f92f57fdad332b9a9c995e08bd40026e0c053723f819d8646",
+      "bytes": 13803
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-desktop-final/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-desktop-final/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 1
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-desktop-final/attached-json/002-hydrology-macro-evidence.json",
+      "sha256": "a28206872ca3aaeeec118efb4a05bde2edd3a0cf32adc695a2f4b693954d696c",
+      "bytes": 198796
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/after.json",
+      "path": "browser/fresh/macro-mobile-repair/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/.last-run.json",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-cancelled-readonly.png",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-cancelled-readonly.png",
+      "sha256": "386a585322a3d097e6d7c7dc3685d51e671907a45a15af06002ac91b8af77837",
+      "bytes": 193013
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-cancelled-readonly.png",
+      "path": "observations/fresh/macro-mobile-repair/macro-cancelled-readonly.png",
+      "sha256": "386a585322a3d097e6d7c7dc3685d51e671907a45a15af06002ac91b8af77837",
+      "bytes": 193013
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "sha256": "6590a0b70ad48a0da4348719fd847060c965bba39d3c5e9a00fa0dccf719bb93",
+      "bytes": 279520
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "path": "observations/fresh/macro-mobile-repair/macro-complete-network.png",
+      "sha256": "6590a0b70ad48a0da4348719fd847060c965bba39d3c5e9a00fa0dccf719bb93",
+      "bytes": 279520
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "sha256": "329fdac8d57f293eef8b3987947bdacc5bad7653861fb48c9e721475f1dc1084",
+      "bytes": 240358
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "path": "observations/fresh/macro-mobile-repair/macro-native-branch-details.png",
+      "sha256": "329fdac8d57f293eef8b3987947bdacc5bad7653861fb48c9e721475f1dc1084",
+      "bytes": 240358
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-restored-identical-network.png",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-restored-identical-network.png",
+      "sha256": "f0f7f709ff8bfdcee3cce7a8d5289ad9ec929f445b1273f662508977a5236622",
+      "bytes": 279618
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-restored-identical-network.png",
+      "path": "observations/fresh/macro-mobile-repair/macro-restored-identical-network.png",
+      "sha256": "f0f7f709ff8bfdcee3cce7a8d5289ad9ec929f445b1273f662508977a5236622",
+      "bytes": 279618
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "path": "browser/fresh/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "sha256": "d3f4afb9eea0550f1b973dc35f712f7619385c424c1b47bf7e186e441fa13ead",
+      "bytes": 513163
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "path": "observations/fresh/macro-mobile-repair/macro-selected-branch-map.png",
+      "sha256": "d3f4afb9eea0550f1b973dc35f712f7619385c424c1b47bf7e186e441fa13ead",
+      "bytes": 513163
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/fresh/macro-mobile-repair/atlas-hydrology-macro-readonly.ts",
+      "sha256": "c0f5e5e8204395d5f86a8614d909086ff4c4241fbbd0b452773efd8d2be9a294",
+      "bytes": 10411
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/atlas-hydrology-macro.spec.ts",
+      "path": "browser/fresh/macro-mobile-repair/atlas-hydrology-macro.spec.ts",
+      "sha256": "9927ab1659779b3d4498f564ea88eda60ce9dde5058b10e349a505735d52889a",
+      "bytes": 20952
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/base-playwright.config.ts",
+      "path": "browser/fresh/macro-mobile-repair/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/before.json",
+      "path": "browser/fresh/macro-mobile-repair/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/build.json",
+      "path": "browser/fresh/macro-mobile-repair/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/playwright.config.ts",
+      "path": "browser/fresh/macro-mobile-repair/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/prerequisite-verification.json",
+      "path": "browser/fresh/macro-mobile-repair/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/results.json",
+      "path": "browser/fresh/macro-mobile-repair/results.json",
+      "sha256": "c6f2f20883fbee87746504123a07b2a89b23d8bac0420a4b9e97276da1212747",
+      "bytes": 285762
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/run.log",
+      "path": "browser/fresh/macro-mobile-repair/run.log",
+      "sha256": "999f392dc3cadc4fb7befb0e5a1f97555a95d8523dd94c61abc99b88f60cbf25",
+      "bytes": 413
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/run.mjs",
+      "path": "browser/fresh/macro-mobile-repair/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/verification.json",
+      "path": "browser/fresh/macro-mobile-repair/verification.json",
+      "sha256": "090ec199ec9781b48eeae8b8d92f9315c5fe1aa427b7a2580fc11b042ac7f0a5",
+      "bytes": 13783
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-mobile-repair/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-mobile-repair/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 1
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-mobile-repair/attached-json/002-hydrology-macro-evidence.json",
+      "sha256": "a29e5efbd7e06c9075b7cc3c8732a9d69a4a20ccb25f8e99c659c297e5b45b82",
+      "bytes": 200958
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/after.json",
+      "path": "browser/fresh/macro-tablet/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/.last-run.json",
+      "path": "browser/fresh/macro-tablet/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-cancelled-readonly.png",
+      "path": "browser/fresh/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-cancelled-readonly.png",
+      "sha256": "0777ebbb660cf4a8aa223be00fd0b74ffebcc6cf1865547ebeeff9c45d3ce88c",
+      "bytes": 219210
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-cancelled-readonly.png",
+      "path": "observations/fresh/macro-tablet/macro-cancelled-readonly.png",
+      "sha256": "0777ebbb660cf4a8aa223be00fd0b74ffebcc6cf1865547ebeeff9c45d3ce88c",
+      "bytes": 219210
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-complete-network.png",
+      "path": "browser/fresh/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-complete-network.png",
+      "sha256": "e46716f263984bc0086062e604a219ed141cade2675e319470beab1c4aec0d7a",
+      "bytes": 384905
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-complete-network.png",
+      "path": "observations/fresh/macro-tablet/macro-complete-network.png",
+      "sha256": "e46716f263984bc0086062e604a219ed141cade2675e319470beab1c4aec0d7a",
+      "bytes": 384905
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-native-branch-details.png",
+      "path": "browser/fresh/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-native-branch-details.png",
+      "sha256": "0a35751ddfddc0e9acd5d3b4fe7bb3b3f2d1505a61197fd15a75d2210fc9457a",
+      "bytes": 274250
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-native-branch-details.png",
+      "path": "observations/fresh/macro-tablet/macro-native-branch-details.png",
+      "sha256": "0a35751ddfddc0e9acd5d3b4fe7bb3b3f2d1505a61197fd15a75d2210fc9457a",
+      "bytes": 274250
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-restored-identical-network.png",
+      "path": "browser/fresh/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-restored-identical-network.png",
+      "sha256": "f285aac843ba391561832d6064ca17bb53863a976f147442cab5e8302d5475f8",
+      "bytes": 385399
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-restored-identical-network.png",
+      "path": "observations/fresh/macro-tablet/macro-restored-identical-network.png",
+      "sha256": "f285aac843ba391561832d6064ca17bb53863a976f147442cab5e8302d5475f8",
+      "bytes": 385399
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-selected-branch-map.png",
+      "path": "browser/fresh/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-selected-branch-map.png",
+      "sha256": "963e6f0ef277808d012e7d3a7955c39364018d2d0ec095d93eb05a503cdf6162",
+      "bytes": 706574
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-tablet-chromium/macro-selected-branch-map.png",
+      "path": "observations/fresh/macro-tablet/macro-selected-branch-map.png",
+      "sha256": "963e6f0ef277808d012e7d3a7955c39364018d2d0ec095d93eb05a503cdf6162",
+      "bytes": 706574
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/fresh/macro-tablet/atlas-hydrology-macro-readonly.ts",
+      "sha256": "c0f5e5e8204395d5f86a8614d909086ff4c4241fbbd0b452773efd8d2be9a294",
+      "bytes": 10411
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/atlas-hydrology-macro.spec.ts",
+      "path": "browser/fresh/macro-tablet/atlas-hydrology-macro.spec.ts",
+      "sha256": "9927ab1659779b3d4498f564ea88eda60ce9dde5058b10e349a505735d52889a",
+      "bytes": 20952
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/base-playwright.config.ts",
+      "path": "browser/fresh/macro-tablet/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/before.json",
+      "path": "browser/fresh/macro-tablet/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/build.json",
+      "path": "browser/fresh/macro-tablet/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/playwright.config.ts",
+      "path": "browser/fresh/macro-tablet/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/prerequisite-verification.json",
+      "path": "browser/fresh/macro-tablet/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/results.json",
+      "path": "browser/fresh/macro-tablet/results.json",
+      "sha256": "e5f613d4c278d96b4c67044f5ab9913a31f5a3fded7e62009838aec55ac89c67",
+      "bytes": 295346
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/run.log",
+      "path": "browser/fresh/macro-tablet/run.log",
+      "sha256": "0a6bb6dfdbad75c4b76209cfe0f53d385a80f2aaace078c71a0710348726b408",
+      "bytes": 414
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/run.mjs",
+      "path": "browser/fresh/macro-tablet/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-tablet/verification.json",
+      "path": "browser/fresh/macro-tablet/verification.json",
+      "sha256": "26e515e7fdcf0815b2f4380155318422a357bef7daa5ca996642f5937d107e0a",
+      "bytes": 13783
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-tablet/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-tablet/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-tablet/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 1
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/macro-tablet/attached-json/002-hydrology-macro-evidence.json",
+      "sha256": "e7bba4b98d50c5f741824a016eb0861b9e96f8a20b21c133876a7ebd182dc5b5",
+      "bytes": 208166
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/after.json",
+      "path": "browser/fresh/coast-desktop/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/.last-run.json",
+      "path": "browser/fresh/coast-desktop/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "path": "browser/fresh/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "sha256": "23cd154bf586321b200a3488f40db43d10d16447701745471760b668f3fccb49",
+      "bytes": 154320
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/restored-coast-close.png",
+      "path": "observations/fresh/coast-desktop/restored-coast-close.png",
+      "sha256": "23cd154bf586321b200a3488f40db43d10d16447701745471760b668f3fccb49",
+      "bytes": 154320
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "path": "browser/fresh/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "sha256": "891b03f8dadca8df8e0280ac7dae3ff33c92820b504b63cd83bc8070ba46e45b",
+      "bytes": 432195
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-mid.png",
+      "path": "observations/fresh/coast-desktop/saved-mountain-mid.png",
+      "sha256": "891b03f8dadca8df8e0280ac7dae3ff33c92820b504b63cd83bc8070ba46e45b",
+      "bytes": 432195
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "path": "browser/fresh/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "sha256": "4e693557a5f564f7df54ebb51f051de8c10808a0aff3b815d544609c340edf47",
+      "bytes": 366893
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/saved-mountain-near.png",
+      "path": "observations/fresh/coast-desktop/saved-mountain-near.png",
+      "sha256": "4e693557a5f564f7df54ebb51f051de8c10808a0aff3b815d544609c340edf47",
+      "bytes": 366893
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "path": "browser/fresh/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "sha256": "bec14b51780d1ec141a643fdd23c4c102490875473e5b95566e085f356b96c96",
+      "bytes": 201458
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/second-continent-preview.png",
+      "path": "observations/fresh/coast-desktop/second-continent-preview.png",
+      "sha256": "bec14b51780d1ec141a643fdd23c4c102490875473e5b95566e085f356b96c96",
+      "bytes": 201458
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "path": "browser/fresh/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "sha256": "89827f5962670668d53009d021313980201d490cc5d9316a17f254a555435358",
+      "bytes": 200424
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-desktop-chromium/two-continents-restored.png",
+      "path": "observations/fresh/coast-desktop/two-continents-restored.png",
+      "sha256": "89827f5962670668d53009d021313980201d490cc5d9316a17f254a555435358",
+      "bytes": 200424
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/atlas-add-detail-coast.spec.ts",
+      "path": "browser/fresh/coast-desktop/atlas-add-detail-coast.spec.ts",
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc",
+      "bytes": 23002
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/base-playwright.config.ts",
+      "path": "browser/fresh/coast-desktop/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/before.json",
+      "path": "browser/fresh/coast-desktop/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/build.json",
+      "path": "browser/fresh/coast-desktop/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/playwright.config.ts",
+      "path": "browser/fresh/coast-desktop/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/prerequisite-verification.json",
+      "path": "browser/fresh/coast-desktop/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/results.json",
+      "path": "browser/fresh/coast-desktop/results.json",
+      "sha256": "da5e29c78ee6309d3af8ebaf16759d7eb8bff8bd881de9e5a8f66b14cb9a2267",
+      "bytes": 165854
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/run.log",
+      "path": "browser/fresh/coast-desktop/run.log",
+      "sha256": "9ca4692dafd2e1bfe011e869102c931860386d5cb5a913d4fc6eb8c55d69fb3b",
+      "bytes": 407
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/run.mjs",
+      "path": "browser/fresh/coast-desktop/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-desktop/verification.json",
+      "path": "browser/fresh/coast-desktop/verification.json",
+      "sha256": "4b40bee9f48994493939945a41c0478106bf00bbd2bdd85d55d960c52cc1baaa",
+      "bytes": 13722
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/coast-desktop/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/coast-desktop/attached-json/001-additive-persistence-observation.json",
+      "sha256": "d0282e489d6db2b0322fcb4b68d8bb7e610f6033f6ecdd4806c8fe644aff903f",
+      "bytes": 120880
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/after.json",
+      "path": "browser/fresh/coast-mobile/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/.last-run.json",
+      "path": "browser/fresh/coast-mobile/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "path": "browser/fresh/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "sha256": "9c39ae5fc79d9c16f7b54124aeab375d3ead99ec659ebbe692f00e9190264ede",
+      "bytes": 195354
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/restored-coast-close.png",
+      "path": "observations/fresh/coast-mobile/restored-coast-close.png",
+      "sha256": "9c39ae5fc79d9c16f7b54124aeab375d3ead99ec659ebbe692f00e9190264ede",
+      "bytes": 195354
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "path": "browser/fresh/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "sha256": "da334f928aceac39841d49f50d82fe69d20fed74e463d1286ea6d1ff6c64270b",
+      "bytes": 553704
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-mid.png",
+      "path": "observations/fresh/coast-mobile/saved-mountain-mid.png",
+      "sha256": "da334f928aceac39841d49f50d82fe69d20fed74e463d1286ea6d1ff6c64270b",
+      "bytes": 553704
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "path": "browser/fresh/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "sha256": "d8dc2593f2c9d9369baad359fd634d8d7b4ebfb1b389fb0aa1cf926cc7562fd0",
+      "bytes": 455364
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/saved-mountain-near.png",
+      "path": "observations/fresh/coast-mobile/saved-mountain-near.png",
+      "sha256": "d8dc2593f2c9d9369baad359fd634d8d7b4ebfb1b389fb0aa1cf926cc7562fd0",
+      "bytes": 455364
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "path": "browser/fresh/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "sha256": "3d2b93c79912ea3c0b57fb527bc87cb4564cf4ae65214592558c4f25c099cb6b",
+      "bytes": 283091
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/second-continent-preview.png",
+      "path": "observations/fresh/coast-mobile/second-continent-preview.png",
+      "sha256": "3d2b93c79912ea3c0b57fb527bc87cb4564cf4ae65214592558c4f25c099cb6b",
+      "bytes": 283091
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "path": "browser/fresh/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "sha256": "ffb6ad2f3b80d95ab4e92f37309f5b7c7103860a5bd6129985eef44b8a2b1107",
+      "bytes": 275879
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-mobile-chromium/two-continents-restored.png",
+      "path": "observations/fresh/coast-mobile/two-continents-restored.png",
+      "sha256": "ffb6ad2f3b80d95ab4e92f37309f5b7c7103860a5bd6129985eef44b8a2b1107",
+      "bytes": 275879
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/atlas-add-detail-coast.spec.ts",
+      "path": "browser/fresh/coast-mobile/atlas-add-detail-coast.spec.ts",
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc",
+      "bytes": 23002
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/base-playwright.config.ts",
+      "path": "browser/fresh/coast-mobile/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/before.json",
+      "path": "browser/fresh/coast-mobile/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/build.json",
+      "path": "browser/fresh/coast-mobile/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/playwright.config.ts",
+      "path": "browser/fresh/coast-mobile/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/prerequisite-verification.json",
+      "path": "browser/fresh/coast-mobile/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/results.json",
+      "path": "browser/fresh/coast-mobile/results.json",
+      "sha256": "7ac228fce63f883bd69c2e4ce01b7415124ac1587335b810ac3a1216fb79c3f6",
+      "bytes": 165883
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/run.log",
+      "path": "browser/fresh/coast-mobile/run.log",
+      "sha256": "0662a38eee0562fc735e671a3586916c29419f31b6245c31698bf8110d1f254f",
+      "bytes": 406
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/run.mjs",
+      "path": "browser/fresh/coast-mobile/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-mobile/verification.json",
+      "path": "browser/fresh/coast-mobile/verification.json",
+      "sha256": "fc36bddd002e988daabe7e1405ad1dacf5cd52e45453892974d3292a1694cc48",
+      "bytes": 13718
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/coast-mobile/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/coast-mobile/attached-json/001-additive-persistence-observation.json",
+      "sha256": "b062d7e85c1a38c92e504629e209d828ae92513ae6531b1dacd03ebf5d2ae796",
+      "bytes": 120908
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/after.json",
+      "path": "browser/fresh/coast-tablet/after.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/.last-run.json",
+      "path": "browser/fresh/coast-tablet/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "path": "browser/fresh/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "sha256": "014332af28339ea5818a709830056f364b91e5f4565ec9cd31312314714e47e6",
+      "bytes": 240402
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/restored-coast-close.png",
+      "path": "observations/fresh/coast-tablet/restored-coast-close.png",
+      "sha256": "014332af28339ea5818a709830056f364b91e5f4565ec9cd31312314714e47e6",
+      "bytes": 240402
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "path": "browser/fresh/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "sha256": "52cdf3bd1964ba3f9a81a0b3b7750613797d25422c4f67101a15efcb3bba84b3",
+      "bytes": 850818
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-mid.png",
+      "path": "observations/fresh/coast-tablet/saved-mountain-mid.png",
+      "sha256": "52cdf3bd1964ba3f9a81a0b3b7750613797d25422c4f67101a15efcb3bba84b3",
+      "bytes": 850818
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "path": "browser/fresh/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "sha256": "2f55beaac0a98a1fdc2aece5a2e91935871c32974acaaab9905174af312952ab",
+      "bytes": 588205
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/saved-mountain-near.png",
+      "path": "observations/fresh/coast-tablet/saved-mountain-near.png",
+      "sha256": "2f55beaac0a98a1fdc2aece5a2e91935871c32974acaaab9905174af312952ab",
+      "bytes": 588205
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "path": "browser/fresh/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "sha256": "0894a5ebed397e03b29c448b583777065a41b030268f5367883e9b36e20a912d",
+      "bytes": 441098
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/second-continent-preview.png",
+      "path": "observations/fresh/coast-tablet/second-continent-preview.png",
+      "sha256": "0894a5ebed397e03b29c448b583777065a41b030268f5367883e9b36e20a912d",
+      "bytes": 441098
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "path": "browser/fresh/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "sha256": "1aa750e59a8e6774b2e2568733247b3ea8f6841ceef6d88811f0b8478b0574ce",
+      "bytes": 436201
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/artifacts/atlas-add-detail-coast--de-20e0a-eload-and-overlap-rejection-tablet-chromium/two-continents-restored.png",
+      "path": "observations/fresh/coast-tablet/two-continents-restored.png",
+      "sha256": "1aa750e59a8e6774b2e2568733247b3ea8f6841ceef6d88811f0b8478b0574ce",
+      "bytes": 436201
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/atlas-add-detail-coast.spec.ts",
+      "path": "browser/fresh/coast-tablet/atlas-add-detail-coast.spec.ts",
+      "sha256": "6af0a5c803bce6b0d1f7827f68570f8a66a1fdbaaba0aaa701633b38e25fbdcc",
+      "bytes": 23002
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/base-playwright.config.ts",
+      "path": "browser/fresh/coast-tablet/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/before.json",
+      "path": "browser/fresh/coast-tablet/before.json",
+      "sha256": "a92ea89e74ff758828424d0ce5072cf19172025660a7cb9c4ce2fde454614274",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/build.json",
+      "path": "browser/fresh/coast-tablet/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/playwright.config.ts",
+      "path": "browser/fresh/coast-tablet/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/prerequisite-verification.json",
+      "path": "browser/fresh/coast-tablet/prerequisite-verification.json",
+      "sha256": "b76f6ef646cc1219f20335c18043465ea6495a6a213f2642446e81c80d0a5aac",
+      "bytes": 6749
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/results.json",
+      "path": "browser/fresh/coast-tablet/results.json",
+      "sha256": "859906137a5d3f2efbab5f0cab87cfcb6566841c98683dc76ceaf9fce850de79",
+      "bytes": 165887
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/run.log",
+      "path": "browser/fresh/coast-tablet/run.log",
+      "sha256": "95d10e8c203e30491f08d70d378634b426063e0af76e9e2b22752c7496fb3213",
+      "bytes": 591
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/run.mjs",
+      "path": "browser/fresh/coast-tablet/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/coast-tablet/verification.json",
+      "path": "browser/fresh/coast-tablet/verification.json",
+      "sha256": "7e2bdf11ecac27a3554287bb17da0697e794557787db19b7a7f51158e6e84f73",
+      "bytes": 13726
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/coast-tablet/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/fresh/coast-tablet/attached-json/001-additive-persistence-observation.json",
+      "sha256": "07e2cc9585f24c0b082ba31d661209a9beffaa97c4ad4ea3b793f9e5f36688a9",
+      "bytes": 120904
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/after.json",
+      "path": "browser/failed/macro-desktop-first/after.json",
+      "sha256": "f84a6f8c20141c4cb249b89c866eb892b13702a7e7c03486e1b17e319741105e",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/.last-run.json",
+      "path": "browser/failed/macro-desktop-first/artifacts/.last-run.json",
+      "sha256": "d703309f259d1d1db2c0b5463b71cac4bea5d6811178d522358a312a04a751ef",
+      "bytes": 96
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/error-context.md",
+      "path": "browser/failed/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/error-context.md",
+      "sha256": "e6006db7f2f48bfd84dcec455aa31f7a39cc02b1d4e5c4f09f8642857822172d",
+      "bytes": 13572
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "browser/failed/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "observations/failed/macro-desktop-first/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "browser/failed/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "sha256": "13a40d35a09946692889d739fd89cd3cbaa3a8ff0bd14a33f2125ccdb08e720a",
+      "bytes": 355060
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "observations/failed/macro-desktop-first/macro-native-branch-details.png",
+      "sha256": "13a40d35a09946692889d739fd89cd3cbaa3a8ff0bd14a33f2125ccdb08e720a",
+      "bytes": 355060
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "browser/failed/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "observations/failed/macro-desktop-first/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/test-failed-1.png",
+      "path": "browser/failed/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/test-failed-1.png",
+      "sha256": "c16ac37545c4f856ec70e36c9e8c8302962c8ba031251cbbda9263d9370c78d8",
+      "bytes": 174514
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/test-failed-1.png",
+      "path": "observations/failed/macro-desktop-first/test-failed-1.png",
+      "sha256": "c16ac37545c4f856ec70e36c9e8c8302962c8ba031251cbbda9263d9370c78d8",
+      "bytes": 174514
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/failed/macro-desktop-first/atlas-hydrology-macro-readonly.ts",
+      "sha256": "300820d3cefca55354e7d70d2e34f76d15ba557b43e270625e8fc9ad0ca6e13c",
+      "bytes": 7523
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/atlas-hydrology-macro.spec.ts",
+      "path": "browser/failed/macro-desktop-first/atlas-hydrology-macro.spec.ts",
+      "sha256": "d54e9b701f85c3b29904b5f534c6b5523f921bc55f164a5aa548344f56f1ffcb",
+      "bytes": 20231
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/base-playwright.config.ts",
+      "path": "browser/failed/macro-desktop-first/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/before.json",
+      "path": "browser/failed/macro-desktop-first/before.json",
+      "sha256": "f84a6f8c20141c4cb249b89c866eb892b13702a7e7c03486e1b17e319741105e",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/build.json",
+      "path": "browser/failed/macro-desktop-first/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/playwright.config.ts",
+      "path": "browser/failed/macro-desktop-first/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/prerequisite-verification.json",
+      "path": "browser/failed/macro-desktop-first/prerequisite-verification.json",
+      "sha256": "9aec68c30539422c397695d4cee8e5dd3992b85b274246df6ce134020dbeb0d9",
+      "bytes": 10463
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/results.json",
+      "path": "browser/failed/macro-desktop-first/results.json",
+      "sha256": "97fdcfb4023a5c7d09cd895f56ca01468c78b362cc126156ce2fbc65390f3ecb",
+      "bytes": 20890
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/run.log",
+      "path": "browser/failed/macro-desktop-first/run.log",
+      "sha256": "da104e799e84b418eb3794b04dbc44595b0b39cf114f102315bf5c6493a714ff",
+      "bytes": 4120
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/run.mjs",
+      "path": "browser/failed/macro-desktop-first/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/verification.json",
+      "path": "browser/failed/macro-desktop-first/verification.json",
+      "sha256": "edb4a9e5bf9cd674dd37604b3b22f0cfef83c65e94641591cae2d85710930892",
+      "bytes": 13794
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-desktop-first/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/failed/macro-desktop-first/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/after.json",
+      "path": "browser/failed/macro-mobile/after.json",
+      "sha256": "eaa1b4592fa9e2b5e7651e1e7b7fa3b2fddb5558ee8bb56c24f115cea8577a98",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/.last-run.json",
+      "path": "browser/failed/macro-mobile/artifacts/.last-run.json",
+      "sha256": "9ba57a4260758c2cf91110aa91b7b042209e52c3167a89a92152ece8c43459be",
+      "bytes": 96
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/error-context.md",
+      "path": "browser/failed/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/error-context.md",
+      "sha256": "b50e9349bcf1b4682279df102a1c56952be01279cd79bb3f865118a6a95bb931",
+      "bytes": 17648
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "path": "browser/failed/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "sha256": "6590a0b70ad48a0da4348719fd847060c965bba39d3c5e9a00fa0dccf719bb93",
+      "bytes": 279520
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-complete-network.png",
+      "path": "observations/failed/macro-mobile/macro-complete-network.png",
+      "sha256": "6590a0b70ad48a0da4348719fd847060c965bba39d3c5e9a00fa0dccf719bb93",
+      "bytes": 279520
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "path": "browser/failed/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "sha256": "329fdac8d57f293eef8b3987947bdacc5bad7653861fb48c9e721475f1dc1084",
+      "bytes": 240358
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-native-branch-details.png",
+      "path": "observations/failed/macro-mobile/macro-native-branch-details.png",
+      "sha256": "329fdac8d57f293eef8b3987947bdacc5bad7653861fb48c9e721475f1dc1084",
+      "bytes": 240358
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "path": "browser/failed/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "sha256": "d3f4afb9eea0550f1b973dc35f712f7619385c424c1b47bf7e186e441fa13ead",
+      "bytes": 513163
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/macro-selected-branch-map.png",
+      "path": "observations/failed/macro-mobile/macro-selected-branch-map.png",
+      "sha256": "d3f4afb9eea0550f1b973dc35f712f7619385c424c1b47bf7e186e441fa13ead",
+      "bytes": 513163
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/test-failed-1.png",
+      "path": "browser/failed/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/test-failed-1.png",
+      "sha256": "b02c330e8ea98e2693379b86d8e62f0caff52d721ce5e572d1e89eff06aa98b3",
+      "bytes": 279608
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-mobile-chromium/test-failed-1.png",
+      "path": "observations/failed/macro-mobile/test-failed-1.png",
+      "sha256": "b02c330e8ea98e2693379b86d8e62f0caff52d721ce5e572d1e89eff06aa98b3",
+      "bytes": 279608
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/failed/macro-mobile/atlas-hydrology-macro-readonly.ts",
+      "sha256": "300820d3cefca55354e7d70d2e34f76d15ba557b43e270625e8fc9ad0ca6e13c",
+      "bytes": 7523
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/atlas-hydrology-macro.spec.ts",
+      "path": "browser/failed/macro-mobile/atlas-hydrology-macro.spec.ts",
+      "sha256": "88584ad35536c0d1aa664ee97d5a182314b6bad04a25185347697029ff2667b4",
+      "bytes": 20437
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/base-playwright.config.ts",
+      "path": "browser/failed/macro-mobile/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/before.json",
+      "path": "browser/failed/macro-mobile/before.json",
+      "sha256": "eaa1b4592fa9e2b5e7651e1e7b7fa3b2fddb5558ee8bb56c24f115cea8577a98",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/build.json",
+      "path": "browser/failed/macro-mobile/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/playwright.config.ts",
+      "path": "browser/failed/macro-mobile/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/prerequisite-verification.json",
+      "path": "browser/failed/macro-mobile/prerequisite-verification.json",
+      "sha256": "42c1b73e2acf1e34839c4dd901246c7d9dda3626cd28162e1f42dd2cfc71dca9",
+      "bytes": 6929
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/results.json",
+      "path": "browser/failed/macro-mobile/results.json",
+      "sha256": "b41a1df96a0de45e48846400e2cd8d76a54140fd3afc4c38e2844a6223adc41b",
+      "bytes": 21268
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/run.log",
+      "path": "browser/failed/macro-mobile/run.log",
+      "sha256": "e3ecadc0337e2473a2a8eb282f46407c3307c8386c9a4a8b6c3a4fabc627cd57",
+      "bytes": 3289
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/run.mjs",
+      "path": "browser/failed/macro-mobile/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-mobile/verification.json",
+      "path": "browser/failed/macro-mobile/verification.json",
+      "sha256": "fc8a1023ab6ce3502aacf88d044ac146bce16d6d35134b7f615c142566584132",
+      "bytes": 13777
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-mobile/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/failed/macro-mobile/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/after.json",
+      "path": "browser/superseded/macro-desktop-repair/after.json",
+      "sha256": "eaa1b4592fa9e2b5e7651e1e7b7fa3b2fddb5558ee8bb56c24f115cea8577a98",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/.last-run.json",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "sha256": "a92463ac5653d1276eb4dd613dd571564a5451d9688f4242ed9baf2f20720f40",
+      "bytes": 318615
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-cancelled-readonly.png",
+      "path": "observations/superseded/macro-desktop-repair/macro-cancelled-readonly.png",
+      "sha256": "a92463ac5653d1276eb4dd613dd571564a5451d9688f4242ed9baf2f20720f40",
+      "bytes": 318615
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-complete-network.png",
+      "path": "observations/superseded/macro-desktop-repair/macro-complete-network.png",
+      "sha256": "8c0c0eebb64807558dfc7c1578e81fbc02b66965f9a0884c38a2488effc2753a",
+      "bytes": 174481
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "sha256": "6c186128fe297301d6c105ae36faf61eef7a8be6042506d820ec2f1b8a7b2083",
+      "bytes": 345244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-native-branch-details.png",
+      "path": "observations/superseded/macro-desktop-repair/macro-native-branch-details.png",
+      "sha256": "6c186128fe297301d6c105ae36faf61eef7a8be6042506d820ec2f1b8a7b2083",
+      "bytes": 345244
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "sha256": "842e0f0893cdbcedcfbd919181c71692e213ab9fca45afb6c2f5ee5243b71ca6",
+      "bytes": 174744
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-restored-identical-network.png",
+      "path": "observations/superseded/macro-desktop-repair/macro-restored-identical-network.png",
+      "sha256": "842e0f0893cdbcedcfbd919181c71692e213ab9fca45afb6c2f5ee5243b71ca6",
+      "bytes": 174744
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "browser/superseded/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/artifacts/atlas-hydrology-macro--hyd-9dadc-on-and-deterministic-reload-desktop-chromium/macro-selected-branch-map.png",
+      "path": "observations/superseded/macro-desktop-repair/macro-selected-branch-map.png",
+      "sha256": "8dc6c44cca41cb133d71465b5a0bcc22bfcc0bed884cb253f1ebbe2bb876e8b3",
+      "bytes": 324750
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/atlas-hydrology-macro-readonly.ts",
+      "path": "browser/superseded/macro-desktop-repair/atlas-hydrology-macro-readonly.ts",
+      "sha256": "300820d3cefca55354e7d70d2e34f76d15ba557b43e270625e8fc9ad0ca6e13c",
+      "bytes": 7523
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/atlas-hydrology-macro.spec.ts",
+      "path": "browser/superseded/macro-desktop-repair/atlas-hydrology-macro.spec.ts",
+      "sha256": "88584ad35536c0d1aa664ee97d5a182314b6bad04a25185347697029ff2667b4",
+      "bytes": 20437
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/base-playwright.config.ts",
+      "path": "browser/superseded/macro-desktop-repair/base-playwright.config.ts",
+      "sha256": "3f891b4c2f8ab24dd8f90d274764992740f84898fde0d76ba6aed6d937dfe214",
+      "bytes": 799
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/before.json",
+      "path": "browser/superseded/macro-desktop-repair/before.json",
+      "sha256": "eaa1b4592fa9e2b5e7651e1e7b7fa3b2fddb5558ee8bb56c24f115cea8577a98",
+      "bytes": 64304
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/build.json",
+      "path": "browser/superseded/macro-desktop-repair/build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/playwright.config.ts",
+      "path": "browser/superseded/macro-desktop-repair/playwright.config.ts",
+      "sha256": "6b37edb30656dadfb64d595be50f2418e257eb17a75f89785d482997bb89e33e",
+      "bytes": 827
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/prerequisite-verification.json",
+      "path": "browser/superseded/macro-desktop-repair/prerequisite-verification.json",
+      "sha256": "42c1b73e2acf1e34839c4dd901246c7d9dda3626cd28162e1f42dd2cfc71dca9",
+      "bytes": 6929
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/results.json",
+      "path": "browser/superseded/macro-desktop-repair/results.json",
+      "sha256": "45bec1587ac1e02e665d156d2de177ac79b82c0def3872bb428d1775067b6fcf",
+      "bytes": 318337
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/run.log",
+      "path": "browser/superseded/macro-desktop-repair/run.log",
+      "sha256": "c6a016c610eca123eb1f3588d1b6649494773cfbdc67e49d6034f3b8b733ac4b",
+      "bytes": 416
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/run.mjs",
+      "path": "browser/superseded/macro-desktop-repair/run.mjs",
+      "sha256": "34ee13690fb30d2b729b25fa83967e2e2a52e50c0f36ad2e49f03681c4261170",
+      "bytes": 7305
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/verification.json",
+      "path": "browser/superseded/macro-desktop-repair/verification.json",
+      "sha256": "7fc61bfc4275c0fa7638f4c3b4bc57f517149260d0ac3dcd87a859b38befe9a2",
+      "bytes": 13798
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 0
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/superseded/macro-desktop-repair/attached-json/001-actual-build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": null,
+      "origin": {
+        "report": ".autopilot/ph07/macro-coast-browser/macro-desktop-repair/results.json",
+        "locator": {
+          "specIndex": 0,
+          "testIndex": 0,
+          "resultIndex": 0,
+          "attachmentIndex": 1
+        },
+        "encoding": "original Playwright results.json attachment body, base64 decoded without reserialization"
+      },
+      "path": "browser/superseded/macro-desktop-repair/attached-json/002-hydrology-macro-evidence.json",
+      "sha256": "fdc21d5596971ee26cbad7ee919bc97b8b6a5fe1036f73d3ff8047f6b3480b2f",
+      "bytes": 225376
+    },
+    {
+      "from": "dist/build.json",
+      "path": "build.json",
+      "sha256": "e61370dac431a1792b60fd38c2a18d5356f5a4c7e7c8820e9cf795415781a4a6",
+      "bytes": 9705
+    },
+    {
+      "from": ".autopilot/ph07/record-macro-coast.mjs",
+      "path": "record-macro-coast.mjs",
+      "sha256": "885746cf159d9056d385bd1fd6d342a60c5f36fb6fc2c9c46dd9b2f2cf989b52",
+      "bytes": 41068
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/recorder-attempts/root-resolution-first/failure.json",
+      "path": "recorder-attempts/root-resolution-first/failure.json",
+      "sha256": "da9d673a91be3f7a4dc9fa42513e78014f98239e6c1564618f065c223f451916",
+      "bytes": 672
+    },
+    {
+      "from": ".autopilot/ph07/macro-coast-archive-staging/recorder-attempts/root-resolution-first/record-macro-coast.before.mjs.txt",
+      "path": "recorder-attempts/root-resolution-first/record-macro-coast.before.mjs.txt",
+      "sha256": "cdd59b9a84be0eb83ab5b89a733562a5c1d4d5ede56d8b29caa8eb6617bdf894",
+      "bytes": 40976
+    },
+    {
+      "from": null,
+      "origin": "Archive-time read-only Git and exact passed snapshots",
+      "path": "source-provenance.json",
+      "sha256": "98fd6645f16c94ee894e0635309c58719556f3659e74d1bed8bf62d36b241ebc",
+      "bytes": 64164
+    },
+    {
+      "from": null,
+      "origin": "Archive indexing only; no invented visual judgment",
+      "path": "observations/index.json",
+      "sha256": "3e99fbbc7c5282166842a03c9cb322247951696a1cb39e366c690055f6f890f6",
+      "bytes": 25048
+    },
+    {
+      "from": null,
+      "origin": "Original attachment byte extraction index",
+      "path": "browser/attached-json-index.json",
+      "sha256": "121807ac6e5e008c60eb43f7b5d12b757d0c9740cffe88dd40f055e5a2d17de4",
+      "bytes": 7390
+    },
+    {
+      "from": null,
+      "origin": "Explicit local-only artifact inventory",
+      "path": "omitted-artifacts.json",
+      "sha256": "8afa875fd76612d490a4a46f2cd2b8a2f132fba3b18be22e0fa2de0e26107382",
+      "bytes": 1673
+    }
+  ]
+}

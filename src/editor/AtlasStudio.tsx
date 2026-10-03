@@ -26,6 +26,8 @@ import { RegionProtectionPanel } from './RegionProtectionPanel';
 import { makeProtectionRequest, protectionRectangle, protectionSelectionStep } from './region-protection-controls';
 import type { HydrologyTrace } from '../world/hydrology-trace';
 import { hydrologyDescription, hydrologyNodeAt, hydrologyRectangle } from './hydrology-controls';
+import type { HydrologyMacroPreview } from '../world/hydrology-macro-contract';
+import { MacroHydrologyPanel } from './MacroHydrologyPanel';
 
 type Props = {
   initialDraftId?: string; initialSource?: 'current' | 'backup'; expectedManifest?: string; initialFormat?: AtlasFormat | null;
@@ -44,7 +46,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const [error, setError] = useState(''), [fatal, setFatal] = useState(''), [status, setStatus] = useState('正在打开大世界草稿…');
   const [graphicsState, setGraphicsState] = useState<AtlasGraphicsState>('ready');
   const [progress, setProgress] = useState<AtlasProgress | null>(null), [drafts, setDrafts] = useState<(AtlasDraftList[number] & { format: AtlasFormat })[]>([]);
-  const [section, setSection] = useState<'edit' | 'world' | 'generate' | null>(initialDraftId ? null : 'world'), [extent, setExtent] = useState<InspectorExtent>('half');
+  const [section, setSection] = useState<'edit' | 'world' | 'generate' | 'water' | null>(initialDraftId ? null : 'world'), [extent, setExtent] = useState<InspectorExtent>('half');
   const [selected, setSelected] = useState<number | null>(null), [locate, setLocate] = useState('32896');
   const [mode, setMode] = useState<'elevation' | 'vertex'>('elevation'), [range, setRange] = useState(1), [height, setHeight] = useState(100);
   const [vertexId, setVertexId] = useState<number | null>(null), [moveX, setMoveX] = useState(1), [moveY, setMoveY] = useState(0);
@@ -76,13 +78,18 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
   const [surfacePick, setSurfacePick] = useState<{ cellId: number; land: boolean; height: number } | null>(null);
   const [hydrologyNode, setHydrologyNode] = useState<{ column: number; row: number } | null>(null);
   const [hydrology, setHydrology] = useState<HydrologyTrace | null>(null);
+  const [macroHydrology, setMacroHydrology] = useState<HydrologyMacroPreview | null>(null);
+  const [macroBranch, setMacroBranch] = useState<number | null>(null), macroPickConsumed = useRef(false);
   const [oceanDepth, setOceanDepth] = useState(3600), [oceanRelief, setOceanRelief] = useState(1000), [oceanShelf, setOceanShelf] = useState(320);
   const outlineCallback = useRef<(points: AtlasOutlinePoint[]) => void>(() => {});
   const [frameMetrics, setFrameMetrics] = useState({ commitMs: 0, durableMs: 0, repaintBlocks: 0 });
   const [cameraScale, setCameraScale] = useState(1), titleId = useId();
 
   function clearPreview() { setPending(null); if (ready && !fatal) rendererRef.current?.showPreview([]); }
-  function clearHydrology() { setHydrology(null); rendererRef.current?.showHydrologyTrace(null); }
+  function clearHydrology() {
+    setHydrology(null); setMacroHydrology(null); setMacroBranch(null);
+    rendererRef.current?.showHydrologyTrace(null); rendererRef.current?.showMacroHydrology(null);
+  }
   function stopLocalSelection() {
     localSelectionRef.current = { active: false, anchor: null }; setLocalSelecting(false);
     protectionSelectionRef.current = { active: false, anchor: null }; setProtectionSelecting(false);
@@ -159,10 +166,17 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     const renderer = new AtlasRenderer(hostRef.current!, {
       onPickPoint: point => {
         if (!current() || busyRef.current) return;
+        macroPickConsumed.current = false;
+        // An active range tool owns the click; keep flow lines as a reference.
+        if (localSelectionRef.current.active || protectionSelectionRef.current.active) return;
+        const branch = renderer.pickMacroHydrology(point);
+        macroPickConsumed.current = branch !== null;
+        if (branch !== null) { renderer.selectMacroBranch(branch); setMacroBranch(branch); setSection('water'); return; }
         setHydrologyNode(hydrologyNodeAt(point)); clearHydrology();
       },
       onPick: (id, surface) => {
         if (!current()) return;
+        if (macroPickConsumed.current) { macroPickConsumed.current = false; renderer.select(selectedRef.current); return; }
         if (busyRef.current) { renderer.select(selectedRef.current); return; }
         const selection = localSelectionRef.current, actual = viewRef.current;
         const protection = protectionSelectionRef.current;
@@ -286,6 +300,17 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     if (!current || current.head.draftId !== next.source.draftId || current.head.revision !== next.source.revision || current.head.manifestDigest !== next.source.manifestDigest || current.head.rootDigest !== next.source.rootDigest) throw new Error('地形已变化，请重新查看流向。');
     rendererRef.current!.showHydrologyTrace(next); setHydrology(next); setSection(null);
     setStatus(hydrologyDescription(next));
+  }
+  async function analyzeMacroHydrology() {
+    const ticket = generation.current;
+    const next = await clientRef.current!.analyzeMacroHydrology({ maxBranches: 64, maxEdges: 8192, minimumContributingSamples: 16 });
+    if (!live.current || generation.current !== ticket) return;
+    const current = viewRef.current;
+    if (!current || current.head.draftId !== next.source.draftId || current.head.revision !== next.source.revision
+      || current.head.manifestDigest !== next.source.manifestDigest || current.head.rootDigest !== next.source.rootDigest) throw new Error('地形已变化，请重新查看大陆汇流。');
+    rendererRef.current!.showMacroHydrology(next); rendererRef.current!.fit();
+    setMacroHydrology(next); setMacroBranch(null); setSection(null);
+    setStatus(`已显示 ${next.branches.length} 支大陆汇流。点选线条查看去向；16 世界单位采样，${next.displayTruncated ? '已达显示上限' : '本次分析完成'}。`);
   }
   async function create() {
     const ticket = generation.current, client = clientRef.current!, start = performance.now(), next = await client.create({ size, seed, name });
@@ -491,8 +516,12 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     </>}
   </div>;
   const graphicsMessage = graphicsState === 'lost' ? '图形连接暂时中断，草稿仍保留；恢复画面后可继续编辑。' : graphicsState === 'restoring' ? '正在恢复地图画面，草稿与当前视角保持不变。' : '';
-  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${atlasGenerationProgressLabel(progress.stage)} · 本步 ${progress.completed}/${progress.total}` : status)}</span>{hydrology && !busy && !fatal && !graphicsLocked && <button onClick={() => { clearHydrology(); setStatus("已关闭流向显示，草稿保持不变。"); }}>关闭流向</button>}{(localSelecting || protectionSelecting) && !busy && <button onClick={() => { stopLocalSelection(); setSection('generate'); setStatus('已取消范围选择，草稿保持原样。'); }}>取消选择范围</button>}{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
+  const feedback = <div className="inspector-feedback" tabIndex={0} aria-label="草稿操作反馈"><div className="inspector-notice" role={error || fatal ? 'alert' : 'status'}><span>{fatal || graphicsMessage || error || (progress ? `${atlasGenerationProgressLabel(progress.stage)} · 本步 ${progress.completed}/${progress.total}` : status)}</span>{macroHydrology && section !== 'water' && !busy && !fatal && !graphicsLocked && <><button onClick={() => setSection('water')}>查看汇流详情</button><button onClick={() => { clearHydrology(); setStatus('已关闭大陆汇流，草稿保持不变。'); }}>关闭大陆汇流</button></>}{hydrology && !busy && !fatal && !graphicsLocked && <button onClick={() => { clearHydrology(); setStatus("已关闭流向显示，草稿保持不变。"); }}>关闭流向</button>}{(localSelecting || protectionSelecting) && !busy && <button onClick={() => { stopLocalSelection(); setSection('generate'); setStatus('已取消范围选择，草稿保持原样。'); }}>取消选择范围</button>}{busy && !fatal && <button onClick={() => { try { if (cancelGenerationDisplay.current) { void cancelGenerationDisplay.current().catch(failure => setError(explain(failure))); } else if (!rendererRef.current?.cancelPendingAcceptance()) clientRef.current?.cancel(); } catch (failure) { setError(explain(failure)); } }}>取消操作</button>}</div>{(fatal || graphicsLocked) && <button onClick={() => window.location.reload()}>刷新并恢复已保存草稿</button>}</div>;
 
+  const waterPanel = <MacroHydrologyPanel preview={macroHydrology} selected={macroBranch} disabled={busy || !!fatal || graphicsLocked}
+    unavailable={!fine ? '请先打开第四版细地形草稿。' : readOnly ? '请打开当前草稿后查看汇流。' : generationPreview || constraintsPreview ? '先确认或取消当前地图预览，再分析已保存地形。' : null}
+    onAnalyze={() => void run(analyzeMacroHydrology)} onSelect={index => { rendererRef.current?.selectMacroBranch(index); setMacroBranch(index); }}
+    onClear={() => { clearHydrology(); setStatus('已关闭大陆汇流，草稿保持不变。'); }} onMap={() => setSection(null)} />;
   const coastPreviewActions = fine && fineOperation === 'draw' && !constraintsPreview && generatedSummary
     ? <div className="atlas-preview-actions" role="group" aria-label="大陆生成预览操作"><button disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(discardTerrain)}>取消生成</button><button className="atlas-primary" disabled={busy || graphicsLocked || !!fatal} onClick={() => void run(confirmTerrain)}>确认生成并保存</button></div> : null;
   const savedLocalScope = generationPreview?.preview.scope.kind === 'cell-rectangle' ? generationPreview.preview.scope : null;
@@ -523,7 +552,7 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
     <details className="world-metadata"><summary>草稿身份与版本</summary><p>生产草稿格式 v{view?.data.manifest.version ?? initialFormat} · 地理编辑阶段，不是社会推演存档。</p>{view && <><p>草稿 {view.head.draftId}</p><p>地理 {view.head.atlasId}</p><p>内容摘要 {view.head.manifestDigest}</p></>}<p>构建 {__BUILD_SHA__}</p></details>
     <button className="atlas-return" disabled={busy} onClick={onBack}>返回原世界工坊</button>
   </div>;
-  return <main className="atlas-studio workbench" data-chrome="map-first" data-mode="atlas" data-atlas-flow-terminal={hydrology?.terminal ?? ""} data-atlas-flow-points={hydrology?.path.length ?? 0} data-atlas-progress-stage={progress?.stage ?? ''} data-atlas-progress-completed={progress?.completed ?? ''} data-atlas-progress-total={progress?.total ?? ''} data-atlas-tool={drawing ? 'outline' : localSelecting || protectionSelecting ? 'region' : 'browse'} data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-format={view?.data.manifest.version ?? initialFormat ?? 'unknown'} data-atlas-display={constraintsPreview ? 'constraints-preview' : generationPreview ? 'generation-preview' : 'committed'} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
+  return <main className="atlas-studio workbench" data-chrome="map-first" data-mode="atlas" data-atlas-macro-branches={macroHydrology?.branches.length ?? 0} data-atlas-macro-selected={macroBranch ?? ''} data-atlas-flow-terminal={hydrology?.terminal ?? ""} data-atlas-flow-points={hydrology?.path.length ?? 0} data-atlas-progress-stage={progress?.stage ?? ''} data-atlas-progress-completed={progress?.completed ?? ''} data-atlas-progress-total={progress?.total ?? ''} data-atlas-tool={drawing ? 'outline' : localSelecting || protectionSelecting ? 'region' : 'browse'} data-testid="atlas-studio" data-atlas-id={view?.head.draftId ?? ''} data-atlas-revision={view?.head.revision ?? ''} data-atlas-hash={view?.head.manifestDigest ?? ''} data-atlas-format={view?.data.manifest.version ?? initialFormat ?? 'unknown'} data-atlas-display={constraintsPreview ? 'constraints-preview' : generationPreview ? 'generation-preview' : 'committed'} data-atlas-gpu={graphicsState} data-atlas-state={fatal ? 'fatal' : graphicsLocked ? graphicsState : busy ? 'busy' : readOnly ? 'readonly' : view ? 'ready' : 'empty'} data-selectedcell={selected ?? ''} data-atlas-selectedcell={selected ?? ''} data-atlas-commit-ms={frameMetrics.commitMs} data-atlas-durable-ms={frameMetrics.durableMs} data-atlas-request-bytes={view?.metrics.requestBytes ?? 0} data-atlas-response-bytes={view?.metrics.responseBytes ?? 0} data-atlas-repainted-blocks={frameMetrics.repaintBlocks}>
     <header className="workbench-header"><div className="workbench-identity"><h1>{view?.head.name ?? '大世界草稿'}</h1><small className="mode-label">{constraintsPreview ? '区域锁预览 · 尚未保存' : generationPreview ? '生成预览 · 尚未保存' : readOnly ? '只读备份' : '地理创作'}</small></div><button disabled={locked || !view?.head.undoCount} aria-label="撤销大世界编辑" onClick={() => void run(undo)}><Icon name="chevron-left" /><span>撤销</span></button><button disabled={busy} aria-label="返回原世界工坊" onClick={onBack}><Icon name="chevron-left" /><span>工坊</span></button></header>
     <div className="workbench-stage"><div className="workbench-map atlas-map" ref={hostRef} />
       <div className="atlas-tool-shelf atlas-toolbar" role="group" aria-label="地图视图与创作工具">
@@ -532,10 +561,10 @@ export default function AtlasStudio({ initialDraftId = '', initialSource = 'curr
       </div>
       {drawing && <div className="atlas-drawing-hint" role="status">画出大陆轮廓 · 松开自动生成</div>}
       {!view && !busy && !fatal && <div className="atlas-empty"><Icon name="map" size={44} /><p>从一片海洋开始</p><button onClick={() => setSection('world')}>创建或打开草稿</button></div>}
-      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? fine && fineOperation === 'protect' ? '保护区域' : '大陆与地貌' : '大世界草稿'} subtitle={section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={<>{section === 'generate' && coastPreviewActions}{feedback}</>}>{section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}
+      {section && <ContextInspector panel={`atlas-${section}`} title={section === 'water' ? '大陆汇流' : section === 'edit' ? selected === null ? '地理编辑' : `地块 #${selected}` : section === 'generate' ? fine && fineOperation === 'protect' ? '保护区域' : '大陆与地貌' : '大世界草稿'} subtitle={section === 'water' ? '从当前地形，读懂汇合与去向' : section === 'edit' ? '查看 → 预览 → 确认后自动保存' : '独立保存，不覆盖原世界'} extent={extent} onExtent={setExtent} onClose={() => setSection(null)} closeLabel="关闭大世界面板" actions={<>{section === 'generate' && coastPreviewActions}{feedback}</>}>{section === 'water' ? waterPanel : section === 'edit' ? editPanel : section === 'generate' ? fine ? finePanel : generatePanel : worldPanel}</ContextInspector>}
       {!section && <div className="workbench-status atlas-status" data-feedback={error || fatal ? 'alert' : graphicsLocked ? 'recovery' : busy || progress ? 'busy' : localSelecting || protectionSelecting ? 'selection' : 'status'}>{feedback}</div>}
     </div>
-    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { stopLocalSelection(); setDrawing(false); setSection(item.id); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
+    <nav className="workbench-nav" aria-label="大世界草稿工具">{([{ id: null, label: '地图', icon: 'map' }, { id: 'generate', label: '创世', icon: 'world' }, { id: 'edit', label: '编辑', icon: 'brush' }, ...(fine ? [{ id: 'water', label: '水文', icon: 'water' } as const] : []), { id: 'world', label: '草稿', icon: 'world' }] as const).map(item => <button key={item.label} className="workbench-nav-item" aria-pressed={section === item.id} onClick={() => { stopLocalSelection(); setDrawing(false); setSection(item.id); }}><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>
     {confirmation && <ModalDialog titleId={titleId} locked={busy} onDismiss={() => setConfirmation(null)}><h2 id={titleId}>{confirmation.title}</h2><p>{confirmation.detail}</p><div className="confirm-actions"><button autoFocus disabled={busy} onClick={() => setConfirmation(null)}>取消</button><button disabled={busy} className="atlas-primary" onClick={() => { const action = confirmation.action; setConfirmation(null); void run(action); }}>{confirmation.button}</button></div></ModalDialog>}
   </main>;
 }

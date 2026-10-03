@@ -1,0 +1,668 @@
+[
+  {
+    "scheduler": false,
+    "name": "reads actual fine owners, rejects mutable UI aliases, ignores late packets and leaves storage unchanged",
+    "workers": [
+      {
+        "elapsedMs": 4914.3544999999995,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.019806976744183,
+            "count": 130,
+            "spanMs": 1808.5550999999996,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 14.711414285714195,
+            "count": 8,
+            "spanMs": 102.97989999999936,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 59904,
+            "meanGapMs": 15.057175000000006,
+            "count": 117,
+            "spanMs": 1746.6323000000007,
+            "stage": "宏观水文读取器：采样权威细地形"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "cancels real macro computation and can run again without creating a receipt",
+    "workers": [
+      {
+        "elapsedMs": 4945.451399999999,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.150855038759694,
+            "count": 130,
+            "spanMs": 1825.4603000000006,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 13.247814285714153,
+            "count": 8,
+            "spanMs": 92.73469999999907,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 65024,
+            "meanGapMs": 14.102886507936496,
+            "count": 127,
+            "spanMs": 1776.9636999999984,
+            "stage": "宏观水文读取器：采样权威细地形"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "Worker independently rejects changed heads, unknown fields, wrong format, excess budgets and payload bytes",
+    "workers": [
+      {
+        "elapsedMs": 4918.155000000001,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.589928682170545,
+            "count": 130,
+            "spanMs": 1882.1008000000002,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 13.095985714285884,
+            "count": 8,
+            "spanMs": 91.67190000000119,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 60928,
+            "meanGapMs": 14.664825423728809,
+            "count": 119,
+            "spanMs": 1730.4493999999995,
+            "stage": "宏观水文读取器：采样权威细地形"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "bridge rejects source, lock, atlas, version, edge, payload and extra-field response corruption",
+    "workers": [
+      {
+        "elapsedMs": 29906.628900000003,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.703289147286807,
+            "count": 130,
+            "spanMs": 1896.724299999998,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 15.3854999999998,
+            "count": 8,
+            "spanMs": 107.6984999999986,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 66049,
+            "meanGapMs": 14.915401550387605,
+            "count": 130,
+            "spanMs": 1924.086800000001,
+            "stage": "宏观水文读取器：采样权威细地形"
+          },
+          {
+            "completed": 0,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-capture"
+          },
+          {
+            "completed": 65536,
+            "meanGapMs": 15.548467741935442,
+            "count": 32,
+            "spanMs": 482.0024999999987,
+            "stage": "宏观汇流：macro-validate"
+          },
+          {
+            "completed": 131072,
+            "meanGapMs": 14.530141935483815,
+            "count": 32,
+            "spanMs": 450.4343999999983,
+            "stage": "宏观汇流：macro-descent"
+          },
+          {
+            "completed": 196608,
+            "meanGapMs": 14.255806451612912,
+            "count": 32,
+            "spanMs": 441.9300000000003,
+            "stage": "宏观汇流：macro-flat-seeds"
+          },
+          {
+            "completed": 264192,
+            "meanGapMs": 14.952699999999936,
+            "count": 33,
+            "spanMs": 478.48639999999796,
+            "stage": "宏观汇流：macro-depressions"
+          },
+          {
+            "completed": 329728,
+            "meanGapMs": 14.369851612903256,
+            "count": 32,
+            "spanMs": 445.46540000000095,
+            "stage": "宏观汇流：macro-indegree"
+          },
+          {
+            "completed": 395264,
+            "meanGapMs": 13.852054838709709,
+            "count": 32,
+            "spanMs": 429.413700000001,
+            "stage": "宏观汇流：macro-topological-seeds"
+          },
+          {
+            "completed": 460800,
+            "meanGapMs": 15.482293548387045,
+            "count": 32,
+            "spanMs": 479.9510999999984,
+            "stage": "宏观汇流：macro-accumulation"
+          },
+          {
+            "completed": 528384,
+            "meanGapMs": 15.469812499999989,
+            "count": 33,
+            "spanMs": 495.03399999999965,
+            "stage": "宏观汇流：macro-terminal-priority"
+          },
+          {
+            "completed": 593920,
+            "meanGapMs": 15.489945161290375,
+            "count": 32,
+            "spanMs": 480.1883000000016,
+            "stage": "宏观汇流：macro-branch-selection"
+          },
+          {
+            "completed": 594642,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-project"
+          },
+          {
+            "completed": 594664,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-publish"
+          }
+        ]
+      },
+      {
+        "elapsedMs": 20333.6063,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 15.101472093023249,
+            "count": 130,
+            "spanMs": 1948.089899999999,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 15.197185714285817,
+            "count": 8,
+            "spanMs": 106.38030000000072,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 66049,
+            "meanGapMs": 14.452960465116275,
+            "count": 130,
+            "spanMs": 1864.4318999999996,
+            "stage": "宏观水文读取器：采样权威细地形"
+          },
+          {
+            "completed": 0,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-capture"
+          },
+          {
+            "completed": 65536,
+            "meanGapMs": 15.446083870967765,
+            "count": 32,
+            "spanMs": 478.82860000000073,
+            "stage": "宏观汇流：macro-validate"
+          },
+          {
+            "completed": 131072,
+            "meanGapMs": 14.41086774193548,
+            "count": 32,
+            "spanMs": 446.7368999999999,
+            "stage": "宏观汇流：macro-descent"
+          },
+          {
+            "completed": 196608,
+            "meanGapMs": 13.968935483870975,
+            "count": 32,
+            "spanMs": 433.03700000000026,
+            "stage": "宏观汇流：macro-flat-seeds"
+          },
+          {
+            "completed": 264192,
+            "meanGapMs": 14.885953125000128,
+            "count": 33,
+            "spanMs": 476.3505000000041,
+            "stage": "宏观汇流：macro-depressions"
+          },
+          {
+            "completed": 329728,
+            "meanGapMs": 13.997906451612746,
+            "count": 32,
+            "spanMs": 433.93509999999515,
+            "stage": "宏观汇流：macro-indegree"
+          },
+          {
+            "completed": 395264,
+            "meanGapMs": 14.32857741935497,
+            "count": 32,
+            "spanMs": 444.18590000000404,
+            "stage": "宏观汇流：macro-topological-seeds"
+          },
+          {
+            "completed": 460800,
+            "meanGapMs": 15.419119354838791,
+            "count": 32,
+            "spanMs": 477.9927000000025,
+            "stage": "宏观汇流：macro-accumulation"
+          },
+          {
+            "completed": 528384,
+            "meanGapMs": 15.016515625000011,
+            "count": 33,
+            "spanMs": 480.52850000000035,
+            "stage": "宏观汇流：macro-terminal-priority"
+          },
+          {
+            "completed": 593920,
+            "meanGapMs": 15.498719354838672,
+            "count": 32,
+            "spanMs": 480.4602999999988,
+            "stage": "宏观汇流：macro-branch-selection"
+          },
+          {
+            "completed": 594642,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-project"
+          },
+          {
+            "completed": 594664,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-publish"
+          }
+        ]
+      },
+      {
+        "elapsedMs": 10834.516899999995,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.2504550387597,
+            "count": 130,
+            "spanMs": 1838.3087000000014,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 15.456357142857867,
+            "count": 8,
+            "spanMs": 108.19450000000506,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 66049,
+            "meanGapMs": 15.253952713178274,
+            "count": 130,
+            "spanMs": 1967.7598999999973,
+            "stage": "宏观水文读取器：采样权威细地形"
+          },
+          {
+            "completed": 0,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-capture"
+          },
+          {
+            "completed": 65536,
+            "meanGapMs": 15.399080645161327,
+            "count": 32,
+            "spanMs": 477.3715000000011,
+            "stage": "宏观汇流：macro-validate"
+          },
+          {
+            "completed": 131072,
+            "meanGapMs": 14.949722580645268,
+            "count": 32,
+            "spanMs": 463.44140000000334,
+            "stage": "宏观汇流：macro-descent"
+          },
+          {
+            "completed": 196608,
+            "meanGapMs": 14.344525806451612,
+            "count": 32,
+            "spanMs": 444.6803,
+            "stage": "宏观汇流：macro-flat-seeds"
+          },
+          {
+            "completed": 264192,
+            "meanGapMs": 15.022196874999963,
+            "count": 33,
+            "spanMs": 480.7102999999988,
+            "stage": "宏观汇流：macro-depressions"
+          },
+          {
+            "completed": 329728,
+            "meanGapMs": 14.98846774193554,
+            "count": 32,
+            "spanMs": 464.64250000000175,
+            "stage": "宏观汇流：macro-indegree"
+          },
+          {
+            "completed": 395264,
+            "meanGapMs": 14.5347225806451,
+            "count": 32,
+            "spanMs": 450.5763999999981,
+            "stage": "宏观汇流：macro-topological-seeds"
+          },
+          {
+            "completed": 460800,
+            "meanGapMs": 14.381435483871046,
+            "count": 32,
+            "spanMs": 445.82450000000244,
+            "stage": "宏观汇流：macro-accumulation"
+          },
+          {
+            "completed": 528384,
+            "meanGapMs": 14.85959374999993,
+            "count": 33,
+            "spanMs": 475.5069999999978,
+            "stage": "宏观汇流：macro-terminal-priority"
+          },
+          {
+            "completed": 593920,
+            "meanGapMs": 14.318396774193623,
+            "count": 32,
+            "spanMs": 443.8703000000023,
+            "stage": "宏观汇流：macro-branch-selection"
+          },
+          {
+            "completed": 594642,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-project"
+          },
+          {
+            "completed": 594664,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-publish"
+          }
+        ]
+      },
+      {
+        "elapsedMs": 1327.6183999999994,
+        "stages": [
+          {
+            "completed": 7168,
+            "meanGapMs": 15.475076923076882,
+            "count": 14,
+            "spanMs": 201.17599999999948,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "rejects an actual owned-session replacement during a computation yield without publishing a result",
+    "workers": [
+      {
+        "elapsedMs": 4864.5694,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.383624031007775,
+            "count": 130,
+            "spanMs": 1855.487500000003,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 13.125885714285166,
+            "count": 8,
+            "spanMs": 91.88119999999617,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 60928,
+            "meanGapMs": 14.210505084745757,
+            "count": 119,
+            "spanMs": 1676.8395999999993,
+            "stage": "宏观水文读取器：采样权威细地形"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "guards pending previews, backups, old formats and overlap while retaining the legacy fine trace",
+    "workers": [
+      {
+        "elapsedMs": 13860.349599999994,
+        "stages": [
+          {
+            "completed": 66049,
+            "meanGapMs": 14.24360232558142,
+            "count": 130,
+            "spanMs": 1837.4247000000032,
+            "stage": "宏观水文读取器：读取实际节点所有者"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 15.66359999999986,
+            "count": 8,
+            "spanMs": 109.64519999999902,
+            "stage": "读取细海岸实际粗格重心"
+          },
+          {
+            "completed": 16384,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观水文读取器：准备既有基础高程"
+          },
+          {
+            "completed": 66049,
+            "meanGapMs": 15.275434108527152,
+            "count": 130,
+            "spanMs": 1970.5310000000027,
+            "stage": "宏观水文读取器：采样权威细地形"
+          },
+          {
+            "completed": 0,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-capture"
+          },
+          {
+            "completed": 65536,
+            "meanGapMs": 14.934383870967835,
+            "count": 32,
+            "spanMs": 462.9659000000029,
+            "stage": "宏观汇流：macro-validate"
+          },
+          {
+            "completed": 131072,
+            "meanGapMs": 14.071090322580506,
+            "count": 32,
+            "spanMs": 436.2037999999957,
+            "stage": "宏观汇流：macro-descent"
+          },
+          {
+            "completed": 196608,
+            "meanGapMs": 15.392558064515939,
+            "count": 32,
+            "spanMs": 477.1692999999941,
+            "stage": "宏观汇流：macro-flat-seeds"
+          },
+          {
+            "completed": 264192,
+            "meanGapMs": 15.503375000000005,
+            "count": 33,
+            "spanMs": 496.1080000000002,
+            "stage": "宏观汇流：macro-depressions"
+          },
+          {
+            "completed": 329728,
+            "meanGapMs": 15.436216129032301,
+            "count": 32,
+            "spanMs": 478.52270000000135,
+            "stage": "宏观汇流：macro-indegree"
+          },
+          {
+            "completed": 395264,
+            "meanGapMs": 13.089038709677322,
+            "count": 32,
+            "spanMs": 405.760199999997,
+            "stage": "宏观汇流：macro-topological-seeds"
+          },
+          {
+            "completed": 460800,
+            "meanGapMs": 15.503767741935594,
+            "count": 32,
+            "spanMs": 480.6168000000034,
+            "stage": "宏观汇流：macro-accumulation"
+          },
+          {
+            "completed": 528384,
+            "meanGapMs": 14.408743749999985,
+            "count": 33,
+            "spanMs": 461.0797999999995,
+            "stage": "宏观汇流：macro-terminal-priority"
+          },
+          {
+            "completed": 593920,
+            "meanGapMs": 15.049516129032371,
+            "count": 32,
+            "spanMs": 466.5350000000035,
+            "stage": "宏观汇流：macro-branch-selection"
+          },
+          {
+            "completed": 594642,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-project"
+          },
+          {
+            "completed": 594664,
+            "meanGapMs": 0,
+            "count": 1,
+            "spanMs": 0.0,
+            "stage": "宏观汇流：macro-publish"
+          }
+        ]
+      },
+      {
+        "elapsedMs": 2196.4190000000017,
+        "stages": []
+      },
+      {
+        "elapsedMs": 1225.662900000003,
+        "stages": []
+      }
+    ]
+  },
+  {
+    "scheduler": false,
+    "name": "reports a read-only timeout without suggesting an unknown map commit",
+    "workers": [
+      {
+        "elapsedMs": 1627.0634999999966,
+        "stages": []
+      }
+    ]
+  }
+]

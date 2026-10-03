@@ -1,5 +1,6 @@
 import type { AtlasDocument, AtlasFormat } from './atlas-format';
 import type { HydrologyTraceRequest } from './hydrology-trace';
+import type { HydrologyMacroRequest } from './hydrology-macro-contract';
 import type { GenerationRecipe, GenerationScope } from './generation-contract';
 import type { GenerationPreviewInfo, GenerationConfirm } from './generation-session';
 import type { ConstraintsPreviewInfo } from './constraints-session';
@@ -118,6 +119,7 @@ export interface AtlasGenerationPreview { data: AtlasDocument; preview: Generati
 export interface AtlasConstraintsPreview { data: AtlasDocument; preview: ConstraintsPreviewInfo; metrics: AtlasMetrics }
 export type AtlasOperation = (
   | ({ type: 'hydrology-analyze' } & HydrologyTraceRequest)
+  | ({ type: 'hydrology-macro-analyze' } & HydrologyMacroRequest)
   | { type: 'create'; options: Pick<AtlasCreateOptions, 'size' | 'seed' | 'name'>; draftId: string; commandId: string }
   | { type: 'restore'; draftId: string; source: 'current' | 'backup' }
   | { type: 'edit' | 'preview' }

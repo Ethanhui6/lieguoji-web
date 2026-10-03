@@ -1,0 +1,14 @@
+{
+  "prerequisite": ".autopilot/ph07/macro-coast-checks/ui-repair-1",
+  "prerequisiteSha256": "42c1b73e2acf1e34839c4dd901246c7d9dda3626cd28162e1f42dd2cfc71dca9",
+  "sourceSha256": "7946859387bf6797d1df6c562de069f3b2f7c4acd19df4eec546436686b8bc1e",
+  "changed": [
+    "tests/atlas-hydrology-macro.spec.ts",
+    "tests/helpers/atlas-hydrology-macro-readonly.ts"
+  ],
+  "productionUnchanged": true,
+  "unitAssertionsReused": 439,
+  "unitAssertionsRerun": 0,
+  "buildReusedUnchanged": true,
+  "generatorIdentitiesReused": 11
+}

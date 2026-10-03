@@ -1,0 +1,14 @@
+{
+  "unitFiles": [
+    "src/world/hydrology-macro-worker.test.ts",
+    "src/world/hydrology-reader-owned.test.ts"
+  ],
+  "knownCaseCounts": {
+    "src/world/hydrology-macro-worker.test.ts": 7,
+    "src/world/hydrology-reader-owned.test.ts": 7
+  },
+  "numericEvidenceLabel": "macro-coast-repair-1",
+  "scope": "Broader coastal rounding with unchanged protected narrow features; preserved preview23 storage; real full-world fixed16 macro sampling, read-only Worker/bridge, map overlays, shared downstream picking and all affected fine hydrology and terrain renderer regressions. All eleven generation closures recomputed. Browser and subjective review separate.",
+  "inheritedNotRerun": "Previous unit pass counts are not newly executed evidence. Terrain shader/material GPU22 probes remain historical; new macro overlay will be checked by native browser. No new GPU acceptance is claimed.",
+  "cloudWrites": false
+}

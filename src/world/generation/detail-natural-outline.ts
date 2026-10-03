@@ -110,17 +110,38 @@ export async function roundAndIndexNaturalOutline(input: { points: readonly Natu
   for (let i = 0; i < source.length; i++) {
     const previous = source[(i + source.length - 1) % source.length], vertex = source[i], next = source[(i + 1) % source.length];
     const before = integerSqrt((vertex.xQ - previous.xQ) ** 2 + (vertex.yQ - previous.yQ) ** 2), after = integerSqrt((next.xQ - vertex.xQ) ** 2 + (next.yQ - vertex.yQ) ** 2);
-    const cut = Math.floor(Math.min(48 * 256, input.structureWorld * 128, sourceCaps[i] / 2, before / 4, after / 4));
+    const legacyCut = Math.floor(Math.min(48 * 256, input.structureWorld * 128, sourceCaps[i] / 2, before / 4, after / 4));
+    // A wide shore may use more of each long gesture edge for its tangent
+    // transition. Each end consumes at most 45%, so the edge cannot reverse.
+    // A quadratic corner stays <= cut/4 from its two original segments.
+    // Keeping cut <= 2*cap leaves at least half of the cap for bay/cape work.
+    const cornerCap = Math.min(sourceCaps[i], sourceCaps[(i + source.length - 1) % source.length], sourceCaps[(i + 1) % source.length]);
+    const broad = before >= 128 * 256 && after >= 128 * 256 && cornerCap >= 32 * 256 && input.structureWorld >= 32;
+    const cut = broad ? Math.max(legacyCut, Math.floor(Math.min(input.structureWorld * 384, cornerCap * 2, before * .45, after * .45))) : legacyCut;
     if (cut < 256 || cross(previous, vertex, next) === 0) append({ ...vertex }, sourceCaps[i]);
     else {
       const a = lerp(vertex, previous, roundRatio(cut * Q20, before)), b = lerp(vertex, next, roundRatio(cut * Q20, after)), steps = Math.max(2, Math.ceil(cut / (4 * 256)));
       const incoming = { a: previous, b: vertex, length: before, arc: 0 }, outgoing = { a: vertex, b: next, length: after, arc: 0 };
+      const corner: { point: NaturalPointQ; used: number }[] = [];
       for (let j = 0; j <= steps; j++) {
         const t = roundRatio(j * Q20, steps), point = lerp(lerp(a, vertex, t), lerp(vertex, b, t), t);
         // Reserve the measured round-off displacement, not an entire corner
         // cut from every following long edge. Endpoints remain on source edges.
         const used = Math.min(distance(incoming, point.xQ, point.yQ).distance, distance(outgoing, point.xQ, point.yQ).distance) + 2;
-        append(point, Math.max(0, sourceCaps[i] - used));
+        if (broad) corner.push({ point, used });
+        else append(point, Math.max(0, sourceCaps[i] - used));
+      }
+      // The distance to a union is 1-Lipschitz but not convex: interpolating
+      // just endpoint distances can under-reserve where the nearest segment
+      // changes. Half the larger adjacent chord bounds this entire segment's
+      // excess above linear interpolation. The legacy branch is unchanged.
+      for (let j = 0; j < corner.length; j++) {
+        const { point, used } = corner[j]; let chord = 0;
+        for (const k of [j - 1, j + 1]) if (k >= 0 && k < corner.length) {
+          const other = corner[k].point;
+          chord = Math.max(chord, integerSqrt((point.xQ - other.xQ) ** 2 + (point.yQ - other.yQ) ** 2) + 1);
+        }
+        append(point, Math.max(0, cornerCap - used - Math.ceil(chord / 2)));
       }
       roundedCorners++;
     }

@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-03T03:05:40.805Z",
+  "files": [
+    {
+      "path": "src/world/hydrology-macro-contract.ts",
+      "sha256": "9bdda40d3458bcc5f4f9455bb19222c054611482f9b64be6a3cb1b9a56420368"
+    },
+    {
+      "path": "src/world/hydrology-macro-flow.ts",
+      "sha256": "39ec25bb868b279f393c7c391552fd338998049b0b265ddf2ba09150fcf2abfe"
+    },
+    {
+      "path": "src/world/hydrology-reader-owned.ts",
+      "sha256": "1979c8604c4608a728ee26ab194d790935eca481dfabda9402fe35428d008269"
+    },
+    {
+      "path": "src/world/hydrology-macro-flow.test.ts",
+      "sha256": "18fca4e5b24b5ac8378c386eaa7cff2efe2c43697f2d65117b4d29f7e1cd7a7f"
+    },
+    {
+      "path": "src/world/hydrology-reader-owned.test.ts",
+      "sha256": "f1ca009d23897c1d3747a1dab4ede2e8438a8194ec32c4245bd02838b38d3189"
+    }
+  ],
+  "sourceTestsRun": false,
+  "sourceAcceptance": false
+}

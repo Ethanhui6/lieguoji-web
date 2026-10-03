@@ -1,5 +1,6 @@
 import { cloneDetailCoastTile, decodeDetailCoastTile, hashDetailCoastTile } from './detail-coast-codec';
 import { validateHydrologyTraceRequest, validateHydrologyTrace, hydrologyHeadMatches, type HydrologyTrace, type HydrologyTraceRequest, type HydrologyTraceNode } from './hydrology-trace';
+import { macroExact, macroHeadMatches, validateMacroRequest, validateMacroPreview, type HydrologyMacroPreview, type HydrologyMacroRequest } from './hydrology-macro-contract';
 import { detailCoastKey, type DetailCoastKey, type DetailCoastTile } from './detail-coast-types';
 import { decodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, verifyAtlasDocument, type AtlasDocument, type AtlasManifest, type AtlasFormat } from './atlas-format';
 import { decodeAtlasCellLockBlock, hashAtlasCellLockBlock, lockKey, atlasCellLockFlags, assertAtlasConstraintsOnly } from './generation-locks';
@@ -14,7 +15,7 @@ import { getAtlasStorage } from './storage';
 import type { AtlasCommitReceipt, AtlasStoredRoot } from './storage-types';
 import { decodeAtlasPacket, encodeAtlasPacket, readAtlasComputation, type AtlasClientView, type AtlasComputationObservation, type AtlasDraftList, type AtlasEditResult, type AtlasHead, type AtlasMetrics, type AtlasOperation, type AtlasPacket, type AtlasPreview, type AtlasProgress, type AtlasStateHeader, type AtlasPreviewHeader, type AtlasGenerationPreview, type AtlasConstraintsPreview, type AtlasConstraintsHeader } from './protocol';
 
-type Result = HydrologyTrace | AtlasConstraintsPreview | AtlasGenerationPreview | AtlasClientView | AtlasEditResult | AtlasPreview | AtlasDraftList | AtlasCommitReceipt | null;
+type Result = HydrologyMacroPreview | HydrologyTrace | AtlasConstraintsPreview | AtlasGenerationPreview | AtlasClientView | AtlasEditResult | AtlasPreview | AtlasDraftList | AtlasCommitReceipt | null;
 type Init = { header: AtlasStateHeader | AtlasPreviewHeader | AtlasConstraintsHeader; bytes: Uint8Array; offset: number; manifest?: AtlasManifest; blocks: AtlasDocument['blocks']; locks: Map<string, AtlasCellLockBlock>; detailCoast: Map<DetailCoastKey, DetailCoastTile> };
 type Pending = {
   id: number; operation: AtlasOperation; started: number; requestBytes: number; responseBytes: number; largestPacketBytes: number;
@@ -49,10 +50,11 @@ export class AtlasClient {
     this.worker = new Worker(new URL('./atlas.worker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = event => {
       const message: unknown = event.data;
-      this.receiveQueue = this.receiveQueue.then(() => this.receive(message)).catch(error => this.fail(error instanceof Error ? error : new Error('草稿响应验证失败。')));
+      this.receiveQueue = this.receiveQueue.then(() => this.receive(message)).catch(error => this.fail(error instanceof Error && this.pending?.operation.type !== 'hydrology-macro-analyze'
+        ? error : this.taskError(error instanceof Error ? error.message : '草稿响应验证失败。')));
     };
-    this.worker.onerror = event => this.fail(new Error(event.message || '草稿线程失败，请刷新后恢复持久存档。'));
-    this.worker.onmessageerror = () => this.fail(new Error('草稿线程消息无法解码，请刷新后恢复。'));
+    this.worker.onerror = event => this.fail(this.taskError(event.message || '草稿线程失败，请刷新后恢复持久存档。'));
+    this.worker.onmessageerror = () => this.fail(this.taskError('草稿线程消息无法解码，请刷新后恢复。'));
   }
   get pendingGeneration() { return this.generationPreview; }
   get pendingConstraints() { return this.constraintsPreview; }
@@ -67,6 +69,7 @@ export class AtlasClient {
     this.options.onFatal?.(error);
   }
   close() { this.fail(new Error('草稿线程已关闭。')); }
+  private taskError(message: string) { return new Error(this.pending?.operation.type === 'hydrology-macro-analyze' ? `只读宏观汇流预览失败：${message} 未提交地图修改。` : message); }
   private send(pending: Pending, type: AtlasPacket['type'], body?: unknown, payload?: Uint8Array, sequence?: number) {
     const bytes = encodeAtlasPacket({ version: 1, id: pending.id, type, ...(body === undefined ? {} : { body }), ...(sequence === undefined ? {} : { sequence }) }, payload);
     pending.requestBytes += bytes.length; pending.largestPacketBytes = Math.max(pending.largestPacketBytes, bytes.length);
@@ -74,7 +77,7 @@ export class AtlasClient {
   }
   private arm(pending: Pending) {
     clearTimeout(pending.timer);
-    pending.timer = setTimeout(() => this.fail(new Error(pending.operation.type === 'hydrology-analyze' ? '只读流向分析长时间无响应；未提交地图修改，请重新打开地图后再分析。' : pending.completed ? '草稿已提交，但计算诊断回执缺失；请刷新后恢复，勿重复提交。' : '草稿操作长时间无响应；提交状态未知，请刷新后查询原commandId并恢复，勿重复提交。')), this.timeoutMs);
+    pending.timer = setTimeout(() => this.fail(new Error(pending.operation.type === 'hydrology-macro-analyze' ? '只读宏观汇流预览长时间无响应；未提交地图修改，请重新打开地图后再分析。' : pending.operation.type === 'hydrology-analyze' ? '只读流向分析长时间无响应；未提交地图修改，请重新打开地图后再分析。' : pending.completed ? '草稿已提交，但计算诊断回执缺失；请刷新后恢复，勿重复提交。' : '草稿操作长时间无响应；提交状态未知，请刷新后查询原commandId并恢复，勿重复提交。')), this.timeoutMs);
   }
   private request<T extends Result>(operation: AtlasOperation, payload?: Uint8Array): Promise<T> {
     if (this.fatal) return Promise.reject(this.fatal);
@@ -109,6 +112,17 @@ export class AtlasClient {
     try { request = validateHydrologyTraceRequest({ expected: { draftId: h.draftId, revision: h.revision, rootDigest: h.rootDigest, manifestDigest: h.manifestDigest }, rectangle, sourceNode }); }
     catch (error) { return Promise.reject(error); }
     return this.request<HydrologyTrace>({ type: 'hydrology-analyze', atlasFormat: 4, ...request });
+  }
+  analyzeMacroHydrology(options: Omit<HydrologyMacroRequest, 'expected'> = { maxBranches: 64, maxEdges: 8192, minimumContributingSamples: 16 }): Promise<HydrologyMacroPreview> {
+    const head = this.verifiedHead;
+    if (!head || head.readOnly || this.format !== 4) return Promise.reject(new Error('宏观汇流需要当前可编辑的第四版细地形草稿。'));
+    if (this.verifiedGeneration || this.verifiedConstraints) return Promise.reject(new Error('请先确认或取消地图预览，再分析已保存地形。'));
+    let request: HydrologyMacroRequest;
+    try {
+      if (!macroExact(options, ['maxBranches', 'maxEdges', 'minimumContributingSamples'])) throw new Error('宏观汇流显示参数字段无效。');
+      request = validateMacroRequest({ ...options, expected: { draftId: head.draftId, revision: head.revision, rootDigest: head.rootDigest, manifestDigest: head.manifestDigest } });
+    } catch (error) { return Promise.reject(error); }
+    return this.request<HydrologyMacroPreview>({ type: 'hydrology-macro-analyze', atlasFormat: 4, ...request });
   }
   previewGeneration(recipe: GenerationRecipe, scope: GenerationScope = { kind: 'world' }) {
     const h = this.verifiedHead; if (!h || h.readOnly || this.format === 1) return Promise.reject(new Error('请先打开可编辑的创世草稿。'));
@@ -233,7 +247,7 @@ export class AtlasClient {
     if (header.type === 'progress') { if (object(body) && typeof body.stage === 'string' && typeof body.completed === 'number' && typeof body.total === 'number') this.options.onProgress?.(body as unknown as AtlasProgress); return; }
     if (header.type === 'error') {
       if (!object(body) || typeof body.message !== 'string') throw new Error('无效线程错误回执。');
-      const error = new Error(body.message); if (body.cancelled) error.name = 'AbortError';
+      const error = this.taskError(body.message); if (body.cancelled) error.name = 'AbortError';
       if (typeof body.draftId === 'string' || typeof body.commandId === 'string') this.lastIdentity = { draftId: body.draftId as string | undefined, commandId: body.commandId as string | undefined };
       if (body.fatal || body.committed || pending.completed) this.fail(error);
       else { clearTimeout(pending.timer); this.pending = undefined; pending.reject(error); }
@@ -317,7 +331,19 @@ export class AtlasClient {
     }
     if (header.type !== 'complete' && header.type !== 'timing' || !object(body)) throw new Error('未知草稿响应。');
     let result: Result;
-    if (body.operation === 'hydrology-analyze') {
+    if (body.operation === 'hydrology-macro-analyze') {
+      const operation = pending.operation, head = this.verifiedHead, base = this.verified;
+      if (header.type !== 'complete' || operation.type !== 'hydrology-macro-analyze' || payload.length || !macroExact(body, ['operation', 'preview'])
+        || !head || head.readOnly || !base || !isDetailCoastDocument(base) || this.verifiedGeneration || this.verifiedConstraints
+        || !macroHeadMatches(head, operation.expected)) throw new Error('宏观汇流结果未绑定当前已保存地图。');
+      const request = validateMacroRequest({ expected: operation.expected, maxBranches: operation.maxBranches,
+        maxEdges: operation.maxEdges, minimumContributingSamples: operation.minimumContributingSamples });
+      const preview = validateMacroPreview(body.preview, request), lockDigest = await generationLockDigest(base);
+      if (preview.source.atlasId !== base.manifest.atlasId || preview.source.lockSetDigest !== lockDigest || this.verified !== base
+        || !this.verifiedHead || this.verifiedHead.readOnly || this.verifiedGeneration || this.verifiedConstraints
+        || !macroHeadMatches(this.verifiedHead, request.expected)) throw new Error('宏观汇流来源地形或锁摘要已经变化。');
+      result = preview;
+    } else if (body.operation === 'hydrology-analyze') {
       const op = pending.operation, head = this.verifiedHead, base = this.verified;
       if (op.type !== 'hydrology-analyze' || payload.length || Object.keys(body).some(key => !['operation', 'trace'].includes(key))
         || !head || head.readOnly || !base || !isDetailCoastDocument(base) || this.verifiedGeneration || this.verifiedConstraints

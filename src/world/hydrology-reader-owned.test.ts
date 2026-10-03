@@ -87,7 +87,7 @@ describe('one-operation private actual-geography reader', () => {
       expect(next.source).toMatchObject(original.expected); expect(next.locks.refs).toEqual(fixture.manifest.constraints.lockRefs);
       expect(next.stats.sampledNodes).toBe(128); expect(next.operation).toMatchObject({ sequence: 2, sampledNodes: 256, maxPages: 8 });
       expect(next.boundary.east).toBe('crop'); expect(next.kernelInput.groundMeters.buffer).not.toBe(first.kernelInput.groundMeters.buffer);
-      expect(session.head.revision).toBe(0); expect(Object.keys(reader).sort()).toEqual(['close', 'readPage']);
+      expect(session.head.revision).toBe(0); expect(Object.keys(reader).sort()).toEqual(['close', 'readMacroGrid', 'readPage']);
     } finally { reader.close(); }
   });
 
@@ -142,5 +142,72 @@ describe('one-operation private actual-geography reader', () => {
     } finally { reader.close(); }
     const one = await createOwnedHydrologyReader(owner, { ...request, budget: { maxPages: 1, maxSampledNodes: 8 } }, fast);
     try { await one.readPage(small); await expect(one.readPage(small)).rejects.toThrow('累计页面或采样预算'); } finally { one.close(); }
+  });
+});
+
+describe('fixed full-world macro read alongside unchanged fine pages', () => {
+  it('samples actual stride-eight owner nodes, prepares Hbase once, and keeps one snapshot and independent copies', async () => {
+    const { owner, session, request } = await setup();
+    const snapshot = vi.spyOn(session, 'snapshotAsync'), base = vi.spyOn(Base, 'extractDetailCoastBase');
+    const reader = await createOwnedHydrologyReader(owner, { ...request, budget: { maxPages: 3, maxSampledNodes: 132102 } }, fast);
+    try {
+      const macro = await reader.readMacroGrid();
+      expect(macro.grid).toEqual({ columns: 257, rows: 257, stepWorld: 16, worldSize: 4096, coverage: 'complete-fixed-grid', sampleSemantics: 'actual-fine-owner-nodes-at-stride-8' });
+      expect(macro.coverageQ).toHaveLength(66049); expect(macro.groundMeters[0]).toBe(890); expect(macro.groundMeters[4]).toBe(-200);
+      expect(macro.coverageQ[0]).toBe(512); expect(macro.coverageQ[4]).toBe(-512); expect(macro.coverageQ[8]).toBeGreaterThan(0);
+      expect(macro.groundMeters[8]).toBeGreaterThan(0); expect(macro.coverageQ.at(-1)).toBeLessThan(0);
+      expect(macro.stats.explicitFineNodes).toBeGreaterThan(0); expect(macro.stats.uniformLandNodes).toBeGreaterThan(0); expect(macro.stats.implicitSeaNodes).toBeGreaterThan(0);
+      expect(macro.stats.explicitFineNodes + macro.stats.uniformLandNodes + macro.stats.implicitSeaNodes).toBe(66049);
+      expect(macro.stats.outputTypedArrayBytes).toBe(264196); expect(macro.operation).toMatchObject({ sequence: 1, sampledNodes: 66049, baseSamplerPreparations: 1 });
+      macro.source.revision = 99; macro.locks.refs[0].hash = '0'.repeat(64); macro.coverageQ.fill(-512); macro.groundMeters.fill(-10);
+      const next = await reader.readMacroGrid(); expect(next.source.revision).toBe(0); expect(next.locks.refs).toEqual(fixture.manifest.constraints.lockRefs);
+      expect(next.groundMeters[0]).toBe(890); expect(next.groundMeters.buffer).not.toBe(macro.groundMeters.buffer);
+      expect(next.operation).toMatchObject({ sequence: 2, sampledNodes: 132098 });
+      const page = await reader.readPage({ originColumn: 26, originRow: 10, columns: 2, rows: 2 });
+      expect(page.kernelInput.groundMeters[0]).toBe(640); expect(page.operation).toMatchObject({ sequence: 3, sampledNodes: 132102 });
+      expect(snapshot).toHaveBeenCalledTimes(1); expect(base).toHaveBeenCalledTimes(1);
+    } finally { reader.close(); }
+  });
+
+  it('prepays actual macro samples and serializes macro/fine reads without poisoning rejected work', async () => {
+    const { owner, request } = await setup(), budget = { maxPages: 3, maxSampledNodes: 66057 };
+    const reader = await createOwnedHydrologyReader(owner, { ...request, budget }, fast), small = { originColumn: 26, originRow: 10, columns: 2, rows: 2 };
+    try {
+      const pending = reader.readMacroGrid();
+      await expect(reader.readMacroGrid()).rejects.toThrow('串行'); await expect(reader.readPage(small)).rejects.toThrow('串行');
+      expect((await pending).operation.sampledNodes).toBe(66049);
+      await expect(reader.readMacroGrid()).rejects.toThrow('累计页面或采样预算');
+      expect((await reader.readPage(small)).operation.sequence).toBe(2); expect((await reader.readPage(small)).operation.sampledNodes).toBe(66057);
+    } finally { reader.close(); }
+    const tooSmall = await createOwnedHydrologyReader(owner, { ...request, budget: { maxPages: 2, maxSampledNodes: 66048 } }, fast);
+    try { await expect(tooSmall.readMacroGrid()).rejects.toThrow('累计页面或采样预算'); expect((await tooSmall.readPage(small)).operation.sequence).toBe(1); } finally { tooSmall.close(); }
+  });
+
+  it('invalidates accepted macro reads on owner, head, abort, callback and close changes without returning half a grid', async () => {
+    for (const mode of ['owner', 'head', 'callback', 'abort', 'close'] as const) {
+      const { session, owner, request, detach } = await setup(), controller = new AbortController(); let armed = false, reached = false;
+      const changed = structuredClone(fixture); changed.manifest.revision++;
+      const prepared = mode === 'head' ? await session.prepareReplacement(changed, `edit-${crypto.randomUUID()}`, '宏观读取来源变化', fast) : undefined;
+      const reader: Awaited<ReturnType<typeof createOwnedHydrologyReader>> = await createOwnedHydrologyReader(owner,
+        { ...request, budget: { maxPages: 2, maxSampledNodes: 132098 } }, { signal: controller.signal,
+          onProgress: progress => { if (armed && progress.stage === '宏观水文读取器：采样权威细地形') reached = true; },
+          yieldTask: async () => {
+            await Promise.resolve(); if (!armed || !reached) return; armed = false;
+            if (mode === 'owner') detach();
+            if (mode === 'head' && prepared) session.publishReplacement(prepared.candidateId, { draftId: fixture.manifest.draftId, commandId: prepared.commandId,
+              revision: prepared.revision, manifestDigest: prepared.manifestDigest, rootDigest: 'b'.repeat(64) });
+            if (mode === 'abort') controller.abort();
+            if (mode === 'close') reader.close();
+            if (mode === 'callback') throw new Error('macro callback failed');
+          },
+        });
+      armed = true; await expect(reader.readMacroGrid()).rejects.toThrow(); expect(reached).toBe(true);
+      await expect(reader.readMacroGrid()).rejects.toThrow('已关闭或失效');
+      await expect(reader.readPage(explicit)).rejects.toThrow('已关闭或失效'); reader.close();
+      if (mode === 'head') {
+        expect(session.head).toMatchObject({ revision: 1, rootDigest: 'b'.repeat(64), manifestDigest: prepared!.manifestDigest });
+        expect(session.head.manifestDigest).not.toBe(request.expected.manifestDigest);
+      } else expect(session.head).toMatchObject(request.expected);
+    }
   });
 });

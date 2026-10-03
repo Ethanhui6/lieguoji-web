@@ -1,0 +1,31 @@
+{
+  "success": true,
+  "stable": true,
+  "results": [
+    {
+      "name": "types",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 3000
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 16632
+    },
+    {
+      "name": "unit",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 2150
+    },
+    {
+      "name": "outline-preview",
+      "exitCode": 0,
+      "signal": null,
+      "milliseconds": 1007
+    }
+  ],
+  "scope": "Isolated outline candidate: types, lint, five corner contracts, one captured-input outline diagnostic. No generated terrain, browser, product renderer, save or phase visual acceptance."
+}

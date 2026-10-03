@@ -2,6 +2,9 @@ import { encodeDetailCoastTile } from './detail-coast-codec';
 import { buildHydrologyKernel } from './hydrology-kernel';
 import { extractOwnedHydrologySnapshot } from './hydrology-snapshot';
 import { buildHydrologyTrace, hydrologyHeadMatches, validateHydrologyTraceRequest } from './hydrology-trace';
+import { createOwnedHydrologyReader } from './hydrology-reader-owned';
+import { MACRO_FLOW, macroExact, macroHeadMatches, validateMacroRequest } from './hydrology-macro-contract';
+import { buildMacroFlowPreview } from './hydrology-macro-flow';
 import { detailCoastKey } from './detail-coast-types';
 import { createGenerationDraft, createGenerationCopy, encodeAtlasManifest, hashAtlasManifest, isDetailCoastDocument, isGenerationDocument, type AtlasDocument } from './atlas-format';
 import { encodeAtlasCellLockBlock, lockKey } from './generation-locks';
@@ -289,6 +292,39 @@ export class AtlasWorkerRuntime {
     }
     if (operation.atlasFormat !== undefined && operation.atlasFormat !== this.session.format) throw new Error('操作格式与当前会话不符。');
     if (this.readOnly) throw new Error('备份来源为只读，请创建独立副本后继续编辑。');
+    if (operation.type === 'hydrology-macro-analyze') {
+      if (this.session.format !== 4 || operation.atlasFormat !== 4 || payload.length
+        || !macroExact(operation, ['type', 'atlasFormat', 'expected', 'maxBranches', 'maxEdges', 'minimumContributingSamples'])) throw new Error('只读宏观汇流操作的版本或消息格式无效。');
+      const request = validateMacroRequest({ expected: operation.expected, maxBranches: operation.maxBranches,
+        maxEdges: operation.maxEdges, minimumContributingSamples: operation.minimumContributingSamples });
+      const session = this.session, root = this.root, storageSession = this.storageSession;
+      const check = () => {
+        control.signal.throwIfAborted();
+        if (this.active !== active || this.session !== session || this.root !== root || this.readOnly || this.sourceSlot !== 'current'
+          || this.generationSession?.pending || this.constraintsSession?.pending || this.storageSession !== storageSession
+          || storageSession && (!storageSession.valid || storageSession.currentRootDigest !== request.expected.rootDigest)
+          || root.rootDigest !== request.expected.rootDigest || !macroHeadMatches(session.head, request.expected)) throw new Error('宏观汇流来源已变化，请重新读取当前地图；未修改地图。');
+      };
+      const guarded = { signal: control.signal,
+        yieldTask: async () => { check(); await control.yieldTask(); check(); },
+        onProgress: (progress: { stage: string; completed: number; total: number }) => { check(); control.onProgress(progress); check(); },
+      };
+      check();
+      const reader = await createOwnedHydrologyReader({ session, assertCurrent: check },
+        { expected: request.expected, budget: { maxPages: 1, maxSampledNodes: MACRO_FLOW.nodes } }, guarded);
+      try {
+        check(); const grid = await reader.readMacroGrid(); check();
+        const preview = await buildMacroFlowPreview(grid, request, { signal: control.signal,
+          yieldControl: guarded.yieldTask,
+          onProgress: (phase, completed, total) => guarded.onProgress({ stage: '宏观汇流：' + phase, completed, total }),
+        });
+        check();
+        // A read-only packet, never a candidate, receipt, root or global cache.
+        // The packet encoder retains its actual 512 KiB framed-byte limit.
+        this.post(active.id, 'complete', { operation: 'hydrology-macro-analyze', preview });
+      } finally { reader.close(); }
+      return;
+    }
     if (operation.type === 'hydrology-analyze') {
       if (this.session.format !== 4 || operation.atlasFormat !== 4 || payload.length || Object.keys(operation).length !== 5
         || Object.keys(operation).some(key => !['type', 'atlasFormat', 'expected', 'rectangle', 'sourceNode'].includes(key))) throw new Error('只读流向操作的版本或消息格式无效。');

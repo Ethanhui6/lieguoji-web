@@ -1,0 +1,907 @@
+{
+  "cases": 12,
+  "passed": true,
+  "results": [
+    {
+      "before": {
+        "label": {
+          "kind": "island",
+          "land": 45,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 81,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77.16049382716051,
+          "cellCount": 81,
+          "landCells": 1,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 77.16049382716051,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 77.16049382716051
+        },
+        "expectedArea": 77.16049382716051,
+        "areaError": 0,
+        "dischargeError": 0,
+        "maxLocalError": 0,
+        "desktopComputeMs": 1.7117999999973108,
+        "oldUnitCellSourceTotal": 1,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "13999fcda281840da6c219911913115ca8ecbcfa855fc84a038b0bf4082d45a1"
+      },
+      "after": {
+        "label": {
+          "kind": "island",
+          "land": 45,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 101,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77.16054092219565,
+          "cellCount": 101,
+          "landCells": 21,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 77.16054092219565,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 36.00825243035797
+        },
+        "expectedArea": 77.16054092219565,
+        "areaError": 0,
+        "dischargeError": 0,
+        "maxLocalError": 0,
+        "desktopComputeMs": 4.632200000000012,
+        "oldUnitCellSourceTotal": 21,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2de6806a3c405e7bdbc70cb17b47cf296ffd33cc4985565f1cb1a621c7fe220b"
+      },
+      "sourceRatio": 1.0000006103516554,
+      "oldSourceRatio": 21
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "island",
+          "land": 21,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 81,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 62.5,
+          "cellCount": 81,
+          "landCells": 1,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 62.5,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 62.5
+        },
+        "expectedArea": 62.5,
+        "areaError": 0,
+        "dischargeError": 0,
+        "maxLocalError": 0,
+        "desktopComputeMs": 0.2973999999994703,
+        "oldUnitCellSourceTotal": 1,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "13999fcda281840da6c219911913115ca8ecbcfa855fc84a038b0bf4082d45a1"
+      },
+      "after": {
+        "label": {
+          "kind": "island",
+          "land": 21,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 101,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 62.50000000000003,
+          "cellCount": 101,
+          "landCells": 21,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 62.50000000000001,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 29.166666666666668
+        },
+        "expectedArea": 62.5,
+        "areaError": 2.842170943040401e-14,
+        "dischargeError": 7.105427357601002e-15,
+        "maxLocalError": 3.552713678800501e-15,
+        "desktopComputeMs": 1.7101000000002387,
+        "oldUnitCellSourceTotal": 21,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2de6806a3c405e7bdbc70cb17b47cf296ffd33cc4985565f1cb1a621c7fe220b"
+      },
+      "sourceRatio": 1.0000000000000004,
+      "oldSourceRatio": 21
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "island",
+          "land": 100,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 81,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 160.00000000000003,
+          "cellCount": 81,
+          "landCells": 1,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 160.00000000000003,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 160.00000000000003
+        },
+        "expectedArea": 160,
+        "areaError": 2.842170943040401e-14,
+        "dischargeError": 2.842170943040401e-14,
+        "maxLocalError": 0,
+        "desktopComputeMs": 0.6859000000004016,
+        "oldUnitCellSourceTotal": 1,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "13999fcda281840da6c219911913115ca8ecbcfa855fc84a038b0bf4082d45a1"
+      },
+      "after": {
+        "label": {
+          "kind": "island",
+          "land": 100,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 113,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 159.99999999999991,
+          "cellCount": 113,
+          "landCells": 33,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 160,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 73.33333333333336
+        },
+        "expectedArea": 160,
+        "areaError": -8.526512829121202e-14,
+        "dischargeError": 0,
+        "maxLocalError": 3.552713678800501e-15,
+        "desktopComputeMs": 0.5011999999987893,
+        "oldUnitCellSourceTotal": 33,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "1648e371dfd0b2b3f0463de5dff19ca607dc1c8f28697147857db1fa830bc1e0"
+      },
+      "sourceRatio": 0.9999999999999993,
+      "oldSourceRatio": 33
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "island",
+          "land": 100,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 81,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 243.8652644413961,
+          "cellCount": 81,
+          "landCells": 1,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 243.8652644413961,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 243.8652644413961
+        },
+        "expectedArea": 243.86526444139633,
+        "areaError": -2.2737367544323206e-13,
+        "dischargeError": -2.2737367544323206e-13,
+        "maxLocalError": 0,
+        "desktopComputeMs": 0.3022000000019034,
+        "oldUnitCellSourceTotal": 1,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "13999fcda281840da6c219911913115ca8ecbcfa855fc84a038b0bf4082d45a1"
+      },
+      "after": {
+        "label": {
+          "kind": "island",
+          "land": 100,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 121,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 243.86526807528207,
+          "cellCount": 121,
+          "landCells": 41,
+          "seaCells": 80,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 0,
+          "seaDischarge": 243.86526807528205,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 113.80379333829781
+        },
+        "expectedArea": 243.86526807528207,
+        "areaError": 0,
+        "dischargeError": -2.842170943040401e-14,
+        "maxLocalError": 3.552713678800501e-15,
+        "desktopComputeMs": 0.5753999999978987,
+        "oldUnitCellSourceTotal": 41,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "c5a7fb31a0d1a6b06b0aef61597ef6e46bbfb1b20038bab165a4efd1a640b0b1"
+      },
+      "sourceRatio": 1.0000000149012036,
+      "oldSourceRatio": 41
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "neck",
+          "land": 45,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77237.03703703724,
+          "cellCount": 1681,
+          "landCells": 763,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 398,
+          "seaDischarge": 77237.0370370374,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3822.2222222222226
+        },
+        "expectedArea": 77237.0370370374,
+        "areaError": -1.6007106751203537e-10,
+        "dischargeError": 0,
+        "maxLocalError": 2.2737367544323206e-13,
+        "desktopComputeMs": 5.275699999998324,
+        "oldUnitCellSourceTotal": 763,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "da213c704cdf7a8b9ef0f63620ffc78d1f30fa4420eb2707d8f8a3d7b7e46c18"
+      },
+      "after": {
+        "label": {
+          "kind": "neck",
+          "land": 45,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 3065,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77237.02912560213,
+          "cellCount": 3065,
+          "landCells": 2147,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 436,
+          "seaDischarge": 77237.02912560226,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3822.2222391764326
+        },
+        "expectedArea": 77237.02912560228,
+        "areaError": -1.4551915228366852e-10,
+        "dischargeError": -1.4551915228366852e-11,
+        "maxLocalError": 4.547473508864641e-13,
+        "desktopComputeMs": 15.606999999999971,
+        "oldUnitCellSourceTotal": 2147,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "d6461a66052feaaae57b7a951d92724fcea3d5c31d3650d14a391423f8c09ced"
+      },
+      "sourceRatio": 0.9999998975694121,
+      "oldSourceRatio": 2.81389252948886
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "neck",
+          "land": 21,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 76274.99999999999,
+          "cellCount": 1681,
+          "landCells": 763,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 398,
+          "seaDischarge": 76275,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3816.666666666667
+        },
+        "expectedArea": 76275,
+        "areaError": -1.4551915228366852e-11,
+        "dischargeError": 0,
+        "maxLocalError": 2.2737367544323206e-13,
+        "desktopComputeMs": 9.741799999999785,
+        "oldUnitCellSourceTotal": 763,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "da213c704cdf7a8b9ef0f63620ffc78d1f30fa4420eb2707d8f8a3d7b7e46c18"
+      },
+      "after": {
+        "label": {
+          "kind": "neck",
+          "land": 21,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 3065,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 76274.99999999495,
+          "cellCount": 3065,
+          "landCells": 2147,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 436,
+          "seaDischarge": 76275.00000000003,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3816.666666666667
+        },
+        "expectedArea": 76275,
+        "areaError": -5.0495145842432976e-9,
+        "dischargeError": 2.9103830456733704e-11,
+        "maxLocalError": 1.3642420526593924e-12,
+        "desktopComputeMs": 9.50829999999769,
+        "oldUnitCellSourceTotal": 2147,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "d6461a66052feaaae57b7a951d92724fcea3d5c31d3650d14a391423f8c09ced"
+      },
+      "sourceRatio": 0.9999999999999339,
+      "oldSourceRatio": 2.81389252948886
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "neck",
+          "land": 100,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 81491.99999999999,
+          "cellCount": 1681,
+          "landCells": 763,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 400,
+          "seaDischarge": 81492,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3846.666666666667
+        },
+        "expectedArea": 81492,
+        "areaError": -1.4551915228366852e-11,
+        "dischargeError": 0,
+        "maxLocalError": 2.2737367544323206e-13,
+        "desktopComputeMs": 7.218899999999849,
+        "oldUnitCellSourceTotal": 763,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "da213c704cdf7a8b9ef0f63620ffc78d1f30fa4420eb2707d8f8a3d7b7e46c18"
+      },
+      "after": {
+        "label": {
+          "kind": "neck",
+          "land": 100,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 2573,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 81491.99999999761,
+          "cellCount": 2573,
+          "landCells": 1655,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 436,
+          "seaDischarge": 81492.00000000001,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3846.666666666667
+        },
+        "expectedArea": 81492,
+        "areaError": -2.3865140974521637e-9,
+        "dischargeError": 1.4551915228366852e-11,
+        "maxLocalError": 4.547473508864641e-13,
+        "desktopComputeMs": 18.151699999998527,
+        "oldUnitCellSourceTotal": 1655,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "33017b25fdfccc941084737c462f388bbb33ba2cf8a8499846dd74b2d9910c6c"
+      },
+      "sourceRatio": 0.9999999999999709,
+      "oldSourceRatio": 2.1690694626474443
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "neck",
+          "land": 100,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 84782.76177411964,
+          "cellCount": 1681,
+          "landCells": 763,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 400,
+          "seaDischarge": 84782.7617741196,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3865.4320987654323
+        },
+        "expectedArea": 84782.76177411983,
+        "areaError": -1.8917489796876907e-10,
+        "dischargeError": -2.3283064365386963e-10,
+        "maxLocalError": 2.2737367544323206e-13,
+        "desktopComputeMs": 7.80370000000039,
+        "oldUnitCellSourceTotal": 763,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "da213c704cdf7a8b9ef0f63620ffc78d1f30fa4420eb2707d8f8a3d7b7e46c18"
+      },
+      "after": {
+        "label": {
+          "kind": "neck",
+          "land": 100,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 3259,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 84782.76988447593,
+          "cellCount": 3259,
+          "landCells": 2341,
+          "seaCells": 918,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 437,
+          "seaDischarge": 84782.76988447622,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3865.43207804362
+        },
+        "expectedArea": 84782.76988447612,
+        "areaError": -1.8917489796876907e-10,
+        "dischargeError": 1.0186340659856796e-10,
+        "maxLocalError": 9.094947017729282e-13,
+        "desktopComputeMs": 15.178100000000995,
+        "oldUnitCellSourceTotal": 2341,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "e5e413fc950455c89bd8f81c46ccfc0e3e57e74a3c9ef5d6c4249b82e7fde3e2"
+      },
+      "sourceRatio": 1.0000000956604398,
+      "oldSourceRatio": 3.0681520314547837
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 45,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 72357.40740740755,
+          "cellCount": 1681,
+          "landCells": 713,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 309,
+          "seaDischarge": 72357.40740740763,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3822.2222222222226
+        },
+        "expectedArea": 72357.40740740788,
+        "areaError": -3.346940502524376e-10,
+        "dischargeError": -2.473825588822365e-10,
+        "maxLocalError": 1.1368683772161603e-13,
+        "desktopComputeMs": 4.008900000000722,
+        "oldUnitCellSourceTotal": 713,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2ef286be204a6ab592d6f6b6a46751beb5575657281371af3c3254d8634c893b"
+      },
+      "after": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 45,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 3273,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 72357.40002482026,
+          "cellCount": 3273,
+          "landCells": 2305,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 353,
+          "seaDischarge": 72357.40002482035,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3822.2222391764326
+        },
+        "expectedArea": 72357.40002482041,
+        "areaError": -1.4551915228366852e-10,
+        "dischargeError": -5.820766091346741e-11,
+        "maxLocalError": 2.2737367544323206e-13,
+        "desktopComputeMs": 7.583600000001752,
+        "oldUnitCellSourceTotal": 2305,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "6d0d373cf0997082d502c7a79851c1aa02e2cc83710e2ba78177f671289c5b0f"
+      },
+      "sourceRatio": 0.9999998979705389,
+      "oldSourceRatio": 3.232819074333801
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 21,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 71249.99999999999,
+          "cellCount": 1681,
+          "landCells": 713,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 309,
+          "seaDischarge": 71250.00000000003,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3816.666666666667
+        },
+        "expectedArea": 71250,
+        "areaError": -1.4551915228366852e-11,
+        "dischargeError": 2.9103830456733704e-11,
+        "maxLocalError": 1.1368683772161603e-13,
+        "desktopComputeMs": 5.006600000000617,
+        "oldUnitCellSourceTotal": 713,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2ef286be204a6ab592d6f6b6a46751beb5575657281371af3c3254d8634c893b"
+      },
+      "after": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 21,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 3273,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 71249.99999999415,
+          "cellCount": 3273,
+          "landCells": 2305,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 353,
+          "seaDischarge": 71250.00000000004,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3816.666666666667
+        },
+        "expectedArea": 71250,
+        "areaError": -5.8498699218034744e-9,
+        "dischargeError": 4.3655745685100555e-11,
+        "maxLocalError": 1.3642420526593924e-12,
+        "desktopComputeMs": 8.922599999998056,
+        "oldUnitCellSourceTotal": 2305,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "6d0d373cf0997082d502c7a79851c1aa02e2cc83710e2ba78177f671289c5b0f"
+      },
+      "sourceRatio": 0.9999999999999181,
+      "oldSourceRatio": 3.232819074333801
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 100,
+          "sea": 0,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77273.99999999999,
+          "cellCount": 1681,
+          "landCells": 713,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 311,
+          "seaDischarge": 77274,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3846.666666666667
+        },
+        "expectedArea": 77274,
+        "areaError": -1.4551915228366852e-11,
+        "dischargeError": 0,
+        "maxLocalError": 1.1368683772161603e-13,
+        "desktopComputeMs": 5.955700000002253,
+        "oldUnitCellSourceTotal": 713,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2ef286be204a6ab592d6f6b6a46751beb5575657281371af3c3254d8634c893b"
+      },
+      "after": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 100,
+          "sea": 0,
+          "stage": "subdivided"
+        },
+        "points": 2725,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 77273.99999999732,
+          "cellCount": 2725,
+          "landCells": 1757,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 353,
+          "seaDischarge": 77274.00000000003,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3846.666666666667
+        },
+        "expectedArea": 77274,
+        "areaError": -2.6775524020195007e-9,
+        "dischargeError": 2.9103830456733704e-11,
+        "maxLocalError": 4.547473508864641e-13,
+        "desktopComputeMs": 7.003199999999197,
+        "oldUnitCellSourceTotal": 1757,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "23a2d1e18934ab7de549b422c414e777bde5a02af26969e418e99b48d5159ce3"
+      },
+      "sourceRatio": 0.9999999999999656,
+      "oldSourceRatio": 2.4642356241234222
+    },
+    {
+      "before": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 100,
+          "sea": 19,
+          "stage": "before"
+        },
+        "points": 1681,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 81097.00502972092,
+          "cellCount": 1681,
+          "landCells": 713,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 311,
+          "seaDischarge": 81097.00502972087,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3865.4320987654323
+        },
+        "expectedArea": 81097.00502972119,
+        "areaError": -2.6193447411060333e-10,
+        "dischargeError": -3.2014213502407074e-10,
+        "maxLocalError": 1.1368683772161603e-13,
+        "desktopComputeMs": 3.719999999997526,
+        "oldUnitCellSourceTotal": 713,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "2ef286be204a6ab592d6f6b6a46751beb5575657281371af3c3254d8634c893b"
+      },
+      "after": {
+        "label": {
+          "kind": "asymmetric",
+          "land": 100,
+          "sea": 19,
+          "stage": "subdivided"
+        },
+        "points": 3514,
+        "stats": {
+          "algorithm": "land-area-runoff-v2",
+          "landArea": 81097.01247239228,
+          "cellCount": 3514,
+          "landCells": 2546,
+          "seaCells": 968,
+          "connectedComponents": 1,
+          "endorheicBasins": 0,
+          "filledLandCells": 0,
+          "maxLakeDepth": 0,
+          "minCatchment": 512,
+          "riverSegmentCount": 354,
+          "seaDischarge": 81097.01247239212,
+          "endorheicDischarge": 0,
+          "maxAccumulation": 3865.43207804362
+        },
+        "expectedArea": 81097.012472392,
+        "areaError": 2.764863893389702e-10,
+        "dischargeError": 1.1641532182693481e-10,
+        "maxLocalError": 4.547473508864641e-13,
+        "desktopComputeMs": 10.582300000001851,
+        "oldUnitCellSourceTotal": 2546,
+        "oldUnitCellThreshold": 8,
+        "receiverHash": "0431b8448b9d2dbf3aa171971b3f238f61e6077e95b65a90b72a0c8daaa24da5"
+      },
+      "sourceRatio": 1.0000000917749226,
+      "oldSourceRatio": 3.570827489481066
+    }
+  ],
+  "actual": [
+    {
+      "label": ".autopilot/resolution-before.json",
+      "points": 38042,
+      "stats": {
+        "algorithm": "land-area-runoff-v2",
+        "landArea": 627430.7650355154,
+        "cellCount": 38042,
+        "landCells": 11163,
+        "seaCells": 26879,
+        "connectedComponents": 1,
+        "endorheicBasins": 0,
+        "filledLandCells": 54,
+        "maxLakeDepth": 2,
+        "minCatchment": 1882.2922951065464,
+        "riverSegmentCount": 987,
+        "seaDischarge": 627430.7650355117,
+        "endorheicDischarge": 0,
+        "maxAccumulation": 28881.773765160957
+      },
+      "expectedArea": 627430.7650355143,
+      "areaError": 1.1641532182693481e-9,
+      "dischargeError": -2.561137080192566e-9,
+      "maxLocalError": 3.637978807091713e-12,
+      "desktopComputeMs": 248.7435000000005,
+      "oldUnitCellSourceTotal": 11163,
+      "oldUnitCellThreshold": 34,
+      "receiverHash": "35c4711d97e4402da735f3b78f7b4e70bacac83bf2d9d92f9bab9b2f72fbc222",
+      "inputSha256": "9ef429d37ad9b97498ea57dec7f4914c3a3feafea474b8ab0985e2752444c694"
+    },
+    {
+      "label": ".autopilot/resolution-after.json",
+      "points": 40789,
+      "stats": {
+        "algorithm": "land-area-runoff-v2",
+        "landArea": 627595.8962655859,
+        "cellCount": 40789,
+        "landCells": 13910,
+        "seaCells": 26879,
+        "connectedComponents": 1,
+        "endorheicBasins": 0,
+        "filledLandCells": 54,
+        "maxLakeDepth": 2,
+        "minCatchment": 1882.7876887967577,
+        "riverSegmentCount": 1048,
+        "seaDischarge": 627595.8962655813,
+        "endorheicDischarge": 0,
+        "maxAccumulation": 28936.866344627615
+      },
+      "expectedArea": 627595.896265582,
+      "areaError": 3.958120942115784e-9,
+      "dischargeError": -6.984919309616089e-10,
+      "maxLocalError": 3.637978807091713e-12,
+      "desktopComputeMs": 268.81570000000283,
+      "oldUnitCellSourceTotal": 13910,
+      "oldUnitCellThreshold": 42,
+      "receiverHash": "f6613b53d9bacbc745fc5f63e0697815a83a45b92cd7711f7611744791b94c79",
+      "inputSha256": "66142b1ff4b891abd1d77b457168879aa8eaccab34684a1328de444fd2f5ead0"
+    }
+  ],
+  "claim": "Area source conservation only; routes and local source allocation remain mesh-dependent."
+}

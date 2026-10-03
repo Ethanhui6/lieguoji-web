@@ -1,0 +1,54 @@
+[
+  {
+    "name": "lint",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/eslint/bin/eslint.js",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "at": "2026-10-03T23:34:28.845Z",
+    "code": 1,
+    "stdout": "\nD:\\游戏\\架空地图模拟器\\src\\fms\\runoff.test.ts\n  15:5  error  Unexpected newline between function and ( of function call  no-unexpected-multiline\n\n✖ 1 problem (1 error, 0 warnings)\n\n",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "at": "2026-10-03T23:34:28.852Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "src/fms",
+      "src/world/fms-native-brush.test.ts"
+    ],
+    "at": "2026-10-03T23:34:28.856Z",
+    "code": 0,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  18 passed (18)\n      Tests  344 passed (344)\n   Start at  07:34:30\n   Duration  13.47s (tests 93%, import 4%, transform 2%)\n\n    Isolate  18 workers spawned · ~149ms startup each (spawn + environment, per file)\n             at least ~1.19s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  },
+  {
+    "name": "measure-lint",
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "node_modules/eslint/bin/eslint.js",
+      "docs/evidence/fms-area-runoff-2026-10-04/measure.mjs"
+    ],
+    "at": "2026-10-03T23:34:28.860Z",
+    "code": 1,
+    "stdout": "\nD:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-area-runoff-2026-10-04\\measure.mjs\n  23:48  error  'Buffer' is not defined  no-undef\n\n✖ 1 problem (1 error, 0 warnings)\n\n",
+    "stderr": ""
+  }
+]

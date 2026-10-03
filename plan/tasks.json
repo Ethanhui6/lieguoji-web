@@ -2636,7 +2636,21 @@
       "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
       "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
       "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
-      "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
+      "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/AREA_RUNOFF.md",
+      "docs/evidence/fms-area-runoff-2026-10-04/browser-checks.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/build-check.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/checks-before-lint-fix.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/checks.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/dev-preview.png",
+      "docs/evidence/fms-area-runoff-2026-10-04/dev-restored.png",
+      "docs/evidence/fms-area-runoff-2026-10-04/measure.mjs",
+      "docs/evidence/fms-area-runoff-2026-10-04/measurements.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/production-browser.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/production-preview.png",
+      "docs/evidence/fms-area-runoff-2026-10-04/production-restored.png",
+      "docs/evidence/fms-area-runoff-2026-10-04/verification.json",
+      "docs/evidence/fms-area-runoff-2026-10-04/checkpoint-checks.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2895,7 +2909,21 @@
           "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
           "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
           "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
-          "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
+          "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/AREA_RUNOFF.md",
+          "docs/evidence/fms-area-runoff-2026-10-04/browser-checks.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/build-check.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/checks-before-lint-fix.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/checks.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/dev-preview.png",
+          "docs/evidence/fms-area-runoff-2026-10-04/dev-restored.png",
+          "docs/evidence/fms-area-runoff-2026-10-04/measure.mjs",
+          "docs/evidence/fms-area-runoff-2026-10-04/measurements.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/production-browser.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/production-preview.png",
+          "docs/evidence/fms-area-runoff-2026-10-04/production-restored.png",
+          "docs/evidence/fms-area-runoff-2026-10-04/verification.json",
+          "docs/evidence/fms-area-runoff-2026-10-04/checkpoint-checks.json"
         ],
         "workItems": [
           {
@@ -2999,13 +3027,27 @@
               "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
               "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
               "docs/evidence/fms-coast-resolution-2026-10-04/verification.json",
-              "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json"
+              "docs/evidence/fms-coast-resolution-2026-10-04/checkpoint-checks.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/AREA_RUNOFF.md",
+              "docs/evidence/fms-area-runoff-2026-10-04/browser-checks.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/build-check.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/checks-before-lint-fix.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/checks.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/dev-preview.png",
+              "docs/evidence/fms-area-runoff-2026-10-04/dev-restored.png",
+              "docs/evidence/fms-area-runoff-2026-10-04/measure.mjs",
+              "docs/evidence/fms-area-runoff-2026-10-04/measurements.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/production-browser.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/production-preview.png",
+              "docs/evidence/fms-area-runoff-2026-10-04/production-restored.png",
+              "docs/evidence/fms-area-runoff-2026-10-04/verification.json",
+              "docs/evidence/fms-area-runoff-2026-10-04/checkpoint-checks.json"
             ],
-            "progress": "海岸平滑加入共享h20交点/局部细分；最终float32几何相对操作前原面前像验位移/面积/梯度，继承旧固定面，阴影可从保存网格重建。327相关测试、24组独立量测、本地源码绑定生产CSP/保存恢复通过；实际图38042→40789点并可继续画/撤销。粗层折角和水系分辨率敏感性仍在，WEB-02-01保持in_progress。",
+            "progress": "海岸加密与有界平滑保留；本批把每点单位径流改为实际float32三角面裁剪陆地面积，Float64汇流，Worker按自有几何快照验证源量/局部平衡/合法终端。345相关测试、12组加密面积对照及两份实际图量测、本地源码绑定生产CSP/保存刷新通过。解决源量按点数膨胀，河路仍受邻接影响；粗海岸、折角河道与手机/视觉门未完成。",
             "remaining": [
-              "粗层级海岸拐角与自然海湾/岬角观感仍不足；局部加密只提供真实自由度，不能以点数、折角指标或mask代替视觉验收。",
-              "加密改变邻接与单位点汇流，需处理水系分辨率敏感性；完整主线程几何验证与派生水文的手机耗时/内存尚未测定。",
-              "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点尚未实现。固定剖面宽度并非保持不变。"
+              "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
+              "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
+              "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点未实现。固定剖面宽度并非保持不变。"
             ]
           },
           {
@@ -3552,6 +3594,51 @@
         "docs/evidence/fms-coast-resolution-2026-10-04/production-restored.png",
         "docs/evidence/fms-coast-resolution-2026-10-04/restored.png",
         "docs/evidence/fms-coast-resolution-2026-10-04/verification.json"
+      ],
+      "hydrologyFollowup": "fb8e82196d51c12587fcf30bf020b5c46610043f",
+      "hydrologyNote": "area runoff now conserved; receiver paths remain mesh-dependent. Previous evidence records unit-cell model."
+    },
+    "areaRunoffPrototype": {
+      "sourceCommit": "fb8e82196d51c12587fcf30bf020b5c46610043f",
+      "algorithm": "land-area-runoff-v2",
+      "status": "local-area-conservation-and-worker-protocol-verified; routes-and-visual-quality-open",
+      "units": "square world units; uniform static source, not rainfall volume",
+      "sourceRule": "clipped float32 triangle land area shared equally among its land corners; sea local source zero",
+      "arrays": "Float64Array runoff and accumulation",
+      "defaultThreshold": "max(512,landArea*0.003); fixed world area floor, not sample-count-dependent",
+      "workerValidation": "owned geometry snapshot, source area, per-node balance, discharge, acyclicity, legal component terminals and river visibility; not full priority-flood replay",
+      "saveSchemaChanged": false,
+      "derivedVisualMayChangeOnLoad": true,
+      "riverPathsResamplingInvariant": false,
+      "physicalDevice": "not_run",
+      "userVisual": "pending",
+      "tests": 345,
+      "independentSubdivisionCases": 12,
+      "actualSourceDeltaPercent": 0.026318637732258843,
+      "previousPointSourceDeltaPercent": 24.608080265161703,
+      "browser": {
+        "devRevision": 35,
+        "devStoredRevision": 16,
+        "prodRevision": 11,
+        "prodStoredRevision": 7,
+        "exactRefresh": true,
+        "undoRestoredExceptRevision": true
+      },
+      "evidence": [
+        "docs/evidence/fms-area-runoff-2026-10-04/AREA_RUNOFF.md",
+        "docs/evidence/fms-area-runoff-2026-10-04/browser-checks.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/build-check.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/checkpoint-checks.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/checks-before-lint-fix.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/checks.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/dev-preview.png",
+        "docs/evidence/fms-area-runoff-2026-10-04/dev-restored.png",
+        "docs/evidence/fms-area-runoff-2026-10-04/measure.mjs",
+        "docs/evidence/fms-area-runoff-2026-10-04/measurements.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/production-browser.json",
+        "docs/evidence/fms-area-runoff-2026-10-04/production-preview.png",
+        "docs/evidence/fms-area-runoff-2026-10-04/production-restored.png",
+        "docs/evidence/fms-area-runoff-2026-10-04/verification.json"
       ]
     }
   }

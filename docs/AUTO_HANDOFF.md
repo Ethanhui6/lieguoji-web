@@ -1,59 +1,56 @@
 # 当前续接：Fantasy Map Simulator 网页重建 V5
 
-更新：2026/10/4 07:16:50 香港时间，显式海岸边与局部加密检查点。先核实 Git，读取 CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild、本文件。接续现有代码；旧 tasks/phaseState/programme 只保留历史和发布审计要求，不决定当前开发顺序。
+更新：2026/10/4 07:44:47 香港时间，面积汇流检查点。先核实Git，读CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild、本文件；接续已有代码。旧tasks/phaseState/programme只作历史及发布审计，不决定开发顺序。
 
-## 当前位置与边界
+## 当前阶段与截止
 
-**WEB-PH02 / WEB-02-01 仍 in_progress。** 当前“预览轮廓平滑”已包含真实海岸交点/共享边细分，实际地图可继续画、撤销、保存、刷新；但4/16/40倍观察仍有粗拐角和折角河道，未达到自然海湾/岬角观感。不能以40,789点或327测试宣布完成。
+**WEB-PH02 / WEB-02-01仍in_progress。** 可画闭合轮廓、海陆笔刷、保形自然化、海岸细化/平滑、连续缩放、撤销保存恢复。海岸粗拐角、折角河道和简单海洋仍未达到用户要求；不能以点数/345测试判完成。
 
-目标iPhone13ProMax，用户报告iOS27，Safari/Chrome，竖屏、原作风格、折叠工具。首份真机/用户视觉门未过，不扩建国家、行政、家族、信仰。**香港时间2026-10-04 08:00截止，到期先保存检查点，不开始新批。** 不声称调度尚未执行的工作完成或会话结束后仍在后台开发。
+目标iPhone13ProMax，用户报告iOS27，Safari/Chrome，竖屏、原作风格、折叠工具。首份真机/用户视觉门未过，不扩建国家、行政、家族、信仰。**香港时间2026-10-04 08:00截止，到期先保存检查点，不开始新批。** 不声称会话结束后仍后台开发。
 
-## 本批实际变化
+## 本批：实际陆地面积汇流
 
-- “预览轮廓平滑”自动沿h20跨海陆边插入共享点，并最多三轮细分真实海岸边，再共同平滑；没有新面板或假曲线。新增点高程只取20，保留Int32；原点高程、保护位不变，新点锁值0。显示/编辑/保存使用同一存储网格。
-- 先用旧网格确定保护面、小组件边界和支撑不足区域，其面边不拆分；原固定点继承，避免拆成纯海/陆面后解锁细颈。共享边两侧同步拆，50k预算截断仍闭合；49,729→50,000回归通过。
-- **最终float32候选直接相对原渲染面未量化细分前像量测**，不以量化后的中间图重设起点。每次0—4位移、每正面积组件面积变化≤2%、梯度≤0.2／对应点间距倍率[0.8,1.2]，包含重网格误差。不是每三角面2%，不是固定剖面宽度不变，连续确认仍可累积。
-- 旧粗层平滑场仿射传到子点，再混合较小连续空间场并统一缩放；初版逐点缩小产生细碎折角，规则样例被拒绝，现已修复。无改善不应用；moves为空的候选addedPoints不算实际新增。
-- 新h20边阴影从存储网格确定重建，纯细分的原非h20顶点shade保持；新增点/原h20边阴影可变化，不承诺全场逐像素不变。水系随新邻接重算，开发图图河段841→696、实际绘制841→650；**单位点汇流导致分辨率敏感，尚需处理**。
-- 整体lint/typecheck、17文件327/327相关测试、测量脚本ESLint通过。首次3个独立几何测试超时，已预计算原面包围盒加速查找，未放宽超时/删检查；失败输出保留。不是全套旧游戏测试或云端CI。
-- 24组独立裁剪/组件面积/奇异值/剖面/原面高程量测通过，16组实际移动，8组小岛不变。实际图38,042→40,789点，2,747新增、13,975点移动；最大点位移1.193614、海岸交点1.123073、单组件面积变化0.0305055%；703个原保护面顶点变化0。
-- 折角诊断621.207→588.798只是诊断，不是自然感评分；4/16/40倍同相机截图仍见粗层级折角。本项未完成，不把局部截图当作WEB-02-02直接源/Atlas完整对照。
-- 开发浏览器：取消checksum不变；确认29→撤销30→重做31→保存store14→刷新完整JSON一致。再画陆地32→撤销33→保存store15，除revision外数据恢复一致，再刷新通过。源码重算与实际revision31文档全部字段精确一致，另存阴影hash。
-- 生产构建：严格CSP实际Worker生成686点，取消不改档，确认7→撤销8→重做9→保存store6→刷新完整JSON一致；两入口warn/error为0。均428×926桌面Chromium鼠标/键盘，不是iPhone或WebKit。一次3秒CDP等待超时后实查预览已完成，不冒充手机性能通过。
+- 源码 **fb8e82196d51c12587fcf30bf020b5c46610043f**，批起点8e8aa59；本文件/证据另作本地checkpoint，当前HEAD用git log -1核实。
+- 原每陆地点1单位改为land-area-runoff-v2：按实际float32三角面裁剪h>=20的陆地面积，均分给该面陆地角点；海点本地源量0，孤立h20零面积不造水。Float64本地源量/累计量，单位平方世界单位；不是原作算法或真实降水体积。
+- 默认河流阈值max(512,landArea*0.003)，不随采样点数重新归一化；线宽仍为累计量/阈值的无量纲比例。
+- Worker传输/主线程校验同步。请求自有几何快照核对源量、每节点流入+源量=累计值、总出口、无环、湖深、河段完整性；有海组件禁止陆地终端，无海组件唯一稳定最低点终端。伪造全部receiver=-1且守恒的响应也拒绝。不是完整逐位重算priority-flood。
+- 接收者选择算法未改；新增邻接和局部分配仍改变河道/河口，**源量守恒不等于河网重采样不变**。文档schema/持久化代码未改，水文不存盘；旧FMS文档加载会重新派生水系，外观可能变化。
+- 18文件345/345相关测试、整体lint/typecheck、measure脚本lint通过。首次两处lint失败（多行调用/缺Buffer导入）已修复并保留输出；未放宽检查。不是全套旧游戏测试或云端CI。
+- 12组独立裁剪面积/加密守恒对照通过，纯细分源量相对差最大6.10352e-7，对应float32面积误差；旧点计数源量可放大2.169—41倍。实际图38042→40789点时陆地点11163→13910（+24.608%），新版源量627430.765→627595.896（+0.0263186%，与真实面积相符）；逐点最大守恒误差3.64e-12。实际图河段987→1048，仍有路径依赖。Node单次水文约249/269ms，不是手机结果。
+- 开发入口：实际Worker预览/取消checksum不变/再次生成确认/撤销/保存/刷新。生产入口：严格CSP下实际Worker预览/确认/撤销/保存/刷新。两入口完整JSON刷新一致、操作后除revision外恢复原地图；玩家锁与启用前v1归档保持。两入口warn/error为0。
+- 均428×926桌面Chromium鼠标/键盘，不是iPhone/WebKit/真实触控。一处浏览器测试按钮名称写错匹配0元素，按当前名称修正后完成，非产品保存故障。
 
-本批：[完整报告](evidence/fms-coast-resolution-2026-10-04/COAST_RESOLUTION.md)、[24组量测](evidence/fms-coast-resolution-2026-10-04/measurements.json)、[实际几何](evidence/fms-coast-resolution-2026-10-04/browser-geometry.json)、[精确重放](evidence/fms-coast-resolution-2026-10-04/exact-browser-geometry.json)、[开发浏览器](evidence/fms-coast-resolution-2026-10-04/browser-checks.json)、[生产](evidence/fms-coast-resolution-2026-10-04/production-browser.json)、[指纹](evidence/fms-coast-resolution-2026-10-04/verification.json)。
+本批：[报告](evidence/fms-area-runoff-2026-10-04/AREA_RUNOFF.md)、[独立量测](evidence/fms-area-runoff-2026-10-04/measurements.json)、[开发浏览器](evidence/fms-area-runoff-2026-10-04/browser-checks.json)、[生产浏览器](evidence/fms-area-runoff-2026-10-04/production-browser.json)、[源码/产物指纹](evidence/fms-area-runoff-2026-10-04/verification.json)。
 
-## Git、产物和发布锁
+## Git、构建和发布锁
 
-- 目录D:/游戏/架空地图模拟器，分支codex/ph06-world-generation。批起点96eae82；源码 **f4d5f76305f87f6d4574205dcec9d03d060e70b8**，证据/本文件单独checkpoint提交，当前HEAD用git log -1核实。
-- dist绑定f4d5f76，39允许游戏产物，coast.worker-2MXmECyk.js；build.json及全部文件SHA256见本批verification.json。0.5.0-preview.33是本地切片基线，不是完成度。
-- remote沿用https://github.com/Ethanhui6/lieguoji-web.git，hooksPath=.githooks；Pages lieguoji-web 唯一原生Git链，main生产、其他分支预览。历史https://lieguoji-web.pages.dev/本批未联网核实或更新。
-- **禁止push/tag、远程PR/Issue/Milestone、上传、Pages触发。** pre-push/CSP/发布策略未改；9月24一次例外已消耗，不另建部署链。V5完成不自动解除旧全部PH门。
-- plan只更新webRebuild，其余顶层字段与96eae82完全相同；旧61任务/36PH/144子项、CANON/正史/长征保留。
+- 目录D:/游戏/架空地图模拟器，分支codex/ph06-world-generation。dist绑定fb8e821，39允许游戏产物；完整SHA见本批verification。preview.33是切片版本基线，不是完成度。
+- remote沿用https://github.com/Ethanhui6/lieguoji-web.git，hooksPath=.githooks。Pages lieguoji-web唯一原生Git链，main生产、其他分支预览；历史https://lieguoji-web.pages.dev/本批未联网核实或更新。
+- **禁止push/tag、远程PR/Issue/Milestone、上传、Pages触发。** pre-push/CSP/发布策略未改，9月24单次例外已消耗；不另建部署链。V5完成不自动解除旧全PH门。
+- plan只更新webRebuild；其余顶层字段、firstPlayableGate与8e8aa59逐字段核对保持。旧61任务/36PH/144子项、CANON/正史/长征保留。
 
-## 本地入口与测试数据
+## 本地入口与测试存档
 
-- 开发 http://127.0.0.1:5180/?fms=1 （session65287），生产产物预览 http://127.0.0.1:5181/?fms=1 （session55887）。续接先核实服务存活；不是公网/手机可访问URL。
-- FMS独立惰性入口，不挂RootApp/LegacyEntry，不建旧640草稿。存储命名空间lieguoji-fms-web-v1，两个工程测试origin均DB2。
-- 5180：v2 revision33/storedRevision15/590锁/40,789点，checksum=f273e2fca413fb61b127a664dd6d95df9a09c225171daa75bd8d4d7bbc5abc20；beforeProtection仍v1 revision10。
-- 5181：v2 revision9/storedRevision6/371锁/37,550点，checksum=e9b8b1daaf26ec271f5ba8d228d0db7d03baa3ccc30e99b338a1ec01892562ab；beforeProtection仍v1 revision2。
-- 均人工测试图；旧4173 atlas-17708eca-a8dc-465b-9763-8f82a1539ca6未打开/覆盖。开发IAB标签7留handoff，生产临时标签20已关闭，临时视口复位。完整测试网格仅ignored .autopilot/resolution-before.json与resolution-after.json（后者rev31，最终rev33仅操作版本号不同），不入Git/dist。
+- 开发 http://127.0.0.1:5180/?fms=1 （原session65287），生产预览 http://127.0.0.1:5181/?fms=1 （原session55887）。续接先核实服务存活；不是公网/手机URL。
+- FMS惰性独立入口，不挂RootApp/LegacyEntry，不建旧640草稿。两个工程测试origin均lieguoji-fms-web-v1/DB2。
+- 5180最终：v2 revision35/storedRevision16/590锁/40789点，checksum=71d891242b4adbb40a376c89a26eabac4bbdccc5182d903083299e422ceca7f5；beforeProtection仍v1 revision10。河段图1048/绘制989、河口78、湖点54。
+- 5181最终：v2 revision11/storedRevision7/371锁/37550点，checksum=57257921dd0de327cc19de5266a8cc7cc5b5d8dd646ec31da7bdc109ce251714；beforeProtection仍v1 revision2。河段图173/绘制141、河口68、湖点0。
+- 都是人工工程测试图；旧4173 atlas-17708eca-a8dc-465b-9763-8f82a1539ca6未打开/覆盖。开发IAB标签7留handoff；本批生产临时标签21关闭、视口复位。
+- ignored .autopilot/resolution-before.json与resolution-after.json为上一批rev28/31人工测试网格；本批最终开发rev35与rev31地图内容相同，仅revision不同。完整网格不提交/dist。
 
-## 继承保护与未通过事项
+## 已有合同与当前限制
 
-- backup恢复归档缺口在5f56088已修复，本批persistence.ts未改。327测试含current损坏/缺失×归档不存在/已有及二次v2保存；chosen有效current??backup归档、不覆盖、CAS/原子升级/失败不迟到保护保持。没有手动归档恢复按钮，不再重复恢复此缺口。
-- 普通自然化fms-shape-preserving-relief-v4固定当前h20海岸（包括加密后），旧v1已保存收缩不自动恢复。沿海低地1%—20%、默认3.5%，有1.8平均点距下限，仅内陆过渡。
-- 旧微细化176f396的每父面海陆各2%合同保持；上一批位置平滑fd6f8a5证据保留。本次算法bounded-coast-relaxation-v2仍按每次当前图约束，无最初轮廓永久锚点。旧微细化不能套用平滑的小组件固定合同。
-- 当前1536单位、36,864基础点不是最终大图；50k点上限、历史预算未抬高。主线程仍完整重验网格和派生水文，桌面结果不是手机耗时/内存证据。原作海洋材质、连续大图LOD、Collider和完整模拟仍有未知。
-- 新增点改变排水邻接和单位点汇流，水系不具备重采样不变性；模拟接入前需冻结水文版本/尺度合同，不能将测试图转正式设定。
+- 海岸共享h20交点/局部细分和平滑源码f4d5f76证据在fms-coast-resolution目录；最终float32候选相对原渲染面未量化前像验位移≤每次0—4、每正面积组件总面积变化≤2%、梯度≤0.2/对应点距倍率[.8,1.2]。不是每面2%，不是固定剖面宽度不变；反复确认仍累积，最初轮廓永久锚点未做。
+- 原固定面/小组件（边界面积<4096）在细分前确定并继承，面边不拆分；50k点上限/最多3轮/2单位目标长度保留，目标长度不保证。原点高程/锁不变，新h20点锁0；显示/拾取/保存同一真实网格。普通画笔选区仍是Voronoi适配，非原Collider等价。
+- 阴影从网格确定重建；纯细分原非h20点shade保持，不保证新增点/原h20边或全图像素不变。新水文不改变海岸几何。河流中心线h20裁剪与butt端帽已有；整条线宽陆地mask未实现。
+- 普通自然化fms-shape-preserving-relief-v4固定当前h20海岸；沿海低地1%—20%、默认3.5%，1.8平均点距下限，仅内陆过渡。旧v1已保存收缩不自动恢复。
+- backup恢复归档缺口5f56088已修；chosen有效current??backup、归档不覆盖、CAS/原子升级/失败不迟到写入保持，345测试包含恢复矩阵。尚无手动归档恢复按钮，不重复恢复同缺口。
+- 1536单位/36864基础点不是最终大图；50k上限未抬高。主线程完整几何/源量重验/水文仍有成本，手机内存耗时未知。海洋材质、连续大图LOD、完整模拟未知；正式CANON独立待验。
 
 ## 下一批
 
-1. 继续WEB-02-01粗层级轮廓自然感、局部细节连贯性；同时针对当前真实加密图定位水系的分辨率敏感性和主线程成本。保留本批原图几何预算，不凭点数、mask或折角指标判视觉通过，不再只叠按钮。
-2. 01前置完成后才做WEB-02-02同输入/种子/相机直接源地形与Atlas完整对照及海洋/湖边/河口连续过程。WEB-02-03真机和用户视觉交用户验收；不扩建国家等系统。
-3. 08:00到期先保存检查点，不开始新批。当前无新登录授权或秘密输入需要，云端冻结。
+1. 继续WEB-02-01自然海湾/岬角和粗层级轮廓；面积源量已修，后续针对邻接/局部分配的流路尺度敏感性与主线程成本，不重复把单位点源量问题当未修。
+2. 01前置完成后才开展WEB-02-02同输入/种子/相机直接地形与Atlas完整对照、海洋/湖边/河口连续过程。WEB-02-03真机/用户视觉不可代验；不扩建国家等系统。
+3. **08:00到期仅保存检查点，不开始新批。** 当前无新登录/秘密输入需求，云端冻结。
 
-## 材料范围
-
-本批未读取新安装材料。只读授权D:/steam/steamapps/common/FantasyMapSimulator，不写安装目录，不读认证/SDK/envs.log/个人存档，不运行原EXE/DLL/恢复脚本。raw/dump留ignored .autopilot/fms-audit，不提交、不进dist。
-原作参考见docs/FMS_REFERENCE_BASELINE_2026-10-04.md和fms-brush-numeric证据；36bd1ac绘图底座、42af5433旧产品基准保留。不重复恢复GetHeightMap/SetCellAsSea；按有界切片接续未知项。
+本批未读取新安装材料。安装目录D:/steam/steamapps/common/FantasyMapSimulator只读，不读认证/SDK/envs.log/个人存档、不运行原EXE/DLL/恢复脚本。raw/dump只在ignored .autopilot/fms-audit，不提交/dist。原参照见FMS_REFERENCE_BASELINE与fms-brush-numeric证据；不重复恢复GetHeightMap/SetCellAsSea。

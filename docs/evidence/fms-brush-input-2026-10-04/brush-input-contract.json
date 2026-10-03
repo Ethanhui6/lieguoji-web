@@ -1,0 +1,50 @@
+{
+  "schema": "lieguoji-fms-web-brush-input-contract",
+  "version": 1,
+  "status": "WEB_ADAPTATION_PROPOSAL_NOT_NATIVE_WIRE_PROTOCOL",
+  "scope": "One brush stamp on a fixed world revision; terrain-only numeric result",
+  "intent": {
+    "identity": ["worldId", "baseRevision", "commandId"],
+    "worldPoint": "finite x/y from the active camera transform; declared web world coordinate system",
+    "radius": "finite positive value in web world units; not CSS pixels and not claimed to reproduce original camera/radius mapping",
+    "shape": ["plane", "hill"],
+    "mode": ["add", "subtract", "min", "max", "average", "replace", "erase"],
+    "heightInput": "finite float32 control value; interpreted by the recovered mode, not generic opacity",
+    "decayFactor": "explicit finite float32 Hill exponent; original runtime UI limits unknown",
+    "randomInput": "declared algorithm/version/state or explicit finite tape; replayable web adaptation, not recovered Unity state"
+  },
+  "selection": {
+    "authority": "Resolve against the same immutable geometry revision used for display and command confirmation",
+    "preferredWebDefinition": "Containing-polygon center pick plus circle/polygon intersection selection",
+    "nativeDefinition": "Raycast CellObject.Site.CellIndex center plus Physics.OverlapSphere collider selection",
+    "nativeEquivalenceClaim": false,
+    "algorithmIdRequired": true,
+    "output": ["centerCellId", "uniqueSelectedCellIds", "geometryRevision", "selectionAlgorithmId"],
+    "neighbors": "Use stored ordered adjacency without sorting or re-triangulating during the command",
+    "noCenterHit": "Explicit no-op; do not silently choose a remote nearest sample",
+    "centerMembership": "Native Hill kernel allows center outside selected; UI adapter may enforce a stricter declared contract"
+  },
+  "numericRules": {
+    "references": [
+      "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
+      "docs/evidence/fms-hill-recovery-2026-10-04/HILL_STATIC_RECOVERY.md"
+    ],
+    "planeEraseElevation": 0,
+    "planeEraseSource": "World.SetCellAsSea, RVA 0x6C2290, elevation write at 0x6C22DC",
+    "eraseEntitySemanticsImplementedByThisContract": false,
+    "hillReplaceErase": "Not covered by the Plane erase finding; reject or explicitly adapt unsupported combinations",
+    "overflowAndInvalidInputs": "Reject or use an explicitly documented adaptation; do not claim arbitrary JavaScript arithmetic matches native int32 overflow",
+    "generalPowerBitEquivalence": false
+  },
+  "result": {
+    "fields": ["commandId", "baseRevision", "newRevision", "centerCellId", "selectedCount", "elevationPatchWithPreviousValues", "affectedBounds", "randomConsumption"],
+    "purpose": "Render, undo, save and restore from the same real elevation state",
+    "previewConfirm": "Bind revision, selection algorithm, control values and RNG input; reject stale confirmation"
+  },
+  "originalRuntimeDefaults": {
+    "height": "Unverified active binding; scene candidate min 0 / max 100 / default 45 recorded separately",
+    "radius": "Unverified active binding; two scene candidates have different defaults",
+    "decay": "Unknown",
+    "webDefaultsMustBeDeclared": true
+  }
+}

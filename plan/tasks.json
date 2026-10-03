@@ -2461,7 +2461,7 @@
     "status": "in_progress",
     "source": "CODEX_AUTOPILOT_V5.md",
     "roadmap": "docs/FMS_WEB_REBUILD_PLAN.md",
-    "currentPhaseId": "WEB-PH00",
+    "currentPhaseId": "WEB-PH01",
     "reason": "用户否定当前体验及旧计划，要求按自己原作重新规划；先可绘图自然大陆与连续缩放",
     "supersedes": {
       "executionOrder": "V4",
@@ -2530,23 +2530,36 @@
       "docs/FMS_REFERENCE_BASELINE_2026-10-04.md",
       "docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md",
       "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
-      "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json"
+      "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json",
+      "docs/evidence/fms-hill-recovery-2026-10-04/HILL_STATIC_RECOVERY.md",
+      "docs/evidence/fms-hill-recovery-2026-10-04/manifest.json",
+      "docs/evidence/fms-hill-recovery-2026-10-04/hill-static-fixtures.json",
+      "docs/evidence/fms-brush-input-2026-10-04/BRUSH_INPUT_REPORT.md",
+      "docs/evidence/fms-brush-input-2026-10-04/manifest.json",
+      "docs/evidence/fms-brush-input-2026-10-04/brush-input-contract.json",
+      "docs/evidence/fms-brush-input-2026-10-04/scene-ui-parameters.json",
+      "docs/evidence/fms-brush-numeric-2026-10-04/verification.json",
+      "scripts/check-v5-plan.mjs",
+      "scripts/check-v5-plan.test.mjs"
     ],
     "nextBatch": [
-      "WEB-00-02",
-      "WEB-00-03"
+      "WEB-01-01"
     ],
     "phases": [
       {
         "id": "WEB-PH00",
         "title": "原作与材料基线",
         "dependsOn": [],
-        "status": "in_progress",
+        "status": "done",
         "legacyRequirementIds": [
           "PH00"
         ],
         "acceptance": "产品选择、原作操作参照及一次画笔输入输出合同明确；静态与实机证据分开",
-        "evidence": [],
+        "evidence": [
+          "docs/FMS_REFERENCE_BASELINE_2026-10-04.md",
+          "docs/evidence/fms-brush-input-2026-10-04/brush-input-contract.json",
+          "docs/evidence/fms-brush-numeric-2026-10-04/verification.json"
+        ],
         "workItems": [
           {
             "id": "WEB-00-01",
@@ -2556,8 +2569,13 @@
             "acceptance": "用户已回答选项、阶段、旧要求与云端冻结均落盘",
             "evidence": [
               "CODEX_AUTOPILOT_V5.md",
-              "docs/FMS_WEB_REBUILD_PLAN.md"
-            ]
+              "docs/FMS_WEB_REBUILD_PLAN.md",
+              "AGENTS.md",
+              "scripts/check-v5-plan.mjs",
+              "scripts/check-v5-plan.test.mjs",
+              "docs/evidence/fms-brush-numeric-2026-10-04/verification.json"
+            ],
+            "maintenance": "附加V5本地计划校验防止旧顺序/依赖错位；原发布检查保持独立且未削弱。"
           },
           {
             "id": "WEB-00-02",
@@ -2565,11 +2583,13 @@
             "dependsOn": [
               "WEB-00-01"
             ],
-            "status": "in_progress",
+            "status": "done",
             "acceptance": "具名片段覆盖画陆擦海、参数、生成、撤销、连续缩放和菜单；不足列未知",
             "evidence": [
               "docs/FMS_REFERENCE_BASELINE_2026-10-04.md"
-            ]
+            ],
+            "completionScope": "参照基线已建立：具名可见片段、官方文字与各操作未知项分别列出；不是完整原作操作观察或相似度通过。",
+            "progress": "实际观察地图/外观菜单/工具条；高度/半径有静态与官方文字交叉证据。撤销/连续缩放完整视频仍未知，进入对应网页切片对照；同一视频登录门不重复尝试。"
           },
           {
             "id": "WEB-00-03",
@@ -2577,15 +2597,27 @@
             "dependsOn": [
               "WEB-00-01"
             ],
-            "status": "in_progress",
+            "status": "done",
             "acceptance": "限定函数静态证据、选择点和高度变化的最小fixture；没有原作运行对照不称等价",
             "evidence": [
               "docs/evidence/fms-web-replan-2026-10-04/BRUSH_STATIC_AUDIT.md",
-              "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json"
+              "docs/evidence/fms-web-replan-2026-10-04/brush-static-manifest.json",
+              "docs/evidence/fms-hill-recovery-2026-10-04/HILL_STATIC_RECOVERY.md",
+              "docs/evidence/fms-hill-recovery-2026-10-04/manifest.json",
+              "docs/evidence/fms-hill-recovery-2026-10-04/hill-static-fixtures.json",
+              "docs/evidence/fms-brush-input-2026-10-04/BRUSH_INPUT_REPORT.md",
+              "docs/evidence/fms-brush-input-2026-10-04/manifest.json",
+              "docs/evidence/fms-brush-input-2026-10-04/brush-input-contract.json",
+              "docs/evidence/fms-brush-input-2026-10-04/scene-ui-parameters.json",
+              "docs/evidence/fms-brush-numeric-2026-10-04/verification.json",
+              "src/world/fms-native-brush.ts",
+              "src/world/fms-native-brush.test.ts"
             ],
-            "progress": "三个函数静态调用/局部高程算术已核实；自然Hill形状和数值fixture未完成，原作运行/网页行为未验"
+            "progress": "Plane七模式高程、Hill FIFO邻接传播与五模式合成已实现，9个独立静态样例包含在68项通过测试中；中心/半径/选区链与Plane擦海高程0具名核实。",
+            "completionScope": "有界静态和网页纯数值合同；未运行原作，不宣称Collider/拓扑、完整实体维护、普通powf/Unity RNG、视觉或手机等价。"
           }
-        ]
+        ],
+        "completionScope": "达到基线出口：产品选择、具名参照、一次画笔静态/数值试验、下一切片输入输出清楚。其余原作未知显式保留，不冒称完整复现。"
       },
       {
         "id": "WEB-PH01",
@@ -2593,7 +2625,7 @@
         "dependsOn": [
           "WEB-PH00"
         ],
-        "status": "todo",
+        "status": "in_progress",
         "legacyRequirementIds": [
           "PH01",
           "PH02",
@@ -2611,9 +2643,12 @@
               "WEB-00-01",
               "WEB-00-02"
             ],
-            "status": "todo",
+            "status": "in_progress",
             "acceptance": "原作工具语义折叠；单指绘图/双指导航；独立命名空间",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md"
+            ],
+            "progress": "已核实RootApp提前创建旧草稿/打开旧库，独立入口需位于main惰性分流；相机/源拓扑API可复用。此项开始，UI和浏览器证据仍未实现，不标完成。"
           },
           {
             "id": "WEB-01-02",
@@ -2779,10 +2814,24 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": {
-      "name": "HeightMapGenerator.GetHeightMap",
-      "rva": "0x38BC80",
-      "reason": "原生自然Hill画笔的直接依赖；现有JS模板不是这一函数"
+    "nextRecoveryTarget": null,
+    "lastRecovery": {
+      "name": "HeightMapGenerator.GetHeightMap and World.SetCellAsSea",
+      "status": "bounded-static-and-numeric-complete",
+      "evidence": [
+        "docs/evidence/fms-hill-recovery-2026-10-04/manifest.json",
+        "docs/evidence/fms-brush-input-2026-10-04/manifest.json",
+        "docs/evidence/fms-brush-numeric-2026-10-04/verification.json"
+      ],
+      "note": "不重复恢复已完成函数；新恢复仅在绘图切片遇到具体必要未知时启动。"
+    },
+    "operationalSchedule": {
+      "id": "v5",
+      "kind": "heartbeat",
+      "intervalMinutes": 30,
+      "until": "2026-10-04T08:00:00+08:00",
+      "configurationReadBack": true,
+      "note": "实际执行依赖本地Codex可用；截至已运行检查点记录结果，到期不开始新批。"
     }
   }
 }

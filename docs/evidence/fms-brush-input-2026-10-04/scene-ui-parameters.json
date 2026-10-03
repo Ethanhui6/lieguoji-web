@@ -1,0 +1,92 @@
+{
+  "schema": "fms-selected-scene-slider-observations",
+  "version": 1,
+  "scope": "Only exact-name brush UI GameObject components with script pointer resolved to SliderValueConnector; no other MonoBehaviour payloads decoded.",
+  "evidenceLevel": "SERIALIZED_SCENE_VALUES_NOT_RUNTIME_ACTIVE_VALUES",
+  "file": {
+    "name": "level0",
+    "bytes": 6329900,
+    "sha256": "a9aba2ef74f52869124f894388e944054aa13faabefde5a9cfba7558a6a9e294"
+  },
+  "serializedFieldOrderSource": "dump.cs SliderValueConnector TypeDefIndex 911; SliderSettings TypeDefIndex 910",
+  "pointerTypeSource": {
+    "file": "globalgamemanagers.assets",
+    "scriptPathId": 1045,
+    "class": "SliderValueConnector",
+    "assembly": "Assembly-CSharp.dll"
+  },
+  "rows": [
+    {
+      "gameObjectId": 10016,
+      "gameObjectName": "BrushHeight",
+      "connectorId": 45856,
+      "scriptFile": "globalgamemanagers.assets",
+      "scriptPathId": 1045,
+      "componentBytes": 112,
+      "componentSha256": "a9408b41eebb90890886f061a2c5c4fbad7caf4c1f15ec0719f8840c79b5f443",
+      "decodedBytes": 112,
+      "fullLengthMatched": true,
+      "sliderPointer": {
+        "fileId": 0,
+        "pathId": 46019
+      },
+      "titleKey": "BrushHeight",
+      "formatString": "0.00",
+      "initialSettings": {
+        "minValue": 0.0,
+        "maxValue": 100.0,
+        "defaultValue": 45.0
+      },
+      "disableValueInput": false,
+      "allowInputOutsideRange": false
+    },
+    {
+      "gameObjectId": 10048,
+      "gameObjectName": "BrushSize",
+      "connectorId": 45860,
+      "scriptFile": "globalgamemanagers.assets",
+      "scriptPathId": 1045,
+      "componentBytes": 112,
+      "componentSha256": "5769b89b8195f7a332e33bf7ec84181561987fe3f826a45bf3d1fed55641281b",
+      "decodedBytes": 112,
+      "fullLengthMatched": true,
+      "sliderPointer": {
+        "fileId": 0,
+        "pathId": 46107
+      },
+      "titleKey": "BrushRadius",
+      "formatString": "0.00",
+      "initialSettings": {
+        "minValue": 0.10000000149011612,
+        "maxValue": 10.0,
+        "defaultValue": 1.5
+      },
+      "disableValueInput": false,
+      "allowInputOutsideRange": false
+    },
+    {
+      "gameObjectId": 10073,
+      "gameObjectName": "BrushSize",
+      "connectorId": 45863,
+      "scriptFile": "globalgamemanagers.assets",
+      "scriptPathId": 1045,
+      "componentBytes": 112,
+      "componentSha256": "f471f4efdfe0c99a29b5c288c9f1a05424d4cf847cfda698459fb1d4d24adf30",
+      "decodedBytes": 112,
+      "fullLengthMatched": true,
+      "sliderPointer": {
+        "fileId": 0,
+        "pathId": 46080
+      },
+      "titleKey": "BrushRadius",
+      "formatString": "0.00",
+      "initialSettings": {
+        "minValue": 0.10000000149011612,
+        "maxValue": 10.0,
+        "defaultValue": 3.5
+      },
+      "disableValueInput": false,
+      "allowInputOutsideRange": false
+    }
+  ]
+}

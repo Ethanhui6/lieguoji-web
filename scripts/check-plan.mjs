@@ -52,15 +52,20 @@ export function loadPlan(root) {
  return JSON.parse(fs.readFileSync(safeProjectFile(root, 'plan/tasks.json'), 'utf8'));
 }
 
-function main() {
+async function main() {
  if (process.argv.length !== 2) throw new Error('check-plan accepts no arguments');
  const root = verifyGitRoot(projectRoot);
  const plan = loadPlan(root);
  const result = validatePlan(plan, collectEvidencePaths(root, evidenceReferences(plan)));
  if (result.errors.length) throw new Error(result.errors.join('\n'));
- console.log(`Plan checked: ${plan.tasks.length} tasks, ${result.phaseCount} PH, ${result.workItemCount} work items; original ${result.originalTaskCount} task digest preserved; release lock does not block local development`);
+ // Keep the historical validator and release consumers intact. The active V5
+ // development track is an additional check, never a substitute release gate.
+ const { validateV5Plan, v5EvidenceReferences } = await import('./check-v5-plan.mjs');
+ const v5 = validateV5Plan(plan, collectEvidencePaths(root, v5EvidenceReferences(plan)));
+ if (v5.errors.length) throw new Error(v5.errors.join('\n'));
+ console.log(`Plan checked: ${plan.tasks.length} tasks, ${result.phaseCount} PH, ${result.workItemCount} work items; original ${result.originalTaskCount} task digest preserved; V5 ${v5.phaseCount} phases/${v5.workItemCount} work items, active ${plan.webRebuild.currentPhaseId}; release lock does not block local development`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
- try { main(); } catch (error) { console.error(`Plan check failed: ${error.message}`); process.exitCode = 1; }
+ try { await main(); } catch (error) { console.error(`Plan check failed: ${error.message}`); process.exitCode = 1; }
 }

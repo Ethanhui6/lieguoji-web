@@ -4,7 +4,7 @@
 
 ## 当前版本与授权
 
-- 分支codex/ph06-world-generation；本批源码提交待本地检查点写入。最终HEAD以git log为准，源码提交与随后记录指针的文档提交分开。
+- 分支codex/ph06-world-generation；本批源码/证据提交 **42af5433aedcb0e02cbcb1cabf88aa538f184c1a**。最终HEAD以git log为准，源码提交与随后记录指针的文档提交分开。
 - 产品/构建 **0.5.0-preview.33**；build.json SHA256 **dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3**；真实构建基准 **199f20d65cdfccff0367a9770d4516ff573e1a4c**，不改写为之后的提交。新生成器recovered-height-square-v1：bc2eb3f4319ff9bf6d21c59faced9b75bca0f5c727cc8f6591493863d154915f。完整源码/32产物/浏览器响应摘要已绑定。
 - 用户已授权只读分析自己的D:/steam/steamapps/common/FantasyMapSimulator并在本项目适配；不运行原游戏或完整recovered main，不读取认证/SDK配置、envs.log或个人存档。原安装目录本批无写入；raw/dump仍ignored。
 - 已核本地remote为https://github.com/Ethanhui6/lieguoji-web.git，core.hooksPath=.githooks。Pages历史项目lieguoji-web，唯一原生Git链main生产/其余分支预览。本批无云端访问/写入。**全PH发布门仍锁定，9月24例外已消耗；禁止所有push、远端PR/Issue/Milestone/上传/Pages触发。**

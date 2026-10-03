@@ -2444,14 +2444,14 @@
         "scope": "Four-template bundled seed generation, real preview/cancel, independent save, creation record across panel changes, edit and country creation/reload passed on desktop and mobile emulation; physical-device/user visual acceptance remains pending."
       }
     ],
-    "sourceCommit": "a570fb55dd2dd42eb307beb62f98b1ba013ea2f4",
+    "sourceCommit": "42af5433aedcb0e02cbcb1cabf88aa538f184c1a",
     "originalPointCoordinatesRecovered": true,
     "originalNativeAdjacencyRecovered": false,
     "previousSourceCommit": "a570fb55dd2dd42eb307beb62f98b1ba013ea2f4",
     "version": "0.5.0-preview.33",
     "buildBaseCommit": "199f20d65cdfccff0367a9770d4516ff573e1a4c",
     "buildSha256": "dba141d82cb35649a927d88475ed13aca314138335e72aa0fda788aa38f989c3",
-    "commitNote": "Source and evidence will be committed locally; the following checkpoint commit records its exact source commit without rewriting build metadata.",
+    "commitNote": "Source and evidence committed locally; this pointer and handoff are recorded in the subsequent documentation checkpoint. Build metadata retains its actual earlier HEAD.",
     "seedCreationInMainFlow": true
   }
 }

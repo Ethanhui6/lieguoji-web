@@ -1,0 +1,59 @@
+{
+  "beforeRevision": 25,
+  "afterRevision": 28,
+  "pointCount": 38042,
+  "lockedFacePoints": 703,
+  "lockedFacePointChanges": 0,
+  "generatedMatchesBrowserSavedPositions": true,
+  "moves": 11280,
+  "algorithm": "bounded-coast-relaxation-v1",
+  "maxDisplacement": 1.687221372746219,
+  "maxComponentAreaFraction": 0.000522580682715601,
+  "maxGradient": 0.19947923131740466,
+  "smallComponentArea": 4096,
+  "turningEnergyBefore": 690.9413027851219,
+  "turningEnergyAfter": 621.2069966496608,
+  "maxCoastDisplacement": 1.4994885978267796,
+  "missingCrossings": 0,
+  "componentCount": 3,
+  "components": [
+    {
+      "land": true,
+      "before": 299421.14381002967,
+      "after": 299577.6155157814,
+      "fraction": 0.000522580682715601
+    },
+    {
+      "land": true,
+      "before": 327731.16454575036,
+      "after": 327853.1495197323,
+      "fraction": 0.0003722104797418968
+    },
+    {
+      "land": false,
+      "before": 1732143.6916442157,
+      "after": 1731865.2349644795,
+      "fraction": 0.00016075841806861835
+    }
+  ],
+  "minStretch": 0.8014708920927535,
+  "maxStretch": 1.1947925872585843,
+  "flippedFaces": 0,
+  "maxFaceAreaFraction": 0.23867117205515198,
+  "sectionBefore": [
+    [
+      528.7981342380635,
+      554.1808908984947
+    ]
+  ],
+  "sectionAfter": [
+    [
+      528.7981342380635,
+      553.4711013945107
+    ]
+  ],
+  "landAreaBefore": 627152.3083557806,
+  "landAreaAfter": 627430.7650355143,
+  "desktopGenerationMs": 546.2688000000016,
+  "desktopValidationMs": 392.0635999999977
+}

@@ -1,0 +1,311 @@
+{
+  "url": "http://127.0.0.1:4175/",
+  "originalGameObserved": false,
+  "originalUnityGeometry": false,
+  "evidence": [
+    {
+      "device": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "emulation": false,
+      "status": "passed",
+      "sameSeedHash": "6450707878a8b891235d8350eda0e85805229765e26e233d7b4354038f50e588",
+      "changedTemplateHash": "25b8f459f036a907bb3f55b52ea7bfd3743c3b6c8ac51c8397ce0e3910470e6e",
+      "templateHashes": {
+        "continents": "6450707878a8b891235d8350eda0e85805229765e26e233d7b4354038f50e588",
+        "archipelago": "491e2fb4a7242724ee0462b965657f8d43581f67e47a4ef1430a5cbab3eb59a4",
+        "highIsland": "830c86a31bb59e7a9cc2d52a9988fa443e70e01c9ab68dc6f48483e393a7b723",
+        "pangea": "a09ac7c5be95b79ab8ffd5df51910d9a9a7de5e22053dbb0a6af330685f1c1f7",
+        "peninsula": "4e8c1a3928025a7eb361a0895dae5754af321cc6da1493e80cbe7ba799a9e15a",
+        "MoreWorldV8": "28c996d48b3e653f748714dce942c412dc6ee08b0b852a90bda209354a17400c",
+        "volcano": "25b8f459f036a907bb3f55b52ea7bfd3743c3b6c8ac51c8397ce0e3910470e6e"
+      },
+      "exportedHeightCount": 24576,
+      "topology": {
+        "kind": "web-jittered-delaunay-v1",
+        "description": "Fixed-seed jittered ordered points with d3-delaunay 6.0.4 adjacency; not recovered Unity topology",
+        "seed": 1374772797,
+        "jitterFraction": 0.42,
+        "columns": 192,
+        "rows": 128,
+        "pointCount": 24576,
+        "triangleCount": 48514,
+        "boundary": "rectangle-edge-sites",
+        "cellsDesired": 20000,
+        "originalUnityTopologyRecovered": false
+      },
+      "topologyHash": "ede5a394c6957c7eef5f7fd31061732ec3708491d2015e5061057f395e2072cf",
+      "rasterMissing": 0,
+      "errors": [],
+      "writes": [],
+      "resources": [
+        {
+          "url": "http://127.0.0.1:4175/",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/lab.css",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/lab.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/meta.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "device": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "emulation": true,
+      "status": "passed",
+      "sameSeedHash": "6450707878a8b891235d8350eda0e85805229765e26e233d7b4354038f50e588",
+      "changedTemplateHash": "25b8f459f036a907bb3f55b52ea7bfd3743c3b6c8ac51c8397ce0e3910470e6e",
+      "templateHashes": {
+        "continents": "6450707878a8b891235d8350eda0e85805229765e26e233d7b4354038f50e588",
+        "archipelago": "491e2fb4a7242724ee0462b965657f8d43581f67e47a4ef1430a5cbab3eb59a4",
+        "highIsland": "830c86a31bb59e7a9cc2d52a9988fa443e70e01c9ab68dc6f48483e393a7b723",
+        "pangea": "a09ac7c5be95b79ab8ffd5df51910d9a9a7de5e22053dbb0a6af330685f1c1f7",
+        "peninsula": "4e8c1a3928025a7eb361a0895dae5754af321cc6da1493e80cbe7ba799a9e15a",
+        "MoreWorldV8": "28c996d48b3e653f748714dce942c412dc6ee08b0b852a90bda209354a17400c",
+        "volcano": "25b8f459f036a907bb3f55b52ea7bfd3743c3b6c8ac51c8397ce0e3910470e6e"
+      },
+      "exportedHeightCount": 24576,
+      "topology": {
+        "kind": "web-jittered-delaunay-v1",
+        "description": "Fixed-seed jittered ordered points with d3-delaunay 6.0.4 adjacency; not recovered Unity topology",
+        "seed": 1374772797,
+        "jitterFraction": 0.42,
+        "columns": 192,
+        "rows": 128,
+        "pointCount": 24576,
+        "triangleCount": 48514,
+        "boundary": "rectangle-edge-sites",
+        "cellsDesired": 20000,
+        "originalUnityTopologyRecovered": false
+      },
+      "topologyHash": "ede5a394c6957c7eef5f7fd31061732ec3708491d2015e5061057f395e2072cf",
+      "rasterMissing": 0,
+      "errors": [],
+      "writes": [],
+      "resources": [
+        {
+          "url": "http://127.0.0.1:4175/",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/lab.css",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/lab.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/meta.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-worker.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/d3-delaunay.min.js",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:4175/terrain-adapter.js",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { countryGeometry } from '../world/politics/model';
 import { CountryInstitutionEditor, type InstitutionDraft } from './CountryInstitutionEditor';
 import { countryTerritoryOwner, type CountryOwnershipView } from '../world/politics/ownership-view';
 import { CountryOwnershipEditor, type CountryOwnershipDraft } from './CountryOwnershipEditor';
+import { LocalNamePicker, LocalNamingPackManager, useLocalNamingPack } from './LocalNamingPack';
 import './country-studio.css';
 
 export type CountryStudioProps = { initialWorldId?: string; source?: CountrySource; onBack: () => void; onWorldOpened: (worldId: string) => void };
@@ -48,6 +49,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
   const [cells, setCells] = useState<number[]>([]), [cityPosition, setCityPosition] = useState<PointQ | null>(null), [scale, setScale] = useState(1);
   const actual = preview?.document ?? state?.document, nation = actual?.nations.find(item => item.id === nationId), city = actual?.cities.find(item => item.id === cityId);
   const locked = busy || !!fatal || !!state?.readOnly || !!preview;
+  const naming = useLocalNamingPack(locked);
   const current = (ticket: Ticket) => live.current && epoch.current === ticket.lifecycle && operation.current === ticket.operation;
   const isPreviewOperation = () => activeKind.current === 'preview';
 
@@ -352,6 +354,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     {!newNation && <button className="country-primary" disabled={locked} onClick={() => { stopTool(); clearOutline(); setNewNation(true); setClaimMode(false); setReleaseMode(false); setNationName(''); setNationColor(colors[(actual?.nations.length ?? 0) % colors.length]); setCells([]); choose(null, null); }}>新建国家</button>}
     {(newNation || nation) && <section aria-label="国家设置" className="country-fields">
       <label>国家名称<input aria-label="国家名称" maxLength={60} value={nationName} disabled={locked} onChange={event => setNationName(event.target.value)} /></label>
+      {newNation && <LocalNamePicker naming={naming} kind="countries" current={nationName} usedNames={actual?.nations.map(item => item.name) ?? []} onName={setNationName} onManage={() => setPanel('world')} />}
       {(newNation || claimMode) && <label className="country-color">国家颜色<input aria-label="国家颜色" type="color" value={nationColor} disabled={locked || claimMode} onChange={event => setNationColor(event.target.value)} /></label>}
       {newNation ? <><p>圈出国家范围，按圈内地块中心划入领土，海水自动排除。</p>
         <button className="country-primary" disabled={locked || !nationName.trim() || !state || state.document.version < 2} onClick={() => beginOutline(false)}>手绘国土</button>
@@ -385,6 +388,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
       <label>所属国家<select aria-label="城市所属国家" value={nationId ?? ''} disabled={locked} onChange={event => { choose(event.target.value, null); setNewCity(true); setCityPosition(null); }}><option value="" disabled>选择国家</option>{actual.nations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {!newCity && <button className="country-primary" disabled={locked || !nationId} onClick={() => { stopTool(); setNewCity(true); setCityName(''); setCityPosition(null); choose(nationId, null); }}>新建城市</button>}
       {(newCity || city) && <section aria-label="城市设置" className="country-fields"><label>城市名称<input aria-label="城市名称" maxLength={60} disabled={locked} value={cityName} onChange={event => setCityName(event.target.value)} /></label>
+        {newCity && <LocalNamePicker naming={naming} kind="cities" current={cityName} usedNames={actual?.cities.map(item => item.name) ?? []} onName={setCityName} onManage={() => setPanel('world')} />}
         {newCity ? <><p>在本国陆地选择聚落位置。地图上的圆点代表聚落，星形代表首都。</p><button disabled={locked || !nationId || !cityName.trim()} onClick={beginCity}>在地图上选择城市位置</button><p data-testid="country-city-position">{cityPosition ? `位置已选定 · ${Math.round(cityPosition.xQ / 256)}，${Math.round(cityPosition.yQ / 256)}` : '尚未选择位置'}</p>
           <button className="country-primary" disabled={locked || !cityPosition || !nationId || !cityName.trim()} onClick={() => void run(ticket => previewCommand({ type: 'create-city', nationId: nationId!, name: cityName.trim(), positionQ: cityPosition! }, ticket))}>预览建城</button></>
           : city && <><dl className="country-facts"><div><dt>所属国家</dt><dd>{nation?.name}</dd></div><div><dt>城市地位</dt><dd data-testid="country-city-capital">{nation?.capitalCityId === city.id ? '首都' : '普通聚落'}</dd></div></dl>
@@ -396,6 +400,7 @@ export function CountryStudio({ initialWorldId, source, onBack, onWorldOpened }:
     </>}
   </>;
   const worldPanel = <>
+    <LocalNamingPackManager naming={naming} />
     {entry.current.source && !state && <section className="country-fields"><h3>把山海，变成你的列国</h3><p>创建独立建国副本，保存自己的地理、国家与城市。原地理草稿保留。</p><label>世界名称<input aria-label="建国世界名称" maxLength={80} value={worldName} disabled={busy} onChange={event => setWorldName(event.target.value)} /></label><button className="country-primary" disabled={busy || !!fatal || !worldName.trim()} onClick={() => void run(createWorld)}>创建独立建国副本</button></section>}
     {state && <section><h3>{state.document.name}</h3><p>{state.document.nations.length} 个国家 · {state.document.cities.length} 座城市 · 修订 {state.document.revision}</p><p className="country-help">领土、国家与城市在本地保存；当前是建国阶段，尚未开启战争与社会推演。</p><details><summary>世界身份</summary><p className="country-id">{state.document.worldId}</p><p className="country-id">{state.rootDigest}</p></details></section>}
     {state && state.document.version < 3 && <section className="country-fields country-upgrade-note"><h3>让国界离开方格</h3><p>创建独立副本，以不规则共享多边形重新解释领土范围。海陆与地形不变，国家、城市与首都身份保留。沿边归属可能变化，没有陆地的单元会排除；若城市因此越界，复制会停止并说明原因。</p><p>原世界与原历史保持原规则。新副本从修订 0 开始。</p>

@@ -77,6 +77,13 @@
 .country-percent-input input { min-width: 0; }
 .country-institution-actions { display: flex; gap: 8px; }
 .country-institution-actions button { flex: 1; padding-inline: 8px; font-size: 13px; }
+.country-naming-selects { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 10px; }
+.country-naming-selects label { min-width: 0; }
+.country-name-picker { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--country-selected); border-radius: 12px; }
+.country-naming-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.country-naming-manager { overflow-wrap: anywhere; }
+.country-naming-error { font-size: 13px; line-height: 1.6; color: #a43639; }
+.country-naming-link { font-size: 13px; }
 .country-studio summary { cursor: pointer; min-height: 44px; padding-block: 12px; color: var(--country-muted); font-size: 13px; }
 .country-entity-list { display: flex; flex-direction: column; border-top: 1px solid var(--country-border); }
 .country-entity-list > button { display: flex; align-items: center; gap: 10px; min-height: 52px; width: 100%; border: 0; border-bottom: 1px solid var(--country-border); border-radius: 0; background: transparent; text-align: left; }
@@ -119,5 +126,6 @@
 [data-theme="dark"] .country-studio { --country-ink: #e6f0f7; --country-muted: #adc0d0; --country-panel: #192b39; --country-border: #3c5365; --country-blue: #196ec5; --country-selected: #20415f; }
 [data-theme="dark"] .country-inspector input, [data-theme="dark"] .country-inspector select { background: #132532; }
 [data-theme="dark"] .country-studio button.country-destructive { color: #ffb8b8; border-color: #af7275; }
+[data-theme="dark"] .country-naming-error { color: #ffb8b8; }
 @media (prefers-contrast: more) { .country-studio { --country-border: #526c7e; } .country-feedback { border: 1px solid currentColor; } }
 @media (forced-colors: active) { .country-studio button[aria-pressed="true"] { outline: 2px solid Highlight; } .country-map-tools, .country-inspector, .country-confirm { border: 1px solid CanvasText; } }

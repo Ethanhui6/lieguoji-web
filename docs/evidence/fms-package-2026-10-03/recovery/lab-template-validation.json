@@ -1,0 +1,114 @@
+{
+  "success": true,
+  "adapterSha256": "420dc9d9dd795406a7334848ec11ee58cb1865d2756ab3b07257a08a9f307c31",
+  "sourceSha256": "df79b44e9a22fb2860ab0b9f8ae48df265594f6cdb2e3f7cd693290de619771d",
+  "fixture": {
+    "cellsX": 192,
+    "cellsY": 128,
+    "width": 1536,
+    "height": 1024,
+    "cellsDesired": 20000,
+    "neighbors": 8,
+    "points": "regular cell centers, row-major",
+    "seed": "421730",
+    "center": [
+      768,
+      512
+    ],
+    "sizeFactor": 1
+  },
+  "checks": [
+    "All seven templates terminate within bounded child/VM deadlines",
+    "All 24576 heights integral and finite in 0..100",
+    "Every template has land (>=20) and sea (<20)",
+    "Seven different template output hashes",
+    "Archipelago byte hash matches separately observed browser Worker result"
+  ],
+  "boundary": "Only height generation on web test topology. No original Unity topology, cities, administrative simulation, original behavior equivalence or Atlas/save integration claimed.",
+  "fixtures": [
+    {
+      "template": "continents",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 19082,
+      "seaCells": 5494,
+      "min": 0,
+      "max": 90,
+      "distinctHeights": 91,
+      "heightsSha256": "6365e2f1a9577df5e6569655efa72bada2a450a14576b9438182320cf07fdb89",
+      "elapsedMs": 126
+    },
+    {
+      "template": "archipelago",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 19471,
+      "seaCells": 5105,
+      "min": 0,
+      "max": 77,
+      "distinctHeights": 77,
+      "heightsSha256": "f9f809cf44f96635ba91b92ad041ef3dc0309cd91be0cc0eff275e53dd5406c6",
+      "elapsedMs": 110
+    },
+    {
+      "template": "highIsland",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 11781,
+      "seaCells": 12795,
+      "min": 0,
+      "max": 100,
+      "distinctHeights": 101,
+      "heightsSha256": "2b2fd9841dea99776505dc85c73589f090186cd3815e68f3cb0e4e2201ca5803",
+      "elapsedMs": 121
+    },
+    {
+      "template": "volcano",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 7355,
+      "seaCells": 17221,
+      "min": 0,
+      "max": 99,
+      "distinctHeights": 99,
+      "heightsSha256": "33cec0bf77b4902d085ec1b6af832f1179d7d59268399bc2f65680e5a70860d7",
+      "elapsedMs": 96
+    },
+    {
+      "template": "pangea",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 16200,
+      "seaCells": 8376,
+      "min": 0,
+      "max": 100,
+      "distinctHeights": 101,
+      "heightsSha256": "c887e846e9c2a07cede4ea3f8ae1755219ad797bcef0caaa6ef017b21eefdacf",
+      "elapsedMs": 113
+    },
+    {
+      "template": "peninsula",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 23872,
+      "seaCells": 704,
+      "min": 0,
+      "max": 100,
+      "distinctHeights": 101,
+      "heightsSha256": "4e5431ea053d4cd2fba3c53480e1e1514a3652f96af4491d57158461413538df",
+      "elapsedMs": 106
+    },
+    {
+      "template": "MoreWorldV8",
+      "seed": "421730",
+      "count": 24576,
+      "landCells": 20684,
+      "seaCells": 3892,
+      "min": 0,
+      "max": 98,
+      "distinctHeights": 96,
+      "heightsSha256": "c94e8991108f3cf4d9569586e82128a44036d853f06c5729c0b7229e645398e8",
+      "elapsedMs": 175
+    }
+  ]
+}

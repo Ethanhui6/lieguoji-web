@@ -763,7 +763,8 @@
         "docs/evidence/2026-10-03-ph06-mountain-area.md",
         "docs/evidence/ph06-mountain-area-2026-10-03/verification.json",
         "docs/evidence/2026-10-03-ph06-coast-ph07-macro.md",
-        "docs/evidence/ph06-coast-ph07-macro-2026-10-03/verification.json"
+        "docs/evidence/ph06-coast-ph07-macro-2026-10-03/verification.json",
+        "docs/FMS_PACKAGE_REUSE_2026-10-03.md"
       ],
       "workItems": [
         {
@@ -859,7 +860,8 @@
             "docs/evidence/2026-10-03-ph06-mountain-area.md",
             "docs/evidence/ph06-mountain-area-2026-10-03/verification.json",
             "docs/evidence/2026-10-03-ph06-coast-ph07-macro.md",
-            "docs/evidence/ph06-coast-ph07-macro-2026-10-03/verification.json"
+            "docs/evidence/ph06-coast-ph07-macro-2026-10-03/verification.json",
+            "docs/FMS_PACKAGE_REUSE_2026-10-03.md"
           ]
         },
         {
@@ -1084,7 +1086,8 @@
       "acceptance": "生成国家不改海岸；同国可有飞地；灭政权不等于删地人口；国家制度可编辑且存档保留。 实际操作→权威状态→正确画面→原因/事件→保存恢复→受影响检查；取消/失败保护不得退化。",
       "evidence": [
         "docs/evidence/2026-10-03-country-world.md",
-        "docs/evidence/country-world-2026-10-03/verification.json"
+        "docs/evidence/country-world-2026-10-03/verification.json",
+        "docs/FMS_PACKAGE_REUSE_2026-10-03.md"
       ],
       "workItems": [
         {
@@ -1114,7 +1117,8 @@
             "docs/evidence/2026-10-03-country-natural.md",
             "docs/evidence/country-natural-2026-10-03/verification.json",
             "docs/evidence/2026-10-03-country-response.md",
-            "docs/evidence/country-response-2026-10-03/verification.json"
+            "docs/evidence/country-response-2026-10-03/verification.json",
+            "docs/FMS_PACKAGE_REUSE_2026-10-03.md"
           ]
         },
         {
@@ -2386,5 +2390,37 @@
       },
       "newLocalChangesAuthorizedForUpload": false
     }
+  },
+  "ownedPackageReuse": {
+    "source": "User-authorized FantasyMapSimulator installation",
+    "date": "2026-10-03",
+    "status": "in_progress",
+    "evidence": [
+      "docs/FMS_PACKAGE_REUSE_2026-10-03.md",
+      "docs/evidence/fms-package-2026-10-03/audit.json",
+      "docs/evidence/fms-package-2026-10-03/verification.json",
+      "docs/evidence/fms-package-2026-10-03/source-readonly-verification.json"
+    ],
+    "sourceReadOnly": true,
+    "rawInstallationPublished": false,
+    "originalUnityGeometryRecovered": false,
+    "atlasGeographyImported": false,
+    "items": [
+      {
+        "id": "FMS-AUDIT",
+        "status": "done",
+        "scope": "Bounded PE/IL2CPP and resource inventory"
+      },
+      {
+        "id": "FMS-NAMING",
+        "status": "done",
+        "scope": "Read-only bilingual naming pack plus actual country/city creation"
+      },
+      {
+        "id": "FMS-TERRAIN",
+        "status": "in_progress",
+        "scope": "Recovered original height kernel works in local browser Worker; original Unity topology/Atlas import still incomplete"
+      }
+    ]
   }
 }

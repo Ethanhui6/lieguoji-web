@@ -1,0 +1,18 @@
+✔ CLI requires both explicit directories and rejects repeated or unknown arguments (2.1937ms)
+✔ CSV quotes, embedded commas, BOM, CRLF, multiline cells and header order are parsed explicitly (0.4628ms)
+✔ extracts only whitelisted bilingual names and known metadata, with exact source hashes and no host paths (25.9652ms)
+✔ repeated extraction is byte reproducible and does not rewrite files; differing output remains intact (33.7369ms)
+✔ rejects duplicate keys, empty translations, control characters, overlong names and excessive pools before writing (75.4722ms)
+✔ retains distinct source keys with the same display name and reports homonyms without discarding data (13.7932ms)
+✔ records only bounded display-name trimming and ignored trailing unnamed language columns (34.4909ms)
+✔ rejects malformed metadata and byte budgets without producing partial output (31.0849ms)
+✔ output cannot overlap the installation and symlinked content or output directories are rejected (18.3898ms)
+✔ linked existing output files cannot alias and overwrite original content (12.9885ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 319.2718

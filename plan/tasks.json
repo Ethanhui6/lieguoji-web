@@ -3640,6 +3640,19 @@
         "docs/evidence/fms-area-runoff-2026-10-04/production-restored.png",
         "docs/evidence/fms-area-runoff-2026-10-04/verification.json"
       ]
+    },
+    "executionCheckpoint": {
+      "at": "2026-10-04T03:44:36.236Z",
+      "deadline": "2026-10-04T08:00:00+08:00",
+      "status": "deadline-reached-awaiting-user-resume",
+      "lastCheckpointCommit": "876f3c3879ab7884f66c9c36bf647f5ea6a547df",
+      "lastSourceCommit": "fb8e82196d51c12587fcf30bf020b5c46610043f",
+      "newCodeSinceCheckpoint": false,
+      "reason": "用户再次指出应按截图流程推进原作恢复；当前已过08:00，待解除本次时间截止。未启动runoff性能优化。",
+      "nextFocus": "沿已有索引核实World.InverseVoronoiTransformPoint与World.GetCellIndex的原实现边界，优先补绘图坐标/选区链，之后适配网页并建立同输入对照；不重复GetHeightMap/SetCellAsSea，不将网页自研自然化称为原作恢复。",
+      "recoveryStarted": false,
+      "cloudWritesAllowed": false,
+      "firstPlayableGateUnchanged": true
     }
   }
 }

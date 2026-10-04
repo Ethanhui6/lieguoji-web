@@ -8,6 +8,7 @@ import { deriveFmsShade } from './shading';
 import { clipFmsRiverSegments } from './river-geometry';
 import { createFmsOceanSource, FmsOceanFields, FMS_OCEAN_CONTRACT, FMS_OCEAN_DEEP, FMS_OCEAN_SHALLOW } from './ocean-surface';
 import { FMS_COLOR_GLSL, FMS_HEIGHT_PALETTE_CONTRACT, srgbToLinear, type FmsTerrainDisplay } from './height-palette';
+import { FmsBiomeFields, type FmsBiomeSurface } from './biome-surface';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; the derived ocean texture changes only color, never coastline.
@@ -17,23 +18,27 @@ in vec2 aPosition;
 in float aHeight;
 in float aShade;
 in float aLakeDepth;
+in vec3 aBiomeColor;
 uniform mat3 uProjectionMatrix;
 uniform mat3 uWorldTransformMatrix;
 uniform mat3 uTransformMatrix;
 out float vHeight;
 out float vShade;
 out float vLakeDepth;
+out vec3 vBiomeColor;
 out vec2 vMapPosition;
-void main(){vMapPosition=aPosition;vHeight=aHeight;vShade=aShade;vLakeDepth=aLakeDepth;vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.0,1.0);}`;
+void main(){vMapPosition=aPosition;vHeight=aHeight;vShade=aShade;vLakeDepth=aLakeDepth;vBiomeColor=aBiomeColor;vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.0,1.0);}`;
 const fragment = `#version 300 es
 precision highp float;
 in float vHeight;
 in float vShade;
 in float vLakeDepth;
+in vec3 vBiomeColor;
 in vec2 vMapPosition;
 uniform sampler2D uOceanDistance;
 uniform vec2 uMapSize;
 uniform float uHeightView;
+uniform float uBiomeView;
 out vec4 finalColor;
 ${FMS_COLOR_GLSL}
 void main(){
@@ -49,6 +54,7 @@ void main(){
  land=mix(land,vec3(.88,.88,.80),smoothstep(78.0,96.0,h));
  land*=vShade;
  if(uHeightView>.5)land=fmsHeightColor(h);
+ if(uBiomeView>.5)land=fmsToDisplay(vBiomeColor);
  // Filled depressions are derived from the same elevation graph, never painted decor.
  float lake=smoothstep(.2,.8,vLakeDepth)*smoothstep(20.0,21.5,h);
  land=mix(land,mix(shallow,deep,smoothstep(0.0,16.0,vLakeDepth)),lake);
@@ -66,6 +72,8 @@ export class FmsRenderer {
   private protection = new Graphics();
   private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; triangles:FmsDocument['triangles']; width:number; height:number; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
   private oceanFields = new FmsOceanFields();
+  private biomeFields = new FmsBiomeFields();
+  private currentDocument?: FmsDocument;
   private oceanSource?: BufferImageSource;
   private oceanUniforms?: UniformGroup;
   private meshDocument?: Pick<FmsDocument,'points'|'triangles'|'width'|'height'>;
@@ -100,15 +108,18 @@ export class FmsRenderer {
       this.surfaces.set(doc.elevations,surface);
     }
     const ocean = this.oceanFields.get(doc);
+    // Derive before touching the current mesh. An unsupported climate candidate
+    // must leave the displayed document intact and remain cancellable.
+    const biome=this.terrainDisplay==='biome'?this.biomeFields.get(doc):undefined;
     if (this.worldId !== doc.worldId || this.meshDocument?.points!==doc.points || this.meshDocument?.triangles!==doc.triangles
       || this.meshDocument?.width!==doc.width || this.meshDocument?.height!==doc.height) {
       this.clearMesh();
       const positions = new Float32Array(doc.points.length * 2);
       doc.points.forEach((p, i) => { positions[i * 2] = p[0]; positions[i * 2 + 1] = p[1]; });
-      this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' } }, indexBuffer: doc.triangles.slice() });
+      this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' }, aBiomeColor:{buffer:biome?.colors??new Float32Array(doc.points.length*3),format:'float32x3'} }, indexBuffer: doc.triangles.slice() });
       this.geometry.autoGarbageCollect = false;
       this.oceanSource = createFmsOceanSource(ocean);
-      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:this.terrainDisplay==='height'?1:0,type:'f32'} });
+      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:this.terrainDisplay==='height'?1:0,type:'f32'},uBiomeView:{value:this.terrainDisplay==='biome'?1:0,type:'f32'} });
       this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v3' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
@@ -119,7 +130,9 @@ export class FmsRenderer {
       const buffer = this.geometry.getBuffer('aHeight'); buffer.data = Float32Array.from(doc.elevations); buffer.update();
       const shades=this.geometry.getBuffer('aShade');shades.data=surface.shade;shades.update();
       const lake=this.geometry.getBuffer('aLakeDepth');lake.data=surface.drainage.lakeDepth;lake.update();
+      if(biome){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=biome.colors;colors.update();}
     }
+    this.currentDocument=doc;this.updateBiomeMetrics(biome);
     this.rivers.clear();
     // Flat brush plateaus have sheet runoff, not an implied incised river network.
     const riverLines=surface.relief>=6?clipFmsRiverSegments(doc,surface.drainage.riverSegments):[];
@@ -169,10 +182,21 @@ export class FmsRenderer {
   /** Display only: keep candidate geometry, camera, history and caches intact. */
   setTerrainDisplay(display: FmsTerrainDisplay): void {
     if(this.destroyed||this.contextLost)return;
+    const biome=display==='biome'&&this.currentDocument?this.biomeFields.get(this.currentDocument):undefined;
+    if(biome&&this.geometry){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=biome.colors;colors.update();}
     this.terrainDisplay=display;
-    if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.update();}
+    if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.uniforms.uBiomeView=display==='biome'?1:0;this.oceanUniforms.update();}
     if(this.initialized)this.canvas.dataset.terrainDisplay=display;
+    this.updateBiomeMetrics(biome);
     this.draw();
+  }
+  private updateBiomeMetrics(surface?:FmsBiomeSurface):void {
+    if(!this.initialized)return;
+    const metrics=this.biomeFields.metrics();
+    this.canvas.dataset.biomeBuilds=String(metrics.builds);
+    this.canvas.dataset.biomeBuildMs=String(metrics.elapsedMs);
+    this.canvas.dataset.biomeCacheBytes=String(metrics.bytes);
+    this.canvas.dataset.biomeStats=surface?JSON.stringify(surface.stats):'';
   }
   setCamera(camera: AtlasCamera): void {
     this.scene.position.set(camera.x,camera.y); this.scene.scale.set(camera.scale); this.draw();
@@ -199,5 +223,5 @@ export class FmsRenderer {
     this.oceanSource?.destroy();this.oceanUniforms?.removeAllListeners();this.oceanSource=undefined;this.oceanUniforms=undefined;
     this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;this.meshDocument=undefined;
   }
-  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear(); if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
+  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.clear();this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

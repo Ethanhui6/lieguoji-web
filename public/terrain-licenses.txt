@@ -1,5 +1,12 @@
 列国纪 — selected terrain generator third-party notices
 
+Additional adapted scope (2026-10-05): selected temperature, wind precipitation,
+and biome classification/palette rules from the user-authorized installed
+Fantasy Map Simulator script, in the Azgaar Fantasy Map Generator family below.
+Web grid sampling, bounded wind edges and rainfall-only biome display are local
+adaptations. The original river flux and final rendered biome texture are not
+included. An exact upstream revision of the installed script is not asserted.
+
 Alea PRNG 1.1: original work © 2010 Johannes Baagøe (MIT); derivative © 2017–2020 W. "Mac" McMeans (BSD-3-Clause).
 Official source: https://github.com/macmcmeans/aleaPRNG/tree/e1afc01b16c076fadb79837157c19bff9671a110
 Full derivative license:
@@ -136,4 +143,3 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
-

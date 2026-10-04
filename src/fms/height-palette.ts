@@ -3,7 +3,7 @@
  * Shader constants and operation order: evidence/ORIGINAL_LAND.md.
  * The browser keeps height as geometry data; switching views never edits a map.
  */
-export type FmsTerrainDisplay = 'height' | 'relief';
+export type FmsTerrainDisplay = 'height' | 'relief' | 'biome';
 export const FMS_HEIGHT_PALETTE_CONTRACT = 'recovered-shader189-mode2-v1';
 // Exact binary32 constants read from the compiled D3D11 fragment, including
 // coefficients that differ by one ULP from rounding their short decimal names.

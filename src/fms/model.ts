@@ -234,6 +234,12 @@ function selectFmsBrush(doc: FmsDocument, stamps: readonly FmsBrushStamp[], surf
   return selected;
 }
 
+/** Web circular selection for a single recovered Hill stamp. This is not the
+ * original Unity Collider selection; propagation uses the saved neighbor order. */
+export function selectFmsHillCells(doc: FmsDocument, stamp: FmsBrushStamp): Set<number> {
+  return selectFmsBrush(doc, [stamp]);
+}
+
 /** Explicit player action; a first nonempty lock transaction opts into v2.
  * Select whole triangles intersecting the brush, without replacing the stored
  * surface by a nearest-site tessellation. */

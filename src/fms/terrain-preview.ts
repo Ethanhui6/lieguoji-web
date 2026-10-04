@@ -5,7 +5,7 @@ import { fixedFmsCoastVertices } from './coastline';
  * the complete result before making a patch; a rejected preview changes nothing. */
 export function prepareFmsTerrainPreview(document: FmsDocument, candidate: {
   worldId: string; baseRevision: number; elevations: Int32Array;
-}): { patch: FmsEditPatch; document: FmsDocument } {
+}, label = '生成自然地形'): { patch: FmsEditPatch; document: FmsDocument } {
   if (candidate.worldId !== document.worldId || candidate.baseRevision !== document.revision) {
     throw new FmsModelError('revision-conflict', '地图已变化，请重新生成地形预览。');
   }
@@ -22,6 +22,6 @@ export function prepareFmsTerrainPreview(document: FmsDocument, candidate: {
     if (next !== previous) changes.push(Object.freeze({ cell, previous, next }));
   }
   const patch = Object.freeze({ worldId: document.worldId, baseRevision: document.revision,
-    label: '生成自然地形', changes: Object.freeze(changes) });
+    label, changes: Object.freeze(changes) });
   return { patch, document: commitFmsEdit(document, patch) };
 }

@@ -1,16 +1,23 @@
 import { naturalizeFmsTerrain } from './naturalize';
 import { deriveFmsDrainage } from './hydrology';
-import type { FmsTerrainRequest, FmsTerrainResponse } from './terrain-client';
+import { generateFmsHill } from './hill';
+import type { FmsGenerationRequest, FmsGenerationResponse } from './terrain-client';
 
 /** Pure computation only: this Worker never opens IndexedDB or commits a revision. */
-export function runFmsTerrainRequest(raw: unknown): FmsTerrainResponse {
-  const value = raw && typeof raw === 'object' ? raw as Partial<FmsTerrainRequest> : {};
+export function runFmsTerrainRequest(raw: unknown): FmsGenerationResponse {
+  const value = raw && typeof raw === 'object' ? raw as Partial<FmsGenerationRequest> : {};
   const requestId = typeof value.requestId === 'number' && Number.isSafeInteger(value.requestId) ? value.requestId : 0;
   const worldId = typeof value.document?.worldId === 'string' ? value.document.worldId : '';
   const baseRevision = typeof value.document?.revision === 'number' ? value.document.revision : -1;
   try {
     if (Object.keys(value).length !== 4 || !['kind', 'requestId', 'document', 'options'].every(key => Object.hasOwn(value, key))
-      || value.kind !== 'naturalize' || requestId <= 0 || !value.document || !value.options) throw new Error('地形线程请求格式无效。');
+      || !['naturalize', 'hill'].includes(value.kind ?? '') || requestId <= 0 || !value.document || !value.options) throw new Error('地形线程请求格式无效。');
+    if (value.kind === 'hill') {
+      const result = generateFmsHill(value.document, value.options);
+      const drainage = deriveFmsDrainage({ ...value.document, elevations: result.elevations });
+      return { kind: 'hill-generated', requestId, worldId, baseRevision, ...result, drainage };
+    }
+    if (value.kind !== 'naturalize') throw new Error('地形请求类型无效。');
     const result = naturalizeFmsTerrain(value.document, value.options);
     const drainage = deriveFmsDrainage({ ...value.document, elevations: result.elevations });
     return { kind: 'naturalized', requestId, worldId, baseRevision, elevations: result.elevations, stats: result.stats, drainage };
@@ -24,7 +31,7 @@ if (typeof self !== 'undefined' && typeof document === 'undefined') {
   self.onmessage = event => {
     const response = runFmsTerrainRequest(event.data);
     // Only owned output arrays are transferred; input is a separate structured clone.
-    const transfer = response.kind === 'naturalized' ? [response.elevations.buffer, response.drainage.receiver.buffer,
+    const transfer = response.kind !== 'error' ? [response.elevations.buffer, response.drainage.receiver.buffer,
       response.drainage.runoff.buffer, response.drainage.accumulation.buffer, response.drainage.filledElevation.buffer, response.drainage.lakeDepth.buffer] : [];
     self.postMessage(response, { transfer });
   };

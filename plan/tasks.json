@@ -2457,7 +2457,7 @@
   "webRebuild": {
     "version": "V5",
     "active": true,
-    "date": "2026-10-04",
+    "date": "2026-10-05",
     "status": "in_progress",
     "source": "CODEX_AUTOPILOT_V5.md",
     "roadmap": "docs/FMS_WEB_REBUILD_PLAN.md",
@@ -2684,7 +2684,20 @@
       "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
       "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
       "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
-      "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
+      "docs/evidence/fms-ocean-v5-2026-10-04/verification.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/before-height.jpg",
+      "docs/evidence/fms-biomes-v5-2026-10-05/build-check.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/checkpoint-checks.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/checks-before-summit-fix.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/checks.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/climate-map.jpg",
+      "docs/evidence/fms-biomes-v5-2026-10-05/dev-browser.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md",
+      "docs/evidence/fms-biomes-v5-2026-10-05/portrait-preview.jpg",
+      "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
+      "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
+      "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -3009,7 +3022,20 @@
           "docs/evidence/fms-land-material-v5-2026-10-04/production-height-preview.jpg",
           "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
           "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
-          "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
+          "docs/evidence/fms-land-material-v5-2026-10-04/verification.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/before-height.jpg",
+          "docs/evidence/fms-biomes-v5-2026-10-05/build-check.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/checkpoint-checks.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/checks-before-summit-fix.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/checks.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/climate-map.jpg",
+          "docs/evidence/fms-biomes-v5-2026-10-05/dev-browser.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md",
+          "docs/evidence/fms-biomes-v5-2026-10-05/portrait-preview.jpg",
+          "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
+          "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
+          "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
         ],
         "workItems": [
           {
@@ -3189,13 +3215,27 @@
               "docs/evidence/fms-land-material-v5-2026-10-04/production-height-preview.jpg",
               "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
               "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
-              "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
+              "docs/evidence/fms-land-material-v5-2026-10-04/verification.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/before-height.jpg",
+              "docs/evidence/fms-biomes-v5-2026-10-05/build-check.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/checkpoint-checks.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/checks-before-summit-fix.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/climate-map.jpg",
+              "docs/evidence/fms-biomes-v5-2026-10-05/dev-browser.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md",
+              "docs/evidence/fms-biomes-v5-2026-10-05/portrait-preview.jpg",
+              "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
+              "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
+              "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
             ],
-            "progress": "3420537恢复并接入原高度编辑Shader189 mode2、20/60/100实际色阶、精确binary32常数和三次linear转换；原生每cell alpha=h/100及高度编辑菜单mode2调用链已静态证实。设置/候选卡可切换高度与网页起伏阴影，不改数据或重建海岸缓存。海洋改按官方Linear颜色上传/标准sRGB输出语义适配。24文件429测试、lint/typecheck/build通过；开发确认/撤销重做/保存刷新和旧v1归档保留、生产37550→37728点网格替换/取消恢复实测正常。完整原biome底图、输出链与真机视觉仍未通过。",
+            "progress": "235224d + ef4aad5接入原温度/风向降水/5x26分类/13色的气候地貌试算；规则气候格仅派生显示，顶点用实际高度降温，原河流增湿明确未接入。设置与候选卡可切换，历史/取消遇气候超预算统一降级高度并重绘正确文档。27文件452测试及lint/typecheck/build通过；生产37550→37705点网格替换、对照、模式切换、取消/刷新及完整主档和归档不变已验证。LandMaterial→RT4096→81tap按需捕获链静态闭合，未执行原作或证明视觉等价；真机和用户门仍未通过。",
             "remaining": [
               "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
               "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
-              "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点未实现。固定剖面宽度并非保持不变。"
+              "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点未实现。固定剖面宽度并非保持不变。",
+              "原河流flux增湿、完整4096生物群系捕获/blur及触发链未适配；小于192气候采样的细部降水和手机主线程性能待验证。"
             ]
           },
           {
@@ -3317,20 +3357,20 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "original land biome material inputs and SDF camera alpha",
+      "name": "original river moisture dependency and final biome/ocean capture inputs",
       "status": "bounded-followup",
-      "note": "Shader189/Material11/alpha与高度编辑mode调用链已恢复，不重复拆。下一步只读核对defaultLandMaterial实际Shader及biome/气候来源，区分可独立移植的地貌显示；继续SDF Camera10195海陆alpha输入。保持现有绘图与存档，先接可玩切片，不扩建国家。"
+      "note": "已恢复温度/降水/分类和实际LandMaterial→BiomRT→GaussianBlur按需捕获链，不重做索引。下一批有界追踪原河流flux及其湿润度依赖，先确定可独立恢复切片；或继续真实SDF Camera10195海陆alpha输入及原作连续观感差异。仍只绘图，首份真机/用户视觉门未通过前不扩国家。"
     },
     "lastRecovery": {
-      "at": "2026-10-04T15:10:02.996Z",
-      "scope": "Shader189 height editing, mesh alpha and menu mode, official Unity Linear material semantics",
-      "sourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
+      "at": "2026-10-04T16:33:49.933Z",
+      "scope": "original climate and biome rules; active LandMaterial and on-demand GaussianBlur capture",
+      "sourceCommit": "ef4aad5f32a27229c66f690a02f12cb1be474197",
       "evidence": [
-        "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md"
+        "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md"
       ],
       "originalExecuted": false,
-      "webAdaptation": "continuous shared-height mesh + recovered height palette; standard sRGB display output; web river/lake/coast overlays",
-      "unknown": "original biome inputs and defaultLandMaterial; original camera/RT/final output equivalence; native cell geometry vs web shared triangles"
+      "webAdaptation": "rainfall-only grid from Float32 triangles; true vertex-height temperature; original palette + web continuous blend; explicit wind-edge fixes",
+      "unknown": "original river ids/flux and humidity bonus; all capture trigger sites; 4096 RT blur vs web interpolation equivalence; mobile performance/visual acceptance"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -3795,14 +3835,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-04T15:10:02.997Z",
+      "at": "2026-10-04T16:33:49.933Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "f810e1e",
-      "lastSourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
+      "lastCheckpointCommit": "8f81f5b",
+      "lastSourceCommit": "ef4aad5f32a27229c66f690a02f12cb1be474197",
       "newCodeSinceCheckpoint": true,
       "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "Shader189/Material11/alpha与高度编辑mode调用链已恢复，不重复拆。下一步只读核对defaultLandMaterial实际Shader及biome/气候来源，区分可独立移植的地貌显示；继续SDF Camera10195海陆alpha输入。保持现有绘图与存档，先接可玩切片，不扩建国家。",
+      "nextFocus": "已恢复温度/降水/分类和实际LandMaterial→BiomRT→GaussianBlur按需捕获链，不重做索引。下一批有界追踪原河流flux及其湿润度依赖，先确定可独立恢复切片；或继续真实SDF Camera10195海陆alpha输入及原作连续观感差异。仍只绘图，首份真机/用户视觉门未通过前不扩国家。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4033,6 +4073,83 @@
         "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
         "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
         "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
+      ]
+    },
+    "biomePrototype": {
+      "sourceCommit": "ef4aad5f32a27229c66f690a02f12cb1be474197",
+      "status": "local-rainfall-only-biome-view-verified",
+      "algorithm": "recovered-climate-rainfall-only-web-v1",
+      "initialSceneClimate": {
+        "north": 0.9,
+        "south": -0.9,
+        "precipitation": 80,
+        "temperatureOffset": 0
+      },
+      "seed": "1337-web-choice",
+      "riverMoisture": false,
+      "climateGridMax": 192,
+      "displaySwitch": {
+        "writesDocument": false,
+        "changesGeometry": false,
+        "rebuildsOcean": false,
+        "candidateSupported": true,
+        "persisted": false
+      },
+      "limitations": [
+        "Original river flux not recovered; area accumulation is not substituted",
+        "Small features can be absent in precipitation grid; final vertex temperature uses actual height",
+        "Original 4096 RT Gaussian blur not reproduced; continuous blend is a web adaptation",
+        "Initial scene climate is not verified original runtime/save climate"
+      ],
+      "fallback": {
+        "climateBudgetFailure": "height view and actual target document restored, UI notified",
+        "otherErrors": "not suppressed",
+        "browserFaultInjection": false
+      },
+      "tests": {
+        "count": 452,
+        "files": 27,
+        "lint": true,
+        "typecheck": true,
+        "build": true,
+        "planTests": 11,
+        "releaseLockTests": 22
+      },
+      "browser": {
+        "devPoints": 40789,
+        "productionPoints": [
+          37550,
+          37705,
+          37550
+        ],
+        "saveAndArchiveUnchanged": true,
+        "refreshDefaultHeight": true,
+        "consoleWarningsOrErrors": 0,
+        "desktopViewport": [
+          1280,
+          720
+        ],
+        "portraitViewport": [
+          428,
+          926
+        ]
+      },
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "evidence": [
+        "docs/evidence/fms-biomes-v5-2026-10-05/before-height.jpg",
+        "docs/evidence/fms-biomes-v5-2026-10-05/build-check.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/checkpoint-checks.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/checks-before-summit-fix.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/climate-map.jpg",
+        "docs/evidence/fms-biomes-v5-2026-10-05/dev-browser.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg",
+        "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md",
+        "docs/evidence/fms-biomes-v5-2026-10-05/portrait-preview.jpg",
+        "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
+        "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
+        "docs/evidence/fms-biomes-v5-2026-10-05/verification.json"
       ]
     }
   }

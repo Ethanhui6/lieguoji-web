@@ -2665,7 +2665,26 @@
       "docs/evidence/fms-click-template-v5-2026-10-04/production-restored.jpg",
       "docs/evidence/fms-click-template-v5-2026-10-04/template-settings.jpg",
       "docs/evidence/fms-click-template-v5-2026-10-04/checkpoint-checks.json",
-      "docs/evidence/fms-click-template-v5-2026-10-04/verification.json"
+      "docs/evidence/fms-click-template-v5-2026-10-04/verification.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/after.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/before.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/build-check.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/checks-initial.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/checks-timeout.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/checks.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/dev-browser.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/new-small-island.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md",
+      "docs/evidence/fms-ocean-v5-2026-10-04/production-mesh-preview.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/restored.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/small-island-close.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/small-island-max-zoom.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/template-preview.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/checkpoint-checks.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
+      "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
+      "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -2952,7 +2971,26 @@
           "docs/evidence/fms-click-template-v5-2026-10-04/production-restored.jpg",
           "docs/evidence/fms-click-template-v5-2026-10-04/template-settings.jpg",
           "docs/evidence/fms-click-template-v5-2026-10-04/checkpoint-checks.json",
-          "docs/evidence/fms-click-template-v5-2026-10-04/verification.json"
+          "docs/evidence/fms-click-template-v5-2026-10-04/verification.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/after.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/before.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/build-check.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/checks-initial.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/checks-timeout.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/checks.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/dev-browser.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/new-small-island.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md",
+          "docs/evidence/fms-ocean-v5-2026-10-04/production-mesh-preview.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/restored.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/small-island-close.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/small-island-max-zoom.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/template-preview.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/checkpoint-checks.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
+          "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
+          "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
         ],
         "workItems": [
           {
@@ -3094,9 +3132,28 @@
               "docs/evidence/fms-click-template-v5-2026-10-04/production-restored.jpg",
               "docs/evidence/fms-click-template-v5-2026-10-04/template-settings.jpg",
               "docs/evidence/fms-click-template-v5-2026-10-04/checkpoint-checks.json",
-              "docs/evidence/fms-click-template-v5-2026-10-04/verification.json"
+              "docs/evidence/fms-click-template-v5-2026-10-04/verification.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/after.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/before.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/build-check.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/checks-initial.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/checks-timeout.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/checks.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/dev-browser.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/new-small-island.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md",
+              "docs/evidence/fms-ocean-v5-2026-10-04/production-mesh-preview.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/restored.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/small-island-close.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/small-island-max-zoom.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/template-preview.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/checkpoint-checks.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
+              "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
+              "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
             ],
-            "progress": "原生Hill批次保留。源码2d4d589新增原JS click-template pangea默认/highIsland：原GetSite中心与边界距离float32尺度，从零跑原模板后max合并，保形开关/保护锁后置；Worker预览/对照/确认/撤销/保存恢复已接入。405相关测试、lint/typecheck/build通过。实际40789点图保形337处抬高，9942跨海陆边插值比偏移0；高山大岛新增198陆地点，允许海岸改变已如实标注。严格CSP生产37550点144处抬高并刷新相等。实际活动海洋NoiseColor/SDF绑定已恢复，完整海洋与观感未完成，阶段仍in_progress。",
+            "progress": "c6008b0将原活动Shader191混色公式、level0海洋配色数字与2%最大边宽度接入V5实际h20海岸距离场；原生Hill/click模板保留。新增Float32退化面保护、512最大边RG16纹理、3份CPU缓存与单GPU资源管理。420相关测试、lint/typecheck/build通过；存档渲染前后完全相等，画小岛/预览取消/撤销重做/80倍缩放已实测。原相机alpha与GPU原地SDF、Unity Linear色彩输出未等价；观感/真机仍待验收，阶段in_progress。",
             "remaining": [
               "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
               "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
@@ -3222,19 +3279,20 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "active ocean NoiseColor Shader191 and SDFTextureGenerator.Update; original map topology / nearest-site float bridge",
+      "name": "active terrain material and color output; ocean camera alpha source",
       "status": "bounded-followup",
-      "note": "ClickToGenerateMap与InitMapGenerationSettings参数、pangea/highIsland已接V5，不再重复恢复。活动场景链已证据替换旧OceanNew/BlurOcean候选优先级；先SDF采样与刷新，再接网页，不冒称素材已使用。"
+      "note": "Shader191采样公式、UV、颜色设置器与SDF Update/Seed/Flood/Dist已恢复，不重复索引。下一步有界核对level0 World省份/地形材质真实消费者、陆地高度配色与Unity Linear颜色输出；同时定位SDF Camera10195的绘制alpha输入。先接可玩切片，不扩建国家。"
     },
     "lastRecovery": {
-      "name": "HeightMapGenerator.GetHeightMap and World.SetCellAsSea",
-      "status": "bounded-static-and-numeric-complete",
+      "at": "2026-10-04T14:04:19.614Z",
+      "scope": "Shader191 ocean and SDFTextureGenerator.Update/Compute419 static recovery",
+      "sourceCommit": "c6008b0fb346e3e7f604c844b76e13fbe09d4aed",
       "evidence": [
-        "docs/evidence/fms-hill-recovery-2026-10-04/manifest.json",
-        "docs/evidence/fms-brush-input-2026-10-04/manifest.json",
-        "docs/evidence/fms-brush-numeric-2026-10-04/verification.json"
+        "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md"
       ],
-      "note": "不重复恢复已完成函数；新恢复仅在绘图切片遇到具体必要未知时启动。"
+      "originalExecuted": false,
+      "webAdaptation": "analytic Float32 h20 contours and capped Euclidean field; original mixing and scene numeric palette",
+      "unknown": "source alpha draw chain; Unity material/framebuffer colorspace; original GPU numerical equivalence"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -3699,14 +3757,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-04T07:05:39.328Z",
+      "at": "2026-10-04T14:04:19.615Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "ab94ce7",
-      "lastSourceCommit": "2d4d589a553e2da6202a748d3836860389774680",
+      "lastCheckpointCommit": "86afe32",
+      "lastSourceCommit": "c6008b0fb346e3e7f604c844b76e13fbe09d4aed",
       "newCodeSinceCheckpoint": true,
       "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "原模板已成可玩切片；继续活动NoiseColor/SDF海洋采样与生成刷新，保持WEB-02-01与首份视觉门。",
+      "nextFocus": "活动陆地材质/配色与SDF相机alpha输入；沿V5首份绘图体验继续，发布锁保留。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -3795,6 +3853,71 @@
         "docs/evidence/fms-click-template-v5-2026-10-04/checkpoint-checks.json",
         "docs/evidence/fms-click-template-v5-2026-10-04/verification.json"
       ]
+    },
+    "oceanPrototype": {
+      "sourceCommit": "c6008b0fb346e3e7f604c844b76e13fbe09d4aed",
+      "status": "local-formula-port-verified; original-visual-equivalence-open",
+      "algorithm": "recovered-shader191-web-contour-distance-v1",
+      "original": "Shader191 smoothstep, SetDeep/ShallowWaterColor binding, UpdateQuadUV scale, level0 numeric colors",
+      "adaptations": [
+        "analytic float32 h20 contour instead of camera alpha/JFA",
+        "aspect-preserving 512 maximum texture side, RG16 bilinear data texture",
+        "no-coast field takes far sea color",
+        "scene numbers used directly; Linear color pipeline not equivalent"
+      ],
+      "coastGeometryAndSaveUnchanged": true,
+      "cpuCacheLimit": 3,
+      "maxCpuBytes": 3145728,
+      "gpuSources": 1,
+      "sourceTextureBytes": 1048576,
+      "worldSampleErrorBound": 4.242875065695619,
+      "tests": {
+        "count": 420,
+        "files": 23,
+        "lint": true,
+        "typecheck": true,
+        "build": true,
+        "planTests": 11,
+        "releaseLockTests": 22
+      },
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "evidence": [
+        "docs/evidence/fms-ocean-v5-2026-10-04/after.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/before.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/build-check.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/checkpoint-checks.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/checks-initial.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/checks-timeout.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/checks.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/dev-browser.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/new-small-island.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md",
+        "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
+        "docs/evidence/fms-ocean-v5-2026-10-04/production-mesh-preview.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/restored.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/small-island-close.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/small-island-max-zoom.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/template-preview.jpg",
+        "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
+      ],
+      "browser": {
+        "devPoints": 40789,
+        "devSegments": 5148,
+        "devFirstBuildMs": 65.5,
+        "maxZoomRelativeFit": 80,
+        "renderOnlySaveUnchanged": true,
+        "devSavedBrushChanges": 137,
+        "productionMeshPoints": [
+          37550,
+          37566
+        ],
+        "productionSaveReloadExact": true,
+        "consoleWarningsOrErrors": 0,
+        "physicalDevice": false
+      }
     }
   }
 }

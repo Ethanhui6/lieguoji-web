@@ -1,0 +1,23 @@
+[
+  {
+    "name": "lint",
+    "at": "2026-10-04T13:54:49.446Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "at": "2026-10-04T13:54:49.453Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "at": "2026-10-04T13:54:49.457Z",
+    "code": 1,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n ❯ src/fms/ocean-surface.test.ts (4 tests | 1 failed) 5423ms\n   ❯ derived ocean field ownership and cache (4)\n     × invalidates geometry and dimensions even if the elevation array is shared 5185ms\n\n Test Files  1 failed | 22 passed (23)\n      Tests  1 failed | 418 passed (419)\n   Start at  21:54:50\n   Duration  24.08s (tests 93%, import 5%, transform 2%)\n\n    Isolate  23 workers spawned · ~133ms startup each (spawn + environment, per file)\n             at least ~1.40s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": "\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯\n\n FAIL  src/fms/ocean-surface.test.ts > derived ocean field ownership and cache > invalidates geometry and dimensions even if the elevation array is shared\nError: Test timed out in 5000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n ❯ src/fms/ocean-surface.test.ts:15:3\n     13|     expect(fields.get(candidate)).toBe(preview); expect(fields.metrics…\n     14|   });\n     15|   it('invalidates geometry and dimensions even if the elevation array …\n       |   ^\n     16|     const fields = new FmsOceanFields(), doc = coastFixture('island'),…\n     17|     expect(fields.get({ ...doc, points: doc.points.map(p => [...p]) })…\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+  }
+]

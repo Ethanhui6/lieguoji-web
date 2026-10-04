@@ -3,9 +3,11 @@
 Additional adapted scope (2026-10-05): selected temperature, wind precipitation,
 and biome classification/palette rules from the user-authorized installed
 Fantasy Map Simulator script, in the Azgaar Fantasy Map Generator family below.
-Web grid sampling, bounded wind edges and rainfall-only biome display are local
-adaptations. The original river flux and final rendered biome texture are not
-included. An exact upstream revision of the installed script is not asserted.
+Web grid sampling, bounded wind edges and continuous biome display are local
+adaptations. Selected river flux, FIFO depression routing and river moisture
+rules are additionally adapted to the editable web graph (2026-10-05).
+Original erosion, meanders and the final rendered biome texture are not included.
+An exact upstream revision of the installed script is not asserted.
 
 Alea PRNG 1.1: original work © 2010 Johannes Baagøe (MIT); derivative © 2017–2020 W. "Mac" McMeans (BSD-3-Clause).
 Official source: https://github.com/macmcmeans/aleaPRNG/tree/e1afc01b16c076fadb79837157c19bff9671a110

@@ -133,21 +133,12 @@ export class FmsRenderer {
       if(biome){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=biome.colors;colors.update();}
     }
     this.currentDocument=doc;this.updateBiomeMetrics(biome);
-    this.rivers.clear();
-    // Flat brush plateaus have sheet runoff, not an implied incised river network.
-    const riverLines=surface.relief>=6?clipFmsRiverSegments(doc,surface.drainage.riverSegments):[];
-    for(const {from,a,b,mouth} of riverLines){
-      const width=Math.min(5,1.8+Math.log2(Math.max(1,surface.drainage.accumulation[from]/surface.drainage.stats.minCatchment))*.55);
-      this.rivers.moveTo(a[0],a[1]).lineTo(b[0],b[1]).stroke({width,color:0x527f88,alpha:.9,cap:mouth?'butt':'round'});
-    }
+    this.drawRivers(doc,biome);
     this.canvas.dataset.minHeight=String(Math.min(...doc.elevations));
     this.canvas.dataset.pointCount=String(doc.points.length);this.canvas.dataset.triangleCount=String(doc.triangles.length/3);
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
     this.canvas.dataset.terrainDisplay=this.terrainDisplay;
     this.canvas.dataset.heightPalette=FMS_HEIGHT_PALETTE_CONTRACT;
-    this.canvas.dataset.riverSegments=String(riverLines.length);
-    this.canvas.dataset.riverGraphSegments=String(surface.drainage.riverSegments.length);
-    this.canvas.dataset.riverMouths=String(riverLines.filter(line=>line.mouth).length);
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
     this.canvas.dataset.drainageAlgorithm=surface.drainage.stats.algorithm;
     this.canvas.dataset.landArea=String(surface.drainage.stats.landArea);
@@ -188,7 +179,23 @@ export class FmsRenderer {
     if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.uniforms.uBiomeView=display==='biome'?1:0;this.oceanUniforms.update();}
     if(this.initialized)this.canvas.dataset.terrainDisplay=display;
     this.updateBiomeMetrics(biome);
+    if(this.currentDocument)this.drawRivers(this.currentDocument,biome);
     this.draw();
+  }
+  private drawRivers(doc:FmsDocument,biome?:FmsBiomeSurface):void {
+    const surface=this.surfaces.get(doc.elevations);if(!surface)return;
+    const segments=biome?biome.rivers.segments:surface.relief>=6?surface.drainage.riverSegments:[];
+    const lines=clipFmsRiverSegments(doc,segments);this.rivers.clear();
+    for(const {from,a,b,mouth}of lines){
+      const amount=biome?biome.rivers.flux[from]/30:surface.drainage.accumulation[from]/surface.drainage.stats.minCatchment;
+      // Width is the existing bounded web stroke, driven by the active model.
+      const width=Math.min(5,1.8+Math.log2(Math.max(1,amount))*.55);
+      this.rivers.moveTo(...a).lineTo(...b).stroke({width,color:0x527f88,alpha:.9,cap:mouth?'butt':'round'});
+    }
+    this.canvas.dataset.riverAlgorithm=biome?biome.rivers.stats.algorithm:surface.drainage.stats.algorithm;
+    this.canvas.dataset.riverSegments=String(lines.length);
+    this.canvas.dataset.riverGraphSegments=String(segments.length);
+    this.canvas.dataset.riverMouths=String(lines.filter(line=>line.mouth).length);
   }
   private updateBiomeMetrics(surface?:FmsBiomeSurface):void {
     if(!this.initialized)return;

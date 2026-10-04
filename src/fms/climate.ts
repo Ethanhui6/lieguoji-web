@@ -2,9 +2,9 @@ import { createAlea } from '../world/recovered-terrain/alea';
 
 /** Selected main.mjs 2584–2758 / 3638–3750, user-authorized installed source.
  * Azgaar family MIT + Alea notices: world/recovered-terrain/licenses.
- * This is a bounded rainfall-only web adapter, not the original river pipeline.
+ * Climate is sampled on a bounded web grid; river recovery is in climate-rivers.
  */
-export const FMS_CLIMATE_ALGORITHM = 'recovered-climate-rainfall-only-web-v1';
+export const FMS_CLIMATE_ALGORITHM = 'recovered-climate-river-web-v2';
 export const FMS_BIOMES = [
   ['海洋', '#466eab'], ['热带沙漠', '#fbe79f'], ['寒带沙漠', '#b5b887'],
   ['热带草原', '#d2d082'], ['温带草原', '#c8d68f'], ['热带季节性森林', '#b6d95d'],

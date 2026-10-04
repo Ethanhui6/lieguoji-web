@@ -1,6 +1,7 @@
 import { assertFmsDocument, type FmsDocument } from './model';
 import { FMS_BIOMES, FMS_CLIMATE_ALGORITHM, FMS_CLIMATE_DEFAULTS, FmsClimateError, generateFmsClimateGrid, recoveredBiome, recoveredTemperature } from './climate';
 import { srgbToLinear } from './height-palette';
+import { deriveFmsClimateRivers, recoveredRiverMoisture, type FmsClimateRivers } from './climate-rivers';
 
 /** Grid is a climate calculation surface, never a replacement for the visible
  * coast/geometry. We sample the SAME float32 triangles the renderer uploads. */
@@ -29,8 +30,8 @@ export function sampleFmsClimateHeights(doc: FmsDocument, columns: number, rows:
 }
 
 export interface FmsBiomeSurface {
-  ids: Uint8Array; colors: Float32Array; temperatures: Int8Array; precipitation: Uint8Array;
-  stats: {algorithm:string;columns:number;rows:number;counts:number[];minTemperature:number|null;maxTemperature:number|null;riverMoisture:false;bytes:number};
+  ids: Uint8Array; colors: Float32Array; temperatures: Int8Array; precipitation: Uint8Array; rivers:FmsClimateRivers;
+  stats: {algorithm:string;columns:number;rows:number;counts:number[];minTemperature:number|null;maxTemperature:number|null;riverMoisture:true;riverChangedBiomes:number;riverStats:FmsClimateRivers['stats'];bytes:number};
 }
 const palette=FMS_BIOMES.map(([,hex])=>[1,3,5].map(start=>srgbToLinear(parseInt(hex.slice(start,start+2),16)/255)));
 /** Climate is derived from current terrain. No biome field is silently inserted
@@ -44,12 +45,15 @@ export function deriveFmsBiomeSurface(doc:FmsDocument):FmsBiomeSurface {
   // fall between climate samples. Only precipitation is resampled from grid.
   const temperatures=Int8Array.from(doc.elevations,(h,i)=>recoveredTemperature(Math.min(100,Math.max(0,h)),FMS_CLIMATE_DEFAULTS.north-doc.points[i][1]/doc.height*(FMS_CLIMATE_DEFAULTS.north-FMS_CLIMATE_DEFAULTS.south)));
   const ids=new Uint8Array(doc.points.length),precipitation=Uint8Array.from(references,i=>climate.precipitation[i]);
+  const rivers=deriveFmsClimateRivers(doc,precipitation);
   const colors=new Float32Array(ids.length*3),counts=new Array<number>(13).fill(0);
-  let min=Infinity,max=-Infinity;
+  let min=Infinity,max=-Infinity,riverChangedBiomes=0;
   for(let i=0;i<ids.length;i++){
     let sum=precipitation[i],n=1;
     for(const j of doc.neighbors[i])if(doc.elevations[j]>=20){sum+=precipitation[j];n++;}
-    ids[i]=recoveredBiome(Math.round(4+sum/n),temperatures[i],doc.elevations[i],false);counts[ids[i]]++;
+    const rainfallOnly=recoveredBiome(Math.round(4+sum/n),temperatures[i],doc.elevations[i],false);
+    ids[i]=recoveredBiome(recoveredRiverMoisture(i,doc.elevations,doc.neighbors,precipitation,rivers),temperatures[i],doc.elevations[i],Boolean(rivers.riverIds[i]));counts[ids[i]]++;
+    if(ids[i]!==rainfallOnly)riverChangedBiomes++;
     if(doc.elevations[i]>=20){min=Math.min(min,temperatures[i]);max=Math.max(max,temperatures[i]);}
   }
   for(let i=0;i<ids.length;i++){
@@ -60,7 +64,7 @@ export function deriveFmsBiomeSurface(doc:FmsDocument):FmsBiomeSurface {
     for(const j of doc.neighbors[i])if(doc.elevations[j]>=20){const c=palette[ids[j]];for(let k=0;k<3;k++)rgb[k]+=c[k];weight++;}
     for(let k=0;k<3;k++)colors[i*3+k]=weight?rgb[k]/weight:base[k];
   }
-  return {ids,colors,temperatures,precipitation,stats:{algorithm:FMS_CLIMATE_ALGORITHM,columns,rows,counts,minTemperature:Number.isFinite(min)?min:null,maxTemperature:Number.isFinite(max)?max:null,riverMoisture:false,bytes:ids.byteLength+colors.byteLength+temperatures.byteLength+precipitation.byteLength}};
+  return {ids,colors,temperatures,precipitation,rivers,stats:{algorithm:FMS_CLIMATE_ALGORITHM,columns,rows,counts,minTemperature:Number.isFinite(min)?min:null,maxTemperature:Number.isFinite(max)?max:null,riverMoisture:true,riverChangedBiomes,riverStats:rivers.stats,bytes:ids.byteLength+colors.byteLength+temperatures.byteLength+precipitation.byteLength+rivers.stats.bytes}};
 }
 
 type Entry={doc:FmsDocument;surface:FmsBiomeSurface};

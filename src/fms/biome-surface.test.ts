@@ -12,7 +12,7 @@ describe('read-only climate display on the current continuous geometry',()=>{
     expect([...sampleFmsClimateHeights(doc,4,2)]).toEqual([10,30,50,70,10,30,50,70]);
     const surface=deriveFmsBiomeSurface(doc);
     expect(doc).toEqual(before);
-    expect(surface.stats).toMatchObject({columns:192,rows:96,riverMoisture:false});
+    expect(surface.stats).toMatchObject({columns:192,rows:96,riverMoisture:true});
     expect(surface.ids[0]).toBe(0);expect(surface.ids[3]).toBe(0);
     expect(surface.stats.counts.reduce((s,n)=>s+n,0)).toBe(4);
     expect([...surface.colors].every(Number.isFinite)).toBe(true);
@@ -48,7 +48,7 @@ describe('read-only climate display on the current continuous geometry',()=>{
     expect(fields.get({...doc,points:doc.points.map(p=>[...p])})).not.toBe(a);
     expect(fields.get({...doc,width:40})).not.toBe(a);
     expect(fields.metrics()).toMatchObject({builds:4,entries:3});
-    expect(fields.metrics().bytes).toBeLessThanOrEqual(3*doc.points.length*15);
+    expect(fields.metrics().bytes).toBeLessThanOrEqual(3*doc.points.length*(15+12+16));
     fields.clear();expect(fields.metrics()).toMatchObject({entries:0,bytes:0});
   });
   it('rejects malformed documents before storing a new cached entry',()=>{

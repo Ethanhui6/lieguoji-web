@@ -4,6 +4,7 @@ import { createFmsDocument, FmsEditHistory, prepareFmsBrushEdit, prepareFmsLockE
 import { loadFmsDocument, saveFmsDocument } from './persistence';
 import { FmsGestures } from './gestures';
 import { FmsRenderer } from './renderer';
+import { displayFmsDocument } from './display-document';
 import { FmsTerrainClient } from './terrain-client';
 import type { FmsHillOptions } from './hill';
 import { prepareFmsTemplatePreview, type FmsTemplateOptions } from './local-template';
@@ -50,6 +51,8 @@ export default function FmsApp() {
   const [hillHeight,setHillHeight]=useState(85),[hillDecay,setHillDecay]=useState(.96);
   const [localTemplate,setLocalTemplate]=useState<ClickTemplate>('pangea'),[preserveCoast,setPreserveCoast]=useState(true);
   const [terrainDisplay,setTerrainDisplay]=useState<FmsTerrainDisplay>('height');
+  const [displayNotice,setDisplayNotice]=useState('');
+  const showDocument=(s:Session,doc:FmsDocument,drainage?:FmsDrainage)=>displayFmsDocument(s.renderer,doc,drainage,reason=>{setTerrainDisplay('height');setDisplayNotice(reason);});
   const settings=useRef({tool,radius,height,hillHeight,hillDecay,seed,localTemplate,preserveCoast});settings.current={tool,radius,height,hillHeight,hillDecay,seed,localTemplate,preserveCoast};
   const [coastalWidth,setCoastalWidth]=useState(FMS_DEFAULT_COASTAL_WIDTH);
   const [coastOffset,setCoastOffset]=useState(0),[generationKind,setGenerationKind]=useState<'terrain'|'coast'|'smooth'|'hill'|'template'>('terrain');
@@ -101,12 +104,12 @@ export default function FmsApp() {
               :active.tool==='lock'||active.tool==='unlock'
                 ?prepareFmsLockEdit(s.history.document,active.points.map(p=>({...p,radius:active.radius})),active.tool==='lock')
                 :prepareFmsBrushEdit(s.history.document,{tool:active.tool==='sea'?'sea':'land',height:active.height,stamps:active.points.map(p=>({...p,radius:active.radius}))});
-            const result=s.history.commit(patch); s.renderer.setDocument(result);refresh(s);
+            const result=s.history.commit(patch); showDocument(s,result);refresh(s);
             setNotice(patch.lockChanges?.length?'保护区域已更新，可撤销；保存后刷新仍保留。':patch.changes.length?'这一笔已完成，可撤销；保存后可以刷新继续。':'这一笔没有改变地图；受保护地形需先解锁。');
           } catch(error) { setNotice(messageOf(error)); }
         },
       });
-      session.current=s; s.renderer.setDocument(document); s.renderer.setCamera(s.camera);
+      session.current=s; showDocument(s,document); s.renderer.setCamera(s.camera);
       const canvas=s.renderer.canvas;
       const point=(event:PointerEvent|WheelEvent)=>{const bounds=canvas.getBoundingClientRect();return{x:event.clientX-bounds.left,y:event.clientY-bounds.top};};
       const options={signal:lifetime.signal};
@@ -126,7 +129,7 @@ export default function FmsApp() {
         if(event.key==='Escape'){s.gestures.interrupt();if(terrainPhaseRef.current!=='idle')cancelTerrain();setExpanded(false);}
         if(!(event.target instanceof HTMLInputElement)&&(event.ctrlKey||event.metaKey)&&['z','y'].includes(event.key.toLowerCase())){
           event.preventDefault();if(busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();
-          const changed=event.key.toLowerCase()==='y'||event.shiftKey?s.history.redo():s.history.undo();s.renderer.setDocument(changed);refresh(s);
+          const changed=event.key.toLowerCase()==='y'||event.shiftKey?s.history.redo():s.history.undo();showDocument(s,changed);refresh(s);
         }
       },options);
       observer=new ResizeObserver(()=>{
@@ -142,7 +145,7 @@ export default function FmsApp() {
 
   function documentVisibility(options: { signal: AbortSignal }, reset: () => void) { document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();},options); }
   const choose = (next:Tool) => {session.current?.gestures.interrupt();setTool(next);setNotice(tools.find(t=>t.id===next)!.help);if(next==='lock'||next==='unlock'||next==='hill'||next==='template')setExpanded(false);};
-  const historyAction = (redo:boolean) => {const s=session.current;if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();const doc=redo?s.history.redo():s.history.undo();s.renderer.setDocument(doc);refresh(s);setNotice(redo?'已重做上一笔。':'已撤销上一笔。');};
+  const historyAction = (redo:boolean) => {const s=session.current;if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();const doc=redo?s.history.redo():s.history.undo();showDocument(s,doc);refresh(s);setNotice(redo?'已重做上一笔。':'已撤销上一笔。');};
   const zoom = (factor:number) => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=zoomCameraAt(s.camera,factor,{x:s.viewport.width/2,y:s.viewport.height/2},s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
   const fit = () => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=fitCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
   const save = async () => {
@@ -156,7 +159,7 @@ export default function FmsApp() {
     generationToken.current++;terrainAbort.current?.abort();terrainAbort.current=null;
     const s=session.current, hadPreview=terrainCandidate.current!==null;
     terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);
-    if(s&&hadPreview&&!renderUnavailable.current)s.renderer.setDocument(s.history.document);
+    if(s&&hadPreview&&!renderUnavailable.current)showDocument(s,s.history.document);
     if(announce)setNotice('已取消地形预览，原地图保持不变。');
   }
   async function generateTemplate(options:FmsTemplateOptions){
@@ -170,8 +173,8 @@ export default function FmsApp() {
       const prepared=prepareFmsTemplatePreview(s.history.document,result,options);
       if(!prepared.patch.changes.length){setTerrainPhase('idle');setNotice(options.preserveCoast?'这里没有可抬高的内陆；移向陆地，或在设置中关闭保留海岸以新增陆地。':'这里已有更高地形或受到保护，请更换落点或种子。');return;}
       terrainCandidate.current={kind:'template',...prepared,drainage:result.drainage,changedCells:result.stats.changedCells,newLandCells:result.stats.newLandCells,preserveCoast:options.preserveCoast};
-      s.renderer.setDocument(prepared.document,result.drainage);setTerrainPhase('preview');setNotice(options.preserveCoast?'原作模板已预览；已有海岸和保护区固定，对照后确认。':'原作模板已预览；会新增陆地或扩展海岸，已有更高地形与保护区保留。');
-    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}}
+      showDocument(s,prepared.document,result.drainage);setTerrainPhase('preview');setNotice(options.preserveCoast?'原作模板已预览；已有海岸和保护区固定，对照后确认。':'原作模板已预览；会新增陆地或扩展海岸，已有更高地形与保护区保留。');
+    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   }
   async function generateHill(options:FmsHillOptions){
@@ -185,8 +188,8 @@ export default function FmsApp() {
       const prepared=prepareFmsTerrainPreview(s.history.document,result,'放置山丘');
       if(!prepared.patch.changes.length){setTerrainPhase('idle');setNotice('这里没有可抬高的地形，请移向内陆、避开保护区，或提高山顶高度。');return;}
       terrainCandidate.current={kind:'hill',...prepared,drainage:result.drainage,changedCells:result.stats.changedCells};
-      s.renderer.setDocument(prepared.document,result.drainage);setTerrainPhase('preview');setNotice('山丘已预览，原有更高地形保留；对照后确认，可整步撤销。');
-    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}}
+      showDocument(s,prepared.document,result.drainage);setTerrainPhase('preview');setNotice('山丘已预览，原有更高地形保留；对照后确认，可整步撤销。');
+    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   }
   const generateTerrain=async()=>{
@@ -200,10 +203,10 @@ export default function FmsApp() {
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       const prepared=prepareFmsTerrainPreview(s.history.document,result);
       if(prepared.patch.changes.length===0){setTerrainPhase('idle');setNotice('没有可更新的内陆地形；海岸与小岛边缘保持原高程，可扩大内陆或调整参数。');return;}
-      terrainCandidate.current={kind:'terrain',...prepared,drainage:result.drainage,coastalWidth:result.stats.coastalWidth};s.renderer.setDocument(prepared.document,result.drainage);
+      terrainCandidate.current={kind:'terrain',...prepared,drainage:result.drainage,coastalWidth:result.stats.coastalWidth};showDocument(s,prepared.document,result.drainage);
       setTerrainPhase('preview');setNotice('内陆地形已生成；海岸边界固定。缩放对照后确认，可整步撤销。');
     } catch(error) {
-      if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}
+      if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}
     } finally {if(generationToken.current===token)terrainAbort.current=null;}
   };
   const generateCoast=async()=>{
@@ -216,9 +219,9 @@ export default function FmsApp() {
       const preview=await client.refine(s.history.document,options,{signal:controller.signal});
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       if(!preview.result.splits.length){setTerrainPhase('idle');setNotice(`没有可细化的海岸；已细化、受保护或支撑不足的狭小区域保持原样。${s.history.canUndo?'可撤销本次操作或用笔刷修改后再试。':'可用笔刷修改海岸后再试。'}`);return;}
-      terrainCandidate.current={kind:'coast',...preview,options};s.renderer.setDocument(preview.document);
+      terrainCandidate.current={kind:'coast',...preview,options};showDocument(s,preview.document);
       setTerrainPhase('preview');setNotice('海岸细化已预览；原始边界交点固定，局部弯折受位移和面积约束。');
-    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}}
+    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   };
   const confirmTerrain=()=>{
@@ -226,12 +229,12 @@ export default function FmsApp() {
     s.gestures.interrupt();
     try {
       const doc=candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template'?s.history.commit(candidate.patch):s.history.replaceDocument(candidate.kind==='coast'?prepareFmsCoastPreview(s.history.document,candidate.result,candidate.options):prepareFmsCoastSmoothPreview(s.history.document,candidate.result,candidate.options),s.history.document.revision);
-      s.renderer.setDocument(doc,candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template'?candidate.drainage:undefined);terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);refresh(s);
+      showDocument(s,doc,candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template'?candidate.drainage:undefined);terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);refresh(s);
       setNotice(candidate.kind==='template'?'原作模板地形已应用，可整步撤销；保存后刷新保留实际地形。':candidate.kind==='hill'?'山丘已应用，可整步撤销；保存后刷新保留实际高度。':candidate.kind==='terrain'?'自然地形已应用，可整步撤销。保存后刷新仍保留山地和河湖。':candidate.kind==='smooth'?'海岸轮廓已平滑，可整步撤销；保存后刷新保留实际位置。每次确认以当前地图为基准。':'海岸细化已应用，可整步撤销；保存后刷新保留实际轮廓。重调这次细化请先撤销。');
     }
     catch(error){cancelTerrain(false);setNotice(messageOf(error));}
   };
-  const compareTerrain=()=>{const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate)return;s.gestures.interrupt();s.renderer.setDocument(showOriginal?candidate.document:s.history.document,showOriginal&&(candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template')?candidate.drainage:undefined);setShowOriginal(!showOriginal);};
+  const compareTerrain=()=>{const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate)return;s.gestures.interrupt();showDocument(s,showOriginal?candidate.document:s.history.document,showOriginal&&(candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template')?candidate.drainage:undefined);setShowOriginal(!showOriginal);};
   const coastCandidate=terrainCandidate.current?.kind==='coast'?terrainCandidate.current:null;
   const smoothCandidate=terrainCandidate.current?.kind==='smooth'?terrainCandidate.current:null;
   const generateSmooth=async()=>{
@@ -242,20 +245,20 @@ export default function FmsApp() {
       const client=coastClient.current??(coastClient.current=new FmsCoastClient()),preview=await client.smooth(s.history.document,options,{signal:controller.signal});
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       if(!preview.result.moves.length){setTerrainPhase('idle');setNotice('当前限制内没有能改善折角的平滑结果；地图保持原样。');return;}
-      terrainCandidate.current={kind:'smooth',...preview,options};s.renderer.setDocument(preview.document);setTerrainPhase('preview');setNotice('轮廓平滑已预览；对照海湾与岬角后确认。本次以当前地图为基准。');
-    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');s.renderer.setDocument(s.history.document);setNotice(messageOf(error));}}
+      terrainCandidate.current={kind:'smooth',...preview,options};showDocument(s,preview.document);setTerrainPhase('preview');setNotice('轮廓平滑已预览；对照海湾与岬角后确认。本次以当前地图为基准。');
+    }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   };
-  const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);setTerrainDisplay(display);}catch(error){setNotice(messageOf(error));}};
+  const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);setTerrainDisplay(display);setDisplayNotice('');}catch(error){setNotice(messageOf(error));}};
   return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
     <div className="fms-map" ref={host}/>
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button onClick={()=>choose('template')} disabled={!editable}>原作地形</button><button className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}>{busy?'保存中…':'保存'}<span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
-    {!ready&&!fatal&&<div className="fms-loading" role="status">{notice}</div>}
+    {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
     {ready&&stats.land===0&&!fatal&&<div className="fms-empty"><span>一片海洋，等你落笔</span><p>选择轮廓，描出第一块大陆</p></div>}
     {fatal&&<div className="fms-error" role="alert"><strong>地图暂时无法打开</strong><p>{fatal}</p>{!ready&&<button onClick={()=>window.location.reload()}>重新尝试</button>}</div>}
     <div className="fms-zoom" aria-label="地图视角"><button onClick={()=>zoom(1.4)} disabled={!navigable} aria-label="放大">＋</button><button onClick={fit} disabled={!navigable} aria-label="查看全图">⌖</button><button onClick={()=>zoom(1/1.4)} disabled={!navigable} aria-label="缩小">−</button><output>{stats.zoom.toFixed(1)}×</output></div>
     <div className="fms-bottom">
-      <div className="fms-status" role="status" aria-live="polite">{ready?notice:''}</div>
+      <div className="fms-status" role="status" aria-live="polite">{ready?[notice,displayNotice].filter(Boolean).join(' '):''}</div>
       {terrainPhase!=='idle'&&<section className="fms-terrain-preview" aria-label={generationKind==='template'?'原作地形预览':generationKind==='hill'?'山丘预览':generationKind==='smooth'?'轮廓平滑预览':generationKind==='coast'?'海岸细化预览':'自然地形预览'}><strong>{terrainPhase==='generating'?(generationKind==='template'?'原作模板生成中…':generationKind==='hill'?'山丘生成中…':generationKind==='smooth'?'轮廓平滑中…':generationKind==='coast'?'海岸细化中…':'山地与河湖生成中…'):showOriginal?'正在对照原地图':generationKind==='template'?'原作地形预览':generationKind==='hill'?'山丘预览':generationKind==='smooth'?'轮廓平滑预览':generationKind==='coast'?'海岸细化预览':'自然地形预览'}</strong><p>{terrainPhase==='generating'?'原地图仍被保留。':terrainCandidate.current?.kind==='template'?`抬高 ${terrainCandidate.current.changedCells} 处 · 新增陆地点 ${terrainCandidate.current.newLandCells} · ${terrainCandidate.current.preserveCoast?'海岸固定':'允许扩展海岸'}，保护区固定。`:terrainCandidate.current?.kind==='hill'?`抬高 ${terrainCandidate.current.changedCells} 处地形 · 海岸和保护区高程固定。`:smoothCandidate?`加密 ${smoothCandidate.result.stats.addedPoints} 点 · 最大偏移 ${smoothCandidate.result.stats.maxDisplacement.toFixed(3)} 地图单位（上限 ${smoothCandidate.options.maxOffset}）· 单块面积最大变化 ${(smoothCandidate.result.stats.maxComponentAreaFraction*100).toFixed(3)}%`:coastCandidate?`${coastCandidate.result.splits.length} 段 · 最大偏移 ${coastCandidate.result.stats.maxDisplacement.toFixed(3)} 地图单位（上限 ${coastCandidate.options.maxOffset}）${coastCandidate.result.stats.budgetLimited?' · 已达地图点数上限':''}`:`沿海低地宽度 ${Math.round((terrainCandidate.current?.kind==='terrain'?terrainCandidate.current.coastalWidth:coastalWidth)*1000)/10}% · 海岸线固定。`}</p>{coastCandidate&&<p>局部海陆面积各变化不超过 2%；保护区跳过。河流与阴影会重新计算。</p>}{smoothCandidate&&<p>每块陆地、水域总面积变化 ≤2%，任意两点间距缩短 ≤20%。小岛边界与支撑不足的细部跳过；保护面固定。每次相对当前地图，连续确认会累积。</p>}<p>单指移动、双指缩放；确认前不会保存。</p><label className="fms-preview-display">地图显示<select aria-label="预览地图显示" value={terrainDisplay} onChange={e=>changeTerrainDisplay(e.target.value as FmsTerrainDisplay)} disabled={!navigable}><option value="height">原作高度配色</option><option value="relief">起伏与阴影</option><option value="biome">气候地貌（试算）</option></select></label>{terrainDisplay==='biome'&&<p>原作初始气候试算；暂不计原作河流增湿。</p>}<div><button onClick={()=>cancelTerrain()}>取消</button>{terrainPhase==='preview'&&<><button onClick={compareTerrain}>{showOriginal?'查看地形':'查看原图'}</button><button className="fms-confirm" onClick={confirmTerrain}>{generationKind==='template'?'确认原作地形':generationKind==='hill'?'确认山丘':generationKind==='smooth'?'确认平滑':generationKind==='coast'?'确认海岸':'确认地形'}</button></>}</div></section>}
       {expanded&&<section className="fms-settings" aria-label="绘图设置"><div className="fms-panel-heading"><h2>高度编辑</h2><button aria-label="收起绘图设置" onClick={()=>setExpanded(false)}>×</button></div>
         <label>地图显示<select aria-label="地图显示" value={terrainDisplay} onChange={e=>changeTerrainDisplay(e.target.value as FmsTerrainDisplay)} disabled={!navigable}><option value="height">原作高度配色</option><option value="relief">起伏与阴影</option><option value="biome">气候地貌（试算）</option></select></label><p>{terrainDisplay==='height'?'按原作高度视图着色：低地浅黄，高地橙褐。海洋、河湖仍可见。':terrainDisplay==='biome'?'按原作初始气候与分类试算森林、草原、沙漠和冰川；暂不计原作河流增湿。':'查看山体阴影与地势起伏。'}切换仅改变显示，不修改地图；当前选择不写入存档。</p>

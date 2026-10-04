@@ -1,0 +1,20 @@
+[
+  {
+    "name": "plan-check",
+    "code": 0,
+    "stdout": "Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/9 work items, active WEB-PH02; release lock does not block local development\n",
+    "stderr": ""
+  },
+  {
+    "name": "plan-tests",
+    "code": 0,
+    "stdout": "✔ a completed numeric contract does not claim completed references, UI, or the first experience gate (2.9667ms)\n✔ active items must have completed declared and inherited phase dependencies (0.6474ms)\n✔ missing dependencies, parent mismatches, duplicates, and dependency cycles fail (0.514ms)\n✔ done items cannot use absent or unsafe evidence (0.4118ms)\n✔ current phase and next batch cannot silently revert to V4 identifiers (0.3055ms)\n✔ phase completion cannot conceal unfinished work or pending phone acceptance (0.4206ms)\n✔ later systems remain blocked even if their declared dependency was removed (0.1954ms)\n✔ mobile emulation cannot pass the physical device gate or replace user acceptance (0.8699ms)\n✔ physical and visual acceptance require their own existing evidence and both phone browsers (0.5911ms)\n✔ valid documented acceptance permits the next V5 phase but keeps local-only rights (0.9992ms)\n✔ all V5 stages done do not mutate or unlock the real historical release gate (207.2348ms)\nℹ tests 11\nℹ suites 0\nℹ pass 11\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 296.6337\n",
+    "stderr": ""
+  },
+  {
+    "name": "release-lock-tests",
+    "code": 0,
+    "stdout": "✔ a locked, unfinished programme remains a valid local plan but cannot release (4.7443ms)\n✔ every PH, subtask, readiness check and matching source permits a synthetic candidate; old blocked formal material stays independent (0.6316ms)\n✔ a done phase cannot conceal an unfinished or unproven work item (0.6679ms)\n✔ missing phases, duplicate work IDs and unknown statuses cannot shrink the acceptance scope (0.9579ms)\n✔ original task status or evidence changes fail the preserved digest (0.5032ms)\n✔ phase and subtask dependency cycles are rejected even when all involved statuses say done (1.3128ms)\n✔ unknown and unfinished dependencies cannot be approved by child evidence alone (0.8781ms)\n✔ an evidence filename is not sufficient unless the filesystem boundary has verified it (1.0198ms)\n✔ real device and visual approvals cannot be omitted, pending, or replaced with empty evidence (2.7738ms)\n✔ readiness cannot unlock modified source or replace required phases with an empty list (1.1903ms)\n✔ matching source evidence cannot authorize an uncommitted or unverified working tree (1.3719ms)\n✔ the authorized playtest permits only its verified branch without completing any PH or formal gate (4.8842ms)\n✔ playtest rejects absent, pending, unknown and altered authorization or schema (2.2692ms)\n✔ playtest requires actual evidence for all three exact checks, a clean source and every valid plan invariant (5.6743ms)\n✔ playtest expires at its exact UTC deadline and rejects invalid or normalized dates (4.276ms)\n✔ path boundary rejects outside, absolute, missing, and credential-capable candidates without reading contents (1.181ms)\n✔ fingerprint covers changed, added and removed source, excludes only readiness, and refuses missing tracked files (764.4254ms)\n✔ CLI enforces defaults and actual target refs using an independent locked fixture (2349.9363ms)\n✔ only reviewed root npm settings bytes are permitted, remain fingerprinted, and nested or altered configs fail closed (394.1162ms)\n✔ archived log review permits only listed bytes in the two reviewed directories and fingerprints its registry (581.6551ms)\n✔ filesystem evidence deletion cannot satisfy the preview gate even with a clean matching fingerprint (508.3612ms)\n✔ pre-push binds exactly accepted HEAD to the actual authorized remote ref and original repository (1510.9503ms)\nℹ tests 22\nℹ suites 0\nℹ pass 22\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 6226.7045\n",
+    "stderr": ""
+  }
+]

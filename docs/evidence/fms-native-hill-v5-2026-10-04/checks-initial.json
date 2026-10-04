@@ -1,0 +1,23 @@
+[
+  {
+    "name": "lint",
+    "at": "2026-10-04T04:13:51.380Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "at": "2026-10-04T04:13:51.386Z",
+    "code": 2,
+    "stdout": "src/fms/terrain-client.ts(256,36): error TS2345: Argument of type '{ worldId: string; baseRevision: number; elevations: Int32Array<ArrayBufferLike>; stats: FmsHillStats | FmsNaturalizationStats; drainage: FmsDrainage; }' is not assignable to parameter of type 'FmsTerrainPreview | FmsHillPreview'.\r\n  Type '{ worldId: string; baseRevision: number; elevations: Int32Array<ArrayBufferLike>; stats: FmsHillStats | FmsNaturalizationStats; drainage: FmsDrainage; }' is not assignable to type 'FmsHillPreview'.\r\n    Types of property 'stats' are incompatible.\r\n      Type 'FmsHillStats | FmsNaturalizationStats' is not assignable to type 'FmsHillStats'.\r\n        Type 'FmsNaturalizationStats' is missing the following properties from type 'FmsHillStats': centerCell, selectedCells, height, decay\r\n",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "at": "2026-10-04T04:13:51.390Z",
+    "code": 0,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  19 passed (19)\n      Tests  366 passed (366)\n   Start at  12:13:52\n   Duration  12.50s (tests 92%, import 4%, transform 3%)\n\n    Isolate  19 workers spawned · ~139ms startup each (spawn + environment, per file)\n             at least ~1.18s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-04T04:22:21.043Z",
+  "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
+  "environment": "Desktop Chromium 428x926; actual mouse UI, not physical iPhone",
+  "initial": {
+    "documentRevision": 35,
+    "storedRevision": 16,
+    "checksum": "71d891242b4adbb40a376c89a26eabac4bbdccc5182d903083299e422ceca7f5",
+    "points": 40789,
+    "locked": 590,
+    "archiveRevision": 10,
+    "archiveVersion": 1
+  },
+  "final": {
+    "documentRevision": 38,
+    "storedRevision": 18,
+    "checksum": "4abb63f05bc1c6711069b54de01c4cfdb105c92cc2f56a28531acec58689f02e",
+    "points": 40789,
+    "locked": 590,
+    "archiveRevision": 10,
+    "archiveVersion": 1
+  },
+  "cancelExact": true,
+  "undoExactExceptRevision": true,
+  "refreshExact": true,
+  "archiveExact": true,
+  "geometry": {
+    "changed": 237,
+    "lockedChanges": 0,
+    "pointsEqual": true,
+    "trianglesEqual": true,
+    "crossEdges": 9942,
+    "maxCrossRatioDelta": 0
+  },
+  "logs": []
+}

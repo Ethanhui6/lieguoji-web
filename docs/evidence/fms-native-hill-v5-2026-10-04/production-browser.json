@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-04T04:27:30.557Z",
+  "environment": "Desktop Chromium 428x926; real mouse/keyboard UI, not iPhone or WebKit",
+  "buildCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
+  "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+  "initial": {
+    "documentRevision": 11,
+    "storedRevision": 7,
+    "checksum": "57257921dd0de327cc19de5266a8cc7cc5b5d8dd646ec31da7bdc109ce251714",
+    "points": 37550,
+    "locked": 371,
+    "archiveRevision": 2,
+    "archiveVersion": 1
+  },
+  "final": {
+    "documentRevision": 12,
+    "storedRevision": 8,
+    "checksum": "4afccd5816e70f44d55636e491c9460b6fe882024441eda1b9ab81777ce67f9c",
+    "points": 37550,
+    "locked": 371,
+    "archiveRevision": 2,
+    "archiveVersion": 1
+  },
+  "changedCells": 232,
+  "lockedChanges": 0,
+  "refreshExact": true,
+  "archiveExact": true,
+  "syntheticTouch": "not_run: IAB CDP Input.dispatchTouchEvent unsupported; no input dispatched",
+  "logs": []
+}

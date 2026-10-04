@@ -1,6 +1,7 @@
 import { naturalizeFmsTerrain } from './naturalize';
 import { deriveFmsDrainage } from './hydrology';
 import { generateFmsHill } from './hill';
+import { generateFmsLocalTemplate } from './local-template';
 import type { FmsGenerationRequest, FmsGenerationResponse } from './terrain-client';
 
 /** Pure computation only: this Worker never opens IndexedDB or commits a revision. */
@@ -27,9 +28,24 @@ export function runFmsTerrainRequest(raw: unknown): FmsGenerationResponse {
   }
 }
 
+export async function runFmsTemplateRequest(raw: unknown): Promise<FmsGenerationResponse> {
+  const value = raw && typeof raw === 'object' ? raw as Partial<FmsGenerationRequest> : {};
+  const requestId = typeof value.requestId === 'number' && Number.isSafeInteger(value.requestId) ? value.requestId : 0;
+  const worldId = typeof value.document?.worldId === 'string' ? value.document.worldId : '';
+  const baseRevision = typeof value.document?.revision === 'number' ? value.document.revision : -1;
+  try {
+    if (Object.keys(value).length !== 4 || !['kind', 'requestId', 'document', 'options'].every(key => Object.hasOwn(value, key))
+      || value.kind !== 'template' || requestId <= 0 || !value.document || !value.options) throw new Error('局部地形线程请求格式无效。');
+    const result = await generateFmsLocalTemplate(value.document, value.options);
+    return { kind: 'template-generated', requestId, worldId, baseRevision, ...result, drainage: deriveFmsDrainage({ ...value.document, elevations: result.elevations }) };
+  } catch (error) {
+    return { kind: 'error', requestId, worldId, baseRevision, code: 'generation-failed', message: error instanceof Error ? error.message.slice(0, 500) : '局部地形生成失败，原地图未改变。' };
+  }
+}
+
 if (typeof self !== 'undefined' && typeof document === 'undefined') {
-  self.onmessage = event => {
-    const response = runFmsTerrainRequest(event.data);
+  self.onmessage = async event => {
+    const response = event.data?.kind === 'template' ? await runFmsTemplateRequest(event.data) : runFmsTerrainRequest(event.data);
     // Only owned output arrays are transferred; input is a separate structured clone.
     const transfer = response.kind !== 'error' ? [response.elevations.buffer, response.drainage.receiver.buffer,
       response.drainage.runoff.buffer, response.drainage.accumulation.buffer, response.drainage.filledElevation.buffer, response.drainage.lakeDepth.buffer] : [];

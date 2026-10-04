@@ -1,5 +1,6 @@
 import { assertFmsDocument, pickFmsCell, selectFmsHillCells, type FmsDocument } from './model';
 import { validFmsHillOptions, type FmsHillOptions, type FmsHillStats } from './hill';
+import { fmsTemplatePlacement, validFmsTemplateOptions, type FmsTemplateOptions, type FmsTemplateStats } from './local-template';
 import type { FmsNaturalizationOptions, FmsNaturalizationStats } from './naturalize';
 import type { FmsDrainage } from './hydrology';
 import { fixedFmsCoastVertices } from './coastline';
@@ -15,8 +16,11 @@ export interface FmsTerrainRequest {
 }
 export interface FmsHillPreview extends Omit<FmsTerrainPreview, 'stats'> { stats: FmsHillStats }
 export interface FmsHillRequest { kind: 'hill'; requestId: number; document: FmsDocument; options: FmsHillOptions }
-export type FmsGenerationRequest = FmsTerrainRequest | FmsHillRequest;
-export type FmsGenerationResponse = FmsTerrainResponse | ({ kind: 'hill-generated'; requestId: number } & FmsHillPreview);
+export interface FmsTemplatePreview extends Omit<FmsTerrainPreview, 'stats'> { stats: FmsTemplateStats }
+export interface FmsTemplateRequest { kind: 'template'; requestId: number; document: FmsDocument; options: FmsTemplateOptions }
+export type FmsGenerationRequest = FmsTerrainRequest | FmsHillRequest | FmsTemplateRequest;
+export type FmsGenerationResponse = FmsTerrainResponse | ({ kind: 'hill-generated'; requestId: number } & FmsHillPreview)
+  | ({ kind: 'template-generated'; requestId: number } & FmsTemplatePreview);
 export type FmsTerrainResponse = ({ kind: 'naturalized'; requestId: number } & FmsTerrainPreview)
   | { kind: 'error'; requestId: number; worldId: string; baseRevision: number; code: string; message: string };
 export class FmsTerrainClientError extends Error {
@@ -31,8 +35,9 @@ const protocolError = () => new FmsTerrainClientError('invalid-response', '地�
 const LAND_LEVEL = 20, MAX_CELLS = 50_000;
 type Snapshot = { worldId: string; revision: number; heights: Int32Array; coastLocks: Uint8Array; neighbors: number[][];
   points: FmsDocument['points']; triangles: Uint32Array; coastalWidthWorld: number; options: FmsNaturalizationOptions;
-  hill?: { options: FmsHillOptions; selected: Set<number>; centerCell: number } };
-type Pending = { requestId: number; snapshot: Snapshot; resolve: (value: FmsTerrainPreview | FmsHillPreview) => void; reject: (error: Error) => void;
+  hill?: { options: FmsHillOptions; selected: Set<number>; centerCell: number };
+  template?: { options: FmsTemplateOptions; playerLocks: Uint8Array; centerCell: number; sizeFactor: number } };
+type Pending = { requestId: number; snapshot: Snapshot; resolve: (value: FmsTerrainPreview | FmsHillPreview | FmsTemplatePreview) => void; reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>; signal?: AbortSignal; abort: () => void };
 
 function snapshotInput(doc: FmsDocument, options: FmsNaturalizationOptions): Snapshot {
@@ -67,6 +72,21 @@ function validHillStats(raw: unknown, elevations: Int32Array, source: Snapshot):
     if (next !== previous) changed++;
   }
   return raw.changedCells === changed;
+}
+
+function validTemplateStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsTemplateStats {
+  const template = source.template;
+  if (!template || !exact(raw, ['algorithm', 'seed', 'x', 'y', 'template', 'preserveCoast', 'centerCell', 'sizeFactor', 'changedCells', 'newLandCells'])
+    || raw.algorithm !== 'recovered-click-template-max-web-v1' || raw.centerCell !== template.centerCell || raw.sizeFactor !== template.sizeFactor
+    || Object.entries(template.options).some(([key, value]) => raw[key] !== value)) return false;
+  let changed = 0, newLand = 0;
+  for (let cell = 0; cell < elevations.length; cell++) {
+    const next = elevations[cell], previous = source.heights[cell];
+    if (next < previous || next < 0 || next > 100 || ((template.playerLocks[cell] || (template.options.preserveCoast && source.coastLocks[cell])) && next !== previous)) return false;
+    if (next !== previous) changed++;
+    if (next >= LAND_LEVEL && previous < LAND_LEVEL) newLand++;
+  }
+  return raw.changedCells === changed && raw.newLandCells === newLand;
 }
 
 function validStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsNaturalizationStats {
@@ -190,11 +210,20 @@ export class FmsTerrainClient {
     if (!validFmsHillOptions(options)) throw new FmsTerrainClientError('invalid-request', '山丘参数无效。');
     return this.generate(document, { seed: options.seed, strength: 1 }, control, options) as Promise<FmsHillPreview>;
   }
-  private async generate(document: FmsDocument, options: FmsNaturalizationOptions, control: { signal?: AbortSignal }, hillOptions?: FmsHillOptions): Promise<FmsTerrainPreview | FmsHillPreview> {
+  async localTemplate(document: FmsDocument, options: FmsTemplateOptions, control: { signal?: AbortSignal } = {}): Promise<FmsTemplatePreview> {
+    if (!validFmsTemplateOptions(options)) throw new FmsTerrainClientError('invalid-request', '局部地形参数无效。');
+    return this.generate(document, { seed: options.seed, strength: 1 }, control, undefined, options) as Promise<FmsTemplatePreview>;
+  }
+  private async generate(document: FmsDocument, options: FmsNaturalizationOptions, control: { signal?: AbortSignal }, hillOptions?: FmsHillOptions, templateOptions?: FmsTemplateOptions): Promise<FmsTerrainPreview | FmsHillPreview | FmsTemplatePreview> {
     if (this.closed) throw new FmsTerrainClientError('closed', '地形预览会话已关闭。');
     if (control.signal?.aborted) throw abortError();
     if (this.pending) throw new FmsTerrainClientError('busy', '当前地形仍在生成，请先取消或等待完成。');
     const snapshot = snapshotInput(document, options), requestId = ++this.requestId;
+    if (templateOptions) {
+      if (document.elevations.some(h => h < 0 || h > 100)) throw new FmsTerrainClientError('invalid-request', '当前地形高度超出模板支持范围。');
+      const placement = fmsTemplatePlacement(document, templateOptions);
+      snapshot.template = { options: { ...templateOptions }, playerLocks: document.terrainLocks?.slice() ?? new Uint8Array(document.points.length), centerCell: placement.centerCell, sizeFactor: placement.sizeFactor };
+    }
     if (hillOptions) {
       const centerCell = pickFmsCell(document, hillOptions.x, hillOptions.y);
       if (centerCell === null || snapshot.heights[centerCell] <= 20 || hillOptions.radius > Math.max(document.width, document.height)) {
@@ -217,7 +246,8 @@ export class FmsTerrainClient {
       control.signal?.addEventListener('abort', abort, { once: true });
       if (control.signal?.aborted) { abort(); return; }
       try {
-        const request: FmsGenerationRequest = snapshot.hill
+        const request: FmsGenerationRequest = snapshot.template
+          ? { kind: 'template', requestId, document, options: snapshot.template.options } : snapshot.hill
           ? { kind: 'hill', requestId, document, options: snapshot.hill.options }
           : { kind: 'naturalize', requestId, document, options: snapshot.options };
         // Structured clone owns the Worker's copy. Never detach source document buffers.
@@ -249,12 +279,13 @@ export class FmsTerrainClient {
           || typeof value.message !== 'string' || !value.message || value.message.length > 500) throw protocolError();
         this.fail(new FmsTerrainClientError(value.code, value.message)); return;
       }
-      if (!exact(value, ['kind', 'requestId', 'worldId', 'baseRevision', 'elevations', 'stats', 'drainage']) || value.kind !== (pending.snapshot.hill ? 'hill-generated' : 'naturalized')
+      if (!exact(value, ['kind', 'requestId', 'worldId', 'baseRevision', 'elevations', 'stats', 'drainage']) || value.kind !== (pending.snapshot.template ? 'template-generated' : pending.snapshot.hill ? 'hill-generated' : 'naturalized')
         || !(value.elevations instanceof Int32Array) || value.elevations.length !== pending.snapshot.heights.length
-        || !(pending.snapshot.hill ? validHillStats(value.stats, value.elevations, pending.snapshot) : validStats(value.stats, value.elevations, pending.snapshot))
+        || !(pending.snapshot.template ? validTemplateStats(value.stats, value.elevations, pending.snapshot) : pending.snapshot.hill ? validHillStats(value.stats, value.elevations, pending.snapshot) : validStats(value.stats, value.elevations, pending.snapshot))
         || !validDrainage(value.drainage, value.elevations, pending.snapshot)) throw protocolError();
       const preview = { worldId: pending.snapshot.worldId, baseRevision: pending.snapshot.revision, elevations: value.elevations, drainage: value.drainage };
-      this.clearPending()?.resolve(pending.snapshot.hill
+      this.clearPending()?.resolve(pending.snapshot.template
+        ? { ...preview, stats: value.stats as FmsTemplateStats } : pending.snapshot.hill
         ? { ...preview, stats: value.stats as FmsHillStats }
         : { ...preview, stats: value.stats as FmsNaturalizationStats });
     } catch (error) { this.fail(error instanceof FmsTerrainClientError ? error : protocolError()); }

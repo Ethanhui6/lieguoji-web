@@ -2697,7 +2697,20 @@
       "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
       "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
       "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
-      "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
+      "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/build-check.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/checkpoint-checks.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/checks-before-confluence-fixture.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/checks.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/dev-browser.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/height-area-before.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/portrait-river-preview.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/production-browser.json",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/production-river-preview.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers-final.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers.jpg",
+      "docs/evidence/fms-river-climate-v5-2026-10-05/verification.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -3035,7 +3048,20 @@
           "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
           "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
           "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
-          "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
+          "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/build-check.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/checkpoint-checks.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/checks-before-confluence-fixture.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/checks.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/dev-browser.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/height-area-before.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/portrait-river-preview.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/production-browser.json",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/production-river-preview.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers-final.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers.jpg",
+          "docs/evidence/fms-river-climate-v5-2026-10-05/verification.json"
         ],
         "workItems": [
           {
@@ -3228,14 +3254,28 @@
               "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
               "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
               "docs/evidence/fms-biomes-v5-2026-10-05/verification.json",
-              "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg"
+              "docs/evidence/fms-biomes-v5-2026-10-05/local-playtest.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/build-check.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/checkpoint-checks.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/checks-before-confluence-fixture.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/dev-browser.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/height-area-before.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/portrait-river-preview.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/production-browser.json",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/production-river-preview.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers-final.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers.jpg",
+              "docs/evidence/fms-river-climate-v5-2026-10-05/verification.json"
             ],
-            "progress": "235224d + ef4aad5接入原温度/风向降水/5x26分类/13色的气候地貌试算；规则气候格仅派生显示，顶点用实际高度降温，原河流增湿明确未接入。设置与候选卡可切换，历史/取消遇气候超预算统一降级高度并重绘正确文档。27文件452测试及lint/typecheck/build通过；生产37550→37705点网格替换、对照、模式切换、取消/刷新及完整主档和归档不变已验证。LandMaterial→RT4096→81tap按需捕获链静态闭合，未执行原作或证明视觉等价；真机和用户门仍未通过。",
+            "progress": "a200a00接入原活动FIFO填洼、降水flux、强支流接管、最终河流ID和增湿公式；气候视图可见河段与增湿同源，高度/阴影保留面积水系。28文件459相关测试及lint/typecheck/build通过，独立手算合流夹具覆盖短支流淘汰。开发40789点中406点分类受增湿改变；生产37550→37705→取消37550、原图/候选/模式切换与刷新验证完成，完整主档和启用前归档不变。冷计算约302ms为本桌面一次采样，手机性能/原作视觉等价未通过，阶段仍进行中。",
             "remaining": [
               "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
               "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
               "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点未实现。固定剖面宽度并非保持不变。",
-              "原河流flux增湿、完整4096生物群系捕获/blur及触发链未适配；小于192气候采样的细部降水和手机主线程性能待验证。"
+              "已接原降水河网/增湿，但每点flux受网格密度影响；原河道弯曲与宽度网格、完整4096生物群系捕获/blur及触发链未适配，现图细支流偏密仍待视觉复核。",
+              "小于192气候采样的细部降水及手机耗时/内存待验证；本桌面40789点气候+河网冷计算约302ms，优先迁出主线程并保持取消/历史/显示一致。"
             ]
           },
           {
@@ -3357,20 +3397,20 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "original river moisture dependency and final biome/ocean capture inputs",
+      "name": "climate and rainfall-river worker responsiveness; final biome/ocean capture inputs",
       "status": "bounded-followup",
-      "note": "已恢复温度/降水/分类和实际LandMaterial→BiomRT→GaussianBlur按需捕获链，不重做索引。下一批有界追踪原河流flux及其湿润度依赖，先确定可独立恢复切片；或继续真实SDF Camera10195海陆alpha输入及原作连续观感差异。仍只绘图，首份真机/用户视觉门未通过前不扩国家。"
+      "note": "原温度/降水/分类及活动FIFO河流flux→最终riverIds→增湿已接入，不重复恢复。下一批优先把冷气候/河网计算移出主线程，保持候选、取消、历史与显示一致；随后有界补原最终Biom/SDF捕获输入和连续观感。首份真机/用户视觉门未过前仍只绘图，不扩国家。"
     },
     "lastRecovery": {
-      "at": "2026-10-04T16:33:49.933Z",
-      "scope": "original climate and biome rules; active LandMaterial and on-demand GaussianBlur capture",
-      "sourceCommit": "ef4aad5f32a27229c66f690a02f12cb1be474197",
+      "at": "2026-10-04T17:46:01.691Z",
+      "scope": "active original FIFO routing, rainfall flux, final river IDs, moisture; matching visible rivers",
+      "sourceCommit": "a200a00a9b75a05bd707374bb5fc5c76b76802c5",
       "evidence": [
-        "docs/evidence/fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md"
+        "docs/evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md"
       ],
       "originalExecuted": false,
-      "webAdaptation": "rainfall-only grid from Float32 triangles; true vertex-height temperature; original palette + web continuous blend; explicit wind-edge fixes",
-      "unknown": "original river ids/flux and humidity bonus; all capture trigger sites; 4096 RT blur vs web interpolation equivalence; mobile performance/visual acceptance"
+      "webAdaptation": "current document graph + sampled rainfall; haven sentinel and coast-distance cap; actual coast clipping; no erosion or meander port",
+      "unknown": "original final capture and river mesh visual equivalence; graph-density dependence; mobile performance and visual acceptance"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -3835,14 +3875,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-04T16:33:49.933Z",
+      "at": "2026-10-04T17:46:01.691Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "8f81f5b",
-      "lastSourceCommit": "ef4aad5f32a27229c66f690a02f12cb1be474197",
+      "lastCheckpointCommit": "175a8a2",
+      "lastSourceCommit": "a200a00a9b75a05bd707374bb5fc5c76b76802c5",
       "newCodeSinceCheckpoint": true,
       "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "已恢复温度/降水/分类和实际LandMaterial→BiomRT→GaussianBlur按需捕获链，不重做索引。下一批有界追踪原河流flux及其湿润度依赖，先确定可独立恢复切片；或继续真实SDF Camera10195海陆alpha输入及原作连续观感差异。仍只绘图，首份真机/用户视觉门未通过前不扩国家。",
+      "nextFocus": "原温度/降水/分类及活动FIFO河流flux→最终riverIds→增湿已接入，不重复恢复。下一批优先把冷气候/河网计算移出主线程，保持候选、取消、历史与显示一致；随后有界补原最终Biom/SDF捕获输入和连续观感。首份真机/用户视觉门未过前仍只绘图，不扩国家。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4150,6 +4190,83 @@
         "docs/evidence/fms-biomes-v5-2026-10-05/production-browser.json",
         "docs/evidence/fms-biomes-v5-2026-10-05/production-mesh-preview.jpg",
         "docs/evidence/fms-biomes-v5-2026-10-05/verification.json"
+      ],
+      "supersededBy": "riverClimatePrototype"
+    },
+    "riverClimatePrototype": {
+      "sourceCommit": "a200a00a9b75a05bd707374bb5fc5c76b76802c5",
+      "status": "local-rainfall-rivers-and-biome-moisture-verified",
+      "algorithm": "recovered-climate-river-web-v2",
+      "riverAlgorithm": "recovered-rainfall-flux-web-graph-v1",
+      "riverMoisture": true,
+      "originalExecuted": false,
+      "derivation": {
+        "writesDocument": false,
+        "changesGeometry": false,
+        "writesSave": false,
+        "acceptedRiverIdsDriveBothMoistureAndVisiblePaths": true,
+        "heightAndReliefRetainAreaRunoff": true
+      },
+      "tests": {
+        "count": 459,
+        "files": 28,
+        "lint": true,
+        "typecheck": true,
+        "build": true,
+        "planTests": 11,
+        "releaseLockTests": 22,
+        "independentConfluenceFixture": true
+      },
+      "browser": {
+        "devPoints": 40789,
+        "riverCount": 518,
+        "riverCells": 2595,
+        "visibleRiverSegments": 2363,
+        "riverChangedBiomes": 406,
+        "coldBiomeBuildMs": 302.1,
+        "desktopSampleOnly": true,
+        "productionPoints": [
+          37550,
+          37705,
+          37550
+        ],
+        "originalAndCandidateNetworksRestored": true,
+        "saveAndArchiveUnchanged": true,
+        "refreshDefaultHeight": true,
+        "consoleWarningsOrErrors": 0,
+        "desktopViewport": [
+          1280,
+          720
+        ],
+        "portraitViewport": [
+          428,
+          926
+        ]
+      },
+      "limitations": [
+        "Per-point precipitation flux changes with graph density; not area-invariant or physically calibrated",
+        "Original meandering/river mesh, erosion and final 4096 RT blur not ported",
+        "192 climate grid can miss small-scale precipitation details",
+        "Cold climate and rivers still block main thread; desktop timing is not mobile acceptance",
+        "Actual current screenshot still has dense narrow tributaries; original visual equivalence unaccepted"
+      ],
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "cloudWrites": false,
+      "evidence": [
+        "docs/evidence/fms-river-climate-v5-2026-10-05/build-check.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/checkpoint-checks.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/checks-before-confluence-fixture.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/dev-browser.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/height-area-before.jpg",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/portrait-river-preview.jpg",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/production-browser.json",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/production-river-preview.jpg",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers-final.jpg",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers.jpg",
+        "docs/evidence/fms-river-climate-v5-2026-10-05/verification.json"
       ]
     }
   }

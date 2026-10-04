@@ -1,0 +1,23 @@
+[
+  {
+    "name": "lint",
+    "at": "2026-10-04T17:39:36.970Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "at": "2026-10-04T17:39:36.978Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "at": "2026-10-04T17:39:36.983Z",
+    "code": 0,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  28 passed (28)\n      Tests  459 passed (459)\n   Start at  01:39:38\n   Duration  22.36s (tests 89%, import 8%, transform 3%)\n\n    Isolate  28 workers spawned · ~124ms startup each (spawn + environment, per file)\n             at least ~1.61s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  }
+]

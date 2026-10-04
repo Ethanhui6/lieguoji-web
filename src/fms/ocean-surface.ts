@@ -7,7 +7,7 @@ import { deriveFmsOceanField, type FmsOceanField } from './ocean-coast';
 export const FMS_OCEAN_SHALLOW = [.23584888875484467, .6113743782043457, .9999999403953552] as const;
 export const FMS_OCEAN_DEEP = [.0784313753247261, .529411792755127, 1] as const;
 export const FMS_OCEAN_EDGE_INTENSITY = .02;
-export const FMS_OCEAN_CONTRACT = 'recovered-shader191-web-contour-distance-v1';
+export const FMS_OCEAN_CONTRACT = 'recovered-shader191-linear-web-contour-distance-v2';
 
 interface Entry {
   points: FmsDocument['points']; triangles: FmsDocument['triangles']; elevations: FmsDocument['elevations'];

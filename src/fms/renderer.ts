@@ -7,6 +7,7 @@ import { deriveFmsDrainage, type FmsDrainage } from './hydrology';
 import { deriveFmsShade } from './shading';
 import { clipFmsRiverSegments } from './river-geometry';
 import { createFmsOceanSource, FmsOceanFields, FMS_OCEAN_CONTRACT, FMS_OCEAN_DEEP, FMS_OCEAN_SHALLOW } from './ocean-surface';
+import { FMS_COLOR_GLSL, FMS_HEIGHT_PALETTE_CONTRACT, srgbToLinear, type FmsTerrainDisplay } from './height-palette';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; the derived ocean texture changes only color, never coastline.
@@ -32,19 +33,22 @@ in float vLakeDepth;
 in vec2 vMapPosition;
 uniform sampler2D uOceanDistance;
 uniform vec2 uMapSize;
+uniform float uHeightView;
 out vec4 finalColor;
+${FMS_COLOR_GLSL}
 void main(){
  float h=vHeight;
  vec3 deep=vec3(.235,.365,.425), shallow=vec3(.47,.62,.64);
  // Shader191: smoothstep(0,EdgeIntensity,max(-SDF.r,0)). The web texture
  // stores unsigned exterior distance / EdgeIntensity, capped at 1.
  float t=clamp(dot(texture(uOceanDistance,vMapPosition/uMapSize).rg,vec2(256.0/257.0,1.0/257.0)),0.0,1.0);
- vec3 sea=mix(vec3(${FMS_OCEAN_SHALLOW.join(',')}),vec3(${FMS_OCEAN_DEEP.join(',')}),t*t*(3.0-2.0*t));
+ vec3 sea=fmsToDisplay(mix(vec3(${FMS_OCEAN_SHALLOW.map(srgbToLinear).join(',')}),vec3(${FMS_OCEAN_DEEP.map(srgbToLinear).join(',')}),t*t*(3.0-2.0*t)));
  vec3 low=vec3(.75,.76,.57), hills=vec3(.48,.57,.37), mountain=vec3(.62,.60,.46);
  vec3 land=mix(low,hills,smoothstep(24.0,55.0,h));
  land=mix(land,mountain,smoothstep(54.0,78.0,h));
  land=mix(land,vec3(.88,.88,.80),smoothstep(78.0,96.0,h));
  land*=vShade;
+ if(uHeightView>.5)land=fmsHeightColor(h);
  // Filled depressions are derived from the same elevation graph, never painted decor.
  float lake=smoothstep(.2,.8,vLakeDepth)*smoothstep(20.0,21.5,h);
  land=mix(land,mix(shallow,deep,smoothstep(0.0,16.0,vLakeDepth)),lake);
@@ -71,6 +75,7 @@ export class FmsRenderer {
   private initialized = false;
   private mesh?: Mesh<Geometry, Shader>;
   private contextLost = false;
+  private terrainDisplay: FmsTerrainDisplay = 'height';
   private worldId?: string;
   private bound?: Graphics;
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
@@ -103,8 +108,8 @@ export class FmsRenderer {
       this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' } }, indexBuffer: doc.triangles.slice() });
       this.geometry.autoGarbageCollect = false;
       this.oceanSource = createFmsOceanSource(ocean);
-      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' } });
-      this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v2' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
+      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:this.terrainDisplay==='height'?1:0,type:'f32'} });
+      this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v3' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
       this.bound = new Graphics().rect(0,0,doc.width,doc.height).stroke({ width: 1, color: 0xb0c1be, alpha: .25 });
@@ -125,6 +130,8 @@ export class FmsRenderer {
     this.canvas.dataset.minHeight=String(Math.min(...doc.elevations));
     this.canvas.dataset.pointCount=String(doc.points.length);this.canvas.dataset.triangleCount=String(doc.triangles.length/3);
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
+    this.canvas.dataset.terrainDisplay=this.terrainDisplay;
+    this.canvas.dataset.heightPalette=FMS_HEIGHT_PALETTE_CONTRACT;
     this.canvas.dataset.riverSegments=String(riverLines.length);
     this.canvas.dataset.riverGraphSegments=String(surface.drainage.riverSegments.length);
     this.canvas.dataset.riverMouths=String(riverLines.filter(line=>line.mouth).length);
@@ -157,6 +164,14 @@ export class FmsRenderer {
     }
     this.canvas.dataset.lockedCells=String(doc.terrainLocks?.reduce((sum,value)=>sum+value,0)??0);
     this.canvas.dataset.lockedTriangles=String(lockedTriangles);
+    this.draw();
+  }
+  /** Display only: keep candidate geometry, camera, history and caches intact. */
+  setTerrainDisplay(display: FmsTerrainDisplay): void {
+    if(this.destroyed||this.contextLost)return;
+    this.terrainDisplay=display;
+    if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.update();}
+    if(this.initialized)this.canvas.dataset.terrainDisplay=display;
     this.draw();
   }
   setCamera(camera: AtlasCamera): void {

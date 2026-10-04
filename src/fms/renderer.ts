@@ -1,4 +1,4 @@
-import { Application, Container, Geometry, GlProgram, Graphics, Mesh, Shader } from 'pixi.js';
+import { Application, Container, Geometry, GlProgram, Graphics, Mesh, Shader, UniformGroup, type BufferImageSource } from 'pixi.js';
 // Pixi's no-eval polyfill preserves the existing strict production CSP.
 import 'pixi.js/unsafe-eval';
 import type { AtlasCamera, CameraPoint } from '../world/camera';
@@ -6,9 +6,10 @@ import type { FmsDocument } from './model';
 import { deriveFmsDrainage, type FmsDrainage } from './hydrology';
 import { deriveFmsShade } from './shading';
 import { clipFmsRiverSegments } from './river-geometry';
+import { createFmsOceanSource, FmsOceanFields, FMS_OCEAN_CONTRACT, FMS_OCEAN_DEEP, FMS_OCEAN_SHALLOW } from './ocean-surface';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
-// authoritative; no texture tiles, invented rivers, or generated decoration.
+// authoritative; the derived ocean texture changes only color, never coastline.
 const vertex = `#version 300 es
 precision highp float;
 in vec2 aPosition;
@@ -21,17 +22,24 @@ uniform mat3 uTransformMatrix;
 out float vHeight;
 out float vShade;
 out float vLakeDepth;
-void main(){vHeight=aHeight;vShade=aShade;vLakeDepth=aLakeDepth;vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.0,1.0);}`;
+out vec2 vMapPosition;
+void main(){vMapPosition=aPosition;vHeight=aHeight;vShade=aShade;vLakeDepth=aLakeDepth;vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.0,1.0);}`;
 const fragment = `#version 300 es
 precision highp float;
 in float vHeight;
 in float vShade;
 in float vLakeDepth;
+in vec2 vMapPosition;
+uniform sampler2D uOceanDistance;
+uniform vec2 uMapSize;
 out vec4 finalColor;
 void main(){
  float h=vHeight;
  vec3 deep=vec3(.235,.365,.425), shallow=vec3(.47,.62,.64);
- vec3 sea=mix(deep,shallow,smoothstep(0.0,20.0,h));
+ // Shader191: smoothstep(0,EdgeIntensity,max(-SDF.r,0)). The web texture
+ // stores unsigned exterior distance / EdgeIntensity, capped at 1.
+ float t=clamp(dot(texture(uOceanDistance,vMapPosition/uMapSize).rg,vec2(256.0/257.0,1.0/257.0)),0.0,1.0);
+ vec3 sea=mix(vec3(${FMS_OCEAN_SHALLOW.join(',')}),vec3(${FMS_OCEAN_DEEP.join(',')}),t*t*(3.0-2.0*t));
  vec3 low=vec3(.75,.76,.57), hills=vec3(.48,.57,.37), mountain=vec3(.62,.60,.46);
  vec3 land=mix(low,hills,smoothstep(24.0,55.0,h));
  land=mix(land,mountain,smoothstep(54.0,78.0,h));
@@ -52,7 +60,10 @@ export class FmsRenderer {
   private overlay = new Graphics();
   private rivers = new Graphics();
   private protection = new Graphics();
-  private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
+  private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; triangles:FmsDocument['triangles']; width:number; height:number; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
+  private oceanFields = new FmsOceanFields();
+  private oceanSource?: BufferImageSource;
+  private oceanUniforms?: UniformGroup;
   private meshDocument?: Pick<FmsDocument,'points'|'triangles'|'width'|'height'>;
   private geometry?: Geometry;
   private shader?: Shader;
@@ -64,7 +75,7 @@ export class FmsRenderer {
   private bound?: Graphics;
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
   async init(host: HTMLElement): Promise<void> {
-    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#3c5d6c', preference: 'webgl' });
+    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#1487ff', preference: 'webgl' });
     this.initialized = true;
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
     this.canvas.setAttribute('aria-label','创世地图画布'); this.canvas.setAttribute('data-testid','fms-canvas'); this.canvas.tabIndex = 0;
@@ -72,17 +83,18 @@ export class FmsRenderer {
     this.canvas.addEventListener('webglcontextlost', () => { this.contextLost = true; });
   }
   setDocument(doc: FmsDocument, drainage?: FmsDrainage): void {
-    if (this.destroyed) return;
+    if (this.destroyed || this.contextLost) return;
     let surface=this.surfaces.get(doc.elevations);
-    if(!surface||surface.points!==doc.points||surface.neighbors!==doc.neighbors){
+    if(!surface||surface.points!==doc.points||surface.neighbors!==doc.neighbors||surface.triangles!==doc.triangles||surface.width!==doc.width||surface.height!==doc.height){
       const shade=deriveFmsShade(doc);let low=100,high=0;
       for(let cell=0;cell<doc.points.length;cell++){
         const h=doc.elevations[cell];
         if(h<20)continue;low=Math.min(low,h);high=Math.max(high,h);
       }
-      surface={points:doc.points,neighbors:doc.neighbors,drainage:drainage??deriveFmsDrainage(doc),shade,relief:Math.max(0,high-low)};
+      surface={points:doc.points,neighbors:doc.neighbors,triangles:doc.triangles,width:doc.width,height:doc.height,drainage:drainage??deriveFmsDrainage(doc),shade,relief:Math.max(0,high-low)};
       this.surfaces.set(doc.elevations,surface);
     }
+    const ocean = this.oceanFields.get(doc);
     if (this.worldId !== doc.worldId || this.meshDocument?.points!==doc.points || this.meshDocument?.triangles!==doc.triangles
       || this.meshDocument?.width!==doc.width || this.meshDocument?.height!==doc.height) {
       this.clearMesh();
@@ -90,12 +102,15 @@ export class FmsRenderer {
       doc.points.forEach((p, i) => { positions[i * 2] = p[0]; positions[i * 2 + 1] = p[1]; });
       this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' } }, indexBuffer: doc.triangles.slice() });
       this.geometry.autoGarbageCollect = false;
-      this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-direct-source-height-v1' }), resources: {} });
+      this.oceanSource = createFmsOceanSource(ocean);
+      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' } });
+      this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v2' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
       this.bound = new Graphics().rect(0,0,doc.width,doc.height).stroke({ width: 1, color: 0xb0c1be, alpha: .25 });
       this.scene.addChild(this.mesh, this.rivers, this.protection, this.bound, this.overlay); this.worldId = doc.worldId;this.meshDocument=doc;
     } else if (this.geometry) {
+      if(this.oceanSource && this.oceanSource.resource!==ocean.pixels){ this.oceanSource.resource=ocean.pixels;this.oceanSource.update(); }
       const buffer = this.geometry.getBuffer('aHeight'); buffer.data = Float32Array.from(doc.elevations); buffer.update();
       const shades=this.geometry.getBuffer('aShade');shades.data=surface.shade;shades.update();
       const lake=this.geometry.getBuffer('aLakeDepth');lake.data=surface.drainage.lakeDepth;lake.update();
@@ -118,6 +133,15 @@ export class FmsRenderer {
     this.canvas.dataset.landArea=String(surface.drainage.stats.landArea);
     this.canvas.dataset.catchmentArea=String(surface.drainage.stats.minCatchment);
     this.canvas.dataset.totalDischarge=String(surface.drainage.stats.seaDischarge+surface.drainage.stats.endorheicDischarge);
+    const oceanMetrics=this.oceanFields.metrics();
+    this.canvas.dataset.oceanAlgorithm=FMS_OCEAN_CONTRACT;
+    this.canvas.dataset.oceanSegments=String(ocean.segmentCount);
+    this.canvas.dataset.oceanTexture=`${ocean.width}x${ocean.height}`;
+    this.canvas.dataset.oceanBytes=String(ocean.pixels.byteLength);
+    this.canvas.dataset.oceanCacheBytes=String(oceanMetrics.bytes);
+    this.canvas.dataset.oceanBuilds=String(oceanMetrics.builds);
+    this.canvas.dataset.oceanBuildMs=String(oceanMetrics.lastBuildMs);
+    this.canvas.dataset.oceanMaxSampleError=String(ocean.maxSampleError);
     this.protection.clear();
     let lockedTriangles=0;
     const edges=new Map<string,{a:number;b:number;count:number}>(),covered=new Uint8Array(doc.points.length);
@@ -157,7 +181,8 @@ export class FmsRenderer {
   private draw(): void { if(this.initialized&&!this.destroyed&&!this.contextLost) this.app.render(); }
   private clearMesh(): void {
     this.mesh?.destroy(); this.bound?.destroy(); this.geometry?.destroy(true); this.shader?.destroy(true);
+    this.oceanSource?.destroy();this.oceanUniforms?.removeAllListeners();this.oceanSource=undefined;this.oceanUniforms=undefined;
     this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;this.meshDocument=undefined;
   }
-  destroy(): void { if(this.destroyed)return; this.destroyed=true; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
+  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear(); if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

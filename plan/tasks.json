@@ -2990,7 +2990,26 @@
           "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
           "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
           "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
-          "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
+          "docs/evidence/fms-ocean-v5-2026-10-04/verification.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md",
+          "docs/evidence/fms-land-material-v5-2026-10-04/after.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/before.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/build-check.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks-initial.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/checks.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/dev-browser.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/height-preview.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/local-playtest.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/portrait-height.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/portrait-preview.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/portrait-relief-zoom.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/portrait-settings.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/production-browser.json",
+          "docs/evidence/fms-land-material-v5-2026-10-04/production-height-preview.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
+          "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
         ],
         "workItems": [
           {
@@ -3151,9 +3170,28 @@
               "docs/evidence/fms-ocean-v5-2026-10-04/local-playtest.jpg",
               "docs/evidence/fms-ocean-v5-2026-10-04/production-browser.json",
               "docs/evidence/fms-ocean-v5-2026-10-04/production-restored.jpg",
-              "docs/evidence/fms-ocean-v5-2026-10-04/verification.json"
+              "docs/evidence/fms-ocean-v5-2026-10-04/verification.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md",
+              "docs/evidence/fms-land-material-v5-2026-10-04/after.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/before.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/build-check.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks-initial.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/checks.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/dev-browser.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/height-preview.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/local-playtest.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/portrait-height.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/portrait-preview.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/portrait-relief-zoom.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/portrait-settings.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/production-browser.json",
+              "docs/evidence/fms-land-material-v5-2026-10-04/production-height-preview.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
+              "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
             ],
-            "progress": "c6008b0将原活动Shader191混色公式、level0海洋配色数字与2%最大边宽度接入V5实际h20海岸距离场；原生Hill/click模板保留。新增Float32退化面保护、512最大边RG16纹理、3份CPU缓存与单GPU资源管理。420相关测试、lint/typecheck/build通过；存档渲染前后完全相等，画小岛/预览取消/撤销重做/80倍缩放已实测。原相机alpha与GPU原地SDF、Unity Linear色彩输出未等价；观感/真机仍待验收，阶段in_progress。",
+            "progress": "3420537恢复并接入原高度编辑Shader189 mode2、20/60/100实际色阶、精确binary32常数和三次linear转换；原生每cell alpha=h/100及高度编辑菜单mode2调用链已静态证实。设置/候选卡可切换高度与网页起伏阴影，不改数据或重建海岸缓存。海洋改按官方Linear颜色上传/标准sRGB输出语义适配。24文件429测试、lint/typecheck/build通过；开发确认/撤销重做/保存刷新和旧v1归档保留、生产37550→37728点网格替换/取消恢复实测正常。完整原biome底图、输出链与真机视觉仍未通过。",
             "remaining": [
               "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
               "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
@@ -3279,20 +3317,20 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "active terrain material and color output; ocean camera alpha source",
+      "name": "original land biome material inputs and SDF camera alpha",
       "status": "bounded-followup",
-      "note": "Shader191采样公式、UV、颜色设置器与SDF Update/Seed/Flood/Dist已恢复，不重复索引。下一步有界核对level0 World省份/地形材质真实消费者、陆地高度配色与Unity Linear颜色输出；同时定位SDF Camera10195的绘制alpha输入。先接可玩切片，不扩建国家。"
+      "note": "Shader189/Material11/alpha与高度编辑mode调用链已恢复，不重复拆。下一步只读核对defaultLandMaterial实际Shader及biome/气候来源，区分可独立移植的地貌显示；继续SDF Camera10195海陆alpha输入。保持现有绘图与存档，先接可玩切片，不扩建国家。"
     },
     "lastRecovery": {
-      "at": "2026-10-04T14:04:19.614Z",
-      "scope": "Shader191 ocean and SDFTextureGenerator.Update/Compute419 static recovery",
-      "sourceCommit": "c6008b0fb346e3e7f604c844b76e13fbe09d4aed",
+      "at": "2026-10-04T15:10:02.996Z",
+      "scope": "Shader189 height editing, mesh alpha and menu mode, official Unity Linear material semantics",
+      "sourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
       "evidence": [
-        "docs/evidence/fms-ocean-v5-2026-10-04/ORIGINAL_OCEAN.md"
+        "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md"
       ],
       "originalExecuted": false,
-      "webAdaptation": "analytic Float32 h20 contours and capped Euclidean field; original mixing and scene numeric palette",
-      "unknown": "source alpha draw chain; Unity material/framebuffer colorspace; original GPU numerical equivalence"
+      "webAdaptation": "continuous shared-height mesh + recovered height palette; standard sRGB display output; web river/lake/coast overlays",
+      "unknown": "original biome inputs and defaultLandMaterial; original camera/RT/final output equivalence; native cell geometry vs web shared triangles"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -3757,14 +3795,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-04T14:04:19.615Z",
+      "at": "2026-10-04T15:10:02.997Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "86afe32",
-      "lastSourceCommit": "c6008b0fb346e3e7f604c844b76e13fbe09d4aed",
+      "lastCheckpointCommit": "f810e1e",
+      "lastSourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
       "newCodeSinceCheckpoint": true,
       "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "活动陆地材质/配色与SDF相机alpha输入；沿V5首份绘图体验继续，发布锁保留。",
+      "nextFocus": "Shader189/Material11/alpha与高度编辑mode调用链已恢复，不重复拆。下一步只读核对defaultLandMaterial实际Shader及biome/气候来源，区分可独立移植的地貌显示；继续SDF Camera10195海陆alpha输入。保持现有绘图与存档，先接可玩切片，不扩建国家。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -3917,7 +3955,85 @@
         "productionSaveReloadExact": true,
         "consoleWarningsOrErrors": 0,
         "physicalDevice": false
+      },
+      "colorPipelineFollowup": {
+        "sourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
+        "algorithm": "recovered-shader191-linear-web-contour-distance-v2",
+        "status": "official Linear Color upload and standard sRGB output adapted; original final output chain unverified",
+        "evidence": "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md"
       }
+    },
+    "heightPalettePrototype": {
+      "sourceCommit": "3420537a6fab122bd7fb290a72ed8a37f4191c15",
+      "status": "local-recovered-height-view-verified",
+      "algorithm": "recovered-shader189-mode2-v1",
+      "originalMaterial": "sharedassets0 Material11 -> Shader189",
+      "originalMeshInput": "List<Color> alpha=CellData.Elevation/100; each cell constant",
+      "originalHeightEditingMode": 2,
+      "webAdaptations": [
+        "continuous interpolated vertex height, not constant cell faces",
+        "explicit sRGB display encode; original final camera/RT chain unverified",
+        "web rivers, lakes, coast antialias and locks retained",
+        "relief option is web palette, not original biome"
+      ],
+      "displaySwitch": {
+        "writesDocument": false,
+        "changesGeometry": false,
+        "rebuildsOcean": false,
+        "candidateSupported": true,
+        "persisted": false
+      },
+      "tests": {
+        "count": 429,
+        "files": 24,
+        "lint": true,
+        "typecheck": true,
+        "build": true,
+        "planTests": 11,
+        "releaseLockTests": 22
+      },
+      "browser": {
+        "devPoints": 40789,
+        "productionPoints": [
+          37550,
+          37728
+        ],
+        "saveRefreshExact": true,
+        "archivePreserved": true,
+        "productionCancelRestores": true,
+        "consoleWarningsOrErrors": 0,
+        "desktopViewport": [
+          1280,
+          720
+        ],
+        "portraitViewport": [
+          428,
+          926
+        ]
+      },
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "evidence": [
+        "docs/evidence/fms-land-material-v5-2026-10-04/ORIGINAL_LAND.md",
+        "docs/evidence/fms-land-material-v5-2026-10-04/after.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/before.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/build-check.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks-initial.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/checkpoint-checks.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/checks.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/dev-browser.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/height-preview.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/local-playtest.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/portrait-height.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/portrait-preview.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/portrait-relief-zoom.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/portrait-settings.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/production-browser.json",
+        "docs/evidence/fms-land-material-v5-2026-10-04/production-height-preview.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/production-restored.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/relief.jpg",
+        "docs/evidence/fms-land-material-v5-2026-10-04/verification.json"
+      ]
     }
   }
 }

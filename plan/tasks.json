@@ -3501,10 +3501,25 @@
             "title": "真实海路、港口与海军可玩切片",
             "status": "todo",
             "dependsOn": [
-              "WEB-04-04"
+              "WEB-04-06"
             ],
             "acceptance": "依据已定位海军海路函数与实际海洋拓扑建立港口/舰队；海上移动不穿陆，预览确认与保存保护同规则；后续海战/运输范围据实际恢复分项验收，不以舰船图标替代规则。",
             "evidence": []
+          },
+          {
+            "id": "WEB-04-06",
+            "title": "动态整军、军旗缩放层级和慢速看海",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-04"
+            ],
+            "acceptance": "原作常规征募链有限恢复；真实兵源配粮与月度新编、渐进补员；近远军旗拾取一致；慢速逐日；新指纹完整旧规则归档与独立存档保护；真实浏览器记录，不代替真机或原作等价。",
+            "evidence": [
+              "docs/evidence/fms-army-density-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-army-density-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-army-density-v5-2026-10-05/browser.json"
+            ],
+            "completionScope": "用户反馈对应的本地有限切片，非完整军制／训练／应急动员／连续帧动画或长期平衡。"
           }
         ]
       },
@@ -4685,21 +4700,21 @@
       ]
     },
     "militaryPrototype": {
-      "sourceCommit": "d4a0a80681a6218be6a2a7786222404a2931ad02",
+      "sourceCommit": "208480c45ef76d398a253019450037ead9e06f7e",
       "status": "local-playable-slice",
       "evidence": [
-        "docs/evidence/fms-watch-controls-v5-2026-10-05/MILITARY.md",
-        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-provenance.json",
-        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-browser.json",
-        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-checks.json"
+        "docs/evidence/fms-army-density-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-army-density-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-army-density-v5-2026-10-05/browser.json"
       ],
       "knownMissing": [
         "navy/ports",
         "alliances/vassals",
         "six political-system attributes",
         "family/faith",
-        "automatic recruitment",
+        "training/emergency mobilization",
         "continuous frame troop motion",
+        "long-term balance",
         "real-device/user visual acceptance"
       ]
     }

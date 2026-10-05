@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-05",
+  "sourceCommit": "208480c45ef76d398a253019450037ead9e06f7e",
+  "development": {
+    "url": "http://127.0.0.1:5180/?fms=1",
+    "initialArmies": 77,
+    "clock": {
+      "result": {
+        "type": "object",
+        "value": [
+          {
+            "day": 1,
+            "ms": 3244.4000000059605
+          },
+          {
+            "day": 2,
+            "ms": 6220.5999999940395
+          },
+          {
+            "day": 3,
+            "ms": 9208.90000000596
+          }
+        ]
+      }
+    },
+    "mobile": {
+      "controls": {
+        "bottom": 914.3999938964844,
+        "height": 143.60000610351562,
+        "left": 29,
+        "right": 399,
+        "top": 770.7999877929688,
+        "width": 370,
+        "x": 29,
+        "y": 770.7999877929688
+      },
+      "panel": {
+        "bottom": 742.4000244140625,
+        "height": 366.3500061035156,
+        "left": 10,
+        "right": 418,
+        "top": 376.0500183105469,
+        "width": 408,
+        "x": 10,
+        "y": 376.0500183105469
+      },
+      "scrollWidth": 428,
+      "width": 428
+    },
+    "markerHit": "Clicked visible 18px shield at 183,270: 陡焕盾兵",
+    "savedId": "fms-7a341713-af24-45e6-ba09-1172fa29f5d5",
+    "restoredId": "fms-7a341713-af24-45e6-ba09-1172fa29f5d5",
+    "restoredDay": "3",
+    "currentStoreMetadata": {
+      "result": {
+        "type": "object",
+        "value": [
+          {
+            "armyCount": 6,
+            "checksum": "dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05",
+            "day": 147,
+            "engine": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+            "name": "lieguoji-fms-play-v1",
+            "revision": 1
+          },
+          {
+            "armyCount": 20,
+            "checksum": "d40b6906293e1146e7f2524942736005ab1e7347f8ec8ae5899facd00d92dd70",
+            "day": 2,
+            "engine": "46b5a571ed0d858eb652ebcd1772c36452482507adb774337f2b9e492965d7d6",
+            "name": "lieguoji-fms-play-v2",
+            "revision": 1
+          },
+          {
+            "armyCount": 77,
+            "checksum": "20d903eb32d7b68bc76cc6ac19e8cdc89a4a2cd3f85615cd063dd941ec1214de",
+            "day": 3,
+            "engine": "52f49f7ff95ea717d0f9f19c2f2efb3a86861f0fe7f49e62b41212a357ee50ef",
+            "name": "lieguoji-fms-mobilization-v1",
+            "revision": 1
+          }
+        ]
+      }
+    },
+    "errors": []
+  },
+  "production": {
+    "url": "http://127.0.0.1:5181/?fms=1",
+    "day": 39,
+    "musterEntries": [
+      "第 34 日北唐整军：新编0支，补员163人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出2717人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。",
+      "第 29 日蜀整军：新编0支，补员270人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出4500人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。",
+      "第 29 日北唐整军：新编0支，补员181人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出3017人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。",
+      "第 24 日北唐整军：新编0支，补员201人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出3350人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。",
+      "第 19 日北唐整军：新编0支，补员223人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出3717人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。",
+      "第 14 日北唐整军：新编0支，补员248人查看原因下一日日结前整军；兵员来自所在辖区，配粮支出4134人日粮，保留当地十日民粮。常规军规模按受控领土与国策调整，月度检查缺额，驻守部队每五日渐进补员。"
+    ],
+    "timingProbe": "CDP wait timed out at 20 seconds; actual game was paused on day 39, not falsely recorded as exact day 30.",
+    "armies": 4,
+    "savedId": "fms-2a3e9682-1228-49ad-ab86-29c239551be5",
+    "saveNotice": "已保存第 39 日，刷新后可继续这个世界。",
+    "restoredId": "fms-2a3e9682-1228-49ad-ab86-29c239551be5",
+    "restoredDay": "39",
+    "errors": [],
+    "resources": {
+      "result": {
+        "type": "object",
+        "value": [
+          "http://127.0.0.1:5181/assets/FmsApp-BH8Qg6n8.js",
+          "http://127.0.0.1:5181/assets/FmsApp-Df_-fzns.css",
+          "http://127.0.0.1:5181/assets/play.worker-B1mMNf8V.js",
+          "http://127.0.0.1:5181/assets/biome.worker-DO2s7HoV.js"
+        ]
+      }
+    }
+  },
+  "physicalIPhone": false,
+  "userVisualAccepted": false,
+  "viewportRestored": true
+}

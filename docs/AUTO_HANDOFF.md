@@ -1,54 +1,52 @@
-# 当前续接：FMS 五类陆军、迁都与地方详情
+# 当前续接：动态整军、紧凑军旗与慢速看海
 
-更新：2026-10-05。用户优先体验关键玩法，最新要求是不同兵种、海军、迁都、外交/政体、家族信仰和缩放后的城市地方细节。**本批已完成五类陆军的有限可玩切片、征募、迁都和地方信息；海军/完整政体/家族信仰未完成。** 先核实Git、CODEX_AUTOPILOT_V5.md和plan/tasks.json.webRebuild，不重复提取已恢复词库/颜色/兵种/迁都。
+更新：2026-10-05。本轮用户要求解决固定三军、图标挡视野、推演过快。对应本地切片已验证。用户“关键玩法先行”的V5例外继续有效，下一批为真实海路／港口／海军；不要重复提取词库、颜色、五兵种或重写计划。真机／视觉体验门和全部云端发布锁保持。
 
-## 当前源码与任务
+## 当前代码与试玩
 
-- 分支codex/ph06-world-generation。军事功能提交146df66332ceeab51c652f4d881edaa10dc1c0f8；触控按钮修正及最终实际构建 **d4a0a80681a6218be6a2a7786222404a2931ad02**。后续提交仅本轮证据检查点；续接查询HEAD核实。
-- 上一个标签/首都名修正1ea07be，词库/配色/操作66b204c；最初看海循环81b5d8d。
-- WEB-PH04仍in_progress；WEB-03-01、WEB-04-01/02/03/04为有限子项done，**下一批WEB-04-05真实海路/港口/海军**。完整PH03/04、PH02真机视觉均未通过，不扩空面板。
-- 用户本地关键玩法例外有效，原绘图和真实验收保留。第一体验门、旧tasks/phaseState/programme/releasePolicy未改。
+- 分支 codex/ph06-world-generation；源码及实际构建 208480c45ef76d398a253019450037ead9e06f7e。后续为证据提交，续接先核实Git、CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild。
+- 新规则指纹 52f49f7ff95ea717d0f9f19c2f2efb3a86861f0fe7f49e62b41212a357ee50ef。
+- 推荐试玩 http://127.0.0.1:5180/?fms=1 ，标签12保留：六国大陆77支军团，第3日已保存刷新恢复，梁21支／目标上限30；暂停、常速3秒/日。下次先重查标签／服务，不假定未被用户操作。
+- 生产构建本地预览 http://127.0.0.1:5181/?fms=1 ，实际build.json已核对208480c与52f49。该origin原稿是另一张小而贫困的细长地图，39日时4支存活军；39日已保存刷新。专用验证标签13已关闭，用户旧标签11未操作。
+- 两个origin存储独立，是当前电脑本机地址，不是手机直连网址。旧Pages未更新。
+- 进入世界可继续整军版／旧兵种版／旧版，或开新局。旧v1/v2可明确“创建自动整军版副本”，保留源世界。继续旧版仍按旧规则，不能期待旧版获得新自动征募。
 
-## 当前如何试玩
+## 本批实际范围
 
-- 开发入口：http://127.0.0.1:5180/?fms=1
-- 最终生产构建本地预览：http://127.0.0.1:5181/?fms=1 ，已核实build.json绑定d4a0a80。二者存储origin独立，不是手机可直连地址。
-- 编辑器“进入世界 →”后可开兵种版新局、继续兵种版、继续旧版、或明确从旧版创建兵种版副本。新局每国步兵/弓兵/骑兵三军团，原初始兵数拆分，总人数不增加；国家面板可以选择本国城市征募盾兵/精锐等、预览迁都。每个操作都有Worker重验。
-- 地图显示不同兵种原作图标、人数/国色/行进标记；同点分排、点击选军、目标预览；1/3/7倍看海、逐日、战争暂停、事件筛选与定位保留。**当前位置按模拟日更新，连续帧步行动画尚未完成。**
-- 城市只显示地名、金菱形首都；国家标签由实时实控主体领土重算。放大有乡野辖区名，所选地方卡读真实当地人口/人日粮/归属/驻军/邻接，不造不存在城市。
-- 5180已知v1存档第147日revision1，checksum dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05；本轮v2测试保存第2日，迁都卫桦及盾兵/精锐可恢复。5181旧版第1日入口保留，兵种版第2日已保存恢复，淮夷首都安丰、零陵盾兵、骑兵抵达安丰。
-- 标签11为保留的最终构建试玩；标签10曾用于开发验证，末次观察已到949日，**不是本轮验证命令推进的结果**，不覆盖或自动退出该活动状态。标签7/8是先前保留标签。标签/服务真实状态续接必须重查，不能假定用户未操作。
+- 常规军上限参考原作floor(自有实控辖区×2/3)，网页每国30／全球含历史军团500。和平与民生国策目标降低、战时提高；资源不足时可以少于三支甚至为零，不保证每国都超过三军。
+- 新局兵员来自实际地方人口，五兵种按原权重分配并分散驻扎。每30日检查缺额；每5日给安全自有辖区内idle军渐进补员。新兵扣实际人口与足额配粮，保留100居民和十日民粮。行军／交战／敌占驻地不能补员。
+- 整军在下一日日结前执行，事件写明边界（例如第30日日结前的事件归第29日末），后续账本读真实粮库。逐日携带完整world+units，整批成功才替换状态。
+- 远景12px小旗合并附近同国军队，数字为军团数；近景18px原作兵种图，选中24px和人数，22px拾取半径。敌国不合并，屏外军旗不画。国家军团列表折叠。
+- 默认3秒/日，另有6／1.5／0.75秒；各档每次只走1日，Worker忙时不堆积请求。隐藏暂停、逐日和交战暂停保留。连续帧行军动画仍未实现，位置随日结更新。
 
-## 规则和存档兼容：必须保留
+## 旧规则与存档保护
 
-- 旧FmsRun v1永久用frozen0.4，指纹 **65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5**。原全局sim和既有frozen源码未改。
-- v2外层rules=fms-military-1，实际源码指纹 **a3d9d4019fa04b21e9096e2a15aef442f36553d967cbed7fb486c5624077537f**，独立lieguoji-fms-play-v2。World内部schema2/.2是基础结构，**不能据此选择旧引擎**；按完整run的version/engine/units经military-registry/runtime派发。
-- 已知开发预览46b5a571ed0d858eb652ebcd1772c36452482507adb774337f2b9e492965d7d6也已精确封存和注册。原因：HMR期间保存第2日测试档后指纹算法/事件说明改变，刷新正确锁写；按实际SHA还原其核心字节，保留原档与对应执行规则后恢复。绝不是放宽未知规则。档案在src/fms/play/compat/preview1，构建重验原指纹；不要修改它。
-- 后续再改军事规则，先封存当前a3d9…完整依赖及执行/预览/操作，然后新增明确引擎注册。不能只改__FMS_PLAY_ENGINE__导致现在的v2被锁，也不能直接把旧engine改成新hash。参考本批归档，保持当前核图/保存/旧档保护。
-- v1/v2分库、独立revision/CAS、摘要涵盖terrain/world/units、主备未来版本锁。所有Worker成功命令返回完整run；客户端不能只合并world丢兵种映射，也不能每步把国家选择重置首国。copy显式产生新runID，原军团赋步兵，不隐式随机分型。
-- 征募克隆后扣地方人口/粮食、新军/units/事件一起校验提交；迁都只更新首都引用。共同重验day/nextEventId，成功递增事件号。
+- v1永久frozen0.4：65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5，lieguoji-fms-play-v1。
+- a3d9d4019fa04b21e9096e2a15aef442f36553d967cbed7fb486c5624077537f在修改前完整封存src/fms/play/compat/military1：7kernel可执行、7entry为.source，按原路径／顺序／归一化源码重算完整组合指纹。更早46b5预览仍在compat/preview1。两个旧兵种引擎用lieguoji-fms-play-v2（StoreKey2），推进／预览／执行均对应旧归档；未知引擎仍锁。不要修改归档。
+- 新52f49仍FmsRun.version2、rules=fms-military-1，使用独立lieguoji-fms-mobilization-v1（StoreKey3）。内层schema2/.2不能决定规则。每库独立revision／CAS／主备／未来版本锁。
+- 下次修改军事指纹相关文件前先封存52f49完整kernel+entry并精确注册。已有实际52f49保存，不能只改hash令其锁死，或把旧engine静默改成新值。后续显式转换另一规则仍须永久保留源世界，不能只靠第二次保存就被覆盖的backup。
+- copy换runID/custom.id；v1赋步兵，v2保留原units、兵数、路线。新副本两次保存仍保留源旧库。当前空军队合法，结构预览不能再调用拒绝空军队的旧验证器。
+- 5180旧v1仍147日rev1、checksum dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05；旧v2仍2日rev1／46b5／20军团；新库3日rev1／77军团。浏览器只导出这些元数据证据，没有完整个人存档。
 
-## 当前证据
+## 验证与限制
 
-`docs/evidence/fms-watch-controls-v5-2026-10-05/`：
+- 新证据 docs/evidence/fms-army-density-v5-2026-10-05/：DELIVERY.md、checks.json、browser.json、overview.png、mobile.png。
+- 本批受影响8文件83测试；旧兼容／引擎／模拟／存储／历史9文件395测试；lint/typecheck通过；37项计划／发布策略测试；实际build通过42个dist产物审计。不是完整e2e／云CI。
+- 回归覆盖新旧规则派发、人口配粮守恒、跨月7日批次及新映射、驻守补员限制、空军队校验→推进→手动征募→保存恢复、旧v2副本双保存原库保护、军旗合并与拾取、明确时钟间隔。复核发现并修复了零军队新世界被验证器拒绝的问题。
+- 5180浏览器实测77军团／五兵种、日更新时间3244/6221/9209ms（相邻约2.98秒）、18px盾兵点击选中、新库3日刷新同runID。5181真实构建推进39日、补员扣粮事件、39日保存刷新、play/biome Worker加载、warning/error为空。
+- 生产加速观察的CDP等待在约20秒超时，随后暂停实际第39日；未假称精确30日取样。小图首月未产生新编事件，补员已观察；月度新增映射与成本以针对性测试验证。
+- 428×926 Chromium无横溢出，控制条宽370，面板底742.4／时间条顶770.8，视口已恢复。不是iPhone13ProMax／iOS27 Safari/Chrome真机或用户视觉认可。
+- 原五兵种／迁都／标签等证据仍在fms-watch-controls-v5-2026-10-05；历史75测试不能当成本次数量。
 
-- MILITARY.md为新功能/规则/兼容/未完成合同；military-provenance.json为5类配置与5图标摘要；military-checks.json及日志为新检查；military-browser.json及production-armies.png为实测。
-- 本轮受影响7文件75测试、旧兼容/引擎/模拟/历史/存储9文件395测试通过；lint/typecheck通过；最终d4a0a80 build通过42产物白名单。没有把上批196文件2458测试记成本次重跑，没有完整旧Playwright e2e套件或云CI。
-- 浏览器实测迁都、两类征募、兵种军旗、2日行軍/12补给、保存刷新、旧版继续入口、选择非首国推进后不重置、当地人口粮食。最终生产play/biome Worker加载、warning/error为空。
-- 428×926 Chromium布局无横溢出；面板底742.4、时间条顶770.8、收起按钮44×44。恢复了viewport。不是iPhone13ProMax/Safari/WebKit或真实触控证据。
-- 原先标签/颜色/事件切片记录仍在DELIVERY.md、checks.json、browser.json、naming-provenance.json。browser.json有真实147→154日国名重算证据；首次交战暂停由单元验证，147→560临时观看未观察到新交战，不算浏览器自动暂停通过。
+## 原作恢复和下一批
 
-## 只读原包恢复与下一批
+- 仅只读D:/steam/steamapps/common/FantasyMapSimulator及项目索引。不读认证／SDK配置／个人存档，不运行原作／恢复脚本。实际PE/IL2CPP，不是ELF/DWARF，未调用hk4e。
+- 本轮复核DLL SHA256 d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b。月度链0x5BF120→0x5DBFE0→0x5DF980；人数0x454C40；渐进重整0x34F7D0／0x453700。具体源公式和网页适配差异见DELIVERY。原地方armyLimit、应急军、训练、重整金钱成本未恢复。
+- WEB-04-06完成本次有限切片，WEB-PH04仍in_progress；下一批WEB-04-05真实海路／港口／海军。Navy.MoveToCell协程0x449600→FindProvincePath0x8019E0(allowLand=false,allowSea=true)→FindCellPathInProvinces0x7FEBB0。不能让陆军直线穿海；有限船SVG在索引，未复制，可能含Lucide来源。
+- 五兵种配置／PNG和迁都小函数0x467850已接入；自动补选首都0x5D4E00触发未知。后续六政体SetPoliticalSystem0x70D250→默认属性→traits，具体数值待恢复。完整联盟／附庸、家族／信仰／继承、连续动画、长期平衡、PWA、真机与视觉仍待完成。
 
-- 授权安装路径D:/steam/steamapps/common/FantasyMapSimulator，仅限只读，禁止读取认证/SDK配置/个人存档、运行原作或恢复脚本。当前对象PE/IL2CPP，不是ELF/DWARF，未调用hk4e。
-- 原作MilitaryProfile.json及5个PNG已有限复用；原作one Army = unitKey+armyCount。速度/基础战力/山地系数真实消费，完整biome修正/原战斗公式未恢复。即时征募成本、人数限额和初始拆军是明确网页适配规则。
-- 已恢复手动迁都小函数0x467850，已定位自动补选首都0x5D4E00但触发时机未知。不要再次声称原作迁都收费或有冷却。
-- 下一项海军：Navy.MoveToCell协程0x449600 → FindProvincePath0x8019E0(allowLand=false,allowSea=true) → FindCellPathInProvinces0x7FEBB0；独立舰队/港口/实际海路，不能用陆军直线穿海替代。有限舰船SVG已在资源索引中，尚未复制，可能含第三方Lucide来源。
-- 后续政体：原作六类型Kingdom/Empire/Federation/Republic/Tribal/Theocracy；SetPoliticalSystem0x70D250→属性默认表→traits修正。完整数值待恢复。联盟实体/战争清理/陆海军调度链已定位，当前仅宣战讲和。家族、信仰、继承仍未实装。
-- 动画连贯性、城市建筑/完整标注避让、自动补军、长期平衡、原作海岸观感、PWA和真机视觉继续未完成。用户求完整原作感觉，不能以本轮75测试冒充完整体验。
+## 发布边界
 
-## 仓库与发布
+既有私有Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git，main生产／其他分支预览。旧站https://lieguoji-web.pages.dev/未更新。本批仅本地开发／构建／提交，无push、远程PR/Issue/Milestone、上传或Pages触发。pre-push、旧tasks/phaseState/programme/releasePolicy及第一体验门保持。五图标独立上游许可未逐项查清，发布锁不解除。
 
-既有私有GitHub Ethanhui6/lieguoji-web、Pages lieguoji-web；唯一原生Git生产链main/其他分支预览。旧站https://lieguoji-web.pages.dev/未更新。全PH发布锁、pre-push保持，**无push、远程PR/Issue/Milestone、上传、Pages触发**。只构建dist游戏产物。五图标的独立上游许可未逐项查清，保留来源未知；此处也没有解除发布门。
-
-普通本地工作继续已有授权。没有索要密码/令牌或待新增云端授权；真机与主观验收需用户实际操作。会话结束后不声称仍在后台开发。
+普通本地工程无需重复确认下一批；必要登录、权限及真机／主观验收由用户介入。会话结束后不声称后台仍在开发。

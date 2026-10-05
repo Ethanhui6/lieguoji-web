@@ -15,7 +15,7 @@ export function runFmsBiomeRequest(raw:unknown):FmsBiomeResponse {
   }catch(error){return {...identity,kind:'error',message:error instanceof Error?error.message.slice(0,300):'气候计算未完成。'};}
 }
 export function fmsBiomeTransfer(surface:FmsBiomeSurface):ArrayBuffer[] {
-  return [surface.ids,surface.colors,surface.temperatures,surface.precipitation,surface.rivers.flux,surface.rivers.riverIds,surface.rivers.receiver,surface.rivers.routingHeight].map(a=>a.buffer as ArrayBuffer);
+  return [surface.ids,surface.colors,surface.temperatures,surface.precipitation,surface.rivers.flux,surface.rivers.riverIds,surface.rivers.receiver,surface.rivers.routingHeight,surface.rivers.shape.positions].map(a=>a.buffer as ArrayBuffer);
 }
 if(typeof self!=='undefined'&&typeof document==='undefined')self.onmessage=event=>{
   const response=runFmsBiomeRequest(event.data);

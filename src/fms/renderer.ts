@@ -70,6 +70,7 @@ export class FmsRenderer {
   private scene = new Container();
   private overlay = new Graphics();
   private rivers = new Graphics();
+  private riverMesh?:Mesh<Geometry,Shader>;
   private protection = new Graphics();
   private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; triangles:FmsDocument['triangles']; width:number; height:number; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
   private oceanFields = new FmsOceanFields();
@@ -191,8 +192,25 @@ export class FmsRenderer {
     const surface=this.surfaces.get(doc.elevations);if(!surface)return;
     const segments=biome?biome.rivers.segments:surface.relief>=6?surface.drainage.riverSegments:[];
     const lines=clipFmsRiverSegments(doc,segments);this.rivers.clear();
-    for(const {from,a,b,mouth}of lines){
-      const amount=biome?biome.rivers.flux[from]/30:surface.drainage.accumulation[from]/surface.drainage.stats.minCatchment;
+    this.clearRiverMesh();
+    if(biome?.rivers.shape.positions.length){
+      const geometry=new Geometry({attributes:{aPosition:{buffer:biome.rivers.shape.positions,format:'float32x2'}}});
+      const shader=new Shader({glProgram:GlProgram.from({vertex:`#version 300 es
+precision highp float;
+in vec2 aPosition;
+uniform mat3 uProjectionMatrix;
+uniform mat3 uWorldTransformMatrix;
+uniform mat3 uTransformMatrix;
+void main(){vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.,1.);}`,
+        fragment:`#version 300 es
+precision highp float;
+out vec4 finalColor;
+void main(){finalColor=vec4(.322,.498,.533,1.);}`})});
+      this.riverMesh=new Mesh({geometry,shader});
+      this.scene.addChildAt(this.riverMesh,this.scene.getChildIndex(this.rivers));
+    }
+    if(!biome)for(const {from,a,b,mouth}of lines){
+      const amount=surface.drainage.accumulation[from]/surface.drainage.stats.minCatchment;
       // Width is the existing bounded web stroke, driven by the active model.
       const width=Math.min(5,1.8+Math.log2(Math.max(1,amount))*.55);
       this.rivers.moveTo(...a).lineTo(...b).stroke({width,color:0x527f88,alpha:.9,cap:mouth?'butt':'round'});
@@ -201,6 +219,7 @@ export class FmsRenderer {
     this.canvas.dataset.riverSegments=String(lines.length);
     this.canvas.dataset.riverGraphSegments=String(segments.length);
     this.canvas.dataset.riverMouths=String(lines.filter(line=>line.mouth).length);
+    this.canvas.dataset.riverShape=biome?JSON.stringify(biome.rivers.shape.stats):'';
   }
   private updateBiomeMetrics(surface?:FmsBiomeSurface):void {
     if(!this.initialized)return;
@@ -231,9 +250,14 @@ export class FmsRenderer {
   }
   private draw(): void { if(this.initialized&&!this.destroyed&&!this.contextLost) this.app.render(); }
   private clearMesh(): void {
+    this.clearRiverMesh();
     this.mesh?.destroy(); this.bound?.destroy(); this.geometry?.destroy(true); this.shader?.destroy(true);
     this.oceanSource?.destroy();this.oceanUniforms?.removeAllListeners();this.oceanSource=undefined;this.oceanUniforms=undefined;
     this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;this.meshDocument=undefined;
+  }
+  private clearRiverMesh():void {
+    if(!this.riverMesh)return;
+    const {geometry,shader}=this.riverMesh;this.riverMesh.destroy();geometry.destroy(true);shader?.destroy(true);this.riverMesh=undefined;
   }
   destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.close();this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

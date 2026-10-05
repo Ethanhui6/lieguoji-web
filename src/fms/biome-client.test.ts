@@ -34,7 +34,7 @@ describe('isolated optional climate Worker',()=>{
     const transferred=structuredClone(result,{transfer:fmsBiomeTransfer(result.surface)});
     expect(result.surface.colors.byteLength).toBe(0);expect(transferred.surface.colors.length).toBe(12);expect(doc.elevations.byteLength).toBe(16);
   });
-  it.each(['requestId','worldId','baseRevision','typed','nan','length','counts','riverIndex'] as const)('rejects wrong or malformed %s results and restarts cleanly',async fault=>{
+  it.each(['requestId','worldId','baseRevision','typed','nan','length','counts','riverIndex','shapeNaN','shapeOutside','shapeLength','shapeBytes'] as const)('rejects wrong or malformed %s results and restarts cleanly',async fault=>{
     const c=client(),pending=c.compute(biomeFixture(),new AbortController().signal),worker=active();
     const rejected=expect(pending).rejects.toThrow('数据无效'),response=runFmsBiomeRequest(worker.messages[0]);
     if(response.kind!=='biome')throw Error('fixture failed');
@@ -46,6 +46,13 @@ describe('isolated optional climate Worker',()=>{
     if(fault==='length')response.surface.ids=new Uint8Array(0);
     if(fault==='counts')response.surface.stats.counts[0]++;
     if(fault==='riverIndex')response.surface.rivers.segments=[[99,0]];
+    if(fault.startsWith('shape')){
+      const shape=response.surface.rivers.shape;shape.positions=new Float32Array(6);shape.stats.bytes=24;shape.stats.triangles=1;
+      if(fault==='shapeNaN')shape.positions[0]=NaN;
+      if(fault==='shapeOutside')shape.positions[0]=999;
+      if(fault==='shapeLength')shape.positions=new Float32Array(7);
+      if(fault==='shapeBytes')shape.stats.bytes=0;
+    }
     worker.reply(response);await rejected;expect(worker.terminate).toHaveBeenCalledOnce();
     const next=c.compute(biomeFixture(),new AbortController().signal);active().reply();await expect(next).resolves.toHaveProperty('surface');
   });

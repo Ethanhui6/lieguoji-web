@@ -6,7 +6,11 @@ Fantasy Map Simulator script, in the Azgaar Fantasy Map Generator family below.
 Web grid sampling, bounded wind edges and continuous biome display are local
 adaptations. Selected river flux, FIFO depression routing and river moisture
 rules are additionally adapted to the editable web graph (2026-10-05).
-Original erosion, meanders and the final rendered biome texture are not included.
+Selected active addMeandering land-source coordinates are also adapted. River
+mouth clipping, land-clipped ribbon geometry and web rendering are local code.
+Original erosion and the final rendered biome texture are not included.
+The installed game's native cubic tangent/thickness rules were statically
+recovered under the user's authorization; no Shapes package code is bundled.
 An exact upstream revision of the installed script is not asserted.
 
 Alea PRNG 1.1: original work © 2010 Johannes Baagøe (MIT); derivative © 2017–2020 W. "Mac" McMeans (BSD-3-Clause).

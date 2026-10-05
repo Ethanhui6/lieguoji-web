@@ -1,7 +1,7 @@
-import type { World } from '../../sim/types';
+import type { GameEvent, World } from '../../sim/types';
 import type { FmsRun } from './world';
 import type { PlayCommand } from './session';
-type Result = { world: World; run?: FmsRun };
+type Result = { world: World; run?: FmsRun; halted?: GameEvent };
 export class PlayClient {
   private worker = new Worker(new URL('./play.worker.ts', import.meta.url), { type: 'module' });
   private id = 0;

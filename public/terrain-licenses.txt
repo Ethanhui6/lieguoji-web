@@ -149,3 +149,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org>
+
+Fantasy Map Simulator — bounded naming and state-color data adaptation
+Chinese country and settlement names: EasternFantasy/StateNames.csv and
+EasternFantasy/CityNames.csv, from the owner's authorized installation.
+State colors: DefaultNamespace.ColorUtils.c12, recovered by static analysis.
+Reused under the project owner's explicit permission (2026-10-03 / 2026-10-05).
+Web naming order, political overlay opacity and border widths are adaptations;
+this does not assert complete native engine or random-sequence equivalence.
+No installation package, decompilation dump, SDK configuration or user save is
+included. Existing third-party algorithm notices above remain applicable.

@@ -54,6 +54,26 @@ describe('FMS playable world uses actual land and existing simulation rules', ()
     const next = session.execute({type:'step',days:1}); expect(next.world.day).toBe(2);
   });
   it('rejects blank ocean rather than substituting a canned map', () => { expect(() => createFmsRun(grid(() => 0))).toThrow('陆地'); });
+  it('stops a 7-day speed batch on its first battle day, without changing the daily rules', () => {
+    const run=createFmsRun(grid(),4,'war'), session=new PlaySession();
+    let before=run.world, expected=before;
+    // Find a genuine generated-world battle, not a fake event or mocked core.
+    for(let i=0;i<100;i++){expected=advanceWorld(before,1);if(expected.events.some(e=>e.id>=before.nextEventId&&e.kind==='battle'))break;before=expected;}
+    expect(expected.events.some(e=>e.id>=before.nextEventId&&e.kind==='battle')).toBe(true);
+    session.execute({type:'load',run:{...run,world:before}});
+    const stopped=session.execute({type:'step',days:7,pauseOnBattle:true});
+    expect(stopped.world).toEqual(expected);expect(stopped.halted?.kind).toBe('battle');
+    session.execute({type:'load',run:{...run,world:before}});
+    expect(session.execute({type:'step',days:7}).world).toEqual(advanceWorld(before,7));
+  });
+  it('ignores retained old battles and rejects invalid pause flags before advancing', () => {
+    const run=createFmsRun(grid(),4,'peace'),session=new PlaySession();
+    run.world.events.push({id:run.world.nextEventId++,day:0,kind:'battle',text:'旧战报',reason:'仅用于验证旧记录不会暂停'});
+    session.execute({type:'load',run});
+    expect(()=>session.execute({type:'step',days:7,pauseOnBattle:'yes' as unknown as boolean})).toThrow('选项无效');
+    const result=session.execute({type:'step',days:7,pauseOnBattle:true});
+    expect(result.world).toEqual(advanceWorld(run.world,7));expect(result.halted).toBeUndefined();
+  });
 });
 describe('isolated whole-world saves', () => {
   it('roundtrips terrain plus simulation; detects multi-tab CAS conflict', async () => {

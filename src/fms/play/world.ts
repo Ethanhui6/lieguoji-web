@@ -1,6 +1,8 @@
 import { assertFmsDocument, type FmsDocument } from '../model';
 import { initializeStatecraft, validateWorld } from '../../sim/core';
 import type { Point, World } from '../../sim/types';
+import { worldNames } from './names';
+import { statePalette } from './politics';
 
 export interface FmsRun { version: 1; id: string; engine: string; terrain: FmsDocument; scale: number; world: World }
 export const runEngine = () => __SIM_ENGINE__;
@@ -99,10 +101,10 @@ export function createFmsRun(document: FmsDocument, countryCount = 6, relations:
   for (let head = 0; head < queue.length; head++) for (const next of regions[queue[head]].neighbors) if (owners[next] < 0) { owners[next] = owners[queue[head]]; queue.push(next); }
   // Disconnected islands may belong to a nearby state, but gain NO sea routes.
   regions.forEach((r, i) => { if (owners[i] < 0) owners[i] = seeds.reduce((best, s, n) => distance(r.center, regions[s].center) < distance(r.center, regions[seeds[best]].center) ? n : best, 0); });
-  const names = ['苍岚', '赤原', '南泽', '霜岭', '金湾', '青丘', '白川', '紫荆'], colors = ['#537f95', '#b86155', '#659274', '#8a7f9d', '#b3984f', '#7f9451', '#8b9aab', '#ac7294'];
+  const {countries:names,places}=worldNames(terrain.worldId,regions.length), colors = statePalette;
   const point = (v: Point) => ({ x: v.x * scale, y: v.y * scale });
-  const provinces = regions.map((r, i) => ({ id: `p-${i}`, name: `${names[owners[i]]}·${i + 1}区`, polygon: r.ring.map(point), center: point(r.center), label: point(r.center), terrain: r.height > 65 ? 'mountain' as const : r.height > 45 ? 'forest' as const : 'plain' as const, legalOwner: `n-${owners[i]}`, controller: `n-${owners[i]}`, neighbors: [...r.neighbors].map(n => `p-${n}`), supply: 80 }));
-  const cities = regions.flatMap((r, i) => seeds.includes(i) || (i % 4 === 0 && polygonArea(r.ring) * scale * scale > 100) ? [{ id: `c-${i}`, name: seeds.includes(i) ? `${names[owners[i]]}京` : `${names[owners[i]]}${i + 1}城`, provinceId: `p-${i}`, position: point(r.center), label: point(r.center), fort: seeds.includes(i) ? 2 : 1 }] : []);
+  const provinces = regions.map((r, i) => ({ id: `p-${i}`, name: places[i], polygon: r.ring.map(point), center: point(r.center), label: point(r.center), terrain: r.height > 65 ? 'mountain' as const : r.height > 45 ? 'forest' as const : 'plain' as const, legalOwner: `n-${owners[i]}`, controller: `n-${owners[i]}`, neighbors: [...r.neighbors].map(n => `p-${n}`), supply: 80 }));
+  const cities = regions.flatMap((r, i) => seeds.includes(i) || (i % 4 === 0 && polygonArea(r.ring) * scale * scale > 100) ? [{ id: `c-${i}`, name: places[i], provinceId: `p-${i}`, position: point(r.center), label: point(r.center), fort: seeds.includes(i) ? 2 : 1 }] : []);
   const nations = seeds.map((s, i) => ({ id: `n-${i}`, name: names[i], color: colors[i], capitalId: `c-${s}`, regimeId: `regime-${i}`, dynastyId: `dynasty-${i}` }));
   const armies = seeds.map((s, i) => ({ id: `a-${i}`, name: `${names[i]}军`, nationId: `n-${i}`, provinceId: `p-${s}`, originId: `p-${s}`, troops: 2400 + (i % 3) * 800, morale: 85, supplies: 100, status: 'idle' as const, route: [], progress: 0 }));
   const id = `fms-${crypto.randomUUID()}`;

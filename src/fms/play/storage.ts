@@ -1,5 +1,5 @@
 import { assertFmsRun, runEngine, type FmsRun } from './world';
-import { supportedMilitaryEngine, previousMilitaryFingerprint, military1Fingerprint, occupationInitialFingerprint } from './military-registry';
+import { supportedMilitaryEngine, previousMilitaryFingerprint, military1Fingerprint, occupationInitialFingerprint, creationFingerprint } from './military-registry';
 
 export const RUN_DATABASE = 'lieguoji-fms-play-v1';
 export const MILITARY_DATABASE = 'lieguoji-fms-play-v2';
@@ -9,8 +9,9 @@ export const REALTIME_DATABASE = 'lieguoji-fms-realtime-v1';
 export const BATTLE_DATABASE='lieguoji-fms-battle-v1';
 export const OCCUPATION_DATABASE='lieguoji-fms-occupation-v1';
 export const CREATION_DATABASE='lieguoji-fms-creation-v1';
-export type StoreKey=1|2|3|4|5|6|7|8;
-export const runStore=(run:FmsRun):StoreKey=>run.version===6?(run.engine===occupationInitialFingerprint?7:8):run.version===5?6:run.version===4?5:run.version===1?1:run.version===3?4:[previousMilitaryFingerprint,military1Fingerprint].includes(run.engine)?2:3;
+export const TRANSPORT_DATABASE='lieguoji-fms-transport-v1';
+export type StoreKey=1|2|3|4|5|6|7|8|9;
+export const runStore=(run:FmsRun):StoreKey=>run.version===7?9:run.version===6?(run.engine===occupationInitialFingerprint?7:8):run.version===5?6:run.version===4?5:run.version===1?1:run.version===3?4:[previousMilitaryFingerprint,military1Fingerprint].includes(run.engine)?2:3;
 type Envelope = { version: 1; revision: number; checksum: string; run: FmsRun };
 type Slots = { current?: Envelope; backup?: Envelope; revision?: number };
 export interface SavedRun { run: FmsRun; revision: number; recovered: boolean }
@@ -20,7 +21,14 @@ async function digest(run: FmsRun): Promise<string> {
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
 }
 function future(raw: Envelope | undefined, version:StoreKey) {
-  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== (version===1?1:version>=7?6:version===6?5:version===5?4:version===4?3:2)) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):version===8?raw.run.engine===runEngine(6):version===7?raw.run.engine===occupationInitialFingerprint:version===6?raw.run.engine===runEngine(5):version===5?raw.run.engine===runEngine(4):version===4?raw.run.engine===runEngine(3):(supportedMilitaryEngine(raw.run.engine)&&runStore(raw.run)===version))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
+  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== (version===1?1:version===9?7:version>=7?6:version===6?5:version===5?4:version===4?3:2)) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):version===9?raw.run.engine===runEngine(7):version===8?[creationFingerprint,runEngine(6)].includes(raw.run.engine):version===7?raw.run.engine===occupationInitialFingerprint:version===6?raw.run.engine===runEngine(5):version===5?raw.run.engine===runEngine(4):version===4?raw.run.engine===runEngine(3):(supportedMilitaryEngine(raw.run.engine)&&runStore(raw.run)===version))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
+  const candidate=raw?.run;
+  if(candidate?.version===7){
+    const armyFields=['id','name','nationId','provinceId','originId','troops','morale','supplies','status','route','progress'];
+    if(Array.isArray(candidate.transports?.cargo)&&candidate.transports.cargo.some(c=>c?.army&&typeof c.army==='object'&&Object.keys(c.army).some(k=>!armyFields.includes(k))))throw Error('运输军团含未知字段，已锁定读写。');
+    if(candidate.rules!=='fms-transport-1'||candidate.transports?.version!==1||Object.keys(candidate.transports??{}).some(k=>!['version','cargo'].includes(k))||(Array.isArray(candidate.transports?.cargo)&&candidate.transports.cargo.some(c=>!c||Object.keys(c).some(k=>!['fleetId','army','unit','fromPortId','targetPortId'].includes(k)))))throw Error('运输存档含未知字段，已锁定读写。');
+    const {transports,...rest}=candidate;void transports;future({...raw!,run:{...rest,version:6,rules:'fms-occupation-1'}},8);return;
+  }
   const run = raw?.run;
   if(run?.version===4||(run?.version===5||run?.version===6)){
     if(run.rules!==(run.version===6?'fms-occupation-1':run.version===5?'fms-battle-1':'fms-realtime-1')||(run.clock?.version!==undefined&&run.clock.version!==1)||Object.keys(run).some(k=>!['version','id','engine','terrain','scale','world','rules','units','navy','clock',...((run.version===5||run.version===6)?['battles']:[]),...(run.version===6?['occupation']:[])].includes(k))||(run.clock&&Object.keys(run.clock).some(k=>!['version','tick'].includes(k))))throw Error('日内存档包含未来规则或未知字段，已锁定读写。');
@@ -45,7 +53,7 @@ async function valid(raw?: Envelope): Promise<Envelope | undefined> {
 }
 async function open(factory: IDBFactory, version:StoreKey): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = factory.open(version===1?RUN_DATABASE:version===2?MILITARY_DATABASE:version===3?MOBILIZATION_DATABASE:version===4?NAVAL_DATABASE:version===5?REALTIME_DATABASE:version===6?BATTLE_DATABASE:version===7?OCCUPATION_DATABASE:CREATION_DATABASE, 1); let ended = false;
+    const req = factory.open(version===1?RUN_DATABASE:version===2?MILITARY_DATABASE:version===3?MOBILIZATION_DATABASE:version===4?NAVAL_DATABASE:version===5?REALTIME_DATABASE:version===6?BATTLE_DATABASE:version===7?OCCUPATION_DATABASE:version===8?CREATION_DATABASE:TRANSPORT_DATABASE, 1); let ended = false;
     const timer = setTimeout(() => fail(), 8000);
     function fail() { if (!ended) { ended = true; clearTimeout(timer); reject(new Error('无法打开推演存档，未覆盖原档。')); } }
     req.onupgradeneeded = () => { if (ended) req.transaction?.abort(); else req.result.createObjectStore('saves'); };

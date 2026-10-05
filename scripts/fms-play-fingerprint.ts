@@ -6,9 +6,12 @@ const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profil
 // Kernel dependencies are closed and checked by fingerprintSources. These
 // additional entry/initial-condition sources bind dispatch, conversion and
 // starting worlds too. Terrain drawing is an input format, not the daily kernel.
-const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts'];
+const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts','src/fms/play/customization.ts','src/fms/play/editor-session.ts','src/fms/play/transport.ts','src/fms/play/transport-runtime.ts'];
 export const fmsPlayFiles=[...kernelFiles,...entryFiles];
 export function fingerprintFmsPlay(){
+  const cRoot='src/fms/play/compat/creation1',c=JSON.parse(readFileSync(cRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
+  const cSources=new Map<string,string>();for(const f of c.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)\.source$/.test(f.archive))throw Error('Unsafe creation archive path');const s=normalized(readFileSync(cRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen creation1 changed');cSources.set(f.path,s);}
+  const cHash=createHash('sha256').update(fingerprintSources(c.kernel,f=>cSources.get(f)!));for(const f of c.entries)cHash.update('\n'+f+'\n'+cSources.get(f)+'\n');if(c.fingerprint!=='76107bed858daa96dc4a721865a7c9f3470e6b8340c2b6661b6b1bd0454f200e'||cHash.digest('hex')!==c.fingerprint)throw Error('Frozen creation1 fingerprint changed');
   const oRoot='src/fms/play/compat/occupation1',o=JSON.parse(readFileSync(oRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
   const oSources=new Map<string,string>();
   for(const f of o.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)\.source$/.test(f.archive))throw Error('Unsafe occupation archive path');const s=normalized(readFileSync(oRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen occupation1 changed');oSources.set(f.path,s);}

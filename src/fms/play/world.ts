@@ -1,3 +1,4 @@
+import {assertTransports,type Transports} from './transport';
 import { assertFmsDocument, type FmsDocument } from '../model';
 import { initializeStatecraft, validateWorld } from '../../compat/v0_4/sim/core';
 import type { Point, World } from '../../sim/types';
@@ -22,8 +23,8 @@ import {assertClock as assertBattleClock} from './compat/battle1/fms/play/clock'
 import {seaGraph as battleSeaGraph} from './compat/battle1/fms/play/sea-path';
 import {assertOccupation,type OccupationState} from './occupation';
 type RunBase = {id:string;engine:string;terrain:FmsDocument;scale:number;world:World};
-export type FmsRun = RunBase & ({version:1}|{version:2;rules:'fms-military-1';units:UnitAssignments}|{version:3;rules:'fms-naval-1';units:UnitAssignments;navy:Navy}|{version:4;rules:'fms-realtime-1';units:UnitAssignments;navy:Navy;clock:SimClock}|{version:5;rules:'fms-battle-1';units:UnitAssignments;navy:Navy;clock:SimClock;battles:BattleState}|{version:6;rules:'fms-occupation-1';units:UnitAssignments;navy:Navy;clock:SimClock;battles:BattleState;occupation:OccupationState});
-export const runEngine = (version:1|2|3|4|5|6=1) => version===1?legacyManifest.engineFingerprint:version===2?mobilizationFingerprint:version===3?navalFingerprint:version===4?realtimeFingerprint:version===5?battleFingerprint:__FMS_PLAY_ENGINE__;
+export type FmsRun = RunBase & ({version:1}|{version:2;rules:'fms-military-1';units:UnitAssignments}|{version:3;rules:'fms-naval-1';units:UnitAssignments;navy:Navy}|{version:4;rules:'fms-realtime-1';units:UnitAssignments;navy:Navy;clock:SimClock}|{version:5;rules:'fms-battle-1';units:UnitAssignments;navy:Navy;clock:SimClock;battles:BattleState}|{version:6;rules:'fms-occupation-1';units:UnitAssignments;navy:Navy;clock:SimClock;battles:BattleState;occupation:OccupationState}|{version:7;rules:'fms-transport-1';units:UnitAssignments;navy:Navy;clock:SimClock;battles:BattleState;occupation:OccupationState;transports:Transports});
+export const runEngine = (version:1|2|3|4|5|6|7=1) => version===1?legacyManifest.engineFingerprint:version===2?mobilizationFingerprint:version===3?navalFingerprint:version===4?realtimeFingerprint:version===5?battleFingerprint:__FMS_PLAY_ENGINE__;
 type Vertex = Point & { key: string };
 type Face = { ring: Vertex[]; neighbors: number[]; height: number };
 const edgeKey = (a: Vertex, b: Vertex) => a.key < b.key ? `${a.key}/${b.key}` : `${b.key}/${a.key}`;
@@ -141,13 +142,18 @@ export function assertFmsRun(value: unknown): asserts value is FmsRun {
 /** Session-only output check. The initial terrain is fully validated on input;
  * an internal movement step cannot edit it. Mutable state is still validated
  * before committing each command, and storage always uses assertFmsRun. */
-export function assertRealtimeStep(previous:Extract<FmsRun,{version:4|5|6}>,next:Extract<FmsRun,{version:4|5|6}>,graph:SeaGraph){
+export function assertRealtimeStep(previous:Extract<FmsRun,{version:4|5|6|7}>,next:Extract<FmsRun,{version:4|5|6|7}>,graph:SeaGraph){
   if(previous.terrain!==next.terrain||previous.scale!==next.scale)throw Error('日内推进不能修改地形。');
   const sameGeometry=previous.world.provinces.length===next.world.provinces.length&&previous.world.provinces.every((p,i)=>p.id===next.world.provinces[i].id&&p.polygon===next.world.provinces[i].polygon);
   assertRun(next,{terrain:previous.terrain,graph:sameGeometry?graph:undefined});
 }
 function assertRun(value:unknown,trusted?:{terrain:FmsDocument;graph?:SeaGraph}):asserts value is FmsRun {
   const r = value as FmsRun;
+  if(r?.version===7){
+    if(r.engine!==__FMS_PLAY_ENGINE__||r.rules!=='fms-transport-1'||!Object.hasOwn(r,'transports'))throw Error('运输存档版本不同，已锁定写入。');
+    const {transports,...rest}=r;const base={...rest,version:6,rules:'fms-occupation-1'};
+    assertRun(base,trusted);assertTransports(transports,r,trusted?.graph??seaGraph(r.terrain,r.world));return;
+  }
   if (!r || ![1,2,3,4,5,6].includes(r.version) || !(r.version===1?r.engine===runEngine(1):r.version===2?supportedMilitaryEngine(r.engine):r.version===6?supportedOccupationEngine(r.engine):r.engine===runEngine(r.version)) || (r.version!==1&&(r.rules!==(r.version===2?'fms-military-1':r.version===3?'fms-naval-1':r.version===4?'fms-realtime-1':r.version===5?'fms-battle-1':'fms-occupation-1')||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
   const keys=['version','id','engine','terrain','scale','world',...(r.version!==1?['rules','units']:[]),...(r.version===3||r.version===4||(r.version===5||r.version===6)?['navy']:[]),...((r.version===4||(r.version===5||r.version===6))?['clock']:[]),...((r.version===5||r.version===6)?['battles']:[]),...(r.version===6?['occupation']:[])];
   if(Object.keys(r).length!==keys.length||!keys.every(k=>Object.hasOwn(r,k)))throw new Error('推演存档含未知字段，已锁定写入。');

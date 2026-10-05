@@ -19,9 +19,11 @@ import realtime1 from './compat/realtime1/manifest.json';
 import {createMilitaryCore as battleCore} from './compat/battle1/fms/play/military-core';
 import {applyMilitaryAction as battleApply,previewMilitaryAction as battlePreview} from './compat/battle1/fms/play/military-actions';
 import battle1 from './compat/battle1/manifest.json';
+import creation1 from './compat/creation1/manifest.json';
+export const creationFingerprint=creation1.fingerprint;
 import occupation1 from './compat/occupation1/manifest.json';
 export const occupationInitialFingerprint=occupation1.fingerprint;
-export const supportedOccupationEngine=(engine:unknown)=>engine===__FMS_PLAY_ENGINE__||engine===occupationInitialFingerprint;
+export const supportedOccupationEngine=(engine:unknown)=>engine===__FMS_PLAY_ENGINE__||engine===occupationInitialFingerprint||engine===creationFingerprint;
 export const battleFingerprint=battle1.fingerprint;
 export const realtimeFingerprint=realtime1.fingerprint;
 

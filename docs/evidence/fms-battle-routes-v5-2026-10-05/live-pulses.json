@@ -1,0 +1,66 @@
+[
+  {
+    "battles": [
+      {
+        "armies": [
+          "muster-2-0",
+          "muster-4-3"
+        ],
+        "id": "engagement-1",
+        "losses": {
+          "muster-2-0": 20,
+          "muster-4-3": 15
+        },
+        "x": 358.087956905365,
+        "y": 237.23575639724731
+      },
+      {
+        "armies": [
+          "muster-4-2",
+          "muster-5-4"
+        ],
+        "id": "engagement-2",
+        "losses": {
+          "muster-4-2": 8,
+          "muster-5-4": 15
+        },
+        "x": 462,
+        "y": 347.5
+      }
+    ],
+    "ms": 807,
+    "tick": 3022
+  },
+  {
+    "battles": [
+      {
+        "armies": [
+          "muster-2-0",
+          "muster-4-3"
+        ],
+        "id": "engagement-1",
+        "losses": {
+          "muster-2-0": 25,
+          "muster-4-3": 18
+        },
+        "x": 358.087956905365,
+        "y": 237.23575639724731
+      },
+      {
+        "armies": [
+          "muster-4-2",
+          "muster-5-4"
+        ],
+        "id": "engagement-2",
+        "losses": {
+          "muster-4-2": 15,
+          "muster-5-4": 30
+        },
+        "x": 462,
+        "y": 347.5
+      }
+    ],
+    "ms": 1800,
+    "tick": 3064
+  }
+]

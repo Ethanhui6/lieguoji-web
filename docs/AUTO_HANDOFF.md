@@ -1,45 +1,44 @@
-# 当前续接：日内版已可玩，下一批海军交战
+# 当前续接：持续陆战与连续路点已交付；下一批战线协同
 
-更新：2026-10-05。用户关键玩法优先例外有效。WEB-04-09已完成下述有限切片；下一批WEB-04-08，继续原作已授权安装目录的只读方法核实与可玩适配。首份绘图真机/用户视觉门仍待验收，全部云端发布锁不变。
+更新：2026-10-05。用户明确“线路进攻两种都要，先做连续地点进攻”。本轮WEB-04-10有限切片完成，WEB-04-11自由绘制战线/多军协同为下一批；WEB-04-08海战仍待办。关键玩法先行本地例外有效，绘图真机/视觉门和全部云端发布锁不变。
 
-## 当前源与实际试玩
+## 当前源、试玩与存档
 
-- 分支 codex/ph06-world-generation；最新源与实际本机构建 **91182cc0deeb04d9066045be45a67528c981add7**。证据/计划提交在其后，续接先git status，不覆盖其他修改。
-- 本机构建页 **http://127.0.0.1:5181/?fms=1**；build.json已查91182cc及日内9b83。交付标签20；原用户旧标签18未操作。标签与服务状态须下次核实。
-- 新世界为v4 / rules=fms-realtime-1；规则 **9b83e494682517f778c795e9676bc1fc2d53698710747b69a95be5900c45576d**。日内版独立Store5，旧世界选择“创建日内版副本”后体验。当前新runID fms-d674950a-0a6b-4693-ae60-20e0a9a9e589；最后保存第23日20:36/tick2863/rev3；曾在22日103/120保存并刷新精确恢复，随后手动跨日验证；各国lastLedger.day均23。
-- 5180为开发服务，测试标签19已经关闭、未写Store5；目前源可能重新加载，不将其当已验证生产构建。两个网址都是电脑本机地址，不是手机直接连接网址。
+- 分支codex/ph06-world-generation；最终源码与本机构建 **6593a5efe956626e79e7c7dbd92c92c5af3ffd82**。后续只有证据/计划提交；先核实git status，不覆盖用户修改。
+- 本机构建页 **http://127.0.0.1:5181/?fms=1**；已查实际build.json对应6593a5e。交付标签21，旧用户标签18/20未刷新。入口：进入世界→继续交锋版第26日；当前选中昌邑步兵，时间暂停。视口临时模拟已reset。部分截图接口超时，浏览器完整截图/帧率不能假称全部通过。
+- 当前新世界 **v5 / fms-battle-1 / f50fbe73b6980108c33cebac67edc704d3910905170a53e11a932e287410351a**；独立Store6 `lieguoji-fms-battle-v1`。
+- 当前run `fms-67d99f08-09b1-4114-8aac-4c8b4fffc463`，第26日21:00 / tick3225 / revision4，checksum `73ae8a9202465a98344d6a99073f4637e551718302f87e2491865dcc0db4d1fe`。当前两处交锋，昌邑步兵563对北安步兵226；进攻计划南关→泰顺暂缓。未确认撤退，没有修改真实旧世界。
+- v5曾在tick3108战斗中保存/刷新/再保存；全run checksum完全一致，含小数伤亡、路段位置及连续计划。具体browser.json。
+- 5180为开发服务，不能当作经本次构建验收的页面。127.0.0.1是电脑本机地址，不是手机网络访问地址。
 
-## 本批实际功能
+## 当前实际玩法
 
-- 一日120tick，陆军progress、舰队海格位置是权威状态；常速目标3秒/日。Worker回复省去不变terrain；仅单位移动时不重建地图图层。
-- 日内军令绑定day/nextEventId/tick，沿当前边走完再转向，保留当前位置，不能瞬移/原地折返。下一路口敌军拦路不能预览穿过。
-- 实际到省中心节点接触敌军时双方停军，空敌地实际占领；同节点宣战先接触再移动。勾选交战暂停后停在首次接触tick，包括＋1日。当前伤亡仍日结，撤退离开交战节点只扣一次2.5%。路段中相向拦截、连续伤亡未实现。
-- 粮账、补员、整军、外交/AI各日在边界结算一次。不能按每tick重扣。海战、登船运输尚未接入；完整历史回放仍待做，确定性分批/存档后下一tick相等不冒充回放UI。
-- 首都高辨识标记、五兵种、人口粮食征募、动态整军、港口水路、舰队编成/巡航和迁都/外交沿用之前已接能力。
+- 一日120tick；道路扫掠接触和节点交锋，遇敌停军，0.1日一次同时伤亡，保存小数余量；经济/补员/补给仍每日单次，避免双扣。
+- 1—8连续路点预览、基础行程/军粮与守军说明、确认、遇敌交锋、战后继续。和平取消无效敌对计划；手动撤退取消整条计划，边上沿原路保留位置且一次2.5%追击，节点无安全退路拒绝主动撤退。
+- 原作二次Bezier方向箭头与实际道路细线分离；交锋标记、双方军旗、兵力条和状态卡由真实状态驱动。每次战损仅更新条/数字，避免全地图文字重建；仍不声称已达到稳定FPS。
+- 本轮只读核实原作停军、省内交战、攻击间隔、伤害调用、箭头与battleFx，见ORIGINAL_COMBAT.md。原作省内cell游走、完整效率/AI、原生箭头生长/技能/围城尚未还原；道路拦截及0.1网页日脉冲为网页适配，非原作精确等价。
 
-## 兼容与下一次改规则前的必做
+## 兼容：改规则前必须再次归档
 
-- v1 frozen0.4：65333e9e，Store1 lieguoji-fms-play-v1。
-- v2 46b5/a3d9：Store2 lieguoji-fms-play-v2，preview1/military1精确归档。
-- v2 52f49：Store3 lieguoji-fms-mobilization-v1，mobilization1完整归档，仍执行其整军/补员。
-- v3 **532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79**：Store4 lieguoji-fms-naval-v1。本批已完整封存10kernel+7entry于compat/naval1并复算原hash；core/actions/navy/seaGraph/mobilize全部归档dispatch。
-- v4当前9b83：Store5 lieguoji-fms-realtime-v1。本批已有真实保存；**下次改当前kernel/entry之前必须封存9b83组合，登记旧dispatch，不悄悄替换Store5规则。** UI纯显示另论。
-- 复制v3换runID，保留陆军、经济、船员余粮及在途海路。各库CAS/主备/未知格式锁写不变，主备未来clock/navy字段不得通过回退绕过。内部运动只读共享地理；任何地理编辑必须另建副本。
-- 5181旧Store4仍22日rev2/id fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5/checksum45657379bfbe02af0a29f445667b358928daaf1d0ba68db4e76f9dfbdec7fe58，独立日内版两次保存后未变。未写入其他旧库或导出完整真实存档。
+- Store1旧frozen0.4；Store2 preview1/military1；Store3 mobilization1；Store4 naval1，均保留原规则。
+- 上轮v4 **9b83e494682517f778c795e9676bc1fc2d53698710747b69a95be5900c45576d** 已在本轮修改前精确封存为compat/realtime1（12kernel+8entry），复算旧hash，core/actions/navy/graph/mobilization全冻结分派。
+- Store5 `lieguoji-fms-realtime-v1` 仍id `fms-d674950a-0a6b-4693-ae60-20e0a9a9e589` / tick2863 / rev3 / checksum `422a8e49e580e27f54f42b9ae595ce7f296dec269d51eb603f5deca6d32d0c02`；Store4仍id `fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5` / day22 / rev2 / checksum `45657379bfbe02af0a29f445667b358928daaf1d0ba68db4e76f9dfbdec7fe58`，浏览器前后对照未变。
+- **当前f50f/Store6已有真实保存。下次改kernel/entry前，先封存当前完整13kernel+8entry，注册旧规则分派。不能用新hash替换Store6而锁掉当前试玩。** 纯UI显示改动无需变规则。
+- 新版只能显式复制旧局并换runID，旧档库不写；保留CAS、主备、未来clock/navy/battles/engagement/plan字段锁写。不要导出/提交完整真实存档。
 
-## 本批证据与边界
+## 证据与未通过项
 
-- **docs/evidence/fms-realtime-v5-2026-10-05/DELIVERY.md、checks.json、browser.json、desktop.png、mobile.png**。
-- 10文件105相关测试、lint/typecheck、构建42产物通过；15计划、22发布策略测试通过。不是全量旧套件、自动e2e或云端CI。
-- 编译页同日舰队各21位置、步兵11位置；在途舰队转港确认无位置重置。保存第22日20:36/tick2743后刷新，全部单位坐标精确一致；后续跨日结果看browser.json。
-- 428×926 Chromium无横溢出；面板底742.4/控制顶770.8，普通视口已恢复；无console warning/error。**不是iPhone13ProMax/iOS27 Safari/Chrome真机，不是用户视觉通过，不是稳定FPS证据。**
-- 首都/显示插值上一批证据docs/evidence/fms-continuous-motion-v5-2026-10-05；原作静态时钟链ORIGINAL_CLOCK.md继续有效：累计缩放deltaTime、跨日补算，默认0.1秒日长与七档[.1,.5,1,2,3,4,5]；网页3秒/日为较慢适配，非原作全链等价。
+证据目录：`docs/evidence/fms-battle-routes-v5-2026-10-05/`：DELIVERY、ORIGINAL_COMBAT、checks、unit、browser、build-check，以及attack-route/contact/mobile-withdraw-preview截图。
 
-## 后续与发布
+- 11文件122项相关测试、lint、typecheck、15计划测试、22发布策略测试、构建与42产物审查通过；不是全量旧套件、自动e2e或云端CI。大chunk警告保留。
+- 实际UI连续两地点确认、反向迎击、战斗暂停、分段损失、战中刷新恢复；最终构建确认框遮挡已修，无console warning/error记录。
+- 428×926 Chromium：无横溢出；面板底742.4，控制顶770.8，撤退确认/取消可用。**不是iPhone13ProMax/iOS27 Safari/Chrome真机，不是用户视觉或原作等价通过。** 短时rAF采样前后均极稀疏，尚不能证明稳定FPS改善；后续继续测量而非宣布流畅。
 
-- WEB-04-08下一批：只读核实原作海军交战入口/损失/撤退，再做可玩接入与原因/存档；先完成上面的9b83归档。陆地沿边拦截另列后续范围。
-- 指定安装目录只读：D:/steam/steamapps/common/FantasyMapSimulator。实际PE/IL2CPP29，非ELF/DWARF；未调用hk4e。DLL SHA d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b。本批未再次扫描/运行原作，不读认证/SDK/个人存档。
-- 政体/联盟附庸/家族信仰/训练/长期平衡/PWA/真机视觉待做，旧完整范围与正式设定保留。
-- 唯一未来云端链：私有Ethanhui6/lieguoji-web → Pages lieguoji-web，原生Git/main生产；旧站https://lieguoji-web.pages.dev/未更新。本批无push、远程PR/Issue/Milestone、上传或Pages触发；pre-push与发布锁保持。
+## 下一批与发布
 
-只在本地推进授权工作，不声称会话结束后后台自动开发。
+- WEB-04-11：用户已确认的自由绘制战线、多军真实集结/分路/协同推进；先建立预览合同和旧档隔离，不以装饰箭头冒充战线系统。微观游走/战斗表现与性能继续按真实证据优化。
+- WEB-04-08海战/封锁、运输登陆；完整行政/政体、家族信仰、长程平衡、历史/PWA与正式设定/真机视觉仍待做。不能扩出全部空面板。
+- 只读授权安装目录D:/steam/steamapps/common/FantasyMapSimulator；PE/IL2CPP29，不是假称ELF/DWARF/hk4e。未运行原作，不读认证/SDK/个人存档，不把原包/raw dump放进仓库或dist。
+- pre-push和发布锁未改；本轮无push、远程PR/Issue/Milestone、上传或Pages触发。唯一未来链仍私有Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git，旧站未更新。
+
+只在本地推进授权工程，不声称会话结束后继续后台开发。

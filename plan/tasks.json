@@ -2747,7 +2747,7 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-08"
+      "WEB-04-11"
     ],
     "phases": [
       {
@@ -3575,6 +3575,32 @@
             ],
             "progressNote": "已封存532842；v4/Store5真实日内陆海行军、节点接战、途中预览绑定tick、每日单次结算；半日双保存/刷新实测。",
             "completionScope": "权威日内位置、当前边不瞬移的后续改令、节点接触/占领、日结伤亡、确定性分批及同位置恢复；沿边拦截、连续伤亡和完整历史回放不在本切片完成范围。真机/视觉门未过。"
+          },
+          {
+            "id": "WEB-04-10",
+            "title": "持续陆地交锋与可预览的沿线进攻",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-09"
+            ],
+            "acceptance": "依据授权原包静态核实停军交锋、伤害间隔和独立Bezier进攻箭头；网页接入道路相遇、持续损耗、撤退、连续路点与战后续行，声明原作与适配边界；封存9b83并使用独立Store6，浏览器真实操作及存档回归。",
+            "evidence": [
+              "docs/evidence/fms-battle-routes-v5-2026-10-05/ORIGINAL_COMBAT.md",
+              "docs/evidence/fms-battle-routes-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-battle-routes-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-battle-routes-v5-2026-10-05/browser.json"
+            ],
+            "completionScope": "本地有限陆战/连续路点切片：道路扫掠接触、持续同时伤亡、实际位置撤退、预览确认与战后续行，原作Bezier方向箭头与真实道路分离，v4完整归档/Store6隔离/实际战中保存恢复。原作省内cell游走、完整效率/AI与战线协同未恢复；稀疏浏览器采样不证明流畅度，真机/用户视觉仍未通过。"
+          },
+          {
+            "id": "WEB-04-11",
+            "title": "自由绘制战线与多军协同推进",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-10"
+            ],
+            "acceptance": "用户明确两种都要、先做连续地点：后续可绘制战线并选择多军，预览真实可达集结/各军分段道路、确认后协同推进；保留各军战损与撤退状态，不能仅画装饰箭头。先封存已有f50f/Store6再改变规则，并继续核实原作行为；真机/视觉独立验收。",
+            "evidence": []
           }
         ]
       },
@@ -4108,14 +4134,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T11:27:13.125Z",
+      "at": "2026-10-05T12:18:21.727Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "91182cc0deeb04d9066045be45a67528c981add7",
-      "lastSourceCommit": "91182cc0deeb04d9066045be45a67528c981add7",
+      "lastCheckpointCommit": "6593a5efe956626e79e7c7dbd92c92c5af3ffd82",
+      "lastSourceCommit": "6593a5efe956626e79e7c7dbd92c92c5af3ffd82",
       "newCodeSinceCheckpoint": false,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-08 原作海军交战入口核实与可玩接战；09权威日内有限切片已完成。当前9b83/Store5已有真实保存，后续改规则前先封存完整组合。",
+      "nextFocus": "WEB-04-11 战线绘制/多军协同；后续修改规则前先封存f50f完整13kernel+8entry和Store6。性能/省内游走待优化，真机与视觉未过。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4701,7 +4727,7 @@
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
       ],
-      "nextFocus": "WEB-04-04：优先让世界持续产生变化的军力补充与玩家干预；原作来源恢复与可玩适配并行，不重复已接入词库、色表或动态标签。不把所有阶段标完成。"
+      "nextFocus": "WEB-04-11 用户已确认的绘制战线/多军协同；连续地点进攻有限切片WEB-04-10已完成。WEB-04-08海战仍在待办。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -4827,6 +4853,31 @@
       "physicalDevice": "not_run",
       "userVisual": "pending",
       "cloudWritesAllowed": false
+    },
+    "battlePrototype": {
+      "sourceCommit": "6593a5efe956626e79e7c7dbd92c92c5af3ffd82",
+      "engine": "f50fbe73b6980108c33cebac67edc704d3910905170a53e11a932e287410351a",
+      "version": 5,
+      "rules": "fms-battle-1",
+      "database": "lieguoji-fms-battle-v1",
+      "status": "local-bounded-land-combat-slice",
+      "userConfirmed": "连续地点进攻与绘制战线都要，先做连续地点",
+      "evidence": [
+        "docs/evidence/fms-battle-routes-v5-2026-10-05/ORIGINAL_COMBAT.md",
+        "docs/evidence/fms-battle-routes-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-battle-routes-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-battle-routes-v5-2026-10-05/browser.json"
+      ],
+      "originalParity": false,
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "performanceAccepted": false,
+      "cloudWrites": false,
+      "finalRun": {
+        "id": "fms-67d99f08-09b1-4114-8aac-4c8b4fffc463",
+        "tick": 3225,
+        "revision": 4
+      }
     }
   }
 }

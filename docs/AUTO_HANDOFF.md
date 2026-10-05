@@ -1,34 +1,36 @@
 # 当前续接：Fantasy Map Simulator 网页移植 V5
 
-更新：2026-10-05，原包降水河网和河流增湿已接入气候地貌；可见河段与分类使用同一组最终河流。先读 CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild 并核实 Git；本文件优先于旧批次记录。
+更新：2026-10-05，已将恢复的气候/降水河网移入可取消Worker，计算期间显示当前高度地图，保持导航和历史正确。先读 CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild 并核实 Git；本文件优先于旧批次记录。
 
 ## 当前检查点
 
-- 功能源码 **a200a00a9b75a05bd707374bb5fc5c76b76802c5**（原降水河网/增湿/同源渲染）；之后为文档证据checkpoint，续接查Git。本批开始于175a8a2，气候入口235224d + 失败降级ef4aad5、高度3420537、海洋c6008b0、点击模板2d4d589、原生Hill fd9f366保留。
+- 功能源码 **20792cb8b3f024f817b678137b0eb5b36df5f08e**（气候/河网Worker与异步显示）；之后为文档证据checkpoint，续接查Git。本批开始于f5b8371。原数值a200a00、气候入口235224d + 降级ef4aad5、高度3420537、海洋c6008b0、点击模板2d4d589、原生Hill fd9f366保留。
 - **WEB-PH02 / WEB-02-01 仍 in_progress**；nextBatch仅WEB-02-01。iPhone13ProMax（用户报告iOS27）Safari/Chrome真机与用户视觉门未过，不扩建国家、行政、家族、信仰。
 - 原海陆笔刷、闭合轮廓、原Hill、pangea/highIsland点击模板、海岸保护、玩家锁、候选对照/取消/确认、撤销与存档保留。
 
 ## 本批可玩变化与限制
 
-- “气候地貌（试算）”本批接入原活动FIFO填洼、降水flux、强支流接管、短路径淘汰和最终riverIds。地貌分类的河流增湿及可见河段使用同一份最终河流，不把旧面积源量当原flux。高度/阴影视图仍显示原有汇水面积水系。
+- 本批将“气候地貌（试算）”采样、分类、FIFO河网和增湿整体迁入module Worker；原数值没有改。新文档立即显示自身高度/面积水系，完成后颜色与气候河流一起切换；提示等待但不阻塞导航。
+- 取消、显示切换、候选对照和历史选择拥有当前请求；旧线程终止，已排队迟到成功/失败也不能覆盖新目标。输入克隆但不转移历史数组，只转移派生输出8个TypedArray缓冲。最多保留3份地形缓存，上下文丢失/销毁时清理。
+- 原活动FIFO填洼、降水flux、强支流接管、短路径淘汰和最终riverIds来自上批。地貌增湿与可见河段仍同源，高度/阴影仍是原面积水系，不混用单位。
 - 降水最长边192规则格采当前Float32三角面；最终顶点温度按自身真实高度/纬度计算，修复小岛雪峰落在采样间隙却误用海温的问题。气候格不替换显示几何，不移动h20海岸。
 - **原河流增湿已接入**：仅有最终riverId的自身点加max(flux/10,2)，再与陆地邻点原降水平均。湿地分支在原JS关闭，未伪造启用。使用原初始场景north/south=.9/-.9、PrecInput80、温度offset0，seed1337明确为网页选择，不称原运行世界或存档值。
 - 保留原Uint16 flux逐次截断/回绕与Uint8临时合流；当前真实图与规则降水格的映射、haven缺失哨兵-1、沿海距离127封顶、真实网格边界是明确网页适配。未侵蚀或写高程。每点降水流量受加密密度影响，不声称面积守恒/物理流量或分辨率不变。
 - 河流沿接受路径的实际邻接段绘制，真实h20河口裁剪；原meander/宽度网格尚未移植，使用网页有上限线宽。当前截图细支流偏密，仍须后续视觉处理，不能把算法恢复称作原作观感完成。
 - 地貌混色为原色+网页linear邻接混合和连续三角插值。原4096RT/81tap模糊尚未接入，未称原作最终画面等价。小于气候格的细部降水响应仍有精度限制。
 - 显示选择不写文档或存档；默认高度配色，刷新恢复默认。单纯模式切换不重建海岸；最多缓存3份派生气候快照。
-- 气候预算失败时，单独切换保留旧显示；撤销/重做/取消/候选展示统一切回高度、重绘真正目标文档并同步选项和提示，避免画面与历史分离。其他渲染错误不吞掉。失败路径有5项单元回归，未做浏览器故障注入。
+- 异步启动/克隆/消息/计算/超时失败统一保留真正目标的高度视图、同步选项并允许重试，不回到旧地图。GPU更新异常另入错误态，可保存内存地图；不是气候降级成功。错误/乱序/超时有单元测试；未在浏览器注入故障。
 
 ## 真实检查与浏览器证据
 
-- 最终 **28文件459/459相关测试、全src/tests/scripts lint、typecheck、生产build通过**。dist39个允许产物，build.json绑定a200a00；计划11、发布锁22通过。相对175a8a2原计划非webRebuild字段和首份体验门逐字段相等。未声称全旧工程测试或云端CI全通过。
-- 独立只读复核提供有效3×3手算合流夹具：56与113合流为169，强支流接管；短支流[1,4]淘汰，保留[3,4,7]。有flux但无最终riverId的点不得获得河流增湿。原文本/恢复脚本未执行。
-- 开发40789点/80812三角面：初次气候+河网计算约302.1ms（此桌面一次采样，非手机性能），518条接受河流、2595河流陆地点、2363条可见线段，406点分类受增湿改变。maxFlux1483、未达海组件0、溢出0。陆地温度-17..26。自然化候选重算、原图对照/模式切换/取消正常；取消恢复原网络，重复切换复用缓存。
-- 开发显示/候选取消/刷新前后，完整已存current及beforeProtection序列化相等；revision49、590保护点保留。本批persistence未修改，没有为显示功能写存档。当前开发/最终生产均为a200a00源码。
-- 最终生产严格CSP下海岸Worker真实加密 **37550→37705→取消37550**；biome/relief切换、不同网格对照、取消恢复原分类，刷新回height。完整current及beforeProtection与本批前相等；控制台warning/error为空。
-- 桌面Chromium1280×720；开发竖屏428×926，无横向溢出，候选卡下拉44px高、取消/对照/确认按钮可见。**尺寸仿真不等于iPhone、Safari/WebKit或实际触控验收。**
-- 本批开始两端口已不存活；在项目内用官方Node/Vite隐藏进程恢复，无清存档、改安全头或跳检查。最终HTTP200，严格CSP保留；开发与生产warning/error均为空。
-- [本批恢复合同](evidence/fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md)、[统一检查](evidence/fms-river-climate-v5-2026-10-05/checks.json)、[开发](evidence/fms-river-climate-v5-2026-10-05/dev-browser.json)、[最终生产](evidence/fms-river-climate-v5-2026-10-05/production-browser.json)、[指纹](evidence/fms-river-climate-v5-2026-10-05/verification.json)。同目录有高度/降水河网对照、竖屏候选、最终可玩页面和生产网格预览截图。上批气候/材质来源见fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md，旧证据保留。
+- 最终 **30文件486/486相关测试、全src/tests/scripts lint、typecheck、生产build通过**；新增27个Worker/乱序/终止/缓存回归，既有459项保留。dist40个允许产物，build.json绑定20792cb；新biome.worker哈希产物为审查必需。计划11、发布锁22通过；相对f5b8371非webRebuild字段与首份门相等。未称全旧工程或云端CI通过。
+- 初次typecheck的postMessage transfer签名失败已改为options.transfer，首次记录保留，最终检查全通过。本批只读子代理未启动，未把等待中的审计记作已复核；上批独立合流夹具证据保留。
+- 开发40789点/80812面：统计与a200a00完全相同，518条接受河流/406点增湿分类变化保留；计算在Worker一次296.3ms。明确观察到pending=true时放大1.0→1.4。1.8秒窗口476帧、最大间隔50ms、一次53ms主线程长任务；不是完整性能基准或手机验收，未定位该长任务全部归因。
+- 候选气候pending=true时取消，恢复原图后再次检查无迟到替换。428×926竖屏气候pending=true时切回高度，显示/状态正确且无横向溢出。原图/候选/缓存切换正常。
+- 开发完整current/beforeProtection前后及刷新后相同；revision49、590保护点保留。初次冷计时/取消在最终提示文案收敛前，计算及控制代码未改；竖屏与最终生产为20792cb。未为本批功能写存档。
+- 最终生产严格CSP下确认海岸 **37550→37705→撤销37550→重做37705→撤销37550**；重做pending=true时撤销，最终原分类完全恢复。原图对照正确；current及beforeProtection不变。测试脏历史页reload没有实际导航，未记通过；随后新页恢复并在干净页真实刷新，revision14/371锁点/height/无脏状态恢复。
+- 桌面Chromium1280×720与竖屏尺寸仿真，**不是iPhone/Safari/WebKit或实际触控验收**。两端口本批复用，HTTP200/严格CSP不变，开发/生产warning/error为空。原包未执行。
+- [本批合同](evidence/fms-climate-worker-v5-2026-10-05/CLIMATE_WORKER.md)、[统一检查](evidence/fms-climate-worker-v5-2026-10-05/checks.json)、[开发](evidence/fms-climate-worker-v5-2026-10-05/dev-browser.json)、[生产](evidence/fms-climate-worker-v5-2026-10-05/production-browser.json)、[指纹](evidence/fms-climate-worker-v5-2026-10-05/verification.json)，同目录有竖屏及当前页面截图。原数值合同见fms-river-climate-v5-2026-10-05/ORIGINAL_RIVER_FLUX.md，气候材质合同见fms-biomes-v5-2026-10-05/ORIGINAL_BIOMES.md。
 
 ## 原包恢复事实，续接不重复拆解
 
@@ -41,7 +43,7 @@
 
 ## 下一批实际绘图工作
 
-1. 优先将冷气候/降水河网计算移出主线程（当前桌面一次302ms），保证候选、对照、取消、撤销、重做及失败降级始终展示实际目标；不得迟到覆盖新的地图/显示。不要重做已恢复的flux/温度/调色/材质索引。
+1. 气候/河网Worker已接通，不重复迁移。优先有界恢复原河道meander/宽度网格，按当前真实流路适配可玩画面，改善细支流密度和缩放表现。原温度/flux/调色不重做；结合实际热点再优化主线程克隆、验证、GPU提交和河段绘制。
 2. 补原生最终Biom捕获触发、SDF Camera10195海陆alpha输入；原4096模糊与网页连续混色差异要量化后选实现，不因有贴图就整包导入。
 3. 海湾/岬角自然感、粗层级折角、最初主体轮廓永久锚点、原KD nearest tie/float桥接和手机主线程耗时仍未完成。继续不依赖人工门的绘图工程，用户确认方向后才扩系统。
 
@@ -49,7 +51,7 @@
 
 - 分支codex/ph06-world-generation；既有remote https://github.com/Ethanhui6/lieguoji-web.git；hooksPath=.githooks。唯一Pages原生Git链lieguoji-web，main生产/其他分支预览。
 - **禁止push/tag、远程PR/Issue/Milestone、上传及Pages触发。** 本地通过不等于云端CI或发布解锁。旧站未改，未另建部署链。
-- 开发 http://127.0.0.1:5180/?fms=1 PID9420/tab29（停在气候地貌）；生产 http://127.0.0.1:5181/?fms=1 PID11808/tab30。隐藏Node/Vite进程，仅绑定127.0.0.1；不是手机或公网入口，不保证后续存活，续接先核实。两个旧exec session已失效，不复用。
+- 开发 http://127.0.0.1:5180/?fms=1 PID9420/tab1（停在气候地貌）；生产 http://127.0.0.1:5181/?fms=1 PID11808/tab3（恢复原存档高度视图）。旧标签已失效，本批新建。隐藏Node/Vite进程仅绑定127.0.0.1；不是手机或公网入口，不保证后续存活，续接先核实。
 - 两origin独立lieguoji-fms-web-v1/DB2；未读写旧4173草稿。persistence没改，CAS、原子升级、backup v1归档、未来版锁写和多标签保护保留。完整存档不入Git/dist。
 - 旧08:00之后用户直接继续请求已恢复本地授权；未创建/延长自动化，不声称会话结束后继续开发。
 - 只读指定FantasyMapSimulator安装目录，不读认证/SDK/envs.log/个人存档；正式CANON/五国验收和历史范围保留。历史高度/海洋批次见Git8f81f5b版交接及各evidence目录。

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "lint",
+    "at": "2026-10-05T01:50:24.377Z",
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "typecheck",
+    "at": "2026-10-05T01:50:24.392Z",
+    "code": 2,
+    "stdout": "src/fms/biome.worker.ts(22,29): error TS2769: No overload matches this call.\r\n  Overload 1 of 2, '(message: any, targetOrigin: string, transfer?: Transferable[] | undefined): void', gave the following error.\r\n    Argument of type 'ArrayBuffer[]' is not assignable to parameter of type 'string'.\r\n  Overload 2 of 2, '(message: any, options?: WindowPostMessageOptions | undefined): void', gave the following error.\r\n    Type 'ArrayBuffer[]' has no properties in common with type 'WindowPostMessageOptions'.\r\n",
+    "stderr": ""
+  },
+  {
+    "name": "tests",
+    "at": "2026-10-05T01:50:24.396Z",
+    "code": 0,
+    "stdout": "\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  30 passed (30)\n      Tests  485 passed (485)\n   Start at  09:50:27\n   Duration  24.16s (tests 88%, import 10%, transform 2%)\n\n    Isolate  30 workers spawned · ~150ms startup each (spawn + environment, per file)\n             at least ~2.10s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  }
+]

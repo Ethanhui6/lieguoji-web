@@ -2,13 +2,23 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fingerprintSources, normalized } from './engine-fingerprint.ts';
 import { sha256 } from './engine-fingerprint.ts';
-const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profile.ts','src/fms/play/military-actions.ts','src/compat/v0_4/sim/core.ts','src/compat/v0_4/sim/statecraft.ts','src/compat/v0_4/sim/types.ts','src/compat/v0_4/history/types.ts','src/fms/play/mobilization.ts'];
+const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profile.ts','src/fms/play/military-actions.ts','src/compat/v0_4/sim/core.ts','src/compat/v0_4/sim/statecraft.ts','src/compat/v0_4/sim/types.ts','src/compat/v0_4/history/types.ts','src/fms/play/mobilization.ts','src/fms/play/sea-path.ts','src/fms/play/navy.ts'];
 // Kernel dependencies are closed and checked by fingerprintSources. These
 // additional entry/initial-condition sources bind dispatch, conversion and
 // starting worlds too. Terrain drawing is an input format, not the daily kernel.
 const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json'];
 export const fmsPlayFiles=[...kernelFiles,...entryFiles];
 export function fingerprintFmsPlay(){
+  const mobilizationRoot='src/fms/play/compat/mobilization1';
+  const mobilization=JSON.parse(readFileSync(`${mobilizationRoot}/manifest.json`,'utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
+  const mobilizationSources=new Map<string,string>();
+  for(const f of mobilization.files){
+    if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)(\.source)?$/.test(f.archive))throw Error('Unsafe mobilization archive path');
+    const source=normalized(readFileSync(`${mobilizationRoot}/${f.archive}`,'utf8'));if(sha256(source)!==f.sha256)throw Error('Frozen mobilization1 source changed');mobilizationSources.set(f.path,source);
+  }
+  const mobilizationHash=createHash('sha256').update(fingerprintSources(mobilization.kernel,f=>mobilizationSources.get(f)!));
+  for(const f of mobilization.entries)mobilizationHash.update(`\n${f}\n${mobilizationSources.get(f)}\n`);
+  if(mobilization.fingerprint!=='52f49f7ff95ea717d0f9f19c2f2efb3a86861f0fe7f49e62b41212a357ee50ef'||mobilizationHash.digest('hex')!==mobilization.fingerprint)throw Error('Frozen mobilization1 fingerprint changed');
   const oldRoot='src/fms/play/compat/military1';
   const old=JSON.parse(readFileSync(`${oldRoot}/manifest.json`,'utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
   const sources=new Map<string,string>();

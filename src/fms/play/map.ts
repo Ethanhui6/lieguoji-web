@@ -5,6 +5,7 @@ import type { World } from '../../sim/types';
 import { armyMarkers } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
+import { drawNavy, type NavalView } from './naval-map';
 
 export class PlayMap {
   readonly layer = new Container();
@@ -16,7 +17,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}}): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
     const g = new Graphics(), marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
@@ -83,5 +84,6 @@ export class PlayMap {
         marks.stroke({color:0xfff0b0,width:2*pixel,alpha:.9});
       }
     }
+    if(naval)drawNavy(this.layer,world,scale,zoom,naval);
   }
 }

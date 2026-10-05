@@ -19,7 +19,13 @@ export class PlayMap {
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
   private battles:{id:string;x:number;y:number;armies:string[];losses:Record<string,number>}[]=[];
+  private battleWidgets:{ids:string[];bar:Graphics;r:number;pixel:number;text?:Text}[]=[];
   battlePositions(){return this.battles;}
+  updateBattles(world:World,state:BattleState){
+    const armies=new Map(world.armies.map(a=>[a.id,a]));
+    for(const widget of this.battleWidgets){const e=state.engagements.find(e=>e.armies.includes(widget.ids[0]));if(!e)continue;const strength=widget.ids.reduce((s,id)=>s+(armies.get(id)?.troops??0),0),loss=widget.ids.reduce((s,id)=>s+(e.losses[id]??0),0),{bar,r,pixel}=widget;bar.clear().rect(-11*pixel,(r+3)*pixel,22*pixel,3*pixel).fill(0x26332d).rect(-11*pixel,(r+3)*pixel,22*pixel*strength/Math.max(1,strength+loss),3*pixel).fill(0xd5dfa1);if(widget.text)widget.text.text=String(strength);}
+    for(const b of this.battles){const e=state.engagements.find(e=>e.id===b.id);if(e)b.losses=e.losses;}
+  }
   capitalPositions(){return this.capitals;}
   unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
   pickUnits(point:Point){return this.unitPositions().map(p=>({...p,distance:Math.hypot(p.x-point.x,p.y-point.y)})).filter(p=>p.distance<=(p.kind==='army'?22:18)).sort((a,b)=>a.distance-b.distance);}
@@ -36,7 +42,7 @@ export class PlayMap {
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[]}): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
-    this.unitGroups=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
+    this.unitGroups=[];this.battleWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     this.capitals=world.nations.flatMap(n=>{const c=world.cities.find(c=>c.id===n.capitalId);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
     const g = new Graphics(), marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
@@ -56,7 +62,7 @@ export class PlayMap {
     }
     const label = (text: string, x: number, y: number, size: number, color = '#f9f1d4',parent=this.layer) => {
       const t = new Text({ text, style: { fontFamily: 'Georgia, serif', fontSize: size, fill: color, fontWeight: 'bold', stroke: { color: '#263d40', width: 3 } } });
-      t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); parent.addChild(t);
+      t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); parent.addChild(t);return t;
     };
     const countryLabels=this.territories.map(territory=>{
       const n=nations.get(territory.nationId)!,size=Math.max(13,Math.min(27,territory.clearance/scale*zoom*.65));
@@ -110,11 +116,12 @@ export class PlayMap {
       if(marker.ids.length>1)label(String(marker.ids.length),x,y+5*pixel,9,'#f9f1d4',container);
       else if((marker.near||active)&&texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=(r*2-3)*pixel;sprite.height=(r*2-3)*pixel;sprite.position.set(x,y);container.addChild(sprite);}
       else marks.moveTo(x-2*pixel,y+3*pixel).lineTo(x-2*pixel,y-3*pixel).lineTo(x+3*pixel,y-1*pixel).stroke({color:0xfff3d4,width:pixel});
-      if(active)label(String(army.troops),x,y+26*pixel,11,'#f9f1d4',container);
-      if(battle){const members=marker.ids.map(id=>byArmy.get(id)!),strength=members.reduce((s,a)=>s+a.troops,0),loss=members.reduce((s,a)=>s+(battle.losses[a.id]??0),0);marks.rect(-11*pixel,(r+3)*pixel,22*pixel,3*pixel).fill(0x26332d).rect(-11*pixel,(r+3)*pixel,22*pixel*strength/(strength+loss),3*pixel).fill(0xd5dfa1);if(marker.near&&!active)label(String(strength),0,-(r+3)*pixel,9,'#fff3d4',container);}
+      const strengthText=active?label(String(army.troops),x,y+26*pixel,11,'#f9f1d4',container):undefined;
+      if(battle){const bar=new Graphics();container.addChild(bar);const text=strengthText??(marker.near?label('',0,-(r+3)*pixel,9,'#fff3d4',container):undefined);this.battleWidgets.push({ids:marker.ids,bar,r,pixel,text});}
       if(army.status==='marching'||army.status==='retreating')marks.poly([x+(r+1)*pixel,y-3*pixel,x+(r+5)*pixel,y,x+(r+1)*pixel,y+3*pixel]).fill(army.status==='retreating'?0xfacba0:0xfff8d6);
     }
     for(const e of combat?.state.engagements??[]){const p=engagementPoint(world,e),x=p.x/scale,y=p.y/scale,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,8*pixel).fill({color:0x392c28,alpha:.85}).stroke({color:0xeedab9,width:pixel});mark.moveTo(x-4*pixel,y-4*pixel).lineTo(x+4*pixel,y+4*pixel).moveTo(x+4*pixel,y-4*pixel).lineTo(x-4*pixel,y+4*pixel).stroke({color:0xffe4b4,width:2*pixel});}
+    if(combat)this.updateBattles(world,combat.state);
     if(naval)this.shipLayer=drawNavy(this.layer,world,scale,zoom,naval,frame?.fleets);
     // Original package's CityCapitalFinal: dark outer disc / white ring / dark
     // center. Keep capitals above terrain/country labels and ordinary cities.

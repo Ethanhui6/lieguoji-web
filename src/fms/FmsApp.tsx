@@ -81,7 +81,11 @@ export default function FmsApp() {
       if(!saved)setNotice('正在准备空白海洋…');
       const document=saved?.document??await createFmsDocument({signal:lifetime.signal}); if(disposed)return;
       const history=new FmsEditHistory(document);
-      renderer=new FmsRenderer(); await renderer.init(host.current!); if(disposed)return;
+      renderer=new FmsRenderer(state=>{
+        if(disposed)return;
+        setTerrainDisplay(state.requested);
+        setDisplayNotice(state.error?'气候地貌暂不可用，已保留当前地图的高度视图；可重新选择重试。':state.pending?'正在计算气候与河流，暂显示高度；可以继续移动、缩放。':'');
+      },error=>{if(!disposed){renderUnavailable.current=true;setFatal(messageOf(error));setNotice('地图显示未能更新，未保存的绘图仍可保存。');}}); await renderer.init(host.current!); if(disposed)return;
       const viewport={width:host.current!.clientWidth,height:host.current!.clientHeight};
       const s = {history,renderer,viewport,camera:fitCamera(document,viewport),storedRevision:saved?.storedRevision??null,savedDocumentRevision:saved?document.revision:-1} as Session;
       s.gestures=new FmsGestures({camera:()=>s.camera,world:()=>s.history.document,viewport:()=>s.viewport,
@@ -249,7 +253,7 @@ export default function FmsApp() {
     }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   };
-  const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);setTerrainDisplay(display);setDisplayNotice('');}catch(error){setNotice(messageOf(error));}};
+  const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);}catch(error){setNotice(messageOf(error));}};
   return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
     <div className="fms-map" ref={host}/>
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button onClick={()=>choose('template')} disabled={!editable}>原作地形</button><button className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}>{busy?'保存中…':'保存'}<span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>

@@ -61,6 +61,9 @@ if (!files.some(file => /^assets\/replay\.worker-[A-Za-z0-9_-]{8}\.js$/.test(fil
 if (!files.some(file => /^assets\/atlas\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/atlas.worker-<hash>.js', 'required isolated atlas draft Worker is missing');
 }
+if (!files.some(file => /^assets\/biome\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
+  reject('assets/biome.worker-<hash>.js', 'required isolated climate and rainfall river Worker is missing');
+}
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }

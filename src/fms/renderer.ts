@@ -8,7 +8,8 @@ import { deriveFmsShade } from './shading';
 import { clipFmsRiverSegments } from './river-geometry';
 import { createFmsOceanSource, FmsOceanFields, FMS_OCEAN_CONTRACT, FMS_OCEAN_DEEP, FMS_OCEAN_SHALLOW } from './ocean-surface';
 import { FMS_COLOR_GLSL, FMS_HEIGHT_PALETTE_CONTRACT, srgbToLinear, type FmsTerrainDisplay } from './height-palette';
-import { FmsBiomeFields, type FmsBiomeSurface } from './biome-surface';
+import type { FmsBiomeSurface } from './biome-surface';
+import { FmsBiomeDisplay, type FmsBiomeDisplayState } from './biome-display';
 
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; the derived ocean texture changes only color, never coastline.
@@ -72,7 +73,7 @@ export class FmsRenderer {
   private protection = new Graphics();
   private surfaces = new WeakMap<Int32Array, { points:FmsDocument['points']; neighbors:FmsDocument['neighbors']; triangles:FmsDocument['triangles']; width:number; height:number; drainage: FmsDrainage; shade: Float32Array; relief: number }>();
   private oceanFields = new FmsOceanFields();
-  private biomeFields = new FmsBiomeFields();
+  private biomeFields = new FmsBiomeDisplay(state=>this.applyBiomeDisplay(state));
   private currentDocument?: FmsDocument;
   private oceanSource?: BufferImageSource;
   private oceanUniforms?: UniformGroup;
@@ -86,6 +87,7 @@ export class FmsRenderer {
   private terrainDisplay: FmsTerrainDisplay = 'height';
   private worldId?: string;
   private bound?: Graphics;
+  constructor(private onDisplayState:(state:FmsBiomeDisplayState)=>void=()=>{},private onDisplayError:(error:unknown)=>void=error=>{throw error;}){}
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
   async init(host: HTMLElement): Promise<void> {
     await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#1487ff', preference: 'webgl' });
@@ -93,7 +95,7 @@ export class FmsRenderer {
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
     this.canvas.setAttribute('aria-label','创世地图画布'); this.canvas.setAttribute('data-testid','fms-canvas'); this.canvas.tabIndex = 0;
     host.appendChild(this.canvas); this.app.stage.addChild(this.scene);
-    this.canvas.addEventListener('webglcontextlost', () => { this.contextLost = true; });
+    this.canvas.addEventListener('webglcontextlost', () => { this.contextLost = true; this.biomeFields.close(); });
   }
   setDocument(doc: FmsDocument, drainage?: FmsDrainage): void {
     if (this.destroyed || this.contextLost) return;
@@ -108,18 +110,17 @@ export class FmsRenderer {
       this.surfaces.set(doc.elevations,surface);
     }
     const ocean = this.oceanFields.get(doc);
-    // Derive before touching the current mesh. An unsupported climate candidate
-    // must leave the displayed document intact and remain cancellable.
-    const biome=this.terrainDisplay==='biome'?this.biomeFields.get(doc):undefined;
+    // Always display the actual new geometry immediately. Cold optional climate
+    // follows asynchronously; never hold an old candidate mesh on screen.
     if (this.worldId !== doc.worldId || this.meshDocument?.points!==doc.points || this.meshDocument?.triangles!==doc.triangles
       || this.meshDocument?.width!==doc.width || this.meshDocument?.height!==doc.height) {
       this.clearMesh();
       const positions = new Float32Array(doc.points.length * 2);
       doc.points.forEach((p, i) => { positions[i * 2] = p[0]; positions[i * 2 + 1] = p[1]; });
-      this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' }, aBiomeColor:{buffer:biome?.colors??new Float32Array(doc.points.length*3),format:'float32x3'} }, indexBuffer: doc.triangles.slice() });
+      this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' }, aBiomeColor:{buffer:new Float32Array(doc.points.length*3),format:'float32x3'} }, indexBuffer: doc.triangles.slice() });
       this.geometry.autoGarbageCollect = false;
       this.oceanSource = createFmsOceanSource(ocean);
-      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:this.terrainDisplay==='height'?1:0,type:'f32'},uBiomeView:{value:this.terrainDisplay==='biome'?1:0,type:'f32'} });
+      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:1,type:'f32'},uBiomeView:{value:0,type:'f32'} });
       this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v3' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });
@@ -130,14 +131,11 @@ export class FmsRenderer {
       const buffer = this.geometry.getBuffer('aHeight'); buffer.data = Float32Array.from(doc.elevations); buffer.update();
       const shades=this.geometry.getBuffer('aShade');shades.data=surface.shade;shades.update();
       const lake=this.geometry.getBuffer('aLakeDepth');lake.data=surface.drainage.lakeDepth;lake.update();
-      if(biome){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=biome.colors;colors.update();}
     }
-    this.currentDocument=doc;this.updateBiomeMetrics(biome);
-    this.drawRivers(doc,biome);
+    this.currentDocument=doc;
     this.canvas.dataset.minHeight=String(Math.min(...doc.elevations));
     this.canvas.dataset.pointCount=String(doc.points.length);this.canvas.dataset.triangleCount=String(doc.triangles.length/3);
     this.canvas.dataset.maxHeight=String(Math.max(...doc.elevations));
-    this.canvas.dataset.terrainDisplay=this.terrainDisplay;
     this.canvas.dataset.heightPalette=FMS_HEIGHT_PALETTE_CONTRACT;
     this.canvas.dataset.lakeCells=String(surface.drainage.stats.filledLandCells);
     this.canvas.dataset.drainageAlgorithm=surface.drainage.stats.algorithm;
@@ -168,19 +166,26 @@ export class FmsRenderer {
     }
     this.canvas.dataset.lockedCells=String(doc.terrainLocks?.reduce((sum,value)=>sum+value,0)??0);
     this.canvas.dataset.lockedTriangles=String(lockedTriangles);
+    this.biomeFields.select(doc,this.terrainDisplay);
     this.draw();
   }
   /** Display only: keep candidate geometry, camera, history and caches intact. */
   setTerrainDisplay(display: FmsTerrainDisplay): void {
     if(this.destroyed||this.contextLost)return;
-    const biome=display==='biome'&&this.currentDocument?this.biomeFields.get(this.currentDocument):undefined;
-    if(biome&&this.geometry){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=biome.colors;colors.update();}
     this.terrainDisplay=display;
-    if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.uniforms.uBiomeView=display==='biome'?1:0;this.oceanUniforms.update();}
-    if(this.initialized)this.canvas.dataset.terrainDisplay=display;
-    this.updateBiomeMetrics(biome);
-    if(this.currentDocument)this.drawRivers(this.currentDocument,biome);
-    this.draw();
+    if(this.currentDocument)this.biomeFields.select(this.currentDocument,display);
+  }
+  private applyBiomeDisplay(state:FmsBiomeDisplayState):void {
+    if(this.destroyed||this.contextLost)return;
+    try {
+      const {display,surface}=state;this.terrainDisplay=state.requested;
+      if(surface&&this.geometry){const colors=this.geometry.getBuffer('aBiomeColor');colors.data=surface.colors;colors.update();}
+      if(this.oceanUniforms){this.oceanUniforms.uniforms.uHeightView=display==='height'?1:0;this.oceanUniforms.uniforms.uBiomeView=display==='biome'?1:0;this.oceanUniforms.update();}
+      if(this.initialized){this.canvas.dataset.terrainDisplay=display;this.canvas.dataset.terrainRequested=state.requested;this.canvas.dataset.biomePending=String(state.pending);this.canvas.dataset.biomeExecution='worker';}
+      this.updateBiomeMetrics(surface);
+      if(this.currentDocument)this.drawRivers(this.currentDocument,surface);
+      this.draw();this.onDisplayState(state);
+    }catch(error){this.onDisplayError(error);}
   }
   private drawRivers(doc:FmsDocument,biome?:FmsBiomeSurface):void {
     const surface=this.surfaces.get(doc.elevations);if(!surface)return;
@@ -230,5 +235,5 @@ export class FmsRenderer {
     this.oceanSource?.destroy();this.oceanUniforms?.removeAllListeners();this.oceanSource=undefined;this.oceanUniforms=undefined;
     this.mesh=undefined; this.geometry=undefined; this.shader=undefined; this.worldId=undefined; this.bound=undefined;this.meshDocument=undefined;
   }
-  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.clear();this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
+  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.close();this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

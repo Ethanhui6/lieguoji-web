@@ -4010,8 +4010,8 @@
       "at": "2026-10-05T06:11:58.310Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "ae0a591",
-      "lastSourceCommit": "pending-local-commit",
+      "lastCheckpointCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580",
+      "lastSourceCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580",
       "newCodeSinceCheckpoint": true,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
       "nextFocus": "WEB-04-03：先按这版看海反馈优化关键干预与节奏，原地图素材/算法继续渐进适配；不回退成只做绘图研究。",
@@ -4623,8 +4623,10 @@
         "docs/evidence/fms-playable-v5-2026-10-05/PLAYABLE.md",
         "docs/evidence/fms-playable-v5-2026-10-05/browser.json",
         "docs/evidence/fms-playable-v5-2026-10-05/checks.json",
-        "docs/evidence/fms-playable-v5-2026-10-05/local-playtest.png"
-      ]
+        "docs/evidence/fms-playable-v5-2026-10-05/local-playtest.png",
+        "docs/evidence/fms-playable-v5-2026-10-05/committed-build.json"
+      ],
+      "sourceCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580"
     }
   }
 }

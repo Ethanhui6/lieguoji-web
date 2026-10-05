@@ -1,54 +1,40 @@
-# 当前续接：Fantasy Map Simulator 网页移植 V5
+# 当前续接：FMS 同图看海沙盒 V5
 
-更新：2026-10-05，已接入原河道弯曲/原生切线与逐点渐宽的网页切片。先读 CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild 并核实Git；本文件优先于旧批次记录。
+更新：2026-10-05。**用户当前要求先做关键可玩功能，后续再优化，并明确选择“看海沙盒：自动生成各国，看它们发展与战争，随时干预”。** 不要退回只研究河流/海岸而阻塞可玩内容。先核实 Git、CODEX_AUTOPILOT_V5.md、plan/tasks.json.webRebuild。
 
-## 当前检查点
+## 当前提交与执行范围
 
-- 功能源码 **518913a29630c1a9c8d0d493395427c667576232**。之后为证据文档checkpoint，续接查Git。本批开始0a204f0；上批Worker20792cb、原flux a200a00、气候入口235224d/ef4aad5、高度3420537、海洋c6008b0、点击模板2d4d589、原Hill fd9f366保留。
-- **WEB-PH02 / WEB-02-01仍in_progress**，nextBatch仅WEB-02-01。iPhone13ProMax（用户报告iOS27）Safari/Chrome真机及用户视觉门未过，不扩建国家、行政、家族、信仰。
-- 原海陆笔刷、闭合轮廓、原Hill、pangea/highIsland点击模板、海岸保护/玩家锁、候选对照/取消/确认、撤销和存档兼容保留。
+- 功能源码提交 **81b5d8db83afe72bf70b934b222b893ab44f0580**，分支 codex/ph06-world-generation；其后仅为本轮证据与本handoff检查点，续接用Git核实HEAD。
+- 当前开发阶段 WEB-PH04。WEB-03-01、WEB-04-01、WEB-04-02 有限核心子项已完成；下一批 WEB-04-03 看海节奏与干预可用性。
+- 用户本地顺序例外记录于 webRebuild.localDevelopmentException。WEB-PH02和WEB-PH03完整阶段仍in_progress，真实iPhone13ProMax（用户报告iOS27）Safari/Chrome及用户视觉状态不改；并未称完整阶段、原作移植或全游戏完成。
+- 原作资源/方法继续从授权安装目录只读适配，完整dump/安装包/认证/个人存档不进dist；本轮直接复用网页既有sim/core，不声称恢复原作全部国家AI。
 
-## 本批实际恢复与可玩变化
+## 现在如何试玩
 
-- 原活动JS addMeandering产生确定性内陆弯曲点；实际Unity桥只传xy，未把flux传给绘制。JS getRiverPath/getOffset虽存在，却未在当前活动绘制链调用，不能用它冒充原渲染。
-- 有界静态恢复World.DrawRiver → BorderDataProcessor.GetLineVertices → StateLineRenderer.SetRiverLines/DrawSingleRiver → BuildRiverPath。原生沿路径设置(.7+i*.7/N)*1.5厚度，切线为normalize(next-prev)、柄长为段长×curveAmount。
-- 使用原构造默认curveAmount=.5及1.05至小于2.1渐宽。**场景序列化覆盖、World.VoronoiTransformPoint和Prefab总尺度还没核实**；网页一地图单位映射一宽度单位、Math.round/6–12采样是明确适配，颜色仍为网页原值。不称完整原作外观等价。
-- 原接受河流路径直接产生曲线，flux/receiver/riverIds/降水与增湿分类未变。只有气候地貌使用新河带；高度/阴影视图仍为面积汇水水系。
-- 海岸混合面一环内保留直段，固定真实Float32 h20河口，避免细颈被弯曲切断。整个河带（包括宽度）在Worker中裁到对应陆地三角面，防止粗线越海；不移动地形或锁定点。
-- 单个非索引Mesh绘制河带；输出增加第9个派生TypedArray转移。保留Worker取消、迟到结果拒绝、3份缓存。每份河带最多12MB，另有每点/裁剪工作预算；超限走现有高度降级，可重试。输入/历史数组不转移，存档格式未改。
-- 当前画面仍有密集支流、靠海直段、湖边折角；7.5×实际截图有记录，更极端缩放、GPU耗时和手机内存未验收。本批未改UI布局或扩系统。
+- 当前用户浏览器地图：**http://127.0.0.1:5180/?fms=1**。已恢复第147日并暂停，点击“开始时间”即可看海。点“绘图”→退出推演→“进入世界”可从绘图原稿开新局；保存新局会将旧推演主档保留为一份备份。
+- 最终生产构建本地预览：**http://127.0.0.1:5181/?fms=1**，绑定上述源码提交；37550点测试原稿，独立保存了第1日世界。两个localhost origin存储隔离，不是手机可直连发布URL。服务是否还存活必须现场核实。
+- 开局2—8国，默认战乱，可选和平；同一FMS地形显示国家实控边界、首都/城市/军队，时间1/3/7倍、逐日、开始暂停；国家人口/粮储/实际结算与下日预测，国策、宣战/讲和，军队行军/撤退预览确认，事件原因。
+- 国家基础沿真实Float32 h20裁剪面聚合，固定比例至最长边1000；不填平内海、不制造跨海道路。极碎地图超规则限额明确拒绝并保留原稿。
+- 独立play Worker串行复用当前规则、校验命令预览day/nextEventId。绘图、模拟分离；原编辑器/弹窗背景inert，快捷键不写原稿；隐藏页面暂停。
+- 新库lieguoji-fms-play-v1将源地形与世界、实际规则指纹原子保存，CAS、主备、摘要、内外未来版本锁。原绘图/旧世界/旧战役库不写，完整存档未导出入仓。
 
-## 真实检查与浏览器证据
+## 本轮证据与边界
 
-- **31文件496/496相关测试、lint、typecheck、生产构建通过**；新增6项形状/海岸＋4项Worker异常测试。独立重心坐标oracle检查整河带三角形位于真实陆地面，覆盖21→0小岛、亚单位宽细颈/逐截面连通与合流。浮点容差见合同，未声称像素零误差。
-- 首次typecheck可空shader报错已修复，仅重跑lint/typecheck；496测试沿用本批真实首次时间。两次checkpoint因先引用、后生成证据文件的顺序错误而失败，保留完整证据后重验通过；失败日志保留。没有删除或跳过检查。只读子代理仍未启动，已停止等待，未记独立审查通过。
-- 生产40个允许产物，build.json绑定518913a；严格CSP（script/worker同源）下新Mesh、Worker正常工作。计划11、发布锁22通过；旧任务字段与首份门相对0a204f0保持不变。
-- 开发40789点、518条接受河流、2595河点、406处增湿分类变化保持原值；新河带4028曲段/308245三角形/7,397,880字节。一次Worker435.3ms，仅桌面样本。
-- 同一生产地图/2.7×相机前后对照：37550点、192条河、740河点、25处增湿变化不变；粗直段变渐宽曲线。新河带83074三角形/1,993,776字节，一次Worker264ms。
-- 生产海岸候选37550→37705，河带83074→85443三角形；查看原图恢复原河带，确认后计算中快速撤销/重做/撤销，最终原图恢复；另等待一次重做完成恢复候选，再撤销恢复原图。没有用pending时暂为空的河带计为绘制通过，JSON分别记录即时和完成态。
-- 428×926竖屏仿真检查2.7×/7.5×、折叠工具与无横向溢出；开发真实刷新回40789点/590锁点/默认height。两origin主档和beforeProtection整包只读摘要前后相同；生产新干净标签恢复revision14/371锁点。未保存测试改动，未输出完整存档。
-- 桌面Chromium控制台warning/error为空；**移动尺寸仿真不是iPhone/Safari/WebKit/实际触控验收**。未运行原包或恢复脚本，未做原进程联调。
-- [本批合同](evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md)、[检查](evidence/fms-river-shape-v5-2026-10-05/checks.json)、[生产](evidence/fms-river-shape-v5-2026-10-05/production-browser.json)、[竖屏](evidence/fms-river-shape-v5-2026-10-05/dev-browser.json)、[刷新](evidence/fms-river-shape-v5-2026-10-05/refresh.json)、[指纹](evidence/fms-river-shape-v5-2026-10-05/verification.json)，同目录有前后及竖屏截图。
+- docs/evidence/fms-playable-v5-2026-10-05/PLAYABLE.md 为完整合同；checks.json为实际统一命令日志，checkpoint.json为最后校验和源码摘要，committed-build.json为提交后构建。
+- 全量196文件2458测试通过；新增20项覆盖地理/战争/陈旧命令/原子存档/CAS/主备内层版本。计划15、发布22通过；lint/typecheck/build通过，42个白名单游戏产物。没有云端CI。本轮未跑完整旧Playwright e2e套件。
+- 浏览器实际开发图40789点：372辖区、6国、47城市、6军队，147日后81个实控变化区；已确认15日/90补给军令、军事国策、占领原因、保存刷新恢复。生产图：56辖区、6国、10城市，讲和/停战保护、1日结算、保存刷新恢复。严格生产CSP下play/biome Worker加载，控制台warning/error为空。
+- 428×926窄屏DOM无横向溢出、按钮44px、实际操作通过；宿主DPI导致竖屏截图裁切/留白，不将这些截图作为视觉通过。仅桌面Chromium与尺寸仿真；真机、WebKit、触控和主观视觉仍待用户。
+- 首次lint问题已修；只读复核指出的内层未来档回退覆盖、退出弹窗键盘穿透已修。一次Node直接写tasks.json遭瞬时UNKNOWN，文件完整且磁盘空间足；后续同目录临时文件写完并原子替换成功。失败未用于篡改状态。
+- 同轮用户优先级与验收说明已同步AGENTS/V5/重建计划；旧tasks/phaseState/programme/releasePolicy保持原样，首份门仅更新note说明用户例外，实际状态不改。
 
-## 原包既有恢复，勿从头重复
+## 下一批：先完善能玩的内容
 
-- Windows x64 PE / Unity2021.3.36f1 / IL2CPP29；按用户图片执行索引→小函数/材质恢复→网页切片→真实检查，不假称ELF/DWARF/hk4e。完整dump/资源仅在ignored .autopilot。
-- main.mjs温度2584–2632、降水2635–2795、Biomes3638–3752及World参数桥、5×26矩阵已核；reMarkFeatures/Rivers.generate/flowDown/defineRivers/alterHeights/实际FIFO fillDepression/calculateMoisture已适配。未误接原活动路径注释的resolveDepressions/Lakes气候。
-- 真实图降水映射、haven=-1、沿海距离127封顶、图边界是网页适配；每点flux随图密度变化，不是面积守恒物理流量。气候最长边192格，最终顶点温度使用自身高度。原初始north/south=.9/-.9、PrecInput80、offset0；seed1337为网页选择。
-- World.Awake→Materials/LandMaterial→ResourceManager13→resources Material10→Shader322 Unlit/LandShader。RenderBiomByProvince写_MainTex=biomTexture；未使用的noise-rgb未提取。
-- biomTexture→sharedassets0 RT204 Biom4096²→Camera10198 HeightBiomCamera(layer9)→GaussianBlur组件37454/Shader183。Start停用GO；CaptureImage调用Camera.Render；OnRenderImage一次81tap blit、alpha强制1。**最终捕获触发链、SDF Camera10195海陆alpha还没闭合**；网页连续混色不是原4096RT最终效果。
-- 原场景气候与CalculateMapCoordinates已核；LatitudeOutput50为位移百分数。历史详细记录见Git0a204f0版交接及fms-climate-worker/fms-river-climate/fms-biomes/fms-land-material各evidence目录。
+1. WEB-04-03：优先看海事件筛选/定位、选择国家或军队时的镜头反馈、可辨国家边界与城市标注，以及自动战争节奏和干预可用性。每批1—3项实际功能后集中检查，不重新写一套大计划。
+2. 后续再补手动建国/命名/边界、征募和兵种、城市近景、不同行政制度、人物家族信仰、历史回放及PWA。它们未因本轮子项完成而自动通过。当前每国初始一支军队，无海军/海上运输，部分军力/粮食平衡仍粗。
+3. 绘图原作海洋、高度、点击模板、气候河网及曲线渐宽继续保留，上一阶段详情见 ae0a591 的handoff与 fms-river-shape-v5-2026-10-05 证据；不要重复提取或重做已恢复函数。
 
-## 下一批实际工作
+## 仓库、发布与授权
 
-1. 有界核实World.VoronoiTransformPoint、河流Prefab厚度/缩放与场景curveAmount，校准本批显示尺度；量化支流过密和河带几何成本。不要重做已接通的气候Worker/flux/曲线规则。
-2. 接续最终Biom捕获触发、SDF Camera10195输入；比较原4096模糊与网页连续混色后选具体实现，不整包导入素材。
-3. 海湾/岬角与湖岸的连续观感、最初主体轮廓永久锚点、原KD nearest tie/float桥接、手机主线程/GPU/内存仍未完成。继续不依赖人工门的绘图工程。
-
-## 本地入口与发布边界
-
-- 分支codex/ph06-world-generation，既有remote https://github.com/Ethanhui6/lieguoji-web.git，hooksPath=.githooks。唯一Pages原生Git链lieguoji-web，main生产/其他分支预览。
-- **禁止push/tag、远程PR/Issue/Milestone、上传及Pages触发**。旧站未改，本地通过不等于云端CI或发布解锁，未另建部署链。
-- 开发 http://127.0.0.1:5180/?fms=1 / tab1停在气候2.7×；生产 http://127.0.0.1:5181/?fms=1 / 新tab4恢复已存高度图，测试旧tab3关闭。仅127.0.0.1，不是手机/公网地址，续接先核实进程存活。
-- 两origin独立lieguoji-fms-web-v1/DB2；不碰旧4173草稿。CAS、原子升级、backup v1归档、未来版锁写和多标签保护保持。真实存档不入Git/dist。
-- root独占写入；只读指定原安装目录，不读认证/SDK/envs.log/个人存档。用户直接继续请求已恢复08:00之后本地授权，未延长自动化，不声称会话结束后后台继续。
+- 既有私有仓库 Ethanhui6/lieguoji-web、Pages项目 lieguoji-web，唯一生产链 Pages原生Git，main生产/其他分支预览。旧站 https://lieguoji-web.pages.dev/ 本轮没有更新，未用它作为本轮试玩证据。
+- 全PH发布锁及pre-push原样保留；本轮仅本地提交、依赖现有环境、测试与临时构建，**无push、PR/Issue/Milestone、上传或Pages触发**。
+- 普通本地开发继续已有授权；真机与主观验收需用户实际操作。没有待输入密码、令牌或新增云端授权。本轮结束后不声称后台继续开发。

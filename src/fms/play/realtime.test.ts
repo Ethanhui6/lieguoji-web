@@ -76,12 +76,12 @@ describe('authoritative sub-day simulation and isolated saves',()=>{
   const r=make(),f=voyage(r),g=graphFor(r);f.food=f.crew;const full=moveNavy(r.world,r.navy,g,1/120);f.food=f.crew-1;const half=moveNavy(r.world,r.navy,g,1/120);
   expect(full.navy.fleets[0].progress).toBeCloseTo(35/120);expect(half.navy.fleets[0].progress).toBeCloseTo(35/240);expect(full.navy.fleets[0].food).toBe(f.crew);
  });
- it('copies an in-flight v3 fleet into current v6 without resetting it, saves twice in Store7 and resumes the exact next tick',async()=>{
+ it('copies an in-flight v3 fleet into current v6 without resetting it, saves twice in Store8 and resumes the exact next tick',async()=>{
   const factory=new IDBFactory(),old=legacy();const staging=withRealtime(old);march(staging);voyage(staging);old.world=staging.world;old.navy=staging.navy;await saveRun(old,null,factory);
   const oldSaved=await loadRun(factory,4),session=new PlaySession(),copy=session.execute({type:'copy',run:old}).run!;
-  expect(copy.version).toBe(6);expect(copy.id).not.toBe(old.id);if(copy.version!==6)throw Error('expected v6');expect(copy.navy).toEqual(old.navy);expect(copy.world.armies).toEqual(old.world.armies);expect(runStore(copy)).toBe(7);
+  expect(copy.version).toBe(6);expect(copy.id).not.toBe(old.id);if(copy.version!==6)throw Error('expected v6');expect(copy.navy).toEqual(old.navy);expect(copy.world.armies).toEqual(old.world.armies);expect(runStore(copy)).toBe(8);
   let next=copy;for(let i=0;i<47;i++)next=advanceRunTick(next);await saveRun(next,null,factory);await saveRun(next,1,factory);
-  const loaded=(await loadRun(factory,7))!.run;expect(loaded).toEqual(next);expect(advanceRunTick(loaded as typeof next)).toEqual(advanceRunTick(next));expect(await loadRun(factory,4)).toEqual(oldSaved);await expect(saveRun(next,1,factory)).rejects.toThrow('另一窗口');
+  const loaded=(await loadRun(factory,8))!.run;expect(loaded).toEqual(next);expect(advanceRunTick(loaded as typeof next)).toEqual(advanceRunTick(next));expect(await loadRun(factory,4)).toEqual(oldSaved);await expect(saveRun(next,1,factory)).rejects.toThrow('另一窗口');
  });
  it.each(['current','backup'])('locks future clock fields in %s before any valid-slot fallback',async key=>{
   const f=new IDBFactory(),r=make();await saveRun(r,null,f);await saveRun(advanceRunTick(r),1,f);await tamper(f,key,raw=>{raw.run.clock.futureFeature=true;});await expect(loadRun(f,5)).rejects.toThrow('未知');await expect(saveRun(r,2,f)).rejects.toThrow('未知');

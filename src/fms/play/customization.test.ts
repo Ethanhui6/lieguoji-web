@@ -1,0 +1,21 @@
+import {describe,it,expect} from 'vitest';
+import {IDBFactory} from 'fake-indexeddb';
+import {grid} from './fixture.test-support';
+import {EditorSession} from './editor-session';
+import {customizeRun,type CustomizeCommand} from './customization';
+import {loadRun,saveRun,runStore} from './storage';
+import {advanceRunTick} from './runtime';
+import {occupationInitialFingerprint} from './military-registry';
+import {namedWorld} from './names';
+
+const fixture=()=>{const session=new EditorSession(),run=session.execute({type:'create',terrain:grid(),count:4,relations:'peace'}).run!;if(run.version!==6)throw Error('version');return {session,run};};
+const command=(run:ReturnType<typeof fixture>['run']):CustomizeCommand=>({type:'customize',runId:run.id,expected:{day:run.world.day,nextEventId:run.world.nextEventId,tick:run.clock.tick},edits:[{kind:'nation',id:run.world.nations[0].id,name:'东岚',color:'#8dd3c7'},{kind:'city',id:run.world.nations[0].capitalId,name:'临海'}]});
+describe('paused identity customization',()=>{
+  it.each(['nation','province'] as const)('keeps old generated locality names after a %s rename',kind=>{const {run}=fixture(),n=run.world.nations[0];for(const p of run.world.provinces.filter(p=>p.legalOwner===n.id))p.name=`${n.name}·${Number(p.id.slice(2))+1}区`;for(const c of run.world.cities.filter(c=>run.world.provinces.find(p=>p.id===c.provinceId)!.legalOwner===n.id))c.name=`${n.name}${Number(c.id.slice(2))+1}城`;const visible=namedWorld(run.world),p=run.world.provinces.find(p=>p.legalOwner===n.id)!,c=command(run);c.edits=[{kind,id:kind==='nation'?n.id:p.id,name:'东岚'}];const result=namedWorld(customizeRun(run,c).world);expect(result.cities.map(c=>c.name)).toEqual(visible.cities.map(c=>c.name));});
+  it('edits real saved names and color without changing IDs, map, troops or historical prose',()=>{const {run}=fixture(),before=structuredClone(run),n=customizeRun(run,command(run));expect(run).toEqual(before);expect(n.world.nations[0].name).toBe('东岚');expect(n.world.nations[0].color).toBe('#8dd3c7');expect(n.world.cities.find(c=>c.id===run.world.nations[0].capitalId)!.name).toBe('临海');expect(n.terrain).toEqual(run.terrain);expect(n.world.provinces).toEqual(run.world.provinces);expect(n.world.armies).toEqual(run.world.armies);expect(n.world.events.slice(0,-1)).toEqual(run.world.events);expect(n.world.nextEventId).toBe(run.world.nextEventId+1);});
+  it('rejects stale edits and rolls back a whole edit set on its last invalid field',()=>{const {session,run}=fixture(),c=command(run);expect(()=>session.execute({...c,expected:{...c.expected,tick:1}})).toThrow('世界已经变化');expect(()=>session.execute({...c,edits:[...c.edits,{kind:'city',id:'missing',name:'不存在'}]})).toThrow('不存在');const n=session.execute(c).run!;expect(n.world.nextEventId).toBe(run.world.nextEventId+1);});
+  it.each(['','   ','a'.repeat(25),'海\n城'])('rejects invalid name %j',name=>{const {run}=fixture(),c=command(run);c.edits[0].name=name;expect(()=>customizeRun(run,c)).toThrow('名称');});
+  it('rejects fields outside identity editing and unsupported colors',()=>{const {run}=fixture(),c=command(run);Object.assign(c.edits[0],{troops:99999});expect(()=>customizeRun(run,c)).toThrow('字段');delete (c.edits[0] as unknown as {troops?:number}).troops;c.edits[0].color='#000000';expect(()=>customizeRun(run,c)).toThrow('色板');});
+  it('preserves old siege saves in Store7; new creation saves independently in Store8 with CAS',async()=>{const {run}=fixture(),f=new IDBFactory(),old={...structuredClone(run),engine:occupationInitialFingerprint};expect(runStore(old)).toBe(7);expect(runStore(run)).toBe(8);await saveRun(old,null,f);const previous=await loadRun(f,7);const n=customizeRun(run,command(run));await saveRun(n,null,f);const loaded=(await loadRun(f,8))!.run;expect(loaded).toEqual(n);expect(await loadRun(f,7)).toEqual(previous);await expect(saveRun(n,null,f)).rejects.toThrow('另一窗口');});
+  it('old and new fingerprints execute identical saved-state ticks and retain their identity',()=>{const {run}=fixture(),old={...structuredClone(run),engine:occupationInitialFingerprint};let a=run,b=old;for(let i=0;i<120;i++){a=advanceRunTick(a);b=advanceRunTick(b);}expect({...b,engine:a.engine}).toEqual(a);expect(b.engine).toBe(occupationInitialFingerprint);});
+});

@@ -5,7 +5,7 @@ import { worldNames } from './names';
 import { statePalette } from './politics';
 
 import legacyManifest from '../../compat/v0_4/manifest.json';
-import { militaryRules,supportedMilitaryEngine,mobilizationFingerprint,navalFingerprint,realtimeFingerprint,battleFingerprint } from './military-registry';
+import { militaryRules,supportedMilitaryEngine,supportedOccupationEngine,mobilizationFingerprint,navalFingerprint,realtimeFingerprint,battleFingerprint } from './military-registry';
 import type { UnitAssignments } from './military-profile';
 import { assertNavy, type Navy } from './navy';
 import { seaGraph,type SeaGraph } from './sea-path';
@@ -88,15 +88,18 @@ export function createFmsRun(document: FmsDocument, countryCount = 6, relations:
   const terrain = structuredClone(document), faces = landFaces(terrain), scale = 1000 / Math.max(terrain.width, terrain.height);
   if (faces.length < 2) throw new Error('请先画出足够的陆地，再创建世界。');
   const assigned = new Int32Array(faces.length).fill(-1), regions: { ring: Vertex[]; center: Point; height: number; neighbors: Set<number> }[] = [];
+  // Keep enough real land faces for the requested states, even on small islands.
+  // This changes administrative partition only: no face is discarded or moved.
+  const regionBudget=Math.max(1,Math.min(160,Math.floor(faces.length/countryCount)));
   for (let start = 0; start < faces.length; start++) {
     if (assigned[start] >= 0) continue;
     let ring = faces[start].ring; const id = regions.length, queue = [start], visited = new Set(queue);
     assigned[start] = id; let count = 1, height = faces[start].height;
-    for (let head = 0; head < queue.length && count < 160; head++) for (const next of faces[queue[head]].neighbors) {
+    for (let head = 0; head < queue.length && count < regionBudget; head++) for (const next of faces[queue[head]].neighbors) {
       if (assigned[next] >= 0 || visited.has(next)) continue;
       visited.add(next); const merged = mergeRing(ring, faces[next].ring); if (!merged) continue;
       ring = merged; assigned[next] = id; queue.push(next); count++; height += faces[next].height;
-      if (count >= 160) break;
+      if (count >= regionBudget) break;
     }
     // Interior of a constituent convex face, not the possibly-exterior centroid of a concave union.
     const face = faces[start].ring, center = { x: face.reduce((s, v) => s + v.x, 0) / face.length, y: face.reduce((s, v) => s + v.y, 0) / face.length };
@@ -145,7 +148,7 @@ export function assertRealtimeStep(previous:Extract<FmsRun,{version:4|5|6}>,next
 }
 function assertRun(value:unknown,trusted?:{terrain:FmsDocument;graph?:SeaGraph}):asserts value is FmsRun {
   const r = value as FmsRun;
-  if (!r || ![1,2,3,4,5,6].includes(r.version) || !(r.version===1?r.engine===runEngine(1):r.version===2?supportedMilitaryEngine(r.engine):r.engine===runEngine(r.version)) || (r.version!==1&&(r.rules!==(r.version===2?'fms-military-1':r.version===3?'fms-naval-1':r.version===4?'fms-realtime-1':r.version===5?'fms-battle-1':'fms-occupation-1')||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
+  if (!r || ![1,2,3,4,5,6].includes(r.version) || !(r.version===1?r.engine===runEngine(1):r.version===2?supportedMilitaryEngine(r.engine):r.version===6?supportedOccupationEngine(r.engine):r.engine===runEngine(r.version)) || (r.version!==1&&(r.rules!==(r.version===2?'fms-military-1':r.version===3?'fms-naval-1':r.version===4?'fms-realtime-1':r.version===5?'fms-battle-1':'fms-occupation-1')||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
   const keys=['version','id','engine','terrain','scale','world',...(r.version!==1?['rules','units']:[]),...(r.version===3||r.version===4||(r.version===5||r.version===6)?['navy']:[]),...((r.version===4||(r.version===5||r.version===6))?['clock']:[]),...((r.version===5||r.version===6)?['battles']:[]),...(r.version===6?['occupation']:[])];
   if(Object.keys(r).length!==keys.length||!keys.every(k=>Object.hasOwn(r,k)))throw new Error('推演存档含未知字段，已锁定写入。');
   if(trusted?.terrain!==r.terrain){

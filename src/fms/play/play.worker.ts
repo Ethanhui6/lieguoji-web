@@ -1,6 +1,6 @@
-import { PlaySession, type PlayCommand } from './session';
-const session = new PlaySession();
-self.onmessage = (event: MessageEvent<{ id: number; command: PlayCommand }>) => {
+import { EditorSession, type EditorCommand } from './editor-session';
+const session = new EditorSession();
+self.onmessage = (event: MessageEvent<{ id: number; command: EditorCommand }>) => {
   const { id, command } = event.data;
   try {
     const result=session.execute(command),run=result.run;

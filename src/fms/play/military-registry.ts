@@ -19,6 +19,9 @@ import realtime1 from './compat/realtime1/manifest.json';
 import {createMilitaryCore as battleCore} from './compat/battle1/fms/play/military-core';
 import {applyMilitaryAction as battleApply,previewMilitaryAction as battlePreview} from './compat/battle1/fms/play/military-actions';
 import battle1 from './compat/battle1/manifest.json';
+import occupation1 from './compat/occupation1/manifest.json';
+export const occupationInitialFingerprint=occupation1.fingerprint;
+export const supportedOccupationEngine=(engine:unknown)=>engine===__FMS_PLAY_ENGINE__||engine===occupationInitialFingerprint;
 export const battleFingerprint=battle1.fingerprint;
 export const realtimeFingerprint=realtime1.fingerprint;
 
@@ -34,7 +37,7 @@ export function militaryRules(engine:string,units:UnitAssignments){
   if(engine===navalFingerprint)return {...navalCore(units),previewMilitaryAction:navalPreview,applyMilitaryAction:navalApply};
   if(engine===mobilizationFingerprint)return {...mobilizationCore(units),previewMilitaryAction:mobilizationPreview,applyMilitaryAction:mobilizationApply};
   if(engine===military1Fingerprint)return {...military1Core(units),previewMilitaryAction:military1Preview,applyMilitaryAction:military1Apply};
-  if(engine===__FMS_PLAY_ENGINE__)return {...createMilitaryCore(units,true,true),previewMilitaryAction,applyMilitaryAction};
+  if(supportedOccupationEngine(engine))return {...createMilitaryCore(units,true,true),previewMilitaryAction,applyMilitaryAction};
   if(engine===previousMilitaryFingerprint)return {...previewCore(units),previewMilitaryAction:previewAction,applyMilitaryAction:previewApply};
   throw new Error('推演规则版本不同，已锁定读写。');
 }

@@ -9,6 +9,15 @@ const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profil
 const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts'];
 export const fmsPlayFiles=[...kernelFiles,...entryFiles];
 export function fingerprintFmsPlay(){
+  const oRoot='src/fms/play/compat/occupation1',o=JSON.parse(readFileSync(oRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
+  const oSources=new Map<string,string>();
+  for(const f of o.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)\.source$/.test(f.archive))throw Error('Unsafe occupation archive path');const s=normalized(readFileSync(oRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen occupation1 changed');oSources.set(f.path,s);}
+  const oHash=createHash('sha256').update(fingerprintSources(o.kernel,f=>oSources.get(f)!));for(const f of o.entries)oHash.update('\n'+f+'\n'+oSources.get(f)+'\n');
+  if(o.fingerprint!=='747f31323a5a6ee7ea3029566241863d6be5809a7fa710f7589941af76e90366'||oHash.digest('hex')!==o.fingerprint)throw Error('Frozen occupation1 fingerprint changed');
+  // The new revision only changes world initialization. Shared execution of
+  // saved v6 games is permitted ONLY while every kernel and dispatch is exact.
+  // A future gameplay change must provide a frozen dispatch before removing this guard.
+  for(const f of [...o.kernel,'src/fms/play/runtime.ts','src/fms/play/session.ts','src/fms/play/naval-rules.ts'])if(normalized(readFileSync(f,'utf8'))!==oSources.get(f))throw Error('Occupation1 live execution changed; implement frozen dispatch first: '+f);
   const bRoot='src/fms/play/compat/battle1',b=JSON.parse(readFileSync(bRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
   const bSources=new Map<string,string>();
   for(const f of b.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)(\.source)?$/.test(f.archive))throw Error('Unsafe battle archive path');const s=normalized(readFileSync(bRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen battle1 changed');bSources.set(f.path,s);}

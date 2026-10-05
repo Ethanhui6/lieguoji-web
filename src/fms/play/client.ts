@@ -1,7 +1,7 @@
 import type { GameEvent, World } from '../../sim/types';
 import type {BattleState} from './battle';
 import type { FmsRun } from './world';
-import type { PlayCommand } from './session';
+import type { EditorCommand } from './editor-session';
 type Result = { world: World; run?: FmsRun; halted?: GameEvent };
 type TickUpdate=Pick<Extract<FmsRun,{version:4|5|6}>,'id'|'world'|'clock'|'navy'|'units'> & {battles?:BattleState;occupation?:Extract<FmsRun,{version:6}>['occupation']};
 export class PlayClient {
@@ -19,7 +19,7 @@ export class PlayClient {
     };
     this.worker.onerror = () => this.close('模拟线程无法继续，已暂停。');
   }
-  send(command: PlayCommand): Promise<Result> {
+  send(command: EditorCommand): Promise<Result> {
     if (this.closed) return Promise.reject(new Error('模拟线程已关闭，请退出后重新进入。'));
     return new Promise((resolve, reject) => { const id = ++this.id, timer = setTimeout(() => this.close('模拟线程超时，已停止，未继续推进。'), 30000); this.pending.set(id, { resolve, reject, timer }); this.worker.postMessage({ id, command }); });
   }

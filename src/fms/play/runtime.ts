@@ -1,5 +1,5 @@
 import * as legacy from '../../compat/v0_4/sim/core';
-import { militaryRules, mobilizationFingerprint,navalFingerprint } from './military-registry';
+import { militaryRules, mobilizationFingerprint,navalFingerprint,realtimeFingerprint } from './military-registry';
 import { formStartingUnits, initialUnitAssignments } from './compat/mobilization1/fms/play/military-actions';
 import type { MilitaryAction } from './military-actions';
 import type { StateVersion } from '../../sim/types';
@@ -12,6 +12,11 @@ import {initialNavy as oldInitialNavy,advanceNavy as oldAdvanceNavy} from './com
 import {seaGraph as oldSeaGraph} from './compat/naval1/fms/play/sea-path';
 import {mobilize as oldNavalMobilize} from './compat/naval1/fms/play/mobilization';
 import {createMilitaryCore} from './military-core';
+import {advanceCombat,initialBattles,reconcileCombat} from './battle';
+import {createMilitaryCore as rtCore} from './compat/realtime1/fms/play/military-core';
+import {mobilize as rtMobilize} from './compat/realtime1/fms/play/mobilization';
+import * as rtNavy from './compat/realtime1/fms/play/navy';
+import {seaGraph as rtGraph} from './compat/realtime1/fms/play/sea-path';
 import {TICKS_PER_DAY} from './clock';
 export function playRules(run:FmsRun){return run.version===1?legacy:militaryRules(run.engine,run.units);}
 export function withMilitary(run:FmsRun,copy=false):Extract<FmsRun,{version:2}>{
@@ -25,24 +30,26 @@ export function withNavy(run:FmsRun,copy=false):Extract<FmsRun,{version:3}>{
   return {...base,...formed,version:3,rules:'fms-naval-1',engine:navalFingerprint};
 }
 export function withRealtime(run:FmsRun,copy=false):Extract<FmsRun,{version:4}>{
-  const base=run.version===3||run.version===4?structuredClone(run):withNavy(run,copy);
+  const base=run.version===3||run.version===4||run.version===5?structuredClone(run):withNavy(run,copy);
   const id=copy?`fms-${crypto.randomUUID()}`:base.id;base.world.custom!.id=id;
-  return {...base,id,version:4,rules:'fms-realtime-1',engine:__FMS_PLAY_ENGINE__,clock:{version:1,tick:run.version===4?run.clock.tick:base.world.day*TICKS_PER_DAY}};
+  const {battles:_b,...oldBase}=base as typeof base & {battles?:unknown};void _b;return {...oldBase,id,version:4,rules:'fms-realtime-1',engine:realtimeFingerprint,clock:{version:1,tick:run.version===4||run.version===5?run.clock.tick:base.world.day*TICKS_PER_DAY}};
 }
-export function advanceRunTick(run:Extract<FmsRun,{version:4}>,graph:SeaGraph=seaGraph(run.terrain,run.world)):Extract<FmsRun,{version:4}>{
-  const clock={version:1 as const,tick:run.clock.tick+1},core=createMilitaryCore(run.units,true);
+export function withBattle(run:FmsRun,copy=false):Extract<FmsRun,{version:5}>{const base=withRealtime(run,copy);return {...base,version:5,rules:'fms-battle-1',engine:__FMS_PLAY_ENGINE__,battles:initialBattles()};}
+export function advanceRunTick<T extends Extract<FmsRun,{version:4|5}>>(run:T,graph:SeaGraph=(run.version===4?rtGraph:seaGraph)(run.terrain,run.world)):T{
+  if(run.version===4){const clock={version:1 as const,tick:run.clock.tick+1},naval=rtNavy.moveNavy(run.world,run.navy,graph,1/TICKS_PER_DAY);let next={...run,...naval,world:rtCore(run.units,true).advanceMovement(naval.world,1/TICKS_PER_DAY),clock};if(clock.tick%TICKS_PER_DAY===0){const formed=rtMobilize(next.world,next.units),first=formed.world.nextEventId,provisioned=rtNavy.advanceNavy(formed.world,next.navy,graph,false),world=rtCore(formed.units,true).settleDay(provisioned.world);for(const e of world.events)if(e.id>=first&&e.id<provisioned.world.nextEventId)e.day=world.day;next={...next,...formed,...provisioned,world};}return next;}
+  const clock={version:1 as const,tick:run.clock.tick+1};
   const naval=moveNavy(run.world,run.navy,graph,1/TICKS_PER_DAY);
-  let next={...run,...naval,world:core.advanceMovement(naval.world,1/TICKS_PER_DAY),clock};
+  let next={...run,...naval,...advanceCombat(naval.world,run.battles,run.units,clock.tick),clock};
   if(clock.tick%TICKS_PER_DAY===0){
     const formed=mobilize(next.world,next.units),first=formed.world.nextEventId;
     const provisioned=advanceNavy(formed.world,next.navy,graph,false);
-    const world=createMilitaryCore(formed.units,true).settleDay(provisioned.world);
+    const world=createMilitaryCore(formed.units,true,true).settleDay(provisioned.world);
     for(const event of world.events)if(event.id>=first&&event.id<provisioned.world.nextEventId)event.day=world.day;
-    next={...next,...formed,...provisioned,world};
-  }return next;
+    next={...next,...formed,...provisioned,...reconcileCombat(world,next.battles,clock.tick)};
+  }return next as T;
 }
 export function stepRunDay(run:FmsRun):FmsRun {
-  if(run.version===4){let next=run;const graph=seaGraph(run.terrain,run.world);for(let i=0;i<TICKS_PER_DAY;i++)next=advanceRunTick(next,graph);return next;}
+  if(run.version===4||run.version===5){let next=run;const graph=(run.version===4?rtGraph:seaGraph)(run.terrain,run.world);for(let i=0;i<TICKS_PER_DAY;i++)next=advanceRunTick(next,graph);return next;}
   const prepared=run.version===3?{...run,...oldNavalMobilize(run.world,run.units)}:run.version===2&&run.engine===mobilizationFingerprint?{...run,...legacyMobilize(run.world,run.units)}:run;
   if(prepared.version===3){
     const first=prepared.world.nextEventId,naval=oldAdvanceNavy(prepared.world,prepared.navy,oldSeaGraph(prepared.terrain,prepared.world));

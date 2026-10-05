@@ -113,7 +113,9 @@ function enact(world: World, action: StateAction, emit: EmitEvent, reason: strin
         if (army.progress > 0) army.route = army.route.slice(0, 1);
         else { army.route = []; army.progress = 0; army.status = 'idle'; }
       }
-      if (army.status === 'fighting' && !world.armies.some(other => live(other) && other.status !== 'retreating' && other.provinceId === army.provinceId && nationsAtWar(world, army.nationId, other.nationId))) army.status = 'idle';
+      // Road contacts retain their current position until the engagement layer
+      // releases the actual participants, including third-party wars.
+      if (army.status === 'fighting' && army.progress === 0 && !world.armies.some(other => live(other) && other.status !== 'retreating' && other.progress===0 && other.provinceId === army.provinceId && nationsAtWar(world, army.nationId, other.nationId))) army.status = 'idle';
     }
   }
   emit(world, 'diplomacy', `${nation.name}与${target.name}${relation.status === 'war' ? '进入战争' : '停止战争'}`, reason);

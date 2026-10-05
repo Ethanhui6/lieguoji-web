@@ -1,12 +1,12 @@
 import type { Army, GameEvent, Order, OrderPreview, Province, StateAction, StateActionPreview, StateVersion, Terrain, World } from '../../compat/v0_4/sim/types';
 import { advanceEconomy as dailyEconomy, applyManagementAction, buildNationReports as dailyReports, makeDiplomaticDecisions, nationsAtWar, previewManagementAction, setDecision, transferEconomy, validateManagement } from '../../compat/v0_4/sim/statecraft';
-import {advanceEconomy as realtimeEconomy,buildNationReports as realtimeReports} from './realtime-statecraft';
+import {advanceEconomy as realtimeEconomy,buildNationReports as realtimeReports,applyManagementAction as tacticalManagement} from './realtime-statecraft';
 import { policyOptions } from '../../compat/v0_4/sim/statecraft';
 import { isUnitKey, unitProfile, type UnitAssignments } from './military-profile';
 /** FMS-only rule fork of frozen 0.4 core. All effects use one explicit unit
  * assignment; legacy runs never enter this factory. Original speed/power data
  * applied to the existing web daily model, not claimed as native combat parity. */
-export function createMilitaryCore(assignments:UnitAssignments, realtime=false) {
+export function createMilitaryCore(assignments:UnitAssignments, realtime=false,tactical=false) {
 const advanceEconomy=realtime?realtimeEconomy:dailyEconomy,buildNationReports=realtime?realtimeReports:dailyReports;
 const units=Object.freeze({...assignments});
 const isAtWar = nationsAtWar;
@@ -18,7 +18,7 @@ function previewStateAction(world: World, action: StateAction): StateActionPrevi
 }
 function applyStateAction(world: World, action: StateAction, expected: StateVersion): World {
   if (!validateWorld(world)) throw new Error('世界状态校验失败。');
-  return applyManagementAction(world, action, expected, event);
+  return (tactical?tacticalManagement:applyManagementAction)(world, action, expected, event);
 }
 function nationReports(world: World) { return buildNationReports(world); }
 
@@ -118,6 +118,7 @@ function previewOrder(world: World, order: Order): OrderPreview {
   if (!army || !alive(army)) return invalid('这支军队不存在或已失去战斗力。');
   if (!canCommandArmy(world, army)) return invalid('测试大陆只能向烈军下达命令；自建世界可以控制各国军队。');
   if (!target) return invalid('目标辖区不存在。');
+  if(tactical&&army.status==='fighting')return invalid('交锋中请使用“脱离交锋”，不能覆盖正在执行的战斗状态。');
   if(realtime&&army.progress===0&&order.kind!=='retreat'&&world.armies.some(a=>canHoldGround(a)&&a.provinceId===army.provinceId&&isAtWar(world,a.nationId,army.nationId)))return invalid('所在路口已有敌军，只能下达撤退命令。');
   if(realtime&&army.route.length){
     if((order.kind==='retreat')!==(army.status==='retreating'))return invalid('途中改令保留当前行军状态；切换行军或撤退请先抵达下一路口。');
@@ -146,7 +147,7 @@ function previewOrder(world: World, order: Order): OrderPreview {
   const supplyCost = days * (retreat ? 5 : 6);
   const warnings: string[] = [];
   const defenders = world.armies.filter(other => canHoldGround(other) && other.provinceId === target.id && isAtWar(world, other.nationId, army.nationId));
-  if (defenders.length) warnings.push(`目标有 ${defenders.reduce((sum, defender) => sum + defender.troops, 0)} 名守军，抵达后按兵力、士气、补给、地形和城防逐日交战；到达时间不含战斗。`);
+  if (defenders.length) warnings.push(`目标有 ${defenders.reduce((sum, defender) => sum + defender.troops, 0)} 名守军，抵达后按兵力、士气、补给、地形和城防${tactical?'持续':'逐日'}交战；到达时间不含战斗。`);
   if (legs.some(province => province.controller !== army.nationId)) warnings.push('进入敌境将失去本国驻扎补给；占领仅改变实控，不改变法理归属。');
   if (supplyCost >= army.supplies) warnings.push('现有军粮不足以完成预计行程；断粮会降低速度、士气并造成减员。');
   if (army.supplies === 0) warnings.push('当前已经断粮，实际行程将长于基础预计时间。');
@@ -233,7 +234,7 @@ function moveArmy(world: World, army: Army, budget = 1, allowPursuit = true) {
       const present=world.armies.filter(a=>canHoldGround(a)&&a.provinceId===army.provinceId);
       for(const a of present)if(present.some(other=>isAtWar(world,a.nationId,other.nationId))){a.status='fighting';a.route=[];a.progress=0;}
     }
-    event(world, 'battle', `${army.name}遭遇敌军`, '抵达敌军所在辖区，后续行军中止；战斗采用同日结算，双方同时承受损失。');
+    event(world, 'battle', `${army.name}遭遇敌军`, tactical?'抵达敌军路口停止，双方按0.1日持续结算；已确认的进攻计划在交锋结束后续行。':'抵达敌军所在辖区，后续行军中止；战斗采用同日结算，双方同时承受损失。');
   } else if (!army.route.length) army.status = 'idle';
   if(realtime)resolveControl(world);
   if (unused > 1e-9 && army.route.length && army.status !== 'fighting') moveArmy(world, army, unused, false);
@@ -356,7 +357,7 @@ function makeAutonomousDecisions(world: World) {
     let target = attacks[0]?.target;
     let reason: string;
     if (target) {
-      reason = `自主判断：军粮 ${army.supplies} 可覆盖 ${attacks[0].cost} 点行军消耗并保留 12 点余粮；攻击有效军力 ${Math.round(attacks[0].attackPower)}，目标守方含地形城防为 ${Math.round(attacks[0].defensePower)}，达到 1.15 倍进攻门槛。实际交战仍逐日结算。`;
+      reason = `自主判断：军粮 ${army.supplies} 可覆盖 ${attacks[0].cost} 点行军消耗并保留 12 点余粮；攻击有效军力 ${Math.round(attacks[0].attackPower)}，目标守方含地形城防为 ${Math.round(attacks[0].defensePower)}，达到 1.15 倍进攻门槛。实际交战${tactical?'每0.1日同时结算':'仍逐日结算'}。`;
     } else {
       const distances = distancesFor(army.nationId), here = distances.get(province.id) ?? Infinity;
       target = neighbors.filter(neighbor => neighbor.controller === army.nationId && (distances.get(neighbor.id) ?? Infinity) < here && Math.ceil(legDays(neighbor, false, army)) * 6 + 12 <= army.supplies && !world.armies.some(other => canHoldGround(other) && isAtWar(world, other.nationId, army.nationId) && other.provinceId === neighbor.id)).sort((a, b) => (distances.get(a.id)! - distances.get(b.id)!) || legDays(a, false, army) - legDays(b, false, army) || a.id.localeCompare(b.id))[0];
@@ -414,7 +415,7 @@ function settleDay(world:World):World {
   const next=structuredClone(world);indexWorld(next);next.day++;
   if(next.statecraft)advanceEconomy(next,event);
   for(const army of next.armies)if(alive(army))replenishOrConsume(next,army);
-  resolveBattles(next);resolveControl(next);
+  if(!tactical)resolveBattles(next);resolveControl(next);
   makeDiplomaticDecisions(next,event);evacuatePeacefulVisitors(next);makeAutonomousDecisions(next);
   return next;
 }
@@ -477,7 +478,8 @@ function validateWorld(value: unknown): value is World {
     let previous = army.provinceId as string;
     for (const target of army.route as string[]) { if (!provinceMap.get(previous)!.neighbors.includes(target)) return false; previous = target; }
     const moving = army.status === 'marching' || army.status === 'retreating';
-    if (moving !== (army.route.length > 0) || (!moving && army.progress !== 0) || (army.status === 'destroyed' ? army.troops !== 0 : army.troops === 0)) return false;
+    const fightingOnEdge=tactical&&army.status==='fighting'&&army.route.length>0&&Number(army.progress)>0;
+    if ((!fightingOnEdge&&(moving !== (army.route.length > 0) || (!moving && army.progress !== 0))) || (army.status === 'destroyed' ? army.troops !== 0 : army.troops === 0)) return false;
   }
   let previousId = 0;
   let previousDay = 0;
@@ -488,5 +490,5 @@ function validateWorld(value: unknown): value is World {
   return (!modern || validateManagement(value as World)) && Object.keys(units).length === value.armies.length && (value.armies as Army[]).every(a=>Object.hasOwn(units,a.id)&&isUnitKey(units[a.id]));
 }
 
-return {validateWorld,advanceWorld,advanceMovement,settleDay,previewOrder,issueOrder,previewStateAction,applyStateAction,nationReports,isAtWar,policyOptions};
+return {validateWorld,advanceWorld,advanceMovement,settleDay,previewOrder,issueOrder,previewStateAction,applyStateAction,nationReports,isAtWar,policyOptions,forceRetreat,destroyArmy,resolveControl};
 }

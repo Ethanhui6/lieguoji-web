@@ -2,13 +2,18 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fingerprintSources, normalized } from './engine-fingerprint.ts';
 import { sha256 } from './engine-fingerprint.ts';
-const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profile.ts','src/fms/play/military-actions.ts','src/compat/v0_4/sim/core.ts','src/compat/v0_4/sim/statecraft.ts','src/compat/v0_4/sim/types.ts','src/compat/v0_4/history/types.ts','src/fms/play/mobilization.ts','src/fms/play/sea-path.ts','src/fms/play/navy.ts','src/fms/play/clock.ts','src/fms/play/realtime-statecraft.ts'];
+const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profile.ts','src/fms/play/military-actions.ts','src/compat/v0_4/sim/core.ts','src/compat/v0_4/sim/statecraft.ts','src/compat/v0_4/sim/types.ts','src/compat/v0_4/history/types.ts','src/fms/play/mobilization.ts','src/fms/play/sea-path.ts','src/fms/play/navy.ts','src/fms/play/clock.ts','src/fms/play/realtime-statecraft.ts','src/fms/play/battle.ts'];
 // Kernel dependencies are closed and checked by fingerprintSources. These
 // additional entry/initial-condition sources bind dispatch, conversion and
 // starting worlds too. Terrain drawing is an input format, not the daily kernel.
 const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts'];
 export const fmsPlayFiles=[...kernelFiles,...entryFiles];
 export function fingerprintFmsPlay(){
+  const rtRoot='src/fms/play/compat/realtime1',rt=JSON.parse(readFileSync(`${rtRoot}/manifest.json`,'utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
+  const rtSources=new Map<string,string>();
+  for(const f of rt.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)(\.source)?$/.test(f.archive))throw Error('Unsafe realtime archive path');const s=normalized(readFileSync(`${rtRoot}/${f.archive}`,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen realtime1 changed');rtSources.set(f.path,s);}
+  const rtHash=createHash('sha256').update(fingerprintSources(rt.kernel,f=>rtSources.get(f)!));for(const f of rt.entries)rtHash.update(`\n${f}\n${rtSources.get(f)}\n`);
+  if(rt.fingerprint!=='9b83e494682517f778c795e9676bc1fc2d53698710747b69a95be5900c45576d'||rtHash.digest('hex')!==rt.fingerprint)throw Error('Frozen realtime1 fingerprint changed');
   const navalRoot='src/fms/play/compat/naval1';
   const naval=JSON.parse(readFileSync(`${navalRoot}/manifest.json`,'utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
   const navalSources=new Map<string,string>();

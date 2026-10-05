@@ -7,6 +7,8 @@ import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
+import {engagementPoint,type BattleState} from './battle';
+import {drawAttackArrow} from './attack-map';
 
 export class PlayMap {
   readonly layer = new Container();
@@ -16,6 +18,8 @@ export class PlayMap {
   private shipLayer?:ReturnType<typeof drawNavy>;
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
+  private battles:{id:string;x:number;y:number;armies:string[];losses:Record<string,number>}[]=[];
+  battlePositions(){return this.battles;}
   capitalPositions(){return this.capitals;}
   unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
   pickUnits(point:Point){return this.unitPositions().map(p=>({...p,distance:Math.hypot(p.x-point.x,p.y-point.y)})).filter(p=>p.distance<=(p.kind==='army'?22:18)).sort((a,b)=>a.distance-b.distance);}
@@ -30,7 +34,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[]}): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
     this.unitGroups=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     this.capitals=world.nations.flatMap(n=>{const c=world.cities.find(c=>c.id===n.capitalId);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
@@ -81,8 +85,22 @@ export class PlayMap {
       label(p.name,x,y-5*pixel,10,'#e2e9cb');
     }
     const byArmy=new Map(world.armies.map(a=>[a.id,a]));
+    this.battles=(combat?.state.engagements??[]).map(e=>{const p=engagementPoint(world,e);return {id:e.id,x:p.x/scale*zoom+this.projection.x,y:p.y/scale*zoom+this.projection.y,armies:e.armies,losses:e.losses};});
+    const directions=new Graphics();this.layer.addChild(directions);
+    const perTarget=new Map<string,number>();let arrows=0;
+    for(const a of world.armies){
+      const plan=combat?.state.plans[a.id],preview=a.id===armyId&&combat?.preview.length?combat.preview:undefined;
+      const route=preview?preview.slice(1):plan?plan.path.slice(plan.path.indexOf(a.provinceId)+1):a.route;
+      if(!route.length||a.status==='destroyed')continue;
+      const points=[frame?.armies.get(a.id)??armyPosition(world,a),...route.map(id=>provinces.get(id)!.center)].map(p=>({x:p.x/scale,y:p.y/scale}));
+      const active=a.id===armyId,key=`${a.nationId}/${route.at(-1)}`,foreign=provinces.get(route.at(-1)!)!.controller!==a.nationId;
+      if(active){directions.moveTo(points[0].x,points[0].y);for(const p of points.slice(1))directions.lineTo(p.x,p.y);directions.stroke({color:preview?0xffffff:0xffecc0,width:1.5*pixel,alpha:.8});for(const id of plan?.targets??[]){const p=provinces.get(id)!.center;directions.circle(p.x/scale,p.y/scale,3*pixel).stroke({color:0xfff2c9,width:pixel});}}
+      if(combat&&(active||(foreign&&a.status==='marching'&&(perTarget.get(key)??0)<2&&arrows<14))){drawAttackArrow(directions,points,pixel,preview?0xfff0b0:nationColor(nations.get(a.nationId)!),!!preview);perTarget.set(key,(perTarget.get(key)??0)+1);arrows++;}
+    }
     for (const marker of armyMarkers(world,scale,{x:0,y:0,scale:zoom},armyId,frame?.armies)) {
       const army=byArmy.get(marker.ids[0])!,active=marker.ids.includes(armyId??'');
+      const battle=combat?.state.engagements.find(e=>e.armies.includes(army.id));
+      if(battle){const sides=[...new Set(battle.armies.map(id=>byArmy.get(id)!.nationId))].sort(),side=sides.indexOf(army.nationId),angle=Math.PI+side*2*Math.PI/sides.length;marker.x+=Math.cos(angle)*24;marker.y+=Math.sin(angle)*24-12;}
       const container=new Container(),marks=new Graphics();container.addChild(marks);this.layer.addChild(container);container.position.set(marker.x/zoom,marker.y/zoom);
       const points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!));
       this.unitGroups.push({ids:marker.ids,container,offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
@@ -93,13 +111,10 @@ export class PlayMap {
       else if((marker.near||active)&&texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=(r*2-3)*pixel;sprite.height=(r*2-3)*pixel;sprite.position.set(x,y);container.addChild(sprite);}
       else marks.moveTo(x-2*pixel,y+3*pixel).lineTo(x-2*pixel,y-3*pixel).lineTo(x+3*pixel,y-1*pixel).stroke({color:0xfff3d4,width:pixel});
       if(active)label(String(army.troops),x,y+26*pixel,11,'#f9f1d4',container);
+      if(battle){const members=marker.ids.map(id=>byArmy.get(id)!),strength=members.reduce((s,a)=>s+a.troops,0),loss=members.reduce((s,a)=>s+(battle.losses[a.id]??0),0);marks.rect(-11*pixel,(r+3)*pixel,22*pixel,3*pixel).fill(0x26332d).rect(-11*pixel,(r+3)*pixel,22*pixel*strength/(strength+loss),3*pixel).fill(0xd5dfa1);if(marker.near&&!active)label(String(strength),0,-(r+3)*pixel,9,'#fff3d4',container);}
       if(army.status==='marching'||army.status==='retreating')marks.poly([x+(r+1)*pixel,y-3*pixel,x+(r+5)*pixel,y,x+(r+1)*pixel,y+3*pixel]).fill(army.status==='retreating'?0xfacba0:0xfff8d6);
-      if(active&&army.route.length){
-        const p=provinces.get(army.provinceId)!;g.moveTo(p.center.x/scale,p.center.y/scale);
-        for(const id of army.route){const next=provinces.get(id)!;g.lineTo(next.center.x/scale,next.center.y/scale);}
-        g.stroke({color:0xfff0b0,width:2*pixel,alpha:.9});
-      }
     }
+    for(const e of combat?.state.engagements??[]){const p=engagementPoint(world,e),x=p.x/scale,y=p.y/scale,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,8*pixel).fill({color:0x392c28,alpha:.85}).stroke({color:0xeedab9,width:pixel});mark.moveTo(x-4*pixel,y-4*pixel).lineTo(x+4*pixel,y+4*pixel).moveTo(x+4*pixel,y-4*pixel).lineTo(x-4*pixel,y+4*pixel).stroke({color:0xffe4b4,width:2*pixel});}
     if(naval)this.shipLayer=drawNavy(this.layer,world,scale,zoom,naval,frame?.fleets);
     // Original package's CityCapitalFinal: dark outer disc / white ring / dark
     // center. Keep capitals above terrain/country labels and ordinary cities.

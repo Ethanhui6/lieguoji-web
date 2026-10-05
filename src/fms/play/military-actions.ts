@@ -11,14 +11,14 @@ export function previewMilitaryAction(world:World,action:MilitaryAction):StateAc
   const no=(reason:string):StateActionPreview=>({valid:false,reason,changes:[],warnings:[],basedOn});
   // Structural validation uses the current empty-army contract; actual unit keys
   // are separately validated on the full run before Worker dispatch.
-  if(!world||!Array.isArray(world.armies)||!createMilitaryCore(Object.fromEntries(world.armies.map(a=>[a?.id,'Infantry']))).validateWorld(world)||!world.statecraft)return no('世界状态无效。');
+  if(!world||!Array.isArray(world.armies)||!createMilitaryCore(Object.fromEntries(world.armies.map(a=>[a?.id,'Infantry'])),true,true).validateWorld(world)||!world.statecraft)return no('世界状态无效。');
   if(!action||typeof action!=='object'||!['relocate-capital','recruit'].includes(action.type))return no('国家操作无效。');
   const keys=action.type==='recruit'?['type','nationId','cityId','unit','troops']:['type','nationId','cityId'];
   if(Object.keys(action).length!==keys.length||!keys.every(k=>Object.hasOwn(action,k)))return no('国家操作格式无效。');
   const nation=world.nations.find(n=>n.id===action.nationId),city=world.cities.find(c=>c.id===action.cityId);
   const province=world.provinces.find(p=>p.id===city?.provinceId);
   if(!nation||!city||!province||province.controller!==nation.id||province.legalOwner!==nation.id)return no('必须选择本国拥有且实际控制的城市。');
-  if(world.armies.some(a=>a.provinceId===province.id&&a.status==='fighting'))return no('城市正在交战，暂不能执行。');
+  if(world.armies.some(a=>a.provinceId===province.id&&a.progress===0&&a.status==='fighting'))return no('城市正在交战，暂不能执行。');
   if(action.type==='relocate-capital'){
     if(nation.capitalId===city.id)return no('这里已经是首都。');
     return {valid:true,reason:`将${nation.name}的首都迁至${city.name}。`,changes:['首都标记与国家首都定位即时更新。'],warnings:['当前规则没有迁都费用。城市、人口、驻军和疆界保持原位。'],basedOn};

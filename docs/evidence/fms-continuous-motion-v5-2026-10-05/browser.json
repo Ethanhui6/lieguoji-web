@@ -1,0 +1,277 @@
+{
+  "at": "2026-10-05T10:47:09.779Z",
+  "source": {
+    "commit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
+    "fmsPlayFingerprint": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+    "workers": [
+      "http://127.0.0.1:5181/assets/play.worker-CJHHiBsu.js",
+      "http://127.0.0.1:5181/assets/biome.worker-DO2s7HoV.js"
+    ]
+  },
+  "development": {
+    "sameDay": "41",
+    "sampleCount": 31,
+    "drawFrameDelta": 473,
+    "movingUnits": [
+      {
+        "id": "muster-3-22",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-7-52",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-7-60",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-746-71",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-746-72",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-749-81",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "muster-749-84",
+        "kind": "army",
+        "poses": 13
+      },
+      {
+        "id": "fleet-8-0",
+        "kind": "fleet",
+        "poses": 13
+      },
+      {
+        "id": "fleet-9-1",
+        "kind": "fleet",
+        "poses": 13
+      }
+    ],
+    "pauseStable": true,
+    "capitalBefore": [
+      {
+        "nationId": "n-0",
+        "cityId": "c-233",
+        "name": "尤溪",
+        "point": {
+          "x": 265.2042640580071,
+          "y": 671.0964838663737
+        }
+      },
+      {
+        "nationId": "n-1",
+        "cityId": "c-333",
+        "name": "美马",
+        "point": {
+          "x": 871.4622874665105,
+          "y": 408.1607924567328
+        }
+      },
+      {
+        "nationId": "n-2",
+        "cityId": "c-355",
+        "name": "象山",
+        "point": {
+          "x": 291.05520910686914,
+          "y": 145.73895931243896
+        }
+      },
+      {
+        "nationId": "n-3",
+        "cityId": "c-354",
+        "name": "德清",
+        "point": {
+          "x": 707.965446015199,
+          "y": 859.7255001465479
+        }
+      },
+      {
+        "nationId": "n-4",
+        "cityId": "c-316",
+        "name": "亳邑",
+        "point": {
+          "x": 634.8050435384114,
+          "y": 158.4571103254954
+        }
+      },
+      {
+        "nationId": "n-5",
+        "cityId": "c-9",
+        "name": "布拖",
+        "point": {
+          "x": 552.6984267764622,
+          "y": 472.90056281619604
+        }
+      }
+    ],
+    "capitalAfter": [
+      {
+        "nationId": "n-0",
+        "cityId": "c-8",
+        "name": "卫桦",
+        "point": {
+          "x": 441.2125746409098,
+          "y": 505.6815809673733
+        }
+      },
+      {
+        "nationId": "n-1",
+        "cityId": "c-333",
+        "name": "美马",
+        "point": {
+          "x": 871.4622874665105,
+          "y": 408.1607924567328
+        }
+      },
+      {
+        "nationId": "n-2",
+        "cityId": "c-355",
+        "name": "象山",
+        "point": {
+          "x": 291.05520910686914,
+          "y": 145.73895931243896
+        }
+      },
+      {
+        "nationId": "n-3",
+        "cityId": "c-354",
+        "name": "德清",
+        "point": {
+          "x": 707.965446015199,
+          "y": 859.7255001465479
+        }
+      },
+      {
+        "nationId": "n-4",
+        "cityId": "c-316",
+        "name": "亳邑",
+        "point": {
+          "x": 634.8050435384114,
+          "y": 158.4571103254954
+        }
+      },
+      {
+        "nationId": "n-5",
+        "cityId": "c-9",
+        "name": "布拖",
+        "point": {
+          "x": 552.6984267764622,
+          "y": 472.90056281619604
+        }
+      }
+    ],
+    "migrationSaved": false
+  },
+  "production": {
+    "url": "http://127.0.0.1:5181/?fms=1",
+    "sampleCount": 33,
+    "days": [
+      "第 21 日",
+      "第 22 日"
+    ],
+    "clickedMovingFleet": {
+      "id": "fleet-10-4",
+      "point": {
+        "x": 437.59204200995254,
+        "y": 282.28775099468606
+      },
+      "selected": "叙永港水师"
+    },
+    "save": {
+      "checksum": "45657379bfbe02af0a29f445667b358928daaf1d0ba68db4e76f9dfbdec7fe58",
+      "day": 22,
+      "engine": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+      "id": "fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5",
+      "revision": 2
+    },
+    "restoredDay": 22,
+    "restoreTab": "18",
+    "warningErrors": []
+  },
+  "mobileEmulation": {
+    "canvas": {
+      "bottom": 926,
+      "height": 926,
+      "left": 0,
+      "right": 428,
+      "top": 0,
+      "width": 428,
+      "x": 0,
+      "y": 0
+    },
+    "capitals": [
+      {
+        "cityId": "c-0",
+        "name": "零陵",
+        "nationId": "n-0",
+        "point": {
+          "x": 499.5239310794406,
+          "y": 501.1750194761488
+        }
+      },
+      {
+        "cityId": "c-54",
+        "name": "八桂",
+        "nationId": "n-1",
+        "point": {
+          "x": 223.22182522879703,
+          "y": 331.91246456570093
+        }
+      },
+      {
+        "cityId": "c-49",
+        "name": "庆安",
+        "nationId": "n-2",
+        "point": {
+          "x": 563.3762622321093,
+          "y": 750.2692032743383
+        }
+      },
+      {
+        "cityId": "c-44",
+        "name": "南靖",
+        "nationId": "n-3",
+        "point": {
+          "x": 701.9508944617378,
+          "y": 592.6626125971476
+        }
+      },
+      {
+        "cityId": "c-31",
+        "name": "北宁府",
+        "nationId": "n-4",
+        "point": {
+          "x": 357.407185766432,
+          "y": 434.4485335879856
+        }
+      },
+      {
+        "cityId": "c-24",
+        "name": "寿宁",
+        "nationId": "n-5",
+        "point": {
+          "x": 577.7189334233601,
+          "y": 573.1110307905409
+        }
+      }
+    ],
+    "height": 926,
+    "scrollWidth": 428,
+    "width": 428
+  },
+  "physicalDevice": "not_run",
+  "userVisualAcceptance": "pending",
+  "cloudWrites": false
+}

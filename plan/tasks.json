@@ -2738,10 +2738,16 @@
       "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-first.json",
       "docs/evidence/fms-river-shape-v5-2026-10-05/local-playtest.png",
       "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
-      "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/DELIVERY.md",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/browser.json",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/checks.json",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/live-motion-samples.json",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/production-motion-samples.json",
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-07"
+      "WEB-04-09"
     ],
     "phases": [
       {
@@ -3529,22 +3535,42 @@
           {
             "id": "WEB-04-07",
             "title": "首都辨识与沿实际路线连续行军",
-            "status": "in_progress",
+            "status": "done",
             "dependsOn": [
               "WEB-04-05"
             ],
             "acceptance": "响应最新反馈：首都在地图与缩放中明确；陆军与舰队沿真实路径连续显示，暂停/恢复/命令/保存不破坏权威状态，不用穿陆直线或假动画替代；浏览器实测，原作与真机验收独立。",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/browser.json",
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/live-motion-samples.json",
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/production-motion-samples.json"
+            ],
+            "completionScope": "首都独立高辨识标记与实际路径连续显示、暂停/变速/拾取；权威经济战争仍逐日，非完整原作实时模拟。子日命令响应另列WEB-04-09，真机/视觉仍待验收。"
           },
           {
             "id": "WEB-04-08",
             "title": "原作海军交战核验与可玩接入",
             "status": "todo",
             "dependsOn": [
-              "WEB-04-07"
+              "WEB-04-09"
             ],
             "acceptance": "先只读核实海军交战入口与状态，接真实敌我判定、损失/撤退/原因和保存；预览确认一致；跨海运输另定完整登船/离船规则，不以船图标算完成。",
             "evidence": []
+          },
+          {
+            "id": "WEB-04-09",
+            "title": "原作时钟核验与权威日内行军、途中命令",
+            "status": "in_progress",
+            "dependsOn": [
+              "WEB-04-07"
+            ],
+            "acceptance": "继续用户即时战略要求：核验原作时间尺度；先封存532842完整规则并保护旧档，再将陆军/舰队权威位置推进与日结经济分离，途中命令/暂停/刷新对应同一位置，明确日内交战及重放。不能把显示插值标为实时规则完成。",
+            "evidence": [
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
+            ],
+            "progressNote": "原作时钟与倍率、单位逐帧更新静态链已核验；网页权威子日模拟尚未实现。"
           }
         ]
       },
@@ -3601,8 +3627,8 @@
       }
     ],
     "nextRecoveryTarget": {
-      "priority": "user-gameplay-first",
-      "next": "首都明显与沿真实路线连续陆军/舰队移动优先，随后海战与原作其他规则；按安装包证据逐项接入。"
+      "priority": "user-real-time-gameplay",
+      "next": "原作时钟/子日权威移动与途中命令优先，随后海军交战；封存532842后才改变模拟规则。"
     },
     "lastRecovery": {
       "at": "2026-10-05T05:32:55.776Z",
@@ -4078,14 +4104,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T10:17:30.664Z",
+      "at": "2026-10-05T10:45:55.710Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
-      "lastSourceCommit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
+      "lastCheckpointCommit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
+      "lastSourceCommit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
       "newCodeSinceCheckpoint": false,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-07 用户最新：首都明显、连续行军与即时战略感觉。保留海军/陆军和旧档，新规则修改前先归档532842。",
+      "nextFocus": "WEB-04-09 原作时钟核验与权威日内行军；07显示层已完成但不等同原作即时模拟。先封存当前532842。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4756,7 +4782,26 @@
         "naval combat/blockade",
         "troop transport/landing",
         "original port construction and route preference",
-        "continuous frame motion",
+        "real-device/user visual acceptance"
+      ],
+      "followupPresentation": "WEB-04-07/bdb8c3b"
+    },
+    "continuousMotionPrototype": {
+      "sourceCommit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
+      "engine": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+      "status": "local-display-slice",
+      "evidence": [
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/browser.json",
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/live-motion-samples.json",
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/production-motion-samples.json"
+      ],
+      "knownMissing": [
+        "authoritative sub-day movement and commands",
+        "original calendar/timeScale equivalence",
+        "mid-animation phase persistence",
+        "naval combat/transport",
         "real-device/user visual acceptance"
       ]
     }

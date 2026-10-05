@@ -1,0 +1,108 @@
+{
+  "atSea": {
+    "armyId": "recruit-13",
+    "checksum": "c19a99f55f58ecaa4e1c8af8a9b06ff046d468aafba31b745f5bc2b1adf4b64d",
+    "fleet": {
+      "id": "fleet-14-6",
+      "node": 411,
+      "progress": 0.5276263116547039,
+      "remainingEdges": 26
+    },
+    "landCopies": 0,
+    "revision": 3,
+    "supplies": 94,
+    "tick": 120,
+    "troops": 100
+  },
+  "landing": {
+    "army": {
+      "id": "recruit-13",
+      "morale": 65,
+      "name": "临海步兵",
+      "nationId": "n-0",
+      "originId": "p-0",
+      "progress": 0,
+      "provinceId": "p-17",
+      "route": [],
+      "status": "idle",
+      "supplies": 70,
+      "troops": 100
+    },
+    "cargoCount": 0,
+    "checksum": "2c182953814b36b5cebb1098270fff60ed0ad5946ac041d0032feff8859dcf35",
+    "controller": "n-5",
+    "landCopies": 1,
+    "revision": 4,
+    "tick": 603
+  },
+  "final": {
+    "build": {
+      "commit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
+      "fmsPlayFingerprint": "f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae"
+    },
+    "slots": {
+      "lieguoji-fms-occupation-v1": {
+        "checksum": "9aea2f57a3349520438c792248c569f69ff182bf8b0053fb1c26105c60dbf180",
+        "day": 39,
+        "engine": "747f31323a5a6ee7ea3029566241863d6be5809a7fa710f7589941af76e90366",
+        "id": "fms-e739c162-3a95-4297-bc7c-4ecd8f1a255b",
+        "nation": {
+          "capitalId": "c-0",
+          "color": "#80b1d3",
+          "dynastyId": "dynasty-0",
+          "id": "n-0",
+          "name": "淮夷",
+          "regimeId": "regime-0"
+        },
+        "revision": 4,
+        "tick": 4715,
+        "version": 6
+      },
+      "lieguoji-fms-transport-v1": {
+        "army": {
+          "id": "recruit-13",
+          "morale": 74,
+          "name": "临海步兵",
+          "nationId": "n-0",
+          "originId": "p-3",
+          "progress": 0.30000000000000016,
+          "provinceId": "p-3",
+          "route": [
+            "p-17"
+          ],
+          "status": "marching",
+          "supplies": 100,
+          "troops": 300
+        },
+        "cargoCount": 0,
+        "checksum": "66b2be927ecace22fa54b0e24c6b87014ff37d494a66d3a75ff4b3727e9843c3",
+        "day": 10,
+        "engine": "f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae",
+        "id": "fms-b200cd87-2d06-44df-ab68-f61dd481e037",
+        "nation": {
+          "capitalId": "c-0",
+          "color": "#fdb462",
+          "dynastyId": "dynasty-0",
+          "id": "n-0",
+          "name": "东岚",
+          "regimeId": "regime-0"
+        },
+        "revision": 6,
+        "tick": 1272,
+        "version": 7
+      }
+    },
+    "buildNote": "Last commit corrects a test fixture only; application asset fingerprint unchanged."
+  },
+  "portrait": {
+    "width": 428,
+    "height": 926,
+    "scrollWidth": 428,
+    "panelBottom": 742.4000244140625
+  },
+  "reducedMotion": {
+    "animation": "0s",
+    "transition": "0s"
+  },
+  "method": "Normal browser UI; CDP used only for read-only app metadata, viewport/media checks; no injected saves."
+}

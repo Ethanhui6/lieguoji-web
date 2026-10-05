@@ -1,48 +1,38 @@
-# 当前续接：省级持续围攻已接入，下一步原作效率/补给节奏
+# 当前续接：新局、自定义、模式点击与手动跨海运输已可试玩
 
-更新：2026-10-06。用户反馈“速度太快，占领一个地区不是直接全部吞并”，要求查原作。WEB-04-12有限切片已完成；下一批WEB-04-13原作围攻效率与持久补给，之后继续WEB-04-11自由战线/多军协同。不要将137测试或省抵抗条称为全面还原/最终平衡。关键玩法先行本地例外有效；真机/视觉门与云端发布锁不变。
+更新2026-10-06。用户最新直接要求优先修bug、补关键玩法；本地玩法例外继续有效。根目录主任务独占写入，子agent只读。按plan/tasks.json.webRebuild续接，不恢复旧国家行政顺序，不重复写规划。
 
-## 当前源码和试玩
+## 源码、入口与存档
 
-- 分支codex/ph06-world-generation；功能源码2926f3c，最终UI/已检查本机构建 **208d6b01dea1eadd2e8a6df0392659dee3cbef2b**；之后仅证据/状态提交。续接先核实git status。
-- 实际本机页 **http://127.0.0.1:5181/?fms=1**，build.json核实commit208d6b0。交付标签22，已标记保留；旧标签18/20/21未刷新。入口“进入世界→继续围城版第39日”。当前暂停，昌邑步兵围攻南关。
-- 当前 **v6 / fms-occupation-1 / 747f31323a5a6ee7ea3029566241863d6be5809a7fa710f7589941af76e90366**，独立Store7 **lieguoji-fms-occupation-v1**。
-- 当前run **fms-e739c162-3a95-4297-bc7c-4ecd8f1a255b**，day39 07:00 / tick4715 / revision4；checksum **9aea2f57a3349520438c792248c569f69ff182bf8b0053fb1c26105c60dbf180**。南关p-5抵抗789.9012106742883/835.1089535236689，即已占领5.4133945827%；仍由曹实控。计划p-4→p-5→p-7，路点南关→泰顺，等待攻下本省。
-- 5180是开发服务，不是最终构建证据。127.0.0.1是电脑地址，不是手机公网地址。
+- 分支codex/ph06-world-generation；a84fe06为创世/自定义，当前功能源码及已检构建 **674921dfe50521da079aa48997ca9e21f94ac7d5**。其后可能仅证据状态提交，先git status/log核实。
+- **http://127.0.0.1:5181/?fms=1**，最终刷新标签25已保留、暂停。入口“进入世界→继续运输版第10日”。5180开发；127.0.0.1非手机公网。
+- v7/fms-transport-1，指纹 **f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae**；Store9/lieguoji-fms-transport-v1。
+- run fms-b200cd87-2d06-44df-ab68-f61dd481e037，day10 14:24/tick1272/rev6/checksum66b2be927ecace22fa54b0e24c6b87014ff37d494a66d3a75ff4b3727e9843c3。东岚/首都临海/#fdb462；临海步兵已运至金阳登陆再撤回五岛，返岸补员300，旧AI再次调动，当前暂停。
+- 旧围城Store7 run fms-e739c162-3a95-4297-bc7c-4ecd8f1a255b/day39/tick4715/rev4/checksum9aea2f57a3349520438c792248c569f69ff182bf8b0053fb1c26105c60dbf180未变。旧标签不强制刷新；标签24仍有此前正在运行的试玩，本轮未替用户暂停/保存它。
 
-## 原作发现与本版变化
+## 完成的有限切片
 
-原包是PE/IL2CPP29；沿用户图片的索引→小函数→切片方法静态恢复。未执行原作，不读认证/SDK/私档，不写安装目录，raw/dump/完整包不提交或进dist。
+- WEB-04-14：小轮廓固定合并预算故障修复；6国开局、真实改名/国色/保存刷新；政治/军事拾取与选目标分离；小军旗、真实pulse反馈、短动画。用户具体开局错误未给，不能说排除所有原因；极小世界兵源与战争平衡未验。
+- WEB-04-15：同港登船→真实海路→抵岸确认登陆，外交重验、不瞬占、乘员日粮和损失、编制上限、独立存档、未来嵌套字段锁写。UI实际100临海步兵→金阳港、海上保存刷新→登陆→撤回五岛。
+- 证据 **docs/evidence/fms-creation-customize-v5-2026-10-06/DELIVERY.md**、unit-final.json（16文件166测试，修正测试夹具后的11项运输定向复测通过）、checks.json、browser.json、console.json、两张截图。lint/typecheck/build、15计划/22发布策略测试、plan:check通过。不是全仓库/自动E2E/云端CI全绿。
+- 428×926 Chromium仿真无横溢出/面板可滚动/reduced-motion0s，真机和用户视觉pending。FmsApp644.81kB chunk警告保留。
 
-- SetCurrentCell不转移土地；BattleInProvince按各军timer扣省battleScore，<=0才ConqueredBy；OnProvinceAdded只更新本省cells。原作普通占领同样在成功时一次转移本省，不是逐格涂色。
-- 原max=max(1,本省cell数×200×省数/总cell×simulateFactor)，默认factor2；守军回补，攻击消耗。堡垒倍率增强守方/削弱攻方，无首都独立额外耐久证据。无人撤军不凭空恢复。
-- WarSystemV2首都失守先登记、月检至少一月且敌仍控制才可能崩溃/吞并/内战，不是必然瞬吞；该完整服务尚未移植。
-- 网页以实际多边形面积代替cell数，平均容量400；半网页日脉冲与现有兵员/士气/补给/地形/城防效率明确是适配。三个instant resolveControl入口仅对新规则停用；旧v5保留原样。
-- 抵达后保持原国家底色、显示围攻条；攻扣守回，完成仅转移本省实控/一次经济归属。普通多段行军和连续路点均保留目标等待，AI不擅离围攻点；可撤退/讲和。
-- 敌军驻点阻止征军/迁入首都、自动整军、造船/港口补给。攻下后法律归属保持，未开放新统合体系。
+## 后续不可破坏
 
-## 测试与证据范围
+- **f72161fb已有实际运输档，改绑定规则前先完整封存当前入口/内核并注册旧版运行分派。不能只改hash锁掉试玩，不能静默迁移。**
+- occupation1归档747f与creation1归档76107bed完整复算；旧14kernel/runtime/session/naval逐字guard保留。v7用独立transport-runtime/editor-session，旧v6按原规则。
+- Store1—8不写，复制新runID独立库；CAS/主备原子保存/先查未来字段再恢复保留，不提交真实存档/安装包dump。
+- 原作港口/海路来源见docs/evidence/fms-naval-v5-2026-10-05/DELIVERY.md；1000人/船、6点日粮等是网页适配，不冒充拆出原作数值。
+- 原安装目录D:/steam/steamapps/common/FantasyMapSimulator仅只读；不读认证/SDK配置/个人存档、不运行完整原作或恢复脚本、不写安装目录。
 
-证据目录docs/evidence/fms-occupation-v5-2026-10-06：ORIGINAL_OCCUPATION.md、DELIVERY.md、unit/checks/build-check/browser.json、local-playtest.png与portrait-siege-focused.png。
+## 下一批
 
-- 12文件137相关单测、全局lint/typecheck、15计划与22发布策略测试、plan:check、构建/42产物审查通过。最终UI两文件lint/typecheck也通过。不代表全仓库/自动e2e/云端CI。
-- 初次回归抓到非v5 copy参数遗漏（会重编旧v1/v2军队），已修并复测；普通行军跨敌区丢失后续目标也已修并新增回归。未知occupation字段两槽优先锁写、CAS/原子事务保留。
-- 正常浏览器UI复制旧v5；推进至35日南关围攻3.3%，全56省控制仍未改变；半途保存→刷新→继续→再保存全run checksum一致，revision2→3。
-- 自动时间tick4305→4715，地图diagnostic与详情进度同步3.3%→5.4%；最后暂停保存。攻下完成/只转一省/之后续行由单测证明，本次浏览器样本未耗尽完整抵抗。
-- 428×926 Chromium仿真无横溢出、面板底742.4；显式定位军队后焦点(214,274.41)在面板上方。桌面缩窗后初始焦点曾落到面板附近，不能称响应式相机体验完整通过。
-- 最终页无console warning/error；一次CDP载入等待超时后正常恢复。FmsApp620.98kB chunk警告保留；无稳定FPS结论。
-- iPhone13ProMax / 用户报告iOS27 / Safari与Chrome真机未测；用户视觉仍pending。
+1. WEB-04-08：只读核实原作海战/敌我/损失撤退，做可玩海军交锋；AI跨海远征另分真实计划/登船/登陆规则。当前没有自动组织跨海战争。
+2. WEB-04-13：持久围攻效率与补给，对照完整/残军/城防耗时，先归档f72161fb；继续解决节奏和平衡。
+3. WEB-04-11多军战线、更多地图入口、玩家永久托管后续单独实现。现有普通玩家军令结束后AI仍可能再调动。
 
-## 兼容：新规则前先完整归档
+海战/封锁/AI远征、完整政体/家族/信仰未完成；第一份真机/用户视觉门仍pending。
 
-- Store1 frozen0.4、Store2 preview1/military1、Store3 mobilization1、Store4 naval1、Store5 realtime1、Store6 battle1保留。v5 f50f完整13kernel+8entry已封存compat/battle1，哈希复算及运行分派通过。
-- 本轮前后旧Store4 id fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5/rev2/checksum45657379...不变；Store5 id fms-d674950a-0a6b-4693-ae60-20e0a9a9e589/tick2863/rev3/checksum422a8e49...不变；Store6 id fms-67d99f08-09b1-4114-8aac-4c8b4fffc463/tick3225/rev4/checksum73ae8a92...不变。完整对照在browser.json。
-- **现在Store7/747f已有保存，后续改kernel/entry前先封存当前完整14kernel+8entry并注册旧规则；不要只换hash锁掉试玩。** 纯UI不改规则。复制另建runID/独立库，旧库不写。不导出或提交完整真实档。
+## 发布锁
 
-## 下一批真实工作与边界
-
-1. WEB-04-13：原作RecalCombatEfficiency不读armyCount，但当前网页沿用兵员模型；当前残军534人攻大省约157日、另一支缺粮残兵估计更长，尚非最终平衡。恢复每军效率、时钟/脉冲与持续补给，建立完好军/残兵/守军/堡垒的可玩耗时对照，避免瞬吞修复后变成长时间断粮围城。
-2. WEB-04-11：自由战线、多军集结/分路/协同推进，已有连续路点不是战线系统。WEB-04-08海战/封锁、运输登陆仍待做；原作省内cell游走、首都事件/迁都联动、完整行政政体家族信仰/历史/PWA及正式设定仍未完成。
-3. 云端锁与.githooks/pre-push未改：禁止push任何ref、远程PR/Issue/Milestone、上传、Pages触发。旧站未更新；唯一未来链仍私有Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git。
-
-保持本地单一主写入；只读审查可并行。会话结束不声称后台继续开发。
+旧唯一链GitHub Ethanhui6/lieguoji-web → Cloudflare Pages lieguoji-web，main生产/其他分支预览；旧站https://lieguoji-web.pages.dev/保持，本轮未查询或变更云端。所有新版本仅本地。全部PH/真机/视觉发布门与pre-push不变：**禁止push分支/tag、远程PR/Issue/Milestone、上传、Pages触发**。普通本地工作已授权；不能声称会话结束后仍后台开发。

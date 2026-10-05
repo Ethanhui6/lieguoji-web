@@ -2747,6 +2747,7 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
+      "WEB-04-08",
       "WEB-04-13"
     ],
     "phases": [
@@ -3630,6 +3631,38 @@
               "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md",
               "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md"
             ]
+          },
+          {
+            "id": "WEB-04-14",
+            "title": "创世入口、自定义与政治军事点击修复",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-12"
+            ],
+            "acceptance": "小轮廓保形开局、真实名称/国色编辑、暂停与保存恢复、模式拾取及小型军队/真实交锋反馈",
+            "evidence": [
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/unit-final.json",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/browser.json"
+            ],
+            "completionScope": "有限入口/自定义/模式拾取/小军旗/真实pulse反馈切片；用户未知错误、整体视觉与真机独立待验。"
+          },
+          {
+            "id": "WEB-04-15",
+            "title": "岛屿大陆跨海运输与登陆",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-12"
+            ],
+            "acceptance": "同港登船、真实海路、外交重验、登陆不瞬占、海上日结与独立恢复；旧档保持",
+            "evidence": [
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/unit-final.json",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-creation-customize-v5-2026-10-06/browser.json"
+            ],
+            "completionScope": "有限手动运兵/真实海路/外交重验/登陆/海上补给和保存切片；自动远征、海战封锁、原作运输数值等价与真机未完成。"
           }
         ]
       },
@@ -4163,14 +4196,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T12:18:21.727Z",
+      "at": "2026-10-05T18:18:13.411Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "6593a5efe956626e79e7c7dbd92c92c5af3ffd82",
-      "lastSourceCommit": "6593a5efe956626e79e7c7dbd92c92c5af3ffd82",
+      "lastCheckpointCommit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
+      "lastSourceCommit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
       "newCodeSinceCheckpoint": false,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-11 战线绘制/多军协同；后续修改规则前先封存f50f完整13kernel+8entry和Store6。性能/省内游走待优化，真机与视觉未过。",
+      "nextFocus": "WEB-04-08海战恢复与可玩交锋；WEB-04-13持久围攻/补给；先完整封存f72161fb运输规则。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4756,7 +4789,7 @@
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
       ],
-      "nextFocus": "WEB-04-13原作围攻效率与补给节奏（WEB-04-12浏览器已见残军长估计），随后WEB-04-11战线协同。云端锁与真机视觉门不变。"
+      "nextFocus": "WEB-04-08海战恢复与可玩交锋；WEB-04-13持久围攻/补给；先完整封存f72161fb运输规则。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -4924,6 +4957,24 @@
         "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md",
         "docs/evidence/fms-occupation-v5-2026-10-06/checks.json",
         "docs/evidence/fms-occupation-v5-2026-10-06/browser.json"
+      ]
+    },
+    "transportPrototype": {
+      "status": "local-limited-slice-verified",
+      "runVersion": 7,
+      "sourceCommit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
+      "engine": "f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae",
+      "database": "lieguoji-fms-transport-v1",
+      "manualTransport": true,
+      "automaticExpeditions": false,
+      "navalCombat": false,
+      "blockade": false,
+      "physicalDeviceAccepted": false,
+      "userVisualAccepted": false,
+      "evidence": [
+        "docs/evidence/fms-creation-customize-v5-2026-10-06/DELIVERY.md",
+        "docs/evidence/fms-creation-customize-v5-2026-10-06/browser.json",
+        "docs/evidence/fms-creation-customize-v5-2026-10-06/checks.json"
       ]
     }
   }

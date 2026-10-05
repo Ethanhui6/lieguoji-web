@@ -7,8 +7,9 @@ export const MOBILIZATION_DATABASE = 'lieguoji-fms-mobilization-v1';
 export const NAVAL_DATABASE = 'lieguoji-fms-naval-v1';
 export const REALTIME_DATABASE = 'lieguoji-fms-realtime-v1';
 export const BATTLE_DATABASE='lieguoji-fms-battle-v1';
-export type StoreKey=1|2|3|4|5|6;
-export const runStore=(run:FmsRun):StoreKey=>run.version===5?6:run.version===4?5:run.version===1?1:run.version===3?4:[previousMilitaryFingerprint,military1Fingerprint].includes(run.engine)?2:3;
+export const OCCUPATION_DATABASE='lieguoji-fms-occupation-v1';
+export type StoreKey=1|2|3|4|5|6|7;
+export const runStore=(run:FmsRun):StoreKey=>run.version===6?7:run.version===5?6:run.version===4?5:run.version===1?1:run.version===3?4:[previousMilitaryFingerprint,military1Fingerprint].includes(run.engine)?2:3;
 type Envelope = { version: 1; revision: number; checksum: string; run: FmsRun };
 type Slots = { current?: Envelope; backup?: Envelope; revision?: number };
 export interface SavedRun { run: FmsRun; revision: number; recovered: boolean }
@@ -18,15 +19,16 @@ async function digest(run: FmsRun): Promise<string> {
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
 }
 function future(raw: Envelope | undefined, version:StoreKey) {
-  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== (version===1?1:version===6?5:version===5?4:version===4?3:2)) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):version===6?raw.run.engine===runEngine(5):version===5?raw.run.engine===runEngine(4):version===4?raw.run.engine===runEngine(3):(supportedMilitaryEngine(raw.run.engine)&&runStore(raw.run)===version))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
+  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== (version===1?1:version===7?6:version===6?5:version===5?4:version===4?3:2)) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):version===7?raw.run.engine===runEngine(6):version===6?raw.run.engine===runEngine(5):version===5?raw.run.engine===runEngine(4):version===4?raw.run.engine===runEngine(3):(supportedMilitaryEngine(raw.run.engine)&&runStore(raw.run)===version))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
   const run = raw?.run;
-  if(run?.version===4||run?.version===5){
-    if(run.rules!==(run.version===5?'fms-battle-1':'fms-realtime-1')||(run.clock?.version!==undefined&&run.clock.version!==1)||Object.keys(run).some(k=>!['version','id','engine','terrain','scale','world','rules','units','navy','clock',...(run.version===5?['battles']:[])].includes(k))||(run.clock&&Object.keys(run.clock).some(k=>!['version','tick'].includes(k))))throw Error('日内存档包含未来规则或未知字段，已锁定读写。');
+  if(run?.version===4||(run?.version===5||run?.version===6)){
+    if(run.rules!==(run.version===6?'fms-occupation-1':run.version===5?'fms-battle-1':'fms-realtime-1')||(run.clock?.version!==undefined&&run.clock.version!==1)||Object.keys(run).some(k=>!['version','id','engine','terrain','scale','world','rules','units','navy','clock',...((run.version===5||run.version===6)?['battles']:[]),...(run.version===6?['occupation']:[])].includes(k))||(run.clock&&Object.keys(run.clock).some(k=>!['version','tick'].includes(k))))throw Error('日内存档包含未来规则或未知字段，已锁定读写。');
   }
-  if(run?.version===5&&run.battles){const b=run.battles;const unknown=(v:object,keys:string[])=>!!v&&typeof v==='object'&&Object.keys(v).some(k=>!keys.includes(k));if(b.version!==1||unknown(b,['version','nextId','engagements','plans'])||(Array.isArray(b.engagements)&&b.engagements.some(e=>unknown(e,['id','a','b','t','armies','started','pulse','carry','losses'])))||(b.plans&&Object.values(b.plans).some(p=>unknown(p,['path','targets']))))throw Error('交锋存档包含未知规则字段，已锁定读写。');}
+  if((run?.version===5||run?.version===6)&&run.battles){const b=run.battles;const unknown=(v:object,keys:string[])=>!!v&&typeof v==='object'&&Object.keys(v).some(k=>!keys.includes(k));if(b.version!==1||unknown(b,['version','nextId','engagements','plans'])||(Array.isArray(b.engagements)&&b.engagements.some(e=>unknown(e,['id','a','b','t','armies','started','pulse','carry','losses'])))||(b.plans&&Object.values(b.plans).some(p=>unknown(p,['path','targets']))))throw Error('交锋存档包含未知规则字段，已锁定读写。');}
+  if(run?.version===6&&run.occupation){const o=run.occupation;if(o.version!==1||Object.keys(o).some(k=>!['version','sieges'].includes(k))||(Array.isArray(o.sieges)&&o.sieges.some(v=>v&&Object.keys(v).some(k=>!['provinceId','controller','attacker','resistance','maximum','started','pulse'].includes(k)))))throw Error('围攻存档包含未知字段，已锁定读写。');}
   if(run?.version===2&&run.rules!=='fms-military-1')throw new Error('推演规则版本不同，已锁定读写。');
-  if((run?.version===3||run?.version===4||run?.version===5)&&((run.version===3&&run.rules!=='fms-naval-1')||(run.navy?.version!==undefined&&run.navy.version!==1)))throw new Error('海军规则版本不同，已锁定读写。');
-  if((run?.version===3||run?.version===4||run?.version===5)&&run.navy){
+  if((run?.version===3||run?.version===4||(run?.version===5||run?.version===6))&&((run.version===3&&run.rules!=='fms-naval-1')||(run.navy?.version!==undefined&&run.navy.version!==1)))throw new Error('海军规则版本不同，已锁定读写。');
+  if((run?.version===3||run?.version===4||(run?.version===5||run?.version===6))&&run.navy){
     const unknown=(value:object,keys:string[])=>Object.keys(value).some(k=>!keys.includes(k));
     if(unknown(run.navy,['version','fleets'])||(Array.isArray(run.navy.fleets)&&run.navy.fleets.some(f=>f&&typeof f==='object'&&unknown(f,['id','name','nationId','ships','crew','food','node','route','progress','dockId','targetId','patrol','status']))))throw new Error('海军存档包含未知规则字段，已锁定读写并保留原档。');
   }
@@ -42,7 +44,7 @@ async function valid(raw?: Envelope): Promise<Envelope | undefined> {
 }
 async function open(factory: IDBFactory, version:StoreKey): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = factory.open(version===1?RUN_DATABASE:version===2?MILITARY_DATABASE:version===3?MOBILIZATION_DATABASE:version===4?NAVAL_DATABASE:version===5?REALTIME_DATABASE:BATTLE_DATABASE, 1); let ended = false;
+    const req = factory.open(version===1?RUN_DATABASE:version===2?MILITARY_DATABASE:version===3?MOBILIZATION_DATABASE:version===4?NAVAL_DATABASE:version===5?REALTIME_DATABASE:version===6?BATTLE_DATABASE:OCCUPATION_DATABASE, 1); let ended = false;
     const timer = setTimeout(() => fail(), 8000);
     function fail() { if (!ended) { ended = true; clearTimeout(timer); reject(new Error('无法打开推演存档，未覆盖原档。')); } }
     req.onupgradeneeded = () => { if (ended) req.transaction?.abort(); else req.result.createObjectStore('saves'); };

@@ -1,5 +1,6 @@
 import type { World, Province } from '../../compat/v0_4/sim/types';
 import { unitProfiles, type UnitAssignments, type UnitKey } from './military-profile';
+import {underSiege} from './occupation';
 
 const alive=(a:World['armies'][number])=>a.status!=='destroyed'&&a.troops>0;
 const grainCost=(troops:number)=>Math.ceil(troops*100/6);
@@ -25,7 +26,7 @@ function event(w:World,text:string,reason:string){w.events.push({id:w.nextEventI
 export function mobilize(world:World,assignments:UnitAssignments,initial=false){
   const w=structuredClone(world),units={...assignments},median=medianPopulation(w),day=w.day+1;
   const local=new Map(w.statecraft!.provinces.map(p=>[p.provinceId,p]));
-  const available=(p:Province)=>!w.armies.some(a=>a.provinceId===p.id&&a.progress===0&&a.status==='fighting');
+  const available=(p:Province)=>!underSiege(w,p.id)&&!w.armies.some(a=>a.provinceId===p.id&&a.progress===0&&a.status==='fighting');
   const affordable=(p:Province,max:number)=>{const l=local.get(p.id)!;return Math.max(0,Math.min(max,Math.floor(l.population*.1),l.population-100,Math.floor((l.grain-l.population*10)*6/100)));};
   for(const n of w.nations){
     let recruited=0,reinforced=0,spent=0;

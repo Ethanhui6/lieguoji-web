@@ -16,6 +16,10 @@ import naval1 from './compat/naval1/manifest.json';
 import {createMilitaryCore as realtimeCore} from './compat/realtime1/fms/play/military-core';
 import {applyMilitaryAction as realtimeApply,previewMilitaryAction as realtimePreview} from './compat/realtime1/fms/play/military-actions';
 import realtime1 from './compat/realtime1/manifest.json';
+import {createMilitaryCore as battleCore} from './compat/battle1/fms/play/military-core';
+import {applyMilitaryAction as battleApply,previewMilitaryAction as battlePreview} from './compat/battle1/fms/play/military-actions';
+import battle1 from './compat/battle1/manifest.json';
+export const battleFingerprint=battle1.fingerprint;
 export const realtimeFingerprint=realtime1.fingerprint;
 
 export const previousMilitaryFingerprint=manifest.fingerprint;
@@ -25,6 +29,7 @@ export const navalFingerprint=naval1.fingerprint;
 export const supportedMilitaryEngine=(engine:unknown)=>engine===mobilizationFingerprint||engine===previousMilitaryFingerprint||engine===military1Fingerprint;
 /** Explicit immutable rule catalog, not an unknown-fingerprint fallback. */
 export function militaryRules(engine:string,units:UnitAssignments){
+  if(engine===battleFingerprint)return {...battleCore(units,true,true),previewMilitaryAction:battlePreview,applyMilitaryAction:battleApply};
   if(engine===realtimeFingerprint)return {...realtimeCore(units,true),previewMilitaryAction:realtimePreview,applyMilitaryAction:realtimeApply};
   if(engine===navalFingerprint)return {...navalCore(units),previewMilitaryAction:navalPreview,applyMilitaryAction:navalApply};
   if(engine===mobilizationFingerprint)return {...mobilizationCore(units),previewMilitaryAction:mobilizationPreview,applyMilitaryAction:mobilizationApply};

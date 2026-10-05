@@ -1,3 +1,4 @@
+import {underSiege} from './occupation';
 import type { Point, StateVersion, World } from '../../compat/v0_4/sim/types';
 import { routeDistance, seaRoute, type Port, type SeaGraph } from './sea-path';
 
@@ -7,7 +8,7 @@ export interface Fleet { id:string; name:string; nationId:string; ships:number; 
 export interface Navy { version:1; fleets:Fleet[] }
 export type NavalAction={type:'build-fleet';nationId:string;portId:string;ships:number}|{type:'sail';fleetId:string;portId:string}|{type:'patrol';fleetId:string;enabled:boolean};
 export interface NavalPreview { valid:boolean; reason:string; details:string[]; route:number[]; days:number }
-const owned=(w:World,p:Port,nationId:string)=>w.provinces.some(v=>v.id===p.provinceId&&v.controller===nationId&&v.legalOwner===nationId);
+const owned=(w:World,p:Port,nationId:string)=>!underSiege(w,p.provinceId)&&w.provinces.some(v=>v.id===p.provinceId&&v.controller===nationId&&v.legalOwner===nationId);
 const event=(w:World,text:string,reason:string)=>{w.events.push({id:w.nextEventId++,day:w.day,kind:'system',text,reason});if(w.events.length>160)w.events.splice(0,w.events.length-160);};
 export const portName=(w:World,p:Port)=>`${w.cities.find(c=>c.provinceId===p.provinceId)?.name??w.provinces.find(v=>v.id===p.provinceId)!.name}港`;
 export function fleetPosition(graph:SeaGraph,f:Fleet):Point {

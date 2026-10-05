@@ -1,5 +1,7 @@
-import { playRules, withBattle, executeMilitary, stepRunDay,advanceRunTick } from './runtime';
+import { playRules, withOccupation, executeMilitary, stepRunDay,advanceRunTick } from './runtime';
 import {applyBattle,reconcileCombat,type BattleAction} from './battle';
+import * as oldBattle from './compat/battle1/fms/play/battle';
+import {reconcileOccupation} from './occupation';
 import { type NavalAction } from './navy';
 import {navalRules,graphFor} from './naval-rules';
 import type { MilitaryAction } from './military-actions';
@@ -12,22 +14,22 @@ export type PlayCommand = {type:'battle';action:BattleAction;expected:PlayVersio
 export class PlaySession {
   private run?: FmsRun;
   execute(command: PlayCommand): { world: World; run?: FmsRun; halted?: GameEvent } {
-    if (command.type === 'create') { const run = withBattle(createFmsRun(command.terrain, command.count, command.relations)); assertFmsRun(run); this.run = run; return { run, world: run.world }; }
+    if (command.type === 'create') { const run = withOccupation(createFmsRun(command.terrain, command.count, command.relations)); assertFmsRun(run); this.run = run; return { run, world: run.world }; }
     if (command.type === 'load') { assertFmsRun(command.run); this.run = structuredClone(command.run); return { run: this.run, world: this.run.world }; }
-    if(command.type==='copy'){assertFmsRun(command.run);if(command.run.version===5)throw Error('本世界已是交锋版，无需再次转换。');const run=withBattle(command.run,true);assertFmsRun(run);this.run=run;return {run,world:run.world};}
+    if(command.type==='copy'){assertFmsRun(command.run);if(command.run.version===6)throw Error('本世界已是围城版，无需再次转换。');const run=withOccupation(command.run,true);assertFmsRun(run);this.run=run;return {run,world:run.world};}
     if (!this.run) throw new Error('请先创建或读取一个世界。');
     if(command.type==='military'&&this.run.version===1)throw Error('旧世界保留旧规则；请先创建新版推演副本。');
-    if('expected' in command&&(command.expected.day!==this.run.world.day||command.expected.nextEventId!==this.run.world.nextEventId||((this.run.version===4||this.run.version===5)&&command.expected.tick!==this.run.clock.tick)))throw Error('模拟时刻已变化，请重新预览命令。');
+    if('expected' in command&&(command.expected.day!==this.run.world.day||command.expected.nextEventId!==this.run.world.nextEventId||((this.run.version===4||(this.run.version===5||this.run.version===6))&&command.expected.tick!==this.run.clock.tick)))throw Error('模拟时刻已变化，请重新预览命令。');
     // Frozen management actions accept exactly the original two fields.
     const expected={day:this.run.world.day,nextEventId:this.run.world.nextEventId};
     if(command.type==='tick'){
-      if((this.run.version!==4&&this.run.version!==5)||!Number.isInteger(command.ticks)||command.ticks<1||command.ticks>120||(command.pauseOnBattle!==undefined&&typeof command.pauseOnBattle!=='boolean'))throw Error('日内推进参数无效。');
+      if((this.run.version!==4&&this.run.version!==5&&this.run.version!==6)||!Number.isInteger(command.ticks)||command.ticks<1||command.ticks>120||(command.pauseOnBattle!==undefined&&typeof command.pauseOnBattle!=='boolean'))throw Error('日内推进参数无效。');
       let candidate=this.run,halted:GameEvent|undefined;const graph=graphFor(candidate);
       for(let i=0;i<command.ticks;i++){const first=candidate.world.nextEventId;candidate=advanceRunTick(candidate,graph);if(command.pauseOnBattle){halted=candidate.world.events.find(e=>e.id>=first&&isClash(candidate.world,e));if(halted)break;}}
       assertRealtimeStep(this.run,candidate,graph);this.run=candidate;return {run:candidate,world:candidate.world,...(halted?{halted}:{})};
     }
-    if(command.type==='battle'){if(this.run.version!==5)throw Error('请先创建交锋版副本。');const run={...this.run,...applyBattle(this.run.world,this.run.battles,this.run.units,command.action)};assertFmsRun(run);this.run=run;return {run,world:run.world};}
-    if(command.type==='naval'){if(this.run.version!==3&&this.run.version!==4&&this.run.version!==5)throw Error('请先创建日内版副本，原档保持原规则。');const run={...this.run,...navalRules(this.run).applyNaval(this.run.world,this.run.navy,graphFor(this.run),command.action,expected)};assertFmsRun(run);this.run=run;return {run,world:run.world};}
+    if(command.type==='battle'){if(this.run.version!==5&&this.run.version!==6)throw Error('请先创建交锋版副本。');const run={...this.run,...(this.run.version===5?oldBattle.applyBattle:applyBattle)(this.run.world,this.run.battles,this.run.units,command.action)};assertFmsRun(run);this.run=run;return {run,world:run.world};}
+    if(command.type==='naval'){if(this.run.version!==3&&this.run.version!==4&&this.run.version!==5&&this.run.version!==6)throw Error('请先创建日内版副本，原档保持原规则。');const run={...this.run,...navalRules(this.run).applyNaval(this.run.world,this.run.navy,graphFor(this.run),command.action,expected)};assertFmsRun(run);this.run=run;return {run,world:run.world};}
     if(command.type==='military'){const run=executeMilitary(this.run,command.action,expected);assertFmsRun(run);this.run=run;return {run,world:run.world};}
     const {applyStateAction,issueOrder,previewOrder,previewStateAction,validateWorld}=playRules(this.run);
     const current = this.run.world; let next: World, halted: GameEvent | undefined;
@@ -35,7 +37,7 @@ export class PlaySession {
       if (!Number.isInteger(command.days) || command.days < 1 || command.days > 7) throw new Error('推进天数无效。');
       if (command.pauseOnBattle !== undefined && typeof command.pauseOnBattle !== 'boolean') throw new Error('交战暂停选项无效。');
       let candidate=this.run;
-      if(candidate.version===4||candidate.version===5){
+      if(candidate.version===4||(candidate.version===5||candidate.version===6)){
         const graph=graphFor(candidate);
         for(let tick=0;tick<command.days*120;tick++){
           const first=candidate.world.nextEventId;candidate=advanceRunTick(candidate,graph);
@@ -56,6 +58,18 @@ export class PlaySession {
       else { const preview = previewStateAction(current, command.action); if (!preview.valid) throw new Error(preview.reason); next = applyStateAction(current, command.action, expected); }
     }
     if (!validateWorld(next)) throw new Error('推演状态校验失败，保留上一状态。');
-    let run={ ...this.run, world: next };if(run.version===5){if(command.type==='order'){run.battles=structuredClone(run.battles);delete run.battles.plans[command.order.armyId];}run={...run,...reconcileCombat(run.world,run.battles,run.clock.tick)};}assertFmsRun(run);this.run = run; return { run:this.run, world: run.world, ...(halted ? { halted } : {}) };
+    let run={ ...this.run, world: next };
+    if(run.version===5||run.version===6){
+      if(command.type==='order'){
+        run.battles=structuredClone(run.battles);delete run.battles.plans[command.order.armyId];
+        if(run.version===6&&command.order.kind==='march'){
+          const a=run.world.armies.find(a=>a.id===command.order.armyId)!,path=[a.provinceId,...a.route];
+          if(path.length>1&&new Set(path).size===path.length)run.battles.plans[a.id]={path,targets:[command.order.targetId]};
+        }
+      }
+      run={...run,...(run.version===5?oldBattle.reconcileCombat:reconcileCombat)(run.world,run.battles,run.clock.tick)};
+    }
+    if(run.version===6)run={...run,...reconcileOccupation(run.world,run.occupation)};
+    assertFmsRun(run);this.run = run;return {run:this.run,world:run.world,...(halted?{halted}:{})};
   }
 }

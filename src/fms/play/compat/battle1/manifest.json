@@ -1,0 +1,135 @@
+{
+  "fingerprint": "f50fbe73b6980108c33cebac67edc704d3910905170a53e11a932e287410351a",
+  "kernel": [
+    "src/fms/play/military-core.ts",
+    "src/fms/play/military-profile.ts",
+    "src/fms/play/military-actions.ts",
+    "src/compat/v0_4/sim/core.ts",
+    "src/compat/v0_4/sim/statecraft.ts",
+    "src/compat/v0_4/sim/types.ts",
+    "src/compat/v0_4/history/types.ts",
+    "src/fms/play/mobilization.ts",
+    "src/fms/play/sea-path.ts",
+    "src/fms/play/navy.ts",
+    "src/fms/play/clock.ts",
+    "src/fms/play/realtime-statecraft.ts",
+    "src/fms/play/battle.ts"
+  ],
+  "entries": [
+    "src/fms/play/runtime.ts",
+    "src/fms/play/military-registry.ts",
+    "src/fms/play/session.ts",
+    "src/fms/play/world.ts",
+    "src/fms/play/names.ts",
+    "src/fms/play/politics.ts",
+    "src/fms/play/eastern-names.json",
+    "src/fms/play/naval-rules.ts"
+  ],
+  "files": [
+    {
+      "path": "src/fms/play/military-core.ts",
+      "archive": "fms/play/military-core.ts",
+      "sha256": "df4373c9603a45a1525a14f118901f0ea7a22485504ae04c5684651dbe74c150"
+    },
+    {
+      "path": "src/fms/play/military-profile.ts",
+      "archive": "fms/play/military-profile.ts",
+      "sha256": "ae934b8bcc52f227ca47dddb30fb01f240979fdbdf79771605403e51d3a3774b"
+    },
+    {
+      "path": "src/fms/play/military-actions.ts",
+      "archive": "fms/play/military-actions.ts",
+      "sha256": "a7866bf77c39a085ba2af224f17c8c1dd8b3eca6180093fe023cf1610bf14c9b"
+    },
+    {
+      "path": "src/compat/v0_4/sim/core.ts",
+      "archive": "compat/v0_4/sim/core.ts",
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "path": "src/compat/v0_4/sim/statecraft.ts",
+      "archive": "compat/v0_4/sim/statecraft.ts",
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "path": "src/compat/v0_4/sim/types.ts",
+      "archive": "compat/v0_4/sim/types.ts",
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "path": "src/compat/v0_4/history/types.ts",
+      "archive": "compat/v0_4/history/types.ts",
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "path": "src/fms/play/mobilization.ts",
+      "archive": "fms/play/mobilization.ts",
+      "sha256": "8b65e6d51a88ce35096fd3b5358a99393b8b47368062c6fd0d39c1034766b2dd"
+    },
+    {
+      "path": "src/fms/play/sea-path.ts",
+      "archive": "fms/play/sea-path.ts",
+      "sha256": "499a000352c7c72fc5c815a9c724619732624d5625f5038d8dd8ebc3baeb44a2"
+    },
+    {
+      "path": "src/fms/play/navy.ts",
+      "archive": "fms/play/navy.ts",
+      "sha256": "3beab1a046a24e8b107673af13a0c5513f1cef98631b83cea4716c2a1f7f9db0"
+    },
+    {
+      "path": "src/fms/play/clock.ts",
+      "archive": "fms/play/clock.ts",
+      "sha256": "f48296dce01e196a7edc5e2832e4927e3946428f8843f3f96bc8aec973c05de6"
+    },
+    {
+      "path": "src/fms/play/realtime-statecraft.ts",
+      "archive": "fms/play/realtime-statecraft.ts",
+      "sha256": "078c05047c02998235ecfeaeead975137f22ce5b9839a10157dcfaf9f1094c02"
+    },
+    {
+      "path": "src/fms/play/battle.ts",
+      "archive": "fms/play/battle.ts",
+      "sha256": "1d952b7c6a17b9cffddf9e2d99138d0216bd61d7deb710022664629f9a32ca72"
+    },
+    {
+      "path": "src/fms/play/runtime.ts",
+      "archive": "fms/play/runtime.ts.source",
+      "sha256": "bf9d2445811f3b5690a24e2eda82d486d706154ca82da044500d35e2fd3dafd2"
+    },
+    {
+      "path": "src/fms/play/military-registry.ts",
+      "archive": "fms/play/military-registry.ts.source",
+      "sha256": "61efba4fcb80ae7aec4b19ac1ab2adbd1fd7bc42bc7702135d5130c337d92653"
+    },
+    {
+      "path": "src/fms/play/session.ts",
+      "archive": "fms/play/session.ts.source",
+      "sha256": "d04b3224eac1dbe336d64ec3fff08677ae7252d80422ff58b7f10c05827d9cca"
+    },
+    {
+      "path": "src/fms/play/world.ts",
+      "archive": "fms/play/world.ts.source",
+      "sha256": "52c34365056bcac204829e31e9290d952efbcf600c3ebcec2c590e1f983eb9ee"
+    },
+    {
+      "path": "src/fms/play/names.ts",
+      "archive": "fms/play/names.ts.source",
+      "sha256": "e69e3489af7216b24e9c4e5c8215c825a9bd4c0e196d2839279fffed85f3b042"
+    },
+    {
+      "path": "src/fms/play/politics.ts",
+      "archive": "fms/play/politics.ts.source",
+      "sha256": "5d9c0dd5d4d33a207da875db0c9b3c5e5f424b6e9d3191b18afaea43390f2f61"
+    },
+    {
+      "path": "src/fms/play/eastern-names.json",
+      "archive": "fms/play/eastern-names.json.source",
+      "sha256": "d4d59db91cdf4bfd388d97ba573fe2f311e856fd4c6b762de6fc99354182da44"
+    },
+    {
+      "path": "src/fms/play/naval-rules.ts",
+      "archive": "fms/play/naval-rules.ts.source",
+      "sha256": "ae3281df48844185932305540213c20b4912bc02c3e54ddd4288852727f50259"
+    }
+  ]
+}

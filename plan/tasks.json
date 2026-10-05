@@ -2747,7 +2747,7 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-11"
+      "WEB-04-12"
     ],
     "phases": [
       {
@@ -3601,6 +3601,18 @@
             ],
             "acceptance": "用户明确两种都要、先做连续地点：后续可绘制战线并选择多军，预览真实可达集结/各军分段道路、确认后协同推进；保留各军战损与撤退状态，不能仅画装饰箭头。先封存已有f50f/Store6再改变规则，并继续核实原作行为；真机/视觉独立验收。",
             "evidence": []
+          },
+          {
+            "id": "WEB-04-12",
+            "title": "原作省防御链与持续围攻，修正抵达即占领",
+            "status": "in_progress",
+            "dependsOn": [
+              "WEB-04-10"
+            ],
+            "acceptance": "只读恢复原作battleScore与单省转移；网页持续抵抗、守军回补、完成后续行、围攻操作限制、独立旧档兼容及真实浏览器保存恢复。明确面积和时钟换算为适配。",
+            "evidence": [
+              "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md"
+            ]
           }
         ]
       },
@@ -4727,7 +4739,7 @@
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
       ],
-      "nextFocus": "WEB-04-11 用户已确认的绘制战线/多军协同；连续地点进攻有限切片WEB-04-10已完成。WEB-04-08海战仍在待办。"
+      "nextFocus": "用户2026-10-06反馈优先修正瞬间占领，完成WEB-04-12后继续WEB-04-11；云端发布锁和真机视觉门不变。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",

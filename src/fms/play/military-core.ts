@@ -119,6 +119,7 @@ function previewOrder(world: World, order: Order): OrderPreview {
   if (!canCommandArmy(world, army)) return invalid('测试大陆只能向烈军下达命令；自建世界可以控制各国军队。');
   if (!target) return invalid('目标辖区不存在。');
   if(tactical&&army.status==='fighting')return invalid('交锋中请使用“脱离交锋”，不能覆盖正在执行的战斗状态。');
+  if(tactical&&order.kind!=='retreat'&&army.progress===0&&isAtWar(world,army.nationId,provinceById(world,army.provinceId).controller))return invalid('尚未攻下当前辖区，请完成围攻或下达撤退命令。');
   if(realtime&&army.progress===0&&order.kind!=='retreat'&&world.armies.some(a=>canHoldGround(a)&&a.provinceId===army.provinceId&&isAtWar(world,a.nationId,army.nationId)))return invalid('所在路口已有敌军，只能下达撤退命令。');
   if(realtime&&army.route.length){
     if((order.kind==='retreat')!==(army.status==='retreating'))return invalid('途中改令保留当前行军状态；切换行军或撤退请先抵达下一路口。');
@@ -235,6 +236,8 @@ function moveArmy(world: World, army: Army, budget = 1, allowPursuit = true) {
       for(const a of present)if(present.some(other=>isAtWar(world,a.nationId,other.nationId))){a.status='fighting';a.route=[];a.progress=0;}
     }
     event(world, 'battle', `${army.name}遭遇敌军`, tactical?'抵达敌军路口停止，双方按0.1日持续结算；已确认的进攻计划在交锋结束后续行。':'抵达敌军所在辖区，后续行军中止；战斗采用同日结算，双方同时承受损失。');
+  } else if(tactical&&!retreating&&isAtWar(world,army.nationId,nextProvince.controller)) {
+    army.route=[];army.status='idle';
   } else if (!army.route.length) army.status = 'idle';
   if(realtime)resolveControl(world);
   if (unused > 1e-9 && army.route.length && army.status !== 'fighting') moveArmy(world, army, unused, false);
@@ -288,6 +291,9 @@ function resolveBattles(world: World) {
 }
 
 function resolveControl(world: World) {
+  // Current tactical rules transfer one province only after occupation.ts
+  // exhausts its resistance. Archived battle1 retains the old instant capture.
+  if(tactical)return;
   for (const province of world.provinces) {
     const present = world.armies.filter(army => canHoldGround(army) && army.provinceId === province.id);
     const nations = new Set(present.filter(army => !world.statecraft || isAtWar(world, army.nationId, province.controller)).map(army => army.nationId));
@@ -310,6 +316,7 @@ function evacuatePeacefulVisitors(world: World) {
   if (!world.statecraft) return;
   for (const army of world.armies) {
     if (!alive(army) || army.status !== 'idle') continue;
+    if(tactical&&isAtWar(world,army.nationId,provinceById(world,army.provinceId).controller))continue;
     const controller = provinceById(world, army.provinceId).controller;
     if (controller === army.nationId || isAtWar(world, army.nationId, controller)) continue;
     const route = findRoute(world, army, null, true);
@@ -334,6 +341,7 @@ function makeAutonomousDecisions(world: World) {
   for (const army of world.armies) {
     // Never replace a player's accepted route, an ongoing battle or a retreat.
     if (!alive(army) || army.status !== 'idle') continue;
+    if(tactical&&isAtWar(world,army.nationId,provinceById(world,army.provinceId).controller))continue;
     const stagger = [...army.id].reduce((sum, character) => sum + character.charCodeAt(0), 0);
     if ((world.day + stagger) % 3 !== 0) continue;
     if (world.statecraft && provinceById(world, army.provinceId).controller !== army.nationId && !isAtWar(world, army.nationId, provinceById(world, army.provinceId).controller)) continue;

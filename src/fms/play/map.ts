@@ -8,6 +8,7 @@ import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
+import type {OccupationState} from './occupation';
 import {drawAttackArrow} from './attack-map';
 
 export class PlayMap {
@@ -20,6 +21,9 @@ export class PlayMap {
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
   private battles:{id:string;x:number;y:number;armies:string[];losses:Record<string,number>}[]=[];
   private battleWidgets:{ids:string[];bar:Graphics;r:number;pixel:number;text?:Text}[]=[];
+  private siegeWidgets:{id:string;bar:Graphics;text:Text;x:number;y:number;pixel:number;percent:number}[]=[];
+  siegePositions(){const p=this.projection;return this.siegeWidgets.map(w=>({id:w.id,percent:w.percent,x:w.x*p.zoom+p.x,y:w.y*p.zoom+p.y}));}
+  updateOccupation(state:OccupationState){for(const w of this.siegeWidgets){const s=state.sieges.find(s=>s.provinceId===w.id);if(!s)continue;w.percent=(1-s.resistance/s.maximum)*100;w.bar.clear().roundRect(-22*w.pixel,0,44*w.pixel,5*w.pixel,2*w.pixel).fill(0x293931).rect(-22*w.pixel,0,44*w.pixel*w.percent/100,5*w.pixel).fill(0xf4c16a);w.text.text='围攻 '+w.percent.toFixed(0)+'%';}}
   battlePositions(){return this.battles;}
   updateBattles(world:World,state:BattleState){
     const armies=new Map(world.armies.map(a=>[a.id,a]));
@@ -40,9 +44,9 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[]}): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState}): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
-    this.unitGroups=[];this.battleWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
+    this.unitGroups=[];this.battleWidgets=[];this.siegeWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     this.capitals=world.nations.flatMap(n=>{const c=world.cities.find(c=>c.id===n.capitalId);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
     const g = new Graphics(), marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
@@ -64,6 +68,13 @@ export class PlayMap {
       const t = new Text({ text, style: { fontFamily: 'Georgia, serif', fontSize: size, fill: color, fontWeight: 'bold', stroke: { color: '#263d40', width: 3 } } });
       t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); parent.addChild(t);return t;
     };
+    if(combat?.occupation){for(const siege of combat.occupation.sieges){const p=provinces.get(siege.provinceId)!;
+      // A progress marker is not a fictitious cell-level ownership front.
+      marks.poly(p.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xe2b568,width:1.7*pixel,alpha:.85});
+      const group=new Container(),x=p.center.x/scale,y=p.center.y/scale+28*pixel;group.position.set(x,y);this.layer.addChild(group);
+      const bar=new Graphics();group.addChild(bar);const text=label('',0,0,10,'#ffdf9c',group);text.position.y=-2*pixel;
+      this.siegeWidgets.push({id:p.id,bar,text,x,y,pixel,percent:0});
+    }this.updateOccupation(combat.occupation);}
     const countryLabels=this.territories.map(territory=>{
       const n=nations.get(territory.nationId)!,size=Math.max(13,Math.min(27,territory.clearance/scale*zoom*.65));
       const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:size,fill:'#263a30',fontWeight:'bold',stroke:{color:'#fffae5',width:2},letterSpacing:2}});

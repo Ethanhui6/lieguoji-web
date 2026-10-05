@@ -2,6 +2,7 @@ import type { StateVersion, World, StateActionPreview } from '../../compat/v0_4/
 import { createMilitaryCore } from './military-core';
 import { isUnitKey, unitProfile, type UnitAssignments, type UnitKey } from './military-profile';
 import { mobilize } from './mobilization';
+import {underSiege} from './occupation';
 
 export type MilitaryAction = {type:'relocate-capital';nationId:string;cityId:string}
   | {type:'recruit';nationId:string;cityId:string;unit:UnitKey;troops:number};
@@ -19,6 +20,7 @@ export function previewMilitaryAction(world:World,action:MilitaryAction):StateAc
   const province=world.provinces.find(p=>p.id===city?.provinceId);
   if(!nation||!city||!province||province.controller!==nation.id||province.legalOwner!==nation.id)return no('必须选择本国拥有且实际控制的城市。');
   if(world.armies.some(a=>a.provinceId===province.id&&a.progress===0&&a.status==='fighting'))return no('城市正在交战，暂不能执行。');
+  if(underSiege(world,province.id))return no('城市正在被围攻，暂不能征军或迁入首都。');
   if(action.type==='relocate-capital'){
     if(nation.capitalId===city.id)return no('这里已经是首都。');
     return {valid:true,reason:`将${nation.name}的首都迁至${city.name}。`,changes:['首都标记与国家首都定位即时更新。'],warnings:['当前规则没有迁都费用。城市、人口、驻军和疆界保持原位。'],basedOn};

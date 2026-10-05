@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-06",
+  "scope": "FMS play affected suite; not full repository or cloud CI",
+  "unit": {
+    "files": 12,
+    "total": 137,
+    "passed": 137,
+    "failed": 0
+  },
+  "lint": true,
+  "typecheck": true,
+  "planTests": 15,
+  "releaseTests": 22,
+  "planCheck": true,
+  "initialFailures": [
+    "copy propagation omitted for v1/v2: fixed and regression passed",
+    "two current-copy version expectations updated to v6/Store7; legacy fixtures retained",
+    "prefer-const in test fixed"
+  ],
+  "browser": "pending",
+  "build": "pending",
+  "physicalDevice": "not_run",
+  "userVisualAcceptance": "pending",
+  "cloudWrites": false
+}

@@ -47,6 +47,10 @@ function finish(w:World,s:BattleState){
     const a=w.armies.find(a=>a.id===id);if(!a||!alive(a)||a.status==='retreating'){delete s.plans[id];continue;}
     const future=plan.path.slice(plan.path.indexOf(a.provinceId)+1);if(future.some(id=>{const p=w.provinces.find(p=>p.id===id)!;return p.controller!==a.nationId&&!nationsAtWar(w,a.nationId,p.controller);})){delete s.plans[id];if(a.route.length){a.route=a.progress>0?a.route.slice(0,1):[];if(!a.route.length&&a.status!=='fighting')a.status='idle';}log(w,'order',`${a.name}取消敌对进攻路线`,'后续目标已经和平；完成已进入的路段后按停战规则撤离。');continue;}
     if(a.status==='idle'){
+      // Clearing the defenders does not complete a siege. Keep the remaining
+      // plan, including its final waypoint, until this province is secured.
+      const here=w.provinces.find(p=>p.id===a.provinceId)!;
+      if(nationsAtWar(w,a.nationId,here.controller))continue;
       const i=plan.path.indexOf(a.provinceId),remaining=plan.path.slice(i+1);
       if(i<0||!remaining.length){delete s.plans[id];continue;}
       if(remaining.some(id=>{const p=w.provinces.find(p=>p.id===id)!;return p.controller!==a.nationId&&!nationsAtWar(w,a.nationId,p.controller);})){delete s.plans[id];log(w,'order',`${a.name}停止进攻路线`,'后续路线出现和平领土，已取消，不会和平越境。');continue;}
@@ -82,6 +86,7 @@ function pulse(w:World,s:BattleState,u:UnitAssignments,tick:number,core:ReturnTy
 export function advanceCombat(world:World,state:BattleState,units:UnitAssignments,tick:number){
   const s=structuredClone(state),core=createMilitaryCore(units,true,true);
   let w=structuredClone({...world,provinces:[]}) as World;w.provinces=world.provinces.map(p=>({...p}));
+  for(const a of w.armies)if(alive(a)&&a.progress===0&&a.status==='marching'&&nationsAtWar(w,a.nationId,w.provinces.find(p=>p.id===a.provinceId)!.controller)){a.status='idle';a.route=[];}
   contact(w);sync(w,s,tick);finish(w,s);let left=1/120,iterations=0;
   while(left>1e-10){if(++iterations>512)throw Error('交锋推进超出安全步数，已取消此批。');
     const armies=w.armies.filter(alive).sort((a,b)=>a.id.localeCompare(b.id));let dt=left;
@@ -114,10 +119,10 @@ export function previewBattle(w:World,state:BattleState,u:UnitAssignments,action
   // Planning beyond defenders is conditional, never an uninterrupted ETA.
   for(const other of temp.armies)if(other.id!==a.id){other.status='destroyed';other.troops=0;other.route=[];other.progress=0;}
   const core=createMilitaryCore(u,true,true),route:string[]=[];let days=0;
-  for(const targetId of action.targets){const p=core.previewOrder(temp,{armyId:a.id,targetId,kind:'march'});if(!p.valid)return invalid(p.reason);route.push(...(route.length?p.route.slice(1):p.route));days+=p.days;army.provinceId=targetId;army.route=[];army.progress=0;army.status='idle';}
+  for(const targetId of action.targets){const p=core.previewOrder(temp,{armyId:a.id,targetId,kind:'march'});if(!p.valid)return invalid(p.reason);route.push(...(route.length?p.route.slice(1):p.route));days+=p.days;temp.provinces.find(p=>p.id===targetId)!.controller=army.nationId;army.provinceId=targetId;army.route=[];army.progress=0;army.status='idle';}
   if(new Set(route).size!==route.length)return invalid('进攻路线不能折返重复经过同一辖区，请调整路点。');
   const guards=w.armies.filter(b=>alive(b)&&nationsAtWar(w,a.nationId,b.nationId)&&route.includes(b.provinceId));
-  return {valid:true,reason:`按 ${action.targets.length} 个路点沿 ${route.length-1} 段道路进攻。`,route,details:[`无交战基础行程约 ${days} 日；补给约 ${days*6}，战斗会延长时间。`,guards.length?`已知沿线有 ${guards.length} 支敌军；遇敌停下交锋，胜利后继续。`:'沿途遇敌会停止行军交锋，胜利后继续。','路段保留实际位置；和平国家禁止借道，撤退将取消整条计划。']};
+  return {valid:true,reason:`按 ${action.targets.length} 个路点沿 ${route.length-1} 段道路进攻。`,route,details:[`仅行军约 ${days} 日；不含沿途交战与围攻。`,`每个敌方辖区都要驻军削减抵抗；未完成占领前，后续路点等待。`,guards.length?`已知沿线有 ${guards.length} 支敌军；先交锋，再推进占领。`:'空省也需要占领时间，抵达不会立即变色。','路段保留实际位置；和平国家禁止借道，撤退将取消整条计划。']};
 }
 export function applyBattle(world:World,state:BattleState,u:UnitAssignments,action:BattleAction){const p=previewBattle(world,state,u,action);if(!p.valid)throw Error(p.reason);const w=structuredClone(world),s=structuredClone(state),a=w.armies.find(a=>a.id===action.armyId)!,core=createMilitaryCore(u,true,true);
   if(action.type==='withdraw'){retreat(w,a,core);delete s.plans[a.id];finish(w,s);}

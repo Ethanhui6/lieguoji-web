@@ -2720,7 +2720,24 @@
       "docs/evidence/fms-climate-worker-v5-2026-10-05/local-playtest.jpg",
       "docs/evidence/fms-climate-worker-v5-2026-10-05/portrait-climate-worker.jpg",
       "docs/evidence/fms-climate-worker-v5-2026-10-05/production-browser.json",
-      "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json"
+      "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/after-production.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/before-production.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/build-check.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checks-first.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checks.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/dev-browser.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/dev-close.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-close.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-rivers.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/production-browser.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/verification.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-first.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/local-playtest.png",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
+      "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
     ],
     "nextBatch": [
       "WEB-02-01"
@@ -3081,7 +3098,24 @@
           "docs/evidence/fms-climate-worker-v5-2026-10-05/local-playtest.jpg",
           "docs/evidence/fms-climate-worker-v5-2026-10-05/portrait-climate-worker.jpg",
           "docs/evidence/fms-climate-worker-v5-2026-10-05/production-browser.json",
-          "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json"
+          "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/after-production.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/before-production.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/build-check.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/checks-first.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/checks.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/dev-browser.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/dev-close.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-close.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-rivers.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/production-browser.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/verification.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-first.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/local-playtest.png",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
+          "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
         ],
         "workItems": [
           {
@@ -3297,15 +3331,33 @@
               "docs/evidence/fms-climate-worker-v5-2026-10-05/local-playtest.jpg",
               "docs/evidence/fms-climate-worker-v5-2026-10-05/portrait-climate-worker.jpg",
               "docs/evidence/fms-climate-worker-v5-2026-10-05/production-browser.json",
-              "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json"
+              "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/after-production.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/before-production.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/build-check.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/checks-first.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/dev-browser.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/dev-close.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-close.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-rivers.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/production-browser.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/verification.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-first.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/local-playtest.png",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
+              "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
             ],
-            "progress": "20792cb将已恢复气候/降水河网整体迁到独立Worker；目标地形先以高度显示，颜色/河流一起提交。取消终止旧计算、请求身份拒绝迟到结果、3份缓存；不转移历史数组、不改存档。30文件486测试及lint/typecheck/build通过。实际pending时可放大；候选计算中取消、竖屏切回高度、生产海岸确认/撤销/重做/再撤销均正确。原图数值统计与a200a00相同，主档/归档不变；一次桌面53ms长任务仍待细化，真机和用户视觉门未通过。",
+            "progress": "518913a接入原活动meander、原生归一化切线与逐点渐宽；气候Worker生成完整陆地裁剪河带并由单Mesh绘制。31文件496测试/lint/typecheck/build通过；37550点同图2.7倍前后对照、428×926至7.5倍、候选原图/确认/计算中历史切换及最终恢复已核对，主档和旧档归档摘要不变。原流量与分类不改；真机/用户视觉、总尺度、密度和湖岸观感仍未完成。",
             "remaining": [
               "粗层级海岸拐角与自然海湾/岬角观感仍不足；真实自由度、点数、折角指标或mask不能替代视觉验收。",
               "面积源量已守恒，但加密改变接收者和局部分配，河道/河口仍有分辨率依赖；主线程几何验证、源量重验与水文计算的手机耗时/内存待测。",
               "每次相对当前图，反复确认会累积；最初主体轮廓永久锚点未实现。固定剖面宽度并非保持不变。",
-              "已接原降水河网/增湿，但每点flux受网格密度影响；原河道弯曲与宽度网格、完整4096生物群系捕获/blur及触发链未适配，现图细支流偏密仍待视觉复核。",
-              "气候/河网已移出主线程；小于192气候采样的细部降水仍有限制。主线程几何/海洋/面积水文、输入克隆和渲染提交仍有成本；桌面短窗口53ms长任务不能代表手机通过。"
+              "原降水河网/增湿与曲线渐宽已适配，但每点flux受网格密度影响；完整4096生物群系捕获/blur及触发链未闭合，细支流偏密仍待处理。",
+              "气候/河网已移出主线程；小于192气候采样的细部降水仍有限制。主线程几何/海洋/面积水文、输入克隆和渲染提交仍有成本；桌面短窗口53ms长任务不能代表手机通过。",
+              "原河道曲线与渐宽已作网页适配；原总尺度/场景参数、密集支流和极近景/GPU成本仍待处理。"
             ]
           },
           {
@@ -3427,20 +3479,20 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "original river meander/width display and scale; final biome/ocean capture",
+      "name": "native river coordinate/prefab scale; final biome/ocean capture and coast quality",
       "status": "bounded-followup",
-      "note": "气候/降水河网Worker已接通且取消/历史恢复已验，不重复移植。下一批有界核对原河道meander/宽度网格并适配当前真实流路，改善细支流密度和缩放表现；继续跟进Biom/SDF最终捕获、海岸连续观感及剩余主线程热点。仍只绘图，首份真机/用户视觉门未过前不扩国家。"
+      "note": "原活动meander、原生切线和逐点渐宽已适配为Worker河带网格，不重复恢复。下一批优先核实World.VoronoiTransformPoint/河流Prefab总尺度与场景curveAmount，量化过密支流与近景裁剪成本；然后续接最终Biom/SDF捕获链及海岸/湖岸连续观感。仍只绘图，真机/用户视觉首份门未过前不扩国家。"
     },
     "lastRecovery": {
-      "at": "2026-10-05T02:02:43.835Z",
-      "scope": "web Worker lifecycle integration of previously recovered climate and rainfall rivers",
-      "sourceCommit": "20792cb8b3f024f817b678137b0eb5b36df5f08e",
+      "at": "2026-10-05T05:32:55.776Z",
+      "scope": "active JS river meandering and native cubic/thickness drawing chain",
+      "sourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
       "evidence": [
-        "docs/evidence/fms-climate-worker-v5-2026-10-05/CLIMATE_WORKER.md"
+        "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md"
       ],
       "originalExecuted": false,
-      "webAdaptation": "same numerical functions on Worker; immediate actual-document height view; latest request ownership, termination, bounded cache, transferred derived buffers",
-      "unknown": "original river mesh visual equivalence, original final capture, mobile performance and user acceptance"
+      "webAdaptation": "coastal ring straight; entire ribbon clipped at actual float32 h20 land faces; worker mesh output; web map-unit scale",
+      "unknown": "native total scale and serialized curve amount, final material capture, mobile performance and user acceptance"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -3905,14 +3957,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T02:02:43.835Z",
+      "at": "2026-10-05T05:32:55.776Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "f5b8371",
-      "lastSourceCommit": "20792cb8b3f024f817b678137b0eb5b36df5f08e",
+      "lastCheckpointCommit": "0a204f0",
+      "lastSourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
       "newCodeSinceCheckpoint": true,
       "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "气候/降水河网Worker已接通且取消/历史恢复已验，不重复移植。下一批有界核对原河道meander/宽度网格并适配当前真实流路，改善细支流密度和缩放表现；继续跟进Biom/SDF最终捕获、海岸连续观感及剩余主线程热点。仍只绘图，首份真机/用户视觉门未过前不扩国家。",
+      "nextFocus": "原活动meander、原生切线和逐点渐宽已适配为Worker河带网格，不重复恢复。下一批优先核实World.VoronoiTransformPoint/河流Prefab总尺度与场景curveAmount，量化过密支流与近景裁剪成本；然后续接最终Biom/SDF捕获链及海岸/湖岸连续观感。仍只绘图，真机/用户视觉首份门未过前不扩国家。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4298,7 +4350,8 @@
         "docs/evidence/fms-river-climate-v5-2026-10-05/rainfall-rivers.jpg",
         "docs/evidence/fms-river-climate-v5-2026-10-05/verification.json"
       ],
-      "executionSupersededBy": "climateWorkerPrototype"
+      "executionSupersededBy": "climateWorkerPrototype",
+      "displaySupersededBy": "riverShapePrototype"
     },
     "climateWorkerPrototype": {
       "sourceCommit": "20792cb8b3f024f817b678137b0eb5b36df5f08e",
@@ -4381,6 +4434,92 @@
         "docs/evidence/fms-climate-worker-v5-2026-10-05/portrait-climate-worker.jpg",
         "docs/evidence/fms-climate-worker-v5-2026-10-05/production-browser.json",
         "docs/evidence/fms-climate-worker-v5-2026-10-05/verification.json"
+      ],
+      "riverDisplaySupersededBy": "riverShapePrototype"
+    },
+    "riverShapePrototype": {
+      "sourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
+      "status": "local-recovered-shape-adaptation-verified; visual-equivalence-pending",
+      "algorithm": "recovered-meander-native-taper-land-clip-v1",
+      "originalExecuted": false,
+      "tests": {
+        "count": 496,
+        "files": 31,
+        "newCases": 10,
+        "lint": true,
+        "typecheck": true,
+        "build": true,
+        "planTests": 11,
+        "releaseLockTests": 22
+      },
+      "contract": {
+        "writesDocument": false,
+        "writesSave": false,
+        "coastIntersection": "actual float32 h20",
+        "fullWidthClippedToLand": true,
+        "coastalRingCurvatureFrozen": true,
+        "oneMesh": true,
+        "workerDerivedBuffers": 9,
+        "cacheEntries": 3,
+        "riverMeshMaxBytes": 12000000
+      },
+      "browser": {
+        "devPoints": 40789,
+        "productionPoints": [
+          37550,
+          37705,
+          37550
+        ],
+        "devRiverMeshBytes": 7397880,
+        "productionRiverMeshBytes": 1993776,
+        "workerDesktopMs": [
+          435.3,
+          264
+        ],
+        "sameMapZoomComparison": 2.7,
+        "portrait": [
+          428,
+          926
+        ],
+        "portraitZooms": [
+          2.7,
+          7.5
+        ],
+        "horizontalOverflow": false,
+        "biomeAndRiverNumericalStatsUnchanged": true,
+        "historyDuringPending": true,
+        "settledHistoryShapeRestored": true,
+        "saveAndArchiveUnchanged": true,
+        "warningOrErrorCount": 0
+      },
+      "limitations": [
+        "Native coordinate/prefab width scale and serialized curveAmount not verified; constructor .5 used",
+        "Dense tributaries, coastal straight segments, lake/coast corners still visible",
+        "Native interpolation rounding and web map units differ; extreme zoom and GPU/mobile performance not accepted",
+        "Additional river geometry costs memory; budgets fall back to height view",
+        "Original final 4096RT/material capture remains unported"
+      ],
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "cloudWrites": false,
+      "evidence": [
+        "docs/evidence/fms-river-shape-v5-2026-10-05/after-production.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/before-production.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/build-check.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-first.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/checks-first.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/dev-browser.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/dev-close.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/local-playtest.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-close.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/portrait-rivers.png",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/production-browser.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
+        "docs/evidence/fms-river-shape-v5-2026-10-05/verification.json"
       ]
     }
   }

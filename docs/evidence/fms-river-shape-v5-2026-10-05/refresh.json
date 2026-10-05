@@ -1,0 +1,76 @@
+{
+  "at": "2026-10-05T05:30:04.277Z",
+  "devActualReload": {
+    "metrics": {
+      "biomeBuildMs": "0",
+      "biomeBuilds": "0",
+      "biomeCacheBytes": "0",
+      "biomeExecution": "worker",
+      "biomePending": "false",
+      "biomeStats": "",
+      "catchmentArea": "1950.962794128547",
+      "drainageAlgorithm": "land-area-runoff-v2",
+      "heightPalette": "recovered-shader189-mode2-v1",
+      "lakeCells": "237",
+      "landArea": "650320.9313761824",
+      "lockedCells": "590",
+      "lockedTriangles": "1078",
+      "maxHeight": "100",
+      "minHeight": "0",
+      "oceanAlgorithm": "recovered-shader191-linear-web-contour-distance-v2",
+      "oceanBuildMs": "66.59999999403954",
+      "oceanBuilds": "1",
+      "oceanBytes": "1048576",
+      "oceanCacheBytes": "1048576",
+      "oceanMaxSampleError": "4.242875065695619",
+      "oceanSegments": "5241",
+      "oceanTexture": "512x512",
+      "pointCount": "40789",
+      "riverAlgorithm": "land-area-runoff-v2",
+      "riverGraphSegments": "939",
+      "riverMouths": "70",
+      "riverSegments": "884",
+      "riverShape": "",
+      "terrainDisplay": "height",
+      "terrainRequested": "height",
+      "testid": "fms-canvas",
+      "totalDischarge": "650320.9313761796",
+      "triangleCount": "80812"
+    },
+    "slots": {
+      "beforeProtection": {
+        "revision": 10,
+        "sha256": "7800964c8fe92959cb62774409e2555b720d02fefa0ff05697f02cd3aef03625",
+        "storedRevision": 6,
+        "version": 1
+      },
+      "current": {
+        "revision": 49,
+        "sha256": "1071c858fa7d1e3a41cf07ecadb016891a0e5f3bd2d5e4b46dc15e5a810a61eb",
+        "storedRevision": 24,
+        "version": 2
+      }
+    },
+    "sameSavedData": true
+  },
+  "productionFreshTab": {
+    "id": "4",
+    "slots": {
+      "beforeProtection": {
+        "revision": 2,
+        "sha256": "2c455b7ac96904602260407eb38b62a7b3e29f1f8cfb61b81f210406b1c33f09",
+        "storedRevision": 3,
+        "version": 1
+      },
+      "current": {
+        "revision": 14,
+        "sha256": "d819006c7dda651c6470cb0d441440005785b5ac54ae76e2b7dccf04fc1c97a0",
+        "storedRevision": 10,
+        "version": 2
+      }
+    },
+    "sameSavedData": true
+  },
+  "newSavePerformed": false,
+  "fullSaveExported": false
+}

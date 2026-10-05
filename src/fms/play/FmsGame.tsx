@@ -38,7 +38,7 @@ export default function FmsGame({ terrain, onClose }: { terrain: FmsDocument; on
   const host = useRef<HTMLDivElement>(null), client = useRef<PlayClient | null>(null), alive = useRef(true);
   const selected = useRef({ provinceId, armyId }); selected.current = { provinceId, armyId };
   const view = useRef<{ renderer: FmsRenderer; map: PlayMap; camera: AtlasCamera; viewport: { width: number; height: number }; terrain: FmsDocument } | null>(null);
-  const paint = () => { const v = view.current, r = runRef.current; if (v && r) { v.map.draw(namedWorld(r.world), r.scale, v.camera.scale, selected.current.provinceId, selected.current.armyId,mapModeRef.current); v.renderer.refresh(); } };
+  const paint = () => { const v = view.current, r = runRef.current; if (v && r) { v.map.draw(namedWorld(r.world), r.scale, v.camera.scale, selected.current.provinceId, selected.current.armyId,mapModeRef.current); v.renderer.canvas.dataset.countryLabels=JSON.stringify(v.map.labelPositions()); v.renderer.refresh(); } };
   function pause() { playingRef.current = false; setPlaying(false); }
   useEffect(() => {
     alive.current = true; const worker = new PlayClient(); client.current = worker;

@@ -35,7 +35,8 @@ export function namedWorld(world:World):World{
   const cities=world.cities.map(c=>{
     if(!/^c-\d+$/.test(c.id))return c;
     const index=Number(c.id.slice(2)),p=world.provinces.find(p=>p.id===c.provinceId),nation=world.nations.find(n=>n.id===p?.legalOwner);
-    if(!p||!aliases.has(p.name)||c.name!==`${nation?.name}${index+1}城`)return c;
+    const generatedCity=c.name===`${nation?.name}${index+1}城`,generatedCapital=nation?.capitalId===c.id&&c.name===`${nation.name}京`;
+    if(!p||!aliases.has(p.name)||(!generatedCity&&!generatedCapital))return c;
     const name=names.places[index];aliases.set(c.name,name);return {...c,name};
   });
   if(!aliases.size){cache.set(world,world);return world;}

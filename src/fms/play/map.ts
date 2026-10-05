@@ -2,14 +2,20 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../../sim/types';
 import { armyMarkerPoint } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
+import { territoryLabels, type TerritoryLabel } from './territory-labels';
 
 export class PlayMap {
   readonly layer = new Container();
+  private territoryKey='';
+  private territories:TerritoryLabel[]=[];
+  labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political'): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
     const g = new Graphics(), marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
     const pixel = 1 / zoom, style=politicalStyle(mode);
+    const territoryKey=`${world.custom?.id}/${world.provinces.map(p=>`${p.id}:${p.controller}`).join('|')}`;
+    if(territoryKey!==this.territoryKey){this.territoryKey=territoryKey;this.territories=territoryLabels(world);}
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
     for (const p of world.provinces) {
       g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: nationColor(nations.get(p.controller)!), alpha: style.fill });
@@ -25,11 +31,21 @@ export class PlayMap {
       const t = new Text({ text, style: { fontFamily: 'Georgia, serif', fontSize: size, fill: color, fontWeight: 'bold', stroke: { color: '#263d40', width: 3 } } });
       t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); this.layer.addChild(t);
     };
+    const countryLabels=this.territories.map(territory=>{
+      const n=nations.get(territory.nationId)!,size=Math.max(13,Math.min(27,territory.clearance/scale*zoom*.65));
+      const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:size,fill:'#263a30',fontWeight:'bold',stroke:{color:'#fffae5',width:2},letterSpacing:2}});
+      t.anchor.set(.5);t.scale.set(pixel);t.position.set(territory.point.x/scale,territory.point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
+      return {point:territory.point,size,width:n.name.length*(size+2)};
+    });
     for (const city of world.cities) {
       const capital = world.nations.find(n => n.capitalId === city.id), x = city.position.x / scale, y = city.position.y / scale;
-      marks.circle(x, y, (capital ? 4.5 : 2.5) * pixel).fill(capital ? 0xffdd87 : 0xf0e5cc).stroke({ width: 1 * pixel, color: 0x38453e });
-      if (capital) label(`${capital.name} · ${city.name}`, x, y - 7 * pixel, 13);
-      else if (zoom > .6) label(city.name, x, y - 5 * pixel, 11);
+      if(capital)marks.poly([x,y-5*pixel,x+5*pixel,y,x,y+5*pixel,x-5*pixel,y]).fill(0xffdd87).stroke({width:1*pixel,color:0x38453e});
+      else marks.circle(x, y, 2.5 * pixel).fill(0xf0e5cc).stroke({width:1*pixel,color:0x38453e});
+      if(capital||zoom>.6){
+        const near=countryLabels.find(c=>Math.abs(c.point.x-city.position.x)/scale*zoom<(c.width+city.name.length*12)/2&&Math.abs(c.point.y-city.position.y)/scale*zoom<c.size+20);
+        const offset=near?Math.max(8,(city.position.y-near.point.y)/scale*zoom+near.size/2+8):7;
+        label(city.name,x,y-offset*pixel,capital?12:11);
+      }
     }
     for (const army of world.armies) {
       if (army.status === 'destroyed') continue;

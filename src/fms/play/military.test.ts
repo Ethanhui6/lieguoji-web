@@ -43,7 +43,7 @@ describe('FMS dedicated military rules and legacy dispatch',()=>{
   it('explicit copy changes identity and preserves the original state and route',()=>{
     const old=createFmsRun(grid(),4,'war'),session=new PlaySession(),before=structuredClone(old);
     const run=session.execute({type:'copy',run:old}).run!;expect(run.id).not.toBe(old.id);expect(run.world.custom!.id).toBe(run.id);expect(old).toEqual(before);
-    expect(run.world.armies).toEqual(old.world.armies);if(run.version===2)expect(Object.values(run.units).every(k=>k==='Infantry')).toBe(true);
+    expect(run.world.armies).toEqual(old.world.armies);if(run.version!==1)expect(Object.values(run.units).every(k=>k==='Infantry')).toBe(true);
   });
   it('requires exact army-to-unit coverage including destroyed formations',()=>{
     const run=make(),id=run.world.armies[0].id;

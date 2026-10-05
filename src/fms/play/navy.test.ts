@@ -81,7 +81,7 @@ describe('real naval geometry and playable commands',()=>{
  });
  it('explicit naval copy and two saves preserve original Store3; CAS and future navy backup lock writes',async()=>{
   const f=new IDBFactory(),old=withMilitary(createFmsRun(grid(),4,'peace')),before=structuredClone(old);await saveRun(old,null,f);
-  const session=new PlaySession(),copy=session.execute({type:'copy',run:old}).run!;expect(copy.version).toBe(3);expect(runStore(copy)).toBe(4);expect(copy.world.armies).toEqual(old.world.armies);expect(copy.world.statecraft).toEqual(old.world.statecraft);
+  const copy=withNavy(old,true);expect(copy.version).toBe(3);expect(runStore(copy)).toBe(4);expect(copy.world.armies).toEqual(old.world.armies);expect(copy.world.statecraft).toEqual(old.world.statecraft);
   await saveRun(copy,null,f);const next=stepRunDay(copy);await saveRun(next,1,f);expect((await loadRun(f,3))?.run).toEqual(before);expect((await loadRun(f,4))?.run).toEqual(next);await expect(saveRun(copy,1,f)).rejects.toThrow('另一窗口');
   await new Promise<void>(resolve=>{const req=f.open(NAVAL_DATABASE,1);req.onsuccess=()=>{const db=req.result,tx=db.transaction('saves','readwrite'),s=tx.objectStore('saves'),q=s.get('backup');q.onsuccess=()=>{const raw=q.result;raw.run.navy.version=2;s.put(raw,'backup');};tx.oncomplete=()=>{db.close();resolve();};};});
   await expect(loadRun(f,4)).rejects.toThrow('锁定');await expect(saveRun(copy,2,f)).rejects.toThrow('锁定');expect((await loadRun(f,3))?.run).toEqual(before);

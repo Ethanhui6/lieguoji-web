@@ -23,9 +23,9 @@ describe('population-based forces, compact markers and readable time',()=>{
  it('old v2 copy retains units/orders and two new saves cannot overwrite its original',async()=>{
   const factory=new IDBFactory(),old={...make(),engine:military1Fingerprint},before=structuredClone(old);
   await saveRun(old,null,factory);const session=new PlaySession(),copy=session.execute({type:'copy',run:old}).run!;
-  expect(copy.id).not.toBe(old.id);expect(copy.world.armies).toEqual(old.world.armies);if(copy.version===2)expect(copy.units).toEqual(old.units);
+  expect(copy.id).not.toBe(old.id);expect(copy.world.armies).toEqual(old.world.armies);if(copy.version!==1)expect(copy.units).toEqual(old.units);
   await saveRun(copy,null,factory);await saveRun(stepRunDay(copy),1,factory);
-  expect((await loadRun(factory,2))?.run).toEqual(before);expect((await loadRun(factory,4))?.run.id).toBe(copy.id);expect(old).toEqual(before);
+  expect((await loadRun(factory,2))?.run).toEqual(before);expect((await loadRun(factory,5))?.run.id).toBe(copy.id);expect(old).toEqual(before);
  });
  it('monthly recruitment is funded, changes the unit map and survives a seven-day Worker batch',()=>{
   const run=make();run.world.armies.forEach(a=>{a.status='destroyed';a.troops=0;});run.world.day=29;

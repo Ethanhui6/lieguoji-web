@@ -57,7 +57,7 @@ export function initialNavy(world:World,graph:SeaGraph){
 }
 /** Before daily land economy: real provisioning debit, ration consumption and
  * segmented navigation. Enemy-held ports cannot supply or teleport a fleet. */
-export function advanceNavy(world:World,state:Navy,graph:SeaGraph){
+export function advanceNavy(world:World,state:Navy,graph:SeaGraph,move=true){
   const w=structuredClone(world),navy=structuredClone(state),day=w.day+1;
   for(const f of navy.fleets){
     if(f.status==='lost')continue;
@@ -67,11 +67,42 @@ export function advanceNavy(world:World,state:Navy,graph:SeaGraph){
     if(f.patrol&&!f.route.length&&day%15===0){for(const p of graph.ports){if(p.id===f.dockId||!owned(w,p,f.nationId))continue;const action:NavalAction={type:'sail',fleetId:f.id,portId:p.id},preview=previewNaval(w,navy,graph,action);if(preview.valid){perform(w,navy,graph,action,preview);break;}}}
     const starving=f.food<f.crew;f.food=Math.max(0,f.food-f.crew);
     if(starving){f.crew=Math.max(0,f.crew-Math.max(1,Math.floor(f.crew*.05)));if(f.crew===0){f.status='lost';event(w,`${f.name}因断粮损失`,'全部船员耗尽，舰队停止航行。');continue;}}
-    if(f.status!=='sailing')continue;
+    if(!move||f.status!=='sailing')continue;
     let budget=NAVAL_SPEED*(starving?.5:1);
     while(f.route.length){const link=graph.nodes.get(f.node)!.links.find(e=>e.to===f.route[0])!,remaining=link.distance-f.progress;if(budget<remaining){f.progress+=budget;break;}budget-=remaining;f.node=f.route.shift()!;f.progress=0;}
     if(!f.route.length){const target=graph.ports.find(p=>p.id===f.targetId)!;f.dockId=owned(w,target,f.nationId)?target.id:null;f.status=f.dockId?'docked':'anchored';f.targetId=null;event(w,`${f.name}抵达${portName(w,target)}`,f.dockId?'已完成逐海格航行，下次日结从港口补粮。':'目的港已易主，停在港外等待命令，无法取得敌港补给。');}
   }
+  return {world:w,navy};
+}
+/** Fractional movement consumes distance only. Rations are charged at the
+ * day boundary; exactly one day's food permits full speed for that day. */
+export function moveNavy(world:World,state:Navy,graph:SeaGraph,fraction:number){
+  // Movement touches fleet records and appends events only. Geography and
+  // the economy remain unchanged until the daily settlement.
+  const w={...world,events:[...world.events]},navy=structuredClone(state);
+  for(const f of navy.fleets){
+    if(f.status!=='sailing')continue;
+    let budget=NAVAL_SPEED*fraction*(f.food<f.crew?.5:1);
+    while(f.route.length){const link=graph.nodes.get(f.node)!.links.find(e=>e.to===f.route[0])!,remaining=link.distance-f.progress;if(budget<remaining){f.progress+=budget;break;}budget-=remaining;f.node=f.route.shift()!;f.progress=0;}
+    if(!f.route.length){const target=graph.ports.find(p=>p.id===f.targetId)!;f.dockId=owned(w,target,f.nationId)?target.id:null;f.status=f.dockId?'docked':'anchored';f.targetId=null;event(w,`${f.name}抵达${portName(w,target)}`,'日内海路完成；下一次日结补粮。');}
+  }return {world:w,navy};
+}
+export function previewRealtimeNaval(w:World,navy:Navy,graph:SeaGraph,action:NavalAction):NavalPreview {
+  const f=action.type==='sail'?navy.fleets.find(f=>f.id===action.fleetId):undefined;
+  if(!f?.route.length)return previewNaval(w,navy,graph,action);
+  const copy=structuredClone(navy),fleet=copy.fleets.find(v=>v.id===f.id)!;
+  fleet.node=f.route[0];fleet.route=[];fleet.progress=0;fleet.dockId=null;fleet.targetId=null;fleet.status='anchored';
+  const p=previewNaval(w,copy,graph,action);if(!p.valid)return p;
+  if(p.route.includes(f.node))return {...p,valid:false,reason:'航路需要原地折返，请先驶出当前海段。'};
+  const route=[f.node,...p.route],distance=routeDistance(graph,route)-f.progress,days=Math.max(1,Math.ceil(distance/NAVAL_SPEED));
+  if(f.food<f.crew*(days+3))return {...p,valid:false,reason:'当前海段与新路线的余粮不足。'};
+  return {...p,route,days,reason:'保持当前位置，走完当前海段后转向目的港。',details:[`实际剩余海路 ${Math.round(distance)} 单位，约 ${days} 日。`,'途中改令保留当前海段进度，不瞬移或穿陆。']};
+}
+export function applyRealtimeNaval(world:World,state:Navy,graph:SeaGraph,action:NavalAction,expected:StateVersion){
+  if(expected.day!==world.day||expected.nextEventId!==world.nextEventId)throw Error('世界已变化，请重新预览海军命令。');
+  const p=previewRealtimeNaval(world,state,graph,action);if(!p.valid)throw Error(p.reason);
+  const w=structuredClone(world),navy=structuredClone(state),old=action.type==='sail'?state.fleets.find(f=>f.id===action.fleetId):undefined;
+  perform(w,navy,graph,action,p);if(old?.route.length)navy.fleets.find(f=>f.id===old.id)!.progress=old.progress;
   return {world:w,navy};
 }
 const exact=(v:object,keys:string[])=>Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));

@@ -2,13 +2,20 @@ import type { GameEvent, World } from '../../sim/types';
 import type { FmsRun } from './world';
 import type { PlayCommand } from './session';
 type Result = { world: World; run?: FmsRun; halted?: GameEvent };
+type TickUpdate=Pick<Extract<FmsRun,{version:4}>,'id'|'world'|'clock'|'navy'|'units'>;
 export class PlayClient {
   private worker = new Worker(new URL('./play.worker.ts', import.meta.url), { type: 'module' });
   private id = 0;
   private pending = new Map<number, { resolve: (r: Result) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private closed = false;
+  private snapshot?:FmsRun;
   constructor() {
-    this.worker.onmessage = (e: MessageEvent<Result & { id: number; error?: string }>) => { const p = this.pending.get(e.data.id); if (!p) return; this.pending.delete(e.data.id); clearTimeout(p.timer); if (e.data.error) p.reject(new Error(e.data.error)); else p.resolve(e.data); };
+    this.worker.onmessage = (e: MessageEvent<Result & { id: number; error?: string;update?:TickUpdate }>) => {
+      const p=this.pending.get(e.data.id);if(!p)return;this.pending.delete(e.data.id);clearTimeout(p.timer);
+      if(e.data.error){p.reject(new Error(e.data.error));return;}
+      if(e.data.update){if(this.snapshot?.version!==4||this.snapshot.id!==e.data.update.id){p.reject(new Error('日内快照不匹配，已暂停。'));return;}e.data.run={...this.snapshot,...e.data.update};}
+      if(e.data.run)this.snapshot=e.data.run;p.resolve(e.data);
+    };
     this.worker.onerror = () => this.close('模拟线程无法继续，已暂停。');
   }
   send(command: PlayCommand): Promise<Result> {

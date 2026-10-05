@@ -14,3 +14,18 @@ export function startDayLoop(options:{playing:()=>boolean;blocked:()=>boolean;re
   schedule(options.remaining());
   return()=>{cancelled=true;clearTimeout(timer);};
 }
+
+/** Presentation cadence is bounded; authoritative time advances only by the
+ * integer ticks actually acknowledged by the Worker. No background catch-up. */
+export function startRealtimeLoop(options:{playing:()=>boolean;blocked:()=>boolean;tickMillis:number;step:(ticks:number)=>Promise<void>}){
+  let cancelled=false,timer:ReturnType<typeof setTimeout>,anchor=performance.now(),credit=0;
+  const tick=async()=>{
+    if(cancelled||!options.playing())return;
+    const now=performance.now(),elapsed=Math.min(250,Math.max(0,now-anchor));anchor=now;
+    if(options.blocked()){credit=0;timer=setTimeout(()=>void tick(),32);return;}
+    credit+=elapsed/options.tickMillis;const count=Math.min(120,Math.floor(credit));
+    if(count){credit-=count;await options.step(count);}
+    if(!cancelled&&options.playing())timer=setTimeout(()=>void tick(),32);
+  };
+  timer=setTimeout(()=>void tick(),32);return()=>{cancelled=true;clearTimeout(timer);};
+}

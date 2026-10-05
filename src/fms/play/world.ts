@@ -5,13 +5,16 @@ import { worldNames } from './names';
 import { statePalette } from './politics';
 
 import legacyManifest from '../../compat/v0_4/manifest.json';
-import { militaryRules,supportedMilitaryEngine,mobilizationFingerprint } from './military-registry';
+import { militaryRules,supportedMilitaryEngine,mobilizationFingerprint,navalFingerprint } from './military-registry';
 import type { UnitAssignments } from './military-profile';
 import { assertNavy, type Navy } from './navy';
-import { seaGraph } from './sea-path';
+import { seaGraph,type SeaGraph } from './sea-path';
+import {assertNavy as assertFrozenNavy} from './compat/naval1/fms/play/navy';
+import {seaGraph as frozenSeaGraph} from './compat/naval1/fms/play/sea-path';
+import {assertClock,type SimClock} from './clock';
 type RunBase = {id:string;engine:string;terrain:FmsDocument;scale:number;world:World};
-export type FmsRun = RunBase & ({version:1}|{version:2;rules:'fms-military-1';units:UnitAssignments}|{version:3;rules:'fms-naval-1';units:UnitAssignments;navy:Navy});
-export const runEngine = (version:1|2|3=1) => version===1?legacyManifest.engineFingerprint:version===2?mobilizationFingerprint:__FMS_PLAY_ENGINE__;
+export type FmsRun = RunBase & ({version:1}|{version:2;rules:'fms-military-1';units:UnitAssignments}|{version:3;rules:'fms-naval-1';units:UnitAssignments;navy:Navy}|{version:4;rules:'fms-realtime-1';units:UnitAssignments;navy:Navy;clock:SimClock});
+export const runEngine = (version:1|2|3|4=1) => version===1?legacyManifest.engineFingerprint:version===2?mobilizationFingerprint:version===3?navalFingerprint:__FMS_PLAY_ENGINE__;
 type Vertex = Point & { key: string };
 type Face = { ring: Vertex[]; neighbors: number[]; height: number };
 const edgeKey = (a: Vertex, b: Vertex) => a.key < b.key ? `${a.key}/${b.key}` : `${b.key}/${a.key}`;
@@ -121,14 +124,28 @@ export function createFmsRun(document: FmsDocument, countryCount = 6, relations:
 }
 
 export function assertFmsRun(value: unknown): asserts value is FmsRun {
+  assertRun(value);
+}
+/** Session-only output check. The initial terrain is fully validated on input;
+ * an internal movement step cannot edit it. Mutable state is still validated
+ * before committing each command, and storage always uses assertFmsRun. */
+export function assertRealtimeStep(previous:Extract<FmsRun,{version:4}>,next:Extract<FmsRun,{version:4}>,graph:SeaGraph){
+  if(previous.terrain!==next.terrain||previous.scale!==next.scale)throw Error('日内推进不能修改地形。');
+  const sameGeometry=previous.world.provinces.length===next.world.provinces.length&&previous.world.provinces.every((p,i)=>p.id===next.world.provinces[i].id&&p.polygon===next.world.provinces[i].polygon);
+  assertRun(next,{terrain:previous.terrain,graph:sameGeometry?graph:undefined});
+}
+function assertRun(value:unknown,trusted?:{terrain:FmsDocument;graph?:SeaGraph}):asserts value is FmsRun {
   const r = value as FmsRun;
-  if (!r || ![1,2,3].includes(r.version) || !(r.version===1?r.engine===runEngine(1):r.version===2?supportedMilitaryEngine(r.engine):r.engine===__FMS_PLAY_ENGINE__) || (r.version!==1&&(r.rules!==(r.version===2?'fms-military-1':'fms-naval-1')||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
-  const keys=['version','id','engine','terrain','scale','world',...(r.version!==1?['rules','units']:[]),...(r.version===3?['navy']:[])];
+  if (!r || ![1,2,3,4].includes(r.version) || !(r.version===1?r.engine===runEngine(1):r.version===2?supportedMilitaryEngine(r.engine):r.engine===runEngine(r.version)) || (r.version!==1&&(r.rules!==(r.version===2?'fms-military-1':r.version===3?'fms-naval-1':'fms-realtime-1')||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
+  const keys=['version','id','engine','terrain','scale','world',...(r.version!==1?['rules','units']:[]),...(r.version===3||r.version===4?['navy']:[]),...(r.version===4?['clock']:[])];
   if(Object.keys(r).length!==keys.length||!keys.every(k=>Object.hasOwn(r,k)))throw new Error('推演存档含未知字段，已锁定写入。');
-  assertFmsDocument(r.terrain);
-  if(r.version===3&&r.terrain.elevations.some(h=>h!==Math.fround(h)))throw Error('此地形高程超出海军版的精确渲染范围，请保留原世界继续旧规则。');
+  if(trusted?.terrain!==r.terrain){
+    assertFmsDocument(r.terrain);
+    if((r.version===3||r.version===4)&&r.terrain.elevations.some(h=>h!==Math.fround(h)))throw Error('此地形高程超出海军版的精确渲染范围，请保留原世界继续旧规则。');
+  }
   if (!(r.version!==1?militaryRules(r.engine,r.units):{validateWorld}).validateWorld(r.world) || r.world.schemaVersion !== 2 || r.world.scenario !== 'custom-world' || r.id !== r.world.custom?.id || r.scale !== 1000 / Math.max(r.terrain.width, r.terrain.height)) throw new Error('推演存档数据损坏，原档已保留。');
-  if(r.version===3)assertNavy(r.navy,r.world,seaGraph(r.terrain,r.world));
+  if(r.version===3)assertFrozenNavy(r.navy,r.world,frozenSeaGraph(r.terrain,r.world));
+  if(r.version===4){assertClock(r.clock,r.world.day);assertNavy(r.navy,r.world,trusted?.graph??seaGraph(r.terrain,r.world));}
 }
 
 export function provinceAt(world: World, point: Point): string | null {

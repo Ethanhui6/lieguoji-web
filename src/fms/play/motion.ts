@@ -2,7 +2,8 @@ import type { Point } from '../../sim/types';
 import type { FmsRun } from './world';
 import { armyPosition } from './navigation';
 import { fleetPosition } from './navy';
-import { seaGraph, seaRoute, seaRoutePoints } from './sea-path';
+import {graphFor} from './naval-rules';
+import { seaRoute, seaRoutePoints } from './sea-path';
 
 export type Tracks={armies:Map<string,Point[]>;fleets:Map<string,Point[]>};
 export type DisplayFrame={armies:Map<string,Point>;fleets:Map<string,Point>;alpha:number};
@@ -32,8 +33,8 @@ export function dayTracks(previous:FmsRun,next:FmsRun):Tracks {
     }
     tracks.armies.set(a.id,points);
   }
-  if(next.version===3){
-    const graph=seaGraph(next.terrain,next.world),oldFleets=new Map(previous.version===3?previous.navy.fleets.map(f=>[f.id,f]):[]);
+  if(next.version===3||next.version===4){
+    const graph=graphFor(next),oldFleets=new Map(previous.version===3||previous.version===4?previous.navy.fleets.map(f=>[f.id,f]):[]);
     for(const f of next.navy.fleets){
       if(f.status==='lost')continue;
       const end=fleetPosition(graph,f),old=oldFleets.get(f.id);let points=[end];

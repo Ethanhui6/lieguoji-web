@@ -2747,7 +2747,7 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-12"
+      "WEB-04-13"
     ],
     "phases": [
       {
@@ -3605,13 +3605,30 @@
           {
             "id": "WEB-04-12",
             "title": "原作省防御链与持续围攻，修正抵达即占领",
-            "status": "in_progress",
+            "status": "done",
             "dependsOn": [
               "WEB-04-10"
             ],
             "acceptance": "只读恢复原作battleScore与单省转移；网页持续抵抗、守军回补、完成后续行、围攻操作限制、独立旧档兼容及真实浏览器保存恢复。明确面积和时钟换算为适配。",
             "evidence": [
-              "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md"
+              "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md",
+              "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-occupation-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-occupation-v5-2026-10-06/browser.json"
+            ],
+            "completionScope": "有限省抵抗切片：攻扣守回、完成单省转移、两类军令续行、独立旧档与真实围攻中恢复；未完成原作效率/时钟完整等价，残军长围城与补给需WEB-04-13继续。真机/视觉未过。"
+          },
+          {
+            "id": "WEB-04-13",
+            "title": "原作围攻效率与持久作战补给节奏",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-12"
+            ],
+            "acceptance": "基于已读原作每军效率/脉冲和继续恢复的数据，建立完好军、残兵、守军、堡垒的可玩耗时与补给对照；避免百日残兵围攻估计被当作最终平衡；保存当前747f规则，旧库隔离。",
+            "evidence": [
+              "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md",
+              "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md"
             ]
           }
         ]
@@ -4739,7 +4756,7 @@
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
       ],
-      "nextFocus": "用户2026-10-06反馈优先修正瞬间占领，完成WEB-04-12后继续WEB-04-11；云端发布锁和真机视觉门不变。"
+      "nextFocus": "WEB-04-13原作围攻效率与补给节奏（WEB-04-12浏览器已见残军长估计），随后WEB-04-11战线协同。云端锁与真机视觉门不变。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -4890,6 +4907,24 @@
         "tick": 3225,
         "revision": 4
       }
+    },
+    "occupationPrototype": {
+      "sourceCommit": "208d6b01dea1eadd2e8a6df0392659dee3cbef2b",
+      "engine": "747f31323a5a6ee7ea3029566241863d6be5809a7fa710f7589941af76e90366",
+      "version": 6,
+      "database": "lieguoji-fms-occupation-v1",
+      "status": "local-bounded-province-resistance-slice",
+      "originalParity": false,
+      "balanceAccepted": false,
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "cloudWrites": false,
+      "evidence": [
+        "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md",
+        "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md",
+        "docs/evidence/fms-occupation-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-occupation-v5-2026-10-06/browser.json"
+      ]
     }
   }
 }

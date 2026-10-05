@@ -17,9 +17,13 @@
     "two current-copy version expectations updated to v6/Store7; legacy fixtures retained",
     "prefer-const in test fixed"
   ],
-  "browser": "pending",
-  "build": "pending",
+  "browser": "local UI verified; scope in browser.json",
+  "build": "passed; 42 artifacts",
   "physicalDevice": "not_run",
   "userVisualAcceptance": "pending",
-  "cloudWrites": false
+  "cloudWrites": false,
+  "sourceCommit": "208d6b01dea1eadd2e8a6df0392659dee3cbef2b",
+  "finalUiTypecheck": true,
+  "finalUiScopedLint": true,
+  "chunkWarning": "FmsApp 620.98 kB > 500 kB; retained"
 }

@@ -159,3 +159,12 @@ Web naming order, political overlay opacity and border widths are adaptations;
 this does not assert complete native engine or random-sequence equivalence.
 No installation package, decompilation dump, SDK configuration or user save is
 included. Existing third-party algorithm notices above remain applicable.
+
+Fantasy Map Simulator — bounded military adaptation (local development)
+Five unit profiles and five 256x256 icons were selected from the authorized
+Base/Military/Default/military directory, not an entire installation export.
+Profile movement, base combat and mountain coefficients are reused; the daily
+simulation, recruitment costs and UI integration are web adaptations.
+Icon original authorship and individual upstream licenses remain unverified;
+the existing local-only release gate remains closed. This is not a claim that
+every asset in the original installation is wholly authored by its owner.

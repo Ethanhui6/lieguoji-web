@@ -1,4 +1,6 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Text, Texture, Sprite } from 'pixi.js';
+import icons from './military-icons.json';
+import { unitProfile, type UnitAssignments, type UnitKey } from './military-profile';
 import type { World } from '../../sim/types';
 import { armyMarkerPoint } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
@@ -6,10 +8,15 @@ import { territoryLabels, type TerritoryLabel } from './territory-labels';
 
 export class PlayMap {
   readonly layer = new Container();
+  private textures=new Map<UnitKey,Texture>();
+  private disposed=false;
+  constructor(refresh=()=>{}){for(const [key,url] of Object.entries(icons)){const img=new Image();img.onload=()=>{if(this.disposed)return;this.textures.set(key as UnitKey,Texture.from(img));refresh();};img.src=url;}}
+  dispose(){this.disposed=true;for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();}
+
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political'): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments): void {
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
     const g = new Graphics(), marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
@@ -47,12 +54,32 @@ export class PlayMap {
         label(city.name,x,y-offset*pixel,capital?12:11);
       }
     }
+    // Near view resolves actual local names. A countryside province is not
+    // presented as an invented city merely to fill the map with settlements.
+    const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
+    for(const p of world.provinces){
+      if(cityProvinces.has(p.id))continue;
+      const area=Math.abs(p.polygon.reduce((sum,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return sum+a.x*b.y-b.x*a.y;},0))/2;
+      if(area*(zoom/scale)**2<2400&&p.id!==selected)continue;
+      const x=p.center.x/scale,y=p.center.y/scale;
+      if(countryLabels.some(c=>Math.abs(c.point.x-p.center.x)/scale*zoom<(c.width+p.name.length*10)/2&&Math.abs(c.point.y-p.center.y)/scale*zoom<c.size+14))continue;
+      label(p.name,x,y-5*pixel,10,'#e2e9cb');
+    }
     for (const army of world.armies) {
       if (army.status === 'destroyed') continue;
       const p = provinces.get(army.provinceId)!, marker = armyMarkerPoint(world, army, scale, { x:0, y:0, scale:zoom });
       const x = marker.x / zoom, y = marker.y / zoom;
-      marks.roundRect(x - 13 * pixel, y - 7 * pixel, 26 * pixel, 14 * pixel, 3 * pixel).fill(nationColor(nations.get(army.nationId)!)).stroke({ color: army.id === armyId ? 0xffefbc : 0xede6cf, width: (army.id === armyId ? 2 : 1) * pixel });
-      label(`${(army.troops / 1000).toFixed(1)}k`, x, y + 6 * pixel, 10);
+      const unit=units?unitProfile(units[army.id]):undefined,texture=unit&&this.textures.get(unit.key);
+      if(unit){
+        marks.roundRect(x-16*pixel,y-17*pixel,32*pixel,32*pixel,5*pixel).fill({color:nationColor(nations.get(army.nationId)!),alpha:.96}).stroke({color:army.id===armyId?0xffefbc:0x33493e,width:(army.id===armyId?2.5:1.2)*pixel});
+        if(texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=24*pixel;sprite.height=24*pixel;sprite.position.set(x,y-2*pixel);this.layer.addChild(sprite);}
+        else label(unit.name,x,y,10);
+        label(String(army.troops),x,y+27*pixel,10);
+        if(army.status==='marching'||army.status==='retreating')marks.poly([x+13*pixel,y-12*pixel,x+20*pixel,y-8*pixel,x+13*pixel,y-4*pixel]).fill(army.status==='retreating'?0xfacba0:0xfff8d6);
+      }else{
+        marks.roundRect(x - 13 * pixel, y - 7 * pixel, 26 * pixel, 14 * pixel, 3 * pixel).fill(nationColor(nations.get(army.nationId)!)).stroke({ color: army.id === armyId ? 0xffefbc : 0xede6cf, width: (army.id === armyId ? 2 : 1) * pixel });
+        label(`${(army.troops / 1000).toFixed(1)}k`, x, y + 6 * pixel, 10);
+      }
       if (army.id === armyId && army.route.length) {
         marks.moveTo(p.center.x / scale, p.center.y / scale);
         for (const id of army.route) { const next = provinces.get(id)!; marks.lineTo(next.center.x / scale, next.center.y / scale); }

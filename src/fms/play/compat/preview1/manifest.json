@@ -1,0 +1,41 @@
+{
+  "fingerprint": "46b5a571ed0d858eb652ebcd1772c36452482507adb774337f2b9e492965d7d6",
+  "reason": "Known local development v2 save made before entry sources were included in fingerprint. Exact kernel bytes recovered and verified; unknown fingerprints remain locked.",
+  "files": [
+    {
+      "path": "src/fms/play/military-core.ts",
+      "archive": "fms/play/military-core.ts",
+      "sha256": "7e3e4e4b49dfe93252250e5abc86f86772be6a3de89cfee8ea65a8f946b3deb8"
+    },
+    {
+      "path": "src/fms/play/military-profile.ts",
+      "archive": "fms/play/military-profile.ts",
+      "sha256": "ae934b8bcc52f227ca47dddb30fb01f240979fdbdf79771605403e51d3a3774b"
+    },
+    {
+      "path": "src/fms/play/military-actions.ts",
+      "archive": "fms/play/military-actions.ts",
+      "sha256": "6c6639f1b31c67ae65d881d28d32dd1175b4de9b0ca6953cb429bd0b4097928f"
+    },
+    {
+      "path": "src/compat/v0_4/sim/core.ts",
+      "archive": "compat/v0_4/sim/core.ts",
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "path": "src/compat/v0_4/sim/statecraft.ts",
+      "archive": "compat/v0_4/sim/statecraft.ts",
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "path": "src/compat/v0_4/sim/types.ts",
+      "archive": "compat/v0_4/sim/types.ts",
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "path": "src/compat/v0_4/history/types.ts",
+      "archive": "compat/v0_4/history/types.ts",
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    }
+  ]
+}

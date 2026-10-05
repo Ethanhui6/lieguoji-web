@@ -9,7 +9,9 @@ export function armyPosition(world: World, army: Army): Point {
 /** Shared by draw, focus and hit testing; the badge is 15 CSS pixels below its route. */
 export function armyMarkerPoint(world: World, army: Army, scale: number, camera: AtlasCamera): Point {
   const p = armyPosition(world, army), screen = worldToScreen(camera, { x: p.x / scale, y: p.y / scale });
-  return { x: screen.x, y: screen.y + 15 };
+  const cohort=world.armies.filter(a=>a.status!=='destroyed'&&a.troops>0&&a.provinceId===army.provinceId&&a.route[0]===army.route[0]&&Math.abs(a.progress-army.progress)<1e-8);
+  const index=cohort.findIndex(a=>a.id===army.id),count=cohort.length;
+  return { x: screen.x+(count>1?(index%4-Math.min(3,count-1)/2)*36:0), y: screen.y+15+(count>4?Math.floor(index/4)*36:0) };
 }
 export function armiesAt(world: World, scale: number, camera: AtlasCamera, point: Point): string[] {
   return world.armies.filter(a => a.troops > 0 && a.status !== 'destroyed').map(a => {

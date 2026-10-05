@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import type { FmsDocument } from '../model';
+import { grid } from './fixture.test-support';
 import { createFmsRun, polygonArea, provinceAt } from './world';
 import { advanceWorld, previewOrder, validateWorld } from '../../sim/core';
 import { PlaySession } from './session';
 import { loadRun, RUN_DATABASE, saveRun } from './storage';
 
-function grid(height: (x: number, y: number) => number = () => 45): FmsDocument {
-  const points: [number, number][] = [], triangles: number[] = [], n = 25;
-  for (let y = 0; y <= n; y++) for (let x = 0; x <= n; x++) points.push([x * 10, y * 10]);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const a = y * (n + 1) + x, b = a + 1, c = a + n + 1, d = c + 1; triangles.push(a,b,c,b,d,c); }
-  const neighbors = points.map(() => new Set<number>());
-  for (let i = 0; i < triangles.length; i += 3) { const [a,b,c] = triangles.slice(i,i+3); neighbors[a].add(b).add(c); neighbors[b].add(a).add(c); neighbors[c].add(a).add(b); }
-  return { format: 'lieguoji-fms-world', version: 1, worldId: '00000000-0000-4000-8000-000000000001', revision: 0, width: 250, height: 250, points, triangles: new Uint32Array(triangles), neighbors: neighbors.map(n => [...n]), elevations: Int32Array.from(points, ([x,y]) => height(x,y)) };
-}
 async function editSlot(factory: IDBFactory, key: string, change: (raw: Record<string, unknown>) => void) {
   await new Promise<void>((resolve,reject) => { const req = factory.open(RUN_DATABASE, 1); req.onsuccess = () => { const db = req.result, tx = db.transaction('saves','readwrite'), store = tx.objectStore('saves'), read = store.get(key); read.onsuccess = () => { const raw = read.result; change(raw); store.put(raw,key); }; tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); }; });
 }
@@ -48,7 +40,7 @@ describe('FMS playable world uses actual land and existing simulation rules', ()
     expect(advanced.statecraft?.provinces.some((p,i) => p.grain !== initial.statecraft!.provinces[i].grain)).toBe(true);
   });
   it('rejects stale confirmed commands and leaves the previous Worker state intact', () => {
-    const session = new PlaySession(), initial = session.execute({type:'create',terrain:grid(),count:4,relations:'peace'}).world;
+    const session = new PlaySession(), initial = session.execute({type:'load',run:createFmsRun(grid(),4,'peace')}).world;
     session.execute({type:'step',days:1});
     expect(() => session.execute({type:'action',action:{type:'declare-war',nationId:'n-0',targetNationId:'n-1'},expected:{day:0,nextEventId:initial.nextEventId}})).toThrow('重新预览');
     const next = session.execute({type:'step',days:1}); expect(next.world.day).toBe(2);

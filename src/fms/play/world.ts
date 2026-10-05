@@ -1,11 +1,15 @@
 import { assertFmsDocument, type FmsDocument } from '../model';
-import { initializeStatecraft, validateWorld } from '../../sim/core';
+import { initializeStatecraft, validateWorld } from '../../compat/v0_4/sim/core';
 import type { Point, World } from '../../sim/types';
 import { worldNames } from './names';
 import { statePalette } from './politics';
 
-export interface FmsRun { version: 1; id: string; engine: string; terrain: FmsDocument; scale: number; world: World }
-export const runEngine = () => __SIM_ENGINE__;
+import legacyManifest from '../../compat/v0_4/manifest.json';
+import { militaryRules,supportedMilitaryEngine } from './military-registry';
+import type { UnitAssignments } from './military-profile';
+type RunBase = {id:string;engine:string;terrain:FmsDocument;scale:number;world:World};
+export type FmsRun = RunBase & ({version:1}|{version:2;rules:'fms-military-1';units:UnitAssignments});
+export const runEngine = (version:1|2=1) => version===1?legacyManifest.engineFingerprint:__FMS_PLAY_ENGINE__;
 type Vertex = Point & { key: string };
 type Face = { ring: Vertex[]; neighbors: number[]; height: number };
 const edgeKey = (a: Vertex, b: Vertex) => a.key < b.key ? `${a.key}/${b.key}` : `${b.key}/${a.key}`;
@@ -64,7 +68,7 @@ function mergeRing(a: Vertex[], b: Vertex[]): Vertex[] | null {
   return next.key === start.key && !outgoing.size ? ring : null;
 }
 
-export function createFmsRun(document: FmsDocument, countryCount = 6, relations: 'peace' | 'war' = 'peace'): FmsRun {
+export function createFmsRun(document: FmsDocument, countryCount = 6, relations: 'peace' | 'war' = 'peace'): Extract<FmsRun,{version:1}> {
   assertFmsDocument(document);
   if (!Number.isInteger(countryCount) || countryCount < 2 || countryCount > 8) throw new Error('请选择 2—8 个国家。');
   const terrain = structuredClone(document), faces = landFaces(terrain), scale = 1000 / Math.max(terrain.width, terrain.height);
@@ -116,9 +120,11 @@ export function createFmsRun(document: FmsDocument, countryCount = 6, relations:
 
 export function assertFmsRun(value: unknown): asserts value is FmsRun {
   const r = value as FmsRun;
-  if (!r || r.version !== 1 || r.engine !== runEngine()) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
+  if (!r || ![1,2].includes(r.version) || !(r.version===1?r.engine===runEngine(1):supportedMilitaryEngine(r.engine)) || (r.version===2&&(r.rules!=='fms-military-1'||!r.units||typeof r.units!=='object'||Array.isArray(r.units)))) throw new Error('推演存档版本或规则不同，已保留原档并锁定写入。');
+  const keys=['version','id','engine','terrain','scale','world',...(r.version===2?['rules','units']:[])];
+  if(Object.keys(r).length!==keys.length||!keys.every(k=>Object.hasOwn(r,k)))throw new Error('推演存档含未知字段，已锁定写入。');
   assertFmsDocument(r.terrain);
-  if (!validateWorld(r.world) || r.world.schemaVersion !== 2 || r.world.scenario !== 'custom-world' || r.id !== r.world.custom?.id || r.scale !== 1000 / Math.max(r.terrain.width, r.terrain.height)) throw new Error('推演存档数据损坏，原档已保留。');
+  if (!(r.version===2?militaryRules(r.engine,r.units):{validateWorld}).validateWorld(r.world) || r.world.schemaVersion !== 2 || r.world.scenario !== 'custom-world' || r.id !== r.world.custom?.id || r.scale !== 1000 / Math.max(r.terrain.width, r.terrain.height)) throw new Error('推演存档数据损坏，原档已保留。');
 }
 
 export function provinceAt(world: World, point: Point): string | null {

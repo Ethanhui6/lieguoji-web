@@ -7,3 +7,4 @@
 .play-locality{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid #8e9677}.play-locality h2{margin:0;font-size:22px}.play-locality .play-stats{margin:12px 0}.play-locality .play-stats dd{font-size:17px}
 
 .play-unit-picker{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}.play-unit-picker button{display:flex;flex-direction:column;align-items:center;flex:1;padding:6px;min-width:48px}.play-unit-picker img{width:26px;height:26px}.play-army-title{display:flex;align-items:center;gap:8px}.play-army-title img{width:36px;height:36px}.play-intervene{border-top:1px solid #546255;padding-top:10px;margin-top:12px}
+.play-panel-title>button{min-width:44px}

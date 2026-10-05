@@ -2741,7 +2741,7 @@
       "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
     ],
     "nextBatch": [
-      "WEB-04-05"
+      "WEB-04-07"
     ],
     "phases": [
       {
@@ -3499,12 +3499,17 @@
           {
             "id": "WEB-04-05",
             "title": "真实海路、港口与海军可玩切片",
-            "status": "todo",
+            "status": "done",
             "dependsOn": [
               "WEB-04-06"
             ],
             "acceptance": "依据已定位海军海路函数与实际海洋拓扑建立港口/舰队；海上移动不穿陆，预览确认与保存保护同规则；后续海战/运输范围据实际恢复分项验收，不以舰船图标替代规则。",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-naval-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-naval-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-naval-v5-2026-10-05/browser.json"
+            ],
+            "completionScope": "有限可玩的真实海路/港口/舰队/配粮/巡航/旧档隔离；海战、运兵、连续帧动画与原作完整等价、真机视觉均未验收。"
           },
           {
             "id": "WEB-04-06",
@@ -3520,6 +3525,26 @@
               "docs/evidence/fms-army-density-v5-2026-10-05/browser.json"
             ],
             "completionScope": "用户反馈对应的本地有限切片，非完整军制／训练／应急动员／连续帧动画或长期平衡。"
+          },
+          {
+            "id": "WEB-04-07",
+            "title": "首都辨识与沿实际路线连续行军",
+            "status": "in_progress",
+            "dependsOn": [
+              "WEB-04-05"
+            ],
+            "acceptance": "响应最新反馈：首都在地图与缩放中明确；陆军与舰队沿真实路径连续显示，暂停/恢复/命令/保存不破坏权威状态，不用穿陆直线或假动画替代；浏览器实测，原作与真机验收独立。",
+            "evidence": []
+          },
+          {
+            "id": "WEB-04-08",
+            "title": "原作海军交战核验与可玩接入",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-07"
+            ],
+            "acceptance": "先只读核实海军交战入口与状态，接真实敌我判定、损失/撤退/原因和保存；预览确认一致；跨海运输另定完整登船/离船规则，不以船图标算完成。",
+            "evidence": []
           }
         ]
       },
@@ -3577,7 +3602,7 @@
     ],
     "nextRecoveryTarget": {
       "priority": "user-gameplay-first",
-      "next": "完成WEB-04-01/02本地完整试玩后，先依据试玩反馈补关键玩法；图形细节渐进优化，不自动扩完整人物信仰。"
+      "next": "首都明显与沿真实路线连续陆军/舰队移动优先，随后海战与原作其他规则；按安装包证据逐项接入。"
     },
     "lastRecovery": {
       "at": "2026-10-05T05:32:55.776Z",
@@ -4053,14 +4078,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T06:11:58.310Z",
+      "at": "2026-10-05T10:17:30.664Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580",
-      "lastSourceCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580",
-      "newCodeSinceCheckpoint": true,
+      "lastCheckpointCommit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
+      "lastSourceCommit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
+      "newCodeSinceCheckpoint": false,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-03：先按这版看海反馈优化关键干预与节奏，原地图素材/算法继续渐进适配；不回退成只做绘图研究。",
+      "nextFocus": "WEB-04-07 用户最新：首都明显、连续行军与即时战略感觉。保留海军/陆军和旧档，新规则修改前先归档532842。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4708,13 +4733,30 @@
         "docs/evidence/fms-army-density-v5-2026-10-05/browser.json"
       ],
       "knownMissing": [
-        "navy/ports",
+        "naval combat/transports (ports/navigation in navalPrototype)",
         "alliances/vassals",
         "six political-system attributes",
         "family/faith",
         "training/emergency mobilization",
         "continuous frame troop motion",
         "long-term balance",
+        "real-device/user visual acceptance"
+      ]
+    },
+    "navalPrototype": {
+      "sourceCommit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
+      "engine": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+      "status": "local-playable-slice",
+      "evidence": [
+        "docs/evidence/fms-naval-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-naval-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-naval-v5-2026-10-05/browser.json"
+      ],
+      "knownMissing": [
+        "naval combat/blockade",
+        "troop transport/landing",
+        "original port construction and route preference",
+        "continuous frame motion",
         "real-device/user visual acceptance"
       ]
     }

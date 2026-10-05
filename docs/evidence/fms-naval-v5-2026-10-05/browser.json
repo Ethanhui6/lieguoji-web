@@ -1,0 +1,311 @@
+{
+  "date": "2026-10-05",
+  "dev": {
+    "url": "http://127.0.0.1:5180/?fms=1",
+    "tab": "14",
+    "preview": {
+      "distanceRounded": 407,
+      "seaCells": 124,
+      "days": 12
+    },
+    "arrivalDay": 12,
+    "rationsAfterArrival": 48,
+    "rationsAfterNextDockDay": 59,
+    "manualBuild": {
+      "ships": 2,
+      "crew": 80,
+      "grain": 4800
+    },
+    "savedDay": 14,
+    "revision": 2,
+    "restoredRunId": "fms-3891c8b9-be34-4bea-bd54-592ad8ca7989",
+    "savedInTransit": true,
+    "oldBefore": [
+      {
+        "checksum": "dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05",
+        "day": 147,
+        "engine": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+        "name": "lieguoji-fms-play-v1",
+        "revision": 1
+      },
+      {
+        "checksum": "d40b6906293e1146e7f2524942736005ab1e7347f8ec8ae5899facd00d92dd70",
+        "day": 2,
+        "engine": "46b5a571ed0d858eb652ebcd1772c36452482507adb774337f2b9e492965d7d6",
+        "name": "lieguoji-fms-play-v2",
+        "revision": 1
+      },
+      {
+        "checksum": "20d903eb32d7b68bc76cc6ac19e8cdc89a4a2cd3f85615cd063dd941ec1214de",
+        "day": 3,
+        "engine": "52f49f7ff95ea717d0f9f19c2f2efb3a86861f0fe7f49e62b41212a357ee50ef",
+        "name": "lieguoji-fms-mobilization-v1",
+        "revision": 1
+      }
+    ],
+    "after": [
+      {
+        "checksum": "dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05",
+        "day": 147,
+        "engine": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+        "name": "lieguoji-fms-play-v1",
+        "revision": 1
+      },
+      {
+        "checksum": "d40b6906293e1146e7f2524942736005ab1e7347f8ec8ae5899facd00d92dd70",
+        "day": 2,
+        "engine": "46b5a571ed0d858eb652ebcd1772c36452482507adb774337f2b9e492965d7d6",
+        "name": "lieguoji-fms-play-v2",
+        "revision": 1
+      },
+      {
+        "checksum": "20d903eb32d7b68bc76cc6ac19e8cdc89a4a2cd3f85615cd063dd941ec1214de",
+        "day": 3,
+        "engine": "52f49f7ff95ea717d0f9f19c2f2efb3a86861f0fe7f49e62b41212a357ee50ef",
+        "name": "lieguoji-fms-mobilization-v1",
+        "revision": 1
+      },
+      {
+        "checksum": "bb0f3dc6f957a37243c8453fb06a441098ea5c9950478e3e32a04183b6d076a1",
+        "day": 14,
+        "engine": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+        "first": {
+          "crew": 40,
+          "dockId": null,
+          "food": 2320,
+          "id": "fleet-8-0",
+          "name": "拘迷莫坨港水师",
+          "nationId": "n-0",
+          "node": 1118,
+          "patrol": true,
+          "progress": 1.6266833775910108,
+          "ships": 1,
+          "status": "sailing",
+          "targetId": "port-p-143-0",
+          "routeLength": 113
+        },
+        "fleets": 7,
+        "name": "lieguoji-fms-naval-v1",
+        "revision": 2,
+        "runId": "fms-3891c8b9-be34-4bea-bd54-592ad8ca7989",
+        "ships": 8
+      }
+    ],
+    "consoleWarningsAndErrors": []
+  },
+  "production": {
+    "url": "http://127.0.0.1:5181/?fms=1",
+    "build": {
+      "commit": "353a4e4fc8f6e82b620dba56546cb43c04eeea69",
+      "fingerprint": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+      "version": "0.5.0-preview.33",
+      "workers": [
+        "http://127.0.0.1:5181/assets/play.worker-CJHHiBsu.js",
+        "http://127.0.0.1:5181/assets/biome.worker-DO2s7HoV.js"
+      ]
+    },
+    "preview": {
+      "distanceRounded": 707,
+      "seaCells": 214,
+      "days": 21
+    },
+    "saved": {
+      "day": 21,
+      "engine": "532842498fac9067d87ca2dfffd53188ccfd3bf1ca2b1277e08740fa02c63f79",
+      "fleets": [
+        {
+          "crew": 40,
+          "food": 1560,
+          "name": "金寨港水师",
+          "routeLength": 0,
+          "status": "docked"
+        },
+        {
+          "crew": 40,
+          "food": 2360,
+          "name": "恩平港水师",
+          "routeLength": 0,
+          "status": "docked"
+        },
+        {
+          "crew": 40,
+          "food": 2120,
+          "name": "罗源港水师",
+          "routeLength": 0,
+          "status": "docked"
+        },
+        {
+          "crew": 40,
+          "food": 2360,
+          "name": "晋安港水师",
+          "routeLength": 0,
+          "status": "docked"
+        },
+        {
+          "crew": 40,
+          "food": 1960,
+          "name": "叙永港水师",
+          "routeLength": 110,
+          "status": "sailing"
+        },
+        {
+          "crew": 40,
+          "food": 2120,
+          "name": "北安港水师",
+          "routeLength": 47,
+          "status": "sailing"
+        }
+      ],
+      "navalEvents": [
+        {
+          "day": 0,
+          "id": 6,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在金寨港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 7,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在恩平港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 8,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在罗源港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 9,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在晋安港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 10,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在叙永港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 11,
+          "kind": "system",
+          "reason": "1 艘船，征用 40 名船员，扣除 2400 人日粮。 配备 60 日口粮；由港外真实海格出发。造船费用为当前网页适配规则。",
+          "text": "在北安港编成舰队。"
+        },
+        {
+          "day": 0,
+          "id": 12,
+          "kind": "system",
+          "reason": "真实海路 707 地图单位，正常速度预计 21 日。 逐段经过 214 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往零陵港。"
+        },
+        {
+          "day": 8,
+          "id": 52,
+          "kind": "system",
+          "reason": "母港已非本国控制；停留在港外海格，无法取得该港补给。",
+          "text": "恩平港水师离港待命"
+        },
+        {
+          "day": 12,
+          "id": 76,
+          "kind": "system",
+          "reason": "母港已非本国控制；停留在港外海格，无法取得该港补给。",
+          "text": "叙永港水师离港待命"
+        },
+        {
+          "day": 15,
+          "id": 99,
+          "kind": "system",
+          "reason": "真实海路 204 地图单位，正常速度预计 6 日。 逐段经过 71 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往六安港。"
+        },
+        {
+          "day": 15,
+          "id": 100,
+          "kind": "system",
+          "reason": "真实海路 123 地图单位，正常速度预计 4 日。 逐段经过 42 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往庆安港。"
+        },
+        {
+          "day": 15,
+          "id": 101,
+          "kind": "system",
+          "reason": "真实海路 135 地图单位，正常速度预计 4 日。 逐段经过 45 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往禾丰港。"
+        },
+        {
+          "day": 15,
+          "id": 102,
+          "kind": "system",
+          "reason": "真实海路 600 地图单位，正常速度预计 18 日。 逐段经过 186 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往海宁港。"
+        },
+        {
+          "day": 15,
+          "id": 103,
+          "kind": "system",
+          "reason": "真实海路 400 地图单位，正常速度预计 12 日。 逐段经过 125 个海格；航线不穿陆，途中不改变当前陆军命令。",
+          "text": "驶往金阳港。"
+        },
+        {
+          "day": 18,
+          "id": 120,
+          "kind": "system",
+          "reason": "已完成逐海格航行，下次日结从港口补粮。",
+          "text": "罗源港水师抵达庆安港"
+        },
+        {
+          "day": 18,
+          "id": 121,
+          "kind": "system",
+          "reason": "已完成逐海格航行，下次日结从港口补粮。",
+          "text": "晋安港水师抵达禾丰港"
+        },
+        {
+          "day": 20,
+          "id": 137,
+          "kind": "system",
+          "reason": "已完成逐海格航行，下次日结从港口补粮。",
+          "text": "恩平港水师抵达六安港"
+        },
+        {
+          "day": 21,
+          "id": 141,
+          "kind": "system",
+          "reason": "已完成逐海格航行，下次日结从港口补粮。",
+          "text": "金寨港水师抵达零陵港"
+        }
+      ],
+      "revision": 1,
+      "runId": "fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5"
+    },
+    "restoredRunId": "fms-6c5c77a7-9fa0-461a-b0f5-c4c0a0128ae5",
+    "consoleWarningsAndErrors": []
+  },
+  "mobileEmulation": {
+    "engine": "Chromium",
+    "width": 428,
+    "height": 926,
+    "horizontalOverflow": false,
+    "panelBottom": 742.4,
+    "controlsTop": 770.8,
+    "controlsWidth": 370,
+    "viewportRestored": true,
+    "physicalDevice": false,
+    "userVisualAcceptance": false
+  },
+  "limits": [
+    "not iOS Safari/Chrome",
+    "no sea combat or troop transports",
+    "movement positions update on simulation days, not continuous frame animation",
+    "no cloud release"
+  ]
+}

@@ -9,13 +9,14 @@ export function armyPosition(world: World, army: Army): Point {
 export type ArmyMarker=Point & {ids:string[];near:boolean};
 /** CSS-sized markers: nearby friendly troops share a far-view marker. Never
  * merge enemies. Selected troops stay individually visible and selectable. */
-export function armyMarkers(world:World,scale:number,camera:AtlasCamera,selected:string|null=null):ArmyMarker[]{
+export function armyMarkers(world:World,scale:number,camera:AtlasCamera,selected:string|null=null,positions?:ReadonlyMap<string,Point>):ArmyMarker[]{
   const area=world.provinces.reduce((sum,p)=>sum+Math.abs(p.polygon.reduce((s,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return s+a.x*b.y-b.x*a.y;},0))/2,0);
   const near=Math.sqrt(area/Math.max(1,world.provinces.length))*camera.scale/scale>=55;
   const groups=new Map<string,{ids:string[];x:number;y:number}>();
   for(const a of world.armies.filter(a=>a.troops>0&&a.status!=='destroyed')){
-    const p=armyPosition(world,a),x=p.x/scale*camera.scale,y=p.y/scale*camera.scale;
-    const key=a.id===selected?`selected:${a.id}`:near?`${a.nationId}/${a.provinceId}/${a.route[0]}/${a.progress}`:`${a.nationId}/${Math.floor(x/36)}/${Math.floor(y/36)}`;
+    const p=positions?.get(a.id)??armyPosition(world,a),x=p.x/scale*camera.scale,y=p.y/scale*camera.scale;
+    const end=armyPosition(world,a),moving=a.status==='marching'||a.status==='retreating'||Math.hypot(p.x-end.x,p.y-end.y)>1e-7;
+    const key=a.id===selected||moving?`unit:${a.id}`:near?`${a.nationId}/${p.x}/${p.y}`:`${a.nationId}/${Math.floor(x/36)}/${Math.floor(y/36)}`;
     const group=groups.get(key)??{ids:[],x:0,y:0};group.ids.push(a.id);group.x+=x;group.y+=y;groups.set(key,group);
   }
   return [...groups.values()].flatMap<ArmyMarker>(g=>{

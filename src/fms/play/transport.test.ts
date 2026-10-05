@@ -36,7 +36,7 @@ describe('real island-mainland army transport',()=>{
     const x=fixture(),n=embark(x),bad=structuredClone(n);bad.transports.cargo[0].targetPortId=x.to.id;expect(()=>assertFmsRun(bad)).toThrow('运输');
     const s=new EditorSession();s.execute({type:'load',run:n});expect(()=>s.execute({type:'step',days:.5})).toThrow('参数');
     for(let i=0;i<29;i++){const a={...structuredClone(x.a),id:'quota-'+i};n.world.armies.push(a);n.units={...n.units,[a.id]:x.run.units[x.a.id]};}s.execute({type:'load',run:n});
-    expect(()=>s.execute({type:'military',action:{type:'recruit',nationId:x.a.nationId,cityId:n.world.cities.find(c=>c.provinceId===x.from.provinceId)!.id,unit:x.run.units[x.a.id],troops:100},expected:stamp(n)})).toThrow('30支');
+    expect(()=>s.execute({type:'military',action:{type:'recruit',nationId:x.a.nationId,cityId:n.world.nations.find(v=>v.id===x.a.nationId)!.capitalId,unit:x.run.units[x.a.id],troops:100},expected:stamp(n)})).toThrow('30支');
   });
   it('counts passengers against monthly targets while freeing the departure province for recruitment',()=>{
     const x=fixture(),n=embark(x);n.world.day=29;for(const p of n.world.statecraft!.provinces){p.population=p.provinceId===x.from.provinceId?30000:100;p.grain=p.population*100;}

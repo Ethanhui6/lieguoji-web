@@ -2747,7 +2747,7 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-09"
+      "WEB-04-08"
     ],
     "phases": [
       {
@@ -3562,15 +3562,19 @@
           {
             "id": "WEB-04-09",
             "title": "原作时钟核验与权威日内行军、途中命令",
-            "status": "in_progress",
+            "status": "done",
             "dependsOn": [
               "WEB-04-07"
             ],
             "acceptance": "继续用户即时战略要求：核验原作时间尺度；先封存532842完整规则并保护旧档，再将陆军/舰队权威位置推进与日结经济分离，途中命令/暂停/刷新对应同一位置，明确日内交战及重放。不能把显示插值标为实时规则完成。",
             "evidence": [
-              "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
+              "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md",
+              "docs/evidence/fms-realtime-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-realtime-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-realtime-v5-2026-10-05/browser.json"
             ],
-            "progressNote": "原作时钟与倍率、单位逐帧更新静态链已核验；网页权威子日模拟尚未实现。"
+            "progressNote": "已封存532842；v4/Store5真实日内陆海行军、节点接战、途中预览绑定tick、每日单次结算；半日双保存/刷新实测。",
+            "completionScope": "权威日内位置、当前边不瞬移的后续改令、节点接触/占领、日结伤亡、确定性分批及同位置恢复；沿边拦截、连续伤亡和完整历史回放不在本切片完成范围。真机/视觉门未过。"
           }
         ]
       },
@@ -4104,14 +4108,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T10:45:55.710Z",
+      "at": "2026-10-05T11:27:13.125Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
-      "lastSourceCommit": "bdb8c3bc159a6adfcc6336aac9fe6dde05cecad6",
+      "lastCheckpointCommit": "91182cc0deeb04d9066045be45a67528c981add7",
+      "lastSourceCommit": "91182cc0deeb04d9066045be45a67528c981add7",
       "newCodeSinceCheckpoint": false,
       "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-09 原作时钟核验与权威日内行军；07显示层已完成但不等同原作即时模拟。先封存当前532842。",
+      "nextFocus": "WEB-04-08 原作海军交战入口核实与可玩接战；09权威日内有限切片已完成。当前9b83/Store5已有真实保存，后续改规则前先封存完整组合。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4804,6 +4808,25 @@
         "naval combat/transport",
         "real-device/user visual acceptance"
       ]
+    },
+    "realtimePrototype": {
+      "sourceCommit": "91182cc0deeb04d9066045be45a67528c981add7",
+      "engine": "9b83e494682517f778c795e9676bc1fc2d53698710747b69a95be5900c45576d",
+      "version": 4,
+      "rules": "fms-realtime-1",
+      "database": "lieguoji-fms-realtime-v1",
+      "ticksPerDay": 120,
+      "status": "local-limited-slice-verified",
+      "entry": "/?fms=1 > 进入世界 > 继续日内版 / 创建日内版副本",
+      "evidence": [
+        "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md",
+        "docs/evidence/fms-realtime-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-realtime-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-realtime-v5-2026-10-05/browser.json"
+      ],
+      "physicalDevice": "not_run",
+      "userVisual": "pending",
+      "cloudWritesAllowed": false
     }
   }
 }

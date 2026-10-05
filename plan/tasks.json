@@ -2741,7 +2741,7 @@
       "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
     ],
     "nextBatch": [
-      "WEB-04-03"
+      "WEB-04-05"
     ],
     "phases": [
       {
@@ -3468,11 +3468,42 @@
           {
             "id": "WEB-04-03",
             "title": "看海节奏与干预可用性",
-            "status": "todo",
+            "status": "done",
             "dependsOn": [
               "WEB-04-02"
             ],
             "acceptance": "依据首轮试玩继续完善国家边界/标注、事件筛选与定位、战争节奏和玩家干预操作；不以UI按钮冒充征募或新规则。真机视觉及完整阶段仍独立验收。",
+            "evidence": [
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/DELIVERY.md",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/naming-provenance.json",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/checks.json",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/browser.json"
+            ]
+          },
+          {
+            "id": "WEB-04-04",
+            "title": "军队补充与持续干预的原作恢复和可玩接入",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-03"
+            ],
+            "acceptance": "只读定位原作征募/兵种与军力补充路径，接入有限可玩的补充、移动与交战行为；先确定旧局兼容和规则版本方案，不静默迁移旧存档。原作等价、完整阶段与真机视觉独立验收。",
+            "evidence": [
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/MILITARY.md",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/military-provenance.json",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/military-browser.json",
+              "docs/evidence/fms-watch-controls-v5-2026-10-05/military-checks.json"
+            ],
+            "completionScope": "有限网页军团切片：原作五兵种数据/图标、真实速度战力、人口粮食征募、迁都、Worker预览与独立规则存档。非完整原作战斗/征兵/海军/政体；真机视觉未通过。"
+          },
+          {
+            "id": "WEB-04-05",
+            "title": "真实海路、港口与海军可玩切片",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-04"
+            ],
+            "acceptance": "依据已定位海军海路函数与实际海洋拓扑建立港口/舰队；海上移动不穿陆，预览确认与保存保护同规则；后续海战/运输范围据实际恢复分项验收，不以舰船图标替代规则。",
             "evidence": []
           }
         ]
@@ -4599,7 +4630,8 @@
       "releasePolicyUnchanged": true,
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
-      ]
+      ],
+      "nextFocus": "WEB-04-04：优先让世界持续产生变化的军力补充与玩家干预；原作来源恢复与可玩适配并行，不重复已接入词库、色表或动态标签。不把所有阶段标完成。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -4627,6 +4659,49 @@
         "docs/evidence/fms-playable-v5-2026-10-05/committed-build.json"
       ],
       "sourceCommit": "81b5d8db83afe72bf70b934b222b893ab44f0580"
+    },
+    "watchControlsPrototype": {
+      "status": "local-bounded-verified",
+      "date": "2026-10-05",
+      "sourceCommit": "1ea07becd8cf74d5897e723187fc1e0e1977acb3",
+      "task": "WEB-04-03",
+      "originalCountryNames": 171,
+      "originalPlaceNames": 1010,
+      "originalStatePalette": true,
+      "labelsFollowCurrentControl": true,
+      "sourceEquivalence": false,
+      "unitFiles": 6,
+      "unitTests": 59,
+      "planTests": 15,
+      "releaseTests": 22,
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "cloudWrites": false,
+      "evidence": [
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/DELIVERY.md",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/naming-provenance.json",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/browser.json"
+      ]
+    },
+    "militaryPrototype": {
+      "sourceCommit": "d4a0a80681a6218be6a2a7786222404a2931ad02",
+      "status": "local-playable-slice",
+      "evidence": [
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/MILITARY.md",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-provenance.json",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-browser.json",
+        "docs/evidence/fms-watch-controls-v5-2026-10-05/military-checks.json"
+      ],
+      "knownMissing": [
+        "navy/ports",
+        "alliances/vassals",
+        "six political-system attributes",
+        "family/faith",
+        "automatic recruitment",
+        "continuous frame troop motion",
+        "real-device/user visual acceptance"
+      ]
     }
   }
 }

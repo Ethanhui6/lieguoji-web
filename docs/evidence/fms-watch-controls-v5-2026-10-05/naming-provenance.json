@@ -1,0 +1,26 @@
+{
+  "source": "FantasyMapSimulator_Data/StreamingAssets",
+  "culture": "EasternFantasy",
+  "language": "Chinese",
+  "authorization": "User requested reuse of their published work, 2026-10-03 and 2026-10-05",
+  "packSha256": "49d19819e734f62deac682aeec72aaef3629b75560eb770832893083c86016b2",
+  "sources": [
+    {
+      "path": "Base/Culture/EasternFantasy/CityNames.csv",
+      "sha256": "46cff66d24469b517a0d2facfdcf7a40439d171a638a997c3ccb1634c8a0e0fe",
+      "bytes": 161470
+    },
+    {
+      "path": "Base/Culture/EasternFantasy/StateNames.csv",
+      "sha256": "7161925cc8a215be2a483d4cbffd50f6f2c10f02c48169f0b8cbbb9c66a5217a",
+      "bytes": 21643
+    }
+  ],
+  "output": {
+    "path": "src/fms/play/eastern-names.json",
+    "sha256": "d4d59db91cdf4bfd388d97ba573fe2f311e856fd4c6b762de6fc99354182da44",
+    "countries": 171,
+    "places": 1010
+  },
+  "scope": "Chinese country and settlement display names only. No scripts, SDK configuration, user saves or installation dumps."
+}

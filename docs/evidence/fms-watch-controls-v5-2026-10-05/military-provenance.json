@@ -1,0 +1,89 @@
+{
+  "sourceDirectory": "D:/steam/steamapps/common/FantasyMapSimulator/FantasyMapSimulator_Data/StreamingAssets/Base/Military/Default/military",
+  "profileSha256": "395030721678acdfcd5ce1cc6ae75872b595c2a72e1b160a8f5ad3f41657cfcf",
+  "units": [
+    {
+      "key": "Infantry",
+      "name": "步兵",
+      "power": 1,
+      "speed": 1,
+      "weight": 1.1,
+      "mountainAttack": 1,
+      "mountainDefense": 1
+    },
+    {
+      "key": "Archer",
+      "name": "弓兵",
+      "power": 0.95,
+      "speed": 0.95,
+      "weight": 0.95,
+      "mountainAttack": 1.1,
+      "mountainDefense": 1.2
+    },
+    {
+      "key": "Shield",
+      "name": "盾兵",
+      "power": 1.05,
+      "speed": 0.9,
+      "weight": 0.9,
+      "mountainAttack": 1.05,
+      "mountainDefense": 1.3
+    },
+    {
+      "key": "Cavalry",
+      "name": "骑兵",
+      "power": 1.25,
+      "speed": 1.2,
+      "weight": 1,
+      "mountainAttack": 0.7,
+      "mountainDefense": 0.75
+    },
+    {
+      "key": "Elite",
+      "name": "精锐",
+      "power": 1.35,
+      "speed": 1.05,
+      "weight": 0.3,
+      "mountainAttack": 1.1,
+      "mountainDefense": 1.15
+    }
+  ],
+  "icons": [
+    {
+      "key": "Infantry",
+      "file": "army-chess-pawn-icon.png",
+      "bytes": 10317,
+      "sha256": "a80761c33a7650e04405b6e169852df9c79eb96b81609ef38fb9ff843d516356"
+    },
+    {
+      "key": "Archer",
+      "file": "recurve-bow-arrow-icon.png",
+      "bytes": 13109,
+      "sha256": "4aa31d94cf601db82e3db392eae2745d5a118d08bd45148492b465c5948c0529"
+    },
+    {
+      "key": "Shield",
+      "file": "shield-cross-icon.png",
+      "bytes": 7819,
+      "sha256": "564ca6c1980fdfc9a333397599b1af1e814b880332c94e58ddefa564e8019e63"
+    },
+    {
+      "key": "Cavalry",
+      "file": "army-chess-knight-icon.png",
+      "bytes": 11422,
+      "sha256": "dbb95d5fd2f6dfe68587eca5470015f5bc7295251fb0ad32fb80ae2ad084ae3c"
+    },
+    {
+      "key": "Elite",
+      "file": "gonfalon-knight-icon.png",
+      "bytes": 7952,
+      "sha256": "93703dd67df8668ef95f8383cf31d239fc066e2277d6dbde3d164b90c09c217c"
+    }
+  ],
+  "rights": "User-authorized installation reuse. Icon original authorship/license not yet individually established; local-only release lock retained.",
+  "notRecovered": [
+    "complete native combat formula",
+    "biome application",
+    "naval combat and transport"
+  ]
+}

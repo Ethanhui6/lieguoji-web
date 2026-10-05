@@ -1,0 +1,27 @@
+
+> lieguoji-web@0.5.0-preview.33 test:plan
+> node --test scripts/check-v5-plan.test.mjs
+
+✔ user local gameplay priority preserves acceptance and cloud locks (3.6592ms)
+✔ invalid or unsupported exception cannot open later phases (1.1838ms)
+✔ phase deferral never waives explicit task prerequisites or cycles (0.6749ms)
+✔ deferral does not grant complete phases or forged phone acceptance (0.6828ms)
+✔ a completed numeric contract does not claim completed references, UI, or the first experience gate (0.8773ms)
+✔ active items must have completed declared and inherited phase dependencies (0.466ms)
+✔ missing dependencies, parent mismatches, duplicates, and dependency cycles fail (0.5692ms)
+✔ done items cannot use absent or unsafe evidence (0.4451ms)
+✔ current phase and next batch cannot silently revert to V4 identifiers (0.3751ms)
+✔ phase completion cannot conceal unfinished work or pending phone acceptance (0.5464ms)
+✔ later systems remain blocked even if their declared dependency was removed (0.2423ms)
+✔ mobile emulation cannot pass the physical device gate or replace user acceptance (0.8941ms)
+✔ physical and visual acceptance require their own existing evidence and both phone browsers (0.4184ms)
+✔ valid documented acceptance permits the next V5 phase but keeps local-only rights (0.3462ms)
+✔ all V5 stages done do not mutate or unlock the real historical release gate (256.227ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 350.3907

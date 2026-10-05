@@ -1,0 +1,34 @@
+
+> lieguoji-web@0.5.0-preview.33 test:release
+> node --test scripts/release-policy.test.mjs
+
+✔ a locked, unfinished programme remains a valid local plan but cannot release (3.4182ms)
+✔ every PH, subtask, readiness check and matching source permits a synthetic candidate; old blocked formal material stays independent (0.6212ms)
+✔ a done phase cannot conceal an unfinished or unproven work item (0.6956ms)
+✔ missing phases, duplicate work IDs and unknown statuses cannot shrink the acceptance scope (0.8289ms)
+✔ original task status or evidence changes fail the preserved digest (0.5196ms)
+✔ phase and subtask dependency cycles are rejected even when all involved statuses say done (1.317ms)
+✔ unknown and unfinished dependencies cannot be approved by child evidence alone (0.8083ms)
+✔ an evidence filename is not sufficient unless the filesystem boundary has verified it (0.9473ms)
+✔ real device and visual approvals cannot be omitted, pending, or replaced with empty evidence (1.8568ms)
+✔ readiness cannot unlock modified source or replace required phases with an empty list (0.7407ms)
+✔ matching source evidence cannot authorize an uncommitted or unverified working tree (1.0343ms)
+✔ the authorized playtest permits only its verified branch without completing any PH or formal gate (4.5329ms)
+✔ playtest rejects absent, pending, unknown and altered authorization or schema (2.3111ms)
+✔ playtest requires actual evidence for all three exact checks, a clean source and every valid plan invariant (5.3706ms)
+✔ playtest expires at its exact UTC deadline and rejects invalid or normalized dates (2.9536ms)
+✔ path boundary rejects outside, absolute, missing, and credential-capable candidates without reading contents (1.2839ms)
+✔ fingerprint covers changed, added and removed source, excludes only readiness, and refuses missing tracked files (924.7789ms)
+✔ CLI enforces defaults and actual target refs using an independent locked fixture (2418.7855ms)
+✔ only reviewed root npm settings bytes are permitted, remain fingerprinted, and nested or altered configs fail closed (499.58ms)
+✔ archived log review permits only listed bytes in the two reviewed directories and fingerprints its registry (555.185ms)
+✔ filesystem evidence deletion cannot satisfy the preview gate even with a clean matching fingerprint (503.3373ms)
+✔ pre-push binds exactly accepted HEAD to the actual authorized remote ref and original repository (1535.3258ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6555.0019

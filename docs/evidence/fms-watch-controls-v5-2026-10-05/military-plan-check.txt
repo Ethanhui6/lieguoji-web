@@ -1,0 +1,5 @@
+
+> lieguoji-web@0.5.0-preview.33 plan:check
+> node scripts/check-plan.mjs
+
+Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/15 work items, active WEB-PH04; release lock does not block local development

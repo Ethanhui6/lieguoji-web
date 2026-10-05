@@ -1,8 +1,11 @@
 import { assertFmsRun, runEngine, type FmsRun } from './world';
-import { supportedMilitaryEngine } from './military-registry';
+import { supportedMilitaryEngine, previousMilitaryFingerprint, military1Fingerprint } from './military-registry';
 
 export const RUN_DATABASE = 'lieguoji-fms-play-v1';
 export const MILITARY_DATABASE = 'lieguoji-fms-play-v2';
+export const MOBILIZATION_DATABASE = 'lieguoji-fms-mobilization-v1';
+export type StoreKey=1|2|3;
+export const runStore=(run:FmsRun):StoreKey=>run.version===1?1:[previousMilitaryFingerprint,military1Fingerprint].includes(run.engine)?2:3;
 type Envelope = { version: 1; revision: number; checksum: string; run: FmsRun };
 type Slots = { current?: Envelope; backup?: Envelope; revision?: number };
 export interface SavedRun { run: FmsRun; revision: number; recovered: boolean }
@@ -11,8 +14,8 @@ async function digest(run: FmsRun): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serialize(run)));
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
 }
-function future(raw: Envelope | undefined, version:1|2) {
-  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== version) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):supportedMilitaryEngine(raw.run.engine))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
+function future(raw: Envelope | undefined, version:StoreKey) {
+  if (raw && ((raw.version !== undefined && raw.version !== 1) || (raw.run?.version !== undefined && raw.run.version !== (version===1?1:2)) || (raw.run?.engine !== undefined && !(version===1?raw.run.engine===runEngine(1):(supportedMilitaryEngine(raw.run.engine)&&runStore(raw.run)===version))))) throw new Error('推演存档属于其他规则版本，已锁定写入，请保留原档。');
   const run = raw?.run;
   if(run?.version===2&&run.rules!=='fms-military-1')throw new Error('推演规则版本不同，已锁定读写。');
   if (run && ((run.terrain?.version !== undefined && ![1, 2].includes(run.terrain.version))
@@ -25,9 +28,9 @@ async function valid(raw?: Envelope): Promise<Envelope | undefined> {
   if (!raw) return;
   try { assertFmsRun(raw.run); if (!Number.isSafeInteger(raw.revision) || raw.revision < 1 || raw.checksum !== await digest(raw.run)) return; return raw; } catch { return; }
 }
-async function open(factory: IDBFactory, version:1|2): Promise<IDBDatabase> {
+async function open(factory: IDBFactory, version:StoreKey): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = factory.open(version===1?RUN_DATABASE:MILITARY_DATABASE, 1); let ended = false;
+    const req = factory.open(version===1?RUN_DATABASE:version===2?MILITARY_DATABASE:MOBILIZATION_DATABASE, 1); let ended = false;
     const timer = setTimeout(() => fail(), 8000);
     function fail() { if (!ended) { ended = true; clearTimeout(timer); reject(new Error('无法打开推演存档，未覆盖原档。')); } }
     req.onupgradeneeded = () => { if (ended) req.transaction?.abort(); else req.result.createObjectStore('saves'); };
@@ -35,7 +38,7 @@ async function open(factory: IDBFactory, version:1|2): Promise<IDBDatabase> {
     req.onsuccess = () => { if (ended) req.result.close(); else { ended = true; clearTimeout(timer); req.result.onversionchange = () => req.result.close(); resolve(req.result); } };
   });
 }
-function transaction(db: IDBDatabase, version:1|2, write?: { expected: Slots; envelope: Envelope; previous?: Envelope }): Promise<Slots> {
+function transaction(db: IDBDatabase, version:StoreKey, write?: { expected: Slots; envelope: Envelope; previous?: Envelope }): Promise<Slots> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('saves', write ? 'readwrite' : 'readonly'), store = tx.objectStore('saves'), slots: Slots = {}; let failure: unknown;
     const timer = setTimeout(() => { failure = new Error('存档操作超时，已取消写入。'); try { tx.abort(); } catch { /* already ended */ } }, 8000);
@@ -56,7 +59,7 @@ function transaction(db: IDBDatabase, version:1|2, write?: { expected: Slots; en
     tx.onabort = tx.onerror = () => { clearTimeout(timer); reject(failure ?? new Error('推演保存失败，原进度已保留。')); };
   });
 }
-async function checked(slots: Slots, version:1|2) {
+async function checked(slots: Slots, version:StoreKey) {
   future(slots.current,version); future(slots.backup,version);
   if (!slots.current && !slots.backup && slots.revision === undefined) return { previous: undefined, revision: null };
   if (!Number.isSafeInteger(slots.revision) || slots.revision! < 1) throw new Error('推演存档序号损坏，已锁定写入。');
@@ -64,12 +67,12 @@ async function checked(slots: Slots, version:1|2) {
   if (!previous || previous.revision > slots.revision! || (current && current.revision !== slots.revision)) throw new Error('推演主备档均无有效进度，已保留原档。');
   return { previous, revision: slots.revision!, recovered: !current };
 }
-export async function loadRun(factory: IDBFactory = indexedDB, version:1|2=1): Promise<SavedRun | null> {
+export async function loadRun(factory: IDBFactory = indexedDB, version:StoreKey=1): Promise<SavedRun | null> {
   const db = await open(factory,version);
   try { const c = await checked(await transaction(db,version),version); return c.previous ? { run: c.previous.run, revision: c.revision!, recovered: !!c.recovered } : null; } finally { db.close(); }
 }
 export async function saveRun(run: FmsRun, expected: number | null, factory: IDBFactory = indexedDB): Promise<number> {
-  const copy = structuredClone(run); assertFmsRun(copy); const checksum = await digest(copy), version=copy.version, db = await open(factory,version);
+  const copy = structuredClone(run); assertFmsRun(copy); const checksum = await digest(copy), version=runStore(copy), db = await open(factory,version);
   try {
     const slots = await transaction(db,version), c = await checked(slots,version);
     if (c.revision !== expected) throw new Error('另一窗口已更新推演存档，本次未覆盖。请重新读取进度。');

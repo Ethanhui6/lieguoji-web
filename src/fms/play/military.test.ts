@@ -7,7 +7,7 @@ import { PlaySession } from './session';
 import { previewMilitaryAction,recruitmentGrain } from './military-actions';
 import { createMilitaryCore } from './military-core';
 import { unitProfiles } from './military-profile';
-import { loadRun,saveRun,MILITARY_DATABASE } from './storage';
+import { loadRun,saveRun,MOBILIZATION_DATABASE } from './storage';
 import * as frozen from '../../compat/v0_4/sim/core';
 import { namedWorld } from './names';
 import { previousMilitaryFingerprint } from './military-registry';
@@ -15,7 +15,7 @@ import { createMilitaryCore as frozenPreview } from './compat/preview1/fms/play/
 
 const make=()=>withMilitary(createFmsRun(grid(),4,'peace'));
 const version=(world:{day:number;nextEventId:number})=>({day:world.day,nextEventId:world.nextEventId});
-async function tamper(factory:IDBFactory,key:string,edit:(v:Record<string,unknown>)=>void){await new Promise<void>((resolve,reject)=>{const req=factory.open(MILITARY_DATABASE,1);req.onsuccess=()=>{const db=req.result,tx=db.transaction('saves','readwrite'),store=tx.objectStore('saves'),get=store.get(key);get.onsuccess=()=>{const v=get.result;edit(v);store.put(v,key);};tx.oncomplete=()=>{db.close();resolve();};tx.onabort=()=>{db.close();reject(tx.error);};};});}
+async function tamper(factory:IDBFactory,key:string,edit:(v:Record<string,unknown>)=>void){await new Promise<void>((resolve,reject)=>{const req=factory.open(MOBILIZATION_DATABASE,1);req.onsuccess=()=>{const db=req.result,tx=db.transaction('saves','readwrite'),store=tx.objectStore('saves'),get=store.get(key);get.onsuccess=()=>{const v=get.result;edit(v);store.put(v,key);};tx.oncomplete=()=>{db.close();resolve();};tx.onabort=()=>{db.close();reject(tx.error);};};});}
 
 describe('FMS dedicated military rules and legacy dispatch',()=>{
   it('continues the exact known development preview while rejecting any unknown engine',async()=>{
@@ -32,11 +32,13 @@ describe('FMS dedicated military rules and legacy dispatch',()=>{
     const f=new IDBFactory();await saveRun(old,null,f);expect((await loadRun(f,1))?.run).toEqual(before);
     expect(()=>session.execute({type:'military',action:{type:'relocate-capital',nationId:'n-0',cityId:'c-0'},expected:version(old.world)})).toThrow('旧世界');
   });
-  it('starts three real formations per country without increasing starting headcount',()=>{
+  it('recruits from actual population without inventing starting soldiers',()=>{
     const old=createFmsRun(grid(),4,'peace'),run=withMilitary(old);expect(()=>assertFmsRun(run)).not.toThrow();
-    expect(run.world.armies.length).toBe(old.world.armies.length*3);
-    expect(run.world.armies.reduce((s,a)=>s+a.troops,0)).toBe(old.world.armies.reduce((s,a)=>s+a.troops,0));
-    expect(new Set(Object.values(run.units))).toEqual(new Set(['Infantry','Archer','Cavalry']));
+    const people=(w:typeof old.world)=>w.statecraft!.provinces.reduce((sum,p)=>sum+p.population,0)+w.armies.reduce((sum,a)=>sum+a.troops,0);
+    expect(people(run.world)).toBe(people(old.world));
+    expect(run.world.statecraft!.provinces.reduce((s,p)=>s+p.grain,0)).toBeLessThan(old.world.statecraft!.provinces.reduce((s,p)=>s+p.grain,0));
+    expect(run.world.armies.length).not.toBe(old.world.armies.length*3);
+    expect(new Set(run.world.armies.map(a=>a.provinceId)).size).toBe(run.world.armies.length);
   });
   it('explicit copy changes identity and preserves the original state and route',()=>{
     const old=createFmsRun(grid(),4,'war'),session=new PlaySession(),before=structuredClone(old);
@@ -126,11 +128,11 @@ describe('FMS dedicated military rules and legacy dispatch',()=>{
     const f=new IDBFactory(),old=createFmsRun(grid(),4),run=withMilitary(old);
     await saveRun(old,null,f);await saveRun(run,null,f);const a={...run,world:playRules(run).advanceWorld(run.world,1)},b={...run,world:playRules(run).advanceWorld(run.world,2)};
     const results=await Promise.allSettled([saveRun(a,1,f),saveRun(b,1,f)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
-    expect((await loadRun(f,1))?.run).toEqual(old);expect((await loadRun(f,2))?.run.version).toBe(2);
-    await tamper(f,'current',v=>{v.checksum='damaged';});expect((await loadRun(f,2))?.run).toEqual(run);
+    expect((await loadRun(f,1))?.run).toEqual(old);expect((await loadRun(f,3))?.run.version).toBe(2);
+    await tamper(f,'current',v=>{v.checksum='damaged';});expect((await loadRun(f,3))?.run).toEqual(run);
   });
   for(const slot of ['current','backup'])it(`locks future ${slot} v2 rules without affecting v1`,async()=>{
     const f=new IDBFactory(),old=createFmsRun(grid(),4),run=withMilitary(old);await saveRun(old,null,f);await saveRun(run,null,f);await saveRun(run,1,f);
-    await tamper(f,slot,v=>{(v.run as {rules:string}).rules='fms-military-99';});await expect(loadRun(f,2)).rejects.toThrow('锁定');await expect(saveRun(run,2,f)).rejects.toThrow('锁定');expect((await loadRun(f,1))?.run).toEqual(old);
+    await tamper(f,slot,v=>{(v.run as {rules:string}).rules='fms-military-99';});await expect(loadRun(f,3)).rejects.toThrow('锁定');await expect(saveRun(run,2,f)).rejects.toThrow('锁定');expect((await loadRun(f,1))?.run).toEqual(old);
   });
 });

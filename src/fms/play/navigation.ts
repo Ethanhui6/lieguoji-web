@@ -6,17 +6,29 @@ export function armyPosition(world: World, army: Army): Point {
   const target = world.provinces.find(p => p.id === army.route[0])?.center ?? origin;
   return { x: origin.x + (target.x - origin.x) * army.progress, y: origin.y + (target.y - origin.y) * army.progress };
 }
-/** Shared by draw, focus and hit testing; the badge is 15 CSS pixels below its route. */
-export function armyMarkerPoint(world: World, army: Army, scale: number, camera: AtlasCamera): Point {
-  const p = armyPosition(world, army), screen = worldToScreen(camera, { x: p.x / scale, y: p.y / scale });
-  const cohort=world.armies.filter(a=>a.status!=='destroyed'&&a.troops>0&&a.provinceId===army.provinceId&&a.route[0]===army.route[0]&&Math.abs(a.progress-army.progress)<1e-8);
-  const index=cohort.findIndex(a=>a.id===army.id),count=cohort.length;
-  return { x: screen.x+(count>1?(index%4-Math.min(3,count-1)/2)*36:0), y: screen.y+15+(count>4?Math.floor(index/4)*36:0) };
+export type ArmyMarker=Point & {ids:string[];near:boolean};
+/** CSS-sized markers: nearby friendly troops share a far-view marker. Never
+ * merge enemies. Selected troops stay individually visible and selectable. */
+export function armyMarkers(world:World,scale:number,camera:AtlasCamera,selected:string|null=null):ArmyMarker[]{
+  const area=world.provinces.reduce((sum,p)=>sum+Math.abs(p.polygon.reduce((s,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return s+a.x*b.y-b.x*a.y;},0))/2,0);
+  const near=Math.sqrt(area/Math.max(1,world.provinces.length))*camera.scale/scale>=55;
+  const groups=new Map<string,{ids:string[];x:number;y:number}>();
+  for(const a of world.armies.filter(a=>a.troops>0&&a.status!=='destroyed')){
+    const p=armyPosition(world,a),x=p.x/scale*camera.scale,y=p.y/scale*camera.scale;
+    const key=a.id===selected?`selected:${a.id}`:near?`${a.nationId}/${a.provinceId}/${a.route[0]}/${a.progress}`:`${a.nationId}/${Math.floor(x/36)}/${Math.floor(y/36)}`;
+    const group=groups.get(key)??{ids:[],x:0,y:0};group.ids.push(a.id);group.x+=x;group.y+=y;groups.set(key,group);
+  }
+  return [...groups.values()].flatMap<ArmyMarker>(g=>{
+    const x=g.x/g.ids.length+camera.x,y=g.y/g.ids.length+camera.y+12;
+    if(!near)return [{ids:g.ids,x,y,near}];
+    return g.ids.map((id,i)=>({ids:[id],x:x+(i%3-Math.min(2,g.ids.length-1)/2)*22,y:y+Math.floor(i/3)*22,near}));
+  });
 }
-export function armiesAt(world: World, scale: number, camera: AtlasCamera, point: Point): string[] {
-  return world.armies.filter(a => a.troops > 0 && a.status !== 'destroyed').map(a => {
-    const p = armyMarkerPoint(world, a, scale, camera); return { id: a.id, distance: Math.hypot(p.x - point.x, p.y - point.y) };
-  }).filter(a => a.distance <= 22).sort((a,b) => a.distance - b.distance).map(a => a.id);
+export function armyMarkerPoint(world:World,army:Army,scale:number,camera:AtlasCamera):Point {
+  return armyMarkers(world,scale,camera).find(m=>m.ids.includes(army.id))??worldToScreen(camera,armyPosition(world,army));
+}
+export function armiesAt(world:World,scale:number,camera:AtlasCamera,point:Point,selected:string|null=null):string[]{
+  return armyMarkers(world,scale,camera,selected).map(m=>({...m,distance:Math.hypot(m.x-point.x,m.y-point.y)})).filter(m=>m.distance<=22).sort((a,b)=>a.distance-b.distance).flatMap(m=>m.ids);
 }
 /** Leave the top status, bottom controls and open sheet outside the focal area. */
 export function focusAnchor(viewport: CameraSize, panel: boolean): Point {

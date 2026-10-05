@@ -1,6 +1,7 @@
 import type { StateVersion, World, StateActionPreview } from '../../compat/v0_4/sim/types';
-import { validateWorld } from '../../compat/v0_4/sim/core';
+import { createMilitaryCore } from './military-core';
 import { isUnitKey, unitProfile, type UnitAssignments, type UnitKey } from './military-profile';
+import { mobilize } from './mobilization';
 
 export type MilitaryAction = {type:'relocate-capital';nationId:string;cityId:string}
   | {type:'recruit';nationId:string;cityId:string;unit:UnitKey;troops:number};
@@ -8,7 +9,9 @@ export const recruitmentGrain=(troops:number)=>Math.ceil(troops*100/6);
 export function previewMilitaryAction(world:World,action:MilitaryAction):StateActionPreview {
   const basedOn={day:world.day,nextEventId:world.nextEventId};
   const no=(reason:string):StateActionPreview=>({valid:false,reason,changes:[],warnings:[],basedOn});
-  if(!validateWorld(world)||!world.statecraft)return no('世界状态无效。');
+  // Structural validation uses the current empty-army contract; actual unit keys
+  // are separately validated on the full run before Worker dispatch.
+  if(!world||!Array.isArray(world.armies)||!createMilitaryCore(Object.fromEntries(world.armies.map(a=>[a?.id,'Infantry']))).validateWorld(world)||!world.statecraft)return no('世界状态无效。');
   if(!action||typeof action!=='object'||!['relocate-capital','recruit'].includes(action.type))return no('国家操作无效。');
   const keys=action.type==='recruit'?['type','nationId','cityId','unit','troops']:['type','nationId','cityId'];
   if(Object.keys(action).length!==keys.length||!keys.every(k=>Object.hasOwn(action,k)))return no('国家操作格式无效。');
@@ -53,13 +56,10 @@ export function initialUnitAssignments(world:World):UnitAssignments {
   return Object.fromEntries(world.armies.map(a=>[a.id,'Infantry']));
 }
 
-/** New worlds start with three real single-type formations per nation.
- * Divide the existing starting soldiers; do not conjure extra headcount. */
+/** Recruit locally instead of splitting every nation into the same three armies. */
 export function formStartingUnits(world:World){
-  const next=structuredClone(world),units:Record<string,UnitKey>={};
-  next.armies=world.armies.flatMap(a=>{
-    const keys:UnitKey[]=['Infantry','Archer','Cavalry'],base=Math.floor(a.troops/3);
-    return keys.map((key,i)=>{const id=`${a.id}-${i}`;units[id]=key;return {...a,id,name:`${world.nations.find(n=>n.id===a.nationId)!.name}${unitProfile(key).name}`,troops:i===2?a.troops-base*2:base};});
-  });
-  return {world:next,units};
+  const next=structuredClone(world);
+  for(const a of next.armies)next.statecraft!.provinces.find(p=>p.provinceId===a.provinceId)!.population+=a.troops;
+  next.armies=[];
+  return mobilize(next,{},true);
 }

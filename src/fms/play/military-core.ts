@@ -401,7 +401,7 @@ function validateWorld(value: unknown): value is World {
     for (const river of custom.rivers) { if (!list(river, 2, 1000) || !river.every(point)) return false; count += river.length; }
     if (count > 5000) return false;
   }
-  if (!list(value.nations, 1, 50) || !list(value.provinces, 1, 1000) || !list(value.cities, 1, 1000) || !list(value.armies, 1, 500) || !list(value.events, 0, MAX_EVENTS)) return false;
+  if (!list(value.nations, 1, 50) || !list(value.provinces, 1, 1000) || !list(value.cities, 1, 1000) || !list(value.armies, 0, 500) || !list(value.events, 0, MAX_EVENTS)) return false;
   const ids = new Set<string>();
   const uniqueId = (id: unknown): id is string => { if (!isId(id) || ids.has(id)) return false; ids.add(id); return true; };
   for (const nation of value.nations) {

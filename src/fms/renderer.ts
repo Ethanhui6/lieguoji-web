@@ -90,6 +90,9 @@ export class FmsRenderer {
   private bound?: Graphics;
   constructor(private onDisplayState:(state:FmsBiomeDisplayState)=>void=()=>{},private onDisplayError:(error:unknown)=>void=error=>{throw error;}){}
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
+  /** A caller-owned gameplay overlay shares this exact terrain/camera. */
+  attachGameplayLayer(layer: Container): void { this.scene.addChild(layer); this.draw(); }
+  refresh(): void { this.draw(); }
   async init(host: HTMLElement): Promise<void> {
     await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#1487ff', preference: 'webgl' });
     this.initialized = true;

@@ -1,5 +1,7 @@
 # 列国纪执行边界
 
+> **2026-10-05 用户优先级调整：** 用户明确要求先做关键功能供试玩、后续再优化。本地顺序改为 FMS 当前地图 → 自动国家／首都／城市 → 自主发展与战争、外交军令 → 独立保存恢复。允许 WEB-PH03/04 的限定核心工作先行；WEB-PH02 真机／视觉及 PH03 完整行政体验仍未完成，历史状态与全部发布锁不变。以 `webRebuild.localDevelopmentException` 和 [本轮指令证据](docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md) 为准，以下“不扩建国家”的旧顺序在此范围内被覆盖。不是完整原作等价或云端发布授权。
+
 > **2026-10-04 最新重规划：** 用户否定旧版本体验和旧计划，明确要求优先忠实还原自己的 Fantasy Map Simulator。当前执行入口改为 [CODEX_AUTOPILOT_V5.md](CODEX_AUTOPILOT_V5.md) 和 [新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)，状态源为 `plan/tasks.json.webRebuild`。iPhone13ProMax / Safari与Chrome / **竖屏优先、原作风格、折叠工具**；先做闭合轮廓＋海陆笔刷、保形自然化、连续缩放的试玩并由用户验收，随后才扩建国家等系统。以下V4开发顺序和iOS美术目标属于历史；旧任务、源代码、存档、兼容约束和全部云端发布锁保留。重规划不自动解锁、不回写旧完成状态。
 
 > 2026-10-03 素材复用授权：用户声明 `D:\steam\steamapps\common\FantasyMapSimulator` 为自己的已发布作品，并明确要求从当前安装包继续分析、复用到网页。本次可只读分析该指定目录并在本项目中适配有用的代码/数据/资源；这覆盖文末针对该作品的旧“不复制”限制。安装目录不写入，不读取认证/SDK配置或个人存档，第三方组件按实际来源单独记录；完整安装包、分析dump与私密素材不进入dist。此授权不解除云端发布门，也不将任何PH自动标为完成。续接见 docs/FMS_PACKAGE_REUSE_2026-10-03.md。

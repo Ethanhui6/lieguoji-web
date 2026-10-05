@@ -64,6 +64,9 @@ if (!files.some(file => /^assets\/atlas\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file
 if (!files.some(file => /^assets\/biome\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/biome.worker-<hash>.js', 'required isolated climate and rainfall river Worker is missing');
 }
+if (!files.some(file => /^assets\/play\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
+  reject('assets/play.worker-<hash>.js', 'required FMS gameplay Worker is missing');
+}
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }

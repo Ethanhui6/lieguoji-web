@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cameraScaleBounds, fitCamera, resizeCamera, zoomCameraAt, type AtlasCamera, type CameraPoint, type CameraSize } from '../world/camera';
 import { createFmsDocument, FmsEditHistory, prepareFmsBrushEdit, prepareFmsLockEdit, prepareFmsOutlineEdit, type FmsDocument, type FmsEditPatch } from './model';
 import { loadFmsDocument, saveFmsDocument } from './persistence';
@@ -17,6 +18,7 @@ import type { FmsDrainage } from './hydrology';
 import { FMS_DEFAULT_COASTAL_WIDTH, FMS_MIN_COASTAL_WIDTH, FMS_MAX_COASTAL_WIDTH } from './terrain-options';
 import type { FmsTerrainDisplay } from './height-palette';
 import './fms.css';
+import FmsGame from './play/FmsGame';
 
 type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock' | 'hill' | 'template';
 const tools: { id: Tool; name: string; symbol: string; help: string }[] = [
@@ -43,6 +45,8 @@ type TerrainCandidate = { kind:'terrain'; patch:FmsEditPatch; document:FmsDocume
 const messageOf = (error: unknown) => error instanceof Error ? error.message : '这次操作未能完成，地图保持原样。';
 
 export default function FmsApp() {
+  const [playTerrain,setPlayTerrain]=useState<FmsDocument|null>(null);
+  const playingRef=useRef(false);playingRef.current=!!playTerrain;
   const host = useRef<HTMLDivElement>(null), session = useRef<Session | null>(null), stroke = useRef<Stroke | null>(null);
   const [tool,setTool] = useState<Tool>('outline'), [radius,setRadius] = useState(48), [height,setHeight] = useState(45), [expanded,setExpanded] = useState(false);
   const [ready,setReady] = useState(false), [fatal,setFatal] = useState(''), [busy,setBusy] = useState(false), [notice,setNotice] = useState('正在读取本机地图…');
@@ -130,6 +134,7 @@ export default function FmsApp() {
       window.addEventListener('beforeunload',event=>{if(s.history.document.revision!==s.savedDocumentRevision||terrainPhaseRef.current!=='idle'){event.preventDefault();event.returnValue='';}},options);
       documentVisibility(options,()=>s.gestures.reset());
       window.addEventListener('keydown',event=>{
+        if(playingRef.current)return;
         if(event.key==='Escape'){s.gestures.interrupt();if(terrainPhaseRef.current!=='idle')cancelTerrain();setExpanded(false);}
         if(!(event.target instanceof HTMLInputElement)&&(event.ctrlKey||event.metaKey)&&['z','y'].includes(event.key.toLowerCase())){
           event.preventDefault();if(busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();
@@ -254,8 +259,10 @@ export default function FmsApp() {
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   };
   const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);}catch(error){setNotice(messageOf(error));}};
-  return <main onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
-    <div className="fms-map" ref={host}/>
+  return <main inert={!!playTerrain} onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
+      <div className="fms-map" ref={host}/>
+      <button className="play-entry" disabled={!editable} onClick={()=>{const s=session.current;if(s){s.gestures.interrupt();setExpanded(false);setPlayTerrain(structuredClone(s.history.document));}}}>进入世界 →</button>
+      {playTerrain&&createPortal(<FmsGame terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button onClick={()=>choose('template')} disabled={!editable}>原作地形</button><button className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}>{busy?'保存中…':'保存'}<span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
     {ready&&stats.land===0&&!fatal&&<div className="fms-empty"><span>一片海洋，等你落笔</span><p>选择轮廓，描出第一块大陆</p></div>}

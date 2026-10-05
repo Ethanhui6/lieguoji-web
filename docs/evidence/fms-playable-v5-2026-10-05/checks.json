@@ -1,0 +1,58 @@
+[
+  {
+    "command": "npm run test:plan",
+    "start": "2026-10-05T05:56:45.078Z",
+    "end": "2026-10-05T05:56:45.747Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 test:plan\n> node --test scripts/check-v5-plan.test.mjs\n\n✔ user local gameplay priority preserves acceptance and cloud locks (3.2318ms)\n✔ invalid or unsupported exception cannot open later phases (1.483ms)\n✔ phase deferral never waives explicit task prerequisites or cycles (0.779ms)\n✔ deferral does not grant complete phases or forged phone acceptance (0.7555ms)\n✔ a completed numeric contract does not claim completed references, UI, or the first experience gate (0.6319ms)\n✔ active items must have completed declared and inherited phase dependencies (0.4232ms)\n✔ missing dependencies, parent mismatches, duplicates, and dependency cycles fail (0.9021ms)\n✔ done items cannot use absent or unsafe evidence (0.4812ms)\n✔ current phase and next batch cannot silently revert to V4 identifiers (0.4511ms)\n✔ phase completion cannot conceal unfinished work or pending phone acceptance (0.5236ms)\n✔ later systems remain blocked even if their declared dependency was removed (0.2384ms)\n✔ mobile emulation cannot pass the physical device gate or replace user acceptance (0.7142ms)\n✔ physical and visual acceptance require their own existing evidence and both phone browsers (0.3617ms)\n✔ valid documented acceptance permits the next V5 phase but keeps local-only rights (0.3049ms)\n✔ all V5 stages done do not mutate or unlock the real historical release gate (193.2048ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 274.4107\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run test:release",
+    "start": "2026-10-05T05:56:45.749Z",
+    "end": "2026-10-05T05:56:52.404Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 test:release\n> node --test scripts/release-policy.test.mjs\n\n✔ a locked, unfinished programme remains a valid local plan but cannot release (3.396ms)\n✔ every PH, subtask, readiness check and matching source permits a synthetic candidate; old blocked formal material stays independent (0.5829ms)\n✔ a done phase cannot conceal an unfinished or unproven work item (0.6533ms)\n✔ missing phases, duplicate work IDs and unknown statuses cannot shrink the acceptance scope (0.8537ms)\n✔ original task status or evidence changes fail the preserved digest (0.5443ms)\n✔ phase and subtask dependency cycles are rejected even when all involved statuses say done (1.3409ms)\n✔ unknown and unfinished dependencies cannot be approved by child evidence alone (0.8282ms)\n✔ an evidence filename is not sufficient unless the filesystem boundary has verified it (0.9506ms)\n✔ real device and visual approvals cannot be omitted, pending, or replaced with empty evidence (2.039ms)\n✔ readiness cannot unlock modified source or replace required phases with an empty list (0.8617ms)\n✔ matching source evidence cannot authorize an uncommitted or unverified working tree (1.0625ms)\n✔ the authorized playtest permits only its verified branch without completing any PH or formal gate (4.438ms)\n✔ playtest rejects absent, pending, unknown and altered authorization or schema (2.3242ms)\n✔ playtest requires actual evidence for all three exact checks, a clean source and every valid plan invariant (5.6209ms)\n✔ playtest expires at its exact UTC deadline and rejects invalid or normalized dates (3.3572ms)\n✔ path boundary rejects outside, absolute, missing, and credential-capable candidates without reading contents (1.7466ms)\n✔ fingerprint covers changed, added and removed source, excludes only readiness, and refuses missing tracked files (823.083ms)\n✔ CLI enforces defaults and actual target refs using an independent locked fixture (2394.3134ms)\n✔ only reviewed root npm settings bytes are permitted, remain fingerprinted, and nested or altered configs fail closed (405.7383ms)\n✔ archived log review permits only listed bytes in the two reviewed directories and fingerprints its registry (596.4348ms)\n✔ filesystem evidence deletion cannot satisfy the preview gate even with a clean matching fingerprint (475.6921ms)\n✔ pre-push binds exactly accepted HEAD to the actual authorized remote ref and original repository (1477.4169ms)\nℹ tests 22\nℹ suites 0\nℹ pass 22\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 6282.9133\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run plan:check",
+    "start": "2026-10-05T05:56:52.404Z",
+    "end": "2026-10-05T05:56:53.063Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 plan:check\n> node scripts/check-plan.mjs\n\nPlan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/12 work items, active WEB-PH04; release lock does not block local development\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run lint",
+    "start": "2026-10-05T05:56:53.063Z",
+    "end": "2026-10-05T05:57:02.800Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 lint\n> eslint src tests scripts\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run typecheck",
+    "start": "2026-10-05T05:57:02.800Z",
+    "end": "2026-10-05T05:57:15.664Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 typecheck\n> tsc --noEmit\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "start": "2026-10-05T05:57:15.665Z",
+    "end": "2026-10-05T06:06:28.651Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 test\n> vitest run\n\n\n RUN  v5.0.1 D:/游戏/架空地图模拟器\n\n\n Test Files  196 passed (196)\n      Tests  2458 passed (2458)\n   Start at  13:57:17\n   Duration  551.31s (tests 98%, import 2%)\n\n    Isolate  196 workers spawned · ~119ms startup each (spawn + environment, per file)\n             at least ~11.54s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run build",
+    "start": "2026-10-05T06:06:28.651Z",
+    "end": "2026-10-05T06:06:30.733Z",
+    "exit": 0,
+    "stdout": "\n> lieguoji-web@0.5.0-preview.33 build\n> vite build && node scripts/check-dist.mjs\n\nvite v8.3.0 building client environment for production...\ntransforming...\n✓ 932 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                                     0.62 kB │ gzip:  0.47 kB\ndist/build.json                                    10.98 kB │ gzip:  1.49 kB\ndist/assets/biome.worker-DO2s7HoV.js               15.88 kB\ndist/assets/coast.worker-2MXmECyk.js               19.34 kB\ndist/assets/seed-terrain.worker-DZf0eV9u.js        34.69 kB\ndist/assets/play.worker-C7nF3ufh.js                41.07 kB\ndist/assets/terrain.worker-DaY7RVPz.js             49.49 kB\ndist/assets/replay.worker-Dvt2kBgS.js              86.98 kB\ndist/assets/sim.worker-CLe8Zpf3.js                 91.68 kB\ndist/assets/terrain-import.worker-B9lRjsio.js     162.20 kB\ndist/assets/worker-pjB4IGPF.js                    223.76 kB\ndist/assets/atlas.worker-D_ZIKkck.js              409.81 kB\ndist/assets/App-B-TSmWiq.css                        9.57 kB │ gzip:  1.97 kB\ndist/assets/FmsApp-DoxjBsdY.css                    11.91 kB │ gzip:  3.28 kB\ndist/assets/CountryStudio-Cn5n2Zb4.css             13.29 kB │ gzip:  3.08 kB\ndist/assets/AtlasStudio-CtV71PEf.css               24.31 kB │ gzip:  5.01 kB\ndist/assets/LegacyEntry-CNvbqJOh.css               34.88 kB │ gzip:  7.03 kB\ndist/assets/webworkerAll-BD1JiE5I.js                0.05 kB │ gzip:  0.06 kB\ndist/assets/getTextureBatchBindGroup-ClDkMdT3.js    0.34 kB │ gzip:  0.26 kB\ndist/assets/getPo2TextureFromSource-BzR2jfx3.js     0.46 kB │ gzip:  0.31 kB\ndist/assets/rolldown-runtime-hePW80VL.js            0.71 kB │ gzip:  0.42 kB\ndist/assets/canvasUtils-BVGwBBBn.js                 6.05 kB │ gzip:  2.04 kB\ndist/assets/BufferResource-Bk8ZSLzt.js             11.02 kB │ gzip:  2.82 kB\ndist/assets/init-B8Jnes8g.js                       15.37 kB │ gzip:  4.80 kB\ndist/assets/camera-BGXwsUH8.js                     23.19 kB │ gzip:  8.45 kB\ndist/assets/Text-BwVmMQlD.js                       34.90 kB │ gzip: 11.70 kB\ndist/assets/browserAll-BJ09HbsY.js                 42.64 kB │ gzip: 11.13 kB\ndist/assets/delaunay-C6o_la8z.js                   52.01 kB │ gzip: 19.10 kB\ndist/assets/App-BFrUSgMd.js                        72.38 kB │ gzip: 22.56 kB\ndist/assets/RenderTargetSystem-a4R96cNy.js         78.10 kB │ gzip: 21.97 kB\ndist/assets/Geometry-IpHxCVTc.js                  109.69 kB │ gzip: 33.09 kB\ndist/assets/CountryStudio-Doq91CRc.js             128.54 kB │ gzip: 37.93 kB\ndist/assets/FmsApp-CvAjjxQj.js                    134.86 kB │ gzip: 44.13 kB\ndist/assets/LegacyEntry-DiZ8EHd3.js               135.52 kB │ gzip: 44.68 kB\ndist/assets/AtlasStudio-DLVCNVeb.js               173.27 kB │ gzip: 50.11 kB\ndist/assets/renderer-D1_tUbYF.js                  210.86 kB │ gzip: 67.91 kB\ndist/assets/index-DcnJAXxa.js                     221.79 kB │ gzip: 69.62 kB\ndist/assets/init-ChhVBUXh.js                      250.43 kB │ gzip: 72.58 kB\n\n✓ built in 602ms\nPublish audit: 42 approved game artifacts; only required root files and hashed JS/CSS assets.\n",
+    "stderr": ""
+  }
+]

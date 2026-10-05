@@ -1,0 +1,123 @@
+import { useEffect, useRef, useState } from 'react';
+import { nationReports, previewOrder, previewStateAction, isAtWar, policyOptions } from '../../sim/core';
+import type { Order, StateAction, StateVersion } from '../../sim/types';
+import { fitCamera, screenToWorld, resizeCamera, zoomCameraAt, type AtlasCamera } from '../../world/camera';
+import type { FmsDocument } from '../model';
+import { FmsRenderer } from '../renderer';
+import { FmsGestures } from '../gestures';
+import { PlayClient } from './client';
+import { PlayMap } from './map';
+import { provinceAt, type FmsRun } from './world';
+import { loadRun, saveRun, type SavedRun } from './storage';
+import type { PlayCommand } from './session';
+import './play.css';
+
+type Confirmation = { command: Extract<PlayCommand, { type: 'order' | 'action' }>; title: string; reason: string; details: string[]; valid: boolean };
+const errorText = (e: unknown) => e instanceof Error ? e.message : '操作失败，已保留当前世界。';
+const number = (n: number) => Math.round(n).toLocaleString('zh-CN');
+export default function FmsGame({ terrain, onClose }: { terrain: FmsDocument; onClose: () => void }) {
+  const [run, setRun] = useState<FmsRun | null>(null), runRef = useRef<FmsRun | null>(null);
+  const [saved, setSaved] = useState<SavedRun | null>(null), revision = useRef<number | null>(null);
+  const savedStamp=useRef('');
+  const [ready, setReady] = useState(false), [locked, setLocked] = useState(false), [busy, setBusy] = useState(false), busyRef = useRef(false);
+  const [notice, setNotice] = useState('正在检查本机推演进度…'), [count, setCount] = useState(6), [war, setWar] = useState(true);
+  const [playing, setPlaying] = useState(false), playingRef = useRef(false), [speed, setSpeed] = useState(1);
+  const [nationId, setNationId] = useState(''), [armyId, setArmyId] = useState<string | null>(null), [provinceId, setProvinceId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<'nation' | 'army' | 'events' | null>(null), [confirmation, setConfirmation] = useState<Confirmation | null>(null), [exit, setExit] = useState(false);
+  const modalRef=useRef(false);modalRef.current=!!confirmation||exit;
+  const host = useRef<HTMLDivElement>(null), client = useRef<PlayClient | null>(null), alive = useRef(true);
+  const selected = useRef({ provinceId, armyId }); selected.current = { provinceId, armyId };
+  const view = useRef<{ renderer: FmsRenderer; map: PlayMap; camera: AtlasCamera; viewport: { width: number; height: number }; terrain: FmsDocument } | null>(null);
+  const paint = () => { const v = view.current, r = runRef.current; if (v && r) { v.map.draw(r.world, r.scale, v.camera.scale, selected.current.provinceId, selected.current.armyId); v.renderer.refresh(); } };
+  function pause() { playingRef.current = false; setPlaying(false); }
+  useEffect(() => {
+    alive.current = true; const worker = new PlayClient(); client.current = worker;
+    void loadRun().then(value => { if (!alive.current) return; setSaved(value); revision.current = value?.revision ?? null; setReady(true); setNotice(value ? `发现第 ${value.run.world.day} 日的进度${value.recovered ? '（由备份恢复）' : ''}。` : '从你的地图创建各国，时间开始后它们会自主发展。'); }).catch(e => { if (alive.current) { setLocked(true); setNotice(errorText(e)); } });
+    const hide = () => { if (document.hidden) { playingRef.current = false; setPlaying(false); } };
+    const unload=(event:BeforeUnloadEvent)=>{const r=runRef.current;if(r&&savedStamp.current!==`${r.id}/${r.world.day}/${r.world.nextEventId}`){event.preventDefault();event.returnValue='';}};
+    document.addEventListener('visibilitychange', hide);
+    window.addEventListener('beforeunload',unload);
+    return () => { alive.current = false; worker.close(); document.removeEventListener('visibilitychange', hide);window.removeEventListener('beforeunload',unload); };
+  }, []);
+  async function command(cmd: PlayCommand) {
+    if (busyRef.current || !client.current || (cmd.type==='step'&&modalRef.current)) return;
+    busyRef.current = true; setBusy(true);
+    try {
+      const result = await client.current.send(cmd); if (!alive.current) return;
+      const next = result.run ?? { ...runRef.current!, world: result.world }; runRef.current = next; setRun(next);
+      if(cmd.type==='load')savedStamp.current=`${next.id}/${next.world.day}/${next.world.nextEventId}`;
+      if (result.run) { setNationId(result.world.nations[0].id); setNotice('世界已就绪。开始时间看海，点选国家可干预外交与军队。'); }
+      paint();
+    } catch (e) { if (alive.current) { pause(); setNotice(errorText(e)); } }
+    finally { busyRef.current = false; if (alive.current) setBusy(false); }
+  }
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setInterval(() => { if (playingRef.current && !busyRef.current) void command({ type: 'step', days: speed }); }, 850);
+    return () => clearInterval(timer);
+    // Commands use refs so there is one serial simulation queue.
+  }, [playing, speed]);
+  const runId = run?.id;
+  useEffect(() => {
+    if (!runId || !host.current || !runRef.current) return;
+    const element = host.current, source = runRef.current.terrain, renderer = new FmsRenderer(() => {}, e => { if (alive.current) { pause(); setNotice(errorText(e)); } }), map = new PlayMap(); let disposed = false;
+    const viewport = { width: element.clientWidth, height: element.clientHeight }, camera = fitCamera(source, viewport);
+    const v = { renderer, map, viewport, camera, terrain: source }; let cleanup = () => {};
+    void renderer.init(element).then(() => {
+      if (disposed) return;
+      view.current = v; renderer.setDocument(source); renderer.setTerrainDisplay('biome'); renderer.attachGameplayLayer(map.layer); renderer.setCamera(camera); paint();
+      renderer.canvas.setAttribute('aria-label', '诸国推演地图'); renderer.canvas.dataset.testid = 'fms-play-canvas';
+      const setCamera = (next: AtlasCamera) => { v.camera = next; renderer.setCamera(next); paint(); };
+      const gestures = new FmsGestures({ camera: () => v.camera, setCamera, world: () => source, viewport: () => v.viewport, begin: () => {}, move: () => {}, commit: () => {}, cancel: () => {} });
+      const canvas = renderer.canvas; let tap: { id: number; x: number; y: number } | null = null; const downIds = new Set<number>();
+      const point = (e: PointerEvent | WheelEvent) => { const b = canvas.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+      const down = (e: PointerEvent) => { if (e.button !== 0) return; const p = point(e); downIds.add(e.pointerId); tap = downIds.size === 1 ? { id: e.pointerId, ...p } : null; canvas.setPointerCapture(e.pointerId); gestures.down(e.pointerId, p, false); };
+      const move = (e: PointerEvent) => { const p = point(e); if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 5) tap = null; gestures.move(e.pointerId, p); };
+      const up = (e: PointerEvent) => {
+        const p = point(e), candidate = tap; gestures.up(e.pointerId, p); downIds.delete(e.pointerId); tap = null;
+        if (candidate?.id !== e.pointerId || downIds.size || !runRef.current) return;
+        const r = runRef.current, coordinate = screenToWorld(v.camera, p), id = provinceAt(r.world, { x: coordinate.x * r.scale, y: coordinate.y * r.scale });
+        setProvinceId(id); if (id) { const province = r.world.provinces.find(p => p.id === id)!; setNationId(province.controller); setPanel(selected.current.armyId ? 'army' : 'nation'); }
+      };
+      const cancel = () => { tap = null; downIds.clear(); gestures.interrupt(); };
+      const wheel = (e: WheelEvent) => { e.preventDefault(); gestures.wheel(point(e), e.deltaY); };
+      canvas.addEventListener('pointerdown', down); canvas.addEventListener('pointermove', move); canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', cancel); canvas.addEventListener('lostpointercapture', cancel); canvas.addEventListener('wheel', wheel, { passive: false });
+      const observer = new ResizeObserver(() => { const next = { width: element.clientWidth, height: element.clientHeight }; v.camera = resizeCamera(v.camera, v.viewport, next, source); v.viewport = next; renderer.resize(next.width, next.height); renderer.setCamera(v.camera); paint(); }); observer.observe(element);
+      cleanup = () => { observer.disconnect(); canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointercancel', cancel); canvas.removeEventListener('lostpointercapture', cancel); canvas.removeEventListener('wheel', wheel); };
+    }).catch(e => { if (!disposed) { pause(); setNotice(errorText(e)); } });
+    return () => { disposed = true; cleanup(); view.current = null; renderer.destroy(); };
+    // Terrain is immutable for each run; daily simulation never rebuilds it.
+  }, [runId]);
+  useEffect(() => { paint(); }, [provinceId, armyId]);
+  async function save() {
+    if (busyRef.current || !runRef.current || locked) return;
+    pause(); busyRef.current = true; setBusy(true);
+    try { const value = runRef.current, next = await saveRun(value, revision.current); if (alive.current) { revision.current = next;savedStamp.current=`${value.id}/${value.world.day}/${value.world.nextEventId}`; setSaved({ run: value, revision: next, recovered: false }); setNotice(`已保存第 ${value.world.day} 日，刷新后可继续这个世界。`); } }
+    catch (e) { if (alive.current) { setNotice(errorText(e)); setLocked(true); } }
+    finally { busyRef.current = false; if (alive.current) setBusy(false); }
+  }
+  const world = run?.world, nation = world?.nations.find(n => n.id === nationId), army = world?.armies.find(a => a.id === armyId), province = world?.provinces.find(p => p.id === provinceId);
+  const report = world ? nationReports(world).find(n => n.nationId === nationId) : undefined;
+  const expected = (): StateVersion => ({ day: world!.day, nextEventId: world!.nextEventId });
+  function action(value: StateAction) { if (!world || busy) return; pause(); const p = previewStateAction(world, value); setConfirmation({ command: { type: 'action', action: value, expected: expected() }, title: value.type === 'policy' ? '调整国策' : value.type === 'declare-war' ? '宣战' : '讲和', valid: p.valid, reason: p.reason, details: [...p.changes, ...p.warnings] }); }
+  function order(kind: Order['kind']) { if (!world || !armyId || !provinceId || busy) return; pause(); const order = { armyId, targetId: provinceId, kind }, p = previewOrder(world, order); setConfirmation({ command: { type: 'order', order, expected: expected() }, title: kind === 'retreat' ? '撤退命令' : '行军命令', valid: p.valid, reason: p.reason, details: [`预计 ${p.days} 日 · 补给消耗 ${p.supplyCost}`, ...p.warnings] }); }
+  function zoom(factor: number) { const v = view.current; if (!v) return; v.camera = zoomCameraAt(v.camera, factor, { x: v.viewport.width / 2, y: v.viewport.height / 2 }, v.terrain, v.viewport); v.renderer.setCamera(v.camera); paint(); }
+  return <section className="fms-play" data-testid="fms-play" data-day={world?.day ?? ''} data-run-id={run?.id ?? ''}>
+    <div className="play-body" inert={!!confirmation||exit}>
+    <div className="fms-play-map" ref={host} />
+    <header className="play-header"><button onClick={() => { pause(); if (run) setExit(true); else onClose(); }} disabled={busy}>‹ 绘图</button><div><small>列国纪 · 诸国沙盒</small><strong>{world ? `第 ${world.day} 日` : '让世界开始生活'}</strong></div>{world && <button onClick={() => void save()} disabled={busy || locked}>保存进度</button>}</header>
+    <p className="play-notice" role="status">{notice}</p>
+    {!run && <div className="play-start"><span className="play-eyebrow">从你的大陆出发</span><h1>群国并起</h1><p>自动划分陆地、建立首都与城市。观察各国发展，也可以随时干预国策、外交与军队。</p><label>国家数量 <select aria-label="国家数量" value={count} onChange={e => setCount(Number(e.target.value))}>{[2,3,4,5,6,7,8].map(n => <option key={n}>{n}</option>)}</select></label><label className="play-checkbox"><input type="checkbox" checked={war} onChange={e => setWar(e.target.checked)} />战乱开局 <small>各国从第一天起交战</small></label><button className="play-primary" disabled={!ready || busy || locked} onClick={() => void command({ type: 'create', terrain, count, relations: war ? 'war' : 'peace' })}>{busy ? '正在建立真实陆地区划…' : '从当前地图开新局'}</button>{saved && <><button disabled={busy} onClick={() => void command({ type: 'load', run: saved.run })}>继续第 {saved.run.world.day} 日的世界</button><small>开新局不会改绘图原稿；保存新局时会替换推演主档，并保留上一档备份。</small></>}<p className="play-muted">第一版开放看海、国家账册、外交、行军和战争。行政制度、人物及城市近景后续加入。</p></div>}
+    {world && <><aside className="play-zoom"><button aria-label="放大推演地图" onClick={() => zoom(1.6)}>＋</button><button aria-label="缩小推演地图" onClick={() => zoom(1/1.6)}>−</button><button onClick={() => { const v = view.current; if (v) { v.camera = fitCamera(v.terrain, v.viewport); v.renderer.setCamera(v.camera); paint(); } }}>全图</button></aside>
+      <div className="play-controls"><div className="play-time"><button className="play-primary" disabled={busy || !!confirmation} onClick={() => { const next = !playing; playingRef.current = next; setPlaying(next); }}>{playing ? '暂停' : '开始时间'}</button><button disabled={busy || playing || !!confirmation} onClick={() => void command({ type: 'step', days: 1 })}>＋1日</button><select aria-label="推演速度" value={speed} onChange={e => setSpeed(Number(e.target.value))}><option value={1}>1倍</option><option value={3}>3倍</option><option value={7}>7倍</option></select></div><nav>{([['nation','国家'],['army','军队'],['events','大事记']] as const).map(([id,title]) => <button className={panel === id ? 'is-active' : ''} key={id} onClick={() => setPanel(panel === id ? null : id)}>{title}</button>)}</nav></div>
+      {panel && <aside className="play-panel"><div className="play-panel-title"><strong>{panel === 'events' ? '大事记与原因' : panel === 'army' ? '军队与命令' : '国家与城市'}</strong><button aria-label="收起面板" onClick={() => setPanel(null)}>×</button></div>
+        {panel === 'nation' && <><select aria-label="查看国家" value={nationId} onChange={e => setNationId(e.target.value)}>{world.nations.map(n => <option value={n.id} key={n.id}>{n.name}</option>)}</select>{nation && report && <><h2 style={{ color: nation.color }}>{nation.name}</h2><p>首都：{world.cities.find(c => c.id === nation.capitalId)?.name} · 实控 {report.territoryCount} 区</p><dl className="play-stats"><div><dt>人口</dt><dd>{number(report.population)}</dd></div><div><dt>粮储</dt><dd>{number(report.grain)}</dd></div><div><dt>下日粮食预测</dt><dd>{number(report.balancePerDay)}</dd></div><div><dt>军队</dt><dd>{report.armyCount} 支</dd></div></dl>{report.lastLedger && <p>第 {report.lastLedger.day} 日实际结粮 {number(report.lastLedger.closingGrain)}；饿亡 {number(report.lastLedger.starvationDeaths)}</p>}<label>国策 <select aria-label="国家政策" disabled={busy} value={report.priority} onChange={e => action({ type: 'policy', nationId, priority: e.target.value as 'civilian'|'balanced'|'military' })}>{policyOptions.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select></label>{report.lastDecision && <p className="play-muted">自主决策：{report.lastDecision.action}。{report.lastDecision.reason}</p>}<h3>外交</h3>{world.nations.filter(n => n.id !== nationId).map(other => <div className="play-row" key={other.id}><span>{other.name} · {isAtWar(world, nationId, other.id) ? '交战' : '和平'}</span><button disabled={busy} onClick={() => action({ type: isAtWar(world, nationId, other.id) ? 'make-peace' : 'declare-war', nationId, targetNationId: other.id })}>{isAtWar(world, nationId, other.id) ? '讲和' : '宣战'}</button></div>)}<h3>城市</h3>{world.cities.filter(c => world.provinces.find(p => p.id === c.provinceId)?.controller === nationId).map(c => <button className="play-city" key={c.id} onClick={() => { setProvinceId(c.provinceId); const v = view.current; if (v && run) { const s = Math.max(v.camera.scale, .9); v.camera = { scale:s, x:v.viewport.width / 2 - c.position.x / run.scale * s, y:v.viewport.height * .4 - c.position.y / run.scale * s }; v.renderer.setCamera(v.camera); paint(); } }}>{c.id === nation.capitalId ? '◆ ' : '· '}{c.name} · 城防 {c.fort}</button>)}</>}</>}
+        {panel === 'army' && <><p>选择军队，再点地图或选择目标辖区，预览后确认命令。</p><select aria-label="选择军队" value={armyId ?? ''} onChange={e => setArmyId(e.target.value || null)}><option value="">选择军队</option>{world.armies.filter(a => a.status !== 'destroyed').map(a => <option key={a.id} value={a.id}>{a.name} · {number(a.troops)}</option>)}</select>{army && <><h2>{army.name}</h2><p>{({ idle:'驻守',marching:'行军',retreating:'撤退',fighting:'交战',destroyed:'覆灭' })[army.status]} · {world.provinces.find(p => p.id === army.provinceId)?.name}</p><p>兵力 {number(army.troops)} · 士气 {Math.round(army.morale)} · 补给 {Math.round(army.supplies)}</p><label>目标辖区<select aria-label="目标辖区" value={provinceId ?? ''} onChange={e => setProvinceId(e.target.value || null)}><option value="">点击地图选目标</option>{world.provinces.map(p => <option key={p.id} value={p.id}>{p.name} · {world.nations.find(n => n.id === p.controller)?.name}</option>)}</select></label><p>{province ? `已选 ${province.name}` : '尚未选择目标'}</p><div className="play-row"><button disabled={!province || busy} onClick={() => order('march')}>预览行军</button><button disabled={!province || busy} onClick={() => order('retreat')}>预览撤退</button></div></>}</>}
+        {panel === 'events' && <>{!world.events.length && <p>世界刚刚诞生。开始时间后，这里会记录真实发生的变化。</p>}{[...world.events].reverse().slice(0,40).map(e => <article className="play-event" key={e.id}><small>第 {e.day} 日</small><p>{e.text}</p><details><summary>查看原因</summary><p>{e.reason}</p></details></article>)}</>}
+      </aside>}
+    </>}
+    </div>
+    {confirmation && <div className="play-modal"><div role="dialog" aria-modal="true" aria-label="命令确认"><h2>{confirmation.title}</h2><p>{confirmation.reason}</p>{confirmation.details.map((d,i) => <p key={i}>{d}</p>)}<div className="play-row"><button disabled={busy || !confirmation.valid} className="play-primary" onClick={() => { const c = confirmation.command; setConfirmation(null); void command(c); }}>确认执行</button><button autoFocus disabled={busy} onClick={() => setConfirmation(null)}>取消</button></div></div></div>}
+    {exit && <div className="play-modal"><div role="dialog" aria-modal="true" aria-label="返回绘图"><h2>返回绘图</h2><p>推演已暂停。未保存的进度退出后会丢失；绘图原稿保持原样。</p><div className="play-row"><button disabled={busy} onClick={() => { setExit(false); onClose(); }}>退出推演</button><button onClick={() => setExit(false)}>留在世界</button></div><button disabled={busy || locked} onClick={() => void save()}>先保存进度</button></div></div>}
+  </section>;
+}

@@ -48,6 +48,37 @@ function completeThrough(plan, last) {
   }
 }
 
+function gameplayFixture() {
+  const p = fixture(); completeThrough(p, 1); p.webRebuild.phases[2].status = 'in_progress';
+  p.webRebuild.phases[3].status = 'in_progress'; p.webRebuild.currentPhaseId = 'WEB-PH03'; p.webRebuild.nextBatch = ['WEB-PH03'];
+  p.webRebuild.localDevelopmentException = { kind:'user-authorized-gameplay-first', confirmedBy:'user', date:'2026-10-05', scope:'local-development-only', allowedPhaseIds:['WEB-PH03','WEB-PH04'], deferredPhaseIds:['WEB-PH02'], deferredPhaseDependencies:[{phaseId:'WEB-PH03',dependencyId:'WEB-PH02'}], acceptanceClaimsUnchanged:true, releasePolicyUnchanged:true, evidence:[evidence] };
+  return p;
+}
+test('user local gameplay priority preserves acceptance and cloud locks', () => {
+  const p = gameplayFixture(), gate = structuredClone(p.webRebuild.firstPlayableGate);
+  assert.deepEqual(errors(p), []); assert.deepEqual(p.webRebuild.firstPlayableGate, gate);
+  assert(v5EvidenceReferences(p).includes(evidence));
+  p.webRebuild.release.cloudWritesAllowed = true; matches(p, /local-only/);
+});
+test('invalid or unsupported exception cannot open later phases', () => {
+  for (const mutation of [p => { delete p.webRebuild.localDevelopmentException; },p => {p.webRebuild.localDevelopmentException.confirmedBy='assistant';},p => {p.webRebuild.localDevelopmentException.evidence=['../outside.md'];},p => {p.webRebuild.localDevelopmentException.allowedPhaseIds.push('WEB-PH05');}]) {
+    const p = gameplayFixture(); mutation(p); matches(p,/First playable gate blocks/);
+  }
+  for(const i of [5,6,7]) {const p=gameplayFixture();p.webRebuild.phases[i].status='in_progress';matches(p,/First playable gate blocks/);}
+});
+test('phase deferral never waives explicit task prerequisites or cycles', () => {
+  const p = gameplayFixture(), phase = p.webRebuild.phases[3];
+  phase.workItems=[{id:'WEB-03-01',status:'in_progress',dependsOn:['WEB-02-01'],acceptance:'real prerequisite',evidence:[]}];
+  matches(p,/Unfinished dependency.*WEB-03-01/);
+  phase.workItems[0].dependsOn=[]; assert.deepEqual(errors(p),[]);
+  p.webRebuild.phases[2].dependsOn.push('WEB-PH03');matches(p,/Dependency cycle/);
+});
+test('deferral does not grant complete phases or forged phone acceptance', () => {
+  const p = gameplayFixture(); p.webRebuild.phases[3].status='done';p.webRebuild.phases[3].evidence=[evidence];matches(p,/First playable gate blocks/);
+  const q=gameplayFixture();q.webRebuild.firstPlayableGate.status='passed';matches(q,/requires both/);
+  q.webRebuild.phases[4].status='in_progress';matches(q,/single active/);matches(q,/Unfinished dependency/);
+});
+
 test('a completed numeric contract does not claim completed references, UI, or the first experience gate', () => {
   const plan = fixture();
   const before = structuredClone(plan);

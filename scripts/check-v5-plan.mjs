@@ -13,6 +13,7 @@ export function v5EvidenceReferences(plan) {
   const refs = [web.source, web.roadmap];
   const add = owner => { if (Array.isArray(owner?.evidence)) refs.push(...owner.evidence); };
   add(web);
+  add(web.localDevelopmentException);
   for (const phase of Array.isArray(web.phases) ? web.phases : []) {
     add(phase);
     for (const item of Array.isArray(phase?.workItems) ? phase.workItems : []) add(item);
@@ -75,6 +76,31 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
   if (!Array.isArray(web.nextBatch) || web.nextBatch.length > 3 || new Set(web.nextBatch).size !== web.nextBatch.length
     || web.nextBatch.some(id => !byId.has(id))) fail('nextBatch must contain up to three distinct V5 IDs');
 
+  // A user may change LOCAL development order without accepting visuals or
+  // granting cloud writes. Keep the full graph for cycle/reference checks.
+  const exception = web.localDevelopmentException, deferred = new Set(), allowed = new Set(), edges = new Set();
+  if (exception !== undefined) {
+    const before = errors.length;
+    if (exception?.kind !== 'user-authorized-gameplay-first' || exception.confirmedBy !== 'user'
+      || exception.scope !== 'local-development-only' || !/^\d{4}-\d{2}-\d{2}$/.test(exception.date ?? '')
+      || exception.acceptanceClaimsUnchanged !== true || exception.releasePolicyUnchanged !== true) fail('Invalid local development exception authority/scope');
+    evidence('local development exception', exception?.evidence, true);
+    const phasesAllowed = exception?.allowedPhaseIds, phasesDeferred = exception?.deferredPhaseIds, dependencies = exception?.deferredPhaseDependencies;
+    if (!Array.isArray(phasesAllowed) || !phasesAllowed.length || new Set(phasesAllowed).size !== phasesAllowed.length
+      || phasesAllowed.some(id => !['WEB-PH03', 'WEB-PH04'].includes(id))) fail('Invalid local development exception phases');
+    if (!Array.isArray(phasesDeferred) || !phasesDeferred.length || new Set(phasesDeferred).size !== phasesDeferred.length
+      || phasesDeferred.some(id => !['WEB-PH02', 'WEB-PH03'].includes(id)) || phasesDeferred.includes(web.currentPhaseId)) fail('Invalid deferred development phases');
+    if (!Array.isArray(dependencies) || !dependencies.length) fail('Missing deferred phase dependencies');
+    else for (const edge of dependencies) {
+      const key = `${edge?.phaseId}/${edge?.dependencyId}`;
+      if (!['WEB-PH03/WEB-PH02', 'WEB-PH04/WEB-PH03'].includes(key) || edges.has(key)
+        || !phasesAllowed?.includes(edge.phaseId) || !phasesDeferred?.includes(edge.dependencyId)
+        || !byId.get(edge.phaseId)?.dependsOn?.includes(edge.dependencyId)) fail('Invalid deferred phase dependency');
+      edges.add(key);
+    }
+    if (errors.length === before) { phasesAllowed.forEach(id => allowed.add(id)); phasesDeferred.forEach(id => deferred.add(id)); } else edges.clear();
+  }
+
   const graph = new Map();
   for (const node of byId.values()) {
     if (!STATUSES.has(node.status)) fail(`Unknown status: ${node.id}`);
@@ -85,7 +111,10 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
     const parent = parents.get(node.id);
     const effective = [...new Set([...declared, ...(Array.isArray(parent?.dependsOn) ? parent.dependsOn : [])])];
     for (const dependency of effective) if (!byId.has(dependency)) fail(`Unknown dependency: ${node.id} -> ${String(dependency)}`);
-    if (STARTED.has(node.status) && effective.some(id => byId.get(id)?.status !== 'done')) fail(`Unfinished dependency for started item: ${node.id}`);
+    const unfinished = effective.filter(id => byId.get(id)?.status !== 'done' && !(parent
+      ? !declared.includes(id) && edges.has(`${parent.id}/${id}`)
+      : edges.has(`${node.id}/${id}`)));
+    if (STARTED.has(node.status) && unfinished.length) fail(`Unfinished dependency for started item: ${node.id}`);
     if (parent && STARTED.has(node.status) && !STARTED.has(parent.status) && parent.status !== 'blocked') fail(`Started work item has inactive parent: ${node.id}`);
     const children = Array.isArray(node.workItems) ? node.workItems : [];
     graph.set(node.id, [...effective, ...children.map(item => item?.id).filter(Boolean)]);
@@ -104,7 +133,7 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
   for (const id of graph.keys()) visit(id, []);
 
   const current = phases.find(phase => phase?.id === web.currentPhaseId);
-  const activePhases = phases.filter(phase => ACTIVE.has(phase?.status));
+  const activePhases = phases.filter(phase => ACTIVE.has(phase?.status) && !deferred.has(phase.id));
   if (web.status === 'done') {
     if (phases.some(phase => phase?.status !== 'done') || web.currentPhaseId !== 'WEB-PH07') fail('Completed V5 track must retain final phase and all done phases');
   } else if (!current || !ACTIVE.has(current.status) || activePhases.length !== 1 || activePhases[0] !== current) {
@@ -138,7 +167,7 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
   if (!gateAccepted && (byId.get('WEB-PH02')?.status === 'done' || byId.get('WEB-02-03')?.status === 'done')) fail('WEB-PH02 experience acceptance is not complete');
   for (const phase of phases) {
     if (V5_PHASE_IDS.indexOf(phase?.id) < 3) continue;
-    if (!gateAccepted && (STARTED.has(phase.status) || phase.workItems?.some(item => STARTED.has(item?.status)))) fail(`First playable gate blocks expansion: ${phase.id}`);
+    if (!gateAccepted && (phase.status === 'done' || (!allowed.has(phase.id) && (STARTED.has(phase.status) || phase.workItems?.some(item => STARTED.has(item?.status)))))) fail(`First playable gate blocks expansion: ${phase.id}`);
   }
   return { errors: [...new Set(errors)], phaseCount: phases.length, workItemCount };
 }

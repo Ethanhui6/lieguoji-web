@@ -2461,7 +2461,7 @@
     "status": "in_progress",
     "source": "CODEX_AUTOPILOT_V5.md",
     "roadmap": "docs/FMS_WEB_REBUILD_PLAN.md",
-    "currentPhaseId": "WEB-PH02",
+    "currentPhaseId": "WEB-PH04",
     "reason": "用户否定当前体验及旧计划，要求按自己原作重新规划；先可绘图自然大陆与连续缩放",
     "supersedes": {
       "executionOrder": "V4",
@@ -2493,7 +2493,8 @@
       "controls": "original-style-expandable-tool-menu",
       "visualDirection": "faithful-original-map-colors-buttons-menus",
       "os": "iOS 27",
-      "osSource": "user-reported; exact minor/build to record during physical test"
+      "osSource": "user-reported; exact minor/build to record during physical test",
+      "playStyle": "看海沙盒：用户2026-10-05明确选择，自动生成各国，观察发展与战争，随时干预"
     },
     "firstPlayableGate": {
       "phaseId": "WEB-PH02",
@@ -2507,7 +2508,7 @@
         "WEB-PH05",
         "WEB-PH06"
       ],
-      "note": "本批真实桌面Chromium完成有界海岸细化预览/取消/确认/撤销重做/保存刷新及生产Worker检查；不是iPhone/WebKit。海岸仍折线化，WEB-02-01、WEB-02-02、真机/用户视觉门均未通过，不扩建国家。"
+      "note": "真机与用户视觉仍未验收；WEB-PH03/04本地关键玩法按localDevelopmentException先行，不解除发布锁。"
     },
     "unknowns": [
       "complete original brush workflow video",
@@ -2740,7 +2741,7 @@
       "docs/evidence/fms-river-shape-v5-2026-10-05/checkpoint-checks-second.json"
     ],
     "nextBatch": [
-      "WEB-02-01"
+      "WEB-04-03"
     ],
     "phases": [
       {
@@ -3393,7 +3394,7 @@
         "dependsOn": [
           "WEB-PH02"
         ],
-        "status": "todo",
+        "status": "in_progress",
         "legacyRequirementIds": [
           "PH10",
           "PH11",
@@ -3403,7 +3404,18 @@
         ],
         "acceptance": "手动自动建国定都、各国行政树与区划、真实城市近景与保存引用",
         "evidence": [],
-        "workItems": []
+        "workItems": [
+          {
+            "id": "WEB-03-01",
+            "title": "FMS原图自动国家与城市基础",
+            "status": "done",
+            "dependsOn": [],
+            "acceptance": "真实h20陆地分区，面积不跨海填充，互反陆地邻接；自动国家/首都/城市/军队通过核心验证，原绘图不变。仅本地基础，完整行政与视觉仍待验。",
+            "evidence": [
+              "docs/evidence/fms-playable-v5-2026-10-05/FOUNDATION.md"
+            ]
+          }
+        ]
       },
       {
         "id": "WEB-PH04",
@@ -3411,7 +3423,7 @@
         "dependsOn": [
           "WEB-PH03"
         ],
-        "status": "todo",
+        "status": "in_progress",
         "legacyRequirementIds": [
           "PH15",
           "PH16",
@@ -3424,7 +3436,46 @@
         ],
         "acceptance": "可解释发展外交编军行军补给交战撤退占领闭环；后续人物/信仰接入后复验全系统",
         "evidence": [],
-        "workItems": []
+        "workItems": [
+          {
+            "id": "WEB-04-01",
+            "title": "同图看海、外交军令与战争",
+            "status": "done",
+            "dependsOn": [
+              "WEB-03-01"
+            ],
+            "acceptance": "独立Worker串行时间推进；自主经营/行军/补给/交战/占领；外交与军令预览确认及陈旧拒绝，原因可查。浏览器实际操作验证。",
+            "evidence": [
+              "docs/evidence/fms-playable-v5-2026-10-05/PLAYABLE.md",
+              "docs/evidence/fms-playable-v5-2026-10-05/browser.json",
+              "docs/evidence/fms-playable-v5-2026-10-05/checks.json"
+            ]
+          },
+          {
+            "id": "WEB-04-02",
+            "title": "整包存档与首轮本地可玩循环",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-01"
+            ],
+            "acceptance": "原稿隔离；推演地形/世界/实际规则指纹原子保存，CAS、主备保护、未来版本锁；刷新恢复、竖屏控件与Worker实际验证，不冒充真机。",
+            "evidence": [
+              "docs/evidence/fms-playable-v5-2026-10-05/PLAYABLE.md",
+              "docs/evidence/fms-playable-v5-2026-10-05/browser.json",
+              "docs/evidence/fms-playable-v5-2026-10-05/checks.json"
+            ]
+          },
+          {
+            "id": "WEB-04-03",
+            "title": "看海节奏与干预可用性",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-02"
+            ],
+            "acceptance": "依据首轮试玩继续完善国家边界/标注、事件筛选与定位、战争节奏和玩家干预操作；不以UI按钮冒充征募或新规则。真机视觉及完整阶段仍独立验收。",
+            "evidence": []
+          }
+        ]
       },
       {
         "id": "WEB-PH05",
@@ -3479,9 +3530,8 @@
       }
     ],
     "nextRecoveryTarget": {
-      "name": "native river coordinate/prefab scale; final biome/ocean capture and coast quality",
-      "status": "bounded-followup",
-      "note": "原活动meander、原生切线和逐点渐宽已适配为Worker河带网格，不重复恢复。下一批优先核实World.VoronoiTransformPoint/河流Prefab总尺度与场景curveAmount，量化过密支流与近景裁剪成本；然后续接最终Biom/SDF捕获链及海岸/湖岸连续观感。仍只绘图，真机/用户视觉首份门未过前不扩国家。"
+      "priority": "user-gameplay-first",
+      "next": "完成WEB-04-01/02本地完整试玩后，先依据试玩反馈补关键玩法；图形细节渐进优化，不自动扩完整人物信仰。"
     },
     "lastRecovery": {
       "at": "2026-10-05T05:32:55.776Z",
@@ -3957,14 +4007,14 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T05:32:55.776Z",
+      "at": "2026-10-05T06:11:58.310Z",
       "deadline": "2026-10-04T08:00:00+08:00",
       "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "0a204f0",
-      "lastSourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
+      "lastCheckpointCommit": "ae0a591",
+      "lastSourceCommit": "pending-local-commit",
       "newCodeSinceCheckpoint": true,
-      "reason": "08:00之后用户再次直接要求运用原素材和生成方法按图片流程全方位移植；本地执行已恢复，不重复询问截止许可。",
-      "nextFocus": "原活动meander、原生切线和逐点渐宽已适配为Worker河带网格，不重复恢复。下一批优先核实World.VoronoiTransformPoint/河流Prefab总尺度与场景curveAmount，量化过密支流与近景裁剪成本；然后续接最终Biom/SDF捕获链及海岸/湖岸连续观感。仍只绘图，真机/用户视觉首份门未过前不扩国家。",
+      "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
+      "nextFocus": "WEB-04-03：先按这版看海反馈优化关键干预与节奏，原地图素材/算法继续渐进适配；不回退成只做绘图研究。",
       "recoveryStarted": true,
       "cloudWritesAllowed": false,
       "firstPlayableGateUnchanged": true
@@ -4520,6 +4570,60 @@
         "docs/evidence/fms-river-shape-v5-2026-10-05/production-browser.json",
         "docs/evidence/fms-river-shape-v5-2026-10-05/refresh.json",
         "docs/evidence/fms-river-shape-v5-2026-10-05/verification.json"
+      ]
+    },
+    "localDevelopmentException": {
+      "kind": "user-authorized-gameplay-first",
+      "confirmedBy": "user",
+      "date": "2026-10-05",
+      "scope": "local-development-only",
+      "allowedPhaseIds": [
+        "WEB-PH03",
+        "WEB-PH04"
+      ],
+      "deferredPhaseIds": [
+        "WEB-PH02",
+        "WEB-PH03"
+      ],
+      "deferredPhaseDependencies": [
+        {
+          "phaseId": "WEB-PH03",
+          "dependencyId": "WEB-PH02"
+        },
+        {
+          "phaseId": "WEB-PH04",
+          "dependencyId": "WEB-PH03"
+        }
+      ],
+      "acceptanceClaimsUnchanged": true,
+      "releasePolicyUnchanged": true,
+      "evidence": [
+        "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
+      ]
+    },
+    "playablePrototype": {
+      "status": "local-core-loop-verified",
+      "date": "2026-10-05",
+      "scope": "watch-sandbox-and-intervene",
+      "tasks": [
+        "WEB-03-01",
+        "WEB-04-01",
+        "WEB-04-02"
+      ],
+      "unitFiles": 196,
+      "unitTests": 2458,
+      "planTests": 15,
+      "releaseTests": 22,
+      "devUrl": "http://127.0.0.1:5180/?fms=1",
+      "productionLocalUrl": "http://127.0.0.1:5181/?fms=1",
+      "cloudWrites": false,
+      "physicalDevice": "not_run",
+      "userVisualAcceptance": "pending",
+      "evidence": [
+        "docs/evidence/fms-playable-v5-2026-10-05/PLAYABLE.md",
+        "docs/evidence/fms-playable-v5-2026-10-05/browser.json",
+        "docs/evidence/fms-playable-v5-2026-10-05/checks.json",
+        "docs/evidence/fms-playable-v5-2026-10-05/local-playtest.png"
       ]
     }
   }

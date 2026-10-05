@@ -1,0 +1,117 @@
+{
+  "recordedAt": "2026-10-05T06:09:17.235Z",
+  "dev": {
+    "armies": 6,
+    "checksum": "dd6050643835cc630f3cc2ae44b67b7a7be2782fed0b04361a5a6f1d84c0dd05",
+    "cities": 47,
+    "day": 147,
+    "engine": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+    "events": 160,
+    "nations": 6,
+    "occupied": 81,
+    "points": 40789,
+    "policy": "military",
+    "provinces": 372,
+    "revision": 1
+  },
+  "production": {
+    "armies": 6,
+    "checksum": "729c34f548f10833883e7d1079d6cf405ef77a106af4766cd868d29b8b5d5f49",
+    "cities": 10,
+    "day": 1,
+    "engine": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+    "events": 4,
+    "nations": 6,
+    "occupied": 0,
+    "points": 37550,
+    "policy": "balanced",
+    "provinces": 56,
+    "revision": 1
+  },
+  "mobile": {
+    "buttons": [
+      {
+        "height": 44,
+        "text": "‹ 绘图"
+      },
+      {
+        "height": 44,
+        "text": "保存进度"
+      },
+      {
+        "height": 44,
+        "text": "＋"
+      },
+      {
+        "height": 44,
+        "text": "−"
+      },
+      {
+        "height": 44,
+        "text": "全图"
+      },
+      {
+        "height": 44,
+        "text": "开始时间"
+      },
+      {
+        "height": 44,
+        "text": "＋1日"
+      },
+      {
+        "height": 44,
+        "text": "国家"
+      },
+      {
+        "height": 44,
+        "text": "军队"
+      },
+      {
+        "height": 44,
+        "text": "大事记"
+      }
+    ],
+    "day": "1",
+    "editorLocked": "371",
+    "editorRevision": "14",
+    "notice": "已保存第 1 日，刷新后可继续这个世界。",
+    "overflow": false,
+    "runId": "fms-2870d995-80a3-4c18-b44c-4c0a01650ec3",
+    "viewport": {
+      "height": 926,
+      "width": 428
+    }
+  },
+  "productionResources": {
+    "width": 1280,
+    "height": 720,
+    "day": "1",
+    "resources": [
+      "http://127.0.0.1:5181/assets/play.worker-C7nF3ufh.js",
+      "http://127.0.0.1:5181/assets/biome.worker-DO2s7HoV.js"
+    ]
+  },
+  "actions": {
+    "devOrderPreview": {
+      "days": 15,
+      "supplyCost": 90,
+      "routeRegions": 7
+    },
+    "policyConfirmed": "military",
+    "devAutoplayPausedAt": 147,
+    "devSaveRefreshRecovered": true,
+    "productionPeaceConfirmed": true,
+    "truceRejectedBeforeDay": 10,
+    "productionSaveRefreshRecovered": true,
+    "exitModalBackgroundInert": true,
+    "exitModalTabInsideDialog": true
+  },
+  "console": {
+    "dev": [],
+    "production": []
+  },
+  "limitations": [
+    "Desktop Chromium only; 428x926 layout and controls are emulation, not iPhone Safari/Chrome or physical touch acceptance",
+    "IAB/OS DPI mismatch clipped portrait screenshots; use recorded DOM metrics only for narrow layout claims, do not count the screenshots as visual acceptance"
+  ]
+}

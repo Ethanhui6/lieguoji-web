@@ -1,0 +1,287 @@
+{
+  "recordedAt": "2026-10-06T15:31:00.968Z",
+  "parentCommit": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "scope": "Project-owned performance adapters, frozen published v11 project source, bounded regression tests, project-only deployment failure metadata and synthesized browser summaries; semantic privacy review in SOURCE_PRIVACY.md. No install dumps, auth, player data, dist or raw browser logs.",
+  "excludedSelf": "docs/evidence/fms-chronicle2-v5-2026-10-06/source-candidate.json",
+  "excludedBinding": "plan/release-readiness.json: fixed-field preview contract",
+  "fileCount": 55,
+  "bytes": 1134278,
+  "findings": [],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 6912,
+      "sha256": "c40f9e2bc6c8af5f7110f901befddee761ffd001506752a649fbaf596166a97f"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "bytes": 2206,
+      "sha256": "51d7a4a4d097a9cae1255882925508d2fb267b2f54ba55ac981abd04eb8e4413"
+    },
+    {
+      "path": "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+      "bytes": 6664,
+      "sha256": "aa3e5bf54f126b0599608e0f3e0dc6c7866833763429f7865bef5dec8d927147"
+    },
+    {
+      "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
+      "bytes": 3753,
+      "sha256": "c5cca7bb88e22ebeed708b2e2ad4322e8e68d6e7dd535ce316ad2cbdd7cc03a6"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/ci-stages.json",
+      "bytes": 3779,
+      "sha256": "2d2bd6201e2ddefad1ed8d7fe4a10c252651c4c1f3f518ac898eac3872c32890"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/cloud-release.json",
+      "bytes": 2788,
+      "sha256": "a024663c07c7f922b730ae468e99fd2bb4b0382a2242e819629c4b5bdc72a9c9"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/deployment-blocker.json",
+      "bytes": 1647,
+      "sha256": "897736e823a9b09cfdda1f6981df17ac15425da7fd398c04c3e78c97b8e30956"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/post-commit-build.json",
+      "bytes": 864,
+      "sha256": "a3fc323d1258b6ecd5009ef4d10e8dfc95f2ce4f98ba36b0f13469abfc582c3c"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md",
+      "bytes": 1646,
+      "sha256": "a22e4622c86386acd10b95a73ed933e72c88034b4d530033c50a1768701dd006"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/SOURCE_PRIVACY.md",
+      "bytes": 1049,
+      "sha256": "0b42bf10bfeb9d96d3d72d8e0ffa445294bd9e0cf8e470246f39e6efbcb0a336"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+      "bytes": 174495,
+      "sha256": "e004feb897a2e3550360d950bf8d040761d8ced6a54661a84b8480f3fc42b505"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+      "bytes": 13014,
+      "sha256": "e934278afeeb957bc8aaeefb83f7ac6067c2ce979f16a576591b09ad1e78e4b7"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json",
+      "bytes": 1691,
+      "sha256": "a6e718a26fe9a6d9c5eb6b25b8d80ca81a57b52ae2b8cf2063b47e2caffd06ab"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/history-review.json",
+      "bytes": 14476,
+      "sha256": "0c7362a6be4768c26cfed7e63ee2492a01699bd639012c874b485c99221b4bfa"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/prior-preview-state.json",
+      "bytes": 3235,
+      "sha256": "4de8a3db85c1d564c5f9e20076d1e57b72daf37fbb0510a14047fc13faa11e43"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle2-v5-2026-10-06/tested-dist.json",
+      "bytes": 7700,
+      "sha256": "f2d975cb9ac6402345fc56841a290ddf999b9a92170f36b9e319118fc9a0f501"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 140963,
+      "sha256": "c6f7e29bb8ea64943d2d2df2f82feb6487c38754e2d64d0a5c6568fe5d3b7477"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1804,
+      "sha256": "a27251ee1dafea4c0839acf14f41f778838d2dc8d473117380d2b89a2a3f3705"
+    },
+    {
+      "path": "plan/reviewed-history-2026-10-06.json",
+      "bytes": 189471,
+      "sha256": "9d3651b224fdab8aac7da40c9468df401e522a6baa51a41f10c6a46eb625e13f"
+    },
+    {
+      "path": "plan/tasks.json",
+      "bytes": 299689,
+      "sha256": "c7b6413552dee44c11b6488b595b222419dc78a694c30cd5c4e6a91b14251548"
+    },
+    {
+      "path": "scripts/fms-chronicle2-fingerprint.ts",
+      "bytes": 2787,
+      "sha256": "5f91872e1674f68a4dfff92ac5999a5db03c75e595187db7e2ca0696cda240c1"
+    },
+    {
+      "path": "scripts/reviewed-history.mjs",
+      "bytes": 4085,
+      "sha256": "d4446bc8ef0b1248baef4334fbd3a39ac7acd052d62e6c64d3930947f88cebd0"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "bytes": 52599,
+      "sha256": "962f35242f78c36e35d17e942a59e5a07db4ba29e97f3c577b05d92239abe30c"
+    },
+    {
+      "path": "src/fms/play/chronicle-scale.test.ts",
+      "bytes": 1153,
+      "sha256": "322214140b65349b575722d64005ebacbc1c026f12c4bf7f6fb7546042456357"
+    },
+    {
+      "path": "src/fms/play/chronicle2-battle.ts",
+      "bytes": 18842,
+      "sha256": "77ed994a4409a2d8ec5d982be293d9b57c54392cb16dc287c6b758b46a797365"
+    },
+    {
+      "path": "src/fms/play/chronicle2-client.ts",
+      "bytes": 2788,
+      "sha256": "781eba8b28bd7194e91c4938c2d856947b7bbe612746e10f221a51f959405b8e"
+    },
+    {
+      "path": "src/fms/play/chronicle2-model.ts",
+      "bytes": 1579,
+      "sha256": "852dfe513840585348daad4f8cbc3421571533e3017264d8a68f285544c6bbe6"
+    },
+    {
+      "path": "src/fms/play/chronicle2-runtime.test.ts",
+      "bytes": 2699,
+      "sha256": "5c875ff76ed75063873ae89aee71c2c531f5cdbf35ae776887b977162b159354"
+    },
+    {
+      "path": "src/fms/play/chronicle2-runtime.ts",
+      "bytes": 2646,
+      "sha256": "4cea04dd2bbb72379ef7fab97e9010ac2e818da654e11a9e2d049c0835db4732"
+    },
+    {
+      "path": "src/fms/play/chronicle2-session.ts",
+      "bytes": 3597,
+      "sha256": "5a0ec0655c466dbd0b6942adb62a03454289218ff87c39d7d593c9aef7b61b57"
+    },
+    {
+      "path": "src/fms/play/chronicle2-storage.ts",
+      "bytes": 7534,
+      "sha256": "b03a95a2be9237ddcb05b823dfe930e5350ed6380fd96ee639481083e6206440"
+    },
+    {
+      "path": "src/fms/play/chronicle2-stores.ts",
+      "bytes": 733,
+      "sha256": "be9118facbeed75a0404a7b563b568d6f7eb83e945eec537f4bd5a5dec7b968a"
+    },
+    {
+      "path": "src/fms/play/chronicle2.test.ts",
+      "bytes": 7298,
+      "sha256": "0d35a138a3e0e32278b2dd69af2058e4d53980621fadc18ed9649f182991df16"
+    },
+    {
+      "path": "src/fms/play/chronicle2/play.worker.ts",
+      "bytes": 1123,
+      "sha256": "96dbdddd8c8b24fd239154a03c05e33f451c737de564b1930c5c9cc14cc19b1f"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-battle.ts.source",
+      "bytes": 18529,
+      "sha256": "e70cdad0cecfdfa76da7eb348878d6a21745b50858ddd6eebeef5c2f029df8f5"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-client.ts.source",
+      "bytes": 2724,
+      "sha256": "ac01cb1f720aeddd33daacec57a016b492c82993392f3960ac4793429f519817"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-model.ts.source",
+      "bytes": 6100,
+      "sha256": "a366e4c503448b007a5423bf6565a8b41e7022888f806a1fee978e3bfd24782b"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-occupation.ts.source",
+      "bytes": 5349,
+      "sha256": "37a25da982e46f097a9ef8b83b4524475343aee2cbd3b62c5f8676653f105ac1"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-politics.ts.source",
+      "bytes": 9562,
+      "sha256": "d08992f9b4571c554be0cd38b38685e6a32d451d25deebabaf1c9a13963d1507"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-records.ts.source",
+      "bytes": 5617,
+      "sha256": "0caf90df7e61702f66d21fe4d36b486db401ccb16afb345f0dc33702647304e2"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-runtime.ts.source",
+      "bytes": 2612,
+      "sha256": "755eae6a1332af75f32c70495939ea9d5466a0d90b6a9d0ded1d3bacba3354fa"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-session.ts.source",
+      "bytes": 6045,
+      "sha256": "3185445a87c24ddf9466dee59f2abe1a5add0a82f4cc70f5352efdb9a3216cf4"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-storage.ts.source",
+      "bytes": 7526,
+      "sha256": "560a5aa24125bc91758b35e2d111439dec8fbf7a7643482c9d21fcf1647744d6"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle-stores.ts.source",
+      "bytes": 726,
+      "sha256": "d62504cd2ea9ce65382dfd737957b1616de46ceeae87a25d91aed06238c6e7c8"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/chronicle/play.worker.ts.source",
+      "bytes": 1083,
+      "sha256": "b3e1c48759bbc942d198f359aa3de46aab5daef4ef7c8c68b78f84cb778f620b"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/district-world.ts.source",
+      "bytes": 10069,
+      "sha256": "5e3fb4ec8fc741d84dd19d93c956f7ac08c10251d6d3cdd0ac9d6065e8b4e6d4"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/fms/play/leader-names.json.source",
+      "bytes": 17202,
+      "sha256": "edd54b949116ba8cd6c0538df811232618016f0575f1c64f2ef626a2cb9b932c"
+    },
+    {
+      "path": "src/fms/play/compat/chronicle1/manifest.json",
+      "bytes": 2767,
+      "sha256": "8846b663fa80e7a484128a034da2ecd1babe1b5846976f8a6fb31d702af3e220"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "bytes": 1058,
+      "sha256": "825f336aac579f9ec52db6c3b9cdcc4cf7ea9cf9fab7e0490224f6eb35b777a8"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "bytes": 10187,
+      "sha256": "6869b37bcec5e67e38f2483804ead4589671d31205602b803c6c1b775a10cd27"
+    },
+    {
+      "path": "tests/fms-chronicle.spec.ts",
+      "bytes": 11621,
+      "sha256": "9e5d9ca6d7e336e09aa19a69788befbec513cc9d647a7f69a9589e8e875a00ed"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "bytes": 3785,
+      "sha256": "b4a6f05b01bedcdb4ea14766ea2266941de0e0276d1dc4392afd7b26b810c477"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "bytes": 4938,
+      "sha256": "a90b5a267c6497fdbb535829987346951063c720f5a4cd4a73672aeba1f3d4b2"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "bytes": 13899,
+      "sha256": "48ac7839408632585dec2945c0d1594881061a771fab68bbf6439656536207fb"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 5570,
+      "sha256": "be66a5ca2de1b7c8d21ccbc848b8cf9b432a4120881cc97062cb3bc800eb1d52"
+    }
+  ]
+}

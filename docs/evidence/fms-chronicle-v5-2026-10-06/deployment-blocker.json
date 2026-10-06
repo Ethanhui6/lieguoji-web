@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-06T15:07:38.762Z",
+  "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "sourceUpload": "passed",
+  "cloudflare": "build_failed",
+  "failureCause": "chronicle-scale.test.ts: 722 districts, 722 cities, 480 armies, 120 ticks took 4663.079481999999 ms, exceeding unchanged 4000 ms cap. All other 2736 tests passed.",
+  "requiredUserAction": null,
+  "readOnlyCli": "No noninteractive Cloudflare auth; did not read credentials or alter authentication/deployment settings.",
+  "local": {
+    "url": "http://127.0.0.1:5181/?fms=1",
+    "status": 200,
+    "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+    "engine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+    "serverExecSession": 65513,
+    "note": "Post-commit entry and chronicle full-flow tests actually passed in isolated desktop Chromium; physical device pending."
+  },
+  "production": "main unchanged",
+  "next": "Optimize owned tick candidates and avoid redundant stationary movement scans; preserve frozen v11 saves in Store13, explicit-copy v12 in Store14. Recheck unchanged gate before normal same-branch preview upload.",
+  "login": "resolved by user; official authenticated build log read",
+  "officialLog": {
+    "deploymentId": "6c26cad6-7542-4002-ae20-3cf415c59b0a",
+    "url": "https://dash.cloudflare.com/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/6c26cad6-7542-4002-ae20-3cf415c59b0a",
+    "method": "Read-only rendered official log after user completed login; no credentials read",
+    "files": 224,
+    "passedFiles": 223,
+    "tests": 2737,
+    "passedTests": 2736,
+    "durationSeconds": 821.13
+  }
+}

@@ -1,0 +1,407 @@
+{
+  "checkedAt": "2026-10-06T15:13:06.524Z",
+  "base": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+  "reviewedHead": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "candidateFilesVerified": 77,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 6856,
+      "sha256": "3212491d054ff6a9d0b38cbb2c5ea351d8b972f971a3339905928c38264337aa"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "bytes": 2940,
+      "sha256": "9e28599034a058639ea1fc7c477b1d7b647c7d08e49ac1edd5989139698369cb"
+    },
+    {
+      "path": "docs/FMS_DESKTOP_WEB_REPLICA_PROMPT_2026-10-06.md",
+      "bytes": 45956,
+      "sha256": "1cf4d0451563b55605ef51c9dd9dd867df944953ae92fda4b32de224ac4c74a6"
+    },
+    {
+      "path": "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+      "bytes": 5628,
+      "sha256": "788ed4c63e482c443eae72284f95f718c29a61f44a41e99ed60644ce6b1576bf"
+    },
+    {
+      "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
+      "bytes": 3404,
+      "sha256": "74fc4cbe82b3d35055028c16ff85b14535b0b4d3cf993bdf8ac661d4ec5bdd5c"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/AUTO_HANDOFF_BEFORE_V11.md",
+      "bytes": 5450,
+      "sha256": "c01010358df3e885135f6d1211dccab5eadc745d859b119ae303471b3eea5ccc"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+      "bytes": 2526,
+      "sha256": "595ac0dd8bccf6cf4245fa2c79730d957ea3cb04d70fe1a1a108f9e989beb957"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md",
+      "bytes": 4400,
+      "sha256": "dafaff14220c6d3401e3ecf53e5bff51b88d8949f1d03c9c79761c2246b2bb7d"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/SOURCE_PRIVACY.md",
+      "bytes": 3132,
+      "sha256": "42070655c0bb1e9718ac657a54c312237009fa302e4b5a2c078bb94e2b04f0c5"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+      "bytes": 129143,
+      "sha256": "7ce828a47ed03cad4f481bad6d27dc4e1256f976fba0ec4b8bdcd060176a3dae"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+      "bytes": 4394,
+      "sha256": "d71122911b5c09ecc8d5adfffa768e16bf1cb96816c9065abc0e6b40143b940e"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/guards.json",
+      "bytes": 672,
+      "sha256": "8ffc5cea02afb2a24a572613f1b0eec12c7a3a5a3a87eb096630068ec1b37f6f"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/history-review.json",
+      "bytes": 15949,
+      "sha256": "a086e855a7a0551e376eaf18d1f071830150ded89b61e1f0e0f02fc547df5906"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/source-candidate.json",
+      "bytes": 14273,
+      "sha256": "9f8eccbaff547c003168de06f6a5d14096731e064092ac72afd5f07ed91beb6e"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/tested-dist.json",
+      "bytes": 24043,
+      "sha256": "a116aff0ec0c7847378ee7c6378eebe5b19976b8d92e30907654fe0f80d2563e"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/v11-chronicle-places.png",
+      "bytes": 843830,
+      "sha256": "0dea6b415cfe094b23ec54443a80519a2c996a4223384c31bfd93ffed8be9c69"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/v11-extinct-country.png",
+      "bytes": 156893,
+      "sha256": "16554503e256b669d8f79cd14bc196e087a5cc1f74be684ca7ac497123ba68f8"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/v11-fragmented-country.png",
+      "bytes": 161126,
+      "sha256": "ae5fc658bd3d23fbdc2926e0980aafc0ed582bcfa7668e51b5322e13b50cd607"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/v11-small-districts.png",
+      "bytes": 436410,
+      "sha256": "a8f30dfc787509d37baac8ca1137e8534616bf602094773932dbdb4bf31b90bd"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/v11-succession-news.png",
+      "bytes": 808960,
+      "sha256": "28a9f885e1997f5c92917618b70d2647d2807c4d751eb5c715a756feb3f0b9fd"
+    },
+    {
+      "path": "docs/evidence/fms-chronicle-v5-2026-10-06/visual-review.json",
+      "bytes": 12238,
+      "sha256": "44a77028aa3ae1066bc5104d85d350b389a26b7127b9a6eac9c2f3c80f1f66c2"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/cloud-release.json",
+      "bytes": 6695,
+      "sha256": "7040de82158be35b0f54f701610770014ed3fd8808581bea4cbebe7f5fc6d00f"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/https-entry.png",
+      "bytes": 726481,
+      "sha256": "819d9fd4018c9ddfbe331dd5ec33a3c674263a70e45315fe6a7fd2f52e8e43dd"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/https-reorganization-complete.png",
+      "bytes": 716525,
+      "sha256": "3c3a7ee14eb18f9e90964faf5cdf55f3f5c6d49d85c684deaf1b1fb2db9b5a19"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/https-reorganization-home.png",
+      "bytes": 714604,
+      "sha256": "d6dcab8651e0a172f008c1624ac51e83fb7c71fd3f5d52960c1d8cf5f98d0d51"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
+      "bytes": 15768,
+      "sha256": "c5eb563160009c4c0e805e708297d2865ff6182e7fd07a5c93bfdf638d09fac8"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 140963,
+      "sha256": "491ada88246b1255c4587ed4c77f217296750f27b255cb6b071436e88eddf609"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1804,
+      "sha256": "cff67a26fb87790e7b0a59b4f5d2af8e4a31418f13f925fa3fc677e818ff099c"
+    },
+    {
+      "path": "plan/release-readiness.json",
+      "bytes": 3137,
+      "sha256": "abbc6d34715c50c5ad0f20e6493530c7a44b0ab0d4b08aecab0e4195ef9bef1d"
+    },
+    {
+      "path": "plan/reviewed-history-2026-10-06.json",
+      "bytes": 189471,
+      "sha256": "5b3a6880e73fe30b72c8e60aeb4784b10af1abeada57fb1f7ab0c6823d74c4a0"
+    },
+    {
+      "path": "plan/tasks.json",
+      "bytes": 298328,
+      "sha256": "1cdd14d52ed669f1b801a489172185235a833549267b6c95e07f772d5a6bdecd"
+    },
+    {
+      "path": "scripts/fms-chronicle-fingerprint.ts",
+      "bytes": 2798,
+      "sha256": "71769174b6d7471427c8a3415f5b32be62a3fd5394890db746a505246a7aa03a"
+    },
+    {
+      "path": "scripts/reviewed-history.mjs",
+      "bytes": 4084,
+      "sha256": "2c8b0af803d7825fde3784d809149b28d6528ff9b78d287387bc17e09979823a"
+    },
+    {
+      "path": "src/fms/play/ChroniclePanel.tsx",
+      "bytes": 3950,
+      "sha256": "9111441b7c3c508a81845ba1a2a08fe87144ffc37bb93d297e338c949f608499"
+    },
+    {
+      "path": "src/fms/play/EventPanel.tsx",
+      "bytes": 1404,
+      "sha256": "ce00fe9144b11a800081a6a7f0cc068b62aa2d9080d3ef7e3f72185821c6b3cd"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "bytes": 52307,
+      "sha256": "9faaf621f48ad6a26b2b498e173592e6b2b9d83c2b2e04a5f36cee8be03a43cf"
+    },
+    {
+      "path": "src/fms/play/LocalityPanel.tsx",
+      "bytes": 2151,
+      "sha256": "4ab680ac2d2c49e680846cbcfbc52e85f939f90dd7de019055fbb63716d85d33"
+    },
+    {
+      "path": "src/fms/play/NewsRibbon.tsx",
+      "bytes": 1291,
+      "sha256": "ee9b0fec207261812d52129f29e333958572633eed5f34d86d10c910e750103b"
+    },
+    {
+      "path": "src/fms/play/capital-view.ts",
+      "bytes": 829,
+      "sha256": "7ad5b663cefe85d343b8bf434aebcdea72ee8da95348631997e6b01a5a7e8c59"
+    },
+    {
+      "path": "src/fms/play/cartography-news.test.ts",
+      "bytes": 2493,
+      "sha256": "be280b6258a514b64158334e82f2dcfff3f69201b12cc7d94a436a0dc2f616cd"
+    },
+    {
+      "path": "src/fms/play/chronicle-battle.ts",
+      "bytes": 18529,
+      "sha256": "e70cdad0cecfdfa76da7eb348878d6a21745b50858ddd6eebeef5c2f029df8f5"
+    },
+    {
+      "path": "src/fms/play/chronicle-client.ts",
+      "bytes": 2724,
+      "sha256": "ac01cb1f720aeddd33daacec57a016b492c82993392f3960ac4793429f519817"
+    },
+    {
+      "path": "src/fms/play/chronicle-model.ts",
+      "bytes": 6100,
+      "sha256": "a366e4c503448b007a5423bf6565a8b41e7022888f806a1fee978e3bfd24782b"
+    },
+    {
+      "path": "src/fms/play/chronicle-occupation.ts",
+      "bytes": 5349,
+      "sha256": "37a25da982e46f097a9ef8b83b4524475343aee2cbd3b62c5f8676653f105ac1"
+    },
+    {
+      "path": "src/fms/play/chronicle-politics.ts",
+      "bytes": 9562,
+      "sha256": "d08992f9b4571c554be0cd38b38685e6a32d451d25deebabaf1c9a13963d1507"
+    },
+    {
+      "path": "src/fms/play/chronicle-records.ts",
+      "bytes": 5617,
+      "sha256": "0caf90df7e61702f66d21fe4d36b486db401ccb16afb345f0dc33702647304e2"
+    },
+    {
+      "path": "src/fms/play/chronicle-runtime.test.ts",
+      "bytes": 2119,
+      "sha256": "32c32005701fb6a0b9f220c381aa627cefaab4d8168d131d9b8b0f96b1e79933"
+    },
+    {
+      "path": "src/fms/play/chronicle-runtime.ts",
+      "bytes": 2612,
+      "sha256": "755eae6a1332af75f32c70495939ea9d5466a0d90b6a9d0ded1d3bacba3354fa"
+    },
+    {
+      "path": "src/fms/play/chronicle-scale.test.ts",
+      "bytes": 1037,
+      "sha256": "0791b619a1e3c20eb84cf91c4b3de7b8e048f8531e712034216657ded9f1e098"
+    },
+    {
+      "path": "src/fms/play/chronicle-session.ts",
+      "bytes": 6045,
+      "sha256": "3185445a87c24ddf9466dee59f2abe1a5add0a82f4cc70f5352efdb9a3216cf4"
+    },
+    {
+      "path": "src/fms/play/chronicle-storage.ts",
+      "bytes": 7526,
+      "sha256": "560a5aa24125bc91758b35e2d111439dec8fbf7a7643482c9d21fcf1647744d6"
+    },
+    {
+      "path": "src/fms/play/chronicle-stores.ts",
+      "bytes": 726,
+      "sha256": "d62504cd2ea9ce65382dfd737957b1616de46ceeae87a25d91aed06238c6e7c8"
+    },
+    {
+      "path": "src/fms/play/chronicle.test.ts",
+      "bytes": 20223,
+      "sha256": "e21f7d7da3a9de2160b7b4a01d0619adec7407f57800a0740fc64283f4b95fde"
+    },
+    {
+      "path": "src/fms/play/chronicle/play.worker.ts",
+      "bytes": 1083,
+      "sha256": "b3e1c48759bbc942d198f359aa3de46aab5daef4ef7c8c68b78f84cb778f620b"
+    },
+    {
+      "path": "src/fms/play/city-labels.ts",
+      "bytes": 1132,
+      "sha256": "f07fde27228f48c5b709f7cbaf9ddf6e644227061773dfd989ee6ffc3d59fe21"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign-model.ts.source",
+      "bytes": 2714,
+      "sha256": "12f55725515980bc37c7b4fb6825473b4eb8bd1168c722dece4c02d3aa686f2f"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign-runtime.ts.source",
+      "bytes": 2372,
+      "sha256": "7953af26253f4aed05bb771a811a3d1637b45551ad0c3b7bcc2facef27d13357"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign-session.ts.source",
+      "bytes": 3054,
+      "sha256": "21966dd6f65c35e205047addcaafdeefa75932875245fe31d17b58e0019ce6a2"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign-storage.ts.source",
+      "bytes": 6579,
+      "sha256": "525af4c1725cf677bd7cbd45023d2676be8e9a61b21bd42ae3008dfc55510c35"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign-stores.ts.source",
+      "bytes": 717,
+      "sha256": "d7f01a384471751e4922748582b7460fce26bdcff6cce1378e21dd696d78646c"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/campaign/play.worker.ts.source",
+      "bytes": 1010,
+      "sha256": "29d11858cc3cbc9528b2c052ee079882ccc41ec2c79bc211d8beb11993c1d11b"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/client.ts.source",
+      "bytes": 2520,
+      "sha256": "69a901c196e8ecf31bb33eae563e93e48c1832be0b3e12f96a1878e1f2ffcc4b"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/fms/play/reorganization.ts.source",
+      "bytes": 3613,
+      "sha256": "ebd35394621cd788479829b5526166d7dc93691408912f93d5b0f5e39a6aeb32"
+    },
+    {
+      "path": "src/fms/play/compat/campaign1/manifest.json",
+      "bytes": 1795,
+      "sha256": "b5199dcd52b15094bac3258b24c0af8fbdafb2af02f6b151d0aa1e7806c4533d"
+    },
+    {
+      "path": "src/fms/play/district-world.ts",
+      "bytes": 10069,
+      "sha256": "5e3fb4ec8fc741d84dd19d93c956f7ac08c10251d6d3cdd0ac9d6065e8b4e6d4"
+    },
+    {
+      "path": "src/fms/play/leader-names.json",
+      "bytes": 17202,
+      "sha256": "edd54b949116ba8cd6c0538df811232618016f0575f1c64f2ef626a2cb9b932c"
+    },
+    {
+      "path": "src/fms/play/map.ts",
+      "bytes": 27563,
+      "sha256": "42ff2202f83e4fb23abe059e2bc6081484e3ba9e49b0f5aa297ffa8c2944675d"
+    },
+    {
+      "path": "src/fms/play/news.ts",
+      "bytes": 1846,
+      "sha256": "b0458976f54b82ee2e5e9d91563aa1798be3fb3b490e62927eb7d8e2425d69be"
+    },
+    {
+      "path": "src/fms/play/play.css",
+      "bytes": 16193,
+      "sha256": "9eda0647c805c2f69598bd87e358c5f568a7bb47371b80c30f061e4541dca42a"
+    },
+    {
+      "path": "src/fms/play/territory-labels.test.ts",
+      "bytes": 3349,
+      "sha256": "4b44f870a2f08cdd4c6258afcbe46ef60206eff364be9e5548dab531bac2bdd9"
+    },
+    {
+      "path": "src/fms/play/territory-labels.ts",
+      "bytes": 4128,
+      "sha256": "a10aec5b5fbbbc9cca7c1a7a294b2ed46ff1c31e79e04aa4478d75f2a99f3799"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "bytes": 1008,
+      "sha256": "30ab280d57c4e5dfd19cca70a37aff582b138d94d069ece7c1e41baa3e82397e"
+    },
+    {
+      "path": "src/world/detail-preview17-history.test.ts",
+      "bytes": 16864,
+      "sha256": "689b2b3221b01484fa887536f696a1974ea3b574f50e1854f418f2ee82bfa8f8"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "bytes": 10187,
+      "sha256": "3dc491a3e2b066acaa75d5ead31ad21ae3d48b68741e91016da577e7c4431436"
+    },
+    {
+      "path": "tests/fms-chronicle.spec.ts",
+      "bytes": 10457,
+      "sha256": "43da6e1471eca78b1dc77815c4b53b9842d4e1db1f341bc84f3b23deda1659ba"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "bytes": 3785,
+      "sha256": "1989aa68a72d1389b448473cf346480d0316dd5b2a38117d8e95a69922cce3ee"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "bytes": 4938,
+      "sha256": "9ed6597b5c20d0ed0c945e040192b3b9ff230d6b5cb8f3c79f835fbddae0637b"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "bytes": 13897,
+      "sha256": "f9a2fc4e0a1761aee8e84ac1d27d4f879f8ab0a52ce53c1605238214eda46624"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 5308,
+      "sha256": "d569b822563c88461f5e7211462785be8428b8e0de6e4f7fc6bda01324b17564"
+    }
+  ],
+  "mismatch": [],
+  "findings": [],
+  "omitted": [],
+  "scope": "Exact prior committed v11 candidate hashes and existing semantic privacy review; not a credential/config scan. Supplementary pattern matching alone is not proof of absence of all secrets."
+}

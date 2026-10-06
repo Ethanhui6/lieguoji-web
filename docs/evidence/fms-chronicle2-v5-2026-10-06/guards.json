@@ -1,0 +1,46 @@
+{
+  "recordedAt": "2026-10-06T15:29:52.378Z",
+  "commands": [
+    {
+      "name": "types-final",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "lint-final",
+      "command": "node node_modules/eslint/bin/eslint.js src tests scripts",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "plan",
+      "command": "node scripts/check-plan.mjs",
+      "exitCode": 0,
+      "logSha256": "ab2409d600c50c65e4404bdf2d20a155b144eaec7f8692fa397070f2d503ddd0"
+    },
+    {
+      "name": "release-tests",
+      "command": "node --test scripts/release-policy.test.mjs",
+      "exitCode": 0,
+      "logSha256": "83fff9eaa5b801f05091ef3311384e8144d62e13f4ae9b20bfb78d589bf6869f"
+    },
+    {
+      "name": "plan-tests",
+      "command": "node --test scripts/check-v5-plan.test.mjs",
+      "exitCode": 0,
+      "logSha256": "8ea58595538a67f991f7a4e1e2b4b9c4c39de6d876b834fddbe2b50ba237170d"
+    },
+    {
+      "name": "plan-final",
+      "command": "node scripts/check-plan.mjs",
+      "exitCode": 0,
+      "logSha256": "ab2409d600c50c65e4404bdf2d20a155b144eaec7f8692fa397070f2d503ddd0"
+    }
+  ],
+  "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+  "checksSha256": "e934278afeeb957bc8aaeefb83f7ac6067c2ce979f16a576591b09ad1e78e4b7",
+  "browserSha256": "e004feb897a2e3550360d950bf8d040761d8ced6a54661a84b8480f3fc42b505",
+  "testedDistSha256": "f2d975cb9ac6402345fc56841a290ddf999b9a92170f36b9e319118fc9a0f501",
+  "formalRelease": "locked"
+}

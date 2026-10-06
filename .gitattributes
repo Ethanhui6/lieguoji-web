@@ -107,3 +107,5 @@ src/world/recovered-terrain/licenses/** -text whitespace=cr-at-eol,-blank-at-eof
 docs/evidence/fms-click-template-v5-2026-10-04/** -text whitespace=cr-at-eol
 
 src/fms/play/compat/campaign1/**/*.source text eol=lf
+
+src/fms/play/compat/chronicle1/**/*.source text eol=lf

@@ -1,0 +1,292 @@
+{
+  "recordedAt": "2026-10-06T15:27:14.151Z",
+  "status": "passed",
+  "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+  "publishedV11Engine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+  "buildParentCommit": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "commands": [
+    {
+      "name": "types",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0,
+      "ms": 15160,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "lint",
+      "command": "node node_modules/eslint/bin/eslint.js src tests scripts",
+      "exitCode": 0,
+      "ms": 11897,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "unit",
+      "command": "node node_modules/vitest/vitest.mjs run src/fms/play/chronicle2.test.ts src/fms/play/chronicle2-runtime.test.ts src/fms/play/chronicle-scale.test.ts src/fms/play/chronicle.test.ts src/fms/play/chronicle-runtime.test.ts --reporter=json --outputFile=.autopilot/chronicle2-unit.json",
+      "exitCode": 0,
+      "ms": 19330,
+      "logSha256": "534f24a05c2989803ae5bb33d91814f09bab75ba88a65ceb2934c447d6e7e0ac"
+    },
+    {
+      "name": "build",
+      "command": "node node_modules/vite/bin/vite.js build",
+      "exitCode": 0,
+      "ms": 3506,
+      "logSha256": "2b4bd46eac4978692bec3113bd8e387d709526a089344ca7410e1dadacdfe032"
+    },
+    {
+      "name": "dist",
+      "command": "node scripts/check-dist.mjs",
+      "exitCode": 0,
+      "ms": 64,
+      "logSha256": "5435509ebe2d3f037e650429746f3916270c73ea299dd31837db2095e3de2558"
+    }
+  ],
+  "unit": {
+    "tests": 48,
+    "passed": 48,
+    "reportSha256": "b704646dc5ee76e8d003dd840593b5d583b86c093103f8c709b132a7fb32de00",
+    "cases": [
+      {
+        "path": "fms/play/chronicle-runtime.test.ts",
+        "status": "passed",
+        "assertions": [
+          {
+            "title": "v11 optimized simulation matches frozen v10 every tick standing retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v11 optimized simulation matches frozen v10 every tick encounter retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v11 optimized simulation matches frozen v10 every tick occupation retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v11 optimized simulation matches frozen v10 every tick monthly retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "path": "fms/play/chronicle-scale.test.ts",
+        "status": "passed",
+        "assertions": [
+          {
+            "title": "advances a full drawn fine map without trimming its standing armies",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "path": "fms/play/chronicle.test.ts",
+        "status": "passed",
+        "assertions": [
+          {
+            "title": "v11 finer districts and durable actual history flattens naval dispatch with the same frozen command outputs and stale/cargo guards",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history keeps regnal and national counts independent across renaming, restoration and saved history",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history rejects forged regnal history and invalid title commands atomically",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history formats regnal ordinals without confusing 10, 110, 101 and 1001",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history creates materially smaller districts with exact land area, one real city each, and unchanged input",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history preserves disconnected islands and inland seas rather than manufacturing land routes",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history freezes published v10 execution and fingerprint",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history rejects tampering with either archived or live v10",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history keeps loaded v10 steps identical and explicit copies preserve its geography and database bytes",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history increments actual succession independently of recent logs and keeps exact save/resume identity",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history uprising changes exactly one real province, relationships, capital and economy, then survives ticking",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history independence changes exactly one real province, relationships, capital and economy, then survives ticking",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history rejects stale or historical-capital secession without changing the installed world",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history includes sea passengers in uprising capacity and allows exactly one remaining slot",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history uses real occupied duration and pressure for autonomous rebellion, never random notices",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history ends a landless nation once, keeps its city, and appends a real restoration when it recovers land",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history schedules a saved succession without inventing previous monarchs",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history resets occupation pressure on every same-day change of control",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history transfers real grain out of the current daily ledger without changing global stocks",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history requires a complete preview stamp at the Worker command boundary",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history rejects contradictory living/ended monarch histories",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history keeps a loaded old session intact after a candidate copy exceeds the city limit",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history keeps CAS, exact backup recovery and the chosen backup on the next write",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history locks unknown and future chronicle schemas in current without writes",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history locks unknown and future chronicle schemas in backup without writes",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history rejects history overflow atomically while keeping the prior snapshot available",
+            "status": "passed"
+          },
+          {
+            "title": "v11 finer districts and durable actual history does not let a projected campaign view modify version or remove stored history",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "path": "fms/play/chronicle2-runtime.test.ts",
+        "status": "passed",
+        "assertions": [
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick standing retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick encounter retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick occupation retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick monthly retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick colocated retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          },
+          {
+            "title": "v12 optimized simulation matches frozen v11 every tick edge-fighting retains complete outcomes and does not mutate its input",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "path": "fms/play/chronicle2.test.ts",
+        "status": "passed",
+        "assertions": [
+          {
+            "title": "v12 performance adapter preserves published v11 progress freezes the complete v11 execution closure and independently identifies v12",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress rejects modified frozen source src/fms/play/chronicle-runtime.ts",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress rejects modified frozen source src/fms/play/compat/chronicle1/fms/play/chronicle-runtime.ts.source",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress continues v11 identically then explicitly copies all regnal history without changing any old database slot",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress keeps v12 CAS and actual chosen backup through two damaged-current recovery cycles",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress locks a future v12 field in current without blocking or writing Store13",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress locks a future v12 field in backup without blocking or writing Store13",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress keeps a future Store13 isolated from valid Store14",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress rejects unknown identity, extra schema and invalid copies without changing the installed v12",
+            "status": "passed"
+          },
+          {
+            "title": "v12 performance adapter preserves published v11 progress matches the whole frozen v11 daily command including polity, navy and chronicle",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "scale": {
+    "benchmark": "v12-fine-map-day",
+    "provinces": 722,
+    "cities": 722,
+    "armies": 480,
+    "ms": 1240.7594999999997,
+    "limitMs": 4000,
+    "ticks": 120,
+    "scope": "Separate final strengthened scale regression after48 affected tests; Cloudflare failure was4663ms, local timings are not equivalent hardware.",
+    "logSha256": "9c52ca018d520c909b592da9e7d4bbb57f536253f8da0a16a80473a3e400f81e"
+  },
+  "browser": {
+    "coveredCases": 31,
+    "evidence": "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json"
+  },
+  "formalPH": "pending",
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "originalParity": false
+}

@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "preview_verified_ci_pending",
+      "status": "local_passed_not_uploaded",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2399,58 +2399,33 @@
       "deploymentMode": "Cloudflare Pages native Git branch preview",
       "productionMainUnchanged": true,
       "phaseCompletionClaim": false,
-      "evidence": [
-        "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-release.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-retry.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/https-tactics-preview.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-entry-release.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-validation-retry.json",
-        "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
-        "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json",
-        "docs/evidence/fms-reorganization-v5-2026-10-06/cloud-release.json",
-        "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
-        "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
-        "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json"
-      ],
-      "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
-      "checkedAt": "2026-10-06T12:12:47.035Z",
-      "urls": [
-        "https://d67c81e1.lieguoji-web.pages.dev",
-        "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
-      ],
+      "candidateStatus": "local_passed_not_uploaded",
+      "candidateEngine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+      "candidateParentCommit": "1790975428e0b13976f8da9f735ec9110f0af714",
+      "commit": null,
+      "urls": [],
+      "https": {
+        "status": "not_started",
+        "commit": null,
+        "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea"
+      },
       "cloudCi": {
-        "status": "in_progress",
-        "conclusion": "",
-        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37455537951"
+        "status": "not_started"
       },
       "pages": {
-        "status": "completed",
-        "conclusion": "success",
-        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/d67c81e1-306e-4dd2-af66-4bcb73afeb5d"
+        "status": "not_started"
       },
-      "verifiedPlayable": {
-        "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
-        "url": "https://e8babf58.lieguoji-web.pages.dev/?fms=1",
-        "evidence": "entry-https-verification.json",
-        "freshEntryCases": 3,
-        "reusedWarfareCases": 10
+      "priorAttempt": {
+        "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+        "status": "pages_failure",
+        "evidence": "docs/evidence/fms-chronicle-v5-2026-10-06/deployment-blocker.json"
       },
-      "candidateStatus": "v11_local_passed_not_uploaded",
-      "candidateEngine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
-      "https": {
-        "status": "passed",
-        "checkedAt": "2026-10-06T12:11:00.777Z",
-        "evidence": "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
-        "freshCases": 5,
-        "physicalDevice": "pending",
-        "userVisual": "pending"
-      }
+      "historicalStateEvidence": "docs/evidence/fms-chronicle2-v5-2026-10-06/prior-preview-state.json",
+      "evidence": [
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json"
+      ]
     }
   },
   "ownedPackageReuse": {
@@ -4031,6 +4006,38 @@
               "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
             ],
             "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-04-29",
+            "title": "细辖区日结优化：不减军队规模、不放宽性能上限",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-28"
+            ],
+            "acceptance": "本地性能小于4000ms且722辖区/722城市/480军/120ticks不变；驻点与路途交锋等六场景逐tick等价；v11原档不变、v12显式复制保留史书、CAS/备份/未来锁及生产Worker浏览器通过。真实Pages及CI分别记录，完整PH/真机/视觉不自动完成。",
+            "evidence": [
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/history-review.json"
+            ],
+            "completionScope": "本地有限性能/存档切片已实测；实际云端检查、完整PH、真机及视觉另记，不由此解锁。"
+          },
+          {
+            "id": "WEB-04-30",
+            "title": "冻结史书原版并隔离新版存档、Worker与升级副本",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-28"
+            ],
+            "acceptance": "本地性能小于4000ms且722辖区/722城市/480军/120ticks不变；驻点与路途交锋等六场景逐tick等价；v11原档不变、v12显式复制保留史书、CAS/备份/未来锁及生产Worker浏览器通过。真实Pages及CI分别记录，完整PH/真机/视觉不自动完成。",
+            "evidence": [
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle2-v5-2026-10-06/history-review.json"
+            ],
+            "completionScope": "本地有限性能/存档切片已实测；实际云端检查、完整PH、真机及视觉另记，不由此解锁。"
           }
         ]
       },
@@ -4603,12 +4610,18 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-06",
-      "status": "chronicle_local_checked_preview_pending",
+      "status": "chronicle2_locally_verified_ready_for_preview_seal",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
-      "cloudScope": "v11 not yet uploaded; existing GitHub+Pages preview authorization only; main/production unchanged",
-      "next": "正常封存候选、提交和同分支预览；核对实际HTTPS及独立CI回执。之后继续WEB-04-13地形效率、补给与长战，不重做本批。",
-      "latestUserPriority": "更细真实地块、一块一城、每片割裂领土标国名、亡国首都去标、顶部真实起义独立传位史"
+      "lastCommitted": "1790975428e0b13976f8da9f735ec9110f0af714",
+      "cloudScope": "GitHub+Pages branch preview uploaded; main unchanged; formal PH/physical/visual pending",
+      "next": "Fresh source privacy/seal, normal same-branch fast-forward preview upload, verify actual Pages HTTPS and independent GitHub CI.",
+      "latestUserPriority": "更细真实地块、一块一城、每片割裂领土标国名、亡国首都去标、顶部真实起义独立传位史",
+      "requiredUserAction": null,
+      "evidence": [
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json"
+      ]
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5422,6 +5435,18 @@
         "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
         "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
         "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json"
+      ]
+    },
+    "chronicle2Prototype": {
+      "status": "bounded_local_slice_verified",
+      "version": 12,
+      "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+      "store": "lieguoji-fms-chronicle-v2",
+      "oldVersion11": "Frozen; explicit copy preserves all history. chroniclePrototype records the v11 feature baseline.",
+      "evidence": [
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json"
       ]
     }
   }

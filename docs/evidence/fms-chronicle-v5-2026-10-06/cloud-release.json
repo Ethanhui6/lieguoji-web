@@ -1,0 +1,66 @@
+{
+  "checkedAt": "2026-10-06T14:47:05.089Z",
+  "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "branch": "codex/ph06-world-generation",
+  "repository": "https://github.com/Ethanhui6/lieguoji-web",
+  "engine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+  "sourceFingerprint": "4650e3132cd4d29206462fc64d7aebfaf1eb1f8995852e27084059d50a4a6483",
+  "push": "passed",
+  "prePush": "passed",
+  "mainUnchanged": "b9b8f96b40544ef8b7e1e428910fe2df64fec6f7",
+  "deploymentMode": "Pages native Git branch preview",
+  "checks": [
+    {
+      "name": "Cloudflare Pages",
+      "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+      "status": "completed",
+      "conclusion": "failure",
+      "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/6c26cad6-7542-4002-ae20-3cf415c59b0a",
+      "title": "Building",
+      "summary": "<table><tr><td><strong>Latest commit:</strong> </td><td>\n<code>1790975</code>\n</td></tr>\n<tr><td><strong>Status:</strong></td><td>🚫&nbsp; Build failed.</td></tr>\n</table>\n\n[View logs](https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/6c26cad6-7542-4002-ae20-3cf415c59b0a)\n"
+    },
+    {
+      "name": "Application checks",
+      "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+      "status": "in_progress",
+      "conclusion": null,
+      "detailsUrl": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37479414731/job/112323317957",
+      "title": null,
+      "summary": null
+    }
+  ],
+  "ci": {
+    "status": "in_progress",
+    "conclusion": null,
+    "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37479414731",
+    "headSha": "1790975428e0b13976f8da9f735ec9110f0af714",
+    "id": 37479414731
+  },
+  "urls": [],
+  "oldCi": {
+    "run": 37455537951,
+    "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+    "conclusion": "cancelled",
+    "note": "Independently read before this push. Not a passed CI run."
+  },
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "originalParity": false,
+  "pushEvidence": {
+    "enforce": {
+      "ready": true,
+      "formalReady": false,
+      "gate": "authorized-preview-20261006",
+      "targetRef": "refs/heads/codex/ph06-world-generation",
+      "mode": "enforce",
+      "sourceFingerprint": "4650e3132cd4d29206462fc64d7aebfaf1eb1f8995852e27084059d50a4a6483",
+      "cleanWorkingTree": true,
+      "fileCount": 8742,
+      "blockers": []
+    },
+    "exitCode": 0,
+    "logSha256": "38d73094e1570509357eda0580d96bb66771f42db55e0f3bef38ce7d1bbe91db",
+    "method": "Normal git push, unchanged project pre-push hook; root observed successful command completion."
+  },
+  "ciStageEvidence": "docs/evidence/fms-chronicle-v5-2026-10-06/ci-stages.json"
+}

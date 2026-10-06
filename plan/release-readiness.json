@@ -80,31 +80,31 @@
     "version": 1,
     "status": "ready",
     "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
-    "sourceFingerprint": "4650e3132cd4d29206462fc64d7aebfaf1eb1f8995852e27084059d50a4a6483",
+    "sourceFingerprint": "5c78ae9c22b47c11e4a2e989f56aee35c42eacd8c1abbfc2b2a705760e615955",
     "branch": "refs/heads/codex/ph06-world-generation",
-    "expiresAt": "2026-10-07T14:28:01.115Z",
+    "expiresAt": "2026-10-07T15:31:15.562Z",
     "checks": {
       "localBuild": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
-          "docs/evidence/fms-chronicle-v5-2026-10-06/guards.json"
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json"
         ]
       },
       "coreBrowser": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
-          "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
-          "docs/evidence/fms-chronicle-v5-2026-10-06/tested-dist.json"
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/tested-dist.json"
         ]
       },
       "sourcePrivacy": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-chronicle-v5-2026-10-06/SOURCE_PRIVACY.md",
-          "docs/evidence/fms-chronicle-v5-2026-10-06/history-review.json",
-          "docs/evidence/fms-chronicle-v5-2026-10-06/source-candidate.json"
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/SOURCE_PRIVACY.md",
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/history-review.json",
+          "docs/evidence/fms-chronicle2-v5-2026-10-06/source-candidate.json"
         ]
       }
     }

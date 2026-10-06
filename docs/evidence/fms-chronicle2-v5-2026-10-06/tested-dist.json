@@ -1,0 +1,223 @@
+{
+  "recordedAt": "2026-10-06T15:27:14.151Z",
+  "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+  "provenance": "Post-browser captured manifest. Root kept the production dist unchanged throughout these browser runs after the recorded build. Manifest alone is not an independent before/after measurement. Seal rechecks every file against the current dist.",
+  "files": [
+    {
+      "path": "dist/assets/App-B-TSmWiq.css",
+      "bytes": 9578,
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "dist/assets/App-CV5X87Vy.js",
+      "bytes": 72384,
+      "sha256": "46d5cb8783e4b32df2344f540d17356eacb27be79d8a989d66dcaeedd9f3839d"
+    },
+    {
+      "path": "dist/assets/atlas.worker-D_ZIKkck.js",
+      "bytes": 409814,
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-C2WTVBEx.js",
+      "bytes": 173274,
+      "sha256": "5f60aa8136c6d5e1a146108f25ccbd4d70a41aa93c6badf2b106cd42b5c2ba9c"
+    },
+    {
+      "path": "dist/assets/AtlasStudio-CtV71PEf.css",
+      "bytes": 24315,
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "dist/assets/battle-sword-BXcDEFcj.png",
+      "bytes": 482109,
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "dist/assets/biome.worker-DO2s7HoV.js",
+      "bytes": 15884,
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "dist/assets/browserAll-BQUQ0Rjz.js",
+      "bytes": 42646,
+      "sha256": "bfeb19849053d0d61c696001e364e96bd0bfe38df8969df341f6ffa27e79fee3"
+    },
+    {
+      "path": "dist/assets/BufferResource-Bk8ZSLzt.js",
+      "bytes": 11027,
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "dist/assets/camera-BGXwsUH8.js",
+      "bytes": 23199,
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "dist/assets/canvasUtils-BVGwBBBn.js",
+      "bytes": 6054,
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "dist/assets/coast.worker-2MXmECyk.js",
+      "bytes": 19346,
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "dist/assets/CountryStudio-Cn5n2Zb4.css",
+      "bytes": 13293,
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "dist/assets/CountryStudio-CWI3JSd3.js",
+      "bytes": 128542,
+      "sha256": "4d2fd7e6d4598cb3e8a82286495b98c6996b07e8a0ed20229e39f73f3309e2ce"
+    },
+    {
+      "path": "dist/assets/delaunay-BCSrghLA.js",
+      "bytes": 55255,
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "dist/assets/FmsApp-CTnsOs3m.js",
+      "bytes": 761609,
+      "sha256": "f4b0d429addf23adc6133a1b532e22040aa0ccfee96443f40505b380ac4d15bd"
+    },
+    {
+      "path": "dist/assets/FmsApp-D9_LUdYC.css",
+      "bytes": 23528,
+      "sha256": "ff934af1e40fb73a80a401d48df26e63a4ee933afea613c02efceb3c217c7983"
+    },
+    {
+      "path": "dist/assets/Geometry-IpHxCVTc.js",
+      "bytes": 109697,
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "dist/assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "bytes": 469,
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "dist/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "bytes": 342,
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "dist/assets/index-CVgMrfFT.js",
+      "bytes": 221793,
+      "sha256": "ce808212d869582dbc249299c5897e271b09c3b967f5c94fd642db01707e0f5f"
+    },
+    {
+      "path": "dist/assets/init-B8Jnes8g.js",
+      "bytes": 15379,
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "dist/assets/init-CTgOoYKd.js",
+      "bytes": 250437,
+      "sha256": "6020cbaf4ff396604cd67430ca54c04951ea26df8d99cdfbae141e451f28f2c8"
+    },
+    {
+      "path": "dist/assets/LegacyEntry-CNvbqJOh.css",
+      "bytes": 34881,
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "dist/assets/LegacyEntry-lih3ReK4.js",
+      "bytes": 132329,
+      "sha256": "846578ec283bf0f515c8d97df64487887cf4672a243b05040e11970d6249fbe1"
+    },
+    {
+      "path": "dist/assets/play.worker-CYjh3Hn5.js",
+      "bytes": 617833,
+      "sha256": "5429f7427f98f8e72cdd615f9d4c3f07ef53a5c149683712b5983c443c876c86"
+    },
+    {
+      "path": "dist/assets/renderer-CEIIirUb.js",
+      "bytes": 210865,
+      "sha256": "305c65b75b648b697bd682013808df687c9c23ce38010946ea3dd25b1ceb55ac"
+    },
+    {
+      "path": "dist/assets/RenderTargetSystem-a4R96cNy.js",
+      "bytes": 78109,
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "dist/assets/replay.worker-Dvt2kBgS.js",
+      "bytes": 86986,
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "dist/assets/rolldown-runtime-hePW80VL.js",
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "dist/assets/seed-terrain.worker-Dlqs0yuM.js",
+      "bytes": 34693,
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "dist/assets/sim.worker-CLe8Zpf3.js",
+      "bytes": 91681,
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "dist/assets/terrain-import.worker-B9lRjsio.js",
+      "bytes": 162206,
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "dist/assets/terrain.worker-DaY7RVPz.js",
+      "bytes": 49491,
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "dist/assets/Text-CG3ARmOR.js",
+      "bytes": 34909,
+      "sha256": "8197bd8c40d29afeeec1c935b0315514903467dc0d1e0acab0506157a1c80ac7"
+    },
+    {
+      "path": "dist/assets/webworkerAll-vjLWQJsg.js",
+      "bytes": 54,
+      "sha256": "f3ac618aac6c6dca1d63ace8224dd56845d1af83a69648e48d2c99af5d8866c8"
+    },
+    {
+      "path": "dist/assets/worker-pjB4IGPF.js",
+      "bytes": 223767,
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "dist/build.json",
+      "bytes": 11440,
+      "sha256": "730e35f4940f92c65bcc226072cf1c893bbdfa7fff2cdbe0fd0784e01a08ff5e"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "bytes": 221,
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 626,
+      "sha256": "ac0f6e5829da5f32ff6f23c9bd40877038b90c076301d40ca650767474fe4b06"
+    },
+    {
+      "path": "dist/terrain-licenses.txt",
+      "bytes": 10779,
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    {
+      "path": "dist/_headers",
+      "bytes": 424,
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "dist/_redirects",
+      "bytes": 19,
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "fingerprint": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+  "files": [
+    {
+      "path": "src/fms/play/chronicle-occupation.ts",
+      "archive": "fms/play/chronicle-occupation.ts.source",
+      "sha256": "37a25da982e46f097a9ef8b83b4524475343aee2cbd3b62c5f8676653f105ac1"
+    },
+    {
+      "path": "src/fms/play/chronicle-runtime.ts",
+      "archive": "fms/play/chronicle-runtime.ts.source",
+      "sha256": "755eae6a1332af75f32c70495939ea9d5466a0d90b6a9d0ded1d3bacba3354fa"
+    },
+    {
+      "path": "src/fms/play/chronicle-battle.ts",
+      "archive": "fms/play/chronicle-battle.ts.source",
+      "sha256": "e70cdad0cecfdfa76da7eb348878d6a21745b50858ddd6eebeef5c2f029df8f5"
+    },
+    {
+      "path": "src/fms/play/chronicle-model.ts",
+      "archive": "fms/play/chronicle-model.ts.source",
+      "sha256": "a366e4c503448b007a5423bf6565a8b41e7022888f806a1fee978e3bfd24782b"
+    },
+    {
+      "path": "src/fms/play/chronicle-records.ts",
+      "archive": "fms/play/chronicle-records.ts.source",
+      "sha256": "0caf90df7e61702f66d21fe4d36b486db401ccb16afb345f0dc33702647304e2"
+    },
+    {
+      "path": "src/fms/play/chronicle-politics.ts",
+      "archive": "fms/play/chronicle-politics.ts.source",
+      "sha256": "d08992f9b4571c554be0cd38b38685e6a32d451d25deebabaf1c9a13963d1507"
+    },
+    {
+      "path": "src/fms/play/chronicle-session.ts",
+      "archive": "fms/play/chronicle-session.ts.source",
+      "sha256": "3185445a87c24ddf9466dee59f2abe1a5add0a82f4cc70f5352efdb9a3216cf4"
+    },
+    {
+      "path": "src/fms/play/chronicle-storage.ts",
+      "archive": "fms/play/chronicle-storage.ts.source",
+      "sha256": "560a5aa24125bc91758b35e2d111439dec8fbf7a7643482c9d21fcf1647744d6"
+    },
+    {
+      "path": "src/fms/play/chronicle-stores.ts",
+      "archive": "fms/play/chronicle-stores.ts.source",
+      "sha256": "d62504cd2ea9ce65382dfd737957b1616de46ceeae87a25d91aed06238c6e7c8"
+    },
+    {
+      "path": "src/fms/play/chronicle-client.ts",
+      "archive": "fms/play/chronicle-client.ts.source",
+      "sha256": "ac01cb1f720aeddd33daacec57a016b492c82993392f3960ac4793429f519817"
+    },
+    {
+      "path": "src/fms/play/chronicle/play.worker.ts",
+      "archive": "fms/play/chronicle/play.worker.ts.source",
+      "sha256": "b3e1c48759bbc942d198f359aa3de46aab5daef4ef7c8c68b78f84cb778f620b"
+    },
+    {
+      "path": "src/fms/play/district-world.ts",
+      "archive": "fms/play/district-world.ts.source",
+      "sha256": "5e3fb4ec8fc741d84dd19d93c956f7ac08c10251d6d3cdd0ac9d6065e8b4e6d4"
+    },
+    {
+      "path": "src/fms/play/leader-names.json",
+      "archive": "fms/play/leader-names.json.source",
+      "sha256": "edd54b949116ba8cd6c0538df811232618016f0575f1c64f2ef626a2cb9b932c"
+    }
+  ]
+}

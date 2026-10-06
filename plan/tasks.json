@@ -3815,9 +3815,15 @@
               "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md",
               "docs/evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md",
-              "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json"
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json",
+              "docs/evidence/fms-court16-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-court16-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-court16-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-court16-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
+              "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。"
           },
           {
             "id": "WEB-04-14",
@@ -4728,11 +4734,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "native_office_income_kernels_verified_continue_characters",
+      "status": "court16_local_verified_continue_lifecycle",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "416e3dca247e34495757a2dc63132f2d8b18e316",
-      "cloudScope": "Local-only v15 batch. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
-      "next": "原人物/官职独立内核15项与lint/types通过、无v15生产调用者。接GetGovernmentOfficeAssignment5CB0A0、MilitaryModifiers83BEE0、Diplomatic/Charisma getter；建真实持久人物/任职/族群前先冻结v15。",
+      "lastCommitted": "884500642233e5430d8a05275b775daf5a36c7a9",
+      "cloudScope": "Local-only v16; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
+      "next": "先落已闭合族群抽样/生命周期纯函数与原文化权重，接续原日历/撤职/继承依赖；生产接线先冻结v16，保留当前试玩与旧库。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4753,12 +4759,18 @@
         "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
         "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md",
         "docs/evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md",
-        "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json"
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md"
       ],
-      "currentVersion": 15,
-      "currentEngine": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+      "currentVersion": 16,
+      "currentEngine": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5186/?fms=1"
+      "localUrl": "http://127.0.0.1:5187/?fms=1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5741,7 +5753,47 @@
       "unitPassed": 15,
       "productionCallers": false,
       "traits": 27,
-      "fiscal15Unchanged": true
+      "fiscal15Unchanged": true,
+      "localCommit": "884500642233e5430d8a05275b775daf5a36c7a9"
+    },
+    "court16Prototype": {
+      "date": "2026-10-07",
+      "status": "local_limited_scope_verified",
+      "version": 16,
+      "store": 18,
+      "database": "lieguoji-fms-court-v16",
+      "fingerprint": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
+      "frozenFiscal15": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+      "localUrl": "http://127.0.0.1:5187/?fms=1",
+      "sourceParent": "884500642233e5430d8a05275b775daf5a36c7a9",
+      "evidence": [
+        "docs/evidence/fms-court16-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md"
+      ],
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "scope": "原人物四能力/特性与真实任职财政；预览确认、Worker、传位保留人物、独立存档与旧库保护。",
+      "validation": {
+        "fullUnit": 2908,
+        "peopleBrowser": 3,
+        "desktopRegression": 21,
+        "lint": true,
+        "types": true,
+        "build": true,
+        "distFiles": 43
+      },
+      "remaining": [
+        "Local only; no push/main/Pages changes.",
+        "Age, death, complete family, AI office hiring, cultural ethnicity and direct leader military/diplomacy not yet integrated.",
+        "Chromium mobile/tablet emulation is not physical iPhone Safari/Chrome acceptance.",
+        "Native exact calendar, succession and complete original UI/visual parity are not claimed.",
+        "WEB-04-13 and overall Goal remain active."
+      ]
     }
   }
 }

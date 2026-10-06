@@ -1,0 +1,240 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-court16.spec.ts",
+      "--config",
+      ".autopilot/court16-playwright.config.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\court16-playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/court16-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/court16-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/court16-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "court16-evidence/browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-court16.spec.ts",
+      "file": "fms-court16.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: persistent traits, appointment confirmation, succession and deep refresh in the real Worker",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47149,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:05:36.477Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "court-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgSW5kZXhlZERCOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSBwYXJpdHkuIiwiZW5naW5lIjoiZmI2NjE2ZjY0ZTIyZDVhZWQ2MTQzNmVhY2MxMzVmODIwYTM3ODI5YTliMWUxYzAxZjA1MzdiNDM5MTA5OGEwZSIsImNoZWNrc3VtIjoiODU2NWZmZDY2MjYyYTJhZjQzMmZhN2ViNzMzYmM1YWNkMWJiYmJkMzYxNmVhMDI1Yzc3M2ZhZjkyMTdmZWNiZCIsIm9sZFBlcnNvbiI6eyJpZCI6MSwic3RhdGVJZCI6MSwibmF0aW9uSWQiOiJuLTAiLCJydWxlcklkIjoicnVsZXItbi0wLTEiLCJuYW1lIjoi5piM5pig5pyIIiwiZmFtaWx5Ijoi5piMIiwiYWxpdmUiOnRydWUsInJlY29yZGVkRGF5IjowLCJiYXNlIjp7ImNoYXJpc21hIjozNC4yNzMzNDU5NDcyNjU2MjUsIm1pbGl0YXJ5Ijo1Mi43ODU4MjM4MjIwMjE0ODQsImRpcGxvbWF0aWMiOjQ5LjA3NjAxNTQ3MjQxMjExLCJhZG1pbmlzdHJhdGl2ZSI6NjAuMDQ5NDcyODA4ODM3ODl9LCJ0cmFpdHMiOlsiV2FyV2VhcnkiLCJQYXJhbm9pZCJdfSwibmV3TGVhZGVySWQiOjMsIm9mZmljZSI6eyJhc3NpZ25tZW50cyI6W3sib2ZmaWNlSWQiOiJTdGV3YXJkIiwic2NvcGVLaW5kIjowLCJzY29wZUlkIjoxLCJ3YXJTeXN0ZW1LaW5kIjowLCJob2xkZXJDaGFyYWN0ZXJJZCI6MX1dLCJub3JtYWxpemVkIjp0cnVlLCJyZXZpc2lvbiI6MX0sImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8031c914891a64696ac-7caf2d128110ee9e1f94",
+          "file": "fms-court16.spec.ts",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "FMS v16: persistent traits, appointment confirmation, succession and deep refresh in the real Worker",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47487,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:06:25.128Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "court-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgSW5kZXhlZERCOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSBwYXJpdHkuIiwiZW5naW5lIjoiZmI2NjE2ZjY0ZTIyZDVhZWQ2MTQzNmVhY2MxMzVmODIwYTM3ODI5YTliMWUxYzAxZjA1MzdiNDM5MTA5OGEwZSIsImNoZWNrc3VtIjoiNjA2ZTk0NGMxZWRlMjZlMzlkMTNjZWM0MThiMTM3M2YyMzQ3NGFjMWVlM2RlMTY1YmZiMjZmYzU0MGNlYmJkYyIsIm9sZFBlcnNvbiI6eyJpZCI6MSwic3RhdGVJZCI6MSwibmF0aW9uSWQiOiJuLTAiLCJydWxlcklkIjoicnVsZXItbi0wLTEiLCJuYW1lIjoi6ams5piO5b63IiwiZmFtaWx5Ijoi6amsIiwiYWxpdmUiOnRydWUsInJlY29yZGVkRGF5IjowLCJiYXNlIjp7ImNoYXJpc21hIjo3Ni42MDYxNDAxMzY3MTg3NSwibWlsaXRhcnkiOjQ3LjAxNDAyMjgyNzE0ODQ0LCJkaXBsb21hdGljIjo0OC41NTYwMTUwMTQ2NDg0NCwiYWRtaW5pc3RyYXRpdmUiOjI0LjY1MzA1MzI4MzY5MTQwNn0sInRyYWl0cyI6WyJEaXBsb21hdGljIiwiQ3JhdmVuIiwiTmF2YWxNYXN0ZXJ5Il19LCJuZXdMZWFkZXJJZCI6Mywib2ZmaWNlIjp7ImFzc2lnbm1lbnRzIjpbeyJvZmZpY2VJZCI6IlN0ZXdhcmQiLCJzY29wZUtpbmQiOjAsInNjb3BlSWQiOjEsIndhclN5c3RlbUtpbmQiOjAsImhvbGRlckNoYXJhY3RlcklkIjoxfV0sIm5vcm1hbGl6ZWQiOnRydWUsInJldmlzaW9uIjoxfSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8031c914891a64696ac-b467acafc1863db8df89",
+          "file": "fms-court16.spec.ts",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "FMS v16: persistent traits, appointment confirmation, succession and deep refresh in the real Worker",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52235,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:07:13.286Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "court-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgSW5kZXhlZERCOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSBwYXJpdHkuIiwiZW5naW5lIjoiZmI2NjE2ZjY0ZTIyZDVhZWQ2MTQzNmVhY2MxMzVmODIwYTM3ODI5YTliMWUxYzAxZjA1MzdiNDM5MTA5OGEwZSIsImNoZWNrc3VtIjoiZDUyOTg2ZDVjNGI1ZTk3ZTgzNjYzNTJlZWE4OGRmZDkxYjllZjIyNGQ1YmQ3MGZkOGE1NGRkMTEwYWMxYjYyMCIsIm9sZFBlcnNvbiI6eyJpZCI6MSwic3RhdGVJZCI6MSwibmF0aW9uSWQiOiJuLTAiLCJydWxlcklkIjoicnVsZXItbi0wLTEiLCJuYW1lIjoi5Y2X5a6r6ZyWIiwiZmFtaWx5Ijoi5Y2X5a6rIiwiYWxpdmUiOnRydWUsInJlY29yZGVkRGF5IjowLCJiYXNlIjp7ImNoYXJpc21hIjo2NC4yMDYzNzUxMjIwNzAzMSwibWlsaXRhcnkiOjcwLjgzMTgwMjM2ODE2NDA2LCJkaXBsb21hdGljIjo1OC43MjcxODA0ODA5NTcwMywiYWRtaW5pc3RyYXRpdmUiOjM3Ljk1MTMwMTU3NDcwNzAzfSwidHJhaXRzIjpbIkp1c3QiLCJHZW5pdXMiXX0sIm5ld0xlYWRlcklkIjozLCJvZmZpY2UiOnsiYXNzaWdubWVudHMiOlt7Im9mZmljZUlkIjoiU3Rld2FyZCIsInNjb3BlS2luZCI6MCwic2NvcGVJZCI6MSwid2FyU3lzdGVtS2luZCI6MCwiaG9sZGVyQ2hhcmFjdGVySWQiOjF9XSwibm9ybWFsaXplZCI6dHJ1ZSwicmV2aXNpb24iOjF9LCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8031c914891a64696ac-a6a9efeed729c0a8835a",
+          "file": "fms-court16.spec.ts",
+          "line": 12,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T21:05:35.986Z",
+    "duration": 149821.87099999998,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

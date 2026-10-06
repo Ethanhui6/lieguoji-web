@@ -1,0 +1,389 @@
+{
+  "recordedAt": "2026-10-06T21:23:48.798Z",
+  "sourceParent": "884500642233e5430d8a05275b775daf5a36c7a9",
+  "note": "Final production source and 43 immutable preview artifacts; build.json parent identifies dirty worktree, not a clean commit/cloud build.",
+  "sourceFiles": [
+    {
+      "path": "scripts/fms-court16-fingerprint.ts",
+      "sha256": "07f08e1a297ba5db4f023d8e203b67a979d0c92a1174f6baa37ba61225375e9f"
+    },
+    {
+      "path": "src/fms/play/FiscalPanel.tsx",
+      "sha256": "7054b2482558498d0d8ba2ab459e671a730cf19adf807f4871c4f09ecc6f93b8"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "83e3c3e47be45c8b6cd5928c244877ffa945364cf2bc3179c27c6420c87b8b88"
+    },
+    {
+      "path": "src/fms/play/PeoplePanel.tsx",
+      "sha256": "b9409874a6c9c720dc19cfc760a5997a43285d494f87d48567335a0c4dc7b66c"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-battle.ts.source",
+      "sha256": "197f1ce0646c95f1d66ed6e258462edf6586a04cc668bc1a4c74790a217b355d"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-client.ts.source",
+      "sha256": "7a2009840fec445814d35a2bd25941033e39f67630a2baa7bbc9f4af4593f66a"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-core.ts.source",
+      "sha256": "c9eba3afc9d5789f5029c03ebfe41a6632a47fd4ef145209578b62f1814c9c34"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-food.ts.source",
+      "sha256": "3518c55680607cbe50a6f44584dfcd7a12b72245d22dc15907c9ed7c10abd01b"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-geography.ts.source",
+      "sha256": "bc3f4d6ccd5fb1432037c599254c3e915c2b0757578f7530c84a43c473ac7d30"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-model.ts.source",
+      "sha256": "9d51bc5612da8f79f8b09e96975f9dcc75fcb1c1f7ca8f45008e763d2765e4c6"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-occupation.ts.source",
+      "sha256": "e996d35c952ca15cd173f29c816296b40169671740364605376ad4431a2b2225"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-rules.ts.source",
+      "sha256": "cf78f4393b93089f312bb8b4f6e4cc6ee1d926cd665fc019aba441bedca3819d"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-runtime.ts.source",
+      "sha256": "4759a8fba5435ea3f493a0421cb85aba8531a2156c3d68d4b944b86e0b8e849d"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-session.ts.source",
+      "sha256": "a1dfd38fe2b454e72662fbc9347fdf881e2b5cd3acbd73de5f8c91b86e16d590"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-state.ts.source",
+      "sha256": "4b8158b0918db2a9ee4f99df0cde43bc971203775328492779370ac058b09247"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-storage.ts.source",
+      "sha256": "c000f6570a69eaaf1ddbe3f6b696ccf1811b7666abeeef51e1e2aff7e41ff3a8"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15-stores.ts.source",
+      "sha256": "36780bc723e89fea7d9e8659790e1f59bd3e9d2cd6b179c303f32bfd54510fb8"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/fiscal15/play.worker.ts.source",
+      "sha256": "b71ce8d01b4be0f09a4b940fa72e4afb40ee9706c7e84d7c5356248de7860a96"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/native-economy/biome-resources.json.source",
+      "sha256": "c6fe1e80f126358d058921ca17a96e0088164d15b1af283ff7285fcc70104445"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/native-economy/numeric.ts.source",
+      "sha256": "32bb34d92ed00ce9d79f928f8d733ec5140a00c26a5dd5ac7c8e5feb1f9f5258"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/native-economy/population.ts.source",
+      "sha256": "49537a9118309371152f55356cd884bd1e95cd61d49eab86dfcf3e7ad59223ba"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/native-economy/resources.ts.source",
+      "sha256": "88ba9ec49d266d6f0ea82b2c33d0f83174fb0fa9a82bfdefefbf47608fc43672"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/fms/play/native-economy/settlement.ts.source",
+      "sha256": "bb11e50891ee469e2d7106635f3fbf90979e3e242e515bef27655573326a71f5"
+    },
+    {
+      "path": "src/fms/play/compat/fiscal15/manifest.json",
+      "sha256": "cdf9821eacdf052b3fd826f64fe6fd5a945d7bf88ebdf36161de762ae97275d9"
+    },
+    {
+      "path": "src/fms/play/court16-client.ts",
+      "sha256": "d002a10ae0b65a3fcc43bba543b8512298ee85a9832b111be748b1408d2f6ba9"
+    },
+    {
+      "path": "src/fms/play/court16-model.ts",
+      "sha256": "baada2796a2a8475bdb53649dc6caf5448e2fafc95ab90459f800cf70349281f"
+    },
+    {
+      "path": "src/fms/play/court16-people.ts",
+      "sha256": "90b55d187681a828139797229e25ecb79136c273b17cb6e62217aa671862cc38"
+    },
+    {
+      "path": "src/fms/play/court16-runtime.ts",
+      "sha256": "725f134e0b49c18505d18046b861cdc8eb5ac6a5a74efa67b908799050a8df0b"
+    },
+    {
+      "path": "src/fms/play/court16-session.ts",
+      "sha256": "487fdb7ee366b045315a15992ba43aba7da88c8035ecaf28b249d961cd5d9ad9"
+    },
+    {
+      "path": "src/fms/play/court16-state.ts",
+      "sha256": "77f963c4b033fee139db55327bc2a3b4049ecff2b792afa46cc8c5b74dfa6915"
+    },
+    {
+      "path": "src/fms/play/court16-storage.ts",
+      "sha256": "6782f302425f1bc91d6f31bfa5a34cce4418bb77507f070141cf30f49500ff47"
+    },
+    {
+      "path": "src/fms/play/court16-stores.ts",
+      "sha256": "202e06584a01f93764d2e9270b6f804992501ec06082b6265e4a3bc2a48d0519"
+    },
+    {
+      "path": "src/fms/play/court16.test.ts",
+      "sha256": "32e277c217e69cb3c552807fd551d1f67847d3b00d424ba9b622ff0434e47a97"
+    },
+    {
+      "path": "src/fms/play/court16/play.worker.ts",
+      "sha256": "f1c75666f26807d213faef34705a302c85bd80c774eab50a50d476de6b0a7689"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-generation.test.ts",
+      "sha256": "ead0b9f20ba7c6674ad1e45cac4164add9f8560303c0893254d2c9dd846cb1cb"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-generation.ts",
+      "sha256": "3dd98e392f6fd3e2774ca1aca70e7aa6acdaaff978c6f655605bf5d9ab8c9fb4"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-income.ts",
+      "sha256": "d16c5297ada64eb5981cd3b48cdc84f15695fcb6c36a9c78ef1ef9dae89c656b"
+    },
+    {
+      "path": "src/fms/play/native-economy/office-assignment.test.ts",
+      "sha256": "f922a740ad49a3306c1b06b2ff3c56ee22b5f5e15ea39f416b921a5f4a0981e3"
+    },
+    {
+      "path": "src/fms/play/native-economy/office-assignment.ts",
+      "sha256": "43f89fe5aefd5a93731c50801df37cd20b722ccd5a215dee8f712353becc6369"
+    },
+    {
+      "path": "src/fms/play/play.css",
+      "sha256": "bbfb8f39ce8daf76678041512d7b980f781b1a36e3a826d996ee0b894c4d9378"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "aa978847bb67aa3fe11fa1ffa3ea3e90785675846a227510d15aa300e87cfd52"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "sha256": "51b05ffb5807dbb868bab933c503cefedc6a0b19b7437257d05235dc68036bcf"
+    },
+    {
+      "path": "tests/fms-chronicle.spec.ts",
+      "sha256": "6b627f47f094d0a597276bc021809b082bffcec1eb1031020d508acca954dd92"
+    },
+    {
+      "path": "tests/fms-court16.spec.ts",
+      "sha256": "3ff51414d12a0c90c71bd7a8e325844120b8eab901de5f5cc72c759f7df382ed"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "sha256": "2e5e4e5d8a643e716d22806cd766ef66d371fbdf0093a1b99d9ec5dd266d022c"
+    },
+    {
+      "path": "tests/fms-fiscal15.spec.ts",
+      "sha256": "1c5437be395c9e849924898cc27d78d1161a4017a760771fa990cd8d63ef450f"
+    },
+    {
+      "path": "tests/fms-inspection.spec.ts",
+      "sha256": "ca86294d14212050ef18218e5b76cb82aa85a4ae9561e6b39f60a7cf68d1e194"
+    },
+    {
+      "path": "tests/fms-locality.spec.ts",
+      "sha256": "ea3d015208d23a429bfd7f633a68699d15629ba07e16f45b841457a0a92e1538"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "sha256": "d635329ae4189505d3632fdd06e4e832d4bc8b2fe3633a93764ab1889b842fc1"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "sha256": "af8585b66027f81d91da5ee9ab17af7f25ef73cd9b0fd4701ee6446b77addef8"
+    },
+    {
+      "path": "tests/fms-upper14.spec.ts",
+      "sha256": "246c4e446d5b4df75af4af9fc3d35feebeab1faed9370794ff28a49f6e142074"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "fd1d10401ba08124b4f89d3a06c933e05e03b7d5fb4c06524986ae015e772412"
+    }
+  ],
+  "artifactFiles": [
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "assets/App-CdjHBEWB.js",
+      "sha256": "79641c03c0c608da451eb742122fbe9918dcadceb07aea1fdbbc267b9aa5e5de"
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "assets/AtlasStudio-DkTo_pa3.js",
+      "sha256": "dc427d4c2436addf727aa9eff57a09dcb70da6e574660551e7a874f717d9fd4f"
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "assets/browserAll-BwTgcfgV.js",
+      "sha256": "47647bbcb7954138c3d7d22fb6b3bf20cfbe67dcdf613f7e43e5e3c5c96aff5e"
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "assets/CountryStudio-C2fih2WF.js",
+      "sha256": "10743939ac14d8efb53561021e7edd7127533df112829149c91abdb83e7d24a4"
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "assets/FmsApp-BaXHhS-b.js",
+      "sha256": "068df641623692aa66a706a80e269e7d8c61d3a956e1cf22729c6714218e5a48"
+    },
+    {
+      "path": "assets/FmsApp-NcDX_SvB.css",
+      "sha256": "57356b36a45baeba23cd430315c9c2bed74277ebab2c17fed519488d114ef612"
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "assets/index-BoM5wAJr.js",
+      "sha256": "1173d87b78e509bbe11880f175843b3d5227ed0ce45b52e0b5d887293425aa06"
+    },
+    {
+      "path": "assets/init-9_y14p61.js",
+      "sha256": "c60b504a9459c7d717aa21ccac7dcf208bb1707d05ce205beff7e8a4fe42bff2"
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "assets/LegacyEntry-BBh9bVyp.js",
+      "sha256": "f3c0716f39a37365976673bbda7ab49cf4f0d612a91bbe281b20bccaaaeb8cf1"
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "assets/play.worker-i99Ivxdu.js",
+      "sha256": "4fe40ad38ba2ea4ea9d72c736101b73c6e185bbf6e426ce6564231c25838a4a6"
+    },
+    {
+      "path": "assets/renderer-VBQY-osm.js",
+      "sha256": "65f5f6cb84ca974276d3bd7d53d9889e748e2969cabfbb35fb005970a0dab7a0"
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "assets/Text-BPSqnpt4.js",
+      "sha256": "f2f5da8d2f432a864910a03456ac5b54e5825f0c86a58cb87d638cc26a134323"
+    },
+    {
+      "path": "assets/webworkerAll-bTd4rNVK.js",
+      "sha256": "66ee08341d88ed38de42e8017e8d4b93e58cd6b7e7a8d2bdf779d59f79465a0c"
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "build.json",
+      "sha256": "0ed984d0d593545599dd413fdea381433149b4c02d52a59f85748b6c670c6423"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "index.html",
+      "sha256": "87856f92806a5e8c048b865bc4449ca8909f9561e002cf6b863df384ebe17c09"
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    {
+      "path": "_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

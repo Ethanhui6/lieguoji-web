@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "fingerprint": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+  "files": [
+    {
+      "path": "src/fms/play/fiscal15-state.ts",
+      "archive": "fms/play/fiscal15-state.ts.source",
+      "sha256": "4b8158b0918db2a9ee4f99df0cde43bc971203775328492779370ac058b09247"
+    },
+    {
+      "path": "src/fms/play/fiscal15-geography.ts",
+      "archive": "fms/play/fiscal15-geography.ts.source",
+      "sha256": "bc3f4d6ccd5fb1432037c599254c3e915c2b0757578f7530c84a43c473ac7d30"
+    },
+    {
+      "path": "src/fms/play/fiscal15-food.ts",
+      "archive": "fms/play/fiscal15-food.ts.source",
+      "sha256": "3518c55680607cbe50a6f44584dfcd7a12b72245d22dc15907c9ed7c10abd01b"
+    },
+    {
+      "path": "src/fms/play/fiscal15-rules.ts",
+      "archive": "fms/play/fiscal15-rules.ts.source",
+      "sha256": "cf78f4393b93089f312bb8b4f6e4cc6ee1d926cd665fc019aba441bedca3819d"
+    },
+    {
+      "path": "src/fms/play/fiscal15-core.ts",
+      "archive": "fms/play/fiscal15-core.ts.source",
+      "sha256": "c9eba3afc9d5789f5029c03ebfe41a6632a47fd4ef145209578b62f1814c9c34"
+    },
+    {
+      "path": "src/fms/play/fiscal15-battle.ts",
+      "archive": "fms/play/fiscal15-battle.ts.source",
+      "sha256": "197f1ce0646c95f1d66ed6e258462edf6586a04cc668bc1a4c74790a217b355d"
+    },
+    {
+      "path": "src/fms/play/fiscal15-occupation.ts",
+      "archive": "fms/play/fiscal15-occupation.ts.source",
+      "sha256": "e996d35c952ca15cd173f29c816296b40169671740364605376ad4431a2b2225"
+    },
+    {
+      "path": "src/fms/play/fiscal15-runtime.ts",
+      "archive": "fms/play/fiscal15-runtime.ts.source",
+      "sha256": "4759a8fba5435ea3f493a0421cb85aba8531a2156c3d68d4b944b86e0b8e849d"
+    },
+    {
+      "path": "src/fms/play/fiscal15-model.ts",
+      "archive": "fms/play/fiscal15-model.ts.source",
+      "sha256": "9d51bc5612da8f79f8b09e96975f9dcc75fcb1c1f7ca8f45008e763d2765e4c6"
+    },
+    {
+      "path": "src/fms/play/fiscal15-session.ts",
+      "archive": "fms/play/fiscal15-session.ts.source",
+      "sha256": "a1dfd38fe2b454e72662fbc9347fdf881e2b5cd3acbd73de5f8c91b86e16d590"
+    },
+    {
+      "path": "src/fms/play/fiscal15-storage.ts",
+      "archive": "fms/play/fiscal15-storage.ts.source",
+      "sha256": "c000f6570a69eaaf1ddbe3f6b696ccf1811b7666abeeef51e1e2aff7e41ff3a8"
+    },
+    {
+      "path": "src/fms/play/fiscal15-stores.ts",
+      "archive": "fms/play/fiscal15-stores.ts.source",
+      "sha256": "36780bc723e89fea7d9e8659790e1f59bd3e9d2cd6b179c303f32bfd54510fb8"
+    },
+    {
+      "path": "src/fms/play/fiscal15-client.ts",
+      "archive": "fms/play/fiscal15-client.ts.source",
+      "sha256": "7a2009840fec445814d35a2bd25941033e39f67630a2baa7bbc9f4af4593f66a"
+    },
+    {
+      "path": "src/fms/play/fiscal15/play.worker.ts",
+      "archive": "fms/play/fiscal15/play.worker.ts.source",
+      "sha256": "b71ce8d01b4be0f09a4b940fa72e4afb40ee9706c7e84d7c5356248de7860a96"
+    },
+    {
+      "path": "src/fms/play/native-economy/numeric.ts",
+      "archive": "fms/play/native-economy/numeric.ts.source",
+      "sha256": "32bb34d92ed00ce9d79f928f8d733ec5140a00c26a5dd5ac7c8e5feb1f9f5258"
+    },
+    {
+      "path": "src/fms/play/native-economy/settlement.ts",
+      "archive": "fms/play/native-economy/settlement.ts.source",
+      "sha256": "bb11e50891ee469e2d7106635f3fbf90979e3e242e515bef27655573326a71f5"
+    },
+    {
+      "path": "src/fms/play/native-economy/population.ts",
+      "archive": "fms/play/native-economy/population.ts.source",
+      "sha256": "49537a9118309371152f55356cd884bd1e95cd61d49eab86dfcf3e7ad59223ba"
+    },
+    {
+      "path": "src/fms/play/native-economy/resources.ts",
+      "archive": "fms/play/native-economy/resources.ts.source",
+      "sha256": "88ba9ec49d266d6f0ea82b2c33d0f83174fb0fa9a82bfdefefbf47608fc43672"
+    },
+    {
+      "path": "src/fms/play/native-economy/biome-resources.json",
+      "archive": "fms/play/native-economy/biome-resources.json.source",
+      "sha256": "c6fe1e80f126358d058921ca17a96e0088164d15b1af283ff7285fcc70104445"
+    }
+  ]
+}

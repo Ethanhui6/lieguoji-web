@@ -1,0 +1,958 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-fiscal15.spec.ts",
+      "tests/fms-upper14.spec.ts",
+      "tests/fms-chronicle.spec.ts",
+      "tests/fms-inspection.spec.ts",
+      "tests/fms-locality.spec.ts",
+      "tests/fms-tactics.spec.ts",
+      "tests/fms-maritime.spec.ts",
+      "tests/fms-battle-animation.spec.ts",
+      "tests/fms-entry.spec.ts",
+      "--config",
+      ".autopilot/court16-regression.config.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\court16-regression.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/court16-evidence/regression",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "court16-evidence/regression.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-battle-animation.spec.ts",
+      "file": "fms-battle-animation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: original battle clip follows a real naval contact, pauses and respects reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 57826,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:10:59.482Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "production-animation-sample",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGRldmljZSIsInNhbXBsZXMiOltbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjIxLCJ4Ijo1NDIsInkiOjQ2Ny41LCJ3aWR0aCI6NDEuOTk5OTk5OTk5OTk5OTksIm9ic2VydmVkQXQiOjQyNTYyLjgwMDAwMDAxMTkyfV0sW3siaWQiOiJzZWE6ZmxlZXQtMi0wL2ZsZWV0LTMtMSIsImZyYW1lIjoyMiwieCI6NTQyLCJ5Ijo0NjcuNSwid2lkdGgiOjQxLjk5OTk5OTk5OTk5OTk5LCJvYnNlcnZlZEF0Ijo0MjY1NS4zMDAwMDAwMTE5Mn1dLFt7ImlkIjoic2VhOmZsZWV0LTItMC9mbGVldC0zLTEiLCJmcmFtZSI6MjMsIngiOjU0MiwieSI6NDY3LjUsIndpZHRoIjo0MS45OTk5OTk5OTk5OTk5OSwib2JzZXJ2ZWRBdCI6NDI3NDcuNjk5OTk5OTg4MDh9XSxbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjI0LCJ4Ijo1NDIsInkiOjQ2Ny41LCJ3aWR0aCI6NDEuOTk5OTk5OTk5OTk5OTksIm9ic2VydmVkQXQiOjQyODM2LjgwMDAwMDAxMTkyfV0sW3siaWQiOiJzZWE6ZmxlZXQtMi0wL2ZsZWV0LTMtMSIsImZyYW1lIjoyNiwieCI6NTQyLCJ5Ijo0NjcuNSwid2lkdGgiOjQxLjk5OTk5OTk5OTk5OTk5LCJvYnNlcnZlZEF0Ijo0MjkzNS44MDAwMDAwMTE5Mn1dLFt7ImlkIjoic2VhOmZsZWV0LTItMC9mbGVldC0zLTEiLCJmcmFtZSI6MjcsIngiOjU0MiwieSI6NDY3LjUsIndpZHRoIjo0MS45OTk5OTk5OTk5OTk5OSwib2JzZXJ2ZWRBdCI6NDMxMDQuNX1dXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e537a6c6ad8be58373e3-78c2253a0057fc33513f",
+          "file": "fms-battle-animation.spec.ts",
+          "line": 7,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-chronicle.spec.ts",
+      "file": "fms-chronicle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: future Store13 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1932,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:11:57.565Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-3b2b3068b046ce8171ce",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: future Store14 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1502,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:11:59.509Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-bcb46a226476ae2e75b1",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: future Store15 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1905,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:12:01.023Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-7826334a375f8abccedb",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: future Store16 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1907,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:12:02.937Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-09c096643ef12a0c0eb1",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: future Store17 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1913,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:12:04.851Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-84aa4473feeeb4946834",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: future Store18 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1458,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:12:06.771Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-3267924214a1418212f8",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 36
+        },
+        {
+          "title": "FMS v16: small real districts, succession, local independence/uprising, top chronicle and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 56434,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:12:08.236Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "chronicle-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gdGVycmFpbiwgcHJvZHVjdGlvbiBXb3JrZXIgY29tbWFuZHMgYW5kIGluZGV4ZWREQiBpbiBpc29sYXRlZCBDaHJvbWl1bSBjb250ZXh0LiBOb3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSB2aXN1YWwgYWNjZXB0YW5jZS4iLCJ2ZXJzaW9uIjoxNiwicHJvdmluY2VzIjo3MzAsImNpdGllcyI6NzMwLCJhcm1pZXMiOjQ4NiwiZW50cmllcyI6W3siaWQiOjEsImRheSI6MCwidGljayI6MCwia2luZCI6ImFjY2Vzc2lvbiIsInRleHQiOiLpmYjkvKDkvY3vvJrmma/mmI7kuIDkuJbvvIjkupHkuJbmsJHvvInnu6fkvY3vvIzkuLrlm73lrrbnrKwy5Lu75ZCb5Li7IiwicmVhc29uIjoi5LiK5bid5bmy6aKE5a6J5o6S5Lyg5L2N77yb5YmN5ZCO5ZCb5Li76Lqr5Lu944CB546L5Y+35LiW5pWw5LiO5Zu95a625Lu75qyh5ZCM5pe25L+d5a2Y44CCIiwibmF0aW9uSWRzIjpbIm4tMCJdLCJwbGFjZSI6eyJpZCI6InAtNTA2IiwibmFtZSI6Iuadvua6qiIsIngiOjg0Mi4yMTM4OTU1ODU4MDE5LCJ5IjozMDcuNDE3MTk0MDQ4NTYzNn0sInBlb3BsZSI6W3siaWQiOiJydWxlci1uLTAtMSIsIm5hbWUiOiLkupHpnZIiLCJvcmRlciI6MSwicmVnbmFsTmFtZSI6IumdkiIsInJlZ25hbE9yZGluYWwiOjF9LHsiaWQiOiJydWxlci1uLTAtMiIsIm5hbWUiOiLkupHkuJbmsJEiLCJvcmRlciI6MiwicmVnbmFsTmFtZSI6IuaZr+aYjiIsInJlZ25hbE9yZGluYWwiOjF9XSwic291cmNlRXZlbnRJZCI6Nn0seyJpZCI6MiwiZGF5IjowLCJ0aWNrIjowLCJraW5kIjoiYWNjZXNzaW9uIiwidGV4dCI6IumZiOS8oOS9je+8muaZr+aYjuS6jOS4lu+8iOS6keilv+aWve+8iee7p+S9je+8jOS4uuWbveWutuesrDPku7vlkJvkuLsiLCJyZWFzb24iOiLkuIrluJ3lubLpooTlronmjpLkvKDkvY3vvJvliY3lkI7lkJvkuLvouqvku73jgIHnjovlj7fkuJbmlbDkuI7lm73lrrbku7vmrKHlkIzml7bkv53lrZjjgIIiLCJuYXRpb25JZHMiOlsibi0wIl0sInBsYWNlIjp7ImlkIjoicC01MDYiLCJuYW1lIjoi5p2+5rqqIiwieCI6ODQyLjIxMzg5NTU4NTgwMTksInkiOjMwNy40MTcxOTQwNDg1NjM2fSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW4tMC0yIiwibmFtZSI6IuS6keS4luawkSIsIm9yZGVyIjoyLCJyZWduYWxOYW1lIjoi5pmv5piOIiwicmVnbmFsT3JkaW5hbCI6MX0seyJpZCI6InJ1bGVyLW4tMC0zIiwibmFtZSI6IuS6keilv+aWvSIsIm9yZGVyIjozLCJyZWduYWxOYW1lIjoi5pmv5piOIiwicmVnbmFsT3JkaW5hbCI6Mn1dLCJzb3VyY2VFdmVudElkIjo3fSx7ImlkIjozLCJkYXkiOjAsInRpY2siOjAsImtpbmQiOiJpbmRlcGVuZGVuY2UiLCJ0ZXh0Ijoi5rKT5Lit5a6j5biD54us56uL77yM5LiK5bq45bu656uL77yM5om/5b+X5LiA5LiW77yI5Y2O5om/5b+X77yJ5Li66aaW5Lu75ZCb5Li7IiwicmVhc29uIjoi5LiK5bid5bmy6aKE77ya5rKT5Lit5a6j5biD54us56uL77yM5oiQ5Li654us56uL5Zu95a6244CCIiwibmF0aW9uSWRzIjpbIm4tMCIsIm5ldy1zdGF0ZS0xIl0sInBsYWNlIjp7ImlkIjoicC0wIiwibmFtZSI6Iuayk+S4rSIsIngiOjQ5OS42NDEyNzI3NTY3ODg0NSwieSI6NTAxLjA1MjY3MTAwODYzOTgzfSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW5ldy1zdGF0ZS0xLTEiLCJuYW1lIjoi5Y2O5om/5b+XIiwib3JkZXIiOjEsInJlZ25hbE5hbWUiOiLmib/lv5ciLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjh9LHsiaWQiOjQsImRheSI6MCwidGljayI6MCwia2luZCI6InVwcmlzaW5nIiwidGV4dCI6IuebiumYs+eIhuWPkei1t+S5ie+8jOm7hOW7uueri++8jOaWh+WnrOS4gOS4lu+8iOS7pOeLkOaWh+WnrO+8ieS4uummluS7u+WQm+S4uyIsInJlYXNvbiI6IuS4iuW4neW5sumihO+8muebiumYs+i1t+S5ieW7uuWbve+8jOS4juWOn+aOp+WItuWbveS6pOaImOOAgiIsIm5hdGlvbklkcyI6WyJuLTAiLCJuZXctc3RhdGUtMiJdLCJwbGFjZSI6eyJpZCI6InAtMSIsIm5hbWUiOiLnm4rpmLMiLCJ4Ijo0NzcuNjY5MTA2NTg5NDIzMiwieSI6NDkyLjYwMzgzMTgyMTAxNzc2fSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW5ldy1zdGF0ZS0yLTEiLCJuYW1lIjoi5Luk54uQ5paH5aesIiwib3JkZXIiOjEsInJlZ25hbE5hbWUiOiLmloflp6wiLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjEwfV0sInJlc3RvcmVkQ2hlY2tzdW0iOiJmZGU5YzU2M2FjZmZlMjUxNTc0OTA2M2M1YzllMDliZTUzZDlhNDdkNTBmMjNhN2M4MDNhMDMzNTFjOTZjMzdlIiwid29ya2VycyI6WyJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL3BsYXkud29ya2VyLWk5OUl2eGR1LmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiLCJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL3BsYXkud29ya2VyLWk5OUl2eGR1LmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiXSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-eb330a9e017751a547b8",
+          "file": "fms-chronicle.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "FMS v16: every fragmented territory label and no extinct capital marker in the rendered map",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 31677,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:13:04.678Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fragmentation-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBmcmFnbWVudGVkL2xhbmRsZXNzIGNvbnRyb2wgZml4dHVyZSwgcmVhbCBwcm9kdWN0aW9uIGxvYWRlci9yZW5kZXJlci4gQ29tYmF0IGNhdXNhdGlvbiBzZXBhcmF0ZWx5IHVuaXQtdGVzdGVkOyBub3QgbmF0aXZlIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJsYWJlbHMiOlt7Im5hdGlvbklkIjoibi0wIiwiY29tcG9uZW50SWQiOiJwLTAiLCJwcm92aW5jZUlkcyI6WyJwLTAiXSwieCI6NTAxLjI2ODg0NDY4NzcxODc0LCJ5Ijo1MDEuOTM3MTMwMjMxMzU0Mn0seyJuYXRpb25JZCI6Im4tMCIsImNvbXBvbmVudElkIjoicC02IiwicHJvdmluY2VJZHMiOlsicC02Il0sIngiOjQ4MS44MTM3MzA2NjMzNjYzNiwieSI6NTE2LjAyMDMzOTY0ODA3MTZ9LHsibmF0aW9uSWQiOiJuLTAiLCJjb21wb25lbnRJZCI6InAtNyIsInByb3ZpbmNlSWRzIjpbInAtNyJdLCJ4Ijo0NjMuMDY3OTA0OTM0MDc2LCJ5Ijo1MjIuNTg5Mjk5NDU3MDU4MX0seyJuYXRpb25JZCI6Im4tMSIsImNvbXBvbmVudElkIjoicC0xIiwicHJvdmluY2VJZHMiOlsicC0xIiwicC0xMCIsInAtMTAwIiwicC0xMDEiLCJwLTEwMiIsInAtMTAzIiwicC0xMDQiLCJwLTEwNSIsInAtMTA2IiwicC0xMDciLCJwLTEwOCIsInAtMTA5IiwicC0xMSIsInAtMTEwIiwicC0xMTEiLCJwLTExMiIsInAtMTEzIiwicC0xMTQiLCJwLTExNSIsInAtMTE2IiwicC0xMTciLCJwLTExOCIsInAtMTE5IiwicC0xMiIsInAtMTIwIiwicC0xMjEiLCJwLTEyMiIsInAtMTIzIiwicC0xMjQiLCJwLTEyNSIsInAtMTI2IiwicC0xMjciLCJwLTEyOCIsInAtMTI5IiwicC0xMyIsInAtMTMwIiwicC0xMzEiLCJwLTEzMiIsInAtMTMzIiwicC0xMzQiLCJwLTEzNSIsInAtMTM2IiwicC0xMzciLCJwLTEzOCIsInAtMTM5IiwicC0xNCIsInAtMTQwIiwicC0xNDEiLCJwLTE0MiIsInAtMTQzIiwicC0xNDQiLCJwLTE0NSIsInAtMTQ2IiwicC0xNDciLCJwLTE0OCIsInAtMTQ5IiwicC0xNSIsInAtMTUwIiwicC0xNTEiLCJwLTE1MiIsInAtMTUzIiwicC0xNTQiLCJwLTE1NSIsInAtMTU2IiwicC0xNTciLCJwLTE1OCIsInAtMTU5IiwicC0xNiIsInAtMTYwIiwicC0xNjEiLCJwLTE2MiIsInAtMTYzIiwicC0xNjQiLCJwLTE2NSIsInAtMTY2IiwicC0xNjciLCJwLTE2OCIsInAtMTY5IiwicC0xNyIsInAtMTcwIiwicC0xNzEiLCJwLTE3MiIsInAtMTczIiwicC0xNzQiLCJwLTE3NSIsInAtMTc2IiwicC0xNzciLCJwLTE3OCIsInAtMTc5IiwicC0xOCIsInAtMTgwIiwicC0xODEiLCJwLTE4MiIsInAtMTgzIiwicC0xODQiLCJwLTE4NSIsInAtMTg2IiwicC0xODciLCJwLTE4OCIsInAtMTg5IiwicC0xOSIsInAtMTkwIiwicC0xOTEiLCJwLTE5MiIsInAtMTkzIiwicC0xOTQiLCJwLTE5NSIsInAtMTk2IiwicC0xOTciLCJwLTE5OCIsInAtMTk5IiwicC0yIiwicC0yMCIsInAtMjAwIiwicC0yMDEiLCJwLTIwMiIsInAtMjAzIiwicC0yMDQiLCJwLTIwNSIsInAtMjA2IiwicC0yMDciLCJwLTIwOCIsInAtMjA5IiwicC0yMSIsInAtMjEwIiwicC0yMTEiLCJwLTIxMiIsInAtMjEzIiwicC0yMTQiLCJwLTIxNSIsInAtMjE2IiwicC0yMTciLCJwLTIxOCIsInAtMjE5IiwicC0yMiIsInAtMjIwIiwicC0yMjEiLCJwLTIyMiIsInAtMjIzIiwicC0yMjQiLCJwLTIyNSIsInAtMjI2IiwicC0yMjciLCJwLTIyOCIsInAtMjI5IiwicC0yMyIsInAtMjMwIiwicC0yMzEiLCJwLTIzMiIsInAtMjMzIiwicC0yMzQiLCJwLTIzNSIsInAtMjM2IiwicC0yMzciLCJwLTIzOCIsInAtMjM5IiwicC0yNCIsInAtMjQwIiwicC0yNDEiLCJwLTI0MiIsInAtMjQzIiwicC0yNDQiLCJwLTI0NSIsInAtMjQ2IiwicC0yNDciLCJwLTI0OCIsInAtMjQ5IiwicC0yNSIsInAtMjUwIiwicC0yNTEiLCJwLTI1MiIsInAtMjUzIiwicC0yNTQiLCJwLTI1NSIsInAtMjU2IiwicC0yNTciLCJwLTI1OCIsInAtMjU5IiwicC0yNiIsInAtMjYwIiwicC0yNjEiLCJwLTI2MiIsInAtMjYzIiwicC0yNjQiLCJwLTI2NSIsInAtMjY2IiwicC0yNjciLCJwLTI2OCIsInAtMjY5IiwicC0yNyIsInAtMjcwIiwicC0yNzEiLCJwLTI3MiIsInAtMjczIiwicC0yNzQiLCJwLTI3NSIsInAtMjc2IiwicC0yNzciLCJwLTI3OCIsInAtMjc5IiwicC0yOCIsInAtMjgwIiwicC0yODEiLCJwLTI4MiIsInAtMjgzIiwicC0yODQiLCJwLTI4NSIsInAtMjg2IiwicC0yODciLCJwLTI4OCIsInAtMjg5IiwicC0yOSIsInAtMjkwIiwicC0yOTEiLCJwLTI5MiIsInAtMjkzIiwicC0yOTQiLCJwLTI5NSIsInAtMjk2IiwicC0yOTciLCJwLTI5OCIsInAtMjk5IiwicC0zIiwicC0zMCIsInAtMzAwIiwicC0zMDEiLCJwLTMwMiIsInAtMzAzIiwicC0zMDQiLCJwLTMwNSIsInAtMzA2IiwicC0zMDciLCJwLTMwOCIsInAtMzA5IiwicC0zMSIsInAtMzEwIiwicC0zMTEiLCJwLTMxMiIsInAtMzEzIiwicC0zMTQiLCJwLTMxNSIsInAtMzE2IiwicC0zMTciLCJwLTMxOCIsInAtMzE5IiwicC0zMiIsInAtMzIwIiwicC0zMjEiLCJwLTMyMiIsInAtMzIzIiwicC0zMjQiLCJwLTMyNSIsInAtMzI2IiwicC0zMjciLCJwLTMyOCIsInAtMzI5IiwicC0zMyIsInAtMzMwIiwicC0zMzEiLCJwLTMzMiIsInAtMzMzIiwicC0zMzQiLCJwLTMzNSIsInAtMzM2IiwicC0zMzciLCJwLTMzOCIsInAtMzM5IiwicC0zNCIsInAtMzQwIiwicC0zNDEiLCJwLTM0MiIsInAtMzQzIiwicC0zNDQiLCJwLTM0NSIsInAtMzQ2IiwicC0zNDciLCJwLTM0OCIsInAtMzQ5IiwicC0zNSIsInAtMzUwIiwicC0zNTEiLCJwLTM1MiIsInAtMzUzIiwicC0zNTQiLCJwLTM1NSIsInAtMzU2IiwicC0zNTciLCJwLTM1OCIsInAtMzU5IiwicC0zNiIsInAtMzYwIiwicC0zNjEiLCJwLTM2MiIsInAtMzYzIiwicC0zNjQiLCJwLTM2NSIsInAtMzY2IiwicC0zNjciLCJwLTM2OCIsInAtMzY5IiwicC0zNyIsInAtMzcwIiwicC0zNzEiLCJwLTM3MiIsInAtMzczIiwicC0zNzQiLCJwLTM3NSIsInAtMzc2IiwicC0zNzciLCJwLTM3OCIsInAtMzc5IiwicC0zOCIsInAtMzgwIiwicC0zODEiLCJwLTM4MiIsInAtMzgzIiwicC0zODQiLCJwLTM4NSIsInAtMzg2IiwicC0zODciLCJwLTM4OCIsInAtMzg5IiwicC0zOSIsInAtMzkwIiwicC0zOTEiLCJwLTM5MiIsInAtMzkzIiwicC0zOTQiLCJwLTM5NSIsInAtMzk2IiwicC0zOTciLCJwLTM5OCIsInAtMzk5IiwicC00IiwicC00MCIsInAtNDAwIiwicC00MDEiLCJwLTQwMiIsInAtNDAzIiwicC00MDQiLCJwLTQwNSIsInAtNDA2IiwicC00MDciLCJwLTQwOCIsInAtNDA5IiwicC00MSIsInAtNDEwIiwicC00MTEiLCJwLTQxMiIsInAtNDEzIiwicC00MTQiLCJwLTQxNSIsInAtNDE2IiwicC00MTciLCJwLTQxOCIsInAtNDE5IiwicC00MiIsInAtNDIwIiwicC00MjEiLCJwLTQyMiIsInAtNDIzIiwicC00MjQiLCJwLTQyNSIsInAtNDI2IiwicC00MjciLCJwLTQyOCIsInAtNDI5IiwicC00MyIsInAtNDMwIiwicC00MzEiLCJwLTQzMiIsInAtNDMzIiwicC00MzQiLCJwLTQzNSIsInAtNDM2IiwicC00MzciLCJwLTQzOCIsInAtNDM5IiwicC00NCIsInAtNDQwIiwicC00NDEiLCJwLTQ0MiIsInAtNDQzIiwicC00NDQiLCJwLTQ0NSIsInAtNDQ2IiwicC00NDciLCJwLTQ0OCIsInAtNDQ5IiwicC00NSIsInAtNDUwIiwicC00NTEiLCJwLTQ1MiIsInAtNDUzIiwicC00NTQiLCJwLTQ1NSIsInAtNDU2IiwicC00NTciLCJwLTQ1OCIsInAtNDU5IiwicC00NiIsInAtNDYwIiwicC00NjEiLCJwLTQ2MiIsInAtNDYzIiwicC00NjQiLCJwLTQ2NSIsInAtNDY2IiwicC00NjciLCJwLTQ2OCIsInAtNDY5IiwicC00NyIsInAtNDcwIiwicC00NzEiLCJwLTQ3MiIsInAtNDczIiwicC00NzQiLCJwLTQ3NSIsInAtNDc2IiwicC00NzciLCJwLTQ3OCIsInAtNDc5IiwicC00OCIsInAtNDgwIiwicC00ODEiLCJwLTQ4MiIsInAtNDgzIiwicC00ODQiLCJwLTQ4NSIsInAtNDg2IiwicC00ODciLCJwLTQ4OCIsInAtNDg5IiwicC00OSIsInAtNDkwIiwicC00OTEiLCJwLTQ5MiIsInAtNDkzIiwicC00OTQiLCJwLTQ5NSIsInAtNDk2IiwicC00OTciLCJwLTQ5OCIsInAtNDk5IiwicC01IiwicC01MCIsInAtNTAwIiwicC01MDEiLCJwLTUwMiIsInAtNTAzIiwicC01MDQiLCJwLTUwNSIsInAtNTA2IiwicC01MDciLCJwLTUwOCIsInAtNTA5IiwicC01MSIsInAtNTEwIiwicC01MTEiLCJwLTUxMiIsInAtNTEzIiwicC01MTQiLCJwLTUxNSIsInAtNTE2IiwicC01MTciLCJwLTUxOCIsInAtNTE5IiwicC01MiIsInAtNTIwIiwicC01MjEiLCJwLTUyMiIsInAtNTIzIiwicC01MjQiLCJwLTUyNSIsInAtNTI2IiwicC01MjciLCJwLTUyOCIsInAtNTI5IiwicC01MyIsInAtNTMwIiwicC01MzEiLCJwLTUzMiIsInAtNTMzIiwicC01MzQiLCJwLTUzNSIsInAtNTM2IiwicC01MzciLCJwLTUzOCIsInAtNTM5IiwicC01NCIsInAtNTQwIiwicC01NDEiLCJwLTU0MiIsInAtNTQzIiwicC01NDQiLCJwLTU0NSIsInAtNTQ2IiwicC01NDciLCJwLTU0OCIsInAtNTQ5IiwicC01NSIsInAtNTUwIiwicC01NTEiLCJwLTU1MiIsInAtNTUzIiwicC01NTQiLCJwLTU1NSIsInAtNTU2IiwicC01NTciLCJwLTU1OCIsInAtNTU5IiwicC01NiIsInAtNTYwIiwicC01NjEiLCJwLTU2MiIsInAtNTYzIiwicC01NjQiLCJwLTU2NSIsInAtNTY2IiwicC01NjciLCJwLTU2OCIsInAtNTY5IiwicC01NyIsInAtNTcwIiwicC01NzEiLCJwLTU3MiIsInAtNTczIiwicC01NzQiLCJwLTU3NSIsInAtNTc2IiwicC01NzciLCJwLTU3OCIsInAtNTc5IiwicC01OCIsInAtNTgwIiwicC01ODEiLCJwLTU4MiIsInAtNTgzIiwicC01ODQiLCJwLTU4NSIsInAtNTg2IiwicC01ODciLCJwLTU4OCIsInAtNTg5IiwicC01OSIsInAtNTkwIiwicC01OTEiLCJwLTU5MiIsInAtNTkzIiwicC01OTQiLCJwLTU5NSIsInAtNTk2IiwicC01OTciLCJwLTU5OCIsInAtNTk5IiwicC02MCIsInAtNjAwIiwicC02MDEiLCJwLTYwMiIsInAtNjAzIiwicC02MDQiLCJwLTYwNSIsInAtNjA2IiwicC02MDciLCJwLTYwOCIsInAtNjA5IiwicC02MSIsInAtNjEwIiwicC02MTEiLCJwLTYxMiIsInAtNjEzIiwicC02MTQiLCJwLTYxNSIsInAtNjE2IiwicC02MTciLCJwLTYxOCIsInAtNjE5IiwicC02MiIsInAtNjIwIiwicC02MjEiLCJwLTYyMiIsInAtNjIzIiwicC02MjQiLCJwLTYyNSIsInAtNjI2IiwicC02MjciLCJwLTYyOCIsInAtNjI5IiwicC02MyIsInAtNjMwIiwicC02MzEiLCJwLTYzMiIsInAtNjMzIiwicC02MzQiLCJwLTYzNSIsInAtNjM2IiwicC02MzciLCJwLTYzOCIsInAtNjM5IiwicC02NCIsInAtNjQwIiwicC02NDEiLCJwLTY0MiIsInAtNjQzIiwicC02NDQiLCJwLTY0NSIsInAtNjQ2IiwicC02NDciLCJwLTY0OCIsInAtNjQ5IiwicC02NSIsInAtNjUwIiwicC02NTEiLCJwLTY1MiIsInAtNjUzIiwicC02NTQiLCJwLTY1NSIsInAtNjU2IiwicC02NTciLCJwLTY1OCIsInAtNjU5IiwicC02NiIsInAtNjYwIiwicC02NjEiLCJwLTY2MiIsInAtNjYzIiwicC02NjQiLCJwLTY2NSIsInAtNjY2IiwicC02NjciLCJwLTY2OCIsInAtNjY5IiwicC02NyIsInAtNjcwIiwicC02NzEiLCJwLTY3MiIsInAtNjczIiwicC02NzQiLCJwLTY3NSIsInAtNjc2IiwicC02NzciLCJwLTY3OCIsInAtNjc5IiwicC02OCIsInAtNjgwIiwicC02ODEiLCJwLTY4MiIsInAtNjgzIiwicC02ODQiLCJwLTY4NSIsInAtNjg2IiwicC02ODciLCJwLTY4OCIsInAtNjg5IiwicC02OSIsInAtNjkwIiwicC02OTEiLCJwLTY5MiIsInAtNjkzIiwicC02OTQiLCJwLTY5NSIsInAtNjk2IiwicC02OTciLCJwLTY5OCIsInAtNjk5IiwicC03MCIsInAtNzAwIiwicC03MDEiLCJwLTcwMiIsInAtNzAzIiwicC03MDQiLCJwLTcwNSIsInAtNzA2IiwicC03MDciLCJwLTcwOCIsInAtNzA5IiwicC03MSIsInAtNzEwIiwicC03MTEiLCJwLTcxMiIsInAtNzEzIiwicC03MTQiLCJwLTcxNSIsInAtNzE2IiwicC03MTciLCJwLTcxOCIsInAtNzE5IiwicC03MiIsInAtNzIwIiwicC03MjEiLCJwLTcyMiIsInAtNzIzIiwicC03MjQiLCJwLTcyNSIsInAtNzI2IiwicC03MjciLCJwLTcyOCIsInAtNzI5IiwicC03MyIsInAtNzQiLCJwLTc1IiwicC03NiIsInAtNzciLCJwLTc4IiwicC03OSIsInAtOCIsInAtODAiLCJwLTgxIiwicC04MiIsInAtODMiLCJwLTg0IiwicC04NSIsInAtODYiLCJwLTg3IiwicC04OCIsInAtODkiLCJwLTkiLCJwLTkwIiwicC05MSIsInAtOTIiLCJwLTkzIiwicC05NCIsInAtOTUiLCJwLTk2IiwicC05NyIsInAtOTgiLCJwLTk5Il0sIngiOjc1OS4zNDU5NjgyMTY0NDQ2LCJ5Ijo0ODguNzkzODA1OTY2Njk1Nn1dLCJoZWxkIjpbInAtMCIsInAtNiIsInAtNyJdLCJjaXR5Q291bnQiOjczMCwiZXJyb3JzIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-a458c958528577432b39",
+          "file": "fms-chronicle.spec.ts",
+          "line": 35,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-entry.spec.ts",
+      "file": "fms-entry.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: terrain confirmation stays clickable before saving and entering a new world",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13649,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:13:36.390Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fms-entry-resources",
+                      "contentType": "application/json",
+                      "body": "eyJ3b3JrZXJzIjpbImh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvdGVycmFpbi53b3JrZXItRGFZN1JWUHouanMiLCJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL3BsYXkud29ya2VyLWk5OUl2eGR1LmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiXSwicmVzb3VyY2VzIjpbeyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL3JvbGxkb3duLXJ1bnRpbWUtaGVQVzgwVkwuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9pbmRleC1Cb001d0FKci5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL0Ztc0FwcC1OY0RYX1N2Qi5jc3MiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvY3NzIn0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2NhbnZhc1V0aWxzLUJWR3dCQkJuLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvZ2V0VGV4dHVyZUJhdGNoQmluZEdyb3VwLUNsRGtNZFQzLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvQnVmZmVyUmVzb3VyY2UtQms4WlNMenQuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9SZW5kZXJUYXJnZXRTeXN0ZW0tYTRSOTZjTnkuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9HZW9tZXRyeS1JcEh4Q1ZUYy5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2dldFBvMlRleHR1cmVGcm9tU291cmNlLUJ6UjJqZngzLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvY2FtZXJhLUJHWHdzVUg4LmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvVGV4dC1CUFNxbnB0NC5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2RlbGF1bmF5LUJDU3JnaExBLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvaW5pdC05X3kxNHA2MS5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL0Ztc0FwcC1CYVhIaFMtYi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2luaXQtQjhKbmVzOGcuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9icm93c2VyQWxsLUJ3VGdjZmdWLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvdGVycmFpbi53b3JrZXItRGFZN1JWUHouanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9yb2xsZG93bi1ydW50aW1lLWhlUFc4MFZMLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvaW5kZXgtQm9NNXdBSnIuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9GbXNBcHAtTmNEWF9TdkIuY3NzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2NzcyJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9nZXRUZXh0dXJlQmF0Y2hCaW5kR3JvdXAtQ2xEa01kVDMuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9jYW52YXNVdGlscy1CVkd3QkJCbi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL0dlb21ldHJ5LUlwSHhDVlRjLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvZ2V0UG8yVGV4dHVyZUZyb21Tb3VyY2UtQnpSMmpmeDMuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9CdWZmZXJSZXNvdXJjZS1CazhaU0x6dC5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL1RleHQtQlBTcW5wdDQuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9jYW1lcmEtQkdYd3NVSDguanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9SZW5kZXJUYXJnZXRTeXN0ZW0tYTRSOTZjTnkuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9kZWxhdW5heS1CQ1NyZ2hMQS5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2luaXQtOV95MTRwNjEuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9GbXNBcHAtQmFYSGhTLWIuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg3L2Fzc2V0cy9pbml0LUI4Sm5lczhnLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvYnJvd3NlckFsbC1Cd1RnY2ZnVi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL3BsYXkud29ya2VyLWk5OUl2eGR1LmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4Ny9hc3NldHMvYmF0dGxlLXN3b3JkLUJYY0RFRmNqLnBuZyIsInN0YXR1cyI6MjAwLCJtaW1lIjoiaW1hZ2UvcG5nIn0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODcvYXNzZXRzL2Jpb21lLndvcmtlci1ETzJzN0hvVi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In1dLCJlcnJvcnMiOltdLCJmYWlsZWQiOltdLCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgcGh5c2ljYWwgZGV2aWNlIGFuZCBvcmlnaW5hbCB2aXN1YWwgYWNjZXB0YW5jZSBwZW5kaW5nIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "15ba0f4b258877adbfdd-133b5372adf794c8f4aa",
+          "file": "fms-entry.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-fiscal15.spec.ts",
+      "file": "fms-fiscal15.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: fiscal month and reorganization commit in real Worker with exact deep-refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46343,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:13:50.069Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fiscal-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkRyYXduIG1hcDsgaXNvbGF0ZWQgZGF5MjkvbmVhci1jb21wbGV0aW9uIGZpeHR1cmUsIGFjdHVhbCBwcm9kdWN0aW9uIGluY3JlbWVudGFsIFdvcmtlciBtb250aCtmZWU7IENocm9taXVtIGVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGlQaG9uZSBvciBuYXRpdmUgdmlzdWFsIHBhcml0eS4iLCJiZWZvcmUiOnsiZ29sZCI6MTI3NjcsImdvbGRQZXJNb250aCI6MTI3NjcsImFybXlDb3N0R29sZCI6MCwiZ29sZEJhdHRsZU1vZGlmaWVyIjoxLjEwMDAwMDAyMzg0MTg1OCwiaW5pdGlhbGl6ZWREYXkiOjAsImxhc3RNb250aCI6MCwibGVkZ2VyIjp7ImdvbGQiOjEyNzY3LCJnb2xkUGVyTW9udGgiOjEyNzY3LCJhcm15Q29zdEdvbGQiOjAsImdvbGRCYXR0bGVNb2RpZmllciI6MS4xMDAwMDAwMjM4NDE4NTgsImJhc2VJbmNvbWUiOjEyNzY3LCJpbnZlbnRvcnlGYWN0b3IiOjEsImdvbGRCZWZvcmVBcm15Q29zdCI6MTI3NjcsImRheSI6MCwib3BlbmluZ0dvbGQiOjAsInJlb3JnYW5pemF0aW9uQ29zdCI6MCwiZGlzdGFuY2VTdXNwZW5kZWQiOmZhbHNlfX0sImFmdGVyIjp7ImdvbGQiOjI5OTM1LCJnb2xkUGVyTW9udGgiOjE3MzE4LCJhcm15Q29zdEdvbGQiOjAsImdvbGRCYXR0bGVNb2RpZmllciI6MS4xMDAwMDAwMjM4NDE4NTgsImluaXRpYWxpemVkRGF5IjowLCJsYXN0TW9udGgiOjEsImxlZGdlciI6eyJnb2xkIjoyOTkzNSwiZ29sZFBlck1vbnRoIjoxNzMxOCwiYXJteUNvc3RHb2xkIjowLCJnb2xkQmF0dGxlTW9kaWZpZXIiOjEuMTAwMDAwMDIzODQxODU4LCJiYXNlSW5jb21lIjoxNzMxOCwiaW52ZW50b3J5RmFjdG9yIjoxLCJnb2xkQmVmb3JlQXJteUNvc3QiOjI5OTM1LCJkYXkiOjMwLCJvcGVuaW5nR29sZCI6MTI2MTcsInJlb3JnYW5pemF0aW9uQ29zdCI6MCwiZGlzdGFuY2VTdXNwZW5kZWQiOmZhbHNlfX0sImNvbXBsZXRlZCI6MSwiY2hlY2tzdW0iOiI3ZjUzZjdkODE0MDYxZmRhNDczOWVjMWM1MjQzN2QxMmMyNWY1ZTg0MDQwMjljNGNkZWVlYzNmZGU4ZDg2ODFjIiwiZW5naW5lIjoiZmI2NjE2ZjY0ZTIyZDVhZWQ2MTQzNmVhY2MxMzVmODIwYTM3ODI5YTliMWUxYzAxZjA1MzdiNDM5MTA5OGEwZSIsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "33c4e4b513d08611c566-777bf9605ed4ac9d290a",
+          "file": "fms-fiscal15.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "FMS v16: real IndexedDB damaged maritime and transport slots recover the chosen backup twice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 45438,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:14:36.420Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "recovered-backup",
+                      "contentType": "application/json",
+                      "body": "eyJjaGVja3N1bSI6IjcwY2ZkZTIwM2MzZTA0M2I3YzkzN2JkZDBjZWIwODQzMTE5Njk0N2E5MDlmYjVkZjZjYmM5NmYzNzk0NDFmY2EiLCJmaW5hbFJldmlzaW9uIjo0LCJkYW1hZ2UiOlsiY3VycmVudC5tYXJpdGltZT1udWxsIiwiZGVsZXRlIGN1cnJlbnQudHJhbnNwb3J0cyJdLCJzY29wZSI6Iklzb2xhdGVkIEluZGV4ZWREQiBkYW1hZ2U7IHByb2R1Y3Rpb24gbG9hZCwgV29ya2VyIGFuZCBDQVMgc2F2ZTsgbm8gcGVyc29uYWwgc2F2ZSBhY2Nlc3NlZC4ifQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "33c4e4b513d08611c566-3601da043315c65e7468",
+          "file": "fms-fiscal15.spec.ts",
+          "line": 28,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-inspection.spec.ts",
+      "file": "fms-inspection.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: real province biome, moving army readiness and terrain context survive Worker save and deep refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 53580,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:15:21.890Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "terrain13-play",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkFjdHVhbCBkcmF3biBtYXAsIHByb2R1Y3Rpb24gV29ya2VyIGFuZCBJbmRleGVkREI7IGJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lL25hdGl2ZSB2aXN1YWwgYWNjZXB0YW5jZS4iLCJ2ZXJzaW9uIjoxNiwiZW5naW5lIjoiZmI2NjE2ZjY0ZTIyZDVhZWQ2MTQzNmVhY2MxMzVmODIwYTM3ODI5YTliMWUxYzAxZjA1MzdiNDM5MTA5OGEwZSIsInByb3ZpbmNlcyI6NzMwLCJhcm15SWQiOiJmb3JjZS0xIiwicG9zaXRpb24iOnsiaWQiOiJmb3JjZS0xIiwibmFtZSI6IuW5s+mYs+atpeWFtSIsIm5hdGlvbklkIjoibi0wIiwicHJvdmluY2VJZCI6InAtMCIsIm9yaWdpbklkIjoicC0wIiwidHJvb3BzIjoyNDAwLCJtb3JhbGUiOjgwLCJzdXBwbGllcyI6OTQsInN0YXR1cyI6Im1hcmNoaW5nIiwicm91dGUiOlsicC0xIl0sInByb2dyZXNzIjowLjQ5OTk5OTk5OTk5OTk5OTQ0fSwiY29udGV4dCI6eyJiaW9tZXMiOlswLDAsMCwxLDAsMCwwLDAsMCwwLDAsMCwwXSwiYXZlcmFnZSI6NDUsImRldmlhdGlvbiI6MCwiaGlnaCI6MCwidmVyeUhpZ2giOjAsIm1vdW50YWluIjpmYWxzZSwicGxhdGVhdSI6ZmFsc2UsInNhbXBsZXMiOjQ4LCJhcmVhIjo5MDkuMDM5ODU4OTQ1NjI0N30sImNoZWNrc3VtIjoiNmM1M2MwNjI4ZjI5ZmVlMjM3YTYyMThiOThjMmI1YTYzODAzYzBiYjlmYTE0NzY2YWIzMzU2MzE2ZTg5ZWYyOSIsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-2768663b0ebdc478eb30",
+          "file": "fms-inspection.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "FMS inspection: real succession history search, nation filters, direct news and exact restoration",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 60933,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:16:15.479Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "inspection-history",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkRyYXduIHRlcnJhaW4gYW5kIHJlYWwgV29ya2VyIHN1Y2Nlc3Npb24sIHJlYWQtb25seSBzZWFyY2gvc2VsZWN0LCBleGFjdCBzYXZlL3Jlc3RvcmUgaW4gaXNvbGF0ZWQgQ2hyb21pdW0uIE5vdCBwaHlzaWNhbCBpUGhvbmUuIiwidmVyc2lvbiI6MTYsImVudHJpZXMiOlt7ImlkIjoxLCJkYXkiOjAsInRpY2siOjAsImtpbmQiOiJhY2Nlc3Npb24iLCJ0ZXh0Ijoi5be05Lyg5L2N77ya5pmv5piO5LiA5LiW77yI5qyn6Ziz5aSq55m977yJ57un5L2N77yM5Li65Zu95a6256ysMuS7u+WQm+S4uyIsInJlYXNvbiI6IuS4iuW4neW5sumihOWuieaOkuS8oOS9je+8m+WJjeWQjuWQm+S4u+i6q+S7veOAgeeOi+WPt+S4luaVsOS4juWbveWutuS7u+asoeWQjOaXtuS/neWtmOOAgiIsIm5hdGlvbklkcyI6WyJuLTAiXSwicGxhY2UiOnsiaWQiOiJwLTUwNiIsIm5hbWUiOiLlk4DniaIiLCJ4Ijo4NDIuMjEzODk1NTg1ODAxOSwieSI6MzA3LjQxNzE5NDA0ODU2MzZ9LCJwZW9wbGUiOlt7ImlkIjoicnVsZXItbi0wLTEiLCJuYW1lIjoi5qyn6Ziz5amJ5LuqIiwib3JkZXIiOjEsInJlZ25hbE5hbWUiOiLlqYnku6oiLCJyZWduYWxPcmRpbmFsIjoxfSx7ImlkIjoicnVsZXItbi0wLTIiLCJuYW1lIjoi5qyn6Ziz5aSq55m9Iiwib3JkZXIiOjIsInJlZ25hbE5hbWUiOiLmma/mmI4iLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjZ9LHsiaWQiOjIsImRheSI6MCwidGljayI6MCwia2luZCI6ImFjY2Vzc2lvbiIsInRleHQiOiLlt7TkvKDkvY3vvJrmma/mmI7kuozkuJbvvIjmrKfpmLPnjq/vvInnu6fkvY3vvIzkuLrlm73lrrbnrKwz5Lu75ZCb5Li7IiwicmVhc29uIjoi5LiK5bid5bmy6aKE5a6J5o6S5Lyg5L2N77yb5YmN5ZCO5ZCb5Li76Lqr5Lu944CB546L5Y+35LiW5pWw5LiO5Zu95a625Lu75qyh5ZCM5pe25L+d5a2Y44CCIiwibmF0aW9uSWRzIjpbIm4tMCJdLCJwbGFjZSI6eyJpZCI6InAtNTA2IiwibmFtZSI6IuWTgOeJoiIsIngiOjg0Mi4yMTM4OTU1ODU4MDE5LCJ5IjozMDcuNDE3MTk0MDQ4NTYzNn0sInBlb3BsZSI6W3siaWQiOiJydWxlci1uLTAtMiIsIm5hbWUiOiLmrKfpmLPlpKrnmb0iLCJvcmRlciI6MiwicmVnbmFsTmFtZSI6IuaZr+aYjiIsInJlZ25hbE9yZGluYWwiOjF9LHsiaWQiOiJydWxlci1uLTAtMyIsIm5hbWUiOiLmrKfpmLPnjq8iLCJvcmRlciI6MywicmVnbmFsTmFtZSI6IuaZr+aYjiIsInJlZ25hbE9yZGluYWwiOjJ9XSwic291cmNlRXZlbnRJZCI6N31dLCJjaGVja3N1bSI6ImM4MWMwMDMwYzJiNmVjNDE4M2RkMmFiYTI5YzQ2NzE2MWJlZmNhZjcyOTQ1MTgzNDdiMmVlM2I0MmRlNDZkMGIiLCJlcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-72bbeaf0c553043aa151",
+          "file": "fms-inspection.spec.ts",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "title": "FMS inspection: full resistance, real pulse, per-army food, cancel/confirm withdrawal and restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 130000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 64094,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:17:16.420Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "inspection-war",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBpbml0aWFsIHR3by1mb3JjZSBiYXR0bGVmaWVsZCBvbiByZWFsIGRyYXduIHRlcnJhaW47IHJlYWwgcHJvZHVjdGlvbiBXb3JrZXIgY29udGFjdCwgZnVsbCByZXNpc3RhbmNlLCBjb21tYW5kIHByZXZpZXcvY2FuY2VsL3dpdGhkcmF3IGFuZCBleGFjdCBwZXJzaXN0ZW5jZS4iLCJ2ZXJzaW9uIjoxNiwicHJvdmluY2UiOiJwLTQwIiwiY29udGFjdFRpY2siOjEsInJlc2lzdGFuY2UiOlt7InByb3ZpbmNlSWQiOiJwLTQwIiwiY29udHJvbGxlciI6Im4tMCIsImF0dGFja2VyIjoibi0xIiwibWF4aW11bSI6NTY5LjA3NTE0MzI0NTE1NjMsInJlc2lzdGFuY2UiOjU2OS4wNzUxNDMyNDUxNTYzLCJzdGFydGVkIjoxLCJwdWxzZSI6MX1dLCJyb3VuZHMiOnsiZm9yY2UtMzExIjoyMSwiZm9yY2UtMSI6MjF9LCJjaGVja3N1bSI6ImE0NjFlMDE1MDZiNTk0OTUzZmFlNmU3YjlkYTIxZDliYTU3ZjQwMmNjYjYzOWQwMGE3ZWRkMWZkMjQ4YmYyYmMiLCJlcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-c8cd98aba429ed7003a5",
+          "file": "fms-inspection.spec.ts",
+          "line": 46,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-locality.spec.ts",
+      "file": "fms-locality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 55528,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:18:20.536Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6OTEwLjUwNzgxMjUsInkiOjQ2Ny41LCJ3aWR0aCI6NDAsImhlaWdodCI6MjgsImlkIjoiYy0wIiwicHJvdmluY2VJZCI6InAtMCIsIm5hbWUiOiLlpKfluoYifSwibG9uZyI6eyJ4Ijo5NiwieSI6NDY3LjUsIndpZHRoIjoxODQsImhlaWdodCI6NDQsImlkIjoiYy0wIiwicHJvdmluY2VJZCI6InAtMCIsIm5hbWUiOiLkuJzmtbfplb/po47kupHmuqrkuJzmtbfplb/po47kupHmuqrkuJzmtbfplb/po47kupHmuqrkuJzmtbfplb/po47kupHmuqoifSwiY3VzdG9taXplTXMiOjYzODgsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-0291b2258ecf0cec264d",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: loading and choosing a landless country clears stale locality and military targets without changing the world",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 48559,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:19:16.071Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "landless-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBsYW5kbGVzcyBvd25lcnNoaXAsIHJlYWwgbG9hZGVyL3NlbGVjdGlvbi9zYXZlOyBubyBhY3R1YWwgY29tYmF0IGV4dGluY3Rpb24gY2xhaW1lZCIsImNvdW50cnkiOiJuLTAiLCJ3b3JsZFVuY2hhbmdlZCI6dHJ1ZSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-2816873e5c7ff1def3f1",
+          "file": "fms-locality.spec.ts",
+          "line": 38,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-maritime.spec.ts",
+      "file": "fms-maritime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: draw islands, create countries, command navy and restore the real voyage",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25484,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:20:04.654Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0a875308967098096cde-c202825818c299d25aaf",
+          "file": "fms-maritime.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-tactics.spec.ts",
+      "file": "fms-tactics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: real map, original-scale mustering, road encounter, mobilization and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 73802,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:20:30.173Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "actual-game-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJydW5JZCI6ImZtcy03NmQxODM2ZC0yMWJkLTQ1OGItOTA4Yy1lNTcxNGNiNjg2ZDciLCJ2ZXJzaW9uIjoxNiwiYXJtaWVzQXRTdGFydCI6NDg2LCJyb2FkQmF0dGxlIjp7ImlkIjoiZW5nYWdlbWVudC0xIiwiYSI6InAtNDAiLCJiIjoicC01NiIsInQiOjAuNSwiYXJtaWVzIjpbImZvcmNlLTQ4NyIsImZvcmNlLTQ4OCJdLCJzdGFydGVkIjoxMjAsInB1bHNlIjoxMjAsImNhcnJ5Ijp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfSwibG9zc2VzIjp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfX0sImluaXRpYWxUcm9vcHMiOjEwMDAsImFmdGVyVHJvb3BzIjo4NjgsImVtZXJnZW5jeSI6NSwidGljayI6MjQwLCJjaGVja3N1bSI6IjQzMTNiZTI0OGFmYjY2NTcyYjhlMjE3Zjk4YjQ1YTBhMWRmNjg5Yjc1MmQxYzFmNjJmNDZiYzYzZDdkZDU3MjIiLCJyZXN0b3JlZFJldmlzaW9uIjo3LCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgbm90IHBoeXNpY2FsIGlQaG9uZSBhY2NlcHRhbmNlIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-cf68e52d1386369c9cde",
+          "file": "fms-tactics.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "FMS v16: real Worker defeat, home reorganization, fractional save/resume and completion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 55259,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:21:43.982Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "reorganization-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBzYXZlZCBiYXR0bGVmaWVsZCwgcmVhbCBwcm9kdWN0aW9uIFdvcmtlci9VSSwgQ2hyb21pdW0gZW11bGF0aW9uOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSB2aXN1YWwgZXF1aXZhbGVuY2UiLCJ2ZXJzaW9uIjoxNiwiYXJteUlkIjoiZm9yY2UtMSIsImhvbWVJZCI6InAtNDAiLCJyZXR1cm5lZFRyb29wcyI6MTAwLCJwYXJ0aWFsVGljayI6MzIsInBhcnRpYWwiOnsic3RhcnRlZFRpY2siOjEsImZyYWN0aW9uIjowLjc1MDk5NzcyMjk4ODA0fSwicmVzdG9yZWRDaGVja3N1bSI6IjY5ZDY2MzdmY2JlN2NmNzE5MTE1NjkyM2JkYTNmODY5NDZkOGJiNGUyZDgzZDY1Y2M2YzU2Y2ZkYWQwZmVlOTQiLCJjb21wbGV0ZWQiOjEsImNvbnNvbGVFcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-7b404e006fad8585a112",
+          "file": "fms-tactics.spec.ts",
+          "line": 28,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-upper14.spec.ts",
+      "file": "fms-upper14.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v16: government draft, cancel, native combat change, dynamic Worker tick and exact restoration",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 130000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 54632,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:22:39.262Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "upper14-government",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHByb2R1Y3Rpb24gV29ya2VyIGVkaXQvdGljaywgZXhhY3QgSW5kZXhlZERCL2RlZXAtcmVmcmVzaDsgQ2hyb21pdW0gZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lLiIsImVuZ2luZSI6ImZiNjYxNmY2NGUyMmQ1YWVkNjE0MzZlYWNjMTM1ZjgyMGEzNzgyOWE5YjFlMWMwMWYwNTM3YjQzOTEwOThhMGUiLCJiZWZvcmUiOnsicG9saXR5IjoiVHJpYmFsIiwidHJhaXRzIjpbXSwiZGVzdGlueSI6ODAsImNvcmVUaHJlc2hvbGQiOjIsImNvcmVZZWFyIjowLCJwcm92aW5jZU9yZGVyIjpbInAtMCIsInAtMSIsInAtMiIsInAtMyIsInAtNCIsInAtNSIsInAtNiIsInAtNyIsInAtOCIsInAtOSIsInAtMTAiLCJwLTExIiwicC0xMiIsInAtMTMiLCJwLTE0IiwicC0xNSIsInAtMTYiLCJwLTE3IiwicC0xOCIsInAtMTkiLCJwLTIwIiwicC0yMSIsInAtMjIiLCJwLTIzIiwicC0yNCIsInAtMjUiLCJwLTI2IiwicC0yNyIsInAtMjgiLCJwLTI5IiwicC0zMCIsInAtMzEiLCJwLTMyIiwicC0zMyIsInAtMzQiLCJwLTM1IiwicC0zNiIsInAtMzciLCJwLTM4IiwicC0zOSIsInAtNDAiLCJwLTQxIiwicC00MiIsInAtNDMiLCJwLTQ0IiwicC00NSIsInAtNDYiLCJwLTQ3IiwicC00OCIsInAtNDkiLCJwLTUwIiwicC01MSIsInAtNTIiLCJwLTUzIiwicC01NCIsInAtNTUiLCJwLTU3IiwicC01OSIsInAtNjAiLCJwLTYxIiwicC02MiIsInAtNjMiLCJwLTY0IiwicC02NSIsInAtNjYiLCJwLTY3IiwicC02OCIsInAtNjkiLCJwLTcwIiwicC03MiIsInAtNzMiLCJwLTc0IiwicC03NSIsInAtNzYiLCJwLTc3IiwicC03OCIsInAtNzkiLCJwLTgwIiwicC04MSIsInAtODIiLCJwLTg0IiwicC04NSIsInAtODYiLCJwLTg3IiwicC04OSIsInAtOTAiLCJwLTkxIiwicC05MiIsInAtOTMiLCJwLTk1IiwicC05NiIsInAtOTgiLCJwLTk5IiwicC0xMDAiLCJwLTEwMSIsInAtMTA0IiwicC0xMDUiLCJwLTEwOCIsInAtMTA5IiwicC0xMTAiLCJwLTExMSIsInAtMTEyIiwicC0xMTMiLCJwLTExNCIsInAtMTE1IiwicC0xMTciLCJwLTExOCIsInAtMTIwIiwicC0xMjEiLCJwLTEyMiIsInAtMTI1IiwicC0xMjYiLCJwLTEyNyIsInAtMTI5IiwicC0xMzAiLCJwLTEzMSIsInAtMTMyIiwicC0xMzUiLCJwLTEzNiIsInAtMTM3IiwicC0xMzgiLCJwLTEzOSIsInAtMTQwIiwicC0xNDIiLCJwLTE0MyIsInAtMTQ0IiwicC0xNDYiLCJwLTE0NyIsInAtMTQ4IiwicC0xNDkiLCJwLTE1MSIsInAtMTU1IiwicC0xNTciLCJwLTE1OCIsInAtMTU5IiwicC0xNjAiLCJwLTE2MSIsInAtMTYyIiwicC0xNjMiLCJwLTE2NCIsInAtMTY1IiwicC0xNjYiLCJwLTE2NyIsInAtMTY4IiwicC0xNzAiLCJwLTE3MyIsInAtMTc1IiwicC0xNzYiLCJwLTE3NyIsInAtMTc4IiwicC0xODIiLCJwLTE4NCIsInAtMTg2IiwicC0xODciLCJwLTE4OCIsInAtMTg5IiwicC0xOTAiLCJwLTE5MSIsInAtMTkyIiwicC0xOTQiLCJwLTE5NSIsInAtMTk3IiwicC0xOTgiLCJwLTIwMCIsInAtMjAxIiwicC0yMDMiLCJwLTIwNCIsInAtMjA2IiwicC0yMDgiLCJwLTIwOSIsInAtMjExIiwicC0yMTMiLCJwLTIxNCIsInAtMjE2IiwicC0yMTgiLCJwLTIxOSIsInAtMjIwIiwicC0yMjEiLCJwLTIyMiIsInAtMjIzIiwicC0yMjQiLCJwLTIyNSIsInAtMjI2IiwicC0yMjciLCJwLTIyOCIsInAtMjI5IiwicC0yMzIiLCJwLTIzMyIsInAtMjM0IiwicC0yMzUiLCJwLTIzNiIsInAtMjM4IiwicC0yMzkiLCJwLTI0MCIsInAtMjQyIiwicC0yNDQiLCJwLTI0NSIsInAtMjQ2IiwicC0yNTAiLCJwLTI1MSIsInAtMjUyIiwicC0yNTMiLCJwLTI1NCIsInAtMjU1IiwicC0yNTYiLCJwLTI1NyIsInAtMjU4IiwicC0yNTkiLCJwLTI2MCIsInAtMjYxIiwicC0yNjIiLCJwLTI2MyIsInAtMjY1IiwicC0yNjYiLCJwLTI2NyIsInAtMjY5IiwicC0yNzEiLCJwLTI3MiIsInAtMjczIiwicC0yNzgiLCJwLTI4MCIsInAtMjgyIiwicC0yODMiLCJwLTI4NCIsInAtMjg1IiwicC0yODYiLCJwLTI4NyIsInAtMjg4IiwicC0yODkiLCJwLTI5MCIsInAtMjkxIiwicC0yOTIiLCJwLTI5MyIsInAtMjk0IiwicC0yOTUiLCJwLTI5NyIsInAtMzAwIiwicC0zMDEiLCJwLTMwMyIsInAtMzA1IiwicC0zMDYiLCJwLTMwNyIsInAtMzA4IiwicC0zMTEiLCJwLTMxMiIsInAtMzEzIiwicC0zMTciLCJwLTMxOCIsInAtMzIwIiwicC0zMjEiLCJwLTMyMyIsInAtMzI0IiwicC0zMjYiLCJwLTMyNyIsInAtMzI4IiwicC0zMjkiLCJwLTMzMCIsInAtMzMxIiwicC0zMzIiLCJwLTMzMyIsInAtMzM0IiwicC0zMzYiLCJwLTM0MSIsInAtMzQzIiwicC0zNDQiLCJwLTM0NiIsInAtMzQ3IiwicC0zNDgiLCJwLTM0OSIsInAtMzUxIiwicC0zNTQiLCJwLTM1NSIsInAtMzU3IiwicC0zNTgiLCJwLTM1OSIsInAtMzYxIiwicC0zNjIiLCJwLTM2MyIsInAtMzY3IiwicC0zNzAiLCJwLTM3MSIsInAtMzcyIiwicC0zNzQiLCJwLTM3NSIsInAtMzc3IiwicC0zNzkiLCJwLTM4MCIsInAtMzgxIiwicC0zODIiLCJwLTM4NCIsInAtMzg3IiwicC0zODgiLCJwLTM5MCIsInAtMzkzIiwicC0zOTUiLCJwLTM5NiIsInAtNDAwIiwicC00MDEiLCJwLTQwMiIsInAtNDA0IiwicC00MDUiLCJwLTQwNiIsInAtNDEwIiwicC00MTEiLCJwLTQxNCIsInAtNDE1IiwicC00MTciLCJwLTQxOCIsInAtNDE5IiwicC00MjAiLCJwLTQyMiIsInAtNDI0IiwicC00MjUiLCJwLTQyNiIsInAtNDI4IiwicC00MzEiLCJwLTQzMiIsInAtNDMzIiwicC00MzYiLCJwLTQzOCIsInAtNDM5IiwicC00NDAiLCJwLTQ0MSIsInAtNDQzIiwicC00NDUiLCJwLTQ0NyIsInAtNDQ5IiwicC00NTAiLCJwLTQ1MSIsInAtNDU0IiwicC00NTciLCJwLTQ1OCIsInAtNDYwIiwicC00NjMiLCJwLTQ2NCIsInAtNDY2IiwicC00NjciLCJwLTQ2OCIsInAtNDY5IiwicC00NzAiLCJwLTQ3MyIsInAtNDc0IiwicC00ODEiLCJwLTQ4MyIsInAtNDg0IiwicC00ODUiLCJwLTQ4NyIsInAtNDg4IiwicC00ODkiLCJwLTQ5MCIsInAtNDk0IiwicC00OTUiLCJwLTUwMCIsInAtNTAyIiwicC01MDMiLCJwLTUwNiIsInAtNTA3IiwicC01MDgiLCJwLTUxMCIsInAtNTExIiwicC01MTIiLCJwLTUxNyIsInAtNTE4IiwicC01MTkiLCJwLTUyNSIsInAtNTI2IiwicC01MjciLCJwLTUzMSIsInAtNTMzIiwicC01MzQiLCJwLTUzNyIsInAtNTQxIiwicC01NDIiLCJwLTU0NSIsInAtNTQ2IiwicC01NDciLCJwLTU0OCIsInAtNTQ5IiwicC01NTEiLCJwLTU1MiIsInAtNTU0IiwicC01NTUiLCJwLTU1NyIsInAtNTU5IiwicC01NjMiLCJwLTU3MCIsInAtNTcxIiwicC01NzMiLCJwLTU3NCIsInAtNTc1IiwicC01NzkiLCJwLTU4MSIsInAtNTgyIiwicC01ODMiLCJwLTU4NCIsInAtNTg3IiwicC01ODgiLCJwLTU4OSIsInAtNTkyIiwicC01OTMiLCJwLTU5NCIsInAtNTk1IiwicC01OTYiLCJwLTU5NyIsInAtNjAxIiwicC02MDIiLCJwLTYwNCIsInAtNjA5IiwicC02MTAiLCJwLTYxNSIsInAtNjE2IiwicC02MTciLCJwLTYyMiIsInAtNjIzIiwicC02MjQiLCJwLTYyNSIsInAtNjI2IiwicC02MjciLCJwLTYzMSIsInAtNjM1IiwicC02NDAiLCJwLTY0MSIsInAtNjQ0IiwicC02NDUiLCJwLTY0NiIsInAtNjQ3IiwicC02NDgiLCJwLTY0OSIsInAtNjUwIiwicC02NTEiLCJwLTY1MiIsInAtNjU2IiwicC02NTgiLCJwLTY2MyIsInAtNjY1IiwicC02NjYiLCJwLTY2NyIsInAtNjY4IiwicC02NjkiLCJwLTY3MCIsInAtNjcxIiwicC02NzQiLCJwLTY4NCIsInAtNjg2IiwicC02ODciLCJwLTY4OCIsInAtNjg5IiwicC02OTEiLCJwLTY5MiIsInAtNjk3IiwicC03MDEiLCJwLTcwMyIsInAtNzA2IiwicC03MDkiLCJwLTcxMCIsInAtNzEyIiwicC03MTMiLCJwLTcxNCIsInAtNzE1IiwicC03MTYiLCJwLTcxNyIsInAtNzE4IiwicC03MjEiLCJwLTcyMiIsInAtNzI0IiwicC03MjciXX0sImFmdGVyIjp7InBvbGl0eSI6IkVtcGlyZSIsInRyYWl0cyI6WyJIb21lbGFuZERlZmVuc2UiLCJDb25xdWVyb3IiXSwiZGVzdGlueSI6MzEsImNvcmVUaHJlc2hvbGQiOjIsImNvcmVZZWFyIjowLCJwcm92aW5jZU9yZGVyIjpbInAtMCIsInAtMSIsInAtMiIsInAtMyIsInAtNCIsInAtNSIsInAtNiIsInAtNyIsInAtOCIsInAtOSIsInAtMTAiLCJwLTExIiwicC0xMiIsInAtMTMiLCJwLTE0IiwicC0xNSIsInAtMTYiLCJwLTE3IiwicC0xOCIsInAtMTkiLCJwLTIwIiwicC0yMSIsInAtMjIiLCJwLTIzIiwicC0yNCIsInAtMjUiLCJwLTI2IiwicC0yNyIsInAtMjgiLCJwLTI5IiwicC0zMCIsInAtMzEiLCJwLTMyIiwicC0zMyIsInAtMzQiLCJwLTM1IiwicC0zNiIsInAtMzciLCJwLTM4IiwicC0zOSIsInAtNDAiLCJwLTQxIiwicC00MiIsInAtNDMiLCJwLTQ0IiwicC00NSIsInAtNDYiLCJwLTQ3IiwicC00OCIsInAtNDkiLCJwLTUwIiwicC01MSIsInAtNTIiLCJwLTUzIiwicC01NCIsInAtNTUiLCJwLTU3IiwicC01OSIsInAtNjAiLCJwLTYxIiwicC02MiIsInAtNjMiLCJwLTY0IiwicC02NSIsInAtNjYiLCJwLTY3IiwicC02OCIsInAtNjkiLCJwLTcwIiwicC03MiIsInAtNzMiLCJwLTc0IiwicC03NSIsInAtNzYiLCJwLTc3IiwicC03OCIsInAtNzkiLCJwLTgwIiwicC04MSIsInAtODIiLCJwLTg0IiwicC04NSIsInAtODYiLCJwLTg3IiwicC04OSIsInAtOTAiLCJwLTkxIiwicC05MiIsInAtOTMiLCJwLTk1IiwicC05NiIsInAtOTgiLCJwLTk5IiwicC0xMDAiLCJwLTEwMSIsInAtMTA0IiwicC0xMDUiLCJwLTEwOCIsInAtMTA5IiwicC0xMTAiLCJwLTExMSIsInAtMTEyIiwicC0xMTMiLCJwLTExNCIsInAtMTE1IiwicC0xMTciLCJwLTExOCIsInAtMTIwIiwicC0xMjEiLCJwLTEyMiIsInAtMTI1IiwicC0xMjYiLCJwLTEyNyIsInAtMTI5IiwicC0xMzAiLCJwLTEzMSIsInAtMTMyIiwicC0xMzUiLCJwLTEzNiIsInAtMTM3IiwicC0xMzgiLCJwLTEzOSIsInAtMTQwIiwicC0xNDIiLCJwLTE0MyIsInAtMTQ0IiwicC0xNDYiLCJwLTE0NyIsInAtMTQ4IiwicC0xNDkiLCJwLTE1MSIsInAtMTU1IiwicC0xNTciLCJwLTE1OCIsInAtMTU5IiwicC0xNjAiLCJwLTE2MSIsInAtMTYyIiwicC0xNjMiLCJwLTE2NCIsInAtMTY1IiwicC0xNjYiLCJwLTE2NyIsInAtMTY4IiwicC0xNzAiLCJwLTE3MyIsInAtMTc1IiwicC0xNzYiLCJwLTE3NyIsInAtMTc4IiwicC0xODIiLCJwLTE4NCIsInAtMTg2IiwicC0xODciLCJwLTE4OCIsInAtMTg5IiwicC0xOTAiLCJwLTE5MSIsInAtMTkyIiwicC0xOTQiLCJwLTE5NSIsInAtMTk3IiwicC0xOTgiLCJwLTIwMCIsInAtMjAxIiwicC0yMDMiLCJwLTIwNCIsInAtMjA2IiwicC0yMDgiLCJwLTIwOSIsInAtMjExIiwicC0yMTMiLCJwLTIxNCIsInAtMjE2IiwicC0yMTgiLCJwLTIxOSIsInAtMjIwIiwicC0yMjEiLCJwLTIyMiIsInAtMjIzIiwicC0yMjQiLCJwLTIyNSIsInAtMjI2IiwicC0yMjciLCJwLTIyOCIsInAtMjI5IiwicC0yMzIiLCJwLTIzMyIsInAtMjM0IiwicC0yMzUiLCJwLTIzNiIsInAtMjM4IiwicC0yMzkiLCJwLTI0MCIsInAtMjQyIiwicC0yNDQiLCJwLTI0NSIsInAtMjQ2IiwicC0yNTAiLCJwLTI1MSIsInAtMjUyIiwicC0yNTMiLCJwLTI1NCIsInAtMjU1IiwicC0yNTYiLCJwLTI1NyIsInAtMjU4IiwicC0yNTkiLCJwLTI2MCIsInAtMjYxIiwicC0yNjIiLCJwLTI2MyIsInAtMjY1IiwicC0yNjYiLCJwLTI2NyIsInAtMjY5IiwicC0yNzEiLCJwLTI3MiIsInAtMjczIiwicC0yNzgiLCJwLTI4MCIsInAtMjgyIiwicC0yODMiLCJwLTI4NCIsInAtMjg1IiwicC0yODYiLCJwLTI4NyIsInAtMjg4IiwicC0yODkiLCJwLTI5MCIsInAtMjkxIiwicC0yOTIiLCJwLTI5MyIsInAtMjk0IiwicC0yOTUiLCJwLTI5NyIsInAtMzAwIiwicC0zMDEiLCJwLTMwMyIsInAtMzA1IiwicC0zMDYiLCJwLTMwNyIsInAtMzA4IiwicC0zMTEiLCJwLTMxMiIsInAtMzEzIiwicC0zMTciLCJwLTMxOCIsInAtMzIwIiwicC0zMjEiLCJwLTMyMyIsInAtMzI0IiwicC0zMjYiLCJwLTMyNyIsInAtMzI4IiwicC0zMjkiLCJwLTMzMCIsInAtMzMxIiwicC0zMzIiLCJwLTMzMyIsInAtMzM0IiwicC0zMzYiLCJwLTM0MSIsInAtMzQzIiwicC0zNDQiLCJwLTM0NiIsInAtMzQ3IiwicC0zNDgiLCJwLTM0OSIsInAtMzUxIiwicC0zNTQiLCJwLTM1NSIsInAtMzU3IiwicC0zNTgiLCJwLTM1OSIsInAtMzYxIiwicC0zNjIiLCJwLTM2MyIsInAtMzY3IiwicC0zNzAiLCJwLTM3MSIsInAtMzcyIiwicC0zNzQiLCJwLTM3NSIsInAtMzc3IiwicC0zNzkiLCJwLTM4MCIsInAtMzgxIiwicC0zODIiLCJwLTM4NCIsInAtMzg3IiwicC0zODgiLCJwLTM5MCIsInAtMzkzIiwicC0zOTUiLCJwLTM5NiIsInAtNDAwIiwicC00MDEiLCJwLTQwMiIsInAtNDA0IiwicC00MDUiLCJwLTQwNiIsInAtNDEwIiwicC00MTEiLCJwLTQxNCIsInAtNDE1IiwicC00MTciLCJwLTQxOCIsInAtNDE5IiwicC00MjAiLCJwLTQyMiIsInAtNDI0IiwicC00MjUiLCJwLTQyNiIsInAtNDI4IiwicC00MzEiLCJwLTQzMiIsInAtNDMzIiwicC00MzYiLCJwLTQzOCIsInAtNDM5IiwicC00NDAiLCJwLTQ0MSIsInAtNDQzIiwicC00NDUiLCJwLTQ0NyIsInAtNDQ5IiwicC00NTAiLCJwLTQ1MSIsInAtNDU0IiwicC00NTciLCJwLTQ1OCIsInAtNDYwIiwicC00NjMiLCJwLTQ2NCIsInAtNDY2IiwicC00NjciLCJwLTQ2OCIsInAtNDY5IiwicC00NzAiLCJwLTQ3MyIsInAtNDc0IiwicC00ODEiLCJwLTQ4MyIsInAtNDg0IiwicC00ODUiLCJwLTQ4NyIsInAtNDg4IiwicC00ODkiLCJwLTQ5MCIsInAtNDk0IiwicC00OTUiLCJwLTUwMCIsInAtNTAyIiwicC01MDMiLCJwLTUwNiIsInAtNTA3IiwicC01MDgiLCJwLTUxMCIsInAtNTExIiwicC01MTIiLCJwLTUxNyIsInAtNTE4IiwicC01MTkiLCJwLTUyNSIsInAtNTI2IiwicC01MjciLCJwLTUzMSIsInAtNTMzIiwicC01MzQiLCJwLTUzNyIsInAtNTQxIiwicC01NDIiLCJwLTU0NSIsInAtNTQ2IiwicC01NDciLCJwLTU0OCIsInAtNTQ5IiwicC01NTEiLCJwLTU1MiIsInAtNTU0IiwicC01NTUiLCJwLTU1NyIsInAtNTU5IiwicC01NjMiLCJwLTU3MCIsInAtNTcxIiwicC01NzMiLCJwLTU3NCIsInAtNTc1IiwicC01NzkiLCJwLTU4MSIsInAtNTgyIiwicC01ODMiLCJwLTU4NCIsInAtNTg3IiwicC01ODgiLCJwLTU4OSIsInAtNTkyIiwicC01OTMiLCJwLTU5NCIsInAtNTk1IiwicC01OTYiLCJwLTU5NyIsInAtNjAxIiwicC02MDIiLCJwLTYwNCIsInAtNjA5IiwicC02MTAiLCJwLTYxNSIsInAtNjE2IiwicC02MTciLCJwLTYyMiIsInAtNjIzIiwicC02MjQiLCJwLTYyNSIsInAtNjI2IiwicC02MjciLCJwLTYzMSIsInAtNjM1IiwicC02NDAiLCJwLTY0MSIsInAtNjQ0IiwicC02NDUiLCJwLTY0NiIsInAtNjQ3IiwicC02NDgiLCJwLTY0OSIsInAtNjUwIiwicC02NTEiLCJwLTY1MiIsInAtNjU2IiwicC02NTgiLCJwLTY2MyIsInAtNjY1IiwicC02NjYiLCJwLTY2NyIsInAtNjY4IiwicC02NjkiLCJwLTY3MCIsInAtNjcxIiwicC02NzQiLCJwLTY4NCIsInAtNjg2IiwicC02ODciLCJwLTY4OCIsInAtNjg5IiwicC02OTEiLCJwLTY5MiIsInAtNjk3IiwicC03MDEiLCJwLTcwMyIsInAtNzA2IiwicC03MDkiLCJwLTcxMCIsInAtNzEyIiwicC03MTMiLCJwLTcxNCIsInAtNzE1IiwicC03MTYiLCJwLTcxNyIsInAtNzE4IiwicC03MjEiLCJwLTcyMiIsInAtNzI0IiwicC03MjciXX0sImNoZWNrc3VtIjoiMjZhNjQzZThlYjNmOGJhMzQ4MjZkZWU3ZmM5YTNhNWE5YjAzZTUwMTI0MjEyOTExYzVjMzRkODRmOTdiYjVhZSIsInRpY2siOjE2LCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f13bd9d0ea153d943c1-123832857a6af169b990",
+          "file": "fms-upper14.spec.ts",
+          "line": 11,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T21:10:58.744Z",
+    "duration": 755719.368,
+    "expected": 21,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

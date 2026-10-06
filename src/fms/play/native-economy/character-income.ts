@@ -1,5 +1,5 @@
-/** Resolved original character inputs. No generated people or v15 callers.
- * Evidence: fiscal15/NEXT_RECOVERY.md, RVAs 83C330/83B880/83DF70/83E330. */
+/** Original character trait arithmetic; finite input checks are web validation.
+ * Evidence: fiscal15/NEXT_RECOVERY.md and CHARACTER_RECOVERY.md. */
 import original from './character-traits.json';
 import {f,finite} from './numeric';
 
@@ -7,6 +7,9 @@ export interface NativeIncomeTrait {
   name: string;
   administrativeModifier: number;
   taxEfficiencyModifier: number;
+  militaryModifier: number;
+  diplomaticModifier: number;
+  charismaModifier: number;
 }
 export const ORIGINAL_CHARACTER_TRAITS: readonly NativeIncomeTrait[] = original.traits;
 type TaxTrait = Pick<NativeIncomeTrait,'taxEfficiencyModifier'>;
@@ -32,4 +35,16 @@ export function nativeAdministrativeSkill(base: number,traits: readonly Administ
 /** Only the getter is recovered; callers must resolve the military modifier. */
 export function nativeMilitarySkill(base: number,resolvedModifiers: number): number {
   return Math.min(100,Math.max(0,f(finite(resolvedModifiers)+finite(base))));
+}
+type SkillTrait = Pick<NativeIncomeTrait,'administrativeModifier'|'militaryModifier'|'diplomaticModifier'|'charismaModifier'>;
+export type NativeBaseSkills={administrative:number;military:number;diplomatic:number;charisma:number};
+/** RVAs 83BEE0/83BDB0/83BB60. Ordered adds, no dedup or age multiplier. */
+export function nativeSkillModifier(traits:readonly Partial<SkillTrait>[]|null,key:keyof SkillTrait):number{
+ let sum=0;
+ for(const trait of traits??[]){if(!trait)throw Error('Unresolved original skill trait');sum=f(sum+finite(trait[key]!));}
+ return sum;
+}
+/** All final getters clamp after base + trait sum, not before. */
+export function nativeCharacterSkills(base:NativeBaseSkills,traits:readonly SkillTrait[]|null):NativeBaseSkills{
+ return {administrative:nativeAdministrativeSkill(base.administrative,traits),military:nativeMilitarySkill(base.military,nativeSkillModifier(traits,'militaryModifier')),diplomatic:nativeMilitarySkill(base.diplomatic,nativeSkillModifier(traits,'diplomaticModifier')),charisma:nativeMilitarySkill(base.charisma,nativeSkillModifier(traits,'charismaModifier'))};
 }

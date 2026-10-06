@@ -1,8 +1,20 @@
-# 当前续接：v15可玩；原人物税赋/官职内核已验证，继续实际人物与任职
+# 当前续接：v16人物与官职已可玩，继续原生命周期与文化族群
+
+2026-10-07。根唯一源码写入，代理只读窄函数恢复。父HEAD 884500642233e5430d8a05275b775daf5a36c7a9；提交后补实际SHA。Goal及WEB-PH04 / WEB-04-13继续，不以本批通过称完整还原。
+
+- 最新本机试玩 <http://127.0.0.1:5187/?fms=1>，独立.autopilot/court16-preview/dist。正常UI生成东牟/皋落/东齐/田/罗/胡六国；任命东牟夏侯伯温为财政官，保存刷新继续仍持任，中央0.957/国库1395不重发；暂停慢速6秒/日。5186最终v15与此前试玩、所有旧库保持。
+- v16 / Store18 lieguoji-fms-court-v16 / engine fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e。原27特性抽样分类与四能力、君主税赋/中央及省任职已实际参与财政；任命可取消确认，传位保留前任与官职；旧v15完整19源已冻结。新局先人物后首结，明确v15副本不重发金币。
+- 最终生产源全量2908单元通过；完整lint/types、24发布+15计划回归、43构建产物审核通过。人物三尺寸真实Worker流程和21桌面战争/海军/史书/六库未来锁/财政回归共24浏览器场景通过，0重试。移动仿真不是iPhone真机。初轮39未覆盖的未来官职/身份风险已修并纳入全量；首次fixture JSON加载失败等见FAILURES。
+- [交付](evidence/fms-court16-v5-2026-10-07/DELIVERY.md) · [检查](evidence/fms-court16-v5-2026-10-07/checks.json) · [产物绑定](evidence/fms-court16-v5-2026-10-07/tested-artifact.json) · [原合同](evidence/fms-court16-v5-2026-10-07/CONTRACT.md)。build.json是父HEAD，实际脏树源码/产物另有SHA，不冒充干净父提交或云CI。
+- 下一批[已恢复文化与生命周期](evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md)：先独立内核，继续GetDateByDayCount/撤职/君主继承；生产接线先冻结v16。当前recordedDay不是生日，年龄死亡/完整家族/官职AI/地区官职/领袖直接军事尚未接入，不能虚报。
+- 无push/PR/Issue/Pages/main变更，既有预览和正式站保留；真机/用户视觉门未过，普通本地工作继续。不要重跑create-court16/wire-court16/finalize-court16等一次性脚本。
+
+---
+ 当前续接：v15可玩；原人物税赋/官职内核已验证，继续实际人物与任职
 
 2026-10-07，根唯一源码写入；两代理只读审计/恢复。源父HEAD 877d8edf73e2aa606d26bc636f365f9e5a9e485a，本批本地提交416e3dca247e34495757a2dc63132f2d8b18e316，未上传；已继续原官职/税赋独立内核，暂不修改v15生产规则。Goal与WEB-04-13继续，不以本批通过标作全原作完成。
 
-随后已完成原人物/官职纯内核：27项原人物特性字节复用、税务/行政f32累加、军略已解析修正getter、四官职cap/权重/存活同国校验与中央/地方收入组合。15项定向、目录lint、全工程类型通过，原恢复代理只读核对未发现数值错误，v15指纹不变。没有生产调用者，不是新人物/官职玩法已上线。[实际代码与边界](evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md) · [检查](evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json)。下一批恢复GetGovernmentOfficeAssignment5CB0A0、MilitaryModifiers83BEE0、Diplomatic83E020/Charisma83DFD0，建立真实持久人物/任职/族群来源；生产接线先冻结v15。地方districtID<=0要由真实任职解析入口置中性，不能漏掉。
+随后本地提交884500642233e5430d8a05275b775daf5a36c7a9（未上传），已完成原人物/官职纯内核：27项原人物特性字节复用、税务/行政f32累加、军略已解析修正getter、四官职cap/权重/存活同国校验与中央/地方收入组合。15项定向、目录lint、全工程类型通过，原恢复代理只读核对未发现数值错误，v15指纹不变。没有生产调用者，不是新人物/官职玩法已上线。[实际代码与边界](evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md) · [检查](evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json)。下一批恢复GetGovernmentOfficeAssignment5CB0A0、MilitaryModifiers83BEE0、Diplomatic83E020/Charisma83DFD0，建立真实持久人物/任职/族群来源；生产接线先冻结v15。地方districtID<=0要由真实任职解析入口置中性，不能漏掉。
 
 - 最新试玩 <http://127.0.0.1:5186/?fms=1>，独立.autopilot/fiscal15-final-preview/dist。正常UI生成大秦/芈/小邾/沈/伊川/狐胡六国，保存刷新恢复第0日/tick0，暂停慢速6秒/日。原5185预修构建、5184/v14及早先试玩/存档保持；不要把5185的预修v15档强行写入新指纹。
 - v15 / Store17 lieguoji-fms-fiscal-v15 / engine eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4。原人口容量/资源、真实初兵成本、首次财政和月结、重编完成一次费、缓存财政战力已进生产Worker；政治/军队/围城说明同源。v14十七源与底层冻结，明确副本保留原人口粮食军队历史路线，旧库不写。

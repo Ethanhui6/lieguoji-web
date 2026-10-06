@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 
-async function saved(page:Page){return page.evaluate(async()=>new Promise<{version:number;revision:number;id:string;tick:number;fleet:{id:string;node:number;progress:number;route:number[];targetId:string|null};hulls:Record<string,number>}>(resolve=>{const q=indexedDB.open('lieguoji-fms-fiscal-v15');q.onsuccess=()=>{const db=q.result,t=db.transaction('saves'),r=t.objectStore('saves').get('current');r.onsuccess=()=>{const s=r.result;resolve({version:s.run.version,revision:s.revision,id:s.run.id,tick:s.run.clock.tick,fleet:s.run.navy.fleets[0],hulls:s.run.maritime.hulls});};t.oncomplete=()=>db.close();};}));}
+async function saved(page:Page){return page.evaluate(async()=>new Promise<{version:number;revision:number;id:string;tick:number;fleet:{id:string;node:number;progress:number;route:number[];targetId:string|null};hulls:Record<string,number>}>(resolve=>{const q=indexedDB.open('lieguoji-fms-court-v16');q.onsuccess=()=>{const db=q.result,t=db.transaction('saves'),r=t.objectStore('saves').get('current');r.onsuccess=()=>{const s=r.result;resolve({version:s.run.version,revision:s.revision,id:s.run.id,tick:s.run.clock.tick,fleet:s.run.navy.fleets[0],hulls:s.run.maritime.hulls});};t.oncomplete=()=>db.close();};}));}
 test('FMS: draw islands, create countries, command navy and restore the real voyage',async({page})=>{
   test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/?fms=1');const app=page.getByTestId('fms-app');await expect(page.getByRole('button',{name:'进入世界 →',exact:true})).toBeEnabled();
@@ -9,7 +9,7 @@ test('FMS: draw islands, create countries, command navy and restore the real voy
   await expect.poll(async()=>Number(await app.getAttribute('data-land-cells'))).toBeGreaterThan(0);
   await page.locator('.fms-save').click();await expect(app).toHaveAttribute('data-dirty','false');
   await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
-  await expect(page.locator('.play-header')).toContainText('第 0 日',{timeout:30000});await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存');const initial=await saved(page);expect(initial.version).toBe(15);
+  await expect(page.locator('.play-header')).toContainText('第 0 日',{timeout:30000});await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存');const initial=await saved(page);expect(initial.version).toBe(16);
   await page.getByRole('button',{name:'海军',exact:true}).click();
   // Switching fleets must replace both panels, never retain duplicate sibling keys.
   await page.getByLabel('选择舰队',{exact:true}).selectOption({index:1});
@@ -17,7 +17,7 @@ test('FMS: draw islands, create countries, command navy and restore the real voy
   await expect(page.getByLabel('舰体完整度',{exact:true})).toHaveAttribute('value','100');
   await page.getByLabel('海战目标海岸',{exact:true}).selectOption({index:1});await page.getByRole('button',{name:'预览驶向敌岸',exact:true}).click();await expect(page.getByRole('dialog',{name:'命令确认'})).toContainText('真实海路');await page.getByRole('button',{name:'确认执行',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'命令确认'})).toBeHidden();await page.getByRole('button',{name:'＋1日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存第 1 日');const moved=await saved(page);expect(moved.tick).toBe(120);expect(moved.fleet.node!==initial.fleet.node||moved.fleet.progress>0).toBe(true);expect(moved.id).toBe(initial.id);
-  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续财政战争版第 1 日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await expect(page.getByRole('button',{name:'开始时间',exact:true})).toBeVisible();
+  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续人物任职版第 1 日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await expect(page.getByRole('button',{name:'开始时间',exact:true})).toBeVisible();
   // Saving again observes what the Worker actually restored, not just the unchanged DB row.
   await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存第 1 日');expect(await saved(page)).toEqual({...moved,revision:moved.revision+1});expect(errors).toEqual([]);
 });

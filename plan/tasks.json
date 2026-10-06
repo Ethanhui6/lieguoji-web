@@ -4268,8 +4268,8 @@
       }
     ],
     "nextRecoveryTarget": {
-      "priority": "WEB-04-13-native-rebel-and-family",
-      "next": "先冻结v18；接省地图文化、原起义候选/旧国复用和新国/复国初始化；保留旧档。候选核9测试已完成；原人物生命周期/家族继承继续按已定位下游恢复。"
+      "priority": "WEB-04-13-native-rebel-production",
+      "next": "先冻结v18；以真实省文化接原起义候选与历史身份；复国重新初始化/省内原军清理按新原证据接入，未恢复家族/外交深层路径明确标适配。"
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
@@ -4748,11 +4748,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "naming18_local_playable_verified_continue_native_rebel",
+      "status": "naming18_playable_native_rebel_identity_verified_continue",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd",
+      "lastCommitted": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1",
       "cloudScope": "Local-only v18; previous cloud preview retained, no push/main/Pages changes.",
-      "next": "先冻结v18；接省地图文化、原起义候选/旧国复用和新国/复国初始化；保留旧档。候选核9测试已完成；原人物生命周期/家族继承继续按已定位下游恢复。",
+      "next": "先冻结v18；以真实省文化接原起义候选与历史身份；复国重新初始化/省内原军清理按新原证据接入，未恢复家族/外交深层路径明确标适配。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4793,13 +4793,15 @@
         "docs/evidence/fms-naming18-v5-2026-10-07/FAILURES.md",
         "docs/evidence/fms-naming18-v5-2026-10-07/checks.json",
         "docs/evidence/fms-naming18-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md"
+        "docs/evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/REBEL_RECOVERY.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/rebel-identity-checks.json"
       ],
       "currentVersion": 18,
       "currentEngine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5189/?fms=1",
-      "currentLocalHead": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd"
+      "currentLocalHead": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5923,7 +5925,20 @@
         "productionIntegrated": false,
         "passed": 9,
         "evidence": "docs/evidence/fms-naming18-v5-2026-10-07/rebel-kernel-final.json"
-      }
+      },
+      "sourceCommit": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1"
+    },
+    "nativeRebelIdentityPrototype": {
+      "date": "2026-10-07",
+      "status": "independent_kernel_verified",
+      "productionIntegrated": false,
+      "passed": 25,
+      "sourceParent": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1",
+      "evidence": [
+        "docs/evidence/fms-naming18-v5-2026-10-07/REBEL_RECOVERY.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/rebel-identity-checks.json"
+      ],
+      "next": "先冻结v18；以真实省文化接原起义候选与历史身份；复国重新初始化/省内原军清理按新原证据接入，未恢复家族/外交深层路径明确标适配。"
     }
   }
 }

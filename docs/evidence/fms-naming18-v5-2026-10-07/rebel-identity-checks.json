@@ -1,0 +1,42 @@
+{
+  "recordedAt": "2026-10-06T23:09:13.225Z",
+  "sourceParent": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1",
+  "productionIntegrated": false,
+  "tests": {
+    "passed": 25,
+    "failed": 0,
+    "files": 2
+  },
+  "checks": {
+    "targetedLint": "passed",
+    "typecheck": "passed",
+    "v18Fingerprint": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914"
+  },
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/native-culture/rebel-name.ts",
+      "sha256": "365a0c17cec7c2ebd46921adee2b645b862cc5c133bb20fbab2ea92353b9c1b3"
+    },
+    {
+      "path": "src/fms/play/native-culture/rebel-name.test.ts",
+      "sha256": "35db4edc4d416a875a97bbf1060f17a2807aa901fb7bbae3722a4f1e9c343cd1"
+    },
+    {
+      "path": "src/fms/play/native-culture/rebel-identity.ts",
+      "sha256": "7f748d20b003efc67788a8e720e021ff169e4f56cbad2f5d55ffcb47ee1a85b0"
+    },
+    {
+      "path": "src/fms/play/native-culture/rebel-identity.test.ts",
+      "sha256": "a85b513399087fce9a0523d435c6ad086ee35b1b3ef8729d30f698d70a25814f"
+    }
+  ],
+  "reviewCorrections": [
+    "Current language is evaluated only after successful map culture lookup.",
+    "Two separate GetCulture calls: first missing throws; second missing changes only display name. First/second passing test reports predate this correction; final 25 cover both timings."
+  ],
+  "limits": [
+    "No production caller; no full-suite or browser rerun claimed for this independent kernel.",
+    "State.Start, restorationCount/unlock and military/diplomatic/family state changes are not performed by this identity kernel.",
+    "v18 playable engine and existing saves are unchanged."
+  ]
+}

@@ -18,6 +18,6 @@ export function nativeRebelNameKey(culture:NativeNamingCulture,language:string,u
  const pool=preferred.length?preferred:fallback;if(!pool.length)return null;const at=intRange(0,pool.length);if(!Number.isInteger(at)||at<0||at>=pool.length)throw Error('Invalid native country name draw');return pool[at];
 }
 /** Manager 3CBA30 resolves only the exact MAP culture identity. */
-export function nativeMapRebelNameKey(cultures:ReadonlyMap<string,NativeNamingCulture|null>,id:string|null,language:string,used:NameMembership|null,current:NameMembership|null,intRange:(min:number,max:number)=>number):string|null{
- if(id===null||id===''||!cultures.has(id))return null;const culture=cultures.get(id);if(!culture)throw Error('Missing map culture');return nativeRebelNameKey(culture,language,used,current,intRange);
+export function nativeMapRebelNameKey(cultures:ReadonlyMap<string,NativeNamingCulture|null>,id:string|null,language:string|(()=>string),used:NameMembership|null,current:NameMembership|null,intRange:(min:number,max:number)=>number):string|null{
+ if(id===null||id===''||!cultures.has(id))return null;const culture=cultures.get(id);if(!culture)throw Error('Missing map culture');return nativeRebelNameKey(culture,typeof language==='function'?language():language,used,current,intRange);
 }

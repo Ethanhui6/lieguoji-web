@@ -11,7 +11,7 @@ export type ArmyMarker=Point & {ids:string[];near:boolean};
  * merge enemies. Selected troops stay individually visible and selectable. */
 export function armyMarkers(world:World,scale:number,camera:AtlasCamera,selected:string|null=null,positions?:ReadonlyMap<string,Point>):ArmyMarker[]{
   const area=world.provinces.reduce((sum,p)=>sum+Math.abs(p.polygon.reduce((s,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return s+a.x*b.y-b.x*a.y;},0))/2,0);
-  const near=Math.sqrt(area/Math.max(1,world.provinces.length))*camera.scale/scale>=55;
+  const near=Math.sqrt(area/Math.max(1,world.provinces.length))*camera.scale/scale>=32;
   const groups=new Map<string,{ids:string[];x:number;y:number}>();
   for(const a of world.armies.filter(a=>a.troops>0&&a.status!=='destroyed')){
     const p=positions?.get(a.id)??armyPosition(world,a),x=p.x/scale*camera.scale,y=p.y/scale*camera.scale;
@@ -22,7 +22,7 @@ export function armyMarkers(world:World,scale:number,camera:AtlasCamera,selected
   return [...groups.values()].flatMap<ArmyMarker>(g=>{
     const x=g.x/g.ids.length+camera.x,y=g.y/g.ids.length+camera.y+12;
     if(!near)return [{ids:g.ids,x,y,near}];
-    return g.ids.map((id,i)=>({ids:[id],x:x+(i%3-Math.min(2,g.ids.length-1)/2)*22,y:y+Math.floor(i/3)*22,near}));
+    return g.ids.map((id,i)=>({ids:[id],x:x+(i%3-Math.min(2,g.ids.length-1)/2)*14,y:y+Math.floor(i/3)*14,near}));
   });
 }
 export function armyMarkerPoint(world:World,army:Army,scale:number,camera:AtlasCamera):Point {

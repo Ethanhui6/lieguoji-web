@@ -75,5 +75,36 @@
         ]
       }
     }
+  },
+  "preview20261006": {
+    "version": 1,
+    "status": "ready",
+    "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
+    "sourceFingerprint": "49b456830dfbdafb152a0999229e7a4ad4c8c27f3e9cac65f32955b03d929599",
+    "branch": "refs/heads/codex/ph06-world-generation",
+    "expiresAt": "2026-10-07T06:41:15.330Z",
+    "checks": {
+      "localBuild": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/fms-tactics-v5-2026-10-06/checks.json"
+        ]
+      },
+      "coreBrowser": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+          "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+          "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
+        ]
+      },
+      "sourcePrivacy": {
+        "status": "passed",
+        "evidence": [
+          "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
+          "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json"
+        ]
+      }
+    }
   }
 }

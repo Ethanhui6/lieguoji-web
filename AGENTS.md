@@ -1,5 +1,7 @@
 # 列国纪执行边界
 
+> 2026-10-06 本轮用户直接要求“继续 做完上传到GitHub”，随后确认“GitHub＋Pages预览，保留正式站”。允许经过本地检查和隐私审查的私库同分支源码快进上传与现有 Pages 原生 Git 预览，范围见 docs/GITHUB_UPLOAD_2026-10-06.md；使用独立 preview20261006 合同。此次不解除完整 PH/真机/视觉门，不更新 main，不复用已过期的9月24日授权。
+
 > **2026-10-05 用户优先级调整：** 用户明确要求先做关键功能供试玩、后续再优化。本地顺序改为 FMS 当前地图 → 自动国家／首都／城市 → 自主发展与战争、外交军令 → 独立保存恢复。允许 WEB-PH03/04 的限定核心工作先行；WEB-PH02 真机／视觉及 PH03 完整行政体验仍未完成，历史状态与全部发布锁不变。以 `webRebuild.localDevelopmentException` 和 [本轮指令证据](docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md) 为准，以下“不扩建国家”的旧顺序在此范围内被覆盖。不是完整原作等价或云端发布授权。
 
 > **2026-10-04 最新重规划：** 用户否定旧版本体验和旧计划，明确要求优先忠实还原自己的 Fantasy Map Simulator。当前执行入口改为 [CODEX_AUTOPILOT_V5.md](CODEX_AUTOPILOT_V5.md) 和 [新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)，状态源为 `plan/tasks.json.webRebuild`。iPhone13ProMax / Safari与Chrome / **竖屏优先、原作风格、折叠工具**；先做闭合轮廓＋海陆笔刷、保形自然化、连续缩放的试玩并由用户验收，随后才扩建国家等系统。以下V4开发顺序和iOS美术目标属于历史；旧任务、源代码、存档、兼容约束和全部云端发布锁保留。重规划不自动解锁、不回写旧完成状态。

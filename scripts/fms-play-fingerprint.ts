@@ -6,9 +6,29 @@ const kernelFiles=['src/fms/play/military-core.ts','src/fms/play/military-profil
 // Kernel dependencies are closed and checked by fingerprintSources. These
 // additional entry/initial-condition sources bind dispatch, conversion and
 // starting worlds too. Terrain drawing is an input format, not the daily kernel.
-const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts','src/fms/play/customization.ts','src/fms/play/editor-session.ts','src/fms/play/transport.ts','src/fms/play/transport-runtime.ts'];
+const entryFiles=['src/fms/play/runtime.ts','src/fms/play/military-registry.ts','src/fms/play/session.ts','src/fms/play/world.ts','src/fms/play/names.ts','src/fms/play/politics.ts','src/fms/play/eastern-names.json','src/fms/play/naval-rules.ts','src/fms/play/customization.ts','src/fms/play/editor-session.ts','src/fms/play/transport.ts','src/fms/play/transport-runtime.ts','src/fms/play/maritime.ts','src/fms/play/maritime-session.ts'];
 export const fmsPlayFiles=[...kernelFiles,...entryFiles];
+/** Keep the actual v8 entry points frozen while later rules evolve in a new facade.
+ * The extra input validators are guarded without rewriting the saved v8 hash. */
+export function verifyMaritimeCompatibility(read=(file:string)=>normalized(readFileSync(file,'utf8'))){
+  const root='src/fms/play/compat/maritime1',manifest=JSON.parse(read(root+'/manifest.json')) as {fingerprint:string;kernel:string[];entries:string[];external:string[];files:{path:string;archive:string;sha256:string}[]};
+  const external=['src/fms/model.ts','src/fms/play/observation.ts'],expected=[...fmsPlayFiles,...external];
+  if(manifest.fingerprint!=='0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504'||JSON.stringify(manifest.kernel)!==JSON.stringify(kernelFiles)||JSON.stringify(manifest.entries)!==JSON.stringify(entryFiles)||JSON.stringify(manifest.external)!==JSON.stringify(external)||manifest.files.length!==expected.length)throw Error('Frozen maritime1 manifest changed');
+  const sources=new Map<string,string>();
+  for(const [i,file] of manifest.files.entries()){
+    if(file.path!==expected[i]||file.archive!==file.path.slice(4)+'.source')throw Error('Frozen maritime1 path changed');
+    const frozen=read(root+'/'+file.archive);if(sha256(frozen)!==file.sha256||read(file.path)!==frozen)throw Error('Maritime1 live execution changed; use a new version facade: '+file.path);sources.set(file.path,frozen);
+  }
+  const hash=createHash('sha256').update(fingerprintSources(kernelFiles,file=>sources.get(file)!));for(const file of entryFiles)hash.update(`\n${file}\n${sources.get(file)}\n`);
+  if(hash.digest('hex')!==manifest.fingerprint)throw Error('Frozen maritime1 fingerprint changed');
+}
 export function fingerprintFmsPlay(){
+  verifyMaritimeCompatibility();
+  const tRoot='src/fms/play/compat/transport1',t=JSON.parse(readFileSync(tRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
+  const tSources=new Map<string,string>();for(const f of t.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)\.source$/.test(f.archive))throw Error('Unsafe transport archive path');const s=normalized(readFileSync(tRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen transport1 changed');tSources.set(f.path,s);}
+  const tHash=createHash('sha256').update(fingerprintSources(t.kernel,f=>tSources.get(f)!));for(const f of t.entries)tHash.update('\n'+f+'\n'+tSources.get(f)+'\n');if(t.fingerprint!=='f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae'||tHash.digest('hex')!==t.fingerprint)throw Error('Frozen transport1 fingerprint changed');
+  for(const f of [...t.kernel,'src/fms/play/runtime.ts','src/fms/play/session.ts','src/fms/play/naval-rules.ts','src/fms/play/editor-session.ts','src/fms/play/transport.ts','src/fms/play/transport-runtime.ts'])if(normalized(readFileSync(f,'utf8'))!==tSources.get(f))throw Error('Transport1 live execution changed; provide frozen dispatch: '+f);
+
   const cRoot='src/fms/play/compat/creation1',c=JSON.parse(readFileSync(cRoot+'/manifest.json','utf8')) as {fingerprint:string;kernel:string[];entries:string[];files:{path:string;archive:string;sha256:string}[]};
   const cSources=new Map<string,string>();for(const f of c.files){if(!/^(fms\/play|compat\/v0_4\/(sim|history))\/[a-z-]+\.(ts|json)\.source$/.test(f.archive))throw Error('Unsafe creation archive path');const s=normalized(readFileSync(cRoot+'/'+f.archive,'utf8'));if(sha256(s)!==f.sha256)throw Error('Frozen creation1 changed');cSources.set(f.path,s);}
   const cHash=createHash('sha256').update(fingerprintSources(c.kernel,f=>cSources.get(f)!));for(const f of c.entries)cHash.update('\n'+f+'\n'+cSources.get(f)+'\n');if(c.fingerprint!=='76107bed858daa96dc4a721865a7c9f3470e6b8340c2b6661b6b1bd0454f200e'||cHash.digest('hex')!==c.fingerprint)throw Error('Frozen creation1 fingerprint changed');

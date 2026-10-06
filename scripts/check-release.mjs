@@ -1,10 +1,11 @@
+import {reviewedHistoricalPath,verifyReviewedHistory} from './reviewed-history.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { projectRoot, verifyGitRoot, safeProjectFile, loadPlan, evidenceReferences, collectEvidencePaths } from './check-plan.mjs';
-import { evaluateRelease, evaluatePlaytest, PLAYTEST_BRANCH } from './release-policy.mjs';
+import { evaluateRelease, evaluatePlaytest, evaluateGithubUpload, evaluateCurrentPreview, PLAYTEST_BRANCH } from './release-policy.mjs';
 
 export function unsafeCandidatePath(relative) {
  const name = relative.toLowerCase();
@@ -40,7 +41,7 @@ export function reviewedEvidenceFile(root, relative) {
   return createHash('sha256').update(fs.readFileSync(safeProjectFile(root, relative, false))).digest('hex') === expected;
  } catch { return false; }
 }
-const reviewedCandidatePath = (root, relative) => reviewedProjectConfig(root, relative) || reviewedEvidenceFile(root, relative);
+const reviewedCandidatePath = (root, relative) => reviewedProjectConfig(root, relative) || reviewedEvidenceFile(root, relative) || reviewedHistoricalPath(root, relative);
 
 export function candidateSourcePaths(root) {
  verifyGitRoot(root, root);
@@ -77,21 +78,26 @@ export function inspectRelease(root, { targetRef, now } = {}) {
  verifyGitRoot(root, root);
  const plan = loadPlan(root);
  const readiness = JSON.parse(fs.readFileSync(safeProjectFile(root, 'plan/release-readiness.json'), 'utf8'));
- const playtestReferences = [readiness.playtest?.authorizationEvidence];
+ const playtestReferences = [readiness.playtest?.authorizationEvidence,readiness.githubUpload?.authorizationEvidence,readiness.preview20261006?.authorizationEvidence].filter(Boolean);
+ for(const check of [...Object.values(readiness.githubUpload?.checks??{}),...Object.values(readiness.preview20261006?.checks??{})])playtestReferences.push(...(Array.isArray(check?.evidence)?check.evidence:[]));
  for (const check of Object.values(readiness.playtest?.checks ?? {})) playtestReferences.push(...(Array.isArray(check?.evidence) ? check.evidence : []));
  const evidencePaths = collectEvidencePaths(root, [...evidenceReferences(plan, readiness), ...playtestReferences]);
  const candidates = candidateSourcePaths(root);
  const pathRisks = candidates.filter(relative => unsafeCandidatePath(relative) && !reviewedCandidatePath(root, relative)).map(relative => `Candidate path needs PH34 private-content review: ${relative}`);
  const wantsRelease = plan.releasePolicy?.state === 'ready' && plan.releasePolicy?.cloudWritesAllowed === true && readiness.status === 'ready';
  const wantsPlaytest = targetRef === PLAYTEST_BRANCH && readiness.playtest?.status === 'ready';
- const cleanWorkingTree = wantsRelease || wantsPlaytest ? workingTreeIsClean(root) : null;
- const fingerprint = (wantsRelease || wantsPlaytest) && !pathRisks.length && cleanWorkingTree ? createSourceFingerprint(root) : { sourceFingerprint: null, fileCount: candidates.filter(file => file !== 'plan/release-readiness.json').length };
- const context = { evidencePaths, sourceFingerprint: fingerprint.sourceFingerprint, cleanWorkingTree, targetRef, now };
+ const wantsPreview=targetRef===PLAYTEST_BRANCH&&readiness.preview20261006?.status==='ready';
+ const wantsUpload=targetRef===PLAYTEST_BRANCH&&(readiness.githubUpload?.status==='ready'||wantsPreview);
+ const cleanWorkingTree = wantsRelease || wantsPlaytest || wantsUpload ? workingTreeIsClean(root) : null;
+ const fingerprint = (wantsRelease || wantsPlaytest || wantsUpload) && !pathRisks.length && cleanWorkingTree ? createSourceFingerprint(root) : { sourceFingerprint: null, fileCount: candidates.filter(file => file !== 'plan/release-readiness.json').length };
+ let historyReviewed=false;if(wantsUpload&&cleanWorkingTree&&!pathRisks.length)try{historyReviewed=verifyReviewedHistory(root,unsafeCandidatePath,p=>reviewedProjectConfig(root,p)||reviewedEvidenceFile(root,p));}catch(e){pathRisks.push(e.message);}
+ const commitMessage=wantsUpload?execFileSync('git',['log','-1','--format=%B'],{cwd:root,encoding:'utf8'}):'';
+ const context = { historyReviewed,commitMessage,evidencePaths, sourceFingerprint: fingerprint.sourceFingerprint, cleanWorkingTree, targetRef, now };
  const formal = evaluateRelease(plan, readiness, context);
  const usePlaytest = !formal.ready && targetRef === PLAYTEST_BRANCH;
- const result = usePlaytest ? evaluatePlaytest(plan, readiness, context) : formal;
+ const result = wantsPreview ? evaluateCurrentPreview(plan, readiness, context) : wantsUpload ? evaluateGithubUpload(plan, readiness, context) : usePlaytest ? evaluatePlaytest(plan, readiness, context) : formal;
  const blockers = [...result.blockers, ...pathRisks];
- return { ...result, ...fingerprint, cleanWorkingTree, blockers, ready: blockers.length === 0, gate: usePlaytest ? 'authorized-playtest' : 'full-release', targetRef: targetRef ?? null, formalReady: formal.ready };
+ return { ...result, ...fingerprint, cleanWorkingTree, blockers, ready: blockers.length === 0, gate: wantsPreview ? 'authorized-preview-20261006' : wantsUpload ? 'github-source-only' : usePlaytest ? 'authorized-playtest' : 'full-release', targetRef: targetRef ?? null, formalReady: formal.ready };
 }
 
 function main() {

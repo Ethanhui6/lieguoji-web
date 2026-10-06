@@ -16,3 +16,5 @@ declare const __LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT__: string;
 declare const __SEED_TERRAIN_FINGERPRINT__: string;
 
 declare const __FMS_PLAY_ENGINE__: string;
+
+declare const __FMS_TACTICS_ENGINE__:string;

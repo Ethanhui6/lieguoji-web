@@ -7,6 +7,7 @@ export const READINESS_CHECKS = Object.freeze([
 ]);
 export const PLAYTEST_BRANCH = 'refs/heads/codex/ph06-world-generation';
 export const PLAYTEST_AUTHORIZATION = 'docs/PLAYTEST_RELEASE_2026-09-24.md';
+export const GITHUB_UPLOAD_AUTHORIZATION = 'docs/GITHUB_UPLOAD_2026-10-06.md';
 export const PLAYTEST_CHECKS = Object.freeze(['localBuild', 'coreBrowser', 'sourcePrivacy']);
 const STATUSES = new Set(['todo', 'in_progress', 'blocked', 'done', 'pending_acceptance']);
 const sameList = (actual, expected) => Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
@@ -120,12 +121,30 @@ export function evaluateRelease(plan, readiness, context = {}) {
 
 /** This single authorized preview does not complete any PH or formal device gate. */
 export function evaluatePlaytest(plan, readiness, context = {}) {
+ return evaluateCandidate(plan, readiness, context, false);
+}
+export function evaluateGithubUpload(plan, readiness, context = {}) {
+ return evaluateCandidate(plan, readiness, context, true);
+}
+export function evaluateCurrentPreview(plan, readiness, context = {}) {
+ return evaluateCandidate(plan, readiness, context, false, true);
+}
+function evaluateCandidate(plan, readiness, context, sourceOnly, currentPreview=false) {
  const validation = validatePlan(plan, context.evidencePaths ?? new Set());
- const blockers = [...validation.errors], candidate = readiness?.playtest;
+ const blockers = [...validation.errors], candidate = currentPreview ? readiness?.preview20261006 : sourceOnly ? readiness?.githubUpload : readiness?.playtest;
  const exact = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) && sameList(Object.keys(value).sort(), [...keys].sort());
  if (!exact(candidate, ['version', 'status', 'authorizationEvidence', 'sourceFingerprint', 'branch', 'expiresAt', 'checks']) || candidate?.version !== 1 || candidate?.status !== 'ready') blockers.push('Authorized playtest readiness is not ready or has an unknown format');
  if (candidate?.branch !== PLAYTEST_BRANCH || context.targetRef !== PLAYTEST_BRANCH) blockers.push(`Playtest permits only ${PLAYTEST_BRANCH}`);
- if (candidate?.authorizationEvidence !== PLAYTEST_AUTHORIZATION) blockers.push('Playtest authorization must match the explicit 2026-09-24 request');
+ if (candidate?.authorizationEvidence !== (sourceOnly||currentPreview ? GITHUB_UPLOAD_AUTHORIZATION : PLAYTEST_AUTHORIZATION)) blockers.push('Playtest authorization must match the explicit request');
+ if(currentPreview){
+  if(/\[(?:cf-pages-skip|skip[- ]ci|ci[- ]skip|no ci|skip actions|actions skip)\]|skip-checks\s*:/i.test(context.commitMessage??''))blockers.push('Authorized preview must run Pages and GitHub checks');
+  if(context.historyReviewed!==true)blockers.push('New reachable history privacy review is required');
+ }
+ if(sourceOnly){
+  if(!/^\[CF-Pages-Skip\] /i.test(context.commitMessage??''))blockers.push('Source-only upload must suppress Pages with the official prefix');
+  if(/\[(?:skip ci|ci skip|no ci|skip actions|actions skip)\]|skip-checks\s*:/i.test(context.commitMessage??''))blockers.push('GitHub Actions may not be skipped');
+  if(context.historyReviewed!==true)blockers.push('New reachable history privacy review is required');
+ }
  checkEvidence('playtest authorization', [candidate?.authorizationEvidence], true, context.evidencePaths ?? new Set(), blockers);
  const expiry = candidate?.expiresAt, now = context.now ?? Date.now();
  const expires = typeof expiry === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(expiry) ? Date.parse(expiry) : NaN;

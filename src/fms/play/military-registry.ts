@@ -1,3 +1,5 @@
+import transport1 from './compat/transport1/manifest.json';
+export const transportFingerprint=transport1.fingerprint;
 import { createMilitaryCore } from './military-core';
 import { applyMilitaryAction,previewMilitaryAction } from './military-actions';
 import { createMilitaryCore as previewCore } from './compat/preview1/fms/play/military-core';
@@ -23,7 +25,7 @@ import creation1 from './compat/creation1/manifest.json';
 export const creationFingerprint=creation1.fingerprint;
 import occupation1 from './compat/occupation1/manifest.json';
 export const occupationInitialFingerprint=occupation1.fingerprint;
-export const supportedOccupationEngine=(engine:unknown)=>engine===__FMS_PLAY_ENGINE__||engine===occupationInitialFingerprint||engine===creationFingerprint;
+export const supportedOccupationEngine=(engine:unknown)=>engine===__FMS_PLAY_ENGINE__||engine===occupationInitialFingerprint||engine===creationFingerprint||engine===transportFingerprint;
 export const battleFingerprint=battle1.fingerprint;
 export const realtimeFingerprint=realtime1.fingerprint;
 

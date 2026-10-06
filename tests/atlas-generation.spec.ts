@@ -10,6 +10,7 @@ interface ProgressObservation {
   id: string; operation: string; startedAt: number; trusted: boolean; seenBusy: boolean; finishedAt: number | null;
   finishedState: string | null; cancelRequestedAt: number | null; cancelTrusted: boolean | null;
   samples: { at: number; stage: string; completed: number; total: number }[];
+  cancelSnapshot?: { state: string | null; candidateVisible: boolean; stage: string; completed: number; total: number; pipelineRunning: boolean };
 }
 const progressObservations = new WeakMap<Page, Map<string, ProgressObservation>>();
 test.beforeEach(async ({ page }) => {
@@ -25,22 +26,24 @@ test.beforeEach(async ({ page }) => {
       };
       else if (text === '取消操作' && host.__atlasGenerationActive?.finishedAt === null) {
         host.__atlasGenerationActive.cancelRequestedAt = performance.now(); host.__atlasGenerationActive.cancelTrusted = event.isTrusted;
+        const root=document.querySelector('[data-testid="atlas-studio"]'),state=root?.getAttribute('data-atlas-state')??null,stage=root?.getAttribute('data-atlas-progress-stage')??'',completed=Number(root?.getAttribute('data-atlas-progress-completed')),total=Number(root?.getAttribute('data-atlas-progress-total')),candidateVisible=!!document.querySelector('[aria-label="大陆生成预览"]');
+        host.__atlasGenerationActive.cancelSnapshot={state,candidateVisible,stage,completed,total,pipelineRunning:state==='busy'&&!candidateVisible&&!!stage&&completed>0&&completed<=total};
       }
     }, true);
     const observe = () => {
       const record = host.__atlasGenerationActive; if (!record || record.finishedAt !== null) return;
       const root = document.querySelector('[data-testid="atlas-studio"]'), state = root?.getAttribute('data-atlas-state');
       if (state === 'busy') record.seenBusy = true;
-      const text = document.querySelector('.inspector-notice span')?.textContent ?? '', match = text.match(/^(.*?) · (\d+)\/(\d+)$/);
-      if (match) {
-        const previous = record.samples.at(-1), stage = match[1], completed = Number(match[2]), total = Number(match[3]);
+      const stage = root?.getAttribute('data-atlas-progress-stage') ?? '', completedRaw = root?.getAttribute('data-atlas-progress-completed') ?? '', totalRaw = root?.getAttribute('data-atlas-progress-total') ?? '';
+      if (stage && /^\d+$/.test(completedRaw) && /^\d+$/.test(totalRaw)) {
+        const previous = record.samples.at(-1), completed = Number(completedRaw), total = Number(totalRaw);
         if (!previous || previous.stage !== stage || previous.completed !== completed || previous.total !== total) record.samples.push({ at: performance.now(), stage, completed, total });
       }
-      if (record.seenBusy && state && state !== 'busy' && !match) {
+      if (record.seenBusy && state && state !== 'busy' && !stage) {
         record.finishedAt = performance.now(); record.finishedState = state; void host.__atlasGenerationObserved(record);
       }
     };
-    const attach = () => new MutationObserver(observe).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-atlas-state', 'data-atlas-display'] });
+    const attach = () => new MutationObserver(observe).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-atlas-state', 'data-atlas-display', 'data-atlas-progress-stage', 'data-atlas-progress-completed', 'data-atlas-progress-total'] });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach, { once: true }); else attach();
   });
 });
@@ -201,19 +204,26 @@ async function configureMacro(page: Page, continents = '6', coverage = '650') {
   await page.getByLabel('生成内容', { exact: true }).selectOption('macro');
   for (const [label, value] of [['地貌种子', '山海-72'], ['大陆数量', continents], ['陆地比例', coverage], ['海岸变化尺度', '384'], ['内陆起伏', '2600']]) await page.getByLabel(label, { exact: true }).fill(value);
 }
-async function cancelActiveGeneration(page: Page) {
+async function cancelActiveGeneration(page: Page, allowPipeline = false) {
+  const previousId=await page.evaluate(()=>(window as unknown as {__atlasGenerationActive?:ProgressObservation}).__atlasGenerationActive?.id);
   await configureMacro(page); await button(page, '预览大陆生成');
-  await page.waitForFunction(() => {
+  const cancel=await page.getByRole('button',{name:'取消操作',exact:true}).filter({visible:true}).boundingBox();if(!cancel)throw new Error('No real cancellation control');
+  const x=cancel.x+cancel.width/2,y=cancel.y+cancel.height/2;await page.mouse.move(x,y);
+  await page.waitForFunction(({previousId,allowPipeline}) => {
     const observation = (window as unknown as { __atlasGenerationActive?: ProgressObservation }).__atlasGenerationActive;
-    // A brief first phase can be coalesced by React. Require an actually
-    // observed generation phase while the operation is still busy, rather
-    // than waiting forever for that one exact phase after work has finished.
-    return observation?.finishedAt === null && document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state') === 'busy'
-      && observation.samples.some(sample => /真实共享地理|连续分枝|真实面积连通生成大陆|实际共享岸线|连续陆地与海底岸距|各大陆连续高程|私有连续高程候选|独立核验实际面积|独立遍历陆地|独立核验全部海陆/.test(sample.stage));
-  }, undefined, { timeout: 15000 });
-  await page.getByRole('button', { name: '取消操作', exact: true }).filter({ visible: true }).click({ timeout: 5000 });
+    const root=document.querySelector('[data-testid="atlas-studio"]'),stage=root?.getAttribute('data-atlas-progress-stage')??'',completed=Number(root?.getAttribute('data-atlas-progress-completed')),total=Number(root?.getAttribute('data-atlas-progress-total'));
+    // Small 128 maps can finish their algorithm before React paints it. Their
+    // general workflow checks cancellation of real validation/transfer/display
+    // work, not algorithm-phase cancellation (strictly tested at 256/512).
+    return observation?.id!==previousId&&observation?.finishedAt===null&&root?.getAttribute('data-atlas-state')==='busy'&&!document.querySelector('[aria-label="大陆生成预览"]')&&!!stage&&completed>0&&completed<total
+      && (allowPipeline||observation.samples.some(sample => /真实共享地理|连续分枝|真实面积连通生成大陆|实际共享岸线|连续陆地与海底岸距|各大陆连续高程|私有连续高程候选|独立核验实际面积|独立遍历陆地|独立核验全部海陆/.test(sample.stage)));
+  }, {previousId,allowPipeline}, { timeout: 15000 });
+  await page.mouse.click(x,y);
   await ready(page); await expect(studio(page)).toHaveAttribute('data-atlas-display', 'committed');
   await expect(page.getByRole('region', { name: '大陆生成预览' })).toHaveCount(0);
+  await expect(page.getByLabel('草稿操作反馈')).toContainText('取消');
+  const record=await page.evaluate(()=>(window as unknown as {__atlasGenerationActive?:ProgressObservation}).__atlasGenerationActive);
+  expect(record?.id).not.toBe(previousId);expect(record?.cancelTrusted).toBe(true);expect(record?.cancelSnapshot?.pipelineRunning).toBe(true);
 }
 async function preview(page: Page, continents = '6', coverage = '650') {
   await configureMacro(page, continents, coverage);
@@ -368,7 +378,7 @@ for (const size of ['128', '512']) test(`真实 ${size} 网格创世预览、确
   test.setTimeout(size === '512' ? 360000 : 240000);
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const id = await create(page, 2, `${size} 地理创世验收`, size), before = await saved(page, id, 2), blocks = 4 * (Number(size) / 32) ** 2;
-  await cancelActiveGeneration(page); expect(await saved(page, id, 2)).toEqual(before);
+  await cancelActiveGeneration(page, size==='128'); expect(await saved(page, id, 2)).toEqual(before);
   await preview(page); const candidate = await audit(page);
   expect(candidate).toMatchObject({ revision: 0, verifiedBlocks: blocks, manifestDigest: before.root.currentManifest, display: { source: 'generation-preview', revision: 1, verifiedBlocks: blocks } });
   expect(await saved(page, id, 2)).toEqual(before); await mapScreenshot(page, info, `generation-${size}-candidate-full-map.png`);

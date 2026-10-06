@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { PHASE_IDS, READINESS_CHECKS, PLAYTEST_BRANCH, PLAYTEST_AUTHORIZATION, PLAYTEST_CHECKS, originalTaskDigest, validatePlan, evaluateRelease, evaluatePlaytest } from './release-policy.mjs';
+import { PHASE_IDS, READINESS_CHECKS, PLAYTEST_BRANCH, PLAYTEST_AUTHORIZATION, PLAYTEST_CHECKS, originalTaskDigest, validatePlan, evaluateRelease, evaluatePlaytest, evaluateGithubUpload, evaluateCurrentPreview, GITHUB_UPLOAD_AUTHORIZATION } from './release-policy.mjs';
 import { projectRoot, safeProjectFile, verifyGitRoot } from './check-plan.mjs';
 import { createSourceFingerprint, inspectRelease, reviewedProjectConfig, reviewedEvidenceFile, unsafeCandidatePath, workingTreeIsClean } from './check-release.mjs';
 
@@ -39,6 +39,17 @@ function playtestFixture() {
  return value;
 }
 const evaluatePreview = value => evaluatePlaytest(value.plan, value.readiness, value.context);
+test('current explicit preview is separate from source-only and historical authorization',()=>{
+ const v=playtestFixture();v.readiness.preview20261006={...v.readiness.playtest,authorizationEvidence:GITHUB_UPLOAD_AUTHORIZATION};v.context.evidencePaths.add(GITHUB_UPLOAD_AUTHORIZATION);v.context.commitMessage='feat: checked naval playtest';v.context.historyReviewed=true;
+ assert.equal(evaluateCurrentPreview(v.plan,v.readiness,v.context).ready,true);assert.equal(evaluate(v).ready,false);assert.equal(evaluateGithubUpload(v.plan,v.readiness,v.context).ready,false);
+ for(const patch of [{commitMessage:'[CF-Pages-Skip] feat'},{commitMessage:'feat [skip ci]'},{historyReviewed:false},{targetRef:'refs/heads/main'},{cleanWorkingTree:false}])assert.equal(evaluateCurrentPreview(v.plan,v.readiness,{...v.context,...patch}).ready,false);
+});
+test('source-only authorization preserves the formal lock and requires Pages suppression, CI, history and evidence',()=>{
+ const v=playtestFixture();v.readiness.githubUpload={...v.readiness.playtest,authorizationEvidence:GITHUB_UPLOAD_AUTHORIZATION};v.context.evidencePaths.add(GITHUB_UPLOAD_AUTHORIZATION);v.context.commitMessage='[CF-Pages-Skip] feat: checked naval playtest';v.context.historyReviewed=true;
+ assert.equal(evaluateGithubUpload(v.plan,v.readiness,v.context).ready,true);assert.equal(evaluate(v).ready,false);
+ for(const patch of [{commitMessage:'feat: public deploy'},{commitMessage:'[CF-Pages-Skip] feat [skip ci]'},{historyReviewed:false},{targetRef:'refs/heads/main'},{cleanWorkingTree:false},{sourceFingerprint:'b'.repeat(64)}])assert.equal(evaluateGithubUpload(v.plan,v.readiness,{...v.context,...patch}).ready,false);
+ v.readiness.githubUpload.authorizationEvidence=PLAYTEST_AUTHORIZATION;assert.equal(evaluateGithubUpload(v.plan,v.readiness,v.context).ready,false);
+});
 function withGitFixture(callback) {
  const parent = path.join(projectRoot, '.autopilot'); fs.mkdirSync(parent, { recursive: true });
  const root = fs.mkdtempSync(path.join(parent, 'release-policy-test-'));
@@ -60,7 +71,7 @@ function writeFixture(root, value) {
  fs.writeFileSync(path.join(root, 'plan/tasks.json'), JSON.stringify(value.plan));
  fs.writeFileSync(path.join(root, 'plan/release-readiness.json'), JSON.stringify(value.readiness));
  fs.mkdirSync(path.join(root, 'scripts'));
- for (const file of ['check-plan.mjs', 'check-release.mjs', 'release-policy.mjs']) fs.copyFileSync(path.join(projectRoot, 'scripts', file), path.join(root, 'scripts', file));
+ for (const file of ['check-plan.mjs', 'check-release.mjs', 'release-policy.mjs','reviewed-history.mjs']) fs.copyFileSync(path.join(projectRoot, 'scripts', file), path.join(root, 'scripts', file));
  fs.writeFileSync(path.join(root, 'app.ts'), 'export const example = 1;');
 }
 function commitFixture(root) {

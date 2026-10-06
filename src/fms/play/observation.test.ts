@@ -45,7 +45,7 @@ describe('army markers and camera focus share CSS pixel coordinates', () => {
   it('returns all overlapping armies rather than silently choosing a side', () => {
     const w=createWorld(),a=w.armies[0];w.armies[1].provinceId=a.provinceId;
     const camera={x:0,y:0,scale:1}, left=armyMarkerPoint(w,a,1,camera),right=armyMarkerPoint(w,w.armies[1],1,camera),p={x:(left.x+right.x)/2,y:(left.y+right.y)/2};
-    expect(Math.abs(left.x-right.x)).toBe(22);
+    expect(Math.abs(left.x-right.x)).toBe(14);
     expect(armiesAt(w,1,camera,p)).toContain(a.id);expect(armiesAt(w,1,camera,p)).toContain(w.armies[1].id);
   });
   it('places a focus above the mobile sheet and to the left of the desktop panel', () => {

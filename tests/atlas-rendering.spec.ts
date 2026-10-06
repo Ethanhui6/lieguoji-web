@@ -361,7 +361,7 @@ async function readActualFramebuffer(page: Page, baseline: boolean) {
         if (!baseline) require(Boolean(state.baseline && state.baseline.width === width && state.baseline.height === height), 'Restored framebuffer dimensions changed');
         for (let offset = 0; offset < bytes.length; offset += 4) {
           if (bytes[offset] === 139 && bytes[offset + 1] === 163 && bytes[offset + 2] === 112) colors.land++;
-          if (bytes[offset] === 76 && bytes[offset + 1] === 151 && bytes[offset + 2] === 168) colors.ocean++;
+          if (bytes[offset] === 81 && bytes[offset + 1] === 134 && bytes[offset + 2] === 138) colors.ocean++;
           if (bytes[offset] === 16 && bytes[offset + 1] === 40 && bytes[offset + 2] === 63) colors.background++;
           if (bytes[offset + 3] !== 255) nonOpaquePixels++;
           if (!baseline) {
@@ -453,7 +453,7 @@ test('已提交新草稿接收画面途中真实丢失GPU，恢复后只开放�
     const onMetrics = () => {
       const state = window.__atlasGpuHarness!;
       if (state.pendingLossTriggered || document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state') !== 'busy'
-        || !document.querySelector('[aria-label="草稿操作反馈"]')?.textContent?.includes('绘制已核验地理块')) return;
+        || document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-progress-stage') !== '绘制已核验地理块') return;
       state.pendingLossTriggered = true; element.removeEventListener('atlas-render-metrics', onMetrics); state.extension.loseContext();
     };
     element.addEventListener('atlas-render-metrics', onMetrics);
@@ -646,7 +646,7 @@ test('[atlas-seams] 远景缓存核心之间没有透明接缝，邻近海陆使
       expect(Math.abs(observation.actual[channel] - observation.expected[channel]), JSON.stringify(observation)).toBeLessThanOrEqual(1);
     }
   }
-  const ocean = [76, 151, 168], land = [139, 163, 112];
+  const ocean = [81, 134, 138], land = [139, 163, 112];
   await inspectStrips('atlas-uniform-ocean-core-seams', Array.from({ length: 7 }, (_, index) => ({ worldX: (index + 1) * 512, worldY: 1792, axis: 'x' as const, rgb: ocean })));
   await locate(page); await previewHeight(page, 650); await confirm(page, 1); await panel(page, '地图'); await button(page, '全图');
   // Move the legitimate selected-entity label away from the fixed seam probes.

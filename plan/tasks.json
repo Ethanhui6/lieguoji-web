@@ -2389,6 +2389,21 @@
         "evidence": ".autopilot/ph06/release-followup-20260927.json"
       },
       "newLocalChangesAuthorizedForUpload": false
+    },
+    "preview20261006": {
+      "status": "local_passed_not_uploaded",
+      "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
+      "branch": "codex/ph06-world-generation",
+      "repository": "https://github.com/Ethanhui6/lieguoji-web",
+      "pagesProject": "lieguoji-web",
+      "deploymentMode": "Cloudflare Pages native Git branch preview",
+      "productionMainUnchanged": true,
+      "phaseCompletionClaim": false,
+      "evidence": [
+        "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
+      ]
     }
   },
   "ownedPackageReuse": {
@@ -2747,7 +2762,6 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
     ],
     "nextBatch": [
-      "WEB-04-08",
       "WEB-04-13"
     ],
     "phases": [
@@ -3392,6 +3406,32 @@
             "status": "todo",
             "acceptance": "iPhone13ProMax Safari和Chrome真实绘图保存恢复；用户认可方向，性能单列",
             "evidence": []
+          },
+          {
+            "id": "WEB-02-04",
+            "title": "玩家可控河流密度与水文一致性",
+            "dependsOn": [
+              "WEB-01-03"
+            ],
+            "acceptance": "让玩家控制完整有效河网；汇流阈值/降水改变同步riverIds、湿度、地貌、河带和缓存身份；区分两套计算单位，默认原参数与网页尺度适配分别记录。新设置保存恢复、撤销、取消与旧文档保持；不能只隐藏蓝线。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/ORIGINAL_EDITING.md"
+            ]
+          },
+          {
+            "id": "WEB-02-05",
+            "title": "山川高程与土地类型真实编辑",
+            "dependsOn": [
+              "WEB-02-04"
+            ],
+            "acceptance": "高程设值与森林/草原/沙漠等地貌覆盖分离；复用已核原地貌ID/色表，支持恢复自动、玩家锁、海岸合同与撤销；独立文档版本、网格细化继承及编辑后进入国家世界完整闭环，不改名max高度画笔冒充平原。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/ORIGINAL_EDITING.md"
+            ]
           }
         ]
       },
@@ -3553,12 +3593,21 @@
           {
             "id": "WEB-04-08",
             "title": "原作海军交战核验与可玩接入",
-            "status": "todo",
+            "status": "done",
             "dependsOn": [
               "WEB-04-09"
             ],
             "acceptance": "先只读核实海军交战入口与状态，接真实敌我判定、损失/撤退/原因和保存；预览确认一致；跨海运输另定完整登船/离船规则，不以船图标算完成。",
-            "evidence": []
+            "evidence": [
+              "docs/evidence/fms-maritime-v5-2026-10-06/ORIGINAL_NAVAL_COMBAT.md",
+              "docs/evidence/fms-maritime-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
+              "docs/evidence/fms-maritime-v5-2026-10-06/browser.json"
+            ],
+            "progressNote": "有限手动海战/撤离/载军损失和旧档兼容已接；真实UI三设备海路恢复再保存通过。",
+            "completionScope": "手动航线、持续海战、撤退和同tick载军损失；不含自动远征、封锁或完整原作等价。"
           },
           {
             "id": "WEB-04-09",
@@ -3622,15 +3671,21 @@
           {
             "id": "WEB-04-13",
             "title": "原作围攻效率与持久作战补给节奏",
-            "status": "todo",
+            "status": "in_progress",
             "dependsOn": [
               "WEB-04-12"
             ],
-            "acceptance": "基于已读原作每军效率/脉冲和继续恢复的数据，建立完好军、残兵、守军、堡垒的可玩耗时与补给对照；避免百日残兵围攻估计被当作最终平衡；保存当前747f规则，旧库隔离。",
+            "acceptance": "基于已读原作每军效率/脉冲和继续恢复的数据，建立完好军、残兵、守军、堡垒的可玩耗时与补给对照；避免百日残兵围攻估计被当作最终平衡；保存当前747f规则，旧库隔离。 2026-10-06进一步确认：先完整冻结当前v8的0026798b执行和独立分发，再改围城效率/断粮退出；增加真实满抵抗、行军耗粮、完好军/残兵/守军全流程，不能把抵抗压成.01证明节奏。",
             "evidence": [
               "docs/evidence/fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md",
-              "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md"
-            ]
+              "docs/evidence/fms-occupation-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
+            ],
+            "progressNote": "v9逐军对军脉冲、邻省救援、抵抗/接管分离与内部粮需已通过单元/生产UI切片；完整地形效率、长期围攻与复合补给平衡仍待完成。"
           },
           {
             "id": "WEB-04-14",
@@ -3663,6 +3718,112 @@
               "docs/evidence/fms-creation-customize-v5-2026-10-06/browser.json"
             ],
             "completionScope": "有限手动运兵/真实海路/外交重验/登陆/海上补给和保存切片；自动远征、海战封锁、原作运输数值等价与真机未完成。"
+          },
+          {
+            "id": "WEB-04-16",
+            "title": "原作陆海战剑40帧适配与部队显示分级",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-10",
+              "WEB-04-15"
+            ],
+            "acceptance": "核实并提取原作Clip真实帧序/时长，绑定实际陆海接触，暂停/减少动态/结束清理与跨重绘相位；按实际兵力缩放标记，不虚构独立编制。真实浏览器与精确dist资源审核后验收。",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/source.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/browser-production.json"
+            ],
+            "progressNote": "原作交战图集40帧/12Hz、箭头生长、真实沉船退场已接；生产浏览器三设备通过。",
+            "completionScope": "动画绑定实际交锋，暂停/减少动态/结束清理；完整动画覆盖、真实编制层级及真机流畅度未完成。"
+          },
+          {
+            "id": "WEB-04-17",
+            "title": "AI独立情报、侦察与埋伏",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-13"
+            ],
+            "acceptance": "用户确认在原作基础上新增：上帝视角可见全局，AI只读己方实际观测与会过期的记忆；未发现敌军不能作为即时目标。侦察、隐蔽、伏击准备和触发均有地形/范围/时间与反制规则，保存重放一致，不伪称已拆出原作迷雾。",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          },
+          {
+            "id": "WEB-04-18",
+            "title": "真实小编制与师军集团指挥",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-17"
+            ],
+            "acceptance": "小编制拥有独立兵员、位置、路线、命令、接触和损耗；上级汇总真实子部队并协调行程。团级小标记、上级大标记、近远景聚合与点选一致，不用装饰点替代模拟。新版本与旧v8隔离，手机数量/性能另实测。",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          },
+          {
+            "id": "WEB-04-19",
+            "title": "同盟援军与可截断补给线路",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-18"
+            ],
+            "acceptance": "显式联盟与共同敌人/军事通行约束，援军沿实际可达路线抵达才加入；真实粮源、运输或补给线与截断后耗粮/撤退，AI只使用己方情报。区分原作盟友边界择敌证据、本籍重编和新增前线增援，不瞬移补兵。",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          },
+          {
+            "id": "WEB-04-20",
+            "title": "战争地图层级与可点击的国别战况",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-10",
+              "WEB-04-12"
+            ],
+            "acceptance": "全图仅突出大型战役，逐级展开实际部队/交锋/围攻，选中与列表保持小战役可达；点击战役按国家显示真实在场兵员/舰体/补给和有证据的损耗。地图聚合去重，不凭空当成联盟或完整战争历史伤亡；生产浏览器及手机布局复核。",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/browser-production.json"
+            ],
+            "progressNote": "全图大型战役、区域/近景、选中例外及点选各国在场兵力已接，生产浏览器三设备通过。",
+            "completionScope": "真实部队ID去重和在场统计；不把共同参战当同盟，不声称全战争累计伤亡。"
+          },
+          {
+            "id": "WEB-04-21",
+            "title": "战争记录、国别累计伤亡与首都失守结算",
+            "dependsOn": [
+              "WEB-04-13",
+              "WEB-04-20"
+            ],
+            "acceptance": "核实原作WarV2及CapitalFallServiceV2限定入口；在权威扣损时按国家/成因累计保存，参与方和初始领土可追溯。首都失守立即改选合法首都，另登记月度危机；满月复核原首都持有者，收复或停战取消危机。后续吞并/内战完整条件待恢复；有ID大事记，不从滚动160条文字倒推。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/CAPITAL_CRISIS.md"
+            ]
+          },
+          {
+            "id": "WEB-04-22",
+            "title": "原作兵力单位、常备军home编制、应急动员与上帝布兵",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-06"
+            ],
+            "acceptance": "按本次原包源码证据区分内部/显示兵力、home与实际位置、regular/manual/emergency来源；月度编制与独立应急冷却、人工预览布兵，Worker重验、独立保存恢复。中性国运/核心代用/网页时间及容量明确标适配。原作击溃连续整编另待实现，不以常规新军代替。",
+            "evidence": [
+              "docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+              "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
+            ],
+            "progressNote": "常备home配额/内部兵员月征、独立应急动员和人工布兵已接；真实Worker、冷却、精确保存恢复与30日粮需回归通过。",
+            "completionScope": "只覆盖任务声明的来源/编制/动员/布兵及旧档保护。国运/核心代用、时间/容量是明确网页适配；原作击溃重编、完整人物效率与自动编制层级未实现。"
           }
         ]
       },
@@ -3682,7 +3843,45 @@
         ],
         "acceptance": "人物职务、谱系继承、信仰由模拟实际消费并影响国家地方，无空面板",
         "evidence": [],
-        "workItems": []
+        "workItems": [
+          {
+            "id": "WEB-05-01",
+            "title": "领袖家族与真实继承大事记",
+            "dependsOn": [
+              "WEB-04-21"
+            ],
+            "acceptance": "限定恢复StateSuccessionUtility和HistoryManager真实调用；建立人物家族/政体资格/任期和死亡上位因果，按国家家族索引事件ID与前后状态，保存恢复一致。君主/共和/神权/部落分支不得仅靠名字伪造等价。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          },
+          {
+            "id": "WEB-05-02",
+            "title": "地方叛乱、家族内战与国家独立",
+            "dependsOn": [
+              "WEB-05-01",
+              "WEB-04-19"
+            ],
+            "acceptance": "分别恢复原省叛乱/附庸独立/家族内战入口，真实压力冷却、领土城市军队转交、新国家外交经济初始化与结果记录；不可随机染色裂国或复制兵员粮食。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          },
+          {
+            "id": "WEB-05-03",
+            "title": "联盟、投降与政体关系完整联动",
+            "dependsOn": [
+              "WEB-05-02"
+            ],
+            "acceptance": "核实原作结盟停战与投降结算，明确战争参与方、通行和军令限制、领土和首都结果、家族政体影响；原因进入可定位大事记。可取消预览与Worker重验、旧版本隔离不退化。",
+            "status": "todo",
+            "evidence": [
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
+            ]
+          }
+        ]
       },
       {
         "id": "WEB-PH06",
@@ -4196,17 +4395,13 @@
       ]
     },
     "executionCheckpoint": {
-      "at": "2026-10-05T18:18:13.411Z",
-      "deadline": "2026-10-04T08:00:00+08:00",
-      "status": "resumed-by-direct-user-request",
-      "lastCheckpointCommit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
-      "lastSourceCommit": "674921dfe50521da079aa48997ca9e21f94ac7d5",
-      "newCodeSinceCheckpoint": false,
-      "reason": "用户要求关键玩法先行，并明确选择看海沙盒。既有夜间截止不阻塞新的直接授权。",
-      "nextFocus": "WEB-04-08海战恢复与可玩交锋；WEB-04-13持久围攻/补给；先完整封存f72161fb运输规则。",
-      "recoveryStarted": true,
-      "cloudWritesAllowed": false,
-      "firstPlayableGateUnchanged": true
+      "date": "2026-10-06",
+      "status": "tactics-local-verified-preview-awaiting-upload",
+      "branch": "codex/ph06-world-generation",
+      "lastCommitted": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
+      "cloudScope": "User confirmed GitHub + Pages preview; main unchanged; final candidate not yet uploaded",
+      "next": "Normal reviewed commit/push of authorized branch preview, verify actual HTTPS and same-SHA Actions; preserve main and physical/visual pending",
+      "latestUserPriority": "用户要求代码级恢复原作战争：野外交锋、空城接管、大量军队与动员；已授权安装目录只读核验后接入v9，先完成相关真实检查，再接续已授权GitHub＋Pages分支预览，正式站不变。"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -4975,6 +5170,23 @@
         "docs/evidence/fms-creation-customize-v5-2026-10-06/DELIVERY.md",
         "docs/evidence/fms-creation-customize-v5-2026-10-06/browser.json",
         "docs/evidence/fms-creation-customize-v5-2026-10-06/checks.json"
+      ]
+    },
+    "tacticsPrototype": {
+      "runVersion": 9,
+      "rules": "fms-tactics-1",
+      "database": "lieguoji-fms-tactics-v1",
+      "status": "local-finite-slice-verified",
+      "originalParity": false,
+      "physicalDeviceAccepted": false,
+      "userVisualAccepted": false,
+      "sourceEvidence": "docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md",
+      "cloudWrites": false,
+      "engine": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+      "evidence": [
+        "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
       ]
     }
   }

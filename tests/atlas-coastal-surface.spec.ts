@@ -150,16 +150,19 @@ test('[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取�
   // cache cores while they are replaced; no saved geography is edited here.
   const zoomFrames = [await rasterFrame(page)];
   for (let attempt = 0; attempt < 24; attempt++) {
-    const previous = zoomFrames.at(-1)!; await button(page, '放大大世界地图');
+    const previous = zoomFrames.at(-1)!; const sequence=(await metrics(page)).completedFrameSequence; await button(page, '放大大世界地图');
+    await expect.poll(async()=>(await metrics(page)).completedFrameSequence).toBeGreaterThan(sequence);
     const frame = await rasterFrame(page); zoomFrames.push(frame);
     if (frame.camera.scale === previous.camera.scale) break;
   }
   expect(zoomFrames.length).toBeLessThan(25);
   expect(zoomFrames.at(-1)!.raster!.density).toBeGreaterThan(4);
   expect(zoomFrames.at(-1)!.labels.visibleCount).toBe(0);
-  await button(page, '显示地块网格');
+  const gridSequence=(await metrics(page)).completedFrameSequence; await button(page, '显示地块网格');
+  await expect.poll(async()=>(await metrics(page)).completedFrameSequence).toBeGreaterThan(gridSequence);
   const withGrid = await rasterFrame(page); expect(withGrid.gridVisible).toBe(true); expect(withGrid.labels.visibleCount).toBeGreaterThan(0);
-  await button(page, '显示地块网格');
+  const plainSequence=(await metrics(page)).completedFrameSequence; await button(page, '显示地块网格');
+  await expect.poll(async()=>(await metrics(page)).completedFrameSequence).toBeGreaterThan(plainSequence);
   const withoutGrid = await rasterFrame(page); expect(withoutGrid.gridVisible).toBe(false); expect(withoutGrid.labels.visibleCount).toBe(0);
   await page.screenshot({ path: info.outputPath('coastal-v3-maximum-zoom.png'), fullPage: true });
   expect(await saved(page, id, 3)).toEqual(committed);
@@ -185,15 +188,15 @@ test('[coastal-v3] 手绘真实海陆分片，取消不写，同格两侧拾取�
   expect(errors).toEqual([]); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第三版', async ({ page }) => {
+test('[coastal-entry] 工坊入口默认进入自然海岸新世界，刷新链接保持第四版', async ({ page }) => {
   test.setTimeout(90000); await page.goto('/');
   await page.getByRole('navigation', { name: '世界工坊工具' }).getByRole('button', { name: '世界', exact: true }).click();
   await page.getByRole('button', { name: /^大世界草稿/ }).click(); await ready(page, 'empty');
-  expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('3');
+  expect(new URL(page.url()).searchParams.get('atlas-format')).toBe('4');
   await page.getByLabel('大世界地理规模', { exact: true }).selectOption('128'); await button(page, '新建空白海洋草稿'); await ready(page);
-  await expect(studio(page)).toHaveAttribute('data-atlas-format', '3');
-  const id = (await studio(page).getAttribute('data-atlas-id'))!, before = await saved(page, id, 3);
-  await page.reload(); await ready(page); expect(await saved(page, id, 3)).toEqual(before);
+  await expect(studio(page)).toHaveAttribute('data-atlas-format', '4');
+  const id = (await studio(page).getAttribute('data-atlas-id'))!, before = await saved(page, id, 4);
+  await page.reload(); await ready(page); expect(await saved(page, id, 4)).toEqual(before);
 });
 
 test('[coastal-copy] 旧地图显式另存自然海岸副本，原库与原链接保持不变', async ({ page }, info) => {

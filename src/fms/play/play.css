@@ -21,3 +21,17 @@
 .play-panel,.play-legend,.play-identity{animation:play-sheet-in 190ms cubic-bezier(.23,1,.32,1) both}.play-panel[data-leaving=true]{animation:play-sheet-out 160ms ease-in-out both;pointer-events:none}.play-modal{animation:play-fade-in 160ms ease-out both}.play-modal>div{animation:play-dialog-in 190ms cubic-bezier(.23,1,.32,1) both}
 @keyframes play-sheet-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes play-sheet-out{to{opacity:0;transform:translateY(10px)}}@keyframes play-fade-in{from{opacity:0}to{opacity:1}}@keyframes play-dialog-in{from{opacity:0;transform:scale(.97) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @media(prefers-reduced-motion:reduce){.fms-play *{animation:none!important;transition:none!important}.fms-play button:active:not(:disabled){transform:none}}
+.play-maritime{margin-top:18px;padding-top:16px;border-top:1px solid #71888055}.play-maritime label{display:grid;gap:6px;margin:12px 0 6px}.play-maritime>button{display:block;width:100%;max-width:100%}.play-hull{display:grid;gap:6px}.play-hull meter{width:100%;height:8px}.play-maritime small{display:block;margin-top:12px;line-height:1.7;opacity:.75}
+.play-war-focus{animation:play-sheet-in 220ms cubic-bezier(.23,1,.32,1) both}.play-war-balance{height:8px;display:flex;gap:3px;overflow:hidden;border-radius:3px;background:#dedaca;margin:16px 0}.play-war-balance span{min-width:0;transition:flex-grow 140ms ease-out}.play-war-country{padding:0 0 12px;border-bottom:1px solid #91967855}.play-war-country h3{font-size:17px;letter-spacing:1px;border:0;margin:12px 0 8px;padding:0}.play-war-country details summary{cursor:pointer;min-height:44px;padding:10px 0}.play-war-list{display:grid;gap:7px}.play-war-list button{text-align:left;display:grid;gap:4px;padding:11px 12px}.play-war-list button[aria-pressed=true]{border-color:#7d6436;box-shadow:inset 3px 0 #a88d54}.play-war-list small{font-size:11px;opacity:.8}.play-war-siege{margin:14px 0}.play-war-siege progress{display:block;width:100%;margin-top:6px;accent-color:#a88d54}.play-war-empty{padding:16px 12px;background:#dedfce66;border-left:2px solid #a88d54}
+.play-controls nav button{white-space:nowrap;font-size:12px;padding:7px 10px}
+
+.play-war-comparison{display:grid;gap:4px;margin:10px 0 16px}.play-war-comparison>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #91967833}.play-war-comparison strong{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}.play-war-focus>h2{font-size:22px;margin:8px 0 4px}.play-war-focus>p{margin:6px 0}.play-war-focus .play-war-balance{margin:10px 0}
+
+/* Keep zoom operable beside the desktop sheet; mobile sheets sit below it. */
+@media(min-width:601px){.fms-play:has(.play-panel) .play-zoom{right:376px}}
+@media(min-width:601px) and (max-width:760px){.fms-play:has(.play-panel) .play-zoom{top:196px}}
+.play-muster-tools{border-top:1px solid var(--play-border,#8d9476);padding-top:12px;margin-bottom:16px}
+.play-muster-tools>small{display:block;line-height:1.5;margin:6px 0;color:var(--play-muted,#b9bda8)}
+.play-muster-tools details{margin-top:12px;border-top:1px solid #72806455;padding-top:10px}
+.play-muster-tools summary{cursor:pointer;font-weight:600;min-height:32px}
+.play-muster-tools input[type=number]{width:100%;padding:9px;background:#23362e;color:#efe6ca;border:1px solid #829080;border-radius:5px}

@@ -1,0 +1,106 @@
+{
+  "scope": "development browser only; no production/device/user visual acceptance",
+  "url": "http://127.0.0.1:5180/?fms=1",
+  "overview": {
+    "day": "第 48 日 · 03:36",
+    "markers": [
+      {
+        "armyCount": 21,
+        "detail": "overview",
+        "ids": [
+          "siege:p-130",
+          "siege:p-166",
+          "siege:p-196",
+          "siege:p-240"
+        ],
+        "selected": false,
+        "ships": 0,
+        "sites": 4,
+        "troops": 10041,
+        "x": 486.76744730322264,
+        "y": 298.93855887710214
+      },
+      {
+        "armyCount": 14,
+        "detail": "overview",
+        "ids": [
+          "siege:p-107",
+          "siege:p-121",
+          "siege:p-139",
+          "siege:p-56"
+        ],
+        "selected": false,
+        "ships": 0,
+        "sites": 4,
+        "troops": 7788,
+        "x": 575.4433600751938,
+        "y": 257.5779788718201
+      },
+      {
+        "armyCount": 14,
+        "detail": "overview",
+        "ids": [
+          "siege:p-116",
+          "siege:p-117",
+          "siege:p-131",
+          "siege:p-87"
+        ],
+        "selected": false,
+        "ships": 0,
+        "sites": 4,
+        "troops": 6697,
+        "x": 774.7489160048137,
+        "y": 322.52344443361244
+      },
+      {
+        "armyCount": 14,
+        "detail": "overview",
+        "ids": [
+          "siege:p-115",
+          "siege:p-126",
+          "siege:p-96"
+        ],
+        "selected": false,
+        "ships": 0,
+        "sites": 3,
+        "troops": 5084,
+        "x": 668.13136729999,
+        "y": 233.27105614634408
+      },
+      {
+        "armyCount": 9,
+        "detail": "overview",
+        "ids": [
+          "siege:p-151"
+        ],
+        "selected": false,
+        "ships": 0,
+        "sites": 1,
+        "troops": 3022,
+        "x": 762.119234085083,
+        "y": 264.847918510437
+      }
+    ],
+    "units": 1
+  },
+  "comparison": {
+    "actualSites": "4 处交战 · 已持续 44.5 日",
+    "innerWidth": 1280,
+    "sides": [
+      "梁2,743 人",
+      "胡7,298 人"
+    ],
+    "title": "鄂西围攻周边战役",
+    "width": 1280
+  },
+  "portrait": {
+    "emulated": true,
+    "width": 428,
+    "height": 926,
+    "documentWidth": 428,
+    "panelWidth": 408,
+    "screenshot": "not retained; browser capture framing mismatch; production Playwright screenshot pending"
+  },
+  "errors": [],
+  "worldWritten": false
+}

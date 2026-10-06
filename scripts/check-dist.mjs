@@ -1,10 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 
 const root = path.resolve('dist');
 const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects', 'terrain-licenses.txt']);
 const assetName = /^[A-Za-z0-9][A-Za-z0-9._-]*-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
 const files = [];
+// Exact authorized clip atlas; accepting this artifact does not allow other images or raw Unity files.
+const battleAtlasName=/^battle-sword-[A-Za-z0-9_-]{8}\.png$/;
+const battleAtlasHash='12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3';
 
 function reject(file, reason) {
   throw new Error(`Publish audit rejected ${file}: ${reason}`);
@@ -36,7 +40,9 @@ function walk(directory, relative = '') {
       continue;
     }
     if (!stat.isFile()) reject(name, 'only regular files are allowed');
-    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && assetName.test(entry);
+    const battleAtlas=relative==='assets'&&battleAtlasName.test(entry);
+    if(battleAtlas){const bytes=fs.readFileSync(absolute);if(bytes.length!==482109||createHash('sha256').update(bytes).digest('hex')!==battleAtlasHash)reject(name,'battle animation atlas differs from reviewed source');}
+    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas);
     if (!allowed) reject(name, 'not an approved root file or hashed JS/CSS asset');
     files.push(name);
   }
@@ -70,4 +76,5 @@ if (!files.some(file => /^assets\/play\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file)
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }
-console.log(`Publish audit: ${files.length} approved game artifacts; only required root files and hashed JS/CSS assets.`);
+if(files.filter(file=>battleAtlasName.test(file.replace(/^assets\//,''))).length!==1)reject('battle-sword','exactly one reviewed battle animation atlas required');
+console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS and the exact reviewed battle atlas.`);

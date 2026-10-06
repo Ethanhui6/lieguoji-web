@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-10-06T06:37:36.128Z",
+  "status": "passed",
+  "scope": "Bounded v9 war/muster slice; not complete original port or physical-device acceptance",
+  "parentCommit": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
+  "engine": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+  "legacyEngine": "0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504",
+  "fullUnitBaseline": {
+    "files": 218,
+    "tests": 2662,
+    "logSha256": "b43bcc40948b6cdb2959668c915ccb47cb2709f9b08e5ac6a8523eae72d3a5b6",
+    "note": "Full unit stage passed; following build failed on a missing new-engine dependency. Preserved failure, then repaired dependency list and checked final affected scope/build."
+  },
+  "latestAffectedUnits": {
+    "files": 3,
+    "tests": 39,
+    "logSha256": "41ffb5c292a94f30defa1f0c5aebcb81c800b377a1b93bdeab6114a8fa327330",
+    "scope": "tactics, maritime, legacy byte compatibility including food-unit fixes"
+  },
+  "lint": {
+    "status": "passed",
+    "logSha256": "f7ec5fbf72649177d0d1313754c24c03876633f24969d525bd917a5f6802d49d"
+  },
+  "typecheck": {
+    "status": "passed",
+    "logSha256": "b48809ad0188ef474dcaa93d18a4ab062859d100b89d7fcd8ceaca47ca5501bb"
+  },
+  "build": {
+    "status": "passed",
+    "artifacts": 43,
+    "logSha256": "20e565879315d205f02b9d24988d6da187ae7b2126f3cb72e33727e1df0e6e04",
+    "warning": "FmsApp chunk about 729 kB; no physical-device performance claim"
+  },
+  "browser": {
+    "freshFmsPassed": 9,
+    "combinedPassed": 233,
+    "declaredSkipped": 4,
+    "combinedScope": 237,
+    "evidence": "e2e-summary.json",
+    "note": "Retains full v8-era baseline and targeted repairs; nine FMS cases are fresh on final v9 production. Combined scope is not a second complete rerun. Chromium desktop/mobile/tablet emulation, not Safari or physical iPhone."
+  },
+  "originalParity": false,
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "cloudCi": "not_yet_uploaded",
+  "pages": "not_yet_uploaded"
+}

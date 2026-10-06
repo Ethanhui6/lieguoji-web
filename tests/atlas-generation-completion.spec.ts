@@ -24,9 +24,15 @@ interface Observation {
   cancelSnapshot?: { state: string | null; candidateVisible: boolean; stage: string; completed: number; total: number; algorithmRunning: boolean; phase: 'generator' | 'coastal' | null };
 }
 interface ObserverHost { __completionActive?: Observation; __completionRecords: Observation[]; __completionInputs: { type: string; trusted: boolean; pointerType: string }[] }
+// Actual yielding phases in shape.ts/ocean.ts. A native click can arrive after
+// the early phase we awaited; classify that later algorithm phase consistently.
+const generatorStagePatterns = {
+  shape: '^(量测手绘轮廓的真实地理|读取手绘区域海岸与高程锁|从闭合轮廓生成连续海陆地形|写入手绘大陆私有高程块|独立遍历手绘大陆真实共享边|核验手绘大陆全部连通分量|核验手绘地形保留层|读取手绘原图实际地理|独立量测手绘结果真实面积|独立核验手绘大陆保护值与面积)$',
+  ocean: '^(读取海床真实共享地理|识别世界边界海水与保护区|沿真实共享边识别外海与封闭内湖|定位需要原样保留的第一圈近岸海水|量测真实海格重心距岸与连续陆架|生成连续海盆、海底山脊与陆架高程|独立核验海床操作后的陆地连通|核验海床操作后的全部海陆采样|核验海床操作的地理保留层|独立读取原海陆实际地理|独立量测海床结果实际面积|独立核验海床海陆、内湖与区域锁保护)$',
+};
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.addInitScript(stagePatterns => {
     const host = window as unknown as ObserverHost; host.__completionRecords = []; host.__completionInputs = [];
     const start = (operation: Observation['operation'], event: Event) => {
       const record: Observation = { id: crypto.randomUUID(), operation, startedAt: performance.now(), trusted: event.isTrusted, seenBusy: false,
@@ -38,9 +44,9 @@ test.beforeEach(async ({ page }) => {
       if (label === '预览海床生成') start('ocean', event);
       else if (label === '取消操作' && host.__completionActive?.finishedAt === null) {
         const record = host.__completionActive, state = document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state') ?? null;
-        const match = (document.querySelector('.inspector-notice span')?.textContent ?? '').match(/^(.*?) · (\d+)\/(\d+)$/);
-        const stage = match?.[1] ?? '', completed = Number(match?.[2] ?? 0), total = Number(match?.[3] ?? 0);
-        const stages = record.operation === 'shape' ? /量测手绘轮廓|读取手绘区域|从闭合轮廓生成/ : /读取海床真实|识别世界边界海水|沿真实共享边识别外海/;
+        const root = document.querySelector('[data-testid="atlas-studio"]');
+        const stage = root?.getAttribute('data-atlas-progress-stage') ?? '', completed = Number(root?.getAttribute('data-atlas-progress-completed')), total = Number(root?.getAttribute('data-atlas-progress-total'));
+        const stages = new RegExp(stagePatterns[record.operation]);
         const phase = stages.test(stage) ? 'generator' : stage === '核验实际裁切海岸面积与保护边界' ? 'coastal' : null;
         const candidateVisible = !!document.querySelector('[aria-label="大陆生成预览"]');
         record.cancelRequestedAt = performance.now(); record.cancelTrusted = event.isTrusted;
@@ -58,16 +64,16 @@ test.beforeEach(async ({ page }) => {
       const record = host.__completionActive; if (!record || record.finishedAt !== null) return;
       const state = document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state');
       if (state === 'busy') record.seenBusy = true;
-      const match = (document.querySelector('.inspector-notice span')?.textContent ?? '').match(/^(.*?) · (\d+)\/(\d+)$/);
-      if (match) {
-        const last = record.samples.at(-1), stage = match[1], completed = Number(match[2]), total = Number(match[3]);
+      const root = document.querySelector('[data-testid="atlas-studio"]'), stage = root?.getAttribute('data-atlas-progress-stage') ?? '', completedRaw = root?.getAttribute('data-atlas-progress-completed') ?? '', totalRaw = root?.getAttribute('data-atlas-progress-total') ?? '';
+      if (stage && /^\d+$/.test(completedRaw) && /^\d+$/.test(totalRaw)) {
+        const last = record.samples.at(-1), completed = Number(completedRaw), total = Number(totalRaw);
         if (!last || last.stage !== stage || last.completed !== completed || last.total !== total) record.samples.push({ at: performance.now(), stage, completed, total });
       }
-      if (record.seenBusy && state && state !== 'busy' && !match) { record.finishedAt = performance.now(); record.finishedState = state; }
+      if (record.seenBusy && state && state !== 'busy' && !stage) { record.finishedAt = performance.now(); record.finishedState = state; }
     };
-    const attach = () => new MutationObserver(observe).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-atlas-state', 'data-atlas-display'] });
+    const attach = () => new MutationObserver(observe).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-atlas-state', 'data-atlas-display', 'data-atlas-progress-stage', 'data-atlas-progress-completed', 'data-atlas-progress-total'] });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach, { once: true }); else attach();
-  });
+  }, generatorStagePatterns);
 });
 
 async function observations(page: Page) {
@@ -379,14 +385,20 @@ async function ocean(page: Page) {
   await fields(page, [['地貌种子', 'PH06-completion-ocean'], ['平均海深', '3600'], ['海底起伏', '1000'], ['陆架宽度', '320']]); await button(page, '预览海床生成');
 }
 async function runningCancel(page: Page, operation: Observation['operation'], phase: 'generator' | 'coastal' = 'generator') {
-  await page.waitForFunction(({ operation, phase }) => {
+  const cancel=await page.getByRole('button',{name:'取消操作',exact:true}).filter({visible:true}).boundingBox();
+  if(!cancel)throw new Error('No visible real cancellation control');
+  const x=cancel.x+cancel.width/2,y=cancel.y+cancel.height/2;await page.mouse.move(x,y);
+  await page.waitForFunction(({ operation, phase, stagePatterns }) => {
     const record = (window as unknown as ObserverHost).__completionActive, state = document.querySelector('[data-testid="atlas-studio"]')?.getAttribute('data-atlas-state');
-    const stages = operation === 'shape' ? /量测手绘轮廓|读取手绘区域|从闭合轮廓生成/ : /读取海床真实|识别世界边界海水|沿真实共享边识别外海/;
-    const match = (document.querySelector('.inspector-notice span')?.textContent ?? '').match(/^(.*?) · (\d+)\/(\d+)$/);
-    return state === 'busy' && record?.operation === operation && record.finishedAt === null && !!match
-      && (phase === 'generator' ? stages.test(match[1]) : match[1] === '核验实际裁切海岸面积与保护边界') && Number(match[2]) > 0 && Number(match[2]) < Number(match[3]);
-  }, { operation, phase }, { timeout: phase === 'coastal' ? 90000 : 15000 });
-  await expect(candidate(page)).toHaveCount(0); await button(page, '取消操作'); await ready(page); await expect(candidate(page)).toHaveCount(0);
+    const stages = new RegExp(stagePatterns[operation]);
+    const root = document.querySelector('[data-testid="atlas-studio"]'), stage = root?.getAttribute('data-atlas-progress-stage') ?? '', completed = Number(root?.getAttribute('data-atlas-progress-completed')), total = Number(root?.getAttribute('data-atlas-progress-total'));
+    return state === 'busy' && record?.operation === operation && record.finishedAt === null && !!stage
+      && (phase === 'generator' ? stages.test(stage) : stage === '核验实际裁切海岸面积与保护边界') && completed > 0 && completed < total;
+  }, { operation, phase, stagePatterns: generatorStagePatterns }, { timeout: phase === 'coastal' ? 90000 : 15000 });
+  // Native input at the already located button avoids another locator-stability
+  // wait after observing a short yielding phase. Capture still verifies the
+  // actual clicked control, trust, stage, and incomplete work at click time.
+  await page.mouse.click(x,y); await ready(page); await expect(candidate(page)).toHaveCount(0);
   await expect(studio(page)).toHaveAttribute('data-atlas-display', 'committed'); await expect(page.getByLabel('草稿操作反馈')).toContainText('取消');
   const record = (await observations(page)).at(-1); expect(record?.cancelSnapshot?.phase).toBe(phase); expect(record?.cancelSnapshot?.algorithmRunning).toBe(true);
 }

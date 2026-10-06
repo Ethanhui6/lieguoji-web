@@ -10,7 +10,7 @@ export type CustomizeCommand = { type:'customize'; runId:string; expected:PlayVe
  * simulation formula, entity reference, geometry or old archive is changed. */
 export function customizeRun(source:FmsRun, command:CustomizeCommand):FmsRun {
   if(source.id!==command.runId || command.expected.day!==source.world.day || command.expected.nextEventId!==source.world.nextEventId ||
-    (source.version>=4 && command.expected.tick!==(source as Extract<FmsRun,{version:4|5|6|7}>).clock.tick)) throw Error('世界已经变化，请重新打开编辑。');
+    (source.version>=4 && command.expected.tick!==(source as Extract<FmsRun,{version:4|5|6|7|8}>).clock.tick)) throw Error('世界已经变化，请重新打开编辑。');
   if(!Array.isArray(command.edits)||command.edits.length<1||command.edits.length>32)throw Error('请一次修改 1—32 项名称。');
   const next=structuredClone(source), seen=new Set<string>(), changes:string[]=[];
   const displayed=namedWorld(source.world);

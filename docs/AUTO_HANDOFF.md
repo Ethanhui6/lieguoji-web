@@ -1,13 +1,15 @@
 # 当前续接：WEB-04-13 原地貌攻防已本地验证，继续上层原效率
 
-2026-10-07，用户要求不停在每批、按表直到还原原作；本线程已建立 active Goal，无新限时或后台完成承诺。根独占写入，两个代理仅只读函数/合同复核。HEAD仍51a1e28，本批尚未提交。
+2026-10-07，用户要求不停在每批、按表直到还原原作；本线程已建立 active Goal，无新限时或后台完成承诺。根独占写入，两个代理仅只读函数/合同复核。本批本地提交 c165ed12dba69e01e3436b82accf76052fb155ba，未上传；提交后仅补记SHA的tasks/交接作为续接检查点。
 
 - 新 `terrain13-*` / v13 / Store15 已接入真实 Worker、UI 与存储。五兵种13地貌表、原float32山地分类和静态 .9 已恢复；省地貌按真实裁海面积聚合，这是明确网页桥接。原v12八文件及旧依赖冻结，不改旧局规则。新建走v13，旧局可原版继续或明确副本。
 - 最终冻结源码全量2797单元、相关36单元、最终构建三尺寸6浏览器、lint/typecheck/构建/43产物、24+15发布/计划回归通过。紧邻前构建12桌面场景作为前构建证据。首轮2796通过1失败因运行中高程兼容修改引发指纹变化，失败保留，完整重跑未删断言。已知null损坏误锁、山地/高原文案、普通行军地貌未查询已修复。完整规模722省/722城/480军，最终本机建局4334ms、日结2169ms，不是真机或帧率验收。
 - 本地试玩 `http://127.0.0.1:5183/?fms=1`，独立 `.autopilot/terrain13-preview/dist`，最终engine `a20d2c88e3bbad359027bcc1d0d9e343c9a0f1955b9c6c250acfa070cdb36c77`；已有5182、根dist及同源个人存档保持。真实UI生成殷/车师/东唐/前唐/卞/嬴六国并保存第0日/日内0，暂停、慢速6秒/日。build.json记录父HEAD，源码/43产物逐项SHA绑定，非干净父提交构建。不要重跑 `.autopilot/create-terrain13.mjs` / wire / tests 生成脚本。
 - [交付](evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md) · [检查](evidence/fms-terrain13-v5-2026-10-07/checks.json) · [受测产物](evidence/fms-terrain13-v5-2026-10-07/tested-artifact.json) · [单函数证据](evidence/fms-terrain13-v5-2026-10-07/RECOVERY.md)。截图为隔离测试合成地图，不是用户个人档或原作实机。
-- 下一切片原上层公式、国家trait直接覆盖、军队1.25×baseBonus快照已核实：[上层](evidence/fms-terrain13-v5-2026-10-07/UPPER_EFFICIENCY_RECOVERY.md)、[国家/基础值](evidence/fms-terrain13-v5-2026-10-07/STATE_BASE_RECOVERY.md)。国家缺原国运/金币/军略/官职/完整政体；不得把morale、grain、regimeId或family姓氏伪映射。核心距离只读恢复正在收拢。下一版先冻结v13；新增/倒戈/登船/重编与政治分裂必须同步新的输入表和Worker delta。
+- 下一切片原上层公式、国家trait直接覆盖、军队1.25×baseBonus快照已核实：[上层](evidence/fms-terrain13-v5-2026-10-07/UPPER_EFFICIENCY_RECOVERY.md)、[国家/基础值](evidence/fms-terrain13-v5-2026-10-07/STATE_BASE_RECOVERY.md)。国家缺原国运/金币/军略/官职/完整政体；不得把morale、grain、regimeId或family姓氏伪映射。[核心距离与年度阈值](evidence/fms-terrain13-v5-2026-10-07/CORE_DISTANCE_RECOVERY.md)已只读核实。下一版先冻结v13；新增/倒戈/登船/重编与政治分裂必须同步新的输入表和Worker delta。
 - 无push/上传/Pages触发，正式main/旧站与真机/视觉边界保持；WEB-04-13仍in_progress，之后继续上层国运/领袖/省通用防御与长期补给，不倒回旧国家行政规划。
+
+随后同一WEB-04-13已实现 `native-combat/` 三个独立数值模块（上层float32、国家特性/基础快照、核心BFS/年度阈值），12项新回归/目标lint/全工程类型通过。只读审计发现bool下溢问题已修复并补正负1e-50回归。这些尚无生产调用者，不是新的可玩v14，未改变v13或其2797/6证据。[实际代码进展及接线风险](evidence/fms-terrain13-v5-2026-10-07/UPPER_KERNEL_PROGRESS.md)。下一批先冻结v13，再建立独立动态输入表、复制/存储/Worker；国家分裂、新军/登船/重整都须覆盖，未知人物/金币等明确基线不伪造来源。
 
 ---
 

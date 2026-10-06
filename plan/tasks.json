@@ -3797,9 +3797,12 @@
               "docs/evidence/fms-terrain13-v5-2026-10-07/checks.json",
               "docs/evidence/fms-terrain13-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-terrain13-v5-2026-10-07/UPPER_EFFICIENCY_RECOVERY.md",
-              "docs/evidence/fms-terrain13-v5-2026-10-07/STATE_BASE_RECOVERY.md"
+              "docs/evidence/fms-terrain13-v5-2026-10-07/STATE_BASE_RECOVERY.md",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/UPPER_KERNEL_PROGRESS.md",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/upper-native-checks.json",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/CORE_DISTANCE_RECOVERY.md"
             ],
-            "progressNote": "2026-10-07 v13/Store15兵种13地貌、float32山地、实际道路位置与UI/AI/战斗统一的本地切片完成；全量2797、最终6浏览器、lint/types/build/43产物通过，保留首轮指纹失败。原上层效率和完整长战补给仍继续，非整项完成。"
+            "progressNote": "2026-10-07 v13/Store15兵种13地貌、float32山地、实际道路位置与UI/AI/战斗统一的本地切片完成；全量2797、最终6浏览器、lint/types/build/43产物通过，保留首轮指纹失败。原上层效率和完整长战补给仍继续，非整项完成。 随后独立上层数值内核已实现，12项/类型/lint通过，尚未接入生产v13。"
           },
           {
             "id": "WEB-04-14",
@@ -4708,11 +4711,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "terrain13_local_verified_upper_efficiency_next",
+      "status": "terrain13_playable_native_upper_kernels_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "51a1e289f885a30edb3eae6cce5a5ba881455bdf",
+      "lastCommitted": "c165ed12dba69e01e3436b82accf76052fb155ba",
       "cloudScope": "This v13 batch is local only. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
-      "next": "冻结已试玩v13，接WEB-04-13原国家特性/军队基础快照/核心防御与长战补给；上层原输入不以士气或fort冒充。",
+      "next": "继续WEB-04-13：先冻结v13，独立版本动态原效率输入/存储/Worker接线，覆盖政治分裂、新军、运输和重整。原上层数值模块12项通过但尚无生产调用者。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [

@@ -1,0 +1,172 @@
+{
+  "checkedAt": "2026-10-06T08:30:07.683Z",
+  "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+  "repository": "https://github.com/Ethanhui6/lieguoji-web",
+  "branch": "codex/ph06-world-generation",
+  "push": "passed",
+  "prePush": "passed",
+  "sourceFingerprint": "99404609d15675609ead8fc78aa11cd64b94074579e5720cec7927ee74942870",
+  "firstFailedAttempt": "cloud-release.json",
+  "localRepair": "entry-overlay-fix.json",
+  "priorPublishedPreview": "cloud-retry.json",
+  "auditedHistoryDelta": "HISTORY_DELTA_PRIVACY.md",
+  "mode": "Pages native Git branch preview",
+  "mainUnchanged": "b9b8f96b40544ef8b7e1e428910fe2df64fec6f7",
+  "checks": [
+    {
+      "name": "Cloudflare Pages",
+      "sha": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+      "status": "completed",
+      "conclusion": "success",
+      "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/e8babf58-e7da-4779-9c93-7c5e5829a076",
+      "title": "Deployed successfully",
+      "summary": "<table><tr><td><strong>Latest commit:</strong> </td><td>\n<code>92af7ea</code>\n</td></tr>\n<tr><td><strong>Status:</strong></td><td>&nbsp;✅&nbsp; Deploy successful!</td></tr>\n<tr><td><strong>Preview URL:</strong></td><td>\n<a href='https://e8babf58.lieguoji-web.pages.dev'>https://e8babf58.lieguoji-web.pages.dev</a>\n</td></tr>\n<tr><td><strong>Branch Preview URL:</strong></td><td>\n<a href='https://codex-ph06-world-generation.lieguoji-web.pages.dev'>https://codex-ph06-world-generation.lieguoji-web.pages.dev</a>\n</td></tr>\n</table>\n\n[View logs](https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/e8babf58-e7da-4779-9c93-7c5e5829a076)\n"
+    },
+    {
+      "name": "Application checks",
+      "sha": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+      "status": "completed",
+      "conclusion": "failure",
+      "detailsUrl": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825/job/112174009100",
+      "title": null,
+      "summary": null
+    }
+  ],
+  "urls": [
+    "https://e8babf58.lieguoji-web.pages.dev",
+    "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
+  ],
+  "ci": {
+    "conclusion": "failure",
+    "headSha": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+    "jobs": [
+      {
+        "completedAt": "2026-10-06T08:26:57Z",
+        "conclusion": "failure",
+        "databaseId": 112174009100,
+        "name": "Application checks",
+        "startedAt": "2026-10-06T08:14:58Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-06T08:15:00Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-06T08:14:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:15:18Z",
+            "conclusion": "success",
+            "name": "Check out tested revision",
+            "number": 2,
+            "startedAt": "2026-10-06T08:15:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:15:30Z",
+            "conclusion": "success",
+            "name": "Set up Node.js",
+            "number": 3,
+            "startedAt": "2026-10-06T08:15:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:15:30Z",
+            "conclusion": "success",
+            "name": "Record tested revision",
+            "number": 4,
+            "startedAt": "2026-10-06T08:15:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:15:41Z",
+            "conclusion": "success",
+            "name": "Install locked dependencies",
+            "number": 5,
+            "startedAt": "2026-10-06T08:15:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:54Z",
+            "conclusion": "failure",
+            "name": "Check plan, lint, types, unit tests, and production build",
+            "number": 6,
+            "startedAt": "2026-10-06T08:15:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:54Z",
+            "conclusion": "skipped",
+            "name": "Install Chromium and system dependencies",
+            "number": 7,
+            "startedAt": "2026-10-06T08:26:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:54Z",
+            "conclusion": "skipped",
+            "name": "Run core browser checks",
+            "number": 8,
+            "startedAt": "2026-10-06T08:26:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:54Z",
+            "conclusion": "skipped",
+            "name": "Keep checked game build",
+            "number": 9,
+            "startedAt": "2026-10-06T08:26:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:55Z",
+            "conclusion": "success",
+            "name": "Keep browser failure evidence",
+            "number": 10,
+            "startedAt": "2026-10-06T08:26:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:55Z",
+            "conclusion": "skipped",
+            "name": "Post Set up Node.js",
+            "number": 19,
+            "startedAt": "2026-10-06T08:26:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:55Z",
+            "conclusion": "success",
+            "name": "Post Check out tested revision",
+            "number": 20,
+            "startedAt": "2026-10-06T08:26:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T08:26:55Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "startedAt": "2026-10-06T08:26:55Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825/job/112174009100"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825"
+  },
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "note": "Local post-upload receipt. No push just to update status.",
+  "https": {
+    "status": "passed",
+    "evidence": "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
+    "freshCases": 3,
+    "reusedGameplayCases": 10,
+    "scope": "Three Chromium screen sizes, mouse pointer. Real drawing/naturalize/confirm/save/reload/new-world, Workers/assets/console. Not physical touch or full gameplay equivalence."
+  }
+}

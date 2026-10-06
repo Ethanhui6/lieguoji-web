@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-10-06T08:13:30.877Z",
+  "recordedAt": "2026-10-06T08:33:49.216Z",
   "parentCommit": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
   "scope": "Changed candidate files; prior history and semantic/privacy manual review in SOURCE_PRIVACY.md. Machine patterns are not a complete secret detector.",
   "excludedSelf": "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
   "excludedBinding": "plan/release-readiness.json (fixed-field acceptance binding reviewed separately)",
-  "fileCount": 175,
-  "textFiles": 165,
-  "bytes": 4947256,
-  "digest": "ad62793c6423ccdd09d358acdb00d736f65366ceec904686d2eb005731ea8bdf",
+  "fileCount": 180,
+  "textFiles": 169,
+  "bytes": 5582069,
+  "digest": "79280063160a89dfae8376f8869e3a56910a332f81ad3ae9e651944cd59202ed",
   "findings": [],
   "files": [
     {
@@ -27,8 +27,8 @@
     },
     {
       "path": "docs/AUTO_HANDOFF.md",
-      "bytes": 13084,
-      "sha256": "6407835f7f4aa0729318be339030a1232633fc2ca1914d0f2dc8e2de80d364a6"
+      "bytes": 8087,
+      "sha256": "189b63deb527d2e83c34e70089ef69ba78d8986060e2a44089bcc5e0f82258c3"
     },
     {
       "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
@@ -102,8 +102,8 @@
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
-      "bytes": 6624,
-      "sha256": "7d663823c3b7483df67a2d10d93ed1d305b477874b6538f473640ff2dd5b7b24"
+      "bytes": 7344,
+      "sha256": "904d1549372a927b0595b2607caa43dbf8e8d8ed3c4ccd22da182ebcc85ab16b"
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/battle-desktop.jpg",
@@ -131,9 +131,14 @@
       "sha256": "732ad93267c5b7a1904c2e8ffd68d62aea8bf0376c25cd76f18327b01a1779be"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/AUTO_HANDOFF_BEFORE_ENTRY_VERIFICATION.md",
+      "bytes": 13084,
+      "sha256": "6407835f7f4aa0729318be339030a1232633fc2ca1914d0f2dc8e2de80d364a6"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md",
-      "bytes": 2378,
-      "sha256": "e890ebf97914e1e48119cc039093d0e9c406789912c6a96044d4f06a489b15fc"
+      "bytes": 3716,
+      "sha256": "265cb5b1791e6e50176bfc1fdfbf210f04611390ba7f9c565a3fd25d102c376a"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/PORT_TARGET_FOLLOWUP.md",
@@ -166,9 +171,19 @@
       "sha256": "323af6ccd31da87c6bafb662aa4efc7098151af5ba19989a06fee2e18d1a8e88"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-entry-release.json",
+      "bytes": 6787,
+      "sha256": "3f409fd93bedf282d218e320db7034a0d7d7f15ee148257a8bcd04b0d062c221"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-release.json",
       "bytes": 3999,
       "sha256": "93400aecfbd3023e468e70359665f2b7a21db8df0aae6ff2e4baa7f2ef6b7dbb"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json",
+      "bytes": 3160,
+      "sha256": "e2079c96a649197eb4ffa1981ab9d885984659925a94278b85808668bc415c65"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-repair.json",
@@ -186,9 +201,19 @@
       "sha256": "21f8f3e12f3efe05a5c3d51450895272302afff96dffbd29eb7482d8ff7c152c"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-confirmation-https-mobile.png",
+      "bytes": 558865,
+      "sha256": "bac5855c8c290774500794a27f9855201a726bd0f1da6390f4c5a2e4d7df162c"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-confirmation-mobile.png",
       "bytes": 558865,
       "sha256": "bac5855c8c290774500794a27f9855201a726bd0f1da6390f4c5a2e4d7df162c"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
+      "bytes": 54446,
+      "sha256": "8e7db705841bf3529de17e0086bd7d21911e0d85b2f60ee96ff64842caf60898"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
@@ -213,12 +238,12 @@
     {
       "path": "plan/reviewed-history-2026-10-06.json",
       "bytes": 189471,
-      "sha256": "f3ba8864cfc047921331469e791e20a7d45e157b9ee4f55d7da31a564b4042cb"
+      "sha256": "feccdb6c649b549bce7f6905e68b6c04b318d0c6fafe42b2a753a81ed0a7bc51"
     },
     {
       "path": "plan/tasks.json",
-      "bytes": 286916,
-      "sha256": "7a9dadf263f0724419ab9a92978475e8a5c8d486f51bfec1d807913e898d8ae4"
+      "bytes": 287154,
+      "sha256": "8c9aaa7d692bf71490669971b1f215cf9aeb6503f6def2e7e2704b5b6a088003"
     },
     {
       "path": "scripts/check-dist.mjs",
@@ -253,7 +278,7 @@
     {
       "path": "scripts/reviewed-history.mjs",
       "bytes": 4046,
-      "sha256": "33d884d8fb5c494538ad3c70c8a4f4a4ef37bb1b00b9d81836899589bc06f079"
+      "sha256": "5876ff3693a9feb13cd07aa005602255b40d9b84c3a247dd3303f2d04afddd97"
     },
     {
       "path": "src/fms/FmsApp.tsx",
@@ -832,8 +857,8 @@
     },
     {
       "path": "src/world/renderer.test.ts",
-      "bytes": 88010,
-      "sha256": "ca8258f477c654e344b55fcb09c4ee613a7022c19b20a3d435b2a6e6c1940139"
+      "bytes": 88650,
+      "sha256": "e132b0c959d1555f2ac037c2a91612115169311067901f94525b4b13b26337f0"
     },
     {
       "path": "tests/atlas-coastal-surface.spec.ts",
@@ -867,8 +892,8 @@
     },
     {
       "path": "tests/fms-entry.spec.ts",
-      "bytes": 3252,
-      "sha256": "e638735f674d66b8ce6ca7cf7dbda745c11833794777834559e9181fad3b2e7b"
+      "bytes": 3784,
+      "sha256": "cad303947aa6fee4a6aa4d81a229a2947d7dbb0077686cc7fb2b7d9b0f072882"
     },
     {
       "path": "tests/fms-maritime.spec.ts",

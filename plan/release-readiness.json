@@ -80,16 +80,16 @@
     "version": 1,
     "status": "ready",
     "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
-    "sourceFingerprint": "99404609d15675609ead8fc78aa11cd64b94074579e5720cec7927ee74942870",
+    "sourceFingerprint": "f02ff2ccf99b1453c7556c145da9bcbcc3231d020b6d38444f14b3e1455d79af",
     "branch": "refs/heads/codex/ph06-world-generation",
-    "expiresAt": "2026-10-07T08:13:45.529Z",
+    "expiresAt": "2026-10-07T08:34:04.752Z",
     "checks": {
       "localBuild": {
         "status": "passed",
         "evidence": [
           "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-repair.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json"
+          "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
+          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
         ]
       },
       "coreBrowser": {
@@ -98,16 +98,17 @@
           "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
           "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
           "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-repair.json",
           "docs/evidence/fms-tactics-v5-2026-10-06/https-tactics-preview.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json"
+          "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
+          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
         ]
       },
       "sourcePrivacy": {
         "status": "passed",
         "evidence": [
           "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
-          "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json"
+          "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
+          "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md"
         ]
       }
     }

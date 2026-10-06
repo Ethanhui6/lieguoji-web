@@ -525,13 +525,23 @@ describe('production camera, cache and GPU lifecycle', () => {
     expect(result.repaintBlocks).toBe(result.repaintBlockKeys.length); expect(result.cache.created - before).toBe(9);
   });
 
-  it('neighboring elevation changes redraw real halo colors and each crop shares one accounted source', async () => {
+  it.each(['fast', 'yield'] as const)('%s neighboring elevation changes redraw real halo colors and each crop shares one accounted source', async budget => {
     const h = await loadedRenderer(), edited = cloneAtlasDraft(source), cell = getCellLayerSlot(edited, 'elevation', 31);
     cell.block.values[cell.slot] = 100; edited.manifest.revision++;
     edited.manifest.blockRefs.find(ref => ref.key === cell.key)!.hash = await hashBlock(cell.block);
+    let workMs = 1;
+    vi.spyOn(performance, 'now').mockImplementation(() => workMs);
+    pixi.targetDraw.mockImplementation(() => { if (budget === 'yield') workMs += 40; });
     pixi.targetDraw.mockClear();
     const accepted = h.renderer.accept(edited, { dirtyKeys: [cell.key], changedVertexIds: [], affectedCellIds: [31] });
-    await Promise.resolve(); tick(); const result = await accepted;
+    if (budget === 'yield') expect(vi.getTimerCount()).toBeGreaterThan(0);
+    else expect(vi.getTimerCount()).toBe(0);
+    // Production painting may yield before requesting its correct frame. A
+    // lone RAF tick cannot release fake timers on a slower CI host.
+    await vi.runAllTimersAsync();
+    expect(h.renderer.metrics().acceptedRevision).toBe(source.manifest.revision);
+    tick(); const result = await accepted;
+    expect(result.acceptedRevision).toBe(edited.manifest.revision);
     // Core 1,0 contains no edited cell. Its sampling halo includes actual land
     // from cell 31, and must therefore contain both real land and sea colors.
     const neighbor = pixi.targetDraw.mock.calls.map(([draw]) => draw).find(draw => draw.transform.tx === -254 && draw.transform.ty === 2);

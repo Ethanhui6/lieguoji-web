@@ -25,8 +25,20 @@ test('FMS: terrain confirmation stays clickable before saving and entering a new
   await entry.click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
   await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','9',{timeout:30000});
   await page.getByRole('button',{name:'军事',exact:true}).click();await expect(page.getByRole('region',{name:'布兵与动员'})).toBeVisible();
+  await info.attach('fms-entry-resources',{body:JSON.stringify({workers,resources,errors,failed,scope:'Chromium emulation; physical device and original visual acceptance pending'}),contentType:'application/json'});
   expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);expect(workers.some(u=>/play\.worker/.test(u))).toBe(true);
   expect(errors).toEqual([]);expect(failed).toEqual([]);
-  for(const resource of resources){expect(resource.status,resource.url).toBe(200);if(/\.js$/.test(resource.url))expect(resource.mime,resource.url).toMatch(/javascript/i);}
-  await info.attach('fms-entry-resources',{body:JSON.stringify({workers,resources,errors,failed,scope:'Chromium emulation; physical device and original visual acceptance pending'}),contentType:'application/json'});
+  const fetched=new Map<string,string>();
+  for(const resource of resources){
+    if(resource.status===200)fetched.set(resource.url,resource.mime);
+    else {
+      // HTTPS reload may revalidate a cached asset. Require its earlier real
+      // 200 response; never accept a cache miss, redirect, or failed resource.
+      expect(resource.status,resource.url).toBe(304);
+      expect(fetched.has(resource.url),`No prior 200 for cached ${resource.url}`).toBe(true);
+    }
+    const mime=resource.mime||fetched.get(resource.url)||'';
+    if(/\.js$/.test(resource.url))expect(mime,resource.url).toMatch(/javascript/i);
+    if(/\.css$/.test(resource.url))expect(mime,resource.url).toMatch(/text\/css/i);
+  }
 });

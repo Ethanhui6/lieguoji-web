@@ -1,0 +1,1327 @@
+{
+  "recordedAt": "2026-10-06T08:30:03.617Z",
+  "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+  "status": "passed_finite_cases",
+  "builds": {
+    "checkedAt": "2026-10-06T08:24:45.227Z",
+    "results": [
+      {
+        "url": "https://e8babf58.lieguoji-web.pages.dev",
+        "status": 200,
+        "metadata": {
+          "version": "0.5.0-preview.33",
+          "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+          "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+          "fmsPlayFingerprint": "0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504",
+          "fmsTacticsFingerprint": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+          "macroGenerator": {
+            "sha256": "7984490d07c9b0d34d154b7e1fccc57e5abc6078c5e6379d7879e7ea29b4a402",
+            "files": [
+              "src/world/generation-contract.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/macro.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "landformGenerator": {
+            "sha256": "858856230b359b1b834171485db2a31e15dfaa5963fbe3b21614fdff0c5ce41e",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/landforms.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "islandGenerator": {
+            "sha256": "3340c36ad93a3a4bd1fcc651f173d6e83efff4b1110be6e81a898f9b4793d34d",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/islands.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "coastGenerator": {
+            "sha256": "f5772f5a9b85fe85878bd89d42905334fa7e9779847f8054efd620120369b35e",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/coast.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "shapeGenerator": {
+            "sha256": "cbe7e8615755b4a3a85ecb4e72e3ee3b87ba7b50e102de3a2786db54355197f3",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/shape.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "oceanGenerator": {
+            "sha256": "9816b908afbe871d7069c4a06975e0830fbbc2de524b1ef2c957c3ad5f7a0a78",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/ocean.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "detailShapeGenerator": {
+            "sha256": "a47a3aea3133595fedc0128dceff6a3ad2362961c05f8b484814b2faa203162d",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-adapter.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addDetailGenerator": {
+            "sha256": "f245bb3ba5856ff0ae4c0c5df05fac803e32c0f094ab7ccfec2188d33ece7fc6",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-add-adapter.ts",
+              "src/world/generation/detail-shape-add.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "naturalDetailGenerator": {
+            "sha256": "3ad50465f760c74fd953cbce7a60f3985728932dd5b44d94221812cf48e7d283",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-adapter.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/natural-ocean-base.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addNaturalDetailGenerator": {
+            "sha256": "fd21dd27f1dbd845a5301d2d462eb92b41519618fb0bab4b7e4134c78309b2ab",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-add-adapter.ts",
+              "src/world/generation/detail-shape-natural-add.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "localDetailReliefGenerator": {
+            "sha256": "518eca074345e57259653d62a5372edbbaeace684234116a37561b361ae6bce2",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-local-background.ts",
+              "src/world/generation/detail-local-relief.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/local-detail-relief-adapter.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "seedTerrainGenerator": {
+            "id": "recovered-height-square-v1",
+            "sha256": "bc2eb3f4319ff9bf6d21c59faced9b75bca0f5c727cc8f6591493863d154915f",
+            "files": [
+              "src/world/model.ts",
+              "src/world/recovered-terrain/alea.ts",
+              "src/world/recovered-terrain/contract.ts",
+              "src/world/recovered-terrain/engine.ts",
+              "src/world/recovered-terrain/numeric.ts",
+              "src/world/recovered-terrain/research.ts",
+              "src/world/recovered-terrain/templates.ts",
+              "src/world/recovered-terrain/topology.ts",
+              "src/world/seed-terrain.ts",
+              "src/world/topology.ts"
+            ],
+            "externalFiles": [
+              "node_modules/d3-delaunay/package.json",
+              "node_modules/d3-delaunay/src/delaunay.js",
+              "node_modules/d3-delaunay/src/index.js",
+              "node_modules/d3-delaunay/src/path.js",
+              "node_modules/d3-delaunay/src/polygon.js",
+              "node_modules/d3-delaunay/src/voronoi.js",
+              "node_modules/delaunator/delaunator.js",
+              "node_modules/delaunator/delaunator.min.js",
+              "node_modules/delaunator/index.js",
+              "node_modules/delaunator/package.json",
+              "node_modules/robust-predicates/esm/incircle.js",
+              "node_modules/robust-predicates/esm/insphere.js",
+              "node_modules/robust-predicates/esm/orient2d.js",
+              "node_modules/robust-predicates/esm/orient3d.js",
+              "node_modules/robust-predicates/esm/util.js",
+              "node_modules/robust-predicates/index.js",
+              "node_modules/robust-predicates/package.json",
+              "package-lock.json"
+            ]
+          },
+          "rules": "0.2.0",
+          "supportedRules": [
+            "0.1.0",
+            "0.2.0"
+          ],
+          "entry": "world-studio",
+          "scenarios": [
+            "custom-world",
+            "test-continent"
+          ]
+        }
+      },
+      {
+        "url": "https://codex-ph06-world-generation.lieguoji-web.pages.dev",
+        "status": 200,
+        "metadata": {
+          "version": "0.5.0-preview.33",
+          "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+          "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+          "fmsPlayFingerprint": "0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504",
+          "fmsTacticsFingerprint": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+          "macroGenerator": {
+            "sha256": "7984490d07c9b0d34d154b7e1fccc57e5abc6078c5e6379d7879e7ea29b4a402",
+            "files": [
+              "src/world/generation-contract.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/macro.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "landformGenerator": {
+            "sha256": "858856230b359b1b834171485db2a31e15dfaa5963fbe3b21614fdff0c5ce41e",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/landforms.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "islandGenerator": {
+            "sha256": "3340c36ad93a3a4bd1fcc651f173d6e83efff4b1110be6e81a898f9b4793d34d",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/islands.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "coastGenerator": {
+            "sha256": "f5772f5a9b85fe85878bd89d42905334fa7e9779847f8054efd620120369b35e",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/coast.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "shapeGenerator": {
+            "sha256": "cbe7e8615755b4a3a85ecb4e72e3ee3b87ba7b50e102de3a2786db54355197f3",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/shape.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "oceanGenerator": {
+            "sha256": "9816b908afbe871d7069c4a06975e0830fbbc2de524b1ef2c957c3ad5f7a0a78",
+            "files": [
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/ocean.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "detailShapeGenerator": {
+            "sha256": "a47a3aea3133595fedc0128dceff6a3ad2362961c05f8b484814b2faa203162d",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-adapter.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addDetailGenerator": {
+            "sha256": "f245bb3ba5856ff0ae4c0c5df05fac803e32c0f094ab7ccfec2188d33ece7fc6",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-shape-add-adapter.ts",
+              "src/world/generation/detail-shape-add.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "naturalDetailGenerator": {
+            "sha256": "3ad50465f760c74fd953cbce7a60f3985728932dd5b44d94221812cf48e7d283",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-adapter.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/natural-ocean-base.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "addNaturalDetailGenerator": {
+            "sha256": "fd21dd27f1dbd845a5301d2d462eb92b41519618fb0bab4b7e4134c78309b2ab",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-natural-outline.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/detail-shape-natural-add-adapter.ts",
+              "src/world/generation/detail-shape-natural-add.ts",
+              "src/world/generation/detail-shape-natural.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "localDetailReliefGenerator": {
+            "sha256": "518eca074345e57259653d62a5372edbbaeace684234116a37561b361ae6bce2",
+            "files": [
+              "src/world/atlas-format.ts",
+              "src/world/coastal-generation.ts",
+              "src/world/coastal-surface.ts",
+              "src/world/detail-coast-base.ts",
+              "src/world/detail-coast-codec.ts",
+              "src/world/detail-coast-field.ts",
+              "src/world/detail-coast-geometry.ts",
+              "src/world/detail-coast-locks.ts",
+              "src/world/detail-coast-types.ts",
+              "src/world/generation-contract.ts",
+              "src/world/generation-format.ts",
+              "src/world/generation-history.ts",
+              "src/world/generation-locks.ts",
+              "src/world/generation/detail-curved-ridge.ts",
+              "src/world/generation/detail-local-background.ts",
+              "src/world/generation/detail-local-relief.ts",
+              "src/world/generation/detail-natural-relief.ts",
+              "src/world/generation/detail-orography.ts",
+              "src/world/generation/detail-shape-distance.ts",
+              "src/world/generation/detail-shape-height.ts",
+              "src/world/generation/fine-range-tree.ts",
+              "src/world/generation/fingerprint.ts",
+              "src/world/generation/local-detail-relief-adapter.ts",
+              "src/world/generation/quality.ts",
+              "src/world/generation/seed.ts",
+              "src/world/generation/terrain-massif.ts",
+              "src/world/model.ts",
+              "src/world/topology.ts"
+            ]
+          },
+          "seedTerrainGenerator": {
+            "id": "recovered-height-square-v1",
+            "sha256": "bc2eb3f4319ff9bf6d21c59faced9b75bca0f5c727cc8f6591493863d154915f",
+            "files": [
+              "src/world/model.ts",
+              "src/world/recovered-terrain/alea.ts",
+              "src/world/recovered-terrain/contract.ts",
+              "src/world/recovered-terrain/engine.ts",
+              "src/world/recovered-terrain/numeric.ts",
+              "src/world/recovered-terrain/research.ts",
+              "src/world/recovered-terrain/templates.ts",
+              "src/world/recovered-terrain/topology.ts",
+              "src/world/seed-terrain.ts",
+              "src/world/topology.ts"
+            ],
+            "externalFiles": [
+              "node_modules/d3-delaunay/package.json",
+              "node_modules/d3-delaunay/src/delaunay.js",
+              "node_modules/d3-delaunay/src/index.js",
+              "node_modules/d3-delaunay/src/path.js",
+              "node_modules/d3-delaunay/src/polygon.js",
+              "node_modules/d3-delaunay/src/voronoi.js",
+              "node_modules/delaunator/delaunator.js",
+              "node_modules/delaunator/delaunator.min.js",
+              "node_modules/delaunator/index.js",
+              "node_modules/delaunator/package.json",
+              "node_modules/robust-predicates/esm/incircle.js",
+              "node_modules/robust-predicates/esm/insphere.js",
+              "node_modules/robust-predicates/esm/orient2d.js",
+              "node_modules/robust-predicates/esm/orient3d.js",
+              "node_modules/robust-predicates/esm/util.js",
+              "node_modules/robust-predicates/index.js",
+              "node_modules/robust-predicates/package.json",
+              "package-lock.json"
+            ]
+          },
+          "rules": "0.2.0",
+          "supportedRules": [
+            "0.1.0",
+            "0.2.0"
+          ],
+          "entry": "world-studio",
+          "scenarios": [
+            "custom-world",
+            "test-continent"
+          ]
+        }
+      }
+    ]
+  },
+  "stats": {
+    "startTime": "2026-10-06T08:26:46.298Z",
+    "duration": 51699.591,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "FMS: terrain confirmation stays clickable before saving and entering a new world",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 15673,
+      "workers": [
+        "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js"
+      ],
+      "resources": [
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 200,
+          "mime": "text/css; charset=utf-8"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/battle-sword-BXcDEFcj.png",
+          "status": 200,
+          "mime": "image/png"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        }
+      ],
+      "errors": [],
+      "failed": [],
+      "scope": "Chromium emulation; physical device and original visual acceptance pending"
+    },
+    {
+      "title": "FMS: terrain confirmation stays clickable before saving and entering a new world",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 14466,
+      "workers": [
+        "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js"
+      ],
+      "resources": [
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 200,
+          "mime": "text/css; charset=utf-8"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/battle-sword-BXcDEFcj.png",
+          "status": 200,
+          "mime": "image/png"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        }
+      ],
+      "errors": [],
+      "failed": [],
+      "scope": "Chromium emulation; physical device and original visual acceptance pending"
+    },
+    {
+      "title": "FMS: terrain confirmation stays clickable before saving and entering a new world",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "durationMs": 19399,
+      "workers": [
+        "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+        "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js"
+      ],
+      "resources": [
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 200,
+          "mime": "text/css; charset=utf-8"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/terrain.worker-DaY7RVPz.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/index-kq9zR5wj.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/rolldown-runtime-hePW80VL.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-MBfgLD2k.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Geometry-IpHxCVTc.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getTextureBatchBindGroup-ClDkMdT3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/RenderTargetSystem-a4R96cNy.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/Text-Bcmlp2PV.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/getPo2TextureFromSource-BzR2jfx3.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/BufferResource-Bk8ZSLzt.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/camera-BGXwsUH8.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/delaunay-BCSrghLA.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/canvasUtils-BVGwBBBn.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/FmsApp-BzJUzzaN.css",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-Dk54I1Lo.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/browserAll-B14nZLx-.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/init-B8Jnes8g.js",
+          "status": 304,
+          "mime": ""
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/play.worker-DDYZfARg.js",
+          "status": 200,
+          "mime": "application/javascript"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/battle-sword-BXcDEFcj.png",
+          "status": 200,
+          "mime": "image/png"
+        },
+        {
+          "url": "https://e8babf58.lieguoji-web.pages.dev/assets/biome.worker-DO2s7HoV.js",
+          "status": 200,
+          "mime": "application/javascript"
+        }
+      ],
+      "errors": [],
+      "failed": [],
+      "scope": "Chromium emulation; physical device and original visual acceptance pending"
+    }
+  ],
+  "rawReportSha256": "f2ba9afdc5e5d832b918e70946f0af5814af85f2e9e0821b31758a5f3e5c4728",
+  "priorResourceAssertionFailure": {
+    "reportSha256": "77667915f38328b54132173d4eca5fd418099adb4b51c977117f8a69879d73e2",
+    "stats": {
+      "startTime": "2026-10-06T08:24:53.459Z",
+      "duration": 56438.396,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "reason": "Three UI flows completed but a strict 200-only assertion rejected valid HTTPS reload 304 responses.",
+    "repair": "Require each 304 URL to have an earlier observed real 200; verify JS/CSS MIME from response or that prior cache entry. No forced click, response mocking, interception or runtime change.",
+    "testSha256": "cad303947aa6fee4a6aa4d81a229a2947d7dbb0077686cc7fb2b7d9b0f072882"
+  },
+  "reusedGameplay": {
+    "file": "https-tactics-preview.json",
+    "commit": "3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b",
+    "cases": 10,
+    "actualProductionDelta": [
+      "src/fms/FmsApp.tsx"
+    ],
+    "scope": "Only FmsApp entry visibility changed; warfare 10 cases reused, not freshly rerun on 92af."
+  },
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "scope": "Three Chromium screen sizes, mouse pointer. Real drawing/naturalize/confirm/save/reload/new-world, Workers/assets/console. Not physical touch or full gameplay equivalence."
+}

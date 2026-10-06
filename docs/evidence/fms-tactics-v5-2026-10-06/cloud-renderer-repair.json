@@ -1,0 +1,76 @@
+{
+  "recordedAt": "2026-10-06T08:32:31.550Z",
+  "status": "passed_locally_cloud_pending",
+  "baseCommit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+  "failure": {
+    "run": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825",
+    "passedFiles": 217,
+    "failedFiles": 1,
+    "passedTests": 2664,
+    "failedTests": 1,
+    "file": "src/world/renderer.test.ts",
+    "test": "neighboring elevation changes redraw real halo colors and each crop shares one accounted source",
+    "error": "Test timed out in 5000ms",
+    "logSha256": "3b937364ed6ce867897d92027df414253ba84445a0a9fb048013ecf7fc4a902c"
+  },
+  "cause": "The unit harness fakes setTimeout but measured real CPU time. After exceeding the 32ms paint budget, production accept waits for a timer before scheduling its correct RAF. The test ticked RAF before draining this pending timer, so await accepted could never settle. Source-proven reachable harness defect; cloud log itself provides no suspended-await stack.",
+  "repair": "Parameterize the real halo/crop/ledger case with fixed fast and 40ms-per-target clocks. Assert zero versus nonzero timers, drain them, prove acceptedRevision remains old until RAF, then preserve all original color, block, crop and accounting assertions. Original 5000ms deadline unchanged.",
+  "targeted": {
+    "passed": 85,
+    "failed": 0,
+    "reportSha256": "8e88725d65526df6f25170a5d8a4550f86c595337acc4ea6aad3519238468efa",
+    "cases": [
+      {
+        "title": "fast neighboring elevation changes redraw real halo colors and each crop shares one accounted source",
+        "status": "passed",
+        "durationMs": 1024.6575999999986
+      },
+      {
+        "title": "yield neighboring elevation changes redraw real halo colors and each crop shares one accounted source",
+        "status": "passed",
+        "durationMs": 1019.8629000000001
+      }
+    ]
+  },
+  "checks": {
+    "lint": {
+      "status": "passed",
+      "sha256": "f7ec5fbf72649177d0d1313754c24c03876633f24969d525bd917a5f6802d49d"
+    },
+    "types": {
+      "status": "passed",
+      "sha256": "b48809ad0188ef474dcaa93d18a4ab062859d100b89d7fcd8ceaca47ca5501bb"
+    }
+  },
+  "runtime": {
+    "changedFiles": [],
+    "buildReused": "entry-overlay-fix.json; same src/assets/Worker/dependencies as 92af7ea",
+    "warfareFingerprint": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad"
+  },
+  "browser": {
+    "freshEntry": "entry-https-verification.json",
+    "freshCases": 3,
+    "reusedWarfareCases": 10,
+    "reusedWarfare": "https-tactics-preview.json"
+  },
+  "remainingCloudIssue": {
+    "run": "37431669150",
+    "cases": [
+      "standard256 long task cancel",
+      "desktop512 long task cancel"
+    ],
+    "status": "previous cloud failures unresolved; job later cancelled by normal newer push",
+    "localReproduction": {
+      "passed": 2,
+      "reportSha256": "f8d8aa1b8ba3c88f8d27b7f2622328e4786b0d736f467e0807a057f530b51280",
+      "maximumProgressGapMs": 119.1,
+      "maximumCancelResponseMs": 16.5
+    },
+    "gateUnchanged": {
+      "progressMs": 250,
+      "cancelMs": 500
+    }
+  },
+  "physicalDevice": "pending",
+  "userVisual": "pending"
+}

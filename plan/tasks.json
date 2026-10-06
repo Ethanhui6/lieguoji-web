@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "preview_entry_fix_locally_verified",
+      "status": "cloud_ci_failed",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2406,23 +2406,26 @@
         "docs/evidence/fms-tactics-v5-2026-10-06/cloud-release.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/cloud-retry.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/https-tactics-preview.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json"
+        "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-entry-release.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
       ],
-      "commit": "3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b",
-      "checkedAt": "2026-10-06T07:59:13.883Z",
+      "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+      "checkedAt": "2026-10-06T08:30:07.683Z",
       "urls": [
-        "https://fd9943e0.lieguoji-web.pages.dev",
+        "https://e8babf58.lieguoji-web.pages.dev",
         "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
       ],
       "cloudCi": {
-        "status": "in_progress",
-        "conclusion": "",
-        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37431669150"
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825"
       },
       "pages": {
         "status": "completed",
         "conclusion": "success",
-        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/fd9943e0-ae0d-42fe-a8db-f5cf86a79f5e"
+        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/e8babf58-e7da-4779-9c93-7c5e5829a076"
       }
     }
   },
@@ -4420,11 +4423,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-06",
-      "status": "entry_fix_ready_for_preview",
+      "status": "cloud_ci_failed",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b",
+      "lastCommitted": "92af7eaea4f3ef0e234fe7494238c293786b310d",
       "cloudScope": "Authorized GitHub + Pages branch preview pushed; main unchanged; physical/visual pending",
-      "next": "Upload checked entry overlay fix through native Pages branch chain, verify actual SHA and naturalize-to-world flow. Preserve v9 before later rule changes.",
+      "next": "Upload audited test-only renderer-timer/cache repair; preserve actual 92af HTTPS evidence and prior cloud failures. No gameplay change. Then WEB-04-13 with published v9 compatibility.",
       "latestUserPriority": "用户要求代码级恢复原作战争：野外交锋、空城接管、大量军队与动员；已授权安装目录只读核验后接入v9，先完成相关真实检查，再接续已授权GitHub＋Pages分支预览，正式站不变。"
     },
     "nativeHillPrototype": {

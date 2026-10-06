@@ -1,67 +1,41 @@
 # 当前续接：v9 原作陆战、常备军与动员
 
-更新：2026-10-06。根任务独占写入，子代理只读。先核实Git，再读V5与plan/tasks.json.webRebuild。用户明确选择“GitHub＋Pages预览，保留正式站”；本次范围见docs/GITHUB_UPLOAD_2026-10-06.md，正式PH、真机与用户视觉状态不变。
+更新：2026-10-06T08:30:07.763Z。根任务独占写入，子代理只读。先核实 Git，再读 CODEX_AUTOPILOT_V5.md 和 plan/tasks.json.webRebuild。旧续接全文保存在 [本轮历史快照](evidence/fms-tactics-v5-2026-10-06/AUTO_HANDOFF_BEFORE_ENTRY_VERIFICATION.md)，其中过去时状态不能作为当前验收结果。
 
-**最新实际状态：** 已正常快进上传 `3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b`，main仍为b9b8f96。Pages `fd9943e0-ae0d-42fe-a8db-f5cf86a79f5e`已成功，实际唯一地址https://fd9943e0.lieguoji-web.pages.dev/及稳定分支地址https://codex-ph06-world-generation.lieguoji-web.pages.dev/均核到同SHA/战争指纹。10项真实HTTPS桌面/手机战斗、动员、海军、存档与深链通过；Actions `37431669150`通过完整build:cf，完整浏览器阶段仍在运行。随后独立428×926自然化探针发现disabled进入世界按钮挡住确认地形；已本地只改FmsApp一项hidden条件，桌面/手机/平板3项真实点击→确认→保存→刷新→开局及Worker/资源/console检查通过，准备正常上传该修复。规则和存档不变，旧失败和10项通过均保留。证据entry-overlay-fix.json、https-tactics-preview.json及cloud-retry.json。
+## 最新实际状态
 
-## 最新用户优先级（2026-10-06 13:55 HKT）
+- 当前本地/已上传开发提交：92af7eaea4f3ef0e234fe7494238c293786b310d，分支 codex/ph06-world-generation；仓库 https://github.com/Ethanhui6/lieguoji-web 。最近这次修复只使绘图设置/自然化预览打开时隐藏“进入世界”按钮，解决它挡住“确认地形”的真实指针错误。战争规则与存档指纹不变。
+- 用户明确选择“GitHub＋Pages预览，保留正式站”，范围见 docs/GITHUB_UPLOAD_2026-10-06.md。正常 pre-push 检查后快进上传，没有 force/绕过/第二条部署链。main 保持 b9b8f96b40544ef8b7e1e428910fe2df64fec6f7；正式站 https://lieguoji-web.pages.dev/ 不变。全部正式 PH、真机和用户视觉门没有自动完成。
+- Pages 原生 Git deployment e8babf58-e7da-4779-9c93-7c5e5829a076：completed / success。实际回传地址：https://e8babf58.lieguoji-web.pages.dev 、 https://codex-ph06-world-generation.lieguoji-web.pages.dev。最新提交 HTTPS 验证：passed。
+- Actions https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825：completed / failure。完整 CI 不能声明通过。之前 3e6b505 的 build:cf 通过 218 文件 / 2665 单测，但完整浏览器出现标准256/桌面512“长任务取消”失败；后续正常上传使旧任务被现有 concurrency 取消。取消不抹去已观察的失败。
+- 同两项在本地最新生产产物重新实测 2/2 通过；只是本地复现，不能代替云端修复。保留 250ms 进度/500ms 取消标准。原始报告 .autopilot/tactics-ci-cancel-repro.json，云失败日志 .autopilot/tactics-retry-cloud-log.txt。需要当前任务的实际失败附件才能定位，不能根据20/58秒总耗时猜成超时或改阈值。
 
-用户指出只围城、空城不接管、兵力稀少且无动员。先恢复原作对军伤害/地区抵抗分离、救援索敌、常备军内部与显示单位以及独立应急动员/上帝布兵，再检查后上传已授权分支预览。本轮不是全系统复刻验收；原作RTS目标省与当前省分支未完全等价。根任务独占写入，v8冻结核不改，新v9独立库/指纹/显式旧档副本。
+## 本轮已接入
 
-## 当前代码
+- v9 / fms-tactics-1 / Store11 lieguoji-fms-tactics-v1。指纹 eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad。真实 gameRef/Worker/保存均保留 v9；v8 只是显示投影。v1—v8 继续原规则，显式“创建战争新版副本”才升级，新 ID/新库不覆盖旧局。
+- 根据原作每军独立攻击周期、40内部对军伤害与10对省伤害的独立合同接入真实野外交锋/地区抵抗；显示兵力为内部×10、精锐效率与抗伤、敌军对象分摊、守方回补和实际击穿者归属。仍是网页同路段相遇/同节点接敌，未恢复原作完整省内cell寻路。
+- “无人驻防接管”是用户本次意图对应的网页选项，军事页可切“原作抵抗”。原作普通无驻军省仍有抵抗，不能把直接占领说成原算法。两种模式只接管实际到达的单省，不整国吞并；撤退者不能继续保持该节点控制。
+- 原作常备 home 配额、领土×float32(2/3)目标、1000—3000显示兵力与月度内部人口扣款；去除旧10%人口/十日民粮门。月检应急军、冷却/和平遣散、上帝布兵预览确认已接。当前中性国运/核心代用/30日折月、500总记录容量和每次20支为明确网页适配。
+- 陆军实际粮需按显示兵力/10，UI预测/AI粮需/外交预算同口径，旧版本与舰员不变。真实30日账本、有限粮库与非整十伤亡回归已测；这不是所有地形/长期战争平衡验收。
+- 保留手动真实海路/登船登陆/持续海战/撤离/沉没载军同tick损失；世界只突出大型战役，放大逐级展开并查看实际各国在场军力。远景小军国色点、近景分级军旗。未完成自动远征、封锁或真实团师层级。
+- 原作BattleSword图集40帧/12Hz，绑定真实陆海交锋、暂停/减少动态/结束清除；进攻箭头生长、0.8秒真实沉船退场。非预制假战争。原作完整动画和真机流畅度仍待验。
 
-- 分支codex/ph06-world-generation；已提交并正常快进上传26296d5b5f229a1ce7310d4bb463327f649b5b50（父297f1e30531c4adfc0ac85463579915e24e0b4ea）。2026-10-06 15:10香港时间核实远端同SHA，main仍为b9b8f96b40544ef8b7e1e428910fe2df64fec6f7。当前后续恢复笔记和部署回执仅作本地续接记录，未触发第二次部署。
-- v8 / fms-maritime-1，Store10 / lieguoji-fms-maritime-v1；玩法指纹0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504。
-- 海军预览驶向敌岸、真实海路接敌、持续同时扣舰体/船员、原位撤离且射程内仍受袭、沉没同tick结算载军、和平清交锋。换舰重复面板、零进度反向路线、撤离后改进攻残留豁免已修复。
-- 新增全图大型战役→区域→近景分层、按兵力缩小军标、点战役看实际国家的在场兵力/士气/粮/舰体。小战役可从列表访问，实际部队ID去重，不自动视共同参战者为同盟，不冒充全战争累计损失。
-- 原作BattleSword 40帧/12Hz/3.333秒，绑定实际陆海交锋，暂停冻结、减少动态静帧、结束清除；进攻箭头生长与0.8秒沉船退场已适配。旧存档不重播，沉船不可选。
-- 修复桌面面板遮住缩放按钮；沉船按独立born计时，避免继承出生前长帧而首帧过期。
-- 显示海图仅缓存主线程不可变快照；政治Graphics按领土/国色/选区/缩放/模式/terrain失效。缓存命中不等于整体流畅度，开发页仍观察到慢RAF，真机性能不能声明通过。
+## 检查证据及范围
 
-## v9 当前增量（GitHub已上传，Pages构建失败）
+- 本批初次完整本地单测218文件2662项通过，最终构建43项白名单产物。后来为云端修复大型测试外层期限及renderer确定性快/慢时钟分支，原功能断言、250/500ms性能门和慢分支不得提前接受画面均保留。原失败和修复见 cloud-repair.json。
+- 3e6b505 的唯一HTTPS https://fd9943e0.lieguoji-web.pages.dev/ 实测桌面/手机10项全部通过：实际道路交锋/207军队/应急动员/精确恢复、海军航行、原作战斗动画/暂停/沉没、旧核心流程与深链。详见 https-tactics-preview.json。这是明确旧提交的有限场景，不是所有流程通过。
+- 随后428×926真实HTTPS操作发现“进入世界”disabled按钮挡确认地形，原失败保留。entry-overlay-fix.json记录一行UI修复、本地桌面/手机/平板3项真实指针确认→保存→刷新→开新局和Worker/资源/console检查。未强制点击或注入样式。
+- 当前提交的实际HTTPS结果独立写入 cloud-entry-release.json，不把复用上述10项记成当前提交全新重跑。部署和Actions分别核实，Pages成功不等于完整CI通过。
+- 发布检查24项、lint/types/计划检查、构建43产物通过；FmsApp体积警告保留。旧Atlas233通过+4原有设备跳过是完整基线与定向修复合并证据，不能称重新跑了全部。CI当前状态以真实回执为准。
+- 移动/平板均为Chromium仿真；iPhone13ProMax / 用户报告iOS27 / Safari与Chrome真机、用户视觉及原作逐帧等价均待验。
 
-- tactics-*独立规则/Session/指纹、Store11。真实run由gameRef保存，v8仅显示投影；Worker的v9增量包含tactics。旧v8字节保护保留，显式副本才升级。
-- 原包恢复：显示兵力=内部×10，原常备按home/领土2/3，月征扣内部人口，另有应急军与上帝布兵。新军不再套旧10%人口/十日民粮门；保留网页安全容量500条/手动批次20。
-- 每军独立战斗计时、实际敌军分摊伤害；救援本国受入侵邻省；精锐输出/抗伤纳入AI评估。空城接管是用户意图对应的网页选项，原作抵抗模式可切换。旧同路段/同节点接敌结构保留，未恢复完整省内cell寻路。
-- 军事页新增国家/地区/兵种/数量布兵、应急动员；迁都入口保留。远景小军团变为国色小点，大军旗仍分级。
-- 只读复核所发现的月检terrain identity、初始人口虚加、home忽略应急军、停战halted丢失、抵抗修复/击穿归属、精锐AI估值及日志超长均已按报告修复。陆军补粮误用显示人数的10倍消耗已通过独立tactics-statecraft修复，UI报告/实际日结/AI粮需/外交预算同口径，旧经济和舰员不动。
-- 14:38香港时间：完整单测218文件2662项通过；其后构建的依赖清单失败已修复并保留。最终3文件39项、lint/types及43产物构建通过。FMS陆战/动员、海军、原作动画三设备合计9项通过，128旧生成问题三设备复验通过。此前陆战脚本轮询整run导致超时，改为轮询独立revision键、单次读取完整状态，仍维持5秒门槛；三个失败与后续三个通过均保留。
-- 当前证据：docs/evidence/fms-tactics-v5-2026-10-06/checks.json、e2e-summary.json、browser-production.json。全量旧基线＋定向修复合并237项：233通过、4原有设备跳过；这不是再跑一次全量。v9指纹eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad。
-- 证据：docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md。原作击溃重编/君主特质/完整效率/联盟与情报仍待接，不声明全部复刻。
+## 原包恢复与下一批
 
-## 检查状态
+- 只读 D:/steam/steamapps/common/FantasyMapSimulator。实际 Windows PE / Unity IL2CPP29，无ELF/DWARF或hk4e调用的声明。恢复方法是索引→小函数边界→可运行切片→行为证据。没有运行原作或恢复脚本，没有读取认证/SDK/个人存档。
+- RECOVERY.md 是已实现与网页适配边界；REORGANIZATION_FOLLOWUP.md、ATTACKING_FOLLOWUP.md、TARGET_SELECTION_FOLLOWUP.md、PORT_TARGET_FOLLOWUP.md 仅是后续只读恢复，未塞进已发布v9。原作重编为合资格常备耗尽后直接回home10%再补足，非沿路返乡；目标选择按候选/Feature/距离，非兵力比；原作有效港口及突出部判定已有限核实，不能当完整海路算法。
+- 先完成当前真实HTTPS和云端失败定位，继续WEB-04-13的原作效率/长期围攻/供粮与击溃连续重编。**v9已经有真实试玩存档；下一次规则变更先归档完整执行源和兼容分派，再建立新版本/独立库/显式副本。** 尚未完成v9归档，不能直接换指纹使现有档锁死。
+- 按依赖接AI独立情报/埋伏、小编制、联盟援军与可截断补给；战争大事记、首都危机/传位/独立/叛乱/家族另据已核源码接入。ORIGINAL_EDITING.md的手工地类/河线、CAPITAL_CRISIS.md的首都危机是恢复证据，尚未完成网页功能，不能标完成。
+- 本地5180开发和5181生产预览可继续用；不停止用户旧标签，不覆盖已保存旧局。localhost不是手机公网。旧档CAS/主备/未来版本/超时abort保持。
+- 云端状态回执和本交接是上传后的本地记录；不为更新一个状态反复push重启全部CI。下次先核实实际Git/Pages/Actions，不从头重做本轮。会话结束后不声称后台开发。
 
-- 完整build:cf基线通过212文件2617单测、lint、类型、计划和构建；后续显示增量9文件67项定向通过，lint/类型通过。最终dist43项白名单产物，FmsApp约677kB警告保留。
-- 完整浏览器首轮231项：199通过、28失败、4原有设备跳过。原JSON保留在.autopilot/maritime-full-results.json，不重跑全部2.5小时。
-- 28项为Atlas旧断言漂移：默认format4、raw进度、实际海色[81,134,138]、WebGL丢失触发阶段、相机/纹理同帧等待。修正保留原250/500ms、精度8/像素≤1、实际WebGL扩展和存档保护门；三设备定向修复已经通过，失败历史保留。
-- 最终FMS动画桌面通过真实画双岛→两国→军令接敌→实际帧变化/暂停/减少动态→国别比较/地图点击→真实沉没清理。先前30秒播放结束仍有6%舰体，不能用墙钟假定沉没；现用真实UI逐日推进及MutationObserver捕获短退场，不延长产品动画。
-- 旧v8定向修复：coastal9通过、rendering9通过、completion5通过4原有设备跳过；generation的128流水线采样（子阶段满、总流程未提交）已按真实busy/candidate合同修复并三设备通过。最终237项汇总见v9 e2e-summary，各原始报告SHA与失败保留。
-- 原作来源、人工操作、生产截图见docs/evidence/fms-maritime-v5-2026-10-06/和fms-battle-animation-v5-2026-10-06/。428×926 Chromium是仿真，iPhone13ProMax/iOS27/Safari/Chrome真机及用户视觉待验。
-
-## 兼容和入口
-
-- v7指纹f72161fb53c2f4a3e31dea36c1ba764150ef0a35e462ce6d42a33ff5d7dae7ae，compat/transport1完整26源封存。旧版本原规则运行；显式复制才产生v8新ID/库。
-- 当前v8也已封存：compat/maritime1共30源（28规则＋model/observation依赖），构建验证实际执行字节。本次陆战采用独立v9，不能改旧核或只换hash锁掉存档。
-- 本次v9一经发布即成为真实试玩存档基线。下一次规则改动先保留其实际执行源与兼容分派，再建立新版本/独立库/显式副本；尤其不要直接修改tactics指纹所绑定的规则或入口，让玩家刚保存的v9因hash变化被锁。当前还没有v9发布后的兼容归档，不得假称已做。
-- CAS、主备原子写入、未来嵌套字段锁写、chosen previous备份、超时abort保留；不提交完整玩家存档。
-- 本地生产预览http://127.0.0.1:5181/?fms=1，5180开发；localhost不是手机公网。
-- 已保存海战run fms-7fd83de0-2155-4dc1-bc17-83e25334fbb7：tick2286/day19 01:12/rev5，checksum236c7fa5fd34a6cc24fb4acf7e5a05b5e360b93e5a565028c8b3c25977fe20b4；临海舰队72舰体/29船员返航暂停。真实保存/刷新/再保存checksum一致；browser.json有证据。
-- 旧运输Store9 rev6/checksum66b2be927ecace22fa54b0e24c6b87014ff37d494a66d3a75ff4b3727e9843c3未变。用户旧标签未替其操作。临时开发标签29已通过退出不保存并关闭，未覆盖已保存的day48。
-
-## 发布和下一批
-
-- 已核私有仓库https://github.com/Ethanhui6/lieguoji-web；旧开发远端90cdabc6fa1c0cd0d3f8d4037b93870b63421db5，main b9b8f96b40544ef8b7e1e428910fe2df64fec6f7。
-- 唯一链Pages lieguoji-web原生Git开发分支预览；main正式站https://lieguoji-web.pages.dev/保留。Pages和Actions独立，分别核实。
-- 118提交历史已审：610风险路径、6795普通path/blob；24历史trace ZIP约487MiB和46已删除Vite缓存仍随历史上传，不重写历史。未发现凭据/完整安装dump/真实玩家档；新增普通历史版本须等于最终HEAD同路径blob，本批准备一个最终提交。
-- 最终验证和隐私增量通过后已绑定preview20261006指纹49b456830dfbdafb152a0999229e7a4ad4c8c27f3e9cac65f32955b03d929599，正常pre-push检查通过。首次传输长时停留后仅停止本次transport，核实远端未变；重试仅本命令postBuffer=1GiB、lowSpeedLimit=1024/90秒并开启progress，未改全局配置/凭据/安全机制，成功上传503.39MiB已审历史。原失败和成功日志在.autopilot/tactics-push*.txt；GitHub对既有50MiB以上trace发警告，但推送成功，不重写历史。
-- 同SHA Actions https://github.com/Ethanhui6/lieguoji-web/actions/runs/37427965544 仍在运行；2026-10-06 15:24香港时间确认Pages deployment 11af79f5-155d-4fd1-a5ef-16ddc4c0e9e6 构建失败，未产生可用新HTTPS URL。GitHub的Pages输出只有Build failed，annotations为空；官方Cloudflare控制台需要重新登录，已给用户打开登录页并请求完成登录（不索要秘密），同时继续核对Actions。未推测失败原因，未跳过检查或改部署方式。当前提交重新本地构建通过，5181/build.json已标26296d5、v9指纹不变。
-- 随后Actions也完成且失败：211文件通过/7失败，2656用例通过/8失败，共2664，892.15秒。已取得实际日志，7项为大数据功能测试默认5秒超时（5.006–6.657秒），1项为renderer单位测试使用真实CPU耗时误选慢分支。已保留全部功能断言和真实浏览器250/500ms门；只对相关大集成用例及同组小岛矩阵给30秒外层期限，细地形往返仍逐字节比较；renderer增加快/慢两个确定性时钟分支且慢分支不得提前接受画面。7文件145项、lint、types、构建已复验通过，见cloud-repair.json。游戏规则、UI、Worker与资源相对26296d5没有改动，复用原9项同运行代码浏览器证据，不能说重新跑了全套。正准备正常提交这项测试修复并重试原生Git链；Pages实际失败细节未核，不能断言与Actions完全相同。
-- 下一批WEB-04-13：继续完善围城/补给和长期战局。旧v8的25.75日围攻缺口已由v9逐军计时、空城规则和内部粮需切片改善；完整地形/国运/君主效率、长途补给、击溃故乡连续重编仍未验收。不要把受控30日粮库回归当作所有地形与战局平衡通过。
-- 上传等待时只读补核了3个小函数，见同证据目录REORGANIZATION_FOLLOWUP.md、ATTACKING_FOLLOWUP.md、TARGET_SELECTION_FOLLOWUP.md，未接入v9。原作合资格耗尽常备军直接回故乡10%再连续补足，不是沿路返乡；RTS Attack/Defend与当前省/目标省分派区别须保留；常备选目标使用候选集/Feature/距离，不含军力比。未知上游可达性及辅助函数明确保留，不能据此造跨省远程伤害或假称全空间模型恢复。
-- ORIGINAL_EDITING.md：原作地类笔刷写Biom并影响战力/人口/资源；手工河线为可保存三点折线，未证改水文。原河网flux30及降水相关，独立密度滑块未证，网页添加须注明适配。需要新文档版本，不塞旧v2。
-- CAPITAL_CRISIS.md：原作首都被攻占立即RecalculateCapital，满月处理危机；压力公式/吞并资格/真实内战事件入口已核，深层分地/家族关系未知。未接入网页玩法。
-- 随后按依赖做AI有限情报/埋伏、真实小编制、联盟援军/可切补给、传位/独立/叛乱/家族与大事记。自动远征、封锁、商船战、修船、完整政体/家族/信仰未完成。
-
-授权安装目录只读；不读认证/SDK配置/个人存档，不运行完整原作或恢复脚本。会话结束后不声称后台开发。
-
-2026-10-06本轮续接：测试修复首次被pre-push历史核验阻断，已补审26296d5的155候选及2固定字段；610风险清单不变。24项发布门回归通过。仅修订尚未上传的本地修复提交，再正常快进上传；不force、不改远端历史，完整记录见HISTORY_DELTA_PRIVACY.md。
+最新云端修复：92af7ea 的实际HTTPS已三设备通过，36资源/每设备16次合法304缓存再验、terrain/play Worker和console正常。完整Actions为217文件/2664通过、1项renderer halo用例5000ms超时；已定位假timer死等并加快/慢两路径，85项renderer复验通过，保留原5000ms/32ms及250/500ms门。HTTPS最初200-only断言误拒304，改为必须同URL先200才允许304且校验MIME，三个失败记录保留。当前只改两份测试与证据，无运行源码变更，准备正常上传；详见cloud-renderer-repair.json与entry-https-verification.json。

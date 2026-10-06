@@ -2,6 +2,8 @@
 
 更新：2026-10-06。根任务独占写入，子代理只读。先核实Git，再读V5与plan/tasks.json.webRebuild。用户明确选择“GitHub＋Pages预览，保留正式站”；本次范围见docs/GITHUB_UPLOAD_2026-10-06.md，正式PH、真机与用户视觉状态不变。
 
+**最新实际状态：** 已正常快进上传 `3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b`，main仍为b9b8f96。Pages `fd9943e0-ae0d-42fe-a8db-f5cf86a79f5e`已成功，实际唯一地址https://fd9943e0.lieguoji-web.pages.dev/及稳定分支地址https://codex-ph06-world-generation.lieguoji-web.pages.dev/均核到同SHA/战争指纹。10项真实HTTPS桌面/手机战斗、动员、海军、存档与深链通过；Actions `37431669150`通过完整build:cf，完整浏览器阶段仍在运行。随后独立428×926自然化探针发现disabled进入世界按钮挡住确认地形；已本地只改FmsApp一项hidden条件，桌面/手机/平板3项真实点击→确认→保存→刷新→开局及Worker/资源/console检查通过，准备正常上传该修复。规则和存档不变，旧失败和10项通过均保留。证据entry-overlay-fix.json、https-tactics-preview.json及cloud-retry.json。
+
 ## 最新用户优先级（2026-10-06 13:55 HKT）
 
 用户指出只围城、空城不接管、兵力稀少且无动员。先恢复原作对军伤害/地区抵抗分离、救援索敌、常备军内部与显示单位以及独立应急动员/上帝布兵，再检查后上传已授权分支预览。本轮不是全系统复刻验收；原作RTS目标省与当前省分支未完全等价。根任务独占写入，v8冻结核不改，新v9独立库/指纹/显式旧档副本。

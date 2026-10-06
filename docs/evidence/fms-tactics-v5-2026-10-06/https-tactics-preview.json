@@ -1,0 +1,88 @@
+{
+  "recordedAt": "2026-10-06T08:12:17.385Z",
+  "commit": "3e6b505ed378ef562cf0a6eed42cfb5a52a7f38b",
+  "url": "https://fd9943e0.lieguoji-web.pages.dev",
+  "status": "passed_finite_cases",
+  "stats": {
+    "startTime": "2026-10-06T07:59:29.697Z",
+    "duration": 388251.802,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "FMS: original battle clip follows a real naval contact, pauses and respects reduced motion",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 64579,
+      "errors": []
+    },
+    {
+      "title": "FMS: original battle clip follows a real naval contact, pauses and respects reduced motion",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 70521,
+      "errors": []
+    },
+    {
+      "title": "FMS: draw islands, create countries, command navy and restore the real voyage",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 33702,
+      "errors": []
+    },
+    {
+      "title": "FMS: draw islands, create countries, command navy and restore the real voyage",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 33650,
+      "errors": []
+    },
+    {
+      "title": "FMS v9: real map, original-scale mustering, road encounter, mobilization and exact restore",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 76325,
+      "errors": []
+    },
+    {
+      "title": "FMS v9: real map, original-scale mustering, road encounter, mobilization and exact restore",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 75538,
+      "errors": []
+    },
+    {
+      "title": "地图、命令取消、真实行军交战占领、原因与刷新恢复",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 9684,
+      "errors": []
+    },
+    {
+      "title": "深链接、产物版本、地图手势和布局",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "durationMs": 7493,
+      "errors": []
+    },
+    {
+      "title": "地图、命令取消、真实行军交战占领、原因与刷新恢复",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 8429,
+      "errors": []
+    },
+    {
+      "title": "深链接、产物版本、地图手势和布局",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "durationMs": 6178,
+      "errors": []
+    }
+  ],
+  "rawReportSha256": "d4ea39137912097d710ff386f9adc0f3bf5bf12ed6b7b9f61ee0ae3c43accd8e",
+  "scope": "Fresh desktop/mobile HTTPS tactics, navy, animation, legacy smoke. Later separate naturalization probe found an entry overlay; not an all-flows pass."
+}

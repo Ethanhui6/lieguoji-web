@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-10-06T07:44:19.171Z",
+  "recordedAt": "2026-10-06T08:13:30.877Z",
   "parentCommit": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
   "scope": "Changed candidate files; prior history and semantic/privacy manual review in SOURCE_PRIVACY.md. Machine patterns are not a complete secret detector.",
   "excludedSelf": "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
   "excludedBinding": "plan/release-readiness.json (fixed-field acceptance binding reviewed separately)",
-  "fileCount": 168,
-  "textFiles": 159,
-  "bytes": 4326440,
-  "digest": "66cc3b3b91797ada14f83d8459d289199525e775a9e7eb1c9e38ada191b9a373",
+  "fileCount": 175,
+  "textFiles": 165,
+  "bytes": 4947256,
+  "digest": "ad62793c6423ccdd09d358acdb00d736f65366ceec904686d2eb005731ea8bdf",
   "findings": [],
   "files": [
     {
@@ -27,8 +27,8 @@
     },
     {
       "path": "docs/AUTO_HANDOFF.md",
-      "bytes": 12175,
-      "sha256": "bd45641fb349510e22032790bda8ca44223557ccb193c4ba393ba20b60106593"
+      "bytes": 13084,
+      "sha256": "6407835f7f4aa0729318be339030a1232633fc2ca1914d0f2dc8e2de80d364a6"
     },
     {
       "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
@@ -102,8 +102,8 @@
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
-      "bytes": 6222,
-      "sha256": "67077716b9ba237e63964a6e2ad504c429bdf66397b0bd254574bccd9e860691"
+      "bytes": 6624,
+      "sha256": "7d663823c3b7483df67a2d10d93ed1d305b477874b6538f473640ff2dd5b7b24"
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/battle-desktop.jpg",
@@ -132,8 +132,13 @@
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md",
-      "bytes": 1736,
-      "sha256": "665b9c37ebafc6be4cccfa75148f06f476686e85ba1714b8f8c1aea32fbb7bf2"
+      "bytes": 2378,
+      "sha256": "e890ebf97914e1e48119cc039093d0e9c406789912c6a96044d4f06a489b15fc"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/PORT_TARGET_FOLLOWUP.md",
+      "bytes": 2399,
+      "sha256": "c89a23256d86eab36b56ada1422170c050b0b1db35a0905f680df539c738c326"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md",
@@ -171,14 +176,34 @@
       "sha256": "9ac007c8451648d109470a4930521ddf5a7824e33a3dbdcc07aae06325ee13f2"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-retry.json",
+      "bytes": 6304,
+      "sha256": "c8c714fb65bf4d3a6bfdd55f9a2320d381c8b5ed62d2b85ac8d5819e7b62c42f"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
       "bytes": 235200,
       "sha256": "21f8f3e12f3efe05a5c3d51450895272302afff96dffbd29eb7482d8ff7c152c"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-confirmation-mobile.png",
+      "bytes": 558865,
+      "sha256": "bac5855c8c290774500794a27f9855201a726bd0f1da6390f4c5a2e4d7df162c"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
+      "bytes": 2913,
+      "sha256": "7187d7423957da577117e88057c6713509cc2a2037b293e5486b13b335fa32fb"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/field-battle-desktop.png",
       "bytes": 351807,
       "sha256": "9588e716f965913cc4f847340796ac43496d9a7d153d5834822cdd44795919f2"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/https-tactics-preview.json",
+      "bytes": 2800,
+      "sha256": "73b32d9d49a18f4dc9310cd95071543eea082afffc659cf4534e7616bacb7535"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/muster-mobile.png",
@@ -188,12 +213,12 @@
     {
       "path": "plan/reviewed-history-2026-10-06.json",
       "bytes": 189471,
-      "sha256": "8d4ed9f10337e4d71e2020ed127f95e40dd0061447c5db76c098321266d6558f"
+      "sha256": "f3ba8864cfc047921331469e791e20a7d45e157b9ee4f55d7da31a564b4042cb"
     },
     {
       "path": "plan/tasks.json",
-      "bytes": 286165,
-      "sha256": "7ef9f51028188531b3da2953f5807ae81be7117eeae8bb1451b7429cdcf1eb48"
+      "bytes": 286916,
+      "sha256": "7a9dadf263f0724419ab9a92978475e8a5c8d486f51bfec1d807913e898d8ae4"
     },
     {
       "path": "scripts/check-dist.mjs",
@@ -228,7 +253,12 @@
     {
       "path": "scripts/reviewed-history.mjs",
       "bytes": 4046,
-      "sha256": "f77fa657a4609142afbb8da2e0857f53258d8446676bbe31e9edb545e9496a8c"
+      "sha256": "33d884d8fb5c494538ad3c70c8a4f4a4ef37bb1b00b9d81836899589bc06f079"
+    },
+    {
+      "path": "src/fms/FmsApp.tsx",
+      "bytes": 41579,
+      "sha256": "075be1fd400b6732ff8be38b02e628cbe52c4008a16e07565ecbcae2ab4938cf"
     },
     {
       "path": "src/fms/play/AttackPanel.tsx",
@@ -834,6 +864,11 @@
       "path": "tests/fms-battle-animation.spec.ts",
       "bytes": 10185,
       "sha256": "b02b785d169be8be37cb1a333a597943599ded8b655c1f0be4fd8e5a6ce4868a"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "bytes": 3252,
+      "sha256": "e638735f674d66b8ce6ca7cf7dbda745c11833794777834559e9181fad3b2e7b"
     },
     {
       "path": "tests/fms-maritime.spec.ts",

@@ -79,3 +79,5 @@
 .play-government-trait span{line-height:1.45}
 @keyframes play-government-enter{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.play-government-editor{animation:none}}
+
+.play-fiscal{margin-block:16px;padding-block:12px;border-block:1px solid #c3b69555}.play-fiscal details{margin-block:10px}.play-fiscal summary{cursor:pointer;min-height:36px;display:flex;align-items:center}.play-fiscal dd{font-variant-numeric:tabular-nums}

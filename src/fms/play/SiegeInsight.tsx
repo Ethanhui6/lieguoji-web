@@ -1,3 +1,4 @@
+import type {FiscalState} from './fiscal15-state';
 import type {UpperCombat} from './upper14-state';
 import type {TerrainContext} from './terrain13-context';
 import type {World} from '../../sim/types';
@@ -5,8 +6,8 @@ import type {UnitAssignments} from './military-profile';
 import {siegeInsight} from './siege-insight';
 import type {OccupationState} from './occupation';
 
-export function SiegeInsight({upperCombat,terrainContext,world,provinceId,units,timing,selectArmy,occupation}:{upperCombat?:UpperCombat;terrainContext?:TerrainContext;world:World;provinceId:string;units:UnitAssignments;timing:{rounds:Record<string,number>;tick:number};selectArmy?:(id:string)=>void;occupation?:OccupationState}){
-  const report=siegeInsight(world,provinceId,units,timing.rounds,timing.tick,occupation,terrainContext,upperCombat);if(!report)return null;
+export function SiegeInsight({finance,upperCombat,terrainContext,world,provinceId,units,timing,selectArmy,occupation}:{finance?:FiscalState;upperCombat?:UpperCombat;terrainContext?:TerrainContext;world:World;provinceId:string;units:UnitAssignments;timing:{rounds:Record<string,number>;tick:number};selectArmy?:(id:string)=>void;occupation?:OccupationState}){
+  const report=siegeInsight(world,provinceId,units,timing.rounds,timing.tick,occupation,terrainContext,upperCombat,finance);if(!report)return null;
   const {province,attack,defense,forces,fort}=report;
   const land=terrainContext?.provinces[provinceId],terrainLabel=land?(land.mountain?'山地':land.plateau?'高原':'非山地'):({plain:'平原',forest:'森林',mountain:'山地'})[province.terrain];
   const next=forces.filter(a=>a.nextDays!==null).sort((a,b)=>a.nextDays!-b.nextDays!)[0];

@@ -3808,9 +3808,14 @@
               "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md",
               "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md",
               "docs/evidence/fms-economy-v5-2026-10-07/checks.json",
-              "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md"
+              "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。"
           },
           {
             "id": "WEB-04-14",
@@ -4721,11 +4726,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "upper14_playable_native_economy_kernels_ready",
+      "status": "fiscal15_local_verified_continue_office_inputs",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "a64c88c449fbe433bd5eb2800871eb646ad0a2cc",
-      "cloudScope": "Local-only v14 batch. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
-      "next": "原财政纯函数/17项已完成；接WEB-04-13独立财政版。先冻结v14，统一地理cell输入桥、月结军费与重编一次费用、缓存持久化/加载不重复收入，再接UI/Worker/存档与浏览器。",
+      "lastCommitted": "877d8edf73e2aa606d26bc636f365f9e5a9e485a",
+      "cloudScope": "Local-only v15 batch. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
+      "next": "接原人物税赋/官职能力纯函数与真实族群输入；已试玩v15先冻结再生产接线。缺失原人物/任职来源不得用国家稳定度替代。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4739,12 +4744,17 @@
         "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md",
         "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md",
         "docs/evidence/fms-economy-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md"
+        "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md"
       ],
-      "currentVersion": 14,
-      "currentEngine": "3482083ac4b38cb0201ddb7517fd40c007fc99285680361b74313858e4dc0f12",
+      "currentVersion": 15,
+      "currentEngine": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5184/?fms=1"
+      "localUrl": "http://127.0.0.1:5186/?fms=1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5678,6 +5688,44 @@
         "webAdaptation": "coastal ring straight; entire ribbon clipped at actual float32 h20 land faces; worker mesh output; web map-unit scale",
         "unknown": "native total scale and serialized curve amount, final material capture, mobile performance and user acceptance"
       }
-    ]
+    ],
+    "fiscal15Prototype": {
+      "date": "2026-10-07",
+      "status": "local_limited_scope_verified",
+      "version": 15,
+      "store": 17,
+      "database": "lieguoji-fms-fiscal-v15",
+      "engine": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+      "localUrl": "http://127.0.0.1:5186/?fms=1",
+      "sourceParent": "877d8edf73e2aa606d26bc636f365f9e5a9e485a",
+      "evidence": [
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md"
+      ],
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "scope": "人口资源初始化、常备兵源真实扣除、原金币月结/重编一次费用/缓存战力、Worker/UI/独立旧档闭环；网页输入桥明确。",
+      "validation": {
+        "fullBeforeStorageRepair": 2858,
+        "finalAffected": 30,
+        "finalBrowser": 4,
+        "reusedPriorBrowser": 13,
+        "lint": true,
+        "types": true,
+        "build": true,
+        "distFiles": 43
+      },
+      "remaining": [
+        "Local only; no push, Pages or main changes.",
+        "Fiscal finance and original resource/population kernels are integrated; full native food, ethnic/character/office, fleet fees and native lifecycle are not.",
+        "Chromium mobile/tablet emulation is not physical iPhone Safari/Chrome or visual acceptance.",
+        "Known maritime/transports null/missing structure and version recovery is covered, not every corrupt legacy shape.",
+        "WEB-04-13 and full restoration remain in progress."
+      ]
+    }
   }
 }

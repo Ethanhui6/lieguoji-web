@@ -1,0 +1,515 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-tactics.spec.ts",
+      "tests/fms-chronicle.spec.ts",
+      "tests/fms-maritime.spec.ts",
+      "tests/fms-inspection.spec.ts",
+      "--config",
+      ".autopilot/fiscal15-playwright-extended.config.ts",
+      "--project",
+      "desktop-chromium",
+      "--grep",
+      "future Store|small real districts|real map, original-scale|real Worker defeat|command navy|full resistance"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\fiscal15-playwright-extended.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/fiscal15-evidence/browser-extended",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/fiscal15-evidence/browser-extended",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/fiscal15-evidence/browser-extended",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".autopilot/fiscal15-evidence/browser-extended.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-chronicle.spec.ts",
+      "file": "fms-chronicle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v15: future Store13 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1451,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:33.470Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-d59e11527eef81e9ec38",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 34
+        },
+        {
+          "title": "FMS v15: future Store14 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1353,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:35.010Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-9fa7a50b64d88071189c",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 34
+        },
+        {
+          "title": "FMS v15: future Store15 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1345,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:36.374Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-706a800b7b2382a2def0",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 34
+        },
+        {
+          "title": "FMS v15: future Store16 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1341,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:37.725Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-36a09a2c8356c38575d1",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 34
+        },
+        {
+          "title": "FMS v15: future Store17 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1311,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:39.074Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-0323937262a400875016",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 34
+        },
+        {
+          "title": "FMS v15: small real districts, succession, local independence/uprising, top chronicle and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 50629,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:27:40.391Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "chronicle-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gdGVycmFpbiwgcHJvZHVjdGlvbiBXb3JrZXIgY29tbWFuZHMgYW5kIGluZGV4ZWREQiBpbiBpc29sYXRlZCBDaHJvbWl1bSBjb250ZXh0LiBOb3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSB2aXN1YWwgYWNjZXB0YW5jZS4iLCJ2ZXJzaW9uIjoxNSwicHJvdmluY2VzIjo3MzAsImNpdGllcyI6NzMwLCJhcm1pZXMiOjQ4NiwiZW50cmllcyI6W3siaWQiOjEsImRheSI6MCwidGljayI6MCwia2luZCI6ImFjY2Vzc2lvbiIsInRleHQiOiLlt7TkvKDkvY3vvJrmma/mmI7kuIDkuJbvvIjoirHnjoTmmI7vvInnu6fkvY3vvIzkuLrlm73lrrbnrKwy5Lu75ZCb5Li7IiwicmVhc29uIjoi5LiK5bid5bmy6aKE5a6J5o6S5Lyg5L2N77yb5YmN5ZCO5ZCb5Li76Lqr5Lu944CB546L5Y+35LiW5pWw5LiO5Zu95a625Lu75qyh5ZCM5pe25L+d5a2Y44CCIiwibmF0aW9uSWRzIjpbIm4tMCJdLCJwbGFjZSI6eyJpZCI6InAtNTA2IiwibmFtZSI6Ium+n+WFuSIsIngiOjg0Mi4yMTM4OTU1ODU4MDE5LCJ5IjozMDcuNDE3MTk0MDQ4NTYzNn0sInBlb3BsZSI6W3siaWQiOiJydWxlci1uLTAtMSIsIm5hbWUiOiLoirHoiJ4iLCJvcmRlciI6MSwicmVnbmFsTmFtZSI6IuiIniIsInJlZ25hbE9yZGluYWwiOjF9LHsiaWQiOiJydWxlci1uLTAtMiIsIm5hbWUiOiLoirHnjoTmmI4iLCJvcmRlciI6MiwicmVnbmFsTmFtZSI6IuaZr+aYjiIsInJlZ25hbE9yZGluYWwiOjF9XSwic291cmNlRXZlbnRJZCI6Nn0seyJpZCI6MiwiZGF5IjowLCJ0aWNrIjowLCJraW5kIjoiYWNjZXNzaW9uIiwidGV4dCI6IuW3tOS8oOS9je+8muaZr+aYjuS6jOS4lu+8iOiKsee0oOW/g++8iee7p+S9je+8jOS4uuWbveWutuesrDPku7vlkJvkuLsiLCJyZWFzb24iOiLkuIrluJ3lubLpooTlronmjpLkvKDkvY3vvJvliY3lkI7lkJvkuLvouqvku73jgIHnjovlj7fkuJbmlbDkuI7lm73lrrbku7vmrKHlkIzml7bkv53lrZjjgIIiLCJuYXRpb25JZHMiOlsibi0wIl0sInBsYWNlIjp7ImlkIjoicC01MDYiLCJuYW1lIjoi6b6f5YW5IiwieCI6ODQyLjIxMzg5NTU4NTgwMTksInkiOjMwNy40MTcxOTQwNDg1NjM2fSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW4tMC0yIiwibmFtZSI6IuiKseeOhOaYjiIsIm9yZGVyIjoyLCJyZWduYWxOYW1lIjoi5pmv5piOIiwicmVnbmFsT3JkaW5hbCI6MX0seyJpZCI6InJ1bGVyLW4tMC0zIiwibmFtZSI6IuiKsee0oOW/gyIsIm9yZGVyIjozLCJyZWduYWxOYW1lIjoi5pmv5piOIiwicmVnbmFsT3JkaW5hbCI6Mn1dLCJzb3VyY2VFdmVudElkIjo3fSx7ImlkIjozLCJkYXkiOjAsInRpY2siOjAsImtpbmQiOiJpbmRlcGVuZGVuY2UiLCJ0ZXh0Ijoi5Y2r6KW/6YOh5a6j5biD54us56uL77yM6LaK5qWa5bu656uL77yM5a2Q576O5LiA5LiW77yI6ZmI5a2Q576O77yJ5Li66aaW5Lu75ZCb5Li7IiwicmVhc29uIjoi5LiK5bid5bmy6aKE77ya5Y2r6KW/6YOh5a6j5biD54us56uL77yM5oiQ5Li654us56uL5Zu95a6244CCIiwibmF0aW9uSWRzIjpbIm4tMCIsIm5ldy1zdGF0ZS0xIl0sInBsYWNlIjp7ImlkIjoicC0wIiwibmFtZSI6IuWNq+ilv+mDoSIsIngiOjQ5OS42NDEyNzI3NTY3ODg0NSwieSI6NTAxLjA1MjY3MTAwODYzOTgzfSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW5ldy1zdGF0ZS0xLTEiLCJuYW1lIjoi6ZmI5a2Q576OIiwib3JkZXIiOjEsInJlZ25hbE5hbWUiOiLlrZDnvo4iLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjh9LHsiaWQiOjQsImRheSI6MCwidGljayI6MCwia2luZCI6InVwcmlzaW5nIiwidGV4dCI6IuWkj+mCkeeIhuWPkei1t+S5ie+8jOa7keW7uueri++8jOm7m+S4gOS4lu+8iOWFrOWtmem7m++8ieS4uummluS7u+WQm+S4uyIsInJlYXNvbiI6IuS4iuW4neW5sumihO+8muWkj+mCkei1t+S5ieW7uuWbve+8jOS4juWOn+aOp+WItuWbveS6pOaImOOAgiIsIm5hdGlvbklkcyI6WyJuLTAiLCJuZXctc3RhdGUtMiJdLCJwbGFjZSI6eyJpZCI6InAtMSIsIm5hbWUiOiLlpI/pgpEiLCJ4Ijo0NzcuNjY5MTA2NTg5NDIzMiwieSI6NDkyLjYwMzgzMTgyMTAxNzc2fSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW5ldy1zdGF0ZS0yLTEiLCJuYW1lIjoi5YWs5a2Z6bubIiwib3JkZXIiOjEsInJlZ25hbE5hbWUiOiLpu5siLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjEwfV0sInJlc3RvcmVkQ2hlY2tzdW0iOiIxNmY5MjljYTY4MWM5ZmI4ZGUxZTdkNzZlMzczZjEwNzM1ZDZiNTU5MDU4ZTE4ODBmNTZiZmVhZTRlOGQ1ZDQ2Iiwid29ya2VycyI6WyJodHRwOi8vMTI3LjAuMC4xOjUxODUvYXNzZXRzL3BsYXkud29ya2VyLURnelVTNzVPLmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg1L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiLCJodHRwOi8vMTI3LjAuMC4xOjUxODUvYXNzZXRzL3BsYXkud29ya2VyLURnelVTNzVPLmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg1L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiXSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-290f347b524409288c0f",
+          "file": "fms-chronicle.spec.ts",
+          "line": 20,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-inspection.spec.ts",
+      "file": "fms-inspection.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS inspection: full resistance, real pulse, per-army food, cancel/confirm withdrawal and restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 130000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 66698,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:28:31.056Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "inspection-war",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBpbml0aWFsIHR3by1mb3JjZSBiYXR0bGVmaWVsZCBvbiByZWFsIGRyYXduIHRlcnJhaW47IHJlYWwgcHJvZHVjdGlvbiBXb3JrZXIgY29udGFjdCwgZnVsbCByZXNpc3RhbmNlLCBjb21tYW5kIHByZXZpZXcvY2FuY2VsL3dpdGhkcmF3IGFuZCBleGFjdCBwZXJzaXN0ZW5jZS4iLCJ2ZXJzaW9uIjoxNSwicHJvdmluY2UiOiJwLTQwIiwiY29udGFjdFRpY2siOjEsInJlc2lzdGFuY2UiOlt7InByb3ZpbmNlSWQiOiJwLTQwIiwiY29udHJvbGxlciI6Im4tMCIsImF0dGFja2VyIjoibi0xIiwibWF4aW11bSI6NTY5LjA3NTE0MzI0NTE1NjMsInJlc2lzdGFuY2UiOjU2OS4wNzUxNDMyNDUxNTYzLCJzdGFydGVkIjoxLCJwdWxzZSI6MX1dLCJyb3VuZHMiOnsiZm9yY2UtMzExIjoyMSwiZm9yY2UtMSI6MjF9LCJjaGVja3N1bSI6ImFiOTZlYjMwMjMzMTM0ZGUzN2ZlNmUwYTk4OGNmMjgzYzAzM2I4OTA0NzUwMjY1YzQwMmFiNzI5MDkyNjUzM2EiLCJlcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-c8cd98aba429ed7003a5",
+          "file": "fms-inspection.spec.ts",
+          "line": 46,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-maritime.spec.ts",
+      "file": "fms-maritime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: draw islands, create countries, command navy and restore the real voyage",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25357,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:29:37.780Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0a875308967098096cde-c202825818c299d25aaf",
+          "file": "fms-maritime.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-tactics.spec.ts",
+      "file": "fms-tactics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v15: real map, original-scale mustering, road encounter, mobilization and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 73285,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:30:03.164Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "actual-game-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJydW5JZCI6ImZtcy0zNjNhNjU1YS00NzJiLTRmNjQtOWQ3OC1jNmQxN2MwNDRmN2IiLCJ2ZXJzaW9uIjoxNSwiYXJtaWVzQXRTdGFydCI6NDg2LCJyb2FkQmF0dGxlIjp7ImlkIjoiZW5nYWdlbWVudC0xIiwiYSI6InAtNDAiLCJiIjoicC01NiIsInQiOjAuNSwiYXJtaWVzIjpbImZvcmNlLTQ4NyIsImZvcmNlLTQ4OCJdLCJzdGFydGVkIjoxMjAsInB1bHNlIjoxMjAsImNhcnJ5Ijp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfSwibG9zc2VzIjp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfX0sImluaXRpYWxUcm9vcHMiOjExMDAsImFmdGVyVHJvb3BzIjo5OTMsImVtZXJnZW5jeSI6NSwidGljayI6MjQwLCJjaGVja3N1bSI6IjNjNzVjYmQ3M2YxODY1ODNlZTk1NDJkMTc4ZDVkOTY0NmY5NDM5MDU4OGFjNzRlNjFjYjQ2NWU1NzE3ZTk4YjgiLCJyZXN0b3JlZFJldmlzaW9uIjo3LCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgbm90IHBoeXNpY2FsIGlQaG9uZSBhY2NlcHRhbmNlIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-8bf246cf7374f893edbf",
+          "file": "fms-tactics.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "FMS v15: real Worker defeat, home reorganization, fractional save/resume and completion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 59825,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T20:31:16.456Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "reorganization-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBzYXZlZCBiYXR0bGVmaWVsZCwgcmVhbCBwcm9kdWN0aW9uIFdvcmtlci9VSSwgQ2hyb21pdW0gZW11bGF0aW9uOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSB2aXN1YWwgZXF1aXZhbGVuY2UiLCJ2ZXJzaW9uIjoxNSwiYXJteUlkIjoiZm9yY2UtMSIsImhvbWVJZCI6InAtNDAiLCJyZXR1cm5lZFRyb29wcyI6MTEwLCJwYXJ0aWFsVGljayI6MzIsInBhcnRpYWwiOnsic3RhcnRlZFRpY2siOjEsImZyYWN0aW9uIjowLjMwMTU3NTM5Mzg0ODQ1MTMzfSwicmVzdG9yZWRDaGVja3N1bSI6IjQ1ZGVmZjJjYmU4NDFkMDQ0ODQwMDMyZWNkYjk0OThiYzdmZWZhZTVmMmNiYTNhNzY0YmM4YWFmMjFhYmZmZmIiLCJjb21wbGV0ZWQiOjEsImNvbnNvbGVFcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-a5a76ef24f04aa405aec",
+          "file": "fms-tactics.spec.ts",
+          "line": 28,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T20:27:32.820Z",
+    "duration": 283774.928,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

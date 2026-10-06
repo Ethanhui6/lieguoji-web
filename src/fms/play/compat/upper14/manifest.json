@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "fingerprint": "3482083ac4b38cb0201ddb7517fd40c007fc99285680361b74313858e4dc0f12",
+  "files": [
+    {
+      "path": "src/fms/play/upper14-state.ts",
+      "archive": "fms/play/upper14-state.ts.source",
+      "sha256": "f3d18a8223704481c3204a082871202258a478425f58eb0c0dce30556db83d0a"
+    },
+    {
+      "path": "src/fms/play/upper14-geography.ts",
+      "archive": "fms/play/upper14-geography.ts.source",
+      "sha256": "4248dda8649d9a5730f2dd7f32fdedb74018bf14b6d82e758e0b42c6b8875ae0"
+    },
+    {
+      "path": "src/fms/play/upper14-rules.ts",
+      "archive": "fms/play/upper14-rules.ts.source",
+      "sha256": "09eb6877b6c03ea2250d2f9f8ac5f349e9b7fef133f26bd413d9498cd70edf06"
+    },
+    {
+      "path": "src/fms/play/upper14-core.ts",
+      "archive": "fms/play/upper14-core.ts.source",
+      "sha256": "168518d64e9af2261ee332b196f3176a039267031be012c13aa63baa6a247c9b"
+    },
+    {
+      "path": "src/fms/play/upper14-battle.ts",
+      "archive": "fms/play/upper14-battle.ts.source",
+      "sha256": "86a7830825dff6b24ba030320d6d87237b8294579c4552a8ef299b2edfaf2321"
+    },
+    {
+      "path": "src/fms/play/upper14-occupation.ts",
+      "archive": "fms/play/upper14-occupation.ts.source",
+      "sha256": "cd5188da2423de4adc3326d4973022534dc1efb76438d9a2de29d2ae1a2ac8b2"
+    },
+    {
+      "path": "src/fms/play/upper14-runtime.ts",
+      "archive": "fms/play/upper14-runtime.ts.source",
+      "sha256": "3b5ed92f18881e7ffb6fe4e8978645b813db45c295ac0b0b7bea332fa1919619"
+    },
+    {
+      "path": "src/fms/play/upper14-model.ts",
+      "archive": "fms/play/upper14-model.ts.source",
+      "sha256": "2945d83492951cf67233486ceeda0a46d8a19c650f1a69ec7d72e9f21fff5caf"
+    },
+    {
+      "path": "src/fms/play/upper14-edit.ts",
+      "archive": "fms/play/upper14-edit.ts.source",
+      "sha256": "7cff4bac1fc0f98a563548b58609d0685748010d6b898e22f582c6d4f507a5a5"
+    },
+    {
+      "path": "src/fms/play/upper14-session.ts",
+      "archive": "fms/play/upper14-session.ts.source",
+      "sha256": "0fea614c987bb8abebd281a0ed6c562607e67fcd12c8cf9fd8517370735a7243"
+    },
+    {
+      "path": "src/fms/play/upper14-storage.ts",
+      "archive": "fms/play/upper14-storage.ts.source",
+      "sha256": "2f75c41de790f2bcfa3d3f4ecc96d56848c76d3752452d183a7cf04caac4bf5e"
+    },
+    {
+      "path": "src/fms/play/upper14-stores.ts",
+      "archive": "fms/play/upper14-stores.ts.source",
+      "sha256": "9c47b3f4bfecba6deae8f5e27f71691e79fea87cb1e2703b9ad2f69a48f479e6"
+    },
+    {
+      "path": "src/fms/play/upper14-client.ts",
+      "archive": "fms/play/upper14-client.ts.source",
+      "sha256": "9e1a9bc6a6b84f683de3aa799beceb78321eb9a375bde7fff5627b458d9a98dd"
+    },
+    {
+      "path": "src/fms/play/upper14/play.worker.ts",
+      "archive": "fms/play/upper14/play.worker.ts.source",
+      "sha256": "b1938df986a512b28090320cf37e481a8fb2d5cbf652e4c16ec42afa67e0d5b8"
+    },
+    {
+      "path": "src/fms/play/native-combat/state-traits.ts",
+      "archive": "fms/play/native-combat/state-traits.ts.source",
+      "sha256": "920284d7debd5debdb58c3276b065d7f1306f5f5f900ec4897f1eb29b67daab6"
+    },
+    {
+      "path": "src/fms/play/native-combat/upper-efficiency.ts",
+      "archive": "fms/play/native-combat/upper-efficiency.ts.source",
+      "sha256": "d1939faf11d99a3e23d9dc24b392cab6edab991392bd87452ea272efe965b078"
+    },
+    {
+      "path": "src/fms/play/native-combat/core-distance.ts",
+      "archive": "fms/play/native-combat/core-distance.ts.source",
+      "sha256": "f03dfcfa72f8b5bd323be234a9b1d9f1da65f34d50caf979cafdff9b2818ff02"
+    }
+  ]
+}

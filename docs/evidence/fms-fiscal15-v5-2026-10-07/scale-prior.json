@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic full drawn map, production Session; local CPU, not phone acceptance.",
+  "createdMs": 4852.624400000001,
+  "dayMs": 2465.266600000001,
+  "provinces": 722,
+  "cities": 722,
+  "armies": 480,
+  "upperCombatBytes": 161245,
+  "engine": "812a8c1b0431a7a5d01a1cee3aeac3c6089635d6b1aee32a1ba4e7f847b99d50"
+}

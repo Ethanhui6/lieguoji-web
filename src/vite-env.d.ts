@@ -31,3 +31,5 @@ declare const __FMS_UPPER14_ENGINE__: string;
 declare const __FMS_FISCAL15_ENGINE__: string;
 
 declare const __FMS_COURT16_ENGINE__: string;
+
+declare const __FMS_CULTURE17_ENGINE__: string;

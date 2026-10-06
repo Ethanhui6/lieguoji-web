@@ -7,3 +7,7 @@
 25定向测试、目标lint通过；生产v16指纹完全不变，没有将独立内核当成新玩法已上线。只读审计指出随机值先舍入后验范围会吞掉微小越界，已改为验原值并补EPSILON/负次正规数；年份回调也增加int32验证，避免NaN误入清理。不是原作实际运行对拍，f32常量测试来自静态合同。
 
 后续生产：先冻结v16，然后建立mapCultureId/baseCultureId持久映射、明确副本和独立存档，真实族群进入省收入与国家财政。默认启用文化、NodaTime起始历法、完整人物死亡与继承仍未齐，不补猜。原函数索引与最新闭合路径在NEXT_RECOVERY。
+
+只读接线定位：FmsDocument和sim.Nation均无文化字段；当前create命令只有terrain/count/relations。names.ts的worldNames固定eastern-names.json，chronicle-records.appointRuler固定leader-names.json；chronicle-politics.secede再用同一东方词库，不继承文化。旧CountryStudio的cultureId仅为临时命名选择，不能当作本局文化来源。不得从人名/政体/国色反推文化，更不得在Upper14Session已生成首条史书后整批改名冒充文化命名。最小下一版可显式绑定已接命名的东方文化，标注网页选项而非原作默认；接其他文化时须在实体与首条史书生成前进入命名入口。
+
+生产顺序必须国家→人物→文化/族群→首次财政；新独立国家可用当次结构化uprising/independence事件的[parentId,newNationId]作为明确网页继承桥，不能解析文字或猜易手后的province.controller。覆亡保留文化记录，复国同ID不重抽；旧档明确副本当日建文化记录，既有金币/账本/军队/史书不重算。provinceIncome与settleNation中当前的Other是待替换输入，不是原族群枚举。

@@ -3821,9 +3821,15 @@
               "docs/evidence/fms-court16-v5-2026-10-07/checks.json",
               "docs/evidence/fms-court16-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
-              "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md"
+              "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/NATIVE_RECOVERY.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。"
           },
           {
             "id": "WEB-04-14",
@@ -4734,11 +4740,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "court16_playable_life_culture_kernels_ready",
+      "status": "culture17_local_verified_continue_original_naming",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "2fcda84cc24418ffae2821aa76b9efbdda1789ca",
+      "lastCommitted": "0b9845425e144123d1c0b4659c30bf1846026b7f",
       "cloudScope": "Local-only v16; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
-      "next": "冻结v16并接真实文化/族群生产输入；完整生命周期待原日历起点/人物生日和死亡继承闭合，不用现有传位假装死亡。",
+      "next": "先复用已核定六文化名称数据并接原命名纯核/人物全名显示；生产升级前冻结v17。保留5188/DB19与旧18，不重建旧阶段。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4767,12 +4773,19 @@
         "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
         "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md",
         "docs/evidence/fms-court16-v5-2026-10-07/LIFE_CULTURE_PROGRESS.md",
-        "docs/evidence/fms-court16-v5-2026-10-07/life-culture-checks.json"
+        "docs/evidence/fms-court16-v5-2026-10-07/life-culture-checks.json",
+        "docs/evidence/fms-culture17-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/NATIVE_RECOVERY.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
       ],
-      "currentVersion": 16,
-      "currentEngine": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
+      "currentVersion": 17,
+      "currentEngine": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5187/?fms=1"
+      "localUrl": "http://127.0.0.1:5188/?fms=1",
+      "currentLocalHead": "0b9845425e144123d1c0b4659c30bf1846026b7f"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5809,7 +5822,48 @@
       "tests": 25,
       "cultures": 6,
       "weights": 30,
-      "productionIntegrated": false
+      "productionIntegrated": false,
+      "localCommit": "0b9845425e144123d1c0b4659c30bf1846026b7f"
+    },
+    "culture17Prototype": {
+      "date": "2026-10-07",
+      "status": "local_limited_scope_verified",
+      "version": 17,
+      "store": 19,
+      "database": "lieguoji-fms-culture-v17",
+      "localUrl": "http://127.0.0.1:5188/?fms=1",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "evidence": [
+        "docs/evidence/fms-culture17-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/NATIVE_RECOVERY.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
+      ],
+      "next": "验证后记录正式证据；下一批原多文化命名/人物继承，不重建旧计划。",
+      "fingerprint": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
+      "frozenCourt16": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
+      "sourceParent": "0b9845425e144123d1c0b4659c30bf1846026b7f",
+      "validation": {
+        "fullUnit": 2951,
+        "namingKernelSeparate": 13,
+        "cultureBrowser": 3,
+        "desktopRegression": 22,
+        "lint": true,
+        "types": true,
+        "build": true,
+        "distFiles": 43
+      },
+      "remaining": [
+        "Local only; no push/main/Pages changes.",
+        "Only EasternFantasy naming currently integrated; not the native four-culture default.",
+        "Full family, age/death, culture assimilation, religion, AI appointments and complete native calendar still missing.",
+        "Mobile/tablet Chromium emulation is not physical iPhone Safari/Chrome acceptance.",
+        "Visual/native equivalence and WEB-04-13 are not complete."
+      ]
     }
   }
 }

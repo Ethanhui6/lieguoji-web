@@ -1,0 +1,342 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture17.spec.ts",
+      "--config",
+      ".autopilot/culture17-playwright.config.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "culture17-evidence/browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture17.spec.ts",
+      "file": "fms-culture17.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 15824,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                      "column": 151,
+                      "line": 15
+                    },
+                    "snippet": "  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                        "column": 151,
+                        "line": 15
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n\n  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:47:20.823Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                    "column": 151,
+                    "line": 15
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-1c18880dcf3edbaef997",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        },
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 16108,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                      "column": 151,
+                      "line": 15
+                    },
+                    "snippet": "  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                        "column": 151,
+                        "line": 15
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n\n  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:47:37.804Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-iphone13pm-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-iphone13pm-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-iphone13pm-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                    "column": 151,
+                    "line": 15
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-02e37e890a77b8d4f5bd",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        },
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 19145,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                      "column": 151,
+                      "line": 15
+                    },
+                    "snippet": "  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                        "column": 151,
+                        "line": 15
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: '文化与族群', exact: true })\nExpected substring: \u001b[32m\"东方幻想\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: '文化与族群', exact: true }) resolved to 4 elements:\n    1) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).first()\n    2) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(1)\n    3) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(2)\n    4) <section aria-label=\"文化与族群\" class=\"play-culture\">…</section> aka getByRole('region', { name: '文化与族群' }).nth(3)\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" getByRole('region', { name: '文化与族群', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: '文化与族群', exact: true })\u001b[22m\n\n\n  13 | test('FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh',async({page},info)=>{\n  14 |  test.setTimeout(150000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));const initial=await create(page),nationId=initial.run.world.nations[0].id;\n> 15 |  await page.getByLabel('查看国家',{exact:true}).selectOption(nationId);const panel=page.getByRole('region',{name:'文化与族群',exact:true});await expect(panel).toContainText('东方幻想');await panel.locator('summary').click();\n     |                                                                                                                                                       ^\n  16 |  const options=['FishAndHunting','Agriculture','Nomadic','Maritime','Commercial'],chosen=options.find(n=>n!==initial.run.culture.nations[nationId].ethnic)!;await panel.getByLabel('调整族群',{exact:true}).selectOption(chosen);await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('下次月结');await page.getByRole('button',{name:'取消',exact:true}).click();const canceled=await save(page);expect(canceled.run).toEqual(initial.run);\n  17 |  await panel.getByRole('button',{name:'预览族群调整',exact:true}).click();await page.getByRole('button',{name:'确认执行',exact:true}).click();await expect(panel.getByRole('button',{name:'预览族群调整',exact:true})).toBeDisabled();const changed=await save(page);expect(changed.run.culture.nations[nationId].ethnic).toBe(chosen);expect(changed.run.culture.revision).toBe(initial.run.culture.revision+1);expect(changed.run.finance).toEqual(initial.run.finance);expect(changed.run.people).toEqual(initial.run.people);expect(changed.run.world.cities).toEqual(initial.run.world.cities);expect(changed.run.world.nations).toEqual(initial.run.world.nations);\n  18 |  await panel.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('culture-choice.png')});await page.getByLabel('推演速度',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'开始时间',exact:true}).click();await expect.poll(async()=>Number(await page.locator('.fms-play-map canvas').getAttribute('data-sim-tick'))).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停',exact:true}).click();const progressed=await save(page);expect(progressed.run.culture).toEqual(changed.run.culture);\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts:15:151"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:47:55.070Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-tablet-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-tablet-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-evidence\\browser\\fms-culture17-FMS-v17-cult-35025-tick-and-exact-deep-refresh-tablet-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture17.spec.ts",
+                    "column": 151,
+                    "line": 15
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-2acda1606119371f35c5",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T21:47:20.297Z",
+    "duration": 54603.085999999996,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

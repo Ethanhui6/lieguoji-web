@@ -23,7 +23,7 @@ test('FMS: terrain confirmation stays clickable before saving and entering a new
   await page.locator('.fms-save').click();await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty','false');
   await page.reload();await expect(entry).toBeEnabled();await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);
   await entry.click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
-  await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','16',{timeout:30000});
+  await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','17',{timeout:30000});
   await page.getByRole('button',{name:'军事',exact:true}).click();await expect(page.getByRole('region',{name:'布兵与动员'})).toBeVisible();
   await info.attach('fms-entry-resources',{body:JSON.stringify({workers,resources,errors,failed,scope:'Chromium emulation; physical device and original visual acceptance pending'}),contentType:'application/json'});
   expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);expect(workers.some(u=>/play\.worker/.test(u))).toBe(true);

@@ -1,0 +1,240 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture17.spec.ts",
+      "--config",
+      ".autopilot/culture17-playwright.config.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture17-playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser-fixed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser-fixed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture17-evidence/browser-fixed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "culture17-evidence/browser-fixed.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture17.spec.ts",
+      "file": "fms-culture17.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 43868,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:50:21.465Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "culture-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciwgY3VycmVudCBjdWx0dXJlIGNvbW1hbmQgYW5kIGV4YWN0IEluZGV4ZWREQiByZWxvYWQuIEVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGlQaG9uZSBvciBuYXRpdmUgdmlzdWFsIHBhcml0eS4iLCJlbmdpbmUiOiJhMDZjYWNjZTNhZGJhMWVmNzg4ZWE4N2U3ZDExNjA3ZjdlNjczMTQxYWFiNWI4ZTg2NDhkYTRmNjk5ZmE4ODVmIiwiY2hlY2tzdW0iOiJiM2E2MzBmZmIyODc4NGQ5NTEzOWQ1OGJhZWJlMDE5OTNmYzRiMWFjNmM5MTQ1OTcxNDZiMjI2NmQ3ZjVmNTgyIiwiY3VsdHVyZSI6eyJ2ZXJzaW9uIjoxLCJyZXZpc2lvbiI6MSwiaW5pdGlhbGl6YXRpb24iOiJleHBsaWNpdC1lYXN0ZXJuLW5hbWluZy12MSIsIm1hcHMiOnsibWFwLWVhc3Rlcm4iOnsiaWQiOiJtYXAtZWFzdGVybiIsIm5hbWUiOiLkuJzmlrnlubvmg7MiLCJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJ3ZWlnaHRzIjpbWzAsNTBdLFsxLDUwXSxbMiw1MF0sWzMsNTBdLFs0LDUwXV19fSwibmF0aW9ucyI6eyJuLTAiOnsibWFwQ3VsdHVyZUlkIjoibWFwLWVhc3Rlcm4iLCJldGhuaWMiOiJGaXNoQW5kSHVudGluZyIsInJlY29yZGVkRGF5IjowLCJvcmlnaW4iOiJuZXctd29ybGQiLCJwYXJlbnRJZCI6bnVsbH0sIm4tMSI6eyJtYXBDdWx0dXJlSWQiOiJtYXAtZWFzdGVybiIsImV0aG5pYyI6Ik5vbWFkaWMiLCJyZWNvcmRlZERheSI6MCwib3JpZ2luIjoibmV3LXdvcmxkIiwicGFyZW50SWQiOm51bGx9fX0sImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-1c18880dcf3edbaef997",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        },
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 50888,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:51:06.056Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "culture-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciwgY3VycmVudCBjdWx0dXJlIGNvbW1hbmQgYW5kIGV4YWN0IEluZGV4ZWREQiByZWxvYWQuIEVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGlQaG9uZSBvciBuYXRpdmUgdmlzdWFsIHBhcml0eS4iLCJlbmdpbmUiOiJhMDZjYWNjZTNhZGJhMWVmNzg4ZWE4N2U3ZDExNjA3ZjdlNjczMTQxYWFiNWI4ZTg2NDhkYTRmNjk5ZmE4ODVmIiwiY2hlY2tzdW0iOiI3YTZmMmYyNzM5ZjA2YmQyMjE2ZmRkMTJhMDg3NmU5OTA0YmUyYzU0ZTE3NmExODkxNmU1YjZkMjE2NDMwM2U1IiwiY3VsdHVyZSI6eyJ2ZXJzaW9uIjoxLCJyZXZpc2lvbiI6MSwiaW5pdGlhbGl6YXRpb24iOiJleHBsaWNpdC1lYXN0ZXJuLW5hbWluZy12MSIsIm1hcHMiOnsibWFwLWVhc3Rlcm4iOnsiaWQiOiJtYXAtZWFzdGVybiIsIm5hbWUiOiLkuJzmlrnlubvmg7MiLCJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJ3ZWlnaHRzIjpbWzAsNTBdLFsxLDUwXSxbMiw1MF0sWzMsNTBdLFs0LDUwXV19fSwibmF0aW9ucyI6eyJuLTAiOnsibWFwQ3VsdHVyZUlkIjoibWFwLWVhc3Rlcm4iLCJldGhuaWMiOiJGaXNoQW5kSHVudGluZyIsInJlY29yZGVkRGF5IjowLCJvcmlnaW4iOiJuZXctd29ybGQiLCJwYXJlbnRJZCI6bnVsbH0sIm4tMSI6eyJtYXBDdWx0dXJlSWQiOiJtYXAtZWFzdGVybiIsImV0aG5pYyI6IkNvbW1lcmNpYWwiLCJyZWNvcmRlZERheSI6MCwib3JpZ2luIjoibmV3LXdvcmxkIiwicGFyZW50SWQiOm51bGx9fX0sImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-02e37e890a77b8d4f5bd",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        },
+        {
+          "title": "FMS v17: culture preview cancel, resource choice, real Worker tick and exact deep refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 51294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T21:51:57.767Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "culture-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciwgY3VycmVudCBjdWx0dXJlIGNvbW1hbmQgYW5kIGV4YWN0IEluZGV4ZWREQiByZWxvYWQuIEVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGlQaG9uZSBvciBuYXRpdmUgdmlzdWFsIHBhcml0eS4iLCJlbmdpbmUiOiJhMDZjYWNjZTNhZGJhMWVmNzg4ZWE4N2U3ZDExNjA3ZjdlNjczMTQxYWFiNWI4ZTg2NDhkYTRmNjk5ZmE4ODVmIiwiY2hlY2tzdW0iOiI1ODkyMzAyOWUzYmQ5ZGRiM2JhYjAxOWZmNmFkZWY5NGJjNjNjMDg4OWZkY2E2MjU3MDU2NGU3ZjliY2M0MWMyIiwiY3VsdHVyZSI6eyJ2ZXJzaW9uIjoxLCJyZXZpc2lvbiI6MSwiaW5pdGlhbGl6YXRpb24iOiJleHBsaWNpdC1lYXN0ZXJuLW5hbWluZy12MSIsIm1hcHMiOnsibWFwLWVhc3Rlcm4iOnsiaWQiOiJtYXAtZWFzdGVybiIsIm5hbWUiOiLkuJzmlrnlubvmg7MiLCJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJ3ZWlnaHRzIjpbWzAsNTBdLFsxLDUwXSxbMiw1MF0sWzMsNTBdLFs0LDUwXV19fSwibmF0aW9ucyI6eyJuLTAiOnsibWFwQ3VsdHVyZUlkIjoibWFwLWVhc3Rlcm4iLCJldGhuaWMiOiJGaXNoQW5kSHVudGluZyIsInJlY29yZGVkRGF5IjowLCJvcmlnaW4iOiJuZXctd29ybGQiLCJwYXJlbnRJZCI6bnVsbH0sIm4tMSI6eyJtYXBDdWx0dXJlSWQiOiJtYXAtZWFzdGVybiIsImV0aG5pYyI6Ik5vbWFkaWMiLCJyZWNvcmRlZERheSI6MCwib3JpZ2luIjoibmV3LXdvcmxkIiwicGFyZW50SWQiOm51bGx9fX0sImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6bb9e23bd3631b83452e-2acda1606119371f35c5",
+          "file": "fms-culture17.spec.ts",
+          "line": 13,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T21:50:20.999Z",
+    "duration": 148374.308,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -3805,9 +3805,12 @@
               "docs/evidence/fms-upper14-v5-2026-10-07/DELIVERY.md",
               "docs/evidence/fms-upper14-v5-2026-10-07/checks.json",
               "docs/evidence/fms-upper14-v5-2026-10-07/tested-artifact.json",
-              "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md"
+              "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md",
+              "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md",
+              "docs/evidence/fms-economy-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。"
           },
           {
             "id": "WEB-04-14",
@@ -4238,19 +4241,21 @@
       }
     ],
     "nextRecoveryTarget": {
-      "priority": "user-real-time-gameplay",
-      "next": "原作时钟/子日权威移动与途中命令优先，随后海军交战；封存532842后才改变模拟规则。"
+      "priority": "WEB-04-13-native-fiscal-production",
+      "next": "冻结v14后建立独立财政版，一致的网页cell桥/真实月份/军费位置/重编一次费用和缓存保存，不再恢复已完成原公式。"
     },
     "lastRecovery": {
-      "at": "2026-10-05T05:32:55.776Z",
-      "scope": "active JS river meandering and native cubic/thickness drawing chain",
-      "sourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
+      "at": "2026-10-06T19:52:20.629Z",
+      "scope": "native monthly gold settlement, province income, population initialization and resources",
+      "sourceCommit": "a64c88c449fbe433bd5eb2800871eb646ad0a2cc",
       "evidence": [
-        "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md"
+        "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md",
+        "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md",
+        "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md"
       ],
       "originalExecuted": false,
-      "webAdaptation": "coastal ring straight; entire ribbon clipped at actual float32 h20 land faces; worker mesh output; web map-unit scale",
-      "unknown": "native total scale and serialized curve amount, final material capture, mobile performance and user acceptance"
+      "webAdaptation": "Not yet bound to production. RNG/state/geographic bridge must be explicit.",
+      "unknown": "Unity full random state, web cell equivalence, source complete post-load gold cache refresh and full monthly food/population lifecycle"
     },
     "operationalSchedule": {
       "id": "v5",
@@ -4716,11 +4721,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "upper14_native_combat_locally_verified",
+      "status": "upper14_playable_native_economy_kernels_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "be90da7c1f6ac88b3a80ff094cd5e99501607cad",
+      "lastCommitted": "a64c88c449fbe433bd5eb2800871eb646ad0a2cc",
       "cloudScope": "Local-only v14 batch. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
-      "next": "接原金币月结/军费缓存纯函数与人口资源初始化合同；再独立版本接线持久战。v14已验证保留，旧规则/库不改；WEB-04-13仍进行中。",
+      "next": "原财政纯函数/17项已完成；接WEB-04-13独立财政版。先冻结v14，统一地理cell输入桥、月结军费与重编一次费用、缓存持久化/加载不重复收入，再接UI/Worker/存档与浏览器。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4731,7 +4736,10 @@
         "docs/evidence/fms-upper14-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-upper14-v5-2026-10-07/checks.json",
         "docs/evidence/fms-upper14-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md"
+        "docs/evidence/fms-upper14-v5-2026-10-07/GOLD_RECOVERY.md",
+        "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md",
+        "docs/evidence/fms-economy-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md"
       ],
       "currentVersion": 14,
       "currentEngine": "3482083ac4b38cb0201ddb7517fd40c007fc99285680361b74313858e4dc0f12",
@@ -5644,6 +5652,32 @@
         "userVisual": false,
         "nativeParity": false
       }
-    }
+    },
+    "nativeEconomyPrototype": {
+      "date": "2026-10-07",
+      "status": "pure_kernels_verified_not_gameplay",
+      "evidence": [
+        "docs/evidence/fms-economy-v5-2026-10-07/PROGRESS.md",
+        "docs/evidence/fms-economy-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-upper14-v5-2026-10-07/POPULATION_RESOURCE_RECOVERY.md"
+      ],
+      "scope": "原金币月结、省收入、军费、人口初始化、资源抽样与原资源JSON；独立纯函数。",
+      "unitPassed": 17,
+      "productionIntegrated": false,
+      "storeMigrated": false
+    },
+    "lastRecoveryHistory": [
+      {
+        "at": "2026-10-05T05:32:55.776Z",
+        "scope": "active JS river meandering and native cubic/thickness drawing chain",
+        "sourceCommit": "518913a29630c1a9c8d0d493395427c667576232",
+        "evidence": [
+          "docs/evidence/fms-river-shape-v5-2026-10-05/ORIGINAL_RIVER_SHAPE.md"
+        ],
+        "originalExecuted": false,
+        "webAdaptation": "coastal ring straight; entire ribbon clipped at actual float32 h20 land faces; worker mesh output; web map-unit scale",
+        "unknown": "native total scale and serialized curve amount, final material capture, mobile performance and user acceptance"
+      }
+    ]
   }
 }

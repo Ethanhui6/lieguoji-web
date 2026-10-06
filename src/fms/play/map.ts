@@ -32,6 +32,8 @@ export class PlayMap {
   private battleTextures:Texture[]=[];
   private battleSprites:{id:string;sprite:Sprite;fleets?:readonly [string,string]}[]=[];
   private impacts:{id:string;graphic:Graphics}[]=[];
+  private reorganizationWidgets:{id:string;bar:Graphics;pixel:number;r:number;full:number;text?:Text}[]=[];
+  updateReorganization(world:World){for(const v of this.reorganizationWidgets){const a=world.armies.find(a=>a.id===v.id);if(!a)continue;v.bar.clear().rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel,2*v.pixel).fill(0x26332d).rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel*Math.min(1,a.troops/v.full),2*v.pixel).fill(0xf0ce7b);if(v.text)v.text.text=`重编 ${a.troops}`;}}
   private unitGroups:{ids:string[];container:Container;offset:Point}[]=[];
   private shipLayer?:ReturnType<typeof drawNavy>;
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
@@ -78,10 +80,10 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic)child.destroy({ children: true });
-    this.unitGroups=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
+    this.unitGroups=[];this.reorganizationWidgets=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     const detail=warDetail(world,scale,zoom),sites=warSites(world,combat?.state,combat?.occupation,naval);
     this.wars=warMarkers(world,sites,naval,scale,{x:this.projection.x,y:this.projection.y,scale:zoom},{width:this.projection.width,height:this.projection.height},selectedWars);
     this.capitals=world.nations.flatMap(n=>{const c=world.cities.find(c=>c.id===n.capitalId);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
@@ -189,11 +191,12 @@ export class PlayMap {
       else if((marker.near||active)&&texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=(r*2-3)*pixel;sprite.height=(r*2-3)*pixel;sprite.position.set(x,y);container.addChild(sprite);}
       else marks.moveTo(x-2*pixel,y+3*pixel).lineTo(x-2*pixel,y-3*pixel).lineTo(x+3*pixel,y-1*pixel).stroke({color:0xfff3d4,width:pixel});
       const strengthText=active?label(String(army.troops),x,y+24*pixel,10,'#f9f1d4',container):undefined;
+      if(reorganizing[army.id]&&(active||marker.near)&&marker.ids.length===1){const bar=new Graphics();container.addChild(bar);this.reorganizationWidgets.push({id:army.id,bar,pixel,r,full:reorganizing[army.id],text:strengthText});}
       if(battle){const bar=new Graphics();container.addChild(bar);this.battleWidgets.push({ids:marker.ids,bar,r,pixel,text:strengthText});}
       if((army.status==='marching'||army.status==='retreating')&&army.route.length){const from=provinces.get(army.provinceId)!.center,to=provinces.get(army.route[0])!.center,arrow=new Graphics();arrow.poly([(r+2)*pixel,-2*pixel,(r+6)*pixel,0,(r+2)*pixel,2*pixel]).fill(army.status==='retreating'?0xfacba0:0xfff8d6);arrow.rotation=Math.atan2(to.y-from.y,to.x-from.x);container.addChild(arrow);}
     }
     for(const e of combat?.state.engagements??[]){if(detail==='overview')continue;const p=engagementPoint(world,e),x=p.x/scale,y=p.y/scale,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,5*pixel).fill({color:0x392c28,alpha:.8});mark.moveTo(x-3*pixel,y-3*pixel).lineTo(x+3*pixel,y+3*pixel).moveTo(x+3*pixel,y-3*pixel).lineTo(x-3*pixel,y+3*pixel).stroke({color:0xffe4b4,width:1.5*pixel});const impact=new Graphics();impact.position.set(x,y);impact.circle(0,0,7*pixel).stroke({color:0xffd69a,width:1.5*pixel});for(let i=0;i<6;i++){const a=i*Math.PI/3;impact.moveTo(Math.cos(a)*9*pixel,Math.sin(a)*9*pixel).lineTo(Math.cos(a)*13*pixel,Math.sin(a)*13*pixel).stroke({color:0xffe6b9,width:pixel});}impact.alpha=0;this.layer.addChild(impact);this.impacts.push({id:e.id,graphic:impact});}
-    if(combat)this.updateBattles(world,combat.state);
+    if(combat)this.updateBattles(world,combat.state);this.updateReorganization(world);
     if(naval){this.sinkMotion.sync(naval.navy.fleets.filter(f=>f.status!=='lost').map(f=>({id:f.id,point:frame?.fleets.get(f.id)??fleetPosition(naval.graph,f),color:nationColor(nations.get(f.nationId)!),radius:6})),naval.navy.fleets.filter(f=>f.status==='lost').map(f=>({id:f.id,point:fleetPosition(naval.graph,f),color:nationColor(nations.get(f.nationId)!),radius:6})));this.shipLayer=drawNavy(this.layer,world,scale,zoom,naval,frame?.fleets,detail==='overview');}this.sinkingLayer=new Graphics();this.layer.addChild(this.sinkingLayer);this.drawSinking();
     // The original BattleFxSystem uses the same battleSwordPrefab for land and sea.
     // Only authoritative live contacts create effects; frame changes never deal damage.

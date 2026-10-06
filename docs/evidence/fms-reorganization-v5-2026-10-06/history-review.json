@@ -1,0 +1,87 @@
+{
+  "checkedAt": "2026-10-06T10:55:58.268Z",
+  "base": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+  "reviewedHead": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
+  "candidateFilesVerified": 180,
+  "files": [
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "bytes": 8087,
+      "sha256": "189b63deb527d2e83c34e70089ef69ba78d8986060e2a44089bcc5e0f82258c3"
+    },
+    {
+      "path": "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
+      "bytes": 7344,
+      "sha256": "904d1549372a927b0595b2607caa43dbf8e8d8ed3c4ccd22da182ebcc85ab16b"
+    },
+    {
+      "path": "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
+      "bytes": 33354,
+      "sha256": "62b1255ac4b59f3faefd6e82874e95a770c58cc3b2752ff100150dc015fa5de4"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/AUTO_HANDOFF_BEFORE_ENTRY_VERIFICATION.md",
+      "bytes": 13084,
+      "sha256": "6407835f7f4aa0729318be339030a1232633fc2ca1914d0f2dc8e2de80d364a6"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md",
+      "bytes": 3716,
+      "sha256": "265cb5b1791e6e50176bfc1fdfbf210f04611390ba7f9c565a3fd25d102c376a"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-entry-release.json",
+      "bytes": 6787,
+      "sha256": "3f409fd93bedf282d218e320db7034a0d7d7f15ee148257a8bcd04b0d062c221"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json",
+      "bytes": 3160,
+      "sha256": "e2079c96a649197eb4ffa1981ab9d885984659925a94278b85808668bc415c65"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-confirmation-https-mobile.png",
+      "bytes": 558865,
+      "sha256": "bac5855c8c290774500794a27f9855201a726bd0f1da6390f4c5a2e4d7df162c"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
+      "bytes": 54446,
+      "sha256": "8e7db705841bf3529de17e0086bd7d21911e0d85b2f60ee96ff64842caf60898"
+    },
+    {
+      "path": "plan/release-readiness.json",
+      "bytes": 3473,
+      "sha256": "46875eb1548a21ad72fab789b7fdf45380ec58bd5240959f605e2fc823e6153b"
+    },
+    {
+      "path": "plan/reviewed-history-2026-10-06.json",
+      "bytes": 189471,
+      "sha256": "feccdb6c649b549bce7f6905e68b6c04b318d0c6fafe42b2a753a81ed0a7bc51"
+    },
+    {
+      "path": "plan/tasks.json",
+      "bytes": 287154,
+      "sha256": "8c9aaa7d692bf71490669971b1f215cf9aeb6503f6def2e7e2704b5b6a088003"
+    },
+    {
+      "path": "scripts/reviewed-history.mjs",
+      "bytes": 4046,
+      "sha256": "5876ff3693a9feb13cd07aa005602255b40d9b84c3a247dd3303f2d04afddd97"
+    },
+    {
+      "path": "src/world/renderer.test.ts",
+      "bytes": 88650,
+      "sha256": "e132b0c959d1555f2ac037c2a91612115169311067901f94525b4b13b26337f0"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "bytes": 3784,
+      "sha256": "cad303947aa6fee4a6aa4d81a229a2947d7dbb0077686cc7fb2b7d9b0f072882"
+    }
+  ],
+  "mismatch": [],
+  "findings": [],
+  "omitted": [],
+  "scope": "Exact prior committed candidate hashes plus manual review of test-only runtime delta and project evidence. Pattern scan is supplementary, not proof of absence of all secrets."
+}

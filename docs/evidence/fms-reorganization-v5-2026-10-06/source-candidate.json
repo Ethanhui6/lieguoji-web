@@ -1,0 +1,422 @@
+{
+  "recordedAt": "2026-10-06T11:17:06.265Z",
+  "parentCommit": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
+  "scope": "Changed files after the exact reviewed 605ad7e history. New source/archive is project TypeScript; screenshots are inspected synthetic app scenes with IHDR/IDAT/IEND only. Semantic review is in SOURCE_PRIVACY.md; pattern scan is supplementary.",
+  "excludedSelf": "docs/evidence/fms-reorganization-v5-2026-10-06/source-candidate.json",
+  "excludedBinding": "plan/release-readiness.json: fixed-field preview contract",
+  "fileCount": 82,
+  "bytes": 2732944,
+  "findings": [],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 6801,
+      "sha256": "32e19ae1ac437a40d948b0aa66f978f9edfc4a7a6c38886d3d9fe955c420a8b4"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "bytes": 3448,
+      "sha256": "8f2c6cd262057f79bdecce80e48c9e1ef46dba75240317953140080a4c03d417"
+    },
+    {
+      "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
+      "bytes": 2935,
+      "sha256": "76531b3ba16f4cd2a2bf2349432bebcc65e4073db498da626c62fbe8fd1ff5de"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/AUTO_HANDOFF_BEFORE_V10.md",
+      "bytes": 10874,
+      "sha256": "857e41d0f5180bb11b2e870d04a63452075b9f815b0d7f1b029b8c27948444b9"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/DELIVERY.md",
+      "bytes": 5249,
+      "sha256": "803d4400e23e47fb3590e58f30b19fdee36fc2ca4159c15a6b7e27c42f97e754"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/SOURCE_PRIVACY.md",
+      "bytes": 2556,
+      "sha256": "a0498b2cc047fe2f5d1e274a57dc7694ac70b26256302767c5b55db72b2c11ec"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json",
+      "bytes": 97153,
+      "sha256": "9b2b0fecffad7e7333ce699b1ced6933d097978fead7111145188408eba73eb0"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+      "bytes": 2078,
+      "sha256": "2e3d74ab40f4b4cbdd75a6403c8f5be58b0fe3b464524bcedd834acae7eef545"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/history-review.json",
+      "bytes": 3204,
+      "sha256": "5668b4ea93225137880df3da2742c491bb8744c57f2ed228a770d16f4e36d716"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/v10-reorganization-complete.png",
+      "bytes": 713701,
+      "sha256": "dfad2ddb2d9e6ea5a5fadfd5857bca575c39fac52bf78709cfe3adedc65d6b01"
+    },
+    {
+      "path": "docs/evidence/fms-reorganization-v5-2026-10-06/v10-returned-home.png",
+      "bytes": 711424,
+      "sha256": "51dc4947bbfadabd89668518e6f61b91fb5b0dc4f24ff2674cc8d574648af162"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-validation-retry.json",
+      "bytes": 6641,
+      "sha256": "069a9ec93fc6b299e0273ef52fc90711aadea35c6737e67477ac64bd46d0e91c"
+    },
+    {
+      "path": "plan/reviewed-history-2026-10-06.json",
+      "bytes": 189471,
+      "sha256": "bcd5962e745b7db990794a7418a14b7d218fab2f8ea059a0c71eba2b9196c205"
+    },
+    {
+      "path": "plan/tasks.json",
+      "bytes": 290227,
+      "sha256": "71a7cb0a8465c4aa658777fa41cf8830bea7fc81375e36527dd56c67a733d628"
+    },
+    {
+      "path": "scripts/fms-campaign-fingerprint.ts",
+      "bytes": 2499,
+      "sha256": "e0c41fdec78a117f3218180075b33a61a9cff9ec73056cd098fbbd7e5ad84b22"
+    },
+    {
+      "path": "scripts/reviewed-history.mjs",
+      "bytes": 4101,
+      "sha256": "a07573f996608ad2091b4f50bb79d709d41ff7be0164500ee114fa623aba2174"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "bytes": 50696,
+      "sha256": "7a0cacad57e437b937340da0d09efea25ec0bdbc2b4ba6ce06137d17d9f03ac9"
+    },
+    {
+      "path": "src/fms/play/ReorganizationPanel.tsx",
+      "bytes": 1357,
+      "sha256": "de3b9d87fc33413d6e0cf47ea67cf521edde70210e3b10d7fbc9e047f4e971f1"
+    },
+    {
+      "path": "src/fms/play/campaign-compatibility.test.ts",
+      "bytes": 895,
+      "sha256": "2b79017e1dfc4ddf0662d9fd97d489404a6d846dbf6d37d00279cdccf1c49f65"
+    },
+    {
+      "path": "src/fms/play/campaign-model.ts",
+      "bytes": 2714,
+      "sha256": "12f55725515980bc37c7b4fb6825473b4eb8bd1168c722dece4c02d3aa686f2f"
+    },
+    {
+      "path": "src/fms/play/campaign-runtime.ts",
+      "bytes": 2372,
+      "sha256": "7953af26253f4aed05bb771a811a3d1637b45551ad0c3b7bcc2facef27d13357"
+    },
+    {
+      "path": "src/fms/play/campaign-session.ts",
+      "bytes": 3054,
+      "sha256": "21966dd6f65c35e205047addcaafdeefa75932875245fe31d17b58e0019ce6a2"
+    },
+    {
+      "path": "src/fms/play/campaign-storage.ts",
+      "bytes": 6579,
+      "sha256": "525af4c1725cf677bd7cbd45023d2676be8e9a61b21bd42ae3008dfc55510c35"
+    },
+    {
+      "path": "src/fms/play/campaign-stores.ts",
+      "bytes": 717,
+      "sha256": "d7f01a384471751e4922748582b7460fce26bdcff6cce1378e21dd696d78646c"
+    },
+    {
+      "path": "src/fms/play/campaign.test.ts",
+      "bytes": 13544,
+      "sha256": "5562035753249d2a8e9cbd47d6c444e2094192bba270296f8f787ce98362e7c1"
+    },
+    {
+      "path": "src/fms/play/campaign/play.worker.ts",
+      "bytes": 1010,
+      "sha256": "29d11858cc3cbc9528b2c052ee079882ccc41ec2c79bc211d8beb11993c1d11b"
+    },
+    {
+      "path": "src/fms/play/client.ts",
+      "bytes": 2520,
+      "sha256": "69a901c196e8ecf31bb33eae563e93e48c1832be0b3e12f96a1878e1f2ffcc4b"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/compat/v0_4/history/types.ts.source",
+      "bytes": 1012,
+      "sha256": "e754f30931866f3309260edc3224139e25268474f08b42f59475724a3297645f"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/compat/v0_4/sim/core.ts.source",
+      "bytes": 35424,
+      "sha256": "3f56bf53f333341a63f27b550613695f39bb4e78157e69fbc394997fe07ee144"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/compat/v0_4/sim/statecraft.ts.source",
+      "bytes": 22259,
+      "sha256": "f4d798aae36c043d7dbaba269f86c52be71ce986f95ba9e7524d26255265c12f"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/compat/v0_4/sim/types.ts.source",
+      "bytes": 3555,
+      "sha256": "80f6eedf679f7918cfff1557adfdf0db5c99d9387449990eea3ae83c4f52601e"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/model.ts.source",
+      "bytes": 27087,
+      "sha256": "6bbce9d6512e155f92b86eeb6e2b4c217e13784ac4b2950c04bc84c29423b7bc"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/battle.ts.source",
+      "bytes": 17852,
+      "sha256": "e423db7de0649669fc051a77be905a003dd413a6215af152754da228319cc9e3"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/clock.ts.source",
+      "bytes": 440,
+      "sha256": "f48296dce01e196a7edc5e2832e4927e3946428f8843f3f96bc8aec973c05de6"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/customization.ts.source",
+      "bytes": 3941,
+      "sha256": "a959b72cb661f3bca3799132b32240b1f220f2224ec1957a181b4bce122a3c93"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/eastern-names.json.source",
+      "bytes": 16483,
+      "sha256": "d4d59db91cdf4bfd388d97ba573fe2f311e856fd4c6b762de6fc99354182da44"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/editor-session.ts.source",
+      "bytes": 4254,
+      "sha256": "10217eacca9461370adcfe4028be47ae91fb201496293253002e19d14a41bdb8"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/game-storage.ts.source",
+      "bytes": 704,
+      "sha256": "866bc1faaafcad20591aa1031fd5ccce07fcaae086881e208b334e8d44253800"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/maritime-session.ts.source",
+      "bytes": 3245,
+      "sha256": "19a6d60cca7188cd673af3c48dd664e5da82b73e16f9a48069872f3dc9a01a41"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/maritime.ts.source",
+      "bytes": 10890,
+      "sha256": "066784a96da779eb94be846118373482bc2d74775bcd8a753834ebf858e202bc"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/military-actions.ts.source",
+      "bytes": 5612,
+      "sha256": "07832fa9a12e93e58ddaf6288aba0bf200f7896215e42d2f0b428c5769b283dc"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/military-core.ts.source",
+      "bytes": 42763,
+      "sha256": "a2210d445a420a3e2e8e8162dc149b707222db47bc82156a8e8be083758d475c"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/military-profile.ts.source",
+      "bytes": 1307,
+      "sha256": "ae934b8bcc52f227ca47dddb30fb01f240979fdbdf79771605403e51d3a3774b"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/military-registry.ts.source",
+      "bytes": 4192,
+      "sha256": "d4bdcc2ef7b70310b0818193a3fbdb928b084edd834c9622e00718209e9e283e"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/mobilization.ts.source",
+      "bytes": 4923,
+      "sha256": "838c0c2d517fb5762ba328d5b654ebf52e6d0b31561d31e4fc7c9f766439fa0e"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/names.ts.source",
+      "bytes": 2971,
+      "sha256": "e69e3489af7216b24e9c4e5c8215c825a9bd4c0e196d2839279fffed85f3b042"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/naval-rules.ts.source",
+      "bytes": 893,
+      "sha256": "cecee1276adb82158bcaf63cc01e0f06d3d6095f05a3dfd9a3af0389815ef813"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/navy.ts.source",
+      "bytes": 13678,
+      "sha256": "665e483a69838629243ee50d352d4c3f1da096dc0d0a0822c2be23be655dc78b"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/observation.ts.source",
+      "bytes": 2939,
+      "sha256": "12852ec893395002afd005afe3741c412052bb667e1609ebe2c46432e61fb00a"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/occupation.ts.source",
+      "bytes": 6383,
+      "sha256": "2c779e06fe428c8eb50270bed73611f30acdc70a565d5a67a61f723c217f0661"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/play.worker.ts.source",
+      "bytes": 946,
+      "sha256": "85207f532c4ce5370fa7078aa66c8172d22c34cf46804e283c0c668ec2c28271"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/politics.ts.source",
+      "bytes": 1151,
+      "sha256": "5d9c0dd5d4d33a207da875db0c9b3c5e5f424b6e9d3191b18afaea43390f2f61"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/realtime-statecraft.ts.source",
+      "bytes": 22498,
+      "sha256": "078c05047c02998235ecfeaeead975137f22ce5b9839a10157dcfaf9f1094c02"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/runtime.ts.source",
+      "bytes": 8662,
+      "sha256": "0e2b59dfa5eaedd884d561f1ccaffe981d2a5620d5e4a8ab3d7fe5325a0013b7"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/sea-path.ts.source",
+      "bytes": 7330,
+      "sha256": "499a000352c7c72fc5c815a9c724619732624d5625f5038d8dd8ebc3baeb44a2"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/session.ts.source",
+      "bytes": 7511,
+      "sha256": "8f6a8d907b61f76ba51d01965b6d9b8bdfc012e9e4e24fdaa80acdb95c19fe4a"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/storage.ts.source",
+      "bytes": 12166,
+      "sha256": "15a30d9c39df8c6226a4f4ac7c13856a4cca432cdc68ee22cc1199fa4e6a2992"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-battle.ts.source",
+      "bytes": 18045,
+      "sha256": "0537f4d36286a964b7cdde7e8d97e8746702b9457d1cbfbae9327ecb558fea24"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-core.ts.source",
+      "bytes": 44019,
+      "sha256": "b32b7d171f2e6831cbbcca43af9b4c65e325b3c6381ff5b2c034d02403e37f4f"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-model.ts.source",
+      "bytes": 3731,
+      "sha256": "626bac129d6cb50fc3c2ac622b068c14c4fe09a069a62e543a8b69b5c2e4efee"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-muster.ts.source",
+      "bytes": 8874,
+      "sha256": "1a5747b23eea1518c81e2b06554ba4ed245c5575036ee11324a23e4a71c5f813"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-occupation.ts.source",
+      "bytes": 4941,
+      "sha256": "7e60cdb58ea75e71de0f8dc9f1c55f905ffd7283ca6e57a0526b958fa7d3101c"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-rules.ts.source",
+      "bytes": 1609,
+      "sha256": "7acde77bfc1fecb25436b747698c73ad3c3c6fb5e3f7a12a46f9e3502ed59fe0"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-runtime.ts.source",
+      "bytes": 1926,
+      "sha256": "de1c9f5c4ff4fe1ecfd74a75bf3cec176b171db24b888de935a8fc4019b57d08"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-sea.ts.source",
+      "bytes": 5173,
+      "sha256": "39fa7a21bba67cadd23d6cf07902ee9b4eeba569354d32ff9d9166e36582d0d3"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-session.ts.source",
+      "bytes": 4613,
+      "sha256": "fc5216530c05282ad603415fdd4b88350227cf46c2cdcc6067ba75b06e621d5c"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-statecraft.ts.source",
+      "bytes": 22812,
+      "sha256": "efad4fb01f85c258c937817b55595ce6caa69c104322bd26514ab69d7970984f"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/tactics-storage.ts.source",
+      "bytes": 6097,
+      "sha256": "00c946c1cc9f723b9e0a2fd72d0743453ecbdd0a1b7d8b261e935353ad7e3310"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/transport-runtime.ts.source",
+      "bytes": 2310,
+      "sha256": "b13aebb6623675a9af5ff5d792a62e9b80313ef8d43796b07bee27b0fe56a9e5"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/transport.ts.source",
+      "bytes": 9785,
+      "sha256": "4317217a951dec68fefec3671f0f96cf2836c75dde81f6d6ad871dc70b35f93f"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/fms/play/world.ts.source",
+      "bytes": 16505,
+      "sha256": "292b610eccfd455be78b6ac1f4636974d5191d2fe98b3b7917417f09ae190f21"
+    },
+    {
+      "path": "src/fms/play/compat/tactics1/manifest.json",
+      "bytes": 8633,
+      "sha256": "e70c21f4370fb66f6370363ce03e8b2ff7c5c3eff1a76a386ab17b03ff2d3f70"
+    },
+    {
+      "path": "src/fms/play/map.ts",
+      "bytes": 26959,
+      "sha256": "83b5c8bbdce7645ac8ce1dea693731ae435ef0a5e1532163c4a5d9e687a0252d"
+    },
+    {
+      "path": "src/fms/play/play.css",
+      "bytes": 14080,
+      "sha256": "ff5f706a2afc03aa4511ed3a29ada1e295421c0730afdedcafa0abe14ee96e43"
+    },
+    {
+      "path": "src/fms/play/reorganization.ts",
+      "bytes": 3613,
+      "sha256": "ebd35394621cd788479829b5526166d7dc93691408912f93d5b0f5e39a6aeb32"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "bytes": 960,
+      "sha256": "9c7fadd3df6901a0cf2f4ea8d6b7f91228ac3af8ca3b712efd969feae263813f"
+    },
+    {
+      "path": "src/world/storage.test.ts",
+      "bytes": 59528,
+      "sha256": "cd11e2683d9b8a6e36a49c4d3728b15d517d13020d2f1c29dac2895829f2a68a"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "bytes": 10186,
+      "sha256": "a8911b0a601594b68f0b4e910e4834b0fc1ee282a989bee9d88cea555fe66ee5"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "bytes": 3785,
+      "sha256": "c5bf61023af5b705d91fc1fbdeef5482bf56eb685592f8a9bd643e9b3695d680"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "bytes": 4937,
+      "sha256": "b3cd78297b6d2718c3525363d96999552345c3387f5c8ba095f2c0e9bdf3ca98"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "bytes": 13877,
+      "sha256": "fedd48171dbdf9627aea653be0378a708192e48a0357bd869fc6094f2032c7c5"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 5055,
+      "sha256": "75798effe2136148c35ecfe2ee7a45e25cf69766f82096a0e4f10d06c5cebbad"
+    }
+  ]
+}

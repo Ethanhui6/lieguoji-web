@@ -80,35 +80,29 @@
     "version": 1,
     "status": "ready",
     "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
-    "sourceFingerprint": "f02ff2ccf99b1453c7556c145da9bcbcc3231d020b6d38444f14b3e1455d79af",
+    "sourceFingerprint": "34c4a788225c2b844ab9ca64fe43fd7fe79041dcd6412b54e0540e91ceca0275",
     "branch": "refs/heads/codex/ph06-world-generation",
-    "expiresAt": "2026-10-07T08:34:04.752Z",
+    "expiresAt": "2026-10-07T11:17:19.841Z",
     "checks": {
       "localBuild": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
+          "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json"
         ]
       },
       "coreBrowser": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/https-tactics-preview.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
+          "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+          "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
         ]
       },
       "sourcePrivacy": {
         "status": "passed",
         "evidence": [
-          "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
-          "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
-          "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md"
+          "docs/evidence/fms-reorganization-v5-2026-10-06/SOURCE_PRIVACY.md",
+          "docs/evidence/fms-reorganization-v5-2026-10-06/history-review.json",
+          "docs/evidence/fms-reorganization-v5-2026-10-06/source-candidate.json"
         ]
       }
     }

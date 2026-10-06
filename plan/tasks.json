@@ -2409,24 +2409,36 @@
         "docs/evidence/fms-tactics-v5-2026-10-06/entry-overlay-fix.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/cloud-entry-release.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/entry-https-verification.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json"
+        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-validation-retry.json",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
       ],
-      "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
-      "checkedAt": "2026-10-06T08:30:07.683Z",
+      "commit": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
+      "checkedAt": "2026-10-06T10:48:37.113Z",
       "urls": [
-        "https://e8babf58.lieguoji-web.pages.dev",
+        "https://52bdebad.lieguoji-web.pages.dev",
         "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
       ],
       "cloudCi": {
         "status": "completed",
         "conclusion": "failure",
-        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37434808825"
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37437068346"
       },
       "pages": {
         "status": "completed",
         "conclusion": "success",
-        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/e8babf58-e7da-4779-9c93-7c5e5829a076"
-      }
+        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/52bdebad-2f82-44e1-8350-2bf824731948"
+      },
+      "verifiedPlayable": {
+        "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+        "url": "https://e8babf58.lieguoji-web.pages.dev/?fms=1",
+        "evidence": "entry-https-verification.json",
+        "freshEntryCases": 3,
+        "reusedWarfareCases": 10
+      },
+      "candidateStatus": "v10_local_passed_not_uploaded",
+      "candidateEngine": "5394c3c20077989a2eb2c243c7a686399e86c8dbfad8102bfbb3951d01019db0"
     }
   },
   "ownedPackageReuse": {
@@ -3710,9 +3722,12 @@
               "docs/evidence/fms-tactics-v5-2026-10-06/REORGANIZATION_FOLLOWUP.md",
               "docs/evidence/fms-tactics-v5-2026-10-06/ATTACKING_FOLLOWUP.md",
               "docs/evidence/fms-tactics-v5-2026-10-06/TARGET_SELECTION_FOLLOWUP.md",
-              "docs/evidence/fms-tactics-v5-2026-10-06/PORT_TARGET_FOLLOWUP.md"
+              "docs/evidence/fms-tactics-v5-2026-10-06/PORT_TARGET_FOLLOWUP.md",
+              "docs/evidence/fms-reorganization-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
             ],
-            "progressNote": "v9逐军对军脉冲、邻省救援、抵抗/接管分离与内部粮需已通过单元/生产UI切片；完整地形效率、长期围攻与复合补给平衡仍待完成。"
+            "progressNote": "v9逐军脉冲、地区抵抗/接管、内部粮需继续有效；v10击溃返乡连续重编有限切片已通过本地检查（WEB-04-23）。完整地形效率、长期围攻和复合补给平衡仍未完成。"
           },
           {
             "id": "WEB-04-14",
@@ -3851,6 +3866,23 @@
             ],
             "progressNote": "常备home配额/内部兵员月征、独立应急动员和人工布兵已接；真实Worker、冷却、精确保存恢复与30日粮需回归通过。",
             "completionScope": "只覆盖任务声明的来源/编制/动员/布兵及旧档保护。国运/核心代用、时间/容量是明确网页适配；原作击溃重编、完整人物效率与自动编制层级未实现。"
+          },
+          {
+            "id": "WEB-04-23",
+            "title": "原作击溃返乡重编、连续补员与旧局隔离",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-22"
+            ],
+            "acceptance": "按已恢复的资格、故乡一成兵力和持续补员公式接入真实陆战；身份、小数余量和完成状态独立存档，旧v9源与分派冻结；主备/CAS/未来字段保护，实际Worker/UI验证。费用、海上语义和完整原作等价不混记完成。",
+            "evidence": [
+              "docs/evidence/fms-reorganization-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-tactics-v5-2026-10-06/REORGANIZATION_FOLLOWUP.md",
+              "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
+            ],
+            "progressNote": "220文件2690单元通过；新旧执行/Store12隔离，真实道路击溃、实际沉船、伤亡中补员和刷新精确续接通过。首轮三尺寸发现布兵守卫，修复后复验，另验428x926。",
+            "completionScope": "有限原作资格与补员公式的网页适配；非完整金币费用、原作海上重编、侦察埋伏、全部战术或真机视觉通过。"
           }
         ]
       },
@@ -4423,11 +4455,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-06",
-      "status": "cloud_ci_failed",
+      "status": "campaign_local_checked_preview_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "92af7eaea4f3ef0e234fe7494238c293786b310d",
+      "lastCommitted": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
       "cloudScope": "Authorized GitHub + Pages branch preview pushed; main unchanged; physical/visual pending",
-      "next": "Upload audited test-only renderer-timer/cache repair; preserve actual 92af HTTPS evidence and prior cloud failures. No gameplay change. Then WEB-04-13 with published v9 compatibility.",
+      "next": "Commit/push this reviewed bounded branch preview normally, verify actual same-SHA HTTPS/Pages and CI independently. Then WEB-04-13 remaining terrain, supply and prolonged fighting. Keep main and physical/visual gates.",
       "latestUserPriority": "用户要求代码级恢复原作战争：野外交锋、空城接管、大量军队与动员；已授权安装目录只读核验后接入v9，先完成相关真实检查，再接续已授权GitHub＋Pages分支预览，正式站不变。"
     },
     "nativeHillPrototype": {
@@ -5214,6 +5246,23 @@
         "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
+      ]
+    },
+    "campaignPrototype": {
+      "runVersion": 10,
+      "rules": "fms-campaign-1",
+      "database": "lieguoji-fms-campaign-v1",
+      "engine": "5394c3c20077989a2eb2c243c7a686399e86c8dbfad8102bfbb3951d01019db0",
+      "status": "local_finite_slice_verified",
+      "oldV9Fingerprint": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+      "originalParity": false,
+      "physicalDeviceAccepted": false,
+      "userVisualAccepted": false,
+      "evidence": [
+        "docs/evidence/fms-reorganization-v5-2026-10-06/DELIVERY.md",
+        "docs/evidence/fms-tactics-v5-2026-10-06/REORGANIZATION_FOLLOWUP.md",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
       ]
     }
   }

@@ -351,16 +351,14 @@ describe('PH04 complete byte comparisons and conditional presence reads', () => 
     await expect(session.commitLocal(request, control)).rejects.toThrow('原像'); expect(await entireDatabase()).toEqual(before); expect(session.valid).toBe(false);
   });
 
-  it.each([1, 2, 3])('checks every byte of a %i-byte manifest tail after the last complete word', async tail => {
+  it.each([1, 2, 3].flatMap(tail => Array.from({ length: tail }, (_, byte) => ({ tail, byte }))))('checks byte $byte of a $tail-byte manifest tail after the last complete word', async ({ tail, byte }) => {
     const initial = cloneAtlasDraft(base); initial.manifest.name = 'tail';
     while (encodeManifest(initial.manifest).length % 4 !== tail) initial.manifest.name += 'x';
     const first = await publish(initial), original = await raw('manifests', first.manifestDigest) as BlobValue, next = await edit(initial);
-    for (let byte = 0; byte < tail; byte++) {
       const session = (await openAtlasStorageSession(first.draftId, control))!, changed = structuredClone(original);
       changed.bytes[changed.bytes.length - tail + byte] ^= 1; await putRaw('manifests', first.manifestDigest, changed); const before = await entireDatabase();
       await expect(session.commitLocal(localRequest(next, first.root), control)).rejects.toThrow('原像'); expect(session.valid).toBe(false); expect(await entireDatabase()).toEqual(before);
       await putRaw('manifests', first.manifestDigest, original);
-    }
   });
 
   it('compares nonzero aligned and unaligned views by their complete content, then rejects a changed byte', async () => {

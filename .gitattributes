@@ -9,6 +9,7 @@
 *.md text eol=lf
 *.css text eol=lf
 *.html text eol=lf
+src/fms/play/compat/tactics1/**/*.source text eol=lf
 .githooks/* text eol=lf
 # Immutable measurement reports and source snapshots must retain their recorded SHA.
 # Tool stdout / historic snapshots may intentionally include trailing whitespace.

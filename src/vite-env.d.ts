@@ -18,3 +18,5 @@ declare const __SEED_TERRAIN_FINGERPRINT__: string;
 declare const __FMS_PLAY_ENGINE__: string;
 
 declare const __FMS_TACTICS_ENGINE__:string;
+
+declare const __FMS_CAMPAIGN_ENGINE__:string;

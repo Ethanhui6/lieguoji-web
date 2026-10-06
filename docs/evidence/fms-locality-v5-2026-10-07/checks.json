@@ -1,0 +1,77 @@
+{
+  "recordedAt": "2026-10-06T17:54:31.501Z",
+  "sourceParent": "89a81765f7605a2a9a74a9835cba2207957da795",
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "bbbc58c4ded01b9b2a915e5c025310092bd472523d688ba3c2e327a2671ca1c9"
+    },
+    {
+      "path": "src/fms/play/IdentityPanel.tsx",
+      "sha256": "8548ad0ef34eaef68150d39dd701855ca936426c69c06f591cf733e64a2c7459"
+    },
+    {
+      "path": "src/fms/play/city-labels.ts",
+      "sha256": "37f0c971a687f0f15b3d5fd2a3efd4cad3b00c44a517dfb08e7a528175d9190b"
+    },
+    {
+      "path": "src/fms/play/map.ts",
+      "sha256": "e333bafb2c3159f5616f366384cfbdb911b547b665049d9ac096fb979f5967ee"
+    },
+    {
+      "path": "src/fms/play/cartography-news.test.ts",
+      "sha256": "b91e677c52b46262cd40fcd3fcb5971919c69262c535060d05568170ae37a6e6"
+    },
+    {
+      "path": "src/fms/play/city-selection.test.ts",
+      "sha256": "01f8b8c715d5a99517edaa77dda979afe2c2308827270725afefd6a0d35fa74c"
+    },
+    {
+      "path": "tests/fms-locality.spec.ts",
+      "sha256": "a7d83f4477b38a1967a734ec9339897462aa5e3216651aded614e00693b73bde"
+    }
+  ],
+  "unit": {
+    "passed": 13,
+    "failed": 0,
+    "report": "unit.json"
+  },
+  "lint": {
+    "command": "node node_modules/eslint/bin/eslint.js src tests scripts",
+    "exitCode": 0,
+    "finalTouchedFileRecheck": "FmsGame.tsx, map.ts, city-labels.ts, city-selection.test.ts, fms-locality.spec.ts after DOM exclusion; FmsGame.tsx again after bidirectional motion envelope, exit 0"
+  },
+  "types": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "exitCode": 0
+  },
+  "build": {
+    "command": "node node_modules/vite/bin/vite.js build --outDir .autopilot/locality-preview/dist",
+    "exitCode": 0,
+    "warning": "FmsApp chunk 774.81 kB above existing 500 kB threshold; warning retained"
+  },
+  "distAudit": {
+    "command": "Existing scripts/check-dist.mjs with cwd .autopilot/locality-preview",
+    "exitCode": 0,
+    "approvedFiles": 43
+  },
+  "engine": {
+    "version": 12,
+    "store": 14,
+    "fingerprint": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+    "frozenChain": "fingerprintChronicle2() validated the original full compatibility chain"
+  },
+  "browser": {
+    "freshFinalArtifactPassed": 3,
+    "reusedPreBidirectionalMotionEnvelopeLandlessPassed": 3,
+    "reusedPreOverlayChroniclePassed": 12,
+    "report": "final-overlay-browser.json",
+    "prior": "browser.json"
+  },
+  "limits": [
+    "Affected unit/browser scope only; no new full-suite cloud claim.",
+    "Current 5182 existing six-country demo was loaded in the app browser, paused at day 0; original saved world was not replaced.",
+    "Original install was not read or launched this batch. This is web display/input adaptation, not new native code recovery.",
+    "Local only. No push, main change, production upload or release-hook change."
+  ]
+}

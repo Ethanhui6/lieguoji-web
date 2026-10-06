@@ -4098,6 +4098,38 @@
               "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
             ],
             "completionScope": "本地展示/指挥/史书检索有限闭环；26单元与14浏览器通过。未修改已发布v12规则/旧库，未上传；完整原作效率/长战平衡、真机和视觉未验收。首轮平板保存超时单独保留，不宣称其性能根因已修复。"
+          },
+          {
+            "id": "WEB-04-33",
+            "title": "所选小城完整地名、置顶标识与同地点击",
+            "dependsOn": [
+              "WEB-04-26"
+            ],
+            "acceptance": "城市在视口内选中后全景与近景不被国名/军旗剔除；长名完整分行，标识不移动城市坐标；偏移标识仍点选原城，操作不改变世界；浏览器三端布局与保存恢复验证",
+            "status": "done",
+            "evidence": [
+              "docs/evidence/fms-locality-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-locality-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-locality-v5-2026-10-07/final-overlay-browser.json",
+              "docs/evidence/fms-locality-v5-2026-10-07/tested-artifact.json"
+            ],
+            "completionScope": "有限本地标牌/选择/输入修复；含实际DOM控制区及面板动画避让。13单元、最终构建3个三尺寸选城场景（另3项无领土为紧邻前构建证据）、类型/lint/构建/43产物审查通过。另保留前一构建12项史书/未来档回归，不冒充最终构建新测。合成无领土夹具明确；v12规则与旧库保留，真机/原作视觉/完整性能未验收，未上传。"
+          },
+          {
+            "id": "WEB-04-34",
+            "title": "无领土国家切换、旧都及军令选择清理",
+            "dependsOn": [
+              "WEB-04-26"
+            ],
+            "acceptance": "加载、国家下拉、图例与军事布兵国家切换不残留前一地方或军令目标；首都失守仍可查看有效领土，无领土不高亮旧都；国家/城市/史书保留，保存前后只读操作无差异",
+            "status": "done",
+            "evidence": [
+              "docs/evidence/fms-locality-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-locality-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-locality-v5-2026-10-07/final-overlay-browser.json",
+              "docs/evidence/fms-locality-v5-2026-10-07/tested-artifact.json"
+            ],
+            "completionScope": "有限本地标牌/选择/输入修复；含实际DOM控制区及面板动画避让。13单元、最终构建3个三尺寸选城场景（另3项无领土为紧邻前构建证据）、类型/lint/构建/43产物审查通过。另保留前一构建12项史书/未来档回归，不冒充最终构建新测。合成无领土夹具明确；v12规则与旧库保留，真机/原作视觉/完整性能未验收，未上传。"
           }
         ]
       },
@@ -4670,17 +4702,18 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "local_inspection_verified",
+      "status": "locality_verified_local",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
-      "cloudScope": "Previous 8eb9b4e remains the uploaded preview. This UI inspection batch is local only; main/production and user 5181 untouched.",
-      "next": "WEB-04-13继续原作地形/补给长战数值对照；先处理对照表第3项的所选小城身份和灭国选择残留。保留首轮平板保存延迟风险，若复现先量测而非加超时。任何已发布规则变更先冻结；本批仅本地，无新发布候选。",
-      "latestUserPriority": "执行桌面网页复刻提示词正文并完成第一批实际可玩闭环",
+      "lastCommitted": "89a81765f7605a2a9a74a9835cba2207957da795",
+      "cloudScope": "Previous 8eb9b4e remains uploaded preview. This locality batch is local only; main/production and old saves untouched.",
+      "next": "WEB-04-13：原作地形效率与长期补给对照，改变v12前先冻结；本批自定义命令4—5秒端到端等待另待定位。先检查现有云端CI实际终态，不为状态文件push。",
+      "latestUserPriority": "继续桌面复刻可玩体验；接续十项对照第3项",
       "requiredUserAction": null,
       "evidence": [
-        "docs/evidence/fms-inspection-v5-2026-10-07/DELIVERY.md",
-        "docs/evidence/fms-inspection-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
+        "docs/evidence/fms-locality-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-locality-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-locality-v5-2026-10-07/final-overlay-browser.json",
+        "docs/evidence/fms-locality-v5-2026-10-07/tested-artifact.json"
       ],
       "currentVersion": 12,
       "currentEngine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",

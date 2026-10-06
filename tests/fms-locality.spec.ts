@@ -1,0 +1,54 @@
+import {test,expect,type Page} from '@playwright/test';
+import type {Chronicle2Run as ChronicleRun} from '../src/fms/play/chronicle2-model';
+type Saved={run:ChronicleRun;revision:number;checksum:string};
+async function read(page:Page){return page.evaluate(()=>new Promise<Saved>((resolve,reject)=>{const q=indexedDB.open('lieguoji-fms-chronicle-v2');q.onerror=()=>reject(q.error);q.onsuccess=()=>{const db=q.result,t=db.transaction('saves'),r=t.objectStore('saves').get('current');r.onsuccess=()=>resolve(r.result);t.oncomplete=()=>db.close();};}));}
+async function save(page:Page){const before=await read(page);await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect.poll(async()=>(await read(page))?.revision??0).toBe((before?.revision??0)+1);return read(page);}
+async function load(page:Page,day=0){await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:`继续史书新版第 ${day} 日`,exact:true}).click();await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','12');}
+async function writeFixture(page:Page,run:ChronicleRun){await page.evaluate(async run=>{const content=JSON.stringify(run,(_k,v)=>ArrayBuffer.isView(v)?Array.from(v as unknown as ArrayLike<number>):v),bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(content)),checksum=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');await new Promise<void>((resolve,reject)=>{const q=indexedDB.open('lieguoji-fms-chronicle-v2');q.onsuccess=()=>{const db=q.result,t=db.transaction('saves','readwrite'),s=t.objectStore('saves');s.put({version:1,revision:20,checksum,run},'current');s.put(20,'revision');t.oncomplete=()=>{db.close();resolve();};t.onerror=()=>reject(t.error);};});},run);await load(page);}
+async function create(page:Page){await page.goto('/campaign/chronicle?fms=1');await expect(page.getByRole('button',{name:'进入世界 →',exact:true})).toBeEnabled();const box=(await page.getByTestId('fms-canvas').boundingBox())!,cx=box.x+box.width*.5,cy=box.y+box.height*.49,rx=box.width*.3,ry=Math.min(box.height*.22,box.width*.26);await page.mouse.move(cx-rx,cy-ry);await page.mouse.down();for(const [x,y] of [[cx+rx,cy-ry],[cx+rx,cy+ry],[cx-rx,cy+ry],[cx-rx,cy-ry]])await page.mouse.move(x,y,{steps:14});await page.mouse.up();await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);await page.locator('.fms-save').click();await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty','false');await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByLabel('战乱开局').uncheck();await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','12',{timeout:30000});return save(page);}
+type Callout={id:string;provinceId:string;name:string;x:number;y:number;width:number;height:number};
+async function callout(page:Page){return JSON.parse(await page.getByTestId('fms-play-canvas').getAttribute('data-selected-city')??'null') as Callout|null;}
+async function openPolitics(page:Page){if(!await page.getByLabel('查看国家',{exact:true}).isVisible())await page.getByRole('button',{name:'政治',exact:true}).click();}
+
+test('FMS locality: a selected small city remains readable and its displaced label selects the same real place',async({page},info)=>{
+  test.setTimeout(120000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));
+  const initial=await create(page),w=initial.run.world,n=w.nations[0],city=w.cities.find(c=>c.id!==n.capitalId&&w.provinces.find(p=>p.id===c.provinceId)?.controller===n.id)!;
+  await openPolitics(page);await page.getByLabel('查看国家',{exact:true}).selectOption(n.id);await page.locator('.play-city').filter({hasText:city.name}).last().click();
+  await expect.poll(async()=>(await callout(page))?.id).toBe(city.id);const small=await callout(page);expect(small!.name).toBe(city.name);
+  const canvas=page.getByTestId('fms-play-canvas');await expect(canvas).toHaveAttribute('data-selected-province',city.provinceId);
+  const panel=(await page.locator('.play-panel').boundingBox())!,c=small!;
+  expect(c.x+c.width/2<=panel.x||c.y+c.height/2<=panel.y||c.x-c.width/2>=panel.x+panel.width).toBe(true);
+  if(info.project.use.hasTouch)await page.touchscreen.tap(c.x,c.y);else await page.mouse.click(c.x,c.y);
+  await expect(canvas).toHaveAttribute('data-selected-province',city.provinceId);await expect(page.getByLabel('查看国家',{exact:true})).toHaveValue(n.id);
+  await page.screenshot({path:info.outputPath('selected-city.png')});
+  const before=await save(page);expect(before.run).toEqual(initial.run);expect(before.checksum).toBe(initial.checksum);
+  // Rename through the production UI; full long names must wrap, not disappear.
+  await page.getByRole('button',{name:'✎ 自定义国家与地名',exact:true}).click();const name='东海长风云溪'.repeat(4);await page.getByRole('textbox',{name:'城市名称',exact:true}).fill(name+'超');await expect(page.getByRole('button',{name:'应用自定义',exact:true})).toBeDisabled();await expect(page.getByRole('alert')).toContainText('1—24');await page.getByRole('textbox',{name:'城市名称',exact:true}).fill(name);const renameStarted=Date.now();await page.getByRole('button',{name:'应用自定义',exact:true}).click();await expect(page.locator('.play-identity')).toHaveCount(0,{timeout:30000});await expect(page.locator('.play-notice')).toContainText('名称与国色已应用');const customizeMs=Date.now()-renameStarted;
+  await expect.poll(async()=>(await callout(page))?.name).toBe(name);const long=await callout(page);expect(long!.height).toBeGreaterThan(28);expect(long!.x-long!.width/2).toBeGreaterThanOrEqual(0);expect(long!.x+long!.width/2).toBeLessThanOrEqual(info.project.use.viewport!.width);
+  // The whole displaced plate must avoid real DOM chrome, not just fit the canvas.
+  for(const box of await page.locator('.play-header,.play-notice,.play-map-options,.play-zoom,.play-panel,.play-controls,.play-news').evaluateAll(els=>els.map(el=>{const b=el.getBoundingClientRect();return{x:b.x,y:b.y,width:b.width,height:b.height};}))){expect(long!.x+long!.width/2<=box.x||long!.x-long!.width/2>=box.x+box.width||long!.y+long!.height/2<=box.y||long!.y-long!.height/2>=box.y+box.height).toBe(true);}
+  if(info.project.use.hasTouch)await page.touchscreen.tap(long!.x,long!.y);else await page.mouse.click(long!.x,long!.y);
+  await expect(canvas).toHaveAttribute('data-selected-province',city.provinceId);
+  await page.screenshot({path:info.outputPath('selected-city-long-name.png')});
+  const changed=await save(page);expect(changed.run.world.cities.find(c=>c.id===city.id)!.position).toEqual(city.position);await load(page);await openPolitics(page);await page.getByLabel('查看国家',{exact:true}).selectOption(n.id);await page.locator('.play-city').filter({hasText:name}).last().click();await expect.poll(async()=>(await callout(page))?.name).toBe(name);const restored=await save(page);expect(restored.run).toEqual(changed.run);expect(restored.checksum).toBe(changed.checksum);
+  await info.attach('locality-evidence',{body:JSON.stringify({scope:'Real drawn map, real selection/customization/Worker/save/restore; Chromium emulation only',selected:small,long,customizeMs,errors,failed}),contentType:'application/json'});expect(errors).toEqual([]);expect(failed).toEqual([]);
+});
+
+test('FMS locality: loading and choosing a landless country clears stale locality and military targets without changing the world',async({page},info)=>{
+  test.setTimeout(120000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failed.push(r.url()));
+  const initial=await create(page),r=initial.run,w=r.world,[a,b]=w.nations;
+  // Explicit landless presentation fixture; no claim that a battle produced it.
+  for(const p of w.provinces){p.controller=b.id;r.chronicle.unrest[p.id].controller=b.id;}r.chronicle.ended[a.id]=0;r.chronicle.leaders[a.id].at(-1)!.endedDay=0;await writeFixture(page,r);
+  await openPolitics(page);const canvas=page.getByTestId('fms-play-canvas'),locality=page.getByRole('region',{name:'所选地方详情'});
+  async function empty(){await expect(canvas).toHaveAttribute('data-selected-province','');await expect(locality).toHaveCount(0);await expect(page.locator('.play-locality-empty')).toContainText('没有实控领土');await expect(page.getByRole('button',{name:'定位当前首都',exact:true})).toBeDisabled();expect(await callout(page)).toBeNull();}
+  await empty();await page.getByRole('button',{name:'✎ 自定义国家与地名',exact:true}).click();await expect(page.getByRole('textbox',{name:'首都名称',exact:true})).toHaveCount(0);await expect(page.getByRole('textbox',{name:'城市名称',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'取消编辑',exact:true}).click();const before=await save(page);
+  for(const entry of ['dropdown','legend'] as const){await page.getByLabel('查看国家',{exact:true}).selectOption(b.id);await expect(locality).toBeVisible();await expect(page.getByRole('button',{name:'定位当前首都',exact:true})).toBeEnabled();
+    if(entry==='dropdown')await page.getByLabel('查看国家',{exact:true}).selectOption(a.id);
+    else{await page.getByRole('button',{name:'国家图例',exact:true}).click();await page.locator('.play-legend').getByRole('button',{name:a.name,exact:true}).click();}
+    await empty();
+  }
+  await page.screenshot({path:info.outputPath('landless-country.png')});
+  await page.getByRole('button',{name:'军事',exact:true}).click();const army=w.armies.find(x=>x.nationId===b.id&&x.status!=='destroyed')!;await page.getByLabel('选择军队',{exact:true}).selectOption(army.id);await page.getByLabel('目标辖区',{exact:true}).selectOption(w.provinces[0].id);await page.getByLabel('布兵国家',{exact:true}).selectOption(a.id);await expect(page.getByLabel('选择军队',{exact:true})).toHaveValue('');await expect(page.getByRole('button',{name:'预览行军',exact:true})).toHaveCount(0);await expect(canvas).toHaveAttribute('data-selected-province','');
+  await page.getByRole('button',{name:'海军',exact:true}).click();await page.getByLabel('海军国家',{exact:true}).selectOption(b.id);await page.getByLabel('海军国家',{exact:true}).selectOption(a.id);await page.getByRole('button',{name:'政治',exact:true}).click();await empty();const after=await save(page);expect(after.run).toEqual(before.run);expect(after.checksum).toBe(before.checksum);expect(after.run.world.cities).toEqual(w.cities);await load(page);await openPolitics(page);await empty();
+  await info.attach('landless-evidence',{body:JSON.stringify({scope:'Synthetic landless ownership, real loader/selection/save; no actual combat extinction claimed',country:a.id,worldUnchanged:true,errors,failed}),contentType:'application/json'});expect(errors).toEqual([]);expect(failed).toEqual([]);
+});

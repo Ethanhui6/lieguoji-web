@@ -10,7 +10,7 @@ import { armyMarkers,armyPosition } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import {currentCapital} from './capital-view';
-import {cityLabels} from './city-labels';
+import {cityLabels,selectedCityLabel,type LabelBox} from './city-labels';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
@@ -42,6 +42,11 @@ export class PlayMap {
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
   private cities:{id:string;provinceId:string;name:string;x:number;y:number;capital:boolean;label:boolean}[]=[];
   cityPositions(){return this.cities;}
+  private cityCallout?:LabelBox&{id:string;provinceId:string;name:string};
+  private uiObstacles:LabelBox[]=[];
+  setUIObstacles(boxes:LabelBox[]){this.uiObstacles=boxes;}
+  selectedCityPosition(){return this.cityCallout;}
+  pickSelectedCity(point:Point){const c=this.cityCallout;return c&&Math.abs(c.x-point.x)<=c.width/2&&Math.abs(c.y-point.y)<=c.height/2?c.provinceId:null;}
   private wars:WarMarker[]=[];
   warPositions(){return this.wars;}
   pickWar(point:Point){return this.wars.map(w=>({...w,distance:Math.hypot(w.x-point.x,w.y-point.y)})).filter(w=>w.distance<=20).sort((a,b)=>a.distance-b.distance)[0];}
@@ -137,12 +142,13 @@ export class PlayMap {
       this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:capital});
       if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
-    const cityText=cityLabels(this.cities.filter(c=>!c.capital).map(c=>({...c,selected:c.provinceId===selected})),[
+    const cityObstacles=[
       ...countryLabels.map(c=>({x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:c.width,height:c.size+4})),
       ...this.cities.filter(c=>c.capital).map(c=>({x:c.x,y:c.y-10,width:Math.max(24,c.name.length*16),height:40})),
       ...this.wars.map(w=>({x:w.x,y:w.y,width:48,height:48}))
-    ],this.projection,detail==='overview');
-    for(const c of cityText){label(c.name,(c.x-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9);this.cities.find(v=>v.id===c.id)!.label=true;}
+    ];
+    const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
+    for(const c of cityText){label(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
@@ -219,5 +225,21 @@ export class PlayMap {
       const name=new Text({text:capital.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:15,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:4}}});name.anchor.set(.5,1);name.scale.set(pixel);name.position.set(x,y-12*pixel);capitalLayer.addChild(name);
     }
     if(frame)this.updateUnits(frame);
+    // Draw the one actively inspected small city above moving units and effects.
+    // Its screen-space callout never moves the saved city or its hit location.
+    this.cityCallout=undefined;
+    const activeCity=this.cities.find(c=>!c.capital&&c.provinceId===selected);
+    if(activeCity){
+      const selectedLabel=selectedCityLabel({...activeCity,selected:true},[...cityObstacles,...cityText.map(c=>({x:c.labelX,y:c.labelY-5,width:c.name.length*10+4,height:12})),...this.unitPositions().map(u=>({x:u.x,y:u.y+5,width:32,height:46}))],this.projection,this.uiObstacles);
+      if(selectedLabel?.callout){
+        const box=selectedLabel.callout,px=this.projection.x,py=this.projection.y,x=(box.x-px)/zoom,y=(box.y-py)/zoom,cx=(activeCity.x-px)/zoom,cy=(activeCity.y-py)/zoom;
+        const endX=(Math.max(box.x-box.width/2,Math.min(box.x+box.width/2,activeCity.x))-px)/zoom,endY=(Math.max(box.y-box.height/2,Math.min(box.y+box.height/2,activeCity.y))-py)/zoom;
+        const callout=new Graphics();this.layer.addChild(callout);
+        callout.moveTo(cx,cy).lineTo(endX,endY).stroke({color:0xffedb6,width:2*pixel}).circle(cx,cy,4*pixel).stroke({color:0xffedb6,width:2*pixel});
+        callout.roundRect(x-box.width/2*pixel,y-box.height/2*pixel,box.width*pixel,box.height*pixel,4*pixel).fill(0xeeeada).stroke({color:0x5f7051,width:pixel});
+        const text=new Text({text:selectedLabel.lines!.join('\n'),style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:12,lineHeight:16,fontWeight:'bold',fill:0x263a30,align:'center'}});text.anchor.set(.5);text.scale.set(pixel);text.position.set(x,y);this.layer.addChild(text);
+        activeCity.label=true;this.cityCallout={...box,id:activeCity.id,provinceId:activeCity.provinceId,name:activeCity.name};
+      }
+    }
   }
 }

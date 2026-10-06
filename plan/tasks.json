@@ -4756,7 +4756,7 @@
       "date": "2026-10-07",
       "status": "naming18_map_legibility_verified_continue_restoration19",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "6cad5c95fb046819a870a20d4158f7d6473d1612",
+      "lastCommitted": "5563650fb28d4f5845758753c8aed1f20a6d88ff",
       "cloudScope": "Local-only v18; previous cloud preview retained, no push/main/Pages changes.",
       "next": "冻结v18；接真实持久省文化/原起义命名/历史国家实体复用。原复国领袖候选14项已完成，深层家族仍待。不要重复已完成函数恢复。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
@@ -5967,7 +5967,8 @@
       ],
       "scope": "Overview pickable dots; interior-safe country labels; nearby selected capital names; touch chooser same-gesture guard; 22 unit / final 6 browser across three sizes. No world mutation.",
       "physicalAccepted": false,
-      "visualAccepted": false
+      "visualAccepted": false,
+      "sourceCommit": "5563650fb28d4f5845758753c8aed1f20a6d88ff"
     },
     "nativeRestorationLeaderPrototype": {
       "status": "isolated_kernel_verified",
@@ -5979,7 +5980,8 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/NEXT_RESTORATION.md",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/restoration-final.json"
       ],
-      "remaining": "Persistent province culture and native history identity lifecycle must be integrated in isolated next version; complete family generation/lifespan not implemented."
+      "remaining": "Persistent province culture and native history identity lifecycle must be integrated in isolated next version; complete family generation/lifespan not implemented.",
+      "sourceCommit": "5563650fb28d4f5845758753c8aed1f20a6d88ff"
     }
   }
 }

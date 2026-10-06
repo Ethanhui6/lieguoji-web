@@ -101,5 +101,12 @@
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
+  },
+  "sourceCommit": "5563650fb28d4f5845758753c8aed1f20a6d88ff",
+  "boundaryChecks": {
+    "planCheck": "passed",
+    "releasePolicy": 24,
+    "planRules": 15,
+    "failed": 0
   }
 }

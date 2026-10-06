@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-07",
+  "sourceParent": "2fcda84cc24418ffae2821aa76b9efbdda1789ca",
+  "unit": {
+    "passed": 25,
+    "failed": 0,
+    "report": "unit-life-culture.json"
+  },
+  "lint": {
+    "exitCode": 0
+  },
+  "types": {
+    "exitCode": 0,
+    "note": "Full project type check passed after final audit repair."
+  },
+  "production": {
+    "engineUnchanged": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
+    "calledFromProduction": false
+  },
+  "originalData": {
+    "cultures": 6,
+    "weights": 30,
+    "hashChecked": true
+  },
+  "auditRepair": "Reject raw PRNG values outside range before f32 conversion; validate injected calendar years as int32. Added EPSILON and negative-subnormal cases.",
+  "files": [
+    {
+      "path": "src/fms/play/native-economy/character-lifecycle.ts",
+      "sha256": "11b794d105702f46f4fec1b2ac8410bec334d12d197419d9e331e2d353982dce"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-lifecycle.test.ts",
+      "sha256": "2128093259c5895eeb4d4d2b6956db20f520b98753a9e7d86b1d4dd935c69a85"
+    },
+    {
+      "path": "src/fms/play/native-economy/ethnic-generation.ts",
+      "sha256": "331296a5952a3c40c3c9817e4a88eebe1f19501a2846ff04d9ce79deb5b1b5e7"
+    },
+    {
+      "path": "src/fms/play/native-economy/ethnic-generation.test.ts",
+      "sha256": "bff10f1642e1d3b49b6288373d246484eab4d2d404db4e9872e62e72b16f69f2"
+    },
+    {
+      "path": "src/fms/play/native-economy/original-cultures.ts",
+      "sha256": "b58c8637084d82f3f21929969bb6a602ad5cce763889c866df5743fc4879fee1"
+    },
+    {
+      "path": "src/fms/play/native-economy/culture-ethnic-weights.json",
+      "sha256": "aa5cc27dd3dec23b95a8f9edb73ef7e69f5b9d14da4456f86ec407e57d1627cd"
+    }
+  ],
+  "limitations": [
+    "Independent kernels, not production aging/death or completed culture integration.",
+    "Base culture identities and map culture identities remain separate; no inferred defaults.",
+    "Native calendar, complete Die transaction and family succession not yet ported.",
+    "No new visual or physical-device evidence; 5187 uses previously verified v16 build."
+  ],
+  "plan": {
+    "exitCode": 0
+  },
+  "review": {
+    "nativeLife": "Reviewed by read-only recovery agent; raw PRNG and calendar validation findings fixed.",
+    "nativeEthnic": "Read-only numeric and six original data tables review matched; no pure-kernel blocker found."
+  }
+}

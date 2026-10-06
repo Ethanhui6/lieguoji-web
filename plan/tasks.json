@@ -4734,11 +4734,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "court16_local_verified_continue_lifecycle",
+      "status": "court16_playable_life_culture_kernels_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "884500642233e5430d8a05275b775daf5a36c7a9",
+      "lastCommitted": "2fcda84cc24418ffae2821aa76b9efbdda1789ca",
       "cloudScope": "Local-only v16; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
-      "next": "先落已闭合族群抽样/生命周期纯函数与原文化权重，接续原日历/撤职/继承依赖；生产接线先冻结v16，保留当前试玩与旧库。",
+      "next": "冻结v16并接真实文化/族群生产输入；完整生命周期待原日历起点/人物生日和死亡继承闭合，不用现有传位假装死亡。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4765,7 +4765,9 @@
         "docs/evidence/fms-court16-v5-2026-10-07/checks.json",
         "docs/evidence/fms-court16-v5-2026-10-07/tested-artifact.json",
         "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md",
-        "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md"
+        "docs/evidence/fms-court16-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/LIFE_CULTURE_PROGRESS.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/life-culture-checks.json"
       ],
       "currentVersion": 16,
       "currentEngine": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
@@ -5793,7 +5795,21 @@
         "Chromium mobile/tablet emulation is not physical iPhone Safari/Chrome acceptance.",
         "Native exact calendar, succession and complete original UI/visual parity are not claimed.",
         "WEB-04-13 and overall Goal remain active."
-      ]
+      ],
+      "localCommit": "2fcda84cc24418ffae2821aa76b9efbdda1789ca"
+    },
+    "lifeCultureKernels": {
+      "date": "2026-10-07",
+      "status": "independent_kernels_verified_not_integrated",
+      "evidence": [
+        "docs/evidence/fms-court16-v5-2026-10-07/LIFE_CULTURE_PROGRESS.md",
+        "docs/evidence/fms-court16-v5-2026-10-07/life-culture-checks.json",
+        "docs/evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md"
+      ],
+      "tests": 25,
+      "cultures": 6,
+      "weights": 30,
+      "productionIntegrated": false
     }
   }
 }

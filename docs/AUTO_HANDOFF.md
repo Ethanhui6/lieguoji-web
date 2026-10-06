@@ -1,6 +1,6 @@
 # 当前续接：v16人物与官职已可玩，继续原生命周期与文化族群
 
-2026-10-07。根唯一源码写入，代理只读窄函数恢复。父HEAD 884500642233e5430d8a05275b775daf5a36c7a9；提交后补实际SHA。Goal及WEB-PH04 / WEB-04-13继续，不以本批通过称完整还原。
+2026-10-07。根唯一源码写入，代理只读窄函数恢复。父HEAD 884500642233e5430d8a05275b775daf5a36c7a9；本批本地提交2fcda84cc24418ffae2821aa76b9efbdda1789ca，未上传。Goal及WEB-PH04 / WEB-04-13继续，不以本批通过称完整还原。
 
 - 最新本机试玩 <http://127.0.0.1:5187/?fms=1>，独立.autopilot/court16-preview/dist。正常UI生成东牟/皋落/东齐/田/罗/胡六国；任命东牟夏侯伯温为财政官，保存刷新继续仍持任，中央0.957/国库1395不重发；暂停慢速6秒/日。5186最终v15与此前试玩、所有旧库保持。
 - v16 / Store18 lieguoji-fms-court-v16 / engine fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e。原27特性抽样分类与四能力、君主税赋/中央及省任职已实际参与财政；任命可取消确认，传位保留前任与官职；旧v15完整19源已冻结。新局先人物后首结，明确v15副本不重发金币。
@@ -8,6 +8,8 @@
 - [交付](evidence/fms-court16-v5-2026-10-07/DELIVERY.md) · [检查](evidence/fms-court16-v5-2026-10-07/checks.json) · [产物绑定](evidence/fms-court16-v5-2026-10-07/tested-artifact.json) · [原合同](evidence/fms-court16-v5-2026-10-07/CONTRACT.md)。build.json是父HEAD，实际脏树源码/产物另有SHA，不冒充干净父提交或云CI。
 - 下一批[已恢复文化与生命周期](evidence/fms-court16-v5-2026-10-07/NEXT_RECOVERY.md)：先独立内核，继续GetDateByDayCount/撤职/君主继承；生产接线先冻结v16。当前recordedDay不是生日，年龄死亡/完整家族/官职AI/地区官职/领袖直接军事尚未接入，不能虚报。
 - 无push/PR/Issue/Pages/main变更，既有预览和正式站保留；真机/用户视觉门未过，普通本地工作继续。不要重跑create-court16/wire-court16/finalize-court16等一次性脚本。
+
+随后实际新增[族群/生命周期内核](evidence/fms-court16-v5-2026-10-07/LIFE_CULTURE_PROGRESS.md)：6文化30权重已复用，25定向与目标lint通过；原年龄f32死亡概率与重要亲属清理、权重抽样均已落代码。尚无生产调用，5187/v16引擎不变。只读审计发现的微小PRNG越界/年份NaN校验已修。下一批先冻结v16，再接文化/族群，生命周期不能以网页30日月冒充原日历。
 
 ---
  当前续接：v15可玩；原人物税赋/官职内核已验证，继续实际人物与任职

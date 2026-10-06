@@ -3791,9 +3791,15 @@
               "docs/evidence/fms-tactics-v5-2026-10-06/PORT_TARGET_FOLLOWUP.md",
               "docs/evidence/fms-reorganization-v5-2026-10-06/DELIVERY.md",
               "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
-              "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
+              "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/RECOVERY.md",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/UPPER_EFFICIENCY_RECOVERY.md",
+              "docs/evidence/fms-terrain13-v5-2026-10-07/STATE_BASE_RECOVERY.md"
             ],
-            "progressNote": "v9逐军脉冲、地区抵抗/接管、内部粮需继续有效；v10击溃返乡连续重编有限切片已通过本地检查（WEB-04-23）。完整地形效率、长期围攻和复合补给平衡仍未完成。"
+            "progressNote": "2026-10-07 v13/Store15兵种13地貌、float32山地、实际道路位置与UI/AI/战斗统一的本地切片完成；全量2797、最终6浏览器、lint/types/build/43产物通过，保留首轮指纹失败。原上层效率和完整长战补给仍继续，非整项完成。"
           },
           {
             "id": "WEB-04-14",
@@ -4702,23 +4708,22 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "locality_verified_local",
+      "status": "terrain13_local_verified_upper_efficiency_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "89a81765f7605a2a9a74a9835cba2207957da795",
-      "cloudScope": "Previous 8eb9b4e remains uploaded preview. This locality batch is local only; main/production and old saves untouched.",
-      "next": "WEB-04-13：原作地形效率与长期补给对照，改变v12前先冻结；本批自定义命令4—5秒端到端等待另待定位。先检查现有云端CI实际终态，不为状态文件push。",
-      "latestUserPriority": "继续桌面复刻可玩体验；接续十项对照第3项",
+      "lastCommitted": "51a1e289f885a30edb3eae6cce5a5ba881455bdf",
+      "cloudScope": "This v13 batch is local only. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
+      "next": "冻结已试玩v13，接WEB-04-13原国家特性/军队基础快照/核心防御与长战补给；上层原输入不以士气或fort冒充。",
+      "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
-        "docs/evidence/fms-locality-v5-2026-10-07/DELIVERY.md",
-        "docs/evidence/fms-locality-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-locality-v5-2026-10-07/final-overlay-browser.json",
-        "docs/evidence/fms-locality-v5-2026-10-07/tested-artifact.json"
+        "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-terrain13-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-terrain13-v5-2026-10-07/tested-artifact.json"
       ],
-      "currentVersion": 12,
-      "currentEngine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+      "currentVersion": 13,
+      "currentEngine": "a20d2c88e3bbad359027bcc1d0d9e343c9a0f1955b9c6c250acfa070cdb36c77",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5182/?fms=1"
+      "localUrl": "http://127.0.0.1:5183/?fms=1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5574,6 +5579,22 @@
         "Physical iPhone/native visual unverified",
         "Source efficiency and long war balance remain WEB-04-13",
         "First tablet 5s save poll failure not root-caused; later unchanged limit checks pass"
+      ]
+    },
+    "terrain13Prototype": {
+      "status": "local_limited_slice_verified",
+      "version": 13,
+      "store": 15,
+      "database": "lieguoji-fms-terrain-v13",
+      "engine": "a20d2c88e3bbad359027bcc1d0d9e343c9a0f1955b9c6c250acfa070cdb36c77",
+      "localUrl": "http://127.0.0.1:5183/?fms=1",
+      "fullUnitPassed": 2797,
+      "finalBrowserPassed": 6,
+      "realDeviceAccepted": false,
+      "originalVisualAccepted": false,
+      "evidence": [
+        "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-terrain13-v5-2026-10-07/checks.json"
       ]
     }
   }

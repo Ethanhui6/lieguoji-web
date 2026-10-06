@@ -11,7 +11,7 @@
 | 逐军围攻、守军回补；原包 Army.BattleInProvince/CalBaseCombatEfficiency，见 fms-occupation-v5-2026-10-06/ORIGINAL_OCCUPATION.md | SiegePanel 固定净速率给剩余天数，WarPanel 仅军粮平均值；实际已有逐军轮次 | 满抵抗/有守军/缺粮场景显示真实下一轮、贡献，选军撤离预览/取消/确认/恢复；不得声称胜利日期 | WEB-04-31，本批实施；WEB-04-13完整平衡继续未完成 |
 | 顶部要闻与历史；原包 MajorEventMessageUI 8秒/1秒、任次记录，见 fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md | ChroniclePanel 无搜索；顶部点击不能展开准确历史条目，旧记录超60条难找 | 按旧名/王号/类别/稳定国家ID检索，点要闻展开同一id原因，定位后恢复史书不变 | WEB-04-32，本批实施；检索UI是网页适配 |
 | 所选城市和灭国观察；用户明确要求地块/城市/失守身份，原包完整布局未恢复 | 已补所选小城置顶完整标牌/同城命中，统一无领土国家焦点清理，历史首都不充当现任首都 | 三尺寸选城/24字改名/保存恢复和无领土加载/下拉/图例/军事/海军切换通过；纯只读选择世界不变 | WEB-04-33/34有限本地完成，见fms-locality-v5-2026-10-07/DELIVERY.md；原作视觉与全倍率密度仍待验收 |
-| 完整地形/兵种/国运效率；原包 MilitaryProfile 与 RecalCombatEfficiency，见 fms-tactics-v5-2026-10-06/RECOVERY.md | tactics-rules 已消费兵种/粗地形/士气粮食，尚非完整地貌/国运/领袖公式 | 固定完好军/残兵/地貌/守军场景，恢复单函数关系、独立新规则、旧局输出不变 | WEB-04-13后续；本批不改规则 |
+| 完整地形/兵种/国运效率；原包 MilitaryProfile 与 RecalCombatEfficiency，见 fms-terrain13-v5-2026-10-07/RECOVERY.md | v13已接5兵种/13地貌、山地分类与同位置攻防；上层仍网页士气/粮食/城防，原国运/领袖等未接 | 固定完好军/残兵/地貌/守军场景，恢复单函数关系、独立新规则、旧局输出不变 | WEB-04-13有限地貌切片已本地验证；完整上层及长战矩阵继续 |
 | 原生省内军队游走；Army.RandomMoveInProvince，见 fms-battle-routes-v5-2026-10-05/ORIGINAL_COMBAT.md | map/tactics-battle 有真实道路遭遇与动画，省内仍为节点接战 | 恢复真实cell路径与碰撞边界，动作使用同一实际位置，暂停/恢复一致 | 尚未原作等价，非假动画填充 |
 | 自动跨海；原包 Navy.BattleInSeaProvince，见 fms-maritime-v5-2026-10-06/ORIGINAL_NAVAL_COMBAT.md | transport-runtime/maritime 已手动载军、登陆和持续海战；无完整自动远征/封锁/护航 | 岛国自主形成有效航路、唯一载军身份、港口易主和停战约束、沉没损失可追溯 | WEB-PH04后续，不冒充已做 |
 | 家族继承/政体；StateManager.AppointLeader 已恢复任次，完整继承条件待核 | chronicle-* 已真实人物/王号几世/有限传位；无完整亲属和候选资格 | 按原作来源建立真实亲属与继承条件，国家差异被模拟消费 | WEB-PH05未完成；不加空面板 |
@@ -30,3 +30,7 @@
 ## 接续第二批
 
 2026-10-07，89a8176之后实施WEB-04-33/34，仅网页标牌/选择/名称校验；v12引擎与Store14保持。13单元、最终构建3个三尺寸选城场景（另3项无领土为紧邻前构建证据）（另12项为前构建回归证据）、类型/lint/独立构建与产物审查通过。改名4—5秒端到端等待保留为性能问题，未声称已经优化。详细失败记录、截图与受测产物见[本批交付](evidence/fms-locality-v5-2026-10-07/DELIVERY.md)。下一批仍按已有WEB-04-13，不另建主计划。
+
+## 接续第三批
+
+2026-10-07，51a1e28后完成WEB-04-13的地貌攻防切片：v12完整冻结；v13/Store15真实地貌、道路位置、AI/战斗/UI统一和显式副本。全量2797单元、最终构建6项三尺寸浏览器、lint/types/build/43产物、24+15发布与计划回归通过，首轮指纹变化导致的1项失败单列保留。用户正常UI六国试玩在5183，旧5182保持。[交付与剩余差异](evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md)。WEB-04-13仍in_progress，继续已恢复上层国家特性/基础战力与核心距离，真机和原作视觉未通过，无上传。

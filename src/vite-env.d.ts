@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+declare const __FMS_TERRAIN13_ENGINE__: string;
 declare const __BUILD_SHA__: string;
 declare const __SIM_ENGINE__: string;
 declare const __MACRO_GENERATOR_FINGERPRINT__: string;

@@ -3827,9 +3827,11 @@
               "docs/evidence/fms-culture17-v5-2026-10-07/FAILURES.md",
               "docs/evidence/fms-culture17-v5-2026-10-07/DELIVERY.md",
               "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
-              "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
+              "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md",
+              "docs/evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。"
           },
           {
             "id": "WEB-04-14",
@@ -4740,11 +4742,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "culture17_local_verified_continue_original_naming",
+      "status": "native_multiculture_naming_kernels_verified_continue_production",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "0b9845425e144123d1c0b4659c30bf1846026b7f",
-      "cloudScope": "Local-only v16; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
-      "next": "先复用已核定六文化名称数据并接原命名纯核/人物全名显示；生产升级前冻结v17。保留5188/DB19与旧18，不重建旧阶段。",
+      "lastCommitted": "4e0524001a9787966cdc53a6b30f282a77c17ac3",
+      "cloudScope": "Local-only v17; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
+      "next": "冻结v17后建立独立多文化版本：world实体名在muster/史书前生成，records/politics新人名在announce前确定；新sidecar校验/Worker/保存/预览。原内核与6文化数据已完成，不重复反编译。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4785,7 +4787,7 @@
       "currentEngine": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5188/?fms=1",
-      "currentLocalHead": "0b9845425e144123d1c0b4659c30bf1846026b7f"
+      "currentLocalHead": "4e0524001a9787966cdc53a6b30f282a77c17ac3"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5843,7 +5845,7 @@
         "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
         "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
       ],
-      "next": "验证后记录正式证据；下一批原多文化命名/人物继承，不重建旧计划。",
+      "next": "继续六文化数据与姓名独立核；生产升级前冻结v17。",
       "fingerprint": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
       "frozenCourt16": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
       "sourceParent": "0b9845425e144123d1c0b4659c30bf1846026b7f",
@@ -5863,7 +5865,23 @@
         "Full family, age/death, culture assimilation, religion, AI appointments and complete native calendar still missing.",
         "Mobile/tablet Chromium emulation is not physical iPhone Safari/Chrome acceptance.",
         "Visual/native equivalence and WEB-04-13 are not complete."
-      ]
+      ],
+      "commit": "4e0524001a9787966cdc53a6b30f282a77c17ac3"
+    },
+    "nativeNamingPrototype": {
+      "date": "2026-10-07",
+      "status": "independent_kernels_verified_not_production",
+      "sourceParent": "4e0524001a9787966cdc53a6b30f282a77c17ac3",
+      "sourceFiles": 36,
+      "cultures": 6,
+      "languages": 14,
+      "rows": 5085,
+      "tests": 36,
+      "evidence": [
+        "docs/evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md",
+        "docs/evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json"
+      ],
+      "next": "冻结v17后建立独立多文化版本：world实体名在muster/史书前生成，records/politics新人名在announce前确定；新sidecar校验/Worker/保存/预览。原内核与6文化数据已完成，不重复反编译。"
     }
   }
 }

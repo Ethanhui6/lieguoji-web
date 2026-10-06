@@ -1,0 +1,122 @@
+{
+  "recordedAt": "2026-10-06T22:14:58.946Z",
+  "sourceParent": "4e0524001a9787966cdc53a6b30f282a77c17ac3",
+  "unit": {
+    "passed": 36,
+    "failed": 0,
+    "files": 6,
+    "report": "unit-naming-expanded-final.json",
+    "scope": "Independent native naming data and kernels; not added to the earlier v17 full-suite count."
+  },
+  "lintExitCode": 0,
+  "typecheckExitCode": 0,
+  "data": {
+    "sourceFiles": 36,
+    "cultures": 6,
+    "languages": 14,
+    "rows": 5085,
+    "bytes": 948093,
+    "sourceComparison": "Every generated structure re-read and deep-compared with allowed original files.",
+    "historicalSourceHashesMatched": 18,
+    "manifest": "src/fms/play/native-culture/data/manifest.json"
+  },
+  "privacy": {
+    "files": 20,
+    "secretPatternsFound": 0
+  },
+  "currentPlayable": {
+    "version": 17,
+    "engine": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
+    "localUrl": "http://127.0.0.1:5188/?fms=1",
+    "http": 200,
+    "productionCallersOfNewNamingKernels": 0,
+    "buildAndBrowser": "Prior v17 evidence retained; no production change and no repeat browser claim."
+  },
+  "sourceHashes": [
+    {
+      "path": "scripts/fms-naming-data.mjs",
+      "sha256": "a7709edfb2c62896311f4e3abbaa2b64c2159775b8565c036bcf63b04b78d889"
+    },
+    {
+      "path": "src/fms/play/native-culture/character-name.test.ts",
+      "sha256": "1d34a52a5dca15d35911576e82d79be6e7186be49a61f55d4ced144dfdc43cc0"
+    },
+    {
+      "path": "src/fms/play/native-culture/character-name.ts",
+      "sha256": "be7c9f0f5a1b0cdbed1a8234b11b4f0ce60d0d98caddcb88ab66c66c971812de"
+    },
+    {
+      "path": "src/fms/play/native-culture/default-culture.test.ts",
+      "sha256": "2dc13045fd6be6446f6865a2c2d8073e63f2df111add47b5fb818e3002263f3b"
+    },
+    {
+      "path": "src/fms/play/native-culture/default-culture.ts",
+      "sha256": "eadf9a2dd10f1db1955993970b8c5ca9f644537ecf04a41b2f454ea70ffd61e6"
+    },
+    {
+      "path": "src/fms/play/native-culture/full-name.test.ts",
+      "sha256": "12cd4b2d9f2ec8c81661219198fd75a4dcbf09de01831ef95cf4607fc0d0ebc8"
+    },
+    {
+      "path": "src/fms/play/native-culture/full-name.ts",
+      "sha256": "9f4c1b1098a9fe9ae6d74b885acbe3292d55b870e6f900332897e90f25f2fc42"
+    },
+    {
+      "path": "src/fms/play/native-culture/localized-name.test.ts",
+      "sha256": "75dbfa0dcaea980d9560c9adefd1cd0a59ae6cfd9de98205ded625636b34034b"
+    },
+    {
+      "path": "src/fms/play/native-culture/localized-name.ts",
+      "sha256": "be582adbf97462d6ea19f92455c322a3c2174607d7b82f4155126dbd67a20177"
+    },
+    {
+      "path": "src/fms/play/native-culture/name-pool.test.ts",
+      "sha256": "f324ebf0b60fc24faa9309a71e2bcb7c4630135a940e52c2811b85bff6298a76"
+    },
+    {
+      "path": "src/fms/play/native-culture/name-pool.ts",
+      "sha256": "9481e2f3bd7274ef56a09dfca821b523adfe1328ae37241357698f929226402b"
+    },
+    {
+      "path": "src/fms/play/native-culture/original-naming.test.ts",
+      "sha256": "4c01d17c0bc4898e105b0d225b0b4143a889373c0ee2fb23e6297e4a0d562f33"
+    },
+    {
+      "path": "src/fms/play/native-culture/original-naming.ts",
+      "sha256": "caf7f4238965a726aabbf1e8dd24f385909cf26c00d9f205d6d87ea23c4227db"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Ciestundu.json",
+      "sha256": "db95db64d86160973c7e1a0ea48900239d9455e6177c0145d5f757170b98aaaf"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/EasternFantasy.json",
+      "sha256": "6014e2f373c13b5d2fc66a992b4e2ba057cb6ec041ca826043f221752eebf1e8"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Leffathou.json",
+      "sha256": "e5db69ebe26c55a5b04e6eb4ddf919e4d11d8699472639b2bbd94d1faf59888c"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/manifest.json",
+      "sha256": "63c4f7229823dbd96398ff11f07149df049a150f1177b2ae5f41c292eb097612"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Oeczea.json",
+      "sha256": "8972462b6c0b70c83b7c8082da8bba990976fee6be0f2ad685362f4074047e36"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/WesternFantasy.json",
+      "sha256": "0c424edfe53c911e4bf963ff1e2409f3b4d218fc7170b567ab0ca71b1a3cf384"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Wristhos.json",
+      "sha256": "e8d1801bdd3690cc4987d1d29288939f654a7f61f05c90c855875bb95bbaa661"
+    }
+  ],
+  "limits": [
+    "New multicultural data/kernels not yet wired into world/entity/history creation.",
+    "Full family/lifecycle/visual/physical iPhone acceptance remain incomplete.",
+    "No push/main/Pages change."
+  ]
+}

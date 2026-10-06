@@ -1,6 +1,6 @@
 # 当前续接：v17文化族群已可玩，继续原多文化命名
 
-2026-10-07，根唯一源码写入，代理只读；父HEAD 0b9845425e144123d1c0b4659c30bf1846026b7f。本批待本地提交，未上传。WEB-PH04/WEB-04-13和总Goal继续。
+2026-10-07，根唯一源码写入，代理只读；父HEAD 0b9845425e144123d1c0b4659c30bf1846026b7f。本批本地提交4e0524001a9787966cdc53a6b30f282a77c17ac3，未上传；提交后tasks/交接补记SHA。WEB-PH04/WEB-04-13和总Goal继续。
 
 - 试玩 http://127.0.0.1:5188/?fms=1，独立.autopilot/culture17-preview/dist；v17/Store19/lieguoji-fms-culture-v17，engine a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f。旧v16/5187及旧库完整保留。新局一次抽族群、分裂继承文化再抽，复国不重抽；资源和财政战力使用真实族群，下次月结才更新。预览取消不写。
 - 正常UI生成嬴/邓/疏勒/秧穗/燕/纪，嬴改商业后保存刷新仍21匹配辖区/2101金币/财政战力1.030。第0日暂停、慢速6秒/日。截图/证据[交付](evidence/fms-culture17-v5-2026-10-07/DELIVERY.md)。
@@ -8,6 +8,8 @@
 - [新原作恢复](evidence/fms-culture17-v5-2026-10-07/NATIVE_RECOVERY.md)：原默认4文化、国家/城市命名池和实体传递、人物姓名与地点译名、继承/任命调用顺序。国家耗尽不重抽，城市完整池有放回；不能反用旧两个无实际城市写入的Random函数。当前只有东方词库入生产，不能选择其他文化却仍东方名。
 - 下一批提取已知六文化命名CSV，闭合人物全名83E070/83BC90/83E600，再将名称key/mapCulture/baseCulture在实体与史书创建前接入。现独立native-culture两模块可复用，无生产调用。生命周期/完整家族/信仰/用户视觉/真机仍未完成。先冻结v17再改变已保存规则，不重跑任何create/wire/update/finalize一次性脚本。
 - 无push/Pages/main改动，正式站、旧档及发布锁保持。不要将当前本机URL当作手机可访问在线站。
+
+随后原六文化名称与家族姓名独立内核已完成，父HEAD 4e0524001a9787966cdc53a6b30f282a77c17ac3，待本地提交。36项定向、目标lint、类型与36来源文件逐结构比对通过；5085行/14语言，v17指纹不变，尚无生产调用。[数据/函数与下一接线位置](evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md) · [实际检查](evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json)。接下来先冻结v17，再新world/records/politics与名称sidecar，不能在旧create返回后改写实体和史书。无需重复恢复命名/默认语言/姓氏函数。
 
 ---
 

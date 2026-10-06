@@ -1,0 +1,401 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      ".autopilot/map-legibility-release.config.ts",
+      "tests/fms-naming18.spec.ts",
+      "tests/fms-locality.spec.ts",
+      "-g",
+      "choose original cultures|a selected small city"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-release.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-release/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-release/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-release/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "map-legibility-release/browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-locality.spec.ts",
+      "file": "fms-locality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47877,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:31:45.137Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6NTEwLCJ5Ijo0NDEuNSwid2lkdGgiOjQwLCJoZWlnaHQiOjI4LCJpZCI6ImMtMCIsInByb3ZpbmNlSWQiOiJwLTAiLCJuYW1lIjoi5biD5aWHIn0sImxvbmciOnsieCI6NDM4LCJ5Ijo0MzMuNSwid2lkdGgiOjE4NCwiaGVpZ2h0Ijo0NCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6qiJ9LCJjdXN0b21pemVNcyI6MzgwMSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-0291b2258ecf0cec264d",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46020,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:33:05.984Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6MjU4LCJ5IjoyNzIuNDA5OTk5OTk5OTk5OTcsIndpZHRoIjo2NCwiaGVpZ2h0IjoyOCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuWGheS6muWQieWwlCJ9LCJsb25nIjp7IngiOjExMCwieSI6MjgwLjQwOTk5OTk5OTk5OTk3LCJ3aWR0aCI6MTg0LCJoZWlnaHQiOjQ0LCJpZCI6ImMtMCIsInByb3ZpbmNlSWQiOiJwLTAiLCJuYW1lIjoi5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqqIn0sImN1c3RvbWl6ZU1zIjozNzg0LCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-b246d0429a179d1f9f70",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52164,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:34:25.520Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6MTg5LCJ5Ijo1MjcuNSwid2lkdGgiOjUyLCJoZWlnaHQiOjI4LCJpZCI6ImMtMCIsInByb3ZpbmNlSWQiOiJwLTAiLCJuYW1lIjoi5Zug5b63572VIn0sImxvbmciOnsieCI6MzMxLCJ5Ijo1NjEuNSwid2lkdGgiOjE4NCwiaGVpZ2h0Ijo0NCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6qiJ9LCJjdXN0b21pemVNcyI6MzY5MCwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-67d10e7709813576c37c",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-naming18.spec.ts",
+      "file": "fms-naming18.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32269,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:32:33.106Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "chooser-pointer-events",
+                      "contentType": "application/json",
+                      "body": "W3sidHlwZSI6InBvaW50ZXJkb3duIiwidGFyZ2V0IjoiQ0FOVkFTIiwiZGV0YWlsIjowfSx7InR5cGUiOiJwb2ludGVydXAiLCJ0YXJnZXQiOiJDQU5WQVMiLCJkZXRhaWwiOjB9LHsidHlwZSI6ImNsaWNrIiwidGFyZ2V0IjoiQ0FOVkFTIiwiZGV0YWlsIjoxfSx7InR5cGUiOiJjbGljayIsInRhcmdldCI6ImZvcmNlLTEiLCJkZXRhaWwiOjB9XQ=="
+                    },
+                    {
+                      "name": "map-legibility",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlNhbWUgcmVhbCB3b3JsZCwgcmVuZGVyZXIgb25seSwgb3ZlcnZpZXcgZG90cyByZW1haW4gcGlja2FibGU7IG5vIHBoeXNpY2FsIGRldmljZSBhY2NlcHRhbmNlIiwiZmFyTWFya2VycyI6MjQwLCJhcm15SWRzIjo0ODUsIm5hbWVzIjp7ImRldGFpbCI6Im92ZXJ2aWV3IiwiY291bnRyaWVzIjpbeyJ4IjoxMDM0LjIyNjg0ODI0MjA1NSwieSI6Mzc5LjIzNjQ4MjQ0MDExOTMsIndpZHRoIjoxMjAsImhlaWdodCI6Mzd9LHsieCI6MzgyLjUzMTcyMjA1ODgzNywieSI6NTg1LjI5MzM4MjczNDA3MDQsIndpZHRoIjozMywiaGVpZ2h0IjozN30seyJ4Ijo0NzAuMzk0Mjk2MjYwNDk3NywieSI6Mzc1LjQ1NjM5OTUzMTk4MjEsIndpZHRoIjo5MSwiaGVpZ2h0IjozN30seyJ4Ijo2NTUuOTM2NTMwNjg1MDYyMywieSI6NjA3Ljc5ODIwMTQ4NDgzMDUsIndpZHRoIjoxMjAsImhlaWdodCI6Mzd9LHsieCI6MTA4MC44MjIwMTY5NzI2OTY3LCJ5Ijo2MDguNDM5Mzc3OTc5NDM5MSwid2lkdGgiOjEyMCwiaGVpZ2h0IjozN30seyJ4Ijo3NjAuNDE5NTg5MTE2NTIxOCwieSI6NDYwLjIxODc3NDc5MDk1MTY3LCJ3aWR0aCI6MTQ5LCJoZWlnaHQiOjM3fV0sImNhcGl0YWxzIjpbeyJ4Ijo3NjYuMjgzODA5NjYxODY1MSwieSI6MzY5LjM3NDcxNzcxMjQwMjM0LCJ3aWR0aCI6NzEsImhlaWdodCI6MTl9LHsieCI6NzU5LjM3MzU4MDkzMjYxNzIsInkiOjY1MC42NzY1NTk0NDgyNDIyLCJ3aWR0aCI6MzIsImhlaWdodCI6MTl9LHsieCI6NTI2Ljk5NzAzNDA3Mjg3NiwieSI6MjQ4LjA4OTcxMjE0Mjk0NDM0LCJ3aWR0aCI6NDUsImhlaWdodCI6MTl9LHsieCI6MTE0NC4yMjY4Mjk1Mjg4MDg2LCJ5Ijo2NTQuMzEyMDI2OTc3NTM5MSwid2lkdGgiOjMyLCJoZWlnaHQiOjE5fSx7IngiOjI5Mi4wMTc2MjY0ODQyMzUxLCJ5Ijo2NTMuNjI2NTcxNjU1MjczNCwid2lkdGgiOjMyLCJoZWlnaHQiOjE5fV19LCJzZWxlY3RlZENhcGl0YWwiOnsieCI6MTA3MS42NzI4MDU3ODYxMzI4LCJ5IjoyODcuNjA4NDU1NjU3OTU4OSwid2lkdGgiOjg4LCJoZWlnaHQiOjI4LCJpZCI6ImMtNTA2IiwicHJvdmluY2VJZCI6InAtNTA2IiwibmFtZSI6IuWNoeiOq+aIiOmHjOiAtuWkqyJ9LCJwaWNrZWRBcm15IjoiZm9yY2UtMSJ9"
+                    },
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiJhZDYxYmIzNWYyZWI2ZGY5NDgwYWU3MWY2YTAzYzE2OWRhYjdmNDJkMjAwZTUzNGI0YjhlOTI0MTUzNGEyOTE0IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi55qu5Z+D6JKZ54m5IiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IlBpZWRtb250aWEiLCJuYW1lIjoi55qu5Z+D6JKZ54m5Iiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTEiLCJuYW1lIjoi5a6/IiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtRWFzdGVybkZhbnRhc3kiLCJrZXkiOiLlrr8iLCJuYW1lIjoi5a6/Iiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTIiLCJuYW1lIjoi5qC85ouJ6IyoIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiTGVmZmF0aG91IiwibWFwQ3VsdHVyZUlkIjoibWFwLUxlZmZhdGhvdSIsImtleSI6IkdsYXR6aWFuIiwibmFtZSI6IuagvOaLieiMqCIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi0zIiwibmFtZSI6IuWkuOeJuemHjOS6miIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ik9lY3plYSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1PZWN6ZWEiLCJrZXkiOiJRdWF0ZXJpYSIsIm5hbWUiOiLlpLjnibnph4zkupoiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tNCIsIm5hbWUiOiLmmIbmlq/kvK/ph4wiLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJXZXN0ZXJuRmFudGFzeSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1XZXN0ZXJuRmFudGFzeSIsImtleSI6IlF1ZWVuc2J1cnkiLCJuYW1lIjoi5piG5pav5Lyv6YeMIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTUiLCJuYW1lIjoi5aGe6I6x5pav5o+Q5LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiV3Jpc3Rob3MiLCJtYXBDdWx0dXJlSWQiOiJtYXAtV3Jpc3Rob3MiLCJrZXkiOiJDZWxlc3RpYSIsIm5hbWUiOiLloZ7ojrHmlq/mj5DkupoiLCJvcmlnaW4iOiJuYXRpdmUifX1dLCJjaGVja3N1bSI6IjcyOGFjODlmNzZiZmExNjgwNjFkNWYyNDUyYzBjOTBmZDg4YTM4YzlkMWYzZjI4ZGM5M2IyMTI2MzUzMmM5MmMiLCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-53465511f68d68c71a97",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32880,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:33:52.089Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "chooser-pointer-events",
+                      "contentType": "application/json",
+                      "body": "W3sidHlwZSI6InBvaW50ZXJkb3duIiwidGFyZ2V0IjoiQ0FOVkFTIiwiZGV0YWlsIjowfSx7InR5cGUiOiJwb2ludGVydXAiLCJ0YXJnZXQiOiJDQU5WQVMiLCJkZXRhaWwiOjB9LHsidHlwZSI6ImNsaWNrIiwidGFyZ2V0IjoiZm9yY2UtMTYiLCJkZXRhaWwiOjF9LHsidHlwZSI6InBvaW50ZXJkb3duIiwidGFyZ2V0IjoiZm9yY2UtMSIsImRldGFpbCI6MH0seyJ0eXBlIjoicG9pbnRlcnVwIiwidGFyZ2V0IjoiZm9yY2UtMSIsImRldGFpbCI6MH0seyJ0eXBlIjoiY2xpY2siLCJ0YXJnZXQiOiJmb3JjZS0xIiwiZGV0YWlsIjoxfV0="
+                    },
+                    {
+                      "name": "map-legibility",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlNhbWUgcmVhbCB3b3JsZCwgcmVuZGVyZXIgb25seSwgb3ZlcnZpZXcgZG90cyByZW1haW4gcGlja2FibGU7IG5vIHBoeXNpY2FsIGRldmljZSBhY2NlcHRhbmNlIiwiZmFyTWFya2VycyI6NjYsImFybXlJZHMiOjQ3NiwibmFtZXMiOnsiZGV0YWlsIjoib3ZlcnZpZXciLCJjb3VudHJpZXMiOlt7IngiOjE0MC40Mjk2MjM3OTYxODExLCJ5Ijo0MzkuMDcyMzg5MjY4MDQ1Niwid2lkdGgiOjk1LjI3OTk4MzUyMDUwNzgxLCJoZWlnaHQiOjMxfSx7IngiOjMwMS4xNzM2ODAxMzY4NDksInkiOjUzOS4zOTM2NzcwNDM5MTQ3LCJ3aWR0aCI6MjcsImhlaWdodCI6Mjl9LHsieCI6MzEzLjk2MDcwMjgzNTMxMTE3LCJ5IjozOTEuOTEyNjE3MjQ0MjUxNjMsIndpZHRoIjo1NC4wMTk5ODkwMTM2NzE4NzUsImhlaWdodCI6MjN9LHsieCI6MTE3LjYyMjQ5ODE0MTg0NjM1LCJ5Ijo1MzIuMjg3MzcwNjgxOTk0Niwid2lkdGgiOjY1LCJoZWlnaHQiOjE4fSx7IngiOjIxOS4yOTg1MDU5ODA5MTY1MywieSI6NTM0LjQ4ODEwMDQ3MTY3NzUsIndpZHRoIjoxMTUuOTk5OTU0MjIzNjMyODEsImhlaWdodCI6MjZ9LHsieCI6Mjg0LjcxNDc2MzQ1NzEzNjc3LCJ5Ijo0MzcuNjc4Nzk5ODkyNjI3MjQsIndpZHRoIjo2NS4xOTk5NTExNzE4NzUsImhlaWdodCI6MTh9XSwiY2FwaXRhbHMiOlt7IngiOjIxOC43OTA5ODcyMDU1MDUzMywieSI6NDc2LjgzMjgxMTAyMTgwNDgsIndpZHRoIjo1OCwiaGVpZ2h0IjoxOX0seyJ4IjozMzcuMDE5MjY0NjAyNjYxMTcsInkiOjQ3OC45MDgzMTM1NjA0ODU4LCJ3aWR0aCI6NDUsImhlaWdodCI6MTl9LHsieCI6OTMuNTc3MDA5OTU2MDQxOTUsInkiOjU4Ny45ODAzODM2NjEwNTgyLCJ3aWR0aCI6NTgsImhlaWdodCI6MTl9LHsieCI6MzQxLjQwNzMzNDQyMzA2NTE1LCJ5Ijo1MzkuNjUzODU1OTkxMzYzNiwid2lkdGgiOjMyLCJoZWlnaHQiOjE5fSx7IngiOjM4Ny4yNDQwNDQwMTc3OTE3NCwieSI6MzQ0Ljc1MTQxODU2NjcwMzc2LCJ3aWR0aCI6NzEsImhlaWdodCI6MTl9XX0sInNlbGVjdGVkQ2FwaXRhbCI6eyJ4IjoxMDIuMTU3NTgwNzU3MTQxMDksInkiOjM2Ni41MTg1MDY3NDE1MjM3LCJ3aWR0aCI6NDAsImhlaWdodCI6MjgsImlkIjoiYy00MTYiLCJwcm92aW5jZUlkIjoicC00MTYiLCJuYW1lIjoi5Yev5Li5In0sInBpY2tlZEFybXkiOiJmb3JjZS0xIn0="
+                    },
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiJhZDYxYmIzNWYyZWI2ZGY5NDgwYWU3MWY2YTAzYzE2OWRhYjdmNDJkMjAwZTUzNGI0YjhlOTI0MTUzNGEyOTE0IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi5piC5Y+k6I6x5aeGIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IkFuZ291bMOqbWUiLCJuYW1lIjoi5piC5Y+k6I6x5aeGIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTEiLCJuYW1lIjoi6a2PIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtRWFzdGVybkZhbnRhc3kiLCJrZXkiOiLprY8iLCJuYW1lIjoi6a2PIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTIiLCJuYW1lIjoi5aWO5bCU5p2+IiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiTGVmZmF0aG91IiwibWFwQ3VsdHVyZUlkIjoibWFwLUxlZmZhdGhvdSIsImtleSI6IlF1ZXJjaW9uIiwibmFtZSI6IuWljuWwlOadviIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi0zIiwibmFtZSI6IuW+t+S8pueJueWwvOS6miIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ik9lY3plYSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1PZWN6ZWEiLCJrZXkiOiJEcmVudGhlbmlhIiwibmFtZSI6IuW+t+S8pueJueWwvOS6miIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi00IiwibmFtZSI6IuWlpeaWr+e6s+W4g+WQleWFiyIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ildlc3Rlcm5GYW50YXN5IiwibWFwQ3VsdHVyZUlkIjoibWFwLVdlc3Rlcm5GYW50YXN5Iiwia2V5IjoiT3NuYWJyw7xjayIsIm5hbWUiOiLlpaXmlq/nurPluIPlkJXlhYsiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tNSIsIm5hbWUiOiLmlq/liqrmnbDmlq/mtoUiLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJXcmlzdGhvcyIsIm1hcEN1bHR1cmVJZCI6Im1hcC1XcmlzdGhvcyIsImtleSI6IlNudWVqIFNuZWEiLCJuYW1lIjoi5pav5Yqq5p2w5pav5raFIiwib3JpZ2luIjoibmF0aXZlIn19XSwiY2hlY2tzdW0iOiI0MDc3MDhhNzYyMWIxOGRjNzkyOWQ0MzFmZmNiMmJlZTU2NmRkOGVhNDdkMDFjZDc1Mzc0ZWYxNDE4Yzc1ZDI2IiwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-7522111ec88619f1ec53",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 37534,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:35:17.778Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "chooser-pointer-events",
+                      "contentType": "application/json",
+                      "body": "W3sidHlwZSI6InBvaW50ZXJkb3duIiwidGFyZ2V0IjoiQ0FOVkFTIiwiZGV0YWlsIjowfSx7InR5cGUiOiJwb2ludGVydXAiLCJ0YXJnZXQiOiJDQU5WQVMiLCJkZXRhaWwiOjB9LHsidHlwZSI6ImNsaWNrIiwidGFyZ2V0IjoiZm9yY2UtMyIsImRldGFpbCI6MX0seyJ0eXBlIjoicG9pbnRlcmRvd24iLCJ0YXJnZXQiOiJmb3JjZS0xIiwiZGV0YWlsIjowfSx7InR5cGUiOiJwb2ludGVydXAiLCJ0YXJnZXQiOiJmb3JjZS0xIiwiZGV0YWlsIjowfSx7InR5cGUiOiJjbGljayIsInRhcmdldCI6ImZvcmNlLTEiLCJkZXRhaWwiOjF9XQ=="
+                    },
+                    {
+                      "name": "map-legibility",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlNhbWUgcmVhbCB3b3JsZCwgcmVuZGVyZXIgb25seSwgb3ZlcnZpZXcgZG90cyByZW1haW4gcGlja2FibGU7IG5vIHBoeXNpY2FsIGRldmljZSBhY2NlcHRhbmNlIiwiZmFyTWFya2VycyI6MTQ5LCJhcm15SWRzIjo0NzksIm5hbWVzIjp7ImRldGFpbCI6Im92ZXJ2aWV3IiwiY291bnRyaWVzIjpbeyJ4IjoyNjMuNDI2NDgzNTQ5ODQzNCwieSI6NDY5Ljg0MTI5ODQ2MTQ5MDMsIndpZHRoIjo5MSwiaGVpZ2h0IjozN30seyJ4Ijo1NzMuMjgyNjY0Mjc2NDQ1MSwieSI6NzAwLjgxMDYyNTQ2ODQ4NDksIndpZHRoIjo2MiwiaGVpZ2h0IjozN30seyJ4Ijo1MzIuMTQyMjY2Nzg2NDAwNSwieSI6MzU3Ljc1MjcwODUzMzc3NjIsIndpZHRoIjo3NS40Mzk5NDE0MDYyNSwiaGVpZ2h0IjoyMX0seyJ4IjoyMjQuOTk0OTQ0NzgxOTgyMDcsInkiOjY3Ni4xODY3MjI0ODQ4MzU0LCJ3aWR0aCI6MTE0LjA5OTk0NTA2ODM1OTM4LCJoZWlnaHQiOjI0fSx7IngiOjQxMC41NjEzNTE5MTMwMDA3NSwieSI6NTQyLjMxMjc1MTAzMDQ5MzcsIndpZHRoIjo5MSwiaGVpZ2h0IjozN30seyJ4Ijo1NzguNTU5MDEyNjc2NTMxMiwieSI6NDkwLjEzMDA3NDAwNTY1MTEsIndpZHRoIjoxMjAuNTU5OTk3NTU4NTkzNzUsImhlaWdodCI6MzF9XSwiY2FwaXRhbHMiOlt7IngiOjQxNC4wNjcwNTUyMjUzNzIyNiwieSI6NTg4LjA0NTc0MDQ4NTE5MTMsIndpZHRoIjozMiwiaGVpZ2h0IjoxOX0seyJ4Ijo2MTguOTE3NTg0NDE5MjUwNSwieSI6NTU4LjA2Mzg4MjgyNzc1ODgsIndpZHRoIjo0NSwiaGVpZ2h0IjoxOX0seyJ4IjoxNzguODE2MzY3NDQ3Mzc2MjUsInkiOjcwOS44ODM3NjY0MTI3MzUsIndpZHRoIjozMiwiaGVpZ2h0IjoxOX0seyJ4Ijo2NDUuNDU0NjkwOTMzMjI3NSwieSI6NzEyLjMyNTEzODgwNzI5NjgsIndpZHRoIjozMiwiaGVpZ2h0IjoxOX0seyJ4Ijo2NDEuMTExNTQwMDc5MTE2OCwieSI6MzAwLjY2NzYzOTYxMzE1MTU1LCJ3aWR0aCI6NDUsImhlaWdodCI6MTl9XX0sInNlbGVjdGVkQ2FwaXRhbCI6eyJ4IjoyMDkuODk2MzU2MTA1ODA0NDEsInkiOjM4MC42MTIxMjcyNDQ0NzI1LCJ3aWR0aCI6NjQsImhlaWdodCI6MjgsImlkIjoiYy00MTgiLCJwcm92aW5jZUlkIjoicC00MTgiLCJuYW1lIjoi6bKB5a6+57qz6buYIn0sInBpY2tlZEFybXkiOiJmb3JjZS0xIn0="
+                    },
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiJhZDYxYmIzNWYyZWI2ZGY5NDgwYWU3MWY2YTAzYzE2OWRhYjdmNDJkMjAwZTUzNGI0YjhlOTI0MTUzNGEyOTE0IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi5pa955Om5pysIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IlN3YWJpYSIsIm5hbWUiOiLmlr3nk6bmnKwiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tMSIsIm5hbWUiOiLlpKfmsYkiLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJFYXN0ZXJuRmFudGFzeSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1FYXN0ZXJuRmFudGFzeSIsImtleSI6IuWkp+axiSIsIm5hbWUiOiLlpKfmsYkiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tMiIsIm5hbWUiOiLojKjpn6bluIPlkJXogq8iLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJMZWZmYXRob3UiLCJtYXBDdWx0dXJlSWQiOiJtYXAtTGVmZmF0aG91Iiwia2V5IjoiWndlaWJydWNrZXIiLCJuYW1lIjoi6Iyo6Z+m5biD5ZCV6IKvIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTMiLCJuYW1lIjoi5LyK5pmu6Zu35Yqg6YeM5LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiT2VjemVhIiwibWFwQ3VsdHVyZUlkIjoibWFwLU9lY3plYSIsImtleSI6IllwcmVnYXJpYSIsIm5hbWUiOiLkvIrmma7pm7fliqDph4zkupoiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tNCIsIm5hbWUiOiLkuo7liKnluIwiLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJXZXN0ZXJuRmFudGFzeSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1XZXN0ZXJuRmFudGFzeSIsImtleSI6IkrDvGxpY2giLCJuYW1lIjoi5LqO5Yip5biMIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTUiLCJuYW1lIjoi5p+v572X6K+66KW/5LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiV3Jpc3Rob3MiLCJtYXBDdWx0dXJlSWQiOiJtYXAtV3Jpc3Rob3MiLCJrZXkiOiJDaHJvbm9zaWEiLCJuYW1lIjoi5p+v572X6K+66KW/5LqaIiwib3JpZ2luIjoibmF0aXZlIn19XSwiY2hlY2tzdW0iOiIxYmU3ZDg2YWMzYmMwZGVmMDZkYzljYjk3MWFiNTk4MTUzMDY5NjBlOTQxMGI5OGI2OTg2NTQ1YWY4NGU5NDc4IiwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-3feafeac9f9ca5962ae1",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T23:31:44.672Z",
+    "duration": 250815.138,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

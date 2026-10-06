@@ -1,0 +1,265 @@
+{
+  "recordedAt": "2026-10-06T23:37:44.073Z",
+  "sourceParent": "6cad5c95fb046819a870a20d4158f7d6473d1612",
+  "engine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+  "note": "Final UI artifact built from dirty tree of parent. Unreferenced restoration-leader kernel is not in production bundle/fingerprint; its getter-input f32 fix was tested separately after build. No cloud CI claimed.",
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "9e6c5a59f50f92a034ef71c167137c8ec761e2971a2d186c3b0bf625e5fcd923"
+    },
+    {
+      "path": "src/fms/play/city-labels.ts",
+      "sha256": "8fee618405180077ff4cbb4a8efe0b22030c4a04e472814b0c8a0f7732260a24"
+    },
+    {
+      "path": "src/fms/play/city-selection.test.ts",
+      "sha256": "7e0760644a49ee0c18cb8709bef341b4cc242cf0bec8390c62640a75d87f3a5c"
+    },
+    {
+      "path": "src/fms/play/map.ts",
+      "sha256": "8a6b0c0934787d6545a6ce5fe76ad900e6f376c3109fba98ef37e624c685ad45"
+    },
+    {
+      "path": "tests/fms-naming18.spec.ts",
+      "sha256": "ffb82030f0c0be49cbdc06b7b169fca4c485144da58264a98730b18e8ac1269d"
+    },
+    {
+      "path": "src/fms/play/map-label-layout.test.ts",
+      "sha256": "6c5618eaea7feb8d6e198f71fdabeec7f7052990518b1821e6f50b24bbb45dd3"
+    },
+    {
+      "path": "src/fms/play/map-label-layout.ts",
+      "sha256": "5a846c762e44957e6ccc872e0c9279239126aaeb229db1cd8dd6ca6b82bf4717"
+    },
+    {
+      "path": "src/fms/play/native-culture/restoration-leader.test.ts",
+      "sha256": "93dc26efbf5fc405dd25a73385dbca6d2e9d4b6cfc68ba4e3fd474bc0128ce93"
+    },
+    {
+      "path": "src/fms/play/native-culture/restoration-leader.ts",
+      "sha256": "851f112dc54678c04ceba0d73956d90bd78cea14fd0eb4470cc6b86fa8672ca1"
+    },
+    {
+      "path": "tests/fms-map-legibility-checks.ts",
+      "sha256": "5c78e790c9467e9023b3cfad9fa76f0016ebb1c81e1a5ada81bb69d2075d243b"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "bytes": 9578,
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "assets/App-BpgoW9ra.js",
+      "bytes": 72384,
+      "sha256": "bd9756d0c4b8050ae24c91a1d1c84e3151940d60ef685a98a0987d3ce3659741"
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "bytes": 409814,
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "assets/AtlasStudio-BALJLSY_.js",
+      "bytes": 173274,
+      "sha256": "4f3267894b4f97135900a9beaf95d251774c37a4006659d6880b58dba7d9c47a"
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "bytes": 24315,
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "bytes": 482109,
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "bytes": 15884,
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "assets/browserAll-DPzi1uHE.js",
+      "bytes": 42646,
+      "sha256": "2e8897b9f8946fdf3e0b80dd6728fd9580a7868c2eb1567486c2b4cf231a6624"
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "bytes": 11027,
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "bytes": 23199,
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "bytes": 6054,
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "bytes": 19346,
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "bytes": 13293,
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "assets/CountryStudio-CYhhi0Ek.js",
+      "bytes": 128542,
+      "sha256": "a027a7f6acc601163816aa8e1aab96d27fc3f07bd559c8f83630f1f3622dac60"
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "bytes": 55255,
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "assets/FmsApp-BLmG7tfA.css",
+      "bytes": 28609,
+      "sha256": "16e31af79300fcbe874c175d161d78b86cff9755db1f4e9d929e12ba63f744fe"
+    },
+    {
+      "path": "assets/FmsApp-Bm7lHjqe.js",
+      "bytes": 1892049,
+      "sha256": "d6adf1c4764962b458620c1792807ad9c0450b5b52ba141e1c9460677096e195"
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "bytes": 109697,
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "bytes": 469,
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "bytes": 342,
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "assets/index-B-2QGrDS.js",
+      "bytes": 221793,
+      "sha256": "67b8984bc4e97e438a5318d7fabeef13ae4d4bfe8839d7213c7b57af6b73119b"
+    },
+    {
+      "path": "assets/init-5LxhqoS5.js",
+      "bytes": 250437,
+      "sha256": "fd52f9504d44004de890eb3b537993ad0785309d2a76e24ce61f870f38afe085"
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "bytes": 15379,
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "assets/LegacyEntry-BKYPA3FM.js",
+      "bytes": 132329,
+      "sha256": "2567be7655ad938e2c60884d5b3d5743080543df73a0b545413760ca9ef8cf52"
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "bytes": 34881,
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "assets/play.worker-BpiWVgyH.js",
+      "bytes": 1804386,
+      "sha256": "a3b05eaaa5e9158c075b7ee4bad1854971c0fbb667beefa05ba0e5f9c96575ef"
+    },
+    {
+      "path": "assets/renderer-BOf1GEBV.js",
+      "bytes": 210865,
+      "sha256": "a3ea1644f96c7bf65cb769a981ff7283e559fbd83fc7fe950ee9492cd4f8b5dd"
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "bytes": 78109,
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "bytes": 86986,
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "bytes": 34693,
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "bytes": 91681,
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "bytes": 162206,
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "bytes": 49491,
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "assets/Text-BVU6C2R6.js",
+      "bytes": 34909,
+      "sha256": "6c507323c97a53d7dfc2029ff3e55dbfd26caa3df9a5d08dcdb8e135df0e8cb9"
+    },
+    {
+      "path": "assets/webworkerAll-BemzMWW0.js",
+      "bytes": 54,
+      "sha256": "de54023c9898686a3175ac508f37b017e9b58f80bde4b721d9b5e0746d0e58d3"
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "bytes": 223767,
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "build.json",
+      "bytes": 11992,
+      "sha256": "25d8e9c94722c8a38aa24e626db81fb709101f0167dbea3c4ec523b4cbb76bd7"
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 221,
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "index.html",
+      "bytes": 626,
+      "sha256": "e15f279de2229a48ca49b4b34ba3f36876e25ade2c295246b76b389237bca218"
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "bytes": 10779,
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    {
+      "path": "_headers",
+      "bytes": 424,
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 19,
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

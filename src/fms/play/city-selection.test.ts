@@ -28,3 +28,9 @@ it('keeps a long selected name clear of actual mobile DOM controls even when map
 it('does not create an unclickable plate when DOM UI covers the entire viewport',()=>{
   expect(selectedCityLabel(city,[],{width:428,height:926},[{x:214,y:463,width:428,height:926}])).toBeUndefined();
 });
+it('keeps a selected capital near its real position when dense small units leave only distant empty space',()=>{
+  const capital={...city,name:'沃洛科沃',x:620,y:270},ui=[{x:600,y:28,width:1180,height:48}],dense=[{x:620,y:270,width:160,height:160}];
+  const label=selectedCityLabel(capital,dense,{width:1280,height:720},ui)!;
+  expect(Math.hypot(label.callout!.x-capital.x,label.callout!.y-capital.y)).toBeLessThan(80);
+  expect(label.lines!.join('')).toBe(capital.name);expect(label.x).toBe(capital.x);expect(label.y).toBe(capital.y);
+});

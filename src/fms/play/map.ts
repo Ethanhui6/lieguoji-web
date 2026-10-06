@@ -11,13 +11,14 @@ import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import {currentCapital} from './capital-view';
 import {cityLabels,selectedCityLabel,type LabelBox} from './city-labels';
+import {countryLabelBox,capitalNameLabels} from './map-label-layout';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
 import type {OccupationState} from './occupation';
 import {drawAttackArrow} from './attack-map';
 import {BattleFeedback} from './battle-feedback';
-import {warDetail,warSites,warMarkers,type WarMarker} from './war-view';
+import {warDetail,warSites,warMarkers,type WarMarker,type WarDetail} from './war-view';
 
 export class PlayMap {
   readonly layer = new Container();
@@ -36,7 +37,9 @@ export class PlayMap {
   private impacts:{id:string;graphic:Graphics}[]=[];
   private reorganizationWidgets:{id:string;bar:Graphics;pixel:number;r:number;full:number;text?:Text}[]=[];
   updateReorganization(world:World){for(const v of this.reorganizationWidgets){const a=world.armies.find(a=>a.id===v.id);if(!a)continue;v.bar.clear().rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel,2*v.pixel).fill(0x26332d).rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel*Math.min(1,a.troops/v.full),2*v.pixel).fill(0xf0ce7b);if(v.text)v.text.text=`重编 ${a.troops}`;}}
-  private unitGroups:{ids:string[];container:Container;offset:Point}[]=[];
+  private unitGroups:{ids:string[];container:Container;offset:Point;display:'dot'|'detail'}[]=[];
+  private labelLayout:{detail:WarDetail;countries:LabelBox[];capitals:LabelBox[]}={detail:'overview',countries:[],capitals:[]};
+  labelDiagnostics(){return this.labelLayout;}
   private shipLayer?:ReturnType<typeof drawNavy>;
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
@@ -69,7 +72,7 @@ export class PlayMap {
   sinkDiagnostics(){return this.sinkMotion.diagnostics();}
   sinkAnimations(){return this.sinkMotion.frames().map(f=>({id:f.id,scale:f.scale,alpha:f.alpha,rotation:f.rotation}));}
   battleAnimations(){return this.battleSprites.map(({id,sprite})=>({id,frame:Math.round(sprite.texture.frame.x/258)+Math.round(sprite.texture.frame.y/194)*5,x:sprite.x*this.projection.zoom+this.projection.x,y:sprite.y*this.projection.zoom+this.projection.y,width:sprite.width*this.projection.zoom}));}
-  unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
+  unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',display:g.display,x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
   pickUnits(point:Point){return this.unitPositions().map(p=>({...p,distance:Math.hypot(p.x-point.x,p.y-point.y)})).filter(p=>p.distance<=(p.kind==='army'?22:18)).sort((a,b)=>a.distance-b.distance);}
   updateUnits(frame:DisplayFrame){
     const p=this.projection;
@@ -130,21 +133,26 @@ export class PlayMap {
       const bar=new Graphics();group.addChild(bar);const text=label('',0,0,10,'#ffdf9c',group);text.position.y=-2*pixel;
       this.siegeWidgets.push({id:p.id,bar,text,x,y,pixel,percent:0});
     }this.updateOccupation(combat.occupation);}
+    const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
       const n=nations.get(territory.nationId)!,size=Math.max(8,Math.min(27,territory.clearance/scale*zoom*1.55/Math.max(2,n.name.length)));
       const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:size,fill:'#263a30',fontWeight:'bold',stroke:{color:'#fffae5',width:2},letterSpacing:2}});
-      t.anchor.set(.5);t.scale.set(pixel);t.position.set(territory.point.x/scale,territory.point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
-      return {point:territory.point,size,width:n.name.length*(size+2)};
+      const box=countryLabelBox({x:territory.point.x/scale*zoom+this.projection.x,y:territory.point.y/scale*zoom+this.projection.y,width:t.width+4,height:t.height+4},territory.clearance/scale*zoom,[...capitalIcons,...countryBoxes,...this.uiObstacles]);countryBoxes.push(box);
+      const point={x:(box.x-this.projection.x)/zoom*scale,y:(box.y-this.projection.y)/zoom*scale};
+      t.anchor.set(.5);t.scale.set(pixel);t.position.set(point.x/scale,point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
+      return {point,size,width:box.width};
     });
     this.cities=[];
     for (const city of world.cities) {
       const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
-      this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:capital});
+      this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:false});
       if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
+    const capitalFont=detail==='overview'?13:15;
+    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons,...this.uiObstacles],this.projection);
+    this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height}))};
     const cityObstacles=[
-      ...countryLabels.map(c=>({x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:c.width,height:c.size+4})),
-      ...this.cities.filter(c=>c.capital).map(c=>({x:c.x,y:c.y-10,width:Math.max(24,c.name.length*16),height:40})),
+      ...countryBoxes,...capitalIcons,...capitalText,...this.uiObstacles,
       ...this.wars.map(w=>({x:w.x,y:w.y,width:48,height:48}))
     ];
     const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
@@ -180,19 +188,18 @@ export class PlayMap {
       const army=byArmy.get(marker.ids[0])!,active=marker.ids.includes(armyId??'');
       const battle=combat?.state.engagements.find(e=>e.armies.includes(army.id));
       const force=marker.ids.reduce((sum,id)=>sum+(byArmy.get(id)?.troops??0),0);
-      if(detail==='overview'&&!active&&battle)continue;
-      if(detail==='overview'&&!active&&force<5000){
-        // Small formations remain visible as moving colored points, without
-        // their large flag, strength label or attack arrow covering the map.
+      if(detail==='overview'&&!active){
+        // Far-view aggregation must not turn many small formations into a
+        // large numbered flag. Keep every group pickable as a moving point.
         const container=new Container(),dot=new Graphics(),points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!)),point={x:points.reduce((s,p)=>s+p.x,0)/points.length,y:points.reduce((s,p)=>s+p.y,0)/points.length};
         dot.circle(0,0,1.65*pixel).fill(nationColor(nations.get(army.nationId)!)).stroke({color:0xeee8c8,width:.55*pixel});
         container.addChild(dot);container.position.set(point.x/scale,point.y/scale);this.layer.addChild(container);
-        this.unitGroups.push({ids:marker.ids,container,offset:{x:0,y:0}});continue;
+        this.unitGroups.push({ids:marker.ids,container,offset:{x:0,y:0},display:'dot'});continue;
       }
       if(battle){const sides=[...new Set(battle.armies.map(id=>byArmy.get(id)!.nationId))].sort(),side=sides.indexOf(army.nationId),angle=Math.PI+side*2*Math.PI/sides.length;marker.x+=Math.cos(angle)*17;marker.y+=Math.sin(angle)*17-8;}
       const container=new Container(),marks=new Graphics();container.addChild(marks);this.layer.addChild(container);container.position.set(marker.x/zoom,marker.y/zoom);
       const points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!));
-      this.unitGroups.push({ids:marker.ids,container,offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
+      this.unitGroups.push({ids:marker.ids,container,display:'detail',offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
       // Marker size reflects real soldiers in this unit/group, not an invented hierarchy.
       // The independent 22px picking radius still makes small units easy to select.
       const x=0,y=0,r=(force>=12000?8:force>=5000?6.5:5)+(active?2:marker.near?0:-1.5);
@@ -222,15 +229,20 @@ export class PlayMap {
     const capitalLayer=new Container();this.layer.addChild(capitalLayer);
     for(const capital of this.capitals){const x=capital.point.x/scale,y=capital.point.y/scale,icon=new Graphics();capitalLayer.addChild(icon);
       icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
-      const name=new Text({text:capital.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:15,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:4}}});name.anchor.set(.5,1);name.scale.set(pixel);name.position.set(x,y-12*pixel);capitalLayer.addChild(name);
+    }
+    for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
+      const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:0xeee8cd,width:.8*pixel,alpha:.6});capitalLayer.addChild(line);
+      const name=new Text({text:c.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:capitalFont,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:3}}});name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
     }
     if(frame)this.updateUnits(frame);
     // Draw the one actively inspected small city above moving units and effects.
     // Its screen-space callout never moves the saved city or its hit location.
     this.cityCallout=undefined;
-    const activeCity=this.cities.find(c=>!c.capital&&c.provinceId===selected);
+    const activeCity=this.cities.find(c=>c.provinceId===selected);
     if(activeCity){
-      const selectedLabel=selectedCityLabel({...activeCity,selected:true},[...cityObstacles,...cityText.map(c=>({x:c.labelX,y:c.labelY-5,width:c.name.length*10+4,height:12})),...this.unitPositions().map(u=>({x:u.x,y:u.y+5,width:32,height:46}))],this.projection,this.uiObstacles);
+      // The callout already leaves a gap around its own point. Reserving its
+      // capital's padded icon box again rejected every nearby position.
+      const selectedLabel=selectedCityLabel({...activeCity,selected:true},[...cityObstacles.filter(b=>!('cityId'in b&&b.cityId===activeCity.id)),...cityText.map(c=>({x:c.labelX,y:c.labelY-5,width:c.name.length*10+4,height:12})),...this.unitPositions().map(u=>{const dot='display'in u&&u.display==='dot';return{x:u.x,y:u.y+(dot?0:5),width:dot?6:32,height:dot?6:46};})],this.projection,this.uiObstacles);
       if(selectedLabel?.callout){
         const box=selectedLabel.callout,px=this.projection.x,py=this.projection.y,x=(box.x-px)/zoom,y=(box.y-py)/zoom,cx=(activeCity.x-px)/zoom,cy=(activeCity.y-py)/zoom;
         const endX=(Math.max(box.x-box.width/2,Math.min(box.x+box.width/2,activeCity.x))-px)/zoom,endY=(Math.max(box.y-box.height/2,Math.min(box.y+box.height/2,activeCity.y))-py)/zoom;

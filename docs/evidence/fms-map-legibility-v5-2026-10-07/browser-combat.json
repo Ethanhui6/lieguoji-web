@@ -1,0 +1,162 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-tactics.spec.ts",
+      "--config=.autopilot/map-legibility-combat.config.ts",
+      "--project=desktop-chromium",
+      "-g",
+      "original-scale mustering"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-combat.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-combat/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-combat/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-combat/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "map-legibility-combat/browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-tactics.spec.ts",
+      "file": "fms-tactics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 59959,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:36:23.936Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "actual-game-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJydW5JZCI6ImZtcy04Mzc4NzljYS1iMTI1LTRiMWMtOGI3Ni1kYTM2NTY4NDE0OGEiLCJ2ZXJzaW9uIjoxOCwiYXJtaWVzQXRTdGFydCI6NDg2LCJyb2FkQmF0dGxlIjp7ImlkIjoiZW5nYWdlbWVudC0xIiwiYSI6InAtNDAiLCJiIjoicC01NiIsInQiOjAuNSwiYXJtaWVzIjpbImZvcmNlLTQ4NyIsImZvcmNlLTQ4OCJdLCJzdGFydGVkIjoxMjAsInB1bHNlIjoxMjAsImNhcnJ5Ijp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfSwibG9zc2VzIjp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfX0sImluaXRpYWxUcm9vcHMiOjEwMDAsImFmdGVyVHJvb3BzIjo4NTYsImVtZXJnZW5jeSI6NSwidGljayI6MjQwLCJjaGVja3N1bSI6ImZjYmMzMDEwODYxMzk1YjM5ZWE1ZDJlNjg5NGIwYTJiNmVkMGU1OTg5ZGZhNGMyMDk4OWY1YmE0NWQxZDVjNzciLCJyZXN0b3JlZFJldmlzaW9uIjo3LCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgbm90IHBoeXNpY2FsIGlQaG9uZSBhY2NlcHRhbmNlIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-a596e17380e5fff570c0",
+          "file": "fms-tactics.spec.ts",
+          "line": 10,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T23:36:23.447Z",
+    "duration": 60693.38,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

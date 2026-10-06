@@ -1,0 +1,444 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      ".autopilot/map-legibility.config.ts",
+      "tests/fms-naming18.spec.ts",
+      "tests/fms-locality.spec.ts",
+      "-g",
+      "choose original cultures|a selected small city"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "iphone13pm-chromium",
+        "name": "iphone13pm-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/map-legibility-evidence/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "map-legibility-evidence/browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-locality.spec.ts",
+      "file": "fms-locality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47880,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:18:10.424Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6NTQyLCJ5IjoxNTgsIndpZHRoIjo2NCwiaGVpZ2h0IjoyOCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IueTpuWIl+S7gOmprCJ9LCJsb25nIjp7IngiOjk2LCJ5Ijo0NjcuNSwid2lkdGgiOjE4NCwiaGVpZ2h0Ijo0NCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6qiJ9LCJjdXN0b21pemVNcyI6MzU3OCwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-0291b2258ecf0cec264d",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46150,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:19:32.668Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6MjE2LCJ5IjoyNDYuNDA5OTk5OTk5OTk5OTcsIndpZHRoIjo1MiwiaGVpZ2h0IjoyOCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuWTiOaLieWNoSJ9LCJsb25nIjp7IngiOjExMCwieSI6MjgwLjQwOTk5OTk5OTk5OTk3LCJ3aWR0aCI6MTg0LCJoZWlnaHQiOjQ0LCJpZCI6ImMtMCIsInByb3ZpbmNlSWQiOiJwLTAiLCJuYW1lIjoi5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqq5Lic5rW36ZW/6aOO5LqR5rqqIn0sImN1c3RvbWl6ZU1zIjozNTY4LCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-b246d0429a179d1f9f70",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 51731,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:20:52.314Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "locality-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCByZWFsIHNlbGVjdGlvbi9jdXN0b21pemF0aW9uL1dvcmtlci9zYXZlL3Jlc3RvcmU7IENocm9taXVtIGVtdWxhdGlvbiBvbmx5Iiwic2VsZWN0ZWQiOnsieCI6MTc3LCJ5Ijo1MDEuNSwid2lkdGgiOjc2LCJoZWlnaHQiOjI4LCJpZCI6ImMtMCIsInByb3ZpbmNlSWQiOiJwLTAiLCJuYW1lIjoi56eR5bCU5bC85LmM5pavIn0sImxvbmciOnsieCI6MzMxLCJ5Ijo1NjEuNSwid2lkdGgiOjE4NCwiaGVpZ2h0Ijo0NCwiaWQiOiJjLTAiLCJwcm92aW5jZUlkIjoicC0wIiwibmFtZSI6IuS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6quS4nOa1t+mVv+mjjuS6kea6qiJ9LCJjdXN0b21pemVNcyI6Mzc4MSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-67d10e7709813576c37c",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-naming18.spec.ts",
+      "file": "fms-naming18.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:18:58.788Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "map-legibility",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlNhbWUgcmVhbCB3b3JsZCwgcmVuZGVyZXIgb25seSwgb3ZlcnZpZXcgZG90cyByZW1haW4gcGlja2FibGU7IG5vIHBoeXNpY2FsIGRldmljZSBhY2NlcHRhbmNlIiwiZmFyTWFya2VycyI6MjQwLCJhcm15SWRzIjo0ODUsIm5hbWVzIjp7ImRldGFpbCI6Im92ZXJ2aWV3IiwiY291bnRyaWVzIjpbeyJ4IjoxMDM0LjIyNjg0ODI0MjA1NSwieSI6Mzc5LjIzNjQ4MjQ0MDExOTMsIndpZHRoIjoxNDksImhlaWdodCI6Mzd9LHsieCI6MzgyLjUzMTcyMjA1ODgzNywieSI6NTg1LjI5MzM4MjczNDA3MDQsIndpZHRoIjozNCwiaGVpZ2h0IjozN30seyJ4Ijo0NzAuMzk0Mjk2MjYwNDk3NywieSI6Mzc1LjQ1NjM5OTUzMTk4MjEsIndpZHRoIjoxMjAsImhlaWdodCI6Mzd9LHsieCI6NjU1LjkzNjUzMDY4NTA2MjMsInkiOjYwNy43OTgyMDE0ODQ4MzA1LCJ3aWR0aCI6MTIwLCJoZWlnaHQiOjM3fSx7IngiOjEwODAuODIyMDE2OTcyNjk2NywieSI6NjA4LjQzOTM3Nzk3OTQzOTEsIndpZHRoIjoxMjAsImhlaWdodCI6Mzd9LHsieCI6NzYwLjQxOTU4OTExNjUyMTgsInkiOjQ2MC4yMTg3NzQ3OTA5NTE2Nywid2lkdGgiOjE0OSwiaGVpZ2h0IjozN31dLCJjYXBpdGFscyI6W3sieCI6NzY2LjI4MzgwOTY2MTg2NTEsInkiOjM2OS4zNzQ3MTc3MTI0MDIzNCwid2lkdGgiOjQ1LCJoZWlnaHQiOjE5fSx7IngiOjc1OS4zNzM1ODA5MzI2MTcyLCJ5Ijo2NTAuNjc2NTU5NDQ4MjQyMiwid2lkdGgiOjQ1LCJoZWlnaHQiOjE5fSx7IngiOjUyNi45OTcwMzQwNzI4NzYsInkiOjI0OC4wODk3MTIxNDI5NDQzNCwid2lkdGgiOjQ1LCJoZWlnaHQiOjE5fSx7IngiOjExNDQuMjI2ODI5NTI4ODA4NiwieSI6NjU0LjMxMjAyNjk3NzUzOTEsIndpZHRoIjo0NSwiaGVpZ2h0IjoxOX0seyJ4IjoyOTIuMDE3NjI2NDg0MjM1MSwieSI6NjUzLjYyNjU3MTY1NTI3MzQsIndpZHRoIjozMiwiaGVpZ2h0IjoxOX1dfSwic2VsZWN0ZWRDYXBpdGFsIjp7IngiOjM2LCJ5IjozMTMuNjA4NDU1NjU3OTU4OSwid2lkdGgiOjY0LCJoZWlnaHQiOjI4LCJpZCI6ImMtNTA2IiwicHJvdmluY2VJZCI6InAtNTA2IiwibmFtZSI6IuWfuuWwlOaWr+WFiyJ9LCJwaWNrZWRBcm15IjoiZm9yY2UtMSJ9"
+                    },
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiJhZDYxYmIzNWYyZWI2ZGY5NDgwYWU3MWY2YTAzYzE2OWRhYjdmNDJkMjAwZTUzNGI0YjhlOTI0MTUzNGEyOTE0IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi5LmM54m55ouJ6YeM5LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IlV0cmFyaWEiLCJuYW1lIjoi5LmM54m55ouJ6YeM5LqaIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTEiLCJuYW1lIjoi6YKzIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtRWFzdGVybkZhbnRhc3kiLCJrZXkiOiLpgrMiLCJuYW1lIjoi6YKzIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTIiLCJuYW1lIjoi5LiK5qC85rSb6auYIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiTGVmZmF0aG91IiwibWFwQ3VsdHVyZUlkIjoibWFwLUxlZmZhdGhvdSIsImtleSI6Ik9iZXJnbG9nYXUiLCJuYW1lIjoi5LiK5qC85rSb6auYIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTMiLCJuYW1lIjoi5qKF5ouJ5bC85LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiT2VjemVhIiwibWFwQ3VsdHVyZUlkIjoibWFwLU9lY3plYSIsImtleSI6Ik1lcmFuaWEiLCJuYW1lIjoi5qKF5ouJ5bC85LqaIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTQiLCJuYW1lIjoi5Yqg5pav56eR5raFIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiV2VzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtV2VzdGVybkZhbnRhc3kiLCJrZXkiOiJHYXNjb2duZSIsIm5hbWUiOiLliqDmlq/np5HmtoUiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tNSIsIm5hbWUiOiLpmL/ljaHov6rlpaXmlq8iLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJXcmlzdGhvcyIsIm1hcEN1bHR1cmVJZCI6Im1hcC1XcmlzdGhvcyIsImtleSI6IkFyY2FkaW9zIiwibmFtZSI6IumYv+WNoei/quWlpeaWryIsIm9yaWdpbiI6Im5hdGl2ZSJ9fV0sImNoZWNrc3VtIjoiODYyMzA1NGMwZGY5MzUyNGNhN2Y4ZTNiNjhiMjJhZGI4MTJhZjA4NjVhOGVkOWU4Y2E1ZjQyNWJlM2MyZjAwMCIsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-53465511f68d68c71a97",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "iphone13pm-chromium",
+              "projectName": "iphone13pm-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 31800,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n\n    at checkMapLegibility (D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts:19:78)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-naming18.spec.ts:15:2",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                      "column": 78,
+                      "line": 19
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-map-legibility-checks.ts:19\n\n  17 |   const chosen=(await units()).find(u=>u.kind==='army'&&u.ids.length>1&&u.x>15&&u.y>15&&u.x<info.project.use.viewport!.width-15&&u.y<info.project.use.viewport!.height-15&&!obstacles.some(b=>intersects({x:u.x,y:u.y,width:12,height:12},b)));\n  18 |   expect(chosen).toBeDefined();if(info.project.use.hasTouch)await page.touchscreen.tap(chosen!.x,chosen!.y);else await page.mouse.click(chosen!.x,chosen!.y);\n> 19 |   const dialog=page.getByRole('dialog',{name:'选择重叠军队'});await expect(dialog).toBeVisible();const ids=await dialog.locator('[data-army-id]').evaluateAll(els=>els.map(e=>e.getAttribute('data-army-id')));for(const id of chosen!.ids)expect(ids).toContain(id);\n     |                                                                              ^\n  20 |   const id=chosen!.ids[0];await dialog.locator(`[data-army-id=\"${id}\"]`).click();await expect(page.getByLabel('选择军队',{exact:true})).toHaveValue(id);\n  21 |   await expect.poll(async()=>(await units()).find(u=>u.ids.includes(id))?.display).toBe('detail');\n  22 |   await page.getByRole('button',{name:'收起面板',exact:true}).click();await page.getByRole('button',{name:'全图',exact:true}).click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                        "column": 78,
+                        "line": 19
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n\n\n   at fms-map-legibility-checks.ts:19\n\n  17 |   const chosen=(await units()).find(u=>u.kind==='army'&&u.ids.length>1&&u.x>15&&u.y>15&&u.x<info.project.use.viewport!.width-15&&u.y<info.project.use.viewport!.height-15&&!obstacles.some(b=>intersects({x:u.x,y:u.y,width:12,height:12},b)));\n  18 |   expect(chosen).toBeDefined();if(info.project.use.hasTouch)await page.touchscreen.tap(chosen!.x,chosen!.y);else await page.mouse.click(chosen!.x,chosen!.y);\n> 19 |   const dialog=page.getByRole('dialog',{name:'选择重叠军队'});await expect(dialog).toBeVisible();const ids=await dialog.locator('[data-army-id]').evaluateAll(els=>els.map(e=>e.getAttribute('data-army-id')));for(const id of chosen!.ids)expect(ids).toContain(id);\n     |                                                                              ^\n  20 |   const id=chosen!.ids[0];await dialog.locator(`[data-army-id=\"${id}\"]`).click();await expect(page.getByLabel('选择军队',{exact:true})).toHaveValue(id);\n  21 |   await expect.poll(async()=>(await units()).find(u=>u.ids.includes(id))?.display).toBe('detail');\n  22 |   await page.getByRole('button',{name:'收起面板',exact:true}).click();await page.getByRole('button',{name:'全图',exact:true}).click();\n    at checkMapLegibility (D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts:19:78)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-naming18.spec.ts:15:2"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:20:18.918Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-iphone13pm-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-iphone13pm-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-iphone13pm-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                    "column": 78,
+                    "line": 19
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-7522111ec88619f1ec53",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 36486,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n\n    at checkMapLegibility (D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts:19:78)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-naming18.spec.ts:15:2",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                      "column": 78,
+                      "line": 19
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-map-legibility-checks.ts:19\n\n  17 |   const chosen=(await units()).find(u=>u.kind==='army'&&u.ids.length>1&&u.x>15&&u.y>15&&u.x<info.project.use.viewport!.width-15&&u.y<info.project.use.viewport!.height-15&&!obstacles.some(b=>intersects({x:u.x,y:u.y,width:12,height:12},b)));\n  18 |   expect(chosen).toBeDefined();if(info.project.use.hasTouch)await page.touchscreen.tap(chosen!.x,chosen!.y);else await page.mouse.click(chosen!.x,chosen!.y);\n> 19 |   const dialog=page.getByRole('dialog',{name:'选择重叠军队'});await expect(dialog).toBeVisible();const ids=await dialog.locator('[data-army-id]').evaluateAll(els=>els.map(e=>e.getAttribute('data-army-id')));for(const id of chosen!.ids)expect(ids).toContain(id);\n     |                                                                              ^\n  20 |   const id=chosen!.ids[0];await dialog.locator(`[data-army-id=\"${id}\"]`).click();await expect(page.getByLabel('选择军队',{exact:true})).toHaveValue(id);\n  21 |   await expect.poll(async()=>(await units()).find(u=>u.ids.includes(id))?.display).toBe('detail');\n  22 |   await page.getByRole('button',{name:'收起面板',exact:true}).click();await page.getByRole('button',{name:'全图',exact:true}).click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                        "column": 78,
+                        "line": 19
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('dialog', { name: '选择重叠军队' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('dialog', { name: '选择重叠军队' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '选择重叠军队' })\u001b[22m\n\n\n   at fms-map-legibility-checks.ts:19\n\n  17 |   const chosen=(await units()).find(u=>u.kind==='army'&&u.ids.length>1&&u.x>15&&u.y>15&&u.x<info.project.use.viewport!.width-15&&u.y<info.project.use.viewport!.height-15&&!obstacles.some(b=>intersects({x:u.x,y:u.y,width:12,height:12},b)));\n  18 |   expect(chosen).toBeDefined();if(info.project.use.hasTouch)await page.touchscreen.tap(chosen!.x,chosen!.y);else await page.mouse.click(chosen!.x,chosen!.y);\n> 19 |   const dialog=page.getByRole('dialog',{name:'选择重叠军队'});await expect(dialog).toBeVisible();const ids=await dialog.locator('[data-army-id]').evaluateAll(els=>els.map(e=>e.getAttribute('data-army-id')));for(const id of chosen!.ids)expect(ids).toContain(id);\n     |                                                                              ^\n  20 |   const id=chosen!.ids[0];await dialog.locator(`[data-army-id=\"${id}\"]`).click();await expect(page.getByLabel('选择军队',{exact:true})).toHaveValue(id);\n  21 |   await expect.poll(async()=>(await units()).find(u=>u.ids.includes(id))?.display).toBe('detail');\n  22 |   await page.getByRole('button',{name:'收起面板',exact:true}).click();await page.getByRole('button',{name:'全图',exact:true}).click();\n    at checkMapLegibility (D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts:19:78)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-naming18.spec.ts:15:2"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T23:21:44.144Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-tablet-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-tablet-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\map-legibility-evidence\\browser\\fms-naming18-FMS-v18-choos-0bfc4-Worker-and-persistent-names-tablet-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-map-legibility-checks.ts",
+                    "column": 78,
+                    "line": 19
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "fd43536a254e43ef1fcd-3feafeac9f9ca5962ae1",
+          "file": "fms-naming18.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T23:18:09.634Z",
+    "duration": 252367.18300000002,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

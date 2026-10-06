@@ -1,0 +1,105 @@
+{
+  "recordedAt": "2026-10-06T23:37:44.074Z",
+  "sourceParent": "6cad5c95fb046819a870a20d4158f7d6473d1612",
+  "localUrl": "http://127.0.0.1:5189/?fms=1",
+  "engine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+  "labelUnit": {
+    "passed": 22
+  },
+  "restorationKernel": {
+    "passed": 39,
+    "newModuleTests": 14,
+    "previousIdentityTests": 25,
+    "productionIntegrated": false,
+    "firstBeforeAudit": 13,
+    "postAuditTargetLintExit": 0
+  },
+  "firstBrowser": {
+    "startTime": "2026-10-06T23:18:09.634Z",
+    "duration": 252367.18300000002,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  },
+  "secondBrowser": {
+    "startTime": "2026-10-06T23:26:13.012Z",
+    "duration": 256025.43999999997,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "finalBrowser": {
+    "startTime": "2026-10-06T23:31:44.672Z",
+    "duration": 250815.138,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "commands": [
+    {
+      "name": "lint",
+      "cmd": "npm run lint",
+      "started": "2026-10-06T23:30:48.006Z",
+      "finished": "2026-10-06T23:31:00.680Z",
+      "exit": 0
+    },
+    {
+      "name": "types",
+      "cmd": "npm run typecheck",
+      "started": "2026-10-06T23:31:00.681Z",
+      "finished": "2026-10-06T23:31:16.717Z",
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "cmd": "npx vite build --outDir .autopilot/naming18-preview/dist",
+      "started": "2026-10-06T23:31:16.717Z",
+      "finished": "2026-10-06T23:31:24.777Z",
+      "exit": 0
+    },
+    {
+      "name": "dist",
+      "cmd": "node .autopilot/check-naming18-dist.mjs",
+      "started": "2026-10-06T23:31:24.777Z",
+      "finished": "2026-10-06T23:31:24.860Z",
+      "exit": 0
+    }
+  ],
+  "artifactCount": 43,
+  "manual": {
+    "createdViaUI": true,
+    "terrain": "Previously drawn irregular continent; no fixture injected",
+    "restoredDay": 0,
+    "restoredTick": 57,
+    "selectedCapital": "沃洛科沃",
+    "capitalPoint": {
+      "x": 622.3368768692017,
+      "y": 271.368896484375
+    },
+    "labelPoint": {
+      "x": 578.3368768692017,
+      "y": 245.368896484375
+    },
+    "distancePx": 51.10772935672255,
+    "paused": true,
+    "speed": 0.5,
+    "scope": "Desktop Codex IAB manual observation, not phone"
+  },
+  "limits": [
+    "Local only, no push/Pages/main.",
+    "No new full unit suite claimed; previous 3017 belongs to earlier naming batch.",
+    "Mobile/tablet Chromium emulation, not physical iPhone or native visual acceptance.",
+    "v18 secession and dynasty lifetime remain web bridges; recovered native restoration kernel has no production caller."
+  ],
+  "combatBrowser": {
+    "startTime": "2026-10-06T23:36:23.447Z",
+    "duration": 60693.38,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

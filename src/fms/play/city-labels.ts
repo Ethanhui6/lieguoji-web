@@ -12,8 +12,11 @@ export function selectedCityLabel(c:CityCandidate,obstacles:LabelBox[],viewport:
   const width=Math.max(32,Math.min(columns,chars.length)*12+16),height=Math.max(28,lines.length*16+12);
   if(width>viewport.width-8||height>viewport.height-8)return;
   const gap=12,dx=width/2+gap,dy=height/2+gap;
-  const offsets=[[0,-dy],[dx,0],[-dx,0],[0,dy],[dx,-dy],[-dx,-dy],[dx,dy],[-dx,dy],...ui.flatMap(b=>[[0,b.y+b.height/2+height/2+8-c.y],[0,b.y-b.height/2-height/2-8-c.y],[b.x+b.width/2+width/2+8-c.x,0],[b.x-b.width/2-width/2-8-c.x,0]])];
-  const candidates=offsets.map(([x,y])=>({x:Math.max(width/2+4,Math.min(viewport.width-width/2-4,c.x+x)),y:Math.max(height/2+4,Math.min(viewport.height-height/2-4,c.y+y)),width,height})).filter(box=>!ui.some(b=>overlaps(box,b)));
+  const place=(offsets:number[][])=>offsets.map(([x,y])=>({x:Math.max(width/2+4,Math.min(viewport.width-width/2-4,c.x+x)),y:Math.max(height/2+4,Math.min(viewport.height-height/2-4,c.y+y)),width,height})).filter(box=>!ui.some(b=>overlaps(box,b)));
+  const nearby=place([[0,-dy],[dx,0],[-dx,0],[0,dy],[dx,-dy],[-dx,-dy],[dx,dy],[-dx,dy]]);
+  // Dense army/city markers may yield no empty nearby slot. A selected label
+  // takes priority there; move it far away only to escape actual DOM controls.
+  const candidates=nearby.length?nearby:place(ui.flatMap(b=>[[0,b.y+b.height/2+height/2+8-c.y],[0,b.y-b.height/2-height/2-8-c.y],[b.x+b.width/2+width/2+8-c.x,0],[b.x-b.width/2-width/2-8-c.x,0]]));
   // Canvas labels cannot be painted above DOM controls. Keep the UI exclusion
   // strict even when all remaining map-label positions are crowded.
   if(!candidates.length)return;

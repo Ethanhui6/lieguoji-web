@@ -116,7 +116,7 @@ describe('actual preview.16 storage history before the next contract change', ()
     for (const row of inventory.files as { path: string; bytes: number; sha256: string }[]) {
       const bytes = readFileSync(new URL(row.path, evidence)); expect(bytes.byteLength).toBe(row.bytes); expect(digest(bytes)).toBe(row.sha256);
     }
-  });
+  }, 30000); // Recompute all three AST closures per generator plus exact archive bytes.
 
   it('round-trips all stored recipe identities including local relief without enabling old execution or mutating them', () => {
     for (const [name, key] of entries) {

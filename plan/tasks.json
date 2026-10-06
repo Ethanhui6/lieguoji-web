@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "local_passed_not_uploaded",
+      "status": "cloud_ci_failed",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2402,8 +2402,22 @@
       "evidence": [
         "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
-        "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json"
-      ]
+        "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
+        "docs/evidence/fms-tactics-v5-2026-10-06/cloud-release.json"
+      ],
+      "commit": "26296d5b5f229a1ce7310d4bb463327f649b5b50",
+      "checkedAt": "2026-10-06T07:35:07.547Z",
+      "urls": [],
+      "cloudCi": {
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37427965544"
+      },
+      "pages": {
+        "status": "completed",
+        "conclusion": "failure",
+        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/11af79f5-155d-4fd1-a5ef-16ddc4c0e9e6"
+      }
     }
   },
   "ownedPackageReuse": {
@@ -4396,11 +4410,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-06",
-      "status": "tactics-local-verified-preview-awaiting-upload",
+      "status": "cloud_ci_failed",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
-      "cloudScope": "User confirmed GitHub + Pages preview; main unchanged; final candidate not yet uploaded",
-      "next": "Normal reviewed commit/push of authorized branch preview, verify actual HTTPS and same-SHA Actions; preserve main and physical/visual pending",
+      "lastCommitted": "26296d5b5f229a1ce7310d4bb463327f649b5b50",
+      "cloudScope": "Authorized GitHub + Pages branch preview pushed; main unchanged; physical/visual pending",
+      "next": "Verify actual HTTPS and same-SHA Actions; then WEB-04-13 with published v9 preserved before any new rules.",
       "latestUserPriority": "用户要求代码级恢复原作战争：野外交锋、空城接管、大量军队与动员；已授权安装目录只读核验后接入v9，先完成相关真实检查，再接续已授权GitHub＋Pages分支预览，正式站不变。"
     },
     "nativeHillPrototype": {

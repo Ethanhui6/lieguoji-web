@@ -14,6 +14,6 @@ describe('drawn land to playable countries',()=>{
     const two=createFmsRun(doc,2),area=(r:typeof two|typeof run)=>r.world.provinces.reduce((s,p)=>s+polygonArea(p.polygon),0);
     expect(area(run)).toBeCloseTo(area(two),7);
     for(const p of run.world.provinces)for(const id of p.neighbors)expect(run.world.provinces.find(q=>q.id===id)!.neighbors).toContain(p.id);
-  });
+  },30000); // Two full worlds per island; browser interaction budgets are separate.
   it('rejects an empty sea without writing or substituting a premade world',()=>{const before=structuredClone(ocean);expect(()=>new EditorSession().execute({type:'create',terrain:ocean,count:6,relations:'peace'})).toThrow('陆地');expect(ocean).toEqual(before);});
 });

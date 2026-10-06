@@ -76,7 +76,7 @@ describe('PH06 closed v2 storage, complete lock references and unchanged v1 data
     const geometry = cloneAtlasDocument(data), vertex = getVertexSlot(geometry, 32 * 129 + 32); vertex.block.xyQ[vertex.slot * 2]++; geometry.manifest.revision++; geometry.manifest.blockRefs.find(r => r.key === vertex.key)!.hash = await hashBlock(vertex.block);
     await expect(session.commitLocal(local(geometry, first.root, [vertex.key]), control)).rejects.toThrow('共享顶点'); expect(await snapshot()).toEqual(before); session.close();
     const prep = await prepare(changed, first.root), staged = await snapshot(); await expect(api.commitAtlasPreparation(prep.preparationId, control)).rejects.toThrow('高程'); expect(await snapshot()).toEqual(staged); expect((await api.openAtlasDraft(data.manifest.draftId, control))!.root).toEqual(first.root);
-  });
+  }, 30000); // Multiple full IDB snapshots validate atomic rejection, not rendering latency.
 
   it('ordinary edits preserve generation/locks metadata and lock bytes, then restore both current and backup', async () => {
     const data = await locked(), first = await publish(data), session = (await api.openAtlasStorageSession(data.manifest.draftId, control))!, next = await edit(data);

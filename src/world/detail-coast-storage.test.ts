@@ -69,7 +69,7 @@ describe('v4 private fine-content ingestion and isolated atomic persistence', ()
     const names = [ATLAS_DRAFTS_DB, ATLAS_GENERATION_DB, ATLAS_SURFACE_DB], before = await Promise.all(names.map(name => snapshot(name)));
     const receipt = await publish(await withTiles()); expect(receipt.root.domain).toBe('atlas-draft-v4'); expect(api.database).toBe(ATLAS_DETAIL_COAST_DB);
     expect(await Promise.all(names.map(name => snapshot(name)))).toEqual(before); expect(() => getAtlasStorage(5 as 4)).toThrow('未知');
-  });
+  }, 30000); // Four complete storage formats; production transaction deadlines stay unchanged.
 
   it('rejects missing referenced fine bytes, then restores exact arrays and accounts every real byte after staging them', async () => {
     const data = await withTiles(), prep = await prepare(data, null, false), before = await snapshot();

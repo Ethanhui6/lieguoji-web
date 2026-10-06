@@ -56,7 +56,7 @@ describe('PH06 explicit pure-constraints atomic persistence', () => {
     expect(loaded.data.manifest.generation).toEqual(generated.manifest.generation); expect(loaded.data.blocks).toEqual(base.blocks);
     expect(third.root.backupManifest).toBe(second.manifestDigest); expect(loaded.handle.pairReferencedBytes).toBe(third.pairReferencedBytes);
     expect(await hashAtlasLockSet(again.manifest.constraints, again.manifest.spec)).not.toBe(again.manifest.generation.lastApplied!.lockSetDigest);
-  });
+  }, 30000); // Full multi-revision/slot integration, not a frame-time budget.
 
   it('keeps ordinary commits strict, permits initial locks through ordinary creation, and limits the dedicated entry to existing v2 roots', async () => {
     const initial = await flags(base, 3); initial.manifest.revision = 0;
@@ -70,7 +70,7 @@ describe('PH06 explicit pure-constraints atomic persistence', () => {
     const receipt = await old.commitAtlasPreparation(v1.preparationId, control), open = vi.spyOn(indexedDB, 'open');
     await expect(old.commitAtlasConstraintsPreparation(v1.preparationId, control)).rejects.toThrow('生成版本'); expect(open).not.toHaveBeenCalled(); open.mockRestore();
     expect((await old.openAtlasDraft(legacy.manifest.draftId, control))!.root).toEqual(receipt.root); expect(await snapshot()).toEqual(before);
-  });
+  }, 30000); // Real old/new IDB copies and complete snapshots on shared CI CPUs.
 
   it.each(['name', 'seed', 'catalogs', 'origin', 'generation'] as const)('rejects a lock update mixed with %s and keeps exact staged database bytes', async field => {
     const first = await publish(), mixed = await flags(base, 3);

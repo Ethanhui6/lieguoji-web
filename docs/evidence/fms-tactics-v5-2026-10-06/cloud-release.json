@@ -1,0 +1,116 @@
+{
+  "recordedAt": "2026-10-06T07:35:07.547Z",
+  "commit": "26296d5b5f229a1ce7310d4bb463327f649b5b50",
+  "repository": "https://github.com/Ethanhui6/lieguoji-web",
+  "branch": "codex/ph06-world-generation",
+  "push": "passed",
+  "prePush": "passed",
+  "sourceFingerprint": "49b456830dfbdafb152a0999229e7a4ad4c8c27f3e9cac65f32955b03d929599",
+  "mainVerifiedUnchanged": "b9b8f96b40544ef8b7e1e428910fe2df64fec6f7",
+  "pagesProject": "lieguoji-web",
+  "deploymentMode": "native Git branch preview",
+  "checks": [
+    {
+      "name": "Cloudflare Pages",
+      "sha": "26296d5b5f229a1ce7310d4bb463327f649b5b50",
+      "status": "completed",
+      "conclusion": "failure",
+      "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/11af79f5-155d-4fd1-a5ef-16ddc4c0e9e6",
+      "title": "Building",
+      "summary": "<table><tr><td><strong>Latest commit:</strong> </td><td>\n<code>26296d5</code>\n</td></tr>\n<tr><td><strong>Status:</strong></td><td>🚫&nbsp; Build failed.</td></tr>\n</table>\n\n[View logs](https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/11af79f5-155d-4fd1-a5ef-16ddc4c0e9e6)\n"
+    },
+    {
+      "name": "Application checks",
+      "sha": "26296d5b5f229a1ce7310d4bb463327f649b5b50",
+      "status": "completed",
+      "conclusion": "failure",
+      "detailsUrl": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37427965544/job/112151866734",
+      "title": null,
+      "summary": null
+    }
+  ],
+  "urls": [],
+  "ci": {
+    "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37427965544",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "name": "Application checks",
+        "status": "completed",
+        "conclusion": "failure",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check out tested revision",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up Node.js",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Record tested revision",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check plan, lint, types, unit tests, and production build",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Install Chromium and system dependencies",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Run core browser checks",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Keep checked game build",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Keep browser failure evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up Node.js",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Check out tested revision",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "localCommittedBuild": "passed; same tactics fingerprint; 43 approved dist artifacts",
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "note": "Post-upload local receipt; no second push/deployment for bookkeeping. Formal release gate stays locked."
+}

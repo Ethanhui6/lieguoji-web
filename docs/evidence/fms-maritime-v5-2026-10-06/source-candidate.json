@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-10-06T06:41:01.417Z",
+  "recordedAt": "2026-10-06T07:44:19.171Z",
   "parentCommit": "297f1e30531c4adfc0ac85463579915e24e0b4ea",
   "scope": "Changed candidate files; prior history and semantic/privacy manual review in SOURCE_PRIVACY.md. Machine patterns are not a complete secret detector.",
   "excludedSelf": "docs/evidence/fms-maritime-v5-2026-10-06/source-candidate.json",
   "excludedBinding": "plan/release-readiness.json (fixed-field acceptance binding reviewed separately)",
-  "fileCount": 155,
-  "textFiles": 146,
-  "bytes": 4135477,
-  "digest": "0ae10201ff4e880c2918274dd1b39893b6140ef72cce7e8820307d0f025bbc5e",
+  "fileCount": 168,
+  "textFiles": 159,
+  "bytes": 4326440,
+  "digest": "66cc3b3b91797ada14f83d8459d289199525e775a9e7eb1c9e38ada191b9a373",
   "findings": [],
   "files": [
     {
@@ -27,8 +27,8 @@
     },
     {
       "path": "docs/AUTO_HANDOFF.md",
-      "bytes": 9396,
-      "sha256": "54d76b0fd602413b0205aa7d4d6d8dcf1773478853df546f1592ee3ee120520a"
+      "bytes": 12175,
+      "sha256": "bd45641fb349510e22032790bda8ca44223557ccb193c4ba393ba20b60106593"
     },
     {
       "path": "docs/GITHUB_UPLOAD_2026-10-06.md",
@@ -102,8 +102,8 @@
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/SOURCE_PRIVACY.md",
-      "bytes": 5286,
-      "sha256": "6c973b91cd130f31261b51298f23585801ba4e20dbb31e1d04d34dcb4daa119d"
+      "bytes": 6222,
+      "sha256": "67077716b9ba237e63964a6e2ad504c429bdf66397b0bd254574bccd9e860691"
     },
     {
       "path": "docs/evidence/fms-maritime-v5-2026-10-06/battle-desktop.jpg",
@@ -126,9 +126,29 @@
       "sha256": "9c48ffba0794a9a53d18bafc4509f7dff9479372b2f3535a2645ec672cb9838d"
     },
     {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/ATTACKING_FOLLOWUP.md",
+      "bytes": 2642,
+      "sha256": "732ad93267c5b7a1904c2e8ffd68d62aea8bf0376c25cd76f18327b01a1779be"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/HISTORY_DELTA_PRIVACY.md",
+      "bytes": 1736,
+      "sha256": "665b9c37ebafc6be4cccfa75148f06f476686e85ba1714b8f8c1aea32fbb7bf2"
+    },
+    {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/RECOVERY.md",
       "bytes": 7295,
       "sha256": "c18ff9307cef142b3823a1de060fbf6d1a18d28197b44eabafa139ed81c4ed54"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/REORGANIZATION_FOLLOWUP.md",
+      "bytes": 2974,
+      "sha256": "1b4216b88d7426db5cd2da9b681583489d0d0682301f5a3a9444374d7e4cccb3"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/TARGET_SELECTION_FOLLOWUP.md",
+      "bytes": 2048,
+      "sha256": "61d5df3acc80b39971a197476bb9976249feb2ed645ba81814d59d8c37075e74"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
@@ -139,6 +159,16 @@
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
       "bytes": 1997,
       "sha256": "323af6ccd31da87c6bafb662aa4efc7098151af5ba19989a06fee2e18d1a8e88"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-release.json",
+      "bytes": 3999,
+      "sha256": "93400aecfbd3023e468e70359665f2b7a21db8df0aae6ff2e4baa7f2ef6b7dbb"
+    },
+    {
+      "path": "docs/evidence/fms-tactics-v5-2026-10-06/cloud-repair.json",
+      "bytes": 2956,
+      "sha256": "9ac007c8451648d109470a4930521ddf5a7824e33a3dbdcc07aae06325ee13f2"
     },
     {
       "path": "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
@@ -158,12 +188,12 @@
     {
       "path": "plan/reviewed-history-2026-10-06.json",
       "bytes": 189471,
-      "sha256": "61cc90ad1c11cf5c8c814e0c52b58693f2047503fa3e95b75f9f760e9d48916e"
+      "sha256": "8d4ed9f10337e4d71e2020ed127f95e40dd0061447c5db76c098321266d6558f"
     },
     {
       "path": "plan/tasks.json",
-      "bytes": 285628,
-      "sha256": "8a012c4f74af7f2dfc208c1118c0ede82038d181e242a0083145b4d3aebf6b54"
+      "bytes": 286165,
+      "sha256": "7ef9f51028188531b3da2953f5807ae81be7117eeae8bb1451b7429cdcf1eb48"
     },
     {
       "path": "scripts/check-dist.mjs",
@@ -197,8 +227,8 @@
     },
     {
       "path": "scripts/reviewed-history.mjs",
-      "bytes": 3886,
-      "sha256": "2834527994a127dbcf98a472139d70ff4b15b1cd50776d33e7ebc0fd42e8d66e"
+      "bytes": 4046,
+      "sha256": "f77fa657a4609142afbb8da2e0857f53258d8446676bbe31e9edb545e9496a8c"
     },
     {
       "path": "src/fms/play/AttackPanel.tsx",
@@ -566,6 +596,11 @@
       "sha256": "d4e04c62fe0da4c958fc08e762557c6138298d550c27fe565d9b2b1d0a165801"
     },
     {
+      "path": "src/fms/play/creation.test.ts",
+      "bytes": 1570,
+      "sha256": "63e8619297916a98e138ef070b847789108efd505af8e0242eb53fd0d677b77c"
+    },
+    {
       "path": "src/fms/play/customization.ts",
       "bytes": 3941,
       "sha256": "a959b72cb661f3bca3799132b32240b1f220f2224ec1957a181b4bce122a3c93"
@@ -739,6 +774,36 @@
       "path": "src/vite-env.d.ts",
       "bytes": 913,
       "sha256": "5535e19e24cdfd685dc5138825e4641a7e78d4c964ae1f727670e67559af8c07"
+    },
+    {
+      "path": "src/world/constraints-storage.test.ts",
+      "bytes": 18277,
+      "sha256": "cd5b5ed695ae5cac0fc33cc25b35f71f10bd5448b6faecce47f26d69b4c8b9d5"
+    },
+    {
+      "path": "src/world/detail-coast-storage.test.ts",
+      "bytes": 22967,
+      "sha256": "1b14eca21627cb37f5b145929a6b479451cb438e6b0838ffee9db6852c23fffb"
+    },
+    {
+      "path": "src/world/detail-preview16-history.test.ts",
+      "bytes": 15147,
+      "sha256": "37fb794764963ca6d467954c2fb952bbe37e65f55af7e0bba0d705faf04be9c9"
+    },
+    {
+      "path": "src/world/generation-storage.test.ts",
+      "bytes": 18434,
+      "sha256": "0f0eb1bae36dab785594f499377cadda3da0da63032c1f6cfe1fb29b5fd127dd"
+    },
+    {
+      "path": "src/world/generation/regional-coast-field.test.ts",
+      "bytes": 5791,
+      "sha256": "4a1cd71d034ffc89a694a98001fbddc41dd208265ee6846dacac937f8c917013"
+    },
+    {
+      "path": "src/world/renderer.test.ts",
+      "bytes": 88010,
+      "sha256": "ca8258f477c654e344b55fcb09c4ee613a7022c19b20a3d435b2a6e6c1940139"
     },
     {
       "path": "tests/atlas-coastal-surface.spec.ts",

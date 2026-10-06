@@ -60,12 +60,14 @@ describe('regional coast actual fine-field protection', () => {
   });
 
   it('roundtrips real coast and fine elevations without changing implicit Hbase or caller buffers', () => {
-    const tiles = new Map([...generated.detailCoast].map(([key, tile]) => [key, decodeDetailCoastTile(encodeDetailCoastTile(tile))]));
+    const originals = new Map([...generated.detailCoast].map(([key, tile]) => [key, encodeDetailCoastTile(tile)]));
+    const tiles = new Map([...originals].map(([key, bytes]) => [key, decodeDetailCoastTile(bytes)]));
     const sampler = createDetailShapeBaseSampler(input.size, input.centersQ, generated.coarseElevations.buffer as ArrayBuffer);
-    for (const [key, tile] of generated.detailCoast) expect(encodeDetailCoastTile(tiles.get(key)!)).toEqual(encodeDetailCoastTile(tile));
+    // Compare every byte and the length without enumerating huge arrays as JS objects.
+    for (const [key, bytes] of originals) expect(Buffer.from(encodeDetailCoastTile(tiles.get(key)!)).equals(Buffer.from(bytes))).toBe(true);
     for (const point of [{ x: 1446, y: 1222 }, { x: 1666, y: 1950 }, { x: 1321, y: 1447 }, { x: 2021, y: 1780 }]) {
       expect(pickDetailCoastSurface({ tiles, sampleBaseElevation: sampler }, point)).toEqual(pickDetailCoastSurface({ tiles: generated.detailCoast, sampleBaseElevation: generated.sampleBaseElevation }, point));
     }
     expect(input.detailCoast.size).toBe(0); expect(new Int32Array(input.elevationsMeters).every(value => value === -2400)).toBe(true);
-  });
+  }, 30000); // Full fine-field encode/decode integration, not a frame-time gate.
 });

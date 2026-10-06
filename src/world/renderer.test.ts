@@ -1073,13 +1073,30 @@ describe('atlas renderer failure and lifetime boundaries', () => {
     expect(fatal).not.toHaveBeenCalled(); expect(renderer.metrics().fatal).toBe(false);
   });
 
-  it('local edits do not insert a paint timer before their correct frame', async () => {
+  it('local edits within the paint budget do not insert a timer before their correct frame', async () => {
     const { renderer, progress, fatal } = await loadedRenderer(); progress.mockClear();
+    // This unit contract controls elapsed work; real CPU/GPU latency is checked
+    // in browser acceptance. A loaded CI CPU must not select the slow branch.
+    vi.spyOn(performance, 'now').mockReturnValue(1);
     const edited: AtlasDraftData = { ...source, manifest: { ...source.manifest, revision: source.manifest.revision + 1 } };
     const result = renderer.accept(edited, { dirtyKeys: ['elevation:0:0'], changedVertexIds: [], affectedCellIds: [0] });
     expect(vi.getTimerCount()).toBe(0); expect(progress).not.toHaveBeenCalled();
     await Promise.resolve(); tick(); const accepted = await result;
     expect(accepted.repaintBlocks).toBe(4); expect(fatal).not.toHaveBeenCalled();
+  });
+
+  it('local edits over the paint budget yield without accepting an incomplete frame', async () => {
+    const { renderer, progress, fatal } = await loadedRenderer(); progress.mockClear();
+    let workMs = 1;
+    vi.spyOn(performance, 'now').mockImplementation(() => workMs);
+    pixi.targetDraw.mockImplementation(() => { workMs += 20; });
+    const edited: AtlasDraftData = { ...source, manifest: { ...source.manifest, revision: source.manifest.revision + 1 } };
+    const published = vi.fn(), result = renderer.accept(edited, { dirtyKeys: ['elevation:0:0'], changedVertexIds: [], affectedCellIds: [0] }).then(published);
+    expect(vi.getTimerCount()).toBeGreaterThan(0); expect(progress).not.toHaveBeenCalled();
+    expect(published).not.toHaveBeenCalled(); expect(renderer.metrics().acceptedRevision).toBe(source.manifest.revision);
+    await vi.runAllTimersAsync(); tick(); await result;
+    expect(published).toHaveBeenCalledTimes(1); expect(published.mock.calls[0][0]).toMatchObject({ repaintBlocks: 4, acceptedRevision: edited.manifest.revision });
+    expect(fatal).not.toHaveBeenCalled();
   });
 
   it('switching a real 512² high-ID preview to 128² clears the old overlay before any drawing', async () => {

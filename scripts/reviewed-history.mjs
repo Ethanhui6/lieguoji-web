@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {safeProjectFile} from './check-plan.mjs';
-const BASE='90cdabc6fa1c0cd0d3f8d4037b93870b63421db5',HEAD='297f1e30531c4adfc0ac85463579915e24e0b4ea';
+// Extended only through the already audited v9 candidate; see HISTORY_DELTA_PRIVACY.md.
+// Later hidden/deleted versions still fail the exact-tip check below.
+const BASE='90cdabc6fa1c0cd0d3f8d4037b93870b63421db5',HEAD='26296d5b5f229a1ce7310d4bb463327f649b5b50';
 const SUMMARY='d37739b4d8bec71ee32eefe63a3f16b9f9599f5f7288094036397f666c9c9c41';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const git=(root,args)=>execFileSync('git',args,{cwd:root,maxBuffer:100*1024*1024,stdio:['ignore','pipe','pipe']});

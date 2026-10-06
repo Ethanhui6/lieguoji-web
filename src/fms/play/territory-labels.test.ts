@@ -14,13 +14,14 @@ it('follows current control after occupation, independent of the capital and leg
   expect(w).toEqual(before);w.provinces[1].controller=a;w.provinces[0].controller=b;
   const moved=territoryLabels(w);expect(moved.find(l=>l.nationId===a)?.point.x).toBeCloseTo(115);
   expect(moved.find(l=>l.nationId===b)?.point.x).toBeCloseTo(5);expect(w.cities).toEqual(before.cities);
-  w.provinces.forEach(p=>{p.controller=a;});expect(territoryLabels(w).map(l=>l.nationId)).toEqual([a]);
+  w.provinces.forEach(p=>{p.controller=a;});expect(territoryLabels(w).map(l=>l.nationId)).toEqual([a,a]);
 });
-it('uses the largest connected land area, not an enclave, province count or an ocean centroid',()=>{
+it('names every disconnected controlled component with stable interior anchors',()=>{
   const w=createWorld(),id=w.nations[0].id;w.nations=w.nations.slice(0,1);
   w.provinces=[box('big',0,0,100,100,id),box('small-1',500,0,10,10,id,['small-2']),box('small-2',510,0,10,10,id,['small-1'])];
   const label=territoryLabels(w)[0];expect(label.provinceIds).toEqual(['big']);expect(label.point).toEqual({x:50,y:50});expect(label.clearance).toBe(50);
-  expect(territoryLabels({...w,provinces:[...w.provinces].reverse()})).toEqual([label]);
+  const all=territoryLabels(w);expect(all).toHaveLength(2);expect(all[1].provinceIds).toEqual(['small-1','small-2']);expect(all.map(l=>l.componentId)).toEqual(['big','small-1']);
+  expect(territoryLabels({...w,provinces:[...w.provinces].reverse()})).toEqual(all);
 });
 it('keeps the anchor on a ring-shaped state instead of placing its name in the inland sea',()=>{
   const w=createWorld(),id=w.nations[0].id;w.nations=w.nations.slice(0,1);w.provinces=[];

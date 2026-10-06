@@ -8,22 +8,24 @@ function centroid(ring:readonly Point[]):Point|null{
 }
 const edgeKey=(a:Point,b:Point)=>{const x=`${a.x},${a.y}`,y=`${b.x},${b.y}`;return x<y?`${x}/${y}`:`${y}/${x}`;};
 function distance2(p:Point,a:Point,b:Point){const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy,t=length?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/length)):0;return (p.x-a.x-t*dx)**2+(p.y-a.y-t*dy)**2;}
-export interface TerritoryLabel{nationId:string;point:Point;area:number;provinceIds:string[];clearance:number}
+export interface TerritoryLabel{nationId:string;componentId:string;point:Point;area:number;provinceIds:string[];clearance:number}
 
-/** Current control, not capital/legal ownership. Find the largest land-connected
- * component by area, then a verified interior point with best boundary clearance.
+/** Current control, not capital/legal ownership. Label every land-connected
+ * component at a verified interior point with best boundary clearance.
  * This is a bounded web placement adapter, not a reproduction of Unity text paths. */
 export function territoryLabels(world:World):TerritoryLabel[]{
   const byId=new Map(world.provinces.map(p=>[p.id,p])),result:TerritoryLabel[]=[];
   for(const nation of world.nations){
     const owned=world.provinces.filter(p=>p.controller===nation.id).sort((a,b)=>a.id.localeCompare(b.id)),seen=new Set<string>();
-    let largest:Province[]=[],largestArea=0;
+    const groups:Province[][]=[];
     for(const seed of owned){
       if(seen.has(seed.id))continue;const group=[seed];seen.add(seed.id);
       for(let i=0;i<group.length;i++)for(const id of group[i].neighbors){const p=byId.get(id);if(p?.controller===nation.id&&!seen.has(id)){group.push(p);seen.add(id);}}
-      const size=group.reduce((sum,p)=>sum+area(p),0);if(size>largestArea){largest=group;largestArea=size;}
+      groups.push(group.sort((a,b)=>a.id.localeCompare(b.id)));
     }
-    if(!largest.length)continue; // A landless state has no territory label.
+    // Stable component identities survive input reordering; no enclave is dropped.
+    for(const largest of groups){
+    const largestArea=largest.reduce((sum,p)=>sum+area(p),0);
     const edges=new Map<string,[Point,Point]>(),candidates:Point[]=[];let cx=0,cy=0;
     for(const p of largest){
       const center=centroid(p.polygon),weight=area(p);cx+=(center??p.center).x*weight;cy+=(center??p.center).y*weight;
@@ -43,7 +45,8 @@ export function territoryLabels(world:World):TerritoryLabel[]{
     // into an inland sea or to a distant enclave just because the centroid did.
     let step=Math.sqrt(largestArea)/8,refined:Point=best;
     for(let iteration=0;iteration<7;iteration++,step/=2){const origin:Point=refined;for(const dx of [-step,0,step])for(const dy of [-step,0,step]){const p:Point={x:origin.x+dx,y:origin.y+dy};if(!inLand(p))continue;const d=clearance(p);if(d>bestDistance){refined=p;bestDistance=d;}}}
-    result.push({nationId:nation.id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:Math.sqrt(bestDistance)});
+    result.push({nationId:nation.id,componentId:largest[0].id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:Math.sqrt(bestDistance)});
+    }
   }
   return result;
 }

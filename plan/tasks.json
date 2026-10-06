@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "cloud_ci_failed",
+      "status": "preview_verified_ci_pending",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2412,23 +2412,27 @@
         "docs/evidence/fms-tactics-v5-2026-10-06/cloud-renderer-repair.json",
         "docs/evidence/fms-tactics-v5-2026-10-06/cloud-validation-retry.json",
         "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
-        "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
+        "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/cloud-release.json",
+        "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
+        "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json"
       ],
-      "commit": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
-      "checkedAt": "2026-10-06T10:48:37.113Z",
+      "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+      "checkedAt": "2026-10-06T12:12:47.035Z",
       "urls": [
-        "https://52bdebad.lieguoji-web.pages.dev",
+        "https://d67c81e1.lieguoji-web.pages.dev",
         "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
       ],
       "cloudCi": {
-        "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37437068346"
+        "status": "in_progress",
+        "conclusion": "",
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37455537951"
       },
       "pages": {
         "status": "completed",
         "conclusion": "success",
-        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/52bdebad-2f82-44e1-8350-2bf824731948"
+        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/d67c81e1-306e-4dd2-af66-4bcb73afeb5d"
       },
       "verifiedPlayable": {
         "commit": "92af7eaea4f3ef0e234fe7494238c293786b310d",
@@ -2437,8 +2441,16 @@
         "freshEntryCases": 3,
         "reusedWarfareCases": 10
       },
-      "candidateStatus": "v10_local_passed_not_uploaded",
-      "candidateEngine": "5394c3c20077989a2eb2c243c7a686399e86c8dbfad8102bfbb3951d01019db0"
+      "candidateStatus": "v11_local_passed_not_uploaded",
+      "candidateEngine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+      "https": {
+        "status": "passed",
+        "checkedAt": "2026-10-06T12:11:00.777Z",
+        "evidence": "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
+        "freshCases": 5,
+        "physicalDevice": "pending",
+        "userVisual": "pending"
+      }
     }
   },
   "ownedPackageReuse": {
@@ -3496,6 +3508,57 @@
             "evidence": [
               "docs/evidence/fms-playable-v5-2026-10-05/FOUNDATION.md"
             ]
+          },
+          {
+            "id": "WEB-03-02",
+            "title": "分裂领土逐片国名",
+            "status": "done",
+            "dependsOn": [
+              "WEB-03-01"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-03-03",
+            "title": "有效首都与小城市显示",
+            "status": "done",
+            "dependsOn": [
+              "WEB-03-01"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-03-04",
+            "title": "新版细辖区与一块一城",
+            "status": "done",
+            "dependsOn": [
+              "WEB-03-01"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
           }
         ]
       },
@@ -3883,6 +3946,91 @@
             ],
             "progressNote": "220文件2690单元通过；新旧执行/Store12隔离，真实道路击溃、实际沉船、伤亡中补员和刷新精确续接通过。首轮三尺寸发现布兵守卫，修复后复验，另验428x926。",
             "completionScope": "有限原作资格与补员公式的网页适配；非完整金币费用、原作海上重编、侦察埋伏、全部战术或真机视觉通过。"
+          },
+          {
+            "id": "WEB-04-24",
+            "title": "顶部真实要闻与定位",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-23"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-04-25",
+            "title": "v10冻结与v11独立存档",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-23"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-04-26",
+            "title": "细地块与史书综合试玩验收",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-23"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-04-27",
+            "title": "君主传位与有身份历史有限切片",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-23"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-04-28",
+            "title": "地方起义独立与国家终结有限切片",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-23"
+            ],
+            "acceptance": "详见docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md对应条目；真机/原作视觉/完整PH独立待验",
+            "evidence": [
+              "docs/FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
+              "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
+            ],
+            "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
           }
         ]
       },
@@ -4455,12 +4603,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-06",
-      "status": "campaign_local_checked_preview_pending",
+      "status": "chronicle_local_checked_preview_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "605ad7e80099ae4831cfb83e21c06eecc3cf94cc",
-      "cloudScope": "Authorized GitHub + Pages branch preview pushed; main unchanged; physical/visual pending",
-      "next": "Commit/push this reviewed bounded branch preview normally, verify actual same-SHA HTTPS/Pages and CI independently. Then WEB-04-13 remaining terrain, supply and prolonged fighting. Keep main and physical/visual gates.",
-      "latestUserPriority": "用户要求代码级恢复原作战争：野外交锋、空城接管、大量军队与动员；已授权安装目录只读核验后接入v9，先完成相关真实检查，再接续已授权GitHub＋Pages分支预览，正式站不变。"
+      "lastCommitted": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+      "cloudScope": "v11 not yet uploaded; existing GitHub+Pages preview authorization only; main/production unchanged",
+      "next": "正常封存候选、提交和同分支预览；核对实际HTTPS及独立CI回执。之后继续WEB-04-13地形效率、补给与长战，不重做本批。",
+      "latestUserPriority": "更细真实地块、一块一城、每片割裂领土标国名、亡国首都去标、顶部真实起义独立传位史"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5043,7 +5191,7 @@
       "evidence": [
         "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
       ],
-      "nextFocus": "WEB-04-08海战恢复与可玩交锋；WEB-04-13持久围攻/补给；先完整封存f72161fb运输规则。"
+      "nextFocus": "当前用户要求：细辖区/分裂国名/有效首都/史书及有限上帝政治干预。完整家族、信仰、附庸和原作政治体系仍留WEB-PH05。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -5263,6 +5411,17 @@
         "docs/evidence/fms-tactics-v5-2026-10-06/REORGANIZATION_FOLLOWUP.md",
         "docs/evidence/fms-reorganization-v5-2026-10-06/checks.json",
         "docs/evidence/fms-reorganization-v5-2026-10-06/browser.json"
+      ]
+    },
+    "chroniclePrototype": {
+      "status": "bounded_local_slice_verified",
+      "version": 11,
+      "engine": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+      "store": "lieguoji-fms-chronicle-v1",
+      "evidence": [
+        "docs/evidence/fms-chronicle-v5-2026-10-06/DELIVERY.md",
+        "docs/evidence/fms-chronicle-v5-2026-10-06/checks.json",
+        "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json"
       ]
     }
   }

@@ -65,6 +65,19 @@ function historical(name: typeof entries[number][0], key: typeof entries[number]
 }
 
 describe('actual preview.17 storage history before the next contract change', () => {
+  // Each independent runtime closure keeps the normal 5s test budget. Do not
+  // put 33 AST walks in one aggregate case or relax source-integrity assertions.
+  it.each(entries)('recomputes the complete archived, prior and reversed %s closure', (_name, key, _historyKey, fingerprint) => {
+    const prior=JSON.parse(readFileSync(new URL(provenance.priorPreview16.archivedPath,evidence),'utf8'));
+    const previousEvidence=new URL('../../docs/evidence/ph06-preview16-generator-history-2026-09-28/frozen-source/',import.meta.url);
+    const previousRead=(file:string)=>readFileSync(new URL(file,previousEvidence),'utf8');
+    const historyPath='src/world/generation-history.ts',previousHistory=previousRead(historyPath);
+    expect(fingerprint(archiveRead)).toEqual(build[key]);expect(fingerprint(previousRead)).toEqual(prior[key]);
+    const reversed=fingerprint(file=>file===historyPath?previousHistory:archiveRead(file));
+    const classification=build[key].sha256===prior[key].sha256?'unchanged':reversed.sha256===prior[key].sha256?'history-only':'non-history-runtime-change';
+    const recorded=provenance.priorPreview16.comparison.find((row:{key:string})=>row.key===key);
+    expect(recorded).toMatchObject({classification,historyReversedSha256:reversed.sha256,priorSha256:prior[key].sha256,actualSha256:build[key].sha256});
+  });
   it('recomputes actual preview17 source and its current identity-verification format without claiming browser or visual acceptance', () => {
     expect(build.version).toBe('0.5.0-preview.17'); expect(build.commit).toBe('a909afd76dbbd05755a12ed8922c09cf5fec1bf7');
     expect(provenance.actualHead).toBe(build.commit); expect(provenance.baseCommit).toBe(build.commit);
@@ -74,19 +87,13 @@ describe('actual preview.17 storage history before the next contract change', ()
     const priorBytes = readFileSync(new URL(provenance.priorPreview16.archivedPath, evidence)), prior = JSON.parse(priorBytes.toString());
     expect(prior.version).toBe('0.5.0-preview.16'); expect(digest(priorBytes)).toBe(provenance.priorPreview16.sha256);
     expect(prior.engineFingerprint).toBe(build.engineFingerprint);
-    const previousEvidence = new URL('../../docs/evidence/ph06-preview16-generator-history-2026-09-28/frozen-source/', import.meta.url);
-    const previousRead = (file: string) => readFileSync(new URL(file, previousEvidence), 'utf8');
-    const historyPath = 'src/world/generation-history.ts', previousHistory = previousRead(historyPath);
     const actualKeys = Object.keys(build).filter(key => key.endsWith('Generator')).sort(), closureFiles = new Set<string>();
     expect(entries.map(([, key]) => key).sort()).toEqual(actualKeys); expect(provenance.closureCount).toBe(actualKeys.length);
     const classifications: Record<string, number> = {};
-    for (const [, key, , fingerprint] of entries) {
-      expect(fingerprint(archiveRead)).toEqual(build[key]); expect(fingerprint(previousRead)).toEqual(prior[key]);
-      const reversed = fingerprint(file => file === historyPath ? previousHistory : archiveRead(file));
-      const classification = build[key].sha256 === prior[key].sha256 ? 'unchanged' : reversed.sha256 === prior[key].sha256 ? 'history-only' : 'non-history-runtime-change';
-      classifications[classification] = (classifications[classification] ?? 0) + 1;
+    for (const [, key] of entries) {
       const recorded = provenance.priorPreview16.comparison.find((row: { key: string }) => row.key === key);
-      expect(recorded).toMatchObject({ classification, historyReversedSha256: reversed.sha256, priorSha256: prior[key].sha256, actualSha256: build[key].sha256 });
+      // The per-closure cases above independently recompute every field.
+      classifications[recorded.classification] = (classifications[recorded.classification] ?? 0) + 1;
       for (const file of build[key].files as string[]) closureFiles.add(file);
     }
     expect(classifications).toEqual(provenance.priorPreview16.classificationCounts);

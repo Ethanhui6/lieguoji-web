@@ -45,3 +45,19 @@
 .play-reorganization-row progress::-webkit-progress-bar { background: #d5d6c5; border-radius: 3px; }
 .play-reorganization-row progress::-webkit-progress-value { background: #677958; border-radius: 3px; transition: width 160ms linear; }
 @media (prefers-reduced-motion: reduce) { .play-reorganization-row progress::-webkit-progress-value { transition: none; } }
+
+/* Emphasis: fresh real history enters briefly; no camera movement or blocking overlay. */
+.fms-play:has(.play-news) .play-header{top:calc(max(16px,env(safe-area-inset-top)) + 54px)}
+.fms-play:has(.play-news) .play-notice{top:138px}
+.fms-play:has(.play-news) .play-map-options{top:192px}
+.fms-play:has(.play-news) .play-zoom{top:192px}
+.fms-play .play-news{position:absolute;z-index:3;top:max(4px,env(safe-area-inset-top));left:12px;right:12px;height:48px;display:flex;align-items:center;gap:9px;padding:5px 12px;text-align:left;background:#e8e2cfee;border:1px solid #8e9278;box-shadow:0 2px 8px #20352722}
+.play-news-tag{font-size:11px;font-weight:700;letter-spacing:2px;color:#655033;flex-shrink:0}
+.play-news-copy{display:flex;align-items:center;gap:12px;min-width:0;animation:news-enter 240ms ease-out both}.play-news-copy small{white-space:nowrap;font-size:10px;color:#69715e}.play-news-copy strong{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.play-news-more{font-size:10px;white-space:nowrap;margin-left:auto}
+@keyframes news-enter{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:601px){.fms-play:has(.play-news) .play-panel{top:246px}}
+@media(max-width:600px){.fms-play:has(.play-news) .play-notice{top:130px}.fms-play:has(.play-news) .play-map-options{top:180px}.fms-play:has(.play-news) .play-zoom{top:180px}.play-news-copy{display:grid;gap:0}.play-news-copy strong{font-size:11px}.play-news-tag{font-size:10px}}
+
+.play-court{border-top:1px solid #8a927366;margin:16px 0;padding-top:10px}.play-ruler{display:flex;align-items:center;gap:12px}.play-ruler strong{font-size:19px}.play-ruler span{font-size:12px;color:#69715e}.play-court .play-row{flex-wrap:wrap;gap:7px}.play-chronicle{border-bottom:2px solid #8b8f71;padding-bottom:18px;margin-bottom:18px}
+
+.play-ruler{flex-wrap:wrap}.play-regnal{display:grid;gap:6px;margin:12px 0;font-size:12px}.play-regnal input{width:100%;font:inherit;font-size:16px;min-height:44px;padding:8px;border:1px solid #9aab8d;border-radius:4px;background:#faf7ec;color:#23362d}

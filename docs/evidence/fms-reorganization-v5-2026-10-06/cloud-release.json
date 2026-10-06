@@ -1,0 +1,168 @@
+{
+  "checkedAt": "2026-10-06T12:12:47.035Z",
+  "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+  "branch": "codex/ph06-world-generation",
+  "repository": "https://github.com/Ethanhui6/lieguoji-web",
+  "engine": "5394c3c20077989a2eb2c243c7a686399e86c8dbfad8102bfbb3951d01019db0",
+  "sourceFingerprint": "34c4a788225c2b844ab9ca64fe43fd7fe79041dcd6412b54e0540e91ceca0275",
+  "push": "passed",
+  "prePush": "passed",
+  "mainUnchanged": "b9b8f96b40544ef8b7e1e428910fe2df64fec6f7",
+  "deploymentMode": "Pages native Git branch preview",
+  "checks": [
+    {
+      "name": "Cloudflare Pages",
+      "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+      "status": "completed",
+      "conclusion": "success",
+      "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/d67c81e1-306e-4dd2-af66-4bcb73afeb5d",
+      "title": "Deployed successfully",
+      "summary": "<table><tr><td><strong>Latest commit:</strong> </td><td>\n<code>2529f8f</code>\n</td></tr>\n<tr><td><strong>Status:</strong></td><td>&nbsp;✅&nbsp; Deploy successful!</td></tr>\n<tr><td><strong>Preview URL:</strong></td><td>\n<a href='https://d67c81e1.lieguoji-web.pages.dev'>https://d67c81e1.lieguoji-web.pages.dev</a>\n</td></tr>\n<tr><td><strong>Branch Preview URL:</strong></td><td>\n<a href='https://codex-ph06-world-generation.lieguoji-web.pages.dev'>https://codex-ph06-world-generation.lieguoji-web.pages.dev</a>\n</td></tr>\n</table>\n\n[View logs](https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/d67c81e1-306e-4dd2-af66-4bcb73afeb5d)\n"
+    },
+    {
+      "name": "Application checks",
+      "commit": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+      "status": "in_progress",
+      "conclusion": null,
+      "detailsUrl": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37455537951/job/112242102407",
+      "title": null,
+      "summary": null
+    }
+  ],
+  "ci": {
+    "conclusion": "",
+    "headSha": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+    "jobs": [
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 112242102407,
+        "name": "Application checks",
+        "startedAt": "2026-10-06T11:18:39Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "completedAt": "2026-10-06T11:18:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-06T11:18:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:19:01Z",
+            "conclusion": "success",
+            "name": "Check out tested revision",
+            "number": 2,
+            "startedAt": "2026-10-06T11:18:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:19:13Z",
+            "conclusion": "success",
+            "name": "Set up Node.js",
+            "number": 3,
+            "startedAt": "2026-10-06T11:19:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:19:13Z",
+            "conclusion": "success",
+            "name": "Record tested revision",
+            "number": 4,
+            "startedAt": "2026-10-06T11:19:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:19:25Z",
+            "conclusion": "success",
+            "name": "Install locked dependencies",
+            "number": 5,
+            "startedAt": "2026-10-06T11:19:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:31:51Z",
+            "conclusion": "success",
+            "name": "Check plan, lint, types, unit tests, and production build",
+            "number": 6,
+            "startedAt": "2026-10-06T11:19:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-06T11:32:23Z",
+            "conclusion": "success",
+            "name": "Install Chromium and system dependencies",
+            "number": 7,
+            "startedAt": "2026-10-06T11:31:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "0001-01-01T00:00:00Z",
+            "conclusion": "",
+            "name": "Run core browser checks",
+            "number": 8,
+            "startedAt": "2026-10-06T11:32:23Z",
+            "status": "in_progress"
+          },
+          {
+            "completedAt": "0001-01-01T00:00:00Z",
+            "conclusion": "",
+            "name": "Keep checked game build",
+            "number": 9,
+            "startedAt": "0001-01-01T00:00:00Z",
+            "status": "pending"
+          },
+          {
+            "completedAt": "0001-01-01T00:00:00Z",
+            "conclusion": "",
+            "name": "Keep browser failure evidence",
+            "number": 10,
+            "startedAt": "0001-01-01T00:00:00Z",
+            "status": "pending"
+          },
+          {
+            "completedAt": "0001-01-01T00:00:00Z",
+            "conclusion": "",
+            "name": "Post Set up Node.js",
+            "number": 19,
+            "startedAt": "0001-01-01T00:00:00Z",
+            "status": "pending"
+          },
+          {
+            "completedAt": "0001-01-01T00:00:00Z",
+            "conclusion": "",
+            "name": "Post Check out tested revision",
+            "number": 20,
+            "startedAt": "0001-01-01T00:00:00Z",
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37455537951/job/112242102407"
+      }
+    ],
+    "status": "in_progress",
+    "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37455537951"
+  },
+  "urls": [
+    "https://d67c81e1.lieguoji-web.pages.dev",
+    "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
+  ],
+  "physicalDevice": "pending",
+  "userVisual": "pending",
+  "originalParity": false,
+  "remoteVerification": {
+    "method": "GitHub REST refs through authenticated official gh",
+    "branchRef": "2529f8f5f332d1a3de612457f0b7142e5c16b56d",
+    "mainRef": "b9b8f96b40544ef8b7e1e428910fe2df64fec6f7",
+    "note": "Post-push ls-remote had already verified both refs. Two later Git HTTPS status reads could not connect to github.com:443; REST refs were independently queried successfully. No network, auth, branch or deployment configuration changed."
+  },
+  "https": {
+    "status": "passed",
+    "checkedAt": "2026-10-06T12:11:00.777Z",
+    "evidence": "docs/evidence/fms-reorganization-v5-2026-10-06/https-verification.json",
+    "freshCases": 5,
+    "physicalDevice": "pending",
+    "userVisual": "pending"
+  }
+}

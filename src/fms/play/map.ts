@@ -9,6 +9,8 @@ import type { World, Point } from '../../sim/types';
 import { armyMarkers,armyPosition } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
+import {currentCapital} from './capital-view';
+import {cityLabels} from './city-labels';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
@@ -38,6 +40,8 @@ export class PlayMap {
   private shipLayer?:ReturnType<typeof drawNavy>;
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
   private capitals:{nationId:string;cityId:string;name:string;point:Point}[]=[];
+  private cities:{id:string;provinceId:string;name:string;x:number;y:number;capital:boolean;label:boolean}[]=[];
+  cityPositions(){return this.cities;}
   private wars:WarMarker[]=[];
   warPositions(){return this.wars;}
   pickWar(point:Point){return this.wars.map(w=>({...w,distance:Math.hypot(w.x-point.x,w.y-point.y)})).filter(w=>w.distance<=20).sort((a,b)=>a.distance-b.distance)[0];}
@@ -79,14 +83,14 @@ export class PlayMap {
   politicalDiagnostics(){return {builds:this.politicalBuilds};}
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
-  labelPositions(){return this.territories.map(({nationId,point})=>({nationId,...point}));}
+  labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point})=>({nationId,componentId,provinceIds,...point}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic)child.destroy({ children: true });
     this.unitGroups=[];this.reorganizationWidgets=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     const detail=warDetail(world,scale,zoom),sites=warSites(world,combat?.state,combat?.occupation,naval);
     this.wars=warMarkers(world,sites,naval,scale,{x:this.projection.x,y:this.projection.y,scale:zoom},{width:this.projection.width,height:this.projection.height},selectedWars);
-    this.capitals=world.nations.flatMap(n=>{const c=world.cities.find(c=>c.id===n.capitalId);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
+    this.capitals=world.nations.flatMap(n=>{const c=currentCapital(world,n.id);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
     const g = this.politicalGraphic, marks = new Graphics(); this.layer.addChild(g, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
     const pixel = 1 / zoom, style=politicalStyle(mode);
@@ -122,21 +126,23 @@ export class PlayMap {
       this.siegeWidgets.push({id:p.id,bar,text,x,y,pixel,percent:0});
     }this.updateOccupation(combat.occupation);}
     const countryLabels=this.territories.map(territory=>{
-      const n=nations.get(territory.nationId)!,size=Math.max(13,Math.min(27,territory.clearance/scale*zoom*.65));
+      const n=nations.get(territory.nationId)!,size=Math.max(8,Math.min(27,territory.clearance/scale*zoom*1.55/Math.max(2,n.name.length)));
       const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:size,fill:'#263a30',fontWeight:'bold',stroke:{color:'#fffae5',width:2},letterSpacing:2}});
       t.anchor.set(.5);t.scale.set(pixel);t.position.set(territory.point.x/scale,territory.point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
       return {point:territory.point,size,width:n.name.length*(size+2)};
     });
+    this.cities=[];
     for (const city of world.cities) {
-      const capital = world.nations.find(n => n.capitalId === city.id), x = city.position.x / scale, y = city.position.y / scale;
-      const conflict=this.wars.some(w=>Math.hypot(w.x-(x*zoom+this.projection.x),w.y-(y*zoom+this.projection.y))<30);
-      if(!capital&&detail!=='overview')marks.circle(x, y, 2.5 * pixel).fill(0xf0e5cc).stroke({width:1*pixel,color:0x38453e});
-      if(capital||detail!=='overview'){
-        const near=countryLabels.find(c=>Math.abs(c.point.x-city.position.x)/scale*zoom<(c.width+city.name.length*12)/2&&Math.abs(c.point.y-city.position.y)/scale*zoom<c.size+20);
-        const offset=near?Math.max(8,(city.position.y-near.point.y)/scale*zoom+near.size/2+8):7;
-        if(!capital&&!conflict)label(city.name,x,y-offset*pixel,11);
-      }
+      const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
+      this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:capital});
+      if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
+    const cityText=cityLabels(this.cities.filter(c=>!c.capital).map(c=>({...c,selected:c.provinceId===selected})),[
+      ...countryLabels.map(c=>({x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:c.width,height:c.size+4})),
+      ...this.cities.filter(c=>c.capital).map(c=>({x:c.x,y:c.y-10,width:Math.max(24,c.name.length*16),height:40})),
+      ...this.wars.map(w=>({x:w.x,y:w.y,width:48,height:48}))
+    ],this.projection,detail==='overview');
+    for(const c of cityText){label(c.name,(c.x-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));

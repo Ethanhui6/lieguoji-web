@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-06T14:26:47.718Z",
+  "commands": [
+    {
+      "command": "node scripts/check-plan.mjs",
+      "exitCode": 0,
+      "logSha256": "a3e4052592d477cbd098fb619ab81c8c8ed064bc331e7b04c54f27575e6b688c"
+    },
+    {
+      "command": "node --test scripts/release-policy.test.mjs",
+      "exitCode": 0,
+      "logSha256": "1c35666cce8d02377e6d21a13cc3c3f0b0f30ca25cc1f6646819b9c524d57bd7"
+    },
+    {
+      "command": "node --test scripts/check-v5-plan.test.mjs",
+      "exitCode": 0,
+      "logSha256": "4f6ddd6ae35e2935f1a4f814a2a7d48caa42e2934efde09224bc20159fbb7b17"
+    }
+  ],
+  "releaseTests": 24,
+  "planTests": 15,
+  "formalRelease": "locked"
+}

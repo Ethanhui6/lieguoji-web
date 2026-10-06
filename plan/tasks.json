@@ -3813,9 +3813,11 @@
               "docs/evidence/fms-fiscal15-v5-2026-10-07/DELIVERY.md",
               "docs/evidence/fms-fiscal15-v5-2026-10-07/checks.json",
               "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
-              "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md"
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md",
+              "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。"
           },
           {
             "id": "WEB-04-14",
@@ -4726,11 +4728,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "fiscal15_local_verified_continue_office_inputs",
+      "status": "native_office_income_kernels_verified_continue_characters",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "877d8edf73e2aa606d26bc636f365f9e5a9e485a",
+      "lastCommitted": "416e3dca247e34495757a2dc63132f2d8b18e316",
       "cloudScope": "Local-only v15 batch. Previous 8eb9b4e remains uploaded preview; no push/main/Pages change.",
-      "next": "接原人物税赋/官职能力纯函数与真实族群输入；已试玩v15先冻结再生产接线。缺失原人物/任职来源不得用国家稳定度替代。",
+      "next": "原人物/官职独立内核15项与lint/types通过、无v15生产调用者。接GetGovernmentOfficeAssignment5CB0A0、MilitaryModifiers83BEE0、Diplomatic/Charisma getter；建真实持久人物/任职/族群前先冻结v15。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4749,7 +4751,9 @@
         "docs/evidence/fms-fiscal15-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-fiscal15-v5-2026-10-07/checks.json",
         "docs/evidence/fms-fiscal15-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md"
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/NEXT_RECOVERY.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json"
       ],
       "currentVersion": 15,
       "currentEngine": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
@@ -5726,6 +5730,18 @@
         "Known maritime/transports null/missing structure and version recovery is covered, not every corrupt legacy shape.",
         "WEB-04-13 and full restoration remain in progress."
       ]
+    },
+    "nativeOfficeIncomeRecovery": {
+      "status": "pure_kernels_verified_not_integrated",
+      "sourceParent": "416e3dca247e34495757a2dc63132f2d8b18e316",
+      "evidence": [
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/OFFICE_KERNEL_PROGRESS.md",
+        "docs/evidence/fms-fiscal15-v5-2026-10-07/office-kernels-checks.json"
+      ],
+      "unitPassed": 15,
+      "productionCallers": false,
+      "traits": 27,
+      "fiscal15Unchanged": true
     }
   }
 }

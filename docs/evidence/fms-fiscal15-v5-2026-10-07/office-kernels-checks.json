@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-06T20:44:22.790Z",
+  "sourceParent": "416e3dca247e34495757a2dc63132f2d8b18e316",
+  "scope": "New pure kernels only; no production callers, gameplay or old-save mutation",
+  "unit": {
+    "passed": 15,
+    "failed": 0,
+    "report": "office-kernels-unit.json"
+  },
+  "lint": {
+    "exitCode": 0
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "fiscal15Unchanged": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+  "files": [
+    {
+      "path": "src/fms/play/native-economy/character-income.ts",
+      "sha256": "9aa3880b73550740d43f43a56441bda23ccb794344ea7284d75e9d2a135aa71a"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-traits.json",
+      "sha256": "80364fe01c1759782e6dad8d9c52eeb44f7963fd88f53fb6f23b2f74157fb797"
+    },
+    {
+      "path": "src/fms/play/native-economy/office-income.ts",
+      "sha256": "56be4dc68377b6b8f7ca06042ffacf3e3cdf773c6e1dcd6a3ba61464dbbb02b4"
+    },
+    {
+      "path": "src/fms/play/native-economy/office-income.test.ts",
+      "sha256": "a80aade2e539257ed3ea57c6e8036d30354b0986d318a3397cd83d2fece1e71e"
+    }
+  ]
+}

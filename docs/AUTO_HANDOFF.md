@@ -1,3 +1,15 @@
+# 当前续接：v18多文化可玩，继续原起义与历史复国
+
+2026-10-07，根唯一源码/文档写入，代理只读。父HEAD 92b6309d7f4c5a2bed90ad27e30637b91156d4cd，本批尚待本地提交补记SHA；完整Goal和WEB-04-13保持进行中。
+
+- 本机试玩 http://127.0.0.1:5189/?fms=1 ，独立.autopilot/naming18-preview/dist；v18/Store20/lieguoji-fms-naming-v18，engine ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914。v17/5188及旧库保持，当前tab已保留。
+- 原六文化国/城/人名及key/文化/家族身份先于军队和史书创建；可选文化，真实Worker/保存刷新。同名城市按真实ID选择。正常UI不规则大陆建六国，沃洛科沃/萨伏依/维尔纳 施奈德，第0日11:24恢复，停在慢速暂停。当前修复准确恢复提示与文化选择对齐。
+- 3017全量/255文件，最终lint/types/构建43产物审查通过；首次6浏览器通过、桌面21过2定位失败，修复后史书/小城/命名三尺寸最终9全过。最后3个UI变动未重复全量，模拟指纹不变；后加未接线起义核9项单列。[交付](evidence/fms-naming18-v5-2026-10-07/DELIVERY.md) · [失败](evidence/fms-naming18-v5-2026-10-07/FAILURES.md) · [哈希](evidence/fms-naming18-v5-2026-10-07/tested-artifact.json)。build.json是父HEAD脏树，不冒充云CI或干净提交。
+- 原Province.TryRebel候选/显示名/省文化/历史国家复用/自定义格式已窄核；rebel-name.ts候选核没有生产调用。当前v18新国仍父文化/初始池网页桥，王朝保留及12–25年任期也非原继承。下一批先冻结v18，接真实省文化与历史国家重新启用，不重复已完成恢复。[后续函数证据](evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md)。
+- 无push/Pages/main变更，正式站与旧预览保留；真机Safari/Chrome、用户视觉、性能及完整原作仍未验收。继续普通本地工程，不为下一批询问。不要重跑任何create/wire/finalize一次性脚本。
+
+---
+
 # 当前续接：v17文化族群已可玩，继续原多文化命名
 
 2026-10-07，根唯一源码写入，代理只读；父HEAD 0b9845425e144123d1c0b4659c30bf1846026b7f。本批本地提交4e0524001a9787966cdc53a6b30f282a77c17ac3，未上传；提交后tasks/交接补记SHA。WEB-PH04/WEB-04-13和总Goal继续。
@@ -9,7 +21,7 @@
 - 下一批提取已知六文化命名CSV，闭合人物全名83E070/83BC90/83E600，再将名称key/mapCulture/baseCulture在实体与史书创建前接入。现独立native-culture两模块可复用，无生产调用。生命周期/完整家族/信仰/用户视觉/真机仍未完成。先冻结v17再改变已保存规则，不重跑任何create/wire/update/finalize一次性脚本。
 - 无push/Pages/main改动，正式站、旧档及发布锁保持。不要将当前本机URL当作手机可访问在线站。
 
-随后原六文化名称与家族姓名独立内核已完成，父HEAD 4e0524001a9787966cdc53a6b30f282a77c17ac3，待本地提交。36项定向、目标lint、类型与36来源文件逐结构比对通过；5085行/14语言，v17指纹不变，尚无生产调用。[数据/函数与下一接线位置](evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md) · [实际检查](evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json)。接下来先冻结v17，再新world/records/politics与名称sidecar，不能在旧create返回后改写实体和史书。无需重复恢复命名/默认语言/姓氏函数。
+随后原六文化名称与家族姓名独立内核已完成，父HEAD 4e0524001a9787966cdc53a6b30f282a77c17ac3，本地提交92b6309d7f4c5a2bed90ad27e30637b91156d4cd，未上传；此后tasks/交接仅补记SHA。36项定向、目标lint、类型与36来源文件逐结构比对通过；5085行/14语言，v17指纹不变，尚无生产调用。[数据/函数与下一接线位置](evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md) · [实际检查](evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json)。接下来先冻结v17，再新world/records/politics与名称sidecar，不能在旧create返回后改写实体和史书。无需重复恢复命名/默认语言/姓氏函数。
 
 ---
 

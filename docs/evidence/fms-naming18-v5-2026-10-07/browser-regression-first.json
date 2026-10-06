@@ -1,0 +1,1094 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      ".autopilot/naming18-regression.config.ts",
+      "tests/fms-battle-animation.spec.ts",
+      "tests/fms-chronicle.spec.ts",
+      "tests/fms-court16.spec.ts",
+      "tests/fms-entry.spec.ts",
+      "tests/fms-inspection.spec.ts",
+      "tests/fms-locality.spec.ts",
+      "tests/fms-maritime.spec.ts",
+      "tests/fms-tactics.spec.ts",
+      "tests/fms-upper14.spec.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-regression.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/naming18-evidence/regression",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "naming18-evidence/regression.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-battle-animation.spec.ts",
+      "file": "fms-battle-animation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: original battle clip follows a real naval contact, pauses and respects reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52071,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:43:53.567Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "production-animation-sample",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGRldmljZSIsInNhbXBsZXMiOltbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjIyLCJ4Ijo1NDIsInkiOjQ2Ny41LCJ3aWR0aCI6NDEuOTk5OTk5OTk5OTk5OTksIm9ic2VydmVkQXQiOjM3Nzk5fV0sW3siaWQiOiJzZWE6ZmxlZXQtMi0wL2ZsZWV0LTMtMSIsImZyYW1lIjoyNCwieCI6NTQyLCJ5Ijo0NjcuNSwid2lkdGgiOjQxLjk5OTk5OTk5OTk5OTk5LCJvYnNlcnZlZEF0IjozNzkwOH1dLFt7ImlkIjoic2VhOmZsZWV0LTItMC9mbGVldC0zLTEiLCJmcmFtZSI6MjUsIngiOjU0MiwieSI6NDY3LjUsIndpZHRoIjo0MS45OTk5OTk5OTk5OTk5OSwib2JzZXJ2ZWRBdCI6MzgwMzQuNX1dLFt7ImlkIjoic2VhOmZsZWV0LTItMC9mbGVldC0zLTEiLCJmcmFtZSI6MjYsIngiOjU0MiwieSI6NDY3LjUsIndpZHRoIjo0MS45OTk5OTk5OTk5OTk5OSwib2JzZXJ2ZWRBdCI6MzgxNjEuODk5OTk5OTc2MTZ9XSxbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjI3LCJ4Ijo1NDIsInkiOjQ2Ny41LCJ3aWR0aCI6NDEuOTk5OTk5OTk5OTk5OTksIm9ic2VydmVkQXQiOjM4Mjg5Ljg5OTk5OTk3NjE2fV1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e537a6c6ad8be58373e3-78c2253a0057fc33513f",
+          "file": "fms-battle-animation.spec.ts",
+          "line": 7,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-chronicle.spec.ts",
+      "file": "fms-chronicle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: future Store13 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1406,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:45.847Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-58828ea012ea98d42e22",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store14 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1810,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:47.263Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-e763fb69ee32585c4c0f",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store15 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1632,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:49.081Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-a62c7b190137513fa5d3",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store16 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1415,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:50.752Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-fd52c0d881252d51b045",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store17 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1895,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:52.176Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-ead519cf4281166d8843",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store18 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1478,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:54.080Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-789b665d80c2953fddbd",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store19 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1393,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:55.567Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-65376ab1217694eab46f",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: future Store20 locks only its own new-world destination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1498,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:56.971Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-139061b740921557dfcb",
+          "file": "fms-chronicle.spec.ts",
+          "line": 13,
+          "column": 40
+        },
+        {
+          "title": "FMS v18: small real districts, succession, local independence/uprising, top chronicle and exact restore",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 23231,
+                  "error": {
+                    "message": "Error: locator.click: Error: strict mode violation: locator('.play-city').filter({ hasText: '走秦南' }) resolved to 4 elements:\n    1) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).first()\n    2) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(1)\n    3) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(2)\n    4) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(3)\n\nCall log:\n\u001b[2m  - waiting for locator('.play-city').filter({ hasText: '走秦南' })\u001b[22m\n",
+                    "stack": "Error: locator.click: Error: strict mode violation: locator('.play-city').filter({ hasText: '走秦南' }) resolved to 4 elements:\n    1) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).first()\n    2) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(1)\n    3) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(2)\n    4) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(3)\n\nCall log:\n\u001b[2m  - waiting for locator('.play-city').filter({ hasText: '走秦南' })\u001b[22m\n\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-chronicle.spec.ts:27:198",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-chronicle.spec.ts",
+                      "column": 198,
+                      "line": 27
+                    },
+                    "snippet": "  25 |  await page.screenshot({path:info.outputPath('v11-succession-news.png')});\n  26 |  const candidates=w.provinces.filter(p=>p.controller===w.nations[0].id&&!w.nations.some(n=>w.cities.find(c=>c.id===n.capitalId)?.provinceId===p.id));expect(candidates.length).toBeGreaterThanOrEqual(2);\n> 27 |  for(const [index,button]of [[0,'预览宣布独立'],[1,'预览地方起义']] as const){const p=candidates[index],city=w.cities.find(c=>c.provinceId===p.id)!;await page.locator('.play-city').filter({hasText:city.name}).click();await page.getByRole('button',{name:button,exact:true}).click();await confirm(page);}\n     |                                                                                                                                                                                                      ^\n  28 |  const final=await save(page);expect(final.run.world.nations).toHaveLength(4);expect(final.run.chronicle.entries.map(e=>e.kind)).toEqual(['accession','accession','independence','uprising']);expect(final.run.chronicle.entries.slice(2).map(e=>e.place!.id)).toEqual(candidates.slice(0,2).map(p=>p.id));\n  29 |  await news.click();await expect(page.getByRole('region',{name:'本局史书'})).toContainText('爆发起义');await page.getByRole('region',{name:'本局史书'}).locator('[data-history-id=\"4\"]').getByRole('button',{name:'定位事发地 ↗',exact:true}).click();await expect(page.locator('.play-notice')).toContainText(candidates[1].name);await page.screenshot({path:info.outputPath('v11-chronicle-places.png')});\n  30 |  await load(page);const restored=await save(page);expect(restored.run).toEqual(final.run);expect(restored.checksum).toBe(final.checksum);await expect(news).toContainText('爆发起义');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-chronicle.spec.ts",
+                        "column": 198,
+                        "line": 27
+                      },
+                      "message": "Error: locator.click: Error: strict mode violation: locator('.play-city').filter({ hasText: '走秦南' }) resolved to 4 elements:\n    1) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).first()\n    2) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.30</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(1)\n    3) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(2)\n    4) <button class=\"play-city\">· 走秦南 · 通用防御 ×1.00</button> aka getByRole('button', { name: '· 走秦南 · 通用防御 ×' }).nth(3)\n\nCall log:\n\u001b[2m  - waiting for locator('.play-city').filter({ hasText: '走秦南' })\u001b[22m\n\n\n  25 |  await page.screenshot({path:info.outputPath('v11-succession-news.png')});\n  26 |  const candidates=w.provinces.filter(p=>p.controller===w.nations[0].id&&!w.nations.some(n=>w.cities.find(c=>c.id===n.capitalId)?.provinceId===p.id));expect(candidates.length).toBeGreaterThanOrEqual(2);\n> 27 |  for(const [index,button]of [[0,'预览宣布独立'],[1,'预览地方起义']] as const){const p=candidates[index],city=w.cities.find(c=>c.provinceId===p.id)!;await page.locator('.play-city').filter({hasText:city.name}).click();await page.getByRole('button',{name:button,exact:true}).click();await confirm(page);}\n     |                                                                                                                                                                                                      ^\n  28 |  const final=await save(page);expect(final.run.world.nations).toHaveLength(4);expect(final.run.chronicle.entries.map(e=>e.kind)).toEqual(['accession','accession','independence','uprising']);expect(final.run.chronicle.entries.slice(2).map(e=>e.place!.id)).toEqual(candidates.slice(0,2).map(p=>p.id));\n  29 |  await news.click();await expect(page.getByRole('region',{name:'本局史书'})).toContainText('爆发起义');await page.getByRole('region',{name:'本局史书'}).locator('[data-history-id=\"4\"]').getByRole('button',{name:'定位事发地 ↗',exact:true}).click();await expect(page.locator('.play-notice')).toContainText(candidates[1].name);await page.screenshot({path:info.outputPath('v11-chronicle-places.png')});\n  30 |  await load(page);const restored=await save(page);expect(restored.run).toEqual(final.run);expect(restored.checksum).toBe(final.checksum);await expect(news).toContainText('爆发起义');\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-chronicle.spec.ts:27:198"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:44:58.482Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-chronicle-FMS-v18-smal-cbeb0-chronicle-and-exact-restore-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-chronicle-FMS-v18-smal-cbeb0-chronicle-and-exact-restore-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-chronicle-FMS-v18-smal-cbeb0-chronicle-and-exact-restore-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-chronicle.spec.ts",
+                    "column": 198,
+                    "line": 27
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-0fb0a41e7538e0d8e070",
+          "file": "fms-chronicle.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: every fragmented territory label and no extinct capital marker in the rendered map",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 31556,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:45:23.132Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fragmentation-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBmcmFnbWVudGVkL2xhbmRsZXNzIGNvbnRyb2wgZml4dHVyZSwgcmVhbCBwcm9kdWN0aW9uIGxvYWRlci9yZW5kZXJlci4gQ29tYmF0IGNhdXNhdGlvbiBzZXBhcmF0ZWx5IHVuaXQtdGVzdGVkOyBub3QgbmF0aXZlIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJsYWJlbHMiOlt7Im5hdGlvbklkIjoibi0wIiwiY29tcG9uZW50SWQiOiJwLTAiLCJwcm92aW5jZUlkcyI6WyJwLTAiXSwieCI6NTAxLjI2ODg0NDY4NzcxODc0LCJ5Ijo1MDEuOTM3MTMwMjMxMzU0Mn0seyJuYXRpb25JZCI6Im4tMCIsImNvbXBvbmVudElkIjoicC02IiwicHJvdmluY2VJZHMiOlsicC02Il0sIngiOjQ4MS44MTM3MzA2NjMzNjYzNiwieSI6NTE2LjAyMDMzOTY0ODA3MTZ9LHsibmF0aW9uSWQiOiJuLTAiLCJjb21wb25lbnRJZCI6InAtNyIsInByb3ZpbmNlSWRzIjpbInAtNyJdLCJ4Ijo0NjMuMDY3OTA0OTM0MDc2LCJ5Ijo1MjIuNTg5Mjk5NDU3MDU4MX0seyJuYXRpb25JZCI6Im4tMSIsImNvbXBvbmVudElkIjoicC0xIiwicHJvdmluY2VJZHMiOlsicC0xIiwicC0xMCIsInAtMTAwIiwicC0xMDEiLCJwLTEwMiIsInAtMTAzIiwicC0xMDQiLCJwLTEwNSIsInAtMTA2IiwicC0xMDciLCJwLTEwOCIsInAtMTA5IiwicC0xMSIsInAtMTEwIiwicC0xMTEiLCJwLTExMiIsInAtMTEzIiwicC0xMTQiLCJwLTExNSIsInAtMTE2IiwicC0xMTciLCJwLTExOCIsInAtMTE5IiwicC0xMiIsInAtMTIwIiwicC0xMjEiLCJwLTEyMiIsInAtMTIzIiwicC0xMjQiLCJwLTEyNSIsInAtMTI2IiwicC0xMjciLCJwLTEyOCIsInAtMTI5IiwicC0xMyIsInAtMTMwIiwicC0xMzEiLCJwLTEzMiIsInAtMTMzIiwicC0xMzQiLCJwLTEzNSIsInAtMTM2IiwicC0xMzciLCJwLTEzOCIsInAtMTM5IiwicC0xNCIsInAtMTQwIiwicC0xNDEiLCJwLTE0MiIsInAtMTQzIiwicC0xNDQiLCJwLTE0NSIsInAtMTQ2IiwicC0xNDciLCJwLTE0OCIsInAtMTQ5IiwicC0xNSIsInAtMTUwIiwicC0xNTEiLCJwLTE1MiIsInAtMTUzIiwicC0xNTQiLCJwLTE1NSIsInAtMTU2IiwicC0xNTciLCJwLTE1OCIsInAtMTU5IiwicC0xNiIsInAtMTYwIiwicC0xNjEiLCJwLTE2MiIsInAtMTYzIiwicC0xNjQiLCJwLTE2NSIsInAtMTY2IiwicC0xNjciLCJwLTE2OCIsInAtMTY5IiwicC0xNyIsInAtMTcwIiwicC0xNzEiLCJwLTE3MiIsInAtMTczIiwicC0xNzQiLCJwLTE3NSIsInAtMTc2IiwicC0xNzciLCJwLTE3OCIsInAtMTc5IiwicC0xOCIsInAtMTgwIiwicC0xODEiLCJwLTE4MiIsInAtMTgzIiwicC0xODQiLCJwLTE4NSIsInAtMTg2IiwicC0xODciLCJwLTE4OCIsInAtMTg5IiwicC0xOSIsInAtMTkwIiwicC0xOTEiLCJwLTE5MiIsInAtMTkzIiwicC0xOTQiLCJwLTE5NSIsInAtMTk2IiwicC0xOTciLCJwLTE5OCIsInAtMTk5IiwicC0yIiwicC0yMCIsInAtMjAwIiwicC0yMDEiLCJwLTIwMiIsInAtMjAzIiwicC0yMDQiLCJwLTIwNSIsInAtMjA2IiwicC0yMDciLCJwLTIwOCIsInAtMjA5IiwicC0yMSIsInAtMjEwIiwicC0yMTEiLCJwLTIxMiIsInAtMjEzIiwicC0yMTQiLCJwLTIxNSIsInAtMjE2IiwicC0yMTciLCJwLTIxOCIsInAtMjE5IiwicC0yMiIsInAtMjIwIiwicC0yMjEiLCJwLTIyMiIsInAtMjIzIiwicC0yMjQiLCJwLTIyNSIsInAtMjI2IiwicC0yMjciLCJwLTIyOCIsInAtMjI5IiwicC0yMyIsInAtMjMwIiwicC0yMzEiLCJwLTIzMiIsInAtMjMzIiwicC0yMzQiLCJwLTIzNSIsInAtMjM2IiwicC0yMzciLCJwLTIzOCIsInAtMjM5IiwicC0yNCIsInAtMjQwIiwicC0yNDEiLCJwLTI0MiIsInAtMjQzIiwicC0yNDQiLCJwLTI0NSIsInAtMjQ2IiwicC0yNDciLCJwLTI0OCIsInAtMjQ5IiwicC0yNSIsInAtMjUwIiwicC0yNTEiLCJwLTI1MiIsInAtMjUzIiwicC0yNTQiLCJwLTI1NSIsInAtMjU2IiwicC0yNTciLCJwLTI1OCIsInAtMjU5IiwicC0yNiIsInAtMjYwIiwicC0yNjEiLCJwLTI2MiIsInAtMjYzIiwicC0yNjQiLCJwLTI2NSIsInAtMjY2IiwicC0yNjciLCJwLTI2OCIsInAtMjY5IiwicC0yNyIsInAtMjcwIiwicC0yNzEiLCJwLTI3MiIsInAtMjczIiwicC0yNzQiLCJwLTI3NSIsInAtMjc2IiwicC0yNzciLCJwLTI3OCIsInAtMjc5IiwicC0yOCIsInAtMjgwIiwicC0yODEiLCJwLTI4MiIsInAtMjgzIiwicC0yODQiLCJwLTI4NSIsInAtMjg2IiwicC0yODciLCJwLTI4OCIsInAtMjg5IiwicC0yOSIsInAtMjkwIiwicC0yOTEiLCJwLTI5MiIsInAtMjkzIiwicC0yOTQiLCJwLTI5NSIsInAtMjk2IiwicC0yOTciLCJwLTI5OCIsInAtMjk5IiwicC0zIiwicC0zMCIsInAtMzAwIiwicC0zMDEiLCJwLTMwMiIsInAtMzAzIiwicC0zMDQiLCJwLTMwNSIsInAtMzA2IiwicC0zMDciLCJwLTMwOCIsInAtMzA5IiwicC0zMSIsInAtMzEwIiwicC0zMTEiLCJwLTMxMiIsInAtMzEzIiwicC0zMTQiLCJwLTMxNSIsInAtMzE2IiwicC0zMTciLCJwLTMxOCIsInAtMzE5IiwicC0zMiIsInAtMzIwIiwicC0zMjEiLCJwLTMyMiIsInAtMzIzIiwicC0zMjQiLCJwLTMyNSIsInAtMzI2IiwicC0zMjciLCJwLTMyOCIsInAtMzI5IiwicC0zMyIsInAtMzMwIiwicC0zMzEiLCJwLTMzMiIsInAtMzMzIiwicC0zMzQiLCJwLTMzNSIsInAtMzM2IiwicC0zMzciLCJwLTMzOCIsInAtMzM5IiwicC0zNCIsInAtMzQwIiwicC0zNDEiLCJwLTM0MiIsInAtMzQzIiwicC0zNDQiLCJwLTM0NSIsInAtMzQ2IiwicC0zNDciLCJwLTM0OCIsInAtMzQ5IiwicC0zNSIsInAtMzUwIiwicC0zNTEiLCJwLTM1MiIsInAtMzUzIiwicC0zNTQiLCJwLTM1NSIsInAtMzU2IiwicC0zNTciLCJwLTM1OCIsInAtMzU5IiwicC0zNiIsInAtMzYwIiwicC0zNjEiLCJwLTM2MiIsInAtMzYzIiwicC0zNjQiLCJwLTM2NSIsInAtMzY2IiwicC0zNjciLCJwLTM2OCIsInAtMzY5IiwicC0zNyIsInAtMzcwIiwicC0zNzEiLCJwLTM3MiIsInAtMzczIiwicC0zNzQiLCJwLTM3NSIsInAtMzc2IiwicC0zNzciLCJwLTM3OCIsInAtMzc5IiwicC0zOCIsInAtMzgwIiwicC0zODEiLCJwLTM4MiIsInAtMzgzIiwicC0zODQiLCJwLTM4NSIsInAtMzg2IiwicC0zODciLCJwLTM4OCIsInAtMzg5IiwicC0zOSIsInAtMzkwIiwicC0zOTEiLCJwLTM5MiIsInAtMzkzIiwicC0zOTQiLCJwLTM5NSIsInAtMzk2IiwicC0zOTciLCJwLTM5OCIsInAtMzk5IiwicC00IiwicC00MCIsInAtNDAwIiwicC00MDEiLCJwLTQwMiIsInAtNDAzIiwicC00MDQiLCJwLTQwNSIsInAtNDA2IiwicC00MDciLCJwLTQwOCIsInAtNDA5IiwicC00MSIsInAtNDEwIiwicC00MTEiLCJwLTQxMiIsInAtNDEzIiwicC00MTQiLCJwLTQxNSIsInAtNDE2IiwicC00MTciLCJwLTQxOCIsInAtNDE5IiwicC00MiIsInAtNDIwIiwicC00MjEiLCJwLTQyMiIsInAtNDIzIiwicC00MjQiLCJwLTQyNSIsInAtNDI2IiwicC00MjciLCJwLTQyOCIsInAtNDI5IiwicC00MyIsInAtNDMwIiwicC00MzEiLCJwLTQzMiIsInAtNDMzIiwicC00MzQiLCJwLTQzNSIsInAtNDM2IiwicC00MzciLCJwLTQzOCIsInAtNDM5IiwicC00NCIsInAtNDQwIiwicC00NDEiLCJwLTQ0MiIsInAtNDQzIiwicC00NDQiLCJwLTQ0NSIsInAtNDQ2IiwicC00NDciLCJwLTQ0OCIsInAtNDQ5IiwicC00NSIsInAtNDUwIiwicC00NTEiLCJwLTQ1MiIsInAtNDUzIiwicC00NTQiLCJwLTQ1NSIsInAtNDU2IiwicC00NTciLCJwLTQ1OCIsInAtNDU5IiwicC00NiIsInAtNDYwIiwicC00NjEiLCJwLTQ2MiIsInAtNDYzIiwicC00NjQiLCJwLTQ2NSIsInAtNDY2IiwicC00NjciLCJwLTQ2OCIsInAtNDY5IiwicC00NyIsInAtNDcwIiwicC00NzEiLCJwLTQ3MiIsInAtNDczIiwicC00NzQiLCJwLTQ3NSIsInAtNDc2IiwicC00NzciLCJwLTQ3OCIsInAtNDc5IiwicC00OCIsInAtNDgwIiwicC00ODEiLCJwLTQ4MiIsInAtNDgzIiwicC00ODQiLCJwLTQ4NSIsInAtNDg2IiwicC00ODciLCJwLTQ4OCIsInAtNDg5IiwicC00OSIsInAtNDkwIiwicC00OTEiLCJwLTQ5MiIsInAtNDkzIiwicC00OTQiLCJwLTQ5NSIsInAtNDk2IiwicC00OTciLCJwLTQ5OCIsInAtNDk5IiwicC01IiwicC01MCIsInAtNTAwIiwicC01MDEiLCJwLTUwMiIsInAtNTAzIiwicC01MDQiLCJwLTUwNSIsInAtNTA2IiwicC01MDciLCJwLTUwOCIsInAtNTA5IiwicC01MSIsInAtNTEwIiwicC01MTEiLCJwLTUxMiIsInAtNTEzIiwicC01MTQiLCJwLTUxNSIsInAtNTE2IiwicC01MTciLCJwLTUxOCIsInAtNTE5IiwicC01MiIsInAtNTIwIiwicC01MjEiLCJwLTUyMiIsInAtNTIzIiwicC01MjQiLCJwLTUyNSIsInAtNTI2IiwicC01MjciLCJwLTUyOCIsInAtNTI5IiwicC01MyIsInAtNTMwIiwicC01MzEiLCJwLTUzMiIsInAtNTMzIiwicC01MzQiLCJwLTUzNSIsInAtNTM2IiwicC01MzciLCJwLTUzOCIsInAtNTM5IiwicC01NCIsInAtNTQwIiwicC01NDEiLCJwLTU0MiIsInAtNTQzIiwicC01NDQiLCJwLTU0NSIsInAtNTQ2IiwicC01NDciLCJwLTU0OCIsInAtNTQ5IiwicC01NSIsInAtNTUwIiwicC01NTEiLCJwLTU1MiIsInAtNTUzIiwicC01NTQiLCJwLTU1NSIsInAtNTU2IiwicC01NTciLCJwLTU1OCIsInAtNTU5IiwicC01NiIsInAtNTYwIiwicC01NjEiLCJwLTU2MiIsInAtNTYzIiwicC01NjQiLCJwLTU2NSIsInAtNTY2IiwicC01NjciLCJwLTU2OCIsInAtNTY5IiwicC01NyIsInAtNTcwIiwicC01NzEiLCJwLTU3MiIsInAtNTczIiwicC01NzQiLCJwLTU3NSIsInAtNTc2IiwicC01NzciLCJwLTU3OCIsInAtNTc5IiwicC01OCIsInAtNTgwIiwicC01ODEiLCJwLTU4MiIsInAtNTgzIiwicC01ODQiLCJwLTU4NSIsInAtNTg2IiwicC01ODciLCJwLTU4OCIsInAtNTg5IiwicC01OSIsInAtNTkwIiwicC01OTEiLCJwLTU5MiIsInAtNTkzIiwicC01OTQiLCJwLTU5NSIsInAtNTk2IiwicC01OTciLCJwLTU5OCIsInAtNTk5IiwicC02MCIsInAtNjAwIiwicC02MDEiLCJwLTYwMiIsInAtNjAzIiwicC02MDQiLCJwLTYwNSIsInAtNjA2IiwicC02MDciLCJwLTYwOCIsInAtNjA5IiwicC02MSIsInAtNjEwIiwicC02MTEiLCJwLTYxMiIsInAtNjEzIiwicC02MTQiLCJwLTYxNSIsInAtNjE2IiwicC02MTciLCJwLTYxOCIsInAtNjE5IiwicC02MiIsInAtNjIwIiwicC02MjEiLCJwLTYyMiIsInAtNjIzIiwicC02MjQiLCJwLTYyNSIsInAtNjI2IiwicC02MjciLCJwLTYyOCIsInAtNjI5IiwicC02MyIsInAtNjMwIiwicC02MzEiLCJwLTYzMiIsInAtNjMzIiwicC02MzQiLCJwLTYzNSIsInAtNjM2IiwicC02MzciLCJwLTYzOCIsInAtNjM5IiwicC02NCIsInAtNjQwIiwicC02NDEiLCJwLTY0MiIsInAtNjQzIiwicC02NDQiLCJwLTY0NSIsInAtNjQ2IiwicC02NDciLCJwLTY0OCIsInAtNjQ5IiwicC02NSIsInAtNjUwIiwicC02NTEiLCJwLTY1MiIsInAtNjUzIiwicC02NTQiLCJwLTY1NSIsInAtNjU2IiwicC02NTciLCJwLTY1OCIsInAtNjU5IiwicC02NiIsInAtNjYwIiwicC02NjEiLCJwLTY2MiIsInAtNjYzIiwicC02NjQiLCJwLTY2NSIsInAtNjY2IiwicC02NjciLCJwLTY2OCIsInAtNjY5IiwicC02NyIsInAtNjcwIiwicC02NzEiLCJwLTY3MiIsInAtNjczIiwicC02NzQiLCJwLTY3NSIsInAtNjc2IiwicC02NzciLCJwLTY3OCIsInAtNjc5IiwicC02OCIsInAtNjgwIiwicC02ODEiLCJwLTY4MiIsInAtNjgzIiwicC02ODQiLCJwLTY4NSIsInAtNjg2IiwicC02ODciLCJwLTY4OCIsInAtNjg5IiwicC02OSIsInAtNjkwIiwicC02OTEiLCJwLTY5MiIsInAtNjkzIiwicC02OTQiLCJwLTY5NSIsInAtNjk2IiwicC02OTciLCJwLTY5OCIsInAtNjk5IiwicC03MCIsInAtNzAwIiwicC03MDEiLCJwLTcwMiIsInAtNzAzIiwicC03MDQiLCJwLTcwNSIsInAtNzA2IiwicC03MDciLCJwLTcwOCIsInAtNzA5IiwicC03MSIsInAtNzEwIiwicC03MTEiLCJwLTcxMiIsInAtNzEzIiwicC03MTQiLCJwLTcxNSIsInAtNzE2IiwicC03MTciLCJwLTcxOCIsInAtNzE5IiwicC03MiIsInAtNzIwIiwicC03MjEiLCJwLTcyMiIsInAtNzIzIiwicC03MjQiLCJwLTcyNSIsInAtNzI2IiwicC03MjciLCJwLTcyOCIsInAtNzI5IiwicC03MyIsInAtNzQiLCJwLTc1IiwicC03NiIsInAtNzciLCJwLTc4IiwicC03OSIsInAtOCIsInAtODAiLCJwLTgxIiwicC04MiIsInAtODMiLCJwLTg0IiwicC04NSIsInAtODYiLCJwLTg3IiwicC04OCIsInAtODkiLCJwLTkiLCJwLTkwIiwicC05MSIsInAtOTIiLCJwLTkzIiwicC05NCIsInAtOTUiLCJwLTk2IiwicC05NyIsInAtOTgiLCJwLTk5Il0sIngiOjc1OS4zNDU5NjgyMTY0NDQ2LCJ5Ijo0ODguNzkzODA1OTY2Njk1Nn1dLCJoZWxkIjpbInAtMCIsInAtNiIsInAtNyJdLCJjaXR5Q291bnQiOjczMCwiZXJyb3JzIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "332701a0f69922ec299d-f9f7d8064de14fe01da5",
+          "file": "fms-chronicle.spec.ts",
+          "line": 35,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-court16.spec.ts",
+      "file": "fms-court16.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: persistent traits, appointment confirmation, succession and deep refresh in the real Worker",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 48006,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:45:54.809Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "court-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlJlYWwgZHJhd24gbWFwLCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgSW5kZXhlZERCOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSBwYXJpdHkuIiwiZW5naW5lIjoiYWQ2MWJiMzVmMmViNmRmOTQ4MGFlNzFmNmEwM2MxNjlkYWI3ZjQyZDIwMGU1MzRiNGI4ZTkyNDE1MzRhMjkxNCIsImNoZWNrc3VtIjoiNTA4MDM4YjkzODM0ODc5YjIzYzM4OTRlYjhjMWJmM2RjNmMzOWZhMTAzYmU3MWVhYzgwZWRjYTdmNDg3YzM3MyIsIm9sZFBlcnNvbiI6eyJpZCI6MSwic3RhdGVJZCI6MSwibmF0aW9uSWQiOiJuLTAiLCJydWxlcklkIjoicnVsZXItbi0wLTEiLCJuYW1lIjoi6JW+5aWl5aauIOmfpuS8ryIsImZhbWlseSI6IumfpuS8ryIsImFsaXZlIjp0cnVlLCJyZWNvcmRlZERheSI6MCwiYmFzZSI6eyJjaGFyaXNtYSI6NzYuMTE1NzIyNjU2MjUsIm1pbGl0YXJ5Ijo1Ny45MTY2NTY0OTQxNDA2MjUsImRpcGxvbWF0aWMiOjI2LjY1MTc5NjM0MDk0MjM4MywiYWRtaW5pc3RyYXRpdmUiOjI0Ljc2MDY1NjM1NjgxMTUyM30sInRyYWl0cyI6WyJEaXBsb21hdGljIiwiQWRtaW5pc3RyYXRvciIsIlBhcmFub2lkIl19LCJuZXdMZWFkZXJJZCI6Mywib2ZmaWNlIjp7ImFzc2lnbm1lbnRzIjpbeyJvZmZpY2VJZCI6IlN0ZXdhcmQiLCJzY29wZUtpbmQiOjAsInNjb3BlSWQiOjEsIndhclN5c3RlbUtpbmQiOjAsImhvbGRlckNoYXJhY3RlcklkIjoxfV0sIm5vcm1hbGl6ZWQiOnRydWUsInJldmlzaW9uIjoxfSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8031c914891a64696ac-935042dd017c938b51d2",
+          "file": "fms-court16.spec.ts",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: fiscal month and reorganization commit in real Worker with exact deep-refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46742,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:46:42.830Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fiscal-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkRyYXduIG1hcDsgaXNvbGF0ZWQgZGF5MjkvbmVhci1jb21wbGV0aW9uIGZpeHR1cmUsIGFjdHVhbCBwcm9kdWN0aW9uIGluY3JlbWVudGFsIFdvcmtlciBtb250aCtmZWU7IENocm9taXVtIGVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGlQaG9uZSBvciBuYXRpdmUgdmlzdWFsIHBhcml0eS4iLCJiZWZvcmUiOnsiZ29sZCI6MTM1NTksImdvbGRQZXJNb250aCI6MTM1NTksImFybXlDb3N0R29sZCI6MCwiZ29sZEJhdHRsZU1vZGlmaWVyIjoxLjE4OTY0OTkzOTUzNzA0ODMsImluaXRpYWxpemVkRGF5IjowLCJsYXN0TW9udGgiOjAsImxlZGdlciI6eyJnb2xkIjoxMzU1OSwiZ29sZFBlck1vbnRoIjoxMzU1OSwiYXJteUNvc3RHb2xkIjowLCJnb2xkQmF0dGxlTW9kaWZpZXIiOjEuMTg5NjQ5OTM5NTM3MDQ4MywiYmFzZUluY29tZSI6MTM1NTksImludmVudG9yeUZhY3RvciI6MSwiZ29sZEJlZm9yZUFybXlDb3N0IjoxMzU1OSwiZGF5IjowLCJvcGVuaW5nR29sZCI6MCwicmVvcmdhbml6YXRpb25Db3N0IjowLCJkaXN0YW5jZVN1c3BlbmRlZCI6ZmFsc2V9fSwiYWZ0ZXIiOnsiZ29sZCI6MzMwNzAsImdvbGRQZXJNb250aCI6MTk1NzEsImFybXlDb3N0R29sZCI6MCwiZ29sZEJhdHRsZU1vZGlmaWVyIjoxLjE4OTY0OTkzOTUzNzA0ODMsImluaXRpYWxpemVkRGF5IjowLCJsYXN0TW9udGgiOjEsImxlZGdlciI6eyJnb2xkIjozMzA3MCwiZ29sZFBlck1vbnRoIjoxOTU3MSwiYXJteUNvc3RHb2xkIjowLCJnb2xkQmF0dGxlTW9kaWZpZXIiOjEuMTg5NjQ5OTM5NTM3MDQ4MywiYmFzZUluY29tZSI6MTk1NzEsImludmVudG9yeUZhY3RvciI6MSwiZ29sZEJlZm9yZUFybXlDb3N0IjozMzA3MCwiZGF5IjozMCwib3BlbmluZ0dvbGQiOjEzNDk5LCJyZW9yZ2FuaXphdGlvbkNvc3QiOjAsImRpc3RhbmNlU3VzcGVuZGVkIjpmYWxzZX19LCJjb21wbGV0ZWQiOjEsImNoZWNrc3VtIjoiZWM2ZTRjM2QxZGFjYmVkMmYwMzU2YTI2MmI5ZDY3MzhjYjAzYmM1ZjRiMDM1ZGIxNTEwZmRmYzIzZTM2ZGNkMyIsImVuZ2luZSI6ImFkNjFiYjM1ZjJlYjZkZjk0ODBhZTcxZjZhMDNjMTY5ZGFiN2Y0MmQyMDBlNTM0YjRiOGU5MjQxNTM0YTI5MTQiLCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8031c914891a64696ac-7afd282cd60bb6ec30a0",
+          "file": "fms-court16.spec.ts",
+          "line": 22,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-entry.spec.ts",
+      "file": "fms-entry.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: terrain confirmation stays clickable before saving and entering a new world",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13275,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:47:29.603Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fms-entry-resources",
+                      "contentType": "application/json",
+                      "body": "eyJ3b3JrZXJzIjpbImh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvdGVycmFpbi53b3JrZXItRGFZN1JWUHouanMiLCJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL3BsYXkud29ya2VyLUJwaVdWZ3lILmpzIiwiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9iaW9tZS53b3JrZXItRE8yczdIb1YuanMiXSwicmVzb3VyY2VzIjpbeyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL3JvbGxkb3duLXJ1bnRpbWUtaGVQVzgwVkwuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9pbmRleC15akhQZzF5Yy5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2dldFRleHR1cmVCYXRjaEJpbmRHcm91cC1DbERrTWRUMy5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL0Ztc0FwcC1ER1hhQ1RiSC5jc3MiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvY3NzIn0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2NhbnZhc1V0aWxzLUJWR3dCQkJuLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvUmVuZGVyVGFyZ2V0U3lzdGVtLWE0Ujk2Y055LmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvR2VvbWV0cnktSXBIeENWVGMuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9CdWZmZXJSZXNvdXJjZS1CazhaU0x6dC5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2NhbWVyYS1CR1h3c1VIOC5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2dldFBvMlRleHR1cmVGcm9tU291cmNlLUJ6UjJqZngzLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvVGV4dC1CUHhUc2gxOS5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2RlbGF1bmF5LUJDU3JnaExBLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvaW5pdC1EM195dGpnWi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL0Ztc0FwcC03QzhhXzhicS5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2luaXQtQjhKbmVzOGcuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9icm93c2VyQWxsLUQtNzFRNEtDLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvdGVycmFpbi53b3JrZXItRGFZN1JWUHouanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9yb2xsZG93bi1ydW50aW1lLWhlUFc4MFZMLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvaW5kZXgteWpIUGcxeWMuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9jYW52YXNVdGlscy1CVkd3QkJCbi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2dldFRleHR1cmVCYXRjaEJpbmRHcm91cC1DbERrTWRUMy5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL0dlb21ldHJ5LUlwSHhDVlRjLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvRm1zQXBwLURHWGFDVGJILmNzcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9jc3MifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvUmVuZGVyVGFyZ2V0U3lzdGVtLWE0Ujk2Y055LmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvQnVmZmVyUmVzb3VyY2UtQms4WlNMenQuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9nZXRQbzJUZXh0dXJlRnJvbVNvdXJjZS1CelIyamZ4My5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2NhbWVyYS1CR1h3c1VIOC5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL1RleHQtQlB4VHNoMTkuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9pbml0LUQzX3l0amdaLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvZGVsYXVuYXktQkNTcmdoTEEuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9GbXNBcHAtN0M4YV84YnEuanMiLCJzdGF0dXMiOjIwMCwibWltZSI6InRleHQvamF2YXNjcmlwdCJ9LHsidXJsIjoiaHR0cDovLzEyNy4wLjAuMTo1MTg5L2Fzc2V0cy9pbml0LUI4Sm5lczhnLmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvYnJvd3NlckFsbC1ELTcxUTRLQy5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL3BsYXkud29ya2VyLUJwaVdWZ3lILmpzIiwic3RhdHVzIjoyMDAsIm1pbWUiOiJ0ZXh0L2phdmFzY3JpcHQifSx7InVybCI6Imh0dHA6Ly8xMjcuMC4wLjE6NTE4OS9hc3NldHMvYmF0dGxlLXN3b3JkLUJYY0RFRmNqLnBuZyIsInN0YXR1cyI6MjAwLCJtaW1lIjoiaW1hZ2UvcG5nIn0seyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjUxODkvYXNzZXRzL2Jpb21lLndvcmtlci1ETzJzN0hvVi5qcyIsInN0YXR1cyI6MjAwLCJtaW1lIjoidGV4dC9qYXZhc2NyaXB0In1dLCJlcnJvcnMiOltdLCJmYWlsZWQiOltdLCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgcGh5c2ljYWwgZGV2aWNlIGFuZCBvcmlnaW5hbCB2aXN1YWwgYWNjZXB0YW5jZSBwZW5kaW5nIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "15ba0f4b258877adbfdd-133b5372adf794c8f4aa",
+          "file": "fms-entry.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-inspection.spec.ts",
+      "file": "fms-inspection.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: real province biome, moving army readiness and terrain context survive Worker save and deep refresh",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 40560,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:47:42.907Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "terrain13-play",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkFjdHVhbCBkcmF3biBtYXAsIHByb2R1Y3Rpb24gV29ya2VyIGFuZCBJbmRleGVkREI7IGJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lL25hdGl2ZSB2aXN1YWwgYWNjZXB0YW5jZS4iLCJ2ZXJzaW9uIjoxOCwiZW5naW5lIjoiYWQ2MWJiMzVmMmViNmRmOTQ4MGFlNzFmNmEwM2MxNjlkYWI3ZjQyZDIwMGU1MzRiNGI4ZTkyNDE1MzRhMjkxNCIsInByb3ZpbmNlcyI6NzMwLCJhcm15SWQiOiJmb3JjZS0xIiwicG9zaXRpb24iOnsiaWQiOiJmb3JjZS0xIiwibmFtZSI6IuW4g+agueeJueatpeWFtSIsIm5hdGlvbklkIjoibi0wIiwicHJvdmluY2VJZCI6InAtMCIsIm9yaWdpbklkIjoicC0wIiwidHJvb3BzIjoyNTAwLCJtb3JhbGUiOjgwLCJzdXBwbGllcyI6OTQsInN0YXR1cyI6Im1hcmNoaW5nIiwicm91dGUiOlsicC0xIl0sInByb2dyZXNzIjowLjQ5OTk5OTk5OTk5OTk5OTQ0fSwiY29udGV4dCI6eyJiaW9tZXMiOlswLDAsMCwxLDAsMCwwLDAsMCwwLDAsMCwwXSwiYXZlcmFnZSI6NDUsImRldmlhdGlvbiI6MCwiaGlnaCI6MCwidmVyeUhpZ2giOjAsIm1vdW50YWluIjpmYWxzZSwicGxhdGVhdSI6ZmFsc2UsInNhbXBsZXMiOjQ4LCJhcmVhIjo5MDkuMDM5ODU4OTQ1NjI0N30sImNoZWNrc3VtIjoiYzg3NjRhZjA5OGFiNTFiMjJhYzkyMzRhZTQwNjM4MGJjZjRlY2E4Yjk5MmMyMzdmMjkzNGI3MTRmMjQyZGM0ZCIsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-0069f5e14561de6469f9",
+          "file": "fms-inspection.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "FMS inspection: real succession history search, nation filters, direct news and exact restoration",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 53790,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:48:23.475Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "inspection-history",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkRyYXduIHRlcnJhaW4gYW5kIHJlYWwgV29ya2VyIHN1Y2Nlc3Npb24sIHJlYWQtb25seSBzZWFyY2gvc2VsZWN0LCBleGFjdCBzYXZlL3Jlc3RvcmUgaW4gaXNvbGF0ZWQgQ2hyb21pdW0uIE5vdCBwaHlzaWNhbCBpUGhvbmUuIiwidmVyc2lvbiI6MTgsImVudHJpZXMiOlt7ImlkIjoxLCJkYXkiOjAsInRpY2siOjAsImtpbmQiOiJhY2Nlc3Npb24iLCJ0ZXh0Ijoi6Im+6KW/5bC85Lqa5Lyg5L2N77ya5pmv5piO5LiA5LiW77yI5qC86Zu354m55bCUIOWFi+mHjOagvO+8iee7p+S9je+8jOS4uuWbveWutuesrDLku7vlkJvkuLsiLCJyZWFzb24iOiLkuIrluJ3lubLpooTlronmjpLkvKDkvY3vvJvliY3lkI7lkJvkuLvouqvku73jgIHnjovlj7fkuJbmlbDkuI7lm73lrrbku7vmrKHlkIzml7bkv53lrZjjgIIiLCJuYXRpb25JZHMiOlsibi0wIl0sInBsYWNlIjp7ImlkIjoicC01MDYiLCJuYW1lIjoi5paw5rGJ5aeGIiwieCI6ODQyLjIxMzg5NTU4NTgwMTksInkiOjMwNy40MTcxOTQwNDg1NjM2fSwicGVvcGxlIjpbeyJpZCI6InJ1bGVyLW4tMC0xIiwibmFtZSI6Iue9l+eRn+eQs+W+tyDlhYvph4zmoLwiLCJvcmRlciI6MSwicmVnbmFsTmFtZSI6Iue9l+eRn+eQs+W+tyIsInJlZ25hbE9yZGluYWwiOjF9LHsiaWQiOiJydWxlci1uLTAtMiIsIm5hbWUiOiLmoLzpm7fnibnlsJQg5YWL6YeM5qC8Iiwib3JkZXIiOjIsInJlZ25hbE5hbWUiOiLmma/mmI4iLCJyZWduYWxPcmRpbmFsIjoxfV0sInNvdXJjZUV2ZW50SWQiOjZ9LHsiaWQiOjIsImRheSI6MCwidGljayI6MCwia2luZCI6ImFjY2Vzc2lvbiIsInRleHQiOiLoib7opb/lsLzkuprkvKDkvY3vvJrmma/mmI7kuozkuJbvvIjlhYvokKjpn6blsJQg5YWL6YeM5qC877yJ57un5L2N77yM5Li65Zu95a6256ysM+S7u+WQm+S4uyIsInJlYXNvbiI6IuS4iuW4neW5sumihOWuieaOkuS8oOS9je+8m+WJjeWQjuWQm+S4u+i6q+S7veOAgeeOi+WPt+S4luaVsOS4juWbveWutuS7u+asoeWQjOaXtuS/neWtmOOAgiIsIm5hdGlvbklkcyI6WyJuLTAiXSwicGxhY2UiOnsiaWQiOiJwLTUwNiIsIm5hbWUiOiLmlrDmsYnlp4YiLCJ4Ijo4NDIuMjEzODk1NTg1ODAxOSwieSI6MzA3LjQxNzE5NDA0ODU2MzZ9LCJwZW9wbGUiOlt7ImlkIjoicnVsZXItbi0wLTIiLCJuYW1lIjoi5qC86Zu354m55bCUIOWFi+mHjOagvCIsIm9yZGVyIjoyLCJyZWduYWxOYW1lIjoi5pmv5piOIiwicmVnbmFsT3JkaW5hbCI6MX0seyJpZCI6InJ1bGVyLW4tMC0zIiwibmFtZSI6IuWFi+iQqOmfpuWwlCDlhYvph4zmoLwiLCJvcmRlciI6MywicmVnbmFsTmFtZSI6IuaZr+aYjiIsInJlZ25hbE9yZGluYWwiOjJ9XSwic291cmNlRXZlbnRJZCI6N31dLCJjaGVja3N1bSI6IjQwNWFkNmI3YjJlNzE5OGUwOTdjMjE5OTRlODhhZjc3YWZkZWY4NTkzODA0NjYyNjMyZmQ2OTc1OWJlYjI3NjIiLCJlcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-72bbeaf0c553043aa151",
+          "file": "fms-inspection.spec.ts",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "title": "FMS inspection: full resistance, real pulse, per-army food, cancel/confirm withdrawal and restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 130000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 57915,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:49:17.275Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "inspection-war",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBpbml0aWFsIHR3by1mb3JjZSBiYXR0bGVmaWVsZCBvbiByZWFsIGRyYXduIHRlcnJhaW47IHJlYWwgcHJvZHVjdGlvbiBXb3JrZXIgY29udGFjdCwgZnVsbCByZXNpc3RhbmNlLCBjb21tYW5kIHByZXZpZXcvY2FuY2VsL3dpdGhkcmF3IGFuZCBleGFjdCBwZXJzaXN0ZW5jZS4iLCJ2ZXJzaW9uIjoxOCwicHJvdmluY2UiOiJwLTQwIiwiY29udGFjdFRpY2siOjEsInJlc2lzdGFuY2UiOlt7InByb3ZpbmNlSWQiOiJwLTQwIiwiY29udHJvbGxlciI6Im4tMCIsImF0dGFja2VyIjoibi0xIiwibWF4aW11bSI6NTY5LjA3NTE0MzI0NTE1NjMsInJlc2lzdGFuY2UiOjU2OS4wNzUxNDMyNDUxNTYzLCJzdGFydGVkIjoxLCJwdWxzZSI6MX1dLCJyb3VuZHMiOnsiZm9yY2UtMzExIjoyMSwiZm9yY2UtMSI6MjF9LCJjaGVja3N1bSI6ImM2NDBmYzEwMjQyNmJmZGEwYTZmNzkxYzQ0ZTgwODdjYmZlZTg1ZWU4MDk2MDhhNGMzYTRiYzk3OGU2ODhmYTAiLCJlcnJvcnMiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b0a0767096559277fc6d-c8cd98aba429ed7003a5",
+          "file": "fms-inspection.spec.ts",
+          "line": 46,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-locality.spec.ts",
+      "file": "fms-locality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS locality: a selected small city remains readable and its displaced label selects the same real place",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 19301,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"c-\u001b[7m0\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"c-\u001b[7m457\u001b[27m\"\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"c-\u001b[7m0\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"c-\u001b[7m457\u001b[27m\"\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-locality.spec.ts:18:57",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-locality.spec.ts",
+                      "column": 57,
+                      "line": 18
+                    },
+                    "snippet": "  16 |   const initial=await create(page),w=initial.run.world,n=w.nations[0],city=w.cities.find(c=>c.id!==n.capitalId&&w.provinces.find(p=>p.id===c.provinceId)?.controller===n.id)!;\n  17 |   await openPolitics(page);await page.getByLabel('查看国家',{exact:true}).selectOption(n.id);await page.locator('.play-city').filter({hasText:city.name}).last().click();\n> 18 |   await expect.poll(async()=>(await callout(page))?.id).toBe(city.id);const small=await callout(page);expect(small!.name).toBe(city.name);\n     |                                                         ^\n  19 |   const canvas=page.getByTestId('fms-play-canvas');await expect(canvas).toHaveAttribute('data-selected-province',city.provinceId);\n  20 |   const panel=(await page.locator('.play-panel').boundingBox())!,c=small!;\n  21 |   expect(c.x+c.width/2<=panel.x||c.y+c.height/2<=panel.y||c.x-c.width/2>=panel.x+panel.width).toBe(true);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-locality.spec.ts",
+                        "column": 57,
+                        "line": 18
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"c-\u001b[7m0\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"c-\u001b[7m457\u001b[27m\"\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  16 |   const initial=await create(page),w=initial.run.world,n=w.nations[0],city=w.cities.find(c=>c.id!==n.capitalId&&w.provinces.find(p=>p.id===c.provinceId)?.controller===n.id)!;\n  17 |   await openPolitics(page);await page.getByLabel('查看国家',{exact:true}).selectOption(n.id);await page.locator('.play-city').filter({hasText:city.name}).last().click();\n> 18 |   await expect.poll(async()=>(await callout(page))?.id).toBe(city.id);const small=await callout(page);expect(small!.name).toBe(city.name);\n     |                                                         ^\n  19 |   const canvas=page.getByTestId('fms-play-canvas');await expect(canvas).toHaveAttribute('data-selected-province',city.provinceId);\n  20 |   const panel=(await page.locator('.play-panel').boundingBox())!,c=small!;\n  21 |   expect(c.x+c.width/2<=panel.x||c.y+c.height/2<=panel.y||c.x-c.width/2>=panel.x+panel.width).toBe(true);\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-locality.spec.ts:18:57"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:50:15.223Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-locality-FMS-locality--92a85-selects-the-same-real-place-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-locality-FMS-locality--92a85-selects-the-same-real-place-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\naming18-evidence\\regression\\fms-locality-FMS-locality--92a85-selects-the-same-real-place-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-locality.spec.ts",
+                    "column": 57,
+                    "line": 18
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-0291b2258ecf0cec264d",
+          "file": "fms-locality.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "FMS locality: loading and choosing a landless country clears stale locality and military targets without changing the world",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 43527,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:50:35.864Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "landless-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBsYW5kbGVzcyBvd25lcnNoaXAsIHJlYWwgbG9hZGVyL3NlbGVjdGlvbi9zYXZlOyBubyBhY3R1YWwgY29tYmF0IGV4dGluY3Rpb24gY2xhaW1lZCIsImNvdW50cnkiOiJuLTAiLCJ3b3JsZFVuY2hhbmdlZCI6dHJ1ZSwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "25d39c8e3c5f8b96b21b-2816873e5c7ff1def3f1",
+          "file": "fms-locality.spec.ts",
+          "line": 38,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-maritime.spec.ts",
+      "file": "fms-maritime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: draw islands, create countries, command navy and restore the real voyage",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21652,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:51:19.494Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0a875308967098096cde-c202825818c299d25aaf",
+          "file": "fms-maritime.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-tactics.spec.ts",
+      "file": "fms-tactics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 60552,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:51:41.169Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "actual-game-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJydW5JZCI6ImZtcy05ZmNkNmNlNi05YjU2LTQ3ZDgtYTM3OS1hOGZmOGU3MmQ2NjAiLCJ2ZXJzaW9uIjoxOCwiYXJtaWVzQXRTdGFydCI6NDg2LCJyb2FkQmF0dGxlIjp7ImlkIjoiZW5nYWdlbWVudC0xIiwiYSI6InAtNDAiLCJiIjoicC01NiIsInQiOjAuNSwiYXJtaWVzIjpbImZvcmNlLTQ4NyIsImZvcmNlLTQ4OCJdLCJzdGFydGVkIjoxMjAsInB1bHNlIjoxMjAsImNhcnJ5Ijp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfSwibG9zc2VzIjp7ImZvcmNlLTQ4NyI6MCwiZm9yY2UtNDg4IjowfX0sImluaXRpYWxUcm9vcHMiOjEwMDAsImFmdGVyVHJvb3BzIjo2NjgsImVtZXJnZW5jeSI6NSwidGljayI6MjQwLCJjaGVja3N1bSI6IjUwMGY3YjBkN2YwMGRkM2QwYTNiN2I3NWMxYzEyNmE3ZWU0Nzk4M2M5MjI1ZTc0NWVlY2ZjZDViYThlZWZkNDMiLCJyZXN0b3JlZFJldmlzaW9uIjo3LCJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbjsgbm90IHBoeXNpY2FsIGlQaG9uZSBhY2NlcHRhbmNlIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-a596e17380e5fff570c0",
+          "file": "fms-tactics.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "FMS v18: real Worker defeat, home reorganization, fractional save/resume and completion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46969,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:52:41.729Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "reorganization-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IlN5bnRoZXRpYyBzYXZlZCBiYXR0bGVmaWVsZCwgcmVhbCBwcm9kdWN0aW9uIFdvcmtlci9VSSwgQ2hyb21pdW0gZW11bGF0aW9uOyBub3QgcGh5c2ljYWwgaVBob25lIG9yIG5hdGl2ZSB2aXN1YWwgZXF1aXZhbGVuY2UiLCJ2ZXJzaW9uIjoxOCwiYXJteUlkIjoiZm9yY2UtMSIsImhvbWVJZCI6InAtNDAiLCJyZXR1cm5lZFRyb29wcyI6MTAwLCJwYXJ0aWFsVGljayI6MzIsInBhcnRpYWwiOnsic3RhcnRlZFRpY2siOjEsImZyYWN0aW9uIjowLjA4Mzg2MDY4MDY1MTc0Nzl9LCJyZXN0b3JlZENoZWNrc3VtIjoiNjBjZjA3YmFiZWQzNzVmMGI4ZDhkMzZlMzBmZDg3M2UyNzg3NzQ1YTFiNTlkZGIyODUyYjRiYWNhZTY5OTczNSIsImNvbXBsZXRlZCI6MSwiY29uc29sZUVycm9ycyI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b03236b6cfc3e65f3e59-bf07a502b10ef9d65310",
+          "file": "fms-tactics.spec.ts",
+          "line": 28,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-upper14.spec.ts",
+      "file": "fms-upper14.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v18: government draft, cancel, native combat change, dynamic Worker tick and exact restoration",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 130000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 50142,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-06T22:53:28.729Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "upper14-government",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHByb2R1Y3Rpb24gV29ya2VyIGVkaXQvdGljaywgZXhhY3QgSW5kZXhlZERCL2RlZXAtcmVmcmVzaDsgQ2hyb21pdW0gZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lLiIsImVuZ2luZSI6ImFkNjFiYjM1ZjJlYjZkZjk0ODBhZTcxZjZhMDNjMTY5ZGFiN2Y0MmQyMDBlNTM0YjRiOGU5MjQxNTM0YTI5MTQiLCJiZWZvcmUiOnsicG9saXR5IjoiS2luZ2RvbSIsInRyYWl0cyI6W10sImRlc3RpbnkiOjg4LCJjb3JlVGhyZXNob2xkIjoyLCJjb3JlWWVhciI6MCwicHJvdmluY2VPcmRlciI6WyJwLTAiLCJwLTEiLCJwLTIiLCJwLTMiLCJwLTQiLCJwLTUiLCJwLTYiLCJwLTciLCJwLTgiLCJwLTkiLCJwLTEwIiwicC0xMSIsInAtMTIiLCJwLTEzIiwicC0xNCIsInAtMTUiLCJwLTE2IiwicC0xNyIsInAtMTgiLCJwLTE5IiwicC0yMCIsInAtMjEiLCJwLTIyIiwicC0yMyIsInAtMjQiLCJwLTI1IiwicC0yNiIsInAtMjciLCJwLTI4IiwicC0yOSIsInAtMzAiLCJwLTMxIiwicC0zMiIsInAtMzMiLCJwLTM0IiwicC0zNSIsInAtMzYiLCJwLTM3IiwicC0zOCIsInAtMzkiLCJwLTQwIiwicC00MSIsInAtNDIiLCJwLTQzIiwicC00NCIsInAtNDUiLCJwLTQ2IiwicC00NyIsInAtNDgiLCJwLTQ5IiwicC01MCIsInAtNTEiLCJwLTUyIiwicC01MyIsInAtNTQiLCJwLTU1IiwicC01NyIsInAtNTkiLCJwLTYwIiwicC02MSIsInAtNjIiLCJwLTYzIiwicC02NCIsInAtNjUiLCJwLTY2IiwicC02NyIsInAtNjgiLCJwLTY5IiwicC03MCIsInAtNzIiLCJwLTczIiwicC03NCIsInAtNzUiLCJwLTc2IiwicC03NyIsInAtNzgiLCJwLTc5IiwicC04MCIsInAtODEiLCJwLTgyIiwicC04NCIsInAtODUiLCJwLTg2IiwicC04NyIsInAtODkiLCJwLTkwIiwicC05MSIsInAtOTIiLCJwLTkzIiwicC05NSIsInAtOTYiLCJwLTk4IiwicC05OSIsInAtMTAwIiwicC0xMDEiLCJwLTEwNCIsInAtMTA1IiwicC0xMDgiLCJwLTEwOSIsInAtMTEwIiwicC0xMTEiLCJwLTExMiIsInAtMTEzIiwicC0xMTQiLCJwLTExNSIsInAtMTE3IiwicC0xMTgiLCJwLTEyMCIsInAtMTIxIiwicC0xMjIiLCJwLTEyNSIsInAtMTI2IiwicC0xMjciLCJwLTEyOSIsInAtMTMwIiwicC0xMzEiLCJwLTEzMiIsInAtMTM1IiwicC0xMzYiLCJwLTEzNyIsInAtMTM4IiwicC0xMzkiLCJwLTE0MCIsInAtMTQyIiwicC0xNDMiLCJwLTE0NCIsInAtMTQ2IiwicC0xNDciLCJwLTE0OCIsInAtMTQ5IiwicC0xNTEiLCJwLTE1NSIsInAtMTU3IiwicC0xNTgiLCJwLTE1OSIsInAtMTYwIiwicC0xNjEiLCJwLTE2MiIsInAtMTYzIiwicC0xNjQiLCJwLTE2NSIsInAtMTY2IiwicC0xNjciLCJwLTE2OCIsInAtMTcwIiwicC0xNzMiLCJwLTE3NSIsInAtMTc2IiwicC0xNzciLCJwLTE3OCIsInAtMTgyIiwicC0xODQiLCJwLTE4NiIsInAtMTg3IiwicC0xODgiLCJwLTE4OSIsInAtMTkwIiwicC0xOTEiLCJwLTE5MiIsInAtMTk0IiwicC0xOTUiLCJwLTE5NyIsInAtMTk4IiwicC0yMDAiLCJwLTIwMSIsInAtMjAzIiwicC0yMDQiLCJwLTIwNiIsInAtMjA4IiwicC0yMDkiLCJwLTIxMSIsInAtMjEzIiwicC0yMTQiLCJwLTIxNiIsInAtMjE4IiwicC0yMTkiLCJwLTIyMCIsInAtMjIxIiwicC0yMjIiLCJwLTIyMyIsInAtMjI0IiwicC0yMjUiLCJwLTIyNiIsInAtMjI3IiwicC0yMjgiLCJwLTIyOSIsInAtMjMyIiwicC0yMzMiLCJwLTIzNCIsInAtMjM1IiwicC0yMzYiLCJwLTIzOCIsInAtMjM5IiwicC0yNDAiLCJwLTI0MiIsInAtMjQ0IiwicC0yNDUiLCJwLTI0NiIsInAtMjUwIiwicC0yNTEiLCJwLTI1MiIsInAtMjUzIiwicC0yNTQiLCJwLTI1NSIsInAtMjU2IiwicC0yNTciLCJwLTI1OCIsInAtMjU5IiwicC0yNjAiLCJwLTI2MSIsInAtMjYyIiwicC0yNjMiLCJwLTI2NSIsInAtMjY2IiwicC0yNjciLCJwLTI2OSIsInAtMjcxIiwicC0yNzIiLCJwLTI3MyIsInAtMjc4IiwicC0yODAiLCJwLTI4MiIsInAtMjgzIiwicC0yODQiLCJwLTI4NSIsInAtMjg2IiwicC0yODciLCJwLTI4OCIsInAtMjg5IiwicC0yOTAiLCJwLTI5MSIsInAtMjkyIiwicC0yOTMiLCJwLTI5NCIsInAtMjk1IiwicC0yOTciLCJwLTMwMCIsInAtMzAxIiwicC0zMDMiLCJwLTMwNSIsInAtMzA2IiwicC0zMDciLCJwLTMwOCIsInAtMzExIiwicC0zMTIiLCJwLTMxMyIsInAtMzE3IiwicC0zMTgiLCJwLTMyMCIsInAtMzIxIiwicC0zMjMiLCJwLTMyNCIsInAtMzI2IiwicC0zMjciLCJwLTMyOCIsInAtMzI5IiwicC0zMzAiLCJwLTMzMSIsInAtMzMyIiwicC0zMzMiLCJwLTMzNCIsInAtMzM2IiwicC0zNDEiLCJwLTM0MyIsInAtMzQ0IiwicC0zNDYiLCJwLTM0NyIsInAtMzQ4IiwicC0zNDkiLCJwLTM1MSIsInAtMzU0IiwicC0zNTUiLCJwLTM1NyIsInAtMzU4IiwicC0zNTkiLCJwLTM2MSIsInAtMzYyIiwicC0zNjMiLCJwLTM2NyIsInAtMzcwIiwicC0zNzEiLCJwLTM3MiIsInAtMzc0IiwicC0zNzUiLCJwLTM3NyIsInAtMzc5IiwicC0zODAiLCJwLTM4MSIsInAtMzgyIiwicC0zODQiLCJwLTM4NyIsInAtMzg4IiwicC0zOTAiLCJwLTM5MyIsInAtMzk1IiwicC0zOTYiLCJwLTQwMCIsInAtNDAxIiwicC00MDIiLCJwLTQwNCIsInAtNDA1IiwicC00MDYiLCJwLTQxMCIsInAtNDExIiwicC00MTQiLCJwLTQxNSIsInAtNDE3IiwicC00MTgiLCJwLTQxOSIsInAtNDIwIiwicC00MjIiLCJwLTQyNCIsInAtNDI1IiwicC00MjYiLCJwLTQyOCIsInAtNDMxIiwicC00MzIiLCJwLTQzMyIsInAtNDM2IiwicC00MzgiLCJwLTQzOSIsInAtNDQwIiwicC00NDEiLCJwLTQ0MyIsInAtNDQ1IiwicC00NDciLCJwLTQ0OSIsInAtNDUwIiwicC00NTEiLCJwLTQ1NCIsInAtNDU3IiwicC00NTgiLCJwLTQ2MCIsInAtNDYzIiwicC00NjQiLCJwLTQ2NiIsInAtNDY3IiwicC00NjgiLCJwLTQ2OSIsInAtNDcwIiwicC00NzMiLCJwLTQ3NCIsInAtNDgxIiwicC00ODMiLCJwLTQ4NCIsInAtNDg1IiwicC00ODciLCJwLTQ4OCIsInAtNDg5IiwicC00OTAiLCJwLTQ5NCIsInAtNDk1IiwicC01MDAiLCJwLTUwMiIsInAtNTAzIiwicC01MDYiLCJwLTUwNyIsInAtNTA4IiwicC01MTAiLCJwLTUxMSIsInAtNTEyIiwicC01MTciLCJwLTUxOCIsInAtNTE5IiwicC01MjUiLCJwLTUyNiIsInAtNTI3IiwicC01MzEiLCJwLTUzMyIsInAtNTM0IiwicC01MzciLCJwLTU0MSIsInAtNTQyIiwicC01NDUiLCJwLTU0NiIsInAtNTQ3IiwicC01NDgiLCJwLTU0OSIsInAtNTUxIiwicC01NTIiLCJwLTU1NCIsInAtNTU1IiwicC01NTciLCJwLTU1OSIsInAtNTYzIiwicC01NzAiLCJwLTU3MSIsInAtNTczIiwicC01NzQiLCJwLTU3NSIsInAtNTc5IiwicC01ODEiLCJwLTU4MiIsInAtNTgzIiwicC01ODQiLCJwLTU4NyIsInAtNTg4IiwicC01ODkiLCJwLTU5MiIsInAtNTkzIiwicC01OTQiLCJwLTU5NSIsInAtNTk2IiwicC01OTciLCJwLTYwMSIsInAtNjAyIiwicC02MDQiLCJwLTYwOSIsInAtNjEwIiwicC02MTUiLCJwLTYxNiIsInAtNjE3IiwicC02MjIiLCJwLTYyMyIsInAtNjI0IiwicC02MjUiLCJwLTYyNiIsInAtNjI3IiwicC02MzEiLCJwLTYzNSIsInAtNjQwIiwicC02NDEiLCJwLTY0NCIsInAtNjQ1IiwicC02NDYiLCJwLTY0NyIsInAtNjQ4IiwicC02NDkiLCJwLTY1MCIsInAtNjUxIiwicC02NTIiLCJwLTY1NiIsInAtNjU4IiwicC02NjMiLCJwLTY2NSIsInAtNjY2IiwicC02NjciLCJwLTY2OCIsInAtNjY5IiwicC02NzAiLCJwLTY3MSIsInAtNjc0IiwicC02ODQiLCJwLTY4NiIsInAtNjg3IiwicC02ODgiLCJwLTY4OSIsInAtNjkxIiwicC02OTIiLCJwLTY5NyIsInAtNzAxIiwicC03MDMiLCJwLTcwNiIsInAtNzA5IiwicC03MTAiLCJwLTcxMiIsInAtNzEzIiwicC03MTQiLCJwLTcxNSIsInAtNzE2IiwicC03MTciLCJwLTcxOCIsInAtNzIxIiwicC03MjIiLCJwLTcyNCIsInAtNzI3Il19LCJhZnRlciI6eyJwb2xpdHkiOiJFbXBpcmUiLCJ0cmFpdHMiOlsiSG9tZWxhbmREZWZlbnNlIiwiQ29ucXVlcm9yIl0sImRlc3RpbnkiOjMxLCJjb3JlVGhyZXNob2xkIjoyLCJjb3JlWWVhciI6MCwicHJvdmluY2VPcmRlciI6WyJwLTAiLCJwLTEiLCJwLTIiLCJwLTMiLCJwLTQiLCJwLTUiLCJwLTYiLCJwLTciLCJwLTgiLCJwLTkiLCJwLTEwIiwicC0xMSIsInAtMTIiLCJwLTEzIiwicC0xNCIsInAtMTUiLCJwLTE2IiwicC0xNyIsInAtMTgiLCJwLTE5IiwicC0yMCIsInAtMjEiLCJwLTIyIiwicC0yMyIsInAtMjQiLCJwLTI1IiwicC0yNiIsInAtMjciLCJwLTI4IiwicC0yOSIsInAtMzAiLCJwLTMxIiwicC0zMiIsInAtMzMiLCJwLTM0IiwicC0zNSIsInAtMzYiLCJwLTM3IiwicC0zOCIsInAtMzkiLCJwLTQwIiwicC00MSIsInAtNDIiLCJwLTQzIiwicC00NCIsInAtNDUiLCJwLTQ2IiwicC00NyIsInAtNDgiLCJwLTQ5IiwicC01MCIsInAtNTEiLCJwLTUyIiwicC01MyIsInAtNTQiLCJwLTU1IiwicC01NyIsInAtNTkiLCJwLTYwIiwicC02MSIsInAtNjIiLCJwLTYzIiwicC02NCIsInAtNjUiLCJwLTY2IiwicC02NyIsInAtNjgiLCJwLTY5IiwicC03MCIsInAtNzIiLCJwLTczIiwicC03NCIsInAtNzUiLCJwLTc2IiwicC03NyIsInAtNzgiLCJwLTc5IiwicC04MCIsInAtODEiLCJwLTgyIiwicC04NCIsInAtODUiLCJwLTg2IiwicC04NyIsInAtODkiLCJwLTkwIiwicC05MSIsInAtOTIiLCJwLTkzIiwicC05NSIsInAtOTYiLCJwLTk4IiwicC05OSIsInAtMTAwIiwicC0xMDEiLCJwLTEwNCIsInAtMTA1IiwicC0xMDgiLCJwLTEwOSIsInAtMTEwIiwicC0xMTEiLCJwLTExMiIsInAtMTEzIiwicC0xMTQiLCJwLTExNSIsInAtMTE3IiwicC0xMTgiLCJwLTEyMCIsInAtMTIxIiwicC0xMjIiLCJwLTEyNSIsInAtMTI2IiwicC0xMjciLCJwLTEyOSIsInAtMTMwIiwicC0xMzEiLCJwLTEzMiIsInAtMTM1IiwicC0xMzYiLCJwLTEzNyIsInAtMTM4IiwicC0xMzkiLCJwLTE0MCIsInAtMTQyIiwicC0xNDMiLCJwLTE0NCIsInAtMTQ2IiwicC0xNDciLCJwLTE0OCIsInAtMTQ5IiwicC0xNTEiLCJwLTE1NSIsInAtMTU3IiwicC0xNTgiLCJwLTE1OSIsInAtMTYwIiwicC0xNjEiLCJwLTE2MiIsInAtMTYzIiwicC0xNjQiLCJwLTE2NSIsInAtMTY2IiwicC0xNjciLCJwLTE2OCIsInAtMTcwIiwicC0xNzMiLCJwLTE3NSIsInAtMTc2IiwicC0xNzciLCJwLTE3OCIsInAtMTgyIiwicC0xODQiLCJwLTE4NiIsInAtMTg3IiwicC0xODgiLCJwLTE4OSIsInAtMTkwIiwicC0xOTEiLCJwLTE5MiIsInAtMTk0IiwicC0xOTUiLCJwLTE5NyIsInAtMTk4IiwicC0yMDAiLCJwLTIwMSIsInAtMjAzIiwicC0yMDQiLCJwLTIwNiIsInAtMjA4IiwicC0yMDkiLCJwLTIxMSIsInAtMjEzIiwicC0yMTQiLCJwLTIxNiIsInAtMjE4IiwicC0yMTkiLCJwLTIyMCIsInAtMjIxIiwicC0yMjIiLCJwLTIyMyIsInAtMjI0IiwicC0yMjUiLCJwLTIyNiIsInAtMjI3IiwicC0yMjgiLCJwLTIyOSIsInAtMjMyIiwicC0yMzMiLCJwLTIzNCIsInAtMjM1IiwicC0yMzYiLCJwLTIzOCIsInAtMjM5IiwicC0yNDAiLCJwLTI0MiIsInAtMjQ0IiwicC0yNDUiLCJwLTI0NiIsInAtMjUwIiwicC0yNTEiLCJwLTI1MiIsInAtMjUzIiwicC0yNTQiLCJwLTI1NSIsInAtMjU2IiwicC0yNTciLCJwLTI1OCIsInAtMjU5IiwicC0yNjAiLCJwLTI2MSIsInAtMjYyIiwicC0yNjMiLCJwLTI2NSIsInAtMjY2IiwicC0yNjciLCJwLTI2OSIsInAtMjcxIiwicC0yNzIiLCJwLTI3MyIsInAtMjc4IiwicC0yODAiLCJwLTI4MiIsInAtMjgzIiwicC0yODQiLCJwLTI4NSIsInAtMjg2IiwicC0yODciLCJwLTI4OCIsInAtMjg5IiwicC0yOTAiLCJwLTI5MSIsInAtMjkyIiwicC0yOTMiLCJwLTI5NCIsInAtMjk1IiwicC0yOTciLCJwLTMwMCIsInAtMzAxIiwicC0zMDMiLCJwLTMwNSIsInAtMzA2IiwicC0zMDciLCJwLTMwOCIsInAtMzExIiwicC0zMTIiLCJwLTMxMyIsInAtMzE3IiwicC0zMTgiLCJwLTMyMCIsInAtMzIxIiwicC0zMjMiLCJwLTMyNCIsInAtMzI2IiwicC0zMjciLCJwLTMyOCIsInAtMzI5IiwicC0zMzAiLCJwLTMzMSIsInAtMzMyIiwicC0zMzMiLCJwLTMzNCIsInAtMzM2IiwicC0zNDEiLCJwLTM0MyIsInAtMzQ0IiwicC0zNDYiLCJwLTM0NyIsInAtMzQ4IiwicC0zNDkiLCJwLTM1MSIsInAtMzU0IiwicC0zNTUiLCJwLTM1NyIsInAtMzU4IiwicC0zNTkiLCJwLTM2MSIsInAtMzYyIiwicC0zNjMiLCJwLTM2NyIsInAtMzcwIiwicC0zNzEiLCJwLTM3MiIsInAtMzc0IiwicC0zNzUiLCJwLTM3NyIsInAtMzc5IiwicC0zODAiLCJwLTM4MSIsInAtMzgyIiwicC0zODQiLCJwLTM4NyIsInAtMzg4IiwicC0zOTAiLCJwLTM5MyIsInAtMzk1IiwicC0zOTYiLCJwLTQwMCIsInAtNDAxIiwicC00MDIiLCJwLTQwNCIsInAtNDA1IiwicC00MDYiLCJwLTQxMCIsInAtNDExIiwicC00MTQiLCJwLTQxNSIsInAtNDE3IiwicC00MTgiLCJwLTQxOSIsInAtNDIwIiwicC00MjIiLCJwLTQyNCIsInAtNDI1IiwicC00MjYiLCJwLTQyOCIsInAtNDMxIiwicC00MzIiLCJwLTQzMyIsInAtNDM2IiwicC00MzgiLCJwLTQzOSIsInAtNDQwIiwicC00NDEiLCJwLTQ0MyIsInAtNDQ1IiwicC00NDciLCJwLTQ0OSIsInAtNDUwIiwicC00NTEiLCJwLTQ1NCIsInAtNDU3IiwicC00NTgiLCJwLTQ2MCIsInAtNDYzIiwicC00NjQiLCJwLTQ2NiIsInAtNDY3IiwicC00NjgiLCJwLTQ2OSIsInAtNDcwIiwicC00NzMiLCJwLTQ3NCIsInAtNDgxIiwicC00ODMiLCJwLTQ4NCIsInAtNDg1IiwicC00ODciLCJwLTQ4OCIsInAtNDg5IiwicC00OTAiLCJwLTQ5NCIsInAtNDk1IiwicC01MDAiLCJwLTUwMiIsInAtNTAzIiwicC01MDYiLCJwLTUwNyIsInAtNTA4IiwicC01MTAiLCJwLTUxMSIsInAtNTEyIiwicC01MTciLCJwLTUxOCIsInAtNTE5IiwicC01MjUiLCJwLTUyNiIsInAtNTI3IiwicC01MzEiLCJwLTUzMyIsInAtNTM0IiwicC01MzciLCJwLTU0MSIsInAtNTQyIiwicC01NDUiLCJwLTU0NiIsInAtNTQ3IiwicC01NDgiLCJwLTU0OSIsInAtNTUxIiwicC01NTIiLCJwLTU1NCIsInAtNTU1IiwicC01NTciLCJwLTU1OSIsInAtNTYzIiwicC01NzAiLCJwLTU3MSIsInAtNTczIiwicC01NzQiLCJwLTU3NSIsInAtNTc5IiwicC01ODEiLCJwLTU4MiIsInAtNTgzIiwicC01ODQiLCJwLTU4NyIsInAtNTg4IiwicC01ODkiLCJwLTU5MiIsInAtNTkzIiwicC01OTQiLCJwLTU5NSIsInAtNTk2IiwicC01OTciLCJwLTYwMSIsInAtNjAyIiwicC02MDQiLCJwLTYwOSIsInAtNjEwIiwicC02MTUiLCJwLTYxNiIsInAtNjE3IiwicC02MjIiLCJwLTYyMyIsInAtNjI0IiwicC02MjUiLCJwLTYyNiIsInAtNjI3IiwicC02MzEiLCJwLTYzNSIsInAtNjQwIiwicC02NDEiLCJwLTY0NCIsInAtNjQ1IiwicC02NDYiLCJwLTY0NyIsInAtNjQ4IiwicC02NDkiLCJwLTY1MCIsInAtNjUxIiwicC02NTIiLCJwLTY1NiIsInAtNjU4IiwicC02NjMiLCJwLTY2NSIsInAtNjY2IiwicC02NjciLCJwLTY2OCIsInAtNjY5IiwicC02NzAiLCJwLTY3MSIsInAtNjc0IiwicC02ODQiLCJwLTY4NiIsInAtNjg3IiwicC02ODgiLCJwLTY4OSIsInAtNjkxIiwicC02OTIiLCJwLTY5NyIsInAtNzAxIiwicC03MDMiLCJwLTcwNiIsInAtNzA5IiwicC03MTAiLCJwLTcxMiIsInAtNzEzIiwicC03MTQiLCJwLTcxNSIsInAtNzE2IiwicC03MTciLCJwLTcxOCIsInAtNzIxIiwicC03MjIiLCJwLTcyNCIsInAtNzI3Il19LCJjaGVja3N1bSI6ImEyZjc2YmRlZmY5M2Q0MmVjOTA1ZmU1OGRlYzhkN2VjODA1ODc0NzFlNDFmZWQ3ZTA1OTE0MGRlZTc4MjZlMjAiLCJ0aWNrIjoxNiwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f13bd9d0ea153d943c1-7ccd8b78a4cd2ff08be6",
+          "file": "fms-upper14.spec.ts",
+          "line": 11,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T22:43:52.833Z",
+    "duration": 626346.799,
+    "expected": 21,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

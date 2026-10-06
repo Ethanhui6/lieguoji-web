@@ -1,0 +1,134 @@
+{
+  "recordedAt": "2026-10-06T23:01:43.236Z",
+  "sourceParent": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd",
+  "localUrl": "http://127.0.0.1:5189/?fms=1",
+  "engine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+  "unit": {
+    "passed": 3017,
+    "failed": 0,
+    "files": 255
+  },
+  "firstBrowser": {
+    "multiculture": {
+      "startTime": "2026-10-06T22:43:53.038Z",
+      "duration": 226188.89200000002,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "regression": {
+      "startTime": "2026-10-06T22:43:52.833Z",
+      "duration": 626346.799,
+      "expected": 21,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    }
+  },
+  "finalBrowser": {
+    "startTime": "2026-10-06T22:55:09.598Z",
+    "duration": 351153.848,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "commands": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "started": "2026-10-06T22:33:19.656Z",
+      "finished": "2026-10-06T22:33:32.021Z",
+      "exit": 0
+    },
+    {
+      "name": "types",
+      "command": "npm run typecheck",
+      "started": "2026-10-06T22:33:32.023Z",
+      "finished": "2026-10-06T22:33:48.345Z",
+      "exit": 0
+    },
+    {
+      "name": "release",
+      "command": "npm run test:release",
+      "started": "2026-10-06T22:33:48.345Z",
+      "finished": "2026-10-06T22:33:54.772Z",
+      "exit": 0
+    },
+    {
+      "name": "plan-tests",
+      "command": "npm run test:plan",
+      "started": "2026-10-06T22:33:54.773Z",
+      "finished": "2026-10-06T22:33:55.426Z",
+      "exit": 0
+    },
+    {
+      "name": "plan",
+      "command": "npm run plan:check",
+      "started": "2026-10-06T22:33:55.426Z",
+      "finished": "2026-10-06T22:33:56.074Z",
+      "exit": 0
+    },
+    {
+      "name": "unit",
+      "command": "npx vitest run --reporter=json --outputFile=.autopilot/naming18-evidence/unit.json",
+      "started": "2026-10-06T22:33:56.075Z",
+      "finished": "2026-10-06T22:43:21.729Z",
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "command": "npx vite build --outDir .autopilot/naming18-preview/dist",
+      "started": "2026-10-06T22:43:21.729Z",
+      "finished": "2026-10-06T22:43:28.534Z",
+      "exit": 0
+    },
+    {
+      "name": "dist",
+      "command": "node .autopilot/check-naming18-dist.mjs",
+      "started": "2026-10-06T22:43:28.534Z",
+      "finished": "2026-10-06T22:43:28.600Z",
+      "exit": 0
+    }
+  ],
+  "finalCommands": [
+    {
+      "name": "lint",
+      "cmd": "npm run lint",
+      "started": "2026-10-06T22:54:26.914Z",
+      "finished": "2026-10-06T22:54:39.943Z",
+      "exit": 0
+    },
+    {
+      "name": "types",
+      "cmd": "npm run typecheck",
+      "started": "2026-10-06T22:54:39.944Z",
+      "finished": "2026-10-06T22:54:56.126Z",
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "cmd": "npx vite build --outDir .autopilot/naming18-preview/dist",
+      "started": "2026-10-06T22:54:56.126Z",
+      "finished": "2026-10-06T22:55:02.582Z",
+      "exit": 0
+    },
+    {
+      "name": "dist",
+      "cmd": "node .autopilot/check-naming18-dist.mjs",
+      "started": "2026-10-06T22:55:02.583Z",
+      "finished": "2026-10-06T22:55:02.662Z",
+      "exit": 0
+    }
+  ],
+  "artifactCount": 43,
+  "limits": [
+    "Local only. No push/main/Pages changes.",
+    "Phone/tablet Chromium emulation is not actual iPhone Safari/Chrome acceptance.",
+    "Secession naming and dynasty/family creation remain explicit web bridges; original next-function evidence saved.",
+    "Age/death, complete family, religion, autonomous offices and full original calendar not integrated.",
+    "Native visual parity and WEB-04-13 remain incomplete.",
+    "Expanded original multilingual naming data increases bundle size; no phone performance acceptance."
+  ]
+}

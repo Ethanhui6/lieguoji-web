@@ -3829,9 +3829,15 @@
               "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
               "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md",
-              "docs/evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json"
+              "docs/evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json",
+              "docs/evidence/fms-naming18-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-naming18-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-naming18-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-naming18-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-naming18-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。 v18/Store20六文化国/城/人物真实命名及独立存档已本地验证，实际命名前置于军队/史书/人物首结。3017全量及最终9三尺寸浏览器通过；最终三UI变动与独立9项起义核分开列证。起义父文化与王朝任期仍为网页桥，下一批接原省文化/历史复国。"
           },
           {
             "id": "WEB-04-14",
@@ -4262,8 +4268,8 @@
       }
     ],
     "nextRecoveryTarget": {
-      "priority": "WEB-04-13-native-fiscal-production",
-      "next": "冻结v14后建立独立财政版，一致的网页cell桥/真实月份/军费位置/重编一次费用和缓存保存，不再恢复已完成原公式。"
+      "priority": "WEB-04-13-native-rebel-and-family",
+      "next": "先冻结v18；接省地图文化、原起义候选/旧国复用和新国/复国初始化；保留旧档。候选核9测试已完成；原人物生命周期/家族继承继续按已定位下游恢复。"
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
@@ -4742,11 +4748,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "native_multiculture_naming_kernels_verified_continue_production",
+      "status": "naming18_local_playable_verified_continue_native_rebel",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "4e0524001a9787966cdc53a6b30f282a77c17ac3",
-      "cloudScope": "Local-only v17; previous 8eb9b4e cloud preview retained, no push/main/Pages changes.",
-      "next": "冻结v17后建立独立多文化版本：world实体名在muster/史书前生成，records/politics新人名在announce前确定；新sidecar校验/Worker/保存/预览。原内核与6文化数据已完成，不重复反编译。",
+      "lastCommitted": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd",
+      "cloudScope": "Local-only v18; previous cloud preview retained, no push/main/Pages changes.",
+      "next": "先冻结v18；接省地图文化、原起义候选/旧国复用和新国/复国初始化；保留旧档。候选核9测试已完成；原人物生命周期/家族继承继续按已定位下游恢复。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4781,13 +4787,19 @@
         "docs/evidence/fms-culture17-v5-2026-10-07/FAILURES.md",
         "docs/evidence/fms-culture17-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-culture17-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json"
+        "docs/evidence/fms-culture17-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-naming18-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-naming18-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md"
       ],
-      "currentVersion": 17,
-      "currentEngine": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
+      "currentVersion": 18,
+      "currentEngine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5188/?fms=1",
-      "currentLocalHead": "4e0524001a9787966cdc53a6b30f282a77c17ac3"
+      "localUrl": "http://127.0.0.1:5189/?fms=1",
+      "currentLocalHead": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5881,7 +5893,37 @@
         "docs/evidence/fms-culture17-v5-2026-10-07/NAMING_KERNEL_PROGRESS.md",
         "docs/evidence/fms-culture17-v5-2026-10-07/naming-expanded-checks.json"
       ],
-      "next": "冻结v17后建立独立多文化版本：world实体名在muster/史书前生成，records/politics新人名在announce前确定；新sidecar校验/Worker/保存/预览。原内核与6文化数据已完成，不重复反编译。"
+      "next": "冻结v17后建立独立多文化版本：world实体名在muster/史书前生成，records/politics新人名在announce前确定；新sidecar校验/Worker/保存/预览。原内核与6文化数据已完成，不重复反编译。",
+      "commit": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd"
+    },
+    "naming18Prototype": {
+      "date": "2026-10-07",
+      "status": "local_playable_verified",
+      "version": 18,
+      "store": 20,
+      "database": "lieguoji-fms-naming-v18",
+      "sourceParent": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd",
+      "evidence": [
+        "docs/evidence/fms-naming18-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-naming18-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-naming18-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-naming18-v5-2026-10-07/NEXT_RECOVERY.md"
+      ],
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "productionIntegrated": true,
+      "browserVerified": true,
+      "engine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+      "localUrl": "http://127.0.0.1:5189/?fms=1",
+      "verificationScope": "3017 full unit before final UI only changes; final lint/types/build/43 dist; first 6 culture +21/23 regression; fixed city-ID locators, final 9 across three viewports. Physical iPhone/visual not accepted.",
+      "nativeRebelKernel": {
+        "productionIntegrated": false,
+        "passed": 9,
+        "evidence": "docs/evidence/fms-naming18-v5-2026-10-07/rebel-kernel-final.json"
+      }
     }
   }
 }

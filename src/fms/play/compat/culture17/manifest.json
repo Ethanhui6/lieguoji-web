@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "fingerprint": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
+  "files": [
+    {
+      "path": "src/fms/play/culture17-culture.ts",
+      "archive": "fms/play/culture17-culture.ts.source",
+      "sha256": "3fd1377045745cfcc6c729dbc1309d2ceccf00d83a49db544e5448dc79e87d72"
+    },
+    {
+      "path": "src/fms/play/culture17-state.ts",
+      "archive": "fms/play/culture17-state.ts.source",
+      "sha256": "1100bbb7a1ae0a73d8b53a590d918fea4d9bb9f5ca12ae1b73e5485b0ff38f23"
+    },
+    {
+      "path": "src/fms/play/culture17-runtime.ts",
+      "archive": "fms/play/culture17-runtime.ts.source",
+      "sha256": "72c66d30b91fa6e1d0ff21045e39aa87523d027ad3f7a6fd4b0fd3c4f9e2aa04"
+    },
+    {
+      "path": "src/fms/play/culture17-model.ts",
+      "archive": "fms/play/culture17-model.ts.source",
+      "sha256": "7e1081588fef845f7158fc0e6be30af205f15b13f7b9994f1e5ad5f1615e23d4"
+    },
+    {
+      "path": "src/fms/play/culture17-session.ts",
+      "archive": "fms/play/culture17-session.ts.source",
+      "sha256": "9fb37cc6ac7dc6546dc5dfc98df5c9bd473fb9032f236ca79991f0ceb3e409fe"
+    },
+    {
+      "path": "src/fms/play/culture17-storage.ts",
+      "archive": "fms/play/culture17-storage.ts.source",
+      "sha256": "97c30ef006a410f3a6755e84709100dccca70aacd0b9937f67cd60fc853eb4bf"
+    },
+    {
+      "path": "src/fms/play/culture17-stores.ts",
+      "archive": "fms/play/culture17-stores.ts.source",
+      "sha256": "9d4b807f2dcec767d529439e676cfd9da45ccda2439a3a6e0a6b50c03d349001"
+    },
+    {
+      "path": "src/fms/play/culture17-client.ts",
+      "archive": "fms/play/culture17-client.ts.source",
+      "sha256": "0bf665429575d4f7e0163cf10dcb628068fd7d761d6534cc362dfa3e73a6b9f1"
+    },
+    {
+      "path": "src/fms/play/culture17/play.worker.ts",
+      "archive": "fms/play/culture17/play.worker.ts.source",
+      "sha256": "d5452051b2a7f0ff27c992ef99acc5186640cd9621540ec01f4c90ad5317fec5"
+    },
+    {
+      "path": "src/fms/play/native-economy/ethnic-generation.ts",
+      "archive": "fms/play/native-economy/ethnic-generation.ts.source",
+      "sha256": "331296a5952a3c40c3c9817e4a88eebe1f19501a2846ff04d9ce79deb5b1b5e7"
+    },
+    {
+      "path": "src/fms/play/native-economy/original-cultures.ts",
+      "archive": "fms/play/native-economy/original-cultures.ts.source",
+      "sha256": "b58c8637084d82f3f21929969bb6a602ad5cce763889c866df5743fc4879fee1"
+    },
+    {
+      "path": "src/fms/play/native-economy/culture-ethnic-weights.json",
+      "archive": "fms/play/native-economy/culture-ethnic-weights.json.source",
+      "sha256": "aa5cc27dd3dec23b95a8f9edb73ef7e69f5b9d14da4456f86ec407e57d1627cd"
+    }
+  ]
+}

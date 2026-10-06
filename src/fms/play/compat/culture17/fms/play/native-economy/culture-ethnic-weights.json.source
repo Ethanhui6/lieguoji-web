@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "sourceField": "EthnicAttributeProbabilities",
+  "cultures": [
+    {
+      "id": "Ciestundu",
+      "source": "Base/Culture/Ciestundu/CultureData.json",
+      "sourceSha256": "53d155d9030cece55630b463775bba07f00b2ce41500ea0f7f8c8539f063ea7e",
+      "weights": [
+        [
+          "FishAndHunting",
+          40
+        ],
+        [
+          "Agriculture",
+          50
+        ],
+        [
+          "Nomadic",
+          5
+        ],
+        [
+          "Maritime",
+          0
+        ],
+        [
+          "Commercial",
+          50
+        ]
+      ]
+    },
+    {
+      "id": "EasternFantasy",
+      "source": "Base/Culture/EasternFantasy/CultureData.json",
+      "sourceSha256": "d85915aac4dbdb5a49d43d491b5fc7f92de0c8c48f0eea06805e679e5bccb52d",
+      "weights": [
+        [
+          "FishAndHunting",
+          50
+        ],
+        [
+          "Agriculture",
+          50
+        ],
+        [
+          "Nomadic",
+          50
+        ],
+        [
+          "Maritime",
+          50
+        ],
+        [
+          "Commercial",
+          50
+        ]
+      ]
+    },
+    {
+      "id": "Leffathou",
+      "source": "Base/Culture/Leffathou/CultureData.json",
+      "sourceSha256": "d1417461a04b67bfcc79359112f5a3ec78807c7a00afea6a677b821e85a44173",
+      "weights": [
+        [
+          "FishAndHunting",
+          90
+        ],
+        [
+          "Agriculture",
+          40
+        ],
+        [
+          "Nomadic",
+          10
+        ],
+        [
+          "Maritime",
+          0
+        ],
+        [
+          "Commercial",
+          60
+        ]
+      ]
+    },
+    {
+      "id": "Oeczea",
+      "source": "Base/Culture/Oeczea/CultureData.json",
+      "sourceSha256": "053e091a9d83b86f1d963d5cb11c0658f15a3df25dbb8c2258da440cc12d7235",
+      "weights": [
+        [
+          "FishAndHunting",
+          70
+        ],
+        [
+          "Agriculture",
+          20
+        ],
+        [
+          "Nomadic",
+          0
+        ],
+        [
+          "Maritime",
+          100
+        ],
+        [
+          "Commercial",
+          100
+        ]
+      ]
+    },
+    {
+      "id": "WesternFantasy",
+      "source": "Base/Culture/WesternFantasy/CultureData.json",
+      "sourceSha256": "1b6f0123d551f974dce5a4b2f37b4beb2d7d90cbbe217627cb34f47db40a1cc7",
+      "weights": [
+        [
+          "FishAndHunting",
+          50
+        ],
+        [
+          "Agriculture",
+          50
+        ],
+        [
+          "Nomadic",
+          50
+        ],
+        [
+          "Maritime",
+          50
+        ],
+        [
+          "Commercial",
+          50
+        ]
+      ]
+    },
+    {
+      "id": "Wristhos",
+      "source": "Base/Culture/Wristhos/CultureData.json",
+      "sourceSha256": "36cc4c2fca2d464a7a2bd55704b5ef58bb022608f278720bf8a8784e082f1808",
+      "weights": [
+        [
+          "FishAndHunting",
+          40
+        ],
+        [
+          "Agriculture",
+          10
+        ],
+        [
+          "Nomadic",
+          100
+        ],
+        [
+          "Maritime",
+          0
+        ],
+        [
+          "Commercial",
+          65
+        ]
+      ]
+    }
+  ]
+}

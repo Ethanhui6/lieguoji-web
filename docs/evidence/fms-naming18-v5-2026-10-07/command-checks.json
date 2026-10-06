@@ -1,0 +1,58 @@
+[
+  {
+    "name": "lint",
+    "command": "npm run lint",
+    "started": "2026-10-06T22:33:19.656Z",
+    "finished": "2026-10-06T22:33:32.021Z",
+    "exit": 0
+  },
+  {
+    "name": "types",
+    "command": "npm run typecheck",
+    "started": "2026-10-06T22:33:32.023Z",
+    "finished": "2026-10-06T22:33:48.345Z",
+    "exit": 0
+  },
+  {
+    "name": "release",
+    "command": "npm run test:release",
+    "started": "2026-10-06T22:33:48.345Z",
+    "finished": "2026-10-06T22:33:54.772Z",
+    "exit": 0
+  },
+  {
+    "name": "plan-tests",
+    "command": "npm run test:plan",
+    "started": "2026-10-06T22:33:54.773Z",
+    "finished": "2026-10-06T22:33:55.426Z",
+    "exit": 0
+  },
+  {
+    "name": "plan",
+    "command": "npm run plan:check",
+    "started": "2026-10-06T22:33:55.426Z",
+    "finished": "2026-10-06T22:33:56.074Z",
+    "exit": 0
+  },
+  {
+    "name": "unit",
+    "command": "npx vitest run --reporter=json --outputFile=.autopilot/naming18-evidence/unit.json",
+    "started": "2026-10-06T22:33:56.075Z",
+    "finished": "2026-10-06T22:43:21.729Z",
+    "exit": 0
+  },
+  {
+    "name": "build",
+    "command": "npx vite build --outDir .autopilot/naming18-preview/dist",
+    "started": "2026-10-06T22:43:21.729Z",
+    "finished": "2026-10-06T22:43:28.534Z",
+    "exit": 0
+  },
+  {
+    "name": "dist",
+    "command": "node .autopilot/check-naming18-dist.mjs",
+    "started": "2026-10-06T22:43:28.534Z",
+    "finished": "2026-10-06T22:43:28.600Z",
+    "exit": 0
+  }
+]

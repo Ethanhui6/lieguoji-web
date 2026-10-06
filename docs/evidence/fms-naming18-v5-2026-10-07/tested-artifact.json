@@ -1,0 +1,433 @@
+{
+  "recordedAt": "2026-10-06T23:01:43.235Z",
+  "sourceParent": "92b6309d7f4c5a2bed90ad27e30637b91156d4cd",
+  "note": "Build commit is parent dirty tree. Final UI adds stable city identity, accurate restoration notice and mobile culture label alignment; engine unchanged. Full unit suite and first browser suite preceded these three UI-only changes. Final affected browser cases separately reported. The unreferenced rebel-name kernel was added after the full suite and has 9 separate targeted passing tests, not included in the 3017 full-suite count.",
+  "engine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/CulturePanel.tsx",
+      "sha256": "f21e7eeeb5f61f66d630ee6830d888f7bff58d5e680c74f5e22aeeb76aff544c"
+    },
+    {
+      "path": "src/fms/play/FiscalPanel.tsx",
+      "sha256": "91b7c83c0f28db6c9602956b33e6c44bd7e2bb47a099faf3fb480a75c479d0ce"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "744536bf6a0d9a377b17d09747fff3a2035f63f2bc9523c5404d5ca7c34e090a"
+    },
+    {
+      "path": "src/fms/play/PeoplePanel.tsx",
+      "sha256": "22fe4296bb337de7d74a9b47aa2d660fe4ca2aabe4eaf3c1d6efba20d6506546"
+    },
+    {
+      "path": "src/fms/play/play.css",
+      "sha256": "961ae1d21b98767a75b66a1acce5066ce7754f2f8c9126113431b4cd2d46b90f"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "81900cc6a95d07d7fb5fff00ef9f572d9262889e3c210a843f027e2d712a5dce"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "sha256": "ac5b1981f1f656e046c7580ac0d7fd8a3a88cd3d600cb41feba66dc4e95c1086"
+    },
+    {
+      "path": "tests/fms-chronicle.spec.ts",
+      "sha256": "87246d3cd6b694089edac6ceb7b3e276036a946d56c63893bb9c58e56db321da"
+    },
+    {
+      "path": "tests/fms-court16.spec.ts",
+      "sha256": "b76e01ae55bd7b92123007520f969041947402b5aa247919664dbdb989ca9154"
+    },
+    {
+      "path": "tests/fms-culture17.spec.ts",
+      "sha256": "41b32491e9db99dfd0f142010684b9fd646d8c1b21f63f54f76ba0c831fcd673"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "sha256": "e7ff219d842bedc7d452a47852d9fc981062c6d7c28e80568fb3322ca1ef69dc"
+    },
+    {
+      "path": "tests/fms-fiscal15.spec.ts",
+      "sha256": "d0697fb8c25e694bc43cc7f52882db103cc00abc3b0a57f532f41b993ea78b40"
+    },
+    {
+      "path": "tests/fms-inspection.spec.ts",
+      "sha256": "490c4fbd12bc76ef5d132cf07836936f512f78c83f1f0db0c312907ef6badde7"
+    },
+    {
+      "path": "tests/fms-locality.spec.ts",
+      "sha256": "c9b6aad6ce72f15f25f35f2b39ecaafe83713d26958d61bddad7d89554521fe7"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "sha256": "7c4c4b4a064bab26f10b36bc0e861442ae8f09380f9a41877153f42c363aeb5b"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "sha256": "307f5e9c229949e83e93fd5edc0fdcc4884d8ce694a9bd1bb496cb6dbc276f03"
+    },
+    {
+      "path": "tests/fms-upper14.spec.ts",
+      "sha256": "64c2a4bd3d04db5328b873fa3bad4038394ee84e36b2885e3c9b6098437bd7ce"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "d5687077ff4d891b19025c738f47dc86b2b4b14c2289702c335046c6a334cb61"
+    },
+    {
+      "path": "scripts/fms-naming18-fingerprint.ts",
+      "sha256": "9932e07645fe46c8f6be33007364456870bef94764e3590323f4b77417c8b5d8"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-client.ts.source",
+      "sha256": "0bf665429575d4f7e0163cf10dcb628068fd7d761d6534cc362dfa3e73a6b9f1"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-culture.ts.source",
+      "sha256": "3fd1377045745cfcc6c729dbc1309d2ceccf00d83a49db544e5448dc79e87d72"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-model.ts.source",
+      "sha256": "7e1081588fef845f7158fc0e6be30af205f15b13f7b9994f1e5ad5f1615e23d4"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-runtime.ts.source",
+      "sha256": "72c66d30b91fa6e1d0ff21045e39aa87523d027ad3f7a6fd4b0fd3c4f9e2aa04"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-session.ts.source",
+      "sha256": "9fb37cc6ac7dc6546dc5dfc98df5c9bd473fb9032f236ca79991f0ceb3e409fe"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-state.ts.source",
+      "sha256": "1100bbb7a1ae0a73d8b53a590d918fea4d9bb9f5ca12ae1b73e5485b0ff38f23"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-storage.ts.source",
+      "sha256": "97c30ef006a410f3a6755e84709100dccca70aacd0b9937f67cd60fc853eb4bf"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17-stores.ts.source",
+      "sha256": "9d4b807f2dcec767d529439e676cfd9da45ccda2439a3a6e0a6b50c03d349001"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/culture17/play.worker.ts.source",
+      "sha256": "d5452051b2a7f0ff27c992ef99acc5186640cd9621540ec01f4c90ad5317fec5"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/native-economy/culture-ethnic-weights.json.source",
+      "sha256": "aa5cc27dd3dec23b95a8f9edb73ef7e69f5b9d14da4456f86ec407e57d1627cd"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/native-economy/ethnic-generation.ts.source",
+      "sha256": "331296a5952a3c40c3c9817e4a88eebe1f19501a2846ff04d9ce79deb5b1b5e7"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/fms/play/native-economy/original-cultures.ts.source",
+      "sha256": "b58c8637084d82f3f21929969bb6a602ad5cce763889c866df5743fc4879fee1"
+    },
+    {
+      "path": "src/fms/play/compat/culture17/manifest.json",
+      "sha256": "f7298a3cd8d76bf80758c8d8a634326122bacd1dde4afb7fa418766c5c14ee48"
+    },
+    {
+      "path": "src/fms/play/naming18-client.test.ts",
+      "sha256": "102448370ef8a658c115aa991afbec397b76d2529ad7cb38c1bdbce92ef65df5"
+    },
+    {
+      "path": "src/fms/play/naming18-client.ts",
+      "sha256": "e49042bf3d0718b7ff66ec23a30964849b339c19a7e37a1bc4e3fa8ade0bad49"
+    },
+    {
+      "path": "src/fms/play/naming18-create.ts",
+      "sha256": "e3527e96d80ae2824c3f8c27ca1c1968b0cacf7998dd744bae4741fc1bd0a11c"
+    },
+    {
+      "path": "src/fms/play/naming18-culture.ts",
+      "sha256": "768f90da87c0dbd4dfe72385ba7d70a9df6362750aa39d570b347b33e332d9b1"
+    },
+    {
+      "path": "src/fms/play/naming18-model.ts",
+      "sha256": "bb4f889a5ccf1fb563c77350f8ee9ecfa2a63fab238f6f19966a51a9ddbde1b9"
+    },
+    {
+      "path": "src/fms/play/naming18-names.ts",
+      "sha256": "c707e079106ce324601dba7c450c68567bb294e4828e9beef71865dbabcf9702"
+    },
+    {
+      "path": "src/fms/play/naming18-politics.ts",
+      "sha256": "eb88a4beb4fb387d8f49ea1f6dcbf94189d86c46766a2eaf2d16337f503d58c0"
+    },
+    {
+      "path": "src/fms/play/naming18-records.ts",
+      "sha256": "a76b63d0bb03a7837aca948e9b395aaa683110ed362dafe50057da8a7fe8dacd"
+    },
+    {
+      "path": "src/fms/play/naming18-runtime.ts",
+      "sha256": "2f7b64c40317ee5e6fdead6e818ec1f19bd55294dce6bd2d5d4ce18919c54e25"
+    },
+    {
+      "path": "src/fms/play/naming18-session.ts",
+      "sha256": "1748f75a7b429b3590bfa267c1406ba6dd769c1559772a2657962928b01d7842"
+    },
+    {
+      "path": "src/fms/play/naming18-state.ts",
+      "sha256": "412ebe333f450edd194adade0313742a1f64cf8db8283d2c12db3968130d450d"
+    },
+    {
+      "path": "src/fms/play/naming18-storage.ts",
+      "sha256": "a2d5d4fe2a986246688179f917f2545fb85bec96e1dfdf7ce93b63325574ee21"
+    },
+    {
+      "path": "src/fms/play/naming18-stores.ts",
+      "sha256": "f2e6e8ca3dbbde1b03c170a8a800c1ea5ecf9b300dcada9ed5c8b08d1571b75d"
+    },
+    {
+      "path": "src/fms/play/naming18-validation.ts",
+      "sha256": "d9b6103d04de5c6251957cd9ad7f2bc5489d43e1e96e52e1c540e7a28db65fd3"
+    },
+    {
+      "path": "src/fms/play/naming18-world.ts",
+      "sha256": "9153c776ed52ad771329eb05fed39283eec217758fb72abbcc52bacb23c8639c"
+    },
+    {
+      "path": "src/fms/play/naming18.test.ts",
+      "sha256": "98129aa4851bfe58562e0663bb99327240bff6844eb3e420f5ceb214b4ec3dcb"
+    },
+    {
+      "path": "src/fms/play/naming18/play.worker.ts",
+      "sha256": "a99a971759e2d5bcb61e7320506ec18e48ab79449aa7b41eee1efbd749d352ee"
+    },
+    {
+      "path": "src/fms/play/native-culture/rebel-name.test.ts",
+      "sha256": "35db4edc4d416a875a97bbf1060f17a2807aa901fb7bbae3722a4f1e9c343cd1"
+    },
+    {
+      "path": "src/fms/play/native-culture/rebel-name.ts",
+      "sha256": "3a796ab55168b207e3d9ae73975d96a427e7de9875937c0c3734e5c38e362958"
+    },
+    {
+      "path": "tests/fms-naming18.spec.ts",
+      "sha256": "b9ba071f8439a1328a248a2cc5b43db032346c3e42d1b6c10f053f544eada479"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "bytes": 9578,
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "assets/App-oIUaD0n8.js",
+      "bytes": 72384,
+      "sha256": "7037abc00246333a4d984f87936366d16da6344e7e9605025b80b8acd4dd0b3c"
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "bytes": 409814,
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "assets/AtlasStudio-BLa7dVVb.js",
+      "bytes": 173274,
+      "sha256": "60ad72812e8a5438cad7c08f3758b4c7ed437e4d654d59602b4a2b6c31eef7f7"
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "bytes": 24315,
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "bytes": 482109,
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "bytes": 15884,
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "assets/browserAll-Cv5S1Tou.js",
+      "bytes": 42646,
+      "sha256": "c86f42b0b4b285a517a14163d2a77b500520f0c37df6ab5542f392ac7bbcdf3a"
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "bytes": 11027,
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "bytes": 23199,
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "bytes": 6054,
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "bytes": 19346,
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "assets/CountryStudio-CH--100N.js",
+      "bytes": 128542,
+      "sha256": "7f6e0baad2706455da477a7eca5defdca09815cc39ae8885068c12742dab5b3b"
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "bytes": 13293,
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "bytes": 55255,
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "assets/FmsApp-BLmG7tfA.css",
+      "bytes": 28609,
+      "sha256": "16e31af79300fcbe874c175d161d78b86cff9755db1f4e9d929e12ba63f744fe"
+    },
+    {
+      "path": "assets/FmsApp-pWG0dw1i.js",
+      "bytes": 1889690,
+      "sha256": "4d3a8f85b060827994fd46505f2aafde99eeba71344b0576d658255a8f3e10ee"
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "bytes": 109697,
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "bytes": 469,
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "bytes": 342,
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "assets/index-CYsoLmbX.js",
+      "bytes": 221793,
+      "sha256": "f29ea2492d8546e3b7706b4b43e8f9fdacb434123cd1bddafa67b49cdd22fa7d"
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "bytes": 15379,
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "assets/init-D6DYbe-R.js",
+      "bytes": 250437,
+      "sha256": "cfd4487dbd494cbc48c4b59252021ec6b391c47c1a7dcfa87f88ca0eee672407"
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "bytes": 34881,
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "assets/LegacyEntry-D5K773ul.js",
+      "bytes": 132329,
+      "sha256": "5eb5693e5cc42e53406cec2d4da693675c9664989124bf5ee083ed587d99ed67"
+    },
+    {
+      "path": "assets/play.worker-BpiWVgyH.js",
+      "bytes": 1804386,
+      "sha256": "a3b05eaaa5e9158c075b7ee4bad1854971c0fbb667beefa05ba0e5f9c96575ef"
+    },
+    {
+      "path": "assets/renderer-BSQGtpKy.js",
+      "bytes": 210865,
+      "sha256": "7a942c5459fddc230c25f1e738ddfe2e8a1a0bf82fd8d5a08823a6f266d011ae"
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "bytes": 78109,
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "bytes": 86986,
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "bytes": 34693,
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "bytes": 91681,
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "bytes": 162206,
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "bytes": 49491,
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "assets/Text-BksfAMvG.js",
+      "bytes": 34909,
+      "sha256": "26511e3597baddad0eb415ff7de6302d15576eea37ee239757560df94da02bec"
+    },
+    {
+      "path": "assets/webworkerAll-CfXuQRVK.js",
+      "bytes": 54,
+      "sha256": "518174417c1a8acb1ae46b531e51254d5dee1c35a293646be97432d622df9c5c"
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "bytes": 223767,
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "build.json",
+      "bytes": 11992,
+      "sha256": "0766c3e8d364c226a3c5d400a2ef48da98aeba0fa5d56c0900b0ac5dd261f3ed"
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 221,
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "index.html",
+      "bytes": 626,
+      "sha256": "3f05a18060aa74d8c96bbda2a72e82ac6b6335420602bf358ed9a167306169dd"
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "bytes": 10779,
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    {
+      "path": "_headers",
+      "bytes": 424,
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 19,
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

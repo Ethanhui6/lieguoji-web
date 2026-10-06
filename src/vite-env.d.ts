@@ -25,3 +25,5 @@ declare const __FMS_CAMPAIGN_ENGINE__:string;
 declare const __FMS_CHRONICLE_ENGINE__:string;
 
 declare const __FMS_CHRONICLE2_ENGINE__: string;
+
+declare const __FMS_UPPER14_ENGINE__: string;

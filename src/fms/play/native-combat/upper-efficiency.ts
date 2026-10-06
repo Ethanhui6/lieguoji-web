@@ -1,6 +1,6 @@
 /** Recovered Army.RecalCombatEfficiency order for finite resolved inputs.
  * Does not resolve characters, treasury, current-cell geography or campaign.
- * No active runtime imports this yet; v13 keeps its published web adaptation.
+ * v14 supplies explicit resolved inputs; v13 keeps its frozen web adaptation.
  * Source: docs/evidence/fms-terrain13-v5-2026-10-07/UPPER_EFFICIENCY_RECOVERY.md. */
 export interface ResolvedCombatInput {
   baseCombatEfficiency: number;

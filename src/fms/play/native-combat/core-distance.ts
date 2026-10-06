@@ -1,5 +1,5 @@
 /** Native algorithm on an explicitly supplied province graph, not old v13 World.
- * Graph adaptation and annual clock binding remain separate work.
+ * v14 separately binds web province topology and its annual clock.
  * See CORE_DISTANCE_RECOVERY.md for disconnected ordering and refresh times. */
 export interface CoreProvince { id: string; stateRef: string | null; neighbors: readonly string[] }
 export interface CoreDistance { distance: number; connected: boolean }

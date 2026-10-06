@@ -1,0 +1,113 @@
+{
+  "recordedAt": "2026-10-06T19:44:33.815Z",
+  "sourceParent": "be90da7c1f6ac88b3a80ff094cd5e99501607cad",
+  "localUrl": "http://127.0.0.1:5184/?fms=1",
+  "engine": {
+    "version": 14,
+    "store": 16,
+    "database": "lieguoji-fms-upper-v14",
+    "fingerprint": "3482083ac4b38cb0201ddb7517fd40c007fc99285680361b74313858e4dc0f12",
+    "frozenV13": "a20d2c88e3bbad359027bcc1d0d9e343c9a0f1955b9c6c250acfa070cdb36c77"
+  },
+  "unit": {
+    "command": "npx vitest run --reporter=json --outputFile=docs/evidence/fms-upper14-v5-2026-10-07/unit-full.json",
+    "exitCode": 0,
+    "passed": 2828,
+    "failed": 0,
+    "report": "unit-full.json",
+    "focusedPassed": 19,
+    "focusedReport": "unit-second.json"
+  },
+  "lint": {
+    "command": "npm run lint",
+    "exitCode": 0
+  },
+  "types": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "plan": {
+    "command": "node scripts/check-plan.mjs",
+    "exitCode": 0
+  },
+  "planRegression": {
+    "passed": 15,
+    "failed": 0
+  },
+  "releaseRegression": {
+    "passed": 24,
+    "failed": 0
+  },
+  "build": {
+    "command": "npx vite build --outDir .autopilot/upper14-preview/dist",
+    "exitCode": 0,
+    "rootDistPreserved": true,
+    "warning": "Existing >500 kB chunks remain."
+  },
+  "distAudit": {
+    "command": "node ../../scripts/check-dist.mjs from isolated preview directory",
+    "exitCode": 0,
+    "approvedFiles": 43
+  },
+  "browser": {
+    "finalScenariosPassed": 15,
+    "scope": "3 sizes each of government edit/cancel/commit/tick/restore and full-resistance siege; 9 desktop regressions for politics/fragmentation, four future DB locks, mustering/road contact/reorganization and navy.",
+    "government": {
+      "passed": 3,
+      "report": "browser-government-fixed.json"
+    },
+    "siege": {
+      "passed": 3,
+      "report": "browser-first-final-failure.json"
+    },
+    "extended": {
+      "passed": 8,
+      "failed": 1,
+      "report": "browser-extended-first-failure.json",
+      "fixedMusterPassed": 1,
+      "fixedMusterReport": "browser-muster-fixed.json",
+      "note": "Old test required active road contact after a full additional day; revised test selects verified active contact before advancing, retaining actual damage and exact restore checks."
+    },
+    "retries": 0,
+    "skipped": 0,
+    "priorDesktop": {
+      "passed": 4,
+      "report": "browser-prior-desktop.json",
+      "build": "build-first.json",
+      "note": "Before editor close/news exit fix; not counted in final scenarios."
+    },
+    "firstFinalFailure": {
+      "passed": 5,
+      "failed": 1,
+      "report": "browser-first-final-failure.json",
+      "cause": "9 MB whole-world polling crossed test protocol deadline; trace proves committed revision6 before deadline. Scalar revision polling retained 5s deadline and full final run/checksum comparisons; no production save workaround.",
+      "details": "FAILURES.md"
+    }
+  },
+  "manualPlay": {
+    "method": "Normal in-app UI original terrain confirm, saved drawing, create6, save/load from independent origin",
+    "state": "Day0 tick0 paused, slow6s/day, map zoomed for play",
+    "countries": [
+      "巴",
+      "殷",
+      "基",
+      "柴",
+      "虞",
+      "梁"
+    ],
+    "origin": "http://127.0.0.1:5184",
+    "olderOrigins": "5183 and earlier untouched"
+  },
+  "privacy": {
+    "reviewedFiles": 80,
+    "secretPatternsFound": 0,
+    "scope": "Named source/frozen source/tests/evidence only; no raw installation dump, auth/SDK configs, personal saves, root bundle or env added."
+  },
+  "limits": [
+    "Local only: no push/main/Pages changes.",
+    "Static recovery plus documented web input bridges, not full original runtime parity.",
+    "Chromium touch/tablet emulation is not physical iPhone Safari/Chrome.",
+    "Destiny decay, full culture/ethnic/13 traits, leaders/treasury/protrusion remain incomplete; neutral inputs explicitly recorded.",
+    "WEB-04-13 long-war/full-supply and physical/visual gates remain in progress."
+  ]
+}

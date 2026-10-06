@@ -1,10 +1,10 @@
 import type {World} from '../../sim/types';
-import {useEffect,useRef} from 'react';
+import {useEffect,useRef,type ReactNode} from 'react';
 import {nationColor} from './politics';
 import {warSummary,type WarNavy,type WarSite} from './war-view';
 const count=(n:number)=>Math.round(n).toLocaleString('zh-CN');
 
-export function WarPanel({world,sites,selected,naval,tick,choose,army,fleet}:{world:World;sites:WarSite[];selected:string[];naval?:WarNavy;tick:number;choose:(ids:string[])=>void;army:(id:string)=>void;fleet:(id:string)=>void}){
+export function WarPanel({world,sites,selected,naval,tick,choose,army,fleet,siegeDetails,armyDetails}:{world:World;sites:WarSite[];selected:string[];naval?:WarNavy;tick:number;choose:(ids:string[])=>void;army:(id:string)=>void;fleet:(id:string)=>void;siegeDetails?:ReactNode;armyDetails?:(id:string)=>ReactNode}){
   const current=sites.filter(s=>selected.includes(s.id)),summary=warSummary(world,current,naval);
   const section=useRef<HTMLElement>(null),selection=selected.join('/');
   useEffect(()=>{const panel=section.current?.closest('.play-panel');if(panel)panel.scrollTop=0;},[selection]);
@@ -23,9 +23,9 @@ export function WarPanel({world,sites,selected,naval,tick,choose,army,fleet}:{wo
           {s.fleetIds.length>0&&<><div><dt>舰船 / 船员</dt><dd>{s.ships} 艘 / {count(s.crew)} 人</dd></div><div><dt>舰体总完整度</dt><dd>{Math.round(s.hull/Math.max(1,s.ships*100)*100)}%</dd></div></>}
         </dl>
         {!s.armyIds.length&&!s.fleetIds.length&&<p className="play-muted">本国当前没有在场部队；所属地区仍在围攻中。</p>}
-        {(s.armyIds.length>0||s.fleetIds.length>0)&&<details><summary>查看参战部队（{s.armyIds.length+s.fleetIds.length} 支）</summary><div className="play-army-shortcuts">{s.armyIds.map(id=><button key={id} onClick={()=>army(id)}>{world.armies.find(a=>a.id===id)!.name}</button>)}{s.fleetIds.map(id=><button key={id} onClick={()=>fleet(id)}>{naval!.navy.fleets.find(f=>f.id===id)!.name}</button>)}</div></details>}
+        {(s.armyIds.length>0||s.fleetIds.length>0)&&<details><summary>查看参战部队（{s.armyIds.length+s.fleetIds.length} 支）</summary><div className="play-army-shortcuts">{s.armyIds.map(id=><div className="play-war-army" key={id}><button onClick={()=>army(id)}>{world.armies.find(a=>a.id===id)!.name}</button>{armyDetails?.(id)}</div>)}{s.fleetIds.map(id=><button key={id} onClick={()=>fleet(id)}>{naval!.navy.fleets.find(f=>f.id===id)!.name}</button>)}</div></details>}
       </article>;})}
-      {current.filter(s=>s.resistance).map(s=><div className="play-war-siege" key={s.id}><label>{s.name} · 抵抗削减 {Math.round((1-s.resistance!.remaining/s.resistance!.maximum)*100)}%<progress aria-label={`${s.name}围攻进度`} max={s.resistance!.maximum} value={s.resistance!.maximum-s.resistance!.remaining}/></label></div>)}
+      {siegeDetails??current.filter(s=>s.resistance).map(s=><div className="play-war-siege" key={s.id}><label>{s.name} · 抵抗削减 {Math.round((1-s.resistance!.remaining/s.resistance!.maximum)*100)}%<progress aria-label={`${s.name}围攻进度`} max={s.resistance!.maximum} value={s.resistance!.maximum-s.resistance!.remaining}/></label></div>)}
       <p className="play-muted">兵员按真实在场单位去重。损失仅统计仍在场陆军的当前交锋记录；不代表整场战争的历史总伤亡。不同国家分别列出，不自动视为同盟。</p>
     </div>:<p className="play-war-empty">{selected.length?'选中的交战已结束或接触已解除。':'点击地图上的战役标记，或选择下方正在发生的交战。'}</p>}
     <h3>正在发生 · {sites.length} 处</h3>

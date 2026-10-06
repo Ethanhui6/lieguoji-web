@@ -1,0 +1,80 @@
+{
+  "checkedAt": "2026-10-06T16:30:05.152Z",
+  "baseCommit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+  "scope": "Local working-tree UI only; same published v12 engine; no cloud upload for this batch",
+  "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+  "unit": {
+    "passed": 26,
+    "failed": 0,
+    "reportSha256": "cd6e5fe736c803801ea3571ad7011aced67ac83ba3e5774f16e1dbaf640fc12c"
+  },
+  "lint": "passed",
+  "types": "passed",
+  "build": "passed; isolated output, existing dist and 5181 preserved",
+  "distAudit": {
+    "artifacts": 43,
+    "command": "node D:/游戏/架空地图模拟器/scripts/check-dist.mjs",
+    "cwd": ".autopilot/replica-preview",
+    "publicLicense": "Identical reviewed terrain-licenses.txt copy; original audit script unchanged"
+  },
+  "sourceFiles": [
+    {
+      "file": "src/fms/play/ArmyReadiness.tsx",
+      "sha256": "ada361e20db69e72171e9755da9a36ed7cc85ea816f9c3c4632a9363d9c3f011"
+    },
+    {
+      "file": "src/fms/play/SiegeInsight.tsx",
+      "sha256": "e267973f92f23436659a3a486fd152e94da4cfb08a5a2c68d90893cb7beb1944"
+    },
+    {
+      "file": "src/fms/play/chronicle-query.ts",
+      "sha256": "f1d31b4cc76557ace494de9ceb56365f6776af67f27baf556be201e65fcbbd74"
+    },
+    {
+      "file": "src/fms/play/inspection.test.ts",
+      "sha256": "6bbb49948ed455a385b0b7be99b2e052a8efec1c764f805036646ed76d4dba13"
+    },
+    {
+      "file": "src/fms/play/siege-insight.ts",
+      "sha256": "368dae0504d2378007d23541e013a7b7529e9ee19b0790d780af2ecce356044d"
+    },
+    {
+      "file": "src/fms/play/ChroniclePanel.tsx",
+      "sha256": "03a39a48667c3d946c146b4d09dd6404dd621dc86f13ca996f3ac3624fbbd5bf"
+    },
+    {
+      "file": "src/fms/play/FmsGame.tsx",
+      "sha256": "98d7a0843b9530f0af579efa9ead77a833e5fe0b2965569d19b214c1e3782749"
+    },
+    {
+      "file": "src/fms/play/SiegePanel.tsx",
+      "sha256": "f3233a48364678de93b289fca69411bf19eea03b947819f21d84fc79a4ad58ed"
+    },
+    {
+      "file": "src/fms/play/WarPanel.tsx",
+      "sha256": "206fb88f1cd3d994c704b662cb669150cb8049a3918e1ad54df794d9da474213"
+    },
+    {
+      "file": "src/fms/play/news.ts",
+      "sha256": "a19c3b2c71e2b6c8e0e367487605c9b15f16a17ca794f8b3b623cd122985b8f9"
+    },
+    {
+      "file": "src/fms/play/play.css",
+      "sha256": "ad2cf9e0cde1b5a01430c46b6be185c9f65472826718d145a523f85dd4361922"
+    },
+    {
+      "file": "src/fms/play/war-view.ts",
+      "sha256": "e5b4a672888928108cf48c2e8cfd2ee9a98227840dc432270788026bc90d894c"
+    },
+    {
+      "file": "tests/fms-inspection.spec.ts",
+      "sha256": "bc00492847cb1bdf3f8237b8b82237873bcffd68b42ab8b4431c597b212210a7"
+    },
+    {
+      "file": "tests/fms-chronicle.spec.ts",
+      "sha256": "85263665f77c0c9250e7c20d7891b8ef005e3f5ade298566a7200b7d49b71cc9"
+    }
+  ],
+  "sourceFingerprint": "da34c8570c6ca2eb9ad64c19da44fa3f8f91177c2a7631183e85622c701ca936",
+  "cloudWrites": false
+}

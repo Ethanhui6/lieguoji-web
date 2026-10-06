@@ -1,6 +1,6 @@
 import type {GameEvent,World} from '../../sim/types';
 import {eventLocation,type EventLocation} from './observation';
-export type NewsItem={key:string;day:number;text:string;reason:string;priority:'major'|'normal';location:EventLocation|null};
+export type NewsItem={key:string;day:number;text:string;reason:string;priority:'major'|'normal';location:EventLocation|null;historyId?:number};
 /** Conservative display adapter. It never writes fabricated political events. */
 export function locateRecent(world:World,event:GameEvent):EventLocation|null{
   const old=eventLocation(world,event);if(old)return old;

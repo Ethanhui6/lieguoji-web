@@ -1,0 +1,100 @@
+{
+  "checkedAt": "2026-10-06T15:52:03.536Z",
+  "commit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+  "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37488428210",
+  "jobs": [
+    {
+      "id": 112354659754,
+      "name": "Application checks",
+      "status": "in_progress",
+      "conclusion": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:33:20Z",
+          "completedAt": "2026-10-06T15:33:21Z"
+        },
+        {
+          "name": "Check out tested revision",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:33:21Z",
+          "completedAt": "2026-10-06T15:33:53Z"
+        },
+        {
+          "name": "Set up Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:33:53Z",
+          "completedAt": "2026-10-06T15:34:00Z"
+        },
+        {
+          "name": "Record tested revision",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:34:00Z",
+          "completedAt": "2026-10-06T15:34:01Z"
+        },
+        {
+          "name": "Install locked dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:34:01Z",
+          "completedAt": "2026-10-06T15:34:14Z"
+        },
+        {
+          "name": "Check plan, lint, types, unit tests, and production build",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:34:14Z",
+          "completedAt": "2026-10-06T15:50:22Z"
+        },
+        {
+          "name": "Install Chromium and system dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-06T15:50:22Z",
+          "completedAt": "2026-10-06T15:50:47Z"
+        },
+        {
+          "name": "Run core browser checks",
+          "status": "in_progress",
+          "conclusion": null,
+          "startedAt": "2026-10-06T15:50:47Z",
+          "completedAt": null
+        },
+        {
+          "name": "Keep checked game build",
+          "status": "pending",
+          "conclusion": null,
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "name": "Keep browser failure evidence",
+          "status": "pending",
+          "conclusion": null,
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "name": "Post Set up Node.js",
+          "status": "pending",
+          "conclusion": null,
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "name": "Post Check out tested revision",
+          "status": "pending",
+          "conclusion": null,
+          "startedAt": null,
+          "completedAt": null
+        }
+      ]
+    }
+  ],
+  "note": "Live read-only GitHub job snapshot. Pages build/test success is independently evidenced; unfinished Actions is not marked passed."
+}

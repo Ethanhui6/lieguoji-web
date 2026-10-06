@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "local_passed_not_uploaded",
+      "status": "preview_verified_ci_pending",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2399,21 +2399,43 @@
       "deploymentMode": "Cloudflare Pages native Git branch preview",
       "productionMainUnchanged": true,
       "phaseCompletionClaim": false,
-      "candidateStatus": "local_passed_not_uploaded",
+      "candidateStatus": "uploaded",
       "candidateEngine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
       "candidateParentCommit": "1790975428e0b13976f8da9f735ec9110f0af714",
-      "commit": null,
-      "urls": [],
+      "commit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+      "urls": [
+        "https://a4760659.lieguoji-web.pages.dev",
+        "https://codex-ph06-world-generation.lieguoji-web.pages.dev"
+      ],
       "https": {
-        "status": "not_started",
-        "commit": null,
-        "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea"
+        "status": "passed",
+        "checkedAt": "2026-10-06T15:49:53.213Z",
+        "commit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+        "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+        "evidence": "docs/evidence/fms-chronicle2-v5-2026-10-06/https-verification.json",
+        "freshCases": 6,
+        "immutableCases": 5,
+        "stableAliasCases": 1,
+        "physicalDevice": "pending",
+        "userVisual": "pending"
       },
       "cloudCi": {
-        "status": "not_started"
+        "id": 37488428210,
+        "status": "in_progress",
+        "conclusion": null,
+        "headSha": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+        "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37488428210"
       },
       "pages": {
-        "status": "not_started"
+        "status": "completed",
+        "conclusion": "success",
+        "detailsUrl": "https://dash.cloudflare.com/?to=/0dccd3742e707d4f6506f2de668e516e/pages/view/lieguoji-web/a4760659-b8d2-4aee-aca0-90cfc6f09fed",
+        "unitTests": {
+          "total": 2753,
+          "passed": 2753
+        },
+        "benchmarkMs": 1432.879774,
+        "evidence": "docs/evidence/fms-chronicle2-v5-2026-10-06/cloud-build.json"
       },
       "priorAttempt": {
         "commit": "1790975428e0b13976f8da9f735ec9110f0af714",
@@ -2424,8 +2446,13 @@
       "evidence": [
         "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
         "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
-        "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json"
-      ]
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/cloud-release.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/cloud-build.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/https-verification.json",
+        "docs/evidence/fms-chronicle2-v5-2026-10-06/ci-stages.json"
+      ],
+      "checkedAt": "2026-10-06T15:50:32.963Z"
     }
   },
   "ownedPackageReuse": {
@@ -2781,7 +2808,8 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/checks.json",
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/live-motion-samples.json",
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/production-motion-samples.json",
-      "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md"
+      "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md",
+      "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md"
     ],
     "nextBatch": [
       "WEB-04-13"
@@ -4038,6 +4066,38 @@
               "docs/evidence/fms-chronicle2-v5-2026-10-06/history-review.json"
             ],
             "completionScope": "本地有限性能/存档切片已实测；实际云端检查、完整PH、真机及视觉另记，不由此解锁。"
+          },
+          {
+            "id": "WEB-04-31",
+            "title": "战役逐军补给与真实围攻轮次解释闭环",
+            "dependsOn": [
+              "WEB-04-29"
+            ],
+            "acceptance": "真实满抵抗/守军回补、下一有效轮次、缺粮单军与三国参与一致；路段不套城防；选军撤离预览取消确认与精确保存恢复；v12执行与旧库不改",
+            "status": "done",
+            "evidence": [
+              "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md",
+              "docs/evidence/fms-inspection-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-inspection-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
+            ],
+            "completionScope": "本地展示/指挥/史书检索有限闭环；26单元与14浏览器通过。未修改已发布v12规则/旧库，未上传；完整原作效率/长战平衡、真机和视觉未验收。首轮平板保存超时单独保留，不宣称其性能根因已修复。"
+          },
+          {
+            "id": "WEB-04-32",
+            "title": "永久史书搜索筛选与顶部要闻直达",
+            "dependsOn": [
+              "WEB-04-27"
+            ],
+            "acceptance": "旧名/王号/原因检索、稳定国家ID与类别筛选、先筛后分页；顶部直达准确历史ID并可见展开，跨run不串选；查询不改存档；刷新恢复完整历史",
+            "status": "done",
+            "evidence": [
+              "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md",
+              "docs/evidence/fms-inspection-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-inspection-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
+            ],
+            "completionScope": "本地展示/指挥/史书检索有限闭环；26单元与14浏览器通过。未修改已发布v12规则/旧库，未上传；完整原作效率/长战平衡、真机和视觉未验收。首轮平板保存超时单独保留，不宣称其性能根因已修复。"
           }
         ]
       },
@@ -4609,19 +4669,23 @@
       ]
     },
     "executionCheckpoint": {
-      "date": "2026-10-06",
-      "status": "chronicle2_locally_verified_ready_for_preview_seal",
+      "date": "2026-10-07",
+      "status": "local_inspection_verified",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "1790975428e0b13976f8da9f735ec9110f0af714",
-      "cloudScope": "GitHub+Pages branch preview uploaded; main unchanged; formal PH/physical/visual pending",
-      "next": "Fresh source privacy/seal, normal same-branch fast-forward preview upload, verify actual Pages HTTPS and independent GitHub CI.",
-      "latestUserPriority": "更细真实地块、一块一城、每片割裂领土标国名、亡国首都去标、顶部真实起义独立传位史",
+      "lastCommitted": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+      "cloudScope": "Previous 8eb9b4e remains the uploaded preview. This UI inspection batch is local only; main/production and user 5181 untouched.",
+      "next": "WEB-04-13继续原作地形/补给长战数值对照；先处理对照表第3项的所选小城身份和灭国选择残留。保留首轮平板保存延迟风险，若复现先量测而非加超时。任何已发布规则变更先冻结；本批仅本地，无新发布候选。",
+      "latestUserPriority": "执行桌面网页复刻提示词正文并完成第一批实际可玩闭环",
       "requiredUserAction": null,
       "evidence": [
-        "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
-        "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json",
-        "docs/evidence/fms-chronicle2-v5-2026-10-06/guards.json"
-      ]
+        "docs/evidence/fms-inspection-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-inspection-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
+      ],
+      "currentVersion": 12,
+      "currentEngine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+      "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
+      "localUrl": "http://127.0.0.1:5182/?fms=1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5447,6 +5511,36 @@
         "docs/evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md",
         "docs/evidence/fms-chronicle2-v5-2026-10-06/checks.json",
         "docs/evidence/fms-chronicle2-v5-2026-10-06/browser.json"
+      ],
+      "preview": {
+        "commit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+        "url": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
+        "httpsVerified": true,
+        "ci": "pending",
+        "physicalDevice": "pending",
+        "userVisual": "pending"
+      }
+    },
+    "inspectionPrototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 12,
+      "engine": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+      "baseCommit": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
+      "localUrl": "http://127.0.0.1:5182/?fms=1",
+      "tasks": [
+        "WEB-04-31",
+        "WEB-04-32"
+      ],
+      "evidence": [
+        "docs/evidence/fms-inspection-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-inspection-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-inspection-v5-2026-10-07/browser.json"
+      ],
+      "limitations": [
+        "Physical iPhone/native visual unverified",
+        "Source efficiency and long war balance remain WEB-04-13",
+        "First tablet 5s save poll failure not root-caused; later unchanged limit checks pass"
       ]
     }
   }

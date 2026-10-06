@@ -1,6 +1,7 @@
 import type {Point,World} from '../../sim/types';
 import {engagementPoint,type BattleState} from './battle';
 import {holdsNode,type OccupationState} from './occupation';
+import {nationsAtWar} from './realtime-statecraft';
 import {fleetPosition,type Navy} from './navy';
 import type {MaritimeState} from './maritime';
 import type {SeaGraph} from './sea-path';
@@ -23,9 +24,9 @@ export function warSites(world:World,battles?:BattleState,occupation?:Occupation
   const sites:WarSite[]=[];
   for(const e of battles?.engagements??[])sites.push({id:`field:${e.id}`,kind:'field',name:`${world.provinces.find(p=>p.id===e.a)?.name??''}${e.b?'道路交锋':'交锋'}`,point:engagementPoint(world,e),started:e.started,armyIds:e.armies,fleetIds:[],nationIds:world.armies.filter(a=>e.armies.includes(a.id)).map(a=>a.nationId),losses:e.losses});
   for(const s of occupation?.sieges??[]){const p=world.provinces.find(p=>p.id===s.provinceId);if(!p)continue;
-    const armies=world.armies.filter(a=>holdsNode(a)&&a.provinceId===p.id&&(a.nationId===s.attacker||a.nationId===s.controller));
-    if(!armies.some(a=>a.nationId===s.attacker))continue;
-    sites.push({id:`siege:${p.id}`,kind:'siege',name:`${p.name}围攻`,point:p.center,started:s.started,armyIds:armies.map(a=>a.id),fleetIds:[],nationIds:[s.controller,s.attacker],losses:{},resistance:{remaining:s.resistance,maximum:s.maximum}});
+    const armies=world.armies.filter(a=>holdsNode(a)&&a.provinceId===p.id&&(a.nationId===s.controller||nationsAtWar(world,a.nationId,s.controller)));
+    if(!armies.some(a=>nationsAtWar(world,a.nationId,s.controller)))continue;
+    sites.push({id:`siege:${p.id}`,kind:'siege',name:`${p.name}围攻`,point:p.center,started:s.started,armyIds:armies.map(a=>a.id),fleetIds:[],nationIds:[...new Set([s.controller,...armies.map(a=>a.nationId)])],losses:{},resistance:{remaining:s.resistance,maximum:s.maximum}});
   }
   for(const c of naval?.maritime?.contacts??[]){const a=naval!.navy.fleets.find(f=>f.id===c.a),b=naval!.navy.fleets.find(f=>f.id===c.b);if(!a||!b)continue;const p=fleetPosition(naval!.graph,a),q=fleetPosition(naval!.graph,b);
     sites.push({id:`sea:${[a.id,b.id].sort().join('/')}`,kind:'sea',name:'海上交锋',point:{x:(p.x+q.x)/2,y:(p.y+q.y)/2},started:c.started,armyIds:[],fleetIds:[a.id,b.id],nationIds:[a.nationId,b.nationId],losses:{}});

@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-07",
+  "sourceCommit": "776eb7a26cda818b7fc09a06fe119eca173c359b",
+  "engine": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
+  "unit": {
+    "passed": 86,
+    "failed": 0,
+    "files": 5,
+    "report": "unit-final.json"
+  },
+  "lint": "passed",
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "distWhitelistArtifacts": 43,
+  "releasePolicyTests": {
+    "passed": 24
+  },
+  "planTests": {
+    "passed": 15
+  },
+  "browser": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "report": "browser-final.json"
+  },
+  "manual": {
+    "normalDrawing": true,
+    "newFourCountriesSixtyCities": true,
+    "realDeclaration": true,
+    "savedDay": 0,
+    "observedLaterDay": 23,
+    "consoleErrors": [],
+    "note": "5204 now contains the visible play world. Preserve it; do not reset or overwrite for future QA."
+  },
+  "warnings": [
+    "App and Worker minified bundles exceed 500 kB",
+    "git diff --check flags the byte-identical frozen v25 mesh archive EOF blank line; kept to preserve fingerprint"
+  ],
+  "deviceAcceptance": "pending iPhone13ProMax Safari/Chrome",
+  "visualAcceptance": "pending user",
+  "nativeParity": "partial leaf kernels plus explicitly documented web inputs/planner",
+  "cloud": "not pushed or deployed"
+}

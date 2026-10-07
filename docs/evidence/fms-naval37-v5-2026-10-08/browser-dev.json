@@ -1,0 +1,51 @@
+{
+  "origin": "http://127.0.0.1:5229",
+  "production": false,
+  "scope": "Disposable Chromium, synthetic five-country naval fixture; actual deployment/manual control UI, Worker and IndexedDB. Not original runtime/visual parity or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": true,
+  "fixture": {
+    "engine": "77da6e217ee79a875e95ec87de2f2ed7e14bf50b5b671bbfb4cd3a2059cf5461",
+    "day": 0
+  },
+  "country": "n-0",
+  "moving": [
+    {
+      "id": "fleet-2-0",
+      "node": 144,
+      "progress": 0.38888888888894735,
+      "targetId": "port-p-6-0",
+      "remainingNodes": 8
+    },
+    {
+      "id": "fleet-11-4",
+      "node": 144,
+      "progress": 0.38888888888894735,
+      "targetId": "port-p-4-0",
+      "remainingNodes": 20
+    },
+    {
+      "id": "fleet-12-5",
+      "node": 144,
+      "progress": 0.38888888888894735,
+      "targetId": "port-p-6-0",
+      "remainingNodes": 8
+    },
+    {
+      "id": "fleet-13-6",
+      "node": 194,
+      "progress": 9.319057844445092,
+      "targetId": "port-p-26-0",
+      "remainingNodes": 17
+    }
+  ],
+  "restored": true,
+  "cancel": true,
+  "manualTakeover": true,
+  "manualRetained": true,
+  "crossTabCAS": true,
+  "portraitOverflow": false,
+  "resumed": true,
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-naval37-v5-2026-10-08\\video\\page@9782ff789671f4e9d1e524a48ac4bb9c.webm"
+}

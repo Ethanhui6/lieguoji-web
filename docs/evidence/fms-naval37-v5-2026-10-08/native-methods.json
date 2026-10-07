@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-08",
+  "path": "D:/steam/steamapps/common/FantasyMapSimulator/GameAssembly.dll",
+  "sha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "evidence": "Scoped PE/IL2CPP static analysis; not runtime/video/visual proof",
+  "methods": [
+    {
+      "name": "NavalSystem$$HandleWarEnded",
+      "rva": "418550",
+      "bytes": 1408,
+      "sha256": "c8d7e0e3cf0dcf1b31a1e7baad9656b58ca6a9174ee195cb47d5f6226658222c"
+    },
+    {
+      "name": "NavalSystem$$TryGetIdleDeploymentTarget",
+      "rva": "41CB40",
+      "bytes": 2480,
+      "sha256": "aaf777e1b0eeee626db92dee7b85687924b81d10612a3fe91ce434235ce08289"
+    },
+    {
+      "name": "NavalSystem$$WeightedRandomPortSelection",
+      "rva": "4206D0",
+      "bytes": 384,
+      "sha256": "61ff3564707403cf09083025349a77d599996d91cf85ff4be5d1770e1957ad15"
+    },
+    {
+      "name": "Navy$$UpdateIdle",
+      "rva": "426EC0",
+      "bytes": 1744,
+      "sha256": "9090c5206eb5f721b267f1b3e57f6d3ceabd42240444567ecfd9600cfb6a48f7"
+    },
+    {
+      "name": "NavalSystem$$BuildFriendlyNavyCountInPort",
+      "rva": "410200",
+      "bytes": 1088,
+      "sha256": "ca1c4ee4ad9905d1ff87a1cfc6b6f1b4965452e8a535fb806dba40f55a08e7ed"
+    },
+    {
+      "name": "NavalSystem$$BuildFriendlyNavyAssignedCountInPort",
+      "rva": "40FE90",
+      "bytes": 880,
+      "sha256": "45da1a00f965e7074740058ddfba5a4594b445530a7093ccbe5174dcd95d5548"
+    },
+    {
+      "name": "Navy$$HandleWarToPeaceTransition",
+      "rva": "422AC0",
+      "bytes": 176,
+      "sha256": "3f7aeb731759d4900c92be5bd5b57f44559e89306fcf8290fd46608accb5bc6b"
+    }
+  ]
+}

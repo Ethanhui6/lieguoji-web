@@ -1,3 +1,17 @@
+# 当前续接：v37舰队港口部署可玩，继续完整战争V2
+
+2026-10-08；源码 `62924dbf73fd3a7d56c77907d8773c710cd4d8a6`；根唯一写入。顺序保持WEB-04-37 → WEB-03-06 → 排队的官网/视频全项目审查/前10差距，没有用新计划替换原任务。无新的必要用户决策阻塞。
+
+- 已接原作港口密度优先池（和平2/战时3）、float32权重和闲置冷却，实际舰队沿同海域海格航线分散。玩家军令、运输、接敌优先；可预览/取消/确认交回港口部署。指派/冷却/随机序列随Worker与Store39保存；旧v36原样推进，复制旧档不补造历史母港。
+- [交付与差异](evidence/fms-naval37-v5-2026-10-08/DELIVERY.md)、[原作合同](evidence/fms-naval37-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-naval37-v5-2026-10-08/checks.json)。87相关含旧v36回归、全仓types/lint、39发布计划保护、生产构建和43产物审查通过；生产Chromium实际出航/手动接管/交回/保存刷新/跨标签CAS/实时Worker增量；原作地形→6国60城→推进保存恢复通过。无pageerror/HTTP失败。
+- [本机试玩v37](http://127.0.0.1:5230/?fms=1)，仅127.0.0.1；产物`.autopilot/naval37-preview/dist`，PID25024，engine `77da6e217ee79a875e95ec87de2f2ed7e14bf50b5b671bbfb4cd3a2059cf5461`。旧v36/5228的43产物哈希不变；不同端口存档不自动搬运。5229开发服PID7296已关闭。
+- 7个原作方法已按PE/IL2CPP有界静态分析索引，没有执行原作或公开视频对照。原作unscaled秒数映射到网页暂停/倍速时钟、单格港口和余粮约束为明确适配；多格闲游、前进基地、独立海港占领及完整战后流程尚未完成。
+- 首轮UI窄化表达式编译、浏览器脚本CRLF拼接及海军国家选择器错误已修，失败记录保留。大包/Vite配置警告仍在；方形大陆是军事夹具，428×926不是iPhone。全景中近景/4-16-40倍原作视觉和手机验收未通过。
+- 下一批：Continue WEB-04-37 from playable v37: finish native idle-army allocation, fleet forward bases/port occupation and postwar lifecycle, full land/naval coordination and military office/cooldown/other internal-war rules. Native idle fleet weight/cap selection is live; do not recover it again. Multi-cell port loiter, unscaled-time parity and full native sea movement remain missing; browser geometry, food guards and persisted sim clock are explicit adapters. Preserve v36/5228 and its 43 hashes. Then WEB-03-06, followed by queued official/video full audit/top10. No push/Pages/main changes.
+- 未push/Pages/main/发布门变更；完整WEB-04-37保持进行，不将此切片报为完整原作还原。
+
+---
+
 # 当前续接：v36盟军借道与陆路协同可玩，继续完整战争V2
 
 2026-10-08；源码 `6985ab690c31d91c44414abd2cf17149ed14b52b`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再接排队的官网/视频全项目研究及前10差距。无新的必要用户决策阻塞。

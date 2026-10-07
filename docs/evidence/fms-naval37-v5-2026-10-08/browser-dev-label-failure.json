@@ -1,0 +1,15 @@
+{
+  "origin": "http://127.0.0.1:5229",
+  "production": false,
+  "scope": "Disposable Chromium, synthetic five-country geometry; actual alliance UI/Worker/IDB. Not original runtime/visual parity or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": false,
+  "fixture": {
+    "engine": "77da6e217ee79a875e95ec87de2f2ed7e14bf50b5b671bbfb4cd3a2059cf5461",
+    "day": 0
+  },
+  "country": "n-0",
+  "failure": "TimeoutError: locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('查看国家', { exact: true })\u001b[22m\n",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-naval37-v5-2026-10-08\\video\\page@17cbf9b725e930755b8a72703e5ca0fa.webm"
+}

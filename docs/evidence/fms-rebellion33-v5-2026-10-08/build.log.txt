@@ -47,7 +47,7 @@ computing gzip size...
 .autopilot/rebellion33-preview/dist/assets/FmsApp-Bz5X_XyX.js                    2,253.80 kB │ gzip: 662.60 kB
 
 ✓ built in 1.06s
-[plugin builtin:vite-reporter] 
+[plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting

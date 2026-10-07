@@ -4289,7 +4289,8 @@
               "docs/evidence/fms-war26-v5-2026-10-07/browser-final.json",
               "docs/evidence/fms-war26-v5-2026-10-07/unit-final.json",
               "docs/evidence/fms-war26-v5-2026-10-07/tested-artifact.json",
-              "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md"
+              "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-war26-v5-2026-10-07/NEXT_WAR_RECOVERY.md"
             ],
             "progressScope": "v26固定连片目标内核、实际陆海军目标推进、目标定位与独立保存已本地验证；CB/战争分/厌战/和约未接，完整WEB-04-37未完成。"
           }
@@ -6524,11 +6525,22 @@
       "observedVideoIds": [
         "zBXNH8hmasA",
         "JUlwXSL_H-w",
-        "SqAYa2BGBEQ"
+        "SqAYa2BGBEQ",
+        "sI-opE_XqY4"
       ],
       "partialVideoId": "BV1RhBDYMER4",
       "nativeGameplay": "capture_failed_not_played",
-      "officialWarV2": "connected-target slice integrated; full war V2 pending"
+      "officialWarV2": "connected-target slice integrated; full war V2 pending",
+      "latestSupplement": {
+        "date": "2026-10-07",
+        "observations": [
+          "Game Mojo 2024-09-04: 00:02/00:10/00:28/00:33 and seek 01:25/01:30; partial only",
+          "Two Real: played 08:00-08:18, inspected 08:02"
+        ],
+        "scope": "Editor controls, map hierarchy, attack arrows, rebellion banner; no frame-rate, complete workflow or current native rules proof",
+        "productionChanged": false,
+        "evidence": "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md"
+      }
     },
     "settlement25Prototype": {
       "date": "2026-10-07",
@@ -6581,6 +6593,28 @@
         "docs/evidence/fms-war26-v5-2026-10-07/tested-artifact.json",
         "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md"
       ]
+    },
+    "nativeWarV2ReadOnlyAudit": {
+      "date": "2026-10-07",
+      "status": "static_recovery_only",
+      "parentCommit": "0461445",
+      "evidence": [
+        "docs/evidence/fms-war26-v5-2026-10-07/NEXT_WAR_RECOVERY.md"
+      ],
+      "recovered": [
+        "BuildConnectedClaimProvinces outer flow and comparators",
+        "CalculateWarScore and CalculateProgress dependencies",
+        "Current actual loss and peace integration points"
+      ],
+      "remaining": [
+        "Sea approach and port eligibility dependencies",
+        "Casus belli and war-start snapshot registration",
+        "Actual casualty accounting",
+        "Weariness and peace settlement",
+        "New-version production integration and tests"
+      ],
+      "productionVersionUnchanged": 26,
+      "newTestsRun": false
     }
   }
 }

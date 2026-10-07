@@ -2,6 +2,8 @@
 
 2026-10-07；源码 776eb7a26cda818b7fc09a06fe119eca173c359b，根唯一写入。V5/WEB-PH04/WEB-04-37及完整原作还原Goal继续进行；不回写旧PH/真机/视觉为通过。
 
+同日后续补充（父HEAD 0461445）：按用户要求新增实际观看 Game Mojo 原作开局片段和 Two Real 08:00–08:18；时间点、地图层级/编辑器/进攻箭头/要闻观察见 [VIDEO_FOLLOWUP](evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md)。并保存既有只读代理完成的完整目标选取外层、排序、战争分/目标进度及真实战损接线审计：[NEXT_WAR_RECOVERY](evidence/fms-war26-v5-2026-10-07/NEXT_WAR_RECOVERY.md)。尚无对应新纯函数/生产接线/测试，v26源码与全部试玩不变。下一批直接使用该证据，不重复恢复；原目标外层允许多分量及海岸后备，不能把网页v26的单连通/可运输约束称作完整原函数。新增规则须冻结v26、另建版本和测试origin。
+
 - 独立本机试玩 http://127.0.0.1:5204/?fms=1 ，.autopilot/war26-preview/dist；v26/Store28/lieguoji-fms-war-v26；engine 6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1。正常绘图四国六十城、真实宣战并保存第0日，后续观察运行至第23日。5204已有试玩现场，不能为测试重置；5199、5201/v24、5203/v25保留。继续先核实端口。
 - 固定战初连片目标驱动陆軍日结与跨海选港；不穿中立陆路，保留救援、真实交锋与玩家命令。已修空舰返航锁陆军、不可执行海上种子和Store28扫描；战争页可定位目标。原作叶函数/float32/HashSet顺序与网页入口/人数尺度分别说明，不能叫全原AI。见 [DELIVERY](evidence/fms-war26-v5-2026-10-07/DELIVERY.md)。
 - 最终86相关单元、完整lint/types/build43产物通过；三尺寸6浏览器0重试通过；发布24与计划15通过。真实完整会话验证登陆军在空舰仍返航时继续向目标进军。不是全量历史测试、真机或用户视觉通过。v25冻结archive沿用原EOF空行有diff --check提示，App/Worker大包警告保留。

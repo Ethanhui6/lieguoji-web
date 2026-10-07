@@ -1,3 +1,17 @@
+# 当前续接：v26 军事/传位/史书入口已修复，战争分内核已测但尚未接入
+
+2026-10-07；源码提交 547f03a85593ea9442d8ee144fe94789e8612d7a，根唯一写入，工作分支 codex/ph06-world-generation。V5 / WEB-PH04 / WEB-04-37 与完整原作还原 Goal 均继续进行。
+
+- 当前新增本机试玩 http://127.0.0.1:5205/?fms=1 ，独立 .autopilot/war26-ui-preview/dist，v26/Store28/lieguoji-fms-war-v26；引擎仍 6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1。构建元数据是 cfc847c 脏树父提交，真实产物哈希见 [tested-artifact](evidence/fms-war26-ui-v5-2026-10-07/tested-artifact.json)，与该源码提交匹配，不伪称构建时已存在提交。
+- 修复 FmsGame 三处漏 v26 分派：restoration 预览规则、永久史书派生视图（连带宫廷/战术面板）、muster确认。已验证实际传位采用已有继承人，取消不改世界，布兵新增真实军团，史书检索、保存刷新完全相同。旧 v11直通、v20动员规则继续保留。人物/家谱本身原先已显示，不能说是本批新建。
+- 最终78相关单元（35新内核+43既有v26）、9浏览器流程（三尺寸新UI闭环3+原绘图/跨海6）、lint/types/build43白名单、39发布/计划保护及计划校验通过。浏览器均0重试。原f32期望和null/v11类型首轮失败如实留证。不是全量历史测试、iPhone真机、原作视觉等价或性能验收。详见 [DELIVERY](evidence/fms-war26-ui-v5-2026-10-07/DELIVERY.md)。
+- 5205手工已画不规则大陆并建四国60城；随后页面视口和运行状态发生变化，未再干预该现场或替用户保存。以后视为已有试玩世界，不得用于QA重置。5199/5201/5203/5204同样保留。新QA需要先查端口和独立origin，勿重启/覆盖这些产物。原作视频研究标签Game Mojo保留1:30，记录见此前 VIDEO_FOLLOWUP；没有把短片段观看称为完整试玩。
+- src/fms/play/native-war/score.ts、weariness.ts 实现已核原战争分/进度/厌战，**没有生产import、没有v27、没有新伤亡账/自动议和**。纯函数合同、float32次序、查询端口、PeaceResolverV2主链新静态证据和方法哈希均已保存 [NATIVE_WAR_KERNELS](evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md)。不要重复恢复。完整和约效果/分类、上游683E30期限与6848F0结束、开战快照/击杀单位等仍待接。
+- 下一批WEB-04-37：冻结v26的15文件含native-round.ts，独立新版库/Worker/client及真实扣兵位置统计；旧局只能明确复制，复制之前战损未知，不能按整tick兵力差反推。新统计与campaign裁剪保持一致。再接WEB-03-06文化一致性；海洋、城名描边和近景折线感仍有可见差距。
+- 无push/远程PR/Issue/Pages/main，旧引擎/存档及pre-push不变。Oct6有界预览未扩展；私库Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git链保持。真机iPhone13ProMax/Safari/Chrome、用户视觉仍待验，不因这些待验事项停止其余已授权本地工程。
+
+---
+
 # 当前续接：v26固定战争目标已接实际陆海军，完整战争V2仍进行
 
 2026-10-07；源码 776eb7a26cda818b7fc09a06fe119eca173c359b，根唯一写入。V5/WEB-PH04/WEB-04-37及完整原作还原Goal继续进行；不回写旧PH/真机/视觉为通过。

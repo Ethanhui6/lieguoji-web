@@ -4870,9 +4870,9 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "v26 UI closure repaired; tested native war kernels not yet integrated",
+      "status": "v26 UI closure and standalone native war kernels verified, locally committed",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "776eb7a26cda818b7fc09a06fe119eca173c359b",
+      "lastCommitted": "547f03a85593ea9442d8ee144fe94789e8612d7a",
       "cloudScope": "Local-only v26; prior bounded preview grant not extended; main and old saves preserved.",
       "next": "WEB-04-37：冻结v26，真实战损/快照与自动结束事务接新版本；接WEB-03-06。不要重复拆解已有score/weariness/peace主链。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
@@ -6644,7 +6644,8 @@
       "physicalDeviceAccepted": false,
       "userVisualAccepted": false,
       "browserCases": 9,
-      "browserRetries": 0
+      "browserRetries": 0,
+      "sourceCommit": "547f03a85593ea9442d8ee144fe94789e8612d7a"
     },
     "nativeWarKernels": {
       "date": "2026-10-07",

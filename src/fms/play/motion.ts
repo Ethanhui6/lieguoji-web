@@ -20,8 +20,8 @@ export function sliceTrack(points:Point[],from:number,to:number):Point[]{
 }
 /** Presentation only. Paths are proved from consecutive authoritative snapshots;
  * unknown resets hold their new position, never invent a straight-line journey. */
-export function dayTracks(previous:FmsRun,next:FmsRun):Tracks {
-  const tracks:Tracks={armies:new Map(),fleets:new Map()},consecutive=previous.id===next.id&&next.world.day===previous.world.day+1;
+export function dayTracks(previous:FmsRun,next:FmsRun,realtime=false):Tracks {
+  const tracks:Tracks={armies:new Map(),fleets:new Map()},consecutive=previous.id===next.id&&(realtime?'clock'in previous&&'clock'in next&&next.clock.tick>previous.clock.tick&&next.clock.tick-previous.clock.tick<=120:next.world.day===previous.world.day+1);
   const provinces=new Map(next.world.provinces.map(p=>[p.id,p])),oldArmies=new Map(previous.world.armies.map(a=>[a.id,a]));
   for(const a of next.world.armies){
     if(a.status==='destroyed'||a.troops<=0)continue;
@@ -74,8 +74,8 @@ export class MovementClock {
     for(const kind of ['armies','fleets'] as const)for(const [id,path] of fresh[kind]){const old=this.tracks[kind].get(id);if(old&&distance(old.at(-1)!,path[0])<1e-7)fresh[kind].set(id,old);}
     this.fraction=this.alpha(now);this.anchor=now;this.tracks=fresh;
   }
-  start(previous:FmsRun,next:FmsRun,now:number,duration:number){
-    const fresh=dayTracks(previous,next),alpha=this.alpha(now);
+  start(previous:FmsRun,next:FmsRun,now:number,duration:number,realtime=false){
+    const fresh=dayTracks(previous,next,realtime),alpha=this.alpha(now);
     // Small Worker scheduling delays cannot drop an unfinished final corner.
     if(alpha<1)for(const kind of ['armies','fleets'] as const)for(const [id,path] of fresh[kind]){const old=this.tracks[kind].get(id);if(old&&distance(old.at(-1)!,path[0])<1e-7)fresh[kind].set(id,[...sliceTrack(old,length(old)*alpha,length(old)),...path.slice(1)]);}
     this.tracks=fresh;this.fraction=0;this.anchor=now;this.duration=duration;this.running=true;

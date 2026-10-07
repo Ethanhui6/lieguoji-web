@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "fingerprint": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
+  "files": [
+    {
+      "path": "src/fms/play/dynasty23-state.ts",
+      "archive": "fms/play/dynasty23-state.ts.source",
+      "sha256": "180c596488dbada9943b79f43c1897bcb223be271037ca1cf31adfb8df933501"
+    },
+    {
+      "path": "src/fms/play/dynasty23-family.ts",
+      "archive": "fms/play/dynasty23-family.ts.source",
+      "sha256": "501cfefbd191bf327e01fd6366bddfa3965bf523e7640ae444d5932cf1f4dbc4"
+    },
+    {
+      "path": "src/fms/play/dynasty23-validation.ts",
+      "archive": "fms/play/dynasty23-validation.ts.source",
+      "sha256": "a8352a6653676beae68fdf7bf3c1f55a73706f56abd81e39d9b79971923fa0e1"
+    },
+    {
+      "path": "src/fms/play/dynasty23-succession.ts",
+      "archive": "fms/play/dynasty23-succession.ts.source",
+      "sha256": "527c6b22f10e3a133c1f206cb531745343a5c27d7fda3bce4e01e655a22e819b"
+    },
+    {
+      "path": "src/fms/play/dynasty23-politics.ts",
+      "archive": "fms/play/dynasty23-politics.ts.source",
+      "sha256": "92c4c48f22297cb093deea7ed59a9167543bde589b0f745b38421c2c962c0dba"
+    },
+    {
+      "path": "src/fms/play/dynasty23-model.ts",
+      "archive": "fms/play/dynasty23-model.ts.source",
+      "sha256": "d83b551325f162c944b1a9ae1a4c0c14ce96feebe68800580186fdc57fa40de3"
+    },
+    {
+      "path": "src/fms/play/dynasty23-session.ts",
+      "archive": "fms/play/dynasty23-session.ts.source",
+      "sha256": "e649f40e3cd6193c5ff06acbf98bfbe23a1664e6b59cad541bb65a8c5c84bc1e"
+    },
+    {
+      "path": "src/fms/play/dynasty23-storage.ts",
+      "archive": "fms/play/dynasty23-storage.ts.source",
+      "sha256": "6c0332a7ec100ecc3c01efcbfb40c8540aac58c635146d8861b6eb84dc6d38ec"
+    },
+    {
+      "path": "src/fms/play/dynasty23-stores.ts",
+      "archive": "fms/play/dynasty23-stores.ts.source",
+      "sha256": "9f9bcd6303e3c0f3d141242f81a39c908decf3b83e400872f7976600cd74f0b6"
+    },
+    {
+      "path": "src/fms/play/dynasty23-client.ts",
+      "archive": "fms/play/dynasty23-client.ts.source",
+      "sha256": "e18e3b613d88bb42a30f6e72a51350f097be544e409997f2ce49260d86cfba96"
+    },
+    {
+      "path": "src/fms/play/dynasty23/play.worker.ts",
+      "archive": "fms/play/dynasty23/play.worker.ts.source",
+      "sha256": "34ae49c55b9a3c1aa6f2dcaaeab85c297582c838462ca5f4e7791ae0c9eddec0"
+    },
+    {
+      "path": "src/fms/play/native-economy/family-members.ts",
+      "archive": "fms/play/native-economy/family-members.ts.source",
+      "sha256": "03752311afc11004e0f7d4a6a6d0019863f67dca9c2ca2e0bc65b131dd8d3777"
+    },
+    {
+      "path": "src/fms/play/native-economy/family-succession.ts",
+      "archive": "fms/play/native-economy/family-succession.ts.source",
+      "sha256": "df4571af3c3f3f84265c8ba3b914cba3d7c4b97f44b88344c37b96bf921e0174"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-registry.ts",
+      "archive": "fms/play/native-economy/character-registry.ts.source",
+      "sha256": "182ad7c123dbb519b49f32aace58470197bdd53f6213cbd6940dc75ea86da954"
+    },
+    {
+      "path": "src/fms/play/native-culture/character-init.ts",
+      "archive": "fms/play/native-culture/character-init.ts.source",
+      "sha256": "b50990d1f80e3d8525202c1ba4d09e15c599b67d2035b4cb80ef437725fd99d9"
+    }
+  ]
+}

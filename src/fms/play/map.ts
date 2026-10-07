@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, Texture, Sprite, Rectangle } from 'pixi.js';
+import { Container, Graphics, Text, Texture, Sprite, Rectangle, type TextStyleOptions } from 'pixi.js';
 import battleAtlasUrl from './assets/battle-sword.png';
 import {BattleAnimationClock} from './battle-animation';
 import {OrderMotion,SinkMotion} from './order-motion';
@@ -22,6 +22,18 @@ import {warDetail,warSites,warMarkers,type WarMarker,type WarDetail} from './war
 
 export class PlayMap {
   readonly layer = new Container();
+  private retainedLabels=new Map<string,Text>();
+  private usedLabels=new Set<string>();
+  private labelCreations=0;
+  textDiagnostics(){return {created:this.labelCreations,retained:this.retainedLabels.size};}
+  private retainedText(key:string,text:string,style:TextStyleOptions){
+    this.usedLabels.add(key);let label=this.retainedLabels.get(key);
+    if(!label){label=new Text({text,style});this.retainedLabels.set(key,label);this.labelCreations++;}
+    else if(label.text!==text)label.text=text;
+    // Layout measures unscaled glyphs. A previous camera pose must not feed
+    // back into the next territory fit or make its letters shrink repeatedly.
+    label.scale.set(1);label.rotation=0;label.alpha=1;return label;
+  }
   private textures=new Map<UnitKey,Texture>();
   private disposed=false;
   private feedback=new BattleFeedback();
@@ -82,7 +94,7 @@ export class PlayMap {
     for(const effect of this.battleSprites){if(!effect.fleets)continue;const a=frame.fleets.get(effect.fleets[0]),b=frame.fleets.get(effect.fleets[1]);if(a&&b)effect.sprite.position.set((a.x+b.x)/2/p.scale,(a.y+b.y)/2/p.scale);}
   }
   constructor(refresh=()=>{}){for(const [key,url] of Object.entries(icons)){const img=new Image();img.onload=()=>{if(this.disposed)return;this.textures.set(key as UnitKey,Texture.from(img));refresh();};img.src=url;}const img=new Image();img.onload=()=>{if(this.disposed)return;this.battleAtlas=Texture.from(img);this.battleTextures=Array.from({length:40},(_,i)=>new Texture({source:this.battleAtlas!.source,frame:new Rectangle(i%5*258,Math.floor(i/5)*194,258,194)}));refresh();};img.src=battleAtlasUrl;}
-  dispose(){this.disposed=true;for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();for(const texture of this.battleTextures)texture.destroy(false);this.battleTextures=[];this.battleAtlas?.destroy(true);}
+  dispose(){this.disposed=true;for(const text of this.retainedLabels.values()){text.removeFromParent();text.destroy();}this.retainedLabels.clear();for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();for(const texture of this.battleTextures)texture.destroy(false);this.battleTextures=[];this.battleAtlas?.destroy(true);}
 
   private politicalGraphic=new Graphics();
   private politicalGeometry?:object;
@@ -94,6 +106,9 @@ export class PlayMap {
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
+    // Keep text objects and their glyph textures across simulation replies.
+    // Detach before destroying old containers, including the capital layer.
+    for(const text of this.retainedLabels.values())text.removeFromParent();this.usedLabels.clear();
     for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic)child.destroy({ children: true });
     this.unitGroups=[];this.reorganizationWidgets=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     const detail=warDetail(world,scale,zoom),sites=warSites(world,combat?.state,combat?.occupation,naval);
@@ -122,8 +137,9 @@ export class PlayMap {
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0x35453a,width:style.border*pixel,alpha:.9});
     }
     }
-    const label = (text: string, x: number, y: number, size: number, color = '#f9f1d4',parent=this.layer) => {
-      const t = new Text({ text, style: { fontFamily: 'Georgia, serif', fontSize: size, fill: color, fontWeight: 'bold', stroke: { color: '#263d40', width: 3 } } });
+    const label = (text: string, x: number, y: number, size: number, color = '#f9f1d4',parent=this.layer,key?:string) => {
+      const style:TextStyleOptions={fontFamily:'Georgia, serif',fontSize:size,fill:color,fontWeight:'bold',stroke:{color:'#263d40',width:3}};
+      const t=key?this.retainedText(key,text,style):new Text({text,style});
       t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); parent.addChild(t);return t;
     };
     if(combat?.occupation){for(const siege of combat.occupation.sieges){if(detail!=='local'&&!selectedWars.includes(`siege:${siege.provinceId}`))continue;const p=provinces.get(siege.provinceId)!;
@@ -136,7 +152,7 @@ export class PlayMap {
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
       const n=nations.get(territory.nationId)!,point=territory.point,factor=zoom/scale;
-      const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:26,fill:'#263a30',fontWeight:'500',stroke:{color:'#fffae5',width:1.6},letterSpacing:2.4}});
+      const t=this.retainedText(`country:${territory.componentId}`,n.name,{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:26,fill:'#263a30',fontWeight:'500',stroke:{color:'#fffae5',width:1.6},letterSpacing:2.4});
       // Fit the measured glyphs in the world-space band, then cap readability.
       // Tiny enclaves keep their name at their true anchor; zoom reveals it.
       const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;
@@ -158,7 +174,7 @@ export class PlayMap {
     ];
     const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
     this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
-    for(const c of cityText){label(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9);this.cities.find(v=>v.id===c.id)!.label=true;}
+    for(const c of cityText){label(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9,'#f9f1d4',this.layer,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
@@ -234,7 +250,7 @@ export class PlayMap {
     }
     for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
       const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:0xeee8cd,width:.8*pixel,alpha:.6});capitalLayer.addChild(line);
-      const name=new Text({text:c.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:capitalFont,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:3}}});name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
+      const name=this.retainedText(`capital:${c.id}:${capitalFont}`,c.name,{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:capitalFont,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:3}});name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
     }
     if(frame)this.updateUnits(frame);
     // Draw the one actively inspected small city above moving units and effects.
@@ -251,9 +267,10 @@ export class PlayMap {
         const callout=new Graphics();this.layer.addChild(callout);
         callout.moveTo(cx,cy).lineTo(endX,endY).stroke({color:0xffedb6,width:2*pixel}).circle(cx,cy,4*pixel).stroke({color:0xffedb6,width:2*pixel});
         callout.roundRect(x-box.width/2*pixel,y-box.height/2*pixel,box.width*pixel,box.height*pixel,4*pixel).fill(0xeeeada).stroke({color:0x5f7051,width:pixel});
-        const text=new Text({text:selectedLabel.lines!.join('\n'),style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:12,lineHeight:16,fontWeight:'bold',fill:0x263a30,align:'center'}});text.anchor.set(.5);text.scale.set(pixel);text.position.set(x,y);this.layer.addChild(text);
+        const text=this.retainedText(`selected:${activeCity.id}`,selectedLabel.lines!.join('\n'),{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:12,lineHeight:16,fontWeight:'bold',fill:0x263a30,align:'center'});text.anchor.set(.5);text.scale.set(pixel);text.position.set(x,y);this.layer.addChild(text);
         activeCity.label=true;this.cityCallout={...box,id:activeCity.id,provinceId:activeCity.provinceId,name:activeCity.name};
       }
     }
+    for(const [key,text]of this.retainedLabels)if(!this.usedLabels.has(key)){text.destroy();this.retainedLabels.delete(key);}
   }
 }

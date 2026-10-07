@@ -1,13 +1,22 @@
 import {describe,it,expect} from 'vitest';
 import {grid} from './fixture.test-support';
 import {createFmsRun} from './world';
-import {withMilitary,withNavy,stepRunDay} from './runtime';
+import {withMilitary,withNavy,withRealtime,stepRunDay} from './runtime';
 import {dayTracks,MovementClock,pointAlong,sampleTracks} from './motion';
 import {armyPosition,armyMarkers} from './navigation';
 import {seaGraph,seaRoute,seaRoutePoints} from './sea-path';
 import {fleetPosition} from './navy';
 const make=()=>withMilitary(createFmsRun(grid(),4,'peace'));
 describe('continuous display follows the completed simulation path',()=>{
+ it('interpolates sub-day snapshots across frames, retaining pose when the next reply arrives',()=>{
+  const old=withRealtime(withNavy(createFmsRun(grid(),4,'peace'))),a=old.world.armies[0],p=old.world.provinces.find(p=>p.id===a.provinceId)!;Object.assign(a,{route:[p.neighbors[0]],progress:.1,status:'marching'});
+  const next=structuredClone(old);next.clock.tick=4;next.world.armies[0].progress=.3;const last=structuredClone(next);last.clock.tick=8;last.world.armies[0].progress=.5;
+  const clock=new MovementClock();clock.reset(old,0);clock.start(old,next,0,100,true);const start=clock.frame(0).armies.get(a.id)!,middle=clock.frame(50).armies.get(a.id)!,end=armyPosition(next.world,next.world.armies[0]);expect(middle).not.toEqual(start);expect(middle).not.toEqual(end);expect(middle.x).toBeCloseTo((start.x+end.x)/2,8);expect(middle.y).toBeCloseTo((start.y+end.y)/2,8);
+  clock.start(next,last,50,100,true);expect(clock.frame(50).armies.get(a.id)).toEqual(middle);expect(clock.frame(150).armies.get(a.id)).toEqual(armyPosition(last.world,last.world.armies[0]));expect(old.clock.tick).toBe(0);
+ });
+ it('does not infer realtime travel across a restored clock or a different run',()=>{
+  const old=withRealtime(withNavy(createFmsRun(grid(),4,'peace'))),next=structuredClone(old);next.clock.tick=4;next.id+='-different';expect([...dayTracks(old,next,true).armies.values()].every(p=>p.length===1)).toBe(true);next.id=old.id;next.clock.tick=-1;expect([...dayTracks(old,next,true).armies.values()].every(p=>p.length===1)).toBe(true);
+ });
  it('keeps the corner when an army crosses a province boundary in one day',()=>{
   const old=make(),p=old.world.provinces[0],q=old.world.provinces.find(q=>p.neighbors.includes(q.id))!,r=old.world.provinces.find(r=>q.neighbors.includes(r.id)&&r.id!==p.id)!;
   const a=old.world.armies[0];Object.assign(a,{provinceId:p.id,route:[q.id,r.id],progress:.8,status:'marching'});

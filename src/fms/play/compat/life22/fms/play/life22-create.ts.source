@@ -1,0 +1,37 @@
+import {copyNaming18} from './restoration19-create';
+import {initialDestiny} from './destiny20-state';
+import {life22Wrap} from './life22-model';
+import type {FmsDocument} from '../model';
+import {createNaming18Base} from './naming18-world';
+import {initialChronicle} from './naming18-records';
+import {withOccupation} from './runtime';
+import {withTransport} from './transport-runtime';
+import {withMaritime,reconcileMaritime} from './maritime';
+import {initialNavy} from './navy';
+import {seaGraph} from './sea-path';
+import {initialTactics,tacticsWrap} from './tactics-model';
+import {regularMuster} from './tactics-muster';
+import {withCampaign} from './campaign-model';
+import {chronicleWrap} from './chronicle-model';
+import {chronicle2Wrap} from './chronicle2-model';
+import {terrain13Wrap} from './terrain13-model';
+import {buildTerrainContext} from './terrain13-context';
+import {upper14Wrap} from './upper14-model';
+import {buildProvinceCombat} from './upper14-geography';
+import {reconcileUpper,type UpperCombat} from './upper14-state';
+import {initialPeopleAndLife22} from './life22-people';
+import {court16Wrap} from './court16-model';
+import {fiscal15Wrap} from './fiscal15-model';
+import {initialCultures} from './naming18-culture';
+import {initializeFiscal} from './naming18-state';
+import {naming18Wrap} from './naming18-model';
+export function createLife22(terrain:FmsDocument,count:number,relations:'peace'|'war',enabled?:readonly string[]){
+ const {base,naming}=createNaming18Base(terrain,count,relations,enabled);base.world.armies=[];
+ let sea=withMaritime(withTransport(withOccupation(base,true)));const graph=seaGraph(sea.terrain,sea.world);sea=reconcileMaritime({...sea,...initialNavy(sea.world,graph)});
+ const campaign=withCampaign(regularMuster(tacticsWrap(sea,initialTactics(sea)),true)),chronicle=initialChronicle(campaign.world,naming);
+ const run=terrain13Wrap(chronicle2Wrap(chronicleWrap(campaign,chronicle)),buildTerrainContext(campaign.terrain,campaign.world,campaign.scale));
+ const upper:UpperCombat={version:1,initialization:'native-combat-web-inputs-v1',nations:{},armies:{},provinces:buildProvinceCombat(run.terrain,run.world,run.scale,run.terrainContext)};reconcileUpper(run,upper);
+ const combat=upper14Wrap(run,upper),{people,life}=initialPeopleAndLife22(combat),culture=initialCultures({...combat,naming});
+ const named=naming18Wrap(court16Wrap(fiscal15Wrap(combat,initializeFiscal({...combat,people,culture},false)),people),culture,naming);
+ const original=copyNaming18(named,false);return life22Wrap(original,initialDestiny(original,false),life);
+}

@@ -43,3 +43,5 @@ declare const __FMS_DESTINY20_ENGINE__: string;
 declare const __FMS_MUSTER21_ENGINE__: string;
 
 declare const __FMS_LIFE22_ENGINE__: string;
+
+declare const __FMS_DYNASTY23_ENGINE__: string;

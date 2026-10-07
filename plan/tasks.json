@@ -3849,9 +3849,17 @@
               "docs/evidence/fms-restoration19-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md",
               "docs/evidence/fms-restoration19-v5-2026-10-07/DESTINY_KERNEL.md",
-              "docs/evidence/fms-restoration19-v5-2026-10-07/destiny-checks.json"
+              "docs/evidence/fms-restoration19-v5-2026-10-07/destiny-checks.json",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/INIT_RECOVERY.md",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。 v18/Store20六文化国/城/人物真实命名及独立存档已本地验证，实际命名前置于军队/史书/人物首结。3017全量及最终9三尺寸浏览器通过；最终三UI变动与独立9项起义核分开列证。起义父文化与王朝任期仍为网页桥，下一批接原省文化/历史复国。 地图可读性与触控选军修复已本地验证：首轮4过2触控失败，最终6三尺寸全过；22标签单元。独立复国领袖核14项（合原起义25=39）通过，未进生产，不冒充完整家族。",
+            "progressNote": "v23新局原初始家庭/持久亲属/真实继承接入，133受影响单元、三尺寸浏览器与完整lint/types/build通过；自然死亡/自动婚育/完整原作仍继续。",
             "progressScope": " v19原省文化起义/历史身份复用、真实前任复位与首都迁移已接，Store21独立保护；完整原作国运重置、家族年龄继承及自然起义概率仍未等价。"
           },
           {
@@ -4282,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "接v23真实亲属表、家族查看与继承；冻结v22，不为未登基人物伪造任期，旧生日与亲属未知保持。",
+    "nextRecoveryTarget": "接原人物死亡的角色归档、真实继承事务；先闭合Round双精度helper和原死亡调用端口，不重复已恢复生日/家族选择核。v23保持可玩，生产变化再冻结独立版本。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4760,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "life22_playable_family_members_ready",
+      "status": "dynasty23_playable_death_roles_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "ff18199",
-      "cloudScope": "Local-only v22; existing bounded cloud preview, main and all old stores are retained. The cloud URL is not this v22 build.",
-      "next": "接v23真实亲属表、家族查看与继承；冻结v22，不为未登基人物伪造任期，旧生日与亲属未知保持。",
+      "lastCommitted": "c90c94f5b6486b283fcdfcdbf7abb9639923cd54",
+      "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
+      "next": "接原人物死亡的角色归档、真实继承事务；先闭合Round双精度helper和原死亡调用端口，不重复已恢复生日/家族选择核。v23保持可玩，生产变化再冻结独立版本。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4816,14 +4824,22 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json",
         "docs/evidence/fms-life22-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-life22-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md"
+        "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/INIT_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json"
       ],
-      "currentVersion": 22,
-      "currentEngine": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
+      "currentVersion": 23,
+      "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5195/?fms=1",
-      "currentLocalHead": "ff18199",
-      "sourceCommit": "34842488b1bc477d942ccb94d11fecdee02d2b19",
+      "localUrl": "http://127.0.0.1:5197/?fms=1",
+      "currentLocalHead": "c90c94f5b6486b283fcdfcdbf7abb9639923cd54",
+      "sourceCommit": null,
       "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
     },
     "nativeHillPrototype": {
@@ -6193,6 +6209,33 @@
         "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_MEMBERS_KERNEL.md",
         "docs/evidence/fms-life22-v5-2026-10-07/family-members-first.json",
         "docs/evidence/fms-life22-v5-2026-10-07/family-members-final.json"
+      ],
+      "sourceCommit": "c90c94f5b6486b283fcdfcdbf7abb9639923cd54"
+    },
+    "dynasty23Prototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 23,
+      "store": 25,
+      "database": "lieguoji-fms-dynasty-v23",
+      "sourceParent": "c90c94f5b6486b283fcdfcdbf7abb9639923cd54",
+      "engine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
+      "localUrl": "http://127.0.0.1:5197/?fms=1",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "browserVerified": true,
+      "unitTests": 133,
+      "productionIntegrated": true,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/INIT_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json"
       ]
     }
   }

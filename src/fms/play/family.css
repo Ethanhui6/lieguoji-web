@@ -1,0 +1,17 @@
+/* Feedback: selected person card confirms relationship navigation; no blocking delay. */
+.play-family { border-top: 1px solid #9c895745; padding-top: 12px; }
+.play-family h3 { display:flex;justify-content:space-between;align-items:center;gap:8px; }
+.play-family h3 small { font-weight:400;font-size:12px; }
+.play-family summary { cursor:pointer;min-height:44px;align-content:center; }
+.play-family-heir { padding:8px 10px;border-left:2px solid #c9aa65;background:#c9aa6510; }
+.play-family-person { padding:12px 0;animation:family-person-enter 140ms ease-out both; }
+.play-family-person>strong,.play-family-person>small { display:block;overflow-wrap:anywhere; }
+.play-family-person>strong { font-size:19px;color:#303c34; }
+.play-family-person>small { margin-top:5px;color:#586550; }
+.play-family-links { margin:8px 0; }
+.play-family-links>div { display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;align-items:start;margin:6px 0; }
+.play-family-links dt { padding-top:10px;color:#586550; }
+.play-family-links dd { margin:0;display:flex;flex-wrap:wrap;gap:5px;min-height:40px;align-items:center; }
+.play-family-links button,.play-family-heir button { min-height:40px;max-width:100%;overflow-wrap:anywhere; }
+@keyframes family-person-enter { from {opacity:.45;transform:translateY(4px)} to {opacity:1;transform:translateY(0)} }
+@media(prefers-reduced-motion:reduce){.play-family-person{animation:none}}

@@ -1,3 +1,16 @@
+# 当前续接：v23真实家族继承可玩，接死亡角色归档
+
+2026-10-07，父HEAD c90c94f5b6486b283fcdfcdbf7abb9639923cd54；根独占写入，代理只读。源码提交待本批本地提交后补记。Goal、WEB-PH04/WEB-04-13进行中。
+
+- 最新候选 http://127.0.0.1:5197/?fms=1 ，独立.autopilot/dynasty23-final-preview/dist，v23/Store25/lieguoji-fms-dynasty-v23；engine fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d。5196早期家谱样本与5195/v22及旧库保持。
+- 新局原配偶/子女/旁系、同一人物编号、生日能力和父母子女关系已进入Worker/家谱；真实继承预览取消确认与重复复位不造新人物。旧亲属保持未知。自然死亡、自动婚育、完整官职及家族领地仍未接。[合同](evidence/fms-dynasty23-v5-2026-10-07/CONTRACT.md)。
+- 最终133受影响单元/7文件、完整lint/types/build43产物、24发布+15计划及计划校验通过；三尺寸最终浏览器3过0重试，桌面实推跨月并精确恢复。浅金姓名低对比已修深绿，首轮证据保留。[交付](evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md)。不是全量单元/真机/完整原作视觉PASS。
+- 缺source且含嵌套未来字段的双槽锁写缺口已修；其余CAS/原子保存和旧版分派保留。App/Worker超500kB警告仍在，不称移动性能通过。
+- 下一批原死亡角色归档与继承事务，PastRole/Normalize及Die领袖类型谓词已静态恢复，Round的CRT helper继续闭合；不要重复恢复同一家庭函数，不重跑start-dynasty23一次性脚本。
+- 无push/PR/Issue/Pages/main；有效发布范围未被v23自动扩展。真机/用户视觉和全部完整PH门保持。
+
+---
+
 # 当前续接：v22人物生日与月龄可玩，接原家族继承
 
 2026-10-07，父HEAD 1224284；根唯一写入、代理只读。本批v22源码已本地提交34842488b1bc477d942ccb94d11fecdee02d2b19，后续选择核另记。Goal、WEB-PH04/WEB-04-13继续进行。

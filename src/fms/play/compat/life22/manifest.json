@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "fingerprint": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
+  "files": [
+    {
+      "path": "src/fms/play/life22-state.ts",
+      "archive": "fms/play/life22-state.ts.source",
+      "sha256": "80f7900aaaaa85430205a4dfeffe9d1080f287005424fade6e7ab83e7825f2fb"
+    },
+    {
+      "path": "src/fms/play/life22-people.ts",
+      "archive": "fms/play/life22-people.ts.source",
+      "sha256": "5c01a52aed6ace91fe49e6aea2fc0aa4c13b9de77c69566e9e6b0791ecd3ab27"
+    },
+    {
+      "path": "src/fms/play/life22-create.ts",
+      "archive": "fms/play/life22-create.ts.source",
+      "sha256": "d712a2044e648157e2dd11b391527b1021f6cc0dfc5b0d71777b01ba7b027809"
+    },
+    {
+      "path": "src/fms/play/life22-model.ts",
+      "archive": "fms/play/life22-model.ts.source",
+      "sha256": "b410d7284117a8b00da3274ec0900fb92355519aa5230a352c635012d7de5cca"
+    },
+    {
+      "path": "src/fms/play/life22-session.ts",
+      "archive": "fms/play/life22-session.ts.source",
+      "sha256": "9cc23bded189ec801b07e92ceba44c177aa12c9b3c3cdfc34cdb1c48bb7ab665"
+    },
+    {
+      "path": "src/fms/play/life22-storage.ts",
+      "archive": "fms/play/life22-storage.ts.source",
+      "sha256": "dc1bacdddd87ba2a0605313cf023b090d5dda2829f83e835d4f015093e288200"
+    },
+    {
+      "path": "src/fms/play/life22-stores.ts",
+      "archive": "fms/play/life22-stores.ts.source",
+      "sha256": "6c6e8dc686b7bffb0fb52e42f41633633951aed4087e599d0e2ebf0c385c74bf"
+    },
+    {
+      "path": "src/fms/play/life22-client.ts",
+      "archive": "fms/play/life22-client.ts.source",
+      "sha256": "1a80e82d73b905ec9bfb531c71d7dac14bcb5532dc121b851028ca71cf14674d"
+    },
+    {
+      "path": "src/fms/play/life22/play.worker.ts",
+      "archive": "fms/play/life22/play.worker.ts.source",
+      "sha256": "7ab506d2bf445b2630fb38910391e4d37579b9d20536d5882014cb5340c02c5b"
+    },
+    {
+      "path": "src/fms/play/native-economy/character-calendar.ts",
+      "archive": "fms/play/native-economy/character-calendar.ts.source",
+      "sha256": "4a145f5d2f4548babbcbe4356314b1d1eed31d32e2dd8073f3b1370fa2c1b567"
+    },
+    {
+      "path": "src/fms/play/native-economy/iso-calendar.ts",
+      "archive": "fms/play/native-economy/iso-calendar.ts.source",
+      "sha256": "ef9242d9a23ece85e961f7e8c8b8cbecb74a9f035d226715a93a8b596f982332"
+    },
+    {
+      "path": "src/fms/play/native-economy/leader-birth.ts",
+      "archive": "fms/play/native-economy/leader-birth.ts.source",
+      "sha256": "3aa9533f8431592bda5d98a1d38256630576f86792129cbcb43c0714c4e7395a"
+    }
+  ]
+}

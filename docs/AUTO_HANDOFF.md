@@ -1,3 +1,16 @@
+# 当前续接：原作议和与结局内核已测，v27试玩保留
+
+2026-10-07；父HEAD 604b3b4，根唯一写入，待本地提交本批四个实现与证据。V5 / WEB-PH04 / WEB-04-37、完整还原Goal继续进行。
+
+- 新增原作自动议和理由/期限筛选、胜方/吞并判断、转地与效果条款计划、各国结局及最终胜方重判；未生产import。57新+35既有=92相关单元通过；全仓lint/types及最终检查详见 [CONTRACT](evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md) / [checks](evidence/fms-peace-kernels-v5-2026-10-07/checks.json)。没有新浏览器/构建或性能验收。
+- 二审已修固定守方含destroyed、Annex比例失败后的单省三倍兜底、普通HasStateCollapsed，并补真实50分边界。actual失败效果须重判赢家；仅丢地不必然败国，胜方盟国不自动获胜。
+- 原作伤亡是未clamp的float军力伤害，面板与史书分别换算；开战快照仅初次注册前采集，旧档缺失补空，禁止以当前版图回填。覆亡参与者与终战海军/外交清理新证据和完整哈希见 [NEXT_INTEGRATION](evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md)。不重复恢复，不把它们称为已生产接线。
+- 下一批直接补HasStateCollapsed/goalAchieved和三类effects.Apply依赖，再接实际执行器/历月/来源统计与新版规则。内部结算仍独立端口。新生产规则须先冻结v27，另建版本/库与新测试origin；随后WEB-03-06文化信仰命名一致性。
+- 当前本机试玩仍 http://127.0.0.1:5206/?fms=1 ，v27/Store29，源码87044a7de1cba92850c4889aaf9e5d98ff83b6f9、engine4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9。5206原第24日世界及5199/5201/5203/5204/5205不重置，不覆盖对应dist；本批只核5206监听仍在，没有新增手工游戏操作。
+- 原作视频观察沿用此前VIDEO_FOLLOWUP与VIDEO_STUDY，本批无新增播放；未从视频推测数值。没有push/PR/Issue/Pages/main；Oct6有界预览不扩大。真机/用户视觉/完整原作等价仍待验。
+
+---
+
 # 当前续接：v27 实际战损记录与保存恢复已本地验证
 
 2026-10-07；源码提交 87044a7de1cba92850c4889aaf9e5d98ff83b6f9，根唯一写入者；本批已本地提交，后续仅交接检查点提交。V5 / WEB-PH04 / WEB-04-37 与完整还原 Goal 仍进行。

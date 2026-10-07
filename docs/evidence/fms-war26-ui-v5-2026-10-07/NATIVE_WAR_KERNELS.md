@@ -61,7 +61,7 @@
 - 非空白可征服战争才播放成功的征服动画。逐个 effect.Apply；返回null记失败；Applied/AlreadySatisfied才成功，否则移除其EnforcedWarGoalIds。效果失败不回滚已成功转地；转地失败此层不移除目标ID。
 - 重新按实际转地/效果 ClassifyOutcomes(useActualEffects=true,includePendingTransfers=false)。内战使用独立分类；特定内战类型5/8..11，母国实际胜利时可尝试镇压国运。非空白战争对存在且未死亡国家记录未记录过的结局。
 - DetermineVictorSide：先双方死亡/零列表或 HasStateCollapsed；单方崩溃另一方胜，双方崩溃null；GoalsAchieved/CapitalFallAnnexation→Attacker。其后一方distress>=.45且比另一方多>=.25则该方败；否则score>=50攻胜、<=-50守胜。FatigueTimeout下领土分量*100>=10且goal>0→攻胜；<=-10或<=0且攻distress比守多>=.1→守胜；其余null。float32减乘不得合并。
-- ShouldDecisiveAnnex：胜方必须攻方，双方对象存在，守方活且陆省>=1。任何Annex目标时，按初始守省且目前仍陆地的数量作基数；攻侧持有初始守都则当前守陆省<=initial*.7，否则<=initial*.4，initial须>0；否则仅守陆省<=1且攻实力>=守*3时真。FatigueTimeout禁止新触发此分支，但不抹原AnnexationConquerorId标志。
+- ShouldDecisiveAnnex：胜方必须攻方，双方对象存在，守方活且陆省>=1。任何Annex目标时，按初始守省且目前仍陆地的数量作基数；攻侧持有初始守都则当前守陆省<=initial*.7，否则<=initial*.4，initial须>0。**2026-10-07二审澄清：上述比例未满足或initial<=0也继续检查单省/实力兜底，不是只有无Annex目标才检查。** 守陆省<=1且攻实力>=守*3时真。FatigueTimeout禁止新触发此分支，但不抹原AnnexationConquerorId标志。新的可执行内核与回归见 [议和合同](../fms-peace-kernels-v5-2026-10-07/CONTRACT.md)，旧v26生产未变。
 
 | 方法 | RVA / 字节数 | SHA-256 |
 |---|---|---|

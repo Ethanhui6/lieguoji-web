@@ -2809,7 +2809,11 @@
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/live-motion-samples.json",
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/production-motion-samples.json",
       "docs/evidence/fms-continuous-motion-v5-2026-10-05/ORIGINAL_CLOCK.md",
-      "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md"
+      "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md",
+      "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
+      "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
+      "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
+      "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
     ],
     "nextBatch": [
       "WEB-04-37",
@@ -4305,9 +4309,13 @@
               "docs/evidence/fms-war27-v5-2026-10-07/FAILURES.md",
               "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
               "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
-              "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
+              "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json",
+              "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
+              "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
             ],
-            "progressScope": "v26固定目标与陆海军推进、v27真实扣减账/保守归因/精确恢复已本地验证。121相关单元、12个三尺寸浏览器闭环通过；原战争分与厌战纯内核未导入生产，完整伤亡单位、开战快照和和约继续恢复。不是完整战争V2、真机或视觉验收。"
+            "progressScope": "v26固定目标和陆海军推进、v27实际扣减账及12浏览器闭环保留。新增原作议和理由、胜方、条款构建、国家结局四个独立实现，57新测试+35既有=92相关测试通过；未生产接线、未执行实际和约。原始伤亡单位/快照/终战清理完成静态核对，效果执行和版本桥接仍待接。非完整战争V2、真机或视觉验收。"
           }
         ]
       },
@@ -4401,7 +4409,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "按最新用户反馈，冻结v23后接独立v24跨海外交与自动远征：集结/运力/装载/航行/登陆，处理停战与手动接管；原死亡内核保留，随后接线。",
+    "nextRecoveryTarget": "WEB-04-37：直接接本批已核原始傷害单位、开战快照和终战清理证据；补HasStateCollapsed/目标达成/三种效果Apply并接实际执行、历月和独立新版规则；禁止用v27整数扣减补造原作kills。然后WEB-03-06文化信仰命名一致性。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4879,11 +4887,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "v27 actual-loss ledger and 12 Chromium browser closures verified; locally committed",
+      "status": "Native peace/plan/outcome kernels verified locally; playable v27 remains unchanged",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
-      "next": "WEB-04-37：核原伤亡单位及开战快照、完整历月与和约效果后接战争分/厌战；随后WEB-03-06文化信仰命名一致预设。",
+      "next": "WEB-04-37：直接接本批已核原始傷害单位、开战快照和终战清理证据；补HasStateCollapsed/目标达成/三种效果Apply并接实际执行、历月和独立新版规则；禁止用v27整数扣减补造原作kills。然后WEB-03-06文化信仰命名一致性。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
@@ -4978,22 +4986,26 @@
         "docs/evidence/fms-war27-v5-2026-10-07/FAILURES.md",
         "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
         "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
-        "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
       ],
       "currentVersion": 27,
       "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5206/?fms=1",
-      "currentLocalHead": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
+      "currentLocalHead": "604b3b4",
       "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
-      "checkpointNote": "v27 production source commit recorded. The following documentation-only checkpoint may be newer. Served build was created from the same source bytes with parent-HEAD metadata; tested-artifact.json binds them. Preserve 5206 paused saved day24 world and all previous origins.",
+      "checkpointNote": "New kernels and evidence are staged for a local-only source commit. Existing sourceCommit/currentVersion/currentEngine identify the protected v27 playable artifact, not these unintegrated kernels.",
       "head": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "v27实际扣减账、保守归因、UI和独立存档已验证；完整战争V2及原作等价仍未完成。",
+      "note": "57 new + 35 existing native-war tests; no new browser/build claims or release. Root remains sole writer.",
       "sourceParent": "3809966674509901890338e7a9e50ef1287564e7"
     },
     "nativeHillPrototype": {
@@ -6672,7 +6684,7 @@
       "weariness": "src/fms/play/native-war/weariness.ts",
       "newTests": 35,
       "productionIntegration": false,
-      "peace": "Read-only recovery; effect execution, outcomes and automatic end dependencies remain",
+      "peace": "2026-10-07 independent peace/plan/classification kernels verified; actual effects, lifecycle and production integration still pending. See nativePeaceKernels.",
       "evidence": [
         "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
@@ -6706,6 +6718,39 @@
         "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
       ],
       "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9"
+    },
+    "nativePeaceKernels": {
+      "date": "2026-10-07",
+      "status": "tested_pure_kernels_not_integrated",
+      "sourceParent": "604b3b4",
+      "files": [
+        "src/fms/play/native-war/peace.ts",
+        "src/fms/play/native-war/settlement-verdict.ts",
+        "src/fms/play/native-war/settlement-plan.ts",
+        "src/fms/play/native-war/settlement-classification.ts"
+      ],
+      "scope": [
+        "Automatic peace reasons and manager deadline IDs",
+        "Settlement verdict and transfer/effect plan construction",
+        "Individual outcomes and final winner classification"
+      ],
+      "newTests": 57,
+      "totalAffectedTests": 92,
+      "testFiles": 4,
+      "productionIntegrated": false,
+      "playableVersionUnchanged": 27,
+      "evidence": [
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
+      ],
+      "remaining": [
+        "HasStateCollapsed and goal achievement dependencies",
+        "Effect Apply and actual ConqueredBy execution",
+        "Native damage source and calendar/state mapping",
+        "Start/end lifecycle and versioned production integration"
+      ]
     }
   }
 }

@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "fingerprint": "2c482b2d97eff1c8978c650247767fbdda4d240542f71ae55c53ad36c464bc5f",
+  "files": [
+    {
+      "path": "src/fms/play/war28-state.ts",
+      "archive": "fms/play/war28-state.ts.source",
+      "sha256": "7104f56c827de225929b0eb1b58d7aec244af9a656bc4bbaf0ea48f2b427ed55"
+    },
+    {
+      "path": "src/fms/play/war28-validation.ts",
+      "archive": "fms/play/war28-validation.ts.source",
+      "sha256": "f7b17bb4720c327a386e2c2ecb34e0c9c7ab4270c38d2ab75490dd9e2b6f2152"
+    },
+    {
+      "path": "src/fms/play/war28-query.ts",
+      "archive": "fms/play/war28-query.ts.source",
+      "sha256": "307331cd836da7697ef0d4d32d34f2b29da7678344ce2f42c6ab5f55d3b4a39a"
+    },
+    {
+      "path": "src/fms/play/war28-model.ts",
+      "archive": "fms/play/war28-model.ts.source",
+      "sha256": "43c0517a13aa613acd263a1793617d8706858039ba58f773bb58bc7b7a1c0d4c"
+    },
+    {
+      "path": "src/fms/play/war28-food.ts",
+      "archive": "fms/play/war28-food.ts.source",
+      "sha256": "9b0b111d0ba9ec9fefa8f3e604478d03a8b0cae98a7330c9cc7746511e8e3b79"
+    },
+    {
+      "path": "src/fms/play/war28-core.ts",
+      "archive": "fms/play/war28-core.ts.source",
+      "sha256": "d6a4b961faf2aa36fb1496d8de29643e5fdd764bcd62cd4216a7366e8bda61f8"
+    },
+    {
+      "path": "src/fms/play/war28-battle.ts",
+      "archive": "fms/play/war28-battle.ts.source",
+      "sha256": "1ca8a859394e3d6c487004ff9107e6809ab85cff7e25d60d408a7f4078a9919d"
+    },
+    {
+      "path": "src/fms/play/war28-runtime.ts",
+      "archive": "fms/play/war28-runtime.ts.source",
+      "sha256": "0bd78571a62f640791ba0b19a528e5083926c7bc4982fa80e5b19e7e1a142c70"
+    },
+    {
+      "path": "src/fms/play/war28-voyages.ts",
+      "archive": "fms/play/war28-voyages.ts.source",
+      "sha256": "fb22411520cf459df56098951c1e518c063c5bf275251c6f064ccdfb0802c21d"
+    },
+    {
+      "path": "src/fms/play/war28-session.ts",
+      "archive": "fms/play/war28-session.ts.source",
+      "sha256": "1a271e51b859333297479a2451b1942aa9f1c208f0bd3761d5e2e9849cfd8f67"
+    },
+    {
+      "path": "src/fms/play/war28-storage.ts",
+      "archive": "fms/play/war28-storage.ts.source",
+      "sha256": "3de5bdc1241d240f4b30b0afb1c74e6007fd4eb5c593b8f8d557e12329501298"
+    },
+    {
+      "path": "src/fms/play/war28-stores.ts",
+      "archive": "fms/play/war28-stores.ts.source",
+      "sha256": "6f247c06db49f225a14f430e3d9d0862f4e0f6cfad8cbdd9c4d3ec5b62933c71"
+    },
+    {
+      "path": "src/fms/play/war28-client.ts",
+      "archive": "fms/play/war28-client.ts.source",
+      "sha256": "c8e0ab690bd40f7d57f3979c41434122da1ec35bce242af565545001b0b5102c"
+    },
+    {
+      "path": "src/fms/play/war28-policy.ts",
+      "archive": "fms/play/war28-policy.ts.source",
+      "sha256": "7f4765b3bd0b94dadc2b0e685411d842942efbffa3f9250d1faab8b8f986f2cf"
+    },
+    {
+      "path": "src/fms/play/war28-goals.ts",
+      "archive": "fms/play/war28-goals.ts.source",
+      "sha256": "df8cb1ce471559002fc5e40fa3ad0ae705caf7d8267b813a0807d98ad9c39731"
+    },
+    {
+      "path": "src/fms/play/war28-settlement.ts",
+      "archive": "fms/play/war28-settlement.ts.source",
+      "sha256": "12c9b77cf9e48e91f787a960867602850cc4abbcc73337583e78004118a464c0"
+    },
+    {
+      "path": "src/fms/play/war28/play.worker.ts",
+      "archive": "fms/play/war28/play.worker.ts.source",
+      "sha256": "be2781a946da99425b4e16af7a52f0739067284556722dc8636b8043cc696bd9"
+    },
+    {
+      "path": "src/fms/play/native-war/score.ts",
+      "archive": "fms/play/native-war/score.ts.source",
+      "sha256": "f7f745682cb9778f26e8baef61c61dc1910af8e6ba630108d32b7d5cd574df24"
+    },
+    {
+      "path": "src/fms/play/native-war/weariness.ts",
+      "archive": "fms/play/native-war/weariness.ts.source",
+      "sha256": "de98f60adfb2ea5fef9211fa90f0532e2207194abb7e9c709546f32cc64cbb26"
+    },
+    {
+      "path": "src/fms/play/native-war/peace.ts",
+      "archive": "fms/play/native-war/peace.ts.source",
+      "sha256": "cdd4ea2f270c07145d08237bfcc3dd6065d1c1acd834392ec4daeb5efa36e366"
+    },
+    {
+      "path": "src/fms/play/native-war/achievement.ts",
+      "archive": "fms/play/native-war/achievement.ts.source",
+      "sha256": "b527f9b2530bc364d589355b661ca7ccdb64465ac289b66d407f9d2f6af8fea6"
+    },
+    {
+      "path": "src/fms/play/native-war/settlement-verdict.ts",
+      "archive": "fms/play/native-war/settlement-verdict.ts.source",
+      "sha256": "e578e7b6fcc89f91a670f4f1454b42fa205aa4b3b65ec499e85c56bae315a084"
+    },
+    {
+      "path": "src/fms/play/native-war/settlement-classification.ts",
+      "archive": "fms/play/native-war/settlement-classification.ts.source",
+      "sha256": "ab43fd43fd3785e492194fbc7b66dd4776a85b48bbdc28264d5eee4288377628"
+    },
+    {
+      "path": "src/fms/play/native-war/settlement-plan.ts",
+      "archive": "fms/play/native-war/settlement-plan.ts.source",
+      "sha256": "f09fac3db72eadc99acbcf7b7f5c3f40946e924b178a47ba865814ffb2c0131c"
+    },
+    {
+      "path": "src/fms/play/native-war/settlement-effects.ts",
+      "archive": "fms/play/native-war/settlement-effects.ts.source",
+      "sha256": "98c07e4b95b6f39d10bbd4ec01ae460408420cf344ea068f645eaa8c26a5662d"
+    },
+    {
+      "path": "src/fms/play/native-war/settlement-execute.ts",
+      "archive": "fms/play/native-war/settlement-execute.ts.source",
+      "sha256": "12e37206daf753a672d1b41037e95fc545d8fd9d5b97e83e2a828c14d6e41c80"
+    },
+    {
+      "path": "src/fms/play/native-war/battle-damage.ts",
+      "archive": "fms/play/native-war/battle-damage.ts.source",
+      "sha256": "e86d356b759deac57184464b0fd79c73767053b89aee5395f6b53ae4f9a310f2"
+    },
+    {
+      "path": "src/fms/play/native-war/conquest-goals.ts",
+      "archive": "fms/play/native-war/conquest-goals.ts.source",
+      "sha256": "d0b211b2d54e5c7df107f730e2bb2ae60719909df670f04377d8db187d2e0dcb"
+    }
+  ]
+}

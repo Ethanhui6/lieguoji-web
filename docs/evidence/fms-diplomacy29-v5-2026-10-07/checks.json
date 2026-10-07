@@ -1,0 +1,352 @@
+{
+  "date": "2026-10-07",
+  "sourceParent": "def39ddb36dd01ac5697fe7998bbd1d0f484028c",
+  "sourceCommit": null,
+  "version": 29,
+  "engine": "15f4a928d78be59d3fe27325c0908ecba9cbaf71a13927b7a3c03b1878e35db0",
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/war29-model.ts",
+      "sha256": "6824ba9b530df46b187cc6aace53dada18afc2c226496fe94ac673c8dcb94e60"
+    },
+    {
+      "path": "src/fms/play/war29-diplomacy.ts",
+      "sha256": "ddcddb80f8e7a693822476d28eaef3701c4942ec026e35c7a84c106d884b61a6"
+    },
+    {
+      "path": "src/fms/play/war29-food.ts",
+      "sha256": "f54f1649eaade0dd7636d9c62c6f3e52de83ae578f7be55fd54ea9a26adf01b2"
+    },
+    {
+      "path": "src/fms/play/war29-core.ts",
+      "sha256": "d5ad71390d412b95476ecc9ded7fa0961d62e33d7a55aceb3db39f5c967f0b68"
+    },
+    {
+      "path": "src/fms/play/war29-runtime.ts",
+      "sha256": "1d507a74d04794bded4b80a323ef5177a8c2cd8b4b1be3043f046153e16a76a2"
+    },
+    {
+      "path": "src/fms/play/war29-voyages.ts",
+      "sha256": "b73523d515b437c1ef02decd9fa434eea9264cfcb3b904d534603e29ca0c1387"
+    },
+    {
+      "path": "src/fms/play/war29-session.ts",
+      "sha256": "eed42aeb5b4306acd687c420eeec4c88e439c57ecaccf9c5f6bc649cd0af382d"
+    },
+    {
+      "path": "src/fms/play/war29-storage.ts",
+      "sha256": "5462df4ae0520d2e1509316734dc15dffaf684e443d21687eee5e51daeaa7ef5"
+    },
+    {
+      "path": "src/fms/play/war29-stores.ts",
+      "sha256": "6875f7bedb4621bf11efd33c31d9e64ac2e7a53e999a4628b8131322efbda9db"
+    },
+    {
+      "path": "src/fms/play/war29-client.ts",
+      "sha256": "51ff936ce5eebe4e2adc0542f4796618c114836a13f87bd79c97761fe4b3f626"
+    },
+    {
+      "path": "src/fms/play/war29-settlement.ts",
+      "sha256": "18a1c654556dd06b68a571cd353a7d7fdc2e6d1bbaf9bd47a7baf81e37edc01d"
+    },
+    {
+      "path": "src/fms/play/war29/play.worker.ts",
+      "sha256": "05d38ccbfabe7fa51acc2108c1a0926f4e9151cbb3b8e47a0d70d3a3e5f06814"
+    },
+    {
+      "path": "src/fms/play/war29.test.ts",
+      "sha256": "98efc2c2604548a260e3f6011696fb4d04fa29c77afccb78961e2fcfadf2dceb"
+    },
+    {
+      "path": "src/fms/play/war29-client.test.ts",
+      "sha256": "db767810505407448f36554dbc65e9290a3f9e2d9e8471ef303f683211d7afe7"
+    },
+    {
+      "path": "src/fms/play/War29Panel.tsx",
+      "sha256": "b0993bee3b526e7760479350ac34b36b6778fe55676ee0d9ee06c83ae2ac13fb"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "92d5e2539bec82cd2186a1e0e6bca5647158a4203a703e5a0e664819a5075e22"
+    },
+    {
+      "path": "src/fms/play/play.css",
+      "sha256": "e2b5b29abb1a28158b04008c0fffdbe27936ddff1f0095105804750358659f3e"
+    },
+    {
+      "path": "src/fms/play/view-capabilities.ts",
+      "sha256": "8ee3616a2641e89da0de3b9f508d048f32586197ba6554f3201a7fbc66ae92e1"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "9f6b13c1205309e9b5a453764089615445bcc13aa514d9f799226177feb5a1a0"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "9cb7da8d1586a3581ed1a9bb5ccc352d73ef3cc96944d230e47bbe442cb1f1e9"
+    },
+    {
+      "path": "scripts/fms-war29-compat.ts",
+      "sha256": "7eddf893ec9d690134d76d77f367adc58a756ba4f1ea748aa1d6dce56ac556d0"
+    },
+    {
+      "path": "scripts/fms-war29-fingerprint.ts",
+      "sha256": "fa53883af1bde746bd2f914f9a727560454e6002b5af136c5f6e315853131d9e"
+    }
+  ],
+  "tests": {
+    "passed": 234,
+    "failed": 0,
+    "files": 12,
+    "scope": "41 new v29 behavior/client checks and 193 related regressions; not full repository suite",
+    "report": "docs/evidence/fms-diplomacy29-v5-2026-10-07/unit-final.json"
+  },
+  "typecheck": "passed",
+  "lint": "full passed, final panel lint passed after scoped layout change",
+  "planGuards": {
+    "passed": 39,
+    "failed": 0
+  },
+  "build": {
+    "status": "passed",
+    "root": ".autopilot/diplomacy29-preview/dist",
+    "privacyAuditFiles": 43,
+    "warning": "large chunks; no FPS or cold-start performance acceptance"
+  },
+  "browser": {
+    "status": "passed",
+    "report": "docs/evidence/fms-diplomacy29-v5-2026-10-07/browser.json",
+    "actualProductionWorker": true,
+    "portrait": "428x926 Chromium simulation only"
+  },
+  "artifacts": [
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+      "bytes": 9578
+    },
+    {
+      "path": "assets/App-DrluszdS.js",
+      "sha256": "774f719fceb1789b2368cea875037256d7d57ce035dadd9bea30db2fa21ddd2d",
+      "bytes": 72384
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+      "bytes": 409814
+    },
+    {
+      "path": "assets/AtlasStudio-Bci3xR7n.js",
+      "sha256": "859c19a5e562259dbd59c5469e7036336cf2e317bb622d10fd0f887fcca954e0",
+      "bytes": 173274
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+      "bytes": 24315
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3",
+      "bytes": 482109
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b",
+      "bytes": 15884
+    },
+    {
+      "path": "assets/browserAll-CFKxsEDP.js",
+      "sha256": "6b8b50bf45a5b84f0ec217417924879c49b0955a514d01534785e7ad7f07a0c1",
+      "bytes": 42646
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+      "bytes": 11027
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+      "bytes": 23199
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+      "bytes": 6054
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390",
+      "bytes": 19346
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+      "bytes": 13293
+    },
+    {
+      "path": "assets/CountryStudio-mXwFJsE_.js",
+      "sha256": "52f71b3f7b101305d3404635710d7224d072919a8465a99c60df8ccea34021d4",
+      "bytes": 128542
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc",
+      "bytes": 55255
+    },
+    {
+      "path": "assets/FmsApp--oZjM1tC.css",
+      "sha256": "b9f6cf528639e9af413bd3de10ac8d13b8d7a686619f7e2db8b7ae8b6c21a416",
+      "bytes": 31707
+    },
+    {
+      "path": "assets/FmsApp-CZ-1LHQ5.js",
+      "sha256": "3e0a7490d973581d8f5bff1eaa305510658100043e62047dae0051b8847bd336",
+      "bytes": 2100834
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+      "bytes": 109697
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+      "bytes": 469
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+      "bytes": 342
+    },
+    {
+      "path": "assets/index-Zw4odUQr.js",
+      "sha256": "21f119c3da26852dc49d2a4c471b7c75f26329d5f83f3d3dd2934346fdfaec8c",
+      "bytes": 221793
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+      "bytes": 15379
+    },
+    {
+      "path": "assets/init-DHNQv45a.js",
+      "sha256": "c56850f12f578b08a2a4efb1db1931d31dcda119d8fde4d08574e68b393163ff",
+      "bytes": 250437
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+      "bytes": 34881
+    },
+    {
+      "path": "assets/LegacyEntry-DvAsn5VV.js",
+      "sha256": "a9a17a1f666b227c67629fc6d2826cea742da986a2f910ab1cdef71e2fe37828",
+      "bytes": 132329
+    },
+    {
+      "path": "assets/play.worker-DXH9iofH.js",
+      "sha256": "60e3456f5b3a6416ad94891472744ef39e746ad5dc5886f7f946d1423a1f5745",
+      "bytes": 2277970
+    },
+    {
+      "path": "assets/renderer-DlOgkbJn.js",
+      "sha256": "17696a931730b8f369146b512a257070ab87c5d34aa743ac0289fc0f62991b79",
+      "bytes": 210865
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+      "bytes": 78109
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+      "bytes": 86986
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "bytes": 716
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5",
+      "bytes": 34693
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+      "bytes": 91681
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+      "bytes": 162206
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897",
+      "bytes": 49491
+    },
+    {
+      "path": "assets/Text-D9zsG-mN.js",
+      "sha256": "b99b1575d6dfaf9187ef1eb54a64c6511720201d52de2e2248ddc2421f02b6b9",
+      "bytes": 34909
+    },
+    {
+      "path": "assets/webworkerAll-DJfPSDH2.js",
+      "sha256": "f08827864737b940c0eb4c6b15dc37aad137765dfe2ae57320e9f57526a7a532",
+      "bytes": 54
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+      "bytes": 223767
+    },
+    {
+      "path": "build.json",
+      "sha256": "2570183f2fab19790899ebe293d06e230859116532ea83871e3115ac955a8fc3",
+      "bytes": 13001
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+      "bytes": 221
+    },
+    {
+      "path": "index.html",
+      "sha256": "2f807826ac2ac0787b61b317d4dc3e5cc245e111eaf3ecb98d96a63cc62f0bcd",
+      "bytes": 626
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df",
+      "bytes": 10779
+    },
+    {
+      "path": "_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+      "bytes": 424
+    },
+    {
+      "path": "_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+      "bytes": 19
+    }
+  ],
+  "localUrl": "http://127.0.0.1:5214/?fms=1",
+  "manualAcceptance": {
+    "originalVisual": false,
+    "iPhone": false,
+    "fullNativeParity": false
+  },
+  "release": {
+    "push": false,
+    "deploy": false,
+    "mainChanged": false,
+    "oldSavesModified": false
+  },
+  "previousGoalTurn": "progress"
+}

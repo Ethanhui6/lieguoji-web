@@ -1,0 +1,7 @@
+{
+  "origin": "http://127.0.0.1:5213",
+  "scope": "real Chromium dev UI and Worker on isolated synthetic test world; not native or phone acceptance",
+  "errors": [],
+  "success": false,
+  "failure": "TimeoutError: page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5213/?fms=1\", waiting until \"networkidle\"\u001b[22m\n"
+}

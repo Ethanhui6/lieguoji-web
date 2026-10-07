@@ -1,3 +1,17 @@
+# 当前续接：v31附庸战争/关系可玩，继续完整战争V2
+
+2026-10-08；源码 56e974e8fe9fce70790657967cb8ebc8adbcb921；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队全项目审查/前10差距。无新的必要用户决策阻塞。
+
+- 新版已接CB3选择/目标、实际附庸和约、登记先于退出其他已知双边战争、宗属关系/解除/覆亡清理、附庸自主外战限制、独立Worker/UI/Store33。保留国家城市；临时占领恢复是网页双重归属模型适配，非声称原作相同数据流程。
+- [交付/原作依据/边界](evidence/fms-vassal31-v5-2026-10-08/DELIVERY.md)、[检查](evidence/fms-vassal31-v5-2026-10-08/checks.json)。89批次、41客户端、最终15受影响通过（有重叠）；全仓types/lint、39发布计划保护、43产物构建审查通过。生产Chromium宣战取消确认/日推进/保存刷新、固定和约档显示宗主/拒绝外战/解除关系保存刷新通过，无pageerror/HTTP失败。
+- [本机试玩v31](http://127.0.0.1:5218/?fms=1)，仅127.0.0.1；产物 .autopilot/vassal31-preview/dist，PID28804，engine afe29c1e7d1e370467970caa087887c5db2c3ad43d7581516bea249c062cb170。用户origin没有注入测试档。旧v30/5216的43个产物hash重核保留，旧v29/5214保留；不自动升级个人旧档。
+- 428×926只是桌面竖屏仿真；宗属展示使用真实结算器显式胜方的固定档，不是自然AI战争获胜证据。固定方形大陆不是原作地图视觉验收。原作视觉、真机和完整WEB-04-37仍未过。
+- 仍缺：周期贡金、军力上限、附庸叛乱、完整宗主援战、联盟/改宗/内战、月排行缓存及完整调度。原生记录中的0.3贡率/0.5军力系数并未自动等于已实现周期行为。
+- 下一步：Continue WEB-04-37 from playable v31: native periodic tribute/army-cap/rebellion and lord war participation, then real alliances/conversion/internal wars, monthly ranking/cache and full diplomacy schedule. Reuse v31 relationship/settlement/Worker/Store33, preserve playable 56e974e artifact and old saves before rule changes. Then WEB-03-06 and queued full audit. No new cloud authorization.
+- 无push/Pages/main；发布锁与旧存档保护不变。下次先核Git，不重复即时附庸恢复，不另起空候选。
+
+---
+
 # 当前续接：v30已接入可玩宣战与外交调度，继续完整战争V2
 
 2026-10-08；源码 7d6d782a05c9f0a4bb31df53f170c0be51102a59；根唯一写入。WEB-04-37仍进行，之后WEB-03-06，再执行排队的全项目审查/前10差距。没有新的必要用户决策阻塞。

@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "fingerprint": "b99a0f06ff02be797aec8f86e82700646ebb4da5a88eb2ded1d61e477a131a79",
+  "files": [
+    {
+      "path": "src/fms/play/settlement25-rivers.ts",
+      "archive": "fms/play/settlement25-rivers.ts.source",
+      "sha256": "2ba23bcb7ad3d6f61e91da31f99d7319d2e7f295936806a92f356335c8b99678"
+    },
+    {
+      "path": "src/fms/play/settlement25-biomes.ts",
+      "archive": "fms/play/settlement25-biomes.ts.source",
+      "sha256": "275cb1ec2232a45a64ee51876303eae4b8986ab1606b5f9313336758c7fb38fb"
+    },
+    {
+      "path": "src/fms/play/settlement25-terrain.ts",
+      "archive": "fms/play/settlement25-terrain.ts.source",
+      "sha256": "ee4a0d12223803ea94b6b4cc2201e83ec88e3a77883db8d97ab1ab61c130387a"
+    },
+    {
+      "path": "src/fms/play/settlement25-combat.ts",
+      "archive": "fms/play/settlement25-combat.ts.source",
+      "sha256": "5d1d663c8b6d6842c03ded9134bec88b5779256ac755d300f14c2be25db6179d"
+    },
+    {
+      "path": "src/fms/play/settlement25-cells.ts",
+      "archive": "fms/play/settlement25-cells.ts.source",
+      "sha256": "9f14acd276e137e4dd38f0dcc29960397be578dd359b30f111660422cab75961"
+    },
+    {
+      "path": "src/fms/play/settlement25-fiscal.ts",
+      "archive": "fms/play/settlement25-fiscal.ts.source",
+      "sha256": "27182ec7e60e789eece2b669ac795aaac36e9e1d33869896f405993a6220e2b0"
+    },
+    {
+      "path": "src/fms/play/settlement25-mesh.ts",
+      "archive": "fms/play/settlement25-mesh.ts.source",
+      "sha256": "95c1128783ca49052bc42cbc367aa3d693abf67fa96808c05901cf45504cd353"
+    },
+    {
+      "path": "src/fms/play/settlement25-cuts.ts",
+      "archive": "fms/play/settlement25-cuts.ts.source",
+      "sha256": "5fafab4f2ae8dd7acae4f088a59b84f6c2ae7878f5f3ef05893e3c2e2da4ae1f"
+    },
+    {
+      "path": "src/fms/play/settlement25-regions.ts",
+      "archive": "fms/play/settlement25-regions.ts.source",
+      "sha256": "96d885c8c5e3018167122b92198444af090767ca380e3dad89e2a73542790abd"
+    },
+    {
+      "path": "src/fms/play/settlement25-palette.ts",
+      "archive": "fms/play/settlement25-palette.ts.source",
+      "sha256": "316abadfe470d791f3a99273c1888f155f990d24c553fdcacf11e45283c50886"
+    },
+    {
+      "path": "src/fms/play/settlement25-world.ts",
+      "archive": "fms/play/settlement25-world.ts.source",
+      "sha256": "dc95d43728151885712a42129b442d17c6b82ac21039bf320ca8cd8c2262392d"
+    },
+    {
+      "path": "src/fms/play/settlement25-create.ts",
+      "archive": "fms/play/settlement25-create.ts.source",
+      "sha256": "a7bda36be71100f7c724543b06ccc7f5d4f99a703b06a464304365e4f9a570a2"
+    },
+    {
+      "path": "src/fms/play/settlement25-model.ts",
+      "archive": "fms/play/settlement25-model.ts.source",
+      "sha256": "d226570fafef88cc745cc8133dcb7c657bd2cf4a6dee4ddd9bfd2c5f070e9894"
+    },
+    {
+      "path": "src/fms/play/settlement25-session.ts",
+      "archive": "fms/play/settlement25-session.ts.source",
+      "sha256": "a74e26f646df971e9816270543bf5f3455082d749ef152ab5c67b16d39d9087a"
+    },
+    {
+      "path": "src/fms/play/settlement25-storage.ts",
+      "archive": "fms/play/settlement25-storage.ts.source",
+      "sha256": "422af3b1e8a672a5d3ad712752ed00bbc5218817bd4171d935a64b4e3f713161"
+    },
+    {
+      "path": "src/fms/play/settlement25-stores.ts",
+      "archive": "fms/play/settlement25-stores.ts.source",
+      "sha256": "d7ed69abf8a8100e917d2fa85f1327333074949f6b9a38bd5ec472890af9c369"
+    },
+    {
+      "path": "src/fms/play/settlement25-client.ts",
+      "archive": "fms/play/settlement25-client.ts.source",
+      "sha256": "f2cb8e84c04816e675657541988b1276a524523c1f22fd5f8363111df10a3a67"
+    },
+    {
+      "path": "src/fms/play/settlement25/play.worker.ts",
+      "archive": "fms/play/settlement25/play.worker.ts.source",
+      "sha256": "2f80fe97dd4ae1699740bb471fcf90f76e512887e7abf22ca105daa23468c4ac"
+    }
+  ]
+}

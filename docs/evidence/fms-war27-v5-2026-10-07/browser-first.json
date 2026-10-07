@@ -1,0 +1,191 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-war27-losses.spec.ts",
+      "--project=desktop-chromium",
+      "--reporter=line,json",
+      "--output=.autopilot/war27-browser-first"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-first",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-first",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-first",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-war27-losses.spec.ts",
+      "file": "fms-war27-losses.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real drawing, frontier deployment, actual combat losses and exact saved recovery",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 53312,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at save (D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts:4:199)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts:13:601",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts",
+                      "column": 199,
+                      "line": 4
+                    },
+                    "snippet": "  2 | import type {War27Run} from '../src/fms/play/war27-model';\n  3 | async function stored(page:Page){return page.evaluate(()=>new Promise<{run:War27Run;revision:number;checksum:string}>(resolve=>{const q=indexedDB.open('lieguoji-fms-war-v27');q.onsuccess=()=>{const db=q.result,tx=db.transaction('saves'),value=tx.objectStore('saves').get('current');tx.oncomplete=()=>{resolve(value.result??{revision:0});db.close();};};}));}\n> 4 | async function save(page:Page){const previous=(await stored(page)).revision;await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect.poll(async()=>(await stored(page)).revision).toBe(previous+1);return stored(page);}\n    |                                                                                                                                                                                                       ^\n  5 | test('real drawing, frontier deployment, actual combat losses and exact saved recovery',async({page},info)=>{\n  6 |  test.setTimeout(180000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('requestfailed',r=>failed.push(r.url()));\n  7 |  await page.goto('/campaign/war27-losses?fms=1');await expect(page.getByRole('button',{name:'进入世界 →',exact:true})).toBeEnabled();const bounds=(await page.getByTestId('fms-canvas').boundingBox())!,cx=bounds.x+bounds.width*.5,cy=bounds.y+bounds.height*.46,rx=Math.min(bounds.width*.28,bounds.height*.24),ry=Math.min(bounds.height*.2,bounds.width*.25);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts",
+                        "column": 199,
+                        "line": 4
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  2 | import type {War27Run} from '../src/fms/play/war27-model';\n  3 | async function stored(page:Page){return page.evaluate(()=>new Promise<{run:War27Run;revision:number;checksum:string}>(resolve=>{const q=indexedDB.open('lieguoji-fms-war-v27');q.onsuccess=()=>{const db=q.result,tx=db.transaction('saves'),value=tx.objectStore('saves').get('current');tx.oncomplete=()=>{resolve(value.result??{revision:0});db.close();};};}));}\n> 4 | async function save(page:Page){const previous=(await stored(page)).revision;await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect.poll(async()=>(await stored(page)).revision).toBe(previous+1);return stored(page);}\n    |                                                                                                                                                                                                       ^\n  5 | test('real drawing, frontier deployment, actual combat losses and exact saved recovery',async({page},info)=>{\n  6 |  test.setTimeout(180000);const errors:string[]=[],failed:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('requestfailed',r=>failed.push(r.url()));\n  7 |  await page.goto('/campaign/war27-losses?fms=1');await expect(page.getByRole('button',{name:'进入世界 →',exact:true})).toBeEnabled();const bounds=(await page.getByTestId('fms-canvas').boundingBox())!,cx=bounds.x+bounds.width*.5,cy=bounds.y+bounds.height*.46,rx=Math.min(bounds.width*.28,bounds.height*.24),ry=Math.min(bounds.height*.2,bounds.width*.25);\n    at save (D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts:4:199)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts:13:601"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T11:54:48.893Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\war27-browser-first\\fms-war27-losses-real-draw-f1472-es-and-exact-saved-recovery-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\war27-browser-first\\fms-war27-losses-real-draw-f1472-es-and-exact-saved-recovery-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\.autopilot\\war27-browser-first\\fms-war27-losses-real-draw-f1472-es-and-exact-saved-recovery-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-war27-losses.spec.ts",
+                    "column": 199,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f5220f966e370c447953-aa9e980e56c557a57ad8",
+          "file": "fms-war27-losses.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T11:54:47.988Z",
+    "duration": 57714.21799999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

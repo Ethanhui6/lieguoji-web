@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "fingerprint": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
+  "files": [
+    {
+      "path": "src/fms/play/war26-native.ts",
+      "archive": "fms/play/war26-native.ts.source",
+      "sha256": "086531ff83a531e7ca9f3ce1ec76bb78daca63efb5ed6b0e59ebaf0cc3c0dfb0"
+    },
+    {
+      "path": "src/fms/play/war26-state.ts",
+      "archive": "fms/play/war26-state.ts.source",
+      "sha256": "5e91f518a3d1105908066ab57b71c8214b9c8031bc3b1bb6946d7d3f35d6dbdc"
+    },
+    {
+      "path": "src/fms/play/war26-strength.ts",
+      "archive": "fms/play/war26-strength.ts.source",
+      "sha256": "ad3310e45da4731f34b71f95ec177cca51a7cfdf40e6b22256f84b64f0a698c2"
+    },
+    {
+      "path": "src/fms/play/war26-validation.ts",
+      "archive": "fms/play/war26-validation.ts.source",
+      "sha256": "a51583774533597a21ee123f312b03306e5315957972febb932b73fdf443994c"
+    },
+    {
+      "path": "src/fms/play/war26-model.ts",
+      "archive": "fms/play/war26-model.ts.source",
+      "sha256": "2d7c125b315f9331b673ffca2ff0cd3fb486ea26d669b35bb2d6d4f32fa2aee0"
+    },
+    {
+      "path": "src/fms/play/war26-core.ts",
+      "archive": "fms/play/war26-core.ts.source",
+      "sha256": "3c49e4c0487505c5aee8dd754a3adecd838b566f806d98fa1273d0cc7f885877"
+    },
+    {
+      "path": "src/fms/play/war26-runtime.ts",
+      "archive": "fms/play/war26-runtime.ts.source",
+      "sha256": "bf9d91683f11cbe57e6847bde4b84027881cdd890b57c63c58232b5597373a58"
+    },
+    {
+      "path": "src/fms/play/war26-sea.ts",
+      "archive": "fms/play/war26-sea.ts.source",
+      "sha256": "2c65344cb90ce778ba949ae12d28d866e6fd5559de88cf80f87fe160e536fd42"
+    },
+    {
+      "path": "src/fms/play/war26-voyages.ts",
+      "archive": "fms/play/war26-voyages.ts.source",
+      "sha256": "a2d6e84f826af99c26eb08a15630e23bf7be55ed17c75f086a80b3925e56c34e"
+    },
+    {
+      "path": "src/fms/play/war26-session.ts",
+      "archive": "fms/play/war26-session.ts.source",
+      "sha256": "4aed7eac85f002e0de8e13a10404473b85043b0f397c3726bc41665d21f107f6"
+    },
+    {
+      "path": "src/fms/play/war26-storage.ts",
+      "archive": "fms/play/war26-storage.ts.source",
+      "sha256": "4a38d4ae630dcd6fa9ddd81700f7dcc5fd521c8f374e51fe6eba26b965d3ed9f"
+    },
+    {
+      "path": "src/fms/play/war26-stores.ts",
+      "archive": "fms/play/war26-stores.ts.source",
+      "sha256": "ed718deebf5f32303ee482097b0e01fcfb1b115e85b2883d8eab69ab37885c6d"
+    },
+    {
+      "path": "src/fms/play/war26-client.ts",
+      "archive": "fms/play/war26-client.ts.source",
+      "sha256": "3dc27e8f4e58f247ed5972f8e0c9ade78532a850fbefaa5615f891499aa08220"
+    },
+    {
+      "path": "src/fms/play/war26/play.worker.ts",
+      "archive": "fms/play/war26/play.worker.ts.source",
+      "sha256": "39bed28d09865d5f8a9dfd84a8a37b07a6bead1bb5ffde234ff97c1c13437136"
+    },
+    {
+      "path": "src/fms/play/native-economy/native-round.ts",
+      "archive": "fms/play/native-economy/native-round.ts.source",
+      "sha256": "42b0757f6d82a065c9a525d9de6a5c7b1ff344e07a3a23a9f6461faef8b082b9"
+    }
+  ]
+}

@@ -94,3 +94,6 @@
 .play-destiny{margin-block:16px;padding-block:12px;border-block:1px solid #8a927355}.play-destiny h3{display:flex;justify-content:space-between;gap:12px}.play-destiny h3 span{font-variant-numeric:tabular-nums;color:#596c42}.play-destiny summary{min-height:44px;padding:12px 0;cursor:pointer}.play-destiny small{display:block;line-height:1.6;margin-top:10px;color:#53634a}
 
 .play-person-life{padding-block:5px 10px;border-block:1px solid #8a927344;margin-block:10px}.play-person-life .play-stats{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:10px;margin-block:6px}.play-person-life .play-stats dd{font-size:15px;overflow-wrap:anywhere}.play-person-life p,.play-person-life small{font-size:11px;color:#586550;margin:4px 0}
+
+/* Persistent loss ledger: compact, readable counters without animation resets. */
+.play-loss-country{border-top:1px solid #ffffff20;padding:8px 0}.play-loss-country>summary{cursor:pointer;line-height:1.5}.play-loss-counts{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:10px 0 16px}.play-loss-counts div{min-width:0}.play-loss-counts dt{font-size:11px;opacity:.8}.play-loss-counts dd{margin:2px 0 0;font-variant-numeric:tabular-nums;font-size:14px}

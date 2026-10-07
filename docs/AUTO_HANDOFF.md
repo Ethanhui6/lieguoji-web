@@ -1,3 +1,16 @@
+# 当前续接：v27 实际战损记录与保存恢复已本地验证
+
+2026-10-07；源码父 HEAD 3809966，根唯一写入者；本批待本地提交。V5 / WEB-PH04 / WEB-04-37 与完整还原 Goal 仍进行。
+
+- 当前本机试玩 http://127.0.0.1:5206/?fms=1 ，独立 .autopilot/war27-final-preview/dist；v27 / Store29 / lieguoji-fms-war-v27；engine 4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9。构建于3809966脏树，实际源码与43产物绑定见 [tested-artifact](evidence/fms-war27-v5-2026-10-07/tested-artifact.json)。
+- 战争页新增真实交锋、追击、溃散、陆上断粮及海战损失。多国和继承小数伤害未归属，不重复给各战争；复制前旧历史未知。它不是原作kills/战争分/厌战，海上断粮等未覆盖。v26的15源冻结、旧库保护，预览无副作用、失败候选不安装。合同见 [CONTRACT](evidence/fms-war27-v5-2026-10-07/CONTRACT.md)。
+- 最终121相关单元、12浏览器（三尺寸真实战损3 + 传位/布兵/史书3 + 内海/双岛远征6）、完整lint/types/独立构建43白名单、39发布/计划保护通过。浏览器0重试；保存首次等待与指纹超时留证，不声称改善了性能。见 [DELIVERY](evidence/fms-war27-v5-2026-10-07/DELIVERY.md) / [checks](evidence/fms-war27-v5-2026-10-07/checks.json)。
+- 5206手工已画不规则大陆、四国六十城、战乱开局，实际推演至第24日(日内21/120)，暂停并保存，截图manual-world-day24.png。此origin以后按已有试玩保护；5199/5201/5203/5204/5205也不重置、不覆盖dist。
+- 下一批WEB-04-37：精确原伤亡单位、开战快照、历月与和约分类/效果。自动议和新增静态边界见 [NATIVE_PEACE_FOLLOWUP](evidence/fms-war27-v5-2026-10-07/NATIVE_PEACE_FOLLOWUP.md)；原score/weariness内核已测但没生产import，不重复恢复。然后WEB-03-06文化信仰与命名一致性。海洋/城名描边/近景折线仍有观感差距。
+- 未push/PR/Issue/Pages/main；Oct6有界预览不扩大，私库Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git链保持。原作完整对照、iPhone13ProMax/iOS27 Safari/Chrome真机及用户视觉未通过，继续不依赖这些验收的本地工程。
+
+---
+
 # 当前续接：v26 军事/传位/史书入口已修复，战争分内核已测但尚未接入
 
 2026-10-07；源码提交 547f03a85593ea9442d8ee144fe94789e8612d7a，根唯一写入，工作分支 codex/ph06-world-generation。V5 / WEB-PH04 / WEB-04-37 与完整原作还原 Goal 均继续进行。

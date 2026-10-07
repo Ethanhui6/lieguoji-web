@@ -1,0 +1,187 @@
+{
+  "date": "2026-10-07",
+  "parent": "3809966674509901890338e7a9e50ef1287564e7",
+  "engine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
+  "localUrl": "http://127.0.0.1:5206/?fms=1",
+  "unit": {
+    "passed": 121,
+    "files": 6,
+    "command": "npx vitest run src/fms/play/war27.test.ts src/fms/play/war27-client.test.ts src/fms/play/war26.test.ts src/fms/play/war26-client.test.ts src/fms/play/native-war/score.test.ts src/fms/play/native-war/weariness.test.ts --maxWorkers 1 --testTimeout 30000",
+    "log": "unit-verified.log",
+    "scope": "43 new,43 frozen v26,35 existing native kernels; not full repository suite"
+  },
+  "lint": {
+    "passed": true,
+    "logs": [
+      "lint-final.log",
+      "browser-lint-final.log"
+    ]
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "types-verified.log"
+  },
+  "build": {
+    "passed": true,
+    "log": "build.log",
+    "outDir": ".autopilot/war27-final-preview/dist",
+    "warning": "App/Worker >500kB; performance not accepted"
+  },
+  "distAudit": {
+    "passed": true,
+    "approvedArtifacts": 43,
+    "log": "dist-audit.log"
+  },
+  "protection": {
+    "passed": 39,
+    "release": 24,
+    "plan": 15,
+    "log": "protection.log"
+  },
+  "browser": {
+    "passed": 12,
+    "retries": 0,
+    "reports": [
+      {
+        "file": "browser-loss-desktop.json",
+        "startTime": "2026-10-07T12:01:24.136Z",
+        "duration": 113272.178,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      {
+        "file": "browser-loss-mobile-tablet.json",
+        "startTime": "2026-10-07T12:06:06.090Z",
+        "duration": 147533.38700000002,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      {
+        "file": "browser-regression.json",
+        "startTime": "2026-10-07T12:09:13.167Z",
+        "duration": 618124.598,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    ],
+    "scope": "Normal UI real Worker/IndexedDB; desktop/Pixel7/iPad dimensions on Chromium; isolated temporary contexts; no injected combat or personal saves"
+  },
+  "manual": {
+    "origin": 5206,
+    "nations": 4,
+    "cities": 60,
+    "day": 24,
+    "dayTick": 21,
+    "state": "paused and saved",
+    "screenshot": "manual-world-day24.png",
+    "landCombatDeductions": [
+      38973,
+      11789,
+      18547,
+      11266
+    ]
+  },
+  "physicalDevice": false,
+  "nativeVisualAccepted": false,
+  "nativeWarScoreIntegrated": false,
+  "cloudPublished": false,
+  "failedFirstAttempts": "FAILURES.md",
+  "privacy": "Reviewed staged source paths, limited secret patterns and dist whitelist. No original installation dump, SDK/auth config, credentials or personal saves included.",
+  "planCheck": {
+    "passed": true,
+    "log": "plan-final.log"
+  },
+  "localLogs": [
+    {
+      "file": "browser-first.log",
+      "sha256": "63b170d43c02f995a79bde428bd469de1970032c74cceb24ded0af19a2e70e47",
+      "gitIgnored": true
+    },
+    {
+      "file": "browser-lint-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gitIgnored": true
+    },
+    {
+      "file": "browser-loss-desktop.log",
+      "sha256": "2a189511c978f8292bd69bbfe1898b07a3bd7c106c22d0fde1db145bb5077e34",
+      "gitIgnored": true
+    },
+    {
+      "file": "browser-loss-mobile-tablet.log",
+      "sha256": "3f845ec6869b820bf5a63c8f50b67764e74a6bccdcd2d2c5530d1d14bd02e226",
+      "gitIgnored": true
+    },
+    {
+      "file": "browser-regression.log",
+      "sha256": "a41c0519281827d754999ce678cc106a0687954be50beb3b5b01be85604e101e",
+      "gitIgnored": true
+    },
+    {
+      "file": "build.log",
+      "sha256": "06b60b20114f95bba8be3800ba6dda38768da535dd8c8fd3bd5426fea719d904",
+      "gitIgnored": true
+    },
+    {
+      "file": "dist-audit.log",
+      "sha256": "3cf7d6f93a76660da580de6b1cfa90b069d38e3d92c55ddc5bfd43b3e5ea73fd",
+      "gitIgnored": true
+    },
+    {
+      "file": "lint-final.log",
+      "sha256": "500b49ca64aa3ebe1a9618b616c3806e1ca154358a7e382f34661c945225748c",
+      "gitIgnored": true
+    },
+    {
+      "file": "lint-first.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gitIgnored": true
+    },
+    {
+      "file": "plan-final.log",
+      "sha256": "002acd619c645b9770d4adb6859ad8a8e732c0f91afaaec1424e7b1994cbf248",
+      "gitIgnored": true
+    },
+    {
+      "file": "protection.log",
+      "sha256": "892876a3460380eb0da760b494ae52565fb96014f4e67c91d7fa9454b1ea5840",
+      "gitIgnored": true
+    },
+    {
+      "file": "types-final.log",
+      "sha256": "8dfc6f39bf0f8167d4e3cb296458832fdf8429241b49603c725970a1f5969562",
+      "gitIgnored": true
+    },
+    {
+      "file": "types-first.log",
+      "sha256": "dfb4a2781382d3579a5145f57d0a2cf6babb9e613e805e26e6e96e920e9900ab",
+      "gitIgnored": true
+    },
+    {
+      "file": "types-verified.log",
+      "sha256": "8dfc6f39bf0f8167d4e3cb296458832fdf8429241b49603c725970a1f5969562",
+      "gitIgnored": true
+    },
+    {
+      "file": "unit-final.log",
+      "sha256": "9f825bdc4408ff56f5d26e4d7939eb51acb6db7338db6bfb23ca9a2ce9d2fb07",
+      "gitIgnored": true
+    },
+    {
+      "file": "unit-first.log",
+      "sha256": "8bc1ac7e37e80f4093491b21f39e3c56a94341e367d19817a94b69cda2d4de6c",
+      "gitIgnored": true
+    },
+    {
+      "file": "unit-verified.log",
+      "sha256": "490028bb6bf2c7d0cdbc04ffacd224875c79dd523771a5f9d27d696bf2e68dd8",
+      "gitIgnored": true
+    }
+  ]
+}

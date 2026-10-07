@@ -1,0 +1,157 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-war27-losses.spec.ts",
+      "--project=desktop-chromium",
+      "--reporter=line,json",
+      "--output=.autopilot/war27-browser-loss-desktop"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-loss-desktop",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-loss-desktop",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/war27-browser-loss-desktop",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-war27-losses.spec.ts",
+      "file": "fms-war27-losses.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real drawing, frontier deployment, actual combat losses and exact saved recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 111706,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T12:01:25.247Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "loss-ledger-proof",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiI0OTI3YTA1OTE4ZjhiNGQ0YWJmNTc4Nzc1NGY3MTM2N2FkZTdlM2UzY2NlMjcwZmU1NDEwYzc3MjYwMzg0OWQ5IiwidGljayI6MzIwLCJsb3NzZXMiOnsidmVyc2lvbiI6MSwicmV2aXNpb24iOjUsIm9yaWdpblRpY2siOjAsInNvdXJjZSI6Im5ldy13b3JsZCIsIm5hdGlvbnMiOnsibi0wIjp7InRvdGFsIjp7ImNvbWJhdCI6MTcwMCwicHVyc3VpdCI6MCwicm91dCI6MCwic3RhcnZhdGlvbiI6MCwiY3JldyI6MCwiaHVsbCI6MCwic2hpcHMiOjAsImNhcmdvIjowfSwidW5hc3NpZ25lZCI6eyJjb21iYXQiOjAsInB1cnN1aXQiOjAsInJvdXQiOjAsInN0YXJ2YXRpb24iOjAsImNyZXciOjAsImh1bGwiOjAsInNoaXBzIjowLCJjYXJnbyI6MH19LCJuLTEiOnsidG90YWwiOnsiY29tYmF0Ijo0NDQsInB1cnN1aXQiOjAsInJvdXQiOjAsInN0YXJ2YXRpb24iOjAsImNyZXciOjAsImh1bGwiOjAsInNoaXBzIjowLCJjYXJnbyI6MH0sInVuYXNzaWduZWQiOnsiY29tYmF0IjowLCJwdXJzdWl0IjowLCJyb3V0IjowLCJzdGFydmF0aW9uIjowLCJjcmV3IjowLCJodWxsIjowLCJzaGlwcyI6MCwiY2FyZ28iOjB9fX0sImNhbXBhaWducyI6eyJuLTAvbi0xLzAiOnsiaGlzdG9yeSI6ImNvbXBsZXRlIiwiZnJvbVRpY2siOjAsImxvc3NlcyI6eyJuLTAiOnsiY29tYmF0IjoxNzAwLCJwdXJzdWl0IjowLCJyb3V0IjowLCJzdGFydmF0aW9uIjowLCJjcmV3IjowLCJodWxsIjowLCJzaGlwcyI6MCwiY2FyZ28iOjB9LCJuLTEiOnsiY29tYmF0Ijo0NDQsInB1cnN1aXQiOjAsInJvdXQiOjAsInN0YXJ2YXRpb24iOjAsImNyZXciOjAsImh1bGwiOjAsInNoaXBzIjowLCJjYXJnbyI6MH19fX19LCJhcm1pZXMiOlsiZm9yY2UtMTYiLCJmb3JjZS0xNyJdLCJjaGVja3N1bSI6IjE2NDg5ZjI3NTVmYmUyZDg3ZjFhNjE2YmM4NjUxYWY5MjQxZTk4ZWI0ZDZhNzUwMTdkMTExMjhkZTY2MTdmODciLCJzY29wZSI6Ik5vcm1hbCBVSSBhbmQgcmVhbCBXb3JrZXIvSW5kZXhlZERCIG9uIGFuIGlzb2xhdGVkIG9yaWdpbi4gTm8gaW5qZWN0ZWQgc2ltdWxhdGlvbiBkYXRhLiBDaHJvbWl1bSBlbXVsYXRpb24sIG5vdCBwaHlzaWNhbCBpUGhvbmUgb3IgbmF0aXZlIHBhcml0eS4ifQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f5220f966e370c447953-aa9e980e56c557a57ad8",
+          "file": "fms-war27-losses.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T12:01:24.136Z",
+    "duration": 113272.178,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

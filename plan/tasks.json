@@ -4296,9 +4296,18 @@
               "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json",
               "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-ui.json",
               "docs/evidence/fms-war26-ui-v5-2026-10-07/tested-artifact.json",
-              "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-regression.json"
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-regression.json",
+              "docs/evidence/fms-war27-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-war27-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-war27-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-war27-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-war27-v5-2026-10-07/NATIVE_PEACE_FOLLOWUP.md",
+              "docs/evidence/fms-war27-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
+              "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
+              "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
             ],
-            "progressScope": "v26固定连片目标与陆海军推进已本地验证；本批修复v26军事/传位/永久史书的UI回退，三尺寸真实确认/取消/保存恢复通过。原战争分/目标进度/厌战35项内核测试通过但未导入生产；完整CB/战损账/和约及WEB-04-37仍未完成。"
+            "progressScope": "v26固定目标与陆海军推进、v27真实扣减账/保守归因/精确恢复已本地验证。121相关单元、12个三尺寸浏览器闭环通过；原战争分与厌战纯内核未导入生产，完整伤亡单位、开战快照和和约继续恢复。不是完整战争V2、真机或视觉验收。"
           }
         ]
       },
@@ -4870,11 +4879,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "v26 UI closure and standalone native war kernels verified, locally committed",
+      "status": "v27 actual-loss ledger and 12 Chromium browser closures verified locally; source ready for local checkpoint commit",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "547f03a85593ea9442d8ee144fe94789e8612d7a",
-      "cloudScope": "Local-only v26; prior bounded preview grant not extended; main and old saves preserved.",
-      "next": "WEB-04-37：冻结v26，真实战损/快照与自动结束事务接新版本；接WEB-03-06。不要重复拆解已有score/weariness/peace主链。",
+      "lastCommitted": "3809966674509901890338e7a9e50ef1287564e7",
+      "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
+      "next": "WEB-04-37：核原伤亡单位及开战快照、完整历月与和约效果后接战争分/厌战；随后WEB-03-06文化信仰命名一致预设。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
@@ -4960,23 +4969,32 @@
         "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
-        "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/NATIVE_PEACE_FOLLOWUP.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
       ],
-      "currentVersion": 26,
-      "currentEngine": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
+      "currentVersion": 27,
+      "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5204/?fms=1",
-      "currentLocalHead": "776eb7a26cda818b7fc09a06fe119eca173c359b",
-      "sourceCommit": "776eb7a26cda818b7fc09a06fe119eca173c359b",
-      "checkpointNote": "v26 production source committed; served build created before commit, same source bytes with parent-HEAD metadata in tested-artifact.json. Do not reset 5204 play world, 5199,5201,5203 or rerun old one-off scripts.",
-      "head": "776eb7a26cda818b7fc09a06fe119eca173c359b",
+      "localUrl": "http://127.0.0.1:5206/?fms=1",
+      "currentLocalHead": "3809966674509901890338e7a9e50ef1287564e7",
+      "sourceCommit": null,
+      "checkpointNote": "New isolated 5206 production artifact and manually saved day24 world. Preserve all old origins and source builds. Build metadata is parent HEAD; tested-artifact.json binds exact source and dist bytes.",
+      "head": "3809966674509901890338e7a9e50ef1287564e7",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "v26固定连片目标内核、实际陆海军目标推进、目标定位与独立保存已本地验证；CB/战争分/厌战/和约未接，完整WEB-04-37未完成。",
-      "sourceParent": "cfc847c"
+      "note": "v27实际扣减账、保守归因、UI和独立存档已验证；完整战争V2及原作等价仍未完成。",
+      "sourceParent": "3809966674509901890338e7a9e50ef1287564e7"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6658,6 +6676,34 @@
       "evidence": [
         "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
+      ]
+    },
+    "war27Prototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 27,
+      "store": 29,
+      "database": "lieguoji-fms-war-v27",
+      "sourceParent": "3809966",
+      "scope": "实际扣减记录和保守归因；不是原作kill单位或战争分。",
+      "unitChecks": 121,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "browserLossChecks": 3,
+      "localUrl": "http://127.0.0.1:5206/?fms=1",
+      "engine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
+      "browserChecks": 12,
+      "manualDay": 24,
+      "evidence": [
+        "docs/evidence/fms-war27-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/NATIVE_PEACE_FOLLOWUP.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
+        "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
       ]
     }
   }

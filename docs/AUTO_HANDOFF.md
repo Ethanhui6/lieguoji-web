@@ -1,6 +1,6 @@
 # 当前续接：v27 实际战损记录与保存恢复已本地验证
 
-2026-10-07；源码父 HEAD 3809966，根唯一写入者；本批待本地提交。V5 / WEB-PH04 / WEB-04-37 与完整还原 Goal 仍进行。
+2026-10-07；源码提交 87044a7de1cba92850c4889aaf9e5d98ff83b6f9，根唯一写入者；本批已本地提交，后续仅交接检查点提交。V5 / WEB-PH04 / WEB-04-37 与完整还原 Goal 仍进行。
 
 - 当前本机试玩 http://127.0.0.1:5206/?fms=1 ，独立 .autopilot/war27-final-preview/dist；v27 / Store29 / lieguoji-fms-war-v27；engine 4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9。构建于3809966脏树，实际源码与43产物绑定见 [tested-artifact](evidence/fms-war27-v5-2026-10-07/tested-artifact.json)。
 - 战争页新增真实交锋、追击、溃散、陆上断粮及海战损失。多国和继承小数伤害未归属，不重复给各战争；复制前旧历史未知。它不是原作kills/战争分/厌战，海上断粮等未覆盖。v26的15源冻结、旧库保护，预览无副作用、失败候选不安装。合同见 [CONTRACT](evidence/fms-war27-v5-2026-10-07/CONTRACT.md)。

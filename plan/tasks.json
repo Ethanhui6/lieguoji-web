@@ -4879,9 +4879,9 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "v27 actual-loss ledger and 12 Chromium browser closures verified locally; source ready for local checkpoint commit",
+      "status": "v27 actual-loss ledger and 12 Chromium browser closures verified; locally committed",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "3809966674509901890338e7a9e50ef1287564e7",
+      "lastCommitted": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
       "next": "WEB-04-37：核原伤亡单位及开战快照、完整历月与和约效果后接战争分/厌战；随后WEB-03-06文化信仰命名一致预设。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
@@ -4984,10 +4984,10 @@
       "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5206/?fms=1",
-      "currentLocalHead": "3809966674509901890338e7a9e50ef1287564e7",
-      "sourceCommit": null,
-      "checkpointNote": "New isolated 5206 production artifact and manually saved day24 world. Preserve all old origins and source builds. Build metadata is parent HEAD; tested-artifact.json binds exact source and dist bytes.",
-      "head": "3809966674509901890338e7a9e50ef1287564e7",
+      "currentLocalHead": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
+      "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
+      "checkpointNote": "v27 production source commit recorded. The following documentation-only checkpoint may be newer. Served build was created from the same source bytes with parent-HEAD metadata; tested-artifact.json binds them. Preserve 5206 paused saved day24 world and all previous origins.",
+      "head": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
@@ -6704,7 +6704,8 @@
         "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-desktop.json",
         "docs/evidence/fms-war27-v5-2026-10-07/browser-loss-mobile-tablet.json",
         "docs/evidence/fms-war27-v5-2026-10-07/browser-regression.json"
-      ]
+      ],
+      "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9"
     }
   }
 }

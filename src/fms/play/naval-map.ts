@@ -16,7 +16,7 @@ export function drawNavy(layer:Container,world:World,scale:number,zoom:number,vi
     if(port.id!==active?.dockId&&port.id!==active?.targetId&&!contested&&!(zoom>1.2&&world.cities.some(c=>c.provinceId===port.provinceId)&&world.provinces.some(p=>p.id===port.provinceId&&p.controller===nationId)))continue;
     const x=port.shore.x/scale,y=port.shore.y/scale,nation=world.nations.find(n=>n.id===control?.occupierId),radius=(contested?4:2)*pixel;
     portLayer.circle(x,y,radius).fill(nation?nationColor(nation):0xd7eee7).stroke({color:0x274d56,width:pixel});
-    if(contested)portLayer.arc(x,y,radius+2*pixel,-Math.PI/2,-Math.PI/2+Math.PI*2*control.value/100).stroke({color:0xffdf8e,width:1.4*pixel});
+    if(contested)portLayer.moveTo(x,y-radius-2*pixel).arc(x,y,radius+2*pixel,-Math.PI/2,-Math.PI/2+Math.PI*2*control.value/100).stroke({color:0xffdf8e,width:1.4*pixel});
   }};updatePorts(view.portControl);
   for(const f of navy.fleets){if(f.status==='lost'||overview&&f.id!==selected&&f.ships<5)continue;const p=positions?.get(f.id)??fleetPosition(graph,f),x=0,y=0,r=(f.id===selected?9:6)*pixel,nation=world.nations.find(n=>n.id===f.nationId)!;
     const ship=new Container(),icon=new Graphics();ship.position.set(p.x/scale,p.y/scale);ship.addChild(icon);layer.addChild(ship);ships.set(f.id,ship);

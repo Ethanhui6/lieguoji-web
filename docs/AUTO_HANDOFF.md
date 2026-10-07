@@ -1,20 +1,15 @@
-# 当前续接：v23真实家族继承可玩，接死亡角色归档
+# 当前续接：v23家族继承可玩，接v24自然死亡与官职清理
 
-2026-10-07，父HEAD c90c94f5b6486b283fcdfcdbf7abb9639923cd54；根独占写入，代理只读。v23源码已本地提交 aebfd10c52105368597e3f5a87bbfcd0649146a4，未上传；此后检查点/独立角色核另记。Goal、WEB-PH04/WEB-04-13进行中。
+2026-10-07，根唯一源码写入者。Goal、WEB-PH04/WEB-04-13继续进行；普通本地工作直接推进，不询问是否继续。
 
-- 最新候选 http://127.0.0.1:5197/?fms=1 ，独立.autopilot/dynasty23-final-preview/dist，v23/Store25/lieguoji-fms-dynasty-v23；engine fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d。5196早期家谱样本与5195/v22及旧库保持。
-- 新局原配偶/子女/旁系、同一人物编号、生日能力和父母子女关系已进入Worker/家谱；真实继承预览取消确认与重复复位不造新人物。旧亲属保持未知。自然死亡、自动婚育、完整官职及家族领地仍未接。[合同](evidence/fms-dynasty23-v5-2026-10-07/CONTRACT.md)。
-- 最终133受影响单元/7文件、完整lint/types/build43产物、24发布+15计划及计划校验通过；三尺寸最终浏览器3过0重试，桌面实推跨月并精确恢复。浅金姓名低对比已修深绿，首轮证据保留。[交付](evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md)。不是全量单元/真机/完整原作视觉PASS。
-- 缺source且含嵌套未来字段的双槽锁写缺口已修；其余CAS/原子保存和旧版分派保留。App/Worker超500kB警告仍在，不称移动性能通过。
-- 下一批原死亡角色归档与继承事务，PastRole/Normalize及Die领袖类型谓词已静态恢复，Round的CRT helper继续闭合；不要重复恢复同一家庭函数，不重跑start-dynasty23一次性脚本。
-- 无push/PR/Issue/Pages/main；有效发布范围未被v23自动扩展。真机/用户视觉和全部完整PH门保持。
-
-随后独立死亡角色归档与原double Round内核已实现：59项（含既有死亡概率）/3文件、目标lint及完整types通过，只读审查未发现偏差。尚无生产调用，v23引擎和5197保持。见 [角色恢复证据](evidence/fms-dynasty23-v5-2026-10-07/DEATH_ROLE_RECOVERY.md)。下一窄批补原死亡统计/死亡史书参数/族长交接，随后接完整事务，不重复已恢复函数。
-
-死亡统计/原LeaderDeathEvent/族长交接与国家TryResolve外壳随后已本地提交59648ff67cc1bf37ae45d998e7fffb76712d78d1，最终145项/7文件、目标lint及完整types通过，尚未生产接线。统计三次重读偏差已修；中间6个测试失败源于vi.fn重复包装共享spy，改独立mock后全部通过，失败JSON保留。见 [死亡合同](evidence/fms-dynasty23-v5-2026-10-07/NATURAL_DEATH_RECOVERY.md)、[国家交接/3政体后续](evidence/fms-dynasty23-v5-2026-10-07/STATE_SUCCESSION_RECOVERY.md)。下一批落已恢复三handler并闭合三个紧急selector；原Appoint/选举与死亡整笔接线独立推进，不重复外壳，不覆盖v23。
-
-
-2026-10-07续接补记：三非君主handler/紧急候选与原年龄能力评分已完成独立核，131项/4文件、目标lint与全工程types通过，尚未生产。见docs/evidence/fms-dynasty23-v5-2026-10-07/SUCCESSION_CANDIDATES_RECOVERY.md。下一批Monarchy88EB70/HoldElection845810外壳与AppointLeader角色任期处理，v23/5197不变；Goal与WEB-04-13仍在进行。
+- 当前可玩源码 aebfd10c52105368597e3f5a87bbfcd0649146a4；候选 http://127.0.0.1:5197/?fms=1 ，独立 .autopilot/dynasty23-final-preview/dist，v23/Store25/lieguoji-fms-dynasty-v23，engine fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d。继续前检查服务实际状态；5196/5195及旧库保留。
+- 已可玩：新局真实配偶、子女、旁系、生日能力与家谱；传位沿用已有亲属人物，不另抽身份。旧亲属来源仍未知。v23还没有自然死亡、自动婚育、完整家族领地。
+- v23最终133受影响单元、lint/types/build43产物、24发布+15计划通过；三尺寸浏览器3过0重试，桌面跨月/精确恢复、家谱低对比修复证据见[DELIVERY](evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md)。不是本批重新跑的浏览器、真机或视觉认可。App/Worker超过500kB警告仍在。
+- 此后独立死亡统计/角色/族长/国家交接核59648ff；紧急候选与三非君主handler提交20cd1d2；王朝、选举、完整任命次序提交3b35488。统一219项/8文件、目标lint与完整types通过，首轮泛型never类型失败已修且异常断言保留。[任命恢复](evidence/fms-dynasty23-v5-2026-10-07/MONARCHY_APPOINTMENT_RECOVERY.md)。
+- 最新Character.Die整笔顺序、登基事件和国家快照核115项/6文件、目标lint/完整types通过，见[DIE_TRANSACTION_RECOVERY](evidence/fms-dynasty23-v5-2026-10-07/DIE_TRANSACTION_RECOVERY.md)。上述数字范围重叠，不累加冒充全量。所有这些后续kernel尚未生产接线，v23引擎/网页仍不启用自然死亡。
+- 下一窄批：旧court16已恢复DismissAll8820D0/DismissAssignment882810外壳，补国家/任职/历史去重谓词及MarkDirty副作用，复用office-assignment.ts的Ensure。再闭合真正调度AdvanceMonth836DC0，进入独立v24角色/死时/家族heir/任期/统计与事务、Worker/存档/UI。不要重复恢复已有选择器/角色/概率/日历，不重跑一次性start脚本。
+- 生产接入须同时维护kin/court存活状态；死者年龄冻结、旧档来源未知、历史配偶引用、原始角色startTime与任期reignStartTime分开。不得提前清leaderId丢失死者身份，不用国家灭亡事件代替人物死亡。所有改动在私有候选上完成后提交，旧v23合同不放宽。
+- 无push/PR/Issue/Pages/main变更；有界2026-10-06预览授权未被这些新版自动扩展。正式站和旧档保留，真机/用户视觉与完整PH仍待验。
 
 ---
 

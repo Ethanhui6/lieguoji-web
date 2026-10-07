@@ -4290,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "三政体候选、Monarchy、HoldElection及AppointLeader/EndReign独立核统一219项与lint/types已过；接Character.Die83AEB0完整顺序和DismissAllForCharacter官职下游，然后独立v24生产接线，不重复已闭合核。",
+    "nextRecoveryTarget": "人物Die整笔核及登基/快照已检查；接旧court16已恢复的DismissAll/DismissAssignment下游谓词、去重与MarkDirty，复用office-assignment Ensure，然后闭合AdvanceMonth836DC0后v24生产接线。不得重复已闭合核或声称已启用自然死亡。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_appointment_kernels_verified",
+      "status": "dynasty23_playable_death_transaction_verified",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
+      "lastCommitted": "3b35488",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "三政体候选、Monarchy、HoldElection及AppointLeader/EndReign独立核统一219项与lint/types已过；接Character.Die83AEB0完整顺序和DismissAllForCharacter官职下游，然后独立v24生产接线，不重复已闭合核。",
+      "next": "人物Die整笔核及登基/快照已检查；接旧court16已恢复的DismissAll/DismissAssignment下游谓词、去重与MarkDirty，复用office-assignment Ensure，然后闭合AdvanceMonth836DC0后v24生产接线。不得重复已闭合核或声称已启用自然死亡。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4838,7 +4838,7 @@
       "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5197/?fms=1",
-      "currentLocalHead": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
+      "currentLocalHead": "3b35488",
       "sourceCommit": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
       "checkpointNote": "Playable v23 source aebfd10; independent death kernels 59648ff. Subsequent documentation-only checkpoint commit is in Git log."
     },
@@ -6309,7 +6309,24 @@
         "Downstream election candidates/weight/winner, alternative dynasty, title, snapshots/events/reform remain explicit ports.",
         "Original Die order recovered next; no natural death production integration or new browser claim."
       ],
-      "repairedFailure": "First full typecheck inferred never from throwing snapshot callback; infer snapshot type directly from state, retain exception test."
+      "repairedFailure": "First full typecheck inferred never from throwing snapshot callback; infer snapshot type directly from state, retain exception test.",
+      "sourceCommit": "3b35488"
+    },
+    "characterDeathKernel": {
+      "date": "2026-10-07",
+      "status": "local_verified_not_integrated",
+      "sourceParent": "3b35488",
+      "productionIntegrated": false,
+      "unitTests": 115,
+      "testFiles": 6,
+      "lint": true,
+      "typecheck": true,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/DIE_TRANSACTION_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/die-first.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/die-typecheck.txt"
+      ],
+      "scope": "Character.Die original order, ascension constructor and state snapshot; office dismissal/history count/scheduling remain explicit dependencies."
     }
   }
 }

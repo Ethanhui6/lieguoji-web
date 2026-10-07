@@ -30,7 +30,7 @@ Family ctor84BC70–84BFA9每次新建十个不同容器，顺序memberIds+38、
 
 显式updateDay=1、poleCellIndex=-1、influence=50f、wealth=100、extendedMembers=50、polePos=(0,0)，poleCellIndex再次-1。新对象零初始化给id/patriarch/heir/founder/home/originalHome/state/征服数=0；totalEnemyDestroyed/rallyCooldown=0f；foundingTime=0d；allowFemaleInheritance/skipNextRedistribution/m_IsRulingFamily/两更新标记/isLabelPlaced=false；surname/culture/religion/colorString/familyLabelObject=null；color=(0,0,0,0)。不能把constructor当已有对象重置函数。分配失败异常，无兜底/回滚，不抽色/分配ID/注册/生成亲属。
 
-GenerateRandomColor849890–849922只是manager.get_Instance873D00→GetNextFamilyColor8624D0恰好一次（8498E1）→16字节color复制（8498ED–F0）→ToHtmlStringRGBA22F0AD0（8498FD）→colorString写入（849902–910）。本体不抽Unity随机、不做浮点运算、不夹色、不更新标志或拼#。manager/getColor失败不写color；HTML失败保留已写color和旧colorString。GetNextFamilyColor/HTML下层另批恢复，不从Random名字猜算法。
+GenerateRandomColor849890–849922只是manager.get_Instance873D00→GetNextFamilyColor8624D0恰好一次（8498E1）→16字节color复制（8498ED–F0）→ToHtmlStringRGBA22F0AD0（8498FD）→colorString写入（849902–910）。本体不抽Unity随机、不做浮点运算、不夹色、不更新标志或拼#。manager/getColor失败不写color；HTML失败保留已写color和旧colorString。后续HTML转换已结合既有半偶数核闭合，GetNext的循环palette/独立seed外层也已恢复；各边界见DEFAULTS_KERNEL.md，不从Random名字猜算法。
 
 ## 人物注册入口的实质纠正
 

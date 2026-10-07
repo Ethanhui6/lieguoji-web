@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "fingerprint": "2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e",
+  "files": [
+    {
+      "path": "src/fms/play/war32-model.ts",
+      "archive": "fms/play/war32-model.ts.source",
+      "sha256": "4466d40d85f1da62c64cb5313951d9e9c25b72343ad7a0b91f574a15e95016ee"
+    },
+    {
+      "path": "src/fms/play/war32-storage.ts",
+      "archive": "fms/play/war32-storage.ts.source",
+      "sha256": "f2ab1eab01f6ae4706682de4fee2c86f63efa72dcb4c8795b8f4bf54ac1a7b72"
+    },
+    {
+      "path": "src/fms/play/war32-stores.ts",
+      "archive": "fms/play/war32-stores.ts.source",
+      "sha256": "c55981cfc167cd7ce0ebf719893bda70fab4385d8a88fa058793548c3697ecbf"
+    },
+    {
+      "path": "src/fms/play/war32-state.ts",
+      "archive": "fms/play/war32-state.ts.source",
+      "sha256": "354165c03ff13586fe21d9adb2c0929c37d625335c424419988e999c2c8e836d"
+    },
+    {
+      "path": "src/fms/play/war32-declaration.ts",
+      "archive": "fms/play/war32-declaration.ts.source",
+      "sha256": "72bec515fc192110e184b63cc0c43ad427454bd8dd4deeb5e27158ab6d824e47"
+    },
+    {
+      "path": "src/fms/play/war32-session.ts",
+      "archive": "fms/play/war32-session.ts.source",
+      "sha256": "b21afa4f1169cf5e7ad212521605f465774e7d5a91c14e5680d0488cf8fb7e5e"
+    },
+    {
+      "path": "src/fms/play/war32-client.ts",
+      "archive": "fms/play/war32-client.ts.source",
+      "sha256": "b89732ac50389e39c4edda2d81c1c9cbb7dc2b1cd604cbbb865703155a5a9ef0"
+    },
+    {
+      "path": "src/fms/play/war32-vassals.ts",
+      "archive": "fms/play/war32-vassals.ts.source",
+      "sha256": "e083f32c922d44cbd5335a9e9c2d6d4b49573e1cc10569ae078757d27a5492d2"
+    },
+    {
+      "path": "src/fms/play/war32-settlement.ts",
+      "archive": "fms/play/war32-settlement.ts.source",
+      "sha256": "5e71ccd95ebd45e3d1b71abdd4c9a9f21d9d647139e5df8ceeb0849165bc696c"
+    },
+    {
+      "path": "src/fms/play/war32-peace.ts",
+      "archive": "fms/play/war32-peace.ts.source",
+      "sha256": "025676a4d9d7ca2e8674e544a9efa578a9980de72d253673f17ca69b3968f2e8"
+    },
+    {
+      "path": "src/fms/play/war32/play.worker.ts",
+      "archive": "fms/play/war32/play.worker.ts.source",
+      "sha256": "d5f4427c7bb01ece14de7b7888c9614a4f05fa77e79248c65bd52577f071fff0"
+    },
+    {
+      "path": "src/fms/play/war32-tribute.ts",
+      "archive": "fms/play/war32-tribute.ts.source",
+      "sha256": "14d2fe12a3fa6d26df4bc72c2714705646b64b358033901a194072d7623c8c7e"
+    },
+    {
+      "path": "src/fms/play/native-war/vassal-tribute.ts",
+      "archive": "fms/play/native-war/vassal-tribute.ts.source",
+      "sha256": "2172f69882eeb84dcbbb9b7da194b3711f52f563056a8b97a851316b09d6c7b2"
+    }
+  ]
+}

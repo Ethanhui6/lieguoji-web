@@ -5,7 +5,7 @@ import type {NativeSettlementWar,NativeSettlementGoal,NativeVerdictQueries} from
 export type NativeWarOutcome=0|1|2; // Victory / Defeat / Peace
 export type NativeTransfer={sourceGoalId:number;provinceId:number;from:number;to:number;type:number};
 export type NativeEffect={sourceGoalId:number;type:number;beneficiary:number;target:number};
-export type NativeEffectResult=NativeEffect&{status:0|1|2;reason:string};
+export type NativeEffectResult=NativeEffect&{status:0|1|2;reason:string|null};
 export type NativeSettlementPlan={warId:number;winnerSide:NativeWarSide|null;victorSide:NativeWarSide|null;outcomes:Map<number,NativeWarOutcome>;enforcedGoals:number[];transfers:NativeTransfer[];appliedTransfers:NativeTransfer[];annexation:boolean;effects:NativeEffect[];effectResults:NativeEffectResult[]};
 export type NativeClassificationQueries=NativeVerdictQueries&{
  currentOwner:(provinceId:number)=>number;

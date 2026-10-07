@@ -2813,7 +2813,12 @@
       "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
       "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
       "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
-      "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
+      "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json",
+      "docs/evidence/fms-peace-execution-v5-2026-10-07/RECOVERY.md",
+      "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
+      "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
+      "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
+      "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
     ],
     "nextBatch": [
       "WEB-04-37",
@@ -4313,9 +4318,14 @@
               "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
               "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
               "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
-              "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
+              "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json",
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/RECOVERY.md",
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
             ],
-            "progressScope": "v26固定目标和陆海军推进、v27实际扣减账及12浏览器闭环保留。新增原作议和理由、胜方、条款构建、国家结局四个独立实现，57新测试+35既有=92相关测试通过；未生产接线、未执行实际和约。原始伤亡单位/快照/终战清理完成静态核对，效果执行和版本桥接仍待接。非完整战争V2、真机或视觉验收。"
+            "progressScope": "v26固定目标推进、v27实际扣减账及既有浏览器闭环保留。独立原作战争内核新增达成/崩溃、赔款/改宗/附庸及执行器，70新+92既有战争+23round=185测试通过；未生产接线、无新可玩版本。v28需先冻结v27并完成状态/历月/伤亡映射、候选事务及终战清理。完整战争V2、真机与视觉未验收。"
           }
         ]
       },
@@ -4409,7 +4419,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "WEB-04-37：直接接本批已核原始傷害单位、开战快照和终战清理证据；补HasStateCollapsed/目标达成/三种效果Apply并接实际执行、历月和独立新版规则；禁止用v27整数扣减补造原作kills。然后WEB-03-06文化信仰命名一致性。",
+    "nextRecoveryTarget": "WEB-04-37：直接复用已测内核做v28生产桥接；先冻结v27，明确伤亡/历月/开战快照映射，接目标→战争分/厌战→和约执行→外交/军队/史记清理及独立保存；不重复恢复本批函数，不造旧局历史。之后WEB-03-06文化信仰命名一致性。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4887,11 +4897,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "Native peace/plan/outcome kernels verified locally; playable v27 remains unchanged",
+      "status": "Native settlement execution and effects verified; production v27 unchanged",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "14f18db6869f8152675abe3de03809910802ea58",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
-      "next": "WEB-04-37：直接接本批已核原始傷害单位、开战快照和终战清理证据；补HasStateCollapsed/目标达成/三种效果Apply并接实际执行、历月和独立新版规则；禁止用v27整数扣减补造原作kills。然后WEB-03-06文化信仰命名一致性。",
+      "next": "WEB-04-37：直接复用已测内核做v28生产桥接；先冻结v27，明确伤亡/历月/开战快照映射，接目标→战争分/厌战→和约执行→外交/军队/史记清理及独立保存；不重复恢复本批函数，不造旧局历史。之后WEB-03-06文化信仰命名一致性。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
@@ -4990,7 +5000,12 @@
         "docs/evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md",
         "docs/evidence/fms-peace-kernels-v5-2026-10-07/NEXT_INTEGRATION.md",
         "docs/evidence/fms-peace-kernels-v5-2026-10-07/checks.json",
-        "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
+        "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/RECOVERY.md",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
       ],
       "currentVersion": 27,
       "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
@@ -4998,14 +5013,14 @@
       "localUrl": "http://127.0.0.1:5206/?fms=1",
       "currentLocalHead": "14f18db6869f8152675abe3de03809910802ea58",
       "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
-      "checkpointNote": "Native peace kernels are locally committed at 14f18db6869f8152675abe3de03809910802ea58. The following documentation-only checkpoint may be newer. sourceCommit/currentVersion/currentEngine still identify the protected v27 playable artifact; no new production rule version.",
+      "checkpointNote": "Current uncommitted execution batch builds on da05fe9; code commit will be recorded after local commit. sourceCommit/version/engine retain protected v27.",
       "head": "14f18db6869f8152675abe3de03809910802ea58",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "57 new + 35 existing native-war tests; no new browser/build claims or release. Root remains sole writer.",
+      "note": "70 new tests, 185 related tests passed. No new game build/browser/release. Video lookup attempts and unplayed candidates recorded separately.",
       "sourceParent": "3809966674509901890338e7a9e50ef1287564e7"
     },
     "nativeHillPrototype": {
@@ -6560,7 +6575,8 @@
       "date": "2026-10-07",
       "evidence": [
         "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
-        "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md"
+        "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
       ],
       "observedVideoIds": [
         "zBXNH8hmasA",
@@ -6580,6 +6596,17 @@
         "scope": "Editor controls, map hierarchy, attack arrows, rebellion banner; no frame-rate, complete workflow or current native rules proof",
         "productionChanged": false,
         "evidence": "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md"
+      },
+      "latestLookup": {
+        "date": "2026-10-07",
+        "newPlaybackVerified": false,
+        "candidates": [
+          "https://www.youtube.com/watch?v=ruzEBJPVWHM",
+          "https://www.bilibili.com/video/BV11v876TEWX/"
+        ],
+        "limitations": "YouTube navigation/observation timed out. New candidates unplayed; existing observed segments retained without recounting.",
+        "officialRulesRead": true,
+        "evidence": "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
       }
     },
     "settlement25Prototype": {
@@ -6684,7 +6711,7 @@
       "weariness": "src/fms/play/native-war/weariness.ts",
       "newTests": 35,
       "productionIntegration": false,
-      "peace": "2026-10-07 independent peace/plan/classification kernels verified; actual effects, lifecycle and production integration still pending. See nativePeaceKernels.",
+      "peace": "Native peace, plan, classification, achievement, effects and executor verified independently; production lifecycle still pending. See nativePeaceKernels/nativePeaceExecutionKernels.",
       "evidence": [
         "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
@@ -6746,12 +6773,40 @@
         "docs/evidence/fms-peace-kernels-v5-2026-10-07/unit-final.json"
       ],
       "remaining": [
-        "HasStateCollapsed and goal achievement dependencies",
-        "Effect Apply and actual ConqueredBy execution",
+        "Production ConqueredBy and internal settlement dependency bridges",
         "Native damage source and calendar/state mapping",
         "Start/end lifecycle and versioned production integration"
       ],
       "sourceCommit": "14f18db6869f8152675abe3de03809910802ea58"
+    },
+    "nativePeaceExecutionKernels": {
+      "date": "2026-10-07",
+      "status": "tested_not_integrated",
+      "sourceParent": "da05fe9",
+      "productionIntegrated": false,
+      "newTests": 70,
+      "totalAffectedTests": 185,
+      "testFiles": 8,
+      "playableVersionUnchanged": 27,
+      "evidence": [
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/RECOVERY.md",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
+      ],
+      "files": [
+        "src/fms/play/native-war/achievement.ts",
+        "src/fms/play/native-war/settlement-effects.ts",
+        "src/fms/play/native-war/vassal-effect.ts",
+        "src/fms/play/native-war/settlement-execute.ts"
+      ],
+      "remaining": [
+        "Production state/calendar/raw-damage mapping",
+        "Native province-conquest and internal settlement dependencies",
+        "Versioned start/end lifecycle and atomic candidate commit",
+        "Browser playable verification"
+      ]
     }
   }
 }

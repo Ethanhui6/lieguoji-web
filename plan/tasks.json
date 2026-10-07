@@ -4282,7 +4282,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "WEB-04-13: 人物生命周期已有死亡概率内核；窄核TimeManager5215E0和Character.UpdateAge83DD30及持久生日，不把recordedDay当生日。",
+    "nextRecoveryTarget": "WEB-04-13: v22生日已接；原继承选择与人物/家族创建外层已测。接Family/Character默认注册及配偶子女旁系，形成真实家族持久记录，再自然死亡事务。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4760,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "life22_verified_family_kernel_ready",
+      "status": "life22_playable_family_creation_kernels_ready",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "34842488b1bc477d942ccb94d11fecdee02d2b19",
       "cloudScope": "Local-only v22; existing bounded cloud preview, main and all old stores are retained. The cloud URL is not this v22 build.",
-      "next": "已完成原家族继承选择核；接真实人物/家族创建入口，再亲属与死亡继承。当前5195仍为v22可玩。",
+      "next": "WEB-04-13: v22生日已接；原继承选择与人物/家族创建外层已测。接Family/Character默认注册及配偶子女旁系，形成真实家族持久记录，再自然死亡事务。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -6153,6 +6153,20 @@
         "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md",
         "docs/evidence/fms-life22-v5-2026-10-07/family-kernel-first.json",
         "docs/evidence/fms-life22-v5-2026-10-07/family-kernel-final.json"
+      ]
+    },
+    "familyCreationKernel": {
+      "status": "local_verified_not_integrated",
+      "sourceParent": "ea32d54",
+      "productionIntegrated": false,
+      "unitTests": 78,
+      "evidence": [
+        "docs/evidence/fms-life22-v5-2026-10-07/CREATION_RECOVERY.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/CREATION_KERNEL.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-creation-first.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-creation-final.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-virtual-first.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-virtual-final.json"
       ]
     }
   }

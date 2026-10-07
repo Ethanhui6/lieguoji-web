@@ -7,7 +7,7 @@
 - 132受影响单元/7文件首轮通过，最终完整lint/types与构建43产物通过；三尺寸普通绘图→生日→桌面实推第31日→传位→精确恢复3项全过，0重试。
 - 手工六国第2日11:00遭遇暂停后已保存并刷新恢复，37岁/原生日保持，控制台error空；24发布+15计划本批实过。
 - 已修年龄缓存校验缺口；无生产检查跳过。日期独立87项先前已过，不合并冒充全量；旧v20的3127不是本批全量。
-- 原家族FindSuccessor860DE0/fallback890150/priority8572D0独立核已完成，最终48项（新34+既有14）与目标lint/完整types通过，尚无生产调用。[内核进展](evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md)。下一依赖是真实人物/家族创建与亲属表；不要重跑start-life22/ui-life22/polish-life22一次性脚本。无push/Pages/main，真机/用户视觉和完整原作仍待验。
+- 原家族FindSuccessor860DE0/fallback890150/priority8572D0独立核已完成，最终48项（新34+既有14）与目标lint/完整types通过，尚无生产调用。[内核进展](evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md)。创建外层随后已完成：最终78定向项、目标lint/完整types通过，无生产调用；首轮类型和宗教中间写入差异均修正，见[创建进展](evidence/fms-life22-v5-2026-10-07/CREATION_KERNEL.md)。下一依赖是Family/Character默认注册与原配偶/子女/旁系，再真实持久亲属表；不要重跑start-life22/ui-life22/polish-life22一次性脚本。无push/Pages/main，真机/用户视觉和完整原作仍待验。
 
 ---
 

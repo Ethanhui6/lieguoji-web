@@ -4323,9 +4323,18 @@
               "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
               "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
               "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
-              "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
+              "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md",
+              "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md",
+              "docs/evidence/fms-war28-bridge-v5-2026-10-07/CHECKPOINT.md",
+              "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json",
+              "docs/evidence/fms-war28-bridge-v5-2026-10-07/unit-final.json",
+              "docs/evidence/fms-war28-bridge-v5-2026-10-07/browser-worker.json",
+              "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-war28-playable-v5-2026-10-07/NATIVE_INPUTS.md",
+              "docs/evidence/fms-war28-playable-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-war28-playable-v5-2026-10-07/browser.json"
             ],
-            "progressScope": "v26固定目标推进、v27实际扣减账及既有浏览器闭环保留。独立原作战争内核新增达成/崩溃、赔款/改宗/附庸及执行器，70新+92既有战争+23round=185测试通过；未生产接线、无新可玩版本。v28需先冻结v27并完成状态/历月/伤亡映射、候选事务及终战清理。完整战争V2、真机与视觉未验收。"
+            "progressScope": "v28有限普通外战可玩闭环已接入FmsGame/真实Worker/Store30：真实目标、原始伤害、战争分/厌战、政体崩溃、转地/赔款、停战清理及结果持久化。302相关检查、真实生产浏览器和竖屏仿真通过。完整CB资格/AI选择、内部战争、最大期限和附庸改宗生产适配未齐，不称原作等价。"
           }
         ]
       },
@@ -4419,7 +4428,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "WEB-04-37：直接复用已测内核做v28生产桥接；先冻结v27，明确伤亡/历月/开战快照映射，接目标→战争分/厌战→和约执行→外交/军队/史记清理及独立保存；不重复恢复本批函数，不造旧局历史。之后WEB-03-06文化信仰命名一致性。",
+    "nextRecoveryTarget": "WEB-04-37继续补真实CB资格/AI目标选择、最大期限设置与内战/附庸改宗生产适配；不重做本批已验闭环。然后按原队列WEB-03-06。新全项目差距审查未启动。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4897,12 +4906,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "Native settlement execution and effects verified; production v27 unchanged",
+      "status": "v28 limited ordinary-war playable closure verified locally; full restoration continues",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
-      "next": "WEB-04-37：直接复用已测内核做v28生产桥接；先冻结v27，明确伤亡/历月/开战快照映射，接目标→战争分/厌战→和约执行→外交/军队/史记清理及独立保存；不重复恢复本批函数，不造旧局历史。之后WEB-03-06文化信仰命名一致性。",
-      "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
+      "next": "WEB-04-37继续补真实CB资格/AI目标选择、最大期限设置与内战/附庸改宗生产适配；不重做本批已验闭环。然后按原队列WEB-03-06。新全项目差距审查未启动。",
+      "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -5005,23 +5014,31 @@
         "docs/evidence/fms-peace-execution-v5-2026-10-07/checks.json",
         "docs/evidence/fms-peace-execution-v5-2026-10-07/unit-final.json",
         "docs/evidence/fms-peace-execution-v5-2026-10-07/native-methods.json",
-        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md",
+        "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md",
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/CHECKPOINT.md",
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json"
       ],
-      "currentVersion": 27,
-      "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
+      "currentVersion": 28,
+      "currentEngine": "2c482b2d97eff1c8978c650247767fbdda4d240542f71ae55c53ad36c464bc5f",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5206/?fms=1",
-      "currentLocalHead": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
-      "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
-      "checkpointNote": "Native settlement execution kernels committed at 9ed2100abcbf7a838ace84e266a03f2ffda0c0c5; the following documentation-only checkpoint may be newer. sourceCommit/currentVersion/currentEngine still identify protected playable v27.",
-      "head": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
+      "localUrl": "http://127.0.0.1:5212/?fms=1",
+      "currentLocalHead": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
+      "sourceCommit": null,
+      "checkpointNote": "Current HEAD is documentation checkpoint; v28 backend changes remain uncommitted. sourceCommit/currentVersion/currentEngine identify protected v27 UI. Separate candidate evidence does not promote it to playable release.",
+      "head": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "70 new tests, 185 related tests passed. No new game build/browser/release. Video lookup attempts and unplayed candidates recorded separately.",
-      "sourceParent": "3809966674509901890338e7a9e50ef1287564e7"
+      "note": "302 related checks (301 batch +1 additional), real production UI verified, manual visual/phone pending.",
+      "sourceParent": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
+      "candidateVersion": 28,
+      "candidateCommitted": false,
+      "candidateUiIntegrated": true,
+      "localUrlListening": true,
+      "localPortCheck": "2026-10-07: 5206 not listening; isolated 5210 probe child closed after command-line verification"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6576,13 +6593,17 @@
       "evidence": [
         "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
         "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md",
-        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
+        "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md",
+        "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md"
       ],
       "observedVideoIds": [
         "zBXNH8hmasA",
         "JUlwXSL_H-w",
         "SqAYa2BGBEQ",
-        "sI-opE_XqY4"
+        "sI-opE_XqY4",
+        "4hNcANO7i6M",
+        "ruzEBJPVWHM",
+        "BV14ZYHeJE1B"
       ],
       "partialVideoId": "BV1RhBDYMER4",
       "nativeGameplay": "capture_failed_not_played",
@@ -6590,24 +6611,33 @@
       "latestSupplement": {
         "date": "2026-10-07",
         "observations": [
-          "Game Mojo 2024-09-04: 00:02/00:10/00:28/00:33 and seek 01:25/01:30; partial only",
-          "Two Real: played 08:00-08:18, inspected 08:02"
+          "Bilibili BV14ZYHeJE1B: brush, continent placement, political view and deliberate rebellion; 00:21/00:42/01:04/01:06",
+          "ViperMoose ruzEBJPVWHM: overview, war/leader and family sidebars; 00:43/05:53/06:29/10:24",
+          "MapAndMage 4hNcANO7i6M: early map overview; 03:24/04:26"
         ],
-        "scope": "Editor controls, map hierarchy, attack arrows, rebellion banner; no frame-rate, complete workflow or current native rules proof",
+        "scope": "New actual playback and screenshot evidence; web gameplay and acceptance status unchanged",
         "productionChanged": false,
-        "evidence": "docs/evidence/fms-war26-v5-2026-10-07/VIDEO_FOLLOWUP.md"
+        "evidence": "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md"
       },
       "latestLookup": {
         "date": "2026-10-07",
-        "newPlaybackVerified": false,
-        "candidates": [
-          "https://www.youtube.com/watch?v=ruzEBJPVWHM",
-          "https://www.bilibili.com/video/BV11v876TEWX/"
-        ],
-        "limitations": "YouTube navigation/observation timed out. New candidates unplayed; existing observed segments retained without recounting.",
-        "officialRulesRead": true,
-        "evidence": "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
-      }
+        "newPlaybackVerified": true,
+        "evidence": "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md",
+        "limitations": "Selected segments and screenshots only. Exact installed-version equivalence, continuous frame-rate, complete brush workflow and full war settlement not verified."
+      },
+      "lookupHistory": [
+        {
+          "date": "2026-10-07",
+          "newPlaybackVerified": false,
+          "candidates": [
+            "https://www.youtube.com/watch?v=ruzEBJPVWHM",
+            "https://www.bilibili.com/video/BV11v876TEWX/"
+          ],
+          "limitations": "YouTube navigation/observation timed out. New candidates unplayed; existing observed segments retained without recounting.",
+          "officialRulesRead": true,
+          "evidence": "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md"
+        }
+      ]
     },
     "settlement25Prototype": {
       "date": "2026-10-07",
@@ -6808,6 +6838,57 @@
         "Browser playable verification"
       ],
       "sourceCommit": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5"
+    },
+    "war28Prototype": {
+      "status": "local_playable_partial_ordinary_war",
+      "version": 28,
+      "store": 30,
+      "engine": "2c482b2d97eff1c8978c650247767fbdda4d240542f71ae55c53ad36c464bc5f",
+      "uiIntegrated": true,
+      "autoPeaceIntegrated": true,
+      "browserWorkerVerified": true,
+      "evidence": [
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/CHECKPOINT.md",
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json",
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/browser-worker.json"
+      ],
+      "limitations": [
+        "Native goal selection and diplomacy policy pending",
+        "Automatic settlement and terminal cleanup pending",
+        "Outer FmsGame remains v27",
+        "No new playable build, native equivalence, visual or real-device acceptance"
+      ],
+      "latestEvidence": "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+      "checkedScope": "真实宣战目标→原始伤害/评分/厌战→普通自动和约/结束→独立保存恢复；完整CB/内战/最大期限/附庸改宗仍未齐。",
+      "testEvidence": [
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/unit-batch.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/sea-regression.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/browser.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/checks.json"
+      ]
+    },
+    "queuedOriginalAudit": {
+      "status": "queued_after_current_work",
+      "requested": "2026-10-07",
+      "predecessor": "WEB-04-37",
+      "source": "用户本轮明确先完成此前未完工作、按原要求验收和保存检查点；下列研究不替代当前批次。",
+      "scope": [
+        "重新核验代码、存档和最新授权",
+        "官网/Steam/中英文完整实机证据与参考版本",
+        "覆盖地图、编辑、操作、模拟的全项目差距清单及前10项",
+        "依赖满足后每批1—3项实际修复",
+        "固定形态全景/中景/4/16/40倍截图与连续操作录像",
+        "重复自然化相对初始地图的累计误差",
+        "单测/类型/构建/真实浏览器与真机视觉分开",
+        "源码检查点、试玩入口与证据回写"
+      ],
+      "constraints": [
+        "不提前重构",
+        "不代替当前未完成批次",
+        "需用户决定的阻塞不擅自绕开",
+        "不扩大发布授权，不覆盖旧存档"
+      ]
     }
   }
 }

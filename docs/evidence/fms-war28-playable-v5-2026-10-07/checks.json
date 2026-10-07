@@ -1,0 +1,405 @@
+{
+  "date": "2026-10-07",
+  "sourceParent": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
+  "sourceFiles": [
+    {
+      "path": "scripts/fms-war28-compat.ts",
+      "sha256": "de5f49b4a40807aa17aae5c6ec61701882a355b0e4f4ff3ce6a24e483ee00150"
+    },
+    {
+      "path": "scripts/fms-war28-fingerprint.ts",
+      "sha256": "9bbb496fb69712a31f593ed95b11568333c3cbc559bde7a7f5af8dcef4c4eb70"
+    },
+    {
+      "path": "src/fms/play/War28Panel.tsx",
+      "sha256": "d8bc4ced2b9e46e04afc124e81d7e1c567819390e01b823c333efa9d063ffc5e"
+    },
+    {
+      "path": "src/fms/play/native-war/battle-damage.ts",
+      "sha256": "e86d356b759deac57184464b0fd79c73767053b89aee5395f6b53ae4f9a310f2"
+    },
+    {
+      "path": "src/fms/play/native-war/conquest-goals.test.ts",
+      "sha256": "0eb00eba7ac4ac3774f2c5feec2ca6ef70b673c8842a882f28546647438de603"
+    },
+    {
+      "path": "src/fms/play/native-war/conquest-goals.ts",
+      "sha256": "d0b211b2d54e5c7df107f730e2bb2ae60719909df670f04377d8db187d2e0dcb"
+    },
+    {
+      "path": "src/fms/play/war28-battle.ts",
+      "sha256": "1ca8a859394e3d6c487004ff9107e6809ab85cff7e25d60d408a7f4078a9919d"
+    },
+    {
+      "path": "src/fms/play/war28-bridge.test.ts",
+      "sha256": "179e0a7decae7c8aa0da38937398b1e0b8afb35c06264180e4a005a684e3a7d1"
+    },
+    {
+      "path": "src/fms/play/war28-client.test.ts",
+      "sha256": "8ec3a4f49d6b89d0739f92f1d9555dbfcb8e8a7d8ffb50cfe1e226115dec24ff"
+    },
+    {
+      "path": "src/fms/play/war28-client.ts",
+      "sha256": "c8e0ab690bd40f7d57f3979c41434122da1ec35bce242af565545001b0b5102c"
+    },
+    {
+      "path": "src/fms/play/war28-core.ts",
+      "sha256": "d6a4b961faf2aa36fb1496d8de29643e5fdd764bcd62cd4216a7366e8bda61f8"
+    },
+    {
+      "path": "src/fms/play/war28-food.ts",
+      "sha256": "9b0b111d0ba9ec9fefa8f3e604478d03a8b0cae98a7330c9cc7746511e8e3b79"
+    },
+    {
+      "path": "src/fms/play/war28-goals.ts",
+      "sha256": "df8cb1ce471559002fc5e40fa3ad0ae705caf7d8267b813a0807d98ad9c39731"
+    },
+    {
+      "path": "src/fms/play/war28-model.ts",
+      "sha256": "43c0517a13aa613acd263a1793617d8706858039ba58f773bb58bc7b7a1c0d4c"
+    },
+    {
+      "path": "src/fms/play/war28-policy.ts",
+      "sha256": "7f4765b3bd0b94dadc2b0e685411d842942efbffa3f9250d1faab8b8f986f2cf"
+    },
+    {
+      "path": "src/fms/play/war28-query.ts",
+      "sha256": "307331cd836da7697ef0d4d32d34f2b29da7678344ce2f42c6ab5f55d3b4a39a"
+    },
+    {
+      "path": "src/fms/play/war28-runtime.ts",
+      "sha256": "0bd78571a62f640791ba0b19a528e5083926c7bc4982fa80e5b19e7e1a142c70"
+    },
+    {
+      "path": "src/fms/play/war28-session.test.ts",
+      "sha256": "35ea0417da7cf0f18429e3185346dfb7017fa7e527ac09d1158124a55e6db46c"
+    },
+    {
+      "path": "src/fms/play/war28-session.ts",
+      "sha256": "1a271e51b859333297479a2451b1942aa9f1c208f0bd3761d5e2e9849cfd8f67"
+    },
+    {
+      "path": "src/fms/play/war28-settlement.test.ts",
+      "sha256": "2ccd490dfcec46bac356ed1f401fcdb0c5cf0cbe07490b496537eb0407dbc9d5"
+    },
+    {
+      "path": "src/fms/play/war28-settlement.ts",
+      "sha256": "12c9b77cf9e48e91f787a960867602850cc4abbcc73337583e78004118a464c0"
+    },
+    {
+      "path": "src/fms/play/war28-state.ts",
+      "sha256": "7104f56c827de225929b0eb1b58d7aec244af9a656bc4bbaf0ea48f2b427ed55"
+    },
+    {
+      "path": "src/fms/play/war28-storage.ts",
+      "sha256": "3de5bdc1241d240f4b30b0afb1c74e6007fd4eb5c593b8f8d557e12329501298"
+    },
+    {
+      "path": "src/fms/play/war28-stores.ts",
+      "sha256": "6f247c06db49f225a14f430e3d9d0862f4e0f6cfad8cbdd9c4d3ec5b62933c71"
+    },
+    {
+      "path": "src/fms/play/war28-validation.ts",
+      "sha256": "f7b17bb4720c327a386e2c2ecb34e0c9c7ab4270c38d2ab75490dd9e2b6f2152"
+    },
+    {
+      "path": "src/fms/play/war28-voyages.test.ts",
+      "sha256": "df4b3b497080a8de4825fa6cbd8d88aef79af203f2d530caddb41400ce9c4dbb"
+    },
+    {
+      "path": "src/fms/play/war28-voyages.ts",
+      "sha256": "fb22411520cf459df56098951c1e518c063c5bf275251c6f064ccdfb0802c21d"
+    },
+    {
+      "path": "src/fms/play/war28/play.worker.ts",
+      "sha256": "be2781a946da99425b4e16af7a52f0739067284556722dc8636b8043cc696bd9"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "9cd0ed65395b8ac8652186939b1d5672d4191cb247d047b37692a3548e6a17e6"
+    },
+    {
+      "path": "src/fms/play/view-capabilities.ts",
+      "sha256": "bd5a9408e81c64e82f43167a1bdfe51a2c83709a03fbaad45c5bea6242b60c8d"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "05c62bf4f5d9cad3dfd378c088d71a990edd75b19d28150a279a8b449e8f53d2"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "9eaf2548c5d97f787b8d6e63ddd207fe4d4f7cd31f139b7731d4c33fb6d4a861"
+    }
+  ],
+  "version": 28,
+  "engine": "2c482b2d97eff1c8978c650247767fbdda4d240542f71ae55c53ad36c464bc5f",
+  "scope": "limited ordinary war production bridge; full WEB-04-37 remains in progress",
+  "lint": {
+    "fullExit": 0,
+    "additionalSeaTestExit": 0
+  },
+  "typecheck": {
+    "latestExit": 0,
+    "corrected": "Additional sea-test fixture now preserves the Chronicle view discriminator; rechecked after fix."
+  },
+  "unit": {
+    "batchPassed": 301,
+    "batchFailed": 0,
+    "additional": {
+      "file": "sea-regression.json",
+      "passed": 1,
+      "failed": 0
+    },
+    "totalPassed": 302
+  },
+  "build": {
+    "exit": 0,
+    "path": ".autopilot/war28-playable/dist",
+    "warning": "large bundled chunks; no new performance claim",
+    "privacyAudit": {
+      "exit": 0,
+      "approvedFiles": 43,
+      "method": "unchanged scripts/check-dist.mjs body; only root points to isolated build"
+    }
+  },
+  "browser": {
+    "file": "browser.json",
+    "production": true,
+    "errors": [],
+    "portraitOverflow": false,
+    "newWorldFromDrawing": true
+  },
+  "artifacts": [
+    {
+      "path": "build.json",
+      "sha256": "350ea70691361eb3880c339599650fe1b9da9b69e32cd274058712b171b4ba8b",
+      "bytes": 12912
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+      "bytes": 221
+    },
+    {
+      "path": "index.html",
+      "sha256": "4468f3c47719db54d608aebd37da793504b4f50228d85ef890bed814327774ec",
+      "bytes": 626
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df",
+      "bytes": 10779
+    },
+    {
+      "path": "_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+      "bytes": 424
+    },
+    {
+      "path": "_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+      "bytes": 19
+    },
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+      "bytes": 9578
+    },
+    {
+      "path": "assets/App-Rf4l8b5P.js",
+      "sha256": "9c0d18bf3744978ad9d8c3646f987989284e96b83c10c6ee8bc092a08e81e9a5",
+      "bytes": 72384
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+      "bytes": 409814
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+      "bytes": 24315
+    },
+    {
+      "path": "assets/AtlasStudio-ns3x0NfZ.js",
+      "sha256": "d5cd6bad6228cc133633fe370113720a8a10936c1b6e522b0d4b64b234fcd0ba",
+      "bytes": 173274
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3",
+      "bytes": 482109
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b",
+      "bytes": 15884
+    },
+    {
+      "path": "assets/browserAll-Dx-AX18a.js",
+      "sha256": "d9c947a896d3b35b55fa467fe0bad27838e609a1207a6c51a009e631bd778fa7",
+      "bytes": 42646
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+      "bytes": 11027
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+      "bytes": 23199
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+      "bytes": 6054
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390",
+      "bytes": 19346
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+      "bytes": 13293
+    },
+    {
+      "path": "assets/CountryStudio-DhOZWZlZ.js",
+      "sha256": "fab50e7eb30ea7c21c923298e7b4cef559ed3e5fe4912e534a31b4ac1f8e9a6d",
+      "bytes": 128542
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc",
+      "bytes": 55255
+    },
+    {
+      "path": "assets/FmsApp-CVDM31bH.css",
+      "sha256": "49ff0812cb58aaf62148f9b620c55f494b4d392f04531afa6b0ac28001849dd4",
+      "bytes": 30956
+    },
+    {
+      "path": "assets/FmsApp-DVW7Y3ob.js",
+      "sha256": "89b979a0f410fc65d36862051fcf6737e32b989f25f9eb5f05a9ee997642b412",
+      "bytes": 2088489
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+      "bytes": 109697
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+      "bytes": 469
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+      "bytes": 342
+    },
+    {
+      "path": "assets/index-Z-8ie_8H.js",
+      "sha256": "ade408d4f52c3991051c886ebc6bdbc48ffba4457474e2ffb7ded2248d8fc84b",
+      "bytes": 221793
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+      "bytes": 15379
+    },
+    {
+      "path": "assets/init-CgtZVTog.js",
+      "sha256": "60014d4a2391da54d84e4404cbb99334f92a36319da6574c19ce0a46b1688fc9",
+      "bytes": 250437
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+      "bytes": 34881
+    },
+    {
+      "path": "assets/LegacyEntry-DHriifFn.js",
+      "sha256": "84b7d940e8330b075d9298b41a674fb4e7346a7ee577b68e62ad459509ffcb56",
+      "bytes": 132329
+    },
+    {
+      "path": "assets/play.worker-DLcK-vSd.js",
+      "sha256": "98fef1d922474b572c945ad6c07d08fe72cd3499a03315d853e972b1f2627950",
+      "bytes": 2217580
+    },
+    {
+      "path": "assets/renderer-bku7thN7.js",
+      "sha256": "d6133fdbfc0306f89a14441c424c2a06a1a0f6ab5877afbbd8442cf351fdb15f",
+      "bytes": 210865
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+      "bytes": 78109
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+      "bytes": 86986
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "bytes": 716
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5",
+      "bytes": 34693
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+      "bytes": 91681
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+      "bytes": 162206
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897",
+      "bytes": 49491
+    },
+    {
+      "path": "assets/Text-BBpu9ok1.js",
+      "sha256": "5a1e1c13b4aef7437043533dbf7fb01c358c6dc8ce610749a12393d21d20a574",
+      "bytes": 34909
+    },
+    {
+      "path": "assets/webworkerAll-EOkWzCgx.js",
+      "sha256": "37dae663c34c71a78712c7b0c57f8b8ff49fae34098597142260e4e76da8f0e5",
+      "bytes": 54
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+      "bytes": 223767
+    }
+  ],
+  "manualAcceptance": {
+    "originalVisual": false,
+    "iPhone": false,
+    "fullNativeParity": false
+  },
+  "release": {
+    "push": false,
+    "deploy": false,
+    "mainChanged": false,
+    "oldSavesModified": false
+  },
+  "localUrl": "http://127.0.0.1:5212/?fms=1",
+  "planAndReleaseGuards": {
+    "passed": 39,
+    "failed": 0
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "fingerprint": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
+  "files": [
+    {
+      "path": "src/fms/play/war27-losses.ts",
+      "archive": "fms/play/war27-losses.ts.source",
+      "sha256": "0ecdc87b84730eec3ceb9726b9dc77eb985d55852e2608d5a93444bcd10c5eb1"
+    },
+    {
+      "path": "src/fms/play/war27-model.ts",
+      "archive": "fms/play/war27-model.ts.source",
+      "sha256": "49880f0604728ec9896aad8a5ba34253e5a3e67096d3ebb88f0a82890468314b"
+    },
+    {
+      "path": "src/fms/play/war27-core.ts",
+      "archive": "fms/play/war27-core.ts.source",
+      "sha256": "c49b264d70c80502f450d5fde0e8d712cfe776786a497c119a48941a05730f26"
+    },
+    {
+      "path": "src/fms/play/war27-battle.ts",
+      "archive": "fms/play/war27-battle.ts.source",
+      "sha256": "4e67ab22c111c0513e7548711dc705e51a5ebd1e25ddc1772fcbe3aae9c21aa7"
+    },
+    {
+      "path": "src/fms/play/war27-runtime.ts",
+      "archive": "fms/play/war27-runtime.ts.source",
+      "sha256": "2ec84cfd71cc2c1c3f432f09806e03247fdbd76c9ce48311b60ae1636b5e0c79"
+    },
+    {
+      "path": "src/fms/play/war27-sea.ts",
+      "archive": "fms/play/war27-sea.ts.source",
+      "sha256": "0349198f2f85fbeb4134a16b524cbffef5f56f69e9fb46df3f1f687e5fc1708a"
+    },
+    {
+      "path": "src/fms/play/war27-session.ts",
+      "archive": "fms/play/war27-session.ts.source",
+      "sha256": "fd042add3686a61a6804f3c4259a2775007a13d8fc28b1c14afcf1abcf6d3320"
+    },
+    {
+      "path": "src/fms/play/war27-storage.ts",
+      "archive": "fms/play/war27-storage.ts.source",
+      "sha256": "c6706b3205372163ab36c43ec906c8327de8f0fdd141d523d5020ff69cd78224"
+    },
+    {
+      "path": "src/fms/play/war27-stores.ts",
+      "archive": "fms/play/war27-stores.ts.source",
+      "sha256": "5876145d32238c3e146ca5e504536505359a0295a93a12390d652c3ec7759d8b"
+    },
+    {
+      "path": "src/fms/play/war27-client.ts",
+      "archive": "fms/play/war27-client.ts.source",
+      "sha256": "0d6e73fca87bd5d76c8955f548883d66ba7c15715592e74e3883694e116c6eac"
+    },
+    {
+      "path": "src/fms/play/war27/play.worker.ts",
+      "archive": "fms/play/war27/play.worker.ts.source",
+      "sha256": "87a0ca610804e04c736a2911ef622f6d12084047453c761c712308f1aab56ece"
+    }
+  ]
+}

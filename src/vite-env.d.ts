@@ -53,3 +53,5 @@ declare const __FMS_SETTLEMENT25_ENGINE__: string;
 declare const __FMS_WAR26_ENGINE__: string;
 
 declare const __FMS_WAR27_ENGINE__:string;
+
+declare const __FMS_WAR28_ENGINE__:string;

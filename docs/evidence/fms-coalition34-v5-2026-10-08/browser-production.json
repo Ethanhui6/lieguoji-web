@@ -1,0 +1,110 @@
+{
+  "origin": "http://127.0.0.1:5224",
+  "production": true,
+  "scope": "Disposable Chromium, synthetic five-country vassal fixture then real declaration UI/Worker/IDB. Not organic alliance formation, original visual parity or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": true,
+  "fixture": {
+    "engine": "6a52897174d9ffd76f9ac1a46eb1d3ffb9fd7171e3b03caee601dafe07361d7d",
+    "day": 0,
+    "vassals": {
+      "version": 1,
+      "revision": 3,
+      "records": [
+        {
+          "vassalId": "n-1",
+          "overlordId": "n-0",
+          "time": 0,
+          "tick": 0,
+          "tributeRate": 0.30000001192092896,
+          "armyCapMultiplier": 0.5,
+          "updateDay": 25,
+          "endedTick": null,
+          "endReason": null
+        },
+        {
+          "vassalId": "n-2",
+          "overlordId": "n-0",
+          "time": 0,
+          "tick": 0,
+          "tributeRate": 0.30000001192092896,
+          "armyCapMultiplier": 0.5,
+          "updateDay": 24,
+          "endedTick": null,
+          "endReason": null
+        },
+        {
+          "vassalId": "n-4",
+          "overlordId": "n-3",
+          "time": 0,
+          "tick": 0,
+          "tributeRate": 0.30000001192092896,
+          "armyCapMultiplier": 0.5,
+          "updateDay": 18,
+          "endedTick": null,
+          "endReason": null
+        }
+      ]
+    }
+  },
+  "cancel": true,
+  "declared": {
+    "members": [
+      {
+        "stateId": 1,
+        "side": 0,
+        "role": 0,
+        "joinedAt": 0,
+        "isPrimary": true
+      },
+      {
+        "stateId": 2,
+        "side": 0,
+        "role": 2,
+        "joinedAt": 0,
+        "isPrimary": false
+      },
+      {
+        "stateId": 3,
+        "side": 0,
+        "role": 2,
+        "joinedAt": 0,
+        "isPrimary": false
+      },
+      {
+        "stateId": 4,
+        "side": 1,
+        "role": 1,
+        "joinedAt": 0,
+        "isPrimary": true
+      },
+      {
+        "stateId": 5,
+        "side": 1,
+        "role": 2,
+        "joinedAt": 0,
+        "isPrimary": false
+      }
+    ],
+    "hostilePairs": 6
+  },
+  "steppedDay": 1,
+  "reloadMembers": true,
+  "portraitOverflow": false,
+  "ended": {
+    "war": {
+      "reason": 11,
+      "tick": 120,
+      "winnerSide": null,
+      "outcomes": [],
+      "enforcedGoals": [],
+      "transfers": [],
+      "effects": [],
+      "confirmedOwnership": []
+    },
+    "pairs": 6
+  },
+  "reloadPeace": true,
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-coalition34-v5-2026-10-08\\video\\page@8c4b53a38324f8182f6ce0b02b27b024.webm"
+}

@@ -1,3 +1,17 @@
+# 当前续接：v34宗属多国参战可玩，继续完整战争V2
+
+2026-10-08；源码 `19512674ef2bf701a1b3c9a821e4b3abd53b2ea3`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的全项目研究/前10差距。没有必须用户决策的新阻塞。
+
+- 已接：原作有序阵营构建接真实宗主/附庸/兄弟附庸，内部战反抗者单独一方；实际多国敌对、共享战争伤害/和约/外交计数；协同退出保留盟方战争，重叠战争保留敌对；完整预览名单/讲和范围、战争阵营详情、Worker/Store36。联盟展开纯函数已恢复，活世界联盟实体与结盟仍缺，不冒称完整联盟。
+- [交付与差异](evidence/fms-coalition34-v5-2026-10-08/DELIVERY.md)、[合同/原作依据](evidence/fms-coalition34-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-coalition34-v5-2026-10-08/checks.json)。57新版相关、41旧v33回归、全仓types/lint、39发布计划保护、43产物审查通过；生产Chromium实际取消/确认五国宣战、推进、保存刷新及从协同国家讲和，另普通空海绘图→6国60城→推进/保存恢复通过，无pageerror/HTTP失败。
+- [本机试玩v34](http://127.0.0.1:5224/?fms=1)，仅127.0.0.1，产物`.autopilot/coalition34-preview/dist`，PID31584，engine `6a52897174d9ffd76f9ac1a46eb1d3ffb9fd7171e3b03caee601dafe07361d7d`。旧v33/5222的43产物哈希保持，旧站/旧存档不覆盖；不同端口存档不自动搬运。测试夹具只在临时独立浏览器context写入。
+- 固定方形大陆/人工宗属用于外交功能回归，不是自然地图还原截图；428×926只是桌面仿真，原作同步视觉与iPhone待验。初次UI版本分发和原生side类型检查失败已修、日志保留；未跳过测试。大包与Vite配置警告保留，不声称手机性能达标。
+- 待做：真实联盟实体与退出、友方领土通行与协同战略、全战时职务/冷却/海军退战重新部署，其他内战/改宗、排行缓存和完整外交调度。网页PRNG/军力尺度/财政月结等原差异保留。
+- 下一批：Continue WEB-04-37 from playable v34: actual alliance entities/formation/join/leave and alliance departure when vassalized, friendly military access and full coalition strategy; remaining native war offices/cooldowns/naval exit, other internal wars/conversion, rankings/cache and complete diplomacy schedule. Reuse working native side builder, real multi-country war/damage/peace and support departures, Worker/Store36. Preserve v33 source 7de0ee1 and saved artifacts; do not redo completed coalition recovery. Then WEB-03-06 and queued full original audit. No cloud scope expansion.
+- 未push、未触发Pages、未改main/发布门；完整WEB-04-37/真机/视觉均未完成。不要重复已经可玩的贡金、反叛和本批宗属参战，也不要抢跑排队的全项目重构。
+
+---
+
 # 当前续接：v33附庸自主独立与内部战争可玩，继续完整战争V2
 
 2026-10-08；源码 `7de0ee1f697db5617c15d6357eacab051ca208d4`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的全项目研究/前10差距。无新的必要用户决策阻塞。

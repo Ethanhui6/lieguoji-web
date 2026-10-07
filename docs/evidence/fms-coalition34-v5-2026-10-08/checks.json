@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "19512674ef2bf701a1b3c9a821e4b3abd53b2ea3",
+  "engine": "6a52897174d9ffd76f9ac1a46eb1d3ffb9fd7171e3b03caee601dafe07361d7d",
+  "tests": {
+    "currentVersion": 57,
+    "oldV33Regression": 41,
+    "totalBatch": 98,
+    "failed": 0,
+    "skipped": 0,
+    "fullTypecheck": "passed",
+    "fullLint": "passed",
+    "releasePlanProtection": 39,
+    "fullRepositoryTestSuite": "not run",
+    "evidence": "tests.log.txt"
+  },
+  "production": {
+    "build": "passed",
+    "artifacts": 43,
+    "privacyAudit": "unchanged check-dist checks with scoped output root",
+    "oldV33ArtifactsVerified": 43,
+    "localUrl": "http://127.0.0.1:5224/?fms=1",
+    "previewPid": 31584,
+    "browser": "browser-production.json",
+    "newGame": "browser-newgame.json",
+    "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-coalition34-v5-2026-10-08\\video\\page@8c4b53a38324f8182f6ce0b02b27b024.webm",
+    "fmsAppBytes": 2312251,
+    "chunkSizeWarning": true,
+    "codexOpenResult": "queued; not claimed visible"
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "planCheck": "Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/57 work items, active WEB-PH04; release lock does not block local development",
+  "logNormalization": "Archived text logs trim trailing whitespace only; original command output retained in .autopilot."
+}

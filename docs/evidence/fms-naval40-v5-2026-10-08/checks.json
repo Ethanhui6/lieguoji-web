@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "dbb2fac58e71b41a5cce7ed444838e1039b99670",
+  "engine": "dfc26e3d14a493aa64ca0a137d02f7ad6e5b5799a9991f382cb4cde13e18c0c4",
+  "tests": {
+    "totalBatch": 60,
+    "failed": 0,
+    "skipped": 0,
+    "sourceCommit": "44ae341a414b226f5618270d271c5e4be0f73f8f",
+    "reusedForVisualOnlyFix": true,
+    "visualFixLint": "arc-lint.log.txt",
+    "scope": "native ratio/ceil/priority and home/target override; actual autonomous route; manual/cargo/combat/food gates; exact save/refresh, v39 frozen execution/DB; future slot guards and CAS",
+    "fullTypecheck": "passed",
+    "fullLint": "passed",
+    "releasePlanProtection": 39,
+    "fullRepositoryTestSuite": "not run",
+    "evidence": "tests.log.txt"
+  },
+  "production": {
+    "build": "passed",
+    "artifacts": 43,
+    "privacyAudit": "unchanged check-dist with scoped artifact root",
+    "oldV39ArtifactsVerified": 43,
+    "localUrl": "http://127.0.0.1:5236/?fms=1",
+    "previewPid": 24136,
+    "browser": "browser-production.json",
+    "newGame": "browser-newgame.json",
+    "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-naval40-v5-2026-10-08\\video\\page@fdf74bffd32948bb85415858bc1702e1.webm",
+    "fmsAppBytes": 3037667,
+    "chunkSizeWarning": true,
+    "retiredOwnedProcesses": [
+      33612,
+      33424
+    ],
+    "consoleErrors": [],
+    "requestFailures": []
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "autonomousWithoutPlayerAssault": true,
+    "liveWorkerDelta": 10,
+    "crossTabCAS": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "planCheck": "passed",
+  "visualReview": {
+    "sameFixtureDay": 15,
+    "before": "port-arc-before.png",
+    "after": "production-port-detail.png",
+    "result": "extraneous origin-to-port stroke removed; actual routes unchanged",
+    "scope": "local renderer fix only; not original map visual acceptance"
+  }
+}

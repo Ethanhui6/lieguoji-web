@@ -1,3 +1,16 @@
+# 当前续接：v40舰队自主进攻已可玩，继续完整战争V2
+
+2026-10-08；已测源码 `dbb2fac58e71b41a5cce7ed444838e1039b99670`；后续证据提交以实际git HEAD核实。根唯一写入。WEB-04-37 → WEB-03-06 → 排队官网/视频全项目审查/前10差距不变，没有新的必要用户决策阻塞。
+
+- 战时原作比例/排序分配攻击舰队，母港失守与旧目标保留可继续进攻，接真实航路和海港控制；其余舰队驻港。玩家军令、货舱运输与海战优先。面板逐舰显示分工，不灌重复调度事件。
+- [交付](evidence/fms-naval40-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-naval40-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-naval40-v5-2026-10-08/checks.json)。60相关回归、types/lint、39保护检查、43产物审查，生产浏览器自主出航/第15日夺港/陆地不变/刷新/CAS/Worker及普通6国60城新局通过。
+- [本机试玩v40](http://127.0.0.1:5236/?fms=1)，目录`.autopilot/roles40-production2/dist`，PID24136，engine `dfc26e3d14a493aa64ca0a137d02f7ad6e5b5799a9991f382cb4cde13e18c0c4`，Store42。旧v39/5234及43产物哈希保留；端口存档不自动迁移，不是手机可访问地址。
+- 只读PE/IL2CPP静态依据，无原作实机/视频对照。多格港湾/游弋/完整战后返航和军事协同尚缺；网页时钟/舰体/ID映射见合同。全景/4-16-40倍视觉与iPhone仍未过。
+- 下一批：Continue WEB-04-37 from playable v40. Native navy attack/defense allocation (float32 ceil ratio, frontline/strength/ID sort, home/target overrides) now drives actual autonomous assaults. Do not repeat recovered role/port leaf functions. Complete multi-cell harbor and within-province loiter, full postwar return lifecycle, land/naval coordination and remaining military office/cooldown/internal-war rules. Then WEB-03-06, followed by queued official/video full audit/top10. Preserve v39/5234 and earlier saves/previews. No push/Pages/main changes.
+- 未push/Pages/main/发布门变化。开发服5235/PID33612与首轮预览PID33424已关闭；最终5236/PID24136保留，旧v39/5234/PID32304未变。类型/lint/60测试复用44ae341同引擎；dbb2fac只修进度弧起点，针对lint与生产构建/浏览器/截图已重验，斜线消失。计划检查通过。
+
+---
+
 # 当前续接：v39海港争夺已可玩，继续完整战争V2
 
 2026-10-08；已测源码 `282c76c22e09447d317bd67fdafbb90b71b8c62c`；后续证据提交请以实际git HEAD核实；根唯一写入。顺序WEB-04-37 → WEB-03-06 → 排队官网/视频全项目审查/前10差距不变，无新的必要用户决策阻塞。

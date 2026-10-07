@@ -1,0 +1,5 @@
+src/fms/play/FmsGame.tsx(366,2138): error TS2345: Argument of type 'War40Run | War39Run' is not assignable to parameter of type 'War39Run'.
+  Type 'War40Run' is not assignable to type 'War39Run'.
+    Type 'War40Run' is not assignable to type '{ version: 39; rules: "fms-war-39"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy39; vassals: Vassals39; ... 6 more ...; portControl: Ports39; }'.
+      Types of property 'version' are incompatible.
+        Type '40' is not assignable to type '39'.

@@ -1,0 +1,8 @@
+{
+  "origin": "http://127.0.0.1:5236/?fms=1",
+  "scope": "Fresh disposable context; UI creates original terrain on empty sea then new game; no test save injection",
+  "errors": [],
+  "httpFailures": [],
+  "passed": false,
+  "failure": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5236/?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5236/?fms=1\", waiting until \"networkidle\"\u001b[22m\n"
+}

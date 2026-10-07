@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import {chromium,expect} from '@playwright/test';
+const out='docs/evidence/fms-naval40-v5-2026-10-08';
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+const result={origin:'http://127.0.0.1:5236/?fms=1',scope:'Fresh disposable context; UI creates original terrain on empty sea then new game; no test save injection',errors:[],consoleErrors:[],requestFailures:[],httpFailures:[],passed:false};
+page.on('console',m=>{if(m.type()==='error')result.consoleErrors.push(m.text());});page.on('requestfailed',r=>result.requestFailures.push({url:r.url(),failure:r.failure()?.errorText}));page.on('pageerror',e=>result.errors.push(e.message));
+page.on('response',r=>{if(r.status()>=400)result.httpFailures.push({url:r.url(),status:r.status()});});
+try{
+ await page.goto(result.origin,{waitUntil:'networkidle'});const metadata=await page.request.get(new URL('/build.json',result.origin).href);if(!metadata.ok())throw Error('build metadata unavailable');result.build=await metadata.json();
+ await page.getByRole('button',{name:'绘图设置',exact:true}).click();
+ await page.getByRole('checkbox',{name:'保留已画海岸',exact:true}).uncheck();
+ await page.getByRole('button',{name:'放置原作地形',exact:true}).click();
+ await page.locator('.fms-map canvas').click({position:{x:720,y:410}});
+ await expect(page.getByRole('button',{name:'确认原作地形',exact:true})).toBeVisible({timeout:60000});
+ await page.getByRole('button',{name:'确认原作地形',exact:true}).click();
+ await expect(page.getByTestId('fms-app')).toHaveAttribute('data-terrain-phase','idle');
+ await page.locator('.fms-save').click();
+ await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty','false');
+ await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
+ await page.getByLabel('国家数量',{exact:true}).selectOption('6');
+ await page.getByLabel('城市数量',{exact:true}).selectOption('60');
+ await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
+ await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','40',{timeout:60000});
+ const day=Number(await page.getByTestId('fms-play').getAttribute('data-day'));
+ await page.getByRole('button',{name:'＋1日',exact:true}).click();
+ await expect(page.getByTestId('fms-play')).toHaveAttribute('data-day',String(day+1));
+ await page.getByRole('button',{name:'全图',exact:true}).click();
+ await page.getByRole('button',{name:'保存进度',exact:true}).click();
+ await expect(page.locator('.play-notice')).toContainText('已保存第');
+ await page.screenshot({path:out+'/production-newgame.png'});
+ await page.reload({waitUntil:'networkidle'});
+ await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
+ await page.getByRole('button',{name:/继续舰队自主战略新版/}).click();
+ await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','40');
+ await expect(page.getByTestId('fms-play')).toHaveAttribute('data-day',String(day+1));
+ result.restoredDay=day+1;
+ if(result.errors.length||result.consoleErrors.length||result.requestFailures.length||result.httpFailures.length)throw Error('Browser errors');
+ result.passed=true;
+}catch(e){result.failure=String(e);process.exitCode=1;await page.screenshot({path:out+'/production-newgame-failure.png'}).catch(()=>{});}
+finally{await context.close();await browser.close();fs.writeFileSync(out+'/browser-newgame.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));}

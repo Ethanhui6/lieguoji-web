@@ -1,0 +1,67 @@
+{
+  "binarySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "methods": [
+    {
+      "method": "Navy$$UpdateState",
+      "rva": "427590",
+      "bytes": 2416,
+      "sha256": "06dd5806bd8ce6e0890d1330d65cbfa36ac58952e3ffd49b2fd980b337de34a8",
+      "analysisFile": ".autopilot/naval40-role-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "NavyManager.<>c$$<RefreshAttackDeploymentIfNeeded>b__55_0",
+      "rva": "44BEC0",
+      "bytes": 288,
+      "sha256": "74af038603b08420c15d240cdc93f1aa3293dac48a78ed024efd1466539776d9",
+      "analysisFile": ".autopilot/naval40-role-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "NavyManager$$IsDeployedForAttack",
+      "rva": "42F5C0",
+      "bytes": 224,
+      "sha256": "d3530d70b7064262be0c59ae54d1e290d4d76a6d3c59e9902e615da4a8eed9aa",
+      "analysisFile": ".autopilot/naval40-role-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "NavyManager$$RefreshAttackDeploymentIfNeeded",
+      "rva": "430080",
+      "bytes": 1808,
+      "sha256": "9dfbcb200f90a73ad5b865f27deeae963cff6527b61a185c3d0b3d923ee733d3",
+      "analysisFile": ".autopilot/naval40-role-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "NavyManager$$IsFrontlineHomePort",
+      "rva": "42F6A0",
+      "bytes": 384,
+      "sha256": "28d10fc52728c51c16a658003ac55557e8ed9a55b8c0d3efc1a05b006e39979c",
+      "analysisFile": ".autopilot/naval40-role-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "Province$$IsAtWar",
+      "rva": "4586B0",
+      "bytes": 48,
+      "sha256": "8ec181c703a0200d00865158b73479de24df5c36ae1a4042581c0810bef80965",
+      "analysisFile": ".autopilot/naval40-frontline-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    },
+    {
+      "method": "Province$$CheckWarStatus",
+      "rva": "4509B0",
+      "bytes": 928,
+      "sha256": "b3e1670d1a344e162e41c59a7ab7f51555e0b0af616c3fa6c140b98a6a2b4411",
+      "analysisFile": ".autopilot/naval40-frontline-check-native.txt",
+      "scope": "bounded static PE/IL2CPP; not runtime observation"
+    }
+  ],
+  "ceilEvidence": {
+    "call": "430581 -> 354640 -> 2D3060 -> 2EC110",
+    "instruction": "roundsd xmm0,xmm0,0xA; ret",
+    "meaning": "SSE round toward positive infinity; suppress exceptions. Scalar fallback also positive ceil.",
+    "scope": "bounded binary inspection, not function-name inference"
+  }
+}

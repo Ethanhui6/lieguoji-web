@@ -49,7 +49,7 @@ export function advancePorts39(r:Input,s:Ports39,v:Voyages,g:SeaGraph){
   for(const port of g.ports.filter(p=>p.node===f.node)){const p=s.ports[port.provinceId];if(!p)continue;
    // Idle ships can contest an enemy anchorage after a real raid, even if the
    // player retains command. Neutral presence never grants an attack.
-   if((nativePortTarget(p,f.nationId,id=>nationsAtWar(r.world,f.nationId,id))||p.occupierId===f.nationId&&p.landOwnerId!==f.nationId)&&nativePortAttack(p,f.nationId,(r.maritime.hulls[f.id]??f.ships*100)/(f.ships*100),dt,id=>nationsAtWar(r.world,f.nationId,id))){a.forwardBaseId=port.provinceId;a.targetId=null;a.nextTick=r.clock.tick+40;event(r,`${f.name}控制${r.world.provinces.find(q=>q.id===port.provinceId)!.name}海港`,'海港已成为前进据点，城市和陆地归属未变。撤舰后控制会衰退。');}
+   if(nativePortTarget(p,f.nationId,id=>nationsAtWar(r.world,f.nationId,id))&&nativePortAttack(p,f.nationId,(r.maritime.hulls[f.id]??f.ships*100)/(f.ships*100),dt,id=>nationsAtWar(r.world,f.nationId,id))){a.forwardBaseId=port.provinceId;a.targetId=null;a.nextTick=r.clock.tick+40;event(r,`${f.name}控制${r.world.provinces.find(q=>q.id===port.provinceId)!.name}海港`,'海港已成为前进据点，城市和陆地归属未变。撤舰后控制会衰退。');}
   }
   if(!a.active||!f.patrol||v.manualFleets.includes(f.id)||r.clock.tick<a.nextTick)continue;
   const target=a.targetId&&s.ports[a.targetId];if(target&&nativePortTarget(target,f.nationId,id=>nationsAtWar(r.world,f.nationId,id)))continue;
@@ -68,7 +68,7 @@ const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Ar
 const unknown=(v:unknown,k:string[])=>obj(v)&&Object.keys(v).some(x=>!k.includes(x));
 export function assertPortsSchema39(v:unknown){const s=v as Ports39|undefined;if(unknown(s,keys)||s?.version!=null&&s.version!==1||obj(s?.ports)&&Object.values(s.ports).some(p=>unknown(p,pk))||obj(s?.fleets)&&Object.values(s.fleets).some(p=>unknown(p,fk)))throw Error('海港控制含未来规则或未知字段，已锁定读写。');}
 export function assertPorts39(s:Ports39,r:Input,g?:SeaGraph){assertPortsSchema39(s);const fail=()=>{throw Error('海港控制记录损坏，已保留原档。');};const int=(x:unknown)=>typeof x==='number'&&Number.isSafeInteger(x)&&x>=0;if(!obj(s)||Object.keys(s).length!==keys.length||s.version!==1||!int(s.revision)||!obj(s.ports)||!obj(s.fleets))return fail();
- const nations=new Set(r.world.nations.map(n=>n.id));for(const [id,p]of Object.entries(s.ports))if(!obj(p)||Object.keys(p).length!==pk.length||!r.world.provinces.some(v=>v.id===id)||!nations.has(p.landOwnerId)||!nations.has(p.occupierId)||!Number.isFinite(p.value)||p.value<0||p.value>100)return fail();
+ const nations=new Set(r.world.nations.map(n=>n.id));for(const [id,p]of Object.entries(s.ports))if(!obj(p)||Object.keys(p).length!==pk.length||!r.world.provinces.some(v=>v.id===id&&v.controller===p.landOwnerId)||!nations.has(p.landOwnerId)||!nations.has(p.occupierId)||!Number.isFinite(p.value)||p.value<0||p.value>100)return fail();
  if(Object.keys(s.fleets).length!==r.navy.fleets.length)return fail();for(const f of r.navy.fleets){const a=s.fleets[f.id];if(!obj(a)||Object.keys(a).length!==fk.length||typeof a.active!=='boolean'||typeof a.lastWar!=='boolean'||!int(a.nextTick)||a.nextTick>r.clock.tick+40)return fail();for(const id of [a.targetId,a.forwardBaseId])if(id!==null&&(typeof id!=='string'||!s.ports[id]))return fail();}
  if(g){const ids=new Set(g.ports.map(p=>p.provinceId));if(ids.size!==Object.keys(s.ports).length||Object.keys(s.ports).some(id=>!ids.has(id)))return fail();}
 }

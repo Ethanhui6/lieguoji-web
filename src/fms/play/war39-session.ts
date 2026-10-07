@@ -77,7 +77,7 @@ export class War39Session{
  private old=new OldSession();private current?:GameRun;
  execute(c:GameCommand):{run:GameRun;world:World;halted?:GameEvent}{
   c=structuredClone(c);
-  if(c.type==='load'){assertGameRun(c.run);if(c.run.version!==39)this.old.execute({type:'load',run:c.run});return this.install(structuredClone(c.run));}
+  if(c.type==='load'){assertGameRun(c.run);if(c.run.version!==39)this.old.execute({type:'load',run:c.run});return this.install(structuredClone(c.run),false,false);}
   if(c.type==='create'){return this.installNew(new OldSession().execute(c).run as OldRun,false);}
   if(c.type==='copy'){
    assertGameRun(c.run);if(c.run.version===39)throw Error('已经是当前新版，无需复制。');
@@ -142,5 +142,5 @@ export class War39Session{
   captureTransitions(next.chronicle,r.world,next.world,next.clock.tick);return this.install(wrap(political(next,naming,people,culture,sovereignty,upper,kin,false,undefined,access)));
  }
  private installNew(base:OldRun,_copy=true){return this.install(war39Wrap(previousView(base),base.diplomaticGeography,base.nativeDiplomacy,base.vassals,base.tribute,base.rebellion,structuredClone(base.alliances),structuredClone(base.navalDeployment),structuredClone(base.garrison),initialPorts39(base,graphFor(maritimeView(tacticsView(campaignView(base)))))),true);}
- private install(run:GameRun,checkGeometry=false){if(run.version===39){reconcileAlliances39(run);const previous=this.current;if(previous?.version===39&&previous.id===run.id)settlePorts39(run,run.portControl,(a,b)=>nationsAtWar(previous.world,a,b));reconcilePorts39(run,run.portControl,graphFor(maritimeView(tacticsView(campaignView(run)))));}if(run.version===39&&!checkGeometry)assertWar39Live(run);else assertGameRun(run);this.current=run;return structuredClone({run,world:run.world});}
+ private install(run:GameRun,checkGeometry=false,transition=true){if(run.version===39){reconcileAlliances39(run);const previous=this.current;if(transition&&previous?.version===39&&previous.id===run.id)settlePorts39(run,run.portControl,(a,b)=>nationsAtWar(previous.world,a,b));reconcilePorts39(run,run.portControl,graphFor(maritimeView(tacticsView(campaignView(run)))));}if(run.version===39&&!checkGeometry)assertWar39Live(run);else assertGameRun(run);this.current=run;return structuredClone({run,world:run.world});}
 }

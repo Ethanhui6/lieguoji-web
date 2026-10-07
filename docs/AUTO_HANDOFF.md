@@ -1,3 +1,16 @@
+# 当前续接：v25城市密度与地形辖区已验证，接原作战争V2
+
+2026-10-07；父HEAD b3c98e7，根唯一写入，本地提交待记录。V5/WEB-PH04/完整还原Goal继续进行；WEB-03-05有限完成，PH03完整体验及真机/视觉门未过。
+
+- 本机实际试玩 http://127.0.0.1:5203/?fms=1 ，独立 .autopilot/settlement25-final-preview/dist；v25/Store27/lieguoji-fms-settlement-v25，engine b99a0f06ff02be797aec8f86e82700646ebb4da5a88eb2ded1d61e477a131a79。已在独立浏览器origin正常建立四国六十城并保存，未覆盖5199用户世界或5201旧v24。继续前核实端口。
+- 国家2–24，城市24/60/120/240/480；同一真实裁剪面保海岸/湖泊/岛屿，地形成本分区。低城数有有界几何备选，非原作全分省算法等价。内湖渲染河网预算不再阻断开局；旧v24及以前冻结。
+- 80受影响单元、完整lint/types/build43白名单，内湖3尺寸和双岛跨海3尺寸分别0重试通过；24发布保护和15计划测试通过。保存验证等待revision提交；逐帧固定采样与等待模拟tick>120分开，平板首轮tick102失败已留证，不能宣称吞吐改善。见 [DELIVERY](evidence/fms-settlement25-v5-2026-10-07/DELIVERY.md)。
+- 原作视频已实际播放的片段见 [VIDEO_STUDY](evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md)。本机原作仍没有可读取画面，未冒充本人原作试玩。
+- 城名描边/拥挤、海洋细节仍需改；当前战争非完整V2。下一批WEB-04-37，定位见 [WAR_V2_INDEX](evidence/fms-settlement25-v5-2026-10-07/WAR_V2_INDEX.md)，随后WEB-03-06。死亡/官职已恢复内核保持，不重复恢复。
+- 私库Ethanhui6/lieguoji-web→Pages lieguoji-web原生Git保留；本批不push/PR/Issue/Pages/main，2026-10-06有界预览不扩大。移动Chromium仿真不是iPhone13ProMax/Safari/Chrome真机；用户视觉门仍待验。
+
+---
+
 # 当前续接：v24跨海与连贯绘制已验证，视频对照后接城市密度和战略
 
 2026-10-07；源码提交 be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31，根唯一写入。V5 / WEB-PH04 / WEB-04-13和完整还原Goal仍进行中；本批有限完成另记WEB-04-35/36。

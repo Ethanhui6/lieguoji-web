@@ -2812,8 +2812,8 @@
       "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md"
     ],
     "nextBatch": [
-      "WEB-03-05",
-      "WEB-04-37"
+      "WEB-04-37",
+      "WEB-03-06"
     ],
     "phases": [
       {
@@ -3567,14 +3567,23 @@
           {
             "id": "WEB-03-05",
             "title": "玩家城市数量与依据地形的连续辖区",
-            "status": "todo",
+            "status": "done",
             "dependsOn": [
               "WEB-03-04"
             ],
             "acceptance": "新局明确选择城市和国家数量；土地可用面积、岸线、坡度与河流影响分区，保持陆地覆盖/邻接/一块一城，不跨海拼接，不改旧世界拓扑或静默迁移。真实多地形与三尺寸新局检查。",
             "evidence": [
-              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
-            ]
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/unit-final.json",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/browser-lake.json",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/browser-voyage.json",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/tested-artifact.json"
+            ],
+            "completionScope": "Exact selectable city/country counts, real connected terrain regions and three-size local browser validation. No full original zoning equivalence or device/visual acceptance."
           },
           {
             "id": "WEB-03-06",
@@ -4271,7 +4280,8 @@
             ],
             "acceptance": "逐函数核对当前安装包与官方战争V2；明确开战目标，连片边境/可登陆海岸，战局与厌战、停战及和约；解释为何出兵并保留老引擎。视频和公告不单独充当代码等价证据。",
             "evidence": [
-              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
+              "docs/evidence/fms-settlement25-v5-2026-10-07/WAR_V2_INDEX.md"
             ]
           }
         ]
@@ -4844,11 +4854,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "voyage24_verified_video_study_recorded",
+      "status": "v25 local checks passed; local commit pending",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
-      "cloudScope": "Local-only v24. Bounded v10-v12 preview grant is not extended. Main, published preview and old stores retained.",
-      "next": "先接WEB-03-05城市密度/地形辖区；WEB-04-37按当前原作战争V2逐函数核对并接线；随后文化一致性和已恢复死亡/官职内核。",
+      "cloudScope": "Local-only v25. Bounded v10-v12 preview grant is not extended. Main, published preview and old stores retained.",
+      "next": "WEB-04-37原作战争V2逐函数恢复和实际接线；随后WEB-03-06文化一致性。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
@@ -4914,15 +4924,30 @@
         "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
         "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
         "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+        "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/browser-lake.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/browser-voyage.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/FAILURES.md"
       ],
-      "currentVersion": 24,
-      "currentEngine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
+      "currentVersion": 25,
+      "currentEngine": "b99a0f06ff02be797aec8f86e82700646ebb4da5a88eb2ded1d61e477a131a79",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5201/?fms=1",
+      "localUrl": "http://127.0.0.1:5203/?fms=1",
       "currentLocalHead": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
       "sourceCommit": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
-      "checkpointNote": "v24 code committed; latest independent dist built from same source before commit. v23 origin5199 is a user world. Do not rerun start-voyage24.mjs or voyage24-ui.mjs. Native game is running but not captured; public video study is separate."
+      "checkpointNote": "v25 code pending local commit; final artifact sources bound by tested-artifact.json. 5199 user world and 5201 v24 preserved. Do not rerun previous one-off recovery scripts.",
+      "head": "b3c98e7",
+      "soleWriter": "root",
+      "nextBatch": [
+        "WEB-04-37",
+        "WEB-03-06"
+      ],
+      "note": "WEB-03-05有限完成。80定向单元和三尺寸6项浏览器0重试通过；不是全原作/真机/视觉验收。"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6484,6 +6509,35 @@
       "partialVideoId": "BV1RhBDYMER4",
       "nativeGameplay": "capture_failed_not_played",
       "officialWarV2": "identified_not_integrated"
+    },
+    "settlement25Prototype": {
+      "date": "2026-10-07",
+      "status": "local_browser_verified",
+      "sourceCommit": null,
+      "engine": "b99a0f06ff02be797aec8f86e82700646ebb4da5a88eb2ded1d61e477a131a79",
+      "database": "lieguoji-fms-settlement-v25",
+      "localUrl": "http://127.0.0.1:5203/?fms=1",
+      "tests": {
+        "unit": 80,
+        "browser": 6,
+        "retries": 0,
+        "lint": true,
+        "typecheck": true,
+        "build": true
+      },
+      "evidence": [
+        "docs/evidence/fms-settlement25-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/browser-lake.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/browser-voyage.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-settlement25-v5-2026-10-07/FAILURES.md"
+      ],
+      "physicalIPhone": false,
+      "userVisualAccepted": false,
+      "nativeZoningEquivalent": false
     }
   }
 }

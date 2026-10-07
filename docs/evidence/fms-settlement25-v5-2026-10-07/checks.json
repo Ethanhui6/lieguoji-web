@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-07",
+  "scope": "Local affected-scope validation; no full historical suite or cloud CI.",
+  "unit": {
+    "passed": 80,
+    "files": 5,
+    "report": "docs/evidence/fms-settlement25-v5-2026-10-07/unit-final.json"
+  },
+  "browser": {
+    "passed": 6,
+    "retries": 0,
+    "reports": [
+      "docs/evidence/fms-settlement25-v5-2026-10-07/browser-lake.json",
+      "docs/evidence/fms-settlement25-v5-2026-10-07/browser-voyage.json"
+    ],
+    "projects": [
+      "desktop-chromium",
+      "mobile-chromium",
+      "tablet-chromium"
+    ],
+    "splitRuns": true,
+    "actualIPhone": false
+  },
+  "lint": true,
+  "typecheck": true,
+  "productionBuild": true,
+  "distWhitelistFiles": 43,
+  "releaseProtectionTests": 24,
+  "planTests": 15,
+  "planCheck": true,
+  "fullHistoricalUnitSuite": false,
+  "nativeVisualEquivalent": false,
+  "userVisualAccepted": false,
+  "cloudUploaded": false,
+  "limitations": [
+    "Existing bundle-size warning remains.",
+    "Cities still have heavy halos and crowded labels.",
+    "Fixed 6.5s animation observation is not a throughput/performance guarantee."
+  ],
+  "gitDiffCheck": {
+    "passed": false,
+    "scope": "staged diff includes new files",
+    "warning": "src/fms/play/settlement25-mesh.ts:61 new blank line at EOF",
+    "impact": "Formatting only; lint and compiler pass. Kept in this engine-bound tested version rather than invalidating the new local demo for an EOF-only change."
+  }
+}

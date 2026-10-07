@@ -1,0 +1,235 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-settlement25.spec.ts",
+      "--reporter=list,json"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-settlement25.spec.ts",
+      "file": "fms-settlement25.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "draw continent and inland sea, choose ten countries and sixty real cities, then resume unchanged",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 30148,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T09:43:41.008Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "settlement-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiJiOTlhMGYwNmZmMDJiZTc5N2FlYzhmODZlODI3MDA2NDZlYmI0ZGE1YTg4ZWIyZGVkMWQ2MWU0NzdhMTMxYTc5IiwiZ2VuZXJhdGlvbiI6eyJ2ZXJzaW9uIjoxLCJtZXRob2QiOiJ0ZXJyYWluLWNvbm5lY3RlZC11bmlvbnMtdjEiLCJjaXR5Q291bnQiOjYwLCJjb3VudHJ5Q291bnQiOjEwfSwiY2l0aWVzIjo2MCwibmF0aW9ucyI6MTAsImFybWllcyI6MzYsInRpY2siOjQxLCJjaGVja3N1bSI6IjEzZDc3ODQ1ZWYzNTY0NDY4NjRmNTQyODE2Y2QxMTNmYmE0MjAyNDBmYTVmZmI1ZmQ5YmJmMmQ1ZGFlNDJkMDQiLCJzY29wZSI6Ik5vcm1hbCBkcmF3aW5nIGluY2x1ZGluZyBzZWEgYnJ1c2gsIHJlYWwgV29ya2VyIGFuZCBJbmRleGVkREIuIENocm9taXVtIGRlc2t0b3AvcGhvbmUvdGFibGV0IGVtdWxhdGlvbiBvbmx5LiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e38386866d26ea7828ac-5336cb2dbff2194ba681",
+          "file": "fms-settlement25.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "draw continent and inland sea, choose ten countries and sixty real cities, then resume unchanged",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33773,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T09:44:11.850Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "settlement-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiJiOTlhMGYwNmZmMDJiZTc5N2FlYzhmODZlODI3MDA2NDZlYmI0ZGE1YTg4ZWIyZGVkMWQ2MWU0NzdhMTMxYTc5IiwiZ2VuZXJhdGlvbiI6eyJ2ZXJzaW9uIjoxLCJtZXRob2QiOiJ0ZXJyYWluLWNvbm5lY3RlZC11bmlvbnMtdjEiLCJjaXR5Q291bnQiOjYwLCJjb3VudHJ5Q291bnQiOjEwfSwiY2l0aWVzIjo2MCwibmF0aW9ucyI6MTAsImFybWllcyI6MzcsInRpY2siOjMxLCJjaGVja3N1bSI6Ijg0NGQ5Nzc1YjIyYWY1MDk1NmE3OWY1ZTBmMzY3NzMyMThkYWNkNWE3MTQ2NzExNDc3MjgwZmVlYjBiM2IyM2QiLCJzY29wZSI6Ik5vcm1hbCBkcmF3aW5nIGluY2x1ZGluZyBzZWEgYnJ1c2gsIHJlYWwgV29ya2VyIGFuZCBJbmRleGVkREIuIENocm9taXVtIGRlc2t0b3AvcGhvbmUvdGFibGV0IGVtdWxhdGlvbiBvbmx5LiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e38386866d26ea7828ac-33f91400fe8df6c286e7",
+          "file": "fms-settlement25.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "draw continent and inland sea, choose ten countries and sixty real cities, then resume unchanged",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52289,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T09:44:46.317Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "settlement-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiJiOTlhMGYwNmZmMDJiZTc5N2FlYzhmODZlODI3MDA2NDZlYmI0ZGE1YTg4ZWIyZGVkMWQ2MWU0NzdhMTMxYTc5IiwiZ2VuZXJhdGlvbiI6eyJ2ZXJzaW9uIjoxLCJtZXRob2QiOiJ0ZXJyYWluLWNvbm5lY3RlZC11bmlvbnMtdjEiLCJjaXR5Q291bnQiOjYwLCJjb3VudHJ5Q291bnQiOjEwfSwiY2l0aWVzIjo2MCwibmF0aW9ucyI6MTAsImFybWllcyI6MzYsInRpY2siOjMxLCJjaGVja3N1bSI6ImJkN2Y5YmVhOWEyMTAyYjM4YmU4ZGZiN2JjNmNhNWE0OTQyZTJjNjliMGIzYWE4Y2ZjZTA1ODZiYjMzNTAzOGUiLCJzY29wZSI6Ik5vcm1hbCBkcmF3aW5nIGluY2x1ZGluZyBzZWEgYnJ1c2gsIHJlYWwgV29ya2VyIGFuZCBJbmRleGVkREIuIENocm9taXVtIGRlc2t0b3AvcGhvbmUvdGFibGV0IGVtdWxhdGlvbiBvbmx5LiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e38386866d26ea7828ac-28a500660088a45e3b79",
+          "file": "fms-settlement25.spec.ts",
+          "line": 7,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T09:43:40.446Z",
+    "duration": 118390.449,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

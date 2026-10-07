@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "fingerprint": "c1080ceb204012e5ca4d70ca1de5c9ebff9b27f534ff4c0d690af3604f9a4325",
+  "files": [
+    {
+      "path": "src/fms/play/war36-model.ts",
+      "archive": "fms/play/war36-model.ts.source",
+      "sha256": "eb27cd411862f8ed25346c3280c9fd9ec46ba25bfbaa23d2f12fce4c4b19b1d8"
+    },
+    {
+      "path": "src/fms/play/war36-storage.ts",
+      "archive": "fms/play/war36-storage.ts.source",
+      "sha256": "ff655c87c43248feb61f4a38cc75a8c6ff249e1632e8ccad16e1496a60fc7641"
+    },
+    {
+      "path": "src/fms/play/war36-stores.ts",
+      "archive": "fms/play/war36-stores.ts.source",
+      "sha256": "56cd08fe4c7dd5ce665a35ca915915984a8ea53f1c14a1955a03e088eda1662d"
+    },
+    {
+      "path": "src/fms/play/war36-state.ts",
+      "archive": "fms/play/war36-state.ts.source",
+      "sha256": "fd19a658454d4555f997e9b93bf1b6faaecbb048a50bf7972f48adca4e198085"
+    },
+    {
+      "path": "src/fms/play/war36-declaration.ts",
+      "archive": "fms/play/war36-declaration.ts.source",
+      "sha256": "5bf3e19fc54b77b07ddc7d33d57c84853abdb87f090661b6b14ef5050ead0548"
+    },
+    {
+      "path": "src/fms/play/war36-session.ts",
+      "archive": "fms/play/war36-session.ts.source",
+      "sha256": "85dafd7e3730d6dac7131c66256f7c94a17da3e03a285dd94e42e494e3355cf0"
+    },
+    {
+      "path": "src/fms/play/war36-client.ts",
+      "archive": "fms/play/war36-client.ts.source",
+      "sha256": "61c93d41d599336c35addb4b1d9f7792d5fc4f7a52a3e93ceb47c1ac8d03dc77"
+    },
+    {
+      "path": "src/fms/play/war36-vassals.ts",
+      "archive": "fms/play/war36-vassals.ts.source",
+      "sha256": "0c94bbd38fdc59967c3cb5ce580bb1bb6f7befbadcf9ec4e6ad187f9b613b840"
+    },
+    {
+      "path": "src/fms/play/war36-settlement.ts",
+      "archive": "fms/play/war36-settlement.ts.source",
+      "sha256": "5a685bb0f0c1a14c0f00acb5ab39a8128934fe2144338d424ef4963a8edebcdd"
+    },
+    {
+      "path": "src/fms/play/war36-peace.ts",
+      "archive": "fms/play/war36-peace.ts.source",
+      "sha256": "2f42b8441f06d22f22c54116494b34f59484fedbbb9236b2c36c4c5f781c95c9"
+    },
+    {
+      "path": "src/fms/play/war36/play.worker.ts",
+      "archive": "fms/play/war36/play.worker.ts.source",
+      "sha256": "e47f2bc2addb02ce416f3d27b615d43692d5a3214ea8e2985c4b508d7769ac53"
+    },
+    {
+      "path": "src/fms/play/war36-tribute.ts",
+      "archive": "fms/play/war36-tribute.ts.source",
+      "sha256": "0c585cf7e914a98ac4d5038f586ed75025920bb1fc0efc3f59068d8a19e3f02c"
+    },
+    {
+      "path": "src/fms/play/war36-rebellion.ts",
+      "archive": "fms/play/war36-rebellion.ts.source",
+      "sha256": "1858ce64002a10cf6459b0116a863fa7ed3e5d6247a42bb33ec17e3023949b9f"
+    },
+    {
+      "path": "src/fms/play/war36-wars.ts",
+      "archive": "fms/play/war36-wars.ts.source",
+      "sha256": "9b0c4416bc274b10953e5b82070c0307ef58da600f8ec93becb3f68c37282e81"
+    },
+    {
+      "path": "src/fms/play/war36-validation.ts",
+      "archive": "fms/play/war36-validation.ts.source",
+      "sha256": "cb475cc76e1e66c5b56db182470274f48d3e5ba3f869a0ce4081e11038ec41b1"
+    },
+    {
+      "path": "src/fms/play/war36-query.ts",
+      "archive": "fms/play/war36-query.ts.source",
+      "sha256": "968c98669e116795bcc77c7a6485c7b142e1ce32b73dcea337cefbc5090be5ff"
+    },
+    {
+      "path": "src/fms/play/war36-coalition.ts",
+      "archive": "fms/play/war36-coalition.ts.source",
+      "sha256": "7d59029c9a73a3c45c83fc255ba5855263e2a831559b03c045a6ac7aebb2adcf"
+    },
+    {
+      "path": "src/fms/play/war36-alliance.ts",
+      "archive": "fms/play/war36-alliance.ts.source",
+      "sha256": "1da9cbcad69dd8213b6af1a19d1495583581797580d277be633622948fbc397f"
+    },
+    {
+      "path": "src/fms/play/war36-access.ts",
+      "archive": "fms/play/war36-access.ts.source",
+      "sha256": "82f2b38788fd8bcfd2239a740f6069756e1b8ac098a508f360d3793e79d55b17"
+    },
+    {
+      "path": "src/fms/play/war36-core.ts",
+      "archive": "fms/play/war36-core.ts.source",
+      "sha256": "49e781f4484834862166d418aedd1af23f5e88571865fa9ffe33af2a432d3a7d"
+    },
+    {
+      "path": "src/fms/play/war36-battle.ts",
+      "archive": "fms/play/war36-battle.ts.source",
+      "sha256": "713005c6984c14e959d7a5dd297f15432964f40c0dd7cf2d759bde43fb20642f"
+    },
+    {
+      "path": "src/fms/play/war36-runtime.ts",
+      "archive": "fms/play/war36-runtime.ts.source",
+      "sha256": "abc955f0ac0df9f903faa7c8abbc4b710cdbb2937410c8c594e2a07fd15db182"
+    },
+    {
+      "path": "src/fms/play/war36-politics.ts",
+      "archive": "fms/play/war36-politics.ts.source",
+      "sha256": "d3d6211ca3edbaf3447ded4467c7b97aa2ab33c71eac4b7166117e242daa5f20"
+    },
+    {
+      "path": "src/fms/play/war36-commands.ts",
+      "archive": "fms/play/war36-commands.ts.source",
+      "sha256": "292c5867072bba707e7ac95109237680c26c7f9f458277e7b86a906b2b21644d"
+    }
+  ]
+}

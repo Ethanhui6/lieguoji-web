@@ -1,3 +1,17 @@
+# 当前续接：v24跨海与连贯绘制已验证，视频对照后接城市密度和战略
+
+2026-10-07；源码提交 be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31，根唯一写入。V5 / WEB-PH04 / WEB-04-13和完整还原Goal仍进行中；本批有限完成另记WEB-04-35/36。
+
+- 本机实际服务 http://127.0.0.1:5201/?fms=1 ，独立 .autopilot/voyage24-final-preview/dist；v24/Store26/lieguoji-fms-voyage-v24，engine 0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a。继续前核实端口；构建记录父HEAD脏树，真实产物哈希见 [本批证据](evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json)。5199是用户已有世界，绝不为测试覆盖。
+- 已接两岛海外宣战、真实集结/运力/载军/航行/登陆/和平返航与手动接管。背景tick不闪禁用按钮，单位沿真实路径逐帧插值，地名对象保留。98受影响单元、完整lint/types/build43白名单、三尺寸6项浏览器0重试通过；24发布保护测试通过。不是全原作AI、所有卡顿消除或真机视觉验收。见 [DELIVERY](evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md)。
+- 用户要求重新尝试原作窗口捕获，仍截图超时/坐标不可用，只有窗口标题被读取；没有真正从原作主菜单试玩。用户转而要求网上视频，已播放两部YouTube相关片段并记录时间点；B站教程01:01登录中断。见 [VIDEO_STUDY](evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md)，不要把字幕或公告冒充本机操作。原作仍运行，不自行关闭。
+- 官方2026-07战争V2有目标、连片诉求、和约与厌战；网页v24只是实际跨海调度桥接，尚无全套V2。当前地图辖区仍旧分区、国家数量2–8，更多文化、无边际地图、自然死亡/完整家族官职未交付。原死亡内核仍保留未接，不重复逆向。
+- 下一批1–3项：WEB-03-05城市/国家密度与地形连续分区；然后WEB-04-37原作战争V2。WEB-03-06记录文化一致性扩展。按用户最新优先级接续，旧下文“v24死亡版”已被跨海版占用，后续死亡接线需新版本。
+- 不重跑 .autopilot/start-voyage24.mjs、voyage24-ui.mjs、record-voyage24.mjs 或任何旧一次性恢复脚本。所有旧引擎和库保持，缺字段/未来版本/CAS不放宽。
+- 私库 Ethanhui6/lieguoji-web → Pages lieguoji-web，原生Git链保留；本批不push/PR/Issue/Pages/main。2026-10-06有界预览授权不自动扩展到v24。iPhone13ProMax/Safari/Chrome和用户视觉门仍未过。
+
+---
+
 # 当前续接：文字与史记已验证，接跨海外交和自动远征
 
 2026-10-07，父HEAD 3c5fa39；根唯一写入。最新用户反馈调整下一批优先级；WEB-PH04 / WEB-04-13 和原作还原 Goal 均进行中。

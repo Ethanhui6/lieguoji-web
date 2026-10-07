@@ -1,0 +1,190 @@
+{
+  "sourceCommit": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+  "baseURL": "http://127.0.0.1:5201",
+  "tests": [
+    {
+      "title": "two drawn islands, real overseas diplomacy, stable UI and continuous saved expedition",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 49573,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-browser-final.json",
+      "observation": {
+        "day": 1,
+        "engine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
+        "missions": {
+          "n-0": {
+            "armyId": "force-11",
+            "fleetId": "fleet-7-2",
+            "fromPortId": "port-p-23-0",
+            "toPortId": "port-p-22-0",
+            "phase": "outbound",
+            "startedTick": 12
+          },
+          "n-1": {
+            "armyId": "force-143",
+            "fleetId": "fleet-8-3",
+            "fromPortId": "port-p-22-0",
+            "toPortId": "port-p-23-0",
+            "phase": "outbound",
+            "startedTick": 12
+          }
+        },
+        "decisions": {
+          "n-0": {
+            "atTick": 24,
+            "text": "瑞泽瓦步兵已装船，沿真实海路前往科兹洛瓦山。"
+          },
+          "n-1": {
+            "atTick": 24,
+            "text": "科兹洛瓦山盾兵已装船，沿真实海路前往瑞泽瓦。"
+          }
+        },
+        "cargo": [
+          {
+            "army": "force-11",
+            "fleet": "fleet-7-2"
+          },
+          {
+            "army": "force-143",
+            "fleet": "fleet-8-3"
+          }
+        ],
+        "sampleCount": 155,
+        "sameTickAnimation": true,
+        "positionSamples": 2,
+        "buttonsStable": true
+      }
+    },
+    {
+      "title": "two drawn islands, real overseas diplomacy, stable UI and continuous saved expedition",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 50179,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-browser-mobile-tablet.json",
+      "observation": {
+        "day": 1,
+        "engine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
+        "missions": {
+          "n-0": {
+            "armyId": "force-104",
+            "fleetId": "fleet-7-2",
+            "fromPortId": "port-p-329-0",
+            "toPortId": "port-p-326-0",
+            "phase": "assembling",
+            "startedTick": 12
+          },
+          "n-1": {
+            "armyId": "force-138",
+            "fleetId": "fleet-9-3",
+            "fromPortId": "port-p-326-0",
+            "toPortId": "port-p-329-0",
+            "phase": "assembling",
+            "startedTick": 12
+          }
+        },
+        "decisions": {
+          "n-0": {
+            "atTick": 24,
+            "text": "马洛维登骑兵正在前往斯塔林集结。"
+          },
+          "n-1": {
+            "atTick": 24,
+            "text": "考纳瓦盾兵正在前往博格丹集结。"
+          }
+        },
+        "cargo": [],
+        "sampleCount": 127,
+        "sameTickAnimation": true,
+        "positionSamples": 26,
+        "buttonsStable": true
+      }
+    },
+    {
+      "title": "two drawn islands, real overseas diplomacy, stable UI and continuous saved expedition",
+      "project": "tablet-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 60064,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-browser-mobile-tablet.json",
+      "observation": {
+        "day": 1,
+        "engine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
+        "missions": {
+          "n-0": {
+            "armyId": "force-22",
+            "fleetId": "fleet-7-2",
+            "fromPortId": "port-p-42-0",
+            "toPortId": "port-p-27-0",
+            "phase": "outbound",
+            "startedTick": 12
+          },
+          "n-1": {
+            "armyId": "force-135",
+            "fleetId": "fleet-8-3",
+            "fromPortId": "port-p-27-0",
+            "toPortId": "port-p-42-0",
+            "phase": "outbound",
+            "startedTick": 12
+          }
+        },
+        "decisions": {
+          "n-0": {
+            "atTick": 24,
+            "text": "奥日斯克弓兵已装船，沿真实海路前往埃尔吉耶雷。"
+          },
+          "n-1": {
+            "atTick": 24,
+            "text": "埃尔吉耶雷精锐已装船，沿真实海路前往奥日斯克。"
+          }
+        },
+        "cargo": [
+          {
+            "army": "force-22",
+            "fleet": "fleet-7-2"
+          },
+          {
+            "army": "force-135",
+            "fleet": "fleet-8-3"
+          }
+        ],
+        "sampleCount": 123,
+        "sameTickAnimation": true,
+        "positionSamples": 2,
+        "buttonsStable": true
+      }
+    },
+    {
+      "title": "drawn diagonal world keeps map labels anchored and the chronicle focused on major events",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 27906,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-cartography-final.json"
+    },
+    {
+      "title": "drawn diagonal world keeps map labels anchored and the chronicle focused on major events",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 28868,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-cartography-final.json"
+    },
+    {
+      "title": "drawn diagonal world keeps map labels anchored and the chronicle focused on major events",
+      "project": "tablet-chromium",
+      "status": "passed",
+      "retry": 0,
+      "duration": 38830,
+      "errors": [],
+      "sourceReport": ".autopilot/voyage24-cartography-final.json"
+    }
+  ],
+  "physicalDevice": false
+}

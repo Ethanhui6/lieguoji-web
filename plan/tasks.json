@@ -2812,7 +2812,8 @@
       "docs/FMS_DESKTOP_WEB_COMPARISON_2026-10-07.md"
     ],
     "nextBatch": [
-      "WEB-04-13"
+      "WEB-03-05",
+      "WEB-04-37"
     ],
     "phases": [
       {
@@ -3562,6 +3563,30 @@
               "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md"
             ],
             "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
+          },
+          {
+            "id": "WEB-03-05",
+            "title": "玩家城市数量与依据地形的连续辖区",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-03-04"
+            ],
+            "acceptance": "新局明确选择城市和国家数量；土地可用面积、岸线、坡度与河流影响分区，保持陆地覆盖/邻接/一块一城，不跨海拼接，不改旧世界拓扑或静默迁移。真实多地形与三尺寸新局检查。",
+            "evidence": [
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+            ]
+          },
+          {
+            "id": "WEB-03-06",
+            "title": "文化、信仰与国名君主城名的一致预设",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-03-01"
+            ],
+            "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。",
+            "evidence": [
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+            ]
           }
         ]
       },
@@ -3858,9 +3883,14 @@
               "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
               "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
               "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json",
-              "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md"
+              "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
             ],
-            "progressNote": "v23新局原初始家庭/持久亲属/真实继承接入，133受影响单元、三尺寸浏览器与完整lint/types/build通过；自然死亡/自动婚育/完整原作仍继续。",
+            "progressNote": "v24真实跨海远征、玩家接管和连贯绘制已成批验证（98单元、6浏览器）；完整原作战略/战争V2和死亡官职接线仍未完成。新增35/36记录本批有限完成，37与WEB-03-05/06接用户最新方向。",
             "progressScope": " v19原省文化起义/历史身份复用、真实前任复位与首都迁移已接，Store21独立保护；完整原作国运重置、家族年龄继承及自然起义概率仍未等价。"
           },
           {
@@ -4198,6 +4228,51 @@
               "docs/evidence/fms-locality-v5-2026-10-07/tested-artifact.json"
             ],
             "completionScope": "有限本地标牌/选择/输入修复；含实际DOM控制区及面板动画避让。13单元、最终构建3个三尺寸选城场景（另3项无领土为紧邻前构建证据）、类型/lint/构建/43产物审查通过。另保留前一构建12项史书/未来档回归，不冒充最终构建新测。合成无领土夹具明确；v12规则与旧库保留，真机/原作视觉/完整性能未验收，未上传。"
+          },
+          {
+            "id": "WEB-04-35",
+            "title": "可达外海外交与自主集结、运输、登陆返航",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-15"
+            ],
+            "acceptance": "独立新版库；真实港口、部队与载军身份；海域连通，预览取消与过期重验；和平返航；玩家军令优先；浏览器实际两岛和精确恢复。限定网页调度桥接，不宣称原作完整战略或云端/真机验收。",
+            "evidence": [
+              "docs/evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+            ]
+          },
+          {
+            "id": "WEB-04-36",
+            "title": "日内按钮稳定、真实路线插值与地名对象保留",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-09",
+              "WEB-03-02"
+            ],
+            "acceptance": "背景tick不改变按钮禁用透明度；真实路线拐点和暂停保留；同tick帧间变化及实际位置变化；国名城名跨快照保留对象；桌面和移动尺寸验证。不是所有闪烁消除或60fps真机保证。",
+            "evidence": [
+              "docs/evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+            ]
+          },
+          {
+            "id": "WEB-04-37",
+            "title": "当前原作战争V2目标、连片推进与和约",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-35"
+            ],
+            "acceptance": "逐函数核对当前安装包与官方战争V2；明确开战目标，连片边境/可登陆海岸，战局与厌战、停战及和约；解释为何出兵并保留老引擎。视频和公告不单独充当代码等价证据。",
+            "evidence": [
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+            ]
           }
         ]
       },
@@ -4769,12 +4844,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "cartography_major_history_verified_cross_sea_next",
+      "status": "voyage24_verified_video_study_recorded",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "3c5fa39",
-      "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "按最新用户反馈，冻结v23后接独立v24跨海外交与自动远征：集结/运力/装载/航行/登陆，处理停战与手动接管；原死亡内核保留，随后接线。",
-      "latestUserPriority": "2026-10-07文字按版图排布且平移稳定、史记只显示大事、完善跨大陆外交与行动。",
+      "lastCommitted": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+      "cloudScope": "Local-only v24. Bounded v10-v12 preview grant is not extended. Main, published preview and old stores retained.",
+      "next": "先接WEB-03-05城市密度/地形辖区；WEB-04-37按当前原作战争V2逐函数核对并接线；随后文化一致性和已恢复死亡/官职内核。",
+      "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -4834,15 +4909,20 @@
         "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md"
+        "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
       ],
-      "currentVersion": 23,
-      "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
+      "currentVersion": 24,
+      "currentEngine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5199/?fms=1",
-      "currentLocalHead": "3c5fa39",
-      "sourceCommit": "3c5fa39 plus current cartography working tree; see Git log for local delivery commit",
-      "checkpointNote": "Cartography renderer only; v23 engine unchanged. Mortality kernels remain committed and not integrated."
+      "localUrl": "http://127.0.0.1:5201/?fms=1",
+      "currentLocalHead": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+      "sourceCommit": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+      "checkpointNote": "v24 code committed; latest independent dist built from same source before commit. v23 origin5199 is a user world. Do not rerun start-voyage24.mjs or voyage24-ui.mjs. Native game is running but not captured; public video study is separate."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6365,6 +6445,45 @@
       ],
       "physicalIPhone": false,
       "userVisualAccepted": false
+    },
+    "voyage24Prototype": {
+      "date": "2026-10-07",
+      "status": "local_browser_verified",
+      "sourceCommit": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+      "engine": "0f3d35adca067525fe6bc2089190939ce067a3b0da442d682bc2142794fec46a",
+      "database": "lieguoji-fms-voyage-v24",
+      "localUrl": "http://127.0.0.1:5201/?fms=1",
+      "tests": {
+        "unit": 98,
+        "browser": 6,
+        "retries": 0,
+        "lint": true,
+        "typecheck": true,
+        "build": true
+      },
+      "evidence": [
+        "docs/evidence/fms-voyage24-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/browser-final.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+      ],
+      "physicalIPhone": false,
+      "userVisualAccepted": false,
+      "nativeAIEquivalent": false
+    },
+    "latestVideoStudy": {
+      "date": "2026-10-07",
+      "evidence": [
+        "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+      ],
+      "observedVideoIds": [
+        "zBXNH8hmasA",
+        "JUlwXSL_H-w"
+      ],
+      "partialVideoId": "BV1RhBDYMER4",
+      "nativeGameplay": "capture_failed_not_played",
+      "officialWarV2": "identified_not_integrated"
     }
   }
 }

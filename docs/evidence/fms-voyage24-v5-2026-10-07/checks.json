@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "be3ca9f924fcf6cdfc66d5f2bd841cd75fcaba31",
+  "unit": {
+    "passed": 98,
+    "failed": 0,
+    "files": 8,
+    "evidence": "unit-final.json"
+  },
+  "browser": {
+    "passed": 6,
+    "failed": 0,
+    "retries": 0,
+    "evidence": "browser-final.json"
+  },
+  "lint": {
+    "passed": true,
+    "session": 59845
+  },
+  "typecheck": {
+    "passed": true,
+    "session": 59845
+  },
+  "build": {
+    "passed": true,
+    "session": 21741,
+    "whitelistedFiles": 43,
+    "bundleWarningRetained": true
+  },
+  "releaseGuard": {
+    "passed": 24,
+    "failed": 0
+  },
+  "planGuard": {
+    "passed": 15,
+    "failed": 0,
+    "planCheckPassed": true,
+    "v5WorkItems": 57,
+    "legacyDigestPreserved": true
+  },
+  "physicalIPhone": false,
+  "userVisualAccepted": false,
+  "nativeHandsOn": false,
+  "cloudWrites": false,
+  "privacy": {
+    "reviewed": "38 selected source/test/config files, frozen source archive, no secret-pattern matches; no install dump/private save/media packaged",
+    "rawAnalysisIgnored": true
+  }
+}

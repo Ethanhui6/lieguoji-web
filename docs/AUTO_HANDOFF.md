@@ -8,7 +8,7 @@
 - [合同](evidence/fms-restoration19-v5-2026-10-07/CONTRACT.md)明确capitalId是最后指定的真实城市，活动首都按控制权，没给校验器塞假城市。原家族/年龄选择和自然起义概率仍网页桥。下一批[国运内核](evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md)已闭合原月衰减、初始化、Manifest特性及读档不重抽区别，先独立测试再冻结v19接生产；完整人物家族仍继续。不要重复已恢复选择器或重跑create/wire/finalize脚本。
 - 无push/PR/Pages/main变更，真机/用户视觉门和旧存档保护保持。
 
-随后已继续独立 `native-economy/destiny.ts`：构造/随机国运/真实月衰减、Manifest特性刷新与读档区别。首轮23项后只读审计发现有限f32中间溢出触底应继续重抽，已修并补回归，最终24项与目标lint/全工程类型通过。[内核进展](evidence/fms-restoration19-v5-2026-10-07/DESTINY_KERNEL.md)。无生产调用，5191/v19引擎不变；不要把它说成已经在试玩中按月衰减。下一批冻结v19，再接独立持久国运与月结，或依赖满足的人物生命周期；无需询问继续。
+随后独立国运内核已本地提交5699477（未上传）；本段及tasks在其后仅补记代码SHA。`native-economy/destiny.ts`包含构造/随机国运/真实月衰减、Manifest特性刷新与读档区别。首轮23项后只读审计发现有限f32中间溢出触底应继续重抽，已修并补回归，最终24项与目标lint/全工程类型通过。[内核进展](evidence/fms-restoration19-v5-2026-10-07/DESTINY_KERNEL.md)。无生产调用，5191/v19引擎不变；不要把它说成已经在试玩中按月衰减。下一批冻结v19，再接独立持久国运与月结，或依赖满足的人物生命周期；无需询问继续。
 
 ---
 

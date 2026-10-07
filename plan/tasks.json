@@ -4765,7 +4765,7 @@
       "date": "2026-10-07",
       "status": "restoration19_verified_native_destiny_kernel_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "c6159ca8b833215e6eab5dfb4e1d6632076a7e9b",
+      "lastCommitted": "56994770d552a80f5b49c799d3eab7e4a2b23337",
       "cloudScope": "Local-only v19; existing cloud preview and main preserved.",
       "next": "国运独立内核24项已验证且未生产接入；先冻结v19，再持久接线真实月结/人口金币行政/特性与读档不重抽。不要重复恢复内核，继续人物家族依赖。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
@@ -4822,7 +4822,7 @@
       "currentEngine": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5191/?fms=1",
-      "currentLocalHead": "c6159ca8b833215e6eab5dfb4e1d6632076a7e9b"
+      "currentLocalHead": "56994770d552a80f5b49c799d3eab7e4a2b23337"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6026,7 +6026,8 @@
         "docs/evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md",
         "docs/evidence/fms-restoration19-v5-2026-10-07/DESTINY_KERNEL.md",
         "docs/evidence/fms-restoration19-v5-2026-10-07/destiny-checks.json"
-      ]
+      ],
+      "sourceCommit": "56994770d552a80f5b49c799d3eab7e4a2b23337"
     }
   }
 }

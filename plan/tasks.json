@@ -4770,7 +4770,7 @@
       "date": "2026-10-07",
       "status": "dynasty23_playable_death_kernels_verified",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "47612a8",
+      "lastCommitted": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
       "next": "实现已恢复Republic/Theocracy/Tribal三个handler外壳，下一只读窄批三个紧急selector890600/890CD0/891210及后续评分/选举依赖；随后v24独立死亡/官职清理/真实继承事务。既有v23可玩，禁止混写其schema或假称自然死亡已接。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
@@ -4838,9 +4838,9 @@
       "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5197/?fms=1",
-      "currentLocalHead": "47612a8",
+      "currentLocalHead": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
       "sourceCommit": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
-      "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
+      "checkpointNote": "Playable v23 source aebfd10; independent death kernels 59648ff. Subsequent documentation-only checkpoint commit is in Git log."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6271,7 +6271,8 @@
       ],
       "lint": true,
       "typecheck": true,
-      "scope": "Natural death accounting/event constructor, patriarch handoff and state succession dispatch; candidate handlers and production death remain separate."
+      "scope": "Natural death accounting/event constructor, patriarch handoff and state succession dispatch; candidate handlers and production death remain separate.",
+      "sourceCommit": "59648ff67cc1bf37ae45d998e7fffb76712d78d1"
     }
   }
 }

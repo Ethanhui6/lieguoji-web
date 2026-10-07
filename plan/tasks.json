@@ -4762,7 +4762,7 @@
       "date": "2026-10-07",
       "status": "muster21_verified_lifecycle_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "7eeb6703d5d65b971baedff624af63976b97d6de",
+      "lastCommitted": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
       "cloudScope": "Local-only v21; main, existing cloud preview and all old local versions/stores preserved.",
       "next": "保留v21普通动员及实际交战存档；按已核人物月序续接生日/年龄/自然死亡完整事务，先闭合日期初始化与新君主生日，不重复纯概率核。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
@@ -4819,7 +4819,9 @@
       "currentEngine": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5194/?fms=1",
-      "currentLocalHead": "7eeb6703d5d65b971baedff624af63976b97d6de"
+      "currentLocalHead": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
+      "sourceCommit": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
+      "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6091,7 +6093,8 @@
         "docs/evidence/fms-muster21-v5-2026-10-07/browser.json",
         "docs/evidence/fms-muster21-v5-2026-10-07/tested-artifact.json",
         "docs/evidence/fms-muster21-v5-2026-10-07/NEXT_LIFECYCLE.md"
-      ]
+      ],
+      "sourceCommit": "33db769af3ae0234ddbd4325d0309fc246ea75fe"
     }
   }
 }

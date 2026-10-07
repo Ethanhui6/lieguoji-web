@@ -1,6 +1,6 @@
 # 当前续接：v21原普通动员可玩，接人物生命周期
 
-2026-10-07，父HEAD 7eeb6703d5d65b971baedff624af63976b97d6de（v20已验证并提交）；根唯一写入，代理只读。本批v21未提交，Goal、WEB-PH04/WEB-04-13继续进行。
+2026-10-07，父HEAD 7eeb6703d5d65b971baedff624af63976b97d6de（v20已验证并提交）；根唯一写入，代理只读。本批v21源码已本地提交33db769af3ae0234ddbd4325d0309fc246ea75fe，未上传；此后仅补记交接提交号。Goal、WEB-PH04/WEB-04-13继续进行。
 
 - 最新候选 http://127.0.0.1:5194/?fms=1 ，独立 .autopilot/muster21-preview/dist，v21/Store23/lieguoji-fms-muster-v21，engine b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9。5193/v20、5191/v19及全部旧库保留。
 - 原普通动员使用真实君主/国运，核心领土前线，主战50→7、中性50→5、主和禁止；零支保留冷却。先常备/应急后国运，使用真实返回tactics清队列。人工按钮是提前普通月检，非public无限制入口。完整[合同](evidence/fms-muster21-v5-2026-10-07/CONTRACT.md)区分原作和网页月历/安全选址/500上限/未接特殊分支。

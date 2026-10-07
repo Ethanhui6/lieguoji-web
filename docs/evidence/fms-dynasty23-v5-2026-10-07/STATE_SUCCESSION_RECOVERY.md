@@ -1,6 +1,6 @@
 # 国家交接外壳与三种政体处理器
 
-2026-10-07，授权原包只读静态恢复；原作未执行。TryResolve外壳已落独立kernel，下面3个非君主handler仅完成恢复，尚未落代码/生产，不可当已可玩。
+2026-10-07，授权原包只读静态恢复；原作未执行。TryResolve外壳已落独立kernel。随后3个非君主handler和紧急候选也已实现并通过独立检查，见[SUCCESSION_CANDIDATES_RECOVERY](SUCCESSION_CANDIDATES_RECOVERY.md)；尚未生产接线，不可当已可玩。
 
 ## TryResolve891750已落核
 
@@ -14,7 +14,7 @@
 
 网页kernel将原日志格式字符串保留为端口输入，不宣称记录文本已逐字接入。它不任命人物、不做候选选择。
 
-## 三个非君主handler已恢复，待实现
+## 三个非君主handler（随后已实现独立核）
 
 每个入口先outfailure=""。有效候选仅nonnull/alive，任命后立即检查新正ID且不同oldId；失败不挑第二人，不进入无候选diagnostic。AppointLeader为void。所有回调异常保留部分修改。
 

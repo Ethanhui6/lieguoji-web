@@ -4290,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "实现已恢复Republic/Theocracy/Tribal三个handler外壳，下一只读窄批三个紧急selector890600/890CD0/891210及后续评分/选举依赖；随后v24独立死亡/官职清理/真实继承事务。既有v23可玩，禁止混写其schema或假称自然死亡已接。",
+    "nextRecoveryTarget": "已完成三非君主handler及紧急选择131项检查；接已读取Monarchy88EB70、HoldElection845810外壳及AppointLeader506C10角色/任期副作用，然后v24独立死亡与官职清理接线，不重做已闭合候选。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_death_kernels_verified",
+      "status": "dynasty23_playable_succession_candidates_verified",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "实现已恢复Republic/Theocracy/Tribal三个handler外壳，下一只读窄批三个紧急selector890600/890CD0/891210及后续评分/选举依赖；随后v24独立死亡/官职清理/真实继承事务。既有v23可玩，禁止混写其schema或假称自然死亡已接。",
+      "next": "已完成三非君主handler及紧急选择131项检查；接已读取Monarchy88EB70、HoldElection845810外壳及AppointLeader506C10角色/任期副作用，然后v24独立死亡与官职清理接线，不重做已闭合候选。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -6273,6 +6273,22 @@
       "typecheck": true,
       "scope": "Natural death accounting/event constructor, patriarch handoff and state succession dispatch; candidate handlers and production death remain separate.",
       "sourceCommit": "59648ff67cc1bf37ae45d998e7fffb76712d78d1"
+    },
+    "successionCandidatesKernel": {
+      "date": "2026-10-07",
+      "status": "local_verified_not_integrated",
+      "sourceParent": "6c8697a",
+      "productionIntegrated": false,
+      "unitTests": 131,
+      "testFiles": 4,
+      "lint": true,
+      "typecheck": true,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/SUCCESSION_CANDIDATES_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/handlers-first.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/candidates-first.json"
+      ],
+      "scope": "Three non-monarchy handlers, emergency selectors and native age/ability scores; production remains v23."
     }
   }
 }

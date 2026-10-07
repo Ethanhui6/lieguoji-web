@@ -13,6 +13,9 @@
 
 死亡统计/原LeaderDeathEvent/族长交接与国家TryResolve外壳随后已本地提交59648ff67cc1bf37ae45d998e7fffb76712d78d1，最终145项/7文件、目标lint及完整types通过，尚未生产接线。统计三次重读偏差已修；中间6个测试失败源于vi.fn重复包装共享spy，改独立mock后全部通过，失败JSON保留。见 [死亡合同](evidence/fms-dynasty23-v5-2026-10-07/NATURAL_DEATH_RECOVERY.md)、[国家交接/3政体后续](evidence/fms-dynasty23-v5-2026-10-07/STATE_SUCCESSION_RECOVERY.md)。下一批落已恢复三handler并闭合三个紧急selector；原Appoint/选举与死亡整笔接线独立推进，不重复外壳，不覆盖v23。
 
+
+2026-10-07续接补记：三非君主handler/紧急候选与原年龄能力评分已完成独立核，131项/4文件、目标lint与全工程types通过，尚未生产。见docs/evidence/fms-dynasty23-v5-2026-10-07/SUCCESSION_CANDIDATES_RECOVERY.md。下一批Monarchy88EB70/HoldElection845810外壳与AppointLeader角色任期处理，v23/5197不变；Goal与WEB-04-13仍在进行。
+
 ---
 
 # 当前续接：v22人物生日与月龄可玩，接原家族继承

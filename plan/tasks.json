@@ -4370,9 +4370,17 @@
               "docs/evidence/fms-vassal31-v5-2026-10-08/browser-production.json",
               "docs/evidence/fms-vassal31-v5-2026-10-08/tested-artifact.json",
               "docs/evidence/fms-vassal31-v5-2026-10-08/production-vassal.png",
-              "docs/evidence/fms-vassal31-v5-2026-10-08/production-portrait.png"
+              "docs/evidence/fms-vassal31-v5-2026-10-08/production-portrait.png",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/DELIVERY.md",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/native-methods.json",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/checks.json",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/unit-final.json",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/browser-production.json",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/tested-artifact.json",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/production-after.png",
+              "docs/evidence/fms-tribute32-v5-2026-10-08/production-portrait.png"
             ],
-            "progressScope": "v31已接原生CB3资格/选择/完整目标和实际附庸和约、登记先于退战、当前双边战争退战、宗属解除/覆亡清理、AI/手动宣战限制，Worker/UI/Store33保存刷新与未来字段保护。89相关批次、41客户端、最终15受影响检查及生产43产物/真实Chromium流程通过（计数有重叠）。保留v30/Store32及所有旧档。贡金/军力约束/附庸叛乱/完整宗主参战、联盟/改宗/内战、原作排行缓存与完整调度、真机和视觉仍未完成。历史切片保留，见war31Playable。"
+            "progressScope": "v31已接附庸和约/关系/退出已知双边战争；v32加入真实ISO日期年度贡金、实际双边国库、预览开关/账目、原子失败保护与独立Worker/UI/Store34。44新版本相关及42旧v31回归、types/lint、39发布计划保护、43产物审查与生产浏览器通过。附庸叛乱/完整宗主援战、联盟/改宗/内战、月排行缓存及完整调度仍缺。原生军力系数是否参与征募尚无足够使用证据，不虚构减半。真机/视觉与完整任务未通过。"
           }
         ]
       },
@@ -4944,11 +4952,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "v31 actual CB3/vassal treaty, exit wars, release, persistence and UI verified locally; full restoration continues",
+      "status": "v32 annual tribute/payment ledger/preview controls verified locally; full restoration continues",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "56e974e8fe9fce70790657967cb8ebc8adbcb921",
-      "cloudScope": "Local-only v31; no push/Pages/main changes. Existing bounded grant not expanded.",
-      "next": "Continue WEB-04-37 from playable v31: native periodic tribute/army-cap/rebellion and lord war participation, then real alliances/conversion/internal wars, monthly ranking/cache and full diplomacy schedule. Reuse v31 relationship/settlement/Worker/Store33, preserve playable 56e974e artifact and old saves before rule changes. Then WEB-03-06 and queued full audit. No new cloud authorization.",
+      "lastCommitted": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
+      "cloudScope": "Local-only v32; no push/Pages/main changes. Bounded grant not expanded.",
+      "next": "Continue WEB-04-37 from playable v32: original vassal rebellion, complete lord war participation, alliances/conversion/internal wars, ranking/cache and full diplomacy schedule. Reuse working annual tribute/Worker/UI/Store34; do not repeat tribute recovery. armyCapMultiplier .5 use not evidenced in inspected recruitment methods: verify real consumer before inventing enforcement. Preserve 61a03ed v32 and v31 old saves. Then WEB-03-06 and queued full audit; no cloud scope expansion.",
       "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
       "evidence": [
@@ -5082,31 +5090,39 @@
         "docs/evidence/fms-vassal31-v5-2026-10-08/browser-production.json",
         "docs/evidence/fms-vassal31-v5-2026-10-08/tested-artifact.json",
         "docs/evidence/fms-vassal31-v5-2026-10-08/production-vassal.png",
-        "docs/evidence/fms-vassal31-v5-2026-10-08/production-portrait.png"
+        "docs/evidence/fms-vassal31-v5-2026-10-08/production-portrait.png",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/native-methods.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/unit-final.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/browser-production.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/production-after.png",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/production-portrait.png"
       ],
-      "currentVersion": 31,
-      "currentEngine": "afe29c1e7d1e370467970caa087887c5db2c3ad43d7581516bea249c062cb170",
+      "currentVersion": 32,
+      "currentEngine": "2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5218/?fms=1",
-      "currentLocalHead": "56e974e8fe9fce70790657967cb8ebc8adbcb921",
-      "sourceCommit": "56e974e8fe9fce70790657967cb8ebc8adbcb921",
+      "localUrl": "http://127.0.0.1:5220/?fms=1",
+      "currentLocalHead": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
+      "sourceCommit": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
       "checkpointNote": "Source commit above; following doc-only checkpoint does not change the playable engine.",
-      "head": "56e974e8fe9fce70790657967cb8ebc8adbcb921",
+      "head": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "WEB-04-37 remains in_progress; v30/5216 and v29/5214 retained. Human phone/visual gates pending.",
-      "sourceParent": "ea94371",
-      "candidateVersion": 31,
+      "note": "WEB-04-37 remains in_progress. v31/5218, v30/5216, v29/5214 retained; native visual and phone gates pending.",
+      "sourceParent": "7b54908",
+      "candidateVersion": 32,
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-08: actual production browser on127.0.0.1:5218 passed; preview PID28804",
+      "localPortCheck": "2026-10-08: production Chromium on127.0.0.1:5220 passed; PID4844; oldv31 43 hashes preserved",
       "previewUrlStatus": "Older cloud preview unchanged; not this source/engine",
       "latestKernelSourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef",
-      "latestCandidateSourceCommit": "56e974e8fe9fce70790657967cb8ebc8adbcb921"
+      "latestCandidateSourceCommit": "61a03ed1a2fbc3f508365d63813f89f58a202e8f"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -7156,6 +7172,33 @@
         "docs/evidence/fms-vassal31-v5-2026-10-08/production-portrait.png"
       ],
       "next": "Continue WEB-04-37 from playable v31: native periodic tribute/army-cap/rebellion and lord war participation, then real alliances/conversion/internal wars, monthly ranking/cache and full diplomacy schedule. Reuse v31 relationship/settlement/Worker/Store33, preserve playable 56e974e artifact and old saves before rule changes. Then WEB-03-06 and queued full audit. No new cloud authorization."
+    },
+    "war32Playable": {
+      "date": "2026-10-08",
+      "task": "WEB-04-37",
+      "status": "local_playable_slice_verified",
+      "sourceCommit": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
+      "engine": "2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e",
+      "version": 32,
+      "store": 34,
+      "database": "lieguoji-fms-war-v32",
+      "localUrl": "http://127.0.0.1:5220/?fms=1",
+      "directory": ".autopilot/tribute32-preview/dist",
+      "previewPid": 4844,
+      "evidence": [
+        "docs/evidence/fms-tribute32-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/native-methods.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/unit-final.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/browser-production.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/production-after.png",
+        "docs/evidence/fms-tribute32-v5-2026-10-08/production-portrait.png"
+      ],
+      "next": "Continue WEB-04-37 from playable v32: original vassal rebellion, complete lord war participation, alliances/conversion/internal wars, ranking/cache and full diplomacy schedule. Reuse working annual tribute/Worker/UI/Store34; do not repeat tribute recovery. armyCapMultiplier .5 use not evidenced in inspected recruitment methods: verify real consumer before inventing enforcement. Preserve 61a03ed v32 and v31 old saves. Then WEB-03-06 and queued full audit; no cloud scope expansion.",
+      "humanVisualAccepted": false,
+      "realDeviceAccepted": false,
+      "published": false
     }
   }
 }

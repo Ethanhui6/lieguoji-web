@@ -1,0 +1,72 @@
+{
+  "origin": "http://127.0.0.1:5219",
+  "production": false,
+  "scope": "Disposable Chromium context; synthetic pre-due fixture, actual UI/Worker/IDB. Not original visual equivalence or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": true,
+  "fixture": {
+    "engine": "2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e",
+    "day": 342,
+    "date": {
+      "year": 1,
+      "month": 12,
+      "day": 9
+    },
+    "vassals": {
+      "version": 1,
+      "revision": 1,
+      "records": [
+        {
+          "vassalId": "n-1",
+          "overlordId": "n-0",
+          "time": 0,
+          "tick": 0,
+          "tributeRate": 0.30000001192092896,
+          "armyCapMultiplier": 0.5,
+          "updateDay": 10,
+          "endedTick": null,
+          "endReason": null
+        }
+      ]
+    }
+  },
+  "nations": [
+    {
+      "id": "n-0",
+      "name": "黑尔维提亚斯"
+    },
+    {
+      "id": "n-1",
+      "name": "桑通热"
+    },
+    {
+      "id": "n-2",
+      "name": "卡林西亚"
+    }
+  ],
+  "disabledNoBackTax": true,
+  "payment": {
+    "id": 1,
+    "vassalId": "n-1",
+    "overlordId": "n-0",
+    "relationIndex": 0,
+    "tick": 41160,
+    "day": 343,
+    "year": 1,
+    "month": 12,
+    "dateDay": 10,
+    "status": "paid",
+    "amount": 360,
+    "income": 100,
+    "rate": 0.30000001192092896,
+    "openingGold": 10000,
+    "closingGold": 9640,
+    "openingOverlordGold": 5000,
+    "closingOverlordGold": 5360
+  },
+  "savedReceiptNoDuplicate": true,
+  "portraitOverflow": false,
+  "reducedMotion": "none",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-tribute32-v5-2026-10-08\\video\\page@f67799a3eba1e152053862741c5200c2.webm"
+}

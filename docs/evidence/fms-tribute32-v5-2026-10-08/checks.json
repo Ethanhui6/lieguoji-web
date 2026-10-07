@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "61a03ed1a2fbc3f508365d63813f89f58a202e8f",
+  "engine": "2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e",
+  "tests": {
+    "currentVersion": {
+      "command": "vitest run src/fms/play/war32.test.ts src/fms/play/war32-storage.test.ts src/fms/play/war32-client.test.ts",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0
+    },
+    "oldV31": {
+      "passed": 42,
+      "evidence": "unit-initial-fixture-failed.json old v31 files all pass; v32 date fixture failure separately retained"
+    },
+    "fullTypecheck": "passed",
+    "fullLint": "passed",
+    "releaseAndPlanProtection": {
+      "passed": 39,
+      "failed": 0
+    },
+    "planCheck": "passed: 61 tasks,36 PH,144 legacy work items; V5 8 phases/57 work items, active WEB-PH04"
+  },
+  "production": {
+    "build": "passed",
+    "artifactCount": 43,
+    "privacyAudit": "passed unchanged check-dist rules with only artifact-root redirected",
+    "browser": "browser-production.json",
+    "oldV31ArtifactHashes": 43,
+    "workerBytesApprox": 2399050,
+    "fmsAppBytesApprox": 2200390,
+    "chunkWarningRemains": true,
+    "codexOpenResult": "queued, not claimed visible",
+    "browserFinalVideo": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-tribute32-v5-2026-10-08\\video\\page@d9179cd65dfa8e864a2881af78d42c6a.webm"
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "desktopPortraitOnly": true,
+    "originalVisualEquivalent": false,
+    "realIPhone": false,
+    "completeWEB0437": false,
+    "published": false
+  },
+  "failures": "DELIVERY.md"
+}

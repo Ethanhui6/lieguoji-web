@@ -1,3 +1,17 @@
+# 当前续接：v32年度贡金可玩，继续完整战争V2
+
+2026-10-08；源码 `61a03ed1a2fbc3f508365d63813f89f58a202e8f`；根唯一写入。WEB-04-37仍进行，接着WEB-03-06，最后排队的全项目审查/前10差距。没有新的必要用户决策阻塞。
+
+- 已接：原作十二月指定日年度贡金金额/战争/余额分支、真实双边国库、下次日期/收支账目、停用启用预览、日历去重、原子失败与独立Worker/UI/Store34。原作整个Update由auto-rebellion门控制；网页当前明确是单独贡金开关，并非已接反叛。军力0.5字段的实际征募用途未证实，不虚构减半。
+- [本批交付/原作证据/边界](evidence/fms-tribute32-v5-2026-10-08/DELIVERY.md)、[检查](evidence/fms-tribute32-v5-2026-10-08/checks.json)。44新版相关检查及42旧v31回归通过；全仓types/lint、39发布/计划保护、生产构建和43产物审查通过。生产Chromium实际预览取消/确认、到期转账、停用不补扣、保存刷新/下一日不重复扣款通过，无pageerror/HTTP失败。
+- [本机试玩v32](http://127.0.0.1:5220/?fms=1)，只监听127.0.0.1；产物`.autopilot/tribute32-preview/dist`，PID4844，engine `2fc396372878585809ef2dc7c343d1bf7e50e56a69b7a817d2c951f99103074e`。用户origin未注入测试档；不同端口的存档不自动搬运。旧v31/5218及43产物hash保留，旧v30/5216和v29/5214不替换。
+- 浏览器验证用合成的12月9日到期前档，再实际操作Worker：10000→9640 / 5000→5360。固定方形大陆非地图还原对照；428×926是桌面竖屏仿真，非iPhone。原作贡金动画、完整视觉、真机和WEB-04-37仍未过。首次夹具年龄基准失败、生产监听前连接失败均保留，修复后通过。
+- 仍缺：附庸叛乱、完整宗主参战、联盟/改宗/内战、月排行缓存和完整调度；既有财政30日月结仍保留，非完整原作同日调度等价。
+- 下一批：Continue WEB-04-37 from playable v32: original vassal rebellion, complete lord war participation, alliances/conversion/internal wars, ranking/cache and full diplomacy schedule. Reuse working annual tribute/Worker/UI/Store34; do not repeat tribute recovery. armyCapMultiplier .5 use not evidenced in inspected recruitment methods: verify real consumer before inventing enforcement. Preserve 61a03ed v32 and v31 old saves. Then WEB-03-06 and queued full audit; no cloud scope expansion.
+- 无push/Pages/main或发布门变更。不要重复贡金恢复或再做空候选；先核Git和实际端口，再接依赖满足的实际功能。
+
+---
+
 # 当前续接：v31附庸战争/关系可玩，继续完整战争V2
 
 2026-10-08；源码 56e974e8fe9fce70790657967cb8ebc8adbcb921；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队全项目审查/前10差距。无新的必要用户决策阻塞。

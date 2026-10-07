@@ -1,0 +1,37 @@
+import {war30Files} from './fms-war30-fingerprint.ts';
+import {verifyWar30Compatibility,FROZEN_WAR30_ENGINE} from './fms-war31-compat.ts';
+import {war29Files} from './fms-war29-fingerprint.ts';
+import {war28Files} from './fms-war28-fingerprint.ts';
+import {war27Files} from './fms-war27-fingerprint.ts';
+import {voyage24Files} from './fms-voyage24-fingerprint.ts';
+import {war26Files} from './fms-war26-fingerprint.ts';
+import {settlement25Files} from './fms-settlement25-fingerprint.ts';
+import {dynasty23Files} from './fms-dynasty23-fingerprint.ts';
+import {life22Files} from './fms-life22-fingerprint.ts';
+import {muster21Files} from './fms-muster21-fingerprint.ts';
+import {destiny20Files} from './fms-destiny20-fingerprint.ts';
+import {restoration19Files} from './fms-restoration19-fingerprint.ts';
+import {naming18Files} from './fms-naming18-fingerprint.ts';
+import {culture17Files} from './fms-culture17-fingerprint.ts';
+import {court16Files} from './fms-court16-fingerprint.ts';
+import {fiscal15Files} from './fms-fiscal15-fingerprint.ts';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import path from 'node:path';
+import ts from 'typescript';
+import {normalized} from './engine-fingerprint.ts';
+import {upper14Files} from './fms-upper14-fingerprint.ts';
+import {terrain13Files} from './fms-terrain13-fingerprint.ts';
+import {chronicle2Files} from './fms-chronicle2-fingerprint.ts';
+import {chronicleFiles} from './fms-chronicle-fingerprint.ts';
+import {campaignFiles} from './fms-campaign-fingerprint.ts';
+import {tacticsFiles} from './fms-tactics-fingerprint.ts';
+import {fmsPlayFiles} from './fms-play-fingerprint.ts';
+export const war31Files=['model','storage','stores','state','declaration','session','client','vassals','settlement','peace'].map(n=>'src/fms/play/war31-'+n+'.ts').concat(['src/fms/play/war31/play.worker.ts']).concat(['src/fms/play/native-war/vassal-effect.ts']);
+export function fingerprintWar31(){
+ const old=verifyWar30Compatibility();if(old!==FROZEN_WAR30_ENGINE)throw Error('Playable v30 fingerprint changed');
+ const hash=createHash('sha256').update('fms-war-31\0'+old),covered=new Set([...war31Files,...war30Files,...war29Files,...war28Files,...war27Files,...war26Files,...settlement25Files,...voyage24Files,...dynasty23Files,...life22Files,...muster21Files,...destiny20Files,...restoration19Files,...naming18Files,...culture17Files,...court16Files,...fiscal15Files,...upper14Files,...terrain13Files,...chronicle2Files,...chronicleFiles,...campaignFiles,...tacticsFiles,...fmsPlayFiles,'src/fms/model.ts']);
+ for(const file of war31Files){const source=normalized(readFileSync(file,'utf8')),ast=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true);
+  function visit(n:ts.Node){if((ts.isImportDeclaration(n)&&!n.importClause?.isTypeOnly||ts.isExportDeclaration(n)&&!n.isTypeOnly)&&n.moduleSpecifier&&ts.isStringLiteral(n.moduleSpecifier)){const spec=n.moduleSpecifier.text,resolved=path.posix.normalize(path.posix.join(path.posix.dirname(file),spec.endsWith('.json')?spec:spec+'.ts'));if(!spec.startsWith('.')||!covered.has(resolved))throw Error(`Unbound war31 dependency ${file} -> ${spec}`);}if(ts.isCallExpression(n)&&(n.expression.kind===ts.SyntaxKind.ImportKeyword||ts.isIdentifier(n.expression)&&['eval','require'].includes(n.expression.text)))throw Error('Dynamic war31 dependency forbidden');ts.forEachChild(n,visit);}visit(ast);hash.update('\n'+file+'\n'+source);
+ }return hash.digest('hex');
+}

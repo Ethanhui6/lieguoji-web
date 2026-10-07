@@ -21,12 +21,14 @@ export interface NativeWeightQueries<S extends NativeDeclarationState> {
 }
 /** EvaluateAiWeight 668980 for ordinary CB1. Sequential float32 arithmetic,
  * including the intermediate sums, is observable at the strict .55 gate. */
-export function nativeConquestAiWeight<S extends NativeDeclarationState>(a:S|null,d:S|null,q:NativeWeightQueries<S>):number{
+export function nativeConquestAiWeight<S extends NativeDeclarationState>(a:S|null,d:S|null,q:NativeWeightQueries<S>,bonus?:(share:number)=>number):number{
  if(!a||!d)return 0;
  const attack=f(q.strength(a)),defend=f(q.strength(d)),sum=f(attack+defend);
  if(sum<=0)return 0;
  const share=f(attack/sum),hostility=clamp01(f(-f(q.affinity(a,d))/f(50))),expansion=clamp01(f(f(a.expansionism)-1)),ambition=q.ambitious(a)?1:0;
- return clamp01(f(f(f(share+f(hostility*f(.08)))+f(expansion*f(.08)))+f(ambition*f(.04))));
+ let value=f(f(f(share+f(hostility*f(.08)))+f(expansion*f(.08)))+f(ambition*f(.04)));
+ if(bonus)value=f(value+f(bonus(share)));
+ return clamp01(value);
 }
 /** IsSuppressed 6762A0. Preserve enemy enumeration and per-add float32
  * rounding; the native leaf does not independently reject dead enemies. */

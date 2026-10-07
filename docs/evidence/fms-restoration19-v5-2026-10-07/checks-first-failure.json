@@ -1,0 +1,16 @@
+[
+  {
+    "name": "lint",
+    "command": "npm run lint",
+    "started": "2026-10-07T00:06:09.546Z",
+    "finished": "2026-10-07T00:06:22.310Z",
+    "exit": 0
+  },
+  {
+    "name": "types",
+    "command": "npm run typecheck",
+    "started": "2026-10-07T00:06:22.311Z",
+    "finished": "2026-10-07T00:06:38.332Z",
+    "exit": 2
+  }
+]

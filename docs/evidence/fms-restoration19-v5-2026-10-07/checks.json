@@ -1,0 +1,67 @@
+{
+  "recordedAt": "2026-10-07T00:25:17.861Z",
+  "engine": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
+  "fullUnitBeforeMaritimeAdapterFix": {
+    "passed": 3076,
+    "failed": 0,
+    "files": 260
+  },
+  "finalRelatedUnit": {
+    "passed": 32,
+    "failed": 0,
+    "files": 3
+  },
+  "finalCommands": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "started": "2026-10-07T00:19:57.552Z",
+      "finished": "2026-10-07T00:20:10.111Z",
+      "exit": 0
+    },
+    {
+      "name": "types",
+      "command": "npm run typecheck",
+      "started": "2026-10-07T00:20:10.113Z",
+      "finished": "2026-10-07T00:20:26.168Z",
+      "exit": 0
+    },
+    {
+      "name": "plan",
+      "command": "npm run plan:check",
+      "started": "2026-10-07T00:20:26.168Z",
+      "finished": "2026-10-07T00:20:26.786Z",
+      "exit": 0
+    },
+    {
+      "name": "targeted",
+      "command": "npx vitest run src/fms/play/restoration19.test.ts src/fms/play/restoration19-navigation.test.ts src/fms/play/maritime.test.ts --reporter=json --outputFile=.autopilot/restoration19-evidence/targeted-final.json",
+      "started": "2026-10-07T00:20:26.786Z",
+      "finished": "2026-10-07T00:20:40.815Z",
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "started": "2026-10-07T00:20:40.816Z",
+      "finished": "2026-10-07T00:20:47.589Z",
+      "exit": 0
+    }
+  ],
+  "browser": {
+    "startTime": "2026-10-07T00:21:13.591Z",
+    "duration": 149340.72999999998,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "artifactCount": 43,
+  "limits": [
+    "One-line cargo adapter fix followed full suite; final 32 affected unit checks and three-view browser flow, not a second full suite.",
+    "Phone and tablet Chromium emulation are not physical iPhone/Safari acceptance.",
+    "Historical restoration stress fixture uses explicit conquests/population; does not claim naturally occurring one-day history.",
+    "Native family/age selection and RandomDestiny not integrated; full replica incomplete.",
+    "No push, Pages trigger, main or old-save changes."
+  ]
+}

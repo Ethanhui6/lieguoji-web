@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "fingerprint": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+  "files": [
+    {
+      "path": "src/fms/play/naming18-names.ts",
+      "archive": "fms/play/naming18-names.ts.source",
+      "sha256": "c707e079106ce324601dba7c450c68567bb294e4828e9beef71865dbabcf9702"
+    },
+    {
+      "path": "src/fms/play/naming18-validation.ts",
+      "archive": "fms/play/naming18-validation.ts.source",
+      "sha256": "d9b6103d04de5c6251957cd9ad7f2bc5489d43e1e96e52e1c540e7a28db65fd3"
+    },
+    {
+      "path": "src/fms/play/naming18-culture.ts",
+      "archive": "fms/play/naming18-culture.ts.source",
+      "sha256": "768f90da87c0dbd4dfe72385ba7d70a9df6362750aa39d570b347b33e332d9b1"
+    },
+    {
+      "path": "src/fms/play/naming18-state.ts",
+      "archive": "fms/play/naming18-state.ts.source",
+      "sha256": "412ebe333f450edd194adade0313742a1f64cf8db8283d2c12db3968130d450d"
+    },
+    {
+      "path": "src/fms/play/naming18-runtime.ts",
+      "archive": "fms/play/naming18-runtime.ts.source",
+      "sha256": "2f7b64c40317ee5e6fdead6e818ec1f19bd55294dce6bd2d5d4ce18919c54e25"
+    },
+    {
+      "path": "src/fms/play/naming18-model.ts",
+      "archive": "fms/play/naming18-model.ts.source",
+      "sha256": "bb4f889a5ccf1fb563c77350f8ee9ecfa2a63fab238f6f19966a51a9ddbde1b9"
+    },
+    {
+      "path": "src/fms/play/naming18-session.ts",
+      "archive": "fms/play/naming18-session.ts.source",
+      "sha256": "1748f75a7b429b3590bfa267c1406ba6dd769c1559772a2657962928b01d7842"
+    },
+    {
+      "path": "src/fms/play/naming18-storage.ts",
+      "archive": "fms/play/naming18-storage.ts.source",
+      "sha256": "a2d5d4fe2a986246688179f917f2545fb85bec96e1dfdf7ce93b63325574ee21"
+    },
+    {
+      "path": "src/fms/play/naming18-stores.ts",
+      "archive": "fms/play/naming18-stores.ts.source",
+      "sha256": "f2e6e8ca3dbbde1b03c170a8a800c1ea5ecf9b300dcada9ed5c8b08d1571b75d"
+    },
+    {
+      "path": "src/fms/play/naming18-client.ts",
+      "archive": "fms/play/naming18-client.ts.source",
+      "sha256": "e49042bf3d0718b7ff66ec23a30964849b339c19a7e37a1bc4e3fa8ade0bad49"
+    },
+    {
+      "path": "src/fms/play/naming18-records.ts",
+      "archive": "fms/play/naming18-records.ts.source",
+      "sha256": "a76b63d0bb03a7837aca948e9b395aaa683110ed362dafe50057da8a7fe8dacd"
+    },
+    {
+      "path": "src/fms/play/naming18-politics.ts",
+      "archive": "fms/play/naming18-politics.ts.source",
+      "sha256": "eb88a4beb4fb387d8f49ea1f6dcbf94189d86c46766a2eaf2d16337f503d58c0"
+    },
+    {
+      "path": "src/fms/play/naming18-world.ts",
+      "archive": "fms/play/naming18-world.ts.source",
+      "sha256": "9153c776ed52ad771329eb05fed39283eec217758fb72abbcc52bacb23c8639c"
+    },
+    {
+      "path": "src/fms/play/naming18-create.ts",
+      "archive": "fms/play/naming18-create.ts.source",
+      "sha256": "e3527e96d80ae2824c3f8c27ca1c1968b0cacf7998dd744bae4741fc1bd0a11c"
+    },
+    {
+      "path": "src/fms/play/naming18/play.worker.ts",
+      "archive": "fms/play/naming18/play.worker.ts.source",
+      "sha256": "a99a971759e2d5bcb61e7320506ec18e48ab79449aa7b41eee1efbd749d352ee"
+    },
+    {
+      "path": "src/fms/play/native-culture/character-name.ts",
+      "archive": "fms/play/native-culture/character-name.ts.source",
+      "sha256": "be7c9f0f5a1b0cdbed1a8234b11b4f0ce60d0d98caddcb88ab66c66c971812de"
+    },
+    {
+      "path": "src/fms/play/native-culture/default-culture.ts",
+      "archive": "fms/play/native-culture/default-culture.ts.source",
+      "sha256": "eadf9a2dd10f1db1955993970b8c5ca9f644537ecf04a41b2f454ea70ffd61e6"
+    },
+    {
+      "path": "src/fms/play/native-culture/full-name.ts",
+      "archive": "fms/play/native-culture/full-name.ts.source",
+      "sha256": "9f4c1b1098a9fe9ae6d74b885acbe3292d55b870e6f900332897e90f25f2fc42"
+    },
+    {
+      "path": "src/fms/play/native-culture/localized-name.ts",
+      "archive": "fms/play/native-culture/localized-name.ts.source",
+      "sha256": "be582adbf97462d6ea19f92455c322a3c2174607d7b82f4155126dbd67a20177"
+    },
+    {
+      "path": "src/fms/play/native-culture/name-pool.ts",
+      "archive": "fms/play/native-culture/name-pool.ts.source",
+      "sha256": "9481e2f3bd7274ef56a09dfca821b523adfe1328ae37241357698f929226402b"
+    },
+    {
+      "path": "src/fms/play/native-culture/original-naming.ts",
+      "archive": "fms/play/native-culture/original-naming.ts.source",
+      "sha256": "caf7f4238965a726aabbf1e8dd24f385909cf26c00d9f205d6d87ea23c4227db"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Ciestundu.json",
+      "archive": "fms/play/native-culture/data/Ciestundu.json.source",
+      "sha256": "db95db64d86160973c7e1a0ea48900239d9455e6177c0145d5f757170b98aaaf"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/EasternFantasy.json",
+      "archive": "fms/play/native-culture/data/EasternFantasy.json.source",
+      "sha256": "6014e2f373c13b5d2fc66a992b4e2ba057cb6ec041ca826043f221752eebf1e8"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Leffathou.json",
+      "archive": "fms/play/native-culture/data/Leffathou.json.source",
+      "sha256": "e5db69ebe26c55a5b04e6eb4ddf919e4d11d8699472639b2bbd94d1faf59888c"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Oeczea.json",
+      "archive": "fms/play/native-culture/data/Oeczea.json.source",
+      "sha256": "8972462b6c0b70c83b7c8082da8bba990976fee6be0f2ad685362f4074047e36"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/WesternFantasy.json",
+      "archive": "fms/play/native-culture/data/WesternFantasy.json.source",
+      "sha256": "0c424edfe53c911e4bf963ff1e2409f3b4d218fc7170b567ab0ca71b1a3cf384"
+    },
+    {
+      "path": "src/fms/play/native-culture/data/Wristhos.json",
+      "archive": "fms/play/native-culture/data/Wristhos.json.source",
+      "sha256": "e8d1801bdd3690cc4987d1d29288939f654a7f61f05c90c855875bb95bbaa661"
+    }
+  ]
+}

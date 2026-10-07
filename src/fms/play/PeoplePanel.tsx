@@ -1,3 +1,4 @@
+import type {Restoration19Run} from './restoration19-model';
 import type {Naming18Run} from './naming18-model';
 import type {Culture17Run} from './culture17-model';
 import {useState} from 'react';
@@ -6,7 +7,7 @@ import {COURT_OFFICES,courtHolder,courtIncome,personSkills,personTraits,previewA
 import {nativeTraitType} from './native-economy/character-generation';
 const names:Record<string,string>={Genius:'天才',Brave:'勇敢',Charismatic:'富有魅力',Administrator:'善于行政',Diplomatic:'善于外交',Just:'公正',Strategist:'战略家',Merciful:'仁慈',Patient:'耐心',Craven:'怯懦',Cruel:'残酷',Incompetent:'无能',Greedy:'贪婪',Paranoid:'多疑',Wrathful:'暴躁',Ambitious:'雄心勃勃',SocialButterfly:'长袖善舞',Hawkish:'主战',Dovish:'主和',Unifier:'统一之志',BattleHardened:'久经战阵',WarWeary:'厌战',NavalMastery:'海战专长',ShipMaster:'造舰专长',Reformer:'改革者',NaturalLeader:'天生领袖',Unconvincing:'缺乏号召'};
 const skills={administrative:'行政',military:'军略',diplomatic:'外交',charisma:'魅力'} as const;
-export function PeoplePanel({run,nationId,provinceId,busy,appoint}:{run:Court16Run|Culture17Run|Naming18Run;nationId:string;provinceId:string|null;busy:boolean;appoint:(a:Appointment)=>void}){
+export function PeoplePanel({run,nationId,provinceId,busy,appoint}:{run:Court16Run|Culture17Run|Naming18Run|Restoration19Run;nationId:string;provinceId:string|null;busy:boolean;appoint:(a:Appointment)=>void}){
  const nation=run.people.nations[nationId],persons=Object.values(run.people.persons).filter(p=>p.nationId===nationId),[personId,setPersonId]=useState(nation?.leaderId??persons[0]?.id??0),[office,setOffice]=useState<CourtOffice>('Chancellor');
  const person=run.people.persons[personId],current=person&&person.nationId===nationId?person:persons[0],values=current?personSkills(current):null,input=courtIncome(run.people,run.world,nationId,provinceId??undefined);
  const action:Appointment={nationId,office,provinceId:office==='Governor'?provinceId:null,personId:current?.id??null},preview=previewAppointment(run,action),holder=courtHolder(run.people,run.world,action),province=run.world.provinces.find(p=>p.id===provinceId);

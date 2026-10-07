@@ -3841,9 +3841,16 @@
               "docs/evidence/fms-map-legibility-v5-2026-10-07/checks.json",
               "docs/evidence/fms-map-legibility-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
-              "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
+              "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/CONTRACT.md",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/FAILURES.md",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md"
             ],
-            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。 v18/Store20六文化国/城/人物真实命名及独立存档已本地验证，实际命名前置于军队/史书/人物首结。3017全量及最终9三尺寸浏览器通过；最终三UI变动与独立9项起义核分开列证。起义父文化与王朝任期仍为网页桥，下一批接原省文化/历史复国。 地图可读性与触控选军修复已本地验证：首轮4过2触控失败，最终6三尺寸全过；22标签单元。独立复国领袖核14项（合原起义25=39）通过，未进生产，不冒充完整家族。"
+            "progressNote": "2026-10-07 v13原兵种地貌之后，v14/Store16上层原战力有限可玩切片通过：国家政体/国运/五特性、核心与通用防御进入真实Worker交锋/围攻，原版冻结和草稿预览确认保存闭环。2828单元、最终15浏览器、lint/types/43产物检查通过；首轮全档轮询超时证据保留并修测试，未放宽5秒。人物/金币/突出部中性、国运未衰减和网页地理桥明确。继续原金币月结/军费/人口资源，非整项完成。 随后原财政/人口资源独立纯函数17项通过，尚未生产接线；原金币不等同网页粮食。 v15/Store17财政生产闭环已本地验证：原人口资源、首结/月结、重编完成一次费用、实际缓存战力与财政UI；初兵成本及海战/运输空缺误锁已修。全量2858是修复前证据，最终30相关单元及4浏览器通过，复用前构建13回归；边界详见checks，不称全原作等价。下一批人物/官职/族群输入。 后续原27人物特性表与税务/行政/四官职能力及收入组合纯内核15项通过，未生产接线；继续实际人物和任职来源。 v16/Store18人物与官职财政生产闭环已本地验证：四能力/原特性、真实宰相财政官省总督、传位留档、Worker预览确认与独立存档；全量2908、三尺寸人物流程+21桌面回归通过。继续原族群/年龄死亡/继承，不标完整原作或真机通过。 v17/Store19原族群真实财政/持久文化闭环本地验证：五类族群、上帝预览确认、分裂建国首结、旧档副本与未来槽保护。2951全量+13独立命名核、最终25浏览器通过；多文化命名生产/完整人物生命周期仍待，不称原作等价。 原六文化5085行/14语言审查数据与姓名/家族文化解析独立核36项通过；未接生产，不改变v17。下一批在世界/史书创建之前接多文化新版本。 v18/Store20六文化国/城/人物真实命名及独立存档已本地验证，实际命名前置于军队/史书/人物首结。3017全量及最终9三尺寸浏览器通过；最终三UI变动与独立9项起义核分开列证。起义父文化与王朝任期仍为网页桥，下一批接原省文化/历史复国。 地图可读性与触控选军修复已本地验证：首轮4过2触控失败，最终6三尺寸全过；22标签单元。独立复国领袖核14项（合原起义25=39）通过，未进生产，不冒充完整家族。",
+            "progressScope": " v19原省文化起义/历史身份复用、真实前任复位与首都迁移已接，Store21独立保护；完整原作国运重置、家族年龄继承及自然起义概率仍未等价。"
           },
           {
             "id": "WEB-04-14",
@@ -4274,8 +4281,8 @@
       }
     ],
     "nextRecoveryTarget": {
-      "priority": "WEB-04-13-native-rebel-production",
-      "next": "冻结v18；接真实持久省文化/原起义命名/历史国家实体复用。原复国领袖候选14项已完成，深层家族仍待。不要重复已完成函数恢复。"
+      "priority": "WEB-04-13-native-destiny-lifecycle",
+      "next": "接已恢复国运初始化/真实月衰减独立内核，先核f32与抽样顺序；再冻结v19并持久接线。继续真实家族/人物生命周期，不能重复已完成起义身份恢复或把观察日当生日。"
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
@@ -4754,11 +4761,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "naming18_map_legibility_verified_continue_restoration19",
+      "status": "restoration19_playable_verified_continue_destiny",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "5563650fb28d4f5845758753c8aed1f20a6d88ff",
-      "cloudScope": "Local-only v18; previous cloud preview retained, no push/main/Pages changes.",
-      "next": "冻结v18；接真实持久省文化/原起义命名/历史国家实体复用。原复国领袖候选14项已完成，深层家族仍待。不要重复已完成函数恢复。",
+      "cloudScope": "Local-only v19; existing cloud preview and main preserved.",
+      "next": "接已恢复国运初始化/真实月衰减独立内核，先核f32与抽样顺序；再冻结v19并持久接线。继续真实家族/人物生命周期，不能重复已完成起义身份恢复或把观察日当生日。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4809,11 +4816,11 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
       ],
-      "currentVersion": 18,
-      "currentEngine": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+      "currentVersion": 19,
+      "currentEngine": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5189/?fms=1",
-      "currentLocalHead": "8135ac5b24e66c119fe36a09d3bb0cb49e3f85d1"
+      "localUrl": "http://127.0.0.1:5191/?fms=1",
+      "currentLocalHead": "0ec8308c4eaac6b55a549c41477ee5488189ca55"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -5982,6 +5989,30 @@
       ],
       "remaining": "Persistent province culture and native history identity lifecycle must be integrated in isolated next version; complete family generation/lifespan not implemented.",
       "sourceCommit": "5563650fb28d4f5845758753c8aed1f20a6d88ff"
+    },
+    "restoration19Prototype": {
+      "date": "2026-10-07",
+      "status": "local_playable_verified",
+      "version": 19,
+      "store": 21,
+      "database": "lieguoji-fms-restoration-v19",
+      "sourceParent": "0ec8308c4eaac6b55a549c41477ee5488189ca55",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "productionIntegrated": true,
+      "browserVerified": true,
+      "evidence": [
+        "docs/evidence/fms-restoration19-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-restoration19-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-restoration19-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-restoration19-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-restoration19-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md"
+      ],
+      "engine": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
+      "localUrl": "http://127.0.0.1:5191/?fms=1",
+      "verificationScope": "3076 full unit before cargo one-line fix; final 32 affected unit, lint/types/build43, three production browser viewports and normal manually drawn map uprising/save/refresh. Not physical/visual acceptance."
     }
   }
 }

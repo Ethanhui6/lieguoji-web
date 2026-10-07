@@ -8,17 +8,18 @@ import type {EventLocation} from './observation';
 import {historyKinds,queryHistory,type HistoryQuery} from './chronicle-query';
 import type {HistoricalEntry} from './chronicle-records';
 export function historicalNews(c:Chronicle):NewsItem[]{return c.entries.map(e=>({key:`history-${e.id}`,historyId:e.id,day:e.day,text:e.text,reason:e.reason,priority:e.kind==='occupation'?'normal':'major',location:e.place?{kind:'province',id:e.place.id,label:`查看${e.place.name}`} as const:null}));}
-export function CourtPanel({run,nationId,provinceId,busy,act}:{run:ChronicleRun;nationId:string;provinceId:string|null;busy:boolean;act:(a:PoliticsAction)=>void}){
+export function CourtPanel({run,nationId,provinceId,busy,act,previewAction}:{run:ChronicleRun;nationId:string;provinceId:string|null;busy:boolean;act:(a:PoliticsAction)=>void;previewAction?:(a:PoliticsAction)=>ReturnType<typeof previewPolitics>}){
+  const inspect=previewAction??((a:PoliticsAction)=>previewPolitics(run,a));
   const c=run.chronicle,ruler=c.leaders[nationId]?.at(-1),ended=Object.hasOwn(c.ended,nationId),province=run.world.provinces.find(p=>p.id===provinceId);
   const [regnalName,setRegnalName]=useState(ruler?.regnalName??'');
-  const accession:PoliticsAction={type:'succession',nationId,regnalName:regnalName.trim()},preview=previewPolitics(run,accession);
+  const accession:PoliticsAction={type:'succession',nationId,regnalName:regnalName.trim()},preview=inspect(accession);
   const action=(type:'uprising'|'independence'):PoliticsAction=>({type,nationId,provinceId:provinceId??''});
   return <section className="play-court" aria-label="君主与地方政治"><h3>王室与政局</h3>
     <p className="play-ruler">{ended?'政府已失去全部领土':ruler?<><strong>{regnalLabel(ruler)}</strong><span>{ruler.name} · 第 {ruler.order} 任君主</span></>:'本版暂无统治者记录'}</p>
     <p className="play-muted">自第 {c.originDay} 日开始记载。王号世数与国家任次分别累计，复用旧王号会接续它的世数。</p>
     <label className="play-regnal">继任者王号<input aria-label="继任者王号" maxLength={12} value={regnalName} onChange={e=>setRegnalName(e.target.value)} placeholder="例如：景明（不填世数）" disabled={busy||ended}/></label>
     <button disabled={busy||ended||!preview.valid} title={preview.reason} onClick={()=>act(accession)}>预览传位</button>
-    {province&&<><h4>{province.name} · 地方干预</h4><p className="play-muted">地方压力 {Math.round(c.unrest[province.id]?.pressure??0)} / 100</p><div className="play-row">{(['uprising','independence'] as const).map(type=>{const p=previewPolitics(run,action(type));return <button key={type} title={p.reason} disabled={busy||!p.valid} onClick={()=>act(action(type))}>{type==='uprising'?'预览地方起义':'预览宣布独立'}</button>;})}</div><small className="play-muted">{previewPolitics(run,action('independence')).reason}</small></>}
+    {province&&<><h4>{province.name} · 地方干预</h4><p className="play-muted">地方压力 {Math.round(c.unrest[province.id]?.pressure??0)} / 100</p><div className="play-row">{(['uprising','independence'] as const).map(type=>{const p=inspect(action(type));return <button key={type} title={p.reason} disabled={busy||!p.valid} onClick={()=>act(action(type))}>{type==='uprising'?'预览地方起义':'预览宣布独立'}</button>;})}</div><small className="play-muted">{inspect(action('independence')).reason}</small></>}
   </section>;
 }
 function HistoryEntry({entry:e,focused=false,locate}:{entry:HistoricalEntry;focused?:boolean;locate:(location:EventLocation)=>void}){

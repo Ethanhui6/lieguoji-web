@@ -1,0 +1,244 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-restoration19.spec.ts"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-restoration19.spec.ts",
+      "file": "fms-restoration19.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS v19: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47934,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T00:21:14.024Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiIzY2UzNTZjMWUzNmMwMDEwY2Y1MzNjNmE0OTgxODM0MDRiZjBhM2RiZDQ3YjAzMzM5NjUxYjEyMjExMDg5ZTU3IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi5YWL5qGR5o+Q5bC85LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IlhhbnRpbml1bSIsIm5hbWUiOiLlhYvmoZHmj5DlsLzkupoiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tMSIsIm5hbWUiOiLojaPpmLMiLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJFYXN0ZXJuRmFudGFzeSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1FYXN0ZXJuRmFudGFzeSIsImtleSI6IuiNo+mYsyIsIm5hbWUiOiLojaPpmLMiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tMiIsIm5hbWUiOiLlqIHlsJTnmbvotLnlsJTms70iLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJMZWZmYXRob3UiLCJtYXBDdWx0dXJlSWQiOiJtYXAtTGVmZmF0aG91Iiwia2V5IjoiV2VyZGVuZmVsc2VyIiwibmFtZSI6IuWogeWwlOeZu+i0ueWwlOazvSIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi0zIiwibmFtZSI6IuW+t+aLieenkeaWryIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ik9lY3plYSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1PZWN6ZWEiLCJrZXkiOiJEcmFjb3MiLCJuYW1lIjoi5b635ouJ56eR5pavIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTQiLCJuYW1lIjoi5ZCV6K635aChIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiV2VzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtV2VzdGVybkZhbnRhc3kiLCJrZXkiOiJMw7xuZWJ1cmciLCJuYW1lIjoi5ZCV6K635aChIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTUiLCJuYW1lIjoi5Y2i57Gz6K+65pavIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiV3Jpc3Rob3MiLCJtYXBDdWx0dXJlSWQiOiJtYXAtV3Jpc3Rob3MiLCJrZXkiOiJMdW1pbm9zIiwibmFtZSI6IuWNouexs+ivuuaWryIsIm9yaWdpbiI6Im5hdGl2ZSJ9fV0sImNoZWNrc3VtIjoiOTNiOTdmNGY2NmUwODk1NDFlMzhlOTYxZGU3M2U0MjI2ZGRjYmU5OWQ1YzM1M2ZmZjMxNjdmNTRjZDYxZDVjYiIsImVycm9ycyI6W10sImZhaWxlZCI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2421c7f532ada0143571-9b6810245f298e3c9df0",
+          "file": "fms-restoration19.spec.ts",
+          "line": 5,
+          "column": 1
+        },
+        {
+          "title": "FMS v19: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 46679,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T00:22:02.692Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiIzY2UzNTZjMWUzNmMwMDEwY2Y1MzNjNmE0OTgxODM0MDRiZjBhM2RiZDQ3YjAzMzM5NjUxYjEyMjExMDg5ZTU3IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi56eR6K+65rKD5YWLIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6Iktlcm5vd2VrIiwibmFtZSI6Iuenkeivuuayg+WFiyIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi0xIiwibmFtZSI6IueUsCIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6IkVhc3Rlcm5GYW50YXN5IiwibWFwQ3VsdHVyZUlkIjoibWFwLUVhc3Rlcm5GYW50YXN5Iiwia2V5Ijoi55SwIiwibmFtZSI6IueUsCIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi0yIiwibmFtZSI6Iui0ueiXj+iQqOebliIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6IkxlZmZhdGhvdSIsIm1hcEN1bHR1cmVJZCI6Im1hcC1MZWZmYXRob3UiLCJrZXkiOiJGw6l6ZW5zYWd1ZXQiLCJuYW1lIjoi6LS56JeP6JCo55uWIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTMiLCJuYW1lIjoi6Zi/5bCU5b63546bIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiT2VjemVhIiwibWFwQ3VsdHVyZUlkIjoibWFwLU9lY3plYSIsImtleSI6IkFsZGVybWFyIiwibmFtZSI6IumYv+WwlOW+t+eOmyIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi00IiwibmFtZSI6IuWQleiut+WgoSIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ildlc3Rlcm5GYW50YXN5IiwibWFwQ3VsdHVyZUlkIjoibWFwLVdlc3Rlcm5GYW50YXN5Iiwia2V5IjoiTMO8bmVidXJnIiwibmFtZSI6IuWQleiut+WgoSIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi01IiwibmFtZSI6IumYv+aWr+aJmOmHjOaBqSIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6IldyaXN0aG9zIiwibWFwQ3VsdHVyZUlkIjoibWFwLVdyaXN0aG9zIiwia2V5IjoiQXN0b3Jpb24iLCJuYW1lIjoi6Zi/5pav5omY6YeM5oGpIiwib3JpZ2luIjoibmF0aXZlIn19XSwiY2hlY2tzdW0iOiIyMDZlZWZjMGM3YTYzMDU1Zjg2NWZiNTNkZjVkODg3YWM2YWE4ZTE2MGRlODY1ZDZhNmRjODZiMWVlNzhlZGUwIiwiZXJyb3JzIjpbXSwiZmFpbGVkIjpbXX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2421c7f532ada0143571-c8fff2ff9fa1ad70f4c8",
+          "file": "fms-restoration19.spec.ts",
+          "line": 5,
+          "column": 1
+        },
+        {
+          "title": "FMS v19: choose original cultures, name before creation, actual Worker and persistent names",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52719,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T00:22:49.951Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "naming-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6Ik5vcm1hbCBkcmF3biBtYXAsIHNpeCBzZWxlY3RlZCBjdWx0dXJlcywgcmVhbCBwcm9kdWN0aW9uIFdvcmtlciBhbmQgZXhhY3QgSW5kZXhlZERCIHJlc3RvcmUuIEJyb3dzZXIgZW11bGF0aW9uLCBub3QgcGh5c2ljYWwgaVBob25lIG9yIG9yaWdpbmFsIHZpc3VhbCBlcXVpdmFsZW5jZS4iLCJlbmdpbmUiOiIzY2UzNTZjMWUzNmMwMDEwY2Y1MzNjNmE0OTgxODM0MDRiZjBhM2RiZDQ3YjAzMzM5NjUxYjEyMjExMDg5ZTU3IiwibmF0aW9ucyI6W3siaWQiOiJuLTAiLCJuYW1lIjoi5Z+D5aGe5YWL6KW/5LqaIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiQ2llc3R1bmR1IiwibWFwQ3VsdHVyZUlkIjoibWFwLUNpZXN0dW5kdSIsImtleSI6IkVzc2V4aWEiLCJuYW1lIjoi5Z+D5aGe5YWL6KW/5LqaIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTEiLCJuYW1lIjoi6bKB5Y2rIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiRWFzdGVybkZhbnRhc3kiLCJtYXBDdWx0dXJlSWQiOiJtYXAtRWFzdGVybkZhbnRhc3kiLCJrZXkiOiLpsoHljasiLCJuYW1lIjoi6bKB5Y2rIiwib3JpZ2luIjoibmF0aXZlIn19LHsiaWQiOiJuLTIiLCJuYW1lIjoi5aWl5byX5raFIiwiY3VsdHVyZSI6eyJiYXNlQ3VsdHVyZUlkIjoiTGVmZmF0aG91IiwibWFwQ3VsdHVyZUlkIjoibWFwLUxlZmZhdGhvdSIsImtleSI6IkF1dmVyZ25hdCIsIm5hbWUiOiLlpaXlvJfmtoUiLCJvcmlnaW4iOiJuYXRpdmUifX0seyJpZCI6Im4tMyIsIm5hbWUiOiLnj4DogLPloZ7npo/mlq8iLCJjdWx0dXJlIjp7ImJhc2VDdWx0dXJlSWQiOiJPZWN6ZWEiLCJtYXBDdWx0dXJlSWQiOiJtYXAtT2VjemVhIiwia2V5IjoiUGVyc2VwaG9zIiwibmFtZSI6IuePgOiAs+Whnuemj+aWryIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi00IiwibmFtZSI6IuWogeWwlOeZu+i0ueWwlOazvSIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6Ildlc3Rlcm5GYW50YXN5IiwibWFwQ3VsdHVyZUlkIjoibWFwLVdlc3Rlcm5GYW50YXN5Iiwia2V5IjoiV2VyZGVuZmVsc2VyIiwibmFtZSI6IuWogeWwlOeZu+i0ueWwlOazvSIsIm9yaWdpbiI6Im5hdGl2ZSJ9fSx7ImlkIjoibi01IiwibmFtZSI6IuW4leagvOiOseeJuSIsImN1bHR1cmUiOnsiYmFzZUN1bHR1cmVJZCI6IldyaXN0aG9zIiwibWFwQ3VsdHVyZUlkIjoibWFwLVdyaXN0aG9zIiwia2V5IjoiUGFnbGFpdCIsIm5hbWUiOiLluJXmoLzojrHnibkiLCJvcmlnaW4iOiJuYXRpdmUifX1dLCJjaGVja3N1bSI6ImM1OTkyNmIzNjBjZmQ4MDE4MzM3NWVjODQzYWZjYTIxOTQ2ZTg2YjBhY2M0OGQ3ZGJiNjIzMmExYjI1NWFlMWEiLCJlcnJvcnMiOltdLCJmYWlsZWQiOltdfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2421c7f532ada0143571-ecdc9f8d7bc9b5939d75",
+          "file": "fms-restoration19.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T00:21:13.591Z",
+    "duration": 149340.72999999998,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

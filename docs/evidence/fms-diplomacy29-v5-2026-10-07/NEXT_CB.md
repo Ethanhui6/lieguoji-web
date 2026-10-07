@@ -1,5 +1,7 @@
 # 后续宣战资格与AI恢复定位（尚未生产接入）
 
+> 2026-10-08续接：[宣战内核恢复](../fms-declaration-kernels-v5-2026-10-08/RECOVERY.md)已补候选/好感/关系副作用与时间戳初始化、月更外交点数；本页关于这些“未恢复”的判断保留为当时记录。CanConsider自身不含IsSuppressed，后者由EvaluateDeclaration另行调用。完整生产AI依然未接入。
+
 2026-10-07只读GameAssembly.dll，指纹同NATIVE_SETTINGS.md。本批只实现世界/国家开关、期限和月初/覆亡调度；下列恢复用于后续接续，禁止当作新增AI已经可玩。
 
 普通CB1登记在BuildCatalog668DA0第一个对象：Id1，键CasusBelli_TerritorialConquest，AllowedGoalTypes顺序[2,1,3,6]，IsDedicatedAnnexCB=false、AnnexThreshold=1，其余特殊门为false。目录实际ID顺序1,2,3,6,7,8,10,11,12,13,14,15,16；元数据4/5不等于此次目录登记。

@@ -4338,9 +4338,13 @@
               "docs/evidence/fms-diplomacy29-v5-2026-10-07/NEXT_CB.md",
               "docs/evidence/fms-diplomacy29-v5-2026-10-07/checks.json",
               "docs/evidence/fms-diplomacy29-v5-2026-10-07/unit-final.json",
-              "docs/evidence/fms-diplomacy29-v5-2026-10-07/browser.json"
+              "docs/evidence/fms-diplomacy29-v5-2026-10-07/browser.json",
+              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/RECOVERY.md",
+              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/DELIVERY.md",
+              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/checks.json",
+              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/unit-final.json"
             ],
-            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。"
+            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。"
           }
         ]
       },
@@ -4434,7 +4438,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "WEB-04-37继续普通CB资格/完整AI候选与好感时间戳、内战和附庸改宗生产适配；见NEXT_CB，不重做v29自动外交/期限/月初/同tick覆亡。之后WEB-03-06，再启动排队全项目审查。",
+    "nextRecoveryTarget": "Bind native data, complete CB catalog conditions/weights, native sea neighbor and relationship history; version/freeze before replacing web AI. Continue existing WEB-04-37, then WEB-03-06; new full audit remains queued.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -5041,7 +5045,7 @@
       "localUrl": "http://127.0.0.1:5214/?fms=1",
       "currentLocalHead": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "checkpointNote": "v29 source committed locally; later documentation-only checkpoints do not change the tested engine. Source/artifact hashes reverified after commit. Full restoration still incomplete.",
+      "checkpointNote": "Playable source remains 41af47b/v29. New declaration kernels are verified but not imported by current runtime; see nativeDeclarationKernels. Full restoration remains incomplete.",
       "head": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "soleWriter": "root",
       "nextBatch": [
@@ -5054,8 +5058,9 @@
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-07: production 5214 loopback only; protected v28 5212 retained.",
-      "previewUrlStatus": "Historical cloud preview URL only; this v28 build was not pushed or deployed there."
+      "localPortCheck": "2026-10-08: original 5214/5212 processes stopped; checked absent handles/listeners, reverified 43 immutable v29 artifacts and restarted 5214 only. v28 artifacts retained, 5212 offline.",
+      "previewUrlStatus": "Historical cloud preview only; local v29 and new standalone kernels have not been pushed or deployed there.",
+      "latestKernelSourceCommit": "c92839c8705d3daf61100ea99cc8a3e0cd867661"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6978,6 +6983,37 @@
         "Native maximum duration is global config; web stores it per independent world",
         "Real phone, original visual and full native parity not accepted"
       ]
+    },
+    "nativeDeclarationKernels": {
+      "date": "2026-10-07T16:23:32.387Z",
+      "status": "native_kernels_verified_not_production_integrated",
+      "task": "WEB-04-37",
+      "sourceCommit": "c92839c8705d3daf61100ea99cc8a3e0cd867661",
+      "evidence": [
+        "docs/evidence/fms-declaration-kernels-v5-2026-10-08/RECOVERY.md",
+        "docs/evidence/fms-declaration-kernels-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-declaration-kernels-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-declaration-kernels-v5-2026-10-08/unit-final.json"
+      ],
+      "checks": {
+        "new": 66,
+        "totalRelated": 336
+      },
+      "currentPlayableVersion": 29,
+      "sourceFiles": [
+        "src/fms/play/native-war/affinity.ts",
+        "src/fms/play/native-war/affinity.test.ts",
+        "src/fms/play/native-war/declaration-candidates.ts",
+        "src/fms/play/native-war/declaration-candidates.test.ts",
+        "src/fms/play/native-war/declaration-choice.ts",
+        "src/fms/play/native-war/declaration-geography.ts",
+        "src/fms/play/native-war/declaration.ts",
+        "src/fms/play/native-war/declaration.test.ts",
+        "src/fms/play/native-war/diplomatic-relations.ts",
+        "src/fms/play/native-war/diplomatic-power.ts",
+        "src/fms/play/native-war/diplomatic-power.test.ts"
+      ],
+      "next": "Bind native data, complete CB catalog conditions/weights, native sea neighbor and relationship history; version/freeze before replacing web AI. Continue existing WEB-04-37, then WEB-03-06; new full audit remains queued."
     }
   }
 }

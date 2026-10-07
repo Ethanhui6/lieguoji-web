@@ -4760,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "muster21_verified_lifecycle_next",
+      "status": "life22_verified_family_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "8166a77",
+      "lastCommitted": "1224284",
       "cloudScope": "Local-only v21; main, existing cloud preview and all old local versions/stores preserved.",
-      "next": "v22限定生日/ISO月龄/人物展示：新局初始人物同一次技能流后抽年龄；旧副本和来源未闭合的新人物unknown。死亡、真实家族另接。",
+      "next": "保留v22生日月龄可玩，接原FindSuccessor/fallback选择纯核，再真实家族关系、自然死亡继承事务。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4815,10 +4815,10 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
       ],
-      "currentVersion": 21,
-      "currentEngine": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
+      "currentVersion": 22,
+      "currentEngine": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5194/?fms=1",
+      "localUrl": "http://127.0.0.1:5195/?fms=1",
       "currentLocalHead": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
       "sourceCommit": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
       "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
@@ -6098,7 +6098,7 @@
     },
     "nativeCalendarPrototype": {
       "date": "2026-10-07",
-      "status": "iso_birth_kernels_verified_not_integrated",
+      "status": "birthday_age_integrated_v22_candidate",
       "productionIntegrated": false,
       "unitTests": 87,
       "sourceParent": "8166a77",
@@ -6108,6 +6108,31 @@
         "docs/evidence/fms-muster21-v5-2026-10-07/iso-calendar-first.json"
       ],
       "next": "v22限定生日/ISO月龄/人物展示：新局初始人物同一次技能流后抽年龄；旧副本和来源未闭合的新人物unknown。死亡、真实家族另接。"
+    },
+    "life22Prototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 22,
+      "store": 24,
+      "database": "lieguoji-fms-life-v22",
+      "sourceParent": "1224284",
+      "engine": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
+      "localUrl": "http://127.0.0.1:5195/?fms=1",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "browserVerified": true,
+      "unitTests": 132,
+      "productionIntegrated": true,
+      "evidence": [
+        "docs/evidence/fms-life22-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/unit-first.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/browser.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/tested-artifact.json"
+      ]
     }
   }
 }

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "fingerprint": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
+  "files": [
+    {
+      "path": "src/fms/play/muster21-rules.ts",
+      "archive": "fms/play/muster21-rules.ts.source",
+      "sha256": "3f637b4ac8f89269464b7fd8fbff1d32dd9f7b20ad44e0ac633b69f2505d8a79"
+    },
+    {
+      "path": "src/fms/play/muster21-runtime.ts",
+      "archive": "fms/play/muster21-runtime.ts.source",
+      "sha256": "6750827a65586c57716e4a166bdc929721b121c730ec030e9c94c2d17d7629db"
+    },
+    {
+      "path": "src/fms/play/muster21-model.ts",
+      "archive": "fms/play/muster21-model.ts.source",
+      "sha256": "a7df493f7bf61fedecc95ec25c162e3f78cfefad54b5cc4c9b01ffca5ce733d0"
+    },
+    {
+      "path": "src/fms/play/muster21-session.ts",
+      "archive": "fms/play/muster21-session.ts.source",
+      "sha256": "f37ae65a0c3bea09ad8a526d6958e0483636316c2a9dbaf66747153a7fc8e8c3"
+    },
+    {
+      "path": "src/fms/play/muster21-storage.ts",
+      "archive": "fms/play/muster21-storage.ts.source",
+      "sha256": "0f59691ed1a7e5ae0398c2f21ce987832441c9bf89cde782391d0ee9af9e1a1e"
+    },
+    {
+      "path": "src/fms/play/muster21-stores.ts",
+      "archive": "fms/play/muster21-stores.ts.source",
+      "sha256": "d0a52964d04f1ccfb7e14e4e8c26c80f28b46acfdf225462eb27237bdf8eef7b"
+    },
+    {
+      "path": "src/fms/play/muster21-client.ts",
+      "archive": "fms/play/muster21-client.ts.source",
+      "sha256": "41915631313a1f684ef6a3fdaa99d4812df73ff205dd705b977ec15e88d95663"
+    },
+    {
+      "path": "src/fms/play/muster21/play.worker.ts",
+      "archive": "fms/play/muster21/play.worker.ts.source",
+      "sha256": "d633a2d0ab847c093ec2f8c1e9a0dd01dc854bba52e59713b1edf48abe4f4839"
+    },
+    {
+      "path": "src/fms/play/native-economy/emergency-muster.ts",
+      "archive": "fms/play/native-economy/emergency-muster.ts.source",
+      "sha256": "aab63a7212e3482428dc4a32cc3f53e391a6483b392111db9027c338eb48208c"
+    }
+  ]
+}

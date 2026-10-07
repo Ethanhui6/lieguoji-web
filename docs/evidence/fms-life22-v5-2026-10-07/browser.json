@@ -1,0 +1,245 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-life22.spec.ts",
+      "--workers=1"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-life22.spec.ts",
+      "file": "fms-life22.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "v22 normal drawing, birthday, real ISO month, abdication and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 67477,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T01:44:13.505Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "life-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiIzZjQ3MjJlNDlhY2M4OGZlNTYzYzQxZTRhMDFmNmM4YzE1MWIxZmQ5YWQyNjYwZmYyMmMzMWIyNTA0NTJmNGMwIiwiZGF5IjozMSwiY2FsZW5kYXIiOnsieWVhciI6MSwibW9udGgiOjIsImRheSI6MX0sIm9sZFBlcnNvbiI6MSwib2xkQmlydGhkYXkiOnsic291cmNlIjoibmF0aXZlLWZvdW5kaW5nIiwiYmlydGhUaW1lIjotMTgyNi4yNSwiYWdlIjo1MCwiaW5pdGlhbEFnZSI6NTAsInVwZGF0ZWRNb250aCI6MTN9LCJuZXdQZXJzb24iOjMsIm5ld0JpcnRoZGF5Ijp7InNvdXJjZSI6IndlYi1vYnNlcnZlZCIsImJpcnRoVGltZSI6bnVsbCwiYWdlIjpudWxsLCJpbml0aWFsQWdlIjpudWxsLCJ1cGRhdGVkTW9udGgiOm51bGx9LCJjaGVja3N1bSI6ImExYjVmZmVlOTM5NWEwNzEwODYwNThiOWU4NDVkMWUyYjFiYjc3ZWU3OTU0Njk0N2NjMTM1NGE5NmQ5YjRhNDAiLCJzY29wZSI6Ik5vcm1hbCBVSSwgcHJvZHVjdGlvbiBXb3JrZXIsIGVtdWxhdGlvbiBvbmx5OyBubyBwaHlzaWNhbCBpUGhvbmUgb3IgdmlzdWFsIGVxdWl2YWxlbmNlIGNsYWltLiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8dc13811c89bed4fa878-2422efd97241cd386076",
+          "file": "fms-life22.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "v22 normal drawing, birthday, real ISO month, abdication and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 37875,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T01:45:21.789Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "life-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiIzZjQ3MjJlNDlhY2M4OGZlNTYzYzQxZTRhMDFmNmM4YzE1MWIxZmQ5YWQyNjYwZmYyMmMzMWIyNTA0NTJmNGMwIiwiZGF5IjowLCJjYWxlbmRhciI6eyJ5ZWFyIjoxLCJtb250aCI6MSwiZGF5IjoxfSwib2xkUGVyc29uIjoxLCJvbGRCaXJ0aGRheSI6eyJzb3VyY2UiOiJuYXRpdmUtZm91bmRpbmciLCJiaXJ0aFRpbWUiOi0xNDYxLCJhZ2UiOjQwLCJpbml0aWFsQWdlIjo0MCwidXBkYXRlZE1vbnRoIjoxMn0sIm5ld1BlcnNvbiI6MywibmV3QmlydGhkYXkiOnsic291cmNlIjoid2ViLW9ic2VydmVkIiwiYmlydGhUaW1lIjpudWxsLCJhZ2UiOm51bGwsImluaXRpYWxBZ2UiOm51bGwsInVwZGF0ZWRNb250aCI6bnVsbH0sImNoZWNrc3VtIjoiYzMwNTIyYmFlMTQzOGI3YzRlOGZlZDQxZjhjZGQ2ZGM2YzQ0NGJmOGUyYjRkNWU2NzI1NjA5MGJhNTJjNDQ3YyIsInNjb3BlIjoiTm9ybWFsIFVJLCBwcm9kdWN0aW9uIFdvcmtlciwgZW11bGF0aW9uIG9ubHk7IG5vIHBoeXNpY2FsIGlQaG9uZSBvciB2aXN1YWwgZXF1aXZhbGVuY2UgY2xhaW0uIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8dc13811c89bed4fa878-09e15e3ffa165eba098a",
+          "file": "fms-life22.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "v22 normal drawing, birthday, real ISO month, abdication and exact restore",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet-chromium",
+              "projectName": "tablet-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 54692,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T01:46:00.495Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "life-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiIzZjQ3MjJlNDlhY2M4OGZlNTYzYzQxZTRhMDFmNmM4YzE1MWIxZmQ5YWQyNjYwZmYyMmMzMWIyNTA0NTJmNGMwIiwiZGF5IjowLCJjYWxlbmRhciI6eyJ5ZWFyIjoxLCJtb250aCI6MSwiZGF5IjoxfSwib2xkUGVyc29uIjoxLCJvbGRCaXJ0aGRheSI6eyJzb3VyY2UiOiJuYXRpdmUtZm91bmRpbmciLCJiaXJ0aFRpbWUiOi0xNjQzLjYyNSwiYWdlIjo0NSwiaW5pdGlhbEFnZSI6NDUsInVwZGF0ZWRNb250aCI6MTJ9LCJuZXdQZXJzb24iOjMsIm5ld0JpcnRoZGF5Ijp7InNvdXJjZSI6IndlYi1vYnNlcnZlZCIsImJpcnRoVGltZSI6bnVsbCwiYWdlIjpudWxsLCJpbml0aWFsQWdlIjpudWxsLCJ1cGRhdGVkTW9udGgiOm51bGx9LCJjaGVja3N1bSI6IjNkOTZiZTcwYWZiNGNjYjZjMjBjMTVjOTJhMTExZWJhYmEyYTI3ZDBlZmU1ZTExZWI3NzQ1YWYzMzhlZjU0ODUiLCJzY29wZSI6Ik5vcm1hbCBVSSwgcHJvZHVjdGlvbiBXb3JrZXIsIGVtdWxhdGlvbiBvbmx5OyBubyBwaHlzaWNhbCBpUGhvbmUgb3IgdmlzdWFsIGVxdWl2YWxlbmNlIGNsYWltLiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8dc13811c89bed4fa878-7656e1bea5023edba5cc",
+          "file": "fms-life22.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T01:44:13.057Z",
+    "duration": 162464.195,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -92,3 +92,5 @@
 .play-culture-choices label { display:flex; align-items:center; justify-content:flex-start; gap:8px; min-height:44px; margin:0; }
 .play-culture-choices input { flex:0 0 auto; width:18px; height:18px; }
 .play-destiny{margin-block:16px;padding-block:12px;border-block:1px solid #8a927355}.play-destiny h3{display:flex;justify-content:space-between;gap:12px}.play-destiny h3 span{font-variant-numeric:tabular-nums;color:#596c42}.play-destiny summary{min-height:44px;padding:12px 0;cursor:pointer}.play-destiny small{display:block;line-height:1.6;margin-top:10px;color:#53634a}
+
+.play-person-life{padding-block:5px 10px;border-block:1px solid #8a927344;margin-block:10px}.play-person-life .play-stats{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:10px;margin-block:6px}.play-person-life .play-stats dd{font-size:15px;overflow-wrap:anywhere}.play-person-life p,.play-person-life small{font-size:11px;color:#586550;margin:4px 0}

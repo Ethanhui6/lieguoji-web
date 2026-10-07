@@ -1,0 +1,74 @@
+{
+  "scope": "Normal UI and production Worker at isolated 5205; Chromium desktop/mobile/tablet emulation only",
+  "stats": {
+    "startTime": "2026-10-07T11:16:09.914Z",
+    "duration": 170434.588,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "errors": [],
+  "tests": [
+    {
+      "title": "v26 real UI retains court succession, native muster preview and searchable history across reload",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 52966,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "ui-closure",
+              "contentType": "application/json",
+              "body": "eyJlbmdpbmUiOiI2ZmE1MjliODM0Y2VhMzNlY2JhZjUzZWJkZWI0ZTFiYjNmMGI1ZTg3ZDJlN2I2NzA3ZTI2OTM0Zjc3YWIzY2MxIiwibmF0aW9uIjoibi0wIiwib2xkSWQiOjEsIm5ld0lkIjo1LCJuZXdGb3JjZXMiOlsiZm9yY2UtNDAiLCJmb3JjZS00MSJdLCJjaGVja3N1bSI6IjYyOGQ5Zjk3NGQ3ZWI1Njc5YTczMjJjM2E0Y2M0NDBiNmExMzM5M2QxNDZiNTA0Mzg5ZTQxZDliNGMyYWUzYzIiLCJzY29wZSI6Ik5vcm1hbCBVSSwgcmVhbCBXb3JrZXIgYW5kIEluZGV4ZWREQi4gQ2hyb21pdW0gZW11bGF0aW9uLCBub3QgYSBwaHlzaWNhbCBpUGhvbmUgb3Igb3JpZ2luYWwgdmlzdWFsLWVxdWl2YWxlbmNlIGFjY2VwdGFuY2UuIn0="
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "v26 real UI retains court succession, native muster preview and searchable history across reload",
+      "project": "mobile-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 51935,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "ui-closure",
+              "contentType": "application/json",
+              "body": "eyJlbmdpbmUiOiI2ZmE1MjliODM0Y2VhMzNlY2JhZjUzZWJkZWI0ZTFiYjNmMGI1ZTg3ZDJlN2I2NzA3ZTI2OTM0Zjc3YWIzY2MxIiwibmF0aW9uIjoibi0wIiwib2xkSWQiOjEsIm5ld0lkIjo0LCJuZXdGb3JjZXMiOlsiZm9yY2UtNDEiLCJmb3JjZS00MiJdLCJjaGVja3N1bSI6ImY0MGExNWYwMTNmYWUxN2EzYWQyODhiYTJhYjZhOWFhYTQzYjk3ZTExYzdkZjdjMDNhZTNhMWNiYzU2MWZlYTkiLCJzY29wZSI6Ik5vcm1hbCBVSSwgcmVhbCBXb3JrZXIgYW5kIEluZGV4ZWREQi4gQ2hyb21pdW0gZW11bGF0aW9uLCBub3QgYSBwaHlzaWNhbCBpUGhvbmUgb3Igb3JpZ2luYWwgdmlzdWFsLWVxdWl2YWxlbmNlIGFjY2VwdGFuY2UuIn0="
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "v26 real UI retains court succession, native muster preview and searchable history across reload",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 63366,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "ui-closure",
+              "contentType": "application/json",
+              "body": "eyJlbmdpbmUiOiI2ZmE1MjliODM0Y2VhMzNlY2JhZjUzZWJkZWI0ZTFiYjNmMGI1ZTg3ZDJlN2I2NzA3ZTI2OTM0Zjc3YWIzY2MxIiwibmF0aW9uIjoibi0wIiwib2xkSWQiOjEsIm5ld0lkIjo2LCJuZXdGb3JjZXMiOlsiZm9yY2UtNDEiLCJmb3JjZS00MiJdLCJjaGVja3N1bSI6ImIwYTYwMzZmN2E3M2RmMzM1YjFiYTZlYjg2MjVhMzg4ZWJkNTgyZTY3OGE0YjQyZGNkNmQyMjE4YzVlYzQzYjgiLCJzY29wZSI6Ik5vcm1hbCBVSSwgcmVhbCBXb3JrZXIgYW5kIEluZGV4ZWREQi4gQ2hyb21pdW0gZW11bGF0aW9uLCBub3QgYSBwaHlzaWNhbCBpUGhvbmUgb3Igb3JpZ2luYWwgdmlzdWFsLWVxdWl2YWxlbmNlIGFjY2VwdGFuY2UuIn0="
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

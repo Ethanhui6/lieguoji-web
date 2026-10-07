@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-07",
+  "parent": "cfc847c",
+  "scope": "Affected checks; not all historical tests or physical-device acceptance",
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit": 0
+  },
+  "lint": {
+    "command": "npm run lint",
+    "exit": 0
+  },
+  "unit": {
+    "command": "npx vitest run src/fms/play/native-war/score.test.ts src/fms/play/native-war/weariness.test.ts src/fms/play/war26.test.ts src/fms/play/war26-client.test.ts",
+    "exit": 0,
+    "files": 4,
+    "passed": 78,
+    "newKernelTests": 35,
+    "existingVersion26Tests": 43
+  },
+  "build": {
+    "command": "npm run build",
+    "exit": 0,
+    "artifacts": 43,
+    "warnings": [
+      "App and Worker exceed 500 kB; not a new performance pass"
+    ]
+  },
+  "ui": {
+    "report": "browser-ui.json",
+    "passed": 3,
+    "retries": 0
+  },
+  "compatibility": {
+    "fmsWar26Fingerprint": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
+    "oldRulesChanged": false,
+    "storageSchemaChanged": false
+  },
+  "release": {
+    "pushed": false,
+    "cloudUpdated": false,
+    "physicalDeviceAccepted": false,
+    "userVisualAccepted": false
+  },
+  "policyTests": {
+    "command": "node --test scripts/release-policy.test.mjs scripts/check-v5-plan.test.mjs",
+    "passed": 39,
+    "exit": 0
+  },
+  "planCheck": {
+    "command": "npm run plan:check",
+    "exit": 0,
+    "currentPhase": "WEB-PH04",
+    "workItems": 57
+  },
+  "existingBrowserRegression": {
+    "report": "browser-regression.json",
+    "passed": 6,
+    "retries": 0
+  },
+  "totalBrowserCases": 9
+}

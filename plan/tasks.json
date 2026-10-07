@@ -4290,9 +4290,15 @@
               "docs/evidence/fms-war26-v5-2026-10-07/unit-final.json",
               "docs/evidence/fms-war26-v5-2026-10-07/tested-artifact.json",
               "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md",
-              "docs/evidence/fms-war26-v5-2026-10-07/NEXT_WAR_RECOVERY.md"
+              "docs/evidence/fms-war26-v5-2026-10-07/NEXT_WAR_RECOVERY.md",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/DELIVERY.md",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-ui.json",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-regression.json"
             ],
-            "progressScope": "v26固定连片目标内核、实际陆海军目标推进、目标定位与独立保存已本地验证；CB/战争分/厌战/和约未接，完整WEB-04-37未完成。"
+            "progressScope": "v26固定连片目标与陆海军推进已本地验证；本批修复v26军事/传位/永久史书的UI回退，三尺寸真实确认/取消/保存恢复通过。原战争分/目标进度/厌战35项内核测试通过但未导入生产；完整CB/战损账/和约及WEB-04-37仍未完成。"
           }
         ]
       },
@@ -4864,11 +4870,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "v26 local target slice verified and committed",
+      "status": "v26 UI closure repaired; tested native war kernels not yet integrated",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "776eb7a26cda818b7fc09a06fe119eca173c359b",
       "cloudScope": "Local-only v26; prior bounded preview grant not extended; main and old saves preserved.",
-      "next": "WEB-04-37完整战争V2后续；再WEB-03-06。",
+      "next": "WEB-04-37：冻结v26，真实战损/快照与自动结束事务接新版本；接WEB-03-06。不要重复拆解已有score/weariness/peace主链。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
       "requiredUserAction": null,
       "evidence": [
@@ -4951,7 +4957,10 @@
         "docs/evidence/fms-war26-v5-2026-10-07/browser-final.json",
         "docs/evidence/fms-war26-v5-2026-10-07/unit-final.json",
         "docs/evidence/fms-war26-v5-2026-10-07/tested-artifact.json",
-        "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md"
+        "docs/evidence/fms-war26-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
       ],
       "currentVersion": 26,
       "currentEngine": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
@@ -4966,7 +4975,8 @@
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "v26固定连片目标内核、实际陆海军目标推进、目标定位与独立保存已本地验证；CB/战争分/厌战/和约未接，完整WEB-04-37未完成。"
+      "note": "v26固定连片目标内核、实际陆海军目标推进、目标定位与独立保存已本地验证；CB/战争分/厌战/和约未接，完整WEB-04-37未完成。",
+      "sourceParent": "cfc847c"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6615,6 +6625,39 @@
       ],
       "productionVersionUnchanged": 26,
       "newTestsRun": false
+    },
+    "war26UiRepair": {
+      "date": "2026-10-07",
+      "parentCommit": "cfc847c",
+      "status": "local_ui_verified",
+      "preview": "http://127.0.0.1:5205/?fms=1",
+      "buildDirectory": ".autopilot/war26-ui-preview/dist",
+      "engine": "6fa529b834cea33ecbaf53ebdeb4e1bb3f0b5e87d2e7b6707e26934f77ab3cc1",
+      "evidence": [
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/browser-ui.json",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/tested-artifact.json"
+      ],
+      "oldRulesOrStoresChanged": false,
+      "physicalDeviceAccepted": false,
+      "userVisualAccepted": false,
+      "browserCases": 9,
+      "browserRetries": 0
+    },
+    "nativeWarKernels": {
+      "date": "2026-10-07",
+      "status": "tested_pure_kernels_not_integrated",
+      "score": "src/fms/play/native-war/score.ts",
+      "weariness": "src/fms/play/native-war/weariness.ts",
+      "newTests": 35,
+      "productionIntegration": false,
+      "peace": "Read-only recovery; effect execution, outcomes and automatic end dependencies remain",
+      "evidence": [
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
+        "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
+      ]
     }
   }
 }

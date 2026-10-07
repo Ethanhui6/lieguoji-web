@@ -4290,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "接原死亡事务：独立角色归档/Round核已59项通过；继续死亡统计/LeaderDeathEvent与族长交接参数，再冻结v23接独立生产生命周期。不重复家族/日期恢复。",
+    "nextRecoveryTarget": "实现已恢复Republic/Theocracy/Tribal三个handler外壳，下一只读窄批三个紧急selector890600/890CD0/891210及后续评分/选举依赖；随后v24独立死亡/官职清理/真实继承事务。既有v23可玩，禁止混写其schema或假称自然死亡已接。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_death_roles_next",
+      "status": "dynasty23_playable_death_kernels_verified",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
+      "lastCommitted": "47612a8",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "接原死亡事务：独立角色归档/Round核已59项通过；继续死亡统计/LeaderDeathEvent与族长交接参数，再冻结v23接独立生产生命周期。不重复家族/日期恢复。",
+      "next": "实现已恢复Republic/Theocracy/Tribal三个handler外壳，下一只读窄批三个紧急selector890600/890CD0/891210及后续评分/选举依赖；随后v24独立死亡/官职清理/真实继承事务。既有v23可玩，禁止混写其schema或假称自然死亡已接。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4838,7 +4838,7 @@
       "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5197/?fms=1",
-      "currentLocalHead": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
+      "currentLocalHead": "47612a8",
       "sourceCommit": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
       "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
     },
@@ -6252,7 +6252,26 @@
       ],
       "lint": true,
       "typecheck": true,
-      "readOnlyAudit": "No demonstrated deviation; OfficeId metadata and runtime-type ordering checked."
+      "readOnlyAudit": "No demonstrated deviation; OfficeId metadata and runtime-type ordering checked.",
+      "sourceCommit": "47612a8"
+    },
+    "naturalDeathKernels": {
+      "date": "2026-10-07",
+      "status": "local_verified_not_integrated",
+      "sourceParent": "47612a8",
+      "productionIntegrated": false,
+      "unitTests": 145,
+      "testFiles": 7,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/NATURAL_DEATH_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/STATE_SUCCESSION_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/death-kernels-first.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/death-kernels-final.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/death-kernels-verified.json"
+      ],
+      "lint": true,
+      "typecheck": true,
+      "scope": "Natural death accounting/event constructor, patriarch handoff and state succession dispatch; candidate handlers and production death remain separate."
     }
   }
 }

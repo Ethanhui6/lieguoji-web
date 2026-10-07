@@ -1,3 +1,18 @@
+# 当前续接：v33附庸自主独立与内部战争可玩，继续完整战争V2
+
+2026-10-08；源码 `7de0ee1f697db5617c15d6357eacab051ca208d4`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的全项目研究/前10差距。无新的必要用户决策阻塞。
+
+- 已接：原作至少12年、季度触发与实力/崩溃/国运/君主特性判断；真实CB16内部战争，开战不立即独立；正常36月和守土条件、实际ReleaseVassal效果与失败分类、平叛国运。政治/战事显示原因、进度、结果及预览开关；Worker/UI/Store35独立。非所有内战与联盟体系完成。
+- [交付和依据](evidence/fms-rebellion33-v5-2026-10-08/DELIVERY.md)、[检查](evidence/fms-rebellion33-v5-2026-10-08/checks.json)。49项不同新版相关检查、44旧v32回归、全仓types/lint、39发布/计划保护及生产构建/43产物审查通过；生产Chromium实际取消/确认、停用不补算、反叛战争、独立结算、保存刷新通过，无pageerror/HTTP失败。
+- [本机试玩v33](http://127.0.0.1:5222/?fms=1)，仅127.0.0.1；产物`.autopilot/rebellion33-preview/dist`，PID20964；engine `d438cd78271cd0e8683ddfb106b514e025bdf13cac9607e7c712d59e264150b4`。旧v32/5220原43产物hash保留，早期预览不替换；不同端口旧档不自动搬运，用户origin未注入测试档。
+- 浏览器从合成12年/36月边界档开始推进实际Worker，非自然游玩多年证明。固定方形大陆用于外交回归，不是地图自然度对照；428×926为桌面仿真，原作同步视觉/iPhone仍待验。初次测试字段/类型问题已修；首次生产监听前访问失败，待真实监听后再验。构建大包警告仍在，不声称手机性能达标。
+- 原作单一auto-rebel开关控制贡金/独立，网页当前两个明确开关；网页PRNG/军力尺度及财政30日月结保持，不称全调度等价。完整宗主/联盟参战与退盟、其他内战/改宗、排行缓存仍缺；军力0.5系数的真实消费者待核。
+- 下一批：Continue WEB-04-37 from playable v33: complete lord/alliance war participation and shared-alliance departure, other internal wars/conversion, ranking/cache and full diplomacy schedule. Reuse integrated native rebellion/CB16/ReleaseVassal/Worker/Store35, preserve old v32 source 61a03ed and its saves. Verify real army-cap consumer before inventing enforcement. Then WEB-03-06 and queued full audit; no cloud scope expansion.
+- 无push/Pages/main或发布门变化。不要重复贡金/本批反叛恢复，不以本批检查标记完整WEB-04-37、真机或原作视觉通过。
+- 额外实际普通入口：空白海洋→原作地形工具生成/确认/保存→6国60城→推进1日→保存刷新恢复通过，无测试存档注入。[开局截图](evidence/fms-rebellion33-v5-2026-10-08/production-newgame.png)。初次空海输入与第二次脚本按钮定位失败均已保留；产品代码未因脚本错误改变。Codex打开请求为queued，不声称标签已显示。
+
+---
+
 # 当前续接：v32年度贡金可玩，继续完整战争V2
 
 2026-10-08；源码 `61a03ed1a2fbc3f508365d63813f89f58a202e8f`；根唯一写入。WEB-04-37仍进行，接着WEB-03-06，最后排队的全项目审查/前10差距。没有新的必要用户决策阻塞。

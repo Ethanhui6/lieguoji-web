@@ -1,0 +1,195 @@
+{
+  "date": "2026-10-08",
+  "originalPath": "D:/steam/steamapps/common/FantasyMapSimulator/GameAssembly.dll",
+  "binarySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "format": "Windows PE/Unity IL2CPP; scoped static reading, not ELF/DWARF or original runtime observation",
+  "versionLock": "Exact installed binary hash; public Steam version not inferred",
+  "methods": [
+    {
+      "name": "StateInfoUI$$ForceVassalRebellion",
+      "rva": "4CC7C0",
+      "bytes": 240,
+      "sha256": "63ae5b9adbe09986cf534d941b5f39b35141e888dbec9ae1193ebf5cbc478434"
+    },
+    {
+      "name": "VassalManager$$TriggerVassalRebellion",
+      "rva": "658270",
+      "bytes": 960,
+      "sha256": "ed12b9aa0d736dcd22337909ebc32d11830a0d51cd9df2a89b7eaae9272bf580"
+    },
+    {
+      "name": "RebellionReasonGenerator$$GenerateRebellionReason",
+      "rva": "64A3A0",
+      "bytes": 2400,
+      "sha256": "36cace877243413662fe834336e6fbbfc422adba44132440ea6d53382896f60c"
+    },
+    {
+      "name": "CasusBelliServiceV2$$BuildInternalWarDeclaration",
+      "rva": "669820",
+      "bytes": 416,
+      "sha256": "12c34f66f5939582cf127f7437ab1565b15f3c973f587ddac833f9c92d91af5e"
+    },
+    {
+      "name": "IndependenceEffectV2$$Apply",
+      "rva": "66BEE0",
+      "bytes": 448,
+      "sha256": "18d11989f814b792709cbb974adbfda8d343f3fbad10770c38c11c49aa9350ac"
+    },
+    {
+      "name": "FantasyWorld.CharacterSystem.Character$$GetRebellionResistanceModifier",
+      "rva": "83C200",
+      "bytes": 304,
+      "sha256": "b270f9f04299b65ff37301b361464130c011e142c9d9959661d570219b425c57"
+    },
+    {
+      "name": "PeaceResolverV2$$BuildInternalSettlementPlan",
+      "rva": "66C750",
+      "bytes": 544,
+      "sha256": "18f4ac1ac17c5eb127464c07f3fe5e26f1c3975f98f33403cdc64e616f3b4444"
+    },
+    {
+      "name": "PeaceResolverV2$$BuildInternalEffect",
+      "rva": "66C610",
+      "bytes": 320,
+      "sha256": "bf3455d30adaa768f2054ed79bb11ceb838de26503dad73adfbc016d69566925"
+    },
+    {
+      "name": "PeaceResolverV2$$ClassifyOutcomesInternal",
+      "rva": "66D130",
+      "bytes": 784,
+      "sha256": "386381aa82b582eb673c048c09b70647a17adb4e31b0d68dada70800eb571294"
+    },
+    {
+      "name": "PeaceResolverV2$$ClassifyStateInternal",
+      "rva": "66DD70",
+      "bytes": 480,
+      "sha256": "57c8d4c03d387155a296f824263dbbb5dc1558faa63e9d973b8b668b2bad8504"
+    },
+    {
+      "name": "PeaceResolverV2$$RebelPrevailed",
+      "rva": "671120",
+      "bytes": 544,
+      "sha256": "fe48717a74a162328f3422f31c5e743ed4441c92a0fc6b5007580cf053007e28"
+    },
+    {
+      "name": "WarManagerV2$$StartWar",
+      "rva": "687880",
+      "bytes": 3856,
+      "sha256": "c897fc0f9ae7a13db0b4057a1cd9f2d1d586bf362e4fa852a590232b6d8af426"
+    },
+    {
+      "name": "WarManagerV2$$EndWar",
+      "rva": "6848F0",
+      "bytes": 2256,
+      "sha256": "762433f7ff8440cd3c3875c771328047bfaa4778d896c41168e1703e3b505d66"
+    },
+    {
+      "name": "PeaceResolverV2.<>c__DisplayClass7_0$$<ClassifyStateInternal>b__0",
+      "rva": "673E80",
+      "bytes": 112,
+      "sha256": "9b47ac40ca04cf323d5fd164d658f87cb04fb305ae97a40adb9a2c2e018cf6a2"
+    },
+    {
+      "name": "ReleaseVassalEffectV2$$get_SourceGoalType",
+      "rva": "66C130",
+      "bytes": 16,
+      "sha256": "eaa38aa9bd2b943e2d5957de87122b75728f3437eb9ff9099ccd657fd35e48af"
+    },
+    {
+      "name": "ReleaseVassalEffectV2$$Apply",
+      "rva": "671DD0",
+      "bytes": 672,
+      "sha256": "8bbf41b3ef1cca3ad4d403e4415bcba253cea1c5621de02c49b65bdfd92d3906"
+    },
+    {
+      "name": "WarLifecycleEffectServiceV2$$ApplyWarStarted",
+      "rva": "6832D0",
+      "bytes": 896,
+      "sha256": "2b85d21abc339444cf392a3633f0307423d55affc29304e80b84bb243036a330"
+    },
+    {
+      "name": "WarLifecycleEffectServiceV2$$ApplyWarEnded",
+      "rva": "682930",
+      "bytes": 2464,
+      "sha256": "b74b180d92488ae0004b8df55e6bc4ebf8a2ff08abf719857bf2e74098c9696a"
+    },
+    {
+      "name": "WarSideBuilderV2$$BuildInternal",
+      "rva": "68F850",
+      "bytes": 848,
+      "sha256": "461cae730f94f4b8fb902788011113d851dcec87b94edf8830e342d14d884091"
+    },
+    {
+      "name": "State.<>c$$<TryRollDestinyAfterCivilWarSuppression>b__169_1",
+      "rva": "6737F0",
+      "bytes": 16,
+      "sha256": "27c99c5ca0e77a06d335f9108e63c91503062a2bae41036af3d79d4d2289f767"
+    },
+    {
+      "name": "State.<>c$$<TryRollDestinyAfterCivilWarSuppression>b__169_2",
+      "rva": "6737F0",
+      "bytes": 16,
+      "sha256": "27c99c5ca0e77a06d335f9108e63c91503062a2bae41036af3d79d4d2289f767"
+    },
+    {
+      "name": "State$$TryRollDestinyAfterCivilWarSuppression",
+      "rva": "5DABF0",
+      "bytes": 2336,
+      "sha256": "90d9558e7b0176edcf9dc0b0b293995c0b0bc22c4f8ac2ccd631beeece885ffa"
+    },
+    {
+      "name": "State$$<TryRollDestinyAfterCivilWarSuppression>b__169_0",
+      "rva": "5DBE50",
+      "bytes": 48,
+      "sha256": "d15ad193fb0b93f1a31fe024a49350eb6be233815be306f2d6fa716bc5b1f9eb"
+    },
+    {
+      "name": "WarTargetScopeV2$$.ctor",
+      "rva": "68FDD0",
+      "bytes": 144,
+      "sha256": "c5c1e0e114b5af368b2105bdc1869a03ed6ddeeb72f1c6a8b99875227e513b88"
+    },
+    {
+      "name": "WarGoalInstanceV2$$.ctor",
+      "rva": "681D30",
+      "bytes": 224,
+      "sha256": "b37c371a88aeaf96beaf7900b18f2ec537897cf4a2d6e2f90406a9b756add558"
+    },
+    {
+      "name": "State$$UpdateArmy",
+      "rva": "5DBFE0",
+      "bytes": 4080,
+      "sha256": "f7f69d03fba564734fc93efbeff7f9ce7480a5b418f3bf58e2aa62537838ce26"
+    },
+    {
+      "name": "State$$UpdateRegularArmyRecruitment",
+      "rva": "5DF980",
+      "bytes": 1216,
+      "sha256": "52542ad97a41fe0ea87e04e6ac8f503c3a0725b87a2352d6e280457f49f9464b"
+    },
+    {
+      "name": "State$$CheckTooMuchArmy",
+      "rva": "5C1B20",
+      "bytes": 720,
+      "sha256": "eb379d462fac84248adbef8f09fe799e8e585921c0c3abfeda1e071c151bbed9"
+    },
+    {
+      "name": "VassalManager$$Update",
+      "rva": "658A50",
+      "bytes": 1904,
+      "sha256": "f2d5f66c2aa7b436f745053d3cee446c2cd0956a5dfe35f35eddb4801cc32219"
+    },
+    {
+      "name": "VassalManager$$IsVassalAtWarWithOverlord",
+      "rva": "6573B0",
+      "bytes": 256,
+      "sha256": "6637f069535a19e5908ab867f3893142218ce528976ad1a20b480ba713514fdf"
+    },
+    {
+      "name": "VassalManager$$ShouldRebelAgainstOverlord",
+      "rva": "6581B0",
+      "bytes": 192,
+      "sha256": "7d47625074f7df898953f47d73a257c87e32b0beeaba892228fe3671de191b70"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/war33.test.ts (11 tests | 1 failed) 7285ms
+   × real session crosses assigned quarter date into a CB16 internal war without immediate independence 127ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/war33.test.ts > real session crosses assigned quarter date into a CB16 internal war without immediate independence
+TypeError: Cannot read properties of undefined (reading 'some')
+ ❯ src/fms/play/war33.test.ts:22:436
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 18 passed (19)
+   Start at  04:20:24
+   Duration  11.72s (tests 62%, transform 29%, import 8%)
+
+  Transform  transforming modules took 3.46s · 29% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

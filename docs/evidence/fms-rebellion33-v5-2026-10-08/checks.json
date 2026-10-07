@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "7de0ee1f697db5617c15d6357eacab051ca208d4",
+  "engine": "d438cd78271cd0e8683ddfb106b514e025bdf13cac9607e7c712d59e264150b4",
+  "tests": {
+    "currentVersion": {
+      "distinctPassed": 49,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": [
+        "war33-check-final.log.txt",
+        "client-final.log.txt"
+      ],
+      "note": "48 final batch includes 23 client tests; final client run has 24 tests. Unique total 49, not sum of executions."
+    },
+    "oldV32": {
+      "passed": 44,
+      "evidence": "war33-check2.log.txt",
+      "note": "Same-turn 91-test batch before last v33 validation changes; frozen v32 source unchanged."
+    },
+    "fullTypecheck": "passed",
+    "fullLint": "passed",
+    "releaseAndPlanProtection": {
+      "passed": 39,
+      "failed": 0
+    },
+    "planCheck": "passed after task update: 61 tasks,36 PH,144 legacy work items; V5 8 phases/57 work items, active WEB-PH04"
+  },
+  "production": {
+    "build": "passed",
+    "artifactCount": 43,
+    "privacyAudit": "passed unchanged check-dist rules with only artifact-root redirected",
+    "browser": "browser-production.json",
+    "oldV32ArtifactHashes": 43,
+    "fmsAppBytes": 2253802,
+    "chunkWarningRemains": true,
+    "configNativeExtensionWarningRemains": true,
+    "previewPid": 20964,
+    "localUrl": "http://127.0.0.1:5222/?fms=1",
+    "browserFinalVideo": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-rebellion33-v5-2026-10-08\\video\\page@d4f5aeff23021c66301e9fd34c24edce.webm",
+    "newGameBrowser": "browser-newgame.json",
+    "codexOpenResult": "queued, not claimed visible"
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "desktopPortraitOnly": true,
+    "originalVisualEquivalent": false,
+    "realIPhone": false,
+    "completeWEB0437": false,
+    "published": false
+  },
+  "failures": "DELIVERY.md"
+}

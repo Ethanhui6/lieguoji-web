@@ -1,0 +1,16 @@
+src/fms/play/FmsGame.tsx(291,262): error TS2345: Argument of type 'War33Run | War32Run' is not assignable to parameter of type 'never'.
+  The intersection 'Omit<War29Run, "version" | "engine" | "rules" | "nativeWars"> & { version: 33; rules: "fms-war-32"; engine: string; diplomaticGeography: DiplomaticGeography; ... 4 more ...; nativeWars: War33Wars; } & Omit<...> & { ...; }' was reduced to 'never' because property 'version' has conflicting types in some constituents.
+    Type 'War33Run' is not assignable to type 'never'.
+src/fms/play/FmsGame.tsx(294,163): error TS2345: Argument of type 'War33Run | War31Run | War32Run' is not assignable to parameter of type 'Pick<War31Run, "vassals">'.
+  Type 'War33Run' is not assignable to type 'Pick<War31Run, "vassals">'.
+    The types of 'vassals.records' are incompatible between these types.
+      Type 'Vassal33[]' is not assignable to type 'Vassal31[]'.
+        Type 'Vassal33' is not assignable to type 'Vassal31'.
+          Types of property 'endReason' are incompatible.
+            Type '"independence" | "released" | "overlord-destroyed" | "vassal-destroyed" | null' is not assignable to type '"released" | "overlord-destroyed" | "vassal-destroyed" | null'.
+              Type '"independence"' is not assignable to type '"released" | "overlord-destroyed" | "vassal-destroyed" | null'.
+src/fms/play/FmsGame.tsx(295,250): error TS2345: Argument of type 'War33Run | War32Run' is not assignable to parameter of type 'War32Run'.
+  Type 'War33Run' is not assignable to type 'War32Run'.
+    Type 'War33Run' is not assignable to type '{ version: 32; rules: "fms-war-32"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy32; vassals: Vassals32; tribute: Tribute32; }'.
+      Types of property 'version' are incompatible.
+        Type '33' is not assignable to type '32'.

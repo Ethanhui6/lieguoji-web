@@ -1,0 +1,54 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 1298 modules transformed.
+rendering chunks...
+computing gzip size...
+.autopilot/rebellion33-preview/dist/index.html                                       0.62 kB │ gzip:   0.47 kB
+.autopilot/rebellion33-preview/dist/build.json                                      13.35 kB │ gzip:   2.68 kB
+.autopilot/rebellion33-preview/dist/assets/biome.worker-DO2s7HoV.js                 15.88 kB
+.autopilot/rebellion33-preview/dist/assets/coast.worker-2MXmECyk.js                 19.34 kB
+.autopilot/rebellion33-preview/dist/assets/seed-terrain.worker-Dlqs0yuM.js          34.69 kB
+.autopilot/rebellion33-preview/dist/assets/terrain.worker-DaY7RVPz.js               49.49 kB
+.autopilot/rebellion33-preview/dist/assets/replay.worker-Dvt2kBgS.js                86.98 kB
+.autopilot/rebellion33-preview/dist/assets/sim.worker-CLe8Zpf3.js                   91.68 kB
+.autopilot/rebellion33-preview/dist/assets/terrain-import.worker-B9lRjsio.js       162.20 kB
+.autopilot/rebellion33-preview/dist/assets/worker-pjB4IGPF.js                      223.76 kB
+.autopilot/rebellion33-preview/dist/assets/atlas.worker-D_ZIKkck.js                409.81 kB
+.autopilot/rebellion33-preview/dist/assets/battle-sword-BXcDEFcj.png               482.10 kB
+.autopilot/rebellion33-preview/dist/assets/play.worker-D9Ui_qeL.js               2,460.90 kB
+.autopilot/rebellion33-preview/dist/assets/App-B-TSmWiq.css                          9.57 kB │ gzip:   1.97 kB
+.autopilot/rebellion33-preview/dist/assets/CountryStudio-Cn5n2Zb4.css               13.29 kB │ gzip:   3.08 kB
+.autopilot/rebellion33-preview/dist/assets/AtlasStudio-CtV71PEf.css                 24.31 kB │ gzip:   5.01 kB
+.autopilot/rebellion33-preview/dist/assets/FmsApp-BJJfxwdS.css                      32.25 kB │ gzip:   7.32 kB
+.autopilot/rebellion33-preview/dist/assets/LegacyEntry-CNvbqJOh.css                 34.88 kB │ gzip:   7.03 kB
+.autopilot/rebellion33-preview/dist/assets/webworkerAll-CCpZ8Za2.js                  0.05 kB │ gzip:   0.05 kB
+.autopilot/rebellion33-preview/dist/assets/getTextureBatchBindGroup-ClDkMdT3.js      0.34 kB │ gzip:   0.26 kB
+.autopilot/rebellion33-preview/dist/assets/getPo2TextureFromSource-BzR2jfx3.js       0.46 kB │ gzip:   0.31 kB
+.autopilot/rebellion33-preview/dist/assets/rolldown-runtime-hePW80VL.js              0.71 kB │ gzip:   0.42 kB
+.autopilot/rebellion33-preview/dist/assets/canvasUtils-BVGwBBBn.js                   6.05 kB │ gzip:   2.04 kB
+.autopilot/rebellion33-preview/dist/assets/BufferResource-Bk8ZSLzt.js               11.02 kB │ gzip:   2.82 kB
+.autopilot/rebellion33-preview/dist/assets/init-B8Jnes8g.js                         15.37 kB │ gzip:   4.80 kB
+.autopilot/rebellion33-preview/dist/assets/camera-BGXwsUH8.js                       23.19 kB │ gzip:   8.45 kB
+.autopilot/rebellion33-preview/dist/assets/Text-Cd4wm95b.js                         34.90 kB │ gzip:  11.70 kB
+.autopilot/rebellion33-preview/dist/assets/browserAll-DaKlDxHp.js                   42.64 kB │ gzip:  11.13 kB
+.autopilot/rebellion33-preview/dist/assets/delaunay-BCSrghLA.js                     55.25 kB │ gzip:  20.76 kB
+.autopilot/rebellion33-preview/dist/assets/App-DqYSigol.js                          72.38 kB │ gzip:  22.56 kB
+.autopilot/rebellion33-preview/dist/assets/RenderTargetSystem-a4R96cNy.js           78.10 kB │ gzip:  21.97 kB
+.autopilot/rebellion33-preview/dist/assets/Geometry-IpHxCVTc.js                    109.69 kB │ gzip:  33.09 kB
+.autopilot/rebellion33-preview/dist/assets/CountryStudio-BE4yfBWQ.js               128.54 kB │ gzip:  37.93 kB
+.autopilot/rebellion33-preview/dist/assets/LegacyEntry-R9MJetHX.js                 132.32 kB │ gzip:  44.94 kB
+.autopilot/rebellion33-preview/dist/assets/AtlasStudio-HG15S9DR.js                 173.27 kB │ gzip:  50.10 kB
+.autopilot/rebellion33-preview/dist/assets/renderer-DYJqug_w.js                    210.86 kB │ gzip:  67.91 kB
+.autopilot/rebellion33-preview/dist/assets/index-B2mA6Npn.js                       221.79 kB │ gzip:  69.62 kB
+.autopilot/rebellion33-preview/dist/assets/init-B2KxWFI1.js                        250.43 kB │ gzip:  72.58 kB
+.autopilot/rebellion33-preview/dist/assets/FmsApp-Bz5X_XyX.js                    2,253.80 kB │ gzip: 662.60 kB
+
+✓ built in 1.06s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

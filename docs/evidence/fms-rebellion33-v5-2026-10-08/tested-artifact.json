@@ -1,0 +1,425 @@
+{
+  "source": "7de0ee1f697db5617c15d6357eacab051ca208d4",
+  "engine": "d438cd78271cd0e8683ddfb106b514e025bdf13cac9607e7c712d59e264150b4",
+  "buildCommit": "7de0ee1f697db5617c15d6357eacab051ca208d4",
+  "directory": ".autopilot/rebellion33-preview/dist",
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 424,
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 19,
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    },
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "bytes": 9578,
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "assets/App-DqYSigol.js",
+      "bytes": 72384,
+      "sha256": "a3deb443add1c51b668d7496400363a9e45a30aa3f724b6d030daa7028128a32"
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "bytes": 409814,
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "bytes": 24315,
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "assets/AtlasStudio-HG15S9DR.js",
+      "bytes": 173274,
+      "sha256": "e864291a8ea6b02a87141cad2f23485365d3394b933ee413c8a148a28aca7f0b"
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "bytes": 482109,
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "bytes": 15884,
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "assets/browserAll-DaKlDxHp.js",
+      "bytes": 42646,
+      "sha256": "bf13f4b65e235320662f4ffaa621efaa61ca1ad0185fa6eaf2af90734710fb00"
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "bytes": 11027,
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "bytes": 23199,
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "bytes": 6054,
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "bytes": 19346,
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "assets/CountryStudio-BE4yfBWQ.js",
+      "bytes": 128542,
+      "sha256": "70bd94dc24fc9baf9c070971c3dc59b9fea486f2b532eccb06f01b9432b6bdf5"
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "bytes": 13293,
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "bytes": 55255,
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "assets/FmsApp-BJJfxwdS.css",
+      "bytes": 32252,
+      "sha256": "ae4d098974eaaa57f50a39d7c7451e2b637f2e67663cc73f325c734bc7cd48ea"
+    },
+    {
+      "path": "assets/FmsApp-Bz5X_XyX.js",
+      "bytes": 2253802,
+      "sha256": "479f6c8d181e350135403e46fa4e882fa901b3296db702389877647bf5475f71"
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "bytes": 109697,
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "bytes": 469,
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "bytes": 342,
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "assets/index-B2mA6Npn.js",
+      "bytes": 221793,
+      "sha256": "181c8d328b55ae43549a31e2f4b193fe53b755b792f4d1666b736b8ef0347dcd"
+    },
+    {
+      "path": "assets/init-B2KxWFI1.js",
+      "bytes": 250437,
+      "sha256": "7401292d12c1e8f0d00f380e2a54cf39012da09db606875b27e603dbd6f4a411"
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "bytes": 15379,
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "bytes": 34881,
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "assets/LegacyEntry-R9MJetHX.js",
+      "bytes": 132329,
+      "sha256": "7fe856744444586a0d4ce45cf448e22deb35a938d4d89bfa322b40e25e63aeee"
+    },
+    {
+      "path": "assets/play.worker-D9Ui_qeL.js",
+      "bytes": 2460900,
+      "sha256": "2c308209ad67be1ed7e237ebb1515becca2489e9ae62fb98c164b77318e7315d"
+    },
+    {
+      "path": "assets/renderer-DYJqug_w.js",
+      "bytes": 210865,
+      "sha256": "9137f4c612593ba79a4a20e1269338052890b05942082ceb70dbbfe6efb784ae"
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "bytes": 78109,
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "bytes": 86986,
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "bytes": 34693,
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "bytes": 91681,
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "bytes": 162206,
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "bytes": 49491,
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "assets/Text-Cd4wm95b.js",
+      "bytes": 34909,
+      "sha256": "ec305c95948bb3f391dd33b8b113fc9cce70ebd0a6e101f46834e441825851d8"
+    },
+    {
+      "path": "assets/webworkerAll-CCpZ8Za2.js",
+      "bytes": 54,
+      "sha256": "665fe6daa5bff66e4c105e1a3a15fc7700c607c89f8f725b5bdf7d99b62b7acc"
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "bytes": 223767,
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "build.json",
+      "bytes": 13357,
+      "sha256": "75c35c44fde99f2a79e836d5e1dcae48c2ff40eca7e115e32699d33a127222a6"
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 221,
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "index.html",
+      "bytes": 626,
+      "sha256": "f7745e798e7d80c17f539c72731bf5de8e91a8d976a8bf0bf1068f365947fa2a"
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "bytes": 10779,
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "scripts/fms-war33-compat.ts",
+      "sha256": "ae2053f68dd78723cfe355d5f509f8a59738a266ac57baaa2951486ad13ba249"
+    },
+    {
+      "path": "scripts/fms-war33-fingerprint.ts",
+      "sha256": "ba0c744aa9b83b7a39880fcd4bd7ba3167dc7f62ef28ed4cffe3c19dc166eb00"
+    },
+    {
+      "path": "src/fms/play/DiplomacyControls33.tsx",
+      "sha256": "71bbd30c84e5ec5447470496bdb8b048aba6fbee5772dd327df8e083bea26116"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "6a444be00a598fbd223355a1da0114e5ad0925c85af87d51c0bfa40b706debaf"
+    },
+    {
+      "path": "src/fms/play/Vassal33Panel.tsx",
+      "sha256": "badb5460e8feaa52c320c272485797a379bc654a83f2be2ab525120766086e44"
+    },
+    {
+      "path": "src/fms/play/VassalRelations33.tsx",
+      "sha256": "1f075a843e27bc0d87d9fae1244076419b403af8dbf477720e83242146820082"
+    },
+    {
+      "path": "src/fms/play/War33Overview.tsx",
+      "sha256": "6462fca9b703259e8ef646e254f35c44fad46420aa4a8c6ce723bb896ff575ab"
+    },
+    {
+      "path": "src/fms/play/War33Panel.tsx",
+      "sha256": "ef44511f7afee0bfb93c953694d80294e4995903a8150a4a6b7dfd0d726bbd27"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/native-war/vassal-tribute.ts.source",
+      "sha256": "2172f69882eeb84dcbbb9b7da194b3711f52f563056a8b97a851316b09d6c7b2"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-client.ts.source",
+      "sha256": "b89732ac50389e39c4edda2d81c1c9cbb7dc2b1cd604cbbb865703155a5a9ef0"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-declaration.ts.source",
+      "sha256": "72bec515fc192110e184b63cc0c43ad427454bd8dd4deeb5e27158ab6d824e47"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-model.ts.source",
+      "sha256": "4466d40d85f1da62c64cb5313951d9e9c25b72343ad7a0b91f574a15e95016ee"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-peace.ts.source",
+      "sha256": "025676a4d9d7ca2e8674e544a9efa578a9980de72d253673f17ca69b3968f2e8"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-session.ts.source",
+      "sha256": "b21afa4f1169cf5e7ad212521605f465774e7d5a91c14e5680d0488cf8fb7e5e"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-settlement.ts.source",
+      "sha256": "5e71ccd95ebd45e3d1b71abdd4c9a9f21d9d647139e5df8ceeb0849165bc696c"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-state.ts.source",
+      "sha256": "354165c03ff13586fe21d9adb2c0929c37d625335c424419988e999c2c8e836d"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-storage.ts.source",
+      "sha256": "f2ab1eab01f6ae4706682de4fee2c86f63efa72dcb4c8795b8f4bf54ac1a7b72"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-stores.ts.source",
+      "sha256": "c55981cfc167cd7ce0ebf719893bda70fab4385d8a88fa058793548c3697ecbf"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-tribute.ts.source",
+      "sha256": "14d2fe12a3fa6d26df4bc72c2714705646b64b358033901a194072d7623c8c7e"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32-vassals.ts.source",
+      "sha256": "e083f32c922d44cbd5335a9e9c2d6d4b49573e1cc10569ae078757d27a5492d2"
+    },
+    {
+      "path": "src/fms/play/compat/war32/fms/play/war32/play.worker.ts.source",
+      "sha256": "d5f4427c7bb01ece14de7b7888c9614a4f05fa77e79248c65bd52577f071fff0"
+    },
+    {
+      "path": "src/fms/play/compat/war32/manifest.json",
+      "sha256": "cd65933d6d7172277f37ed0337d64c58d01718ef54258bebe23fc7c24b16a1b2"
+    },
+    {
+      "path": "src/fms/play/native-war/internal-settlement.test.ts",
+      "sha256": "40d0b62a070b14932ad39067b6442ffc1533f77d8260878145e53de8a8b51170"
+    },
+    {
+      "path": "src/fms/play/native-war/internal-settlement.ts",
+      "sha256": "dcd32ec32cd41e6e70d47ea106bc02238c152d7c5bfe60014cfde24f6fcce9df"
+    },
+    {
+      "path": "src/fms/play/native-war/suppression-destiny.ts",
+      "sha256": "6dbe8131bd84da568e29272fd18254226c54315e771cddc96ebece0ff4124901"
+    },
+    {
+      "path": "src/fms/play/native-war/vassal-rebellion.test.ts",
+      "sha256": "4637c6aa5afdc2dc37276736735e710130ef61da385bf4461ba2cca145c9571a"
+    },
+    {
+      "path": "src/fms/play/native-war/vassal-rebellion.ts",
+      "sha256": "b35c7620cf78422360eb0c996d6c8418687469cbcb7fa2126cf9e8a2d93526a4"
+    },
+    {
+      "path": "src/fms/play/view-capabilities.ts",
+      "sha256": "258c6421037c9f952f1c141964e33dddcbe2aabd7c59585eb8aba93c3370fec1"
+    },
+    {
+      "path": "src/fms/play/war33-client.test.ts",
+      "sha256": "56e65c2badcb2673cc00042ddd780bf2379f3a2fe2ec084b653757a557de8869"
+    },
+    {
+      "path": "src/fms/play/war33-client.ts",
+      "sha256": "889282200919329e3de7ae8e31095d70e28f7827ba79e50fec016a5b6e01c930"
+    },
+    {
+      "path": "src/fms/play/war33-declaration.ts",
+      "sha256": "af906401c5f17d6cf8bdbf080d05d4104e308f27e482d8bb7ea97ce08280b8e6"
+    },
+    {
+      "path": "src/fms/play/war33-model.ts",
+      "sha256": "3de0355f453b277e2c733c795c4ef219da831875acc2bb8ce790064357a78bde"
+    },
+    {
+      "path": "src/fms/play/war33-peace.ts",
+      "sha256": "dc9f9c0c29655759c04c072a094efc8dba598ba99d3fe1d0fd4801f5a8efceac"
+    },
+    {
+      "path": "src/fms/play/war33-query.ts",
+      "sha256": "fdd6f57dc79bdc41bddd8a9ef37ecee8130798e782cf4dd0008c187196a1c109"
+    },
+    {
+      "path": "src/fms/play/war33-rebellion.ts",
+      "sha256": "250af7f45f102b3113abb73ae56783a934b66bdb4b2d0bda0d6f4834a0dc83d0"
+    },
+    {
+      "path": "src/fms/play/war33-session.ts",
+      "sha256": "708444d1f59ba20cdedf4bfa7d604d0693b5a97422c4a00c85bd03172b88801e"
+    },
+    {
+      "path": "src/fms/play/war33-settlement.ts",
+      "sha256": "64617d36518da51214cd87c154edd38ce991e27ab8f8073b739f4e7bba860415"
+    },
+    {
+      "path": "src/fms/play/war33-state.ts",
+      "sha256": "cdf7b406c2eb687c23fcfbf08a29f827da52c8eef57a66c14cd35e53dd2fa71c"
+    },
+    {
+      "path": "src/fms/play/war33-storage.test.ts",
+      "sha256": "e3a759f94fd185347860298adf037653e40f4bd6395800199f57db40f9bdb138"
+    },
+    {
+      "path": "src/fms/play/war33-storage.ts",
+      "sha256": "f1c5b9452f686af2046cb14fe6ca544d6148586dc94147052d86880087071fba"
+    },
+    {
+      "path": "src/fms/play/war33-stores.ts",
+      "sha256": "b0a0f2466a500eb4b1ec3933dce9274e0343a0845c8a58554a6238413a93f446"
+    },
+    {
+      "path": "src/fms/play/war33-tribute.ts",
+      "sha256": "0ecf1aa0e1513236c278d2277e7e15da363d087e43fae53668170ca54049816a"
+    },
+    {
+      "path": "src/fms/play/war33-validation.ts",
+      "sha256": "8e46891da5fa4bde2cfb961e4a749d5758428d4b26db06d34abef65e3f44658f"
+    },
+    {
+      "path": "src/fms/play/war33-vassals.ts",
+      "sha256": "6f1a97f2f99d7ae1eb0ee9f240813908e1de2e73b542c5df6952b732b0757016"
+    },
+    {
+      "path": "src/fms/play/war33-wars.ts",
+      "sha256": "4d99becf251525d397a94ae6464ecac2fb50e3281e6f383f76194cf17454aa6f"
+    },
+    {
+      "path": "src/fms/play/war33.test-support.ts",
+      "sha256": "c2913662f86b8f86c28b6ed4c16aed836ee77e65287eb6f4174a02b515ed509d"
+    },
+    {
+      "path": "src/fms/play/war33.test.ts",
+      "sha256": "3a397ca8fa591cb5c454198911a8c9f4f7e4e25242409d8e65fc78d6f481d72f"
+    },
+    {
+      "path": "src/fms/play/war33/play.worker.ts",
+      "sha256": "b28b4155d40da5b3e2d841b70e2fde2e102980a286d4b96837b26379584bf911"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "f805d80e2cb7ea477ef6dd0bc9d83377ade3e2403a5c136fca11c48e5ff04817"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "2e0e8b964d089592a2817941f57df70326b38e91e8e169b3f9e528c107a10c68"
+    }
+  ]
+}

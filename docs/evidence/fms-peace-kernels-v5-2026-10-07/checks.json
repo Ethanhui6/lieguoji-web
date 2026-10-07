@@ -150,5 +150,6 @@
     "contentType": "text/html",
     "bytes": 626,
     "note": "Read-only GET; not a browser gameplay/visual check."
-  }
+  },
+  "testedSourceCommit": "14f18db6869f8152675abe3de03809910802ea58"
 }

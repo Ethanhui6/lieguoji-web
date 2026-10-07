@@ -4889,7 +4889,7 @@
       "date": "2026-10-07",
       "status": "Native peace/plan/outcome kernels verified locally; playable v27 remains unchanged",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
+      "lastCommitted": "14f18db6869f8152675abe3de03809910802ea58",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
       "next": "WEB-04-37：直接接本批已核原始傷害单位、开战快照和终战清理证据；补HasStateCollapsed/目标达成/三种效果Apply并接实际执行、历月和独立新版规则；禁止用v27整数扣减补造原作kills。然后WEB-03-06文化信仰命名一致性。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
@@ -4996,10 +4996,10 @@
       "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5206/?fms=1",
-      "currentLocalHead": "604b3b4",
+      "currentLocalHead": "14f18db6869f8152675abe3de03809910802ea58",
       "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
-      "checkpointNote": "New kernels and evidence are staged for a local-only source commit. Existing sourceCommit/currentVersion/currentEngine identify the protected v27 playable artifact, not these unintegrated kernels.",
-      "head": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
+      "checkpointNote": "Native peace kernels are locally committed at 14f18db6869f8152675abe3de03809910802ea58. The following documentation-only checkpoint may be newer. sourceCommit/currentVersion/currentEngine still identify the protected v27 playable artifact; no new production rule version.",
+      "head": "14f18db6869f8152675abe3de03809910802ea58",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
@@ -6750,7 +6750,8 @@
         "Effect Apply and actual ConqueredBy execution",
         "Native damage source and calendar/state mapping",
         "Start/end lifecycle and versioned production integration"
-      ]
+      ],
+      "sourceCommit": "14f18db6869f8152675abe3de03809910802ea58"
     }
   }
 }

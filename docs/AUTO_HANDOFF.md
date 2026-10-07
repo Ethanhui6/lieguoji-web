@@ -1,6 +1,6 @@
 # 当前续接：原作议和与结局内核已测，v27试玩保留
 
-2026-10-07；父HEAD 604b3b4，根唯一写入，待本地提交本批四个实现与证据。V5 / WEB-PH04 / WEB-04-37、完整还原Goal继续进行。
+2026-10-07；内核源码提交 14f18db6869f8152675abe3de03809910802ea58，根唯一写入；本批已本地提交，随后仅交接检查点。V5 / WEB-PH04 / WEB-04-37、完整还原Goal继续进行。
 
 - 新增原作自动议和理由/期限筛选、胜方/吞并判断、转地与效果条款计划、各国结局及最终胜方重判；未生产import。57新+35既有=92相关单元通过；全仓lint/types及最终检查详见 [CONTRACT](evidence/fms-peace-kernels-v5-2026-10-07/CONTRACT.md) / [checks](evidence/fms-peace-kernels-v5-2026-10-07/checks.json)。没有新浏览器/构建或性能验收。
 - 二审已修固定守方含destroyed、Annex比例失败后的单省三倍兜底、普通HasStateCollapsed，并补真实50分边界。actual失败效果须重判赢家；仅丢地不必然败国，胜方盟国不自动获胜。

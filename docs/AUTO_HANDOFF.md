@@ -1,12 +1,13 @@
 # 当前续接：v22人物生日与月龄可玩，接原家族继承
 
-2026-10-07，父HEAD 1224284；根唯一写入、代理只读。本批尚未提交。Goal、WEB-PH04/WEB-04-13继续进行。
+2026-10-07，父HEAD 1224284；根唯一写入、代理只读。本批v22源码已本地提交34842488b1bc477d942ccb94d11fecdee02d2b19，后续选择核另记。Goal、WEB-PH04/WEB-04-13继续进行。
 
 - 最新候选 http://127.0.0.1:5195/?fms=1 ，独立 .autopilot/life22-preview/dist，v22/Store24/lieguoji-fms-life-v22，engine 3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0；5194/v21及旧库保持。
 - 新局初始君主同一技能随机流后抽35–54岁，原f32生日与ISO真实月初年龄已接Worker/人物卡片；旧副本生日未知，新网页人物也明确未知。传位、战争、动员、财政仍保留；自然死亡/真实家族继承未接。[合同](evidence/fms-life22-v5-2026-10-07/CONTRACT.md)。
 - 132受影响单元/7文件首轮通过，最终完整lint/types与构建43产物通过；三尺寸普通绘图→生日→桌面实推第31日→传位→精确恢复3项全过，0重试。
+- 手工六国第2日11:00遭遇暂停后已保存并刷新恢复，37岁/原生日保持，控制台error空；24发布+15计划本批实过。
 - 已修年龄缓存校验缺口；无生产检查跳过。日期独立87项先前已过，不合并冒充全量；旧v20的3127不是本批全量。
-- 只读原家族FindSuccessor860DE0与fallback890150正在继续；不要重跑start-life22/ui-life22/polish-life22一次性脚本。无push/Pages/main，真机/用户视觉和完整原作仍待验。
+- 原家族FindSuccessor860DE0/fallback890150/priority8572D0独立核已完成，最终48项（新34+既有14）与目标lint/完整types通过，尚无生产调用。[内核进展](evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md)。下一依赖是真实人物/家族创建与亲属表；不要重跑start-life22/ui-life22/polish-life22一次性脚本。无push/Pages/main，真机/用户视觉和完整原作仍待验。
 
 ---
 

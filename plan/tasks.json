@@ -4760,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "life22_verified_family_next",
+      "status": "life22_verified_family_kernel_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "1224284",
-      "cloudScope": "Local-only v21; main, existing cloud preview and all old local versions/stores preserved.",
-      "next": "保留v22生日月龄可玩，接原FindSuccessor/fallback选择纯核，再真实家族关系、自然死亡继承事务。",
+      "lastCommitted": "34842488b1bc477d942ccb94d11fecdee02d2b19",
+      "cloudScope": "Local-only v22; existing bounded cloud preview, main and all old stores are retained. The cloud URL is not this v22 build.",
+      "next": "已完成原家族继承选择核；接真实人物/家族创建入口，再亲属与死亡继承。当前5195仍为v22可玩。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4813,14 +4813,17 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/checks.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/tested-artifact.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
-        "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
+        "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md"
       ],
       "currentVersion": 22,
       "currentEngine": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5195/?fms=1",
-      "currentLocalHead": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
-      "sourceCommit": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
+      "currentLocalHead": "34842488b1bc477d942ccb94d11fecdee02d2b19",
+      "sourceCommit": "34842488b1bc477d942ccb94d11fecdee02d2b19",
       "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
     },
     "nativeHillPrototype": {
@@ -6132,6 +6135,24 @@
         "docs/evidence/fms-life22-v5-2026-10-07/checks.json",
         "docs/evidence/fms-life22-v5-2026-10-07/browser.json",
         "docs/evidence/fms-life22-v5-2026-10-07/tested-artifact.json"
+      ],
+      "sourceCommit": "34842488b1bc477d942ccb94d11fecdee02d2b19"
+    },
+    "familySuccessionKernel": {
+      "status": "local_verified_not_integrated",
+      "sourceParent": "34842488b1bc477d942ccb94d11fecdee02d2b19",
+      "functions": [
+        "FindSuccessor860DE0",
+        "SelectFamilyFallbackCandidate890150",
+        "CalculateSuccessionPriority8572D0"
+      ],
+      "unitTests": 48,
+      "productionIntegrated": false,
+      "evidence": [
+        "docs/evidence/fms-life22-v5-2026-10-07/NEXT_FAMILY.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-kernel-first.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-kernel-final.json"
       ]
     }
   }

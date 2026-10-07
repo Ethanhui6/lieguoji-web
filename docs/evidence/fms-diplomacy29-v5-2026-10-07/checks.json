@@ -1,7 +1,7 @@
 {
   "date": "2026-10-07",
   "sourceParent": "def39ddb36dd01ac5697fe7998bbd1d0f484028c",
-  "sourceCommit": null,
+  "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
   "version": 29,
   "engine": "15f4a928d78be59d3fe27325c0908ecba9cbaf71a13927b7a3c03b1878e35db0",
   "sourceFiles": [
@@ -348,5 +348,10 @@
     "mainChanged": false,
     "oldSavesModified": false
   },
-  "previousGoalTurn": "progress"
+  "previousGoalTurn": "progress",
+  "checkpointNote": "Post-commit source/artifact hashes match. Build was produced before commit and embeds sourceParent; no rebuild or cloud release is implied.",
+  "stagedPrivacyReview": {
+    "files": 65,
+    "scope": "scoped paths and credential signatures; no original DLL/raw dump/personal saves"
+  }
 }

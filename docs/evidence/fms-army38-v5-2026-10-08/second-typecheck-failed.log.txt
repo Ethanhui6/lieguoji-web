@@ -1,0 +1,8 @@
+src/fms/play/ArmyGarrisonPanel38.tsx(5,114): error TS2551: Property 'armyId' does not exist on type 'Cargo'. Did you mean 'army'?
+src/fms/play/FmsGame.tsx(337,1872): error TS2345: Argument of type 'War38Run | War37Run' is not assignable to parameter of type 'War37Run'.
+  Type 'War38Run' is not assignable to type 'War37Run'.
+    Type 'War38Run' is not assignable to type '{ version: 37; rules: "fms-war-37"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy37; vassals: Vassals37; ... 4 more ...; navalDeployment: NavalDeployment37; }'.
+      Types of property 'version' are incompatible.
+        Type '38' is not assignable to type '37'.
+src/fms/play/FmsGame.tsx(374,339): error TS2322: Type '"army-garrison"' is not assignable to type '"order" | "battle" | "military" | "action" | "appointment" | "maritime" | "naval" | "transport" | "muster" | "politics" | "combat-edit" | "culture-edit" | "destiny-edit" | "rebellion-settings" | ... 5 more ... | "alliance-edit"'.
+src/fms/play/war38-garrison.ts(15,138): error TS2551: Property 'armyId' does not exist on type 'Cargo'. Did you mean 'army'?

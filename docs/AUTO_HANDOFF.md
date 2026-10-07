@@ -1,3 +1,18 @@
+# 当前续接：v38陆军驻防已可玩，继续完整战争V2
+
+2026-10-08；已测源码 `67f2d1d7a39c0a9fb41e3dcb38198719d0f16aac`；后续证据提交请以git HEAD现场核实；根唯一写入。顺序WEB-04-37 → WEB-03-06 → 排队的官网/视频全项目审查/前10差距不变。没有新的必要用户决策阻塞。
+
+- 本批恢复原作首都圈/边境驻地池、目标部队数量上限、float32权重与18%次级池。部队沿实际地图路线行军，保存驻地而不逐帧随机折返。军事面板可查看驻地与不可达/休整原因，预览取消/确认交回AI；玩家军令/交战/退却/整编/运输优先。
+- [交付](evidence/fms-army38-v5-2026-10-08/DELIVERY.md)、[原作合同与适配差异](evidence/fms-army38-v5-2026-10-08/CONTRACT.md)、[实际检查](evidence/fms-army38-v5-2026-10-08/checks.json)。57相关含旧v37回归、全仓types/lint、39发布计划保护、生产构建/43产物审查通过。生产Chromium实际出发/接管/第4日到达/交回/保存刷新/CAS/实时Worker更新和普通6国60城新局通过；无pageerror/HTTP失败。
+- [本机试玩v38](http://127.0.0.1:5232/?fms=1)，产物`.autopilot/army38-preview/dist`，PID22276，engine `438c68084a420cb4caa110a076c736de52ef8e45e1c00311a17cc41e8999146d`。Store40/独立DB；旧v37/5230的43产物哈希保留。不同端口存档不自动搬运；手机不能用此127.0.0.1地址。
+- 原作依据是7个有界静态方法及已存在v36寻路恢复。没有原作实机或视频视觉通过。网页日结调度、补给门槛、海岸映射、路径与PRNG差异写入合同；省内随机闲游、原生多格跨海/港湾和完整战争行为尚缺。
+- 初次版本标识/命令联合类型和货舱字段编译错误已修，失败日志保留。主游戏包约2.78MB（minified）、Vite配置警告仍在，未宣称性能达标。军事夹具方形大陆不是地图美术验收；428×926是桌面仿真。原作全景/4-16-40倍视觉与iPhone门未过。
+- 下一批：Continue WEB-04-37 from playable v38: native idle-army priority/secondary pools and persistent real land deployment are live; do not recover/reimplement those leaf methods again. Complete fleet forward bases/port occupation and postwar lifecycle, full land/naval coordination, within-province loiter and remaining military office/cooldown/internal-war rules. Keep native vs web adapter differences explicit. Preserve v37/5230 and earlier saves/previews. Then WEB-03-06, followed by queued official/video full audit/top10. No push/Pages/main changes.
+- 开发服5231/PID34216已关闭；生产试玩5232/PID22276与旧v37/5230/PID25024监听已复核。任务结构检查通过。
+- 未push/Pages/main/发布门变化；不将v38切片记作完整WEB-04-37或完整原作还原。
+
+---
+
 # 当前续接：v37舰队港口部署可玩，继续完整战争V2
 
 2026-10-08；源码 `62924dbf73fd3a7d56c77907d8773c710cd4d8a6`；根唯一写入。顺序保持WEB-04-37 → WEB-03-06 → 排队的官网/视频全项目审查/前10差距，没有用新计划替换原任务。无新的必要用户决策阻塞。

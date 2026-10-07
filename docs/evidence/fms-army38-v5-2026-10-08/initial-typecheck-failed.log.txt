@@ -1,0 +1,81 @@
+src/fms/play/Alliance38Panel.tsx(2,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/Alliance38Panel.tsx(5,80): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/Alliance38Panel.tsx(5,141): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/Alliance38Panel.tsx(6,199): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/Alliance38Panel.tsx(6,271): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/Alliance38Panel.tsx(8,122): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/Alliance38Panel.tsx(8,208): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/ArmyGarrisonPanel38.tsx(1,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/ArmyGarrisonPanel38.tsx(4,32): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/fms/play/ArmyGarrisonPanel38.tsx(5,109): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/fms/play/ArmyGarrisonPanel38.tsx(5,176): error TS18046: 'm' is of type 'unknown'.
+src/fms/play/ArmyGarrisonPanel38.tsx(6,90): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ waiting: string; assigned: string; manual: string; busy: string; lost: string; rest: string; 'no-route': string; }'.
+src/fms/play/ArmyGarrisonPanel38.tsx(6,155): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/DiplomacyControls38.tsx(2,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/DiplomacyControls38.tsx(15,66): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/FmsGame.tsx(337,1872): error TS2345: Argument of type 'War37Run | War37Run' is not assignable to parameter of type 'War37Run'.
+  Type 'import("D:/\u6E38\u620F/\u67B6\u7A7A\u5730\u56FE\u6A21\u62DF\u5668/src/fms/play/war38-model").War37Run' is not assignable to type 'import("D:/\u6E38\u620F/\u67B6\u7A7A\u5730\u56FE\u6A21\u62DF\u5668/src/fms/play/war37-model").War37Run'.
+    Type 'War37Run' is not assignable to type '{ version: 37; rules: "fms-war-37"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy37; vassals: Vassals37; ... 4 more ...; navalDeployment: NavalDeployment37; }'.
+      Types of property 'version' are incompatible.
+        Type '38' is not assignable to type '37'.
+src/fms/play/FmsGame.tsx(374,339): error TS2322: Type '"army-garrison"' is not assignable to type '"order" | "battle" | "military" | "action" | "appointment" | "maritime" | "naval" | "transport" | "muster" | "politics" | "combat-edit" | "culture-edit" | "destiny-edit" | "rebellion-settings" | ... 5 more ... | "alliance-edit"'.
+src/fms/play/NavalDeploymentPanel38.tsx(1,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/NavalDeploymentPanel38.tsx(7,38): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/fms/play/NavalDeploymentPanel38.tsx(8,171): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/fms/play/NavalDeploymentPanel38.tsx(9,173): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<"waiting" | "disabled" | "lost" | "manual" | "assigned" | "mission" | "engaged" | "no-port" | "no-supply", string>'.
+src/fms/play/Vassal38Panel.tsx(3,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/Vassal38Panel.tsx(7,49): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(10,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(10,81): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(12,33): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(12,163): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(12,244): error TS7006: Parameter 'w' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(12,385): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<NativeRebellionReason, string>'.
+src/fms/play/Vassal38Panel.tsx(12,475): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(15,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(15,108): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(23,32): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(23,108): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/Vassal38Panel.tsx(28,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(2,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/VassalRelations38.tsx(6,75): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(8,49): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(9,46): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(12,47): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(14,172): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/VassalRelations38.tsx(14,235): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/war38-garrison.ts(15,138): error TS2551: Property 'armyId' does not exist on type 'Cargo'. Did you mean 'army'?
+src/fms/play/war38-model.ts(24,519): error TS18004: No value exists in scope for the shorthand property 'garrison'. Either declare one or provide an initializer.
+src/fms/play/war38-session.ts(8,9): error TS2395: Individual declarations in merged declaration 'War37Session' must be all exported or all local.
+src/fms/play/war38-session.ts(8,9): error TS2440: Import declaration conflicts with local declaration of 'War37Session'.
+src/fms/play/war38-session.ts(74,14): error TS2395: Individual declarations in merged declaration 'War37Session' must be all exported or all local.
+src/fms/play/war38-session.ts(88,139): error TS2554: Expected 3-8 arguments, but got 9.
+src/fms/play/war38-session.ts(141,253): error TS2554: Expected 3-8 arguments, but got 9.
+src/fms/play/War38Overview.tsx(1,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/War38Overview.tsx(10,101): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(15,83): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<NativePeaceReason, string>'.
+src/fms/play/War38Overview.tsx(16,199): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(16,221): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(16,264): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(16,327): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(16,392): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(16,487): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(19,18): error TS7006: Parameter 'g' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(19,404): error TS7006: Parameter 'pid' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(19,480): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(20,142): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(20,202): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(20,223): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/fms/play/War38Overview.tsx(23,62): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(3,14): error TS2724: '"./war38-model"' has no exported member named 'War38Run'. Did you mean 'War37Run'?
+src/fms/play/War38Panel.tsx(9,49): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(12,29): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(12,57): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(12,86): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(13,41): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(13,85): error TS7006: Parameter 'w' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(14,41): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(14,72): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(16,102): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(16,129): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/fms/play/War38Panel.tsx(16,229): error TS7006: Parameter 'v' implicitly has an 'any' type.

@@ -1,0 +1,561 @@
+{
+  "origin": "http://127.0.0.1:5231",
+  "production": false,
+  "scope": "Disposable Chromium, synthetic five-country geometry; actual army deployment/manual control UI/Worker/IDB. Not original runtime/visual parity or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": true,
+  "fixture": {
+    "engine": "438c68084a420cb4caa110a076c736de52ef8e45e1c00311a17cc41e8999146d",
+    "day": 0
+  },
+  "moving": [
+    {
+      "id": "force-1",
+      "provinceId": "p-4",
+      "route": [
+        "p-5",
+        "p-13"
+      ],
+      "assignment": {
+        "provinceId": "p-13",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-2",
+      "provinceId": "p-5",
+      "route": [
+        "p-13",
+        "p-19"
+      ],
+      "assignment": {
+        "provinceId": "p-19",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-3",
+      "provinceId": "p-6",
+      "route": [
+        "p-13"
+      ],
+      "assignment": {
+        "provinceId": "p-13",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-4",
+      "provinceId": "p-7",
+      "route": [
+        "p-6",
+        "p-5",
+        "p-9"
+      ],
+      "assignment": {
+        "provinceId": "p-9",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-5",
+      "provinceId": "p-9",
+      "route": [
+        "p-5",
+        "p-6"
+      ],
+      "assignment": {
+        "provinceId": "p-6",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-7",
+      "provinceId": "p-32",
+      "route": [
+        "p-34"
+      ],
+      "assignment": {
+        "provinceId": "p-34",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-8",
+      "provinceId": "p-34",
+      "route": [
+        "p-39",
+        "p-45",
+        "p-58"
+      ],
+      "assignment": {
+        "provinceId": "p-58",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-9",
+      "provinceId": "p-38",
+      "route": [
+        "p-34"
+      ],
+      "assignment": {
+        "provinceId": "p-34",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-10",
+      "provinceId": "p-39",
+      "route": [
+        "p-45",
+        "p-46"
+      ],
+      "assignment": {
+        "provinceId": "p-46",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-11",
+      "provinceId": "p-43",
+      "route": [
+        "p-38",
+        "p-34"
+      ],
+      "assignment": {
+        "provinceId": "p-34",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-12",
+      "provinceId": "p-44",
+      "route": [
+        "p-39"
+      ],
+      "assignment": {
+        "provinceId": "p-39",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-13",
+      "provinceId": "p-45",
+      "route": [
+        "p-46",
+        "p-59"
+      ],
+      "assignment": {
+        "provinceId": "p-59",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-14",
+      "provinceId": "p-46",
+      "route": [
+        "p-45",
+        "p-39"
+      ],
+      "assignment": {
+        "provinceId": "p-39",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-15",
+      "provinceId": "p-0",
+      "route": [
+        "p-1",
+        "p-11",
+        "p-16"
+      ],
+      "assignment": {
+        "provinceId": "p-16",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-16",
+      "provinceId": "p-1",
+      "route": [
+        "p-11",
+        "p-16"
+      ],
+      "assignment": {
+        "provinceId": "p-16",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-17",
+      "provinceId": "p-2",
+      "route": [
+        "p-11",
+        "p-16"
+      ],
+      "assignment": {
+        "provinceId": "p-16",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-18",
+      "provinceId": "p-3",
+      "route": [
+        "p-12"
+      ],
+      "assignment": {
+        "provinceId": "p-12",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-19",
+      "provinceId": "p-8",
+      "route": [
+        "p-1",
+        "p-2"
+      ],
+      "assignment": {
+        "provinceId": "p-2",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-20",
+      "provinceId": "p-10",
+      "route": [
+        "p-15",
+        "p-16"
+      ],
+      "assignment": {
+        "provinceId": "p-16",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-21",
+      "provinceId": "p-11",
+      "route": [
+        "p-1"
+      ],
+      "assignment": {
+        "provinceId": "p-1",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-22",
+      "provinceId": "p-33",
+      "route": [
+        "p-42",
+        "p-51",
+        "p-50"
+      ],
+      "assignment": {
+        "provinceId": "p-50",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-23",
+      "provinceId": "p-42",
+      "route": [
+        "p-51",
+        "p-50",
+        "p-49"
+      ],
+      "assignment": {
+        "provinceId": "p-49",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-24",
+      "provinceId": "p-49",
+      "route": [
+        "p-55"
+      ],
+      "assignment": {
+        "provinceId": "p-55",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-25",
+      "provinceId": "p-50",
+      "route": [
+        "p-51",
+        "p-42",
+        "p-33"
+      ],
+      "assignment": {
+        "provinceId": "p-33",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-26",
+      "provinceId": "p-51",
+      "route": [
+        "p-50"
+      ],
+      "assignment": {
+        "provinceId": "p-50",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-27",
+      "provinceId": "p-54",
+      "route": [
+        "p-55"
+      ],
+      "assignment": {
+        "provinceId": "p-55",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-28",
+      "provinceId": "p-17",
+      "route": [
+        "p-23",
+        "p-28"
+      ],
+      "assignment": {
+        "provinceId": "p-28",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-29",
+      "provinceId": "p-18",
+      "route": [
+        "p-24",
+        "p-30",
+        "p-36",
+        "p-40",
+        "p-47"
+      ],
+      "assignment": {
+        "provinceId": "p-47",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-30",
+      "provinceId": "p-22",
+      "route": [
+        "p-23",
+        "p-17",
+        "p-18"
+      ],
+      "assignment": {
+        "provinceId": "p-18",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-31",
+      "provinceId": "p-23",
+      "route": [
+        "p-29",
+        "p-36",
+        "p-40"
+      ],
+      "assignment": {
+        "provinceId": "p-40",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-32",
+      "provinceId": "p-24",
+      "route": [
+        "p-30",
+        "p-41"
+      ],
+      "assignment": {
+        "provinceId": "p-41",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-33",
+      "provinceId": "p-25",
+      "route": [
+        "p-24",
+        "p-23"
+      ],
+      "assignment": {
+        "provinceId": "p-23",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-34",
+      "provinceId": "p-27",
+      "route": [
+        "p-28",
+        "p-29",
+        "p-24",
+        "p-25"
+      ],
+      "assignment": {
+        "provinceId": "p-25",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-35",
+      "provinceId": "p-28",
+      "route": [
+        "p-23",
+        "p-17"
+      ],
+      "assignment": {
+        "provinceId": "p-17",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-36",
+      "provinceId": "p-29",
+      "route": [
+        "p-24",
+        "p-25"
+      ],
+      "assignment": {
+        "provinceId": "p-25",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-37",
+      "provinceId": "p-30",
+      "route": [
+        "p-24",
+        "p-18",
+        "p-17"
+      ],
+      "assignment": {
+        "provinceId": "p-17",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-38",
+      "provinceId": "p-31",
+      "route": [
+        "p-30",
+        "p-36"
+      ],
+      "assignment": {
+        "provinceId": "p-36",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    },
+    {
+      "id": "force-39",
+      "provinceId": "p-35",
+      "route": [
+        "p-36",
+        "p-30",
+        "p-31"
+      ],
+      "assignment": {
+        "provinceId": "p-31",
+        "decision": "assigned",
+        "nextTick": 120,
+        "lastWar": false
+      }
+    }
+  ],
+  "restored": true,
+  "cancel": true,
+  "manualTakeover": true,
+  "arrivalDay": 4,
+  "resumed": true,
+  "crossTabCAS": true,
+  "portraitOverflow": false,
+  "liveTickDelta": 17,
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-army38-v5-2026-10-08\\video\\page@f151535241798e9839e4273f486a5b0b.webm"
+}

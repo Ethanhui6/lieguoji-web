@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-08",
+  "binarySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "evidence": "Bounded static PE/IL2CPP analysis, not runtime/video proof",
+  "methods": [
+    {
+      "name": "Army$$ResetIdleProvince",
+      "rva": "34FB60",
+      "bytes": 32,
+      "sha256": "de275e08a76958238feca336fdf783afb7c845c1ebfcf7c01cf3277677feb5b7"
+    },
+    {
+      "name": "Army$$FindTargetIdleProvince",
+      "rva": "348CE0",
+      "bytes": 2800,
+      "sha256": "7c3d8bcda1a2d40cf927c9493fa1c11d368eb8cb4bfca61a3be41b442ecfa601"
+    },
+    {
+      "name": "Army$$GetCapitalAreaProvinces",
+      "rva": "34B170",
+      "bytes": 784,
+      "sha256": "e35a1ab25cbc2f2a2eb0819d87e153f9d34fab54cb3db097522e4399a7a17b31"
+    },
+    {
+      "name": "Army$$HasNonBlankForeignLandNeighbor",
+      "rva": "34C1F0",
+      "bytes": 416,
+      "sha256": "4bb1c21c35c7f03433e2447bd81e088801395b8fc74722851ff5439df8c923ff"
+    },
+    {
+      "name": "Army$$WeightedRandomSelection",
+      "rva": "352540",
+      "bytes": 320,
+      "sha256": "4c6328a411b5c274e42cc216f1527c080678f40b8c6256db5425118d17e02167"
+    },
+    {
+      "name": "Army$$Idle",
+      "rva": "34C390",
+      "bytes": 912,
+      "sha256": "3877cb1698fe994133aaba81e6e0822deee2e3d6d0f7a497cf2ff5fab3c7911a"
+    },
+    {
+      "name": "State$$RedeployIdleArmy",
+      "rva": "5D5C90",
+      "bytes": 304,
+      "sha256": "57173fe29f9929beaf00f9697fdb6554f06c298770ef515743c3e51aad487575"
+    }
+  ]
+}

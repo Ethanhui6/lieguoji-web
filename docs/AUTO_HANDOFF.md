@@ -1,3 +1,17 @@
+# 当前续接：v36盟军借道与陆路协同可玩，继续完整战争V2
+
+2026-10-08；源码 `6985ab690c31d91c44414abd2cf17149ed14b52b`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再接排队的官网/视频全项目研究及前10差距。无新的必要用户决策阻塞。
+
+- 已接：真实联盟/宗主至直接附庸的陆军借道；单点/连续进攻、实际日内行军、战斗后续行和撤退共用权限；AI沿友方土地接近共同敌人的固定目标，并可驰援相邻友方；退盟取消非法未来路段、保留实际位置、沿路撤离。无友方占领或自动粮仓共享。政治页列可通行国家，实际预览/确认/保存，独立Worker/Store38。
+- [交付与差异](evidence/fms-access36-v5-2026-10-08/DELIVERY.md)、[规则合同](evidence/fms-access36-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-access36-v5-2026-10-08/checks.json)。88相关含旧v35回归、全仓types/lint、39发布计划保护、43产物审查通过；生产Chromium实际中立拒绝/结盟借道/取消/行军/保存刷新/退盟撤离/跨标签CAS；普通地形→六国六十城→推进保存恢复通过。无pageerror/HTTP失败。
+- [本机试玩v36](http://127.0.0.1:5228/?fms=1)，仅127.0.0.1；产物`.autopilot/access36-preview/dist`，PID24736，engine `c1080ceb204012e5ca4d70ca1de5c9ebff9b27f534ff4c0d690af3604f9a4325`。旧v35/5226的43产物哈希保持，旧局原样运行；不同端口保存不自动搬运。5227/PID23232开发服已在验证后关闭。
+- 原作按安装包hash锁定，仅PE/IL2CPP静态恢复。13方法已索引；原作闲军陆海重置已读，不等于完整驻地/港口分配已接。方形大陆是军事回归夹具；428×926是桌面仿真，原作同步视觉/4-16-40倍/iPhone待验。现有网页距离/补给/海路算法不冒充原作完整算法。
+- 首轮UI版本类型、测试导入名称和浏览器脚本误找“＋7日”已修；原失败日志/录像保留。大包和Vite配置警告仍在，没有手机性能承诺。
+- 下一批：Continue WEB-04-37 from playable v36: native idle-army/idle-navy reassignment and complete land/naval coordination; war offices/cooldowns, other internal wars/conversion, ranking/cache and full diplomacy schedule. Land allied access, actual daily shared-front movement and route revocation are integrated; do not recover them again. 13 scoped original methods including ResetIdleProvince/ResetIdlePortAssignment are indexed, but idle allocation consumers still need live integration. Preserve v35/5226 source 628a104 and frozen 43 artifacts. Then WEB-03-06 and queued official/video full audit/top10. No push/Pages/main changes.
+- 未push/Pages/main/发布门变更；完整WEB-04-37/视觉/真机不标完成。不要重复已接借道，也不要以排队重规划替换当前原任务。
+
+---
+
 # 当前续接：v35真实联盟与自主结盟可玩，继续完整战争V2
 
 2026-10-08；源码 `628a104c7a32e9c14b46eebf3cc046a73006962f`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的官网/视频全项目研究与前10差距。无新的必要用户决策阻塞。

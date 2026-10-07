@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "fingerprint": "15f4a928d78be59d3fe27325c0908ecba9cbaf71a13927b7a3c03b1878e35db0",
+  "files": [
+    {
+      "path": "src/fms/play/war29-model.ts",
+      "archive": "fms/play/war29-model.ts.source",
+      "sha256": "6824ba9b530df46b187cc6aace53dada18afc2c226496fe94ac673c8dcb94e60"
+    },
+    {
+      "path": "src/fms/play/war29-diplomacy.ts",
+      "archive": "fms/play/war29-diplomacy.ts.source",
+      "sha256": "ddcddb80f8e7a693822476d28eaef3701c4942ec026e35c7a84c106d884b61a6"
+    },
+    {
+      "path": "src/fms/play/war29-food.ts",
+      "archive": "fms/play/war29-food.ts.source",
+      "sha256": "f54f1649eaade0dd7636d9c62c6f3e52de83ae578f7be55fd54ea9a26adf01b2"
+    },
+    {
+      "path": "src/fms/play/war29-core.ts",
+      "archive": "fms/play/war29-core.ts.source",
+      "sha256": "d5ad71390d412b95476ecc9ded7fa0961d62e33d7a55aceb3db39f5c967f0b68"
+    },
+    {
+      "path": "src/fms/play/war29-runtime.ts",
+      "archive": "fms/play/war29-runtime.ts.source",
+      "sha256": "1d507a74d04794bded4b80a323ef5177a8c2cd8b4b1be3043f046153e16a76a2"
+    },
+    {
+      "path": "src/fms/play/war29-voyages.ts",
+      "archive": "fms/play/war29-voyages.ts.source",
+      "sha256": "b73523d515b437c1ef02decd9fa434eea9264cfcb3b904d534603e29ca0c1387"
+    },
+    {
+      "path": "src/fms/play/war29-session.ts",
+      "archive": "fms/play/war29-session.ts.source",
+      "sha256": "eed42aeb5b4306acd687c420eeec4c88e439c57ecaccf9c5f6bc649cd0af382d"
+    },
+    {
+      "path": "src/fms/play/war29-storage.ts",
+      "archive": "fms/play/war29-storage.ts.source",
+      "sha256": "5462df4ae0520d2e1509316734dc15dffaf684e443d21687eee5e51daeaa7ef5"
+    },
+    {
+      "path": "src/fms/play/war29-stores.ts",
+      "archive": "fms/play/war29-stores.ts.source",
+      "sha256": "6875f7bedb4621bf11efd33c31d9e64ac2e7a53e999a4628b8131322efbda9db"
+    },
+    {
+      "path": "src/fms/play/war29-client.ts",
+      "archive": "fms/play/war29-client.ts.source",
+      "sha256": "51ff936ce5eebe4e2adc0542f4796618c114836a13f87bd79c97761fe4b3f626"
+    },
+    {
+      "path": "src/fms/play/war29-settlement.ts",
+      "archive": "fms/play/war29-settlement.ts.source",
+      "sha256": "18a1c654556dd06b68a571cd353a7d7fdc2e6d1bbaf9bd47a7baf81e37edc01d"
+    },
+    {
+      "path": "src/fms/play/war29/play.worker.ts",
+      "archive": "fms/play/war29/play.worker.ts.source",
+      "sha256": "05d38ccbfabe7fa51acc2108c1a0926f4e9151cbb3b8e47a0d70d3a3e5f06814"
+    }
+  ]
+}

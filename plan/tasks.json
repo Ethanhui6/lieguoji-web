@@ -4762,9 +4762,9 @@
       "date": "2026-10-07",
       "status": "muster21_verified_lifecycle_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "33db769af3ae0234ddbd4325d0309fc246ea75fe",
+      "lastCommitted": "8166a77",
       "cloudScope": "Local-only v21; main, existing cloud preview and all old local versions/stores preserved.",
-      "next": "v21保留可玩；原生日/年龄日期端口独立34项通过，接实际日历适配、新成人年龄来源与完整死亡事务。",
+      "next": "v22限定生日/ISO月龄/人物展示：新局初始人物同一次技能流后抽年龄；旧副本和来源未闭合的新人物unknown。死亡、真实家族另接。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -6098,15 +6098,16 @@
     },
     "nativeCalendarPrototype": {
       "date": "2026-10-07",
-      "status": "kernel_verified_not_integrated",
+      "status": "iso_birth_kernels_verified_not_integrated",
       "productionIntegrated": false,
-      "unitTests": 34,
-      "sourceParent": "9a1f960",
+      "unitTests": 87,
+      "sourceParent": "8166a77",
       "evidence": [
         "docs/evidence/fms-muster21-v5-2026-10-07/CALENDAR_KERNEL.md",
-        "docs/evidence/fms-muster21-v5-2026-10-07/calendar-final-verified.json"
+        "docs/evidence/fms-muster21-v5-2026-10-07/calendar-final-verified.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/iso-calendar-first.json"
       ],
-      "next": "原LocalDate历法与新成人年龄来源，随后独立持久生日和完整死亡继承事务；旧未知生日不补造。"
+      "next": "v22限定生日/ISO月龄/人物展示：新局初始人物同一次技能流后抽年龄；旧副本和来源未闭合的新人物unknown。死亡、真实家族另接。"
     }
   }
 }

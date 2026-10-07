@@ -1,0 +1,117 @@
+{
+  "binarySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "methods": [
+    {
+      "method": "NavalSystem$$IsPortValidAttackOrReclaimTarget",
+      "rva": "419E50",
+      "bytes": 848,
+      "sha256": "ac069bf6f8554973acbc4752bd5660c4e98af479b327ab2a1b6649f17f361ddc",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$ApplyNavyOccupation",
+      "rva": "40F460",
+      "bytes": 2608,
+      "sha256": "8933e423b13e48e908ad4d2be0b9a7b4f34b0104cdc58b8c7768aa4b2b0f0863",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$UpdatePortOccupationRecovery",
+      "rva": "41FA00",
+      "bytes": 1120,
+      "sha256": "b52f35e2d7f25784d867aa40899578efa84d0a4d06f2732f2ecaf61b368975c5",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$HasNavyInPort",
+      "rva": "418F40",
+      "bytes": 112,
+      "sha256": "efb15a59af39e46f385dbb87ae0a49da62dab70abe36467fab98d441329b5063",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$HasEnemyNavyInPort",
+      "rva": "418D30",
+      "bytes": 112,
+      "sha256": "5e6310f1f89f27605ef281634620bd5fd070b51fe5df546e8309c70f199f917a",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "Navy$$GetStrengthFactor",
+      "rva": "422A30",
+      "bytes": 144,
+      "sha256": "4c5fe1355cf0301626017af09c426f9dabad1e8ad6fa8cd29fb45ac51446c05d",
+      "analysisFile": ".autopilot/port39-occupation-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$FindBestEnemyPortTarget",
+      "rva": "4147E0",
+      "bytes": 2208,
+      "sha256": "c27fc551163d3784c96de6ceb266be7978cf369c26a2952d55805e699bc2b9b5",
+      "analysisFile": ".autopilot/port39-target-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$FindBestEnemyPortTarget",
+      "rva": "415080",
+      "bytes": 6016,
+      "sha256": "fbc33e8f6177fd67b770e2cfa76882c6187089f674bb606b872578e3c1bec155",
+      "analysisFile": ".autopilot/port39-target-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "Navy$$UpdateAttacking",
+      "rva": "425580",
+      "bytes": 6080,
+      "sha256": "1b4b9156288626b824f9026b3408ac5298481877f35ed850a297c667a3ef0d35",
+      "analysisFile": ".autopilot/port39-target-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "WorldSettings$$.cctor",
+      "rva": "6E2240",
+      "bytes": 1552,
+      "sha256": "6001d810782ae1857b0dde90c76230e45ac90f9a3530ba17cce9e3b63ad5874d",
+      "analysisFile": ".autopilot/port39-target-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$HasNavyInPortInternal",
+      "rva": "418DA0",
+      "bytes": 416,
+      "sha256": "18fc7d7e7896c6ff6109689ce0a4891ae9aa085f4c022b5bf95c3fa7607ebc5f",
+      "analysisFile": ".autopilot/port39-presence-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$HasEnemyNavyInPortInternal",
+      "rva": "418B40",
+      "bytes": 496,
+      "sha256": "20b582aa7e0ccd7817d11f6d0f7929c863526b622ae4387a8b1ec2e122bfda83",
+      "analysisFile": ".autopilot/port39-presence-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "NavalSystem$$HandleWarEnded",
+      "rva": "418550",
+      "bytes": 1408,
+      "sha256": "c8d7e0e3cf0dcf1b31a1e7baad9656b58ca6a9174ee195cb47d5f6226658222c",
+      "analysisFile": ".autopilot/naval37-native.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    },
+    {
+      "method": "Navy$$HandleWarToPeaceTransition",
+      "rva": "422AC0",
+      "bytes": 176,
+      "sha256": "3f7aeb731759d4900c92be5bd5b57f44559e89306fcf8290fd46608accb5bc6b",
+      "analysisFile": ".autopilot/naval37-counts.txt",
+      "scope": "bounded static PE/IL2CPP; runtime/video unverified"
+    }
+  ]
+}

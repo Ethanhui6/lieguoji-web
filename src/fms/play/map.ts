@@ -86,6 +86,7 @@ export class PlayMap {
   battleAnimations(){return this.battleSprites.map(({id,sprite})=>({id,frame:Math.round(sprite.texture.frame.x/258)+Math.round(sprite.texture.frame.y/194)*5,x:sprite.x*this.projection.zoom+this.projection.x,y:sprite.y*this.projection.zoom+this.projection.y,width:sprite.width*this.projection.zoom}));}
   unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',display:g.display,x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
   pickUnits(point:Point){return this.unitPositions().map(p=>({...p,distance:Math.hypot(p.x-point.x,p.y-point.y)})).filter(p=>p.distance<=(p.kind==='army'?22:18)).sort((a,b)=>a.distance-b.distance);}
+  updatePortControl(controls:NavalView['portControl']){this.shipLayer?.updatePorts(controls);}
   updateUnits(frame:DisplayFrame){
     const p=this.projection;
     for(const g of this.unitGroups){const points=g.ids.flatMap(id=>frame.armies.has(id)?[frame.armies.get(id)!]:[]);if(!points.length)continue;g.container.position.set(points.reduce((s,v)=>s+v.x,0)/points.length/p.scale+g.offset.x,points.reduce((s,v)=>s+v.y,0)/points.length/p.scale+g.offset.y);const x=g.container.x*p.zoom+p.x,y=g.container.y*p.zoom+p.y;g.container.visible=x>=-30&&y>=-30&&x<=p.width+30&&y<=p.height+30;}

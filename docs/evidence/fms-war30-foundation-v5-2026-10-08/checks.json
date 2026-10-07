@@ -1,0 +1,404 @@
+{
+  "date": "2026-10-07T18:06:20.471Z",
+  "task": "WEB-04-37",
+  "sourceParent": "68944191aab195ebaf4bfdb6438d526895c184d4",
+  "sourceCommit": "c7c51544113032653c13b71ef0f26cd15263bf99",
+  "sourceFiles": [
+    {
+      "path": "scripts/fms-war30-compat.ts",
+      "sha256": "a281bb321de4f2ef8afd307ac80f1803b171ed5a3a9ab0a8381bc6dfb83f5ecc"
+    },
+    {
+      "path": "scripts/fms-war30-fingerprint.ts",
+      "sha256": "2354291f6cce0c0f338aa539d64dab60276f2ce5fbeeecf99d24e35603a66332"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-client.ts.source",
+      "sha256": "51ff936ce5eebe4e2adc0542f4796618c114836a13f87bd79c97761fe4b3f626"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-core.ts.source",
+      "sha256": "d5ad71390d412b95476ecc9ded7fa0961d62e33d7a55aceb3db39f5c967f0b68"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-diplomacy.ts.source",
+      "sha256": "ddcddb80f8e7a693822476d28eaef3701c4942ec026e35c7a84c106d884b61a6"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-food.ts.source",
+      "sha256": "f54f1649eaade0dd7636d9c62c6f3e52de83ae578f7be55fd54ea9a26adf01b2"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-model.ts.source",
+      "sha256": "6824ba9b530df46b187cc6aace53dada18afc2c226496fe94ac673c8dcb94e60"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-runtime.ts.source",
+      "sha256": "1d507a74d04794bded4b80a323ef5177a8c2cd8b4b1be3043f046153e16a76a2"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-session.ts.source",
+      "sha256": "eed42aeb5b4306acd687c420eeec4c88e439c57ecaccf9c5f6bc649cd0af382d"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-settlement.ts.source",
+      "sha256": "18a1c654556dd06b68a571cd353a7d7fdc2e6d1bbaf9bd47a7baf81e37edc01d"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-storage.ts.source",
+      "sha256": "5462df4ae0520d2e1509316734dc15dffaf684e443d21687eee5e51daeaa7ef5"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-stores.ts.source",
+      "sha256": "6875f7bedb4621bf11efd33c31d9e64ac2e7a53e999a4628b8131322efbda9db"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29-voyages.ts.source",
+      "sha256": "b73523d515b437c1ef02decd9fa434eea9264cfcb3b904d534603e29ca0c1387"
+    },
+    {
+      "path": "src/fms/play/compat/war29/fms/play/war29/play.worker.ts.source",
+      "sha256": "05d38ccbfabe7fa51acc2108c1a0926f4e9151cbb3b8e47a0d70d3a3e5f06814"
+    },
+    {
+      "path": "src/fms/play/compat/war29/manifest.json",
+      "sha256": "42b65861ed3d39ce7b8d7a20df4cb822ddcc2e5bca6a23707d6493bc5f0924c8"
+    },
+    {
+      "path": "src/fms/play/war30-geography.test.ts",
+      "sha256": "f9b7e3f3af890a43bdf93a68a3a38ccd964a4d70f850ee6101ae381342c112d3"
+    },
+    {
+      "path": "src/fms/play/war30-geography.ts",
+      "sha256": "61ef5f7f9ba85a337c30fd579961f442b4ee838b6c9dcd5afce044dd976fe80d"
+    },
+    {
+      "path": "src/fms/play/war30-model.ts",
+      "sha256": "36093444205b1ca0cb12018ae4e26888acd02933fd44f351ff623de24c59a842"
+    },
+    {
+      "path": "src/fms/play/war30-storage.test.ts",
+      "sha256": "03a6ef0d6765328a1e2a873eab22056c4233fc16203c994f9846b36e2ad08e1d"
+    },
+    {
+      "path": "src/fms/play/war30-storage.ts",
+      "sha256": "7d444b1e6fc92a5afedd7f3da9db54b400738e601682a18c98c24b626100ff94"
+    },
+    {
+      "path": "src/fms/play/war30-stores.ts",
+      "sha256": "e4c03141dbf42275da607aeb2f7dd81b9b86079f16e9460afba57243aa85b449"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "11cd9f2df2713cbe3ddc5ae332b57a47639b661c91da34025ee0acaa365bd993"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "98c65d1bdec12e3c2769fc5f1caa48edd651bead84a15341077c1dd302c6d536"
+    }
+  ],
+  "candidate": {
+    "version": 30,
+    "engine": "6b3e40afc1d3f956e1ba877cc86fa95b8df0c540d05b777ad80f7ff864b21b84",
+    "store": 32,
+    "database": "lieguoji-fms-war-v30",
+    "status": "geography-and-storage-foundation-only",
+    "worker": false,
+    "ui": false,
+    "nativeAi": false
+  },
+  "currentPlayable": {
+    "version": 29,
+    "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
+    "engine": "15f4a928d78be59d3fe27325c0908ecba9cbaf71a13927b7a3c03b1878e35db0",
+    "url": "http://127.0.0.1:5214/?fms=1",
+    "localOnly": true,
+    "http200": true,
+    "retainedArtifactsVerified": 43
+  },
+  "tests": {
+    "passed": 39,
+    "failed": 0,
+    "files": 3,
+    "newTests": 31,
+    "scope": "20 real geography, 11 independent storage/freeze, 8 recovered neighbor checks; not full repository suite"
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "planReleaseGuards": {
+    "passed": 39,
+    "failed": 0
+  },
+  "build": {
+    "root": ".autopilot/war30-foundation/dist",
+    "artifacts": [
+      {
+        "path": "build.json",
+        "sha256": "b7ade237b840b02ab4aa752d0460e992e52e748feed2a576a1dfbfb6d073d551",
+        "bytes": 13090
+      },
+      {
+        "path": "favicon.svg",
+        "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+        "bytes": 221
+      },
+      {
+        "path": "index.html",
+        "sha256": "e6ba985cd0bb7d28bea7665e46b233d841ddeac89b15f6e260a0b2abc3884546",
+        "bytes": 626
+      },
+      {
+        "path": "terrain-licenses.txt",
+        "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df",
+        "bytes": 10779
+      },
+      {
+        "path": "_headers",
+        "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+        "bytes": 424
+      },
+      {
+        "path": "_redirects",
+        "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+        "bytes": 19
+      },
+      {
+        "path": "assets/App-B-TSmWiq.css",
+        "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+        "bytes": 9578
+      },
+      {
+        "path": "assets/App-BBgwnl13.js",
+        "sha256": "4a49f89ad86b960d805031efe199e10c56bce331d005744fc4b3e165977c269b",
+        "bytes": 72384
+      },
+      {
+        "path": "assets/atlas.worker-D_ZIKkck.js",
+        "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+        "bytes": 409814
+      },
+      {
+        "path": "assets/AtlasStudio-CSilyENn.js",
+        "sha256": "79d3aec281a398e5f4021db1e89294b360b97a89a2efc242aea8e46e4beed442",
+        "bytes": 173274
+      },
+      {
+        "path": "assets/AtlasStudio-CtV71PEf.css",
+        "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+        "bytes": 24315
+      },
+      {
+        "path": "assets/battle-sword-BXcDEFcj.png",
+        "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3",
+        "bytes": 482109
+      },
+      {
+        "path": "assets/biome.worker-DO2s7HoV.js",
+        "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b",
+        "bytes": 15884
+      },
+      {
+        "path": "assets/browserAll-u-eDj63v.js",
+        "sha256": "f181fdd321f7de5c2ea4953d310c1bf56e065492a268430dace48356b7b4f964",
+        "bytes": 42646
+      },
+      {
+        "path": "assets/BufferResource-Bk8ZSLzt.js",
+        "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+        "bytes": 11027
+      },
+      {
+        "path": "assets/camera-BGXwsUH8.js",
+        "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+        "bytes": 23199
+      },
+      {
+        "path": "assets/canvasUtils-BVGwBBBn.js",
+        "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+        "bytes": 6054
+      },
+      {
+        "path": "assets/coast.worker-2MXmECyk.js",
+        "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390",
+        "bytes": 19346
+      },
+      {
+        "path": "assets/CountryStudio-C82NM8ff.js",
+        "sha256": "53c88be182fad16c9f9338f574747cde31a57bf3b41ae0ca35b985d062b453fc",
+        "bytes": 128542
+      },
+      {
+        "path": "assets/CountryStudio-Cn5n2Zb4.css",
+        "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+        "bytes": 13293
+      },
+      {
+        "path": "assets/delaunay-BCSrghLA.js",
+        "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc",
+        "bytes": 55255
+      },
+      {
+        "path": "assets/FmsApp--oZjM1tC.css",
+        "sha256": "b9f6cf528639e9af413bd3de10ac8d13b8d7a686619f7e2db8b7ae8b6c21a416",
+        "bytes": 31707
+      },
+      {
+        "path": "assets/FmsApp-BlSx05ka.js",
+        "sha256": "af8ae18edb68269d36b40a2efa6952f60bab71ab2a51599b739e5cdf9dd3dec0",
+        "bytes": 2100834
+      },
+      {
+        "path": "assets/Geometry-IpHxCVTc.js",
+        "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+        "bytes": 109697
+      },
+      {
+        "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+        "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+        "bytes": 469
+      },
+      {
+        "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+        "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+        "bytes": 342
+      },
+      {
+        "path": "assets/index-B2s3mIfY.js",
+        "sha256": "6d0f505d27cfec1d8bc86fdc3272c7e81a1c1540e73dfcdea5e0c2564c6dea2b",
+        "bytes": 221793
+      },
+      {
+        "path": "assets/init-B8Jnes8g.js",
+        "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+        "bytes": 15379
+      },
+      {
+        "path": "assets/init-DwZTGHrq.js",
+        "sha256": "773049079338f4a890c052c43b0b0d5165603d6fb507a050b6ae6423072b0a72",
+        "bytes": 250437
+      },
+      {
+        "path": "assets/LegacyEntry-CNvbqJOh.css",
+        "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+        "bytes": 34881
+      },
+      {
+        "path": "assets/LegacyEntry-DxtcxUu9.js",
+        "sha256": "cb1f038d07e2d6996a4f4b0378ede3737b8ee210b98f44f6286bc6191b36a074",
+        "bytes": 132329
+      },
+      {
+        "path": "assets/play.worker-DXH9iofH.js",
+        "sha256": "60e3456f5b3a6416ad94891472744ef39e746ad5dc5886f7f946d1423a1f5745",
+        "bytes": 2277970
+      },
+      {
+        "path": "assets/renderer-DMfl_J3a.js",
+        "sha256": "0af323d06898a6eed3d5857f31bd6910974aeb5f543f1fcad2402b10d34a1a9c",
+        "bytes": 210865
+      },
+      {
+        "path": "assets/RenderTargetSystem-a4R96cNy.js",
+        "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+        "bytes": 78109
+      },
+      {
+        "path": "assets/replay.worker-Dvt2kBgS.js",
+        "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+        "bytes": 86986
+      },
+      {
+        "path": "assets/rolldown-runtime-hePW80VL.js",
+        "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+        "bytes": 716
+      },
+      {
+        "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+        "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5",
+        "bytes": 34693
+      },
+      {
+        "path": "assets/sim.worker-CLe8Zpf3.js",
+        "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+        "bytes": 91681
+      },
+      {
+        "path": "assets/terrain-import.worker-B9lRjsio.js",
+        "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+        "bytes": 162206
+      },
+      {
+        "path": "assets/terrain.worker-DaY7RVPz.js",
+        "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897",
+        "bytes": 49491
+      },
+      {
+        "path": "assets/Text-BY1CTNKR.js",
+        "sha256": "e443413dc96e4ae9c2b669ff267e839e144a17e2e9a004575bbbfc9f6680dc46",
+        "bytes": 34909
+      },
+      {
+        "path": "assets/webworkerAll-COqORy8b.js",
+        "sha256": "708a86737245ef81cf960137290985f38090dc198b6186057b2d9d29d11b0dbd",
+        "bytes": 54
+      },
+      {
+        "path": "assets/worker-pjB4IGPF.js",
+        "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+        "bytes": 223767
+      }
+    ],
+    "status": "passed, 43-file whitelist",
+    "note": "Candidate configuration/build check. FmsGame and production Worker are still v29; new candidate modules are not production entry imports.",
+    "warning": "Large existing chunks; not a load-time or FPS acceptance."
+  },
+  "browser": {
+    "status": "passed",
+    "report": "docs/evidence/fms-war30-foundation-v5-2026-10-08/browser.json",
+    "scope": "Isolated Chromium dev, real v29 Worker and candidate v30 IndexedDB; no v30 session/UI or native/phone acceptance.",
+    "scale": {
+      "points": 36864,
+      "triangles": 72962,
+      "landProvinces": 60,
+      "waterProvinces": 100,
+      "wetFaces": 45915,
+      "partitionJsonBytes": 293537,
+      "landGenerationMs": 735.1000000014901,
+      "geographyMs": 679.7000000029802,
+      "validateMs": 174.89999999850988,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+    }
+  },
+  "failures": [
+    {
+      "step": "initial unit",
+      "result": "37 passed / 1 failed: fingerprint scan 20.916s exceeded default 5s. Redundant recursive scan removed; uses existing v29 filesystem/AST 30s check budget; final whole storage file 6.4s, no assertion removed."
+    },
+    {
+      "step": "Python driver",
+      "result": "Bundled Python has no playwright; reused project JS Playwright 1.63, no dependency installation."
+    },
+    {
+      "step": "initial browser",
+      "result": "Test harness left async setup function uninvoked; no synthetic save created. Corrected to invoke function; failure report preserved."
+    },
+    {
+      "step": "browser after source edit",
+      "result": "Vite restart caused ERR_CONNECTION_RESET. Confirmed HTTP200 then reran; failure report preserved."
+    }
+  ],
+  "privacy": "Scoped 23 source/config/archive paths; credential signatures clear; no install dump, auth or personal saves",
+  "acceptance": {
+    "productionV30": false,
+    "nativeVisual": false,
+    "iPhone": false,
+    "fullWeb0437": false
+  },
+  "release": {
+    "push": false,
+    "pages": false,
+    "mainChanged": false,
+    "personalSavesChanged": false
+  },
+  "next": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces."
+}

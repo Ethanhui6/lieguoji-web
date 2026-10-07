@@ -4347,9 +4347,15 @@
               "docs/evidence/fms-casus-state-v5-2026-10-08/DELIVERY.md",
               "docs/evidence/fms-casus-state-v5-2026-10-08/checks.json",
               "docs/evidence/fms-casus-state-v5-2026-10-08/unit-batch.json",
-              "docs/evidence/fms-casus-state-v5-2026-10-08/unit-neighbor-final.json"
+              "docs/evidence/fms-casus-state-v5-2026-10-08/unit-neighbor-final.json",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/checks.json",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/unit-final.json",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/browser.json",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-desktop.png",
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-portrait.png"
             ],
-            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。 2026-10-08宣战目录/资格/目标和国家输入片段已接成组合测试；391相关+最后8项受影响检查通过，初始化100仅构造值的范围已更正；生产仍v29，详见nativeCasusState。"
+            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。 2026-10-08宣战目录/资格/目标和国家输入片段已接成组合测试；391相关+最后8项受影响检查通过，初始化100仅构造值的范围已更正；生产仍v29，详见nativeCasusState。 2026-10-08 v29冻结、新v30候选真实外交水域与Store32已验；39相关测试、真实浏览器保存/竞争写/旧版继续、43产物构建审查通过。未接v30 AI/Worker/UI，生产仍v29，见war30Foundation。"
           }
         ]
       },
@@ -4443,7 +4449,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit.",
+    "nextRecoveryTarget": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4920,12 +4926,12 @@
       ]
     },
     "executionCheckpoint": {
-      "date": "2026-10-07",
+      "date": "2026-10-08",
       "status": "v29 diplomacy settings and native monthly/death scheduling verified locally; full restoration continues",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "cloudScope": "Local-only v29; bounded preview grant not extended; main, v28 preview and old saves preserved.",
-      "next": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit.",
+      "next": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces.",
       "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
       "evidence": [
@@ -5050,7 +5056,7 @@
       "localUrl": "http://127.0.0.1:5214/?fms=1",
       "currentLocalHead": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "checkpointNote": "Playable source remains 41af47b/v29. Complete registered CB and state-input kernels verified at 1e81910, not yet production imported; new version integration next. Do not reinterpret constructor power 100 as fully initialized start/end power.",
+      "checkpointNote": "v30 candidate geography and storage foundation verified at c7c51544113032653c13b71ef0f26cd15263bf99; playable source remains 41af47b/v29. Do not recreate v30, regenerate geography on load, or claim native AI/UI integrated.",
       "head": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "soleWriter": "root",
       "nextBatch": [
@@ -5063,9 +5069,10 @@
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-08: HTTP build.json 200, v29 engine and all 43 retained artifacts verified; no new game build. Existing 5214 loopback preview remains.",
+      "localPortCheck": "2026-10-07T18:06:20.471Z: restored retained v29 on 127.0.0.1:5214 after checking 43 artifact hashes; HTTP build.json 200 and engine match. Temporary QA 5215 is not a new playable version.",
       "previewUrlStatus": "Historical cloud preview only; local v29 and new standalone kernels have not been pushed or deployed there.",
-      "latestKernelSourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef"
+      "latestKernelSourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef",
+      "latestCandidateSourceCommit": "c7c51544113032653c13b71ef0f26cd15263bf99"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -7050,6 +7057,23 @@
       },
       "currentPlayableVersion": 29,
       "next": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit."
+    },
+    "war30Foundation": {
+      "date": "2026-10-07T18:06:20.471Z",
+      "status": "verified_candidate_geography_and_storage_only",
+      "sourceCommit": "c7c51544113032653c13b71ef0f26cd15263bf99",
+      "evidence": [
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/unit-final.json",
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/browser.json",
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-desktop.png",
+        "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-portrait.png"
+      ],
+      "workerIntegrated": false,
+      "uiIntegrated": false,
+      "currentPlayableVersion": 29,
+      "next": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces."
     }
   }
 }

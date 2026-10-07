@@ -4342,9 +4342,14 @@
               "docs/evidence/fms-declaration-kernels-v5-2026-10-08/RECOVERY.md",
               "docs/evidence/fms-declaration-kernels-v5-2026-10-08/DELIVERY.md",
               "docs/evidence/fms-declaration-kernels-v5-2026-10-08/checks.json",
-              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/unit-final.json"
+              "docs/evidence/fms-declaration-kernels-v5-2026-10-08/unit-final.json",
+              "docs/evidence/fms-casus-state-v5-2026-10-08/RECOVERY.md",
+              "docs/evidence/fms-casus-state-v5-2026-10-08/DELIVERY.md",
+              "docs/evidence/fms-casus-state-v5-2026-10-08/checks.json",
+              "docs/evidence/fms-casus-state-v5-2026-10-08/unit-batch.json",
+              "docs/evidence/fms-casus-state-v5-2026-10-08/unit-neighbor-final.json"
             ],
-            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。"
+            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。 2026-10-08宣战目录/资格/目标和国家输入片段已接成组合测试；391相关+最后8项受影响检查通过，初始化100仅构造值的范围已更正；生产仍v29，详见nativeCasusState。"
           }
         ]
       },
@@ -4438,7 +4443,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Bind native data, complete CB catalog conditions/weights, native sea neighbor and relationship history; version/freeze before replacing web AI. Continue existing WEB-04-37, then WEB-03-06; new full audit remains queued.",
+    "nextRecoveryTarget": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4920,7 +4925,7 @@
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "cloudScope": "Local-only v29; bounded preview grant not extended; main, v28 preview and old saves preserved.",
-      "next": "WEB-04-37继续普通CB资格/完整AI候选与好感时间戳、内战和附庸改宗生产适配；见NEXT_CB，不重做v29自动外交/期限/月初/同tick覆亡。之后WEB-03-06，再启动排队全项目审查。",
+      "next": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit.",
       "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
       "evidence": [
@@ -5045,7 +5050,7 @@
       "localUrl": "http://127.0.0.1:5214/?fms=1",
       "currentLocalHead": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "checkpointNote": "Playable source remains 41af47b/v29. New declaration kernels are verified but not imported by current runtime; see nativeDeclarationKernels. Full restoration remains incomplete.",
+      "checkpointNote": "Playable source remains 41af47b/v29. Complete registered CB and state-input kernels verified at 1e81910, not yet production imported; new version integration next. Do not reinterpret constructor power 100 as fully initialized start/end power.",
       "head": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
       "soleWriter": "root",
       "nextBatch": [
@@ -5058,9 +5063,9 @@
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-08: original 5214/5212 processes stopped; checked absent handles/listeners, reverified 43 immutable v29 artifacts and restarted 5214 only. v28 artifacts retained, 5212 offline.",
+      "localPortCheck": "2026-10-08: HTTP build.json 200, v29 engine and all 43 retained artifacts verified; no new game build. Existing 5214 loopback preview remains.",
       "previewUrlStatus": "Historical cloud preview only; local v29 and new standalone kernels have not been pushed or deployed there.",
-      "latestKernelSourceCommit": "c92839c8705d3daf61100ea99cc8a3e0cd867661"
+      "latestKernelSourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -7014,6 +7019,37 @@
         "src/fms/play/native-war/diplomatic-power.test.ts"
       ],
       "next": "Bind native data, complete CB catalog conditions/weights, native sea neighbor and relationship history; version/freeze before replacing web AI. Continue existing WEB-04-37, then WEB-03-06; new full audit remains queued."
+    },
+    "nativeCasusState": {
+      "date": "2026-10-07T16:54:00.150Z",
+      "status": "verified_native_fragments_not_production_integrated",
+      "task": "WEB-04-37",
+      "sourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef",
+      "evidence": [
+        "docs/evidence/fms-casus-state-v5-2026-10-08/RECOVERY.md",
+        "docs/evidence/fms-casus-state-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-casus-state-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-casus-state-v5-2026-10-08/unit-batch.json",
+        "docs/evidence/fms-casus-state-v5-2026-10-08/unit-neighbor-final.json"
+      ],
+      "checks": {
+        "initialPassed": 290,
+        "batchPassed": 391,
+        "batchFiles": 21,
+        "finalAffectedPassed": 8,
+        "finalAffectedFiles": 1,
+        "uniqueChecks": 392,
+        "addedChecks": 56,
+        "failedFinal": 0,
+        "scopeNote": "391 related tests passed before final lazy-set-read correction; corrected geography then passed all 8 affected tests. 392 is unique coverage, not a single final 392-test run.",
+        "reports": [
+          "unit-initial.json",
+          "unit-batch.json",
+          "unit-neighbor-final.json"
+        ]
+      },
+      "currentPlayableVersion": 29,
+      "next": "Freeze v29, persist actual country/relationship/CB state in a new isolated version and integrate recovered declaration into Worker/UI; establish logical water-province topology, preserve unknown historical fields on explicit old-world copies. Continue WEB-04-37 before WEB-03-06 and queued full audit."
     }
   }
 }

@@ -4282,10 +4282,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": {
-      "priority": "WEB-04-13-native-destiny-lifecycle",
-      "next": "国运独立内核24项已验证且未生产接入；先冻结v19，再持久接线真实月结/人口金币行政/特性与读档不重抽。不要重复恢复内核，继续人物家族依赖。"
-    },
+    "nextRecoveryTarget": "WEB-04-13: 原普通动员数量/君主特性，已核RVA见v20 NEXT_MUSTER；特殊强国榜单依赖仍未闭合。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4763,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "restoration19_verified_native_destiny_kernel_ready",
+      "status": "destiny20_verified_muster_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "56994770d552a80f5b49c799d3eab7e4a2b23337",
-      "cloudScope": "Local-only v19; existing cloud preview and main preserved.",
-      "next": "国运独立内核24项已验证且未生产接入；先冻结v19，再持久接线真实月结/人口金币行政/特性与读档不重抽。不要重复恢复内核，继续人物家族依赖。",
+      "lastCommitted": "938769f0e8b48e8da7d2227db8f50060a3d627fc",
+      "cloudScope": "Local-only v20; existing cloud preview/main and all prior stores preserved.",
+      "next": "冻结已验证v20，按原普通动员数量/君主特性/核心候选接新规则，先补齐真实资格与同月次序；原特殊强国榜单仍未闭合。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4818,11 +4815,11 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
       ],
-      "currentVersion": 19,
-      "currentEngine": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
+      "currentVersion": 20,
+      "currentEngine": "8c86ffb84d46b7e45a2fbd5f7ac88772a9fbee672d452bf12544e2c8c4a2d382",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5191/?fms=1",
-      "currentLocalHead": "56994770d552a80f5b49c799d3eab7e4a2b23337"
+      "localUrl": "http://127.0.0.1:5193/?fms=1",
+      "currentLocalHead": "938769f0e8b48e8da7d2227db8f50060a3d627fc"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6019,8 +6016,8 @@
     },
     "nativeDestinyPrototype": {
       "date": "2026-10-07",
-      "status": "kernel_verified_not_integrated",
-      "productionIntegrated": false,
+      "status": "integrated_v20_local_verified",
+      "productionIntegrated": true,
       "passed": 24,
       "evidence": [
         "docs/evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md",
@@ -6028,6 +6025,44 @@
         "docs/evidence/fms-restoration19-v5-2026-10-07/destiny-checks.json"
       ],
       "sourceCommit": "56994770d552a80f5b49c799d3eab7e4a2b23337"
+    },
+    "destiny20Prototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 20,
+      "store": 22,
+      "database": "lieguoji-fms-destiny-v20",
+      "sourceParent": "938769f0e8b48e8da7d2227db8f50060a3d627fc",
+      "engine": "8c86ffb84d46b7e45a2fbd5f7ac88772a9fbee672d452bf12544e2c8c4a2d382",
+      "localUrl": "http://127.0.0.1:5193/?fms=1",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "productionIntegrated": true,
+      "browserVerified": true,
+      "evidence": [
+        "docs/evidence/fms-destiny20-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/unit-first.json",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/browser-first.json",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/NEXT_MUSTER.md",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/browser.json",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/tested-artifact.json"
+      ],
+      "unitTests": 3127,
+      "browserChecks": 3
+    },
+    "nativeMusterPrototype": {
+      "date": "2026-10-07",
+      "status": "kernel_verified_not_integrated",
+      "tests": 18,
+      "productionIntegrated": false,
+      "evidence": [
+        "docs/evidence/fms-destiny20-v5-2026-10-07/NEXT_MUSTER.md",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/muster-kernel-final.json"
+      ]
     }
   }
 }

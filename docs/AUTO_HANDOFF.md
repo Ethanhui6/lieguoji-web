@@ -1,3 +1,16 @@
+# 当前续接：v20国运可玩，接原动员规则
+
+2026-10-07，父HEAD 938769f0e8b48e8da7d2227db8f50060a3d627fc；根唯一源码写入，代理只读。本批未提交/未上传；Goal、WEB-PH04/WEB-04-13保持进行中。
+
+- 最新候选 http://127.0.0.1:5193/?fms=1 ，独立 .autopilot/destiny20-final-preview/dist，v20/Store22/lieguoji-fms-destiny-v20，engine 8c86ffb84d46b7e45a2fbd5f7ac88772a9fbee672d452bf12544e2c8c4a2d382。5191/v19、5189/v18及全部旧库保留。5192仅早期候选，有已修继续标签错误。
+- 原国运f32月衰减、触底重抽、Manifest特性、真实人口/金币/行政、清recent而保留动员冷却已进Worker；独立schema、旧档显式副本、随机流持久。完整合同 [CONTRACT](docs/evidence/fms-destiny20-v5-2026-10-07/CONTRACT.md)。网页30日/政治次序仍适配，不称原月日历/完整国运事件等价。
+- 全量3127项/264文件、lint/types、24发布＋15计划、计划校验、43产物构建通过；桌面/手机尺寸/平板3项实际Worker流程0重试通过，桌面走到第30日国运/财政月结并精确保存恢复。后加未接生产动员核18项单列，不混入上述全量；最新UI与核另做最终lint/types。首轮继续标签失败、极小小数表单问题已修，失败证据保留。见[evidence交付](evidence/fms-destiny20-v5-2026-10-07/DELIVERY.md)。
+- 手工普通UI不规则大陆六国（威尔登费尔泽/西萨克斯/吕讷堡/哈莫尼乌斯/德拉科斯/松德高）；威尔登费尔泽国运40、天命计数2保存刷新保持。小数试验后恢复40。tab14已保存第0日/暂停/6秒日/全图，控制台error空。不是iPhone真机/视觉验收。
+- 下一批原动员数量和特性已只读恢复 [NEXT_MUSTER](docs/evidence/fms-destiny20-v5-2026-10-07/NEXT_MUSTER.md)：普通月动员读国运与Hawkish/Dovish，不写国运；特殊强国分支须另核榜单，不混入。不重跑旧或本批start/wire/ui一次性脚本。
+- 无push/PR/Issue/Pages/main修改。生产发布与真机/视觉边界不变。
+
+---
+
 # 当前续接：v19起义/复国可玩，接原国运与人物生命周期
 
 2026-10-07，父HEAD 0ec8308；根唯一写入，代理仅只读。本批v19源码已本地提交c6159ca8b833215e6eab5dfb4e1d6632076a7e9b，未上传；WEB-PH04 / WEB-04-13与完整Goal保持进行中，不以此批为完整还原。

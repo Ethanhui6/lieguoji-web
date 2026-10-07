@@ -1,0 +1,62 @@
+[
+  {
+    "file": "browser-harness.mjs",
+    "rawSha256": "9752d089d69574600699698ad5e0a8ffab1908df85c489d671d38d2cdb1d73bf",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "build.log.txt",
+    "rawSha256": "3868cac51e9553425ddefc42808a86857d10d40f74acb29c05d12e9cf51c5fcc",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "dist-audit.log.txt",
+    "rawSha256": "3cf7d6f93a76660da580de6b1cfa90b069d38e3d92c55ddc5bfd43b3e5ea73fd",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "lint-first.log.txt",
+    "rawSha256": "f41e2bc205321809a6276ce8325885984125f980f9ff4e798f41bf1dcd3f5a5c",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "lint.log.txt",
+    "rawSha256": "1e332a06fdfeab3adde150b03e92e8869c63cb2947b609f3adbae7455ed239c4",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "plan-check.log.txt",
+    "rawSha256": "5f3489f38b6cf7ca42ae74b48c033ceedb98fdc45ef9b165f6bc928e20f68533",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "release-policy.log.txt",
+    "rawSha256": "856cbfc26a12bcf463fe5f51e49796611292a3701e6de5c4957607ca71a32bf3",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "tests-clock-fixture-failure.log.txt",
+    "rawSha256": "3fcc732e633518f41d4dfb193f9363d67ca8c729ffe0abbfefc60d91472fb276",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "tests-reload-fixture-failure.log.txt",
+    "rawSha256": "ccc4c2a7b73b9969d0906dbf9b1e03009a7e2dbb9a6d843ad1cc0a8693b74b7b",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "tests.log.txt",
+    "rawSha256": "6eb87198c3fad36ed778510abcb4ca9891adfd8f3f66ebb224d9b7fd5d60aacd",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "typecheck-first.log.txt",
+    "rawSha256": "98c77b11ce3944f0dd8801e62a1e79a4aaae9510a69c17e8fe8ce86392d3649a",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  },
+  {
+    "file": "typecheck.log.txt",
+    "rawSha256": "1e332a06fdfeab3adde150b03e92e8869c63cb2947b609f3adbae7455ed239c4",
+    "normalization": "CRLF and trailing whitespace only; original command logs retained under .autopilot"
+  }
+]

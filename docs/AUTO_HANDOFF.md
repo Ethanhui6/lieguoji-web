@@ -1,3 +1,18 @@
+# 当前续接：v39海港争夺已可玩，继续完整战争V2
+
+2026-10-08；已测源码 `282c76c22e09447d317bd67fdafbb90b71b8c62c`；后续证据提交请以实际git HEAD核实；根唯一写入。顺序WEB-04-37 → WEB-03-06 → 排队官网/视频全项目审查/前10差距不变，无新的必要用户决策阻塞。
+
+- 海港控制与城市/陆地独立；原作攻击/恢复、前进据点、优先夺回再最近敌港接实际航路。海军面板预览取消确认；地图国色小进度环独立刷新；造船、补粮与自动运输遵守海港控制。手动军令/货舱/海战优先。
+- [交付](evidence/fms-port39-v5-2026-10-08/DELIVERY.md)、[原作合同](evidence/fms-port39-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-port39-v5-2026-10-08/checks.json)。62相关回归、全仓types/lint、39保护检查及43产物审查；生产浏览器22海格航行、第15日夺港、陆地未变、保存刷新/CAS/实时Worker、普通6国60城新局通过。
+- [本机试玩v39](http://127.0.0.1:5234/?fms=1)，产物`.autopilot/port39-production2/dist`，PID32304，engine `2e99729db51b4ea8bf23b8b1e80c45b364ecba2fe8bbd3bd8079f63ea0f7bb53`；Store41/独立DB。旧v38/5232与43产物哈希保留。端口存档不自动迁移，手机不能使用此127.0.0.1地址。
+- 本批只读原作PE/IL2CPP静态恢复；.35舰队攻击角色完整分配、多格港湾/游弋、完整战后重置和原生协同尚缺。网页时钟/航路/舰体/海战经济差异明确；不要将本切片记作完整战争或原作等价。
+- 428×926为桌面仿真；方形军事夹具不是地图美术验收。全景/4-16-40倍原作视觉和iPhone门仍未过。主包约2.91MB与Vite警告保留。
+- 下一批：Continue WEB-04-37 from playable v39. Native sea-port independent control, attack/recovery, real assault route and forward-base record are integrated; do not recover those leaf methods again. Finish native navy attack/defend role allocation (0.35 ratio alone is not full evidence), multi-cell harbor/loiter, complete postwar return lifecycle, land/naval coordination and remaining military office/cooldown/internal-war rules. Then WEB-03-06, followed by queued official/video full audit/top10. Preserve v38/5232 and earlier saved worlds. No push/Pages/main changes.
+- 开发服5233/PID20644及首轮临时预览PID34464已关闭；最终5234/PID32304与旧5232/PID22276保留。任务结构检查通过。
+- 未push/Pages/main/发布门变化；详细失败与修复证据已保存。
+
+---
+
 # 当前续接：v38陆军驻防已可玩，继续完整战争V2
 
 2026-10-08；已测源码 `67f2d1d7a39c0a9fb41e3dcb38198719d0f16aac`；后续证据提交请以git HEAD现场核实；根唯一写入。顺序WEB-04-37 → WEB-03-06 → 排队的官网/视频全项目审查/前10差距不变。没有新的必要用户决策阻塞。

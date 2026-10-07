@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "282c76c22e09447d317bd67fdafbb90b71b8c62c",
+  "engine": "2e99729db51b4ea8bf23b8b1e80c45b364ecba2fe8bbd3bd8079f63ea0f7bb53",
+  "tests": {
+    "totalBatch": 62,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "native port values/target priorities; physical presence, cargo, sea combat; retreat recovery; remaining war; dock food/build permission; routes; exact load state; v38 frozen DB; future slot guards and CAS",
+    "fullTypecheck": "passed",
+    "fullLint": "passed",
+    "releasePlanProtection": 39,
+    "fullRepositoryTestSuite": "not run",
+    "evidence": "tests.log.txt"
+  },
+  "production": {
+    "build": "passed",
+    "artifacts": 43,
+    "privacyAudit": "unchanged check-dist with scoped artifact root",
+    "oldV38ArtifactsVerified": 43,
+    "localUrl": "http://127.0.0.1:5234/?fms=1",
+    "previewPid": 32304,
+    "browser": "browser-production.json",
+    "newGame": "browser-newgame.json",
+    "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-port39-v5-2026-10-08\\video\\page@51181a097ac3fe15da18269d187023d0.webm",
+    "fmsAppBytes": 2909474,
+    "chunkSizeWarning": true
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "liveWorkerDelta": 9,
+    "crossTabCAS": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "planCheck": "passed",
+  "validationSourceCommit": "9160ab0a21a653f8c0e6d9bb9bcb5a56da29c54e",
+  "validationReuse": "Only CSS contrast changed in 282c76c; native engine unchanged. Production browser/new-game/screenshots repeated against 282c76c."
+}

@@ -1,0 +1,10 @@
+{
+  "origin": "http://127.0.0.1:5233",
+  "production": false,
+  "scope": "Disposable Chromium, synthetic five-country geometry; actual sea-port capture/control UI/Worker/IDB. Not original runtime/visual parity or iPhone.",
+  "errors": [],
+  "httpFailures": [],
+  "passed": false,
+  "failure": "Error: page.evaluate: Error: 两国没有可争夺的相邻土地或外交海域。\n    at declareWar39 (http://127.0.0.1:5233/src/fms/play/war39-declaration.ts:311:17)\n    at War39Session.execute (http://127.0.0.1:5233/src/fms/play/war39-session.ts:389:4)\n    at eval (eval at evaluate (:311:30), <anonymous>:1:853)\n    at async <anonymous>:337:30",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-port39-v5-2026-10-08\\video\\page@5b1f500f688e5aa94e61bf22dc491a89.webm"
+}

@@ -1,0 +1,6 @@
+
+D:\游戏\架空地图模拟器\src\fms\play\war39-deployment.ts
+  82:72   error  'reserved' is assigned a value but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  82:112  error  'portAccess' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 2 problems (2 errors, 0 warnings)

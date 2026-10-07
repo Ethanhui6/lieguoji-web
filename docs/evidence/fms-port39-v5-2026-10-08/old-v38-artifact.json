@@ -1,0 +1,222 @@
+{
+  "source": "67f2d1d7a39c0a9fb41e3dcb38198719d0f16aac",
+  "directory": ".autopilot/army38-preview/dist",
+  "files": [
+    {
+      "path": "_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+      "bytes": 424
+    },
+    {
+      "path": "_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+      "bytes": 19
+    },
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+      "bytes": 9578
+    },
+    {
+      "path": "assets/App-BemJE6Kw.js",
+      "sha256": "da6cf156f326b691dc060c41a01051698386abe93d661810316e91754e3e7c81",
+      "bytes": 72384
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+      "bytes": 409814
+    },
+    {
+      "path": "assets/AtlasStudio-BQYFe6P0.js",
+      "sha256": "ed332bde64ac1c479cfc10d9db77afa9adc9d7b180b94c4d7c2931e1c5f08def",
+      "bytes": 173274
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+      "bytes": 24315
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3",
+      "bytes": 482109
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b",
+      "bytes": 15884
+    },
+    {
+      "path": "assets/browserAll-DLLtM-kO.js",
+      "sha256": "36e69688e303dcee57a06974a5357d8dc3823b37e202e8d349e9d34c23440a72",
+      "bytes": 42646
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+      "bytes": 11027
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+      "bytes": 23199
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+      "bytes": 6054
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390",
+      "bytes": 19346
+    },
+    {
+      "path": "assets/CountryStudio-_vPav_Pg.js",
+      "sha256": "69eca66ed9900dee06f1effe85f784de5a4042d254da4b96a2215471243c1268",
+      "bytes": 128542
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+      "bytes": 13293
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc",
+      "bytes": 55255
+    },
+    {
+      "path": "assets/FmsApp-CJicFzye.js",
+      "sha256": "1a2a2eb4c7d34bae8c161c10f1db4c7477a220335351d936588355d1352e6057",
+      "bytes": 2781542
+    },
+    {
+      "path": "assets/FmsApp-Dxb4r-XI.css",
+      "sha256": "6a41cf255bfac33aeaf31b7b1c24a5d1ec4c0d36c490106e40cfeb631727ad06",
+      "bytes": 34474
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+      "bytes": 109697
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+      "bytes": 469
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+      "bytes": 342
+    },
+    {
+      "path": "assets/index-5RvEeXYX.js",
+      "sha256": "9ea991c2634ed0f4286c7a9de2c007243975b4caafde2c42e50895a269a4770b",
+      "bytes": 221793
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+      "bytes": 15379
+    },
+    {
+      "path": "assets/init-DFSUWiVo.js",
+      "sha256": "38faa083acf416a535ca8103524ddb4bc95a47dd868d3e4ec1227ccb37169d4c",
+      "bytes": 250437
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+      "bytes": 34881
+    },
+    {
+      "path": "assets/LegacyEntry-CtRXEWSk.js",
+      "sha256": "499d2fc7355efdfd8afdb53e6ab1ea4b74ed208583cca84b5229c56fc7669530",
+      "bytes": 132329
+    },
+    {
+      "path": "assets/play.worker-B8H5Vcdk.js",
+      "sha256": "cb62c14d59322a13fc4f9f5990f9e6fb692a20c6b8581d9afcbc9480100e5ce7",
+      "bytes": 2993514
+    },
+    {
+      "path": "assets/renderer-Cr1I4_wO.js",
+      "sha256": "e3d9b40295e4aef923c8713df038fe5d6e97da0ff6189e8c5bca727d82640fba",
+      "bytes": 210865
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+      "bytes": 78109
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+      "bytes": 86986
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "bytes": 716
+    },
+    {
+      "path": "assets/seed-terrain.worker-By3PuuSW.js",
+      "sha256": "0e4e2201e3af1ac527e85199dd53fdbd2a3f41c81eafd92f45f0b7baac952f67",
+      "bytes": 34693
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+      "bytes": 91681
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+      "bytes": 162206
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897",
+      "bytes": 49491
+    },
+    {
+      "path": "assets/Text-BdmC5O8N.js",
+      "sha256": "0daeb43169de7a5ae53374306bbe19be511e2cad9ca5fe6069db673322f71ff7",
+      "bytes": 34909
+    },
+    {
+      "path": "assets/webworkerAll-DBb4kMFd.js",
+      "sha256": "d36fd633c1aac1b63728a31b5da54a9079bab26522ecc66f285e7b090b69581f",
+      "bytes": 54
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+      "bytes": 223767
+    },
+    {
+      "path": "build.json",
+      "sha256": "253bf2b38b9fecbb0c841f405cd071de8d57f75398506faa3036eb7268a6c863",
+      "bytes": 13802
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+      "bytes": 221
+    },
+    {
+      "path": "index.html",
+      "sha256": "4db171dceb70f5d78d812d3d2cf16779a96e92cefdcbffe272609dadc24a4925",
+      "bytes": 626
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df",
+      "bytes": 10779
+    }
+  ],
+  "recheckedAfterProduction": true
+}

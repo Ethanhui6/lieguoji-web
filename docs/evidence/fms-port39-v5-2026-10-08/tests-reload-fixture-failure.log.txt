@@ -1,0 +1,41 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/war39.test.ts (12 tests | 1 failed) 9557ms
+   × loading the same run does not reinterpret saved control using the previous session relations 24ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/war39.test.ts > loading the same run does not reinterpret saved control using the previous session relations
+Error: 战争目标状态损坏，保留上一进度。
+ ❯ fail src/fms/play/war26-validation.ts:12:45
+
+ ❯ assertWar26 src/fms/play/war26-validation.ts:19:163
+ ❯ assertWar26Run src/fms/play/war26-model.ts:18:234
+ ❯ assertWar27Run src/fms/play/war27-model.ts:17:194
+ ❯ assertWar39Live src/fms/play/war39-model.ts:44:2
+ ❯ assertWar39Run src/fms/play/war39-model.ts:45:65
+ ❯ assertGameRun src/fms/play/war39-model.ts:46:95
+ ❯ War39Session.execute src/fms/play/war39-session.ts:80:23
+ ❯ src/fms/play/war39.test.ts:23:570
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 61 passed (62)
+   Start at  06:58:15
+   Duration  19.42s (tests 59%, transform 29%, import 12%)
+
+  Transform  transforming modules took 10.87s · 29% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

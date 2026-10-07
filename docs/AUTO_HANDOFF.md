@@ -9,6 +9,9 @@
 - 已修年龄缓存校验缺口；无生产检查跳过。日期独立87项先前已过，不合并冒充全量；旧v20的3127不是本批全量。
 - 原家族FindSuccessor860DE0/fallback890150/priority8572D0独立核已完成，最终48项（新34+既有14）与目标lint/完整types通过，尚无生产调用。[内核进展](evidence/fms-life22-v5-2026-10-07/FAMILY_KERNEL.md)。创建外层随后已完成：最终78定向项、目标lint/完整types通过，无生产调用；首轮类型和宗教中间写入差异均修正，见[创建进展](evidence/fms-life22-v5-2026-10-07/CREATION_KERNEL.md)。人物注册/家族默认/HTML颜色内核随后33项与目标lint/types通过，见[默认注册进展](evidence/fms-life22-v5-2026-10-07/DEFAULTS_KERNEL.md)。下一批落实[FAMILY_MEMBERS_RECOVERY](evidence/fms-life22-v5-2026-10-07/FAMILY_MEMBERS_RECOVERY.md)真实配偶/子女/旁系及旁系婚育，再独立持久亲属表；不要重跑start-life22/ui-life22/polish-life22一次性脚本。无push/Pages/main，真机/用户视觉和完整原作仍待验。
 
+
+随后初始配偶/子女/两轮旁系/旁系婚育内核最终67项、目标lint/完整types通过；父HEAD ff18199。见 [成员内核](evidence/fms-life22-v5-2026-10-07/FAMILY_MEMBERS_KERNEL.md)。当前无生产调用；下一批v23独立亲属持久化及真实继承接线，不重复恢复已闭合函数。
+
 ---
 
 # 当前续接：v21原普通动员可玩，接人物生命周期

@@ -4282,7 +4282,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "原配偶/子女/旁系及旁系婚育规则已闭合；实现真实成员生成，随后v23独立人物与家族保存/继承。v22继续可玩，未接线核不冒充家族已可玩。",
+    "nextRecoveryTarget": "接v23真实亲属表、家族查看与继承；冻结v22，不为未登基人物伪造任期，旧生日与亲属未知保持。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4760,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "life22_playable_family_defaults_ready",
+      "status": "life22_playable_family_members_ready",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "aa87060",
+      "lastCommitted": "ff18199",
       "cloudScope": "Local-only v22; existing bounded cloud preview, main and all old stores are retained. The cloud URL is not this v22 build.",
-      "next": "原配偶/子女/旁系及旁系婚育规则已闭合；实现真实成员生成，随后v23独立人物与家族保存/继承。v22继续可玩，未接线核不冒充家族已可玩。",
+      "next": "接v23真实亲属表、家族查看与继承；冻结v22，不为未登基人物伪造任期，旧生日与亲属未知保持。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4822,7 +4822,7 @@
       "currentEngine": "3f4722e49acc88fe563c41e4a01f6c8c151b1fd9ad2660ff22c31b250452f4c0",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5195/?fms=1",
-      "currentLocalHead": "aa87060",
+      "currentLocalHead": "ff18199",
       "sourceCommit": "34842488b1bc477d942ccb94d11fecdee02d2b19",
       "checkpointNote": "Source commit recorded here; subsequent documentation-only checkpoint commit is available in Git log."
     },
@@ -6181,6 +6181,18 @@
         "docs/evidence/fms-life22-v5-2026-10-07/family-defaults-first.json",
         "docs/evidence/fms-life22-v5-2026-10-07/family-defaults-final.json",
         "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_MEMBERS_RECOVERY.md"
+      ],
+      "sourceCommit": "ff18199"
+    },
+    "familyMembersKernel": {
+      "status": "local_verified_not_integrated",
+      "sourceParent": "ff18199",
+      "productionIntegrated": false,
+      "unitTests": 67,
+      "evidence": [
+        "docs/evidence/fms-life22-v5-2026-10-07/FAMILY_MEMBERS_KERNEL.md",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-members-first.json",
+        "docs/evidence/fms-life22-v5-2026-10-07/family-members-final.json"
       ]
     }
   }

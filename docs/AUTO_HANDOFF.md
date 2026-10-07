@@ -1,12 +1,14 @@
 # 当前续接：v19起义/复国可玩，接原国运与人物生命周期
 
-2026-10-07，父HEAD 0ec8308；根唯一写入，代理仅只读。本批最终检查已通过，待本地提交写回SHA；WEB-PH04 / WEB-04-13与完整Goal保持进行中，不以此批为完整还原。
+2026-10-07，父HEAD 0ec8308；根唯一写入，代理仅只读。本批v19源码已本地提交c6159ca8b833215e6eab5dfb4e1d6632076a7e9b，未上传；WEB-PH04 / WEB-04-13与完整Goal保持进行中，不以此批为完整还原。
 
 - 本机试玩 http://127.0.0.1:5191/?fms=1 ，独立.autopilot/restoration19-final-preview/dist，v19/Store21/lieguoji-fms-restoration-v19，engine 3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57。5189/v18与旧库保留；5190早期候选不能当最终版。
 - 本批原省文化、历史ID复用、首都起义/母国迁都、真实前君主任期绑定、独立世界/命令校验已接。载军改航漏transports已修。全量3076通过在该一行修复前；最终32受影响单元、lint/types/构建43产物和三尺寸真实Worker/起义/取消/确认/精确恢复通过。24+15发布计划回归复用本批全量前记录，源码不变。[交付](evidence/fms-restoration19-v5-2026-10-07/DELIVERY.md) · [检查](evidence/fms-restoration19-v5-2026-10-07/checks.json)。
 - 正常UI手绘六文化大陆，塔贡起义建东法利亚/伊沃一世，巴斯克尼迁都泰格；保存刷新仍正确。tab13暂停慢速6秒/日；tab12/v18保留。当前图层密度/长标牌引线、真机与原作视觉不作通过。
 - [合同](evidence/fms-restoration19-v5-2026-10-07/CONTRACT.md)明确capitalId是最后指定的真实城市，活动首都按控制权，没给校验器塞假城市。原家族/年龄选择和自然起义概率仍网页桥。下一批[国运内核](evidence/fms-restoration19-v5-2026-10-07/NEXT_DESTINY.md)已闭合原月衰减、初始化、Manifest特性及读档不重抽区别，先独立测试再冻结v19接生产；完整人物家族仍继续。不要重复已恢复选择器或重跑create/wire/finalize脚本。
 - 无push/PR/Pages/main变更，真机/用户视觉门和旧存档保护保持。
+
+随后已继续独立 `native-economy/destiny.ts`：构造/随机国运/真实月衰减、Manifest特性刷新与读档区别。首轮23项后只读审计发现有限f32中间溢出触底应继续重抽，已修并补回归，最终24项与目标lint/全工程类型通过。[内核进展](evidence/fms-restoration19-v5-2026-10-07/DESTINY_KERNEL.md)。无生产调用，5191/v19引擎不变；不要把它说成已经在试玩中按月衰减。下一批冻结v19，再接独立持久国运与月结，或依赖满足的人物生命周期；无需询问继续。
 
 ---
 

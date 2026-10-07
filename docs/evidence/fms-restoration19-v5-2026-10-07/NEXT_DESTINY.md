@@ -44,4 +44,6 @@ State.AdvanceOneMonth5BF120再排除i0/dead/不可征服/空白国家，顺序�
 - **纠正旧STATE_BASE_RECOVERY.md中“刷新入口”的宽泛说法**：PostLoadSaveData5D3B50的5D3ECC调用单条Trait.ApplyEffect528750，不是State.ApplyTraitEffect5BFFA0。读档恢复Manifest布尔不触发count重抽。新实现不可在load调用完整特性刷新。
 - destinyDecrease是无可见JSON注解的私有字段；count公开；Manifest属性JsonIgnore。全局Json.NET resolver设置未闭合，未证明原档全部往返行为。网页显式存运行值，读档不抽随机，避免丢档/漂移。
 
+补核精确边界：阈值5DD7DF为cvttss2si，溢出在通常屏蔽无效浮点异常时得到INT_MIN，不是JS Math.trunc/取模/饱和；原MXCSR未检查。两个计数递减5D45BB/5D45ED为dec dword，INT_MIN回绕INT_MAX。两构造器未写destiny+1E4，初值0。有限输入也可在月计算中溢出到-Infinity，原5DD784→5DD7FC→5DD80D仍触底重抽；内部重抽不能再次拒绝马上会被覆盖的旧destiny。独立核已按此修复并补测试，结果单列，不回写此前23项报告。
+
 下一批先独立可测内核，核float32、边界30/threshold、负金币、真实行政getter、抽数顺序与Manifest早退；再冻结已交付v19，确定持久国运状态和统一月结适配，新版本接真实Worker。紧急动员/内战/改革也可改国运，尚未全部恢复；不要将自然衰减叫完整国运生命周期。完整人物年龄/家族仍独立后续。

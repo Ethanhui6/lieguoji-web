@@ -4290,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "人物Die整笔核及登基/快照已检查；接旧court16已恢复的DismissAll/DismissAssignment下游谓词、去重与MarkDirty，复用office-assignment Ensure，然后闭合AdvanceMonth836DC0后v24生产接线。不得重复已闭合核或声称已启用自然死亡。",
+    "nextRecoveryTarget": "死亡、继承、撤职与月度调度独立核已检查；冻结 v23，接独立 v24 事务与 Worker/存档/UI，不重复恢复已有核。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_death_transaction_verified",
+      "status": "dynasty23_playable_office_month_verified",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "3b35488",
+      "lastCommitted": "bc15375",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "人物Die整笔核及登基/快照已检查；接旧court16已恢复的DismissAll/DismissAssignment下游谓词、去重与MarkDirty，复用office-assignment Ensure，然后闭合AdvanceMonth836DC0后v24生产接线。不得重复已闭合核或声称已启用自然死亡。",
+      "next": "死亡、继承、撤职与月度调度独立核已检查；冻结 v23，接独立 v24 事务与 Worker/存档/UI，不重复恢复已有核。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4838,7 +4838,7 @@
       "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5197/?fms=1",
-      "currentLocalHead": "3b35488",
+      "currentLocalHead": "bc15375",
       "sourceCommit": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
       "checkpointNote": "Playable v23 source aebfd10; independent death kernels 59648ff. Subsequent documentation-only checkpoint commit is in Git log."
     },
@@ -6326,7 +6326,24 @@
         "docs/evidence/fms-dynasty23-v5-2026-10-07/die-first.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/die-typecheck.txt"
       ],
-      "scope": "Character.Die original order, ascension constructor and state snapshot; office dismissal/history count/scheduling remain explicit dependencies."
+      "scope": "Character.Die original order, ascension constructor and state snapshot; office dismissal/history count/scheduling remain explicit dependencies.",
+      "sourceCommit": "bc15375"
+    },
+    "officeMonthKernel": {
+      "date": "2026-10-07",
+      "status": "local_verified_not_integrated",
+      "sourceParent": "bc15375",
+      "productionIntegrated": false,
+      "unitTests": 108,
+      "testFiles": 7,
+      "lint": true,
+      "typecheck": true,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/OFFICE_MONTH_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/office-month-first.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/office-month-checks.json"
+      ],
+      "scope": "Native office dismissal predicates/history/mirror/dirty side effects and CharacterManager monthly snapshot, age/death order and year-end cleanup. Playable v23 unchanged."
     }
   }
 }

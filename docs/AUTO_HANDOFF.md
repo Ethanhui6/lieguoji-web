@@ -7,7 +7,7 @@
 - v23最终133受影响单元、lint/types/build43产物、24发布+15计划通过；三尺寸浏览器3过0重试，桌面跨月/精确恢复、家谱低对比修复证据见[DELIVERY](evidence/fms-dynasty23-v5-2026-10-07/DELIVERY.md)。不是本批重新跑的浏览器、真机或视觉认可。App/Worker超过500kB警告仍在。
 - 此后独立死亡统计/角色/族长/国家交接核59648ff；紧急候选与三非君主handler提交20cd1d2；王朝、选举、完整任命次序提交3b35488。统一219项/8文件、目标lint与完整types通过，首轮泛型never类型失败已修且异常断言保留。[任命恢复](evidence/fms-dynasty23-v5-2026-10-07/MONARCHY_APPOINTMENT_RECOVERY.md)。
 - 最新Character.Die整笔顺序、登基事件和国家快照核115项/6文件、目标lint/完整types通过，见[DIE_TRANSACTION_RECOVERY](evidence/fms-dynasty23-v5-2026-10-07/DIE_TRANSACTION_RECOVERY.md)。上述数字范围重叠，不累加冒充全量。所有这些后续kernel尚未生产接线，v23引擎/网页仍不启用自然死亡。
-- 下一窄批：旧court16已恢复DismissAll8820D0/DismissAssignment882810外壳，补国家/任职/历史去重谓词及MarkDirty副作用，复用office-assignment.ts的Ensure。再闭合真正调度AdvanceMonth836DC0，进入独立v24角色/死时/家族heir/任期/统计与事务、Worker/存档/UI。不要重复恢复已有选择器/角色/概率/日历，不重跑一次性start脚本。
+- 撤职谓词/镜像/去重/MarkDirty、AdvanceMonth 的真实快照和年末清理顺序已闭合，108项/7文件、目标lint/全工程types通过；[OFFICE_MONTH_RECOVERY](evidence/fms-dynasty23-v5-2026-10-07/OFFICE_MONTH_RECOVERY.md)。仍无生产调用。下一窄批冻结 v23，接独立 v24 自然死亡、任职清理与继承事务、Worker/存档/UI；不重复恢复已有核，不重跑旧一次性脚本。
 - 生产接入须同时维护kin/court存活状态；死者年龄冻结、旧档来源未知、历史配偶引用、原始角色startTime与任期reignStartTime分开。不得提前清leaderId丢失死者身份，不用国家灭亡事件代替人物死亡。所有改动在私有候选上完成后提交，旧v23合同不放宽。
 - 无push/PR/Issue/Pages/main变更；有界2026-10-06预览授权未被这些新版自动扩展。正式站和旧档保留，真机/用户视觉与完整PH仍待验。
 

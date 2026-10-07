@@ -1,0 +1,12 @@
+{
+  "unitReport": "office-month-first.json",
+  "passed": 108,
+  "files": 7,
+  "targetEslintExit": 0,
+  "fullTypecheckExit": 0,
+  "checkSession": 88498,
+  "notes": [
+    "PowerShell Tee-Object did not create a file when tsc emitted no diagnostics. Exit 0 was observed.",
+    "First checkpoint plan validation rejected prose in nextBatch; restored WEB-04-13. No commit/push occurred."
+  ]
+}

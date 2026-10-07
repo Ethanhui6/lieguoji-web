@@ -1,0 +1,34 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/war35.test.ts (16 tests | 1 failed) 8822ms
+   × AI actually creates an alliance on its assigned monthly update, spends shared power and persists it 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/war35.test.ts > AI actually creates an alliance on its assigned monthly update, spends shared power and persists it
+Error: 家谱或人物关联损坏，已保留原档。
+ ❯ fail src/fms/play/dynasty23-validation.ts:22:43
+
+ ❯ assertKin src/fms/play/dynasty23-validation.ts:41:276
+ ❯ assertDynasty23 src/fms/play/dynasty23-model.ts:21:253
+ ❯ assertVoyage24 src/fms/play/voyage24-model.ts:15:233
+ ❯ assertSettlement25 src/fms/play/settlement25-model.ts:19:2
+ ❯ assertWar26Run src/fms/play/war26-model.ts:18:194
+ ❯ assertWar27Run src/fms/play/war27-model.ts:17:194
+ ❯ assertWar35Live src/fms/play/war35-model.ts:38:2
+ ❯ assertWar35Run src/fms/play/war35-model.ts:39:65
+ ❯ assertGameRun src/fms/play/war35-model.ts:40:95
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 6 passed (7)
+      Tests  1 failed | 105 passed (106)
+   Start at  05:17:16
+   Duration  19.94s (tests 65%, transform 20%, import 15%)

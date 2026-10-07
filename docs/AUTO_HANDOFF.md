@@ -1,3 +1,18 @@
+# 当前续接：v35真实联盟与自主结盟可玩，继续完整战争V2
+
+2026-10-08；源码 `628a104c7a32e9c14b46eebf3cc046a73006962f`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的官网/视频全项目研究与前10差距。无新的必要用户决策阻塞。
+
+- 已接：真实联盟实体创建/加入/合并/退出/解散、死亡清理、附庸化强制退盟；原作好感/陆海邻接/实力比与3/7/10年/共享外交power的月度AI；真实盟友纳入多国战争，退出联盟不退出既有战争；强制结盟 reason8 取消所选双方相对参战的整场战争；政治页前部有实际预览/确认/成员和大事记，独立Worker/Store37。
+- [交付与差异](evidence/fms-alliance35-v5-2026-10-08/DELIVERY.md)、[规则合同](evidence/fms-alliance35-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-alliance35-v5-2026-10-08/checks.json)。107相关检查含旧v34回归、全仓types/lint、39发布计划保护、43产物审查通过；生产Chromium实际组两联盟/五国宣战/退盟/合并/保存刷新/跨标签冲突，另普通原作地形→6国60城→推进/保存恢复通过。没有pageerror或HTTP失败。
+- [本机试玩v35](http://127.0.0.1:5226/?fms=1)，仅127.0.0.1，产物`.autopilot/alliance35-preview/dist`，PID3436，engine `b1e9266cbe2301dec766f771aff9b2541cad1d5288e667bf470bda49de5508db`。旧v34/5224的43产物哈希保持，Store36旧局原样运行；不同端口保存不自动搬运。只在临时独立浏览器context注入合成测试档，未动用户origin。
+- 原作版本锁定安装包hash；Windows PE/IL2CPP静态恢复，不冒充ELF/DWARF或原作运行录像。方形大陆为外交回归夹具；AI用合成历年/人物档推进真实月度路径，不是自然游玩四年。428×926只为桌面仿真，原作同步视觉、4/16/40倍与iPhone仍待验。
+- 初次AI夹具未同步家谱技能及UI测试定位碰到联盟名称含成员名的问题已修并留原始失败日志；初次类型分发已修。未删检查；大包/Vite配置警告仍在，没有手机性能承诺。
+- 待做：友军通行、陆海协同战略、联盟变更后的闲军重新部署、联盟地图覆盖/动画、战时职务/冷却、改宗和其他内战、排行缓存与完整调度；网页PRNG/军力尺度/旧财政月结等差异仍明确保留。
+- 下一批：Continue WEB-04-37 from playable v35: actual friendly military access and coordinated land/naval objectives, native idle-army/navy redeployment on alliance/war departure; remaining war offices/cooldowns, other internal wars/conversion, ranking/cache and full diplomacy schedule. Reuse real alliance lifecycle/AI/power/coalition consumers/Worker/Store37; do not redo formation recovery. Preserve v34/5224 source 1951267 and frozen 43 artifacts. Then WEB-03-06 and queued full official/video audit/top10. No push/Pages/main changes.
+- 未push、未触发Pages、未改main/发布门；完整WEB-04-37/视觉/真机不标完成。不要重复联盟恢复，也不要提前换成排队重规划。
+
+---
+
 # 当前续接：v34宗属多国参战可玩，继续完整战争V2
 
 2026-10-08；源码 `19512674ef2bf701a1b3c9a821e4b3abd53b2ea3`；根唯一写入。WEB-04-37仍进行，其后WEB-03-06，再做排队的全项目研究/前10差距。没有必须用户决策的新阻塞。

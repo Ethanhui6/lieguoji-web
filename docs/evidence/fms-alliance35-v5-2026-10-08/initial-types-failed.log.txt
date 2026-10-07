@@ -1,0 +1,21 @@
+src/fms/play/FmsGame.tsx(300,331): error TS2345: Argument of type 'War35Run | War34Run' is not assignable to parameter of type 'War34Run'.
+  Type 'War35Run' is not assignable to type 'War34Run'.
+    Type 'War35Run' is not assignable to type '{ version: 34; rules: "fms-war-34"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy34; vassals: Vassals34; tribute: Tribute34; rebellion: Rebellion34; nativeWars: War34Wars; }'.
+      Types of property 'version' are incompatible.
+        Type '35' is not assignable to type '34'.
+src/fms/play/FmsGame.tsx(301,181): error TS2322: Type '"alliance-edit"' is not assignable to type '"order" | "battle" | "military" | "action" | "appointment" | "maritime" | "naval" | "transport" | "muster" | "politics" | "combat-edit" | "culture-edit" | "destiny-edit" | "diplomacy-settings" | "rebellion-settings" | "declare-cb" | "release-vassal" | "tribute-settings"'.
+src/fms/play/FmsGame.tsx(301,202): error TS2322: Type 'AllianceEdit35' is not assignable to type 'DiplomacyEdit'.
+  Type '{ type: "unite"; nationId: string; targetId: string; }' is not assignable to type 'DiplomacyEdit'.
+    Type '{ type: "unite"; nationId: string; targetId: string; }' is missing the following properties from type '{ scope: "nation"; nationId: string; enabled: boolean; }': scope, enabled
+src/fms/play/FmsGame.tsx(305,298): error TS2345: Argument of type 'War35Run | War34Run' is not assignable to parameter of type 'War34Run'.
+  Type 'War35Run' is not assignable to type 'War34Run'.
+    Type 'War35Run' is not assignable to type '{ version: 34; rules: "fms-war-34"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy34; vassals: Vassals34; tribute: Tribute34; rebellion: Rebellion34; nativeWars: War34Wars; }'.
+      Types of property 'version' are incompatible.
+        Type '35' is not assignable to type '34'.
+src/fms/play/FmsGame.tsx(305,1411): error TS2345: Argument of type 'War35Run | War34Run' is not assignable to parameter of type 'War34Run'.
+  Type 'War35Run' is not assignable to type 'War34Run'.
+    Type 'War35Run' is not assignable to type '{ version: 34; rules: "fms-war-34"; engine: string; diplomaticGeography: DiplomaticGeography; nativeDiplomacy: NativeDiplomacy34; vassals: Vassals34; tribute: Tribute34; rebellion: Rebellion34; nativeWars: War34Wars; }'.
+      Types of property 'version' are incompatible.
+        Type '35' is not assignable to type '34'.
+src/fms/play/war35-declaration.ts(100,786): error TS2322: Type 'object | null' is not assignable to type '{ states: ReadonlySet<State> | null; } | null'.
+  Property 'states' is missing in type '{}' but required in type '{ states: ReadonlySet<State> | null; }'.

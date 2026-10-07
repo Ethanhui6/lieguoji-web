@@ -26,7 +26,7 @@ import {chronicleFiles} from './fms-chronicle-fingerprint.ts';
 import {campaignFiles} from './fms-campaign-fingerprint.ts';
 import {tacticsFiles} from './fms-tactics-fingerprint.ts';
 import {fmsPlayFiles} from './fms-play-fingerprint.ts';
-export const war30Files=['model','geography','storage','stores'].map(n=>'src/fms/play/war30-'+n+'.ts');
+export const war30Files=['model','geography','storage','stores','state','declaration','session','client'].map(n=>'src/fms/play/war30-'+n+'.ts').concat(['src/fms/play/war30/play.worker.ts']).concat(['declaration','declaration-choice','declaration-candidates','declaration-geography','diplomatic-geography','diplomatic-power','diplomatic-relations','state-initialization','casus-belli','casus-goals','affinity'].map(n=>'src/fms/play/native-war/'+n+'.ts'));
 export function fingerprintWar30(){
  const old=verifyWar29Compatibility();if(old!==FROZEN_WAR29_ENGINE)throw Error('Playable v29 fingerprint changed');
  const hash=createHash('sha256').update('fms-war-30\0'+old),covered=new Set([...war30Files,...war29Files,...war28Files,...war27Files,...war26Files,...settlement25Files,...voyage24Files,...dynasty23Files,...life22Files,...muster21Files,...destiny20Files,...restoration19Files,...naming18Files,...culture17Files,...court16Files,...fiscal15Files,...upper14Files,...terrain13Files,...chronicle2Files,...chronicleFiles,...campaignFiles,...tacticsFiles,...fmsPlayFiles,'src/fms/model.ts']);

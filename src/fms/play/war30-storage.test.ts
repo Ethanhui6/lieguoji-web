@@ -49,6 +49,11 @@ describe('v30 geography candidate storage; production stays v29',()=>{
   await slots(db,WAR30_DATABASE,s=>{const q=s.get(key);q.onsuccess=()=>{q.result.run.diplomaticGeography.water[0].futureShape=1;s.put(q.result,key);};});
   const before=await slots(db,WAR30_DATABASE);await expect(loadRun(db)).rejects.toThrow(/未来/);await expect(saveRun(candidate,2,db)).rejects.toThrow(/未来/);expect(await slots(db,WAR30_DATABASE)).toEqual(before);
  });
+ it.each(['current','backup'])('locks future diplomatic history in %s before fallback, preserving both slots',async key=>{
+  const db=new IDBFactory();await saveRun(candidate,null,db);await saveRun(candidate,1,db);
+  await slots(db,WAR30_DATABASE,s=>{const q=s.get(key);q.onsuccess=()=>{q.result.run.nativeDiplomacy.nations[candidate.world.nations[0].id].pools.futurePower=1;s.put(q.result,key);};});
+  const before=await slots(db,WAR30_DATABASE);await expect(loadRun(db)).rejects.toThrow(/未来/);await expect(saveRun(candidate,2,db)).rejects.toThrow(/未来/);expect(await slots(db,WAR30_DATABASE)).toEqual(before);
+ });
  it('refuses invalid geography, new root fields or a wrong engine before opening/writing a database',async()=>{
   const db=new IDBFactory();for(const mutate of [(r:War30Run)=>r.diplomaticGeography.water[0].area++,(r:War30Run)=>Object.assign(r,{future:1}),(r:War30Run)=>r.engine='different']){const bad=structuredClone(candidate);mutate(bad);await expect(saveRun(bad,null,db)).rejects.toThrow();}
   expect(await db.databases()).toEqual([]);

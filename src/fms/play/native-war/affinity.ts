@@ -16,7 +16,7 @@ export const createNativeAffinityCaches=():NativeAffinityCaches=>({affinity:new 
 /** DiplomacyManager.Update in World.FixedUpdate: these three caches expire
  * together only while the game has started and is not paused. */
 export function nativeUpdateDiplomaticCaches(c:NativeAffinityCaches,started:boolean,paused:boolean){if(started&&!paused){c.affinity.clear();c.atWar.clear();c.sameWar.clear();}}
-export interface NativeAffinityQueries<S extends NativeAffinityState,L extends NativeAffinityLeader> {
+export interface NativeAffinityQueries<S extends NativeAffinityState,L extends NativeAffinityLeader,R=NativeDiplomaticRelation> {
  isSuperPower:(state:S)=>boolean;
  superSuperpowerExists:()=>boolean;
  nearSea:(state:S)=>boolean;
@@ -25,9 +25,9 @@ export interface NativeAffinityQueries<S extends NativeAffinityState,L extends N
  enemies:(state:S)=>Iterable<S>;
  leader:(state:S)=>L|null;
  diplomaticSkill:(leader:L)=>number;
- relation:(source:S,target:S)=>NativeDiplomaticRelation;
- yearsSinceWar:(relation:NativeDiplomaticRelation)=>number;
- truceYears:(relation:NativeDiplomaticRelation)=>number;
+ relation:(source:S,target:S)=>R;
+ yearsSinceWar:(relation:R)=>number;
+ truceYears:(relation:R)=>number;
  minimumYearsBeforeNewWar:number;
 }
 const systemAffinity=[
@@ -41,7 +41,7 @@ function add<K,V>(cache:Map<K,V>,key:K,value:V){if(cache.has(key))throw Error('N
 /** GetAffinity 8963E0. The formula is directional, but its cache key is NOT.
  * Preserve first-query direction; do not average, clamp, or symmetrize it.
  * External inputs retain explicit ports until their production data exists. */
-export function nativeDiplomaticAffinity<S extends NativeAffinityState,L extends NativeAffinityLeader>(source:S,target:S,c:NativeAffinityCaches,q:NativeAffinityQueries<S,L>):number{
+export function nativeDiplomaticAffinity<S extends NativeAffinityState,L extends NativeAffinityLeader,R=NativeDiplomaticRelation>(source:S,target:S,c:NativeAffinityCaches,q:NativeAffinityQueries<S,L,R>):number{
  const key=nativeDiplomaticPairKey(source.id,target.id);
  if(c.affinity.has(key))return c.affinity.get(key)!;
  let atWar=c.atWar.get(key);

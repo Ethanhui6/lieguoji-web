@@ -1,3 +1,4 @@
+import {assertNativeDiplomacySchema30} from './war30-state';
 import {assertGeographySchema} from './war30-geography';
 import {assertDiplomacySchema} from './war29-diplomacy';
 import {assertWar28Schema} from './war28-validation';
@@ -41,9 +42,9 @@ function future(raw: Envelope | undefined, _version:StoreKey) {
   if(t?.mobilizations&&Object.values(t.mobilizations).some(m=>unknown(m,['lastMonth','recent'])))fail();
   const re=r.reorganization;if(re?.version!=null&&re.version!==1||unknown(re,['version','active','completed']))fail();
   if(re?.active&&Object.values(re.active).some(v=>unknown(v,['startedTick','fraction'])))fail();
-  if(unknown(r,['version','rules','engine','id','terrain','scale','world','units','navy','clock','battles','occupation','transports','maritime','tactics','reorganization','chronicle','terrainContext','upperCombat','finance','people','culture','naming','sovereignty','destiny','life','kin','voyages','generation','warfare','losses','nativeWars','diplomacy','diplomaticGeography']))fail();
+  if(unknown(r,['version','rules','engine','id','terrain','scale','world','units','navy','clock','battles','occupation','transports','maritime','tactics','reorganization','chronicle','terrainContext','upperCombat','finance','people','culture','naming','sovereignty','destiny','life','kin','voyages','generation','warfare','losses','nativeWars','diplomacy','diplomaticGeography','nativeDiplomacy']))fail();
   assertTerrainSchema(r.terrainContext);
-  assertUpperSchema(r.upperCombat);assertFiscalSchema(r.finance);assertPeopleSchema(r.people);assertCultureSchema(r.culture);assertNamingSchema(r.naming);assertSovereigntySchema(r.sovereignty);assertDestinySchema(r.destiny);assertLifeSchema(r.life);assertKinSchema(r.kin);assertVoyagesSchema(r.voyages);assertGenerationSchema(r.generation);assertWar26Schema(r.warfare);assertLossSchema(r.losses);assertWar28Schema(r.nativeWars);assertDiplomacySchema(r.diplomacy);assertGeographySchema(r.diplomaticGeography);
+  assertUpperSchema(r.upperCombat);assertFiscalSchema(r.finance);assertPeopleSchema(r.people);assertCultureSchema(r.culture);assertNamingSchema(r.naming);assertSovereigntySchema(r.sovereignty);assertDestinySchema(r.destiny);assertLifeSchema(r.life);assertKinSchema(r.kin);assertVoyagesSchema(r.voyages);assertGenerationSchema(r.generation);assertWar26Schema(r.warfare);assertLossSchema(r.losses);assertWar28Schema(r.nativeWars);assertDiplomacySchema(r.diplomacy);assertGeographySchema(r.diplomaticGeography);assertNativeDiplomacySchema30(r.nativeDiplomacy);
   // Unknown schemas lock both slots; damage to known values may recover backup.
   const c=r.chronicle;
   if(c&&(c.version!=null&&c.version!==1||unknown(c,['version','originDay','nextEntryId','nextNationId','leaders','entries','unrest','ended'])))fail();

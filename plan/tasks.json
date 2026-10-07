@@ -3857,7 +3857,8 @@
               "docs/evidence/fms-dynasty23-v5-2026-10-07/checks.json",
               "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
               "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
-              "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json"
+              "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json",
+              "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md"
             ],
             "progressNote": "v23新局原初始家庭/持久亲属/真实继承接入，133受影响单元、三尺寸浏览器与完整lint/types/build通过；自然死亡/自动婚育/完整原作仍继续。",
             "progressScope": " v19原省文化起义/历史身份复用、真实前任复位与首都迁移已接，Store21独立保护；完整原作国运重置、家族年龄继承及自然起义概率仍未等价。"
@@ -4290,7 +4291,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "死亡、继承、撤职与月度调度独立核已检查；冻结 v23，接独立 v24 事务与 Worker/存档/UI，不重复恢复已有核。",
+    "nextRecoveryTarget": "按最新用户反馈，冻结v23后接独立v24跨海外交与自动远征：集结/运力/装载/航行/登陆，处理停战与手动接管；原死亡内核保留，随后接线。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,12 +4769,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_office_month_verified",
+      "status": "cartography_major_history_verified_cross_sea_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "bc15375",
+      "lastCommitted": "3c5fa39",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "死亡、继承、撤职与月度调度独立核已检查；冻结 v23，接独立 v24 事务与 Worker/存档/UI，不重复恢复已有核。",
-      "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
+      "next": "按最新用户反馈，冻结v23后接独立v24跨海外交与自动远征：集结/运力/装载/航行/登陆，处理停战与手动接管；原死亡内核保留，随后接线。",
+      "latestUserPriority": "2026-10-07文字按版图排布且平移稳定、史记只显示大事、完善跨大陆外交与行动。",
       "requiredUserAction": null,
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -4832,15 +4833,16 @@
         "docs/evidence/fms-dynasty23-v5-2026-10-07/checks.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/unit-guard-final.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/browser-final.json",
-        "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json"
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md"
       ],
       "currentVersion": 23,
       "currentEngine": "fb71eb875cc8c9c1c21eea05b3ba3b87c94bae3fa4339822f8e37abed163709d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5197/?fms=1",
-      "currentLocalHead": "bc15375",
-      "sourceCommit": "aebfd10c52105368597e3f5a87bbfcd0649146a4",
-      "checkpointNote": "Playable v23 source aebfd10; independent death kernels 59648ff. Subsequent documentation-only checkpoint commit is in Git log."
+      "localUrl": "http://127.0.0.1:5199/?fms=1",
+      "currentLocalHead": "3c5fa39",
+      "sourceCommit": "3c5fa39 plus current cartography working tree; see Git log for local delivery commit",
+      "checkpointNote": "Cartography renderer only; v23 engine unchanged. Mortality kernels remain committed and not integrated."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6344,6 +6346,25 @@
         "docs/evidence/fms-dynasty23-v5-2026-10-07/office-month-checks.json"
       ],
       "scope": "Native office dismissal predicates/history/mirror/dirty side effects and CharacterManager monthly snapshot, age/death order and year-end cleanup. Playable v23 unchanged."
+    },
+    "cartographyFeedback": {
+      "date": "2026-10-07",
+      "status": "local_browser_verified",
+      "scope": "World-anchored slanted country labels, stable city/capital labels, major history default; not original pixel equivalence.",
+      "tests": {
+        "unit": 30,
+        "browser": 3,
+        "retries": 0,
+        "lint": true,
+        "typecheck": true,
+        "build": true
+      },
+      "evidence": [
+        "docs/evidence/fms-cartography-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-cartography-v5-2026-10-07/browser-final.json"
+      ],
+      "physicalIPhone": false,
+      "userVisualAccepted": false
     }
   }
 }

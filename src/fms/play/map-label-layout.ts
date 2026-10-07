@@ -1,6 +1,6 @@
 import type {LabelBox,CityCandidate} from './city-labels';
 const overlap=(a:LabelBox,b:LabelBox)=>Math.max(0,Math.min(a.x+a.width/2+3,b.x+b.width/2)-Math.max(a.x-a.width/2-3,b.x-b.width/2))*Math.max(0,Math.min(a.y+a.height/2+3,b.y+b.height/2)-Math.max(a.y-a.height/2-3,b.y-b.height/2));
-const fits=(a:LabelBox,v:{width:number;height:number})=>a.x-a.width/2>=3&&a.x+a.width/2<=v.width-3&&a.y-a.height/2>=3&&a.y+a.height/2<=v.height-3;
+const visible=(a:LabelBox,v:{width:number;height:number})=>a.x+a.width/2>=0&&a.x-a.width/2<=v.width&&a.y+a.height/2>=0&&a.y-a.height/2<=v.height;
 
 /** Keep each country's label inside its known interior clearance circle. This
  * only moves the display anchor; it never moves a capital or stored territory.
@@ -14,16 +14,16 @@ export function countryLabelBox(anchor:LabelBox,clearance:number,obstacles:Label
   return best;
 }
 
-/** Capitals retain their real circle marker. Their optional name seeks free
- * space around it; selected cities use the full, higher-priority callout. */
-export function capitalNameLabels(cities:CityCandidate[],size:number,obstacles:LabelBox[],viewport:{width:number;height:number}){
+/** Lay out every capital before clipping. Camera edges and UI are not layout
+ * inputs: a pan translates the same label, never chooses a different side. */
+export function capitalNameLabels(cities:CityCandidate[],size:number,obstacles:LabelBox[],viewport:{width:number;height:number},clip=true){
   const boxes=[...obstacles],labels:(CityCandidate&LabelBox)[]=[];
-  for(const c of cities){
-    if(c.x<0||c.y<0||c.x>viewport.width||c.y>viewport.height)continue;
+  for(const c of [...cities].sort((a,b)=>a.id.localeCompare(b.id))){
     const width=Array.from(c.name).length*size+6,height=size+6,dx=width/2+15,dy=height/2+15;
     const offsets=[[0,-dy],[0,dy],[dx,0],[-dx,0],[dx,-dy],[-dx,-dy],[dx,dy],[-dx,dy]];
-    const box=offsets.map(([x,y])=>({x:c.x+x,y:c.y+y,width,height})).find(b=>fits(b,viewport)&&!boxes.some(o=>overlap(b,o)>0));
+    if(width>viewport.width-8||height>viewport.height-8)continue;
+    const box=offsets.map(([x,y])=>({x:c.x+x,y:c.y+y,width,height})).find(b=>!boxes.some(o=>overlap(b,o)>0));
     if(box){labels.push({...c,...box});boxes.push(box);}
   }
-  return labels;
+  return clip?labels.filter(b=>visible(b,viewport)):labels;
 }

@@ -9,7 +9,7 @@ export function locateRecent(world:World,event:GameEvent):EventLocation|null{
   return found.length===1?{kind:'province',id:found[0].id,label:'查看事发地方'}:null;
 }
 export function recentNews(world:World):NewsItem[]{
-  return world.events.filter(e=>['occupation','diplomacy'].includes(e.kind)).map(e=>({key:`event-${e.id}`,day:e.day,text:e.text,reason:e.reason,priority:e.kind==='diplomacy'?'major':'normal',location:locateRecent(world,e)}));
+  return world.events.filter(e=>e.kind==='diplomacy').map(e=>({key:`event-${e.id}`,day:e.day,text:e.text,reason:e.reason,priority:'major',location:locateRecent(world,e)}));
 }
 /** Original MajorEventMessageUI declares 8s priority / 1s normal queues.
  * Web motion is an explicit presentation adaptation; all retained records remain accessible. */

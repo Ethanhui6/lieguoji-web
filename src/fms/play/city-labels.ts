@@ -28,14 +28,13 @@ export function selectedCityLabel(c:CityCandidate,obstacles:LabelBox[],viewport:
 export function cityLabels(cities:CityCandidate[],obstacles:LabelBox[],viewport:{width:number;height:number},overview:boolean){
   const boxes=[...obstacles],result:CityLabel[]=[];
   for(const c of [...cities].sort((a,b)=>Number(b.selected)-Number(a.selected)||a.id.localeCompare(b.id))){
-    if(c.x<0||c.y<0||c.x>viewport.width||c.y>viewport.height||overview&&!c.selected)continue;
+    if(overview&&!c.selected)continue;
     if(c.selected){const label=selectedCityLabel(c,boxes,viewport);if(label){result.push(label);boxes.push(label.callout!);}continue;}
     for(const offset of [-14,15,-28,29]){
       const box={x:c.x,y:c.y+offset,width:c.name.length*10+4,height:12};
-      if(box.x-box.width/2<2||box.x+box.width/2>viewport.width-2||box.y<8||box.y>viewport.height-8)continue;
       if(boxes.some(b=>overlaps(box,b)))continue;
       result.push({...c,labelX:box.x,labelY:box.y+5});boxes.push(box);break;
     }
   }
-  return result;
+  return result.filter(c=>c.selected||c.labelX+c.name.length*5>=0&&c.labelX-c.name.length*5<=viewport.width&&c.labelY>=0&&c.labelY<=viewport.height);
 }

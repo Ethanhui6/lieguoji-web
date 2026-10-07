@@ -1,0 +1,199 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-cartography.spec.ts",
+      "--project=desktop-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-cartography.spec.ts",
+      "file": "fms-cartography.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "drawn diagonal world keeps map labels anchored and the chronicle focused on major events",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 36549,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -1,8 +1,8 @@\u001b[39m\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"checksum\": \"edd384b5dfe2fe7edb58dd032191ff4938369ddc104a02ef236cf973c6e0920e\",\u001b[22m\n\u001b[32m-   \"revision\": 2,\u001b[39m\n\u001b[31m+   \"revision\": 3,\u001b[39m\n\u001b[2m    \"run\": Object {\u001b[22m\n\u001b[2m      \"battles\": Object {\u001b[22m\n\u001b[2m        \"engagements\": Array [],\u001b[22m\n\u001b[2m        \"nextId\": 1,\u001b[22m\n\u001b[2m        \"plans\": Object {},\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -1,8 +1,8 @@\u001b[39m\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"checksum\": \"edd384b5dfe2fe7edb58dd032191ff4938369ddc104a02ef236cf973c6e0920e\",\u001b[22m\n\u001b[32m-   \"revision\": 2,\u001b[39m\n\u001b[31m+   \"revision\": 3,\u001b[39m\n\u001b[2m    \"run\": Object {\u001b[22m\n\u001b[2m      \"battles\": Object {\u001b[22m\n\u001b[2m        \"engagements\": Array [],\u001b[22m\n\u001b[2m        \"nextId\": 1,\u001b[22m\n\u001b[2m        \"plans\": Object {},\u001b[22m\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-cartography.spec.ts:22:228",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-cartography.spec.ts",
+                      "column": 228,
+                      "line": 22
+                    },
+                    "snippet": "  20 |  await page.getByRole('button',{name:'政治',exact:true}).click();await page.getByRole('button',{name:'预览传位',exact:true}).click();await page.getByRole('dialog',{name:'命令确认'}).getByRole('button',{name:'确认执行',exact:true}).click();const after=await save(page);expect(after.run.chronicle.entries.some(e=>e.kind==='accession')).toBe(true);\n  21 |  await page.getByRole('button',{name:'大事记',exact:true}).click();await expect(page.getByLabel('史书类别',{exact:true})).toHaveValue('important');await expect(page.locator('.play-chronicle')).toContainText('君主传位');await expect(page.locator('.play-recent-reports')).not.toHaveAttribute('open','');await page.screenshot({path:info.outputPath('important-history.png')});\n> 22 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续家族继承新版第 '+after.run.world.day+' 日',exact:true}).click();const loaded=await save(page);expect(loaded).toEqual(after);expect(loaded.run.engine).toBe(before.run.engine);expect(await anchors()).toEqual(at);expect(errors).toEqual([]);expect(failed).toEqual([]);\n     |                                                                                                                                                                                                                                    ^\n  23 |  await info.attach('cartography-evidence',{body:JSON.stringify({anchors:at,pan:{dx:42,dy:31,commonCityNames:common},before:a,after:z,engine:loaded.run.engine,checksum:loaded.checksum,scope:'Normal UI drawing, real Worker succession/save/reload; Chromium emulation, no native iPhone or original visual acceptance.'}),contentType:'application/json'});\n  24 | });\n  25 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-cartography.spec.ts",
+                        "column": 228,
+                        "line": 22
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -1,8 +1,8 @@\u001b[39m\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"checksum\": \"edd384b5dfe2fe7edb58dd032191ff4938369ddc104a02ef236cf973c6e0920e\",\u001b[22m\n\u001b[32m-   \"revision\": 2,\u001b[39m\n\u001b[31m+   \"revision\": 3,\u001b[39m\n\u001b[2m    \"run\": Object {\u001b[22m\n\u001b[2m      \"battles\": Object {\u001b[22m\n\u001b[2m        \"engagements\": Array [],\u001b[22m\n\u001b[2m        \"nextId\": 1,\u001b[22m\n\u001b[2m        \"plans\": Object {},\u001b[22m\n\n  20 |  await page.getByRole('button',{name:'政治',exact:true}).click();await page.getByRole('button',{name:'预览传位',exact:true}).click();await page.getByRole('dialog',{name:'命令确认'}).getByRole('button',{name:'确认执行',exact:true}).click();const after=await save(page);expect(after.run.chronicle.entries.some(e=>e.kind==='accession')).toBe(true);\n  21 |  await page.getByRole('button',{name:'大事记',exact:true}).click();await expect(page.getByLabel('史书类别',{exact:true})).toHaveValue('important');await expect(page.locator('.play-chronicle')).toContainText('君主传位');await expect(page.locator('.play-recent-reports')).not.toHaveAttribute('open','');await page.screenshot({path:info.outputPath('important-history.png')});\n> 22 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续家族继承新版第 '+after.run.world.day+' 日',exact:true}).click();const loaded=await save(page);expect(loaded).toEqual(after);expect(loaded.run.engine).toBe(before.run.engine);expect(await anchors()).toEqual(at);expect(errors).toEqual([]);expect(failed).toEqual([]);\n     |                                                                                                                                                                                                                                    ^\n  23 |  await info.attach('cartography-evidence',{body:JSON.stringify({anchors:at,pan:{dx:42,dy:31,commonCityNames:common},before:a,after:z,engine:loaded.run.engine,checksum:loaded.checksum,scope:'Normal UI drawing, real Worker succession/save/reload; Chromium emulation, no native iPhone or original visual acceptance.'}),contentType:'application/json'});\n  24 | });\n  25 |\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-cartography.spec.ts:22:228"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T08:03:41.871Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-cartography-drawn-diag-2303c-cle-focused-on-major-events-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-cartography-drawn-diag-2303c-cle-focused-on-major-events-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-cartography-drawn-diag-2303c-cle-focused-on-major-events-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-cartography.spec.ts",
+                    "column": 228,
+                    "line": 22
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "5e562147089e779d2662-f3bf93f240e13e164096",
+          "file": "fms-cartography.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T08:03:41.244Z",
+    "duration": 38525.908,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

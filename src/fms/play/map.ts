@@ -11,7 +11,7 @@ import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import {currentCapital} from './capital-view';
 import {cityLabels,selectedCityLabel,type LabelBox} from './city-labels';
-import {countryLabelBox,capitalNameLabels} from './map-label-layout';
+import {capitalNameLabels} from './map-label-layout';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
@@ -38,7 +38,7 @@ export class PlayMap {
   private reorganizationWidgets:{id:string;bar:Graphics;pixel:number;r:number;full:number;text?:Text}[]=[];
   updateReorganization(world:World){for(const v of this.reorganizationWidgets){const a=world.armies.find(a=>a.id===v.id);if(!a)continue;v.bar.clear().rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel,2*v.pixel).fill(0x26332d).rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel*Math.min(1,a.troops/v.full),2*v.pixel).fill(0xf0ce7b);if(v.text)v.text.text=`重编 ${a.troops}`;}}
   private unitGroups:{ids:string[];container:Container;offset:Point;display:'dot'|'detail'}[]=[];
-  private labelLayout:{detail:WarDetail;countries:LabelBox[];capitals:LabelBox[]}={detail:'overview',countries:[],capitals:[]};
+  private labelLayout:{detail:WarDetail;countries:LabelBox[];capitals:LabelBox[];towns:{id:string;x:number;y:number}[]}={detail:'overview',countries:[],capitals:[],towns:[]};
   labelDiagnostics(){return this.labelLayout;}
   private shipLayer?:ReturnType<typeof drawNavy>;
   private projection={scale:1,zoom:1,x:0,y:0,width:1280,height:720};
@@ -91,7 +91,7 @@ export class PlayMap {
   politicalDiagnostics(){return {builds:this.politicalBuilds};}
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
-  labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point})=>({nationId,componentId,provinceIds,...point}));}
+  labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic)child.destroy({ children: true });
@@ -135,11 +135,14 @@ export class PlayMap {
     }this.updateOccupation(combat.occupation);}
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
-      const n=nations.get(territory.nationId)!,size=Math.max(8,Math.min(27,territory.clearance/scale*zoom*1.55/Math.max(2,n.name.length)));
-      const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:size,fill:'#263a30',fontWeight:'bold',stroke:{color:'#fffae5',width:2},letterSpacing:2}});
-      const box=countryLabelBox({x:territory.point.x/scale*zoom+this.projection.x,y:territory.point.y/scale*zoom+this.projection.y,width:t.width+4,height:t.height+4},territory.clearance/scale*zoom,[...capitalIcons,...countryBoxes,...this.uiObstacles]);countryBoxes.push(box);
-      const point={x:(box.x-this.projection.x)/zoom*scale,y:(box.y-this.projection.y)/zoom*scale};
-      t.anchor.set(.5);t.scale.set(pixel);t.position.set(point.x/scale,point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
+      const n=nations.get(territory.nationId)!,point=territory.point,factor=zoom/scale;
+      const t=new Text({text:n.name,style:{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:26,fill:'#263a30',fontWeight:'500',stroke:{color:'#fffae5',width:1.6},letterSpacing:2.4}});
+      // Fit the measured glyphs in the world-space band, then cap readability.
+      // Tiny enclaves keep their name at their true anchor; zoom reveals it.
+      const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;
+      const width=t.width*textScale,height=t.height*textScale,c=Math.abs(Math.cos(territory.angle)),s=Math.abs(Math.sin(territory.angle));
+      const box={x:point.x*factor+this.projection.x,y:point.y*factor+this.projection.y,width:width*c+height*s,height:width*s+height*c};countryBoxes.push(box);
+      t.anchor.set(.5);t.scale.set(pixel*textScale);t.rotation=territory.angle;t.position.set(point.x/scale,point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
       return {point,size,width:box.width};
     });
     this.cities=[];
@@ -149,13 +152,12 @@ export class PlayMap {
       if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
     const capitalFont=detail==='overview'?13:15;
-    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons,...this.uiObstacles],this.projection);
-    this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height}))};
+    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);
     const cityObstacles=[
-      ...countryBoxes,...capitalIcons,...capitalText,...this.uiObstacles,
-      ...this.wars.map(w=>({x:w.x,y:w.y,width:48,height:48}))
+      ...countryBoxes,...capitalIcons,...capitalText
     ];
     const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
+    this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
     for(const c of cityText){label(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.

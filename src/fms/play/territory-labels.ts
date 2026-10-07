@@ -1,4 +1,5 @@
 import type { Point, Province, World } from '../../sim/types';
+import {territoryAxis,territoryTextBand} from './territory-axis';
 
 const area=(p:Province)=>Math.abs(p.polygon.reduce((sum,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return sum+a.x*b.y-b.x*a.y;},0))/2;
 function inside(p:Point,ring:readonly Point[]){let result=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)result=!result;}return result;}
@@ -8,7 +9,7 @@ function centroid(ring:readonly Point[]):Point|null{
 }
 const edgeKey=(a:Point,b:Point)=>{const x=`${a.x},${a.y}`,y=`${b.x},${b.y}`;return x<y?`${x}/${y}`:`${y}/${x}`;};
 function distance2(p:Point,a:Point,b:Point){const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy,t=length?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/length)):0;return (p.x-a.x-t*dx)**2+(p.y-a.y-t*dy)**2;}
-export interface TerritoryLabel{nationId:string;componentId:string;point:Point;area:number;provinceIds:string[];clearance:number}
+export interface TerritoryLabel{nationId:string;componentId:string;point:Point;area:number;provinceIds:string[];clearance:number;angle:number;length:number;height:number}
 
 /** Current control, not capital/legal ownership. Label every land-connected
  * component at a verified interior point with best boundary clearance.
@@ -45,7 +46,8 @@ export function territoryLabels(world:World):TerritoryLabel[]{
     // into an inland sea or to a distant enclave just because the centroid did.
     let step=Math.sqrt(largestArea)/8,refined:Point=best;
     for(let iteration=0;iteration<7;iteration++,step/=2){const origin:Point=refined;for(const dx of [-step,0,step])for(const dy of [-step,0,step]){const p:Point={x:origin.x+dx,y:origin.y+dy};if(!inLand(p))continue;const d=clearance(p);if(d>bestDistance){refined=p;bestDistance=d;}}}
-    result.push({nationId:nation.id,componentId:largest[0].id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:Math.sqrt(bestDistance)});
+    const safe=Math.sqrt(bestDistance),angle=territoryAxis(largest,refined),band=territoryTextBand(refined,angle,safe,boundary);
+    result.push({nationId:nation.id,componentId:largest[0].id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:safe,angle,...band});
     }
   }
   return result;

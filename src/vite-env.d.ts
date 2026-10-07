@@ -79,3 +79,5 @@ declare const __FMS_WAR38_ENGINE__:string;
 declare const __FMS_WAR39_ENGINE__:string;
 
 declare const __FMS_WAR40_ENGINE__:string;
+
+declare const __FMS_WAR41_ENGINE__:string;

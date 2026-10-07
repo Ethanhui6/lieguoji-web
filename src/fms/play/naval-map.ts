@@ -4,11 +4,16 @@ import type { World, Point } from '../../sim/types';
 import { fleetPosition, type Navy } from './navy';
 import { seaRoutePoints, type SeaGraph } from './sea-path';
 import { nationColor } from './politics';
-export interface NavalView { navy:Navy; graph:SeaGraph; selected:string|null; nationId:string; preview:number[]; maritime?:MaritimeState;portControl?:Record<string,{occupierId:string;landOwnerId:string;value:number}> }
+export interface NavalView { navy:Navy; graph:SeaGraph; selected:string|null; nationId:string; preview:number[];harborCells?:readonly number[]; maritime?:MaritimeState;portControl?:Record<string,{occupierId:string;landOwnerId:string;value:number}> }
 export function fleetAt(navy:Navy,graph:SeaGraph,scale:number,camera:{x:number;y:number;scale:number},point:Point){return navy.fleets.filter(f=>f.status!=='lost').map(f=>{const p=fleetPosition(graph,f);return {id:f.id,d:Math.hypot(p.x/scale*camera.scale+camera.x-point.x,p.y/scale*camera.scale+camera.y-point.y)};}).filter(f=>f.d<18).sort((a,b)=>a.d-b.d)[0]?.id;}
 export function drawNavy(layer:Container,world:World,scale:number,zoom:number,view:NavalView,positions?:ReadonlyMap<string,Point>,overview=false){
   const {navy,graph,selected,nationId,preview}=view,g=new Graphics(),pixel=1/zoom;layer.addChild(g);
   const ships=new Map<string,Container>();
+  if(view.harborCells?.length){const edges=new Map<string,{a:Point;b:Point;count:number}>();
+    const key=(p:Point)=>`${p.x.toFixed(7)},${p.y.toFixed(7)}`;
+    for(const id of view.harborCells){const poly=graph.nodes.get(id)?.polygon;if(!poly)continue;g.poly(poly.map(p=>({x:p.x/scale,y:p.y/scale}))).fill({color:0x9ad6d5,alpha:.045});for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],k=[key(a),key(b)].sort().join('/'),old=edges.get(k);if(old)old.count++;else edges.set(k,{a,b,count:1});}}
+    for(const e of edges.values())if(e.count===1)g.moveTo(e.a.x/scale,e.a.y/scale).lineTo(e.b.x/scale,e.b.y/scale).stroke({color:0x9ad6d5,width:pixel,alpha:.48});
+  }
   const path=(ids:number[],color:number)=>{const points=seaRoutePoints(graph,ids);points.forEach((p,i)=>{if(i)g.lineTo(p.x/scale,p.y/scale);else g.moveTo(p.x/scale,p.y/scale);});if(points.length>1)g.stroke({color,width:1.5*pixel,alpha:.85});};
   const active=navy.fleets.find(f=>f.id===selected&&f.status!=='lost');if(active?.route.length)path([active.node,...active.route],0xd2eff2);if(preview.length)path(preview,0xffe191);
   const portLayer=new Graphics();layer.addChild(portLayer);

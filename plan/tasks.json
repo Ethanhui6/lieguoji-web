@@ -4899,7 +4899,7 @@
       "date": "2026-10-07",
       "status": "Native settlement execution and effects verified; production v27 unchanged",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "14f18db6869f8152675abe3de03809910802ea58",
+      "lastCommitted": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
       "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
       "next": "WEB-04-37：直接复用已测内核做v28生产桥接；先冻结v27，明确伤亡/历月/开战快照映射，接目标→战争分/厌战→和约执行→外交/军队/史记清理及独立保存；不重复恢复本批函数，不造旧局历史。之后WEB-03-06文化信仰命名一致性。",
       "latestUserPriority": "2026-10-07看原作视频学习；连贯动画、更合理战略与辖区、自选城市国家数量、文化一致性、大地图和家族。",
@@ -5011,10 +5011,10 @@
       "currentEngine": "4927a05918f8b4d4abf5787754f71367ade7e3e3cce270fe5410c772603849d9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5206/?fms=1",
-      "currentLocalHead": "14f18db6869f8152675abe3de03809910802ea58",
+      "currentLocalHead": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
       "sourceCommit": "87044a7de1cba92850c4889aaf9e5d98ff83b6f9",
-      "checkpointNote": "Current uncommitted execution batch builds on da05fe9; code commit will be recorded after local commit. sourceCommit/version/engine retain protected v27.",
-      "head": "14f18db6869f8152675abe3de03809910802ea58",
+      "checkpointNote": "Native settlement execution kernels committed at 9ed2100abcbf7a838ace84e266a03f2ffda0c0c5; the following documentation-only checkpoint may be newer. sourceCommit/currentVersion/currentEngine still identify protected playable v27.",
+      "head": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
@@ -6806,7 +6806,8 @@
         "Native province-conquest and internal settlement dependencies",
         "Versioned start/end lifecycle and atomic candidate commit",
         "Browser playable verification"
-      ]
+      ],
+      "sourceCommit": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5"
     }
   }
 }

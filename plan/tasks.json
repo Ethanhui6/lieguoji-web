@@ -4282,7 +4282,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "WEB-04-13: 原普通动员数量/君主特性，已核RVA见v20 NEXT_MUSTER；特殊强国榜单依赖仍未闭合。",
+    "nextRecoveryTarget": "WEB-04-13: 人物生命周期已有死亡概率内核；窄核TimeManager5215E0和Character.UpdateAge83DD30及持久生日，不把recordedDay当生日。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4760,11 +4760,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "destiny20_verified_muster_next",
+      "status": "muster21_verified_lifecycle_next",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "938769f0e8b48e8da7d2227db8f50060a3d627fc",
-      "cloudScope": "Local-only v20; existing cloud preview/main and all prior stores preserved.",
-      "next": "冻结已验证v20，按原普通动员数量/君主特性/核心候选接新规则，先补齐真实资格与同月次序；原特殊强国榜单仍未闭合。",
+      "lastCommitted": "7eeb6703d5d65b971baedff624af63976b97d6de",
+      "cloudScope": "Local-only v21; main, existing cloud preview and all old local versions/stores preserved.",
+      "next": "保留v21普通动员及实际交战存档；按已核人物月序续接生日/年龄/自然死亡完整事务，先闭合日期初始化与新君主生日，不重复纯概率核。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -4815,11 +4815,11 @@
         "docs/evidence/fms-map-legibility-v5-2026-10-07/first-browser.json",
         "docs/evidence/fms-map-legibility-v5-2026-10-07/browser-final.json"
       ],
-      "currentVersion": 20,
-      "currentEngine": "8c86ffb84d46b7e45a2fbd5f7ac88772a9fbee672d452bf12544e2c8c4a2d382",
+      "currentVersion": 21,
+      "currentEngine": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5193/?fms=1",
-      "currentLocalHead": "938769f0e8b48e8da7d2227db8f50060a3d627fc"
+      "localUrl": "http://127.0.0.1:5194/?fms=1",
+      "currentLocalHead": "7eeb6703d5d65b971baedff624af63976b97d6de"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6049,19 +6049,48 @@
         "docs/evidence/fms-destiny20-v5-2026-10-07/NEXT_MUSTER.md",
         "docs/evidence/fms-destiny20-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-destiny20-v5-2026-10-07/browser.json",
-        "docs/evidence/fms-destiny20-v5-2026-10-07/tested-artifact.json"
+        "docs/evidence/fms-destiny20-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-destiny20-v5-2026-10-07/final-checks.json"
       ],
       "unitTests": 3127,
-      "browserChecks": 3
+      "browserChecks": 3,
+      "sourceCommit": "7eeb6703d5d65b971baedff624af63976b97d6de"
     },
     "nativeMusterPrototype": {
       "date": "2026-10-07",
-      "status": "kernel_verified_not_integrated",
+      "status": "ordinary_integrated_v21_local_verified",
       "tests": 18,
-      "productionIntegrated": false,
+      "productionIntegrated": true,
       "evidence": [
         "docs/evidence/fms-destiny20-v5-2026-10-07/NEXT_MUSTER.md",
         "docs/evidence/fms-destiny20-v5-2026-10-07/muster-kernel-final.json"
+      ]
+    },
+    "muster21Prototype": {
+      "date": "2026-10-07",
+      "status": "local_verified",
+      "version": 21,
+      "store": 23,
+      "database": "lieguoji-fms-muster-v21",
+      "sourceParent": "7eeb6703d5d65b971baedff624af63976b97d6de",
+      "engine": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
+      "localUrl": "http://127.0.0.1:5194/?fms=1",
+      "accepted": false,
+      "physicalDevice": false,
+      "visualAccepted": false,
+      "browserVerified": true,
+      "unitTests": 91,
+      "productionIntegrated": true,
+      "evidence": [
+        "docs/evidence/fms-muster21-v5-2026-10-07/CONTRACT.md",
+        "docs/evidence/fms-muster21-v5-2026-10-07/FAILURES.md",
+        "docs/evidence/fms-muster21-v5-2026-10-07/unit-first.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/unit-final.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-muster21-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/browser.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/tested-artifact.json",
+        "docs/evidence/fms-muster21-v5-2026-10-07/NEXT_LIFECYCLE.md"
       ]
     }
   }

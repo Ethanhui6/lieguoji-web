@@ -1,0 +1,662 @@
+{
+  "date": "2026-10-07T01:18:19.180Z",
+  "build": {
+    "version": "0.5.0-preview.35",
+    "commit": "7eeb6703d5d65b971baedff624af63976b97d6de",
+    "engineFingerprint": "65333e9ed3fccd77c6e5bf32a9a3d0396df2990f2ad1ede7f952aec1217851c5",
+    "fmsPlayFingerprint": "0026798b10d65cfb186247b0e65148310c3e72965698dd94633a640594fee504",
+    "fmsTacticsFingerprint": "eade9f19e7b2bfecef9b59b688bd53c29ee95c13af1eb5e3f440b20fc5ed4dad",
+    "fmsCampaignFingerprint": "5394c3c20077989a2eb2c243c7a686399e86c8dbfad8102bfbb3951d01019db0",
+    "fmsChronicleFingerprint": "f22268ac708380330dac94247a24c46a8fef2c2d716972049f9af9f124fd5884",
+    "fmsChronicle2Fingerprint": "4f3d955e7a3e3626d2392fd46dce89e221b0935d89aac5a998f22771a67595ea",
+    "fmsTerrain13Fingerprint": "a20d2c88e3bbad359027bcc1d0d9e343c9a0f1955b9c6c250acfa070cdb36c77",
+    "fmsUpper14Fingerprint": "3482083ac4b38cb0201ddb7517fd40c007fc99285680361b74313858e4dc0f12",
+    "fmsFiscal15Fingerprint": "eb95d5fcb6affb4f1ca405300adbefc69029adaa1e91f293871bfb47966389e4",
+    "fmsCourt16Fingerprint": "fb6616f64e22d5aed61436eacc135f820a37829a9b1e1c01f0537b4391098a0e",
+    "fmsCulture17Fingerprint": "a06cacce3adba1ef788ea87e7d11607f7e673141aab5b8e8648da4f699fa885f",
+    "fmsNaming18Fingerprint": "ad61bb35f2eb6df9480ae71f6a03c169dab7f42d200e534b4b8e9241534a2914",
+    "fmsRestoration19Fingerprint": "3ce356c1e36c0010cf533c6a498183404bf0a3dbd47b03339651b12211089e57",
+    "fmsDestiny20Fingerprint": "8c86ffb84d46b7e45a2fbd5f7ac88772a9fbee672d452bf12544e2c8c4a2d382",
+    "fmsMuster21Fingerprint": "b462edef9aeb3393bb019f8d43567f6c3a439f5193668a53450af06fe69072c9",
+    "macroGenerator": {
+      "sha256": "7984490d07c9b0d34d154b7e1fccc57e5abc6078c5e6379d7879e7ea29b4a402",
+      "files": [
+        "src/world/generation-contract.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/macro.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "landformGenerator": {
+      "sha256": "858856230b359b1b834171485db2a31e15dfaa5963fbe3b21614fdff0c5ce41e",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/landforms.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "islandGenerator": {
+      "sha256": "3340c36ad93a3a4bd1fcc651f173d6e83efff4b1110be6e81a898f9b4793d34d",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/islands.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "coastGenerator": {
+      "sha256": "f5772f5a9b85fe85878bd89d42905334fa7e9779847f8054efd620120369b35e",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/coast.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "shapeGenerator": {
+      "sha256": "cbe7e8615755b4a3a85ecb4e72e3ee3b87ba7b50e102de3a2786db54355197f3",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/shape.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "oceanGenerator": {
+      "sha256": "9816b908afbe871d7069c4a06975e0830fbbc2de524b1ef2c957c3ad5f7a0a78",
+      "files": [
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/ocean.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "detailShapeGenerator": {
+      "sha256": "a47a3aea3133595fedc0128dceff6a3ad2362961c05f8b484814b2faa203162d",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-adapter.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "addDetailGenerator": {
+      "sha256": "f245bb3ba5856ff0ae4c0c5df05fac803e32c0f094ab7ccfec2188d33ece7fc6",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-shape-add-adapter.ts",
+        "src/world/generation/detail-shape-add.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "naturalDetailGenerator": {
+      "sha256": "3ad50465f760c74fd953cbce7a60f3985728932dd5b44d94221812cf48e7d283",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-natural-outline.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape-natural-adapter.ts",
+        "src/world/generation/detail-shape-natural.ts",
+        "src/world/generation/fine-range-tree.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/natural-ocean-base.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/terrain-massif.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "addNaturalDetailGenerator": {
+      "sha256": "fd21dd27f1dbd845a5301d2d462eb92b41519618fb0bab4b7e4134c78309b2ab",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-natural-outline.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/detail-shape-natural-add-adapter.ts",
+        "src/world/generation/detail-shape-natural-add.ts",
+        "src/world/generation/detail-shape-natural.ts",
+        "src/world/generation/fine-range-tree.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/terrain-massif.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "localDetailReliefGenerator": {
+      "sha256": "518eca074345e57259653d62a5372edbbaeace684234116a37561b361ae6bce2",
+      "files": [
+        "src/world/atlas-format.ts",
+        "src/world/coastal-generation.ts",
+        "src/world/coastal-surface.ts",
+        "src/world/detail-coast-base.ts",
+        "src/world/detail-coast-codec.ts",
+        "src/world/detail-coast-field.ts",
+        "src/world/detail-coast-geometry.ts",
+        "src/world/detail-coast-locks.ts",
+        "src/world/detail-coast-types.ts",
+        "src/world/generation-contract.ts",
+        "src/world/generation-format.ts",
+        "src/world/generation-history.ts",
+        "src/world/generation-locks.ts",
+        "src/world/generation/detail-curved-ridge.ts",
+        "src/world/generation/detail-local-background.ts",
+        "src/world/generation/detail-local-relief.ts",
+        "src/world/generation/detail-natural-relief.ts",
+        "src/world/generation/detail-orography.ts",
+        "src/world/generation/detail-shape-distance.ts",
+        "src/world/generation/detail-shape-height.ts",
+        "src/world/generation/fine-range-tree.ts",
+        "src/world/generation/fingerprint.ts",
+        "src/world/generation/local-detail-relief-adapter.ts",
+        "src/world/generation/quality.ts",
+        "src/world/generation/seed.ts",
+        "src/world/generation/terrain-massif.ts",
+        "src/world/model.ts",
+        "src/world/topology.ts"
+      ]
+    },
+    "seedTerrainGenerator": {
+      "id": "recovered-height-square-v1",
+      "sha256": "af551c9ad560a0c5887a1fa0474b9f6cf49b0185f637e2c798abaab1e1d03754",
+      "files": [
+        "src/world/model.ts",
+        "src/world/recovered-terrain/alea.ts",
+        "src/world/recovered-terrain/contract.ts",
+        "src/world/recovered-terrain/engine.ts",
+        "src/world/recovered-terrain/numeric.ts",
+        "src/world/recovered-terrain/research.ts",
+        "src/world/recovered-terrain/templates.ts",
+        "src/world/recovered-terrain/topology.ts",
+        "src/world/seed-terrain.ts",
+        "src/world/topology.ts"
+      ],
+      "externalFiles": [
+        "node_modules/d3-delaunay/package.json",
+        "node_modules/d3-delaunay/src/delaunay.js",
+        "node_modules/d3-delaunay/src/index.js",
+        "node_modules/d3-delaunay/src/path.js",
+        "node_modules/d3-delaunay/src/polygon.js",
+        "node_modules/d3-delaunay/src/voronoi.js",
+        "node_modules/delaunator/delaunator.js",
+        "node_modules/delaunator/delaunator.min.js",
+        "node_modules/delaunator/index.js",
+        "node_modules/delaunator/package.json",
+        "node_modules/robust-predicates/esm/incircle.js",
+        "node_modules/robust-predicates/esm/insphere.js",
+        "node_modules/robust-predicates/esm/orient2d.js",
+        "node_modules/robust-predicates/esm/orient3d.js",
+        "node_modules/robust-predicates/esm/util.js",
+        "node_modules/robust-predicates/index.js",
+        "node_modules/robust-predicates/package.json",
+        "package-lock.json"
+      ]
+    },
+    "rules": "0.2.0",
+    "supportedRules": [
+      "0.1.0",
+      "0.2.0"
+    ],
+    "entry": "world-studio",
+    "scenarios": [
+      "custom-world",
+      "test-continent"
+    ]
+  },
+  "workingTree": true,
+  "notCleanHeadBuild": true,
+  "previewRoot": ".autopilot/muster21-preview/dist",
+  "url": "http://127.0.0.1:5194/?fms=1",
+  "checkedDistEqualsBrowserPreview": true,
+  "sourceFiles": [
+    {
+      "path": "src/fms/play/CulturePanel.tsx",
+      "sha256": "17ee77a8347a7565cae709e1cec31482826f9fc78b59d9948beed2abdc57b10b"
+    },
+    {
+      "path": "src/fms/play/DestinyPanel.tsx",
+      "sha256": "78a781aca6001ff25f95533810ed3d4b752aa6a35345dc151694d29bbd33eaf9"
+    },
+    {
+      "path": "src/fms/play/FiscalPanel.tsx",
+      "sha256": "9fa99b1d1a00bc5de1261dcb6f5a0832d033ed4221de1b79a8c9c6224b07df20"
+    },
+    {
+      "path": "src/fms/play/FmsGame.tsx",
+      "sha256": "10b234c6228322bcf6ff9af0c845576ac28a23ca86fee40281d32aae2400697a"
+    },
+    {
+      "path": "src/fms/play/PeoplePanel.tsx",
+      "sha256": "b8a1a0db6f0e4291a53462ca53b8c0a122256ccf5750646a9e8babec32acdf21"
+    },
+    {
+      "path": "src/fms/play/TacticsMusterPanel.tsx",
+      "sha256": "3fd43a8f707f1aebad3dd49e2f85a9d8feb3499de586fb1b309cd1d672c7fa4f"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "67c6ac12746abae15c3f7a40dca0648534d1cc8677fe272c964c24a0379cc03b"
+    },
+    {
+      "path": "scripts/fms-muster21-fingerprint.ts",
+      "sha256": "412f59cb684f35442fb9b5775907274dae3794e67b685b180bf97f4ebdc4f67e"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-client.ts.source",
+      "sha256": "e8272ef4cea45b6f9db24908e639838415c362eb9b21153748658a1c2535a731"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-edit.ts.source",
+      "sha256": "43d16d76bde21d201f63b2c042366e23ca9330832dc7ba7e225bae3360fc1ac9"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-model.ts.source",
+      "sha256": "2f0ac731b29034880aff817b507a0f56b10de67dac896f6c5b5bf99b41bbcf78"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-runtime.ts.source",
+      "sha256": "fbc70a617fc2357061714275e3f7edafcdb2dceb620e5ce0b342e28650ffb522"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-session.ts.source",
+      "sha256": "5817e77964c59979acdce34e1990a33244994d44f0554197fc326510ddb46f1d"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-state.ts.source",
+      "sha256": "9af83c615b7430d523cd07fac3d041c1409ee1f39b102619b27c0a00d3c68b08"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-storage.ts.source",
+      "sha256": "35a59f42aea16e59568ae881e50877412774bd06f485b2388dbc6374ebf033d9"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-stores.ts.source",
+      "sha256": "2a3c2058fc98577f493421117af40360bb90394df297d3618dfbe07f91c78edb"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20-structure.ts.source",
+      "sha256": "d8a4bba9cabe113797f92b0dbcafff5a7a5f388aeff39ca17d80d4811cd4b662"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/destiny20/play.worker.ts.source",
+      "sha256": "b1f0871487395e849c545ae3308c11a52cb4b5f9e0c7fa1f56bb76daac25caec"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/fms/play/native-economy/destiny.ts.source",
+      "sha256": "9202abbbc249f96dff66b6d399d799eaa7420137850a1e2367858f3919e6f14d"
+    },
+    {
+      "path": "src/fms/play/compat/destiny20/manifest.json",
+      "sha256": "6a62a8a7c638cbe8a1d01d656edc548221bd43c87b305ea0f326a0e9215787ae"
+    },
+    {
+      "path": "src/fms/play/muster21-client.test.ts",
+      "sha256": "99c405738cef4d25bcc60d9d1c14ba46fa982bd2943bd10a484200d51d2bd046"
+    },
+    {
+      "path": "src/fms/play/muster21-client.ts",
+      "sha256": "41915631313a1f684ef6a3fdaa99d4812df73ff205dd705b977ec15e88d95663"
+    },
+    {
+      "path": "src/fms/play/muster21-model.ts",
+      "sha256": "a7df493f7bf61fedecc95ec25c162e3f78cfefad54b5cc4c9b01ffca5ce733d0"
+    },
+    {
+      "path": "src/fms/play/muster21-rules.ts",
+      "sha256": "3f637b4ac8f89269464b7fd8fbff1d32dd9f7b20ad44e0ac633b69f2505d8a79"
+    },
+    {
+      "path": "src/fms/play/muster21-runtime.ts",
+      "sha256": "6750827a65586c57716e4a166bdc929721b121c730ec030e9c94c2d17d7629db"
+    },
+    {
+      "path": "src/fms/play/muster21-session.ts",
+      "sha256": "f37ae65a0c3bea09ad8a526d6958e0483636316c2a9dbaf66747153a7fc8e8c3"
+    },
+    {
+      "path": "src/fms/play/muster21-storage.ts",
+      "sha256": "0f59691ed1a7e5ae0398c2f21ce987832441c9bf89cde782391d0ee9af9e1a1e"
+    },
+    {
+      "path": "src/fms/play/muster21-stores.ts",
+      "sha256": "d0a52964d04f1ccfb7e14e4e8c26c80f28b46acfdf225462eb27237bdf8eef7b"
+    },
+    {
+      "path": "src/fms/play/muster21.test.ts",
+      "sha256": "7c749341488c5fce524d9442a204d3f7c2ca96bba1c07173b0d40c368615f1eb"
+    },
+    {
+      "path": "src/fms/play/muster21/play.worker.ts",
+      "sha256": "d633a2d0ab847c093ec2f8c1e9a0dd01dc854bba52e59713b1edf48abe4f4839"
+    },
+    {
+      "path": "tests/fms-muster21.spec.ts",
+      "sha256": "1647bb54c8c94e88255fa8368620480d1af7b3bd06bc6393ac85cca3b3f4583a"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "assets/App-B-TSmWiq.css",
+      "sha256": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055"
+    },
+    {
+      "path": "assets/App-DCax4yUJ.js",
+      "sha256": "9202aff21308c488f2f905e70018f59ba6ff5fb8f24d66c203851e9eb12f10f3"
+    },
+    {
+      "path": "assets/atlas.worker-D_ZIKkck.js",
+      "sha256": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8"
+    },
+    {
+      "path": "assets/AtlasStudio-BYCAe5af.js",
+      "sha256": "66e300963b187a42ad1582ec03cd0c71830b95d4b4aaab6579e23c15a4f04412"
+    },
+    {
+      "path": "assets/AtlasStudio-CtV71PEf.css",
+      "sha256": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7"
+    },
+    {
+      "path": "assets/battle-sword-BXcDEFcj.png",
+      "sha256": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3"
+    },
+    {
+      "path": "assets/biome.worker-DO2s7HoV.js",
+      "sha256": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b"
+    },
+    {
+      "path": "assets/browserAll-4oiQHvlP.js",
+      "sha256": "3d0a969b08c3e4a8501f4337f3161ec23c9b74f528a7429ca68a358df028a7ac"
+    },
+    {
+      "path": "assets/BufferResource-Bk8ZSLzt.js",
+      "sha256": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c"
+    },
+    {
+      "path": "assets/camera-BGXwsUH8.js",
+      "sha256": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30"
+    },
+    {
+      "path": "assets/canvasUtils-BVGwBBBn.js",
+      "sha256": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2"
+    },
+    {
+      "path": "assets/coast.worker-2MXmECyk.js",
+      "sha256": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390"
+    },
+    {
+      "path": "assets/CountryStudio-Cn5n2Zb4.css",
+      "sha256": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee"
+    },
+    {
+      "path": "assets/CountryStudio-DIEgGwKm.js",
+      "sha256": "e6adb97b329207eedca4db14d214b486a07561c658bf3752a0777703569c7c41"
+    },
+    {
+      "path": "assets/delaunay-BCSrghLA.js",
+      "sha256": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc"
+    },
+    {
+      "path": "assets/FmsApp-BWJHFQM2.css",
+      "sha256": "57adf015e762865df8a9b37a22f8d502a6f0f60e400fc6104d22aacfa723cd04"
+    },
+    {
+      "path": "assets/FmsApp-ClJ3Sc7E.js",
+      "sha256": "46304a9dc500464a22acfb15f69aead6574dcf9922a7fff567ae01867ec5dce2"
+    },
+    {
+      "path": "assets/Geometry-IpHxCVTc.js",
+      "sha256": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573"
+    },
+    {
+      "path": "assets/getPo2TextureFromSource-BzR2jfx3.js",
+      "sha256": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3"
+    },
+    {
+      "path": "assets/getTextureBatchBindGroup-ClDkMdT3.js",
+      "sha256": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c"
+    },
+    {
+      "path": "assets/index-Dlp3Ncqr.js",
+      "sha256": "fb17a5d7ceb79afa5b99408df173d6dfeddba197d9ada90f7f55bdd7577ccfd6"
+    },
+    {
+      "path": "assets/init-B8Jnes8g.js",
+      "sha256": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a"
+    },
+    {
+      "path": "assets/init-Dk1pON3P.js",
+      "sha256": "61108d21bb3abefce8216da223d2e5cec611a25684148c1b7e2a751a3a0ecc8a"
+    },
+    {
+      "path": "assets/LegacyEntry-CNvbqJOh.css",
+      "sha256": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52"
+    },
+    {
+      "path": "assets/LegacyEntry-CZMoxY4w.js",
+      "sha256": "f81d378cf0a831e9f0f911f2e51b39af8df73fb904c2075cff2dccd4b7e1beca"
+    },
+    {
+      "path": "assets/play.worker-CCBgFTRT.js",
+      "sha256": "f836af0e2f6ca0179df027b938665f1823acfa865cc2e68eaa0bd66d2f952055"
+    },
+    {
+      "path": "assets/renderer-5-3eA65x.js",
+      "sha256": "58d370c40678b343626a972a33fa9dec6a483e78c82a1382e89f22232ed79431"
+    },
+    {
+      "path": "assets/RenderTargetSystem-a4R96cNy.js",
+      "sha256": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81"
+    },
+    {
+      "path": "assets/replay.worker-Dvt2kBgS.js",
+      "sha256": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85"
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "path": "assets/seed-terrain.worker-Dlqs0yuM.js",
+      "sha256": "af1b6332737a3cb2dd46944106eca34764fd9e635f5b4b5477b3d9685585c9f5"
+    },
+    {
+      "path": "assets/sim.worker-CLe8Zpf3.js",
+      "sha256": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda"
+    },
+    {
+      "path": "assets/terrain-import.worker-B9lRjsio.js",
+      "sha256": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e"
+    },
+    {
+      "path": "assets/terrain.worker-DaY7RVPz.js",
+      "sha256": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897"
+    },
+    {
+      "path": "assets/Text-LwYoFoz8.js",
+      "sha256": "f10e970cc61cfca0314f108454d1b0819b26d7f40c34bbf1b07fde90d3ac30c1"
+    },
+    {
+      "path": "assets/webworkerAll-BMBUU_3k.js",
+      "sha256": "8fe2294d1723af8ba37ca9d59a334ad8e4f977e0f5ec6e22e9a8c9508d6a8764"
+    },
+    {
+      "path": "assets/worker-pjB4IGPF.js",
+      "sha256": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5"
+    },
+    {
+      "path": "build.json",
+      "sha256": "7f1cc95f49331e44653bcc09c0d8c9a88b6b2acc58f0199fb983001bba845c6b"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03"
+    },
+    {
+      "path": "index.html",
+      "sha256": "086d495edf8b6aa7016d135ceca10ee76e3002a9db6f5090a32a72463341fcb6"
+    },
+    {
+      "path": "terrain-licenses.txt",
+      "sha256": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    {
+      "path": "_headers",
+      "sha256": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44"
+    },
+    {
+      "path": "_redirects",
+      "sha256": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef"
+    }
+  ]
+}

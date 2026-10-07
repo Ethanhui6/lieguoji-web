@@ -4290,7 +4290,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "已完成三非君主handler及紧急选择131项检查；接已读取Monarchy88EB70、HoldElection845810外壳及AppointLeader506C10角色/任期副作用，然后v24独立死亡与官职清理接线，不重做已闭合候选。",
+    "nextRecoveryTarget": "三政体候选、Monarchy、HoldElection及AppointLeader/EndReign独立核统一219项与lint/types已过；接Character.Die83AEB0完整顺序和DismissAllForCharacter官职下游，然后独立v24生产接线，不重复已闭合核。",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -4768,11 +4768,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-07",
-      "status": "dynasty23_playable_succession_candidates_verified",
+      "status": "dynasty23_playable_appointment_kernels_verified",
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "59648ff67cc1bf37ae45d998e7fffb76712d78d1",
       "cloudScope": "Local-only v23; bounded cloud preview/main and old stores retained. Cloud site is not this v23 build.",
-      "next": "已完成三非君主handler及紧急选择131项检查；接已读取Monarchy88EB70、HoldElection845810外壳及AppointLeader506C10角色/任期副作用，然后v24独立死亡与官职清理接线，不重做已闭合候选。",
+      "next": "三政体候选、Monarchy、HoldElection及AppointLeader/EndReign独立核统一219项与lint/types已过；接Character.Die83AEB0完整顺序和DismissAllForCharacter官职下游，然后独立v24生产接线，不重复已闭合核。",
       "latestUserPriority": "不按批次停下来，持续按计划执行到还原原作；已建立本线程active Goal",
       "requiredUserAction": null,
       "evidence": [
@@ -6288,7 +6288,28 @@
         "docs/evidence/fms-dynasty23-v5-2026-10-07/handlers-first.json",
         "docs/evidence/fms-dynasty23-v5-2026-10-07/candidates-first.json"
       ],
-      "scope": "Three non-monarchy handlers, emergency selectors and native age/ability scores; production remains v23."
+      "scope": "Three non-monarchy handlers, emergency selectors and native age/ability scores; production remains v23.",
+      "sourceCommit": "20cd1d2"
+    },
+    "leaderAppointmentKernel": {
+      "date": "2026-10-07",
+      "status": "local_verified_not_integrated",
+      "sourceParent": "20cd1d2",
+      "productionIntegrated": false,
+      "unitTests": 219,
+      "testFiles": 8,
+      "lint": true,
+      "typecheck": true,
+      "evidence": [
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/MONARCHY_APPOINTMENT_RECOVERY.md",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/succession-verified.json",
+        "docs/evidence/fms-dynasty23-v5-2026-10-07/appointment-typecheck.txt"
+      ],
+      "limitations": [
+        "Downstream election candidates/weight/winner, alternative dynasty, title, snapshots/events/reform remain explicit ports.",
+        "Original Die order recovered next; no natural death production integration or new browser claim."
+      ],
+      "repairedFailure": "First full typecheck inferred never from throwing snapshot callback; infer snapshot type directly from state, retain exception test."
     }
   }
 }

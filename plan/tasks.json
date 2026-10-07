@@ -4353,9 +4353,17 @@
               "docs/evidence/fms-war30-foundation-v5-2026-10-08/unit-final.json",
               "docs/evidence/fms-war30-foundation-v5-2026-10-08/browser.json",
               "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-desktop.png",
-              "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-portrait.png"
+              "docs/evidence/fms-war30-foundation-v5-2026-10-08/retained-v29-portrait.png",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/DELIVERY.md",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/checks.json",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/unit-batch.json",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/unit-final.json",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/browser-production.json",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/tested-artifact.json",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/production-war.png",
+              "docs/evidence/fms-war30-live-v5-2026-10-08/production-portrait.png"
             ],
-            "progressScope": "v29继续v28可玩普通外战：世界/单国自动外交、240月默认及0..480期限、原作月初期限优先、同tick真实零省清理，预览确认及独立Store31保存已接入。234相关检查、最终生产浏览器与竖屏仿真通过；完整CB/AI/内战/附庸改宗仍未完成。 2026-10-08新增原生宣战资格/候选/选择、好感/关系缓存及外交点数内核；66新检查/336相关检查通过，未接入生产，当前仍v29。 2026-10-08宣战目录/资格/目标和国家输入片段已接成组合测试；391相关+最后8项受影响检查通过，初始化100仅构造值的范围已更正；生产仍v29，详见nativeCasusState。 2026-10-08 v29冻结、新v30候选真实外交水域与Store32已验；39相关测试、真实浏览器保存/竞争写/旧版继续、43产物构建审查通过。未接v30 AI/Worker/UI，生产仍v29，见war30Foundation。"
+            "progressScope": "v30已实际接入独立会话、Worker、UI和Store32：持久外交点数/逐国月更/随机状态，真实地理和国家输入下CB1/2/6宣战、完整目标、可达连片军队目标、终战次数与渐增停战、手动预览确认、旧史unknown及旧会话继续。376相关批次+46最终受影响检查、生产构建43产物、真实生产浏览器闭环及竖屏仿真通过。完整联盟/附庸/改宗/内战、原作月排行缓存与完整调度、真机和视觉仍未完成。历史各切片证据保留，见war30Playable。"
           }
         ]
       },
@@ -4927,11 +4935,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "v29 diplomacy settings and native monthly/death scheduling verified locally; full restoration continues",
+      "status": "v30 supported CB declaration, monthly points, war-end histories and playable Worker/UI verified locally; full restoration continues",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "cloudScope": "Local-only v29; bounded preview grant not extended; main, v28 preview and old saves preserved.",
-      "next": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces.",
+      "lastCommitted": "7d6d782a05c9f0a4bb31df53f170c0be51102a59",
+      "cloudScope": "Local-only v30; no push/Pages/main changes. Existing bounded grant not expanded.",
+      "next": "Continue WEB-04-37 from playable v30: real alliance/vassal/conversion and internal-war lifecycle, native monthly ranking/cache and complete diplomacy schedule. Reuse integrated declaration/geography/Store32/Worker; do not repeat recovery or create an empty candidate. Preserve frozen 7d6d782 local v30 build before changing rules. Then WEB-03-06 and queued full audit; do not expand cloud authorization.",
       "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
       "evidence": [
@@ -5048,31 +5056,39 @@
         "docs/evidence/fms-diplomacy29-v5-2026-10-07/NEXT_CB.md",
         "docs/evidence/fms-diplomacy29-v5-2026-10-07/checks.json",
         "docs/evidence/fms-diplomacy29-v5-2026-10-07/unit-final.json",
-        "docs/evidence/fms-diplomacy29-v5-2026-10-07/browser.json"
+        "docs/evidence/fms-diplomacy29-v5-2026-10-07/browser.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/unit-batch.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/unit-final.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/browser-production.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/production-war.png",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/production-portrait.png"
       ],
-      "currentVersion": 29,
-      "currentEngine": "15f4a928d78be59d3fe27325c0908ecba9cbaf71a13927b7a3c03b1878e35db0",
+      "currentVersion": 30,
+      "currentEngine": "b6e9971fb79450beb69438eceeca23c292c968eb92003fd8a0724dae84431cde",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5214/?fms=1",
-      "currentLocalHead": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "sourceCommit": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
-      "checkpointNote": "v30 candidate geography and storage foundation verified at c7c51544113032653c13b71ef0f26cd15263bf99; playable source remains 41af47b/v29. Do not recreate v30, regenerate geography on load, or claim native AI/UI integrated.",
-      "head": "41af47bebf8bbd03f0255af7c7d98a37f620f4bc",
+      "localUrl": "http://127.0.0.1:5216/?fms=1",
+      "currentLocalHead": "7d6d782a05c9f0a4bb31df53f170c0be51102a59",
+      "sourceCommit": "7d6d782a05c9f0a4bb31df53f170c0be51102a59",
+      "checkpointNote": "Source commit above; following doc-only checkpoint does not change the playable engine.",
+      "head": "7d6d782a05c9f0a4bb31df53f170c0be51102a59",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
         "WEB-03-06"
       ],
-      "note": "234 related tests, actual production Worker/UI, 428x926 simulation; not complete native restoration.",
+      "note": "WEB-04-37 remains in_progress. v29/5214 retained. All human phone/visual gates remain pending.",
       "sourceParent": "def39ddb36dd01ac5697fe7998bbd1d0f484028c",
-      "candidateVersion": 29,
+      "candidateVersion": 30,
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-07T18:06:20.471Z: restored retained v29 on 127.0.0.1:5214 after checking 43 artifact hashes; HTTP build.json 200 and engine match. Temporary QA 5215 is not a new playable version.",
-      "previewUrlStatus": "Historical cloud preview only; local v29 and new standalone kernels have not been pushed or deployed there.",
+      "localPortCheck": "2026-10-08: preview PID6792 bound to127.0.0.1:5216; actual production browser flow passed",
+      "previewUrlStatus": "Older cloud preview unchanged; not this source/engine",
       "latestKernelSourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef",
-      "latestCandidateSourceCommit": "c7c51544113032653c13b71ef0f26cd15263bf99"
+      "latestCandidateSourceCommit": "7d6d782a05c9f0a4bb31df53f170c0be51102a59"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -7074,6 +7090,30 @@
       "uiIntegrated": false,
       "currentPlayableVersion": 29,
       "next": "Continue the existing unpublished v30 candidate, not another version: persist actual country/relationship and full CB goal state; wire native declaration scheduling, real war/settlement outcomes, then Worker/UI. Reuse frozen v29 runtime and voyage execution with old autonomous declaration disabled. Finish WEB-04-37, then WEB-03-06 and queued full audit. Do not regenerate sea partition on load or treat water faces as native water provinces."
+    },
+    "war30Playable": {
+      "date": "2026-10-08",
+      "status": "local_supported_declaration_slice_verified_not_full_native_parity",
+      "sourceCommit": "7d6d782a05c9f0a4bb31df53f170c0be51102a59",
+      "engine": "b6e9971fb79450beb69438eceeca23c292c968eb92003fd8a0724dae84431cde",
+      "version": 30,
+      "store": 32,
+      "database": "lieguoji-fms-war-v30",
+      "localUrl": "http://127.0.0.1:5216/?fms=1",
+      "originalPhone": false,
+      "originalVisual": false,
+      "task": "WEB-04-37",
+      "evidence": [
+        "docs/evidence/fms-war30-live-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/unit-batch.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/unit-final.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/browser-production.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/production-war.png",
+        "docs/evidence/fms-war30-live-v5-2026-10-08/production-portrait.png"
+      ],
+      "next": "Continue WEB-04-37 from playable v30: real alliance/vassal/conversion and internal-war lifecycle, native monthly ranking/cache and complete diplomacy schedule. Reuse integrated declaration/geography/Store32/Worker; do not repeat recovery or create an empty candidate. Preserve frozen 7d6d782 local v30 build before changing rules. Then WEB-03-06 and queued full audit; do not expand cloud authorization."
     }
   }
 }

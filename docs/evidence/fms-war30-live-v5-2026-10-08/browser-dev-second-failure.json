@@ -1,0 +1,18 @@
+{
+  "origin": "http://127.0.0.1:5215",
+  "production": false,
+  "scope": "Isolated Chromium; synthetic map; actual UI, Worker and IndexedDB; not phone/native/visual acceptance",
+  "errors": [],
+  "passed": false,
+  "worker": {
+    "version": 30,
+    "engine": "0e629c66eece871fe673087ef3e6b43a84d7cbb0af69769868197abd9caa5114",
+    "creationAndSaveMs": 807.1000000014901,
+    "points": 36864,
+    "createMs": 3547,
+    "tick1Ms": 269.09999999403954
+  },
+  "preview": "宣战\n\n黑尔维提亚斯向桑通热宣战\n\n宣战理由：领土争夺\n\n目标 3 处；开战不转移领土。\n\n此版本开放领土争夺、吞并与文化统一；附庸、改宗和内战外交仍待接入。\n\n确认执行\n取消",
+  "failure": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '讲和', exact: true }).first()\u001b[22m\n",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-war30-live-v5-2026-10-08\\video\\page@1b0180805bec1e1c74c5781cc692ca20.webm"
+}

@@ -1,0 +1,11 @@
+{
+  "origin": "http://127.0.0.1:5216",
+  "production": true,
+  "scope": "Isolated Chromium; synthetic map; actual UI, Worker and IndexedDB; not phone/native/visual acceptance",
+  "errors": [],
+  "passed": false,
+  "preview": "宣战\n\n黑尔维提亚斯向桑通热宣战\n\n宣战理由：领土争夺\n\n目标 3 处；开战不转移领土。\n\n此版本开放领土争夺、吞并与文化统一；附庸、改宗和内战外交仍待接入。\n\n确认执行\n取消",
+  "trucePreview": "宣战\n\n黑尔维提亚斯向卡林西亚宣战\n\n宣战理由：领土争夺\n\n目标 2 处；开战不转移领土。\n\n此版本开放领土争夺、吞并与文化统一；附庸、改宗和内战外交仍待接入。\n\n确认执行\n取消",
+  "failure": "Error: Missing truce refusal",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-war30-live-v5-2026-10-08\\video\\page@9927620bc911c730db90f0410c7e2676.webm"
+}

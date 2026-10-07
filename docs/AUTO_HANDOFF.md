@@ -1,3 +1,16 @@
+# 当前续接：v30已接入可玩宣战与外交调度，继续完整战争V2
+
+2026-10-08；源码 7d6d782a05c9f0a4bb31df53f170c0be51102a59；根唯一写入。WEB-04-37仍进行，之后WEB-03-06，再执行排队的全项目审查/前10差距。没有新的必要用户决策阻塞。
+
+- 新版已接真实国家/关系、月更点数与随机流、CB1/2/6、完整目标、终战次数与渐增停战、独立会话/Worker/UI/Store32。旧陆地及海上自主宣战入口都关闭；旧史null保持，未知旧次数采用明示的保守12年停战策略。附庸/改宗/联盟/内战仍待接，不宣称完整原作AI。
+- [本批交付与原作依据](evidence/fms-war30-live-v5-2026-10-08/DELIVERY.md)、[检查](evidence/fms-war30-live-v5-2026-10-08/checks.json)。376相关批次通过，最终受影响46通过；全仓types/lint、39发布计划保护、43产物构建审查通过。生产Chromium实际开局/宣战取消确认/推进/保存刷新/讲和/重战拒绝通过，无pageerror/HTTP错误。竖屏仿真非真机。
+- [新本机试玩](http://127.0.0.1:5216/?fms=1)，仅127.0.0.1；生产产物 .autopilot/war30-live/dist，PID6792，engine b6e9971fb79450beb69438eceeca23c292c968eb92003fd8a0724dae84431cde。旧v29/5214、原43文件和个人旧档保留。用户origin没有注入测试档。Codex打开请求返回queued，不宣称标签已经可见。
+- 已实测几何重复校验开销：36,864点、60城单步约220–224ms→124–132ms；创建/load/save仍完整验证，正常推进使用隔离私有已验证地图。仍有旧校验/快照开销，不是FPS/手机验收。
+- 下一步：Continue WEB-04-37 from playable v30: real alliance/vassal/conversion and internal-war lifecycle, native monthly ranking/cache and complete diplomacy schedule. Reuse integrated declaration/geography/Store32/Worker; do not repeat recovery or create an empty candidate. Preserve frozen 7d6d782 local v30 build before changing rules. Then WEB-03-06 and queued full audit; do not expand cloud authorization.
+- 无push/Pages/main变更；源与旧档保护不变。原作视觉、真机、完整WEB-04-37和全PH均未完成。
+
+---
+
 # 当前续接：v30水域与存档基础已验，接国家外交数据和调度
 
 2026-10-08；源码 c7c51544113032653c13b71ef0f26cd15263bf99；根唯一写入。WEB-04-37仍进行，后接WEB-03-06，新全项目审查仍排队。无新用户决策阻塞。

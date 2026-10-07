@@ -1,0 +1,17 @@
+{
+  "origin": "http://127.0.0.1:5215",
+  "production": false,
+  "scope": "Isolated Chromium; synthetic map; actual UI, Worker and IndexedDB; not phone/native/visual acceptance",
+  "errors": [],
+  "passed": false,
+  "worker": {
+    "version": 30,
+    "engine": "0e629c66eece871fe673087ef3e6b43a84d7cbb0af69769868197abd9caa5114",
+    "creationAndSaveMs": 828.7999999970198,
+    "points": 36864,
+    "createMs": 3706.39999999851,
+    "tick1Ms": 257
+  },
+  "failure": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '国家', exact: true })\u001b[22m\n",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-war30-live-v5-2026-10-08\\video\\page@6d81460b7c88e1a4de9b5af70af3c995.webm"
+}

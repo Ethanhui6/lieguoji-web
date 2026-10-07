@@ -1,0 +1,63 @@
+{
+  "origin": "http://127.0.0.1:5215",
+  "production": false,
+  "scope": "Isolated Chromium; synthetic map; actual UI, Worker and IndexedDB; not phone/native/visual acceptance",
+  "errors": [],
+  "passed": true,
+  "worker": {
+    "version": 30,
+    "engine": "b6e9971fb79450beb69438eceeca23c292c968eb92003fd8a0724dae84431cde",
+    "creationAndSaveMs": 853.6000000014901,
+    "points": 36864,
+    "createMs": 3828.2000000029802,
+    "tick1Ms": 137.29999999701977
+  },
+  "preview": "宣战\n\n黑尔维提亚斯向桑通热宣战\n\n宣战理由：领土争夺\n\n目标 3 处；开战不转移领土。\n\n此版本开放领土争夺、吞并与文化统一；附庸、改宗和内战外交仍待接入。\n\n确认执行\n取消",
+  "trucePreview": "宣战\n\n停战期尚未结束（3 年规则）。\n\n确认执行\n取消",
+  "portraitOverflow": false,
+  "stored": {
+    "engine": "b6e9971fb79450beb69438eceeca23c292c968eb92003fd8a0724dae84431cde",
+    "day": 1,
+    "version": 30,
+    "war": {
+      "warId": 1,
+      "attackerId": 1,
+      "defenderId": 2,
+      "casusBelliId": 1,
+      "goals": [
+        {
+          "id": 1,
+          "type": 2,
+          "addedBy": 1,
+          "target": 2,
+          "beneficiary": 1,
+          "primary": true,
+          "scopeType": 0,
+          "scope": {
+            "provinceIds": [
+              7,
+              8,
+              2
+            ],
+            "requiredCount": 3
+          },
+          "districtId": 0,
+          "secondaryStateId": 0
+        }
+      ]
+    },
+    "relations": [
+      {
+        "a": "n-0",
+        "b": "n-1",
+        "history": "complete",
+        "lastWar": 0.10000000149011612,
+        "warCount": 1,
+        "endedWarIds": [
+          1
+        ]
+      }
+    ]
+  },
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-war30-live-v5-2026-10-08\\video\\page@1f90de84311b851517833cf6ca31be13.webm"
+}

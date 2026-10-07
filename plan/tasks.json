@@ -4908,8 +4908,8 @@
       "date": "2026-10-07",
       "status": "v28 limited ordinary-war playable closure verified locally; full restoration continues",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
-      "cloudScope": "Local-only v27; prior bounded preview grant not extended; main and old saves preserved.",
+      "lastCommitted": "221ab049366cef7816ce5857b0862b5bfde2937b",
+      "cloudScope": "Local-only v28 playable build; prior bounded preview grant not extended; main and old saves preserved.",
       "next": "WEB-04-37继续补真实CB资格/AI目标选择、最大期限设置与内战/附庸改宗生产适配；不重做本批已验闭环。然后按原队列WEB-03-06。新全项目差距审查未启动。",
       "latestUserPriority": "先完成原任务；全方位原作审查/前10差距排队，不替代当前WEB-04-37。",
       "requiredUserAction": null,
@@ -5017,16 +5017,20 @@
         "docs/evidence/fms-peace-execution-v5-2026-10-07/VIDEO_RESEARCH.md",
         "docs/evidence/fms-video-learning-v5-2026-10-07/STUDY.md",
         "docs/evidence/fms-war28-bridge-v5-2026-10-07/CHECKPOINT.md",
-        "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json"
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/NATIVE_INPUTS.md",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/browser.json"
       ],
       "currentVersion": 28,
       "currentEngine": "2c482b2d97eff1c8978c650247767fbdda4d240542f71ae55c53ad36c464bc5f",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5212/?fms=1",
-      "currentLocalHead": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
-      "sourceCommit": null,
-      "checkpointNote": "Current HEAD is documentation checkpoint; v28 backend changes remain uncommitted. sourceCommit/currentVersion/currentEngine identify protected v27 UI. Separate candidate evidence does not promote it to playable release.",
-      "head": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
+      "currentLocalHead": "221ab049366cef7816ce5857b0862b5bfde2937b",
+      "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b",
+      "checkpointNote": "v28 UI/Worker and limited ordinary-war closure committed locally. Source commit and engine identify this tested playable build. Later documentation-only commits do not change its engine. Full WEB-04-37, native parity and manual acceptance remain incomplete.",
+      "head": "221ab049366cef7816ce5857b0862b5bfde2937b",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-04-37",
@@ -5035,10 +5039,11 @@
       "note": "302 related checks (301 batch +1 additional), real production UI verified, manual visual/phone pending.",
       "sourceParent": "285981247aea21643e2f8f1e3af6b452cfbb8a9a",
       "candidateVersion": 28,
-      "candidateCommitted": false,
+      "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-07: 5206 not listening; isolated 5210 probe child closed after command-line verification"
+      "localPortCheck": "2026-10-07: verified production preview 5212 on 127.0.0.1 with .autopilot/war28-playable/dist; no phone/LAN exposure.",
+      "previewUrlStatus": "Historical cloud preview URL only; this v28 build was not pushed or deployed there."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -6745,7 +6750,22 @@
       "evidence": [
         "docs/evidence/fms-war26-ui-v5-2026-10-07/NATIVE_WAR_KERNELS.md",
         "docs/evidence/fms-war26-ui-v5-2026-10-07/checks.json"
-      ]
+      ],
+      "recordType": "historical_kernel_batch_snapshot",
+      "snapshotNote": "Statuses, test counts and remaining items above describe this earlier kernel-only batch, not current gameplay. See war28Prototype and executionCheckpoint for the current limited production integration.",
+      "subsequentIntegration": {
+        "version": 28,
+        "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b",
+        "status": "partial_ordinary_war_integrated",
+        "evidence": "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+        "incomplete": [
+          "Full CB eligibility and AI choice",
+          "Maximum duration policy",
+          "Internal wars",
+          "Vassal and religion production effects",
+          "Complete native equivalence and manual acceptance"
+        ]
+      }
     },
     "war27Prototype": {
       "date": "2026-10-07",
@@ -6807,7 +6827,22 @@
         "Native damage source and calendar/state mapping",
         "Start/end lifecycle and versioned production integration"
       ],
-      "sourceCommit": "14f18db6869f8152675abe3de03809910802ea58"
+      "sourceCommit": "14f18db6869f8152675abe3de03809910802ea58",
+      "recordType": "historical_kernel_batch_snapshot",
+      "snapshotNote": "Statuses, test counts and remaining items above describe this earlier kernel-only batch, not current gameplay. See war28Prototype and executionCheckpoint for the current limited production integration.",
+      "subsequentIntegration": {
+        "version": 28,
+        "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b",
+        "status": "partial_ordinary_war_integrated",
+        "evidence": "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+        "incomplete": [
+          "Full CB eligibility and AI choice",
+          "Maximum duration policy",
+          "Internal wars",
+          "Vassal and religion production effects",
+          "Complete native equivalence and manual acceptance"
+        ]
+      }
     },
     "nativePeaceExecutionKernels": {
       "date": "2026-10-07",
@@ -6837,7 +6872,22 @@
         "Versioned start/end lifecycle and atomic candidate commit",
         "Browser playable verification"
       ],
-      "sourceCommit": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5"
+      "sourceCommit": "9ed2100abcbf7a838ace84e266a03f2ffda0c0c5",
+      "recordType": "historical_kernel_batch_snapshot",
+      "snapshotNote": "Statuses, test counts and remaining items above describe this earlier kernel-only batch, not current gameplay. See war28Prototype and executionCheckpoint for the current limited production integration.",
+      "subsequentIntegration": {
+        "version": 28,
+        "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b",
+        "status": "partial_ordinary_war_integrated",
+        "evidence": "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+        "incomplete": [
+          "Full CB eligibility and AI choice",
+          "Maximum duration policy",
+          "Internal wars",
+          "Vassal and religion production effects",
+          "Complete native equivalence and manual acceptance"
+        ]
+      }
     },
     "war28Prototype": {
       "status": "local_playable_partial_ordinary_war",
@@ -6851,13 +6901,17 @@
         "docs/evidence/fms-war28-bridge-v5-2026-10-07/CHECKPOINT.md",
         "docs/evidence/fms-war28-bridge-v5-2026-10-07/checkpoint.json",
         "docs/evidence/fms-war28-bridge-v5-2026-10-07/unit-final.json",
-        "docs/evidence/fms-war28-bridge-v5-2026-10-07/browser-worker.json"
+        "docs/evidence/fms-war28-bridge-v5-2026-10-07/browser-worker.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/NATIVE_INPUTS.md",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/checks.json",
+        "docs/evidence/fms-war28-playable-v5-2026-10-07/browser.json"
       ],
       "limitations": [
-        "Native goal selection and diplomacy policy pending",
-        "Automatic settlement and terminal cleanup pending",
-        "Outer FmsGame remains v27",
-        "No new playable build, native equivalence, visual or real-device acceptance"
+        "Complete native CB eligibility and AI declaration selection remain pending; ordinary conquest has an explicit web adapter.",
+        "Internal wars, maximum-duration policy, and vassal/religion production effects remain pending.",
+        "Ordinary goals, automatic settlement and terminal cleanup are integrated into FmsGame v28; the complete native scheduling chain is not equivalent.",
+        "Local desktop production browser verified; original visual equivalence, iPhone real-device and full phase acceptance remain unpassed."
       ],
       "latestEvidence": "docs/evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md",
       "checkedScope": "真实宣战目标→原始伤害/评分/厌战→普通自动和约/结束→独立保存恢复；完整CB/内战/最大期限/附庸改宗仍未齐。",
@@ -6866,7 +6920,8 @@
         "docs/evidence/fms-war28-playable-v5-2026-10-07/sea-regression.json",
         "docs/evidence/fms-war28-playable-v5-2026-10-07/browser.json",
         "docs/evidence/fms-war28-playable-v5-2026-10-07/checks.json"
-      ]
+      ],
+      "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b"
     },
     "queuedOriginalAudit": {
       "status": "queued_after_current_work",

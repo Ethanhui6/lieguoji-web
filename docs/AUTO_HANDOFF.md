@@ -1,6 +1,6 @@
 # 当前续接：v28普通战争可玩闭环已本地验收
 
-2026-10-07，核实时HEAD 285981247aea21643e2f8f1e3af6b452cfbb8a9a，codex/ph06-world-generation；根唯一代码/证据写入，代理只读。源码尚待本地检查点提交。
+2026-10-07，源码检查点 221ab049366cef7816ce5857b0862b5bfde2937b，codex/ph06-world-generation；根唯一代码/证据写入，代理只读。源码已本地提交；本条及任务表为后续文档检查点，实际Git HEAD须续接时核实。源码与生产产物哈希已在提交后复核。
 
 - 最新执行顺序：先完成既有任务；全项目原作研究/前10差距审查已排入 webRebuild.queuedOriginalAudit，尚未启动，不提前重构。
 - WEB-04-37仍in_progress，但原未接UI的v28后端现在已接到FmsGame与真实Worker。新增普通宣战目标、六政体默认崩溃阈值、自动和约的转地/赔款/停战/结果恢复，以及战争面板。[本批交付](evidence/fms-war28-playable-v5-2026-10-07/DELIVERY.md) / [静态来源与边界](evidence/fms-war28-playable-v5-2026-10-07/NATIVE_INPUTS.md)。
@@ -14,7 +14,7 @@
 <!-- queued-original-audit-2026-10-07 -->
 用户最新执行顺序：先完成当前 WEB-04-37 / v28 战争可玩闭环，按原要求验收并保存检查点。新的全项目原作资料研究、前10差距及首批修复已记入 `webRebuild.queuedOriginalAudit`，当前不启动、不提前地图重构。遇需用户决定的阻塞应说明等待，不能换任务。
 
-# 当前续接：原作视频实际播放已补证，保留v28后端候选
+# 历史续接：原作视频实际播放已补证，保留v28后端候选
 
 2026-10-07；核实时HEAD为285981247aea21643e2f8f1e3af6b452cfbb8a9a，分支codex/ph06-world-generation。根仍为唯一源码/证据写入者，代理仅只读研究；本补充未提交。WEB-PH04 / WEB-04-37仍进行，不重建已有计划。
 

@@ -401,5 +401,7 @@
   "planAndReleaseGuards": {
     "passed": 39,
     "failed": 0
-  }
+  },
+  "sourceCommit": "221ab049366cef7816ce5857b0862b5bfde2937b",
+  "checkpointNote": "Source and built artifact hashes reverified after local source commit. Build was created before this commit; sourceParent records that original build context. No rebuild or cloud release claimed."
 }

@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "fingerprint": "6a52897174d9ffd76f9ac1a46eb1d3ffb9fd7171e3b03caee601dafe07361d7d",
+  "files": [
+    {
+      "path": "src/fms/play/war34-model.ts",
+      "archive": "fms/play/war34-model.ts.source",
+      "sha256": "cfb5fd3339cff224f52cb49d92ffd41ae0e7593199c830d08e074b22e4b30303"
+    },
+    {
+      "path": "src/fms/play/war34-storage.ts",
+      "archive": "fms/play/war34-storage.ts.source",
+      "sha256": "9b8a5630e7bd44e12ce70e29a3860d91d32e4f0f2c49b63f414c68017c15da87"
+    },
+    {
+      "path": "src/fms/play/war34-stores.ts",
+      "archive": "fms/play/war34-stores.ts.source",
+      "sha256": "23a99818e0c271194f6e819c5bf766ea8c0d4307c49c2040232b676fe6aebeed"
+    },
+    {
+      "path": "src/fms/play/war34-state.ts",
+      "archive": "fms/play/war34-state.ts.source",
+      "sha256": "5836c9a811b3c101e03a0a5ffdf5cfdc393666dff21080eea18a6ad0df2dcd2d"
+    },
+    {
+      "path": "src/fms/play/war34-declaration.ts",
+      "archive": "fms/play/war34-declaration.ts.source",
+      "sha256": "95b77d3e9a028e0a28fde6057a00dc82203859e38ea446b2097e5bd2167033e5"
+    },
+    {
+      "path": "src/fms/play/war34-session.ts",
+      "archive": "fms/play/war34-session.ts.source",
+      "sha256": "c9f2c2a9176e91ed9c0d64f90e150921ddf83f4ef86165303e9432ca7511b2ec"
+    },
+    {
+      "path": "src/fms/play/war34-client.ts",
+      "archive": "fms/play/war34-client.ts.source",
+      "sha256": "66d13f1cfb78378da4c792de7111aa695758af7cbee95dff0ff2c8a527880d57"
+    },
+    {
+      "path": "src/fms/play/war34-vassals.ts",
+      "archive": "fms/play/war34-vassals.ts.source",
+      "sha256": "627ddded549d0598683df5979a084dab616f823668ee2ac690e3283240351792"
+    },
+    {
+      "path": "src/fms/play/war34-settlement.ts",
+      "archive": "fms/play/war34-settlement.ts.source",
+      "sha256": "40d06b10db0e8c1e92b64b6391e8e833e28c386029842a3c2e99f221e8274d1a"
+    },
+    {
+      "path": "src/fms/play/war34-peace.ts",
+      "archive": "fms/play/war34-peace.ts.source",
+      "sha256": "c8d5223a66d9e4ba4d07f3caf2d799c924e9f34d314e158d824153b7d001cde4"
+    },
+    {
+      "path": "src/fms/play/war34/play.worker.ts",
+      "archive": "fms/play/war34/play.worker.ts.source",
+      "sha256": "a987427982c148969b4cd63305e3d091b8813357233744160b6bc60bcc0cc47e"
+    },
+    {
+      "path": "src/fms/play/war34-tribute.ts",
+      "archive": "fms/play/war34-tribute.ts.source",
+      "sha256": "19b282d805bc6b0d1fe90019d657786232b2f0fb480f5490dc31e30d5a0551ad"
+    },
+    {
+      "path": "src/fms/play/war34-rebellion.ts",
+      "archive": "fms/play/war34-rebellion.ts.source",
+      "sha256": "68125d8d548fe72676e5491b40c2b2088cabee3dc557d6fc2bff2de9024e52a7"
+    },
+    {
+      "path": "src/fms/play/war34-wars.ts",
+      "archive": "fms/play/war34-wars.ts.source",
+      "sha256": "7d2ceb78c3b7472616478b9d8122875b84edba09450f2dc60ec530da2d5c2bc4"
+    },
+    {
+      "path": "src/fms/play/war34-validation.ts",
+      "archive": "fms/play/war34-validation.ts.source",
+      "sha256": "87522a6f89aee43ee7283cb021e73dccb268d40b32e9606c3f0eec6eb91e9c22"
+    },
+    {
+      "path": "src/fms/play/war34-query.ts",
+      "archive": "fms/play/war34-query.ts.source",
+      "sha256": "a19a276bbdc98dddf89bfa9f9ec6267a0667a7919a0f4ad518a1d0130cf41e8c"
+    },
+    {
+      "path": "src/fms/play/war34-coalition.ts",
+      "archive": "fms/play/war34-coalition.ts.source",
+      "sha256": "ff264c200b032d3f66dc0837ff11bd6fea231df00de40f7a9cde8fae7117371d"
+    },
+    {
+      "path": "src/fms/play/native-war/side-builder.ts",
+      "archive": "fms/play/native-war/side-builder.ts.source",
+      "sha256": "8e0a8b17de4f9a34730a5f817aadc3992da214c1a398db55aada494c0f641fec"
+    },
+    {
+      "path": "src/fms/play/native-war/participation-leave.ts",
+      "archive": "fms/play/native-war/participation-leave.ts.source",
+      "sha256": "f10e335e92b9abb0aa1b327aa6956b051da6dc0c8249e1260200c516d1dfcfe3"
+    }
+  ]
+}

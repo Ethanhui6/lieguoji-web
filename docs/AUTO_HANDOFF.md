@@ -1,3 +1,16 @@
+# 当前续接：人物战力统一接入已验证；接自主海陆军令
+
+2026-10-08；源码 `606a4b14f3a27f47a6c9fafdfe74cf7c39e629bf`，证据HEAD按Git核实。根唯一写入；WEB-03-06/WEB-04-37与完整还原目标仍in_progress/active。5254/v46及用户900天世界未刷新、未迁移。
+
+- **本批实际代码**：真实人物能力/海军特性、缓存敌国加成、国家野战/攻城伤害同时接进对军齐射和地区攻击/修复；使用实际省/海位置、政体、国运和已结账财政。创建/月更/后续征募登记快照，既有军队不自动重整。[合同](evidence/fms-combat-personnel47-2026-10-08/CONTRACT.md)。
+- 原作恢复补齐83C010海军逐项float32和、GetEnemyStates当前参与者、已核初建/月更刷新；Army初始化40/10或60/15。原Serialize不存这两项伤害，网页保存快照是明确差异；全原读档顺序未恢复。纠正State.PostLoad直接Trait.ApplyEffect而非默认重置。[静态依据](evidence/fms-combat-personnel47-2026-10-08/NATIVE.md)。
+- 131项相关检查（23新）、完整types/lint、39发布保护、构建/43产物检查通过。首轮89通过1失败为测试误把native负零写正零，最终相关复跑64通过；稀疏敌国与未登位缓存人物守卫已补。[检查证据](evidence/fms-combat-personnel47-2026-10-08/checks.json)。冻结46不变。不是新浏览器/真机/视觉或完整900日游戏通过。
+- **仍不是可玩47**：中央军是明确网页归属，军事官职/家族军与突出部未接；真实自主命令、造船/港口阶段/外交政治、完整live validator/session/Store49/Worker/创建UI仍缺。产物仍46，新47未入入口。
+- **直接下一批**：复用army-commands47解析并拆出候选内自动发令（不调playerTakeover），按实际land/sea选战争陆地终点、保留正在执行路线；然后舰队真实sea-only航令和安全回港。旧war46-core/garrison/voyages/deployment仍用旧provinceId/fleet.node不能直接调用；旧war26海目标要求两端港口会挡无港可达岸。单格redirect原地停，舰队靠泊须真实到港锚点，不能改dockId瞬移。之后政治/完整运行/保存/UI，不重复恢复已完成人物核。
+- 保留5254的36cf58d/v46（本批未刷新），本机入口仅本机。用户900天绕港未登陆、节奏、宗教/暴政/家族分裂、海域和地图质感仍未通过。不push/Pages/main，pre-push保持。下方为历史。
+
+---
+
 # 当前续接：真实位置日结已验证；接人物战力和自主命令
 
 2026-10-08；源码 `589880c4742c36f8e768712966385c890b5fa725`，证据HEAD按Git核实。根唯一写入，WEB-03-06/WEB-04-37与完整还原目标仍in_progress/active。5254/v46及900天用户世界未刷新、未迁移。

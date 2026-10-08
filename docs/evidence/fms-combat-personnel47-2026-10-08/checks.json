@@ -1,0 +1,74 @@
+{
+  "at": "2026-10-08T11:25:04.939528+00:00",
+  "sourceCommit": "606a4b14f3a27f47a6c9fafdfe74cf7c39e629bf",
+  "branch": "codex/ph06-world-generation",
+  "relatedTests": {
+    "uniquePassed": 131,
+    "finalFailed": 0,
+    "files": 7,
+    "newCases": 23,
+    "runs": [
+      {
+        "passed": 89,
+        "failed": 1,
+        "files": 5,
+        "durationSeconds": 106.98,
+        "report": "first-tests.log",
+        "note": "67 unchanged daily/speed/founding/tick cases passed. One of23 combat cases expected positive zero for native negative-trait times zero; corrected to retain IEEE negative zero. The non-matching war47-spatial filename did not run."
+      },
+      {
+        "passed": 64,
+        "failed": 0,
+        "files": 3,
+        "report": "final-tests.json",
+        "note": "23 combat including regression fixes plus41 actual spatial consumers and force cases. Unique total67+64, not summing repeated successes."
+      }
+    ]
+  },
+  "types": {
+    "exitCode": 0,
+    "scope": "full project, final guard changes included"
+  },
+  "lint": {
+    "exitCode": 0,
+    "scope": "full project"
+  },
+  "protectionTests": {
+    "passed": 39,
+    "failed": 0,
+    "durationMs": 8104.9679
+  },
+  "build": {
+    "exitCode": 0,
+    "dist": ".autopilot/combat47-check/dist",
+    "runtimeVersion": 46,
+    "new47Bundled": false
+  },
+  "distAudit": {
+    "exitCode": 0,
+    "artifacts": 43
+  },
+  "frozen46": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "reviewFixes": [
+    "Cached trait provenance recomputes modifier and rejects self enemy and fabricated leader.",
+    "Dense arrays prevent holes from counting as enemies; prior ruler cache must be an observed Court person.",
+    "Current participants exclude departed historical coalition members.",
+    "Same owned-world combat source for both field volleys and resistance attack/repair."
+  ],
+  "browser": {
+    "new47Verified": false,
+    "playerReloaded": false
+  },
+  "notPassed": [
+    "full47 real AI and naval orders",
+    "military offices and family army assignment",
+    "Store49/Worker/creation UI",
+    "900-day autonomous island landing",
+    "native visual equivalence",
+    "physical iPhone Safari and Chrome"
+  ],
+  "cloudWrites": false,
+  "warnings": [
+    "Existing future Vite config loader warning and bundled chunk size warning retained; no checks suppressed."
+  ]
+}

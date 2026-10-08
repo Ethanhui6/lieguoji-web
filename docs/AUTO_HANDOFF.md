@@ -6,6 +6,7 @@
 - 133相关测试（21新）、完整types/lint、39发布保护、构建/43产物检查通过。初次types有TS2367，改终止状态判定后重跑通过；未关闭检查。零末半段门前受阻、同刻入出境接触、local浮点到达均有回归。[证据](evidence/fms-fleet-endpoint47-2026-10-08/checks.json)。
 - 这是舰令/行军/补给模块验收，**不是完整新47可玩或900日海战验收**。测试明确把舰队置于港格内作为初始夹具，之后实际移动；单独日粮调用不冒充经过了完整模拟日。新47仍未进入产物/Worker/UI。
 - **下一批直接接线**：复用native-war/naval-roles/deployment/construction、port-occupation纯核，另写47实际位置适配；portControl保留，部署RNG/冷却账新建，之后月度造船。旧advanceDeployment46/advancePorts46/advanceShipbuilding46依赖旧位置不可直接调用。港湾presence取actual cell.face，不用fleet.node/dockId，也不把两端港口门槛塞回陆军跨岸。
+- **启用前新风险**：新47把Unity速度单位到1000网页尺度固定为1，但原World Bounds映射尚未核；原速率×当前日长与现有6点/日粮可能不匹配。先量测实际日结长程存活并核比例，不能用独立10M移动测试充当900日登陆，也不能把这个新候选风险冒称为旧46问题的已证根因。[量纲证据](evidence/fms-fleet-endpoint47-2026-10-08/UNIT_SCALE.md)。
 - 再接政治/战争收尾、完整live47 validator/session/Store49/创建UI；两种国家城市命名选择后端保留。长程地图尺度/原速度/粮食存活、900日登陆、宗教/暴政/家族分裂、海域与地图质感继续未完成。
 - 本机5254仍36cf58d/v46；未刷新、无新浏览器/真机/用户视觉通过。不push/Pages/main，旧档与发布保护保留。下方为历史。
 

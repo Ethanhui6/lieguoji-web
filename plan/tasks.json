@@ -4834,7 +4834,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
+    "nextRecoveryTarget": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save. Before full47 activation, verify Unity-world-to-normalized-map scale and actual calendar food survival; current1:1 mapping is unmeasured, not a diagnosis of old46.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -5316,7 +5316,7 @@
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
+      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save. Before full47 activation, verify Unity-world-to-normalized-map scale and actual calendar food survival; current1:1 mapping is unmeasured, not a diagnosis of old46.",
       "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -5749,7 +5749,8 @@
         "docs/evidence/fms-army-ai47-2026-10-08/artifact.json",
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
-        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/UNIT_SCALE.md"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
@@ -5778,7 +5779,8 @@
       "currentBatchEvidence": [
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
-        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/UNIT_SCALE.md"
       ],
       "headMeaning": "Latest source is unbundled47 fleet commands and precise endpoint travel; verify Git for evidence commit.5254 remains36cf58d/v46 without reload."
     },
@@ -8826,7 +8828,8 @@
       "evidence": [
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
-        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/UNIT_SCALE.md"
       ],
       "completed": [
         "Exact V2 endpoint with unchanged V1 semantics",
@@ -8836,7 +8839,7 @@
       ],
       "tests": 133,
       "newCases": 21,
-      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
+      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save. Before full47 activation, verify Unity-world-to-normalized-map scale and actual calendar food survival; current1:1 mapping is unmeasured, not a diagnosis of old46.",
       "new47Enabled": false,
       "phoneVisualPassed": false,
       "cloudWrites": false

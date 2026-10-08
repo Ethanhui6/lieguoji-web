@@ -44,7 +44,13 @@
   ],
   "browser": {
     "new47Verified": false,
-    "playerReloaded": false
+    "playerReloaded": false,
+    "metadataOnly5254": {
+      "at": "2026-10-08T12:16:57.206200+00:00",
+      "version": "0.5.0-preview.46",
+      "commit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+      "method": "GET build.json only; no player reload or new gameplay verification"
+    }
   },
   "notPassed": [
     "Full autonomous fleet deployment/port occupation/construction",
@@ -56,5 +62,10 @@
   "cloudWrites": false,
   "warnings": [
     "Existing Vite future config-loader and chunk-size warnings retained; no checks suppressed."
-  ]
+  ],
+  "planCheck": {
+    "exitCode": 0,
+    "activePhase": "WEB-PH04"
+  },
+  "unitScaleRisk": "UNIT_SCALE.md"
 }

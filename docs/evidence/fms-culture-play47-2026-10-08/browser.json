@@ -1,0 +1,54 @@
+{
+  "fixture": "676 sample points; synthetic fixed mainland, not a user save or original visual equivalence",
+  "url": "http://127.0.0.1:5261/?fms=1",
+  "checks": [
+    "creation + real Japanese imperial title + map",
+    "post-creation religion + republic title + city rename + daily settlement",
+    "time continues with country inspector open",
+    "zoom + fit + actual map city picking",
+    "save + refresh + exact tick/identity/religion/city restoration",
+    "428x926 portrait layout simulation; not iPhone hardware",
+    "dirty exit protects unsaved world",
+    "founding events visible from day zero",
+    "historical-name mode + real family successor + second reign + chronicle entry"
+  ],
+  "countries": [
+    {
+      "id": "n-0",
+      "name": "平德帝国"
+    },
+    {
+      "id": "n-1",
+      "name": "丰滨帝国"
+    },
+    {
+      "id": "n-2",
+      "name": "Roseland共和国"
+    },
+    {
+      "id": "n-3",
+      "name": "Al-Bahr al-Akhḍar王国"
+    },
+    {
+      "id": "n-4",
+      "name": "Maria帝国"
+    },
+    {
+      "id": "n-5",
+      "name": "Hirschfeld王国"
+    }
+  ],
+  "historicalCountries": [
+    {
+      "id": "n-0",
+      "name": "越帝国"
+    },
+    {
+      "id": "n-1",
+      "name": "出云帝国"
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "status": "passed"
+}

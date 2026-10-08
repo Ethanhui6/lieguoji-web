@@ -72,3 +72,19 @@ InitDrawMesh 6B97A6实例化World+2F0对象，6B97BC取新Transform，6B97E6只�
 InitMapFrame 6BA279–6BA331用逻辑角点(0,0)/(1600,0)/(1600,900)/(0,900)，随后selector按既有World Bounds变换。1600×900不是已证的Renderer世界尺寸或当前World.Width/Height。共享selector的Z约-0.7f。InitMapFrame3读取Width/Height，6B9B9A–6B9BCB按f32(f32(Height/30f)*1.41f)扩边，再生成Quad；这里30不是速度比例。
 
 上述主体未见写World尺寸字段+128…+13C或set_localScale；不代表未展开下游都已排除。剩余核心缺口收窄为：**Renderer网格/Transform的实际bounds.size输入来源，以及尺寸初始化/UpdateBounds的调用先后**。不能据此声称已得到数值倍率或完成900日存活验收。
+
+
+## Bounded resource follow-up retained during culture-priority correction
+
+Read-only object inspection on 2026-10-08 found the serialized default chain: `level0 World GameObject #8915 → root Transform #10194 + MeshFilter #10200 + MeshRenderer #10199`; mesh points to fileID 3, pathID 10210, `Resources/unity default resources` / Quad. Root transform has no parent, position zero, identity rotation, scale `(240,130,9.999999974752427e-7)`. Quad local AABB center is zero, XY extents `.5/.5`, hence serialized scene default geometry implies 240×130. World MonoBehaviour #44231 belongs to the same GameObject. This is not an executed Renderer.bounds measurement; initialization/load may still override transform or mesh. No numeric movement multiplier was changed.
+
+Six object records only, no scene-wide scan or original execution. Record byte offset/length/SHA256:
+
+- GameObject8915: 1738376 / 287 / c91aaa15b5d682e563ced76f49e41715d35762779ef50216c0dec3e92746c525
+- Transform10194: 1835768 / 68 / 8b7210dc5b37e6d8e8547c748f9cc309d2792dd0d02e7da88365fac24b128c2c
+- MeshRenderer10199: 1836448 / 156 / 35e999159a68fadc31b6f4d74db0e240436b3bb4b74de8974fdd76736ba4730d
+- MeshFilter10200: 1836608 / 24 / 4c8c882253a7acbf4901f2b1ecd87eb80f91db8b1395ab2b8e58253954a0f4a5
+- WorldMono44231: 5907016 / 972 / d5e19e8ebcfeea6a1ae9228278a7855f6d709f261684fcacd7c2c10270f9c237
+- Quad10210 (default-resources file): 1803024 / 604 / 9c09568c3b080a71b9a6c6d7eb017b6de02ff8598e35c2decf389e9ebd9824f2
+
+Source `level0`: 6329900 bytes, a9aba2ef74f52869124f894388e944054aa13faabefde5a9cfba7558a6a9e294. Default resources: 4832808 bytes, f0ec4ec61e03c9382ee9e93ac1206a58a969d8652639d914850bfa05919ac82e. These are read-only subagent findings retained for the later scale batch, not new runtime acceptance. Culture delivery takes priority now.

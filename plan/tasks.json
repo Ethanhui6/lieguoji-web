@@ -5320,12 +5320,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "real_naval_autonomy47_verified_shipbuilding_pending",
+      "status": "culture47_local_playable_verified_full47_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "5380b85f68681d1fae468836a27a71153e96cd1c",
+      "lastCommitted": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Continue real47 monthly shipbuilding from actual safe qualified harbor and resource ledger, then political/war closeout owner using the new zero-time peace-port hook. Before full47 activation resolve actual World Renderer bounds/scale; WorldPos formula is now verified. Finish live47 validator/session/Store49/Worker/two-mode name creation UI, actual calendar-food-battle 900-day crossing and browser/visual tests. Profile full military validation/clone overhead;20-day speed case passes solo108.7s but grouped120s timeout remains performance evidence. Preserve5254/900-day save and all release guards.",
-      "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
+      "next": "沿用户文化优先要求，接完整47政治/战争终局和国家新生登记，再接宗教不满、多因起义、家族分割；旧文化新入口不得再次让位于无关底层恢复。海陆比例240x130资源默认证据已保存但runtime覆盖未核，月度造船仍待，不重做已完成的创建/家族/日结/海军自主。",
+      "latestUserPriority": "用户指出文化迟迟未交付；立即优先真实文化入口、国家宗教/政体/称号/城市命名、家族和独立保存恢复。月度造船暂后置。",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -5767,18 +5767,18 @@
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
-      "localUrl": "http://127.0.0.1:5254/?fms=1",
-      "currentLocalHead": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "sourceCommit": "5380b85f68681d1fae468836a27a71153e96cd1c",
-      "checkpointNote": "Actual half-open military port intervals, immediate land-title sync and neutral-held supply protection; persistent real-position naval role/deployment/ration/target lifecycle wired to whole ticks.146 unique affected tests/23new have pass evidence after2 retained first failures and standalone performance recheck. Full47 is not activated.",
-      "head": "5380b85f68681d1fae468836a27a71153e96cd1c",
+      "localUrl": "http://127.0.0.1:5261/?fms=1",
+      "currentLocalHead": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
+      "sourceCommit": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
+      "checkpointNote": "文化可玩闭环已接入当前绘图入口：创建/两种命名/制度宗教/地图名字/真实家族传位/日结/独立重放存档；80相关单测、39保护测试、类型/lint/构建/9浏览器流程通过。完整raw live47/Store49仍未激活，旧5254/900日世界原样。",
+      "head": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-03-06",
         "WEB-04-37",
         "WEB-04-38"
       ],
-      "note": "No run47 activation or cloud release. Preserve old preview tabs/worlds. Three-skills image target exists; do not recreate it.",
+      "note": "No cloud publication. New cultural local entry is usable, not full47 equivalence or phone acceptance.",
       "sourceParent": "6fab4c8",
       "candidateVersion": 47,
       "candidateCommitted": true,
@@ -5789,12 +5789,14 @@
       "latestKernelSourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "latestCandidateSourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "currentBatchEvidence": [
-        "docs/evidence/fms-naval-autonomy47-2026-10-08/CONTRACT.md",
-        "docs/evidence/fms-naval-autonomy47-2026-10-08/NATIVE_WORLD_SCALE.md",
-        "docs/evidence/fms-naval-autonomy47-2026-10-08/checks.json",
-        "docs/evidence/fms-naval-autonomy47-2026-10-08/artifact.json"
+        "docs/evidence/fms-culture-play47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-culture-play47-2026-10-08/checks.json",
+        "docs/evidence/fms-culture-play47-2026-10-08/artifact.json",
+        "docs/evidence/fms-culture-play47-2026-10-08/browser.json"
       ],
-      "headMeaning": "Source5380b85 is unbundled47 naval autonomy/port integration; verify Git for evidence commit.5254 remains36cf58d/v46 without reload."
+      "headMeaning": "Source f12f16e serves cultural slice at5261; package baseline46 and frozen46 engine retained. Evidence checkpoint may follow; verify Git.",
+      "cultureEntryIntegrated": true,
+      "preservedLegacyLocalUrl": "http://127.0.0.1:5254/?fms=1"
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -8883,6 +8885,72 @@
       "new47Enabled": false,
       "phoneVisualPassed": false,
       "cloudWrites": false
+    },
+    "culture47PlayCheckpoint": {
+      "status": "local_playable_verified",
+      "date": "2026-10-08",
+      "userPriority": "culture_delivery_first",
+      "done": [
+        "actual drawing entry to 47 creation",
+        "real culture/religion/polity and two naming modes",
+        "running edit and real family succession",
+        "independent worker and replay/CAS/backup storage"
+      ],
+      "checks": {
+        "sourceCommit": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
+        "relatedUnitTests": {
+          "total": 80,
+          "passed": 80,
+          "failed": 0,
+          "file": "unit-tests.json",
+          "newTests": 13
+        },
+        "typecheck": {
+          "exitCode": 0,
+          "command": "node node_modules/typescript/bin/tsc --noEmit"
+        },
+        "lint": {
+          "exitCode": 0,
+          "command": "node node_modules/eslint/bin/eslint.js src tests scripts"
+        },
+        "releaseAndPlanTests": {
+          "passed": 39,
+          "failed": 0
+        },
+        "build": {
+          "exitCode": 0,
+          "directory": ".autopilot/culture47-final/dist",
+          "artifacts": 44
+        },
+        "browser": {
+          "status": "passed",
+          "file": "browser.json",
+          "observedScenarios": 9,
+          "pageErrors": 0,
+          "consoleErrors": 0
+        },
+        "phone": "not tested on physical iPhone",
+        "visualOriginalEquivalence": "not accepted",
+        "retainedFirstFailures": [
+          "browser-first.json: ambiguous status selector",
+          "browser-second.json: default 5 second expect during command replay; all steps rerun on final build with 90 second bound"
+        ],
+        "warnings": [
+          "4.12 MB uncompressed FmsApp chunk; mobile load/performance not accepted",
+          "native Vite config future-loader extension warnings remain pre-existing",
+          "full native47 political owner and speed scale not complete"
+        ]
+      },
+      "limits": [
+        "Local cultural play uses completed military/daily owner; automated diplomacy, secession, religious spread and full war closeout pending",
+        "Real47 travel scale remains uncalibrated",
+        "Replay bound 1000 days/20000 commands, engine-bound; not a migration for v46"
+      ],
+      "preserved": "5254 v46 900-day player world and all release guards",
+      "sourceCommit": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
+      "entryIntegrated": true,
+      "url": "http://127.0.0.1:5261/?fms=1",
+      "evidenceDirectory": "docs/evidence/fms-culture-play47-2026-10-08"
     }
   }
 }

@@ -1,0 +1,38 @@
+{
+  "fixture": "676 sample points; synthetic fixed mainland, not a user save or original visual equivalence",
+  "url": "http://127.0.0.1:5261/?fms=1",
+  "checks": [
+    "creation + real Japanese imperial title + map",
+    "post-creation religion + republic title + city rename + daily settlement",
+    "time continues with country inspector open"
+  ],
+  "countries": [
+    {
+      "id": "n-0",
+      "name": "平德帝国"
+    },
+    {
+      "id": "n-1",
+      "name": "丰滨帝国"
+    },
+    {
+      "id": "n-2",
+      "name": "Roseland共和国"
+    },
+    {
+      "id": "n-3",
+      "name": "Al-Bahr al-Akhḍar王国"
+    },
+    {
+      "id": "n-4",
+      "name": "Maria帝国"
+    },
+    {
+      "id": "n-5",
+      "name": "Hirschfeld王国"
+    }
+  ],
+  "status": "failed",
+  "failure": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('status')\nExpected: \"文化世界已保存，刷新后可继续。\"\nError: strict mode violation: getByRole('status') resolved to 2 elements:\n    1) <output>1.0×</output> aka getByTestId('fms-app').getByText('×')\n    2) <div role=\"status\" class=\"fms-status\" aria-live=\"polite\">已恢复本机地图，可以继续绘制。</div> aka getByText('已恢复本机地图，可以继续绘制。')\n\nCall log:\n  - Expect \"toHaveText\" getByRole('status') with timeout 5000ms\n  - waiting for getByRole('status')\n",
+  "body": "进入世界\n列国纪 · 创世\n地图编辑\n地形\n1.0×\n已恢复本机地图，可以继续绘制。\n浏览\n轮廓\n陆地\n海洋\n列国纪\n真实文化世界\n第 1 日\n1年 1月 2日\n平德共和国\n丰滨帝国\nRoseland共和国\nAl-Bahr al-Akhḍar王国\nMaria帝国\nHirschfeld王国\n×\n中华文化 · 共和国\n平德共和国\n\n道教\n\n总统 · 第 1 任\n陈令昭\n· 43 岁\n国家制度与名称\n自定国名\n政体\n王国\n帝国\n联邦\n共和国\n部族\n神权国\n国家宗教\n无指定宗教\n中国民间信仰\n道教\n佛教\n神道\n伊斯兰教\n天主教\n东正教\n新教\n犹太教\n印度教\n祆教\n希腊罗马多神信仰\n北欧传统信仰\n应用国家设置\n国名留空时，国号随政体变化。国家宗教不会自动改变所有居民的信仰。\n城市 · 6\n云津 · 中华文化\n应用城市名\n山山\n平安\n湖江\n青安\n♛ 云津\n山阳\n宗族 · 陈\n时间已暂停\n查看详情不会暂停"
+}

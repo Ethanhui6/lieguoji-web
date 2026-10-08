@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "f12f16e5b176fd40d99d8752f28e365dbc07604f",
+  "url": "http://127.0.0.1:5261/?fms=1",
+  "access": "127.0.0.1 local PC only",
+  "servedDirectory": ".autopilot/culture47-final/dist",
+  "ruleFingerprint": "136c81cfbd41b2564dc355ff986457157fcd684db195e073a16794d261ec29aa",
+  "baseVersion": "0.5.0-preview.46",
+  "legacyEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "approvedArtifactCount": 44,
+  "legacyPreserved": {
+    "url": "http://127.0.0.1:5254/?fms=1",
+    "commit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+    "version": "0.5.0-preview.46",
+    "check": "metadata-only HTTP read, no reload or player save access"
+  },
+  "published": false
+}

@@ -3,7 +3,7 @@ import type {SeaGraph} from './sea-path';
 import {shipbuildingQuote45} from './war45-shipbuilding';
 export function ShipbuildingPanel45({run,graph,nationId}:{run:War45Run;graph:SeaGraph;nationId:string}){
  const q=run.shipbuilding.nations[nationId],v=shipbuildingQuote45(run,nationId,graph);if(!q)return null;
- const progress=q.totalMonths?Math.max(0,q.totalMonths-q.remaining):0;
+ const progress=q.blocked?q.totalMonths:q.totalMonths?Math.max(0,q.totalMonths-q.remaining):0;
  return <section className="play-shipbuilding" data-testid="shipbuilding" aria-label="海军造船">
   <h3>海军造船</h3><p>{v.controlled.length} 处受控海港 · 舰队 {v.active} / 自动配额 {v.quota}</p>
   {q.remaining>0?<><progress aria-label="造船进度" max={q.totalMonths||1} value={progress}/><p>{q.blocked?'船体完工 · 等待下水':`建造中 · 还需 ${q.remaining} 次月度更新`}</p></>:<p>{v.active<v.quota?'等待下次月度开工':v.controlled.length?'当前无需补建舰队':'没有可用于补建的受控海港'}</p>}

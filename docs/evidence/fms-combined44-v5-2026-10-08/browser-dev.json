@@ -1,0 +1,68 @@
+{
+  "origin": "http://127.0.0.1:5243",
+  "production": false,
+  "scope": "Disposable Chromium fresh synthetic 5-nation/60-city world. Tests physically present staged harbor raider capturing a nearly exhausted port, coupled land battle/siege feedback, cancel and persistence. No personal saves; not original visual/device acceptance.",
+  "errors": [],
+  "consoleErrors": [],
+  "requestFailures": [],
+  "httpFailures": [],
+  "passed": true,
+  "preparation": {
+    "provinceId": "p-33",
+    "portId": "port-p-33-0",
+    "attackerId": "force-1",
+    "defenderId": "force-22",
+    "fleetId": "fleet-2-0",
+    "nationId": "n-0",
+    "provinceName": "比伦",
+    "landOwner": "n-3",
+    "startingControl": {
+      "landOwnerId": "n-3",
+      "occupierId": "n-3",
+      "value": 0.01
+    },
+    "note": "Staged synthetic raid nearing capture; fleets begin at known real graph nodes. Not a claim of a voyage from home."
+  },
+  "fixture": {
+    "provinceId": "p-33",
+    "portId": "port-p-33-0",
+    "attackerId": "force-1",
+    "defenderId": "force-22",
+    "fleetId": "fleet-2-0",
+    "nationId": "n-0",
+    "provinceName": "比伦",
+    "landOwner": "n-3",
+    "startingControl": {
+      "landOwnerId": "n-3",
+      "occupierId": "n-3",
+      "value": 0.01
+    },
+    "note": "Staged synthetic raid nearing capture; fleets begin at known real graph nodes. Not a claim of a voyage from home."
+  },
+  "beforeText": "金顿步兵\n攻方 · 步兵\n\n5,000 人 · 每次削减 19.3 抵抗\n\n军粮 100 · 当前每日消耗 4，不计补充将在第 25 日结算时耗尽\n\n查看金顿步兵",
+  "captured": {
+    "tick": 21,
+    "port": {
+      "landOwnerId": "n-3",
+      "occupierId": "n-0",
+      "value": 10.499992370605469
+    },
+    "land": "n-3"
+  },
+  "afterText": "金顿步兵\n攻方 · 步兵\n\n3,539 人 · 每次削减 38.7 抵抗\n\n军粮 100 · 当前每日消耗 8，不计补充将在第 13 日结算时耗尽\n\n查看金顿步兵",
+  "contribution": {
+    "before": 19.3,
+    "after": 38.7
+  },
+  "restored": true,
+  "cancel": true,
+  "crossTabCAS": true,
+  "portraitOverflow": false,
+  "liveTickDelta": 21,
+  "battle": {
+    "attackerRemaining": 3539,
+    "defenderRemaining": 4227,
+    "resistance": 314.14233033258756
+  },
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-combined44-v5-2026-10-08\\video\\page@d70b1003a3adeb1ba7b48d2248d9af87.webm"
+}

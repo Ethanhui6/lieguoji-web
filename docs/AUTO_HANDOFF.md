@@ -1,3 +1,16 @@
+# 当前续接：v44海港封锁与陆战协同已可玩
+
+2026-10-08；已测源码 `e362d5423a212359fc5b07793021c042acecc0d2`，后续证据提交核实实际Git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。
+
+- 原作港口异主→正向地区陆军伤害与抵抗削减×2接真实模拟和可见贡献；守军修复/途中遭遇/海战保持。夺回、陆地更换、停战归还后不留旧封锁旗标；v43港湾、舰队、人口粮食复制不重建。
+- [交付](evidence/fms-combined44-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-combined44-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-combined44-v5-2026-10-08/checks.json)。55相关回归、types/lint、39保护、生产构建/43产物审查，实际夺港/对军与围攻/刷新/CAS/取消/Worker及普通6国60城新局通过。
+- [本机v44试玩](http://127.0.0.1:5244/?fms=1)，目录`.autopilot/combined44-production/dist`，PID38356，Store46，engine `ba4301c52eeacb31808d124ffadaaf8da5daa40d77242f52d3040d0b07ada7a1`。旧v43/5242及43产物哈希未变；手机不能用PC的127.0.0.1。
+- 依据为静态PE/IL2CPP；原作海陆统一寻路、Army运输对象、跨海限制生命周期、军事细则仍有差距。4/16/40倍视觉和iPhone未过。
+- 下一批：Continue WEB-04-37 from playable v44. Native captured-harbor blockade now doubles positive on-province land battle and siege damage, with shared UI contributions; road/sea/defender repair remain unchanged. Do not repeat v37-v44 recovered leaves. Remaining full land/sea coordination: original Army unified paths/crossing restriction lifecycle vs current fleet-transport adapter; military office/cooldown/internal-war rules and native supply/speed fidelity. State+0x310 is isLandArmySeaCrossingRestricted; a single reader is insufficient to invent its lifecycle. Then WEB-03-06, followed by queued official/video full-project audit/top10. Preserve v43/5242 and earlier saves/previews. No push/Pages/main.
+- 未push/Pages/main；开发服5243/PID38024已关闭，最终5244/PID38356与旧5242/PID18624保留，HTTP源码/引擎再次匹配；计划检查通过。普通新局仍有小岛/平海比例和近景细节差距，不作美术通过。
+
+---
+
 # 当前续接：v43地方城市港湾与真实海路已可玩
 
 2026-10-08；已测源码 `540af0a9416e84c8cd7cdb76f33563909602ed1a`，后续证据提交核实git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。

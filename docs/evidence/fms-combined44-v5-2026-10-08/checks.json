@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "e362d5423a212359fc5b07793021c042acecc0d2",
+  "engine": "ba4301c52eeacb31808d124ffadaaf8da5daa40d77242f52d3040d0b07ada7a1",
+  "tests": {
+    "total": 55,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "war44 blockade/battle/siege/peace/old-copy, storage and Worker; v43 regressions",
+    "fullRepoUnitSuite": false
+  },
+  "typecheck": true,
+  "lint": true,
+  "protectionTests": 39,
+  "productionBuild": true,
+  "artifactCount": 43,
+  "oldV43ArtifactsUnchanged": 43,
+  "preview": {
+    "origin": "http://127.0.0.1:5244",
+    "pid": 38356,
+    "directory": ".autopilot/combined44-production/dist"
+  },
+  "warnings": {
+    "fmsAppBytes": 3574655,
+    "chunkSizeWarning": true,
+    "viteExtensionWarning": true
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "actualStagedHarborCapture": true,
+    "landNotAnnexedByNavy": true,
+    "perPulseDisplay": {
+      "before": 19.3,
+      "after": 38.7
+    },
+    "liveWorkerTicks": 11,
+    "saveRefresh": true,
+    "crossTabCAS": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "firstFailures": {
+    "fixture": "Synthetic army supplies=1000 exceeded existing 0..100 guard; corrected to 100 without relaxing validators.",
+    "scaffold": "Two new UI identifiers retained 43 inside their names; restored old source from verified clean HEAD, created 44 panels and fixed aliases; all diagnostics cleared.",
+    "finalProbe": "Local closing checker initially used Playwright response.ok() on native fetch Response; corrected to .ok, both production metadata endpoints then passed. No application change."
+  },
+  "planCheck": true,
+  "devStopped": {
+    "port": 5243,
+    "pid": 38024
+  },
+  "finalPortsVerified": true
+}

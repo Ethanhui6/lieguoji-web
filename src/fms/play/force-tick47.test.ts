@@ -11,7 +11,7 @@ import {initialForceDamage47} from './force-losses47';
 import {initialForceClock47} from './force-clock47';
 import {advanceMilitaryWindow47,type MilitaryRun47} from './force-tick47';
 import {assertLosses} from './war27-losses';
-import {assertWars46} from './war46-validation';
+import {assertWars47} from './war47-validation';
 import {assertOccupation} from './occupation';
 
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -43,7 +43,7 @@ describe('47 atomic motion, persisted timers, occupation and accounting',()=>{
     for(const id of [f.a.id,f.b.id])expect(hit.run.world.armies.find(a=>a.id===id)!.troops).toBe(19600);
     for(const n of [f.a.nationId,f.b.nationId])expect(hit.run.losses.nations[n].total.combat).toBe(400);
     expect(()=>assertLosses(hit.run.losses,hit.run.world,hit.run.warfare,hit.run.clock.tick)).not.toThrow();
-    expect(()=>assertWars46(hit.run.nativeWars,hit.run)).not.toThrow();
+    expect(()=>assertWars47(hit.run.nativeWars,hit.run)).not.toThrow();
     const war=hit.run.nativeWars.campaigns.find(c=>c.nations.includes(f.a.nationId)&&c.nations.includes(f.b.nationId))!;
     expect(war.kills.map(x=>x[1])).toEqual([40,40]);
   });

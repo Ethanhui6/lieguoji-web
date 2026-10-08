@@ -2,7 +2,7 @@ import type {War46Run} from './war46-model';
 import {applyActualVolley47} from './force-losses47';
 import {forceKey47} from './force-motion47';
 import {lossRecorder,reconcileLosses,assertLosses} from './war27-losses';
-import {war28DamageSink,type War28World} from './war46-wars';
+import {war28DamageSink,type War28World} from './war47-wars';
 
 type Run = Parameters<typeof applyActualVolley47>[0] & War28World & Pick<War46Run,'losses'|'nativeWars'>;
 /** Apply physical damage and both ledgers to the SAME returned candidate.

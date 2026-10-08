@@ -9,8 +9,9 @@ import {nationsAtWar} from './realtime-statecraft';
 import {readArmySpace47} from './army-space47';
 import {advanceTacticsOccupation47} from './war47-occupation';
 import {TICKS_PER_DAY} from './clock';
+import type {War28World} from './war47-wars';
 
-export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'life'|'portControl'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
+export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
 type Rules<T extends MilitaryRun47> = {
   speed: Parameters<typeof advanceActualForces47<T>>[3];
   combat: (snapshot:T)=>Parameters<typeof applyAccountedVolley47>[2];

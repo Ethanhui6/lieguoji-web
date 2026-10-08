@@ -9018,7 +9018,8 @@
           "reloaded19Day": false,
           "image": "docs/evidence/fms-continue-repair-2026-10-09/playable-day19.png",
           "device": "Codex IAB 451x560, not physical iPhone"
-        }
+        },
+        "sourceCommit": "7188e34a8e7a5a37c8e8d79e1440d92ed4fb6630"
       }
     }
   }

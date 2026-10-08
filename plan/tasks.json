@@ -9144,6 +9144,20 @@
         "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/pages-time-budget.json",
         "checksUnchanged": true
       }
+    },
+    "officialTitleNative20261009": {
+      "status": "three-functions-static-recovered-not-integrated",
+      "task": "WEB-03-06",
+      "evidence": "docs/evidence/fms-official-title-native-2026-10-09/RESOLVER.md",
+      "functions": [
+        "State.GetEffectiveOfficialTitleProfile@0x5CAB60",
+        "OfficialTitleResolver.ResolveDetailed@0x888D40",
+        "OfficialTitleResolver.TryResolveTranslations@0x88A810"
+      ],
+      "sourceFullDllAndMetadataHashesVerified": true,
+      "originalExecuted": false,
+      "webCandidateChanged": false,
+      "next": "After current playable candidate verification and bounded preview, freeze existing b365 engine before integrating title data/commands. Keep unexpanded helpers explicit."
     }
   }
 }

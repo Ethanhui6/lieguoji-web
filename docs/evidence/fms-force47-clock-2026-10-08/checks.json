@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-10-08T07:47:41.253Z",
+  "task": "WEB-04-37",
+  "sourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
+  "scope": "Atomic military window with persisted timers, actual-position occupation and loss accounting; full47 disabled",
+  "checks": {
+    "unit": {
+      "exitCode": 0,
+      "files": 6,
+      "tests": 115,
+      "added": 15,
+      "log": "docs/evidence/fms-force47-clock-2026-10-08/unit.txt"
+    },
+    "types": {
+      "exitCode": 0,
+      "log": "docs/evidence/fms-force47-clock-2026-10-08/types.txt"
+    },
+    "lint": {
+      "exitCode": 0,
+      "files": 8,
+      "fullTreeEarlierPass": true,
+      "log": "docs/evidence/fms-force47-clock-2026-10-08/lint.txt"
+    },
+    "frozen46": {
+      "exitCode": 0,
+      "fingerprint": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d"
+    },
+    "build": {
+      "exitCode": 0,
+      "sourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
+      "directory": ".autopilot/force47-clock-check/dist",
+      "version": "0.5.0-preview.46",
+      "newMilitaryModulesBundled": false
+    },
+    "artifactAudit": {
+      "exitCode": 0,
+      "artifacts": 43,
+      "sourceLicense": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df",
+      "copiedLicense": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+    },
+    "protectionBeforeTaskUpdate": {
+      "exitCode": 0,
+      "tests": 39
+    },
+    "firstFailures": [
+      "Mixed Army/Fleet Map value inference corrected with explicit union type.",
+      "Replay functional test took 9.236s with default 5s timeout; bounded allowance raised to20s. No performance PASS claimed.",
+      "First due volley belonged to defender already attacking hostile province; regression now asserts attacker own contact deadline20.25.",
+      "Fresh untouched siege is removed after both holders die; regression now uses a valid damaged fort to observe skipped attack and repair."
+    ],
+    "readOnlyReview": {
+      "reviewers": [
+        "rendezvous46_safety",
+        "unified_route47_map",
+        "native_sea_army47"
+      ],
+      "reviewersRanTests": false,
+      "closed": [
+        "Validate forceDamage even without due attacks, reject nonobject books.",
+        "Explicit simultaneous unit volley vs surviving occupation-holder semantics.",
+        "Rollback of prior capture, economy and upper/core modifications after later failure."
+      ]
+    },
+    "performance": {
+      "accepted": false,
+      "note": "Functional replay fixture is heavy; repeated validation/cloning must be measured before full47 activation. Test and build ran alongside typecheck; not a controlled device benchmark."
+    },
+    "protection": {
+      "exitCode": 0,
+      "tests": 39,
+      "afterTaskUpdate": true,
+      "log": "docs/evidence/fms-force47-clock-2026-10-08/protection.txt"
+    }
+  },
+  "files": {
+    "src/fms/play/force-clock47.ts": "cf370e629a808126fd2576eb1f07cba8b115ed821abbabe81da0185466704e69",
+    "src/fms/play/force-accounting47.ts": "28f9f996921283622250b554e53bf8771446bb11b368acc001969731f6a7264f",
+    "src/fms/play/force-tick47.ts": "4a825d1ff4f164fed154cf8c8c99144f3632ffb0356f5ea117830848c975a957",
+    "src/fms/play/force-tick47.test.ts": "231feaf112b92d946ef6f335076fc598921c6f5558cd3a1cafd7bca7a4ae4bd5",
+    "src/fms/play/force-losses47.ts": "a181259c1ed5ad4adc31c177df6cc8ccc2cbf99eda2a3fe36f345905bef39055",
+    "src/fms/play/force-motion47.ts": "c966bb1ac72177f8a173d24a16c096dcd4e83512e387a023de63802140ae9506",
+    "src/fms/play/force-runtime47.ts": "ec55d0ceb28bb906571663a6551d503b7da424dfc9626f6fa56217aa3ea3abc9",
+    "src/fms/play/force47.test.ts": "7ed740d655570271a6599e07a2d7e1439e2f7d28e620c824211f8ec3238ebf45"
+  },
+  "acceptance": {
+    "militaryWindow": true,
+    "fullRuntime47": false,
+    "store49": false,
+    "worker47": false,
+    "ui47": false,
+    "newBrowserMilitary": false,
+    "nativeRuntimeParity": false,
+    "phone": false,
+    "userVisual": false,
+    "release": false
+  }
+}

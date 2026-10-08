@@ -1,0 +1,68 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/force-tick47.test.ts (11 tests | 2 failed) 22311ms
+   ❯ 47 atomic motion, persisted timers, occupation and accounting (11)
+     × matches one window against split windows and JSON reload, including deadlines, draws, positions and all ledgers 9236ms
+     × stops at actual entry, starts the attack clock there, then resumes within the same tick after killing the blocker 1000ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/force-tick47.test.ts > 47 atomic motion, persisted timers, occupation and accounting > matches one window against split windows and JSON reload, including deadlines, draws, positions and all ledgers
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/fms/play/force-tick47.test.ts:49:3
+     47|     expect(war.kills.map(x=>x[1])).toEqual([40,40]);
+     48|   });
+     49|   it('matches one window against split windows and JSON reload, includ…
+       |   ^
+     50|     const f=fixture(),one=advance(f.run,95);let split=f.run;const voll…
+     51|     for(const dt of [7,12,1,13,29,33]){const out=advance(jsonState(spl…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/fms/play/force-tick47.test.ts > 47 atomic motion, persisted timers, occupation and accounting > stops at actual entry, starts the attack clock there, then resumes within the same tick after killing the blocker
+AssertionError: expected 20 to be 20.25 // Object.is equality
+
+- Expected
++ Received
+
+- 20.25
++ 20
+
+ ❯ src/fms/play/force-tick47.test.ts:73:31
+     71|     const speed=Math.hypot(edge.gate.x-from.center.x,edge.gate.y-from.…
+     72|     const out=advanceMilitaryWindow47(f.run,21,weights,{speed:()=>spee…
+     73|     expect(out.volleys[0].at).toBe(20.25);expect(out.run.world.armies.…
+       |                               ^
+     74|     const point=armyTravelLocation47(out.run.armyPositions.records[f.a…
+     75|     expect(point).not.toEqual(edge.gate);expect(out.run.clock.tick).to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 63 passed (65)
+   Start at  15:31:54
+   Duration  32.87s (tests 56%, transform 36%, import 8%)
+
+  Transform  transforming modules took 16.17s · 36% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

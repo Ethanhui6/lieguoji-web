@@ -2850,9 +2850,9 @@
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs"
     ],
     "nextBatch": [
+      "WEB-03-06",
       "WEB-04-37",
-      "WEB-04-38",
-      "WEB-03-06"
+      "WEB-04-38"
     ],
     "phases": [
       {
@@ -3631,7 +3631,7 @@
             "dependsOn": [
               "WEB-03-01"
             ],
-            "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。",
+            "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。 2026-10-08追加：采用真实文化与单独宗教，不使用架空文化替代；中华君主/日本君主等称号按用户要求与当前政体一致，共和政体不保留帝号。国号/城市/人物命名联动，分裂或改制后更新自动国号和职位称号，保留玩家自定义名字。",
             "evidence": [
               "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
             ]
@@ -4674,9 +4674,12 @@
               "docs/evidence/fms-force47-contact-2026-10-08/checks.json",
               "docs/evidence/fms-atlas-first-land-2026-10-08/DELIVERY.md",
               "docs/evidence/fms-atlas-first-land-2026-10-08/checks.json",
-              "docs/evidence/fms-atlas-first-land-2026-10-08/browser.json"
+              "docs/evidence/fms-atlas-first-land-2026-10-08/browser.json",
+              "docs/evidence/fms-force47-clock-2026-10-08/CHECKPOINT.md",
+              "docs/evidence/fms-force47-clock-2026-10-08/NATIVE_TIMING.md",
+              "docs/evidence/fms-force47-clock-2026-10-08/checks.json"
             ],
-            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint."
+            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation."
           },
           {
             "id": "WEB-04-38",
@@ -4729,7 +4732,7 @@
               "WEB-05-01",
               "WEB-04-19"
             ],
-            "acceptance": "分别恢复原省叛乱/附庸独立/家族内战入口，真实压力冷却、领土城市军队转交、新国家外交经济初始化与结果记录；不可随机染色裂国或复制兵员粮食。",
+            "acceptance": "分别恢复原省叛乱/附庸独立/家族内战入口，真实压力冷却、领土城市军队转交、新国家外交经济初始化与结果记录；不可随机染色裂国或复制兵员粮食。 2026-10-08追加：宗教不满、暴政、负担、继承与家族分割等原因须有真实状态与可解释因果；起义军需要实际支持/资源/兵源，验证可生存与胜败而非必败或必胜；分裂后可形成不同政体并同步国号/称谓。",
             "status": "todo",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
@@ -5261,13 +5264,13 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "army47_contacts_verified_runtime_pending_atlas_first_land_playable",
+      "status": "military_window_verified_latest_user_culture_priority",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+      "lastCommitted": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Full bounded clock/damage scheduling and actual-position remaining consumers, then independent run47/Store49/Worker/render and explicit lossless copy. Do not run old movement/sea pulses alongside new phases.",
-      "latestUserPriority": "使用 UI UX Pro Max / Hallmark / Emil，image 生成最终 UI 目标图后按目标迭代；保留当前可玩版本、Army 海域与原作还原主线。",
-      "requiredUserAction": "None for remaining local engineering; phone/user visual acceptance still pending",
+      "next": "After this checked checkpoint, prioritize WEB-03-06 real culture/religion and culture+polity naming per latest user report, preserving frozen46/old saves. Continue WEB-04-37 actual cross-sea landing and inland offensive with a 900-day island-to-mainland reproduction, then sea jurisdiction WEB-04-38. Rebellion causes/strength and map material/detail feedback are queued with explicit evidence; no claim they are fixed.",
+      "latestUserPriority": "真实文化与独立宗教；文化/政体对应君主、国号与城名；更合理的起义分裂、跨海登陆、占领回防节奏和地图质感。先保存当前军事检查点再优先文化命名。",
+      "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
         "docs/evidence/fms-terrain13-v5-2026-10-07/checks.json",
@@ -5677,13 +5680,13 @@
       "localUrl": "http://127.0.0.1:5254/?fms=1",
       "currentLocalHead": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "sourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "checkpointNote": "Playable UI source36cf58d, independent military phase source89b1a5c. Later evidence-only commit does not change either artifact. Verify actual Git HEAD.",
-      "head": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+      "checkpointNote": "Military source b143e60; playable UI remains36cf58d at5254. Current user reports900day sea/offensive and culture errors, not fixed by this internal window.",
+      "head": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "soleWriter": "root",
       "nextBatch": [
+        "WEB-03-06",
         "WEB-04-37",
-        "WEB-04-38",
-        "WEB-03-06"
+        "WEB-04-38"
       ],
       "note": "No run47 activation or cloud release. Preserve old preview tabs/worlds. Three-skills image target exists; do not recreate it.",
       "sourceParent": "89b1a5c1376ac38c81af6285e159b83575b08f67",
@@ -5691,19 +5694,16 @@
       "candidateCommitted": true,
       "candidateUiIntegrated": true,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-08T07:07:24.243Z real production browser and build metadata checked on5254",
+      "localPortCheck": "2026-10-08T07:42:44Z HTTP200/build36cf58d/PID34808 only; no refresh of player tab",
       "previewUrlStatus": "Older cloud preview unchanged; not this source/engine",
-      "latestKernelSourceCommit": "89b1a5c1376ac38c81af6285e159b83575b08f67",
+      "latestKernelSourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "latestCandidateSourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "currentBatchEvidence": [
-        "docs/evidence/fms-force47-contact-2026-10-08/CHECKPOINT.md",
-        "docs/evidence/fms-force47-contact-2026-10-08/NATIVE_EVIDENCE.md",
-        "docs/evidence/fms-force47-contact-2026-10-08/checks.json",
-        "docs/evidence/fms-atlas-first-land-2026-10-08/DELIVERY.md",
-        "docs/evidence/fms-atlas-first-land-2026-10-08/checks.json",
-        "docs/evidence/fms-atlas-first-land-2026-10-08/browser.json"
+        "docs/evidence/fms-force47-clock-2026-10-08/CHECKPOINT.md",
+        "docs/evidence/fms-force47-clock-2026-10-08/NATIVE_TIMING.md",
+        "docs/evidence/fms-force47-clock-2026-10-08/checks.json"
       ],
-      "headMeaning": "Verified playable source; following evidence-only commit does not change engine. Verify actual HEAD on resume."
+      "headMeaning": "Latest source checkpoint includes unbundled military47 integration. Playable UI still36cf58d/v46 on5254. Verify actual HEAD on resume."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -8528,6 +8528,54 @@
       "userVisual": false,
       "nativeParity": false,
       "notes": "Atlas target retained; explicit empty-sea generation preview does not change coast settings. Actual map remains far from concept, especially saturated sea and initial framing."
+    },
+    "force47ClockCheckpoint": {
+      "date": "2026-10-08",
+      "task": "WEB-04-37",
+      "sourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
+      "status": "military_window_verified_full_runtime_pending",
+      "tests": 115,
+      "addedTests": 15,
+      "types": true,
+      "lint": true,
+      "frozen46Unchanged": true,
+      "fullRuntimeIntegrated": false,
+      "storeIntegrated": false,
+      "evidence": [
+        "docs/evidence/fms-force47-clock-2026-10-08/CHECKPOINT.md",
+        "docs/evidence/fms-force47-clock-2026-10-08/NATIVE_TIMING.md",
+        "docs/evidence/fms-force47-clock-2026-10-08/checks.json"
+      ]
+    },
+    "latestGameplayFeedback20261008": {
+      "date": "2026-10-08",
+      "source": "Direct user report in current chat; not independently reproduced",
+      "playerObservation": "At local5254, after900days island nations only circulate between ports; occupation and response too fast.",
+      "priorities": [
+        {
+          "task": "WEB-03-06",
+          "requirement": "Real Chinese/Japanese/English/Arab and other cultural presets; religion distinct (Islam, Catholicism etc). Culture and current polity jointly choose ruler title, nation style and city/person names; splits into republic/empire change titles and polity styles without overwriting custom names."
+        },
+        {
+          "task": "WEB-04-37",
+          "requirement": "Reproduce island-to-mainland900day failures; verify embarkation/crossing/landing/inland advance and bounded response/capture speed from actual positions, not port patrol endpoints."
+        },
+        {
+          "task": "WEB-04-13",
+          "requirement": "Rebalance occupation and defensive response; measure travel/logistics and defended versus empty place capture. No teleportation or instant whole-country annexation."
+        },
+        {
+          "task": "WEB-05-02",
+          "requirement": "Rebel viability plus explained religious/tax/tyranny/succession/family partition causes, territorial support and differentiated successor governments."
+        },
+        {
+          "task": "WEB-PH02",
+          "requirement": "Restore original map scale/detail/materials via comparable views; UI target is not map/native visual acceptance."
+        }
+      ],
+      "preserveCurrentWorld": true,
+      "noReleaseAuthorization": true,
+      "completionClaim": false
     }
   }
 }

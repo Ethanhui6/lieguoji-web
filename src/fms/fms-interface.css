@@ -36,3 +36,5 @@
 .fms-app [hidden]{display:none!important}
 .fms-app.fms-app>button.play-entry{background:#f2f8fbed;color:#28658f;border-color:#ffffffaa;border-radius:18px;font-size:13px;box-shadow:0 3px 14px #153d5320;}
 @media(max-width:600px){.fms-app.fms-app>button.play-entry{top:72px;right:14px;bottom:auto;left:auto}.fms-zoom{top:136px}}
+
+.fms-app:has(.fms-settings) .fms-empty{visibility:hidden}

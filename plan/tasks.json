@@ -3627,14 +3627,15 @@
           {
             "id": "WEB-03-06",
             "title": "文化、信仰与国名君主城名的一致预设",
-            "status": "todo",
+            "status": "in_progress",
             "dependsOn": [
               "WEB-03-01"
             ],
-            "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。 2026-10-08追加：采用真实文化与单独宗教，不使用架空文化替代；中华君主/日本君主等称号按用户要求与当前政体一致，共和政体不保留帝号。国号/城市/人物命名联动，分裂或改制后更新自动国号和职位称号，保留玩家自定义名字。",
+            "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。 2026-10-08追加：采用真实文化与单独宗教，不使用架空文化替代；中华君主/日本君主等称号按用户要求与当前政体一致，共和政体不保留帝号。国号/城市/人物命名联动，分裂或改制后更新自动国号和职位称号，保留玩家自定义名字。 用户已确认创建世界时同时提供“按文化习惯生成新名字”和“真实历史名称”两种命名模式；模式独立持久化，刷新/重开不混用，玩家自定义名称保留。",
             "evidence": [
               "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
-            ]
+            ],
+            "progressScope": "2026-10-08 read-only audit: production recognizes only six native naming libraries; language columns are translations, not real culture identities. Existing UI economics ethnicity controls are not culture selection; religionId is not integrated. New real culture/religion/name-mode state must join the pending full47 runtime and its single new Store49, not be injected into frozen46 saves. No real-culture playable implementation claimed yet."
           }
         ]
       },
@@ -5268,7 +5269,7 @@
       "branch": "codex/ph06-world-generation",
       "lastCommitted": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "After this checked checkpoint, prioritize WEB-03-06 real culture/religion and culture+polity naming per latest user report, preserving frozen46/old saves. Continue WEB-04-37 actual cross-sea landing and inland offensive with a 900-day island-to-mainland reproduction, then sea jurisdiction WEB-04-38. Rebellion causes/strength and map material/detail feedback are queued with explicit evidence; no claim they are fixed.",
+      "next": "WEB-03-06 first: independently implement real culture/religion catalog, culture+polity titles/names and two user-selected naming modes. Integrate once into pending full47 runtime/Store49 before playable activation; preserve frozen46 and custom names. Continue Army47 landing/inland offense/900day regression and WEB-04-38. Do not create a separate fake v46 display-only culture layer.",
       "latestUserPriority": "真实文化与独立宗教；文化/政体对应君主、国号与城名；更合理的起义分裂、跨海登陆、占领回防节奏和地图质感。先保存当前军事检查点再优先文化命名。",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -8575,7 +8576,16 @@
       ],
       "preserveCurrentWorld": true,
       "noReleaseAuthorization": true,
-      "completionClaim": false
+      "completionClaim": false,
+      "namingModeChoice": {
+        "source": "Direct async answer in this chat",
+        "choice": "Both modes, selected when creating a world",
+        "modes": [
+          "culture-generated",
+          "historical-names"
+        ],
+        "status": "confirmed_not_implemented"
+      }
     }
   }
 }

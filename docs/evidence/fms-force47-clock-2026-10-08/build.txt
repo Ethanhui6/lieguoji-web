@@ -72,4 +72,3 @@ Additional hook time came from the hooks below and from hooks under 1s.
 1 hook is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
   - vite:worker-import-meta-url transform (10 calls)
 See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
-

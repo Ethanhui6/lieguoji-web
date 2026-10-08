@@ -20,7 +20,7 @@ import { FMS_DEFAULT_COASTAL_WIDTH, FMS_MIN_COASTAL_WIDTH, FMS_MAX_COASTAL_WIDTH
 import type { FmsTerrainDisplay } from './height-palette';
 import './fms.css';
 import './fms-interface.css';
-import FmsGame from './play/FmsGame';
+import {WorldEntry} from './play/WorldEntry';
 
 type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock' | 'hill' | 'template';
 const tools: { id: Tool; name: string; symbol: string; help: string }[] = [
@@ -273,7 +273,7 @@ export default function FmsApp() {
   return <main inert={!!playTerrain} onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
       <div className="fms-map" ref={host}/>
       <button aria-label="进入世界 →" className="play-entry" hidden={expanded || terrainPhase !== 'idle'} disabled={!editable} onClick={()=>{const s=session.current;if(s){s.gestures.interrupt();setExpanded(false);setPlayTerrain(structuredClone(s.history.document));}}}><span>进入世界</span><PlayIcon name="chevron" size={16}/></button>
-      {playTerrain&&createPortal(<FmsGame terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
+      {playTerrain&&createPortal(<WorldEntry terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button aria-label="原作地形" onClick={()=>choose('template')} disabled={!editable} title="原作地形"><PlayIcon name="terrain"/><span>地形</span></button><button aria-label="保存地图" title="保存地图" className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}><PlayIcon name="save"/><span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
     {ready&&stats.land===0&&!fatal&&!expanded&&terrainPhase==='idle'&&<div className="fms-empty"><span>从一片海洋开始</span><p>画出轮廓，或生成第一块大陆</p><button className="fms-first-land" onClick={previewFirstContinent} disabled={!editable}><PlayIcon name="terrain"/><span>生成大陆</span><PlayIcon name="chevron" size={16}/></button><small>先预览，再确认</small></div>}

@@ -65,7 +65,11 @@ export function validateCivilizationWorld47(value: unknown): value is World {
     let previous = army.provinceId as string;
     for (const target of army.route as string[]) { if (!provinceMap.get(previous)!.neighbors.includes(target)) return false; previous = target; }
     const moving = army.status === 'marching' || army.status === 'retreating';
-    if (moving !== (army.route.length > 0) || (!moving && army.progress !== 0) || (army.status === 'destroyed' ? army.troops !== 0 : army.troops === 0)) return false;
+    // A native47 retreat travels in the authoritative position ledger. World
+    // payload validation permits its empty legacy route; the actual runtime
+    // owner validates that ledger, never fabricates province hops.
+    const actualRetreat=army.status==='retreating'&&army.route.length===0&&army.progress===0;
+    if ((!actualRetreat && moving !== (army.route.length > 0)) || (!moving && army.progress !== 0) || (army.status === 'destroyed' ? army.troops !== 0 : army.troops === 0)) return false;
   }
   let previousId = 0;
   let previousDay = 0;

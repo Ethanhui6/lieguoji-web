@@ -91,3 +91,5 @@ declare const __FMS_WAR44_ENGINE__:string;
 declare const __FMS_WAR45_ENGINE__:string;
 
 declare const __FMS_WAR46_ENGINE__:string;
+
+declare const __CULTURE47_ENGINE__:string;

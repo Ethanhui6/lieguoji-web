@@ -9097,7 +9097,7 @@
       "status": "in-progress-not-released",
       "baseCommit": "a0e37869914b825610ff962f5b6ba17e29fe9ccd",
       "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/STATUS.md",
-      "history": "docs/evidence/fms-preview-preparation-2026-10-09/history-delta-a0e3786.json",
+      "history": "docs/evidence/fms-preview-preparation-2026-10-09/history-delta-d802342.json",
       "media": "docs/evidence/fms-preview-preparation-2026-10-09/media-delta.json",
       "activeUnitSession": null,
       "unitLog": ".autopilot/culture47-full-serial.txt",
@@ -9138,6 +9138,11 @@
         "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/source-candidate.json",
         "status": "text-scan-no-findings-final-delta-still-required",
         "files": 12282
+      },
+      "cloudTimeBudget": {
+        "status": "risk-not-measured-on-current-cloud",
+        "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/pages-time-budget.json",
+        "checksUnchanged": true
       }
     }
   }

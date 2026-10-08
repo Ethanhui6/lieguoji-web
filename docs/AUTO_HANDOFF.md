@@ -1,8 +1,10 @@
 # 当前检查点：同一存档继续至44日，冷恢复不再重复载入（2026-10-09）
 
-根独占写入，本批源码/测试/证据已本地提交 bf5a29c5f202f19b080c86f6fb28caa8e0443c97，既有发布配置与视频余项保留。状态源webRebuild.culture47ColdRestoreCheckpoint；WEB-PH04 / WEB-04-37不标整体完成。
+根独占写入，继续修复源码/测试已本地提交 bf5a29c5f202f19b080c86f6fb28caa8e0443c97；后续发布配置、六段已审视频和检查证据已分别提交52c5626、d802342。状态源webRebuild.culture47ColdRestoreCheckpoint；WEB-PH04 / WEB-04-37不标整体完成。
 
-后续预览准备代码已本地提交52c562646d966d546e746e03e989468b1603e54a：默认单测并发统一为1；旧47兼容测试绑定GAME_BUILD_DIR并逐字节核对服务build.json；历史差额固定审到a0e3786，新增四张截图及六段既有视频摘要复核已落证据。[准确范围与待执行检查](evidence/fms-preview-preparation-2026-10-09/STATUS.md)，状态webRebuild.culture47PreviewPreparationCheckpoint。最新构建与扫描/执行记录待追加检查点，未跑完的浏览器全套不得记通过；不改变既有游戏入口与引擎。
+后续预览准备代码已本地提交52c562646d966d546e746e03e989468b1603e54a：默认单测并发统一为1；旧47兼容测试绑定GAME_BUILD_DIR并逐字节核对服务build.json；历史差额固定审到d802342，累计33个中间blob，新增7个全文审查和2个提交对象已核摘要，最终新增差额仍待审，不提前推进guard。[准确范围与待执行检查](evidence/fms-preview-preparation-2026-10-09/STATUS.md)，状态webRebuild.culture47PreviewPreparationCheckpoint。当前构建/完整文本扫描已落d802342；未跑完的浏览器全套不得记通过，不改变既有游戏入口与引擎。
+
+发布耗时注意：官方Pages构建限时20分钟，本机完整单测1650.02秒；旧同项目Pages仅226文件/2753项、467.82秒，不能外推本轮421文件/5612项必通过或必失败。保持build:cf完整检查、隔离和阈值不变，最终有界上传后取得真实同SHA Actions/Pages时长；证据pages-time-budget.json。不要因此删除检查、并行开启负载或中断当前44710。
 
 当前仅本机试玩 **http://127.0.0.1:5273/?fms=1**，已更新自己的静态服务到 .autopilot/culture47-cold-handoff-checked（会话32928，脚本culture47-cold-live-server.mjs），旧5273产物作为已加载hash资源回退保留。真实侧栏标签12：刷新原31日/3755tick存档、继续原世界、详情查看不断时，至44日/5362tick暂停保存成功；无页面控制台错误。5271第19日标签11原样保留，5254/5261未动。5274（会话98513）为同新产物自动测试入口，都非手机URL。
 

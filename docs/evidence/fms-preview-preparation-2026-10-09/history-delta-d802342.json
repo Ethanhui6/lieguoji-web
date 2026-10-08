@@ -1,0 +1,85 @@
+{
+  "base": "339c2e181a0737cf285ac8f7dcd642c92eabd5d2",
+  "previousReviewedHead": "a0e37869914b825610ff962f5b6ba17e29fe9ccd",
+  "reviewedHead": "d802342b2057f10481061c27b9872728907c98fa",
+  "reviewedAt": "2026-10-08T23:03:02.293Z",
+  "reviewer": "readonly damage_snapshot47_audit; root independently checked each recorded byte length and SHA256",
+  "enumeratedVersions": 213,
+  "hiddenVersions": 33,
+  "reused": {
+    "path": "docs/evidence/fms-preview-preparation-2026-10-09/history-delta-a0e3786.json",
+    "sha256": "455d2215703f6193b918afe9009a0e461c7f235337855d72bacebb57817957a3",
+    "entries": 26,
+    "bytes": 3675641
+  },
+  "newEntries": [
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "ab0990bc2332714be12d2b70d7de48905b818dc7",
+      "bytes": 180061,
+      "sha256": "98d7879eeada405e4d6d576eda420145dba94c714d9a0d5d7eaa8d8ccce33161"
+    },
+    {
+      "path": "docs/evidence/fms-preview-preparation-2026-10-09/STATUS.md",
+      "gitBlob": "a733af8afbdec26f0a0b962a51c0c70cfb31a32c",
+      "bytes": 3302,
+      "sha256": "88449cf9569b9c6cf6bc52c668256938156318e4d183c691aef08f01f7053fe4"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "76fb877e11ed0ee997c388f4eaaa874eacabae98",
+      "bytes": 526409,
+      "sha256": "8cda085a3c52361ed4172a8d821017efd79d2d9d66f255d00e9be7eabbca9bfc"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "ed49caf2a096199790045d9511d3b83a75c80e4b",
+      "bytes": 179387,
+      "sha256": "2e9f39923e8655c2ea8c5071f78dfbb5c6265485c456c4232a8b98b740626056"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "8196a3874158ead37a9f0e6655f2918bf27c56c7",
+      "bytes": 525396,
+      "sha256": "77e5ac34d47e0d43935c10d086172bef4c3f5dd7b38e3b09207fbe94b3fc544d"
+    },
+    {
+      "path": "tests/fms-culture47-compat.spec.ts",
+      "gitBlob": "427c1f3e57cd29b1d16308c445a655ea84f25544",
+      "bytes": 16251,
+      "sha256": "5680b161d614c11fe2ecf790a9e2e19544798b26b073972c18da33b55c93b2c9"
+    },
+    {
+      "path": "vite.config.ts",
+      "gitBlob": "4b1bdbf1103792ecc979699498110a0580b60fd5",
+      "bytes": 13678,
+      "sha256": "af765b9cc022c61a2fbbe7fb466afb0f5080a1da3785a9d2fbee5c13d1a0d2a8"
+    }
+  ],
+  "newEntryManifestSha256": "98fc82b07ce366eabe613c9daa555a18d475fa83aeef9462d5fea2bc7011eb2a",
+  "newBytes": 1444484,
+  "commitObjects": [
+    {
+      "commit": "52c562646d966d546e746e03e989468b1603e54a",
+      "bytes": 327,
+      "sha256": "9dbc5b087d2aca799c90ef9509b9e75ec3c067f147f05bc14d4a4816f0f0bf8b"
+    },
+    {
+      "commit": "d802342b2057f10481061c27b9872728907c98fa",
+      "bytes": 329,
+      "sha256": "7bbf7d5ac81e331648470093ef57b098e80ec6866d71d5ef1ba32c03ceec90d3"
+    }
+  ],
+  "commitBytes": 656,
+  "checks": {
+    "fullTextWithoutTruncation": true,
+    "strictUtf8Valid": true,
+    "gitObjectIdsMatch": true,
+    "credentialPatternClasses": 16,
+    "decodedUnicodeHexHtmlAndJsonTsStrings": true,
+    "hiddenSignalClasses": 8,
+    "manualCommitMessageReview": true
+  },
+  "findings": [],
+  "limits": "Fixed-head intermediate versions and commit objects only. Current tip and later changes require final candidate delta. No binary semantic review. Guard and manifest not changed."
+}

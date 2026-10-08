@@ -6,7 +6,7 @@
 - 原作恢复补齐83C010海军逐项float32和、GetEnemyStates当前参与者、已核初建/月更刷新；Army初始化40/10或60/15。原Serialize不存这两项伤害，网页保存快照是明确差异；全原读档顺序未恢复。纠正State.PostLoad直接Trait.ApplyEffect而非默认重置。[静态依据](evidence/fms-combat-personnel47-2026-10-08/NATIVE.md)。
 - 131项相关检查（23新）、完整types/lint、39发布保护、构建/43产物检查通过。首轮89通过1失败为测试误把native负零写正零，最终相关复跑64通过；稀疏敌国与未登位缓存人物守卫已补。[检查证据](evidence/fms-combat-personnel47-2026-10-08/checks.json)。冻结46不变。不是新浏览器/真机/视觉或完整900日游戏通过。
 - **仍不是可玩47**：中央军是明确网页归属，军事官职/家族军与突出部未接；真实自主命令、造船/港口阶段/外交政治、完整live validator/session/Store49/Worker/创建UI仍缺。产物仍46，新47未入入口。
-- **直接下一批**：复用army-commands47解析并拆出候选内自动发令（不调playerTakeover），按实际land/sea选战争陆地终点、保留正在执行路线；然后舰队真实sea-only航令和安全回港。旧war46-core/garrison/voyages/deployment仍用旧provinceId/fleet.node不能直接调用；旧war26海目标要求两端港口会挡无港可达岸。单格redirect原地停，舰队靠泊须真实到港锚点，不能改dockId瞬移。之后政治/完整运行/保存/UI，不重复恢复已完成人物核。
+- **直接下一批**：复用army-commands47解析并拆出候选内自动发令（不调playerTakeover），按实际land/sea选战争陆地终点、保留正在执行路线；然后舰队真实sea-only航令和安全回港。旧war46-core/garrison/voyages/deployment仍用旧provinceId/fleet.node不能直接调用；旧war26海目标要求两端港口会挡无港可达岸。单格redirect原地停，舰队靠泊须真实到港锚点，不能改dockId瞬移。原Attacking343700和FindRegularTargetProvince3482B0已有完整有限证据在fms-tactics-v5-2026-10-06/{ATTACKING_FOLLOWUP,TARGET_SELECTION_FOLLOWUP}.md，先写常规进攻评分核，不重复恢复；资格层和补给判断分别标原未核/网页扩展。之后政治/完整运行/保存/UI，不重复恢复已完成人物核。
 - 保留5254的36cf58d/v46（本批未刷新），本机入口仅本机。用户900天绕港未登陆、节奏、宗教/暴政/家族分裂、海域和地图质感仍未通过。不push/Pages/main，pre-push保持。下方为历史。
 
 ---

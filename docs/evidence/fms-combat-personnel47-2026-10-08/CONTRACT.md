@@ -22,4 +22,6 @@
 
 接真实同步日结命令与后续舰队建立，直接复用 `army-commands47` 和统一 Army/Fleet 实际位置。不得把旧46自主循环（旧 provinceId/fleet.node/route）塞进 hook，也不得把所有自动军令标成玩家接管。跨大陆陆军目标须是敌方真实陆地，不能只选港口循环。然后补真实政治收尾、完整live校验/会话/存储与UI，保持同一47规则版本。
 
+已复核原进攻入口：`Army.Attacking` RVA343700在非RTS且目标失效后重选，`FindRegularTargetProvince` RVA3482B0对本国受袭/边境/盟友资格/敌岸候选评分。同Feature→异Feature港口→其余异Feature的硬优先级、当前距离与故乡距离公式见既有 [目标评分证据](../fms-tactics-v5-2026-10-06/TARGET_SELECTION_FOLLOWUP.md)，玩家目标保护/夺地后重选见 [Attacking证据](../fms-tactics-v5-2026-10-06/ATTACKING_FOLLOWUP.md)。原函数不读军粮/军力比，不能把网页补给或胜率扩展写成原公式；regular敌集/盟友/突出部完整资格仍待核。现有native-war/army-deployment仅和平驻防核，常规进攻评分尚需实现。不重新恢复已存在的上述两份证据。
+
 检查结果另见 checks.json；不得提前从本文推断已通过。

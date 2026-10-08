@@ -1,0 +1,207 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-battle-animation.spec.ts",
+      "tests/fms-cartography.spec.ts",
+      "--project=mobile-chromium",
+      "--workers=1",
+      "--output=.autopilot/culture47-regression-mobile-results",
+      "--reporter=list,json"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-regression-mobile-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-regression-mobile-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-regression-mobile-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-battle-animation.spec.ts",
+      "file": "fms-battle-animation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FMS: original battle clip follows a real naval contact, pauses and respects reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 81646,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T21:10:55.428Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "production-animation-sample",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6IkNocm9taXVtIGVtdWxhdGlvbiwgbm90IHBoeXNpY2FsIGRldmljZSIsInNhbXBsZXMiOltbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjcsIngiOjIwNiwieSI6MjIxLjYxNSwid2lkdGgiOjMxLjk5OTk5OTk5OTk5OTk5Niwib2JzZXJ2ZWRBdCI6NjM3NjAuNjA1MDAwMDE5MDd9XSxbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjksIngiOjIwNiwieSI6MjIxLjYxNSwid2lkdGgiOjMxLjk5OTk5OTk5OTk5OTk5Niwib2JzZXJ2ZWRBdCI6NjM5NzguNDQwMDAwMDI3NDJ9XSxbeyJpZCI6InNlYTpmbGVldC0yLTAvZmxlZXQtMy0xIiwiZnJhbWUiOjEwLCJ4IjoyMDYsInkiOjIyMS42MTUsIndpZHRoIjozMS45OTk5OTk5OTk5OTk5OTYsIm9ic2VydmVkQXQiOjY0MDg5LjgxMDAwMDAwMjM4NH1dLFt7ImlkIjoic2VhOmZsZWV0LTItMC9mbGVldC0zLTEiLCJmcmFtZSI6MTEsIngiOjIwNiwieSI6MjIxLjYxNSwid2lkdGgiOjMxLjk5OTk5OTk5OTk5OTk5Niwib2JzZXJ2ZWRBdCI6NjQyMDIuNjY1MDAwMDIxNDZ9XV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e537a6c6ad8be58373e3-3a9969cb1e6741ee2003",
+          "file": "fms-battle-animation.spec.ts",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-cartography.spec.ts",
+      "file": "fms-cartography.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "drawn diagonal world keeps map labels anchored and the chronicle focused on major events",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33109,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T21:12:17.179Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "cartography-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJhbmNob3JzIjpbeyJuYXRpb25JZCI6Im4tMCIsImNvbXBvbmVudElkIjoicC0wIiwicHJvdmluY2VJZHMiOlsicC0wIiwicC0xIiwicC0xMCIsInAtMTAzIiwicC0xMSIsInAtMTIiLCJwLTEzIiwicC0xNCIsInAtMTUiLCJwLTE2IiwicC0xNyIsInAtMTgiLCJwLTE5IiwicC0yIiwicC0yMCIsInAtMjEiLCJwLTIyIiwicC0yMyIsInAtMjQiLCJwLTI1IiwicC0yNiIsInAtMjciLCJwLTI4IiwicC0yOSIsInAtMyIsInAtMzAiLCJwLTMxIiwicC0zMiIsInAtMzMiLCJwLTM0IiwicC0zNSIsInAtMzYiLCJwLTM3IiwicC0zOCIsInAtMzkiLCJwLTQiLCJwLTQwIiwicC00MSIsInAtNDIiLCJwLTQzIiwicC00NCIsInAtNDUiLCJwLTQ2IiwicC00NyIsInAtNDgiLCJwLTQ5IiwicC01IiwicC01MCIsInAtNTEiLCJwLTUyIiwicC01MyIsInAtNTQiLCJwLTU1IiwicC01NiIsInAtNTciLCJwLTU4IiwicC01OSIsInAtNiIsInAtNjAiLCJwLTYxIiwicC02MiIsInAtNjMiLCJwLTY0IiwicC02NSIsInAtNjYiLCJwLTY3IiwicC02OCIsInAtNjkiLCJwLTciLCJwLTcwIiwicC03MSIsInAtNzIiLCJwLTczIiwicC03NCIsInAtNzUiLCJwLTc2IiwicC03NyIsInAtNzgiLCJwLTc5IiwicC04IiwicC04MCIsInAtODEiLCJwLTgyIiwicC04MyIsInAtODQiLCJwLTg1IiwicC04NiIsInAtODciLCJwLTg4IiwicC04OSIsInAtOSIsInAtOTAiLCJwLTkxIiwicC05MiIsInAtOTMiLCJwLTk1IiwicC05NiIsInAtOTciLCJwLTk4Il0sIngiOjYxNC4wNTU5NzI1MTA4MDY0LCJ5Ijo0ODAuMTI5OTAwMzY1MDY4MjQsImFuZ2xlIjowLjgwMDQ5Njg2NzM4MTkzMDMsImxlbmd0aCI6MTY4LjU4ODY3MjEzMjU3MTczLCJoZWlnaHQiOjUwLjQ2OTU4NTg3MTkyMTc3fSx7Im5hdGlvbklkIjoibi0xIiwiY29tcG9uZW50SWQiOiJwLTEwMCIsInByb3ZpbmNlSWRzIjpbInAtMTAwIiwicC0xMDEiLCJwLTEwMiIsInAtMTA0IiwicC0xMDUiLCJwLTEwNiIsInAtMTA3IiwicC0xMDgiLCJwLTEwOSIsInAtMTEwIiwicC0xMTEiLCJwLTExMiIsInAtMTEzIiwicC0xMTQiLCJwLTExNSIsInAtMTE2IiwicC0xMTciLCJwLTExOCIsInAtMTE5IiwicC0xMjAiLCJwLTEyMSIsInAtMTIyIiwicC0xMjMiLCJwLTEyNCIsInAtMTI1IiwicC0xMjYiLCJwLTk0IiwicC05OSJdLCJ4IjozNjQuMzg0NzEwODU5NTEsInkiOjIzMi45MzgwMjk1NzQwODQwOCwiYW5nbGUiOjAsImxlbmd0aCI6ODcuNTM4NjEyNDIzNjk4MjUsImhlaWdodCI6MzkuNzk3MzI0NjQxODkyNzN9XSwicGFuIjp7ImR4Ijo0MiwiZHkiOjMxLCJjb21tb25DaXR5TmFtZXMiOjM0fSwiYmVmb3JlIjp7ImRldGFpbCI6InJlZ2lvbmFsIiwiY291bnRyaWVzIjpbeyJ4Ijo0ODMuMTY0NTUzNzEyNDgxNCwieSI6MzcxLjIxNDE3MDAxNDA1NTMsIndpZHRoIjoxNDAuNzgwMzgxMzIzNDU3OTYsImhlaWdodCI6MTQzLjcyNjk1NDY1Mzk4MDU4fSx7IngiOi0xMjMuNTU1MzA3NDg0MjQxNTUsInkiOi0yMjkuNDgwNTg1NzM1MzIxMjYsIndpZHRoIjo4NS4zOTk5OTk5OTk5OTk5OSwiaGVpZ2h0IjozMS42fV0sImNhcGl0YWxzIjpbeyJ4IjotMjU3LjkxODY5Njc4ODE5NDU1LCJ5IjotMzE4LjQxMTk2MTkyNzA4MzU1LCJ3aWR0aCI6NjYsImhlaWdodCI6MjF9XSwidG93bnMiOlt7ImlkIjoiYy0wIiwieCI6MjkyLjQyNTAxNDY4NzUwMDE1LCJ5IjozNDIuNDk1OTIzNzV9LHsiaWQiOiJjLTEiLCJ4IjoyNTQuOTMzNTI5Njg3NDk5OSwieSI6MjkyLjI1MTMzMjgxMjUwMDF9LHsiaWQiOiJjLTEwIiwieCI6MzY5LjY4NjUzNzgxMjQ5OTg2LCJ5IjoyODUuMDM2ODI2NTYyNX0seyJpZCI6ImMtMTEiLCJ4IjozNzkuNzI1NDc5MzA1NTU1NiwieSI6NDg3LjA0ODU4NzM5NTgzMzI0fSx7ImlkIjoiYy0xMyIsIngiOjI0My41MjkzMDUzMTI0OTk5LCJ5IjoxOTIuMDg3NDY5OTk5OTk5OTR9LHsiaWQiOiJjLTE0IiwieCI6NDIxLjg4NTQyNDk5OTk5OTk0LCJ5Ijo0NTguODIxMjQ0Mzc0OTk5OX0seyJpZCI6ImMtMTUiLCJ4IjozMzIuNTU3ODcwMzEyNDk5NzQsInkiOjI1Ni4xOTE3OTA2MjUwMDAwN30seyJpZCI6ImMtMTYiLCJ4IjozNDEuOTQ1MjkwMzEyNSwieSI6MjI5Ljc3OTcwODQzNzQ5OTk1fSx7ImlkIjoiYy0xOCIsIngiOjI5NS4zOTg4ODIxODc1LCJ5IjoxODAuMjU3NTMzNzV9LHsiaWQiOiJjLTE5IiwieCI6MTQ0LjA2MTY1ODEyNTAwMDEyLCJ5IjoxNzAuODQxMDE2MjQ5OTk5OTR9LHsiaWQiOiJjLTIiLCJ4IjozNDkuNTU5NTMzMTI0OTk5OSwieSI6MzgxLjIzNjM0ODEyNDk5OTk1fSx7ImlkIjoiYy0yMCIsIngiOjIwMi40NTkzNzUwMDAwMDAxNCwieSI6MTQ1LjM2NDU0NTYyNDk5OTl9LHsiaWQiOiJjLTIyIiwieCI6NDA2Ljk3NDgyMzEyNDk5OTgzLCJ5IjoyNDcuMTk4MTY3MTg3NTAwMDh9LHsiaWQiOiJjLTI1IiwieCI6MjY3LjM3NDQxNjg3NDk5OTcsInkiOjEzMC4zNTQ4NzA2MjQ5OTk4OH0seyJpZCI6ImMtMjYiLCJ4IjozODYuNDI2OTY2ODc0OTk5ODMsInkiOjE5NS44NTkzM30seyJpZCI6ImMtMyIsIngiOjIyMC41MTI4NjA5Mzc0OTk5LCJ5IjoyNDQuNzE4Mzc3ODEyNDk5OTd9LHsiaWQiOiJjLTMxIiwieCI6MTM5LjcwMjUwNDk5OTk5OTk3LCJ5IjoxMjcuMzUxMTk3NDk5OTk5OX0seyJpZCI6ImMtMzIiLCJ4Ijo5MC4wODc2NjI1MDAwMDAwOCwieSI6MTE1LjI0MzgwNDk5OTk5OTg0fSx7ImlkIjoiYy0zNiIsIngiOjIwMS41MjQwMzg0Mzc0OTk5NCwieSI6OTIuNzIwNTM3NDk5OTk5OTh9LHsiaWQiOiJjLTQiLCJ4IjozNzcuODIwMzUxMjQ5OTk5OTMsInkiOjQyMi41Njk2MDQzNzQ5OTk5fSx7ImlkIjoiYy00MiIsIngiOjI3MC4wODI2MDg3NDk5OTk5NiwieSI6ODYuNjc4OTQzNzUwMDAwMDN9LHsiaWQiOiJjLTQzIiwieCI6MzMxLjQxNDUwNTkzNzUwMDA1LCJ5Ijo5My4xNzE2Nzc0OTk5OTk4N30seyJpZCI6ImMtNDQiLCJ4Ijo0MDUuNDAzNDYxNTYyNTAwMDcsInkiOjE0MC43NjgxMDYyNDk5OTk5Nn0seyJpZCI6ImMtNDUiLCJ4IjoxNDUuMTIxMDc3NDk5OTk5OTYsInkiOjcwLjM0MDUwNDM3NDk5OTkxfSx7ImlkIjoiYy00OSIsIngiOjIyNy43NDIzNjY1NjI0OTk5LCJ5IjozOC40NTQ5MjMxMjQ5OTk5NH0seyJpZCI6ImMtNSIsIngiOjMyMy42NDAzNTU2MjUsInkiOjMyMy4wNjI0OTEyNX0seyJpZCI6ImMtNTEiLCJ4IjozNjUuNzM2NDg3ODEyNDk5OTQsInkiOjgxLjM4ODYzODQzNzQ5OTk0fSx7ImlkIjoiYy01MiIsIngiOjQ5LjE4ODcxMjE4NzQ5OTk2LCJ5Ijo2NS4yOTI3MzE4NzQ5OTk5Nn0seyJpZCI6ImMtNTQiLCJ4IjozMDQuOTU1NDE1MzEyNDk5OCwieSI6MzcuNTA1NzEzNzQ5OTk5OTN9LHsiaWQiOiJjLTU3IiwieCI6OTIuOTk4NTA2ODc0OTk5OTgsInkiOjQxLjY5NzEwNTYyNDk5OTk1fSx7ImlkIjoiYy02MSIsIngiOjE2Ny4zNTAyNzk5OTk5OTk4OCwieSI6MTguOTE4MDQ0MDYyNDk5OTE2fSx7ImlkIjoiYy02MiIsIngiOjI1OC4yNTYwMjAwMDAwMDAwMywieSI6NTkuNjI0NTA5MDYyNTAwMDF9LHsiaWQiOiJjLTY5IiwieCI6MjUyLjk0ODA3NTkzNzQ5OTg4LCJ5IjoxOC41MDE3OTUzMTI0OTk4OTR9LHsiaWQiOiJjLTciLCJ4IjoyODEuMTMzODY1LCJ5IjoyMzguNzc1NTk5Njg3NTAwMDZ9LHsiaWQiOiJjLTczIiwieCI6MTYuNzY2NDA0Mzc1MDAwMDkzLCJ5IjoyOS42MzgxMjMxMjQ5OTk5OTN9LHsiaWQiOiJjLTgiLCJ4IjozNzAuNTk4NTcwNjI0OTk5ODcsInkiOjM0NC43MTA4MTAwMDAwMDAwNH0seyJpZCI6ImMtOSIsIngiOjE4Mi43MDYyNjAzMTI1MDAwNCwieSI6MjA4LjkyMzk0NjU2MjQ5OTk2fV19LCJhZnRlciI6eyJkZXRhaWwiOiJyZWdpb25hbCIsImNvdW50cmllcyI6W3sieCI6NTI1LjE2NDU1MzcxMjQ4MTQsInkiOjQwMi4yMTQxNzAwMTQwNTUzLCJ3aWR0aCI6MTQwLjc4MDM4MTMyMzQ1Nzk2LCJoZWlnaHQiOjE0My43MjY5NTQ2NTM5ODA1OH0seyJ4IjotODEuNTU1MzA3NDg0MjQxNTUsInkiOi0xOTguNDgwNTg1NzM1MzIxMjYsIndpZHRoIjo4NS4zOTk5OTk5OTk5OTk5OSwiaGVpZ2h0IjozMS42fV0sImNhcGl0YWxzIjpbeyJ4IjotMjE1LjkxODY5Njc4ODE5NDU1LCJ5IjotMjg3LjQxMTk2MTkyNzA4MzU1LCJ3aWR0aCI6NjYsImhlaWdodCI6MjF9XSwidG93bnMiOlt7ImlkIjoiYy0wIiwieCI6MzM0LjQyNTAxNDY4NzUwMDE1LCJ5IjozNzMuNDk1OTIzNzV9LHsiaWQiOiJjLTEiLCJ4IjoyOTYuOTMzNTI5Njg3NDk5OSwieSI6MzIzLjI1MTMzMjgxMjUwMDF9LHsiaWQiOiJjLTEwIiwieCI6NDExLjY4NjUzNzgxMjQ5OTg2LCJ5IjozMTYuMDM2ODI2NTYyNX0seyJpZCI6ImMtMTEiLCJ4Ijo0MjEuNzI1NDc5MzA1NTU1NiwieSI6NTE4LjA0ODU4NzM5NTgzMzJ9LHsiaWQiOiJjLTEzIiwieCI6Mjg1LjUyOTMwNTMxMjQ5OTksInkiOjIyMy4wODc0Njk5OTk5OTk5NH0seyJpZCI6ImMtMTUiLCJ4IjozNzQuNTU3ODcwMzEyNDk5NzQsInkiOjI4Ny4xOTE3OTA2MjUwMDAwN30seyJpZCI6ImMtMTYiLCJ4IjozODMuOTQ1MjkwMzEyNSwieSI6MjYwLjc3OTcwODQzNzQ5OTk1fSx7ImlkIjoiYy0xOCIsIngiOjMzNy4zOTg4ODIxODc1LCJ5IjoyMTEuMjU3NTMzNzV9LHsiaWQiOiJjLTE5IiwieCI6MTg2LjA2MTY1ODEyNTAwMDEyLCJ5IjoyMDEuODQxMDE2MjQ5OTk5OTR9LHsiaWQiOiJjLTIiLCJ4IjozOTEuNTU5NTMzMTI0OTk5OSwieSI6NDEyLjIzNjM0ODEyNDk5OTk1fSx7ImlkIjoiYy0yMCIsIngiOjI0NC40NTkzNzUwMDAwMDAxNCwieSI6MTc2LjM2NDU0NTYyNDk5OTl9LHsiaWQiOiJjLTI1IiwieCI6MzA5LjM3NDQxNjg3NDk5OTcsInkiOjE2MS4zNTQ4NzA2MjQ5OTk4OH0seyJpZCI6ImMtMjYiLCJ4Ijo0MjguNDI2OTY2ODc0OTk5ODMsInkiOjIyNi44NTkzM30seyJpZCI6ImMtMyIsIngiOjI2Mi41MTI4NjA5Mzc0OTk5LCJ5IjoyNzUuNzE4Mzc3ODEyNDk5OTd9LHsiaWQiOiJjLTMxIiwieCI6MTgxLjcwMjUwNDk5OTk5OTk3LCJ5IjoxNTguMzUxMTk3NDk5OTk5OX0seyJpZCI6ImMtMzIiLCJ4IjoxMzIuMDg3NjYyNTAwMDAwMDgsInkiOjE0Ni4yNDM4MDQ5OTk5OTk4NH0seyJpZCI6ImMtMzYiLCJ4IjoyNDMuNTI0MDM4NDM3NDk5OTQsInkiOjEyMy43MjA1Mzc0OTk5OTk5OH0seyJpZCI6ImMtNCIsIngiOjQxOS44MjAzNTEyNDk5OTk5MywieSI6NDUzLjU2OTYwNDM3NDk5OTl9LHsiaWQiOiJjLTQyIiwieCI6MzEyLjA4MjYwODc0OTk5OTk2LCJ5IjoxMTcuNjc4OTQzNzUwMDAwMDN9LHsiaWQiOiJjLTQzIiwieCI6MzczLjQxNDUwNTkzNzUwMDA1LCJ5IjoxMjQuMTcxNjc3NDk5OTk5ODd9LHsiaWQiOiJjLTQ1IiwieCI6MTg3LjEyMTA3NzQ5OTk5OTk2LCJ5IjoxMDEuMzQwNTA0Mzc0OTk5OTF9LHsiaWQiOiJjLTQ5IiwieCI6MjY5Ljc0MjM2NjU2MjQ5OTksInkiOjY5LjQ1NDkyMzEyNDk5OTk0fSx7ImlkIjoiYy01IiwieCI6MzY1LjY0MDM1NTYyNSwieSI6MzU0LjA2MjQ5MTI1fSx7ImlkIjoiYy01MSIsIngiOjQwNy43MzY0ODc4MTI0OTk5NCwieSI6MTEyLjM4ODYzODQzNzQ5OTk0fSx7ImlkIjoiYy01MiIsIngiOjkxLjE4ODcxMjE4NzQ5OTk2LCJ5Ijo5Ni4yOTI3MzE4NzQ5OTk5Nn0seyJpZCI6ImMtNTQiLCJ4IjozNDYuOTU1NDE1MzEyNDk5OCwieSI6NjguNTA1NzEzNzQ5OTk5OTN9LHsiaWQiOiJjLTU3IiwieCI6MTM0Ljk5ODUwNjg3NDk5OTk4LCJ5Ijo3Mi42OTcxMDU2MjQ5OTk5NX0seyJpZCI6ImMtNjEiLCJ4IjoyMDkuMzUwMjc5OTk5OTk5ODgsInkiOjQ5LjkxODA0NDA2MjQ5OTkxNn0seyJpZCI6ImMtNjIiLCJ4IjozMDAuMjU2MDIwMDAwMDAwMDMsInkiOjkwLjYyNDUwOTA2MjUwMDAxfSx7ImlkIjoiYy02NiIsIngiOjI2My40NDU2MjI0OTk5OTk5LCJ5IjoyNC4xMTg1NTU3ODEyNDk4MjV9LHsiaWQiOiJjLTY4IiwieCI6MTY4Ljc2Mjk2OTA2MjUwMDEzLCJ5IjoyNS42MTQ4ODgyODEyNDk5MzJ9LHsiaWQiOiJjLTY5IiwieCI6Mjk0Ljk0ODA3NTkzNzQ5OTksInkiOjQ5LjUwMTc5NTMxMjQ5OTg5NH0seyJpZCI6ImMtNyIsIngiOjMyMy4xMzM4NjUsInkiOjI2OS43NzU1OTk2ODc1MDAwNn0seyJpZCI6ImMtNzMiLCJ4Ijo1OC43NjY0MDQzNzUwMDAwOSwieSI6NjAuNjM4MTIzMTI0OTk5OTl9LHsiaWQiOiJjLTc0IiwieCI6MzA4LjM0NTQ5MjQ3Mzk1ODMsInkiOjQuODQwNjY5NDE0MDYyNDA0fSx7ImlkIjoiYy03NyIsIngiOjk3LjczNzgzODQzNzQ5OTkzLCJ5IjoyNC4xNDY3MTk4NDM3NDk5MDZ9LHsiaWQiOiJjLTgiLCJ4Ijo0MTIuNTk4NTcwNjI0OTk5ODcsInkiOjM3NS43MTA4MTAwMDAwMDAwNH0seyJpZCI6ImMtODIiLCJ4IjoyNy42Njk4MDMxMjUwMDAwNDQsInkiOjEzLjAwNjM1MjQ5OTk5OTgyfSx7ImlkIjoiYy04MyIsIngiOjEyMi45MTI3NzY1NjI1MDAwOCwieSI6MS44NDM1MTgyODEyNDk4ODUxfSx7ImlkIjoiYy05IiwieCI6MjI0LjcwNjI2MDMxMjUwMDA0LCJ5IjoyMzkuOTIzOTQ2NTYyNDk5OTZ9XX0sImVuZ2luZSI6ImZiNzFlYjg3NWNjOGM5YzFjMjFlZWEwNWIzYmEzYjg3Yzk0YmFlM2ZhNDMzOTgyMmY4ZTM3YWJlZDE2MzcwOWQiLCJjaGVja3N1bSI6ImNiYzRjMGM2NWVkMjQzMTdiZWI1NmE3MTk1OTczNjFhMGU4MWI0NmMyOWE3MjI1MjU0ZmFhZTVjZmU5NmU3N2MiLCJzY29wZSI6Ik5vcm1hbCBVSSBkcmF3aW5nLCByZWFsIFdvcmtlciBzdWNjZXNzaW9uL3NhdmUvcmVsb2FkOyBDaHJvbWl1bSBlbXVsYXRpb24sIG5vIG5hdGl2ZSBpUGhvbmUgb3Igb3JpZ2luYWwgdmlzdWFsIGFjY2VwdGFuY2UuIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5e562147089e779d2662-299c756bd2f6426c5278",
+          "file": "fms-cartography.spec.ts",
+          "line": 7,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-08T21:10:54.873Z",
+    "duration": 115687.10500000001,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

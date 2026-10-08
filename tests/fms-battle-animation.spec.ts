@@ -1,4 +1,4 @@
-import {enterLegacyWorld,closeLegacyPanel,expandLegacyGroup} from './fms-legacy';
+import {enterLegacyWorld,closeLegacyPanel,expandLegacyGroup,ensureLegacyMapTools} from './fms-legacy';
 import {test,expect,type Page} from '@playwright/test';
 
 type Frame={id:string;frame:number;width:number;observedAt?:number};
@@ -21,7 +21,7 @@ test('FMS: original battle clip follows a real naval contact, pauses and respect
   await page.getByLabel('海军国家',{exact:true}).selectOption(a.nationId);await page.getByLabel('选择舰队',{exact:true}).selectOption(a.id);await expandLegacyGroup(page,'海战与撤离');await page.getByLabel('海战目标海岸',{exact:true}).selectOption(bFleet.dockId);await page.getByRole('button',{name:'预览驶向敌岸',exact:true}).click();await confirm(page);
   const status=page.locator('.play-maritime [role=status]');
   for(let day=0;day<50&&!((await status.textContent())??'').includes('交锋');day++){const before=await page.getByTestId('fms-play').getAttribute('data-day');await page.getByRole('button',{name:'＋1日',exact:true}).click();await expect(page.getByTestId('fms-play')).not.toHaveAttribute('data-day',before!);}
-  await expect(status).toContainText('交锋');await page.getByRole('button',{name:'定位舰队',exact:true}).click();
+  await expect(status).toContainText('交锋');await page.getByRole('button',{name:'定位舰队',exact:true}).click();await ensureLegacyMapTools(page);
   const id=`sea:${[a.id,bFleet.id].sort().join('/')}`;
   await expect.poll(async()=>(await frames(page)).some(f=>f.id===id)).toBe(true);
   const paused=(await frames(page)).find(f=>f.id===id)!;expect(paused.width).toBeLessThanOrEqual(42);expect(paused.width).toBeGreaterThan(0);

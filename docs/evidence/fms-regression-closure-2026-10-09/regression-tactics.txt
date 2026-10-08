@@ -1,0 +1,68 @@
+
+Running 2 tests using 1 worker
+
+(node:48424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop-chromium] › tests\fms-tactics.spec.ts:11:1 › FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore (13.8s)
+(node:48288) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [desktop-chromium] › tests\fms-tactics.spec.ts:29:1 › FMS v18: real Worker defeat, home reorganization, fractional save/resume and completion (13.8s)
+
+
+  1) [desktop-chromium] › tests\fms-tactics.spec.ts:11:1 › FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore 
+
+    TypeError: Cannot read properties of undefined (reading 'some')
+
+      10 | async function place(page:Page,nation:string,province:string,count:number){await expandLegacyGroup(page,'征募与补员');await page.getByLabel('布兵国家',{exact:true}).selectOption(nation);const summary=page.locator('.play-muster-tools details').filter({has:page.getByText('上帝布兵 · 批量建立军团',{exact:true})});if((await summary.getAttribute('open'))===null)await summary.locator('summary').click();await page.getByLabel('布兵地区',{exact:true}).selectOption(province);await page.getByLabel('布兵数量',{exact:true}).fill(String(count));await page.getByRole('button',{name:'步兵',exact:true}).click();await page.getByRole('button',{name:'预览布兵',exact:true}).click();await expect(page.getByRole('dialog',{name:'命令确认'})).toContainText('不扣地方人口');await confirm(page);}
+      11 | test('FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore',async({page},info)=>{
+    > 12 |   test.setTimeout(180000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await draw(page);const start=await save(page);expect(start.run.world.relations.some(r=>r.status==='war')).toBe(true);expect(start.run.world.armies.length).toBeGreaterThan(2);
+         |                                                                                                                                                                                  ^
+      13 |   const p=start.run.world.provinces.find(p=>p.neighbors.some(id=>start.run.world.provinces.find(q=>q.id===id)!.controller!==p.controller))!,q=start.run.world.provinces.find(q=>p.neighbors.includes(q.id)&&q.controller!==p.controller)!;expect(p).toBeDefined();expect(q).toBeDefined();
+      14 |   await page.getByRole('button',{name:'军事',exact:true}).click();await place(page,p.controller,p.id,1);const aSave=await save(page),a=aSave.run.world.armies.find(a=>!start.run.tactics.forces[a.id])!;await place(page,q.controller,q.id,1);const bSave=await save(page),b=bSave.run.world.armies.find(b=>!aSave.run.tactics.forces[b.id])!;
+      15 |   expect(bSave.run.world.statecraft!.provinces).toEqual(start.run.world.statecraft!.provinces);expect(bSave.run.tactics.forces[a.id].kind).toBe('manual');expect(bSave.run.tactics.forces[b.id].kind).toBe('manual');
+        at D:\游戏\架空地图模拟器\tests\fms-tactics.spec.ts:12:178
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-m-26091-ilization-and-exact-restore-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-m-26091-ilization-and-exact-restore-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-m-26091-ilization-and-exact-restore-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-m-26091-ilization-and-exact-restore-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop-chromium] › tests\fms-tactics.spec.ts:29:1 › FMS v18: real Worker defeat, home reorganization, fractional save/resume and completion 
+
+    TypeError: Cannot read properties of undefined (reading 'some')
+
+      28 |
+      29 | test('FMS v18: real Worker defeat, home reorganization, fractional save/resume and completion',async({page},info)=>{
+    > 30 |   test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await draw(page);const original=await save(page);expect(original.run.world.relations.some(r=>r.status==='war')).toBe(true);
+         |                                                                                                                                                                                        ^
+      31 |   // Isolated browser-context scenario, not a user save or a mock simulation.
+      32 |   // The normal loader validates this real saved game; all subsequent time,
+      33 |   // damage, home return and replenishment execute inside the production Worker.
+        at D:\游戏\架空地图模拟器\tests\fms-tactics.spec.ts:30:184
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-W-1e260--save-resume-and-completion-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-W-1e260--save-resume-and-completion-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-W-1e260--save-resume-and-completion-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .autopilot\culture47-regression-tactics-results\fms-tactics-FMS-v18-real-W-1e260--save-resume-and-completion-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop-chromium] › tests\fms-tactics.spec.ts:11:1 › FMS v18: real map, original-scale mustering, road encounter, mobilization and exact restore 
+    [desktop-chromium] › tests\fms-tactics.spec.ts:29:1 › FMS v18: real Worker defeat, home reorganization, fractional save/resume and completion 

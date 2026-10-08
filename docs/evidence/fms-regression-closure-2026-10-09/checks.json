@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-09",
+  "sourceBase": "720b1bae19e07be984b6708363d6ced62026e4da",
+  "reports": [
+    {
+      "report": "regression-desktop",
+      "stats": {
+        "startTime": "2026-10-08T20:56:11.685Z",
+        "duration": 784418.795,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "regression-tactics",
+      "stats": {
+        "startTime": "2026-10-08T21:10:23.751Z",
+        "duration": 29756.483999999997,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "regression-tactics-final",
+      "stats": {
+        "startTime": "2026-10-08T21:18:16.258Z",
+        "duration": 127853.667,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "regression-mobile",
+      "stats": {
+        "startTime": "2026-10-08T21:10:54.873Z",
+        "duration": 115687.10500000001,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "regression-seed-final",
+      "stats": {
+        "startTime": "2026-10-08T21:23:16.118Z",
+        "duration": 256743.155,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "regression-animation-final",
+      "stats": {
+        "startTime": "2026-10-08T21:27:34.201Z",
+        "duration": 68884.117,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "cold-browser",
+      "stats": {
+        "startTime": "2026-10-08T21:40:14.757Z",
+        "duration": 395281.722,
+        "expected": 40,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "report": "cold-cancel-final",
+      "stats": {
+        "startTime": "2026-10-08T21:49:12.764Z",
+        "duration": 25740.969,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "scope": {
+    "historicalBrowserFailures": {
+      "uniquePassed": 8,
+      "desktop": 6,
+      "mobileChromium": 2,
+      "fullSuite": false,
+      "artifact": ".autopilot/culture47-replay-final-checked"
+    },
+    "coldRestore": {
+      "uniquePassed": 42,
+      "firstRun": {
+        "passed": 40,
+        "failed": 2
+      },
+      "fixedFixtureRun": {
+        "passed": 3,
+        "failed": 0
+      },
+      "cause": "new polling fixture read revision before first save existed; optional access preserves exact expected revision",
+      "skip": 0,
+      "retries": 0,
+      "artifact": ".autopilot/culture47-cold-handoff-checked"
+    },
+    "build": {
+      "passed": true,
+      "approvedGameArtifacts": 67
+    },
+    "types": {
+      "passed": true
+    },
+    "lint": {
+      "passed": true
+    },
+    "physicalIphone": false,
+    "originalVisualEquivalent": false,
+    "fullUnitSuite": "serial check started, not yet completed",
+    "fullBrowserSuite": "not completed; previous 369 run stopped at 191",
+    "releaseProtection": {
+      "passed": 24,
+      "failed": 0
+    },
+    "planProtection": {
+      "passed": 15,
+      "failed": 0
+    },
+    "fullUnitSession": 2130
+  },
+  "live": {
+    "url": "http://127.0.0.1:5273/?fms=1",
+    "scope": "loopback only",
+    "sameOrigin": true,
+    "reloadedSavedDay": 31,
+    "reloadedSavedTick": 3755,
+    "dayAfterContinue": 44,
+    "tickAfterContinue": 5362,
+    "paused": true,
+    "saved": true,
+    "nationDetailsDidNotPause": true,
+    "pageConsoleErrors": [],
+    "coldReadyObservedUpperMs": 265072,
+    "coldReadyTimingNote": "upper bound includes tool calls and other work; not an exact duration or speed benchmark",
+    "continueClickAndObservationMs": 2277,
+    "continuationTimingNote": "includes browser input and accessibility observation; not exact frame time",
+    "old5271": "unchanged paused day19",
+    "old5254and5261": "untouched"
+  },
+  "release": {
+    "remoteWrites": false,
+    "productionChanged": false
+  }
+}

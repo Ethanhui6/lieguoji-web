@@ -28,7 +28,10 @@ test('FMS: terrain confirmation stays clickable before saving and entering a new
   await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','18',{timeout:30000});
   await page.getByRole('button',{name:'军事',exact:true}).click();await expandLegacyGroup(page,'征募与补员');await expect(page.getByRole('region',{name:'布兵与动员'})).toBeVisible();
   await info.attach('fms-entry-resources',{body:JSON.stringify({workers,resources,errors,failed,scope:'Chromium emulation; physical device and original visual acceptance pending'}),contentType:'application/json'});
-  expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);expect(workers.some(u=>/naming18\.worker/.test(u))).toBe(true);
+  expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);const legacyClient=resources.find(r=>/\/naming18-client-[^/]+\.js$/.test(r.url));expect(legacyClient).toBeDefined();
+  const clientResponse=await page.request.get(legacyClient!.url);expect(clientResponse.ok()).toBe(true);
+  const workerPath=(await clientResponse.text()).match(/\/assets\/play\.worker-[A-Za-z0-9_-]+\.js/)?.[0];expect(workerPath).toBeDefined();
+  expect(workers).toContain(new URL(workerPath!,legacyClient!.url).href);
   expect(errors).toEqual([]);expect(failed).toEqual([]);
   const fetched=new Map<string,string>();
   for(const resource of resources){

@@ -1,0 +1,118 @@
+{
+  "recordedAt": "2026-10-08T21:18:28.932Z",
+  "reviewedAt": "2026-10-08T21:06:13.863Z",
+  "base": "339c2e181a0737cf285ac8f7dcd642c92eabd5d2",
+  "head": "720b1bae19e07be984b6708363d6ced62026e4da",
+  "reviewer": "readonly damage_snapshot47_audit; root rechecked exact blob byte hashes",
+  "scope": "13 superseded ordinary source/document blobs only",
+  "count": 13,
+  "bytes": 2169574,
+  "checks": {
+    "validUtf8": true,
+    "credentialPatternClasses": 16,
+    "credentialMatches": 0,
+    "decodedTextAndJsonAndTsStrings": true,
+    "hiddenContentSignalClasses": 8,
+    "hiddenContentMatches": 0
+  },
+  "limitations": [
+    "Not final candidate privacy clearance",
+    "No metadata audit or arbitrary recursive decoding",
+    "Newly superseded blobs after this fixed head require additional review",
+    "No release guard update or remote write"
+  ],
+  "entries": [
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "5425e4f07308a94d8effc6bc96571b3258875ab6",
+      "bytes": 175424,
+      "sha256": "b0c40b478fb8b4ab4659a7f1cb563c25a4cb35184eb68c2c613b72504708fdf8"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "42cb79fbf786b770632fbde88aaf9e8ecd6693cb",
+      "bytes": 522399,
+      "sha256": "1c8506a13a6d4553db9e7f187a017b301dc5119c16cbf573d8b83548986407dc"
+    },
+    {
+      "path": "src/fms/play/CultureWorld47.tsx",
+      "gitBlob": "0d4b7a6a158a4ccbe4e353925a7e57755d2fe21b",
+      "bytes": 34294,
+      "sha256": "894d690964b8381d5550df7c4225ae1ea7c4f8e4c5df06f66b64142e03434930"
+    },
+    {
+      "path": "src/fms/play/culture47-client.ts",
+      "gitBlob": "2cb6cf4d879bf2979ef0a9d7529db738fb48e33e",
+      "bytes": 1361,
+      "sha256": "f4929a606aea441c4cebd8a91103bef243089a0371a4cd431e835c3f9c0976c0"
+    },
+    {
+      "path": "src/fms/play/culture47-session.ts",
+      "gitBlob": "5f18d5e62a5583312099f761a6ff3c270fd6d313",
+      "bytes": 8613,
+      "sha256": "dc8ceafadc1ccd64a98d37f29c8d58e208b332e130f6aee77e07a4382fbf06b1"
+    },
+    {
+      "path": "src/fms/play/culture47-storage.ts",
+      "gitBlob": "d76a6f1affe9580fcdeeaa05fc120ab468ec7609",
+      "bytes": 9163,
+      "sha256": "df2e57f7608b1a0d5f45c02c48204b6326dd7ccd896ca040b3f80eafba974cb1"
+    },
+    {
+      "path": "src/fms/play/culture47.css",
+      "gitBlob": "eed964f48ac3d00265d76088c570e745a6c276b3",
+      "bytes": 12915,
+      "sha256": "c29751940484adfac060ef100bd768d8f864ab17554d0b0123f89bf9549f0efb"
+    },
+    {
+      "path": "src/fms/play/culture47.worker.ts",
+      "gitBlob": "4a58184ecd873c2312943a3d04885e8520d04f7c",
+      "bytes": 1649,
+      "sha256": "d345e17248c900e8bbc994adbad432846cb77b8757ca825dc778f795ac2ba90d"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "9b2a52f042f99e94737da90f94d5b58aa074494b",
+      "bytes": 175663,
+      "sha256": "d4ae116b98fc207e924bf0796d1ad47b9d3b9be1588c8e0783f7df7443d15f61"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "32b6d1c56032c16a09ece2ef224cae68043b72ad",
+      "bytes": 522467,
+      "sha256": "989d847945b67ae04d9e1f53156663ee84b95ea9a33d35b88dcf21d5c309bfbe"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "271f9c55215a2d3baeeb8274f88fbf18ded29e59",
+      "bytes": 177366,
+      "sha256": "f7be1d9c17bccc15df6d67fae43515c13d769cf39b00becb0dd86fdb2f95fdf5"
+    },
+    {
+      "path": "docs/evidence/fms-continue-save-2026-10-09/RESULT.md",
+      "gitBlob": "07307d0f47ed2cc94ba5a1f2d1895dfd2af9863d",
+      "bytes": 4493,
+      "sha256": "e4289c08ec23314281e3814ef18a473d45d5143b0f9e7f1efa2cd4d2602bf41c"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "d042145e2232239c9014a0e34f998c04aec941f5",
+      "bytes": 523767,
+      "sha256": "6c78e41f994ae5aacb71c2830801812f39992cb93600b95b202c2718acbb1dc2"
+    }
+  ],
+  "images": {
+    "paths": [
+      "docs/evidence/fms-continue-save-2026-10-09/playable-day15.png",
+      "docs/evidence/fms-continue-save-2026-10-09/playable-day15-zoom.png",
+      "docs/evidence/fms-continue-repair-2026-10-09/playable-day19.png"
+    ],
+    "actualFormat": "JPEG/JFIF despite .png filenames",
+    "dimensions": [
+      451,
+      560
+    ],
+    "metadata": "no Exif/XMP/COM or trailing bytes, reviewed by readonly agent",
+    "visual": "root inspected all three: synthetic game world and controls only"
+  }
+}

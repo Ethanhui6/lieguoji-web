@@ -1,4 +1,10 @@
 import {expect,type Page} from '@playwright/test';
+/** Compact mobile controls must be opened through the same public UI as play. */
+export async function ensureLegacyMapTools(page:Page){
+ const zoom=page.getByRole('button',{name:'放大推演地图',exact:true});
+ if(!await zoom.isVisible())await page.getByRole('button',{name:'地图工具',exact:true}).click();
+ await expect(zoom).toBeVisible();
+}
 /** Exercise the real frozen-rule entrance, including after a browser reload. */
 export async function enterLegacyWorld(page:Page,version:number){
  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();

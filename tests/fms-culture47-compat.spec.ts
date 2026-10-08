@@ -44,17 +44,17 @@ test('unavailable original engine blocks reading without overwriting its valid j
 
 test('normal repeated saves use the executed journal witness and still restore by actual replay',async({page},info)=>{
   test.setTimeout(90000);
-  await page.addInitScript(()=>{const Real=window.Worker,acks:string[]=[];Object.defineProperty(window,'verificationSources',{value:acks});window.Worker=class extends Real{constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',e=>{if(e.data.verified)acks.push(e.data.verified.source);});}};});
+  await page.addInitScript(()=>{const Real=window.Worker,acks:string[]=[],commands:string[]=[];Object.defineProperty(window,'verificationSources',{value:acks});Object.defineProperty(window,'restorationCommands',{value:commands});window.Worker=class extends Real{constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',e=>{if(e.data.verified)acks.push(e.data.verified.source);});}postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){commands.push((message as {command:{type:string}}).command.type);if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}};});
   await enter(page);await create(page);await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1',{timeout:30000});
   const start=Date.now();for(let i=0;i<3;i++){await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect.poll(async()=>(await stored(page))?.revision).toBe(i+1);}
   const ms=Date.now()-start,acks=await page.evaluate(()=>(window as unknown as {verificationSources:string[]}).verificationSources);expect(acks).toEqual(Array(6).fill('witness'));
-  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1',{timeout:30000});expect(await page.evaluate(()=>(window as unknown as {verificationSources:string[]}).verificationSources)).toEqual(['replay','replay']);
+  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1',{timeout:30000});expect(await page.evaluate(()=>(window as unknown as {verificationSources:string[]}).verificationSources)).toEqual(['witness']);expect(await page.evaluate(()=>(window as unknown as {restorationCommands:string[]}).restorationCommands)).toEqual(['load','verify']);
   await info.attach('verification-cost',{body:JSON.stringify({threeSavesMs:ms,witnessAcks:acks,fixture:'676 sample synthetic geography',physicalIphone:false}),contentType:'application/json'});
 });
 
 test('initial saved-world verification can be cancelled and retried without losing the slot',async({page})=>{
   test.setTimeout(90000);await enter(page);await create(page);await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');const before=await stored(page);
-  await page.addInitScript(()=>{const Real=window.Worker;let delayed=false;window.Worker=class extends Real{postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){const type=(message as {command?:{type:string}})?.command?.type;if(type==='verify'&&!delayed){delayed=true;setTimeout(()=>super.postMessage(message),5000);return;}if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}};});
+  await page.addInitScript(()=>{const Real=window.Worker;let delayed=false;window.Worker=class extends Real{postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){const type=(message as {command?:{type:string}})?.command?.type;if(type==='load'&&!delayed){delayed=true;setTimeout(()=>super.postMessage(message),5000);return;}if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}};});
   await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'取消处理',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已取消恢复');expect(await stored(page)).toEqual(before);
   await page.getByRole('button',{name:'重新读取存档',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click({timeout:30000});await expect(page.getByTestId('culture47-map')).toBeVisible();expect(await stored(page)).toEqual(before);
 });
@@ -65,4 +65,38 @@ test('cancelling a queued save clears the pending action and never writes later'
   await enter(page);await create(page);await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');const before=await stored(page);
   await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-advancing','true');await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await page.getByRole('button',{name:'取消处理',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-advancing','false');
   await page.waitForTimeout(2000);expect(await stored(page)).toEqual(before);await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-tick','0');
+});
+
+async function allSlots(page:Page){return page.evaluate(async()=>{const db=await new Promise<IDBDatabase>((ok,no)=>{const q=indexedDB.open('lieguoji-fms-culture47-zh-journal-v2',1);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});try{return await new Promise<string>((ok,no)=>{const q=db.transaction('slots').objectStore('slots').getAll();q.onsuccess=()=>ok(JSON.stringify(q.result,(_,x)=>ArrayBuffer.isView(x)?Array.from(x as unknown as ArrayLike<number>):x));q.onerror=()=>no(q.error);});}finally{db.close();}});}
+
+test('cancel after the current slot loaded discards its candidate while backup validation is pending',async({page})=>{
+  test.setTimeout(90000);await enter(page);await create(page,24);
+  for(let i=1;i<=2;i++){await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect.poll(async()=>(await stored(page))?.revision).toBe(i);}
+  const before=await allSlots(page);
+  await page.addInitScript(()=>{const Real=window.Worker,state={delayed:false,holding:false,terminations:0};Object.defineProperty(window,'coldCancelProbe',{value:state});window.Worker=class extends Real{
+    postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){const type=(message as {command?:{type:string}})?.command?.type;if(type==='verify'&&!state.delayed){state.delayed=true;state.holding=true;setTimeout(()=>super.postMessage(message),3000);return;}if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}
+    terminate(){state.terminations++;super.terminate();}
+  };});
+  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {coldCancelProbe:{holding:boolean}}).coldCancelProbe.holding)).toBe(true);
+  await page.getByRole('button',{name:'取消处理',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已取消恢复');await expect(page.getByRole('button',{name:'继续文化世界',exact:true})).toHaveCount(0);expect(await allSlots(page)).toBe(before);
+  await page.getByRole('button',{name:'重新读取存档',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-map')).toBeVisible();
+  await page.waitForTimeout(3200);await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-tick','0');expect(await allSlots(page)).toBe(before);expect(await page.evaluate(()=>(window as unknown as {coldCancelProbe:{terminations:number}}).coldCancelProbe.terminations)).toBeGreaterThanOrEqual(2);
+});
+
+test('losing the fully loaded candidate before Continue triggers real reload and subsequent live save',async({page})=>{
+  test.setTimeout(90000);await enter(page);await create(page,24);await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');const before=await stored(page);
+  await page.addInitScript(()=>{const Real=window.Worker,state:{worker:Worker|null;loads:number}={worker:null,loads:0};Object.defineProperty(window,'coldLossProbe',{value:state});window.Worker=class extends Real{
+    postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){if((message as {command?:{type:string}})?.command?.type==='load'){state.loads++;state.worker=this;}if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}
+  };});
+  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await expect(page.getByRole('button',{name:'继续文化世界',exact:true})).toBeVisible();
+  await page.evaluate(()=>(window as unknown as {coldLossProbe:{worker:Worker}}).coldLossProbe.worker.dispatchEvent(new Event('error')));
+  await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-map')).toBeVisible();expect(await page.evaluate(()=>(window as unknown as {coldLossProbe:{loads:number}}).coldLossProbe.loads)).toBe(2);expect(await stored(page)).toEqual(before);
+  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1');await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect.poll(async()=>(await stored(page)).revision).toBe(2);expect((await stored(page)).journal.id).toBe(before.journal.id);expect((await stored(page)).journal.actions).toEqual([{kind:'advance',ticks:120}]);
+});
+
+test('creating a new world discards the ready save candidate without writing the old slots',async({page})=>{
+  test.setTimeout(90000);await enter(page);await create(page,24);await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');const before=await stored(page),bytes=await allSlots(page);
+  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await expect(page.getByRole('button',{name:'继续文化世界',exact:true})).toBeVisible();await create(page,60);
+  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1');expect(await allSlots(page)).toBe(bytes);
+  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect.poll(async()=>(await stored(page)).revision).toBe(2);const after=await stored(page);expect(after.journal.id).not.toBe(before.journal.id);expect(after.journal.opening.cityCount).toBe(60);expect(after.journal.actions).toEqual([{kind:'advance',ticks:120}]);
 });

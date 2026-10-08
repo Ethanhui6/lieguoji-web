@@ -11,6 +11,8 @@ import {PlayIcon} from './PlayIcon';
 import {CULTURE_IDS47,CULTURES47,RELIGIONS47,POLITIES47,culture47,type CultureId47,type NamingMode47,type ReligionId47} from './civilization47-catalog';
 import {currentRuler47,type CultureChoice47,type CivilizationEdit47} from './civilization47-names';
 import {Culture47Client} from './culture47-client';
+import {sameCulture47Value} from './culture47-equal';
+import {Culture47Unavailable} from './culture47-contract';
 import type {Culture47Snapshot,Culture47Request as WorkerRequest} from './culture47.worker';
 import type {Culture47Action,Culture47Journal} from './culture47-session';
 import {loadCulture47,saveCulture47,type SavedCulture47} from './culture47-storage';
@@ -29,6 +31,7 @@ import {actualForces47} from './force-runtime47';
 import type {MilitaryIntent47} from './culture47-orders';
 
 type Culture47Request=Exclude<WorkerRequest,{type:'load'|'verify'}>|{type:'load';journal:Culture47Journal};
+type ReadyCulture47={client:Culture47Client;snapshot:Culture47Snapshot;journal:Culture47Journal};
 const polityLabels:Record<NativePolity,string>={Kingdom:'王国',Empire:'帝国',Republic:'共和国',Federation:'联邦',Tribal:'部族',Theocracy:'神权国'};
 const failText=(e:unknown)=>e instanceof Error?e.message:String(e);
 async function verifyJournal(journal:Culture47Journal,signal?:AbortSignal,progress?:Parameters<Culture47Client['verify']>[1]){const client=new Culture47Client(journal.engine);try{await client.verify(journal,{...progress,signal,longReplay:true});}finally{client.close();}}
@@ -73,11 +76,42 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const [recovering,setRecovering]=useState(false),resumeAfterRecovery=useRef(false);
   const previewEpoch=useRef({military:0,political:0}),requestEpoch=useRef(new WeakMap<Culture47Request,number>());
   const client=useRef<Culture47Client|null>(null),current=useRef(snapshot),inflight=useRef(false),revision=useRef<number|null>(null),lifetime=useRef<AbortController|null>(null),host=useRef<HTMLDivElement>(null);
+  const readyWorld=useRef<ReadyCulture47|null>(null);
   const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
   current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview};
   useEffect(()=>{const controller=new AbortController(),reading=new AbortController();lifetime.current=controller;storageAbort.current=reading;client.current=new Culture47Client();setStorageReading(true);setStorageReady(false);setLocked(false);
-    void loadCulture47(indexedDB,j=>verifyJournal(j,reading.signal,{progress:replayProgress}),reading.signal).then(s=>{if(controller.signal.aborted)return;setSaved(s);revision.current=s?.revision??null;setStorageReady(true);setNotice('');}).catch(e=>{if(!controller.signal.aborted){setLocked(true);setNotice(reading.signal.aborted?'已取消恢复，原存档保持。可重新读取。':failText(e));setStorageReady(true);}}).finally(()=>{if(!controller.signal.aborted)setStorageReading(false);});
-    return()=>{controller.abort();reading.abort();operation.current?.abort();client.current?.close();client.current=null;};
+    const candidate:{value:ReadyCulture47|null}={value:null};
+    const discard=()=>{candidate.value?.client.close();candidate.value=null;};
+    const progress=(p:import('./culture47-session').Culture47Progress)=>{if(!controller.signal.aborted&&!reading.signal.aborted)replayProgress(p);};
+    const verify=async(j:Culture47Journal)=>{
+      reading.signal.throwIfAborted();
+      const held=candidate.value;
+      if(held){
+        // This session has executed the entire current slot. Its existing
+        // verifier proves exact prefixes, or replays other histories without
+        // replacing that state. Frozen engines still validate by original rules.
+        if(held.client.engine===j.engine)await held.client.verify(j,{signal:reading.signal,progress,longReplay:true});
+        else await verifyJournal(j,reading.signal,{progress});
+        return;
+      }
+      const restored=new Culture47Client(j.engine);
+      try{
+        const loaded=await restored.send({type:'load',journal:j},{signal:reading.signal,progress,longReplay:true});
+        reading.signal.throwIfAborted();
+        if(!sameCulture47Value(loaded.journal,j))throw new Culture47Unavailable('恢复结果与存档不一致，原档保留。');
+        candidate.value={client:restored,snapshot:loaded,journal:structuredClone(j)};
+      }catch(error){restored.close();throw error;}
+    };
+    void loadCulture47(indexedDB,verify,reading.signal).then(s=>{
+      if(controller.signal.aborted||reading.signal.aborted){discard();return;}
+      const held=candidate.value;
+      if(s){
+        if(!held||held.client.isClosed||!sameCulture47Value(held.journal,s.journal))throw new Culture47Unavailable('已恢复世界与选中存档不一致，请重新读取。');
+        client.current?.close();client.current=held.client;readyWorld.current=held;candidate.value=null;
+      }else discard();
+      setSaved(s);revision.current=s?.revision??null;setStorageReady(true);setNotice('');
+    }).catch(e=>{discard();if(!controller.signal.aborted){setLocked(true);setNotice(reading.signal.aborted?'已取消恢复，原存档保持。可重新读取。':failText(e));setStorageReady(true);}}).finally(()=>{if(!controller.signal.aborted)setStorageReading(false);});
+    return()=>{controller.abort();reading.abort();discard();operation.current?.abort();readyWorld.current?.client.close();readyWorld.current=null;client.current?.close();client.current=null;};
   },[storageAttempt]);
   function replayProgress(p:import('./culture47-session').Culture47Progress){if(!lifetime.current?.signal.aborted)setNotice(p.stage==='opening'?'正在恢复创建时的地图…':`正在恢复历史 ${p.completed} / ${p.total} · 第 ${Math.floor(p.ticks/120)} 日`);}
   function drain(){const pending=queued.current;queued.current=null;if(!pending)return;if(pending.kind==='command')void send(pending.command);else if(pending.kind==='save')void save(pending.exit);else requestClose();}
@@ -87,12 +121,14 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     if(previewKind&&!requestEpoch.current.has(command))requestEpoch.current.set(command,++previewEpoch.current[previewKind]);
     if(!client.current||storageReading)return;if(inflight.current){if(!background&&!queued.current){queued.current={kind:'command',command};setBusy(true);}return;}inflight.current=true;if(!background)setBusy(true);if(isAdvance)setAdvancing(true);
     if(command.type==='create'||command.type==='load'){const engine=command.type==='load'?command.journal.engine:__CULTURE47_ENGINE__;if(client.current.isClosed||client.current.engine!==engine){client.current.close();client.current=new Culture47Client(engine);}}
+    const ready=readyWorld.current;readyWorld.current=null;
+    const reuse=command.type==='load'&&ready&&ready.client===client.current&&!ready.client.isClosed&&sameCulture47Value(ready.journal,command.journal)?ready.snapshot:null;
     const op=new AbortController();operation.current=op;
     if(command.type==='load'&&command.journal.engine!==__CULTURE47_ENGINE__)setNotice('正在按原规则恢复旧世界，耗时取决于历史长度；可以取消。');
     // Ordinary edits carry intent. Only previewed decisions retain their exact
     // stamp; never refresh their sequence behind the player's confirmation.
     const dispatched=command.type==='action'&&(command.action.kind==='advance'||command.action.kind==='identity'||command.action.kind==='succession')&&current.current?{...command,sequence:current.current.journal.actions.length}:command;
-    try{const s=await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
+    try{const s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
     catch(e){if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice(failText(e)+(client.current?.isClosed?(current.current?' 点击继续可恢复最后确认的进度。':' 可以重新点击创建或继续世界；原档保留。'):''));}}
     finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);setAdvancing(false);drain();}}
   }

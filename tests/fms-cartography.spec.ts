@@ -1,4 +1,4 @@
-import {enterLegacyWorld,legacyNationTab,closeLegacyPanel,saveLegacyProgress} from './fms-legacy';
+import {enterLegacyWorld,legacyNationTab,closeLegacyPanel,saveLegacyProgress,ensureLegacyMapTools} from './fms-legacy';
 import {test,expect,type Page} from '@playwright/test';
 import type {Dynasty23Run} from '../src/fms/play/dynasty23-model';
 type Box={x:number;y:number;width:number;height:number};
@@ -11,7 +11,7 @@ test('drawn diagonal world keeps map labels anchored and the chronicle focused o
  await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);await page.locator('.fms-save').click();await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty','false');await enterLegacyWorld(page,23);await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByLabel('战乱开局').uncheck();await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','23',{timeout:30000});const before=await save(page);
  const canvas=page.getByTestId('fms-play-canvas'),layout=async()=>JSON.parse(await canvas.getAttribute('data-map-label-layout')??'null') as Layout,anchors=async()=>JSON.parse(await canvas.getAttribute('data-country-labels')??'[]') as {angle:number;x:number;y:number}[];
  const at=await anchors();expect(at.length).toBeGreaterThanOrEqual(2);expect(at.some(a=>Math.abs(a.angle)>.15)).toBe(true);
- if(await page.getByRole('button',{name:'收起面板',exact:true}).isVisible())await closeLegacyPanel(page);for(let i=0;i<4&&(await layout()).detail==='overview';i++)await page.getByRole('button',{name:'放大推演地图',exact:true}).click();await expect.poll(async()=>(await layout()).detail).not.toBe('overview');
+ if(await page.getByRole('button',{name:'收起面板',exact:true}).isVisible())await closeLegacyPanel(page);await ensureLegacyMapTools(page);for(let i=0;i<4&&(await layout()).detail==='overview';i++)await page.getByRole('button',{name:'放大推演地图',exact:true}).click();await expect.poll(async()=>(await layout()).detail).not.toBe('overview');
  const a=await layout();await page.screenshot({path:info.outputPath('map-before-pan.png')});const box=(await canvas.boundingBox())!,x=box.x+box.width*.65,y=box.y+box.height*.53;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+42,y+31,{steps:16});await page.mouse.up();await expect.poll(async()=>(await layout()).countries[0].x-a.countries[0].x).toBeCloseTo(42,1);const z=await layout();
  expect(await anchors()).toEqual(at);for(let i=0;i<a.countries.length;i++){expect(z.countries[i].x-a.countries[i].x).toBeCloseTo(42,1);expect(z.countries[i].y-a.countries[i].y).toBeCloseTo(31,1);expect(z.countries[i].width).toBeCloseTo(a.countries[i].width,5);expect(z.countries[i].height).toBeCloseTo(a.countries[i].height,5);}

@@ -1,6 +1,8 @@
-import { test, expect, type Page, type TestInfo } from '@playwright/test';
+import { test, expect, type Page, type TestInfo, type Request } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { audit, metrics, saved, databaseDigest, type SavedManifest } from './helpers/atlas-shape-readonly';
 import { persistedCountry } from './helpers/country-readonly';
 
@@ -73,24 +75,31 @@ async function highGround(page: Page, manifest: SavedManifest) {
 
 test('[seed-terrain] bundled creation, cancel, independent save, record lifecycle, edit and country', async ({ page }, info) => {
   test.setTimeout(900000);
+  if (process.env.GAME_BASE_URL && !process.env.GAME_BUILD_DIR) throw new Error('seed-terrain requires GAME_BUILD_DIR bound to the build served by GAME_BASE_URL');
+  const buildDirectory = process.env.GAME_BUILD_DIR ? resolve(process.env.GAME_BUILD_DIR) : fileURLToPath(new URL('../dist/', import.meta.url));
   const touch = !!info.project.use.hasTouch, errors: string[] = [], requests: { method: string; url: string; type: string }[] = [], workerUrls: string[] = [];
-  const assets = new Map<string, { url: string; status: number; sha256: string; bytes: number }>(), pendingAssets: Promise<void>[] = [];
+  const assets = new Map<string, { url: string; status: number; sha256: string; bytes: number }>(), pendingAssets: Promise<void>[] = [], assetFailures: unknown[] = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', entry => { if (entry.type() === 'error') errors.push(entry.text()); });
   page.on('request', request => requests.push({ method: request.method(), url: request.url(), type: request.resourceType() }));
   page.on('worker', worker => workerUrls.push(worker.url()));
-  page.on('response', response => {
-    const path = new URL(response.url()).pathname;
-    if (!/^\/assets\/[A-Za-z0-9_.-]+\.(js|css)$/.test(path) || assets.has(path)) return;
+  const requestedAssets = new Set<string>();
+  const auditAsset = (request: Request) => {
+    const path = new URL(request.url()).pathname;
+    if (!/^\/assets\/[A-Za-z0-9_.-]+\.(js|css)$/.test(path) || requestedAssets.has(path)) return;
+    requestedAssets.add(path);
     pendingAssets.push((async () => {
-      const body = await response.body(), local = await readFile(new URL(`../dist${path}`, import.meta.url));
+      const response = await request.response();
+      if (!response) throw new Error(`Asset request failed without a response: ${request.url()}`);
+      const body = await response.body(), local = await readFile(resolve(buildDirectory, path.slice(1)));
       expect(response.ok(), path).toBe(true); expect(hash(body), path).toBe(hash(local));
       assets.set(path, { url: response.url(), status: response.status(), sha256: hash(body), bytes: body.length });
-    })());
-  });
+    })().catch(error => { assetFailures.push(error); }));
+  };
+  page.on('request', auditAsset);
   const buildResponse = await page.request.get('/build.json'); expect(buildResponse.ok()).toBe(true);
   const buildBytes = await buildResponse.body(), build = JSON.parse(buildBytes.toString('utf8'));
-  expect(hash(buildBytes)).toBe(hash(await readFile(new URL('../dist/build.json', import.meta.url))));
+  expect(hash(buildBytes)).toBe(hash(await readFile(resolve(buildDirectory, 'build.json'))));
   const expectedBuild = process.env.SEED_TERRAIN_EXPECTED_BUILD_SHA256 ?? process.env.COUNTRY_EXPECTED_BUILD_SHA256;
   if (expectedBuild) expect(hash(buildBytes)).toBe(expectedBuild);
   expect(build.seedTerrainGenerator.id).toBe('recovered-height-square-v1'); expect(build.seedTerrainGenerator.sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -163,7 +172,11 @@ test('[seed-terrain] bundled creation, cancel, independent save, record lifecycl
   expect(await persistedCountry(page, worldId)).toEqual(nation); expect(await saved(page, originalId, 4)).toEqual(original); expect(await saved(page, candidateId, 4)).toEqual(edited);
   await page.screenshot({ path: info.outputPath('seed-country-restored.png'), fullPage: true });
 
+  // Seal registration only after the last tested UI operation. Every request
+  // already issued is registered, including responses still in flight.
+  page.off('request', auditAsset);
   await Promise.all(pendingAssets);
+  expect(assetFailures, 'Served build asset integrity failures').toEqual([]);
   expect([...assets.keys()].some(path => path.endsWith('.css'))).toBe(true); expect([...assets.keys()].some(path => path.endsWith('.js'))).toBe(true);
   expect(workerUrls.some(url => /\/assets\/seed-terrain\.worker-.*\.js$/.test(url))).toBe(true);
   expect(workerUrls.some(url => /\/assets\/terrain-import\.worker-.*\.js$/.test(url))).toBe(true);

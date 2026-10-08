@@ -43,8 +43,8 @@ test('the saved-world Continue button retries after its loading Worker fails, wi
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
  await page.addInitScript(()=>{const RealWorker=window.Worker;let failed=false;window.Worker=class extends RealWorker{postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){const type=(message as {command?:{type:string}})?.command?.type;if(type==='load'&&!failed){failed=true;setTimeout(()=>this.dispatchEvent(new Event('error')),0);return;}if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);}};});
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
- await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('可以重新点击');
- await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-map')).toBeVisible({timeout:30000});await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-tick','0');
+ await expect(page.getByRole('button',{name:'重新读取存档',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'继续文化世界',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'重新读取存档',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(page.getByTestId('culture47-map')).toBeVisible({timeout:30000});await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-tick','0');
  await page.getByRole('button',{name:'返回绘图',exact:true}).click();await expect(page.getByRole('dialog',{name:'保存后离开'})).not.toBeVisible();await expect(page.getByRole('button',{name:'进入世界 →',exact:true})).toBeVisible();
 });
 

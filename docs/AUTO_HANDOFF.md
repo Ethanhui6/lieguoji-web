@@ -2,13 +2,15 @@
 
 根独占写入，本批源码/测试/证据已本地提交 bf5a29c5f202f19b080c86f6fb28caa8e0443c97，既有发布配置与视频余项保留。状态源webRebuild.culture47ColdRestoreCheckpoint；WEB-PH04 / WEB-04-37不标整体完成。
 
-后续预览准备已开始：默认单测并发与正在运行的完整串行命令统一为1；旧47兼容测试绑定GAME_BUILD_DIR并逐字节核对服务build.json；历史差额固定审到a0e3786，新增四张截图及六段既有视频摘要复核已落证据。[准确范围与待执行检查](evidence/fms-preview-preparation-2026-10-09/STATUS.md)，状态webRebuild.culture47PreviewPreparationCheckpoint。当前这些后续改动尚未提交，未跑完的全套不得记通过；不改变既有游戏入口与引擎。
+后续预览准备代码已本地提交52c562646d966d546e746e03e989468b1603e54a：默认单测并发统一为1；旧47兼容测试绑定GAME_BUILD_DIR并逐字节核对服务build.json；历史差额固定审到a0e3786，新增四张截图及六段既有视频摘要复核已落证据。[准确范围与待执行检查](evidence/fms-preview-preparation-2026-10-09/STATUS.md)，状态webRebuild.culture47PreviewPreparationCheckpoint。最新构建与扫描/执行记录待追加检查点，未跑完的浏览器全套不得记通过；不改变既有游戏入口与引擎。
 
 当前仅本机试玩 **http://127.0.0.1:5273/?fms=1**，已更新自己的静态服务到 .autopilot/culture47-cold-handoff-checked（会话32928，脚本culture47-cold-live-server.mjs），旧5273产物作为已加载hash资源回退保留。真实侧栏标签12：刷新原31日/3755tick存档、继续原世界、详情查看不断时，至44日/5362tick暂停保存成功；无页面控制台错误。5271第19日标签11原样保留，5254/5261未动。5274（会话98513）为同新产物自动测试入口，都非手机URL。
 
 实际修改：冷读取的真实Worker在两槽与完整journal验证后继续使用，去掉点击继续时第二次load；取消/迟到响应/候选失效/创建新局均保留原档、原CAS、原引擎。全部Fingerprint未变化。生产构建67产物/types/lint通过；三设备42个唯一恢复用例已有通过证据，首轮2个新测试轮询竞态失败和后续3/3修复保留。不是iPhone或视觉通过。
 
-旧全量369浏览器至191实际为8失败（不是历史头部误记的6）；8个指定旧失败已逐项回归通过，但非全套通过。最终完整单测串行已完成：会话2130退出0，421文件/5612项全过，原7超时所在35项也在完整运行内通过；证据fms-preview-preparation-2026-10-09/unit-check.json及full-unit.json/txt。不要重开此单测。当前types/lint工具会话87750，接续最终构建和完整411浏览器，1000日重放仍待完成，当前没有push或Pages更新。详见 [本批结果](evidence/fms-regression-closure-2026-10-09/RESULT.md) 和checks/artifact.json。下一步接续真实进程、闭合全范围检查、完整隐私扫描及有效preview20261006绑定，再按既有同分支预览授权发布；main/旧档/真机视觉边界不变。
+旧全量369浏览器至191实际为8失败（不是历史头部误记的6）；8个指定旧失败已逐项回归通过，但非全套通过。最终完整单测已完成：2130退出0，421文件/5612项全过，原7超时所在35项也在完整运行内通过。87750 types/lint/plan和41177 build均退出0、67dist审查通过；68482完整候选文本扫描12282文件未发现所列凭据模式。证据在fms-preview-preparation-2026-10-09，不能据此说浏览器或真机通过。
+
+**当前唯一完整浏览器进程44710正在执行411项，保留原4项桌面专用场景skip，未有最终结果。** 日志.autopilot/culture47-preview-browser.txt/json，产物.autopilot/culture47-preview-52c5626，http://127.0.0.1:5275（服务70670），build.json SHA256为00d465961c8600c22b3669c0c8ab0bd718ea261e393cd10ebe31a41f0b60155e。必须先轮询44710，不重开完整单测或并行性能测试，不覆盖dist/不可变候选。规则Fingerprint变化为空。1000日重放仍未验收；没有push或Pages更新。完整浏览器通过后，补最后历史差额和候选变动隐私、有效preview20261006指纹绑定，再按既有同分支预览授权发布；main/旧档/真机视觉边界不变。
 
 ---
 

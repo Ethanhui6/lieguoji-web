@@ -9103,7 +9103,7 @@
       "unitLog": ".autopilot/culture47-full-serial.txt",
       "browserRegistered": 411,
       "browserExistingDesktopOnlySkips": 4,
-      "browserExecuted": false,
+      "browserExecuted": true,
       "release": "no remote writes; final privacy, full checks and exact preview contract still required",
       "unit": {
         "session": 2130,
@@ -9113,6 +9113,31 @@
         "failed": 0,
         "seconds": 1650.02,
         "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/unit-check.json"
+      },
+      "sourceCommit": "52c562646d966d546e746e03e989468b1603e54a",
+      "localChecks": {
+        "types": "passed",
+        "lint": "passed",
+        "plan": "passed",
+        "productionBuild": "passed",
+        "approvedDistArtifacts": 67
+      },
+      "browser": {
+        "status": "running-not-pass",
+        "session": 44710,
+        "registered": 411,
+        "expectedExistingSkips": 4,
+        "log": ".autopilot/culture47-preview-browser.txt",
+        "report": ".autopilot/culture47-preview-browser.json",
+        "url": "http://127.0.0.1:5275",
+        "serverSession": 70670,
+        "artifact": ".autopilot/culture47-preview-52c5626",
+        "buildJsonSha256": "00d465961c8600c22b3669c0c8ab0bd718ea261e393cd10ebe31a41f0b60155e"
+      },
+      "candidatePrivacy": {
+        "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/source-candidate.json",
+        "status": "text-scan-no-findings-final-delta-still-required",
+        "files": 12282
       }
     }
   }

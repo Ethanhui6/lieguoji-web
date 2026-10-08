@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-08T11:57:49.222946+00:00",
+  "sourceCommit": "73b90a4d42a401fc2467875cacf1bba674cd8db9",
+  "branch": "codex/ph06-world-generation",
+  "relatedTests": {
+    "uniquePassed": 117,
+    "finalFailed": 0,
+    "files": 5,
+    "newCases": 23,
+    "runs": [
+      {
+        "passed": 113,
+        "failed": 2,
+        "files": 5,
+        "report": "first-tests.txt",
+        "note": "94 unchanged command/daily/founding/combat cases passed;19 new AI passed. Two fixtures incorrectly assumed historical anchor differs from target and omitted surviving enemies when marking conquest complete; fixture corrected without removing actual contact checks."
+      },
+      {
+        "passed": 22,
+        "failed": 0,
+        "files": 1,
+        "report": "final-tests.json",
+        "note": "Includes fixed fixtures and stopped-retreat real defect regression."
+      },
+      {
+        "passed": 23,
+        "failed": 0,
+        "files": 1,
+        "report": "edge-final-tests.json",
+        "note": "Includes invalid offensive halted at sea with no home remaining, and no stale route revival next day. Unique total94+23, not repeated successes."
+      }
+    ]
+  },
+  "types": {
+    "exitCode": 0,
+    "scope": "full project after final no-return halt/test change"
+  },
+  "lint": {
+    "exitCode": 0,
+    "scope": "full project after final changes"
+  },
+  "protectionTests": {
+    "passed": 39,
+    "failed": 0,
+    "durationMs": 6661.9049
+  },
+  "build": {
+    "exitCode": 0,
+    "dist": ".autopilot/army-ai47-check/dist",
+    "runtimeVersion": 46,
+    "new47Bundled": false
+  },
+  "distAudit": {
+    "exitCode": 0,
+    "artifacts": 43,
+    "initialFailure": "Isolated audit cwd lacked public/terrain-licenses.txt due to incorrect relative copy. Copied exact reviewed root artifact using absolute paths and reran unchanged audit successfully."
+  },
+  "frozen46": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "reviewFixes": [
+    "Stopped withdrawing army replans home instead of waiting for occupation it cannot perform.",
+    "Invalid sea offensive with no home halts before clearing goal, so following day cannot preserve a stale unknown route.",
+    "Current external participants preserve external enemies even when the same pair also has an internal campaign."
+  ],
+  "browser": {
+    "new47Verified": false,
+    "playerReloaded": false
+  },
+  "notPassed": [
+    "Full naval/political daily owner",
+    "900-day survival and autonomous island landing with economy and combat",
+    "live47 validator/session/Store49/Worker/two-mode creation UI",
+    "native visual equivalence",
+    "physical iPhone Safari and Chrome"
+  ],
+  "cloudWrites": false,
+  "warnings": [
+    "Existing Vite future config-loader and chunk-size warnings retained; no checks suppressed."
+  ]
+}

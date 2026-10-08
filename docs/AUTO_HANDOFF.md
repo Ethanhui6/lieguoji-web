@@ -1,6 +1,6 @@
 # 当前检查点：同一存档继续至44日，冷恢复不再重复载入（2026-10-09）
 
-根独占写入，本批基线720b1ba，源码/测试/证据尚待本地提交，既有发布配置与视频余项保留。状态源webRebuild.culture47ColdRestoreCheckpoint；WEB-PH04 / WEB-04-37不标整体完成。
+根独占写入，本批源码/测试/证据已本地提交 bf5a29c5f202f19b080c86f6fb28caa8e0443c97，既有发布配置与视频余项保留。状态源webRebuild.culture47ColdRestoreCheckpoint；WEB-PH04 / WEB-04-37不标整体完成。
 
 当前仅本机试玩 **http://127.0.0.1:5273/?fms=1**，已更新自己的静态服务到 .autopilot/culture47-cold-handoff-checked（会话32928，脚本culture47-cold-live-server.mjs），旧5273产物作为已加载hash资源回退保留。真实侧栏标签12：刷新原31日/3755tick存档、继续原世界、详情查看不断时，至44日/5362tick暂停保存成功；无页面控制台错误。5271第19日标签11原样保留，5254/5261未动。5274（会话98513）为同新产物自动测试入口，都非手机URL。
 

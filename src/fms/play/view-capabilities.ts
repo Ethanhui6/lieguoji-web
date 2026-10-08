@@ -1,4 +1,4 @@
-import type {GameRun} from './war44-model';
+import type {GameRun} from './war45-model';
 
 // View dispatch only. Runs are validated by their own frozen session/storage
 // contracts before reaching the UI; these guards do not authorize a new schema.

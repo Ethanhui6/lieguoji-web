@@ -1,3 +1,16 @@
+# 当前续接：v42前进据点与真实补给回航已可玩
+
+2026-10-08；已测源码 `3e976066005d912f062fd228954133c9c24fbfe3`，后续证据提交核实git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。
+
+- 原作战时海港与陆地主权分开：已夺外域海港可以驻防；前进据点接后备偏好权重。失港只走完已进入海段，缺粮回真实本国有余粮港口并日结扣账；保留玩家/运输/海战优先。
+- [交付](evidence/fms-forward42-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-forward42-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-forward42-v5-2026-10-08/checks.json)。62回归、types/lint、39保护、生产构建/43产物审查与生产Chromium军事/普通6国60城新局/刷新/CAS/Worker通过。
+- [本机v42试玩](http://127.0.0.1:5240/?fms=1)，目录`.autopilot/forward42-production/dist`，PID22828，Store44，engine `adc39de810e018bc361afbc009be83330c0cc8d2e250ad00ef18164d873d333d`。旧v41/5238及43产物哈希未变；手机不能使用PC的127.0.0.1。
+- 静态PE/IL2CPP证据，不冒充原作实机/视频观察。首府种子/海格资格/首个frontier锚点已查明，整套几何适配仍待做；全景/4-16-40倍、真机/用户视觉、完整战争协同均未过。
+- 下一批：Continue WEB-04-37 from playable v42. Captured foreign-land harbors now support idle garrisons; saved forward base is a native fallback weighted preference; low food yields new attacks to real home resupply, with lost-port edge-safe return. Do not redo v41/v42 leaves. Next complete coherent native harbor geometry (capital-neighbor seeds, sea qualification, frontier-first anchor; static rules recovered in v42 CONTRACT), measuring mapping to actual web cities/sea cells before replacement; then land/naval coordination and remaining military office/cooldown/internal-war rules, native supply/speed fidelity. WEB-03-06 follows, then queued official/video full audit/top10. Preserve v41/5238 and older saves/previews. No push/Pages/main changes.
+- 未push/Pages/main；开发服5239/PID36164已关闭，最终5240/PID22828与旧5238/PID24052保留，HTTP build元数据再次匹配。计划检查通过。选舰航路与普通新局截图已检查；大片平海/小岛比例和近景细节仍有差距，不作美术通过。
+
+---
+
 # 当前续接：v41港湾游弋与停战撤回已可玩
 
 2026-10-08；已测源码 `2de4957d0ed10fc9ea1aac22f42551abd1460e8d`。后续证据提交请核实实际git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。

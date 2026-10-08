@@ -1,0 +1,81 @@
+{
+  "at": "2026-10-08T12:54:10.384888+00:00",
+  "sourceCommit": "5380b85f68681d1fae468836a27a71153e96cd1c",
+  "branch": "codex/ph06-world-generation",
+  "relatedTests": {
+    "uniquePassed": 146,
+    "failedRemaining": 0,
+    "newCases": 23,
+    "files": 9,
+    "reports": {
+      "first-tests.json": {
+        "passed": 141,
+        "failed": 2
+      },
+      "final-tests.json": {
+        "passed": 145,
+        "failed": 1
+      },
+      "speed-recheck.json": {
+        "passed": 13,
+        "failed": 0
+      }
+    },
+    "union": "Same final source; final-tests covers146 cases, speed-recheck replaces the13 speed-file results, not13 additional cases."
+  },
+  "failuresAndRepairs": [
+    "First lost-fleet fixture incorrectly retained nonzero hull. Corrected the explicit test placement; production hull guard retained.",
+    "Twenty-day military test exceeded120s during both grouped runs. A per-window immutable sea graph is reused while all current state and validation still read live; assertions and120s deadline unchanged. Standalone complete speed file passed; the long case took108713.9933ms. Different concurrent load prevents attributing this improvement solely to the cache."
+  ],
+  "types": {
+    "exitCode": 0,
+    "scope": "full project"
+  },
+  "lint": {
+    "exitCode": 0,
+    "scope": "full project"
+  },
+  "protectionTests": {
+    "passed": 39,
+    "failed": 0,
+    "durationMs": 8712.385
+  },
+  "build": {
+    "exitCode": 0,
+    "dist": ".autopilot/naval-autonomy47-check/dist",
+    "runtimeVersion": 46,
+    "new47Bundled": false
+  },
+  "distAudit": {
+    "exitCode": 0,
+    "artifacts": 43
+  },
+  "reviewRepairs": [
+    "Routine idle voyages must budget actual path plus3days reserve, just like attacks.",
+    "Invalidated assigned port and new low-food emergency bypass idle reroll cooldown.",
+    "Manual takeover clears stale autonomous booking; booking weights count only living same-nation autonomous guards.",
+    "Halted route midpoint is not assumed to have arrived at enemy harbor."
+  ],
+  "nativeScale": "Read-only UpdateBounds/forward mapping/InitBaseWorld bodies verified; WorldPos generation uses Renderer bounds. Renderer numeric dimensions still unknown. See NATIVE_WORLD_SCALE.md.",
+  "browser": {
+    "new47Verified": false,
+    "playerReloaded": false,
+    "metadataOnly": {
+      "url": "http://127.0.0.1:5254/build.json",
+      "version": "0.5.0-preview.46",
+      "commit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa"
+    }
+  },
+  "notPassed": [
+    "Stable performance under parallel checks; twenty-daycase has little120s headroom",
+    "Monthly native shipbuilding and political war-closeout owner",
+    "Numeric Unity-world to web-map scale",
+    "900-day actual food/battle/survival/landing run",
+    "Full47 live validator/session/Store49/Worker/two-name-mode creation UI",
+    "Native map visual equivalence and physical iPhone Safari/Chrome"
+  ],
+  "cloudWrites": false,
+  "warnings": [
+    "Existing Vite native-config-loader and chunk-size warnings retained."
+  ]
+}

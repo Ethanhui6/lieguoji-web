@@ -18,7 +18,7 @@ const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:
 const combat=()=>({navyCountToHull:1,army:()=>({efficiency:1,damageToArmy:40,multiplier:1}),navy:()=>({destiny:30,maritime:false,livingLeaderModifier:null})});
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),4,24,'peace',{mode:'culture-generated',enabled:['chinese','japanese','english','arab']});},20000);
 /** Fixture clock setup only; it does NOT perform economic/AI day settlement. */
-function atTick(tick:number){const r=structuredClone(base);for(let i=1;i<=tick;i++){r.clock.tick=i;r.world.day=Math.floor(i/120);advanceFamilyCalendar47(r,i);}r.forceClock.now=tick;return r;}
+function atTick(tick:number){const r=structuredClone(base);for(let i=1;i<=tick;i++){r.clock.tick=i;r.world.day=Math.floor(i/120);advanceFamilyCalendar47(r,i);}r.forceClock.now=tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
 
 describe('one saved motion and attack time scale, real family clock',()=>{
   it('persists one speed per Army, with nation tradition separate from Cavalry unit and real culture',()=>{
@@ -55,7 +55,7 @@ describe('one saved motion and attack time scale, real family clock',()=>{
       const out=advanceCivilizationMilitary47(r,120,weights,combat);hits.push(...out.volleys.map(v=>v.at));expect(out.dailyPending).toBe(true);expect(out.run.world.day).toBe(day);
       if(day<19){expect(out.volleys).toEqual([]);expect(out.run.forceClock.draws).toBe(0);expect(out.run.forceClock.deadlines[forceKey47({kind:'army',id:a.id})]).toBe(first);}
       // Deliberately ONLY a settlement stub. No claim of finance/AI/Store49.
-      out.run.world.day++;const {terrain,...state}=out.run;r={...JSON.parse(JSON.stringify(state)),terrain};
+      out.run.world.day++;out.run.dailyEconomy.lastDay=out.run.world.day;const {terrain,...state}=out.run;r={...JSON.parse(JSON.stringify(state)),terrain};
     }
     expect(hits).toEqual([first]);expect(r.forceClock.draws).toBe(2);expect(r.world.armies.find(v=>v.id===a.id)!.troops).toBe(19600);expect(r.life.lastTick).toBe(2400);expect(r.life.gameTime).toBe(Math.fround(20*r.life.secondsPerDay));assertFamilyCalendar47(r);
   },120000);
@@ -71,7 +71,7 @@ describe('one saved motion and attack time scale, real family clock',()=>{
     expect(out.dailyPending).toBe(true);expect(out.run.world.day).toBe(0);expect(out.run.life.currentDate).toEqual({year:1,month:1,day:2});expect(out.run.life.lastTick).toBe(120);assertFamilyCalendar47(out.run,true);
     expect(()=>advanceCivilizationMilitary47(out.run,1,weights,combat)).toThrow();expect(r).toEqual(before);
     // Explicit settlement stub: only verifies no second calendar update.
-    out.run.world.day=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.run.life.lastTick).toBe(121);expect(next.run.life.currentDate).toEqual(out.run.life.currentDate);
+    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.run.life.lastTick).toBe(121);expect(next.run.life.currentDate).toEqual(out.run.life.currentDate);
   });
   it('updates non-court relatives at the ISO month boundary and preserves birthdays and relations',()=>{
     const r=atTick(31*120-1),relative=Object.values(r.kin.persons).find(p=>!r.people.persons[p.id])!,birth=relative.birthTime,out=advanceCivilizationMilitary47(r,1,weights,combat);
@@ -83,7 +83,7 @@ describe('one saved motion and attack time scale, real family clock',()=>{
     for(const army of [a,b]){army.troops=20000;r.armyPositions.records[army.id]=beginArmyTravel47(army.id,[sea.id],spatial.graph);}
     r.forceClock.deadlines=Object.fromEntries(keys.map(k=>[k,120+offset]));const out=advanceCivilizationMilitary47(r,1,weights,combat);
     expect(out.volleys.length).toBe(offset<=0?1:0);expect(out.run.forceClock.draws).toBe(offset<=0?2:0);
-    out.run.world.day=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.volleys.length).toBe(offset>0?1:0);expect(next.run.forceClock.draws).toBe(2);
+    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.volleys.length).toBe(offset>0?1:0);expect(next.run.forceClock.draws).toBe(2);
   });
   it('rejects stale calendars, future speed data and the old independent military second atomically',()=>{
     for(const mutate of [(r:FoundingForces47)=>r.life.lastTick++, (r:FoundingForces47)=>{delete r.life.persons[Object.keys(r.life.persons)[0]];},(r:FoundingForces47)=>{Object.assign(r.kin,{origin:'native-initial-family-web-stream-v1'});},(r:FoundingForces47)=>{r.forceClock.secondsPerTick=.1;},(r:FoundingForces47)=>{Object.assign(r.forceSpeed,{future:1});},(r:FoundingForces47)=>{r.forceSpeed.armies[r.world.armies[0].id].base=1.5;}]){

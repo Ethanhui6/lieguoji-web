@@ -31,6 +31,12 @@ function frame(r:MilitaryRun47) {
   }
   return {spatial,eligible,forces};
 }
+/** Candidate owner uses this after reconciling deaths/contacts outside a
+ * military window; surviving eligible forces retain their exact deadlines. */
+export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
+  reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
+  assertForceClock47(r.forceClock,now,new Set(actualForces47(r).forces.map(forceKey47)));
+}
 function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>) {
   const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
   const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl);

@@ -3639,9 +3639,12 @@
               "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
               "docs/evidence/fms-civilization47-2026-10-08/checks.json",
               "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
-              "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
+              "docs/evidence/fms-culture-family47-2026-10-08/checks.json",
+              "docs/evidence/fms-government47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-government47-2026-10-08/checks.json",
+              "docs/evidence/fms-government47-2026-10-08/artifact.json"
             ],
-            "progressScope": "2026-10-08: actual terrain/country/city/founding-person creation now includes native-generated families with real-culture name ports, independent faith, known-heir atomic accession, separate regnal name and all-relative monthly ages.139 related checks passed,35 new family cases. Place mode historical/generated remains; people generated independently to avoid spliced historical biographies. Full47/Store49/Worker/UI and elected/religious offices, secession/restoration and religious simulation pending. Frozen46 unchanged; not playable in5254 yet."
+            "progressScope": "2026-10-08: real cultures, independent faith and two place-name modes now feed real families, actual chosen polity, terrain population/resources, first standing Army roster with population debit, native first treasury and destiny, and Army47 initial positions.153 related checks/33 new government cases passed. Full47/Store49/Worker/UI, active lifecycle/secession/restoration and religious simulation pending. Frozen46/player5254 untouched; not a new playable delivery."
           }
         ]
       },
@@ -5271,11 +5274,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "culture_family_verified_full47_pending",
+      "status": "government_opening_verified_full47_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "651399748f82df642d0c8c84d54d3bfbcc14d556",
+      "lastCommitted": "3e587b1aceaa8b32d028ad32e1115a849f752407",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Pre-seed selected civilization polity before first upperCombat/fiscal settlement and actual muster; preserve real culture ethnicity inputs without old six-culture aliases. Integrate actual succession/appointments, secession/restoration and Army47 into one full47/Store49/Worker/create UI. Then fixed900day island-to-mainland regression and pacing. Keep player5254 and old saves untouched.",
+      "next": "Join actual creation with existing MilitaryRun47 state and real movement/combat inputs; finish full47 day settlement, politics/identity transitions, Store49/Worker/UI. Preserve current5254 and old saves; later fixed900day island/mainland regression and pacing.",
       "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -5684,16 +5687,19 @@
         "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
         "docs/evidence/fms-civilization47-2026-10-08/checks.json",
         "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
-        "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
+        "docs/evidence/fms-culture-family47-2026-10-08/checks.json",
+        "docs/evidence/fms-government47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-government47-2026-10-08/checks.json",
+        "docs/evidence/fms-government47-2026-10-08/artifact.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5254/?fms=1",
       "currentLocalHead": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "sourceCommit": "651399748f82df642d0c8c84d54d3bfbcc14d556",
-      "checkpointNote": "Known-heir families and all-relative birthdays validated. No activation or refresh of player5254. Two naming modes concern states/cities; peopleMode is independently culture-generated.",
-      "head": "651399748f82df642d0c8c84d54d3bfbcc14d556",
+      "sourceCommit": "3e587b1aceaa8b32d028ad32e1115a849f752407",
+      "checkpointNote": "Actual selected polity -> recovered population/resources -> real Army muster debit -> first treasury -> destiny -> Army47 positions.153 related checks,33 new cases passed. No full47/Store49/Worker/UI activation.",
+      "head": "3e587b1aceaa8b32d028ad32e1115a849f752407",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-03-06",
@@ -5701,7 +5707,7 @@
         "WEB-04-38"
       ],
       "note": "No run47 activation or cloud release. Preserve old preview tabs/worlds. Three-skills image target exists; do not recreate it.",
-      "sourceParent": "9bd11e7",
+      "sourceParent": "c5ee48e",
       "candidateVersion": 47,
       "candidateCommitted": true,
       "candidateUiIntegrated": false,
@@ -5711,10 +5717,11 @@
       "latestKernelSourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "latestCandidateSourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "currentBatchEvidence": [
-        "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
-        "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
+        "docs/evidence/fms-government47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-government47-2026-10-08/checks.json",
+        "docs/evidence/fms-government47-2026-10-08/artifact.json"
       ],
-      "headMeaning": "Latest source is unbundled47 culture/family integration. Playable UI remains36cf58d/v46 on5254. Evidence commit may be newer; verify Git."
+      "headMeaning": "Latest source is unbundled47 government opening integration. Player5254 remains36cf58d/v46; verify actual Git for evidence commits."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -8623,6 +8630,20 @@
         "island-mainland900day",
         "visual/phone acceptance"
       ]
+    },
+    "civilizationGovernment47Checkpoint": {
+      "status": "opening_verified_runtime_pending",
+      "sourceCommit": "3e587b1aceaa8b32d028ad32e1115a849f752407",
+      "tests": 153,
+      "newTests": 33,
+      "evidence": [
+        "docs/evidence/fms-government47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-government47-2026-10-08/checks.json",
+        "docs/evidence/fms-government47-2026-10-08/artifact.json"
+      ],
+      "taxCorrection": "Native polity goldProduction affects goldBattleModifier, not a direct tax multiplier.",
+      "playableVersion": 46,
+      "store49Enabled": false
     }
   }
 }

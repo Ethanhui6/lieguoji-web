@@ -1,0 +1,12 @@
+
+D:\游戏\架空地图模拟器\src\fms\play\war43-declaration.ts
+  4:9  error  'presentationOf' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\游戏\架空地图模拟器\src\fms\play\war43-model.ts
+  6:9   error  'maritimeView' is defined but never used         @typescript-eslint/no-unused-vars
+  7:24  error  'campaignTacticsView' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\游戏\架空地图模拟器\src\fms\play\war43-rebellion.ts
+  17:9  error  'presentationOf' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 4 problems (4 errors, 0 warnings)

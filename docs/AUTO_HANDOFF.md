@@ -1,3 +1,16 @@
+# 当前续接：v43地方城市港湾与真实海路已可玩
+
+2026-10-08；已测源码 `540af0a9416e84c8cd7cdb76f33563909602ed1a`，后续证据提交核实git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。
+
+- 新局港口按地方城市邻海/合格外海生成，first qualified seed锚点与五层湿海格范围共享给模拟、菜单、造船、游弋、海路和保存。60城夹具28→7港；新局初始化人口粮食守恒，旧局复制保留布局/舰队/航路。first-seed不是旧记录所误称的外圈frontier。
+- [交付](evidence/fms-harbor43-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-harbor43-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-harbor43-v5-2026-10-08/checks.json)。62相关回归、types/lint、39保护、生产构建/43产物审查，生产浏览器真实抵港/造船/取消/刷新/CAS/Worker和普通6国60城新局通过。
+- [本机v43试玩](http://127.0.0.1:5242/?fms=1)，目录`.autopilot/harbor43-production/dist`，PID18624，Store45，engine `68838b9ee0cf1f825be28be670c58238460f6c69ec3bb2800f9e9842f9706035`。旧v42/5240及43产物哈希未变；手机不能用PC的127.0.0.1。
+- 原作静态PE/IL2CPP证据；当前20湿三角格不等价原作20 Voronoi格物理面积。全景/4-16-40倍原作视觉、真机、完整战争协同未过。避免再用裸数字替换版本号，曾误改uint32常量，已修且补边界回归。
+- 下一批：Continue WEB-04-37 from playable v43. City-adjacent qualified harbors, stable first-seed anchor and five-layer real wet-cell area are integrated into new-world simulation/UI/save. Existing copied layouts stay preserved; do not repeat v37-v43 recovered leaves. Next close land/naval coordination and remaining military office/cooldown/internal-war rules, native supply/speed fidelity; keep triangle-vs-native-cell adapter explicit. WEB-03-06 follows, then queued official/video full audit/top10. Preserve v42/5240 and older saves/previews. No push/Pages/main changes. For future version scaffolds never replace bare digits inside constants; maintain uint32 bounds and compare frozen behavior.
+- 未push/Pages/main；开发服5241/PID36952已关闭。最终5242/PID18624与旧5240/PID22828保留，HTTP源码/引擎再次匹配；计划检查通过。普通新局仍有小岛/平海比例和近景细节差距，不作美术通过。
+
+---
+
 # 当前续接：v42前进据点与真实补给回航已可玩
 
 2026-10-08；已测源码 `3e976066005d912f062fd228954133c9c24fbfe3`，后续证据提交核实git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。

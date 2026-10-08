@@ -1,0 +1,52 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/war43-client.test.ts (30 tests | 1 failed) 962ms
+   × retains immutable harbor layout across tick deltas and rejects replacements before changing the snapshot 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/war43-client.test.ts > retains immutable harbor layout across tick deltas and rejects replacements before changing the snapshot
+AssertionError: promise resolved "{ id: 2, world: { …(13) }, …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "id": 2,
++   "run": {
++     "alliances": {
++       "enabled": true,
+[synthetic full world assertion diff omitted; raw SHA below]
+ada641a032f01acb55f6ad57baff75d764722e9b1207d484116f9fa75dfcd004
+  }
+
+ ❯ src/fms/play/war43-client.test.ts:19:77
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  08:40:03
+   Duration  22.88s (tests 60%, transform 28%, import 12%)
+
+  Transform  transforming modules took 11.68s · 28% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

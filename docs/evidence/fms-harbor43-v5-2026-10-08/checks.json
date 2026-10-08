@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "540af0a9416e84c8cd7cdb76f33563909602ed1a",
+  "engine": "68838b9ee0cf1f825be28be670c58238460f6c69ec3bb2800f9e9842f9706035",
+  "tests": {
+    "total": 62,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "war43 city harbor geometry, economy conservation, old copy/engine, uint32 bounds, private persistence/CAS/future fields, immutable Worker layout; war42 regression",
+    "fullRepoUnitSuite": false
+  },
+  "typecheck": true,
+  "lint": true,
+  "protectionTests": 39,
+  "productionBuild": true,
+  "artifactCount": 43,
+  "oldV42ArtifactsUnchanged": 43,
+  "preview": {
+    "origin": "http://127.0.0.1:5242",
+    "pid": 18624,
+    "directory": ".autopilot/harbor43-production/dist"
+  },
+  "warnings": {
+    "fmsAppBytes": 3437112,
+    "chunkSizeWarning": true
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "sharedCityHarborGeometry": true,
+    "realSailingArrivalDay": 18,
+    "realShipConstruction": true,
+    "liveWorkerTicks": 267,
+    "saveRefresh": true,
+    "crossTabCAS": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "firstFailures": {
+    "lint": "Four unused scaffold imports removed; log retained",
+    "browser": "Fixture wrote world.auto and non-map voyages.enabled; strict load correctly rejected. Fixed fixture schema, not validators.",
+    "workerTest": "24-city fixture already had empty harbor sites; changed method instead and asserted difference.",
+    "numericAudit": "One-shot version scaffold changed uint32 divisor/max in three modules; fixed before source checkpoint, added boundary/random sequence regressions."
+  },
+  "planCheck": "passed",
+  "developmentServer": {
+    "pid": 36952,
+    "port": 5241,
+    "stopped": true
+  },
+  "servedBuildsVerifiedAfterChecks": true,
+  "visualReview": "Production ordinary new world and close fleet route screenshots inspected. Ordinary full-map view still has small islands against large flat ocean, and close details remain limited. Synthetic military fixture is intentionally square. Not original visual acceptance."
+}

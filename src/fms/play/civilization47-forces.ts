@@ -28,13 +28,14 @@ import {initialForceSpeed47,type ForceSpeed47} from './force-speed47';
 import {TICKS_PER_DAY} from './clock';
 import type {DailyEconomy47} from './civilization47-daily';
 import {initialCombatPersonnel47,type CombatPersonnel47} from './civilization47-combat-state';
+import {initialArmyAutonomy47,type ArmyAutonomy47} from './civilization47-army-ai-state';
 
 export type NavalOpening47={version:1;rule:'qualified-starter-debit-v1';firstEventId:number;charges:{fleetId:string;homeId:string;crew:number;grain:number}[]};
 /** All fields consumed by the real47 military phase, using real-culture
  * creation. This still needs daily settlement/live validation/Store49 before
  * it is a complete playable run; no version or legacy culture is fabricated. */
-export type FoundingForces47=Government47&MilitaryRun47&{harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47;dailyEconomy:DailyEconomy47;combatPersonnel:CombatPersonnel47};
-const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening','forceSpeed','dailyEconomy','combatPersonnel'] as const;
+export type FoundingForces47=Government47&MilitaryRun47&{harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47;dailyEconomy:DailyEconomy47;combatPersonnel:CombatPersonnel47;armyAutonomy:ArmyAutonomy47};
+const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening','forceSpeed','dailyEconomy','combatPersonnel','armyAutonomy'] as const;
 const seed=(text:string)=>{let h=2166136261;for(const c of text)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 /** Private construction. The starter allocation is the existing WEB rule:
  * one affordable fleet at a qualified harbor, crew/grain debited exactly once.
@@ -56,7 +57,7 @@ function build<T extends Government47>(input:T):T&FoundingForces47{
   const warfare=initialWar26();reconcileWar26(world,warfare,sea,r.clock.tick,(w,id)=>war26Strength(w,base,id));
   const inputWars={...base,warfare},nativeWars=initialWar28(inputWars);importUnknownWars28(nativeWars,inputWars);
   const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`),r.life.secondsPerDay/TICKS_PER_DAY),forceDamage:initialForceDamage47(),forceSpeed:initialForceSpeed47(world,r.clock.tick),dailyEconomy:{version:1 as const,lastDay:0,lastMusterMonth:0},navalOpening};
-  const result={...out,combatPersonnel:initialCombatPersonnel47(out)};actualForces47(result);return result;
+  const result={...out,combatPersonnel:initialCombatPersonnel47(out),armyAutonomy:initialArmyAutonomy47(world)};actualForces47(result);return result;
 }
 export function attachFoundingForces47<T extends Government47>(input:T):T&FoundingForces47{
   assertGovernmentOpening47(input);if(fields.some(k=>k in input))throw Error('海陆军事创建只能初始化一次。');

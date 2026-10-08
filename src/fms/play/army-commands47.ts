@@ -7,8 +7,9 @@ import {armyTravelPathPoints47, type TravelCell47, type TravelPolicy47} from './
 import {advanceArmyTravel47, armyTravelLocation47, haltArmyTravel47, redirectArmyTravel47} from './army-travel47-state';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
+import type {ForceContacts47} from './force-motion47';
 
-export type ArmyMotionRun47 = Pick<War46Run, 'id' | 'terrain' | 'world' | 'clock' | 'battles' | 'voyages' | 'navy' | 'transports' | 'reorganization' | 'alliances' | 'vassals'> & {armyPositions: ArmyPositions47};
+export type ArmyMotionRun47 = Pick<War46Run, 'id' | 'terrain' | 'world' | 'clock' | 'battles' | 'voyages' | 'navy' | 'transports' | 'reorganization' | 'alliances' | 'vassals'> & {armyPositions: ArmyPositions47;forceContacts?:ForceContacts47};
 export type ArmyTarget47 = {kind: 'province'; id: string} | {kind: 'cell'; id: number};
 export type ArmyCommand47 = {type: 'army-move'; armyId: string; target: ArmyTarget47; kind: 'march' | 'retreat'} | {type: 'army-halt'; armyId: string};
 export type ArmyStamp47 = {runId: string; day: number; nextEventId: number; tick: number; positionsRevision: number; binding: string};
@@ -38,7 +39,7 @@ export function armyTravelPolicy47(r: ArmyMotionRun47, a: Army, weights: ArmyRou
     const p = provinces.get(id); return !!p && (access(r.world, a.nationId, p.controller) || !retreat && nationsAtWar(r.world, a.nationId, p.controller));
   }};
 }
-const engaged = (r: ArmyMotionRun47, a: Army) => a.status === 'fighting' || r.battles.engagements.some(e => e.armies.includes(a.id));
+const engaged = (r: ArmyMotionRun47, a: Army) => a.status === 'fighting' || r.battles.engagements.some(e => e.armies.includes(a.id)) || !!r.forceContacts?.pairs.some(p=>[p.a,p.b].includes(JSON.stringify(['army',a.id])));
 /** Web retreat contract: stopping at sea is not reaching safety. An actual
  * accessible land province without an active enemy ends retreat on arrival,
  * halt, or a new order. All three paths use the same condition. */
@@ -120,7 +121,15 @@ function playerTakeover(r: ArmyMotionRun47, armyId: string) {
  * preview points or graph is trusted; confirmation resolves from current data. */
 export function applyArmyCommand47<T extends ArmyMotionRun47>(r: T, action: ArmyCommand47, expected: ArmyStamp47, weights: ArmyRouteWeights47): T {
   assertExpected(r, expected);
-  const next = candidate(r), value = resolve(next, action, weights);
+  const next = candidate(r);issueArmyOrderOwned47(next,action,weights,'player');return next;
+}
+/** Private transaction owner only. Player commands and AI use identical actual
+ * geography/permission/retreat checks; only player commands claim manual control.
+ * Never expose this mutating entry directly to Worker messages or UI actions. */
+export function issueArmyOrderOwned47(next:ArmyMotionRun47,action:ArmyCommand47,weights:ArmyRouteWeights47,source:'player'|'autonomous'):void {
+  if(source!=='player'&&source!=='autonomous')throw Error('军令来源无效。');
+  if(source==='autonomous'&&next.voyages.manualArmies.includes(action.armyId))throw Error('玩家接管的军队不能被自动军令覆盖。');
+  const value=resolve(next,action,weights);
   if (next.world.nextEventId >= Number.MAX_SAFE_INTEGER) throw Error('事件编号已达安全上限，已保留原世界。');
   next.armyPositions.records[action.armyId] = value.travel;
   // Legacy fields remain valid historical references, never fake sea routes.
@@ -128,10 +137,10 @@ export function applyArmyCommand47<T extends ArmyMotionRun47>(r: T, action: Army
   const retreat = action.type === 'army-halt' ? value.a.status === 'retreating' : action.kind === 'retreat';
   const space = readArmySpace47(next.world, {...value.spatial, positions: next.armyPositions});
   value.a.status = retreat && (!['arrived', 'halted'].includes(value.travel.status) || !safeRetreatEnd(next, space.byArmy.get(action.armyId)!, space)) ? 'retreating' : 'idle';
-  delete next.battles.plans[action.armyId]; playerTakeover(next, action.armyId);
+  delete next.battles.plans[action.armyId];if(source==='player')playerTakeover(next, action.armyId);
   next.world.events.push({id: next.world.nextEventId++, day: next.world.day, kind: 'order', text: `${value.a.name}${action.type === 'army-halt' ? '停止行军' : '前往' + value.targetName}`, reason: '军令从实际海陆位置生效；连续经过相邻地块，停止或改令不回跳旧城市。'});
   next.world.events = next.world.events.slice(-160); next.armyPositions.revision++;
-  armySpatialFor47(next); return next;
+  armySpatialFor47(next);
 }
 
 export type ArmySpeed47 = (run: ArmyMotionRun47, army: Readonly<Army>, cell: Readonly<TravelCell47>) => number;

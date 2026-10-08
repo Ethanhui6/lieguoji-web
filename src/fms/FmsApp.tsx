@@ -188,6 +188,15 @@ export default function FmsApp() {
     }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   }
+  function previewFirstContinent() {
+    const s=session.current;
+    if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;
+    // A one-shot, explicitly requested empty-map preview. Do not change the
+    // player's preserveCoast setting or bypass painted protection regions.
+    if(s.history.document.elevations.some(h=>h>=20)){setNotice('已有陆地，请使用地形工具继续编辑。');return;}
+    if(!/^\d{1,10}$/.test(seed)||Number(seed)>0xffffffff){setNotice('地形种子须为0至4294967295之间的整数。');return;}
+    void generateTemplate({x:s.history.document.width/2,y:s.history.document.height/2,template:localTemplate,seed:Number(seed),preserveCoast:false});
+  }
   async function generateHill(options:FmsHillOptions){
     const s=session.current;if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;
     s.gestures.interrupt();setExpanded(false);setShowOriginal(false);setGenerationKind('hill');setTerrainPhase('generating');setNotice('正在生成这座山丘，可以随时取消。');
@@ -267,7 +276,7 @@ export default function FmsApp() {
       {playTerrain&&createPortal(<FmsGame terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button aria-label="原作地形" onClick={()=>choose('template')} disabled={!editable} title="原作地形"><PlayIcon name="terrain"/><span>地形</span></button><button aria-label="保存地图" title="保存地图" className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}><PlayIcon name="save"/><span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
-    {ready&&stats.land===0&&!fatal&&<div className="fms-empty"><span>一片海洋，等你落笔</span><p>选择轮廓，描出第一块大陆</p></div>}
+    {ready&&stats.land===0&&!fatal&&!expanded&&terrainPhase==='idle'&&<div className="fms-empty"><span>从一片海洋开始</span><p>画出轮廓，或生成第一块大陆</p><button className="fms-first-land" onClick={previewFirstContinent} disabled={!editable}><PlayIcon name="terrain"/><span>生成大陆</span><PlayIcon name="chevron" size={16}/></button><small>先预览，再确认</small></div>}
     {fatal&&<div className="fms-error" role="alert"><strong>地图暂时无法打开</strong><p>{fatal}</p>{!ready&&<button onClick={()=>window.location.reload()}>重新尝试</button>}</div>}
     <div className="fms-zoom" aria-label="地图视角"><button onClick={()=>zoom(1.4)} disabled={!navigable} aria-label="放大"><PlayIcon name="plus"/></button><button onClick={fit} disabled={!navigable} aria-label="查看全图"><PlayIcon name="fit"/></button><button onClick={()=>zoom(1/1.4)} disabled={!navigable} aria-label="缩小"><PlayIcon name="minus"/></button><output>{stats.zoom.toFixed(1)}×</output></div>
     <div className="fms-bottom">

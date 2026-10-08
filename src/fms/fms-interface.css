@@ -1,6 +1,9 @@
 /* The editor and the sandbox use the same restrained control language. */
 .fms-app { --ink:#27323e;--muted:#65717b;--paper:#faf9f6f7;--border:#dbdedc;--active:#2868c4;--accent:#2868c4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
 .fms-app button { border-radius:13px;transition:background 140ms,transform 120ms;display:inline-flex;align-items:center;justify-content:center;gap:7px; }
+.fms-empty { max-width:calc(100vw - 32px);white-space:normal; }
+.fms-empty .fms-first-land { pointer-events:auto;min-height:48px;padding:10px 16px;border:1px solid #ffffffab;background:#faf9f6;color:#27323e;box-shadow:0 3px 14px #15394b22;gap:10px; }
+.fms-empty small { display:block;margin-top:10px;color:#eef4fa;font-size:11px;letter-spacing:.03em; }
 .fms-app button:hover:not(:disabled) { background:#e6f0f8; }.fms-app button:active:not(:disabled) { transform:scale(.96); }
 .fms-header { top:max(12px,env(safe-area-inset-top));left:14px;right:14px; }
 .fms-header h1 { font-family:inherit;font-size:18px;font-weight:650;letter-spacing:0; }.fms-kicker { font-size:9px;letter-spacing:.12em; }
@@ -23,7 +26,7 @@
 .fms-status { border-radius:14px;background:#f2f7fae8;color:#547083;font-size:11px;max-width:440px;margin-bottom:8px;padding:7px 12px; }
 .fms-terrain-preview,.fms-lock-mode,.fms-error { border-radius:18px;border-color:#ffffff99; }.fms-terrain-preview { box-shadow:0 10px 32px #18364830; }
 .fms-lock-mode { font-size:12px;background:#e9f2fadf; }.fms-lock-mode button { background:transparent; }
-.fms-empty>span { font-family:inherit;letter-spacing:0;font-size:22px; }.fms-empty p { letter-spacing:0;color:#e8f2fa; }
+.fms-empty>span { font-family:inherit;letter-spacing:0;font-size:22px;font-weight:600; }.fms-empty p { margin:12px 0 18px;letter-spacing:0;color:#e8f2fa; }
 @keyframes fms-interface-in { from {opacity:.3;transform:translateY(5px)} to {opacity:1;transform:translateY(0)} }
 @media(max-width:600px) {
  .fms-toolbar { flex-direction:column;width:270px;gap:2px; }.fms-toolbar nav { justify-content:space-between; }.fms-toolbar nav button { flex:1;min-width:0; }

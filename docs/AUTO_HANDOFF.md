@@ -1,3 +1,16 @@
+# 当前续接：舰队精确靠港与军令已验证；接自主部署/夺港/造船
+
+2026-10-08；源码 `4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c`，证据HEAD按Git核实。根唯一写入，完整还原目标active；WEB-03-06/WEB-04-37仍in_progress。5254/v46和用户900天世界未刷新、未迁移。
+
+- **本批实际代码**：严格V1原样读取，V2显式保存精确终点；同格内部耗时航行，最后门直接到码头，两个运动器共用几何。新舰令按当前数据解析港口/海面目标，确认重验位置/港控/日历版本；自主不覆盖玩家、交锋与脱离过程不被普通改令取消。真实到锚点后日结才补粮。[合同](evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md)。
+- 133相关测试（21新）、完整types/lint、39发布保护、构建/43产物检查通过。初次types有TS2367，改终止状态判定后重跑通过；未关闭检查。零末半段门前受阻、同刻入出境接触、local浮点到达均有回归。[证据](evidence/fms-fleet-endpoint47-2026-10-08/checks.json)。
+- 这是舰令/行军/补给模块验收，**不是完整新47可玩或900日海战验收**。测试明确把舰队置于港格内作为初始夹具，之后实际移动；单独日粮调用不冒充经过了完整模拟日。新47仍未进入产物/Worker/UI。
+- **下一批直接接线**：复用native-war/naval-roles/deployment/construction、port-occupation纯核，另写47实际位置适配；portControl保留，部署RNG/冷却账新建，之后月度造船。旧advanceDeployment46/advancePorts46/advanceShipbuilding46依赖旧位置不可直接调用。港湾presence取actual cell.face，不用fleet.node/dockId，也不把两端港口门槛塞回陆军跨岸。
+- 再接政治/战争收尾、完整live47 validator/session/Store49/创建UI；两种国家城市命名选择后端保留。长程地图尺度/原速度/粮食存活、900日登陆、宗教/暴政/家族分裂、海域与地图质感继续未完成。
+- 本机5254仍36cf58d/v46；未刷新、无新浏览器/真机/用户视觉通过。不push/Pages/main，旧档与发布保护保留。下方为历史。
+
+---
+
 # 当前续接：自主陆军军令已验证；接舰队真实航行与靠港
 
 2026-10-08；源码 `73b90a4d42a401fc2467875cacf1bba674cd8db9`，证据HEAD按Git核实。根唯一写入；WEB-03-06/WEB-04-37及完整还原目标仍in_progress/active。5254/v46及用户900天世界未刷新、未迁移。

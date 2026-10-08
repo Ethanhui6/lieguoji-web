@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-08T12:14:29.247017+00:00",
+  "sourceCommit": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
+  "branch": "codex/ph06-world-generation",
+  "relatedTests": {
+    "passed": 133,
+    "failed": 0,
+    "files": 7,
+    "newCases": 21,
+    "report": "first-tests.json",
+    "scope": "Old V1 paths/Army commands, actual daily fleet food, shared contacts and military event clock; new exact endpoint and fleet commands. Final loop guard uses includes instead of a direct narrowed-property comparison for TypeScript; behavior is unchanged."
+  },
+  "types": {
+    "exitCode": 0,
+    "scope": "full project",
+    "initialExitCode": 2,
+    "initialFailure": "TS2367: compiler cannot see finishGate47 changing a previously narrowed status. Changed loop terminal-status membership check, no cast or disabled check.",
+    "initialReport": "first-types.txt"
+  },
+  "lint": {
+    "exitCode": 0,
+    "scope": "full project after final changes"
+  },
+  "protectionTests": {
+    "passed": 39,
+    "failed": 0,
+    "durationMs": 7652.1595
+  },
+  "build": {
+    "exitCode": 0,
+    "dist": ".autopilot/fleet-endpoint47-check/dist",
+    "runtimeVersion": 46,
+    "new47Bundled": false
+  },
+  "distAudit": {
+    "exitCode": 0,
+    "artifacts": 43
+  },
+  "frozen46": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "reviewFixes": [
+    "Exact gate endpoint can remain lawfully blocked on old side before entry.",
+    "Completed final gate retains geometric boundary evidence for simultaneous encounter with an arriving enemy.",
+    "Local partial step rounded exactly to endpoint normalizes arrival in both movers."
+  ],
+  "browser": {
+    "new47Verified": false,
+    "playerReloaded": false
+  },
+  "notPassed": [
+    "Full autonomous fleet deployment/port occupation/construction",
+    "900-day island campaign with food and combat",
+    "live47 validator/session/Store49/Worker/creation UI",
+    "native map visual equivalence",
+    "physical iPhone Safari and Chrome"
+  ],
+  "cloudWrites": false,
+  "warnings": [
+    "Existing Vite future config-loader and chunk-size warnings retained; no checks suppressed."
+  ]
+}

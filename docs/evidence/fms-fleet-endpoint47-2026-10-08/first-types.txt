@@ -1,0 +1,1 @@
+src/fms/play/army-travel47-state.ts(57,21): error TS2367: This comparison appears to be unintentional because the types '"blocked" | "moving"' and '"arrived"' have no overlap.

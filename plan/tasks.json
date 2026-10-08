@@ -3658,9 +3658,12 @@
               "docs/evidence/fms-combat-personnel47-2026-10-08/artifact.json",
               "docs/evidence/fms-army-ai47-2026-10-08/CONTRACT.md",
               "docs/evidence/fms-army-ai47-2026-10-08/checks.json",
-              "docs/evidence/fms-army-ai47-2026-10-08/artifact.json"
+              "docs/evidence/fms-army-ai47-2026-10-08/artifact.json",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
             ],
-            "progressScope": "2026-10-08: real cultures, independent faith and two place-name modes now feed real families, actual chosen polity, terrain population/resources, first standing Army roster with population debit, native first treasury and destiny, and Army47 initial positions.153 related checks/33 new government cases passed. Full47/Store49/Worker/UI, active lifecycle/secession/restoration and religious simulation pending. Frozen46/player5254 untouched; not a new playable delivery. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass."
+            "progressScope": "2026-10-08: real cultures, independent faith and two place-name modes now feed real families, actual chosen polity, terrain population/resources, first standing Army roster with population debit, native first treasury and destiny, and Army47 initial positions.153 related checks/33 new government cases passed. Full47/Store49/Worker/UI, active lifecycle/secession/restoration and religious simulation pending. Frozen46/player5254 untouched; not a new playable delivery. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation."
           }
         ]
       },
@@ -4719,9 +4722,12 @@
               "docs/evidence/fms-combat-personnel47-2026-10-08/artifact.json",
               "docs/evidence/fms-army-ai47-2026-10-08/CONTRACT.md",
               "docs/evidence/fms-army-ai47-2026-10-08/checks.json",
-              "docs/evidence/fms-army-ai47-2026-10-08/artifact.json"
+              "docs/evidence/fms-army-ai47-2026-10-08/artifact.json",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
+              "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
             ],
-            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass."
+            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation."
           },
           {
             "id": "WEB-04-38",
@@ -4828,7 +4834,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Implement real fleet sea-only orders and exact harbor endpoint travel/docking/refill, then construction and political/war closeout; compose full live47 validator/session/Store49/Worker/two-mode creation UI. Army target score and owned daily orders are verified; do not restart them or reuse old46 province/fleet anchors. Preserve5254 and900-day save; measure full calendar long-range survival before claiming landing.",
+    "nextRecoveryTarget": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -5306,11 +5312,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "real_army_autonomy47_verified_fleet_orders_pending",
+      "status": "real_fleet_endpoint47_verified_autonomous_naval_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "73b90a4d42a401fc2467875cacf1bba674cd8db9",
+      "lastCommitted": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Implement real fleet sea-only orders and exact harbor endpoint travel/docking/refill, then construction and political/war closeout; compose full live47 validator/session/Store49/Worker/two-mode creation UI. Army target score and owned daily orders are verified; do not restart them or reuse old46 province/fleet anchors. Preserve5254 and900-day save; measure full calendar long-range survival before claiming landing.",
+      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
       "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -5740,16 +5746,19 @@
         "docs/evidence/fms-combat-personnel47-2026-10-08/artifact.json",
         "docs/evidence/fms-army-ai47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-army-ai47-2026-10-08/checks.json",
-        "docs/evidence/fms-army-ai47-2026-10-08/artifact.json"
+        "docs/evidence/fms-army-ai47-2026-10-08/artifact.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5254/?fms=1",
       "currentLocalHead": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "sourceCommit": "73b90a4d42a401fc2467875cacf1bba674cd8db9",
-      "checkpointNote": "Actual Army daily orders use native target scores plus explicit web eligibility/access/food bridges, preserve ongoing routes and manual orders, and replan after capture or peace.117 related cases/23new. Full naval/political owner, live47/save/creation UI remain pending.",
-      "head": "73b90a4d42a401fc2467875cacf1bba674cd8db9",
+      "sourceCommit": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
+      "checkpointNote": "V1 travel stays unchanged; explicit V2 destination supports in-cell motion, direct final gate to dock, canonical arrival and same shared combat events. Actual fleet preview/confirm/manual protection and food-on-arrival verified in133 cases/21new. Full naval autonomy, live47/storage/UI remain pending.",
+      "head": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-03-06",
@@ -5767,11 +5776,11 @@
       "latestKernelSourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "latestCandidateSourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "currentBatchEvidence": [
-        "docs/evidence/fms-army-ai47-2026-10-08/CONTRACT.md",
-        "docs/evidence/fms-army-ai47-2026-10-08/checks.json",
-        "docs/evidence/fms-army-ai47-2026-10-08/artifact.json"
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
       ],
-      "headMeaning": "Latest source is unbundled47 Army autonomy; evidence commit is verified from Git.5254 remains36cf58d/v46 and was not refreshed."
+      "headMeaning": "Latest source is unbundled47 fleet commands and precise endpoint travel; verify Git for evidence commit.5254 remains36cf58d/v46 without reload."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -8802,6 +8811,32 @@
       "tests": 117,
       "newCases": 23,
       "next": "Implement real fleet sea-only orders and exact harbor endpoint travel/docking/refill, then construction and political/war closeout; compose full live47 validator/session/Store49/Worker/two-mode creation UI. Army target score and owned daily orders are verified; do not restart them or reuse old46 province/fleet anchors. Preserve5254 and900-day save; measure full calendar long-range survival before claiming landing.",
+      "new47Enabled": false,
+      "phoneVisualPassed": false,
+      "cloudWrites": false
+    },
+    "fleetEndpoint47Checkpoint": {
+      "date": "2026-10-08",
+      "status": "verified_private_candidate_not_playable",
+      "sourceCommit": "4a3f4f1e8ea584bbc8961dcbb9269ff04d1f311c",
+      "tasks": [
+        "WEB-03-06",
+        "WEB-04-37"
+      ],
+      "evidence": [
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/checks.json",
+        "docs/evidence/fms-fleet-endpoint47-2026-10-08/artifact.json"
+      ],
+      "completed": [
+        "Exact V2 endpoint with unchanged V1 semantics",
+        "Shared single-force and coupled contact geometry",
+        "Server-resolved stamped sea-only fleet preview/confirm and owned orders",
+        "Real travel before anchor-based supply"
+      ],
+      "tests": 133,
+      "newCases": 21,
+      "next": "Connect real-position fleet autonomous roles/deployment/port control using existing native pure kernels, persist deployment RNG/cooldowns, then monthly shipbuilding and political/war closeout. Precise V2 endpoint and owned preview/confirm fleet orders are verified; V1 records unchanged. Finish live47 validator/session/Store49/Worker/two-mode creation UI and long-range calendar survival/900-day landing regression. Preserve5254 and900-day save.",
       "new47Enabled": false,
       "phoneVisualPassed": false,
       "cloudWrites": false

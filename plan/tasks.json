@@ -3645,7 +3645,10 @@
               "docs/evidence/fms-government47-2026-10-08/artifact.json",
               "docs/evidence/fms-founding-forces47-2026-10-08/CONTRACT.md",
               "docs/evidence/fms-founding-forces47-2026-10-08/checks.json",
-              "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json"
+              "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json",
+              "docs/evidence/fms-unified-time47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-unified-time47-2026-10-08/checks.json",
+              "docs/evidence/fms-unified-time47-2026-10-08/artifact.json"
             ],
             "progressScope": "2026-10-08: real cultures, independent faith and two place-name modes now feed real families, actual chosen polity, terrain population/resources, first standing Army roster with population debit, native first treasury and destiny, and Army47 initial positions.153 related checks/33 new government cases passed. Full47/Store49/Worker/UI, active lifecycle/secession/restoration and religious simulation pending. Frozen46/player5254 untouched; not a new playable delivery. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending."
           }
@@ -4693,7 +4696,10 @@
               "docs/evidence/fms-force47-clock-2026-10-08/checks.json",
               "docs/evidence/fms-founding-forces47-2026-10-08/CONTRACT.md",
               "docs/evidence/fms-founding-forces47-2026-10-08/checks.json",
-              "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json"
+              "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json",
+              "docs/evidence/fms-unified-time47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-unified-time47-2026-10-08/checks.json",
+              "docs/evidence/fms-unified-time47-2026-10-08/artifact.json"
             ],
             "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending."
           },
@@ -5280,11 +5286,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "real_culture_military_creation_verified_full47_pending",
+      "status": "unified47_military_time_and_family_verified_daily_owner_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "b0a0c2f8bef984fbbf58e40dda18a247e6294829",
+      "lastCommitted": "7f88f10791ca76e35f8a5d24c6011f5a34caa5e8",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Resolve actual47 speed/combat inputs without old position assumptions; add per-tick family time and daily/monthly fiscal/muster/destiny settlement, actual naval/political AI and full live validation, then Store49/Worker/create UI. Do not use creation-only validators after movement or fake old culture/person schemas.",
+      "next": "Connect real combat personnel/damage inputs and complete actual-position daily/monthly economy, muster, destiny and naval/political AI; then live47 validation, Store49, Worker and creation UI. Reuse persisted speed/unified time/per-tick family owner; do not repeat completed leaves or run old46 movement. Preserve private dailyPending until true settlement.",
       "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -5699,7 +5705,12 @@
         "docs/evidence/fms-government47-2026-10-08/artifact.json",
         "docs/evidence/fms-founding-forces47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-founding-forces47-2026-10-08/checks.json",
-        "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json"
+        "docs/evidence/fms-founding-forces47-2026-10-08/artifact.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-unified-time47-2026-10-08/checks.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/artifact.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/tool-outputs.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/final-tool-outputs.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
@@ -8667,6 +8678,24 @@
       "playableVersion": 46,
       "store49Enabled": false,
       "firstTypesFailure": "Preserved; actual calendar contracts narrowed in47 only."
+    },
+    "unifiedTime47Checkpoint": {
+      "status": "speed_time_family_verified_full_runtime_pending",
+      "sourceCommit": "7f88f10791ca76e35f8a5d24c6011f5a34caa5e8",
+      "tests": 101,
+      "newCases": 13,
+      "evidence": [
+        "docs/evidence/fms-unified-time47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-unified-time47-2026-10-08/checks.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/artifact.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/tool-outputs.json",
+        "docs/evidence/fms-unified-time47-2026-10-08/final-tool-outputs.json"
+      ],
+      "playableVersion": 46,
+      "store49Enabled": false,
+      "webScale": 1,
+      "nativeTimePerTick": "life.secondsPerDay/120",
+      "next": "Connect real combat personnel/damage inputs and complete actual-position daily/monthly economy, muster, destiny and naval/political AI; then live47 validation, Store49, Worker and creation UI. Reuse persisted speed/unified time/per-tick family owner; do not repeat completed leaves or run old46 movement. Preserve private dailyPending until true settlement."
     }
   }
 }

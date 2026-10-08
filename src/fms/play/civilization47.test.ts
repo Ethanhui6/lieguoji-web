@@ -31,7 +31,7 @@ describe('real culture 47 actual founding chain',()=>{
       expect(person.rulerId).toBe(reign.id);expect(person.name).toBe(reign.name);expect(person.family).toBe(reign.family);
       expect(r.life.persons[person.id].source).toBe('native-founding');expect(r.life.persons[person.id].age).toBeGreaterThan(0);
       expect(r.chronicle.entries[i].text).toContain(n.name);expect(r.chronicle.entries[i].text).toContain(reign.name);
-      expect(r.civilization.rulers[reign.id].mode).toBe(mode);
+      expect(r.civilization.rulers[reign.id].mode).toBe('culture-generated');
     }
     expect(new Set(r.world.cities.map(c=>c.name)).size).toBe(60);
     expect(r).toEqual(before);
@@ -120,12 +120,11 @@ describe('catalogue and persisted-source contracts',()=>{
     expect(rulerTitle47('chinese','Kingdom','chineseFolk',0)).toBe('国王');expect(stateTitle47('秦','chinese','Kingdom','chineseFolk')).toBe('秦王国');
     expect(rulerTitle47('roman','Republic','catholic',0)).toBe('执政官');expect(rulerTitle47('arab','Theocracy','catholic',0)).toBe('教宗');expect(rulerTitle47('arab','Theocracy','islam',0)).toBe('哈里发');
   });
-  it('checks every historical and generated source for twelve cultures, including inherited houses',()=>{
+  it('keeps generated people and inherited houses independent from either place naming mode',()=>{
     for(const mode of ['culture-generated','historical-names'] as const){const c=worlds[mode].civilization;
       for(const [i,culture] of CULTURE_IDS47.entries()) {
-        const seen=new Set<string>();
-        for(let j=0;j<100;j++) {const a=createRulerIdentity47(c,'n-'+i,'new-'+j,'source');assertRulerIdentity47(a,mode,c.enabled);seen.add(a.sourceKey);if(mode==='culture-generated'){const b=createRulerIdentity47(c,'n-'+i,'heir-'+j,'source',a);assertRulerIdentity47(b,mode,c.enabled);expect(b.house).toBe(a.house);}}
-        if(mode==='historical-names')expect(seen.size,culture).toBe(CULTURES47[culture].historicalPeople.length);
+        expect(c.peopleMode).toBe('culture-generated');
+        for(let j=0;j<100;j++) {const a=createRulerIdentity47(c,'n-'+i,'new-'+j,'source');assertRulerIdentity47(a,c.peopleMode,c.enabled);expect(a.cultureId).toBe(culture);const b=createRulerIdentity47(c,'n-'+i,'heir-'+j,'source',a);assertRulerIdentity47(b,c.peopleMode,c.enabled);expect(b.house).toBe(a.house);}
       }
     }
   });

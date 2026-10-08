@@ -1,6 +1,6 @@
 import type {Point} from '../../sim/types';
 import type {TravelCell47, TravelGraph47} from './army-travel47-graph';
-import {armyTravelLocation47, assertArmyTravel47, type ArmyTravel47} from './army-travel47-state';
+import {armyTravelLocation47, armyTravelSegment47, assertArmyTravel47, type ArmyTravel47} from './army-travel47-state';
 
 export type ForceRef47 = {kind: 'army' | 'fleet'; id: string};
 export type MovingForce47 = ForceRef47 & {nationId: string; withdrawing: boolean; travel: ArmyTravel47};
@@ -15,7 +15,6 @@ type Rules = {
   /** Verified persisted water-province membership. Never screen proximity. */
   seaRegion: (face: number) => number;
 };
-const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 const pairKey = (a: string, b: string) => JSON.stringify([a, b].sort());
 const areaOf = (cell: TravelCell47, rules: Pick<Rules, 'seaRegion'>) => {
@@ -25,11 +24,19 @@ const areaOf = (cell: TravelCell47, rules: Pick<Rules, 'seaRegion'>) => {
   return 'sea/' + id;
 };
 function segment(f: MovingForce47, graph: TravelGraph47) {
-  const s = f.travel, from = graph.cells.get(s.nodes[s.leg])!, to = graph.cells.get(s.nodes[s.leg + 1]);
-  if (!to) return null;
-  const gate = from.links.find(l => l.to === to.id)!.gate, start = s.leg === 0 ? s.origin : from.center;
-  const toGate = distance(start, gate), end = toGate + distance(gate, to.center);
-  return {from, to, gate, toGate, end};
+  const value=armyTravelSegment47(f.travel,graph);if(!value)return null;
+  // The local endpoint is not an admission gate; kind guards below prevent
+  // it from participating in gate requests or boundary contact exceptions.
+  return value.kind==='local'?{kind:'local' as const,from:value.cell,to:value.cell,gate:value.endPoint,toGate:value.distance,end:value.distance}:{kind:'gate' as const,from:value.a,to:value.b,gate:value.gate,toGate:value.toGate,end:value.distance};
+}
+/** A V2 endpoint can coincide with its final shared gate. Normalizing arrival
+ * must not erase that geometric boundary for a simultaneous encounter in the
+ * region it just left. Recover only this exact persisted final gate. */
+function boundarySegment(f:MovingForce47,graph:TravelGraph47){
+  const edge=segment(f,graph);if(edge?.kind==='gate')return f.travel.offset===edge.toGate?edge:null;
+  const s=f.travel;if(s.version!==2||s.nodes.length<2||s.leg!==s.nodes.length-1)return null;
+  const previous=segment({...f,travel:{...s,leg:s.leg-1}},graph);
+  return previous?.kind==='gate'&&same(s.destination,previous.gate)?previous:null;
 }
 function positions(forces: MovingForce47[], graph: TravelGraph47) {
   return new Map(forces.map(f => [forceKey47(f), {...armyTravelLocation47(f.travel, graph), force: f}]));
@@ -57,12 +64,12 @@ export function assertForceContacts47(value: ForceContacts47, forces: MovingForc
     const area = (cell: TravelCell47) => areaOf(cell, {seaRegion});
     const atBoundary = (v: NonNullable<typeof a>) => {
       if (area(v.cell) === c.area) return true;
-      const edge = segment(v.force, graph), travel = v.force.travel;
-      return !!edge && travel.offset === edge.toGate && same(v.point, edge.gate) && [edge.from, edge.to].some(cell => area(cell) === c.area);
+      const edge = boundarySegment(v.force, graph);
+      return !!edge && same(v.point, edge.gate) && [edge.from, edge.to].some(cell => area(cell) === c.area);
     };
     if (c.area.startsWith('gate/')) {
       const x = segment(a.force, graph), y = segment(b.force, graph);
-      if (!x || !y || a.force.travel.crossed || b.force.travel.crossed || a.force.travel.offset !== x.toGate || b.force.travel.offset !== y.toGate || x.from.id !== y.to.id || x.to.id !== y.from.id || !same(a.point, x.gate) || !same(b.point, x.gate) || c.area !== 'gate/' + [x.from.id, x.to.id].sort((a,b)=>a-b).join('/')) throw Error('边界交锋缺少共同真实边界。');
+      if (x?.kind!=='gate' || y?.kind!=='gate' || a.force.travel.crossed || b.force.travel.crossed || a.force.travel.offset !== x.toGate || b.force.travel.offset !== y.toGate || x.from.id !== y.to.id || x.to.id !== y.from.id || !same(a.point, x.gate) || !same(b.point, x.gate) || c.area !== 'gate/' + [x.from.id, x.to.id].sort((a,b)=>a-b).join('/')) throw Error('边界交锋缺少共同真实边界。');
     } else if (!(c.area.startsWith('land/') || c.area.startsWith('sea/')) || !atBoundary(a) || !atBoundary(b) || area(a.cell) !== c.area && area(b.cell) !== c.area) throw Error('交锋不属于两支部队的实际地区或入出边界。');
     seen.add(key);
   }
@@ -118,8 +125,8 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     const movers = forces.flatMap(f => {
       if (current.held.has(forceKey47(f)) || ['arrived', 'halted'].includes(f.travel.status)) return [];
       const s = f.travel, edge = segment(f, graph)!;
-      if (!s.crossed && (s.offset === 0 || s.offset === edge.toGate) && !rules.canEnter(f, edge.to)) {s.status = 'blocked'; return [];}
-      s.status = 'moving'; const end = s.crossed ? edge.end : edge.toGate, left = end - s.offset;
+      if (edge.kind==='gate' && !s.crossed && (s.offset === 0 || s.offset === edge.toGate) && !rules.canEnter(f, edge.to)) {s.status = 'blocked'; return [];}
+      s.status = 'moving'; const end = edge.kind==='local'||s.crossed ? edge.end : edge.toGate, left = end - s.offset;
       const speed = left === 0 ? 0 : rules.speed(f, s.crossed ? edge.to : edge.from);
       if (!Number.isFinite(speed) || speed < 0) throw Error('统一行军速度无效，原世界未提交。');
       return [{f, edge, speed, end, time: left === 0 ? 0 : speed > 0 ? left / speed : Infinity}];
@@ -128,16 +135,17 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     if (dt > 0) {
       const participating = new Set([...current.held, ...book.pairs.flatMap(p => [p.a, p.b])]);
       for (const key of participating) exposure[key] = (exposure[key] ?? 0) + dt;
-      for (const m of movers) m.f.travel.offset = m.time <= dt ? m.end : m.f.travel.offset + dt * m.speed;
+      for (const m of movers) m.f.travel.offset = m.time <= dt ? m.end : m.edge.kind==='local'?Math.min(m.end,m.f.travel.offset+dt*m.speed):m.f.travel.offset + dt * m.speed;
       remaining = Math.max(0, remaining - dt);
     }
     // Center normalization is not a second move; gate admission stays pending.
-    for (const m of movers) if (m.time <= dt && m.f.travel.crossed) {
-      const s = m.f.travel; s.leg++; s.offset = 0; s.crossed = false;
-      if (s.leg === s.nodes.length - 1) s.status = 'arrived';
+    const reached=(m:typeof movers[number])=>m.time<=dt||m.edge.kind==='local'&&m.f.travel.offset===m.end;
+    for (const m of movers) if (reached(m)) {
+      const s=m.f.travel;if(m.edge.kind==='local'){s.offset=m.edge.end;s.status='arrived';}
+      else if(s.crossed){s.leg++; s.offset = 0; s.crossed = false;if (s.leg === s.nodes.length - 1) s.status = 'arrived';}
     }
     const before = positions(forces, graph);
-    const requests = movers.filter(m => m.time <= dt && !m.f.travel.crossed && m.f.travel.nodes[m.f.travel.leg] === m.edge.from.id && m.f.travel.offset === m.edge.toGate);
+    const requests = movers.filter(m => m.edge.kind==='gate' && m.time <= dt && m.f.travel.status!=='arrived' && !m.f.travel.crossed && m.f.travel.nodes[m.f.travel.leg] === m.edge.from.id && m.f.travel.offset === m.edge.toGate);
     const admitted = requests.filter(m => {if (rules.canEnter(m.f, m.edge.to)) return true; m.f.travel.status = 'blocked'; return false;});
     const stopped = new Set<string>(), meetings: {a: string; b: string; area: string}[] = [];
     // Simultaneous gate exchange is a real contact, never an ID-ordered swap.
@@ -155,13 +163,18 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
       const area = areaOf(m.edge.to, rules);
       for (const [key, value] of before) if (key !== forceKey47(m.f) && areaOf(value.cell, rules) === area && rules.enemy(m.f.nationId, value.force.nationId) && (area.startsWith('sea/') || !m.f.withdrawing && !value.force.withdrawing)) meetings.push({a: forceKey47(m.f), b: key, area});
     }
-    for (const m of admitted) if (!stopped.has(forceKey47(m.f))) m.f.travel.crossed = true;
+    for (const m of admitted) if (!stopped.has(forceKey47(m.f))) {
+      const s=m.f.travel;s.crossed=true;
+      // A precise destination may be the gate itself. Finish at this same
+      // event even if no frame time remains; do not retain invalid full offset.
+      if(s.offset===m.edge.end){s.leg++;s.offset=0;s.crossed=false;if(s.leg===s.nodes.length-1)s.status='arrived';}
+    }
     const after = positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
     book = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules).contacts;
     // Yield AFTER simultaneous admission. This also exposes empty-land entry
     // to occupation and changing terrain speed before any further movement.
-    if (stopAtEvent && movers.some(m => m.time <= dt)) break;
+    if (stopAtEvent && movers.some(reached)) break;
     if (dt === 0 && !admitted.length && !movers.some(m => m.time <= dt)) throw Error('统一行军未消费事件，原世界未提交。');
   }
   const result = contacts(forces, graph, book, rules);

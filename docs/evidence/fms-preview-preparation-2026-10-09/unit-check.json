@@ -1,0 +1,30 @@
+{
+  "command": "npm test -- --maxWorkers=1 --reporter=default --reporter=json --outputFile=.autopilot/culture47-full-serial.json",
+  "session": 2130,
+  "exitCode": 0,
+  "startedAt": "2026-10-08T22:09:32.000Z",
+  "durationSeconds": 1650.02,
+  "files": 421,
+  "passed": 5612,
+  "failed": 0,
+  "skipped": 0,
+  "todo": 0,
+  "reportSha256": "3f1fe27d9cf6399143dff9d50a88c8186efeab37f7620b8ae0ef2991a8705af7",
+  "fullLogSha256": "d11f9941f78799f1d38b6e30779163ab6ab84d6a26d84722dc4190e46b283e3e",
+  "priorTimeoutFiles": [
+    {
+      "file": "src/world/hydrology-worker.test.ts",
+      "passed": 12,
+      "maximumCaseMs": 2795.6360999999997,
+      "defaultTimeoutUnchanged": 5000
+    },
+    {
+      "file": "src/world/terrain-import-worker.test.ts",
+      "passed": 23,
+      "maximumCaseMs": 3221.0056999999997,
+      "defaultTimeoutUnchanged": 5000
+    }
+  ],
+  "configuration": "Explicit maxWorkers=1 matched subsequently updated default; source runtime/unit cases were not edited during this run. Browser-only asset binding is outside this unit result.",
+  "scope": "complete current src/**/*.test.ts suite, not browser/phone/original visual acceptance"
+}

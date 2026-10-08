@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-10-08T22:27:44.670Z",
+  "priorVisualReview": "docs/evidence/fms-chinese-culture-release-2026-10-08/MEDIA_REVIEW.md",
+  "videos": [
+    {
+      "path": "docs/evidence/fms-compact-ui-v5-2026-10-08/video/page@afbf7b15737fe916ae4d28545ff480b1.webm",
+      "bytes": 1831940,
+      "sha256": "ab07ddc67675ca72064d4fe99b8807b4094291f8369ae7365a5fb4c4d9f58ea0",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    },
+    {
+      "path": "docs/evidence/fms-compact-ui-v5-2026-10-08/video/page@d47851a4b302f764717de9bf532a5e2f.webm",
+      "bytes": 1623618,
+      "sha256": "26db7a999c4b1cb30ba2ff3149b07d490edd36f5b270932b9a402942bd654c2d",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    },
+    {
+      "path": "docs/evidence/fms-live-observation-v5-2026-10-08/video/page@7780b58c0e1cdac420de5b1db4ded42e.webm",
+      "bytes": 5016760,
+      "sha256": "01e0e4218351285c6f85fc0d7246fc89b2c8ef01587ce1a158bb64540886ef75",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    },
+    {
+      "path": "docs/evidence/fms-live-observation-v5-2026-10-08/video/page@980eec47cbe86476635bc277a458e095.webm",
+      "bytes": 4009626,
+      "sha256": "99685e279084077955c30e8af07b470dbfd420fb3d3778b7c37f6ac88ccaa492",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    },
+    {
+      "path": "docs/evidence/fms-live-observation-v5-2026-10-08/video/page@a842ca5b7f9647b1990bf0f27554f0cc.webm",
+      "bytes": 4598339,
+      "sha256": "5f4de2d096634f1174e414374627be18e393babe3a1a0794d867e09dfb93c042",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    },
+    {
+      "path": "docs/evidence/fms-live-observation-v5-2026-10-08/video/page@edc2c996833ebfd162a5ce57d5204e9a.webm",
+      "bytes": 5297396,
+      "sha256": "191a8cbedbcdb8b9eee9022f5e92ada0e380f1a811f5a946a90a467948798aee",
+      "review": "reused exact 2026-10-08 2/50/97 percent sampling; not new or all-frame viewing"
+    }
+  ],
+  "images": [
+    {
+      "path": "docs/evidence/fms-regression-closure-2026-10-09/continued-day31-detail.jpg",
+      "bytes": 27253,
+      "sha256": "0ad8b6a98533269af5ded1f2b628553a1ad725c7c7c39d05dc99efa5a355846f",
+      "review": "root inspected real image pixels; generated test game only; no account or unrelated desktop; not phone or original visual acceptance"
+    },
+    {
+      "path": "docs/evidence/fms-regression-closure-2026-10-09/continued-day31-map.jpg",
+      "bytes": 29970,
+      "sha256": "5e042034094f23f8e62b44886a9cb72e793f443bdbfcd3a5d0c71aa557f9625a",
+      "review": "root inspected real image pixels; generated test game only; no account or unrelated desktop; not phone or original visual acceptance"
+    },
+    {
+      "path": "docs/evidence/fms-regression-closure-2026-10-09/continued-same-save-day44-detail.jpg",
+      "bytes": 27165,
+      "sha256": "a13debe1d5ecda1e331e41d9b42c76ba0ac95b40948592aaa655fddc199198df",
+      "review": "root inspected real image pixels; generated test game only; no account or unrelated desktop; not phone or original visual acceptance"
+    },
+    {
+      "path": "docs/evidence/fms-regression-closure-2026-10-09/continued-same-save-day44-map.jpg",
+      "bytes": 30058,
+      "sha256": "c078d46747a8726ebd0a5345ae2ea63ee07392707d1be91626d1ba3c6138dc72",
+      "review": "root inspected real image pixels; generated test game only; no account or unrelated desktop; not phone or original visual acceptance"
+    }
+  ]
+}

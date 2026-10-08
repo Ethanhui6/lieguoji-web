@@ -14,12 +14,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Application checks
+  build:
+    name: Build and unit checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 180 # Complete serial browser suite plus unit checks; local desktop scope takes about 50 minutes. Individual gates stay unchanged.
+    timeout-minutes: 180
     env:
       CI: 'true'
+    outputs:
+      artifact: ${{ steps.dist.outputs.artifact-id }}
     steps:
       - name: Check out tested revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
@@ -42,29 +44,69 @@ jobs:
       - name: Check plan, lint, types, unit tests, and production build
         run: npm run build:cf
 
-      - name: Install Chromium and system dependencies
-        run: npx playwright install --with-deps chromium
-
-      - name: Run core browser checks
-        run: npm run test:e2e
-
       - name: Keep checked game build
+        id: dist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
         with:
-          name: game-dist-${{ github.sha }}
+          name: game-dist-${{ github.sha }}-${{ github.run_attempt }}
           path: dist/
           if-no-files-found: error
           retention-days: 7
           include-hidden-files: false
 
-      - name: Keep browser failure evidence
-        if: failure()
+  browser:
+    name: Browser / ${{ matrix.project }} / ${{ matrix.shard }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      CI: 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-chromium, mobile-chromium, tablet-chromium]
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.18.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Use the exact build checked by this run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact }}
+          path: dist
+          merge-multiple: true
+          digest-mismatch: error
+      - run: node scripts/check-dist.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Run every browser test in this project and shard
+        run: npm run test:e2e -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2 --workers=1
+      - name: Keep browser evidence
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
         with:
-          name: browser-failure-${{ github.sha }}-${{ github.run_attempt }}
+          name: browser-${{ matrix.project }}-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/
           if-no-files-found: warn
           retention-days: 7
           include-hidden-files: false
+
+  checks:
+    name: Application checks
+    needs: [build, browser]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require both the build and every browser shard
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: test "$BUILD_RESULT" = success && test "$BROWSER_RESULT" = success

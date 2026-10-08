@@ -1,0 +1,130 @@
+{
+  "base": "339c2e181a0737cf285ac8f7dcd642c92eabd5d2",
+  "reviewedHead": "a0e37869914b825610ff962f5b6ba17e29fe9ccd",
+  "reviewedAt": "2026-10-08T22:18:18.010Z",
+  "reviewer": "readonly damage_snapshot47_audit; root independently verified exact bytes/hash on record",
+  "enumeratedVersions": 182,
+  "hiddenVersions": 26,
+  "reused": {
+    "path": "docs/evidence/fms-regression-closure-2026-10-09/history-readonly-review.json",
+    "sha256": "39e8145098cc1eff3643d5935a7619f5c1baf959cbf1a25952897274a9479e7e",
+    "entries": 13,
+    "bytes": 2169574
+  },
+  "newEntries": [
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "5eacfdb713a0512522b24c4393d56bbe12e4b6c0",
+      "bytes": 179365,
+      "sha256": "2af1754c56ff5c5f1546c7143c568de8455d77397cd7996d4acab33e5b547764"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "4c6cc60a5e77a15db38e2eccfa4eb25a74559ae6",
+      "bytes": 525330,
+      "sha256": "64951ea95e3d688d79f1a01bb4e706243ccdaeaa026284c3175fa19d53c4770f"
+    },
+    {
+      "path": "docs/AUTO_HANDOFF.md",
+      "gitBlob": "6327f5a527fc0b5701bc25d7c6d5c02a572a899b",
+      "bytes": 177414,
+      "sha256": "ed91f49dcffaf9590d439f20f7f6b7e4f5dfea9d1d267ce34821b2d30db130f3"
+    },
+    {
+      "path": "plan/tasks.json",
+      "gitBlob": "afda7dfd5093e0859f07a88040a0b2702e00cdef",
+      "bytes": 523833,
+      "sha256": "5759800de48fa4cb2dac99e865f3676e209fad1aa3e7e6d58a095a138a0839fe"
+    },
+    {
+      "path": "src/fms/play/CultureWorld47.tsx",
+      "gitBlob": "ea846adf5bcf13c02ea20c55f0690b3bde588106",
+      "bytes": 37660,
+      "sha256": "b506292d4e5e522882d048dd4417b0fb96998e704647a24d6211cec65f7f0c25"
+    },
+    {
+      "path": "tests/fms-culture47-compat.spec.ts",
+      "gitBlob": "520b0dc1ae57164fa6678357e63a0f9ef8076906",
+      "bytes": 10052,
+      "sha256": "173e18a6e97db0b8689d98f2e2e35d1483ad714f6b3345f1c27afadc779bc568"
+    },
+    {
+      "path": "tests/fms-battle-animation.spec.ts",
+      "gitBlob": "976f2313df07868eb7ab8d8ddd9d0f1b6fa6dc53",
+      "bytes": 10274,
+      "sha256": "95d58dbd894f0410bdfeebc7940b4d97fb17cb313ce0674fb8c79744118b568b"
+    },
+    {
+      "path": "tests/fms-cartography.spec.ts",
+      "gitBlob": "b45d13de2783c31b20452d1ba6b1d35907d8f600",
+      "bytes": 5896,
+      "sha256": "380ba9d32b57ad7374691e116c4b4c44d616fe994f12811e5850e407b28fcfaf"
+    },
+    {
+      "path": "tests/fms-culture47-resume.spec.ts",
+      "gitBlob": "7c05e32da18e875f5ac53c9f8c02ca74105278a8",
+      "bytes": 9338,
+      "sha256": "8e3c1b00cdec6e070f8dfd3163890c1e229f9a82be5192d584eccd963e6f5ad6"
+    },
+    {
+      "path": "tests/fms-entry.spec.ts",
+      "gitBlob": "6234ee3b0e4316d514836e144f21df9143be3911",
+      "bytes": 3975,
+      "sha256": "cf9dcd6c1d7623ed205a2552909cf4aee73ec5ec95ca7c74faa907e5f987a666"
+    },
+    {
+      "path": "tests/fms-legacy.ts",
+      "gitBlob": "e2e36b64cd50b68cf41a24da40f1e279f68bfa7e",
+      "bytes": 3024,
+      "sha256": "ae36651f28fc59c7211c1efc6037b33381d7a06f304fa530c1254bb2018f0cf7"
+    },
+    {
+      "path": "tests/fms-maritime.spec.ts",
+      "gitBlob": "879c257c663b7b1ceefb68f13cdf43c24a41d2db",
+      "bytes": 5055,
+      "sha256": "4166c887e42d1fdc703899fc11518f7bf4b50439f5da8cd63b428704181539c3"
+    },
+    {
+      "path": "tests/fms-tactics.spec.ts",
+      "gitBlob": "dd1be0398e312c2bf2aee26f30e440fac09cde6a",
+      "bytes": 14851,
+      "sha256": "481d42e0b744677b328c0d7e90a45511738929abfb3b83fe63b9f3b46587fc73"
+    }
+  ],
+  "newBytes": 1506067,
+  "commits": [
+    {
+      "commit": "7188e34a8e7a5a37c8e8d79e1440d92ed4fb6630",
+      "bytes": 334,
+      "sha256": "68e96e0019f2f2d5a980e951485213d2f47bea018bd6935ea4c84d1859cc6215"
+    },
+    {
+      "commit": "4ca3b034f05cb114bb63e1df1e33ea541c2a4527",
+      "bytes": 328,
+      "sha256": "b3fa353ce37ef061adec9fea47b34a5e1bf698d25b54d140b52f90bb9e37bd3f"
+    },
+    {
+      "commit": "0d3c7fff8c913b7621ecf49e826dd0d4e16990ab",
+      "bytes": 326,
+      "sha256": "6584db8eddb3ef3b36ecd79a347fc9b3919b923ce848260b0c098ca2dd466aa5"
+    },
+    {
+      "commit": "720b1bae19e07be984b6708363d6ced62026e4da",
+      "bytes": 314,
+      "sha256": "4612bc37d6d078374532a017af7859776748197ac695eebd141ffa2fdd5a25d8"
+    },
+    {
+      "commit": "bf5a29c5f202f19b080c86f6fb28caa8e0443c97",
+      "bytes": 329,
+      "sha256": "35b94e92800de5eca2f7fc5cb6034472727eba3552b116869548550ecde6d338"
+    },
+    {
+      "commit": "a0e37869914b825610ff962f5b6ba17e29fe9ccd",
+      "bytes": 312,
+      "sha256": "bd6459993abe57aaf17806985e64940e596981392e0d98b04967127e62a71b37"
+    }
+  ],
+  "findings": [],
+  "scope": "Full text, UTF8, JSON/TS decoded strings, 16 credential patterns and 8 supplemental signals for exactly these hidden blobs; complete commit objects. No claim about tip candidate or later history.",
+  "guardChanged": false
+}

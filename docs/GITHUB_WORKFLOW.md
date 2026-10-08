@@ -1,5 +1,25 @@
 # GitHub 检查与受控合并
 
+## 2026-10-09 继续修复后的候选检查
+
+`vite.config.ts` 的单测文件并发统一为1，与当前完整串行复验的 `--maxWorkers=1` 一致。`npm test`、`build:cf`、Cloudflare原生构建和Actions因此采用相同并发配置；全部用例、原超时和实际Worker断言保留。此前并发2的完整运行有7项5秒超时，原阈值隔离35项通过；本次完整串行结果仍须等真实执行完成，不能由修改配置推定通过。
+
+当前浏览器收集为59文件、411项：三个设备各137项。两个已有512桌面场景在手机和平板跳过，合计4项；完整执行成功应记录407 passed / 4 skipped，而不是411 passed。新增继续及恢复42项自然包含在完整运行中。最终聚合要求的是全部CI任务成功，现有4个明确的场景跳过不伪装成已测试。
+
+外部本机产物测试必须同时指定 `GAME_BASE_URL` 和 `GAME_BUILD_DIR`；种子地图与旧引擎兼容测试核对实际服务的build.json及其对应资源。候选的构建时commit和构建文件SHA分别记录，不能把后来源码提交号写成旧产物内的commit。完整运行后再绑定有界预览授权，不能以411项收集成功冒充执行通过。
+
+## 2026-10-08 当前候选的检查结构
+
+用户重新明确授权本次同一开发分支的GitHub＋Pages手机试玩，边界见 [本次预览授权](GITHUB_UPLOAD_2026-10-06.md)。main与正式发行门保持；下方历史M4结果不能当作本次CI结果。
+
+此前单个任务把全部设备浏览器流程串行执行，实际旧run 37488428210已因3小时上限取消。本批保留完整检查，改为build任务先执行npm run build:cf并上传唯一已验dist；browser矩阵按desktop/mobile/tablet各分两片、每片workers=1，下载该次构建返回的artifact-id，严格要求下载校验摘要一致。最终Application checks依赖build和整个browser矩阵，任何失败、取消或跳过都不通过。Actions仍只检查，不另建上传Cloudflare的部署链。
+
+新增下载Action固定为 actions/download-artifact v8.0.2，SHA `9000827ccba6bdab643e8b6fd33ac0654aef8333`；已核对官方标签与该提交action.yml，使用artifact-ids、merge-multiple、digest-mismatch:error。来源：[固定版本定义](https://github.com/actions/download-artifact/blob/9000827ccba6bdab643e8b6fd33ac0654aef8333/action.yml)。现有其他Action SHA、依赖锁、测试断言与完整文件集合保留。build和每片浏览器上限180分钟，分片不共用本机上下文或存档，所有报告按SHA/attempt/设备/分片分别保存。
+
+当前仍为本地候选，远端是否通过须上传后核对真实run与SHA；本地结果和workflow文件本身都不等于云端CI已通过。
+
+以下为历史记录，云端冻结的本次有界例外以上述授权为准。
+
 > **当前云端写入冻结。** 用户要求PH00—PH35全部完成并验收前不上传GitHub/Cloudflare，包含任意分支push、PR/Issue/Milestone与artifact。允许本地提交与测试。下面的既有CI和受控合并流程只在 [V4发布门](RELEASE_POLICY_V4.md) 解除后适用；不删除已有检查或另开发布链。
 
 本文件对应 `.github/workflows/ci.yml`。仓库为本人私有的 [Ethanhui6/lieguoji-web](https://github.com/Ethanhui6/lieguoji-web)，唯一生产部署由 Pages 原生 Git 完成，Actions 负责检查而不向生产上传。

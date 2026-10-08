@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
-import {readdirSync} from 'node:fs';
+import {readdirSync,readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
 import frozen from '../src/fms/play/culture47-frozen.json' with {type:'json'};
 import {grid} from '../src/fms/play/fixture.test-support';
 import {enter,create} from './fms-culture47-fixture';
@@ -7,7 +8,11 @@ import type {Culture47Journal} from '../src/fms/play/culture47-session';
 
 async function installOriginal(page:Page,entry:typeof frozen[number]){
   await enter(page);
-  const filename=readdirSync('dist/assets').find(f=>f.startsWith(entry.file.replace('.js','-'))&&f.endsWith('.js'));
+  if(process.env.GAME_BASE_URL&&!process.env.GAME_BUILD_DIR)throw Error('External preview requires GAME_BUILD_DIR to bind its reviewed frozen engines');
+  const buildDir=resolve(process.env.GAME_BUILD_DIR??'dist');
+  const servedBuild=await page.request.get('/build.json');expect(servedBuild.ok()).toBe(true);
+  expect(await servedBuild.body()).toEqual(readFileSync(resolve(buildDir,'build.json')));
+  const filename=readdirSync(resolve(buildDir,'assets')).find(f=>f.startsWith(entry.file.replace('.js','-'))&&f.endsWith('.js'));
   if(!filename)throw Error('Missing reviewed frozen worker');
   const terrain=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);
   return page.evaluate(async({filename,terrain})=>{

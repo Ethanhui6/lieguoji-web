@@ -9091,6 +9091,29 @@
         "bounded preview privacy and release"
       ],
       "sourceCommit": "bf5a29c5f202f19b080c86f6fb28caa8e0443c97"
+    },
+    "culture47PreviewPreparationCheckpoint": {
+      "date": "2026-10-09",
+      "status": "in-progress-not-released",
+      "baseCommit": "a0e37869914b825610ff962f5b6ba17e29fe9ccd",
+      "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/STATUS.md",
+      "history": "docs/evidence/fms-preview-preparation-2026-10-09/history-delta-a0e3786.json",
+      "media": "docs/evidence/fms-preview-preparation-2026-10-09/media-delta.json",
+      "activeUnitSession": null,
+      "unitLog": ".autopilot/culture47-full-serial.txt",
+      "browserRegistered": 411,
+      "browserExistingDesktopOnlySkips": 4,
+      "browserExecuted": false,
+      "release": "no remote writes; final privacy, full checks and exact preview contract still required",
+      "unit": {
+        "session": 2130,
+        "status": "passed",
+        "files": 421,
+        "tests": 5612,
+        "failed": 0,
+        "seconds": 1650.02,
+        "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/unit-check.json"
+      }
     }
   }
 }

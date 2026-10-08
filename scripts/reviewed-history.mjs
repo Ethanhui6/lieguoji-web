@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {safeProjectFile} from './check-plan.mjs';
-// Extended only through the audited v11 candidate; see fms-chronicle2-v5-2026-10-06/history-review.json and SOURCE_PRIVACY.md.
+// Extended through the fixed, scanned 2026-10-08 head; see
+// fms-chinese-culture-release-2026-10-08/history-review.json and MEDIA_REVIEW.md.
 // Later hidden/deleted versions still fail the exact-tip check below.
-const BASE='90cdabc6fa1c0cd0d3f8d4037b93870b63421db5',HEAD='1790975428e0b13976f8da9f735ec9110f0af714';
+const BASE='90cdabc6fa1c0cd0d3f8d4037b93870b63421db5',HEAD='339c2e181a0737cf285ac8f7dcd642c92eabd5d2';
 const SUMMARY='d37739b4d8bec71ee32eefe63a3f16b9f9599f5f7288094036397f666c9c9c41';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const git=(root,args)=>execFileSync('git',args,{cwd:root,maxBuffer:100*1024*1024,stdio:['ignore','pipe','pipe']});

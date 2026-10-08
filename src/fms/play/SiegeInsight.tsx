@@ -1,3 +1,5 @@
+import type {Ports44} from './war44-ports';
+import {blockadedPort44,landAttackMultiplier44,provinceDamage44} from './war44-blockade';
 import type {FiscalState} from './fiscal15-state';
 import type {UpperCombat} from './upper14-state';
 import type {TerrainContext} from './terrain13-context';
@@ -6,12 +8,15 @@ import type {UnitAssignments} from './military-profile';
 import {siegeInsight} from './siege-insight';
 import type {OccupationState} from './occupation';
 
-export function SiegeInsight({finance,upperCombat,terrainContext,world,provinceId,units,timing,selectArmy,occupation}:{finance?:FiscalState;upperCombat?:UpperCombat;terrainContext?:TerrainContext;world:World;provinceId:string;units:UnitAssignments;timing:{rounds:Record<string,number>;tick:number};selectArmy?:(id:string)=>void;occupation?:OccupationState}){
+export function SiegeInsight({finance,upperCombat,terrainContext,world,provinceId,units,timing,selectArmy,occupation,ports}:{finance?:FiscalState;upperCombat?:UpperCombat;terrainContext?:TerrainContext;world:World;provinceId:string;units:UnitAssignments;timing:{rounds:Record<string,number>;tick:number};selectArmy?:(id:string)=>void;occupation?:OccupationState;ports?:Ports44}){
   const report=siegeInsight(world,provinceId,units,timing.rounds,timing.tick,occupation,terrainContext,upperCombat,finance);if(!report)return null;
   const {province,attack,defense,forces,fort}=report;
+  for(const a of forces)a.perPulse=provinceDamage44(a.perPulse,landAttackMultiplier44(world,ports,province.id,a.nationId));
+  const blockaded=blockadedPort44(world,ports,province.id);
   const land=terrainContext?.provinces[provinceId],terrainLabel=land?(land.mountain?'山地':land.plateau?'高原':'非山地'):({plain:'平原',forest:'森林',mountain:'山地'})[province.terrain];
   const next=forces.filter(a=>a.nextDays!==null).sort((a,b)=>a.nextDays!-b.nextDays!)[0];
   return <div className="play-siege-insight" aria-label="围攻战况与军粮">
+    {blockaded&&<p className="play-blockade" data-blockade="active">海港被封锁 · 攻方对军伤害与抵抗削减 ×2；守军回补不加成。</p>}
     <p className="play-siege-state">{!attack.length?'进攻已中断':defense.length?'攻守拉锯 · 守军会回补抵抗':'持续削减抵抗 · 无守军回补'}</p>
     <div className="play-siege-facts"><span>{terrainLabel}{upperCombat?` · 通用防御 ×${report.genericDefense!.toFixed(2)}`:fort>0?` · 城防 ${fort}`:' · 无城防加成'}</span><span>{attack.length} 支进攻 / {defense.length} 支守军</span></div>
     <p>{next?`下一次行动：${next.name}，约 ${next.nextDays!.toFixed(2)} 日后。`:'尚无待结算行动；继续时间后按实际驻军更新。'}</p>

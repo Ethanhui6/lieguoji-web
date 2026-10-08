@@ -4665,7 +4665,7 @@
               "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-browser.mjs",
               "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs"
             ],
-            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated."
+            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration."
           },
           {
             "id": "WEB-04-38",
@@ -5250,12 +5250,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "v46 observation and Apple-style UI locally verified; unified Army v47 not integrated",
+      "status": "Compact icon UI local playable verified; no skills; v46 rules unchanged; WEB-04-37 remains in progress",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "038bc431062db4fb50dde2979e3fee52f0f361f2",
+      "lastCommitted": "bac6b56e83f4d6a4303e29dbf3a469870fe9551b",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Continue WEB-04-37 unified Army real land/sea movement and sea combat from the three preserved v47 groundwork files; they are not integrated. Include new user sea jurisdiction/control request WEB-04-38 after the required travel/state groundwork. Then WEB-03-06 cultures and the queued public-reference full audit. Preserve 5250 UI preview, old 5248/5246 worlds, original-engine and phone/visual gates. No push/Pages/main.",
-      "latestUserPriority": "查看详情继续时间、开篇真实史记、轻量iOS界面，并指定apple-ui-designer与emilkowalski/skills；海域管理争夺为后续真实规则扩展。",
+      "next": "Continue WEB-04-37 unified Army using NEXT_ARMY_AUDIT.md: h20 dry ridge adjacency, boundary permission and authoritative mixed position. Then WEB-04-38 sea control, WEB-03-06 cultures, queued source/video audit. Preserve 5250/5248 worlds and 5252 new UI preview; no cloud/device/visual gate change.",
+      "latestUserPriority": "不用 skills 自行做 UI；多做清楚的图标，减轻国家/军事/海军/绘图文字负担。UI 实际切片后接回统一 Army 与真实海域规则。",
       "requiredUserAction": null,
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -8348,6 +8348,48 @@
         "src/fms/play/army-travel47-state.ts",
         "src/fms/play/native-war/army-path.ts"
       ]
+    },
+    "uiDirectionOverride": {
+      "date": "2026-10-08",
+      "source": "latest direct user request",
+      "skillsUsedThisBatch": false,
+      "direction": "自主设计 iOS 风格、更多统一图标、更少常驻文字；原作地图与模拟还原继续",
+      "previousSkillRequestSupersededForThisBatch": true
+    },
+    "compactUi46Checkpoint": {
+      "date": "2026-10-08",
+      "task": "WEB-04-37",
+      "status": "local_playable_verified",
+      "sourceCommit": "bac6b56e83f4d6a4303e29dbf3a469870fe9551b",
+      "localUrl": "http://127.0.0.1:5252/?fms=1",
+      "directory": ".autopilot/compact-ui46-delivery/dist",
+      "previewPid": 34472,
+      "skillsUsed": false,
+      "evidence": [
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/DELIVERY.md",
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/browser.json",
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-compact-ui-v5-2026-10-08/NEXT_ARMY_AUDIT.md"
+      ],
+      "notAccepted": [
+        "physical-iPhone",
+        "user-visual",
+        "full-original-equivalence",
+        "full-WEB-04-37"
+      ],
+      "publish": false,
+      "checks": {
+        "typecheck": true,
+        "lint": true,
+        "build": true,
+        "distArtifacts": 43,
+        "protectionTests": 39,
+        "browserFlows": 11,
+        "realDevice": false,
+        "userVisual": false
+      }
     }
   }
 }

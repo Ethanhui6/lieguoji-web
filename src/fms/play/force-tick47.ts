@@ -12,9 +12,12 @@ import {TICKS_PER_DAY} from './clock';
 import type {War28World} from './war47-wars';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
-type Rules<T extends MilitaryRun47> = {
+export type MilitaryRules47<T extends MilitaryRun47> = {
   speed: Parameters<typeof advanceActualForces47<T>>[3];
   combat: (snapshot:T)=>Parameters<typeof applyAccountedVolley47>[2];
+  /** Owned candidate only. The real47 owner fixes this to its family calendar;
+   * the generic military primitive also supports isolated no-family fixtures. */
+  afterTick?: (candidate:T,dailyPending:boolean)=>void;
 };
 function frame(r:MilitaryRun47) {
   const {spatial,forces}=actualForces47(r),regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const)));
@@ -40,7 +43,7 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>)
  * world-units/tick. No old v46 movement, Navy pulse or Army timer runs beside it.
  * At a day boundary, the returned candidate NEEDS daily settlement before it
  * can be exposed/saved. This is not a complete session or an enabled old save. */
-export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:Rules<T>) {
+export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<T>) {
   const untilDay=(input.world.day+1)*TICKS_PER_DAY;
   if(!Number.isSafeInteger(ticks)||ticks<1||input.clock.tick<0||Math.floor(input.clock.tick/TICKS_PER_DAY)!==input.world.day||input.clock.tick+ticks>untilDay) throw Error('军事推进必须在当前日界内；先完成日结再推进。');
   const initial=actualForces47(input);
@@ -74,6 +77,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
     }
     for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick)delete r.maritime.retreating[id];
     r.clock.tick=tick;r.forceClock.now=tick;
+    rules.afterTick?.(r,tick===untilDay);
     // Expiry/peace/death can change attack eligibility without moving a point.
     reconcileAttackClock47(r.forceClock,frame(r).eligible,tick);
     assertForceClock47(r.forceClock,tick,new Set(actualForces47(r).forces.map(forceKey47)));

@@ -24,13 +24,15 @@ import {beginArmyTravel47} from './army-travel47-state';
 import type {ArmyPositions47} from './army-presence47';
 import type {MilitaryRun47} from './force-tick47';
 import {actualForces47} from './force-runtime47';
+import {initialForceSpeed47,type ForceSpeed47} from './force-speed47';
+import {TICKS_PER_DAY} from './clock';
 
 export type NavalOpening47={version:1;rule:'qualified-starter-debit-v1';firstEventId:number;charges:{fleetId:string;homeId:string;crew:number;grain:number}[]};
 /** All fields consumed by the real47 military phase, using real-culture
  * creation. This still needs daily settlement/live validation/Store49 before
  * it is a complete playable run; no version or legacy culture is fabricated. */
-export type FoundingForces47=Government47&MilitaryRun47&{harbors:HarborLayout46;navalOpening:NavalOpening47};
-const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening'] as const;
+export type FoundingForces47=Government47&MilitaryRun47&{harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47};
+const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening','forceSpeed'] as const;
 const seed=(text:string)=>{let h=2166136261;for(const c of text)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 /** Private construction. The starter allocation is the existing WEB rule:
  * one affordable fleet at a qualified harbor, crew/grain debited exactly once.
@@ -51,7 +53,7 @@ function build<T extends Government47>(input:T):T&FoundingForces47{
   const base={...r,world,navy,harbors,maritime,reorganization,battles:initialBattles(),occupation:initialOccupation(),transports:initialTransports(),voyages:initialVoyages(world),alliances,vassals:initialVassals46(),diplomaticGeography:buildDiplomaticGeography(r),fleetPositions};
   const warfare=initialWar26();reconcileWar26(world,warfare,sea,r.clock.tick,(w,id)=>war26Strength(w,base,id));
   const inputWars={...base,warfare},nativeWars=initialWar28(inputWars);importUnknownWars28(nativeWars,inputWars);
-  const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`)),forceDamage:initialForceDamage47(),navalOpening};
+  const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`),r.life.secondsPerDay/TICKS_PER_DAY),forceDamage:initialForceDamage47(),forceSpeed:initialForceSpeed47(world,r.clock.tick),navalOpening};
   actualForces47(out);return out;
 }
 export function attachFoundingForces47<T extends Government47>(input:T):T&FoundingForces47{

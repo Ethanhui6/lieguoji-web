@@ -20,7 +20,8 @@ beforeAll(()=>{base=new War46Session().execute({type:'create',terrain:grid((x,y)
 function fixture() {
   const old=structuredClone(base),graph=buildArmyTravelGraph47(old.terrain,old.world),binding=geographyBinding(old);
   const armyPositions=initialArmyPositions47(old.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:old.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,binding);
-  const run:MilitaryRun47={...old,armyPositions,fleetPositions:{version:1,binding,revision:0,records:{}},forceContacts:initialForceContacts47(),forceDamage:initialForceDamage47(),forceClock:initialForceClock47(old.clock.tick,1234)};
+  // Explicit synthetic time scale for short event fixtures, not real47's day.
+  const run:MilitaryRun47={...old,armyPositions,fleetPositions:{version:1,binding,revision:0,records:{}},forceContacts:initialForceContacts47(),forceDamage:initialForceDamage47(),forceClock:initialForceClock47(old.clock.tick,1234,.1)};
   const a=run.world.armies[0],b=run.world.armies.find(b=>b.nationId!==a.nationId)!;
   for(const army of run.world.armies) {army.troops=0;army.status='destroyed';}
   const sea=[...graph.cells.values()].find(c=>c.surface==='sea')!;

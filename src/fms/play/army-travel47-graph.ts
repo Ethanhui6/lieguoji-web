@@ -1,0 +1,86 @@
+import type {FmsDocument} from '../model';
+import type {Point,World} from '../../sim/types';
+import {landFaces,polygonArea} from './settlement25-mesh';
+import {contains} from './settlement25-terrain';
+import {seaGraph} from './sea-path';
+import {nativeArmyCellDistance,nativeArmyRouteCost} from './native-war/army-path';
+
+export type TravelLink47={to:number;gate:Point;distance:number;toGate:number};
+export type TravelCell47={id:number;face:number;surface:'land'|'sea';provinceId:string|null;center:Point;polygon:Point[];links:TravelLink47[]};
+export type TravelGraph47={cells:Map<number,TravelCell47>;byProvince:Map<string,number[]>;scale:number;polygonWork:number};
+const distance=(a:Point,b:Point)=>Math.hypot(a.x-b.x,a.y-b.y);
+/** Closed polygon membership, including a stopped shore gate. The caller's
+ * persisted cell identity resolves the two valid sides of a shared boundary. */
+export function insideTravelCell47(cell:TravelCell47,p:Point):boolean{
+ if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return false;
+ if(contains(cell.polygon,p))return true;
+ return cell.polygon.some((a,i)=>{const b=cell.polygon[(i+1)%cell.polygon.length],dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy,t=len2?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len2)):0;return distance(p,{x:a.x+t*dx,y:a.y+t*dy})<=1e-8;});
+}
+export function locateTravelCell47(g:TravelGraph47,p:Point,provinceId?:string):TravelCell47|null{
+ const candidates=provinceId===undefined?[...g.cells.values()]:(g.byProvince.get(provinceId)??[]).map(id=>g.cells.get(id)!);
+ return candidates.filter(c=>insideTravelCell47(c,p)).sort((a,b)=>a.id-b.id)[0]??null;
+}
+const edgeKey=(a:Point,b:Point)=>{const x=`${a.x},${a.y}`,y=`${b.x},${b.y}`;return x<y?x+'/'+y:y+'/'+x;};
+const sourceKey=(ids:readonly number[])=>[...ids].sort((a,b)=>a-b).join('/');
+/** New-version geometry adapter. Native uses Voronoi cells; this uses the
+ * actual h=20 clipped render faces. Land and sea are distinct halves of one
+ * triangle and meet only through a positive-width shared edge. No sea node
+ * becomes a taxable province and no port is required to cross a shoreline.
+ * Caller supplies a validated immutable terrain/world, never reruns zoning. */
+export function buildArmyTravelGraph47(doc:FmsDocument,world:World):TravelGraph47{
+ const scale=1000/Math.max(doc.width,doc.height),cells=new Map<number,TravelCell47>(),byProvince=new Map<string,number[]>();
+ const groups=world.provinces.map(p=>({p,minX:Math.min(...p.polygon.map(v=>v.x)),maxX:Math.max(...p.polygon.map(v=>v.x)),minY:Math.min(...p.polygon.map(v=>v.y)),maxY:Math.max(...p.polygon.map(v=>v.y)),area:0}));
+ const bin=(v:number)=>Math.min(31,Math.max(0,Math.floor(v/1000*32))),bins=new Map<number,typeof groups>();
+ for(const g of groups)for(let y=bin(g.minY);y<=bin(g.maxY);y++)for(let x=bin(g.minX);x<=bin(g.maxX);x++){const key=y*32+x,list=bins.get(key)??[];list.push(g);bins.set(key,list);}
+ const sources=new Map<string,number>();for(let i=0;i<doc.triangles.length;i+=3){const k=sourceKey([...doc.triangles.slice(i,i+3)]);if(sources.has(k))throw Error('行军地形存在重复面。');sources.set(k,i/3);}
+ let polygonWork=0;
+ for(const face of landFaces(doc)){
+  const id=sources.get(sourceKey(face.source));if(id===undefined)throw Error('行军陆面缺少真实三角引用。');
+  const polygon=face.ring.map(p=>({x:p.x*scale,y:p.y*scale})),center={x:polygon.reduce((s,p)=>s+p.x,0)/polygon.length,y:polygon.reduce((s,p)=>s+p.y,0)/polygon.length};
+  const matches=(bins.get(bin(center.y)*32+bin(center.x))??[]).filter(g=>{if(center.x<g.minX||center.x>g.maxX||center.y<g.minY||center.y>g.maxY)return false;polygonWork+=g.p.polygon.length;if(polygonWork>40_000_000)throw Error('行军地理归属超出预算，已保留原世界。');return contains(g.p.polygon,center);});
+  if(matches.length!==1)throw Error('行军陆面无法唯一匹配当前辖区。');const g=matches[0];g.area+=polygonArea(polygon);
+  const cell:TravelCell47={id:id*2,face:id,surface:'land',provinceId:g.p.id,center,polygon,links:[]};cells.set(cell.id,cell);
+  const owned=byProvince.get(g.p.id)??[];owned.push(cell.id);byProvince.set(g.p.id,owned);
+ }
+ for(const g of groups)if(!byProvince.has(g.p.id)||Math.abs(g.area-polygonArea(g.p.polygon))>Math.max(1e-7,g.area*1e-7))throw Error('行军陆面面积与当前辖区不一致。');
+ const water=seaGraph(doc,world);
+ for(const n of water.nodes.values())cells.set(n.id*2+1,{id:n.id*2+1,face:n.id,surface:'sea',provinceId:null,center:{...n.center},polygon:n.polygon.map(p=>({...p})),links:[]});
+ const edges=new Map<string,{cell:TravelCell47;a:Point;b:Point;paired:boolean}>();
+ for(const cell of cells.values())for(let i=0;i<cell.polygon.length;i++){
+  const a=cell.polygon[i],b=cell.polygon[(i+1)%cell.polygon.length];if(distance(a,b)<=0)continue;
+  const k=edgeKey(a,b),old=edges.get(k);if(!old){edges.set(k,{cell,a,b,paired:false});continue;}
+  if(old.paired||old.cell.id===cell.id)throw Error('行军网格共享边重叠。');old.paired=true;
+  // A shared h20/h20 edge is a dry ridge. Retain the terrain graph's
+  // positive-width wet-edge decision instead of reconnecting separated seas.
+  if(old.cell.surface==='sea'&&cell.surface==='sea'&&!water.nodes.get(old.cell.face)!.links.some(l=>l.to===cell.face))continue;
+  const gate={x:(a.x+b.x)/2,y:(a.y+b.y)/2},left=distance(old.cell.center,gate),right=distance(cell.center,gate);
+  old.cell.links.push({to:cell.id,gate,distance:left+right,toGate:left});cell.links.push({to:old.cell.id,gate,distance:left+right,toGate:right});
+ }
+ for(const n of cells.values())n.links.sort((a,b)=>a.to-b.to);
+ return{cells,byProvince,scale,polygonWork};
+}
+export type TravelPolicy47={allowLand:boolean;allowSea:boolean;preferPorts:boolean;portSeaFaces:ReadonlySet<number>;oceanRouteFaces:ReadonlySet<number>;canEnter:(provinceId:string)=>boolean};
+export const unrestrictedTravel47:TravelPolicy47={allowLand:true,allowSea:true,preferPorts:false,portSeaFaces:new Set(),oceanRouteFaces:new Set(),canEnter:()=>true};
+const permitted=(n:TravelCell47,p:TravelPolicy47)=>n.surface==='sea'?p.allowSea:p.allowLand&&p.canEnter(n.provinceId!);
+/** Native scalar weights on actual web geometry; Dijkstra is deliberate here:
+ * the unscaled native octile A* heuristic is not admissible for .02 sea-route
+ * edges. Native equal-cost tie order/cache are not claimed reproduced. */
+export function findArmyTravelPath47(g:TravelGraph47,start:number,end:number,p:TravelPolicy47):{nodes:number[];cost:number}|null{
+ const first=g.cells.get(start),last=g.cells.get(end);if(!first||!last||!permitted(first,{...p,canEnter:()=>true})||!permitted(last,p))return null;
+ const cost=new Map([[start,0]]),prev=new Map<number,number>(),heap:{id:number;cost:number}[]=[];
+ const before=(a:{id:number;cost:number},b:{id:number;cost:number})=>a.cost<b.cost||a.cost===b.cost&&a.id<b.id;
+ const push=(v:{id:number;cost:number})=>{let i=heap.length;heap.push(v);while(i){const j=(i-1)>>1;if(!before(v,heap[j]))break;heap[i]=heap[j];i=j;}heap[i]=v;};
+ const pop=()=>{const v=heap[0],tail=heap.pop()!;if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&before(heap[j+1],heap[j]))j++;if(!before(heap[j],tail))break;heap[i]=heap[j];i=j;}heap[i]=tail;}return v;};
+ push({id:start,cost:0});while(heap.length){const current=pop();if(cost.get(current.id)!==current.cost)continue;if(current.id===end){const nodes=[end];while(nodes[0]!==start)nodes.unshift(prev.get(nodes[0])!);return{nodes,cost:current.cost};}
+  const a=g.cells.get(current.id)!;for(const link of a.links){const b=g.cells.get(link.to)!;if(!permitted(b,p))continue;
+   // Native weights use cell-coordinate distance, while web movement follows
+   // both sides of the real gate. Keep cost units in source terrain space.
+   const from={x:a.center.x/g.scale,y:a.center.y/g.scale},to={x:b.center.x/g.scale,y:b.center.y/g.scale};
+   const value=nativeArmyRouteCost(nativeArmyCellDistance(from,to),b.surface==='sea'&&p.oceanRouteFaces.has(b.face),p.preferPorts,a.surface!==b.surface,p.portSeaFaces.has((a.surface==='sea'?a:b).face));
+   const next=Math.fround(current.cost+value);if(!Number.isFinite(next))throw Error('行军路径代价溢出。');if(next<(cost.get(b.id)??Infinity)){cost.set(b.id,next);prev.set(b.id,a.id);push({id:b.id,cost:next});}
+  }
+ }return null;
+}
+export function armyTravelPathPoints47(g:TravelGraph47,nodes:readonly number[]):Point[]{
+ const points:Point[]=[];nodes.forEach((id,i)=>{const n=g.cells.get(id);if(!n)throw Error('行军路径格不存在。');if(i){const link=g.cells.get(nodes[i-1])!.links.find(v=>v.to===id);if(!link)throw Error('行军路径不相邻。');points.push({...link.gate});}points.push({...n.center});});return points;
+}

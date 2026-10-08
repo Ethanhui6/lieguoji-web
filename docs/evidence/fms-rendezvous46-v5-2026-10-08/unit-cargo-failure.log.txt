@@ -1,0 +1,55 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/war46.test.ts (12 tests | 1 failed) 6215ms
+   ❯ existing-fleet rendezvous (10)
+     × real session preserves the chosen physical leg, completes pickup, voyage and landing with one army identity 2824ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/war46.test.ts > existing-fleet rendezvous > real session preserves the chosen physical leg, completes pickup, voyage and landing with one army identity
+Error: 运输状态或搭载引用损坏，已保留原档。
+ ❯ fail src/fms/play/destiny20-structure.ts:48:47
+     46| }
+     47| export function assertTransports(value:unknown,r:Omit<ExpeditionRun,'t…
+     48|   const s=value as Transports,fail=()=>{throw Error('运输状态或搭载引用损坏，已保留原档…
+       |                                               ^
+     49|   if(!s||s.version!==1||Object.keys(s).sort().join()!=='cargo,version'…
+     50|   const ids=new Set(r.world.armies.map(a=>a.id)),fleets=new Set<string…
+ ❯ assertTransports src/fms/play/destiny20-structure.ts:57:94
+ ❯ assertDestinyStructure src/fms/play/destiny20-structure.ts:26:2
+ ❯ assertDestiny20 src/fms/play/destiny20-model.ts:18:209
+ ❯ assertMuster21 src/fms/play/muster21-model.ts:16:204
+ ❯ assertLife22 src/fms/play/life22-model.ts:17:194
+ ❯ assertDynasty23 src/fms/play/dynasty23-model.ts:21:235
+ ❯ assertVoyage24 src/fms/play/voyage24-model.ts:15:233
+ ❯ assertSettlement25 src/fms/play/settlement25-model.ts:19:2
+ ❯ assertWar26Run src/fms/play/war26-model.ts:18:194
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 66 passed (67)
+   Start at  09:58:09
+   Duration  22.84s (tests 50%, transform 36%, import 14%)
+
+  Transform  transforming modules took 14.86s · 36% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

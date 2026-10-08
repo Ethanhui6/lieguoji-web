@@ -1,0 +1,83 @@
+{
+  "origin": "http://127.0.0.1:5247",
+  "production": false,
+  "scope": "Disposable Chromium fresh synthetic 5-nation/60-city world. Existing physical fleet travels to pick up a real army, then sails and lands, with save/refresh, cancel and CAS. No personal saves; not original visual/device acceptance.",
+  "errors": [],
+  "consoleErrors": [],
+  "requestFailures": [],
+  "httpFailures": [],
+  "passed": false,
+  "preparation": {
+    "nationId": "n-2",
+    "enemyId": "n-1",
+    "armyId": "force-21",
+    "fleetId": "fleet-12-2",
+    "fromPortId": "port-p-17-0",
+    "toPortId": "port-p-10-0",
+    "startingPortId": "port-p-1-0",
+    "engine": "157590f1bd5241da70e8bb83165c3afad05934816cc940b1e2ec2db6185834dc",
+    "note": "Synthetic two continents, existing fleet at another home port. No personal save."
+  },
+  "fixture": {
+    "nationId": "n-2",
+    "enemyId": "n-1",
+    "armyId": "force-21",
+    "fleetId": "fleet-12-2",
+    "fromPortId": "port-p-17-0",
+    "toPortId": "port-p-10-0",
+    "startingPortId": "port-p-1-0",
+    "engine": "157590f1bd5241da70e8bb83165c3afad05934816cc940b1e2ec2db6185834dc",
+    "note": "Synthetic two continents, existing fleet at another home port. No personal save."
+  },
+  "phases": [
+    "assembling"
+  ],
+  "assembly": {
+    "day": 1,
+    "fleet": {
+      "id": "fleet-12-2",
+      "name": "梅德利斯港水师",
+      "nationId": "n-2",
+      "ships": 1,
+      "crew": 40,
+      "food": 2360,
+      "node": 114,
+      "route": [
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        170,
+        171,
+        220,
+        221,
+        270,
+        271,
+        320,
+        321,
+        370,
+        371,
+        420
+      ],
+      "progress": 12.819057844445089,
+      "dockId": null,
+      "targetId": "port-p-17-0",
+      "patrol": false,
+      "status": "sailing"
+    },
+    "mission": {
+      "armyId": "force-21",
+      "fleetId": "fleet-12-2",
+      "fromPortId": "port-p-17-0",
+      "toPortId": "port-p-10-0",
+      "phase": "assembling",
+      "startedTick": 0
+    }
+  },
+  "restoredDuringPickup": true,
+  "failure": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('fms-play')\nExpected: \"12\"\nReceived: \"11\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" getByTestId('fms-play') with timeout 5000ms\n  - waiting for getByTestId('fms-play')\n    14 × locator resolved to <section data-day=\"11\" class=\"fms-play\" data-run-version=\"46\" data-testid=\"fms-play\" data-interaction=\"navy\" data-map-mode=\"political\" data-run-rules=\"fms-war-46\" data-run-id=\"fms-48bb6959-724e-46e7-9b1b-16e79195b3b3\">…</section>\n       - unexpected value \"11\"\n",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-rendezvous46-v5-2026-10-08\\video\\page@18f8f014f477c3c9053a16637fd45d56.webm"
+}

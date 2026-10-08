@@ -1,3 +1,16 @@
+# 当前续接：v46现有舰队跨港接兵已可玩
+
+2026-10-08；已测源码 `8805226571c93c3622c2dc8002395d3ecd70a506`，后续证据提交以实际 Git HEAD 核实。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查与前10差距顺序不变，无必要用户决策阻塞。
+
+- 自动远征使用现有合格舰队，真实跨港接兵，双方到齐且粮储满足后登船；航行、登陆和返航保留同一军队身份。自动造船仍由月度队列执行，远征不再即时编船。海军页显示出发港、阶段、载军和等待原因。
+- [交付](evidence/fms-rendezvous46-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-rendezvous46-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-rendezvous46-v5-2026-10-08/checks.json)、[失败与复核](evidence/fms-rendezvous46-v5-2026-10-08/REVIEW.md)。69相关回归、types/lint、39保护、生产构建/43产物审查通过。生产Chromium跨港接兵→装载→登陆2280tick，途中两次刷新、取消、CAS、普通6国60城新局通过。
+- [本机v46试玩](http://127.0.0.1:5248/?fms=1)，目录`.autopilot/rendezvous46-production/dist`，PID36708，Store48，engine `e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d`。PC的127.0.0.1不是手机入口。已恢复旧v45/5246/PID32328并核实原43产物未变；更早历史服务记录不代表当前仍在线。
+- 原作统一Army海陆寻路及海域战斗身份仍有实质差距，此批只是现有网页运输适配闭环。原作依据为限定静态PE/IL2CPP，未运行原作或实际观看新视频。全景/4、16、40倍原作对照、iPhone/用户视觉、完整WEB-04-37均未完成；方格运输夹具不是自然地图美术。普通UI截图仍可见大陆比例小、平海及近景细节不足。入口旧概述“编船”文字待随下一批校正为实际月度建造/接兵关系。
+- 下一批：Continue WEB-04-37: recover and integrate Army.<MoveToProvince>d__117.MoveNext with ArmyPathfinding real land/sea route and sea-combat identity; existing-fleet rendezvous is only the current web transport adapter, not that native model. Do not repeat v37-v46 recovered leaves. Remaining native excess-fleet retirement, supply/speed and military appointment/internal-war timing stay explicit. Then WEB-03-06, then queued official/video full-project audit/top10. Preserve v46/5248, v45/5246 and older saved rules/artifacts; no push/Pages/main.
+- 未push/Pages/main；原安装包、认证、SDK配置、个人存档未进入产物。此前服务/检查进程中断没有冒充通过，最终真实重跑结果及失败日志均保留。开发服5247/PID20012已核实后关闭；5248/PID36708与5246/PID32328的HTTP源码/引擎再次核实。应用内tab1通过正常UI建立6国60城新局，停在第1日、已保存暂停并保留标签页；工具面板收起，视角放大两次。计划检查通过。
+
+---
+
 # 当前续接：v45月度海军补建已可玩
 
 2026-10-08；已测源码 `c9c81f1f596e3244504516de45f071250cbcb135`，证据提交后核实实际Git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。

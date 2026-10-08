@@ -1,0 +1,12 @@
+{
+  "origin": "http://127.0.0.1:5245",
+  "production": false,
+  "scope": "Disposable Chromium fresh synthetic 5-nation/60-city world. Tests a synthetic February monthly boundary: completed shipbuilding creates a physical fleet, with save/refresh, cancel and CAS. No personal saves; not original visual/device acceptance.",
+  "errors": [],
+  "consoleErrors": [],
+  "requestFailures": [],
+  "httpFailures": [],
+  "passed": false,
+  "failure": "Error: page.evaluate: Error: 战力输入损坏，保留原存档。\n    at fail (http://127.0.0.1:5245/src/fms/play/upper14-state.ts:138:9)\n    at assertUpper (http://127.0.0.1:5245/src/fms/play/upper14-state.ts:144:595)\n    at assertDestinyStructure (http://127.0.0.1:5245/src/fms/play/destiny20-structure.ts:69:2)\n    at assertDestiny20 (http://127.0.0.1:5245/src/fms/play/destiny20-model.ts:34:2)\n    at assertMuster21 (http://127.0.0.1:5245/src/fms/play/muster21-model.ts:25:2)\n    at assertLife22 (http://127.0.0.1:5245/src/fms/play/life22-model.ts:31:2)\n    at assertDynasty23 (http://127.0.0.1:5245/src/fms/play/dynasty23-model.ts:35:2)\n    at assertVoyage24 (http://127.0.0.1:5245/src/fms/play/voyage24-model.ts:32:2)\n    at assertSettlement25 (http://127.0.0.1:5245/src/fms/play/settlement25-model.ts:41:2)\n    at assertWar26Run (http://127.0.0.1:5245/src/fms/play/war26-model.ts:33:2)",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-shipyard45-v5-2026-10-08\\video\\page@44ffa48a8d42e90a893cf9fc269e4b26.webm"
+}

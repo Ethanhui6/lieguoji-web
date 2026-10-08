@@ -1,0 +1,114 @@
+{
+  "binarySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "method": "Bounded static PE/IL2CPP function reads; original never executed; no private dump published",
+  "methods": [
+    {
+      "name": "State$$UpdateNavy",
+      "rva": "5DE860",
+      "bytes": 1104,
+      "sha256": "8c3223d528c3d21952497b8d2aee31b8b099f854e860ddc05509c7e041099302"
+    },
+    {
+      "name": "State$$SelectNavyBuildPort",
+      "rva": "5D7210",
+      "bytes": 576,
+      "sha256": "12d47886e0ec4eb346f3240d2c3027e321f40678a3c580cb4731dac327569e90"
+    },
+    {
+      "name": "State$$GetNavyBuildMonths",
+      "rva": "5CDAA0",
+      "bytes": 384,
+      "sha256": "409c4114f4f01a5f22beccf19130c3cae05b5b99e0f2fed5e8cff1d3875b3af7"
+    },
+    {
+      "name": "State$$CalculateLandArmySeaCrossingRestriction",
+      "rva": "321180",
+      "bytes": 16,
+      "sha256": "9aa0858555b2f0dcfb2e62c18e238df28fbaf81f25346fcc428385196cd18139"
+    },
+    {
+      "name": "State$$IsLandArmySeaCrossingRestricted",
+      "rva": "5D2000",
+      "bytes": 16,
+      "sha256": "025306bbfca9b35d37fe8fcc51ebfb16c72329abc2a53c3e4a85015bea9de398"
+    },
+    {
+      "name": "NavalSystem$$GetPortBuildTimeMultiplier",
+      "rva": "417FB0",
+      "bytes": 368,
+      "sha256": "29c2a81a1e0153e3510bfc49f4f121713ccbb98e93c6ccc993607a95f4cdb5a2"
+    },
+    {
+      "name": "NavyManager.<>c__DisplayClass51_0$$<TrimStateNaviesToLimit>b__0",
+      "rva": "44C0B0",
+      "bytes": 464,
+      "sha256": "add25620aa71880c10568fea69741fa201e7938adf64ebebc1594ea69901acff"
+    },
+    {
+      "name": "NavyManager$$HasAnyNavyOnPort",
+      "rva": "42F2E0",
+      "bytes": 368,
+      "sha256": "be2075420b4176c825071ae7934a66fa147e6b01dc94a2850e128dbc68806bf1"
+    },
+    {
+      "name": "NavyManager$$GetActiveNaviesForState",
+      "rva": "42EB00",
+      "bytes": 448,
+      "sha256": "6fe1897dfc54b24b9c731b63280a39c40019029bc99865c6b4fa3b006e515339"
+    },
+    {
+      "name": "NavyManager$$TrimStateNaviesToLimit",
+      "rva": "430C20",
+      "bytes": 336,
+      "sha256": "b760e1121ebef1a869b22d68bf06766b259c7f5bd4737f0dcf0465885928575a"
+    },
+    {
+      "name": "WorldSettings$$.cctor",
+      "rva": "6E2240",
+      "bytes": 1552,
+      "sha256": "6001d810782ae1857b0dde90c76230e45ac90f9a3530ba17cce9e3b63ad5874d"
+    },
+    {
+      "name": "FantasyWorld.CharacterSystem.Character$$GetWarshipBuildTimeMultiplier",
+      "rva": "83CE70",
+      "bytes": 368,
+      "sha256": "61fc3d809ceda40e9e13064e5ef7a4584a18c9eb720bb5f6e40fb613ad1326f2"
+    },
+    {
+      "name": "State$$UpdateArmy",
+      "rva": "5DBFE0",
+      "bytes": 4080,
+      "sha256": "f7f69d03fba564734fc93efbeff7f9ce7480a5b418f3bf58e2aa62537838ce26"
+    },
+    {
+      "name": "State$$AdvanceOneMonth",
+      "rva": "5BF120",
+      "bytes": 992,
+      "sha256": "8f044f72fce20b8f78e3584df763fa59862b9a739410fe60252ca800ea365b5e"
+    },
+    {
+      "name": "NavalSystem$$GetControlledPorts",
+      "rva": "417170",
+      "bytes": 624,
+      "sha256": "adb434dced018e5a375694248e0d9b9bddc90d4493f2acde57e2634c1b824bf5"
+    },
+    {
+      "name": "NavyManager$$CreateNavy",
+      "rva": "42DAE0",
+      "bytes": 1744,
+      "sha256": "a74dba05f331dd0cf4b2678ff7a7168ea03a136e4f3c4c578bd7afdea46fecbe"
+    },
+    {
+      "name": "NavyManager$$HasAnyNavyOnPort",
+      "rva": "42F2E0",
+      "bytes": 368,
+      "sha256": "be2075420b4176c825071ae7934a66fa147e6b01dc94a2850e128dbc68806bf1"
+    },
+    {
+      "name": "NavyManager$$GetActiveNaviesForState",
+      "rva": "42EB00",
+      "bytes": 448,
+      "sha256": "6fe1897dfc54b24b9c731b63280a39c40019029bc99865c6b4fa3b006e515339"
+    }
+  ]
+}

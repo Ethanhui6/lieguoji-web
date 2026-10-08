@@ -1,3 +1,17 @@
+# 当前续接：v45月度海军补建已可玩
+
+2026-10-08；已测源码 `c9c81f1f596e3244504516de45f071250cbcb135`，证据提交后核实实际Git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。
+
+- 原作港口配额、月度建造、族群/君主/失港工期已接真实舰队、船员配粮、Worker与存档。海军页显示造船、等待原因和实际下水数。原作自动裁舰与统一Army跨海尚未接；现有载军舰队保留，受阻工期等待为明确适配。
+- [交付](evidence/fms-shipyard45-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-shipyard45-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-shipyard45-v5-2026-10-08/checks.json)。61相关回归、types/lint、39保护、生产构建/43产物审查，实际月度下水/刷新/CAS/取消及普通6国60城新局通过。
+- [本机v45试玩](http://127.0.0.1:5246/?fms=1)，目录`.autopilot/shipyard45-production/dist`，PID27992，Store47，engine `3db316ba4f672dac0a0a64eb0fb4602f2074eaceed1833e36318f4c465ee1ab4`。旧v44/5244及43产物哈希未变；手机不能用PC的127.0.0.1。
+- 已核实当前CalculateLandArmySeaCrossingRestriction直接false，UpdateNavy正常清零+0x310；不要再凭字段名捏造禁航机制或重复恢复。
+- 依据为限定静态PE/IL2CPP；4/16/40倍原作对照和iPhone/用户视觉未过。固定方格造船夹具不作自然地图美术通过。
+- 下一批：Continue WEB-04-37 from v45. Monthly native naval quota/build duration/queue now produce real browser fleets, using existing crew/grain and save protections. Cross-sea restriction normal native calculation returns false and UpdateNavy clears it; do not invent a threshold from its field name or repeat these recoveries. Remaining material gaps: original unified Army sea path versus browser transport mission capacity; native excess-fleet retirement versus retained crew/cargo; native speed/supply and military appointment/internal-war timing. Then WEB-03-06, followed by queued official/video full-project audit/top10. Preserve v44/5244 and older saved versions. No push/Pages/main.
+- 未push/Pages/main；开发服5245/PID35816已关闭，5246/PID27992与旧5244/PID38356的实际HTTP源码/引擎匹配，计划检查通过。应用内浏览器tab17已通过正常UI建立6国60城独立新局，停在第1日海军页并确认保存、保留标签页；没有搬迁旧端口存档。地图海陆比例、平海色彩与近景细节仍未作原作视觉通过。
+
+---
+
 # 当前续接：v44海港封锁与陆战协同已可玩
 
 2026-10-08；已测源码 `e362d5423a212359fc5b07793021c042acecc0d2`，后续证据提交核实实际Git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。

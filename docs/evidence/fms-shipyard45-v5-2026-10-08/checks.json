@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "c9c81f1f596e3244504516de45f071250cbcb135",
+  "engine": "3db316ba4f672dac0a0a64eb0fb4602f2074eaceed1833e36318f4c465ee1ab4",
+  "tests": {
+    "total": 61,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "native queue/quota/duration, live monthly session, actual crew/grain, blocked launch, old v44 continuation, v45 storage/Worker",
+    "fullRepoUnitSuite": false
+  },
+  "typecheck": true,
+  "lint": true,
+  "protectionTests": 39,
+  "productionBuild": true,
+  "artifactCount": 43,
+  "oldV44ArtifactsUnchanged": 43,
+  "preview": {
+    "origin": "http://127.0.0.1:5246",
+    "pid": 27992,
+    "directory": ".autopilot/shipyard45-production/dist"
+  },
+  "warnings": {
+    "fmsAppBytes": 3715345,
+    "chunkSizeWarning": true,
+    "viteExtensionWarning": true
+  },
+  "acceptance": {
+    "code": true,
+    "browserFlow": true,
+    "actualStagedMonthlyLaunch": true,
+    "liveWorkerTicks": 120,
+    "saveRefresh": true,
+    "crossTabCAS": true,
+    "portraitDesktopEmulation": true,
+    "originalVisualEquivalent": false,
+    "iPhone": false,
+    "fullWEB0437": false,
+    "published": false
+  },
+  "firstFailures": {
+    "fixture": "Synthetic fixture reassigned land controller without rebuilding political battle inputs. Fixed by staging harbor occupancy only; validators unchanged.",
+    "auditHelper": "Inline PowerShell/Node quoting failed before executing audit; rerun safely from saved .mjs."
+  },
+  "planCheck": true,
+  "devStopped": {
+    "port": 5245,
+    "pid": 35816
+  },
+  "finalPortsVerified": true,
+  "sourceLineage": {
+    "kernelAnd61Tests": "70f9d44b192451f0af6b3d2dc63cdd4ce8b8097b",
+    "finalUiSource": "c9c81f1f596e3244504516de45f071250cbcb135",
+    "delta": "one UI progress value corrected for completed hulls awaiting launch; full types and production browser checks use final source; lint rerun for changed UI file"
+  },
+  "visiblePlaytest": {
+    "browser": "Codex in-app browser",
+    "tab": "17",
+    "url": "http://127.0.0.1:5246/?fms=1",
+    "newWorld": {
+      "nations": 6,
+      "cities": 60,
+      "day": 1
+    },
+    "saved": true,
+    "paused": true,
+    "scope": "Fresh origin prepared through normal UI; no existing personal save read/copied/replaced. Not device acceptance."
+  }
+}

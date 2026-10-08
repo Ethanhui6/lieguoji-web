@@ -3633,9 +3633,13 @@
             ],
             "acceptance": "按用户要求增加日本、阿拉伯、日耳曼、英伦等更多可选文化，姓名和地名池与默认信仰/制度一致且可自定义；原素材、网页适配和用户扩展分清来源，不能冒充原作六文化已有这些全部内容。 2026-10-08追加：采用真实文化与单独宗教，不使用架空文化替代；中华君主/日本君主等称号按用户要求与当前政体一致，共和政体不保留帝号。国号/城市/人物命名联动，分裂或改制后更新自动国号和职位称号，保留玩家自定义名字。 用户已确认创建世界时同时提供“按文化习惯生成新名字”和“真实历史名称”两种命名模式；模式独立持久化，刷新/重开不混用，玩家自定义名称保留。",
             "evidence": [
-              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md"
+              "docs/evidence/fms-voyage24-v5-2026-10-07/VIDEO_STUDY.md",
+              "docs/evidence/fms-real-culture-2026-10-08/AUDIT.md",
+              "docs/evidence/fms-civilization47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
+              "docs/evidence/fms-civilization47-2026-10-08/checks.json"
             ],
-            "progressScope": "2026-10-08 read-only audit: production recognizes only six native naming libraries; language columns are translations, not real culture identities. Existing UI economics ethnicity controls are not culture selection; religionId is not integrated. New real culture/religion/name-mode state must join the pending full47 runtime and its single new Store49, not be injected into frozen46 saves. No real-culture playable implementation claimed yet."
+            "progressScope": "2026-10-08: implemented and tested independent12culture/14religion catalog, both naming modes, culture+polity titles and source-aware names; actual terrain→country/city→chronicle→people/life creation and atomic identity edits with revision check.42 related tests passed,32 new; full47/Store49/Worker/UI, kin/succession/secession/restoration/religious diplomacy remain pending. Frozen46 unchanged. Not yet playable in5254."
           }
         ]
       },
@@ -5265,11 +5269,11 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "military_window_verified_latest_user_culture_priority",
+      "status": "culture_creation_verified_full47_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "b143e60863802042d01527e7fb9c801f98b9a76c",
+      "lastCommitted": "8da19f156081c350e52b56b5028fe62345a51ec3",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "WEB-03-06 first: independently implement real culture/religion catalog, culture+polity titles/names and two user-selected naming modes. Integrate once into pending full47 runtime/Store49 before playable activation; preserve frozen46 and custom names. Continue Army47 landing/inland offense/900day regression and WEB-04-38. Do not create a separate fake v46 display-only culture layer.",
+      "next": "Continue WEB-03-06: adapt kin/sovereignty and actual succession, secession and historical restoration to civilization47 authority; chosen polity must feed first fiscal/military state. Then integrate with the pending full47 runtime and Store49/Worker/create UI once. Do not expose a fake v46 culture layer. Continue Army47 full daily settlement, island→mainland900day regression, occupation/defense pacing and WEB-04-38; preserve player5254 and old saves.",
       "latestUserPriority": "真实文化与独立宗教；文化/政体对应君主、国号与城名；更合理的起义分裂、跨海登陆、占领回防节奏和地图质感。先保存当前军事检查点再优先文化命名。",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
@@ -5673,7 +5677,10 @@
         "docs/evidence/fms-atlas-ui-v5-2026-10-08/browser.json",
         "docs/evidence/fms-atlas-ui-v5-2026-10-08/checks.json",
         "docs/evidence/fms-atlas-ui-v5-2026-10-08/tested-artifact.json",
-        "docs/evidence/fms-atlas-ui-v5-2026-10-08/old-previews.json"
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/old-previews.json",
+        "docs/evidence/fms-civilization47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
+        "docs/evidence/fms-civilization47-2026-10-08/checks.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",

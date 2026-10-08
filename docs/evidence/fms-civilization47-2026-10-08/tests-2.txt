@@ -1,0 +1,47 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/civilization47.test.ts (32 tests | 1 failed) 7558ms
+   ❯ catalogue and persisted-source contracts (16)
+     × keeps the whole playable v46 rule chain frozen 7049ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/civilization47.test.ts > catalogue and persisted-source contracts > keeps the whole playable v46 rule chain frozen
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/fms/play/civilization47.test.ts:145:3
+    143|     expect(()=>assertCivilization47(worlds['culture-generated'].civili…
+    144|   });
+    145|   it('keeps the whole playable v46 rule chain frozen',()=>{expect(veri…
+       |   ^
+    146|   it('permits a real pre-muster new world while retaining geometry, ar…
+    147|     const r=worlds['culture-generated'];expect(validateWorld(r.world))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 41 passed (42)
+   Start at  16:26:57
+   Duration  9.12s (tests 66%, transform 27%, import 7%)
+
+  Transform  transforming modules took 3.15s · 27% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

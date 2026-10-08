@@ -1,0 +1,177 @@
+{
+  "checkedAt": "2026-10-08T08:33:26.622174+00:00",
+  "task": "WEB-03-06",
+  "sourceCommit": "8da19f156081c350e52b56b5028fe62345a51ec3",
+  "scope": "Real culture catalogue, dual naming modes, actual world/reign/people creation and atomic identity candidate edits; not full run47",
+  "checks": {
+    "unit": {
+      "exitCode": 0,
+      "files": 2,
+      "tests": 42,
+      "newTests": 32,
+      "log": "tests-3.txt"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "log": "types-2.txt"
+    },
+    "lint": {
+      "exitCode": 0,
+      "scope": "src tests scripts",
+      "log": "lint-2.txt"
+    },
+    "frozen46": {
+      "exitCode": 0,
+      "fingerprint": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+      "inUnitSuite": true
+    },
+    "build": {
+      "exitCode": 0,
+      "version": "0.5.0-preview.46",
+      "sourceCommit": "8da19f156081c350e52b56b5028fe62345a51ec3",
+      "directory": ".autopilot/civilization47-check/dist",
+      "newCultureModulesBundled": false,
+      "log": "build-1.txt"
+    },
+    "artifactAudit": {
+      "exitCode": 0,
+      "artifacts": 43,
+      "log": "artifact-1.txt"
+    },
+    "protectionBeforeTaskUpdate": {
+      "exitCode": 0,
+      "tests": 39,
+      "log": "protection-1.txt"
+    },
+    "protection": {
+      "exitCode": 0,
+      "tests": 39,
+      "afterTaskUpdate": true,
+      "log": "protection-2.txt"
+    }
+  },
+  "firstFailures": [
+    {
+      "log": "lint-1.txt",
+      "reason": "ESLint control-character regex; replaced with explicit char-code checks without disabling rule."
+    },
+    {
+      "log": "tests-1.txt",
+      "reason": "Actual creation rejected by frozen validator requiring at least one Army; added forward-only full World validation with zero Army allowed before real muster. Legacy unchanged."
+    },
+    {
+      "log": "tests-2.txt",
+      "reason": "Complete source-chain filesystem hash audit took7049ms beyond default5000ms. Assigned a dedicated20000ms audit timeout; no gameplay performance claim."
+    }
+  ],
+  "readOnlyReview": {
+    "reviewers": [
+      "character_integration_map",
+      "culture_sources47"
+    ],
+    "reviewersRanTests": false,
+    "closed": [
+      "Object.hasOwn writable identities, future/nested fields rejected before editing",
+      "Chronicle required, person provenance checked including chosen inherited house",
+      "Derived world name synchronized atomically; past accession preserved",
+      "Separate Kingdom and Empire titles, clear repeated aliases, regnal-name length corrected"
+    ]
+  },
+  "playableStatus": {
+    "checkedAt": "2026-10-08T08:32:25.2642038Z",
+    "status": 200,
+    "url": "http://127.0.0.1:5254/?fms=1",
+    "commit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+    "version": "0.5.0-preview.46",
+    "reloadedUserTab": false
+  },
+  "acceptance": {
+    "codeAndUnit": true,
+    "full47Runtime": false,
+    "store49": false,
+    "workerAndCreateUI": false,
+    "newCultureBrowser": false,
+    "historicalCatalogueFullyAudited": false,
+    "phone": false,
+    "userVisual": false,
+    "originalEquivalent": false,
+    "published": false
+  },
+  "files": {
+    "src/fms/play/civilization47-catalog.ts": {
+      "sha256": "37e7674123878586fcd404b8a4e69c1e2c311bee2d0b56b6100a996d57d89fb9",
+      "normalizedSha256": "d3056952e818775b606d7cf200e8df2e40800a0760484af08b1cd38771bc98d7"
+    },
+    "src/fms/play/civilization47-names.ts": {
+      "sha256": "96d1031d9cd46dcf9dc50a36c6cd6223326dff8e7ead0793078d0129b8a6d623",
+      "normalizedSha256": "2845c5d821c037f57fdafad5ea1c998ba8fda2430848cb1666509e19b879a043"
+    },
+    "src/fms/play/civilization47-world-validation.ts": {
+      "sha256": "c51043b4842ab745dc8341e16247a761fc9cab86a24814eb568a49cb0992e379",
+      "normalizedSha256": "1649ad971c14618a73a7c73348b11d462178fa1eabe53438cc3f0a60f3a0e2c1"
+    },
+    "src/fms/play/civilization47-world.ts": {
+      "sha256": "cf28d56a92b5caee8c8ea3ee51b05387c9d0062a1ff0e5e3414a7b3fce0e947c",
+      "normalizedSha256": "4015559432ca4a8f8f80d62f58617064ddbf408b7779f62c80929baa02de5e92"
+    },
+    "src/fms/play/civilization47.test.ts": {
+      "sha256": "7c42e63e715a901458168a8776d442f91e1e25e770ae2290c3185232037713d6",
+      "normalizedSha256": "7c42e63e715a901458168a8776d442f91e1e25e770ae2290c3185232037713d6"
+    }
+  },
+  "artifacts": {
+    "_headers": "01e9c66149fd3bceb9c20428cf4cce408f38faa85291a444ab5a473ce1c54d44",
+    "_redirects": "6036983e5fc00f0169c9e939b1816ed771eee00e27f2fcc517b819041460b9ef",
+    "assets/App-B-TSmWiq.css": "bb4dcf8204d27e8ca0c6a7e5b27aaa0d98906692a2da61a07dfc61840f7a5055",
+    "assets/App-rLfkwpip.js": "ef46bb5292369f15dbf53b42fb37ac9e5c1dba2f25f631b1171f981f00117ca9",
+    "assets/atlas.worker-D_ZIKkck.js": "8c0ccfd62264f958d6c885d6be74d134f4cf107203c9a3af4e9938fbbc1fd6c8",
+    "assets/AtlasStudio-Bo6ix1L0.js": "bac7cf68281180656829303b17a1210ab2d8e62cf2ce3b52529be3ac7ba60e94",
+    "assets/AtlasStudio-CtV71PEf.css": "c1f0a47472b5b37995687e6577391996b49ec300c91ab86e7955d3cf1d6dc5f7",
+    "assets/battle-sword-BXcDEFcj.png": "12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3",
+    "assets/biome.worker-DO2s7HoV.js": "c63c5805867c97316fc46294177ec15c1bb108ccff159541166545921b576e4b",
+    "assets/browserAll-Cm5AthWe.js": "d38f5c3276e9fc153a5b5a01108f9957477018b484310f2b8f7a7e47e184c440",
+    "assets/BufferResource-Bk8ZSLzt.js": "997a5324c41ab25a417f763cfae844f35c90c3be4ecf7c4c955b24b91eac2d6c",
+    "assets/camera-BGXwsUH8.js": "08b6a8ed198719f13c7051bb429185430b652a444e3a4e800af3a8073d6e4c30",
+    "assets/canvasUtils-BVGwBBBn.js": "98ca6808b94ec0853ddcf0db0454a4309b043a07d15972b9a53f35dd4eed62e2",
+    "assets/coast.worker-2MXmECyk.js": "0b3ca25285cd6f339479ca5a7b46af9ef529a3e81a1d079f4fb7eb166f160390",
+    "assets/CountryStudio-CJDrU6nB.js": "54a9035d2d6f2aa88d7b2d33aee9fd74e869ebfd2e0a0ae9d1936483e8bf3285",
+    "assets/CountryStudio-Cn5n2Zb4.css": "17a5d6ba82a8ca9cfb82cca3359fe4b09ab50e5e24b50b70a4585283032c30ee",
+    "assets/delaunay-BCSrghLA.js": "58cf4293ca96f77eb7d3d230bf2732fd86147b1edd61f7bf6963a41cd3aa93dc",
+    "assets/FmsApp-M1X6xPOO.js": "18740e74a47e49f9eb8afffaebbde4db77d3b93d2ae277f47212bcded8b7b6fa",
+    "assets/FmsApp-zizkLS4Z.css": "be9f0391e599673827fc33a051ba5273930d60ef9d8f15a026e184c828bdc42d",
+    "assets/Geometry-IpHxCVTc.js": "df89e906e856d2798e557de272693ecd1694e4afe8da3c85846ae030f3f0f573",
+    "assets/getPo2TextureFromSource-BzR2jfx3.js": "1c3790e0224c52d07c4f1d37d54b635b5a6e4da10ccd6cb221a01912285a00b3",
+    "assets/getTextureBatchBindGroup-ClDkMdT3.js": "9bf17d41c7006d74e6744ba6e5953aa763ff278623a0dfc1c48c38c0c3fb7c6c",
+    "assets/index--87Ebkpc.js": "6a1f2885bdcf6d9cb0f9aeb0f4a90f753b7840e14172f1d98d8d51f82347916f",
+    "assets/init-B8Jnes8g.js": "60c6242e254bf1323f1f0fc6d19f9d3133c32dc3c51d9357359deaa61f9de77a",
+    "assets/init-CdT69TsS.js": "fc482ed5ff07e04413af75a4619d71be5e3fd7f681a737a6647a61a4e1647c8b",
+    "assets/LegacyEntry-CNvbqJOh.css": "d3d0f6d8783b4fa3a930606531584b6a06eca9fee710f2869ea6377ec02e0b52",
+    "assets/LegacyEntry-CsLBqXXN.js": "855b1f0cc209812afbc60395db52948848aa06d9bc2a86be7cdb97a4da060530",
+    "assets/play.worker-BkmcYKCE.js": "03e229ec430c9008ccdec418afec27d66739d48ffb99acc2646eb6576d51bd31",
+    "assets/renderer-BDRYXDRm.js": "7038f53ed393c80dee7399a812073164a5113edfd17e3b9e55779894e7f3dfe0",
+    "assets/RenderTargetSystem-a4R96cNy.js": "d1a956df3a1e3c5b10758c152dec84b790b21d98886c584bf0a1467ed2fbbd81",
+    "assets/replay.worker-Dvt2kBgS.js": "ee27d5be15c9cbb7e496612f2d716095dd1be717c635b7b893b02f262d12bb85",
+    "assets/rolldown-runtime-hePW80VL.js": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+    "assets/seed-terrain.worker-CB78RwKX.js": "6d599872dd8588fcb420cca05e01eaee0ad9543312dfe6ca4db358950cef3ed8",
+    "assets/sim.worker-CLe8Zpf3.js": "43022574341c8e40c7923fdb26e0d06158ae58abf27cf3cc3545bb4b6c881eda",
+    "assets/terrain-import.worker-B9lRjsio.js": "797ce8077032f3a89a0a7a4b20159a96813397aeb9898d0c9476acae5544829e",
+    "assets/terrain.worker-DaY7RVPz.js": "6dc434c4328d56e93d423a17cb8742b701e8b0f02c4cf3ece8f522863fe84897",
+    "assets/Text-Bnt6WTVO.js": "d48af298b9174b7de7cb0e177cad13c8288d5678d7cf1b7790478d45721192a3",
+    "assets/webworkerAll-D6tpwzVs.js": "79cf056586cf2317b865fe91b4dc581cadb375f835813402169213c89294ab45",
+    "assets/worker-pjB4IGPF.js": "79d0f01514849be56d6a8ab245ebf356f00cd7b35c744853bc619b5561f041f5",
+    "build.json": "919032af4a9f2517dcef941459d7e63bc7a4a813f28a0bafe1d565bb79dc79aa",
+    "favicon.svg": "42e1c8ef7f02c4fdd95a6adb74fe80886ecd6ffc37ca05863ebceb96fe8dcd03",
+    "index.html": "ec23a72882df83677f040556a1f72343b002dde4a3ad7e3d6b83bd7308b0108d",
+    "terrain-licenses.txt": "e5ac7e93931b7f4283b78ca1eab997167b73a42aa6b7a4a81cd807c7018041df"
+  },
+  "next": "47 kin/sovereignty and actual succession/secession/restoration adapters, selected polity before fiscal/muster; integrate with Army47 in one full47 session/Store49/Worker/UI. Preserve5254 player world.900day naval regression and wider remaining scope not completed.",
+  "commands": {
+    "unit": "node node_modules/vitest/vitest.mjs run src/fms/play/civilization47.test.ts src/fms/play/life22-state.test.ts",
+    "types": "node node_modules/typescript/bin/tsc --noEmit",
+    "lint": "node node_modules/eslint/bin/eslint.js src tests scripts",
+    "build": "node node_modules/vite/bin/vite.js build --outDir .autopilot/civilization47-check/dist",
+    "artifact": "node D:/游戏/架空地图模拟器/scripts/check-dist.mjs (cwd .autopilot/civilization47-check, reviewed license copied byte-identically under public/)",
+    "protection": "node --test scripts/release-policy.test.mjs scripts/check-v5-plan.test.mjs"
+  },
+  "logPreservation": "Readable txt logs normalize newlines and trailing whitespace; raw-logs.json contains exact original bytes, lengths and SHA256 for every log."
+}

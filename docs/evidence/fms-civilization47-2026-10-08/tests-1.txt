@@ -1,0 +1,40 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/civilization47.test.ts (31 tests | 31 skipped) 58ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/civilization47.test.ts [ src/fms/play/civilization47.test.ts ]
+Error: 文化世界地理或实体引用无效，原稿未改动。
+ ❯ createCivilizationWorld47 src/fms/play/civilization47-world.ts:27:32
+
+ ❯ src/fms/play/civilization47.test.ts:13:97
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  10 passed | 31 skipped (41)
+   Start at  16:23:18
+   Duration  2.98s (transform 76%, import 19%, tests 5%)
+
+  Transform  transforming modules took 3.37s · 76% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

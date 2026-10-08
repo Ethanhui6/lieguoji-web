@@ -1,0 +1,5 @@
+
+D:\游戏\架空地图模拟器\src\fms\play\army-commands47.test.ts
+  11:9  error  'beginArmyTravel47' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (1 error, 0 warnings)

@@ -4665,9 +4665,12 @@
               "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-browser.mjs",
               "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs",
               "docs/evidence/fms-army47-spatial-consumers-2026-10-08/CHECKPOINT.md",
-              "docs/evidence/fms-army47-spatial-consumers-2026-10-08/checks.json"
+              "docs/evidence/fms-army47-spatial-consumers-2026-10-08/checks.json",
+              "docs/evidence/fms-army47-commands-2026-10-08/CHECKPOINT.md",
+              "docs/evidence/fms-army47-commands-2026-10-08/NATIVE_SPEED.md",
+              "docs/evidence/fms-army47-commands-2026-10-08/checks.json"
             ],
-            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint."
+            "progressScope": "保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint."
           },
           {
             "id": "WEB-04-38",
@@ -8422,7 +8425,7 @@
         "docs/evidence/fms-army47-foundation-2026-10-08/CHECKPOINT.md",
         "docs/evidence/fms-army47-foundation-2026-10-08/checks.json"
       ],
-      "next": "Continue actual-position movement/commands and contacts, sea battle targets, remaining navy/garrison/politics/reorganization/muster consumers, then atomic run47/Store49/Worker/render. Do not refreeze46 or rerun already recovered leaves. Do not reuse food make-peace old route mutations. Preserve v46 previews/saves and Atlas UI target."
+      "next": "Integrate along-path actual contact stops and sea damage with the full candidate tick; then remaining navy/garrison/politics/reorganization/muster/economy consumers, run47/Store49/Worker/render and explicit copies. Movement47 is only a phase, not a full tick. Native ctor base 1.5 is overridden by Init: ordinary random(.7,1.1)*1.5 or cavalry-tradition ~1.95, never reroll per frame/load. Calendar defaults already recovered; map coordinate scale and lifecycle remain explicit. Preserve v46/Atlas and release gates."
     },
     "atlasUiTargetCheckpoint": {
       "date": "2026-10-08",
@@ -8497,7 +8500,28 @@
         "docs/evidence/fms-army47-spatial-consumers-2026-10-08/CHECKPOINT.md",
         "docs/evidence/fms-army47-spatial-consumers-2026-10-08/checks.json"
       ],
-      "next": "Continue actual-position movement/commands and contacts, sea battle targets, remaining navy/garrison/politics/reorganization/muster consumers, then atomic run47/Store49/Worker/render. Do not refreeze46 or rerun already recovered leaves. Do not reuse food make-peace old route mutations. Preserve v46 previews/saves and Atlas UI target."
+      "next": "Integrate along-path actual contact stops and sea damage with the full candidate tick; then remaining navy/garrison/politics/reorganization/muster/economy consumers, run47/Store49/Worker/render and explicit copies. Movement47 is only a phase, not a full tick. Native ctor base 1.5 is overridden by Init: ordinary random(.7,1.1)*1.5 or cavalry-tradition ~1.95, never reroll per frame/load. Calendar defaults already recovered; map coordinate scale and lifecycle remain explicit. Preserve v46/Atlas and release gates."
+    },
+    "army47CommandCheckpoint": {
+      "date": "2026-10-08",
+      "task": "WEB-04-37",
+      "sourceCommit": "38bdaaeb247dde657dce1d183cc2c0d3fd265763",
+      "status": "intent_and_movement_phase_verified_not_playable",
+      "tests": 71,
+      "newCommandTests": 24,
+      "typecheck": true,
+      "lint": true,
+      "build": true,
+      "distArtifacts": 43,
+      "frozen46Unchanged": true,
+      "runtimeIntegrated": false,
+      "storeIntegrated": false,
+      "evidence": [
+        "docs/evidence/fms-army47-commands-2026-10-08/CHECKPOINT.md",
+        "docs/evidence/fms-army47-commands-2026-10-08/NATIVE_SPEED.md",
+        "docs/evidence/fms-army47-commands-2026-10-08/checks.json"
+      ],
+      "next": "Integrate along-path actual contact stops and sea damage with the full candidate tick; then remaining navy/garrison/politics/reorganization/muster/economy consumers, run47/Store49/Worker/render and explicit copies. Movement47 is only a phase, not a full tick. Native ctor base 1.5 is overridden by Init: ordinary random(.7,1.1)*1.5 or cavalry-tradition ~1.95, never reroll per frame/load. Calendar defaults already recovered; map coordinate scale and lifecycle remain explicit. Preserve v46/Atlas and release gates."
     }
   }
 }

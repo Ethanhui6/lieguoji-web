@@ -20,6 +20,8 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   /** Owned candidate only. The real47 owner fixes this to its family calendar;
    * the generic military primitive also supports isolated no-family fixtures. */
   afterTick?: (candidate:T,dailyPending:boolean)=>void;
+  afterOccupation?: (candidate:T)=>undefined;
+  portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
 };
 function frame(r:MilitaryRun47) {
   const {spatial,forces}=actualForces47(r),regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const)));
@@ -43,6 +45,7 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,
   const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
   const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
   r.world=out.world;r.occupation=out.occupation;
+  if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
 }
 /** Atomic military window for a future full47 session. Whole public ticks give
  * stable partition/reload behavior; within each tick, stop at every real gate,
@@ -78,10 +81,12 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
       }
       if(now===tick)break;
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
-      const moved=advanceActualForces47(r,stop-now,weights,rules.speed,true);r=moved.run;
+      const moved=advanceActualForces47(r,stop-now,weights,rules.speed,true);
       // Assign an exact known endpoint when the interval was consumed; avoid
       // arithmetic residue causing a phantom delayed/missed attack at save.
-      now=moved.unusedSeconds===0?stop:now+moved.elapsed;
+      const end=moved.unusedSeconds===0?stop:now+moved.elapsed;
+      if(end>now&&rules.portInterval?.(r,moved.run,now,end)!==undefined)throw Error('港湾结算必须同步完成，原进度未提交。');
+      r=moved.run;now=end;
     }
     for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick)delete r.maritime.retreating[id];
     r.clock.tick=tick;r.forceClock.now=tick;

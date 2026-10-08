@@ -19,7 +19,7 @@ const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:
 // Actual production personnel resolver is used by the real military owner.
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),4,24,'peace',{mode:'culture-generated',enabled:['chinese','japanese','english','arab']});},20000);
 /** Fixture clock setup only; it does NOT perform economic/AI day settlement. */
-function atTick(tick:number){const r=structuredClone(base);for(let i=1;i<=tick;i++){r.clock.tick=i;r.world.day=Math.floor(i/120);advanceFamilyCalendar47(r,i);}r.forceClock.now=tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
+function atTick(tick:number){const r=structuredClone(base);for(let i=1;i<=tick;i++){r.clock.tick=i;r.world.day=Math.floor(i/120);advanceFamilyCalendar47(r,i);}r.forceClock.now=tick;r.navalAutonomy.lastTick=tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
 
 describe('one saved motion and attack time scale, real family clock',()=>{
   it('persists one speed per Army, with nation tradition separate from Cavalry unit and real culture',()=>{

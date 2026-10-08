@@ -9,6 +9,7 @@ import {nationsAtWar} from './realtime-statecraft';
 import {lossRecorder} from './war27-losses';
 import {forceKey47,reconcileForceContactsOwned47} from './force-motion47';
 import {reconcileMilitaryClock47} from './force-tick47';
+import {navalPresence47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
 
 export function dailyEvent47(r:Pick<FoundingForces47,'world'>,kind:GameEvent['kind'],text:string,reason:string){
   if(!Number.isSafeInteger(r.world.nextEventId)||r.world.nextEventId<1||r.world.nextEventId>=Number.MAX_SAFE_INTEGER)throw Error('事件记录已达上限。');
@@ -29,9 +30,9 @@ export function assertDailyResources47(r:FoundingForces47){
 export function settleFleetFood47(r:FoundingForces47){
   assertDailyResources47(r);
   if(r.transports.cargo.length)throw Error('旧承运军队需先明确转换，不能重复扣独立跨海军队口粮。');
-  const {spatial}=actualForces47(r),space=readArmySpace47(r.world,{...spatial,positions:r.armyPositions}),sea=graphFor46(r),loss=lossRecorder(r.losses,r.warfare),held=new Set(r.forceContacts.pairs.flatMap(p=>[p.a,p.b]));
+  const {spatial,held}=navalPresence47(r),space=readArmySpace47(r.world,{...spatial,positions:r.armyPositions}),sea=graphFor46(r),loss=lossRecorder(r.losses,r.warfare);
   // Only the land-ownership reconciliation, no old Navy role/motion readers.
-  for(const port of sea.ports){const state=r.portControl.ports[port.provinceId],land=r.world.provinces.find(p=>p.id===port.provinceId)!;if(!state)throw Error('实际海港缺少控制记录。');if(state.landOwnerId!==land.controller){Object.assign(state,{landOwnerId:land.controller,occupierId:land.controller,value:100});revise(r.portControl);}}
+  reconcilePortLandOwnersOwned47(r);
   for(const fleet of r.navy.fleets){
     if(fleet.status==='lost')continue;
     if(!Number.isSafeInteger(fleet.crew)||fleet.crew<1||!Number.isSafeInteger(fleet.food)||fleet.food<0)throw Error('活动舰队的船员或粮储无效。');

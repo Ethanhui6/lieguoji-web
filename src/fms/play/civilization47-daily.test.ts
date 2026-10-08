@@ -24,7 +24,7 @@ const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:
 const noOrders=()=>undefined;
 /** Positions and fiscal data are fixture inputs. Advancing the calendar here
  * does not claim that preceding economic days or AI were simulated. */
-function pending(day:number){const r=structuredClone(base);for(let tick=1;tick<=day*120;tick++){r.clock.tick=tick;r.world.day=Math.floor(tick/120)-(tick===day*120?1:0);advanceFamilyCalendar47(r,tick,tick===day*120);}r.forceClock.now=r.clock.tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
+function pending(day:number){const r=structuredClone(base);for(let tick=1;tick<=day*120;tick++){r.clock.tick=tick;r.world.day=Math.floor(tick/120)-(tick===day*120?1:0);advanceFamilyCalendar47(r,tick,tick===day*120);}r.forceClock.now=r.clock.tick;r.navalAutonomy.lastTick=r.clock.tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),5,60,'peace',{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman']});dayOne=pending(1);dayThirty=pending(30);},30000);
 function stock(r:FoundingForces47,id:string){return r.world.statecraft!.provinces.find(p=>p.provinceId===id)!;}
 function atSea(r:FoundingForces47,id:string,moving=false){const graph=actualForces47(r).spatial.graph,cell=[...graph.cells.values()].find(c=>c.surface==='sea'&&c.links.some(l=>graph.cells.get(l.to)!.surface==='sea'))!,to=cell.links.find(l=>graph.cells.get(l.to)!.surface==='sea')!.to;r.armyPositions.records[id]=beginArmyTravel47(id,moving?[cell.id,to]:[cell.id],graph);return cell;}

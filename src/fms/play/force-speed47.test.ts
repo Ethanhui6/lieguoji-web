@@ -11,11 +11,12 @@ import {assertFamilyCalendar47,advanceFamilyCalendar47} from './civilization47-c
 import {beginArmyTravel47} from './army-travel47-state';
 import {forceKey47} from './force-motion47';
 import {applyArmyCommand47,armyStamp47} from './army-commands47';
+import {combatReader47} from './civilization47-combat';
+import {nativeArmyHit} from './native-war/battle-damage';
 
 let base:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
-// Explicit fixture combat only. Production personnel adapter remains pending.
-const combat=()=>({navyCountToHull:1,army:()=>({efficiency:1,damageToArmy:40,multiplier:1}),navy:()=>({destiny:30,maritime:false,livingLeaderModifier:null})});
+// Actual production personnel resolver is used by the real military owner.
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),4,24,'peace',{mode:'culture-generated',enabled:['chinese','japanese','english','arab']});},20000);
 /** Fixture clock setup only; it does NOT perform economic/AI day settlement. */
 function atTick(tick:number){const r=structuredClone(base);for(let i=1;i<=tick;i++){r.clock.tick=i;r.world.day=Math.floor(i/120);advanceFamilyCalendar47(r,i);}r.forceClock.now=tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
@@ -50,51 +51,52 @@ describe('one saved motion and attack time scale, real family clock',()=>{
     for(const fleet of r.navy.fleets){fleet.status='lost';r.maritime.hulls[fleet.id]=0;}
     for(const army of [a,b]){army.troops=20000;army.status='idle';r.armyPositions.records[army.id]=beginArmyTravel47(army.id,[sea.id],spatial.graph);}
     for(const rel of r.world.statecraft!.relations)if([a.nationId,b.nationId].includes(rel.a)&&[a.nationId,b.nationId].includes(rel.b))rel.status='war';
+    const reader=combatReader47(r),attacker=reader.army(b),expectedLoss=Math.floor(nativeArmyHit(attacker.efficiency,1,r.units[a.id]==='Elite',attacker.damageToArmy)*10);
     const first=2/r.forceClock.secondsPerTick,hits:number[]=[];
     for(let day=0;day<20;day++){
-      const out=advanceCivilizationMilitary47(r,120,weights,combat);hits.push(...out.volleys.map(v=>v.at));expect(out.dailyPending).toBe(true);expect(out.run.world.day).toBe(day);
+      const out=advanceCivilizationMilitary47(r,120,weights);hits.push(...out.volleys.map(v=>v.at));expect(out.dailyPending).toBe(true);expect(out.run.world.day).toBe(day);
       if(day<19){expect(out.volleys).toEqual([]);expect(out.run.forceClock.draws).toBe(0);expect(out.run.forceClock.deadlines[forceKey47({kind:'army',id:a.id})]).toBe(first);}
       // Deliberately ONLY a settlement stub. No claim of finance/AI/Store49.
       out.run.world.day++;out.run.dailyEconomy.lastDay=out.run.world.day;const {terrain,...state}=out.run;r={...JSON.parse(JSON.stringify(state)),terrain};
     }
-    expect(hits).toEqual([first]);expect(r.forceClock.draws).toBe(2);expect(r.world.armies.find(v=>v.id===a.id)!.troops).toBe(19600);expect(r.life.lastTick).toBe(2400);expect(r.life.gameTime).toBe(Math.fround(20*r.life.secondsPerDay));assertFamilyCalendar47(r);
+    expect(hits).toEqual([first]);expect(r.forceClock.draws).toBe(2);expect(r.world.armies.find(v=>v.id===a.id)!.troops).toBe(20000-expectedLoss);expect(r.life.lastTick).toBe(2400);expect(r.life.gameTime).toBe(Math.fround(20*r.life.secondsPerDay));assertFamilyCalendar47(r);
   },120000);
   it('matches split windows and reload for all clocks, RNG, positions, speeds, birthdays and family state',()=>{
     const a=base.world.armies.find(a=>base.world.provinces.find(p=>p.id===a.provinceId)!.neighbors.some(id=>base.world.provinces.find(p=>p.id===id)!.controller===a.nationId))!,target=base.world.provinces.find(p=>p.id===a.provinceId)!.neighbors.find(id=>base.world.provinces.find(p=>p.id===id)!.controller===a.nationId)!;
-    const ordered=applyArmyCommand47(base,{type:'army-move',armyId:a.id,target:{kind:'province',id:target},kind:'march'},armyStamp47(base),weights),one=advanceCivilizationMilitary47(ordered,12,weights,combat);let r=ordered;
-    for(const ticks of [3,4,5]){const {terrain,...state}=r;r=advanceCivilizationMilitary47({...JSON.parse(JSON.stringify(state)),terrain},ticks,weights,combat).run;}
+    const ordered=applyArmyCommand47(base,{type:'army-move',armyId:a.id,target:{kind:'province',id:target},kind:'march'},armyStamp47(base),weights),one=advanceCivilizationMilitary47(ordered,12,weights);let r=ordered;
+    for(const ticks of [3,4,5]){const {terrain,...state}=r;r=advanceCivilizationMilitary47({...JSON.parse(JSON.stringify(state)),terrain},ticks,weights).run;}
     expect(r).toEqual(one.run);expect(r.life.lastTick).toBe(12);expect(r.forceSpeed).toEqual(base.forceSpeed);expect(base.clock.tick).toBe(0);
     expect(r.armyPositions.records[a.id]).not.toEqual(ordered.armyPositions.records[a.id]);
   },20000);
   it('holds the economic day pending while calendar advances once and rejects another military tick',()=>{
-    const r=atTick(119),before=structuredClone(r),out=advanceCivilizationMilitary47(r,1,weights,combat);
+    const r=atTick(119),before=structuredClone(r),out=advanceCivilizationMilitary47(r,1,weights);
     expect(out.dailyPending).toBe(true);expect(out.run.world.day).toBe(0);expect(out.run.life.currentDate).toEqual({year:1,month:1,day:2});expect(out.run.life.lastTick).toBe(120);assertFamilyCalendar47(out.run,true);
-    expect(()=>advanceCivilizationMilitary47(out.run,1,weights,combat)).toThrow();expect(r).toEqual(before);
+    expect(()=>advanceCivilizationMilitary47(out.run,1,weights)).toThrow();expect(r).toEqual(before);
     // Explicit settlement stub: only verifies no second calendar update.
-    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.run.life.lastTick).toBe(121);expect(next.run.life.currentDate).toEqual(out.run.life.currentDate);
+    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights);expect(next.run.life.lastTick).toBe(121);expect(next.run.life.currentDate).toEqual(out.run.life.currentDate);
   });
   it('updates non-court relatives at the ISO month boundary and preserves birthdays and relations',()=>{
-    const r=atTick(31*120-1),relative=Object.values(r.kin.persons).find(p=>!r.people.persons[p.id])!,birth=relative.birthTime,out=advanceCivilizationMilitary47(r,1,weights,combat);
+    const r=atTick(31*120-1),relative=Object.values(r.kin.persons).find(p=>!r.people.persons[p.id])!,birth=relative.birthTime,out=advanceCivilizationMilitary47(r,1,weights);
     expect(out.run.world.day).toBe(30);expect(out.run.life.currentDate).toEqual({year:1,month:2,day:1});expect(out.run.life.persons[relative.id].updatedMonth).toBe(13);expect(out.run.kin.persons[relative.id].birthTime).toBe(birth);expect(out.run.kin.persons[relative.id].childrenIds).toEqual(relative.childrenIds);expect(out.run.kin.revision).toBe(r.kin.revision+1);expect(out.run.life.revision).toBe(r.life.revision+1);assertFamilyCalendar47(out.run,true);
   });
   it.each([-1e-4,0,1e-4])('processes an attack %s ticks relative to the day edge without double firing',offset=>{
     const r=atTick(119),{spatial}=actualForces47(r),sea=[...spatial.graph.cells.values()].find(c=>c.surface==='sea')!,a=r.world.armies[0],b=r.world.armies.find(v=>v.nationId!==a.nationId)!,keys=[a,b].map(a=>forceKey47({kind:'army',id:a.id}));
     for(const relation of r.world.statecraft!.relations)if([a.nationId,b.nationId].includes(relation.a)&&[a.nationId,b.nationId].includes(relation.b))relation.status='war';
     for(const army of [a,b]){army.troops=20000;r.armyPositions.records[army.id]=beginArmyTravel47(army.id,[sea.id],spatial.graph);}
-    r.forceClock.deadlines=Object.fromEntries(keys.map(k=>[k,120+offset]));const out=advanceCivilizationMilitary47(r,1,weights,combat);
+    r.forceClock.deadlines=Object.fromEntries(keys.map(k=>[k,120+offset]));const out=advanceCivilizationMilitary47(r,1,weights);
     expect(out.volleys.length).toBe(offset<=0?1:0);expect(out.run.forceClock.draws).toBe(offset<=0?2:0);
-    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights,combat);expect(next.volleys.length).toBe(offset>0?1:0);expect(next.run.forceClock.draws).toBe(2);
+    out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights);expect(next.volleys.length).toBe(offset>0?1:0);expect(next.run.forceClock.draws).toBe(2);
   });
   it('rejects stale calendars, future speed data and the old independent military second atomically',()=>{
     for(const mutate of [(r:FoundingForces47)=>r.life.lastTick++, (r:FoundingForces47)=>{delete r.life.persons[Object.keys(r.life.persons)[0]];},(r:FoundingForces47)=>{Object.assign(r.kin,{origin:'native-initial-family-web-stream-v1'});},(r:FoundingForces47)=>{r.forceClock.secondsPerTick=.1;},(r:FoundingForces47)=>{Object.assign(r.forceSpeed,{future:1});},(r:FoundingForces47)=>{r.forceSpeed.armies[r.world.armies[0].id].base=1.5;}]){
-      const r=structuredClone(base);mutate(r);const before=structuredClone(r);expect(()=>advanceCivilizationMilitary47(r,1,weights,combat)).toThrow();expect(r).toEqual(before);
+      const r=structuredClone(base);mutate(r);const before=structuredClone(r);expect(()=>advanceCivilizationMilitary47(r,1,weights)).toThrow();expect(r).toEqual(before);
     }
   });
   it('rolls back the whole candidate when the monthly revision overflows after earlier ticks',()=>{
-    const r=atTick(31*120-3);r.kin.revision=2147483647;const before=structuredClone(r);expect(()=>advanceCivilizationMilitary47(r,3,weights,combat)).toThrow(/上限/);expect(r).toEqual(before);
+    const r=atTick(31*120-3);r.kin.revision=2147483647;const before=structuredClone(r);expect(()=>advanceCivilizationMilitary47(r,3,weights)).toThrow(/上限/);expect(r).toEqual(before);
   });
   it('rejects coherent-looking founder age edits and later birthdays without a recorded birth source',()=>{
-    const r=atTick(1),founder=Object.values(r.kin.persons).find(p=>p.source==='founding')!;founder.age=0;r.life.persons[founder.id].age=0;expect(()=>advanceCivilizationMilitary47(r,1,weights,combat)).toThrow(/日历/);
-    const s=atTick(1),relative=Object.values(s.kin.persons).find(p=>p.source==='initial-family')!;relative.birthTime=Math.fround(.0001);relative.age=0;s.life.persons[relative.id].birthTime=relative.birthTime;s.life.persons[relative.id].age=0;expect(()=>advanceCivilizationMilitary47(s,1,weights,combat)).toThrow(/日历/);
+    const r=atTick(1),founder=Object.values(r.kin.persons).find(p=>p.source==='founding')!;founder.age=0;r.life.persons[founder.id].age=0;expect(()=>advanceCivilizationMilitary47(r,1,weights)).toThrow(/日历/);
+    const s=atTick(1),relative=Object.values(s.kin.persons).find(p=>p.source==='initial-family')!;relative.birthTime=Math.fround(.0001);relative.age=0;s.life.persons[relative.id].birthTime=relative.birthTime;s.life.persons[relative.id].age=0;expect(()=>advanceCivilizationMilitary47(s,1,weights)).toThrow(/日历/);
   });
 });

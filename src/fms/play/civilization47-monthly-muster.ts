@@ -12,6 +12,7 @@ import {personTraits} from './court16-people';
 import {nativeMonthlyEmergencyQuantity} from './native-economy/emergency-muster';
 import {nationsAtWar} from './realtime-statecraft';
 import {dailyEvent47} from './civilization47-upkeep';
+import {initializedArmyCombat47} from './civilization47-combat-state';
 
 const alive=(a:FoundingForces47['world']['armies'][number])=>a.troops>0&&a.status!=='destroyed';
 /** Owned candidate only. Preserves native muster kernels and documented web
@@ -29,6 +30,7 @@ export function musterMonth47(r:FoundingForces47){
     r.world.armies.push({id,name:name+(kind==='emergency'?'动员':'')+unit.name,nationId,provinceId:homeId,originId:homeId,troops,morale:80,supplies:100,status:'idle',route:[],progress:0});
     r.units={...r.units,[id]:unit.key};r.tactics.forces[id]={homeId,kind,fullStrength:troops};r.armyPositions.records[id]=beginArmyTravel47(id,[cell.id],spatial.graph,home.center);
     r.forceSpeed.armies[id]=initializedArmySpeed47(r.world.custom!.seed,id,nationId,r.clock.tick,false);
+    r.combatPersonnel.armies[id]=initializedArmyCombat47(nationId,r.clock.tick,r.combatPersonnel.nations[nationId].damageTraits);
     r.upperCombat.armies[id]={base:initializedArmyBase(traitProjection(r.upperCombat.nations[nationId].traits)),initializedTick:r.clock.tick};return troops;
   };
   for(const n of r.world.nations){

@@ -3,7 +3,7 @@ import {landAttackMultiplier46,provinceDamage46} from './war46-blockade';
 import type {TerrainContext} from './fiscal15-state';
 import {reconcileCore} from './upper14-state';
 /** v47 uses entered land cells for occupation; frozen v46 keeps its province-anchor rules. */
-import type {World,Army} from '../../sim/types';
+import type {World,Army,Province} from '../../sim/types';
 import {nationsAtWar,transferEconomy} from '../../compat/v0_4/sim/statecraft';
 import {reconcileOccupation,resistanceCapacity,type OccupationState} from './occupation';
 import {readArmySpace47,landHolders47,type ArmySpace47,type ArmySpaceInput47} from './army-space47';
@@ -24,20 +24,22 @@ export function dueCombatRounds47(w:World,s:TacticsState,tick:number,occupation:
   }
   for(const id of Object.keys(s.rounds))if(!eligible.has(id))delete s.rounds[id];return due;
 }
-function forcesFromGroup(w:World,id:string,units:UnitAssignments,armies:Army[],terrain:TerrainContext,ports?:Ports46,due?:Set<string>){
+export type ProvinceCombat47=(army:Army,province:Province)=>{efficiency:number;damageToProvince:number};
+function forcesFromGroup(w:World,id:string,units:UnitAssignments,armies:Army[],terrain:TerrainContext,ports?:Ports46,due?:Set<string>,combat?:ProvinceCombat47){
   const p=w.provinces.find(p=>p.id===id)!,powers=new Map<string,number>();let defense=0;
-  for(const a of armies){if(due&&!due.has(a.id))continue;const e=combatEfficiency(w,a,units,p,true,terrain)*landAttackMultiplier46(w,ports,p.id,a.nationId);if(a.nationId===p.controller)defense+=e;else if(nationsAtWar(w,a.nationId,p.controller))powers.set(a.nationId,(powers.get(a.nationId)??0)+e);}
+  for(const a of armies){if(due&&!due.has(a.id))continue;const e=(combat?combat(a,p).efficiency:combatEfficiency(w,a,units,p,true,terrain))*landAttackMultiplier46(w,ports,p.id,a.nationId);if(a.nationId===p.controller)defense+=e;else if(nationsAtWar(w,a.nationId,p.controller))powers.set(a.nationId,(powers.get(a.nationId)??0)+e);}
   const rank=[...powers].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));return {attacker:rank[0]?.[0]??null,attack:rank[0]?.[1]??0,defense};
 }
-export function occupationForces47(w:World,id:string,units:UnitAssignments,spatial:ArmySpaceInput47,terrain:TerrainContext,ports?:Ports46,due?:Set<string>){
-  return forcesFromGroup(w,id,units,landHolders47(readArmySpace47(w,spatial),id),terrain,ports,due);
+export function occupationForces47(w:World,id:string,units:UnitAssignments,spatial:ArmySpaceInput47,terrain:TerrainContext,ports?:Ports46,due?:Set<string>,combat?:ProvinceCombat47){
+  return forcesFromGroup(w,id,units,landHolders47(readArmySpace47(w,spatial),id),terrain,ports,due,combat);
 }
 /** World is copied here; terrain.upper belongs to the caller's candidate
  * transaction and is reconciled on capture, just as in v46. The session must
  * clone world/upper/positions together before invoking this operation. */
-export function advanceTacticsOccupation47(world:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46){
+export function advanceTacticsOccupation47(world:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46,combatFactory?:(world:World)=>ProvinceCombat47){
   const w=structuredClone({...world,provinces:[]}) as World;w.provinces=world.provinces.map(p=>({...p}));const s=structuredClone(reconcileOccupation(w,state).occupation),local=stationed(readArmySpace47(w,spatial));
-  for(const p of w.provinces){const group=local.get(p.id)??[];let siege=s.sieges.find(v=>v.provinceId===p.id);if(!siege&&!group.some(a=>nationsAtWar(w,a.nationId,p.controller)))continue;const forces=forcesFromGroup(w,p.id,units,group,terrain,ports);if(!forces.attacker&&!siege)continue;
+  const combat=combatFactory?.(w);
+  for(const p of w.provinces){const group=local.get(p.id)??[];let siege=s.sieges.find(v=>v.provinceId===p.id);if(!siege&&!group.some(a=>nationsAtWar(w,a.nationId,p.controller)))continue;const forces=forcesFromGroup(w,p.id,units,group,terrain,ports,undefined,combat);if(!forces.attacker&&!siege)continue;
     const attackers=group.filter(a=>a.nationId===forces.attacker);
     const defenders=group.filter(a=>a.nationId!==forces.attacker&&!!forces.attacker&&nationsAtWar(w,a.nationId,forces.attacker));
     // User's explicit empty-town rule. Native resistance mode stays available
@@ -48,7 +50,7 @@ export function advanceTacticsOccupation47(world:World,state:OccupationState,uni
     if(!siege)continue;if(forces.attacker)siege.attacker=forces.attacker;
     let conqueror=immediate?forces.attacker:null;if(immediate)siege.resistance=0;
     else for(const a of group.filter(a=>due.has(a.id)).sort((a,b)=>a.id.localeCompare(b.id))){
-      const damage=provinceDamage46(10*combatEfficiency(w,a,units,p,true,terrain),landAttackMultiplier46(w,ports,p.id,a.nationId));
+      const resolved=combat?.(a,p),damage=provinceDamage46(resolved?Math.fround(resolved.damageToProvince*resolved.efficiency):10*combatEfficiency(w,a,units,p,true,terrain),landAttackMultiplier46(w,ports,p.id,a.nationId));
       if(a.nationId===p.controller)siege.resistance=Math.min(siege.maximum,siege.resistance+damage);
       else if(nationsAtWar(w,a.nationId,p.controller)){siege.attacker=a.nationId;siege.resistance=Math.max(0,siege.resistance-damage);}
       siege.pulse=tick;if(siege.resistance===0){conqueror=a.nationId;break;}

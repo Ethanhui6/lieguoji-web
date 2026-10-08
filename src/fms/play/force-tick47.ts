@@ -7,7 +7,8 @@ import {assertForceDamage47,type ForceDamage47} from './force-losses47';
 import {applyAccountedVolley47} from './force-accounting47';
 import {nationsAtWar} from './realtime-statecraft';
 import {readArmySpace47} from './army-space47';
-import {advanceTacticsOccupation47} from './war47-occupation';
+import {advanceTacticsOccupation47,type ProvinceCombat47} from './war47-occupation';
+import type {World} from '../../sim/types';
 import {TICKS_PER_DAY} from './clock';
 import type {War28World} from './war47-wars';
 
@@ -15,6 +16,7 @@ export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tac
 export type MilitaryRules47<T extends MilitaryRun47> = {
   speed: Parameters<typeof advanceActualForces47<T>>[3];
   combat: (snapshot:T)=>Parameters<typeof applyAccountedVolley47>[2];
+  occupation?: (snapshot:T,world:World)=>ProvinceCombat47;
   /** Owned candidate only. The real47 owner fixes this to its family calendar;
    * the generic military primitive also supports isolated no-family fixtures. */
   afterTick?: (candidate:T,dailyPending:boolean)=>void;
@@ -37,9 +39,9 @@ export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
   reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
   assertForceClock47(r.forceClock,now,new Set(actualForces47(r).forces.map(forceKey47)));
 }
-function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>) {
+function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>) {
   const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
-  const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl);
+  const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
   r.world=out.world;r.occupation=out.occupation;
 }
 /** Atomic military window for a future full47 session. Whole public ticks give
@@ -61,7 +63,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
   for(let tick=input.clock.tick+1;tick<=input.clock.tick+ticks;tick++) {
     for(;;) {
       if(++eventCount>100000)throw Error('军事事件超出预算，原进度未提交。');
-      occupy(r,now,new Set());
+      occupy(r,now,new Set(),rules);
       reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
       const due=new Set(Object.keys(r.forceClock.deadlines).filter(k=>r.forceClock.deadlines[k]<=now).sort());
       if(due.size) {
@@ -71,7 +73,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});
         // Web simultaneous-unit policy: even dying units fired the volley;
         // only surviving real holders attack/repair resistance or change flags.
-        occupy(r,now,due);
+        occupy(r,now,due,rules);
         reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
       }
       if(now===tick)break;

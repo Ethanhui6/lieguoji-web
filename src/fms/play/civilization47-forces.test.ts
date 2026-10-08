@@ -36,7 +36,7 @@ describe('actual cultural creation joins the uniform military phase',()=>{
   it('connects a real creation army to saved native speed, command and the real family clock',()=>{
     const graph=actualForces47(founding).spatial.graph,a=founding.world.armies.find(a=>founding.world.provinces.find(p=>p.id===a.provinceId)!.neighbors.some(id=>founding.world.provinces.find(p=>p.id===id)!.controller===a.nationId))!,target=founding.world.provinces.find(p=>p.id===a.provinceId)!.neighbors.find(id=>founding.world.provinces.find(p=>p.id===id)!.controller===a.nationId)!;
     const input=structuredClone(founding),before=armyTravelLocation47(input.armyPositions.records[a.id],graph).point,command=applyArmyCommand47(input,{type:'army-move',armyId:a.id,target:{kind:'province',id:target},kind:'march'},armyStamp47(input),weights);
-    const result=advanceCivilizationMilitary47(command,1,weights,()=>({navyCountToHull:1,army:()=>({efficiency:1,damageToArmy:40,multiplier:1}),navy:()=>({destiny:30,maritime:false,livingLeaderModifier:null})}));
+    const result=advanceCivilizationMilitary47(command,1,weights);
     expect(armyTravelLocation47(result.run.armyPositions.records[a.id],graph).point).not.toEqual(before);expect(result.run.clock.tick).toBe(1);expect(result.dailyPending).toBe(false);expect(result.run.finance).toEqual(founding.finance);expect(result.run.civilization).toEqual(founding.civilization);expect(input).toEqual(founding);
     // Family advances, while finance/daily settlement is still a separate owner.
     expect(result.run.life.lastTick).toBe(1);expect(result.run.life.gameTime).toBe(Math.fround(result.run.life.secondsPerDay/120));expect(result.run.forceSpeed).toEqual(founding.forceSpeed);expect(()=>assertFoundingForces47(result.run)).toThrow();

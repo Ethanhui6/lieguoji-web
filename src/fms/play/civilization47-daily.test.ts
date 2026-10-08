@@ -20,9 +20,8 @@ import {economicEthnic47} from './civilization47-economy';
 
 let base:FoundingForces47,dayOne:FoundingForces47,dayThirty:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
-// Explicit no-AI and scalar combat fixtures, never a playable-world claim.
+// Explicit no-AI fixture, never a playable-world claim. Combat uses real people.
 const noOrders=()=>undefined;
-const combat=()=>({navyCountToHull:1,army:()=>({efficiency:1,damageToArmy:40,multiplier:1}),navy:()=>({destiny:30,maritime:false,livingLeaderModifier:null})});
 /** Positions and fiscal data are fixture inputs. Advancing the calendar here
  * does not claim that preceding economic days or AI were simulated. */
 function pending(day:number){const r=structuredClone(base);for(let tick=1;tick<=day*120;tick++){r.clock.tick=tick;r.world.day=Math.floor(tick/120)-(tick===day*120?1:0);advanceFamilyCalendar47(r,tick,tick===day*120);}r.forceClock.now=r.clock.tick;r.dailyEconomy.lastDay=r.world.day;r.dailyEconomy.lastMusterMonth=Math.floor(r.world.day/30);return r;}
@@ -33,11 +32,11 @@ function fleetAway(r:FoundingForces47){const fleet=r.navy.fleets[0],graph=actual
 
 describe('atomic real47 food, monthly tax and muster candidate',()=>{
   it('settles a real military day boundary once, preserves input and resumes the next tick',()=>{
-    const before=structuredClone(base),pendingRun=advanceCivilizationMilitary47(base,120,weights,combat).run;
+    const before=structuredClone(base),pendingRun=advanceCivilizationMilitary47(base,120,weights).run;
     const out=settleCivilizationDay47(pendingRun,noOrders);
     expect(base).toEqual(before);expect(pendingRun.world.day).toBe(0);expect(out.world.day).toBe(1);expect(out.dailyEconomy).toEqual({version:1,lastDay:1,lastMusterMonth:0});expect(out.life).toEqual(pendingRun.life);assertFamilyCalendar47(out);
     expect(out.world.statecraft!.nations.every(n=>n.lastLedger?.day===1)).toBe(true);expect(out.armyPositions.revision).toBe(pendingRun.armyPositions.revision+1);expect(out.finance).toEqual(pendingRun.finance);
-    expect(()=>settleCivilizationDay47(out,noOrders)).toThrow();expect(advanceCivilizationMilitary47(out,1,weights,combat).run.clock.tick).toBe(121);
+    expect(()=>settleCivilizationDay47(out,noOrders)).toThrow();expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(121);
   },30000);
   it('sea armies consume once without drawing grain from their stale land anchor',()=>{
     const r=structuredClone(dayOne),a=r.world.armies[0],home=a.provinceId;atSea(r,a.id);a.supplies=50;
@@ -59,7 +58,7 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
     const out=settleCivilizationDay47(r,noOrders),dead=out.world.armies.find(v=>v.id===a.id)!;
     expect(dead.status).toBe('destroyed');expect(dead.troops).toBe(0);expect(out.forceContacts.pairs.some(p=>p.a===key||p.b===key)).toBe(false);expect(out.forceClock.deadlines[key]).toBeUndefined();expect(out.forceDamage).toEqual(r.forceDamage);
     expect(out.losses.nations[a.nationId].total.starvation).toBe(1);expect(out.losses.nations[a.nationId].unassigned.starvation).toBe(1);expect(out.losses.nations[a.nationId].total.combat).toBe(0);expect(out.armyPositions.records[a.id].status).toBe('halted');
-    expect(advanceCivilizationMilitary47(out,1,weights,combat).run.clock.tick).toBe(121);
+    expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(121);
   });
   it('retries from the same private pending state deterministically, including JSON reload',()=>{
     const r=structuredClone(dayThirty),before=structuredClone(r),out=settleCivilizationDay47(r,noOrders),{terrain,...state}=r;
@@ -79,12 +78,12 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
     });
     const replacement=out.world.armies.find(a=>!oldIds.has(a.id)&&out.tactics.forces[a.id].homeId===home)!;expect(replacement).toBeDefined();expect(replacement.troops).toBe(expectedTroops);expect(stock(out,home).population).toBe(populationBefore-Math.round(expectedTroops/10));expect(out.units[replacement.id]).toBeDefined();expect(out.upperCombat.armies[replacement.id].initializedTick).toBe(3600);expect(out.forceSpeed.armies[replacement.id].initializedTick).toBe(3600);assertForceSpeed47(out.forceSpeed,out.world,3600);
     const position=armyTravelLocation47(out.armyPositions.records[replacement.id],actualForces47(out).spatial.graph);expect(position.onLand).toBe(true);expect(position.point).toEqual(out.world.provinces.find(p=>p.id===home)!.center);expect(out.destiny.nations[nation].lastMonth).toBe(1);
-    const settled=structuredClone(out);musterMonth47(out);expect(out).toEqual(settled);expect(advanceCivilizationMilitary47(out,1,weights,combat).run.clock.tick).toBe(3601);
+    const settled=structuredClone(out);musterMonth47(out);expect(out).toEqual(settled);expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(3601);
   });
   it('mobilizes from actual safe core locations and respects the saved cooldown on repeated month entry',()=>{
     const r=structuredClone(dayThirty),p=r.world.provinces.find(p=>p.neighbors.some(id=>r.world.provinces.find(v=>v.id===id)!.controller!==p.controller))!,other=r.world.provinces.find(v=>p.neighbors.includes(v.id)&&v.controller!==p.controller)!.controller,id=p.controller;
     for(const rel of r.world.statecraft!.relations)if([id,other].includes(rel.a)&&[id,other].includes(rel.b))rel.status='war';r.upperCombat.nations[id].coreThreshold=100;r.destiny.nations[id].destiny=50;r.upperCombat.nations[id].destiny=50;
-    const person=r.people.persons[r.people.nations[id].leaderId!];person.traits=[];const expected=nativeMonthlyEmergencyQuantity(50,personTraits(person)).count,oldIds=new Set(r.world.armies.map(a=>a.id));
+    const person=r.people.persons[r.people.nations[id].leaderId!];person.traits=[];r.kin.persons[person.id].traits=[];const expected=nativeMonthlyEmergencyQuantity(50,personTraits(person)).count,oldIds=new Set(r.world.armies.map(a=>a.id));
     const out=settleCivilizationDay47(r,noOrders),emergency=out.world.armies.filter(a=>a.nationId===id&&!oldIds.has(a.id)&&out.tactics.forces[a.id].kind==='emergency');expect(emergency.length).toBe(expected);expect(expected).toBeGreaterThan(0);expect(out.tactics.mobilizations[id].lastMonth).toBe(1);
     const snapshot=structuredClone(out);musterMonth47(out);expect(out).toEqual(snapshot);expect(emergency.every(a=>out.forceSpeed.armies[a.id]&&out.armyPositions.records[a.id])).toBe(true);
   });
@@ -131,6 +130,6 @@ describe('fleet food uses the actual stopped anchor, not legacy dock IDs',()=>{
   it('total crew starvation loses the ship at its real position and removes active orders and deadlines',()=>{
     const r=structuredClone(dayOne),fleet=fleetAway(r),position=structuredClone(r.fleetPositions.records[fleet.id]),hull=r.maritime.hulls[fleet.id];fleet.crew=1;fleet.food=0;const out=settleCivilizationDay47(r,noOrders),lost=out.navy.fleets.find(f=>f.id===fleet.id)!;
     expect(lost.status).toBe('lost');expect(lost.crew).toBe(0);expect(out.maritime.hulls[fleet.id]).toBe(0);expect(out.fleetPositions.records[fleet.id]).toEqual({...position,status:'halted'});expect(out.portControl.fleets[fleet.id]).toMatchObject({active:false,targetId:null,forwardBaseId:null});expect(out.portControl.attackFleetIds).not.toContain(fleet.id);
-    expect(out.losses.nations[fleet.nationId].unassigned).toMatchObject({crew:1,hull,ships:fleet.ships,combat:0});expect(advanceCivilizationMilitary47(out,1,weights,combat).run.clock.tick).toBe(121);
+    expect(out.losses.nations[fleet.nationId].unassigned).toMatchObject({crew:1,hull,ships:fleet.ships,combat:0});expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(121);
   });
 });

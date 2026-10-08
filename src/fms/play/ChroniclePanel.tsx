@@ -1,3 +1,4 @@
+import {openingRulers} from './opening-history';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {ChronicleRun} from './chronicle-model';
 import type {Chronicle} from './chronicle-records';
@@ -34,11 +35,13 @@ export function ChroniclePanel({chronicle,nations,focusId,locate}:{chronicle:Chr
   useEffect(()=>{if(focusId!==undefined){const panel=section.current?.closest('.play-panel');if(panel)panel.scrollTop=0;}},[focusId]);
   const [count,setCount]=useState(60),[query,setQuery]=useState<HistoryQuery>({text:'',kind:'important',nationId:''}),[focused,setFocused]=useState(focusId);
   const matches=useMemo(()=>queryHistory(chronicle.entries,query),[chronicle.entries,query]);
+  const opening=openingRulers(chronicle,nations).filter(v=>(!query.nationId||v.nationId===query.nationId)&&(!query.text.trim()||[v.currentNationName,v.ruler.name,regnalLabel(v.ruler)].join(' ').includes(query.text.trim())));
   const chosen=chronicle.entries.find(e=>e.id===focused),events=matches.filter(e=>e.id!==chosen?.id).slice(0,count);
   const change=(value:Partial<HistoryQuery>)=>{setQuery(q=>({...q,...value}));setCount(60);};
-  return <section ref={section} className="play-chronicle" aria-label="本局史书"><h3>本局史书 · {chronicle.entries.filter(isMajorHistory).length} 条要闻</h3>
+  return <section ref={section} className="play-chronicle" aria-label="本局史书"><div className="play-chronicle-heading"><h2>诸国纪事</h2><p className="play-muted">{opening.length} 位开篇君主 · {chronicle.entries.filter(isMajorHistory).length} 条后续要闻</p></div>
     {chosen&&<div className="play-history-selection"><div className="play-row"><strong>当前要闻</strong><button onClick={()=>setFocused(undefined)}>收起要闻</button></div><HistoryEntry entry={chosen} focused locate={locate}/></div>}
     {focused!==undefined&&!chosen&&<p role="status">此条要闻已不在当前世界中，请查阅本局记录。</p>}
+    {!!opening.length&&(query.kind==='important'||query.kind==='')&&<details className="play-opening-history" open={chronicle.entries.length===0?true:undefined}><summary>第 {chronicle.originDay} 日 · 开篇人物志</summary><p className="play-muted">本局开始记载时的在位君主。国名采用现名；这不是后来发生的传位。</p>{opening.map(v=><article key={v.nationId}><strong>{v.currentNationName}</strong><span>{regnalLabel(v.ruler)} · {v.ruler.name}</span><small>第 {v.ruler.order} 任 · 第 {v.ruler.ascendedDay} 日即位</small></article>)}</details>}
     <div className="play-history-tools" role="group" aria-label="史书筛选">
       <label>搜索史书<input type="search" aria-label="搜索史书" placeholder="国名、地名、王号或原因" maxLength={120} value={query.text} onChange={e=>change({text:e.target.value})}/></label>
       <div><label>事件类别<select aria-label="史书类别" value={query.kind} onChange={e=>change({kind:e.target.value as HistoryQuery['kind']})}><option value="important">重要大事</option><option value="">全部记录（含领土易手）</option>{Object.entries(historyKinds).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>
@@ -47,7 +50,7 @@ export function ChroniclePanel({chronicle,nations,focusId,locate}:{chronicle:Chr
     </div>
     <p className="play-muted" role="status">匹配 {matches.length} 条 / 全部 {chronicle.entries.length} 条{chosen?' · 当前要闻单独展开':''}</p>
     <details className="play-history-help"><summary>史书记载范围</summary><p>默认显示宣战与和约、起义、独立、传位、迁都、覆亡和复国。日常领土易手保留在“全部记录”中，不进入顶部大事记。从第 {chronicle.originDay} 日开始保存当时的人名、国名、地点和原因，旧记录保留旧名；上限一万条。</p></details>
-    {!chronicle.entries.length?<p>尚无国家要闻。真实传位、起义、独立、覆亡及外交战事发生后记录。</p>:!matches.length&&<p>没有匹配记录。试试旧地名、王号，或清除筛选。</p>}
+    {!chronicle.entries.length?<p>后续大事将接续记载：宣战、和约、传位、起义与独立。日常领土易手收在全部记录中。</p>:!matches.length&&<p>没有匹配记录。试试旧地名、王号，或清除筛选。</p>}
     {events.map(e=><HistoryEntry key={e.id} entry={e} locate={locate}/>)}
     {events.length<matches.filter(e=>e.id!==chosen?.id).length&&<button onClick={()=>setCount(n=>n+60)}>查看更早记录</button>}
   </section>;

@@ -6,7 +6,7 @@ export function Presence({show,children}:{show:boolean;children:ReactElement<{in
   if(show&&children)last.current=children;
   useEffect(()=>{
     if(show){setRetained(true);return;}
-    const timer=setTimeout(()=>setRetained(false),matchMedia('(prefers-reduced-motion: reduce)').matches?0:160);
+    const timer=setTimeout(()=>setRetained(false),matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
     return()=>clearTimeout(timer);
   },[show]);
   return (show||retained)&&last.current?cloneElement(last.current,{'data-leaving':!show,inert:!show,'aria-hidden':!show}):null;

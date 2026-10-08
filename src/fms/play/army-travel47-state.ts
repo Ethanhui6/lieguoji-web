@@ -28,6 +28,9 @@ export function armyTravelLocation47(s:ArmyTravel47,g:TravelGraph47):{point:Poin
  const l=segment(s,g)!;
  const first=!s.crossed,start=first?l.start:l.gate,end=first?l.gate:b.center,total=first?l.toGate:l.distance-l.toGate;
  const ratio=total>0?(first?s.offset:s.offset-l.toGate)/total:0,cell=first?a:b;
+ // Boundary points are canonical on both sides. Interpolating ratio=1 can
+ // produce a different float from the same gate reached with ratio=0.
+ if(s.offset===l.toGate)return{point:{...l.gate},cell,onLand:cell.surface==='land'};
  return{point:{x:start.x+(end.x-start.x)*ratio,y:start.y+(end.y-start.y)*ratio},cell,onLand:cell.surface==='land'};
 }
 /** Functional motion step. Base/world time conversion remains explicit at the

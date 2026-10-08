@@ -32,7 +32,7 @@ function actionSchema(action: ArmyCommand47) {
   if (action.type === 'army-halt') return;
   if (action.type !== 'army-move' || !['march', 'retreat'].includes(action.kind) || !exact(action.target, ['kind', 'id']) || (action.target.kind === 'province' ? typeof action.target.id !== 'string' || !action.target.id : action.target.kind !== 'cell' || !integer(action.target.id))) throw Error('行军目标无效。');
 }
-function policy(r: ArmyMotionRun47, a: Army, weights: ArmyRouteWeights47, retreat: boolean): TravelPolicy47 {
+export function armyTravelPolicy47(r: ArmyMotionRun47, a: Army, weights: ArmyRouteWeights47, retreat: boolean): TravelPolicy47 {
   const access = militaryAccess46(r), provinces = new Map(r.world.provinces.map(p => [p.id, p]));
   return {...weights, allowLand: true, allowSea: !r.reorganization.active[a.id], canEnter: id => {
     const p = provinces.get(id); return !!p && (access(r.world, a.nationId, p.controller) || !retreat && nationsAtWar(r.world, a.nationId, p.controller));
@@ -78,7 +78,7 @@ function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWe
   }
   if (target === undefined) throw Error('目标不在当前地图的实际海陆网格中。');
   if (target === here.travel.nodes.at(-1) && here.travel.status === 'moving') throw Error('军队正在前往这个目标。');
-  const travel = redirectArmyTravel47(here.travel, spatial.graph, target, policy(r, a, weights, action.kind === 'retreat'));
+  const travel = redirectArmyTravel47(here.travel, spatial.graph, target, armyTravelPolicy47(r, a, weights, action.kind === 'retreat'));
   if (!travel) throw Error(r.reorganization.active[a.id] ? '重编期间保留陆上行军，暂不能进入海域。' : '没有符合当前外交通行限制的海陆路线。');
   // A one-cell redirect explicitly stops at the exact point; do not draw a
   // fake trip back to the cell center when the movement primitive stays put.
@@ -143,7 +143,7 @@ export function advanceArmyMovement47<T extends ArmyMotionRun47>(r: T, seconds: 
   const next = candidate(r), spatial = armySpatialFor47(next);
   for (const a of [...next.world.armies].sort((a, b) => a.id.localeCompare(b.id))) {
     if (a.troops <= 0 || a.status === 'destroyed' || engaged(next, a)) continue;
-    const input = next.armyPositions.records[a.id], p = policy(next, a, weights, a.status === 'retreating');
+    const input = next.armyPositions.records[a.id], p = armyTravelPolicy47(next, a, weights, a.status === 'retreating');
     if (input.status === 'halted' || input.status === 'arrived') continue;
     const result = advanceArmyTravel47(input, spatial.graph, seconds, c => speed(next, a, c), c => c.surface === 'sea' ? p.allowSea : p.allowLand && p.canEnter(c.provinceId!));
     next.armyPositions.records[a.id] = result.travel;

@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "fingerprint": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "files": [
+    {
+      "path": "src/fms/play/war46-model.ts",
+      "archive": "fms/play/war46-model.ts.source",
+      "sha256": "eb66ff84ab34c75a2764278a7fc324e80bf6445b6a8ada022c49466019853dc2"
+    },
+    {
+      "path": "src/fms/play/war46-storage.ts",
+      "archive": "fms/play/war46-storage.ts.source",
+      "sha256": "25ccc1e64351bc587e646000ab06a530ba58313234350622c0d3b18af65efe31"
+    },
+    {
+      "path": "src/fms/play/war46-stores.ts",
+      "archive": "fms/play/war46-stores.ts.source",
+      "sha256": "faec5e2b0e23a2cfc5c570d29b702ea3e97b01b72655463d85bf90a735c4fde4"
+    },
+    {
+      "path": "src/fms/play/war46-state.ts",
+      "archive": "fms/play/war46-state.ts.source",
+      "sha256": "3e2b2e0fa12d314c2019d262c7fc44a07bd3162791407772a70882457c596b55"
+    },
+    {
+      "path": "src/fms/play/war46-declaration.ts",
+      "archive": "fms/play/war46-declaration.ts.source",
+      "sha256": "42e4d4ed82d2badeabbc6ec1b7167e146f0dc8ace2501735b02e86d9e5d911d5"
+    },
+    {
+      "path": "src/fms/play/war46-session.ts",
+      "archive": "fms/play/war46-session.ts.source",
+      "sha256": "e2232e667041fbd66fab373d4eedd3c59aedb1fba1eea644660dbd8eef123a6d"
+    },
+    {
+      "path": "src/fms/play/war46-client.ts",
+      "archive": "fms/play/war46-client.ts.source",
+      "sha256": "9e71e4686a2f49b1116319729de1e1b1813fd39e458ed19155c90564ffc11cab"
+    },
+    {
+      "path": "src/fms/play/war46-vassals.ts",
+      "archive": "fms/play/war46-vassals.ts.source",
+      "sha256": "6b50d73e0ad3d8b45912705a7be8a1a1b7bc14110bcc4011e45bf6299e9bc980"
+    },
+    {
+      "path": "src/fms/play/war46-settlement.ts",
+      "archive": "fms/play/war46-settlement.ts.source",
+      "sha256": "60263c375029b679c767566d69b5d053605bdda23d947de9cf8876135f44f585"
+    },
+    {
+      "path": "src/fms/play/war46-peace.ts",
+      "archive": "fms/play/war46-peace.ts.source",
+      "sha256": "8ecb65c1fad9bd95cc308a2662f09f8286ad8f1595bd4dc35c97ba36875573ad"
+    },
+    {
+      "path": "src/fms/play/war46/play.worker.ts",
+      "archive": "fms/play/war46/play.worker.ts.source",
+      "sha256": "78b77c92d9bb6ba822979a9db8d3733ecc6f45e104e9c63fdc5ee8cf793ba230"
+    },
+    {
+      "path": "src/fms/play/war46-tribute.ts",
+      "archive": "fms/play/war46-tribute.ts.source",
+      "sha256": "bdbbed976dcb78f4ef1afb277d682bca23d96e56e1bbca39e3d2e319ad560de9"
+    },
+    {
+      "path": "src/fms/play/war46-rebellion.ts",
+      "archive": "fms/play/war46-rebellion.ts.source",
+      "sha256": "2b561211313dee450d3d3515d8d6703aea701f801fce5a5aaeac03645631d98e"
+    },
+    {
+      "path": "src/fms/play/war46-wars.ts",
+      "archive": "fms/play/war46-wars.ts.source",
+      "sha256": "99e5904e7e7ea7a4ae6afdde276400c880b33d5adecd0381f1580325a4ee59e9"
+    },
+    {
+      "path": "src/fms/play/war46-validation.ts",
+      "archive": "fms/play/war46-validation.ts.source",
+      "sha256": "fad38529c5b59f5c996609c37ef484cb150d713ff3a482fc221bf48d1accc5e2"
+    },
+    {
+      "path": "src/fms/play/war46-query.ts",
+      "archive": "fms/play/war46-query.ts.source",
+      "sha256": "c32356fb8cbfc26f3d3c637b6ad691d41fd534f9927064609570af9b22610447"
+    },
+    {
+      "path": "src/fms/play/war46-coalition.ts",
+      "archive": "fms/play/war46-coalition.ts.source",
+      "sha256": "1e04894d0723d272ff933b01ffe9b38ed06e216763b87f31ccaa78e9179d9bde"
+    },
+    {
+      "path": "src/fms/play/war46-alliance.ts",
+      "archive": "fms/play/war46-alliance.ts.source",
+      "sha256": "1cd233514d68d38729c1326b471f47686203c553e4716cddcf246c0120dd71ae"
+    },
+    {
+      "path": "src/fms/play/war46-access.ts",
+      "archive": "fms/play/war46-access.ts.source",
+      "sha256": "80df8d2474de729bd5e956f032c17628ef73ca2ea46465e6bfc444d2182ddd15"
+    },
+    {
+      "path": "src/fms/play/war46-core.ts",
+      "archive": "fms/play/war46-core.ts.source",
+      "sha256": "79b785ad9103255828251e13fb153043934ba0e08763b2d62473f39bb573a8f7"
+    },
+    {
+      "path": "src/fms/play/war46-battle.ts",
+      "archive": "fms/play/war46-battle.ts.source",
+      "sha256": "08c8a029859ce795ee49f09cf289af47a87e577509ad4f67ae5cd7385040a29a"
+    },
+    {
+      "path": "src/fms/play/war46-runtime.ts",
+      "archive": "fms/play/war46-runtime.ts.source",
+      "sha256": "f16696e83fb83e72cca99a3fae7a3d1c3037ed282947068d01802e6563dcf788"
+    },
+    {
+      "path": "src/fms/play/war46-politics.ts",
+      "archive": "fms/play/war46-politics.ts.source",
+      "sha256": "12f5ee1a8fe2d60d7de116fd310c890238ae029ff33d06fc4d1b57619ffce43b"
+    },
+    {
+      "path": "src/fms/play/war46-commands.ts",
+      "archive": "fms/play/war46-commands.ts.source",
+      "sha256": "3865dd2b5f518db603e0aac1abf214a0b93c8228d0ba84bbdfa6f03fdbce265d"
+    },
+    {
+      "path": "src/fms/play/war46-navy.ts",
+      "archive": "fms/play/war46-navy.ts.source",
+      "sha256": "b036d1365e786c9f81d6b45bcdd5253509fa29d91b41bfdd26972046ebf6fe5a"
+    },
+    {
+      "path": "src/fms/play/war46-deployment.ts",
+      "archive": "fms/play/war46-deployment.ts.source",
+      "sha256": "2704ce619ff649158814c8a97fff6b672fa29ca0221be5235438779f10aa08e6"
+    },
+    {
+      "path": "src/fms/play/war46-garrison.ts",
+      "archive": "fms/play/war46-garrison.ts.source",
+      "sha256": "a9a496a07038870ef5698676658ec0eeb0436cf7331c4efb3da693684cb6e5e5"
+    },
+    {
+      "path": "src/fms/play/war46-ports.ts",
+      "archive": "fms/play/war46-ports.ts.source",
+      "sha256": "c8f8c8798b5605dd46a810a47241be2829d38fdcf660108bf18f1d3408366b75"
+    },
+    {
+      "path": "src/fms/play/war46-voyages.ts",
+      "archive": "fms/play/war46-voyages.ts.source",
+      "sha256": "a4bbf00a7d03a96f437b04bae45e81bcbda6c071478f36fa5e257d9a0b79242c"
+    },
+    {
+      "path": "src/fms/play/war46-harbor.ts",
+      "archive": "fms/play/war46-harbor.ts.source",
+      "sha256": "ed92d8b490cedc0061d1ab83898107bdde5e6d944e1fb09749d4693349947f8c"
+    },
+    {
+      "path": "src/fms/play/war46-geography.ts",
+      "archive": "fms/play/war46-geography.ts.source",
+      "sha256": "ccb621a10ac0526c64b4be9ab5ec09427f8c627d9b3ac16c83c981fd57ee5aee"
+    },
+    {
+      "path": "src/fms/play/war46-initial.ts",
+      "archive": "fms/play/war46-initial.ts.source",
+      "sha256": "0035d6219798696bc3022c769e79ff3dd43cec4ad96c71244a305f0f2a49cbe2"
+    },
+    {
+      "path": "src/fms/play/war46-shipbuilding.ts",
+      "archive": "fms/play/war46-shipbuilding.ts.source",
+      "sha256": "aa6a75a2cd0762e1c06754fcb6f9a0bdf79ae39a6e0d4a182005bb1649d11337"
+    },
+    {
+      "path": "src/fms/play/native-war/naval-construction.ts",
+      "archive": "fms/play/native-war/naval-construction.ts.source",
+      "sha256": "8f05cdb416e9e01572086e041da182b381db0d138f3df4615bb20e7284c0916c"
+    },
+    {
+      "path": "src/fms/play/war46-blockade.ts",
+      "archive": "fms/play/war46-blockade.ts.source",
+      "sha256": "c7b617dcec9b40cac234da4a61e49724f656cc10dd72fb83f75f68ec0cde0651"
+    },
+    {
+      "path": "src/fms/play/war46-occupation.ts",
+      "archive": "fms/play/war46-occupation.ts.source",
+      "sha256": "2174e923041ffe3ccd0cf5325ce909938a8b11119a3b000459a8658af5ef620a"
+    }
+  ]
+}

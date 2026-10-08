@@ -1,0 +1,81 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:1:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:2:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+ ❯ src/fms/play/force47.test.ts (19 tests | 3 failed) 38ms
+   ❯ recovered Navy damage and typed volley (5)
+     × gives Navy separate Army and Fleet budgets, no elite discount, no neutral injury 5ms
+     × does not invent Army fire against Navy and rechecks peace before allocating damage 1ms
+     × filters actual land Army out of Navy damage count and ignores duplicate pair entries 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fms/play/force47.test.ts > recovered Navy damage and typed volley > gives Navy separate Army and Fleet budgets, no elite discount, no neutral injury
+Error: 统一部队身份无效。
+ ❯ assertForceContacts47 src/fms/play/force-motion47.ts:48:169
+     46|   const keys = new Set<string>();
+     47|   for (const f of forces) {
+     48|     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId ||…
+       |                                                                                                                                                                         ^
+     49|     keys.add(forceKey47(f)); assertArmyTravel47(f.travel, graph);
+     50|     if (f.kind === 'fleet' && f.travel.nodes.some(id => graph.cells.ge…
+ ❯ advanceForceContacts47 src/fms/play/force-motion47.ts:96:3
+ ❯ volleyFixture src/fms/play/force47.test.ts:117:19
+ ❯ src/fms/play/force47.test.ts:122:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/fms/play/force47.test.ts > recovered Navy damage and typed volley > does not invent Army fire against Navy and rechecks peace before allocating damage
+Error: 统一部队身份无效。
+ ❯ assertForceContacts47 src/fms/play/force-motion47.ts:48:169
+     46|   const keys = new Set<string>();
+     47|   for (const f of forces) {
+     48|     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId ||…
+       |                                                                                                                                                                         ^
+     49|     keys.add(forceKey47(f)); assertArmyTravel47(f.travel, graph);
+     50|     if (f.kind === 'fleet' && f.travel.nodes.some(id => graph.cells.ge…
+ ❯ advanceForceContacts47 src/fms/play/force-motion47.ts:96:3
+ ❯ volleyFixture src/fms/play/force47.test.ts:117:19
+ ❯ src/fms/play/force47.test.ts:127:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/fms/play/force47.test.ts > recovered Navy damage and typed volley > filters actual land Army out of Navy damage count and ignores duplicate pair entries
+Error: 统一部队身份无效。
+ ❯ assertForceContacts47 src/fms/play/force-motion47.ts:48:169
+     46|   const keys = new Set<string>();
+     47|   for (const f of forces) {
+     48|     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId ||…
+       |                                                                                                                                                                         ^
+     49|     keys.add(forceKey47(f)); assertArmyTravel47(f.travel, graph);
+     50|     if (f.kind === 'fleet' && f.travel.nodes.some(id => graph.cells.ge…
+ ❯ advanceForceContacts47 src/fms/play/force-motion47.ts:96:3
+ ❯ volleyFixture src/fms/play/force47.test.ts:117:19
+ ❯ src/fms/play/force47.test.ts:132:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  3 failed | 91 passed (94)
+   Start at  14:44:43
+   Duration  9.41s (transform 67%, tests 19%, import 15%)
+
+  Transform  transforming modules took 6.71s · 67% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-08T07:07:24.243Z",
+  "sourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
+  "scope": "One-shot empty-map continent preview, existing v46 gameplay unchanged",
+  "checks": {
+    "types": {
+      "exitCode": 0,
+      "log": "docs/evidence/fms-atlas-first-land-2026-10-08/types.txt"
+    },
+    "lint": {
+      "exitCode": 0,
+      "log": "docs/evidence/fms-atlas-first-land-2026-10-08/lint.txt"
+    },
+    "build": {
+      "exitCode": 0,
+      "directory": ".autopilot/atlas-first-land46-delivery/dist",
+      "log": "docs/evidence/fms-atlas-first-land-2026-10-08/build.txt"
+    },
+    "artifactAudit": {
+      "exitCode": 0,
+      "artifacts": 43,
+      "log": "docs/evidence/fms-atlas-first-land-2026-10-08/artifact-audit.txt",
+      "firstFailure": "Wrong relative audit path and missing temporary reference copy; corrected absolute paths, original checker unchanged"
+    },
+    "browser": {
+      "exitCode": 0,
+      "checks": [
+        "Touch entry creates a real Worker preview; pending preview does not commit land; cancel restores empty sea.",
+        "Confirm, undo, redo operate on real terrain; one-shot creation preserves the existing coast setting.",
+        "Saved drawing refreshes intact and enters a real six-nation sixty-city v46 world; v47 not enabled.",
+        "320px layout has no document horizontal overflow; Chromium touch emulation only, not iPhone acceptance."
+      ],
+      "errors": [],
+      "log": "docs/evidence/fms-atlas-first-land-2026-10-08/browser.json",
+      "touchTarget": {
+        "width": 146,
+        "height": 48
+      }
+    },
+    "compatibility": {
+      "frozen46": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+      "evidence": "docs/evidence/fms-force47-contact-2026-10-08/compatibility.txt"
+    }
+  },
+  "files": {
+    "src/fms/FmsApp.tsx": "e126ca42e7933c8e79a55455718bb4d2512ad6b5e1f3f2eef3ca17dd1c46a50e",
+    "src/fms/fms-interface.css": "be10bcbf10ee9d2679d1832738d1bb088591f702f15b9127118748bb5edcb906"
+  },
+  "acceptance": {
+    "localPlayable": true,
+    "phone": false,
+    "nativeVisualParity": false,
+    "userVisual": false,
+    "fullMilitary47": false,
+    "release": false
+  }
+}

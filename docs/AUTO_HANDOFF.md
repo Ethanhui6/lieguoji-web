@@ -1,4 +1,17 @@
-# 当前续接：Army47 军令与连续行军 phase 已提交，接沿途交锋
+# 当前续接：Army47 同步交锋与战损阶段通过；Atlas 空海入口可试玩
+
+2026-10-08；军事源码 `89b1a5c1376ac38c81af6285e159b83575b08f67`，可玩UI源码 `36cf58defffa8d563a8a697bc60b9b1c85a9e4fa`。证据提交以实际HEAD核实。根唯一写入，审查者只读。WEB-04-37仍in_progress。
+
+- 已实现 Army/Fleet 同一事件时序移动、沿途截停、同刻边界交锋、真实海区接触与原作海军分列目标伤害；损失同时扣减、余数保存、沉船载军和独立Army区分。修复远程伪接触、退离海区额外暴露、浮点gate坐标、旧陆海循环接管与沉船失效引用。100相关测试、types、lint、构建43产物及冻结链检查通过，首轮失败保留。[合同](evidence/fms-force47-contact-2026-10-08/CHECKPOINT.md)、[原作静态依据](evidence/fms-force47-contact-2026-10-08/NATIVE_EVIDENCE.md)、[结果](evidence/fms-force47-contact-2026-10-08/checks.json)。
+- **仍未启用run47/Store49/Worker/UI**。新phase不是完整tick；接下来补按事件截断的攻击时序、实际位置的海军/驻防/政治/重组/征募/费用、日志与撤退收尾，再独立47会话和无损显式复制。不要新旧移动/海伤一起调用，不把单测称为可玩47，不重新恢复本批已核海军公式。
+- 沿已生成的[三技能Atlas目标图](design/atlas-ui-2026-10-08/target-v1.png)，新增显式“生成大陆”空海入口：一次预览，不改保岸设置，已有保护仍有效；取消/确认/撤销/重做/保存链复用。真实Chromium全新上下文通过保存刷新和6国60城建局，未捕获错误。[本机5254试玩](http://127.0.0.1:5254/?fms=1)，PID34808，`.autopilot/atlas-first-land46-delivery/dist`。[交付](evidence/fms-atlas-first-land-2026-10-08/DELIVERY.md)、[浏览器/截图/录像](evidence/fms-atlas-first-land-2026-10-08/browser.json)。Codex打开请求为queued，未称用户已看到。
+- 原5253/5252/5250/5248/5246及玩家未保存世界保持；不要刷新旧用户标签。新入口不同origin，不自动迁移旧档。v46冻结指纹仍 `e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d`。
+- 实际地图仍有过亮海色、初始大陆视角偏小、近景细节不足；概念图不是当前画面或原作等价。触控仿真不是iPhone/Safari真机。完整视觉/性能/手机门未过。
+- 统一Army→真实海域WEB-04-38→文化WEB-03-06→排队全审查顺序不变，同步沿目标做UI。没有本地授权阻塞；不push/Pages/main，不改pre-push，旧档和发布门保留。以下为历史。
+
+---
+
+# 历史续接：Army47 军令与连续行军 phase 已提交，接沿途交锋
 
 2026-10-08；源码检查点 `38bdaaeb247dde657dce1d183cc2c0d3fd265763`，证据/任务提交以 Git HEAD 核实。WEB-04-37 保持 in_progress；根独占写入，其他审查者只读。
 

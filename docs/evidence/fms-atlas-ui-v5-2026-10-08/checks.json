@@ -1,0 +1,30 @@
+{
+  "source": "13e86629f962a3d32a7e4949fb99d43a15c701e2",
+  "typecheck": {
+    "exitCode": 0,
+    "log": ".autopilot/atlas-ui-typecheck.log"
+  },
+  "lint": {
+    "exitCode": 0,
+    "log": ".autopilot/army47-lint-final.log"
+  },
+  "build": {
+    "exitCode": 0,
+    "log": ".autopilot/atlas-ui-build.log",
+    "approvedArtifacts": 43,
+    "warning": "FmsApp chunk remains above 500 kB"
+  },
+  "browser": {
+    "passed": true,
+    "flows": 12,
+    "capturedErrors": [],
+    "scope": "Chromium 1440x1000, 428x926, 320x740. Separate contexts and test-only save."
+  },
+  "physicalDevice": false,
+  "userVisualAccepted": false,
+  "originalEquivalence": false,
+  "allHistoricalE2E": false,
+  "engineUnchanged": true,
+  "cloudWrite": false,
+  "protectionTests": 39
+}

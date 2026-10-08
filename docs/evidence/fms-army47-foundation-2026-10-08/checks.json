@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "5f4ab4f",
+  "scope": "Unconnected Army47 position/path/presence kernel; no Worker/store/render integration",
+  "commands": [
+    {
+      "command": "vitest run src/fms/play/army-travel47.test.ts src/fms/play/army-presence47.test.ts",
+      "exitCode": 0,
+      "files": 2,
+      "tests": 29,
+      "log": ".autopilot/army47-tests-final2.log"
+    },
+    {
+      "command": "tsc --noEmit",
+      "exitCode": 0,
+      "log": ".autopilot/atlas-ui-typecheck.log"
+    },
+    {
+      "command": "eslint src tests scripts",
+      "exitCode": 0,
+      "log": ".autopilot/army47-lint-final.log"
+    }
+  ],
+  "resolvedFailures": [
+    "First test expected redirect to snap to center; contract and regression corrected to actual current position.",
+    "Lint rejected literal sparse array fixture; use Reflect.deleteProperty without changing malformed-save coverage.",
+    "Read-only audit found crossed zero-offset gate/permission issue; fixed and added JSON round-trip regression."
+  ],
+  "playableIntegration": false,
+  "nativeRuntimeEquivalence": false
+}

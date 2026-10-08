@@ -5250,12 +5250,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "Compact icon UI local playable verified; no skills; v46 rules unchanged; WEB-04-37 remains in progress",
+      "status": "Atlas UI concept generated and first surface/short-card slice locally verified; Army47 position kernel saved but unintegrated",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "bac6b56e83f4d6a4303e29dbf3a469870fe9551b",
+      "lastCommitted": "13e86629f962a3d32a7e4949fb99d43a15c701e2",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Continue WEB-04-37 unified Army using NEXT_ARMY_AUDIT.md: h20 dry ridge adjacency, boundary permission and authoritative mixed position. Then WEB-04-38 sea control, WEB-03-06 cultures, queued source/video audit. Preserve 5250/5248 worlds and 5252 new UI preview; no cloud/device/visual gate change.",
-      "latestUserPriority": "不用 skills 自行做 UI；多做清楚的图标，减轻国家/军事/海军/绘图文字负担。UI 实际切片后接回统一 Army 与真实海域规则。",
+      "next": "Continue WEB-04-37 unified Army from tested 47 kernel; retain atlas UI target for following title/stat/time-control refinements. Then WEB-04-38 sea control, WEB-03-06 cultures and queued source/video audit. Actual map is still much simpler than concept; no native/device/visual PASS. Preserve 5253/5252/5250/5248 and old saves; no cloud changes.",
+      "latestUserPriority": "使用 UI UX Pro Max / Hallmark / Emil，image 生成最终 UI 目标图后按目标迭代；保留当前可玩版本、Army 海域与原作还原主线。",
       "requiredUserAction": null,
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -5651,7 +5651,14 @@
         "docs/evidence/fms-live-observation-v5-2026-10-08/unit.log.txt",
         "docs/evidence/fms-live-observation-v5-2026-10-08/plan-check.log.txt",
         "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-browser.mjs",
-        "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs"
+        "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs",
+        "docs/design/atlas-ui-2026-10-08/DESIGN.md",
+        "docs/design/atlas-ui-2026-10-08/target-v1.png",
+        "docs/evidence/fms-army47-foundation-2026-10-08/CHECKPOINT.md",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/browser.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/old-previews.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
@@ -8351,10 +8358,18 @@
     },
     "uiDirectionOverride": {
       "date": "2026-10-08",
-      "source": "latest direct user request",
-      "skillsUsedThisBatch": false,
-      "direction": "自主设计 iOS 风格、更多统一图标、更少常驻文字；原作地图与模拟还原继续",
-      "previousSkillRequestSupersededForThisBatch": true
+      "source": "latest direct user request: three skills plus image target",
+      "skillsUsedThisBatch": true,
+      "skills": [
+        "ui-ux-pro-max",
+        "hallmark",
+        "emil-design-eng",
+        "imagegen"
+      ],
+      "direction": "地图主导；温白克制 iOS 图标界面；桌面短卡/手机抽屉；原作地理与模拟基线另做真实对照",
+      "previousNoSkillRequestSupersededForThisBatch": true,
+      "concept": "docs/design/atlas-ui-2026-10-08/target-v1.png",
+      "conceptIsImplementedScreenshot": false
     },
     "compactUi46Checkpoint": {
       "date": "2026-10-08",
@@ -8389,6 +8404,77 @@
         "browserFlows": 11,
         "realDevice": false,
         "userVisual": false
+      }
+    },
+    "army47FoundationCheckpoint": {
+      "date": "2026-10-08",
+      "task": "WEB-04-37",
+      "sourceCommit": "5f4ab4f",
+      "status": "kernel_only_not_playable",
+      "tests": 29,
+      "typecheck": true,
+      "lint": true,
+      "runtimeIntegrated": false,
+      "newStoreIntegrated": false,
+      "evidence": [
+        "docs/evidence/fms-army47-foundation-2026-10-08/CHECKPOINT.md",
+        "docs/evidence/fms-army47-foundation-2026-10-08/checks.json"
+      ],
+      "next": "Freeze v46 and integrate actual position into a separate v47 tick/Worker/store/render; no ghost land membership or implicit old-save migration."
+    },
+    "atlasUiTargetCheckpoint": {
+      "date": "2026-10-08",
+      "status": "concept_generated_first_slice_locally_verified",
+      "sourceCommit": "13e86629f962a3d32a7e4949fb99d43a15c701e2",
+      "concept": "docs/design/atlas-ui-2026-10-08/target-v1.png",
+      "implemented": [
+        "warm controls",
+        "short desktop inspector",
+        "flat stats and category tabs",
+        "country-color shield"
+      ],
+      "originalMapVisualMatched": false,
+      "userVisualAccepted": false,
+      "physicalDeviceAccepted": false,
+      "published": false,
+      "evidence": [
+        "docs/design/atlas-ui-2026-10-08/DESIGN.md",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/browser.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/checks.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/tested-artifact.json",
+        "docs/evidence/fms-atlas-ui-v5-2026-10-08/old-previews.json"
+      ],
+      "localUrl": "http://127.0.0.1:5253/?fms=1",
+      "directory": ".autopilot/atlas-ui46-delivery/dist",
+      "previewPid": 18136,
+      "checks": {
+        "source": "13e86629f962a3d32a7e4949fb99d43a15c701e2",
+        "typecheck": {
+          "exitCode": 0,
+          "log": ".autopilot/atlas-ui-typecheck.log"
+        },
+        "lint": {
+          "exitCode": 0,
+          "log": ".autopilot/army47-lint-final.log"
+        },
+        "build": {
+          "exitCode": 0,
+          "log": ".autopilot/atlas-ui-build.log",
+          "approvedArtifacts": 43,
+          "warning": "FmsApp chunk remains above 500 kB"
+        },
+        "browser": {
+          "passed": true,
+          "flows": 12,
+          "capturedErrors": [],
+          "scope": "Chromium 1440x1000, 428x926, 320x740. Separate contexts and test-only save."
+        },
+        "physicalDevice": false,
+        "userVisualAccepted": false,
+        "originalEquivalence": false,
+        "allHistoricalE2E": false,
+        "engineUnchanged": true,
+        "cloudWrite": false
       }
     }
   }

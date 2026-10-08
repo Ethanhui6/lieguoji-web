@@ -1,0 +1,51 @@
+{
+  "origin": "http://127.0.0.1:5253",
+  "passed": true,
+  "scope": "Isolated Chromium contexts; same previously UI-created test save. No user storage or tabs accessed.",
+  "errors": [],
+  "checks": [
+    "Capital location reveals selected locality",
+    "Draft survives hidden tab; cancel preserves name",
+    "Roving tab keyboard arrows/Home/End",
+    "Live policy pauses/settles pending tick; cancel leaves policy unchanged",
+    "Observation and icon controls keep date advancing",
+    "Opening rulers, search/filter/reset reachable",
+    "Army selection/core stats/map-target cancel reachable",
+    "Fleet controls precede collapsed strategy sections",
+    "Same v46 save refresh; canceled rename not persisted",
+    "Desktop short card reduces map obstruction; 320px page fits",
+    "Reduced motion honored",
+    "Editor groups retain chosen parameters, original action names reachable"
+  ],
+  "comparison": [
+    {
+      "label": "before",
+      "textLength": 142,
+      "scrollHeight": 510,
+      "clientHeight": 350,
+      "bodyOverflow": false
+    },
+    {
+      "label": "desktop-before",
+      "height": 764,
+      "width": 340,
+      "scrollHeight": 762
+    },
+    {
+      "label": "after",
+      "textLength": 142,
+      "scrollHeight": 498,
+      "clientHeight": 350,
+      "bodyOverflow": false
+    },
+    {
+      "label": "desktop-after",
+      "height": 540,
+      "width": 340,
+      "scrollHeight": 576
+    }
+  ],
+  "source": "13e86629f962a3d32a7e4949fb99d43a15c701e2",
+  "engine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "video": "D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-atlas-ui-v5-2026-10-08\\video\\page@c0ce77adc13572044724af5e00ea4eec.webm"
+}

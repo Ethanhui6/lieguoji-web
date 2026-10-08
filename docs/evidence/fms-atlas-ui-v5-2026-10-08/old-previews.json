@@ -1,0 +1,20 @@
+[
+  {
+    "directory": ".autopilot\\compact-ui46-delivery\\dist",
+    "source": "bac6b56e83f4d6a4303e29dbf3a469870fe9551b",
+    "files": 43,
+    "unchanged": true
+  },
+  {
+    "directory": ".autopilot/live-ui46-production/dist",
+    "source": "038bc431062db4fb50dde2979e3fee52f0f361f2",
+    "files": 43,
+    "unchanged": true
+  },
+  {
+    "directory": ".autopilot/rendezvous46-production/dist",
+    "source": "8805226571c93c3622c2dc8002395d3ecd70a506",
+    "files": 43,
+    "unchanged": true
+  }
+]

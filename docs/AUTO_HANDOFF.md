@@ -6,7 +6,7 @@
 
 发布耗时注意：官方Pages构建限时20分钟，本机完整单测1650.02秒；旧同项目Pages仅226文件/2753项、467.82秒，不能外推本轮421文件/5612项必通过或必失败。保持build:cf完整检查、隔离和阈值不变，最终有界上传后取得真实同SHA Actions/Pages时长；证据pages-time-budget.json。不要因此删除检查、并行开启负载或中断当前44710。
 
-等待44710期间完成原作官职的三个小函数静态恢复：国家三来源绑定、profile内政体/通用/地图/预设层级、请求语言→English→Chinese→Values回退。当前安装DLL和metadata完整摘要已重新核对，原始指令/dump不入仓库；[准确RVA、字节摘要与未知helper](evidence/fms-official-title-native-2026-10-09/RESOLVER.md)，状态webRebuild.officialTitleNative20261009。不是网页编辑器已完成或原作运行时等价；不修改当前52c5626候选，后续接线前须冻结b365引擎，继续以本轮可玩修复/有界预览优先。
+等待44710期间完成原作官职六个函数静态恢复：国家三来源绑定、profile内政体/通用/地图/预设层级、语言回退，以及地图两层查找、预设key命中与性别字段选择。当前安装DLL和metadata完整摘要已重新核对，原始指令/dump不入仓库；[外层准确RVA与摘要](evidence/fms-official-title-native-2026-10-09/RESOLVER.md)、[三个helper与未解边界](evidence/fms-official-title-native-2026-10-09/HELPERS.md)，状态webRebuild.officialTitleNative20261009。地图默认不递归整个Resolver；预设专属key命中但无可用翻译时不再查该预设Any。不是网页编辑器已完成或原作运行时等价；不修改当前52c5626候选，后续接线前须冻结b365引擎，继续以本轮可玩修复/有界预览优先。
 
 当前仅本机试玩 **http://127.0.0.1:5273/?fms=1**，已更新自己的静态服务到 .autopilot/culture47-cold-handoff-checked（会话32928，脚本culture47-cold-live-server.mjs），旧5273产物作为已加载hash资源回退保留。真实侧栏标签12：刷新原31日/3755tick存档、继续原世界、详情查看不断时，至44日/5362tick暂停保存成功；无页面控制台错误。5271第19日标签11原样保留，5254/5261未动。5274（会话98513）为同新产物自动测试入口，都非手机URL。
 

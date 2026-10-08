@@ -1,0 +1,65 @@
+[
+  {
+    "raw": ".autopilot/harbor41-tests-accepted.log",
+    "rawSha256": "93a8ec4f4a5edfdac8b73565ae5baf1c6c346b2f112d529c294274a8aada3e44",
+    "committed": "tests.log.txt",
+    "sha256": "58c9614c7b479cb16ef224335b35dc428d792ff7f6b40787e16b8ffb6faee380",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-types-accepted.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed": "typecheck.log.txt",
+    "sha256": "1e332a06fdfeab3adde150b03e92e8869c63cb2947b609f3adbae7455ed239c4",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-lint-accepted.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed": "lint.log.txt",
+    "sha256": "1e332a06fdfeab3adde150b03e92e8869c63cb2947b609f3adbae7455ed239c4",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-protection.log",
+    "rawSha256": "813e39542a18ff3c86f12acaa9216dec16174cb002feb047d384f0b0a3d96739",
+    "committed": "release-policy.log.txt",
+    "sha256": "e4836b8a3813edbf53b7aff56619457de54f38a474acb61842b5bbc33c9b7f70",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-build.log",
+    "rawSha256": "676eaeda3467f9b9fa481d5c19c93b9707428462530f17bf6e93e19cadbf159c",
+    "committed": "build.log.txt",
+    "sha256": "1f7c925c9356f69daa9f1f9123639d1ddb12e2d0728af8c0226a8394cc5f2b8f",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-dist-audit.log",
+    "rawSha256": "3cf7d6f93a76660da580de6b1cfa90b069d38e3d92c55ddc5bfd43b3e5ea73fd",
+    "committed": "dist-audit.log.txt",
+    "sha256": "5435509ebe2d3f037e650429746f3916270c73ea299dd31837db2095e3de2558",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-tests.log",
+    "rawSha256": "37e17af882323bcae98da2aef7f7abdf667c640bbdb91e213b933cf600b00769",
+    "committed": "tests-first-failure.log.txt",
+    "sha256": "12270486079e655854a05b48a2355da8be8e8690213fc1603e7551bdb1bec37f",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-types2.log",
+    "rawSha256": "94e26aaf5f9880eab00927f1d62a2f87165186fc0ba41892d95dd1dd59c2d632",
+    "committed": "typecheck-first-failure.log.txt",
+    "sha256": "61f5b1b9cef47e25b398d83509e0dbc990bb2ceb82dc66a586ab4f7323f2bc2c",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  },
+  {
+    "raw": ".autopilot/harbor41-browser-dev-final.log",
+    "rawSha256": "3ea8f10160bde04299628dbacf33775fcf673d76e5b7ef46607afc5f7ba4ad29",
+    "committed": "browser-startup-failure.log.txt",
+    "sha256": "d539c12d8e68b7725fa8d62dd38e92f1aad120f7d1b9ea6a1cc54db552233226",
+    "transformation": "LF normalization and trailing whitespace only; empty successful diagnostics labelled"
+  }
+]

@@ -1,0 +1,11 @@
+src/fms/play/FmsGame.tsx(9,9): error TS2300: Duplicate identifier 'Alliance40Panel'.
+src/fms/play/FmsGame.tsx(10,9): error TS2300: Duplicate identifier 'War40Panel'.
+src/fms/play/FmsGame.tsx(11,9): error TS2300: Duplicate identifier 'Vassal40Panel'.
+src/fms/play/FmsGame.tsx(20,9): error TS2300: Duplicate identifier 'Vassal40Panel'.
+src/fms/play/FmsGame.tsx(21,9): error TS2300: Duplicate identifier 'War40Panel'.
+src/fms/play/FmsGame.tsx(22,9): error TS2300: Duplicate identifier 'Alliance40Panel'.
+src/fms/play/FmsGame.tsx(415,1668): error TS2552: Cannot find name 'Alliance41Panel'. Did you mean 'Alliance40Panel'?
+src/fms/play/FmsGame.tsx(417,4997): error TS2552: Cannot find name 'Vassal41Panel'. Did you mean 'Vassal40Panel'?
+src/fms/play/FmsGame.tsx(422,1312): error TS2552: Cannot find name 'War41Panel'. Did you mean 'War40Panel'?
+src/fms/play/FmsGame.tsx(422,1377): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/fms/play/war41.test.ts(12,9): error TS2724: '"../../../scripts/fms-war41-compat"' has no exported member named 'verifyWar41Compatibility'. Did you mean 'verifyWar40Compatibility'?

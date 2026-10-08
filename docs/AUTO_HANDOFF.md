@@ -1,3 +1,16 @@
+# 当前续接：v41港湾游弋与停战撤回已可玩
+
+2026-10-08；已测源码 `2de4957d0ed10fc9ea1aac22f42551abd1460e8d`。后续证据提交请核实实际git HEAD。根唯一写入；WEB-04-37 → WEB-03-06 → 排队官网/视频全审查/前10差距不变，无必要用户决策阻塞。
+
+- 五层真实湿海格港湾，游弋、控制存在判定、守备权重、选舰边界共用数据；和平等待与随机流保存。低粮回码头扣账。最终停战清攻击线路，已进入海段不瞬移，随后重新和平驻防。
+- [交付](evidence/fms-harbor41-v5-2026-10-08/DELIVERY.md)、[合同](evidence/fms-harbor41-v5-2026-10-08/CONTRACT.md)、[检查](evidence/fms-harbor41-v5-2026-10-08/checks.json)。60相关回归、types/lint、39保护检查、43产物审查、生产Chromium军事夹具/普通6国60城新局/刷新/CAS/连续Worker通过。
+- [本机v41试玩](http://127.0.0.1:5238/?fms=1)，目录`.autopilot/harbor41-production/dist`，PID24052，Store43，engine `0ccebb5bb5216215be275b2e83af5a83ac937a3ccde7de60865a8d0ca4ce7d64`。旧v40/5236及43产物哈希不变；手机不能用PC的127.0.0.1。
+- 静态PE/IL2CPP依据；原作实机/视频同步对照、全景/4-16-40倍和iPhone/用户视觉均未过。港湾首府种子/资格/锚点、时钟/速度/补给仍有明确网页适配；完整战争V2与海陆协同未完成。
+- 下一批：Continue WEB-04-37 from playable v41. Real multi-cell harbor loiter, saved wait/PRNG, low-food dock return and final-war reset/redeployment are integrated. Do not repeat these recovered leaves. Remaining: native capital-neighbor harbor seed/qualification/anchor fidelity, forward-base preference and full native fleet supply/speed mapping, land/naval coordination, military office/cooldown/internal-war rules. Then WEB-03-06, followed by queued official/video full audit/top10. Preserve v40/5236 and earlier saves/previews. No push/Pages/main changes.
+- 未push/Pages/main；开发服5237/PID35000已关闭；最终5238/PID24052与旧5236/PID24136保留。计划检查通过；新局仍有小岛/平海视觉差距，本批不作地图美术通过。
+
+---
+
 # 当前续接：v40舰队自主进攻已可玩，继续完整战争V2
 
 2026-10-08；已测源码 `dbb2fac58e71b41a5cce7ed444838e1039b99670`；后续证据提交以实际git HEAD核实。根唯一写入。WEB-04-37 → WEB-03-06 → 排队官网/视频全项目审查/前10差距不变，没有新的必要用户决策阻塞。

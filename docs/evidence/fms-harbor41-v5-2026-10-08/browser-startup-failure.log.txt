@@ -1,0 +1,1 @@
+{"passed":false,"failure":"Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5237/?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5237/?fms=1\", waiting until \"networkidle\"\u001b[22m\n","errors":[],"video":"D:\\游戏\\架空地图模拟器\\docs\\evidence\\fms-harbor41-v5-2026-10-08\\video\\page@594544e819b8eed6598784c4c7a8381e.webm"}

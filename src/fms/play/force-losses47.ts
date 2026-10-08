@@ -12,6 +12,9 @@ type CombatInputs = Pick<Parameters<typeof forceVolley47>[3], 'army' | 'navy'> &
    * different units. No implicit claim of native health-scale equivalence. */
   navyCountToHull: number;
 };
+export function assertForceDamage47(state: ForceDamage47, known: ReadonlySet<string>) {
+  if (!state || Object.keys(state).sort().join('/') !== 'carry/losses/version' || state.version !== 1 || !state.carry || !state.losses || typeof state.carry !== 'object' || typeof state.losses !== 'object' || Array.isArray(state.carry) || Array.isArray(state.losses) || Object.entries(state.carry).some(([id,n]) => !known.has(id) || !Number.isFinite(n) || n < 0 || n >= 1) || Object.entries(state.losses).some(([id,n]) => !known.has(id) || !Number.isSafeInteger(n) || n < 0)) throw Error('部队战损余数或累计值无效。');
+}
 /** One due volley computed before ANY deduction, then committed together.
  * Raw native damage remains separate from clamped integer web losses. Fleet
  * cargo loss is distinct from independent Army travelling on the same sea. */
@@ -20,7 +23,7 @@ export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<st
   const {terrain, ...mutable} = input, next = {...structuredClone(mutable), terrain} as T;
   const {spatial, forces} = actualForces47(next), known = new Set([...next.world.armies.map(a => forceKey47({kind: 'army', id: a.id})), ...next.navy.fleets.map(f => forceKey47({kind: 'fleet', id: f.id}))]);
   const state = next.forceDamage;
-  if (!state || Object.keys(state).sort().join('/') !== 'carry/losses/version' || state.version !== 1 || !state.carry || !state.losses || Array.isArray(state.carry) || Array.isArray(state.losses) || Object.entries(state.carry).some(([id,n]) => !known.has(id) || !Number.isFinite(n) || n < 0 || n >= 1) || Object.entries(state.losses).some(([id,n]) => !known.has(id) || !Number.isSafeInteger(n) || n < 0)) throw Error('部队战损余数或累计值无效。');
+  assertForceDamage47(state,known);
   const regions = new Map(next.diplomaticGeography.water.flatMap(p => p.faces.map(face => [face, p.id] as const)));
   assertForceContacts47(next.forceContacts, forces, spatial.graph, face => regions.get(face)!);
   const hits = forceVolley47(forces, next.forceContacts, due, {

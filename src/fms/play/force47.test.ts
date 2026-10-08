@@ -21,6 +21,16 @@ const place = (f: MovingForce47, g: TravelGraph47) => armyTravelLocation47(f.tra
 const byId = (fs: MovingForce47[], id: string) => fs.find(f => f.id === id)!;
 
 describe('47 synchronous Army and Fleet contact motion', () => {
+  it('yields an initial contact at zero elapsed and every real gate/center before consuming remaining time',()=>{
+    const g=strip(),fs=[unit(g,'a','a',[0,1,2]),unit(g,'b','b',[1])];
+    const boundary=advanceForceContacts47(fs,initialForceContacts47(),g,40,rules,100,true);
+    expect(boundary.elapsed).toBe(5);expect(boundary.unusedSeconds).toBe(35);expect(boundary.contacts.pairs).toHaveLength(1);
+    const same=[unit(g,'a','a',[0]),unit(g,'b','b',[0])],initial=advanceForceContacts47(same,initialForceContacts47(),g,10,rules,100,true);
+    expect(initial.elapsed).toBe(0);expect(initial.unusedSeconds).toBe(10);
+    const held=advanceForceContacts47(initial.forces,initial.contacts,g,10,rules,100,true);expect(held.elapsed).toBe(10);
+    const free=advanceForceContacts47([fs[0]],initialForceContacts47(),g,40,rules,100,true);
+    expect(free.elapsed).toBe(5);const center=advanceForceContacts47(free.forces,free.contacts,g,35,rules,100,true);expect(center.elapsed).toBe(5);expect(center.forces[0].travel.leg).toBe(1);
+  });
   it.each(['arrived', 'halted', 'blocked'] as const)('stops a long march at a %s intermediate defender rather than crossing it', status => {
     const g = strip(), a = unit(g, 'a', 'a', [0, 1, 2, 3]), b = unit(g, 'b', 'b', status === 'arrived' ? [1] : [1, 2]); b.travel.status = status;
     const stopDefender = {...rules, canEnter: (f: Readonly<MovingForce47>) => f.id !== 'b'};

@@ -32,7 +32,7 @@ export function actualForces47(r: ForceRun47) {
 /** Coupled Army+Fleet movement/contact phase of the private full-session
  * candidate. Does not run the old v46 Army/Navy movers, old road contacts or
  * damage loops. Caller must bound seconds at day/diplomacy/combat events. */
-export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: number, weights: ArmyRouteWeights47, speed: (run: T, force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => number) {
+export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: number, weights: ArmyRouteWeights47, speed: (run: T, force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => number, stopAtEvent = false) {
   for (const book of [input.armyPositions, input.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
   const {terrain, ...mutable} = input, next = {...structuredClone(mutable), terrain} as T;
   const {spatial, forces} = actualForces47(next);
@@ -42,7 +42,7 @@ export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: n
     enemy: (a, b) => nationsAtWar(next.world, a, b), seaRegion: face => regions.get(face)!,
     canEnter: (f, c) => f.kind === 'fleet' ? c.surface === 'sea' : c.surface === 'sea' ? policies.get(f.id)!.allowSea : policies.get(f.id)!.canEnter(c.provinceId!),
     speed: (f, c) => speed(next, f, c),
-  });
+  }, 100000, stopAtEvent);
   for (const f of out.forces) (f.kind === 'army' ? next.armyPositions : next.fleetPositions).records[f.id] = f.travel;
   next.forceContacts = out.contacts;
   const space = readArmySpace47(next.world, {...spatial, positions: next.armyPositions}), access = militaryAccess46(next);
@@ -54,5 +54,5 @@ export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: n
   }
   next.armyPositions.revision++; next.fleetPositions.revision++;
   actualForces47(next);
-  return {run: next, exposure: out.exposure, boundaryEvents: out.events};
+  return {run: next, exposure: out.exposure, boundaryEvents: out.events, held:out.held, elapsed:out.elapsed, unusedSeconds:out.unusedSeconds};
 }

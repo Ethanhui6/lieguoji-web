@@ -96,17 +96,22 @@ function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceConta
 export function reconcileForceContactsOwned47(forces: MovingForce47[], graph: TravelGraph47, old: ForceContacts47, enemy: Rules['enemy'], seaRegion: Rules['seaRegion']) {
   return contacts(forces, graph, old, {enemy, seaRegion, canEnter: () => false, speed: () => 0});
 }
+const contactIdentity = (book: ForceContacts47) => JSON.stringify(book.pairs.map(c => [c.a,c.b,c.area]).sort());
 /** Shared event cursor for BOTH Army and Fleet paths. No force gets a whole
  * frame before another. The owner bounds seconds by its next diplomacy/day/
  * damage event, then executes those events before the next call. Speeds and
  * access callbacks must be pure. This is a motion/contact phase, not a clock.
  * Water partitions and clipped triangles are explicit web geometry adapters. */
-export function advanceForceContacts47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents = 100000) {
+export function advanceForceContacts47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents = 100000, stopAtEvent = false) {
   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
   const forces = structuredClone([...input]).sort((a, b) => forceKey47(a).localeCompare(forceKey47(b)));
   assertForceContacts47(previous, forces, graph, rules.seaRegion);
   let book = structuredClone(previous), remaining = seconds, events = 0;
   const exposure: Record<string, number> = {};
+  const initial = contacts(forces, graph, book, rules);
+  // The military clock must see a contact beginning at time zero before it
+  // chooses an attack deadline. Ordinary movement callers still consume dt.
+  if (stopAtEvent && contactIdentity(initial.contacts) !== contactIdentity(book)) return {...initial, forces, exposure, events, elapsed:0, unusedSeconds:seconds};
   while (remaining > 0) {
     if (++events > maxEvents) throw Error('统一行军事件超出预算，原世界未提交。');
     const current = contacts(forces, graph, book, rules); book = current.contacts;
@@ -154,9 +159,12 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     const after = positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
     book = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules).contacts;
+    // Yield AFTER simultaneous admission. This also exposes empty-land entry
+    // to occupation and changing terrain speed before any further movement.
+    if (stopAtEvent && movers.some(m => m.time <= dt)) break;
     if (dt === 0 && !admitted.length && !movers.some(m => m.time <= dt)) throw Error('统一行军未消费事件，原世界未提交。');
   }
   const result = contacts(forces, graph, book, rules);
   assertForceContacts47(result.contacts, forces, graph, rules.seaRegion);
-  return {forces, contacts: result.contacts, held: result.held, exposure, events};
+  return {forces, contacts: result.contacts, held: result.held, exposure, events, elapsed:seconds-remaining, unusedSeconds:remaining};
 }

@@ -3637,9 +3637,11 @@
               "docs/evidence/fms-real-culture-2026-10-08/AUDIT.md",
               "docs/evidence/fms-civilization47-2026-10-08/CONTRACT.md",
               "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
-              "docs/evidence/fms-civilization47-2026-10-08/checks.json"
+              "docs/evidence/fms-civilization47-2026-10-08/checks.json",
+              "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
+              "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
             ],
-            "progressScope": "2026-10-08: implemented and tested independent12culture/14religion catalog, both naming modes, culture+polity titles and source-aware names; actual terrain→country/city→chronicle→people/life creation and atomic identity edits with revision check.42 related tests passed,32 new; full47/Store49/Worker/UI, kin/succession/secession/restoration/religious diplomacy remain pending. Frozen46 unchanged. Not yet playable in5254."
+            "progressScope": "2026-10-08: actual terrain/country/city/founding-person creation now includes native-generated families with real-culture name ports, independent faith, known-heir atomic accession, separate regnal name and all-relative monthly ages.139 related checks passed,35 new family cases. Place mode historical/generated remains; people generated independently to avoid spliced historical biographies. Full47/Store49/Worker/UI and elected/religious offices, secession/restoration and religious simulation pending. Frozen46 unchanged; not playable in5254 yet."
           }
         ]
       },
@@ -5269,12 +5271,12 @@
     },
     "executionCheckpoint": {
       "date": "2026-10-08",
-      "status": "culture_creation_verified_full47_pending",
+      "status": "culture_family_verified_full47_pending",
       "branch": "codex/ph06-world-generation",
-      "lastCommitted": "8da19f156081c350e52b56b5028fe62345a51ec3",
+      "lastCommitted": "651399748f82df642d0c8c84d54d3bfbcc14d556",
       "cloudScope": "Local-only v46; no push/Pages/main. Bounded grant not expanded.",
-      "next": "Continue WEB-03-06: adapt kin/sovereignty and actual succession, secession and historical restoration to civilization47 authority; chosen polity must feed first fiscal/military state. Then integrate with the pending full47 runtime and Store49/Worker/create UI once. Do not expose a fake v46 culture layer. Continue Army47 full daily settlement, island→mainland900day regression, occupation/defense pacing and WEB-04-38; preserve player5254 and old saves.",
-      "latestUserPriority": "真实文化与独立宗教；文化/政体对应君主、国号与城名；更合理的起义分裂、跨海登陆、占领回防节奏和地图质感。先保存当前军事检查点再优先文化命名。",
+      "next": "Pre-seed selected civilization polity before first upperCombat/fiscal settlement and actual muster; preserve real culture ethnicity inputs without old six-culture aliases. Integrate actual succession/appointments, secession/restoration and Army47 into one full47/Store49/Worker/create UI. Then fixed900day island-to-mainland regression and pacing. Keep player5254 and old saves untouched.",
+      "latestUserPriority": "Real culture and independent religion; both generated/historical state and city names at world creation; coherent polity/ruler names; stronger multi-cause rebellions and family partitions; real island-to-mainland invasion, slower occupation/defense, and original-like map detail.",
       "requiredUserAction": "None for local development; preserve current900day player world and old saves. Phone/visual/native runtime acceptance pending.",
       "evidence": [
         "docs/evidence/fms-terrain13-v5-2026-10-07/DELIVERY.md",
@@ -5680,16 +5682,18 @@
         "docs/evidence/fms-atlas-ui-v5-2026-10-08/old-previews.json",
         "docs/evidence/fms-civilization47-2026-10-08/CONTRACT.md",
         "docs/evidence/fms-civilization47-2026-10-08/SOURCES.md",
-        "docs/evidence/fms-civilization47-2026-10-08/checks.json"
+        "docs/evidence/fms-civilization47-2026-10-08/checks.json",
+        "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
       ],
       "currentVersion": 46,
       "currentEngine": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
       "previewUrl": "https://codex-ph06-world-generation.lieguoji-web.pages.dev/?fms=1",
       "localUrl": "http://127.0.0.1:5254/?fms=1",
       "currentLocalHead": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "sourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
-      "checkpointNote": "Military source b143e60; playable UI remains36cf58d at5254. Current user reports900day sea/offensive and culture errors, not fixed by this internal window.",
-      "head": "b143e60863802042d01527e7fb9c801f98b9a76c",
+      "sourceCommit": "651399748f82df642d0c8c84d54d3bfbcc14d556",
+      "checkpointNote": "Known-heir families and all-relative birthdays validated. No activation or refresh of player5254. Two naming modes concern states/cities; peopleMode is independently culture-generated.",
+      "head": "651399748f82df642d0c8c84d54d3bfbcc14d556",
       "soleWriter": "root",
       "nextBatch": [
         "WEB-03-06",
@@ -5697,21 +5701,20 @@
         "WEB-04-38"
       ],
       "note": "No run47 activation or cloud release. Preserve old preview tabs/worlds. Three-skills image target exists; do not recreate it.",
-      "sourceParent": "89b1a5c1376ac38c81af6285e159b83575b08f67",
-      "candidateVersion": 46,
+      "sourceParent": "9bd11e7",
+      "candidateVersion": 47,
       "candidateCommitted": true,
-      "candidateUiIntegrated": true,
+      "candidateUiIntegrated": false,
       "localUrlListening": true,
-      "localPortCheck": "2026-10-08T07:42:44Z HTTP200/build36cf58d/PID34808 only; no refresh of player tab",
+      "localPortCheck": "2026-10-08T17:12:01.4819975+08:00 HTTP200/build36cf58d only; no refresh of player tab",
       "previewUrlStatus": "Older cloud preview unchanged; not this source/engine",
       "latestKernelSourceCommit": "b143e60863802042d01527e7fb9c801f98b9a76c",
       "latestCandidateSourceCommit": "36cf58defffa8d563a8a697bc60b9b1c85a9e4fa",
       "currentBatchEvidence": [
-        "docs/evidence/fms-force47-clock-2026-10-08/CHECKPOINT.md",
-        "docs/evidence/fms-force47-clock-2026-10-08/NATIVE_TIMING.md",
-        "docs/evidence/fms-force47-clock-2026-10-08/checks.json"
+        "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
       ],
-      "headMeaning": "Latest source checkpoint includes unbundled military47 integration. Playable UI still36cf58d/v46 on5254. Verify actual HEAD on resume."
+      "headMeaning": "Latest source is unbundled47 culture/family integration. Playable UI remains36cf58d/v46 on5254. Evidence commit may be newer; verify Git."
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",
@@ -8593,6 +8596,33 @@
         ],
         "status": "confirmed_not_implemented"
       }
+    },
+    "civilizationFamily47Checkpoint": {
+      "sourceCommit": "651399748f82df642d0c8c84d54d3bfbcc14d556",
+      "status": "validated_unbundled",
+      "task": "WEB-03-06",
+      "evidence": [
+        "docs/evidence/fms-culture-family47-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-culture-family47-2026-10-08/checks.json"
+      ],
+      "relatedTests": 139,
+      "familyCases": 35,
+      "placeNamingModes": [
+        "culture-generated",
+        "historical-names"
+      ],
+      "peopleMode": "culture-generated",
+      "notDone": [
+        "full47",
+        "Store49",
+        "Worker/create UI",
+        "elective/theocratic office",
+        "new births/deaths",
+        "secession/restoration",
+        "religious diplomacy",
+        "island-mainland900day",
+        "visual/phone acceptance"
+      ]
     }
   }
 }

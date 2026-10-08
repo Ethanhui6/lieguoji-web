@@ -1,6 +1,6 @@
 # 当前检查点：继续、快速保存与旧47原引擎续接（2026-10-09）
 
-根独占写入。源码基线4ca3b03；本批代码/证据待本地提交，完成后以Git核实最新提交。任务状态 webRebuild.culture47ContinuationCheckpoint，WEB-PH04 / WEB-04-37 未整体完成。
+根独占写入。本批源码与证据已本地提交 0d3c7fff8c913b7621ecf49e826dd0d4e16990ab；发布配置等既有余项仍在工作区，不冒称干净。任务状态 webRebuild.culture47ContinuationCheckpoint，WEB-PH04 / WEB-04-37 未整体完成。
 
 最新仅本机入口 **http://127.0.0.1:5273/?fms=1**，不可由手机直接访问。静态目录 .autopilot/culture47-replay-final-checked，服务会话79496；侧栏标签12已实际从0日继续到15日/1861tick、暂停并保存成功。不是旧5271世界迁移；原5271标签11的19日/2389tick保留、未刷新，5254/5261未触动。
 

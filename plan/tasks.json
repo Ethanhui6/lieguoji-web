@@ -5418,7 +5418,30 @@
         "docs/evidence/fms-forward42-v5-2026-10-08/production-portrait.png",
         "docs/evidence/fms-forward42-v5-2026-10-08/production-newgame.png"
       ],
-      "headMeaning": "Verified source; evidence-only commit follows. Verify actual HEAD on resume."
+      "headMeaning": "Verified source; evidence-only commit follows. Verify actual HEAD on resume.",
+      "inFlightBatch": {
+        "date": "2026-10-08",
+        "task": "WEB-04-37",
+        "version": 43,
+        "status": "native city harbors implemented; 62 relevant tests/types/lint and development Chromium passed; production verification pending",
+        "scope": [
+          "capital neighbor seeds and qualified ocean filtering",
+          "shared saved anchors/harbor areas for simulation and UI",
+          "new-world starter economy conservation; explicit copies preserve old layout"
+        ],
+        "lastVerifiedPreview": "http://127.0.0.1:5240/?fms=1",
+        "measurement": {
+          "fixtureCities": 60,
+          "previousPorts": 28,
+          "capitalAdjacent": 7
+        },
+        "publish": false,
+        "evidence": [
+          "docs/evidence/fms-harbor43-v5-2026-10-08/CONTRACT.md",
+          "docs/evidence/fms-harbor43-v5-2026-10-08/native-methods.json"
+        ],
+        "testedFailures": "Fixture field error, unchanged-empty-layout regression fixture, and version scaffold uint32 constants corrected before checkpoint; no legacy source changed"
+      }
     },
     "nativeHillPrototype": {
       "sourceCommit": "fd9f366c565aad7a8f6ee2e2c8ca64d3d990ae37",

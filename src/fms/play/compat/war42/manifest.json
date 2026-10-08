@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "fingerprint": "adc39de810e018bc361afbc009be83330c0cc8d2e250ad00ef18164d873d333d",
+  "files": [
+    {
+      "path": "src/fms/play/war42-model.ts",
+      "archive": "fms/play/war42-model.ts.source",
+      "sha256": "f27ebdbbdfc0ed0fe4e818bb694279cdaddadfd4bd42bf64ae0b08c5b20a122a"
+    },
+    {
+      "path": "src/fms/play/war42-storage.ts",
+      "archive": "fms/play/war42-storage.ts.source",
+      "sha256": "91767b5d5b75bdfa787262611f5f0ebfd55579d0a9308d2c61897ae5b3ee72ec"
+    },
+    {
+      "path": "src/fms/play/war42-stores.ts",
+      "archive": "fms/play/war42-stores.ts.source",
+      "sha256": "a9fa25095d1b06db8d277f618cf7b24f038a1736bef6bb4f4a6b83d30af90c91"
+    },
+    {
+      "path": "src/fms/play/war42-state.ts",
+      "archive": "fms/play/war42-state.ts.source",
+      "sha256": "45b433f2fcf9fc6192b45c4ad572ec8637e84d3e82bd84ae19e00184bb814d3d"
+    },
+    {
+      "path": "src/fms/play/war42-declaration.ts",
+      "archive": "fms/play/war42-declaration.ts.source",
+      "sha256": "534e426cb374f0b4bd647d3a71af6aaa7099c2325e72375de249d837e38e19a8"
+    },
+    {
+      "path": "src/fms/play/war42-session.ts",
+      "archive": "fms/play/war42-session.ts.source",
+      "sha256": "2b8a3e1f92ac7b0fc2919bf4cfbb3577224ba4a016a8f1b6bfb9d81544a6c798"
+    },
+    {
+      "path": "src/fms/play/war42-client.ts",
+      "archive": "fms/play/war42-client.ts.source",
+      "sha256": "0e01746dc8d7cd828f05061510f05e6ee64e1f4d0c1e1215da35d3511ed07d87"
+    },
+    {
+      "path": "src/fms/play/war42-vassals.ts",
+      "archive": "fms/play/war42-vassals.ts.source",
+      "sha256": "f29fda8efb5f3ba9b55a27f425fe6efecdf7cdd1b640e42cb2674e78bd140518"
+    },
+    {
+      "path": "src/fms/play/war42-settlement.ts",
+      "archive": "fms/play/war42-settlement.ts.source",
+      "sha256": "855f31d106eb4994b9b118443b98daba8a88afb6b1c40647e10dc2c341787aa3"
+    },
+    {
+      "path": "src/fms/play/war42-peace.ts",
+      "archive": "fms/play/war42-peace.ts.source",
+      "sha256": "6193a97ff36ebee09753dd35775955accfeca4ef6245a7a5a86c22b95881ee62"
+    },
+    {
+      "path": "src/fms/play/war42/play.worker.ts",
+      "archive": "fms/play/war42/play.worker.ts.source",
+      "sha256": "da0203e5dbdfd18c0485bba1dddacc62bd58d0d985828fbc553ed9964dbcfbb6"
+    },
+    {
+      "path": "src/fms/play/war42-tribute.ts",
+      "archive": "fms/play/war42-tribute.ts.source",
+      "sha256": "24059c402038bd7c6973585eec5847b41faf89959ed68adc0f2b8a908a1c7d3d"
+    },
+    {
+      "path": "src/fms/play/war42-rebellion.ts",
+      "archive": "fms/play/war42-rebellion.ts.source",
+      "sha256": "c779bcf7ff158526fac20b6b6928b8eb3d9cf382cd636a925dc3a5eb0510cefd"
+    },
+    {
+      "path": "src/fms/play/war42-wars.ts",
+      "archive": "fms/play/war42-wars.ts.source",
+      "sha256": "ca63dccd4d955788ceff959d57bb625377471bd79248c898085effc9a036c2b2"
+    },
+    {
+      "path": "src/fms/play/war42-validation.ts",
+      "archive": "fms/play/war42-validation.ts.source",
+      "sha256": "2d82e3139132243539ef86e1061428069b8e5a2afb94c40fc60c3a4003a2c5b7"
+    },
+    {
+      "path": "src/fms/play/war42-query.ts",
+      "archive": "fms/play/war42-query.ts.source",
+      "sha256": "5c42d8a70feaff4be41ff29162fe1c79c07e7c69663343503ce0fbc00ca5d89a"
+    },
+    {
+      "path": "src/fms/play/war42-coalition.ts",
+      "archive": "fms/play/war42-coalition.ts.source",
+      "sha256": "0f8a112f0833b4eb0a9dbe4851010196b73501b26cea9121f8b79793198d56d3"
+    },
+    {
+      "path": "src/fms/play/war42-alliance.ts",
+      "archive": "fms/play/war42-alliance.ts.source",
+      "sha256": "bd87c74314556993d9442fee85eccaf0b5ef0777ef3eb833d5c01bf8efaab75e"
+    },
+    {
+      "path": "src/fms/play/war42-access.ts",
+      "archive": "fms/play/war42-access.ts.source",
+      "sha256": "f4916a89358a37e88bc41a6cdc36ccab81a8349b14cebea0770daa4f29bda6a1"
+    },
+    {
+      "path": "src/fms/play/war42-core.ts",
+      "archive": "fms/play/war42-core.ts.source",
+      "sha256": "b06bee99e7ed4b92c98c23ead224295968b2262c920e2abfd3cc377fd2666f11"
+    },
+    {
+      "path": "src/fms/play/war42-battle.ts",
+      "archive": "fms/play/war42-battle.ts.source",
+      "sha256": "86570e71bab37262f01f6ea36a41102d00c4746785487119238e43d40e9677e3"
+    },
+    {
+      "path": "src/fms/play/war42-runtime.ts",
+      "archive": "fms/play/war42-runtime.ts.source",
+      "sha256": "dada2d658714dedc545327dcda4366bb6978bedc041b46d1084fefe96dadc15f"
+    },
+    {
+      "path": "src/fms/play/war42-politics.ts",
+      "archive": "fms/play/war42-politics.ts.source",
+      "sha256": "e27243d0e64e0f175feaf64efc6f6af76edf96d0068fd549acb9dd3db7df0eff"
+    },
+    {
+      "path": "src/fms/play/war42-commands.ts",
+      "archive": "fms/play/war42-commands.ts.source",
+      "sha256": "40533fb0f1834f62b44e9d74bb22e578fc2f7fc644f53c946019af5a65d1302f"
+    },
+    {
+      "path": "src/fms/play/war42-navy.ts",
+      "archive": "fms/play/war42-navy.ts.source",
+      "sha256": "f15458470f0bda0fbf996239cab1b591ce2e3861e9db6ae97ec73bca370e0d21"
+    },
+    {
+      "path": "src/fms/play/war42-deployment.ts",
+      "archive": "fms/play/war42-deployment.ts.source",
+      "sha256": "5afb34a11add5aa733c2fd6275068e8a6791aec794c633b684a90f1a7021fc57"
+    },
+    {
+      "path": "src/fms/play/war42-garrison.ts",
+      "archive": "fms/play/war42-garrison.ts.source",
+      "sha256": "784b3ee826c472e4ff98623c68f3a1102bbbeee7fe73088f20ee4ef548e60bca"
+    },
+    {
+      "path": "src/fms/play/war42-ports.ts",
+      "archive": "fms/play/war42-ports.ts.source",
+      "sha256": "a41113ce6f0146d2fa01fbf2d06fe726f985bf1d981c49a3a0f7a104872ed6f9"
+    },
+    {
+      "path": "src/fms/play/war42-voyages.ts",
+      "archive": "fms/play/war42-voyages.ts.source",
+      "sha256": "19b84b8dc23cc31def8bc5bfd00f2a18190d636b2cf0df8c1b1bfc5f348a9963"
+    },
+    {
+      "path": "src/fms/play/war42-harbor.ts",
+      "archive": "fms/play/war42-harbor.ts.source",
+      "sha256": "e4c074d263d960de5758331c08ce84839bc69d91c1f874edec659143e8c65983"
+    }
+  ]
+}

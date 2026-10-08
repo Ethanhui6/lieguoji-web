@@ -1,3 +1,4 @@
+import {PlayIcon} from './PlayIcon';
 import {useEffect,useRef,useState} from 'react';
 import {NewsQueue,type NewsItem} from './news';
 export function NewsRibbon({items,open}:{items:NewsItem[];open:(item:NewsItem|null)=>void}){
@@ -14,6 +15,6 @@ export function NewsRibbon({items,open}:{items:NewsItem[];open:(item:NewsItem|nu
   },[items]);
   useEffect(()=>()=>{clearTimeout(timer.current);timer.current=undefined;},[]);
   return <button className="play-news" aria-label="顶部大事记" onClick={()=>open(shown??null)}>
-    <span className="play-news-tag">大事记</span><span className="play-news-copy" key={shown?.key??'empty'} aria-live="polite"><small>{shown?`第 ${shown.day} 日`:'世界史'}</small><strong>{shown?.text??'天下尚无要闻 · 点击查看记录'}</strong></span><span className="play-news-more">{pending?`+${pending}`:'查看'} ›</span>
+    <span className="play-news-tag" title="大事记"><PlayIcon name="book" size={18}/></span><span className="play-news-copy" key={shown?.key??'empty'} aria-live="polite"><small>{shown?`第 ${shown.day} 日`:'世界史'}</small><strong>{shown?.text??'天下尚无要闻 · 点击查看记录'}</strong></span><span className="play-news-more">{pending?`+${pending}`:''}<PlayIcon name="chevron" size={14}/></span>
   </button>;
 }

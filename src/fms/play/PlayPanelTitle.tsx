@@ -1,3 +1,4 @@
+import {PlayIcon} from './PlayIcon';
 import {useRef,type PointerEvent} from 'react';
 
 /** Only the sheet header owns the mobile dismissal gesture; list scrolling stays native. */
@@ -17,6 +18,6 @@ export function PlayPanelTitle({title,close}:{title:string;close:()=>void}){
     drag.current={id:e.pointerId,y:e.clientY,start:e.timeStamp,panel};panel.setAttribute('data-dragging','true');e.currentTarget.setPointerCapture(e.pointerId);
   }} onPointerMove={e=>{const d=drag.current;if(!d||d.id!==e.pointerId)return;const delta=e.clientY-d.y;d.panel.style.transform=`translateY(${delta>0?delta:delta*.12}px)`;}}
   onPointerUp={e=>finish(e)} onPointerCancel={e=>finish(e,true)} onLostPointerCapture={e=>finish(e,true)}>
-    <span className="play-sheet-grip" aria-hidden="true"/><strong>{title}</strong><button aria-label="收起面板" onClick={close}>×</button>
+    <span className="play-sheet-grip" aria-hidden="true"/><strong>{title}</strong><button aria-label="收起面板" onClick={close}><PlayIcon name="close" size={16}/></button>
   </div>;
 }

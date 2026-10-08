@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "038bc431062db4fb50dde2979e3fee52f0f361f2",
+  "types": {
+    "exitCode": 0,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/types.log.txt"
+  },
+  "lint": {
+    "exitCode": 0,
+    "fullLog": "docs/evidence/fms-live-observation-v5-2026-10-08/lint.log.txt",
+    "finalAffectedLog": "docs/evidence/fms-live-observation-v5-2026-10-08/lint-final.log.txt"
+  },
+  "unit": {
+    "passed": 14,
+    "files": 4,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/unit.log.txt",
+    "scope": "Affected chronicle/news/playback tests earlier in this batch; unchanged by later presentation refinements."
+  },
+  "protection": {
+    "passed": 39,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/protection.log.txt",
+    "scope": "Policy sources unchanged; same-batch result reused. Final edited task plan separately checked."
+  },
+  "build": {
+    "exitCode": 0,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/build.log.txt",
+    "sourceCommit": "038bc431062db4fb50dde2979e3fee52f0f361f2",
+    "warnings": [
+      "Existing extensionless Vite-config imports",
+      "Existing large chunks"
+    ]
+  },
+  "distAudit": {
+    "approvedArtifacts": 43,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/dist-audit.log.txt"
+  },
+  "browser": {
+    "passed": true,
+    "evidence": "docs/evidence/fms-live-observation-v5-2026-10-08/browser.json",
+    "observationsContinuingTime": 9,
+    "errors": []
+  },
+  "desktopPortrait": {
+    "width": 428,
+    "height": 926,
+    "horizontalOverflow": false,
+    "dragToDismiss": true,
+    "shortDragReturns": true,
+    "mobileToolsCollapse": true,
+    "keyboardMotion": "0s",
+    "reducedMotion": {
+      "animation": "none",
+      "transition": "0s"
+    }
+  },
+  "realIPhone": false,
+  "humanVisualAccepted": false,
+  "originalEquivalent": false,
+  "cloudPublished": false,
+  "finalPlan": {
+    "exitCode": 0,
+    "log": "docs/evidence/fms-live-observation-v5-2026-10-08/plan-check.log.txt"
+  }
+}

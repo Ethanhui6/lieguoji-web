@@ -77,4 +77,10 @@ if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }
 if(files.filter(file=>battleAtlasName.test(file.replace(/^assets\//,''))).length!==1)reject('battle-sword','exactly one reviewed battle animation atlas required');
+for(const e of JSON.parse(fs.readFileSync('src/fms/play/culture47-frozen.json','utf8'))){
+  const prefix='assets/'+e.file.replace(/\.js$/,'-'),matches=files.filter(f=>f.startsWith(prefix)&&f.endsWith('.js'));
+  if(matches.length!==1)reject(e.file,'exactly one registered old culture Worker required');
+  const bytes=fs.readFileSync(path.join(root,matches[0]));
+  if(bytes.length!==e.bytes||createHash('sha256').update(bytes).digest('hex')!==e.sha256)reject(e.file,'old culture Worker must retain original bytes');
+}
 console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS and the exact reviewed battle atlas.`);

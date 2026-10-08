@@ -1,0 +1,68 @@
+{
+  "changed": [
+    "culture47Fingerprint"
+  ],
+  "preserved": [
+    "engineFingerprint",
+    "fmsPlayFingerprint",
+    "fmsTacticsFingerprint",
+    "fmsCampaignFingerprint",
+    "fmsChronicleFingerprint",
+    "fmsChronicle2Fingerprint",
+    "fmsTerrain13Fingerprint",
+    "fmsUpper14Fingerprint",
+    "fmsFiscal15Fingerprint",
+    "fmsCourt16Fingerprint",
+    "fmsCulture17Fingerprint",
+    "fmsNaming18Fingerprint",
+    "fmsRestoration19Fingerprint",
+    "fmsDestiny20Fingerprint",
+    "fmsMuster21Fingerprint",
+    "fmsLife22Fingerprint",
+    "fmsDynasty23Fingerprint",
+    "fmsVoyage24Fingerprint",
+    "fmsSettlement25Fingerprint",
+    "fmsWar26Fingerprint",
+    "fmsWar27Fingerprint",
+    "fmsWar28Fingerprint",
+    "fmsWar29Fingerprint",
+    "fmsWar30Fingerprint",
+    "fmsWar31Fingerprint",
+    "fmsWar32Fingerprint",
+    "fmsWar33Fingerprint",
+    "fmsWar34Fingerprint",
+    "fmsWar35Fingerprint",
+    "fmsWar36Fingerprint",
+    "fmsWar37Fingerprint",
+    "fmsWar38Fingerprint",
+    "fmsWar39Fingerprint",
+    "fmsWar40Fingerprint",
+    "fmsWar41Fingerprint",
+    "fmsWar42Fingerprint",
+    "fmsWar43Fingerprint",
+    "fmsWar44Fingerprint",
+    "fmsWar45Fingerprint",
+    "fmsWar46Fingerprint"
+  ],
+  "current": "b365886c0ed6418d6786a5701fc31db518190fe61c0bfad77c1effc8d33255de",
+  "frozen": [
+    {
+      "engine": "42a33afc41f84ad36c9bbf2fa3ba175f48c615db727fb1968aff4f0289288f88",
+      "file": "engine-42a3.js",
+      "bytes": 1322000,
+      "sha256": "c34fb1d1d8baf5f7344df6d13c67c501822509151a4778330a1cdec2428b7590",
+      "rule": "real-culture-zh-politics-journal-2",
+      "protocol": 1,
+      "source": "culture47-reference-final-checked"
+    },
+    {
+      "engine": "ce32a48b19680557c4795a5c9a9b8bdc70d0c98812e0c485378ef5b2969fa177",
+      "file": "engine-ce32.js",
+      "bytes": 1325561,
+      "sha256": "d3050a3b01a9639c83480c6049330a095feef894ae79ed388cb400e94136cdc3",
+      "rule": "real-culture-zh-politics-journal-2",
+      "protocol": 1,
+      "source": "culture47-visible-panel-checked"
+    }
+  ]
+}

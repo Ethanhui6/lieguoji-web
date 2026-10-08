@@ -1,4 +1,5 @@
 import {fingerprintCulture47,culture47Files} from './scripts/fms-culture47-fingerprint.ts';
+import {verifyFrozenCulture47} from './scripts/fms-culture47-frozen.ts';
 import {fingerprintWar46,war46Files} from './scripts/fms-war46-fingerprint';
 import {fingerprintWar45,war45Files} from './scripts/fms-war45-fingerprint';
 import {fingerprintWar44,war44Files} from './scripts/fms-war44-fingerprint';
@@ -72,6 +73,7 @@ const addNaturalDetailGenerator=fingerprintAddNaturalDetailGenerator();
 const localDetailReliefGenerator=fingerprintLocalDetailReliefGenerator();
 const seedTerrainGenerator=fingerprintSeedTerrain();
 verifyFrozenSources();
+verifyFrozenCulture47();
 const version=JSON.parse(readFileSync('package.json','utf8')).version as string;
 const fmsNaming18Fingerprint=fingerprintNaming18();
 const fmsRestoration19Fingerprint=fingerprintRestoration19();

@@ -1,4 +1,5 @@
-import {Culture47Session,CULTURE47_RULE,assertCulture47Journal,type Culture47Journal} from './culture47-session';
+import {Culture47Session,CULTURE47_RULE,type Culture47Journal} from './culture47-session';
+import {assertStoredCulture47,supportsCulture47,Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
 // The v1 database is left intact. New Chinese names must never replay and
 // overwrite an old world's Latin names, family identities or chronicle.
 export const CULTURE47_DATABASE='lieguoji-fms-culture47-zh-journal-v2';
@@ -27,7 +28,7 @@ function future(e:Envelope|undefined){
   const unknown=(x:unknown,keys:string[])=>{if(x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).some(k=>!keys.includes(k)))fail();};
   unknown(e,['version','revision','checksum','journal']);if(e?.version>1)fail();
   const j=e?.journal;unknown(j,['format','version','rule','engine','id','opening','actions']);
-  if(j&&(j.version>1||typeof j.engine==='string'&&j.engine!==__CULTURE47_ENGINE__||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
+  if(j&&(j.version>1||typeof j.engine==='string'&&!supportsCulture47(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
   const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup']);unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);
   if(Array.isArray(j?.actions))for(const a of j.actions as unknown as {kind?:string;edit?:{kind?:string;patch?:unknown}}[]){
@@ -46,7 +47,7 @@ function future(e:Envelope|undefined){
   }
 }
 export type Culture47Verifier=(journal:Culture47Journal)=>void|Promise<void>;
-const replay:Culture47Verifier=j=>{new Culture47Session().load(j);};
+const replay:Culture47Verifier=j=>{if(j.engine!==__CULTURE47_ENGINE__)throw new Culture47Unavailable('此存档须由登记的原模拟引擎读取，原档保留。');try{new Culture47Session().load(j);}catch(e){throw new Culture47InvalidJournal(e instanceof Error?e.message:'文化日志无效。');}};
 async function checked(s:Slots,verify:Culture47Verifier){
   if(!Number.isSafeInteger(s.revision)||s.revision<0)throw Error('文化存档版本损坏，原档保留。');
   // Unknown schemas lock both slots. A known, checksum-corrupted current may
@@ -54,18 +55,23 @@ async function checked(s:Slots,verify:Culture47Verifier){
   future(s.current);future(s.backup);
   const valid=async(e:Envelope|undefined,current:boolean)=>{
     if(!e||e.version!==1||!Number.isSafeInteger(e.revision)||e.revision<1||(current?e.revision!==s.revision:e.revision>s.revision)||typeof e.checksum!=='string')return;
-    try{assertCulture47Journal(e.journal);if(await digest(e.journal)===e.checksum){await verify(e.journal);return e;}}catch{/* Known damaged slot; retain bytes and try the other valid slot. */}
+    try{assertStoredCulture47(e.journal);}catch{return;}
+    if(await digest(e.journal)!==e.checksum)return;
+    try{await verify(e.journal);return e;}catch(error){
+      // Transport failure or cancellation is not evidence of a corrupt slot.
+      if(!(error instanceof Culture47InvalidJournal))throw error;
+    }
   };
   return {current:await valid(s.current,true),backup:await valid(s.backup,false)};
 }
-export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay):Promise<SavedCulture47|null>{
-  const db=await open(factory);try{const s=await read(db),v=await checked(s,verify),chosen=v.current??v.backup;
+export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay,signal?:AbortSignal):Promise<SavedCulture47|null>{
+  signal?.throwIfAborted();const db=await open(factory,signal);try{const s=await read(db,signal),v=await checked(s,verify),chosen=v.current??v.backup;signal?.throwIfAborted();
     if(!chosen){if(s.current||s.backup||s.revision)throw Error('文化存档校验失败，两个槽位均保留。');return null;}
     return {journal:chosen.journal,revision:s.revision,recovered:!v.current};
   }finally{db.close();}
 }
 export async function saveCulture47(journal:Culture47Journal,expected:number|null,factory:IDBFactory=indexedDB,signal?:AbortSignal,verify:Culture47Verifier=replay):Promise<number>{
-  const candidate=structuredClone(journal);assertCulture47Journal(candidate);signal?.throwIfAborted();await verify(candidate);signal?.throwIfAborted();
+  const candidate=structuredClone(journal);assertStoredCulture47(candidate);signal?.throwIfAborted();await verify(candidate);signal?.throwIfAborted();
   const checksum=await digest(candidate);signal?.throwIfAborted();const db=await open(factory,signal);
   try{const before=await read(db,signal),prior=await checked(before,verify);signal?.throwIfAborted();
     if(before.revision!==(expected??0))throw Error('另一个页面已保存文化世界，请先重新读取；当前世界未覆盖。');

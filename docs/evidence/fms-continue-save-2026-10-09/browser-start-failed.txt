@@ -1,0 +1,2 @@
+TypeError: Module "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/src/fms/play/culture47-frozen.json" needs an import attribute of "type: json"
+    at eval (<anonymous>:1:1)

@@ -9,6 +9,7 @@ import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 import {prepareOwnedGeography47} from './geography-content47';
+import {sameCulture47Value} from './culture47-equal';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
 import type {DisplayFrame} from './motion';
@@ -22,6 +23,7 @@ export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
 export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47};
 export type Culture47Action={kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export type Culture47Journal={format:'lieguoji-culture-play';version:1;rule:typeof CULTURE47_RULE;engine:string;id:string;opening:Culture47Opening;actions:Culture47Action[]};
+export type Culture47Progress={stage:'opening'|'replay';completed:number;total:number;ticks:number};
 const exact=(x:unknown,keys:string[]):x is Record<string,unknown>=>!!x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
 const integer=(x:unknown,min:number,max:number):x is number=>Number.isSafeInteger(x)&&Number(x)>=min&&Number(x)<=max;
 export function assertCulture47Journal(value:unknown):asserts value is Culture47Journal {
@@ -77,15 +79,28 @@ export class Culture47Session {
     const journal:Culture47Journal={format:'lieguoji-culture-play',version:1,rule:CULTURE47_RULE,engine:__CULTURE47_ENGINE__,id:'fms-'+crypto.randomUUID(),opening:structuredClone(opening),actions:[]};
     const state=this.build(journal);this.state=state;return this.snapshot();
   }
-  private build(journal:Culture47Journal){
+  private build(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){
     assertCulture47Journal(journal);const o=journal.opening;
+    progress?.({stage:'opening',completed:0,total:journal.actions.length,ticks:0});
     let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,o.relations,o.setup));
     run.id=journal.id;run.world.custom!.id=journal.id;
     prepareOwnedGeography47(run);
-    for(const action of journal.actions){run=apply(run,action);prepareOwnedGeography47(run);}
+    let completed=0,ticks=0;
+    for(const action of journal.actions){run=apply(run,action);prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
     return {run,journal:structuredClone(journal)};
   }
-  load(journal:Culture47Journal){const candidate=this.build(journal);this.state=candidate;return this.snapshot();}
+  load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;return this.snapshot();}
+  verify(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void):'witness'|'replay'{
+    assertCulture47Journal(journal);
+    const known=this.state?.journal;
+    if(known&&journal.actions.length<=known.actions.length){
+      const {actions:a,...header}=journal,{actions:b,...privateHeader}=known;
+      if(sameCulture47Value(header,privateHeader)&&a.every((action,i)=>sameCulture47Value(action,b[i])))return 'witness';
+    }
+    // A different world or history must replay in a candidate; never replace
+    // the currently running state just to verify a backup.
+    this.build(journal,progress);return 'replay';
+  }
   preview(action:PoliticalCommand47){if(!this.state)throw Error('请先创建世界。');return {...previewPoliticalCommand47(this.state.run,action),sequence:this.state.journal.actions.length};}
   previewOrder(intent:MilitaryIntent47){if(!this.state)throw Error('请先创建世界。');return {intent,preview:previewMilitary47(this.state.run,intent),sequence:this.state.journal.actions.length};}
   execute(action:Culture47Action,sequence:number){

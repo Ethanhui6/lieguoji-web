@@ -3,10 +3,37 @@ import {IDBFactory} from 'fake-indexeddb';
 import {grid} from './fixture.test-support';
 import {Culture47Session,type Culture47Journal} from './culture47-session';
 import {CULTURE47_DATABASE,saveCulture47,loadCulture47} from './culture47-storage';
+import {Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
 let journal:Culture47Journal;
 beforeAll(()=>{journal=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).journal;},30000);
 async function mutate(factory:IDBFactory,fn:(s:IDBObjectStore)=>void){const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=factory.open(CULTURE47_DATABASE,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{await new Promise<void>((resolve,reject)=>{const t=db.transaction('slots','readwrite');fn(t.objectStore('slots'));t.oncomplete=()=>resolve();t.onerror=()=>reject(t.error);});}finally{db.close();}}
 describe('independent culture journal storage',()=>{
+  it('keeps the second CAS check even when a slot changes without its revision',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);let calls=0;
+    await expect(saveCulture47(journal,1,f,undefined,async()=>{if(++calls===2)await mutate(f,s=>{const r=s.get('current');r.onsuccess=()=>s.put({...r.result,checksum:'concurrent-slot-write'},'current');});})).rejects.toThrow('另一个页面已修改');
+    let rev=0,checksum='';await mutate(f,s=>{const a=s.get('revision'),b=s.get('current');a.onsuccess=()=>{rev=a.result;};b.onsuccess=()=>{checksum=b.result.checksum;};});expect(rev).toBe(1);expect(checksum).toBe('concurrent-slot-write');
+  },30000);
+  it('an unknown engine in the backup locks both slots before verifier selection',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);await saveCulture47(journal,1,f);
+    await mutate(f,s=>{const r=s.get('backup');r.onsuccess=()=>s.put({...r.result,journal:{...r.result.journal,engine:'0'.repeat(64)}},'backup');});
+    await expect(loadCulture47(f)).rejects.toThrow('未来');await expect(saveCulture47(journal,2,f)).rejects.toThrow('未来');
+  },30000);
+  it('never falls back or writes after a verifier transport failure',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);await saveCulture47(journal,1,f);
+    const unavailable=()=>{throw new Culture47Unavailable('worker missing');};
+    await expect(loadCulture47(f,unavailable)).rejects.toThrow('worker missing');
+    let calls=0;await expect(saveCulture47(journal,2,f,undefined,()=>{if(++calls>1)unavailable();})).rejects.toThrow('worker missing');
+    expect((await loadCulture47(f))?.revision).toBe(2);
+  },30000);
+  it('only a definitive invalid-journal result permits backup recovery',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);const second=structuredClone(journal);second.actions=[{kind:'advance',ticks:1}];await saveCulture47(second,1,f);
+    const loaded=await loadCulture47(f,j=>{if(j.actions.length)throw new Culture47InvalidJournal('definitive rejection');});expect(loaded?.recovered).toBe(true);expect(loaded?.journal).toEqual(journal);
+    await expect(loadCulture47(f,()=>{throw Error('unknown runtime failure');})).rejects.toThrow('unknown runtime failure');
+  },30000);
+  it('cancelled cold reads do not return a late verified world',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);const c=new AbortController();
+    await expect(loadCulture47(f,()=>{c.abort();},c.signal)).rejects.toThrow();expect((await loadCulture47(f))?.revision).toBe(1);
+  },30000);
   it('saves typed geography and all choices; rejects stale multi-tab CAS',async()=>{
     const f=new IDBFactory();expect(await loadCulture47(f)).toBeNull();expect(await saveCulture47(journal,null,f)).toBe(1);const loaded=await loadCulture47(f);expect(loaded?.journal).toEqual(journal);expect(loaded?.journal.opening.terrain.elevations).toBeInstanceOf(Int32Array);
     const outcomes=await Promise.allSettled([saveCulture47(journal,1,f),saveCulture47(journal,1,f)]);expect(outcomes.filter(o=>o.status==='fulfilled')).toHaveLength(1);expect((await loadCulture47(f))?.revision).toBe(2);

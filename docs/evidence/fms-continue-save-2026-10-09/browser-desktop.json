@@ -1,0 +1,502 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-compat.spec.ts",
+      "tests/fms-culture47-resume.spec.ts",
+      "--project=desktop-chromium",
+      "--reporter=list,json",
+      "--output=.autopilot/culture47-replay-browser-results"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-replay-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-replay-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-replay-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-compat.spec.ts",
+      "file": "fms-culture47-compat.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "registered original engine-42a3.js continues without changing history or engine",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9423,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:17.547Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "compatibility",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiI0MmEzM2FmYzQxZjg0YWQzNmM5YmJmMmZhM2JhMTc1ZjQ4YzYxNWRiNzI3ZmIxOTY4YWZmNGYwMjg5Mjg4Zjg4Iiwid29ya2VySGFzaCI6ImMzNGZiMWQxZDhiYWY1ZjczNDRkZjZkMTNjNjdjNTAxODIyNTA5MTUxYTQ3NzgzMzBhMWNkZWMyNDI4Yjc1OTAiLCJ0aWNrIjoiMTMiLCJlcnJvcnMiOltdLCJzeW50aGV0aWNXb3JsZCI6dHJ1ZSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "193c8dcba57c18b3dad1-b23f34892514c99bdeb8",
+          "file": "fms-culture47-compat.spec.ts",
+          "line": 28,
+          "column": 27
+        },
+        {
+          "title": "registered original engine-ce32.js continues without changing history or engine",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7901,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:27.144Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "compatibility",
+                      "contentType": "application/json",
+                      "body": "eyJlbmdpbmUiOiJjZTMyYTQ4YjE5NjgwNTU3YzQ3OTVhNWM5YTliOGJkYzcwZDBjOTg4MTJlMGM0ODUzNzhlZjViMjk2OWZhMTc3Iiwid29ya2VySGFzaCI6ImQzMDUwYTNiMDFhOTYzOWM4MzQ4MGM2MDQ5MzMwYTA5NWZlZWY4OTRhZTc5ZWQzODhjYjQwMGU5NDEzNmNkYzMiLCJ0aWNrIjoiMTIiLCJlcnJvcnMiOltdLCJzeW50aGV0aWNXb3JsZCI6dHJ1ZSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "193c8dcba57c18b3dad1-91eddcad6f672091adb1",
+          "file": "fms-culture47-compat.spec.ts",
+          "line": 28,
+          "column": 27
+        },
+        {
+          "title": "unavailable original engine blocks reading without overwriting its valid journal",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2051,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:35.054Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "193c8dcba57c18b3dad1-24a370b563cc1da73525",
+          "file": "fms-culture47-compat.spec.ts",
+          "line": 39,
+          "column": 1
+        },
+        {
+          "title": "normal repeated saves use the executed journal witness and still restore by actual replay",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8291,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:37.113Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "verification-cost",
+                      "contentType": "application/json",
+                      "body": "eyJ0aHJlZVNhdmVzTXMiOjEwNjYsIndpdG5lc3NBY2tzIjpbIndpdG5lc3MiLCJ3aXRuZXNzIiwid2l0bmVzcyIsIndpdG5lc3MiLCJ3aXRuZXNzIiwid2l0bmVzcyJdLCJmaXh0dXJlIjoiNjc2IHNhbXBsZSBzeW50aGV0aWMgZ2VvZ3JhcGh5IiwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "193c8dcba57c18b3dad1-b01d5c0c9b7256201b69",
+          "file": "fms-culture47-compat.spec.ts",
+          "line": 45,
+          "column": 1
+        },
+        {
+          "title": "initial saved-world verification can be cancelled and retried without losing the slot",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4410,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:45.416Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "193c8dcba57c18b3dad1-ee85a7c0d320c5ca537d",
+          "file": "fms-culture47-compat.spec.ts",
+          "line": 55,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-resume.spec.ts",
+      "file": "fms-culture47-resume.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "a zero-sized app panel can open and become visible without breaking the map or Continue controls",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4741,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:49.847Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-b5dae69ac348a966e879",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=false",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3963,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:54.596Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOmZhbHNlLCJ0aWNrIjoxNSwiZXZpZGVuY2UiOlt7InR5cGUiOiJpbmplY3RlZC1lcnJvciJ9LHsidHlwZSI6ImxvYWQiLCJhY3Rpb25zIjowfV0sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-0a9fe1ffd99a2911e2df",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 14,
+          "column": 42
+        },
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=true",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4215,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:20:58.567Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOnRydWUsInRpY2siOjAsImV2aWRlbmNlIjpbeyJ0eXBlIjoiaW5qZWN0ZWQtZXJyb3IifSx7InR5cGUiOiJsb2FkIiwiYWN0aW9ucyI6MH1dLCJwaHlzaWNhbElwaG9uZSI6ZmFsc2V9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-798473659b8f91328b13",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 14,
+          "column": 42
+        },
+        {
+          "title": "the saved-world Continue button retries after its loading Worker fails, without replacing the save",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4391,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:21:02.790Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-85a9eb7a5c4a9de7f3a8",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "normal generated continent resumes, acknowledges busy controls and restores the exact saved tick",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 89605,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T20:21:07.189Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "resume-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJmaXh0dXJlIjoibm9ybWFsIEdlbmVyYXRlIENvbnRpbmVudCBVSSwgc2VlZCAxMzM3LCAzNjg2NCBwb2ludHMsIDYgbmF0aW9ucywgMTIwIGNpdGllczsgbm8gcHJpdmF0ZSBzYXZlIiwiZmlyc3REYXlNcyI6MTcxNjAsInNhdmVkVGljayI6IjI1NiIsImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-4c616f284bee3ee8dc3e",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 51,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-08T20:20:16.921Z",
+    "duration": 140175.95799999998,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

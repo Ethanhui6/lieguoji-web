@@ -1,3 +1,17 @@
+# 当前续接：Army47 实际位置已接粮食与占领，尚未启用新运行时
+
+2026-10-08；源码检查点 `ca6dac5bb8337fab394d290166a5146cde889735`，最终证据/任务提交以 Git HEAD 核实。根唯一写入；只读审查未发现本切片阻断缺陷。当前 WEB-04-37 保持 in_progress。
+
+- v46 已冻结36运行文件，`scripts/fms-war47-compat.ts` 实际核验执行源码/归档/旧引擎链，指纹仍为 `e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d`。不要再次冻结或运行裸数字版本替换脚本。
+- 已实现 `army-space47.ts`、`war47-economy.ts`、`war47-occupation.ts`：可信外部 binding/完整 Army roster/cargo 排他校验；实际海军队消耗口粮及计入国力，但不从旧陆地补给、减产、围城或修复；真正登陆后只处理实际地区。海战计时器有独立实际海面冲突输入。粮食率为保留网页适配，未宣称原作完整数值。
+- 47相关单测（含18新消费者回归）、最终type/lint、临时生产构建与43产物审查通过；初次独立目录审查缺授权清单参考，已复制同哈希原文件后重跑，未改检查器。大包/Vite未来配置警告保留。[本批边界](evidence/fms-army47-spatial-consumers-2026-10-08/CHECKPOINT.md)、[命令证据与文件哈希](evidence/fms-army47-spatial-consumers-2026-10-08/checks.json)。
+- **没有 run47、Store49、Worker、命令/UI 接线；这批不是已可玩统一跨海**。未重复运行浏览器/真机/视觉验收。[当前 Atlas 本机试玩](http://127.0.0.1:5253/?fms=1) 仍为13e8662/v46，本轮HTTP200和build元数据核实，未重载玩家页面。5252/5250/5248/5246及其旧世界保留，勿刷新或覆盖。
+- 下一批：实际位置移动/军令和接触 → 海战目标伤害 → 海军/驻防/政治/重组/征募的位置入口 → 同一候选事务的run47/Store49/Worker/渲染和明确复制。occupation只复制World，`terrain.upper` 必须由session先克隆；旧food make-peace不能单独取消新ledger，避免失败后部分写入。以上无需用户确认即可本地继续。
+- 顺序仍为统一Army WEB-04-37 → WEB-04-38真实海域 → WEB-03-06文化 → 排队原作全审查。UI继续沿 [三技能+image目标图](design/atlas-ui-2026-10-08/target-v1.png)，不重做已完成目标图或把概念冒充当前画面。
+- 不push/Pages/main，发布锁、旧档、真机与用户视觉门保持。完整目标仍 active，以下为此前实际交付历史。
+
+---
+
 # 当前续接：三技能目标图与首批 Atlas 界面已可本地试玩
 
 2026-10-08；已测源码 `13e86629f962a3d32a7e4949fb99d43a15c701e2`。用户最新明确要求 UI UX Pro Max / Hallmark / Emil 加 image 目标图，覆盖下方上一切片“不用skills”的执行方式；旧证据不改写。根唯一代码写入，审查者只读。

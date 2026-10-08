@@ -13,7 +13,7 @@
         "failed": 1,
         "files": 5,
         "durationSeconds": 106.98,
-        "report": "first-tests.log",
+        "report": "first-tests.txt",
         "note": "67 unchanged daily/speed/founding/tick cases passed. One of23 combat cases expected positive zero for native negative-trait times zero; corrected to retain IEEE negative zero. The non-matching war47-spatial filename did not run."
       },
       {

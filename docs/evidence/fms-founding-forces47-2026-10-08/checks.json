@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-08T09:56:55.447255+00:00",
+  "sourceCommit": "b0a0c2f8bef984fbbf58e40dda18a247e6294829",
+  "branch": "codex/ph06-world-generation",
+  "types": {
+    "exitCode": 0,
+    "scope": "full project"
+  },
+  "lint": {
+    "exitCode": 0,
+    "scope": "full project"
+  },
+  "relatedTests": {
+    "passed": 95,
+    "failed": 0,
+    "files": 4,
+    "newFoundingForcesCases": 16,
+    "scope": [
+      "civilization47-forces.test.ts",
+      "civilization47-government.test.ts",
+      "civilization47.test.ts",
+      "force-tick47.test.ts"
+    ]
+  },
+  "firstAttempt": {
+    "typesExitCode": 2,
+    "reason": "Life47 native-family sources were incompatible with overbroad old LifeState contracts. New47 war interfaces now require only actual calendar fields; family data is not filtered or relabeled.",
+    "testsPassed": 95,
+    "lintExitCode": 0
+  },
+  "reviewFix": "Fleet travel seeds now use the known wet-face ID, not tolerance-based all-cell picking. Normal harbor same-face test passes; extreme narrow wet-face fleet fixture pending.",
+  "protectionTests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "build": {
+    "exitCode": 0,
+    "dist": ".autopilot/founding-forces47-check/dist",
+    "runtimeVersion": 46,
+    "new47Bundled": false
+  },
+  "distAudit": {
+    "exitCode": 0,
+    "artifacts": 43
+  },
+  "frozen46": "e3191f1edda29829bb24cc1a1ec8ff20336344aa85b7f770769735336a4fd52d",
+  "browser": "No new enabled flow;5254 build metadata HTTP200 observed2026-10-08T17:54:37.6501583+08:00,36cf58d/v46. Player not refreshed.",
+  "store49": "Not enabled; structured clone is not IndexedDB acceptance",
+  "mobile": "Not physical-device tested",
+  "visual": "Not accepted",
+  "cloudWrites": false,
+  "goal": "active",
+  "planCheck": {
+    "exitCode": 0
+  }
+}

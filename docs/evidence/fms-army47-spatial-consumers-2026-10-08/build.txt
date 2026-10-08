@@ -60,7 +60,7 @@ computing gzip size...
 .autopilot/army47-consumers-build/dist/assets/FmsApp-DoV9RL03.js                    3,873.35 kB │ gzip: 1,075.30 kB
 
 ✓ built in 2.28s
-[plugin builtin:vite-reporter] 
+[plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting

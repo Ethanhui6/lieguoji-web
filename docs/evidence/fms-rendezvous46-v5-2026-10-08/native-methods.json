@@ -1,0 +1,61 @@
+{
+  "assemblySha256": "d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b",
+  "method": "bounded PE/IL2CPP static analysis; not DWARF/ELF; not runtime video",
+  "constructionEvidence": "../fms-shipyard45-v5-2026-10-08/native-methods.json",
+  "methods": [
+    {
+      "name": "Army$$MoveToProvince",
+      "rva": "34D460",
+      "bytes": 112,
+      "sha256": "027df4d9ee5a6485376930472e2eff337d7b9cb2c7b2f1f73fc88368253cda6f"
+    },
+    {
+      "name": "Army$$ShouldBlockSeaCrossing",
+      "rva": "350AC0",
+      "bytes": 256,
+      "sha256": "46aeaefe5837211adb64716eec97f56a76897c921742e23a50964b6bc46dbf7f"
+    },
+    {
+      "name": "Army$$IsCrossSeaTargetProvince",
+      "rva": "34CAB0",
+      "bytes": 400,
+      "sha256": "9ebffa36192f22b8b0c09f83549ea91031bb01d37bcf3abb515e5c666c6da54b"
+    },
+    {
+      "name": "Army$$ShouldPreferPortTransitionForPath",
+      "rva": "350F30",
+      "bytes": 1488,
+      "sha256": "d2a21a4983e3e7d60c0cbca15f02ea7e9bb5ddc8807da4ad671ce3b5ed920252"
+    },
+    {
+      "name": "Army$$ShouldEnableSeaRoutePreferenceForPath",
+      "rva": "350BF0",
+      "bytes": 832,
+      "sha256": "41440a364f80bc353af727225025477b7dfb3157e55b1544c4c56b9df529548b"
+    },
+    {
+      "name": "Army$$BattleInSeaProvince",
+      "rva": "344B70",
+      "bytes": 416,
+      "sha256": "a5312f832bb8b6286ae62ce70be17143f0ccdfc1e2a7b4b4050175803d62e9db"
+    },
+    {
+      "name": "Army$$GetResolvedArmySpriteIconResourcePath",
+      "rva": "34BB80",
+      "bytes": 96,
+      "sha256": "cf3a3522fc26f9c792ec2d44d86c1903fc5a59cc90d566e80d2ab966cd3a9495"
+    },
+    {
+      "name": "Army$$GetDisplayedArmySpriteIconResourcePath",
+      "rva": "34B720",
+      "bytes": 160,
+      "sha256": "96274af365ab26969b7c3ddbd41e143e51ede246ba7d2926a915375ca9ca047a"
+    },
+    {
+      "name": "Army$$RTSMoveToProvince",
+      "rva": "34DD80",
+      "bytes": 1968,
+      "sha256": "7e901f19f095915b6663ab59770a40453d5d9875f17c0defc6e7c45506d48cd6"
+    }
+  ]
+}

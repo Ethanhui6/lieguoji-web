@@ -1,0 +1,75 @@
+import type {PoliticalRun47} from './civilization47-diplomatic-world';
+import {initialDiplomacy,assertDiplomacy} from './war29-diplomacy';
+import {initialNativeDiplomacy46,advanceDiplomaticSchedule46,reconcileNativeDiplomacy46,assertNativeDiplomacy46} from './civilization47-diplomatic-state';
+import {evaluateDeclaration47,declareWar47,previewDeclaration47} from './civilization47-declaration';
+import {advancePeace47,settleWar47,reconcileDiplomaticForces47} from './civilization47-war-settlement';
+import {coversPair46} from './war46-coalition';
+import {assertWars47} from './war47-validation';
+import {assertPopulation47} from './civilization47-population-validation';
+import {refreshLeaderCombat47} from './civilization47-combat-state';
+import {announce,recordHistory,nameSeed,type Ruler} from './chronicle-records';
+import {rulerFromPerson47} from './civilization47-names';
+import type {FoundingForces47} from './civilization47-forces';
+import type {World} from '../../sim/types';
+import {assertArmyAutonomy47} from './civilization47-army-ai-state';
+import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
+export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;targetNationId:string};
+export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
+export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
+export function attachPolitics47(r:FoundingForces47):PoliticalRun47 {
+  return {...r,diplomacy:initialDiplomacy(r.world),nativeDiplomacy:initialNativeDiplomacy46(r,'new-world')};
+}
+/** WEB real-identity lifecycle: extinction ends office, not the person's life.
+ * Regaining land resumes the recorded living house head as a NEW reign, never
+ * resurrects or regenerates a person. Full native restoration selection remains
+ * separate from this deliberately stated continuation policy. */
+export function reconcileGovernmentContinuity47(r:FoundingForces47){
+  let changed=false;
+  for(const n of r.world.nations){const land=r.world.provinces.filter(p=>p.controller===n.id),ended=Object.hasOwn(r.chronicle.ended,n.id),history=r.chronicle.leaders[n.id],last=history.at(-1)!;
+    if(!land.length&&!ended){r.chronicle.ended[n.id]=r.world.day;if(last.endedDay===null)last.endedDay=r.world.day;r.people.nations[n.id].leaderId=null;r.people.revision++;changed=true;
+      announce(r.chronicle,r.world,r.clock.tick,'extinction',`${n.name}失去全部领土，国家覆亡`,'实控领土归零，结束当前任期；人物、家族、城市与历史保留。',[n.id],null,[last]);
+    }else if(land.length&&ended){
+      const family=r.kin.families[r.people.nations[n.id].id],person=r.kin.persons[family.headId];if(!person?.isAlive)throw Error('复国缺少已知存活家主，需先接完整继承登记。');
+      delete r.chronicle.ended[n.id];const order=history.length+1,id=`ruler-${n.id}-${order}`,identity=rulerFromPerson47(person.identity,r.civilization.nations[n.id],last.regnalName),regnalOrdinal=history.filter(h=>h.regnalName===last.regnalName).length+1;
+      const reign:Ruler={id,name:identity.name,family:identity.house,order,regnalName:last.regnalName,regnalOrdinal,ascendedDay:r.world.day,endedDay:null,termEndDay:r.world.day+(12+nameSeed(id)%14)*365};
+      history.push(reign);r.civilization.rulers[id]=identity;r.civilization.revision++;r.sovereignty.reigns[id]=person.id;r.sovereignty.restorations[n.id]++;r.sovereignty.revision++;r.people.nations[n.id].leaderId=person.id;r.people.revision++;changed=true;
+      announce(r.chronicle,r.world,r.clock.tick,'restoration',`${n.name}重获领土，${person.identity.name}复位`,'沿用已知存活家主并新增任次；网页身份延续规则，不重新生成人物。',[n.id],land[0].id,[reign]);
+    }
+  }if(changed)refreshLeaderCombat47(r,r.combatPersonnel);
+}
+/** Called at each actual occupation transaction, before any family validation.
+ * IDs come from the transfer itself, never substring matching visible names. */
+export function recordPoliticalOccupation47(r:FoundingForces47,before:World){
+  let changed=false;
+  for(const p of r.world.provinces){const old=before.provinces.find(v=>v.id===p.id);if(!old||old.controller===p.controller)continue;changed=true;
+    const names=[old.controller,p.controller].map(id=>r.world.nations.find(n=>n.id===id)!.name);
+    recordHistory(r.chronicle,r.world,r.clock.tick,'occupation',`${names[1]}取得${p.name}`,`实际控制从${names[0]}转移至${names[1]}；城市、地形与法理归属分别保留。`,[old.controller,p.controller],p.id);
+  }if(changed)reconcileGovernmentContinuity47(r);
+}
+export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}
+export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean){
+  reconcileGovernmentContinuity47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
+  if(dayChanged)advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateDeclaration47(r,id);});
+  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
+}
+export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}
+export function assertPoliticalCommand47(a:unknown):asserts a is PoliticalCommand47 {
+  const v=a as PoliticalCommand47;if(!v||typeof v!=='object'||Object.keys(v).sort().join('/')!=='nationId/targetNationId/type'||!['declare-war','make-peace'].includes(v.type)||typeof v.nationId!=='string'||typeof v.targetNationId!=='string'||v.nationId===v.targetNationId)throw Error('外交命令无效。');
+}
+function applyOwned(r:PoliticalRun47,a:PoliticalCommand47){
+  assertPoliticalCommand47(a);
+  if(a.type==='declare-war'){declareWar47(r,a.nationId,a.targetNationId);reconcileDiplomaticForces47(r,new Set());}
+  else {const c=r.nativeWars.campaigns.find(c=>c.endedTick===null&&coversPair46(c,r.nativeWars,a.nationId,a.targetNationId));if(!c)throw Error('两国当前没有可结束的战争。');settleWar47(r,c,11);}
+  reconcileGovernmentContinuity47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
+}
+export function previewPoliticalCommand47(r:PoliticalRun47,action:PoliticalCommand47){
+  const expected=politicalStamp47(r);try{assertPoliticalCommand47(action);const copy=structuredClone(r);applyOwned(copy,action);
+    const details=action.type==='declare-war'?previewDeclaration47(r,action.nationId,action.targetNationId).changes:['结束选中的这场战争；其他战争继续。','保持当前土地实控与法理归属，不强制割地或赔款。','取消双方交锋、占领和港口争夺，部队保留真实位置。'];
+    return{valid:true,reason:copy.chronicle.entries.at(-1)!.text,details,expected,action:structuredClone(action)};
+  }catch(e){return{valid:false,reason:e instanceof Error?e.message:'外交预览失败。',details:[] as string[],expected,action:structuredClone(action)};}
+}
+export function applyPoliticalCommand47(r:PoliticalRun47,a:PoliticalCommand47,expected:PoliticalStamp47){
+  const stamp=politicalStamp47(r),keys=Object.keys(stamp) as (keyof PoliticalStamp47)[];
+  if(!expected||Object.keys(expected).length!==keys.length||keys.some(k=>expected[k]!==stamp[k]))throw Error('外交预览已过期，请重新预览；原世界未改动。');
+  const next=structuredClone(r);applyOwned(next,a);return next;
+}

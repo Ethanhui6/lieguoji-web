@@ -1,3 +1,4 @@
+import {enterLegacyWorld,expandLegacyGroup} from './fms-legacy';
 import {test,expect} from '@playwright/test';
 
 test('FMS: terrain confirmation stays clickable before saving and entering a new world',async({page},info)=>{
@@ -15,6 +16,7 @@ test('FMS: terrain confirmation stays clickable before saving and entering a new
   for(const[x,y]of[[cx+rx,cy-ry],[cx+rx,cy+ry],[cx-rx,cy+ry],[cx-rx,cy-ry]])await page.mouse.move(x,y,{steps:12});
   await page.mouse.up();await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);
   await page.getByRole('button',{name:'绘图设置',exact:true}).click();await expect(entry).toBeHidden();
+  await page.getByText('自然地形',{exact:true}).click();
   await page.getByRole('button',{name:'预览保形自然化',exact:true}).click();
   await expect(page.getByRole('button',{name:'确认地形',exact:true})).toBeVisible({timeout:30000});await expect(entry).toBeHidden();
   await page.screenshot({path:info.outputPath('terrain-confirmation-unobstructed.png')});
@@ -22,11 +24,11 @@ test('FMS: terrain confirmation stays clickable before saving and entering a new
   await page.getByRole('button',{name:'确认地形',exact:true}).click();await expect(entry).toBeVisible();
   await page.locator('.fms-save').click();await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty','false');
   await page.reload();await expect(entry).toBeEnabled();await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);
-  await entry.click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
+  await enterLegacyWorld(page,18);await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
   await expect(page.getByTestId('fms-play')).toHaveAttribute('data-run-version','18',{timeout:30000});
-  await page.getByRole('button',{name:'军事',exact:true}).click();await expect(page.getByRole('region',{name:'布兵与动员'})).toBeVisible();
+  await page.getByRole('button',{name:'军事',exact:true}).click();await expandLegacyGroup(page,'征募与补员');await expect(page.getByRole('region',{name:'布兵与动员'})).toBeVisible();
   await info.attach('fms-entry-resources',{body:JSON.stringify({workers,resources,errors,failed,scope:'Chromium emulation; physical device and original visual acceptance pending'}),contentType:'application/json'});
-  expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);expect(workers.some(u=>/play\.worker/.test(u))).toBe(true);
+  expect(workers.some(u=>/terrain\.worker/.test(u))).toBe(true);expect(workers.some(u=>/naming18\.worker/.test(u))).toBe(true);
   expect(errors).toEqual([]);expect(failed).toEqual([]);
   const fetched=new Map<string,string>();
   for(const resource of resources){

@@ -1,4 +1,6 @@
 import type {NativePolity} from './native-combat/upper-efficiency';
+import {CHINESE_CATALOG47,ROMAN_HOUSES_FEMALE47,HISTORICAL_PEOPLE_ZH47} from './civilization47-chinese-catalog';
+import eastern from './native-culture/data/EasternFantasy.json';
 
 /** User-requested real-world naming references for a fictional simulation.
  * These are independent identities, never aliases for a translated old pool.
@@ -15,7 +17,7 @@ export type NamingMode47 = 'culture-generated'|'historical-names';
 export type HistoricalPerson47 = {name:string;given:string;house:string;gender:0|1};
 export type CultureProfile47 = {
   id:CultureId47;label:string;suggestedReligion:ReligionId47;suggestedPolity:NativePolity;
-  join:''|' ';familyFirst:boolean;houseLabel:string;
+  join:''|' '|'·';familyFirst:boolean;houseLabel:string;
   stateRoots:readonly string[];stateEnds:readonly string[];cityRoots:readonly string[];cityEnds:readonly string[];
   givenMale:readonly string[];givenFemale:readonly string[];houses:readonly string[];
   historicalStates:readonly string[];historicalCities:readonly string[];historicalPeople:readonly HistoricalPerson47[];
@@ -24,9 +26,11 @@ const words=(s:string)=>s.split('|');
 type Spec=Omit<CultureProfile47,'stateRoots'|'stateEnds'|'cityRoots'|'cityEnds'|'givenMale'|'givenFemale'|'houses'|'historicalStates'|'historicalCities'> & {roots:string;ends:string;cityRootsText?:string;cityEndsText?:string;male:string;female:string;family:string;states:string;cities:string};
 function profile(s:Spec):CultureProfile47 {
   const {roots,ends,cityRootsText,cityEndsText,male,female,family,states,cities,...fields}=s;
-  return {...fields,stateRoots:words(roots),stateEnds:words(ends),cityRoots:words(cityRootsText??roots),cityEnds:words(cityEndsText??ends),givenMale:words(male),givenFemale:words(female),houses:words(family),historicalStates:words(states),historicalCities:words(cities)};
+  const z=CHINESE_CATALOG47[s.id];
+  const personal=(text:string,key:'male'|'female'|'surnames')=>[...new Set([...words(text),...(s.id==='chinese'?eastern.tables[key].map(row=>row[1]):[])])];
+  return {...fields,join:s.familyFirst?'':'·',stateRoots:words(z.roots??roots),stateEnds:words(z.ends??ends),cityRoots:words(z.roots??cityRootsText??roots),cityEnds:words(z.ends??cityEndsText??ends),givenMale:personal(z.male??male,'male'),givenFemale:personal(z.female??female,'female'),houses:personal(z.family??family,'surnames'),historicalStates:words(z.states??states),historicalCities:[...new Set(words((z.cities??cities)+'|'+z.extraCities))]};
 }
-const person=(name:string,given:string,house:string,gender:0|1=0):HistoricalPerson47=>({name,given,house,gender});
+const person=(name:string,given:string,house:string,gender:0|1=0):HistoricalPerson47=>{const z=HISTORICAL_PEOPLE_ZH47[name];return {name:z?.[0]??name,given:z?.[1]??given,house:z?.[2]??house,gender};};
 export const CULTURES47:Readonly<Record<CultureId47,CultureProfile47>>={
   chinese:profile({id:'chinese',label:'中华',suggestedReligion:'chineseFolk',suggestedPolity:'Empire',join:'',familyFirst:true,houseLabel:'宗族',roots:'景|宁|昭|永|承|元|建|安|广|平|隆|兴|崇|德|弘|天',ends:'华|安|宁|和|昌|平|阳|明|庆|兴|顺|泰|德|熙|乾|靖',cityRootsText:'青|云|江|松|竹|石|柳|白|长|临|东|南|北|西|龙|凤|锦|清|海|山|河|湖|金|玉|新|永|广|安|平|高|丹|紫',cityEndsText:'溪|川|阳|阴|陵|津|浦|州|城|关|原|宁|安|平|山|江',male:'文昭|景明|承安|弘毅|元清|仲衡|子谦|德宁|怀远|允和|世宁|景行',female:'婉清|令仪|淑宁|静姝|明玥|昭华|若蘅|清和|思柔|惠宁|文茵|令昭',family:'李|赵|陈|王|刘|杨|朱|萧|谢|顾|陆|沈|周|杜|韩|梁',states:'秦|汉|唐|宋|明|晋|齐|楚|燕|赵|魏|吴|越|鲁|郑|蜀',cities:'长安|洛阳|开封|建康|临安|成都|扬州|苏州|泉州|广州|汉中|邯郸|临淄|襄阳|江陵|武昌|寿春|会稽|大同|太原|洛口|敦煌|张掖|姑臧|蓟城|涿郡|南阳|许昌|陈留|睢阳|曲阜|平阳',historicalPeople:[person('李世民','世民','李'),person('刘彻','彻','刘'),person('朱元璋','元璋','朱'),person('武则天','则天','武',1)]}),
   japanese:profile({id:'japanese',label:'日本',suggestedReligion:'shinto',suggestedPolity:'Empire',join:'',familyFirst:true,houseLabel:'氏族',roots:'朝|瑞|丰|青|春|秋|长|高|和|明|若|天|白|松|藤|橘',ends:'阳|和|野|原|津|川|山|冈|田|崎|岛|泽|宫|城|浦|滨',cityRootsText:'青|赤|白|黑|松|杉|柏|樱|藤|竹|梅|小|大|高|长|新|古|若|石|木|水|山|川|滨|富|丰|春|秋|月|星|日|雪',cityEndsText:'野|原|泽|川|崎|冈|田|山|津|浦|滨|岛|谷|森|宫|城',male:'晴信|义清|宗明|景春|康成|光彦|正行|秀久|信之|庆亲|忠义|明仁',female:'春子|明子|和子|清子|幸子|光子|千代|绫|葵|雪|初音|静',family:'藤原|源|平|橘|足利|德川|织田|上杉|武田|伊达|岛津|毛利|北条|浅井|细川|今川',states:'大和|山城|河内|和泉|摄津|伊势|尾张|三河|骏河|甲斐|武藏|相模|近江|美浓|信浓|出云',cities:'京都|奈良|江户|大阪|镰仓|堺|博多|长崎|平户|小田原|骏府|岐阜|金泽|仙台|鹿儿岛|山口|广岛|冈山|会津|高山|松江|高知|熊本|福冈|姬路|水户|弘前|平泉|安土|大津|伏见|宇治',historicalPeople:[person('德川家康','家康','德川'),person('德川庆喜','庆喜','德川'),person('织田信长','信长','织田'),person('持统','持统','皇室',1)]}),
@@ -47,7 +51,7 @@ export function culture47(id:string):CultureProfile47 {if(!CULTURE_IDS47.include
  * separate where joining it as a modern surname would misrepresent the form. */
 export function personalName47(culture:CultureId47,given:string,house:string,gender:0|1) {
   const p=culture47(culture);
-  if(culture==='roman'&&gender===1)return house.replace(/ius$/,'ia')+' '+given;
+  if(culture==='roman'&&gender===1){const feminine=ROMAN_HOUSES_FEMALE47[p.houses.indexOf(house)];if(!feminine)throw Error('缺少罗马女性氏族词形。');return feminine+'·'+given;}
   if(['arab','greek','norse','indian'].includes(culture))return given;
   return p.familyFirst?house+p.join+given:given+p.join+house;
 }

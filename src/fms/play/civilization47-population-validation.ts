@@ -25,7 +25,7 @@ export function assertPopulation47(r:Population47) {
   if(!exact(v,['version','revision','provinces','reigns','restorations','nativeRebels'])||v.version!==1||!integer(v.revision)||!exact(v.provinces,r.world.provinces.map(p=>p.id))||!exact(v.restorations,r.world.nations.map(n=>n.id))||!exact(v.reigns,Object.keys(r.civilization.rulers))||!record(v.nativeRebels))return fail();
   // Political creation/restoration registers its own records in a later slice;
   // do not accept unverified flags now merely because they are empty on create.
-  if(Object.keys(v.nativeRebels).length||Object.values(v.restorations).some(n=>n!==0))return fail();
+  if(Object.keys(v.nativeRebels).length||Object.entries(v.restorations).some(([id,n])=>!integer(n)||n!==r.chronicle.entries.filter(e=>e.kind==='restoration'&&e.nationIds.includes(id)).length))return fail();
   for(const p of r.world.provinces){const row=v.provinces[p.id],city=r.world.cities.find(c=>c.id===row?.sourceCityId);if(!exact(row,['mapCultureId','sourceCityId','recordedDay','origin'])||!city||city.provinceId!==p.id||row.mapCultureId!==r.civilization.cities[city.id].cultureId||row.recordedDay!==0||row.origin!=='new-world')return fail();}
   assertPeople(r.people,r,v);
   // This slice creates one founding family per state. New houses, adoption or

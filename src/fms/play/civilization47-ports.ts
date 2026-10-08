@@ -1,3 +1,4 @@
+import {waterRegions47} from './geography-content47';
 import type {MilitaryRun47} from './force-tick47';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
@@ -14,7 +15,7 @@ const revise=(r:PortRun47)=>{if(!Number.isSafeInteger(r.portControl.revision)||r
 /** Read the true travel/region contact state, including neutral observers held
  * inside a contested sea region. Does not install or mutate contact state. */
 export function navalPresence47(r:PortRun47,sea:SeaGraph=graphFor46(r)){
- const {spatial,forces}=actualForces47(r),regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const))),region=(face:number)=>regions.get(face)!;
+ const {spatial,forces}=actualForces47(r),regions=waterRegions47(r.diplomaticGeography),region=(face:number)=>regions.get(face)!;
  assertForceContacts47(r.forceContacts,forces,spatial.graph,region);
  const contact=reconcileForceContactsOwned47(forces,spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),region);
  const fleets=r.navy.fleets.filter(f=>f.status!=='lost').map(f=>({fleet:f,at:armyTravelLocation47(r.fleetPositions.records[f.id],spatial.graph)}));

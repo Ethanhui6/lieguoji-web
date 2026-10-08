@@ -11,10 +11,13 @@ import type {EventLocation} from './observation';
 import {historyKinds,isMajorHistory,queryHistory,type HistoryQuery} from './chronicle-query';
 import type {HistoricalEntry} from './chronicle-records';
 export function historicalNews(c:Chronicle):NewsItem[]{return c.entries.filter(isMajorHistory).map(e=>({key:`history-${e.id}`,historyId:e.id,day:e.day,text:e.text,reason:e.reason,priority:'major',location:e.place?{kind:'province',id:e.place.id,label:`查看${e.place.name}`} as const:null}));}
-export function CourtPanel({run,nationId,provinceId,busy,act,previewAction}:{run:ChronicleRun;nationId:string;provinceId:string|null;busy:boolean;act:(a:PoliticsAction)=>void;previewAction?:(a:PoliticsAction)=>ReturnType<typeof previewPolitics>}){
+export function CourtPanel({run,nationId,provinceId,busy,act,previewAction,visible=true}:{run:ChronicleRun;nationId:string;provinceId:string|null;busy:boolean;act:(a:PoliticsAction)=>void;previewAction?:(a:PoliticsAction)=>ReturnType<typeof previewPolitics>;visible?:boolean}){
   const inspect=previewAction??((a:PoliticsAction)=>previewPolitics(run,a));
   const c=run.chronicle,ruler=c.leaders[nationId]?.at(-1),ended=Object.hasOwn(c.ended,nationId),province=run.world.provinces.find(p=>p.id===provinceId);
   const [regnalName,setRegnalName]=useState(ruler?.regnalName??'');
+  // Retain the draft while hidden, but do not regenerate names and political
+  // previews on every realtime snapshot of an unrelated nation tab.
+  if(!visible)return null;
   const accession:PoliticsAction={type:'succession',nationId,regnalName:regnalName.trim()},preview=inspect(accession);
   const action=(type:'uprising'|'independence'):PoliticsAction=>({type,nationId,provinceId:provinceId??''});
   return <section className="play-court" aria-label="君主与地方政治"><h3>王室与政局</h3>

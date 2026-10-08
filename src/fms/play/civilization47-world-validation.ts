@@ -59,7 +59,9 @@ export function validateCivilizationWorld47(value: unknown): value is World {
     if (!isRecord(city) || !exactKeys(city, ['id', 'name', 'provinceId', 'position', 'label', 'fort']) || !uniqueId(city.id) || !isText(city.name) || !provinceIds.has(city.provinceId as string) || !point(city.position) || !point(city.label) || !integer(city.fort, 0, 10)) return false;
   }
   const cities = value.cities as World['cities'];
-  for (const nation of value.nations as World['nations']) if (!cities.some(city => city.id === nation.capitalId && provinceMap.get(city.provinceId)?.legalOwner === nation.id)) return false;
+  // Capital references survive conquest as historical city identities. The
+  // active-capital view separately requires current territorial control.
+  for (const nation of value.nations as World['nations']) if (!cities.some(city => city.id === nation.capitalId)) return false;
   for (const army of value.armies) {
     if (!isRecord(army) || !exactKeys(army, ['id', 'name', 'nationId', 'provinceId', 'troops', 'morale', 'supplies', 'status', 'route', 'progress', 'originId']) || !uniqueId(army.id) || !isText(army.name) || !nationIds.has(army.nationId as string) || !provinceIds.has(army.provinceId as string) || !provinceIds.has(army.originId as string) || !integer(army.troops, 0, 10000000) || !finite(army.morale, 0, 100) || !finite(army.supplies, 0, 100) || !['idle', 'marching', 'fighting', 'retreating', 'destroyed'].includes(army.status as string) || !finite(army.progress, 0, 1) || army.progress === 1 || !list(army.route, 0, provinces.length) || !army.route.every(id => provinceIds.has(id as string)) || new Set(army.route).size !== army.route.length || army.route.includes(army.provinceId)) return false;
     let previous = army.provinceId as string;

@@ -1,0 +1,29 @@
+{
+  "status": "reviewed-through-fixed-head",
+  "baseExclusive": "1790975428e0b13976f8da9f735ec9110f0af714",
+  "headInclusive": "339c2e181a0737cf285ac8f7dcd642c92eabd5d2",
+  "startedAt": "2026-10-08T15:01:51.839Z",
+  "finishedAt": "2026-10-08T15:02:13.227Z",
+  "commits": 155,
+  "changedPaths": 3457,
+  "pathBlobVersions": 4047,
+  "changedUniqueBlobs": 3166,
+  "newReachableBlobs": 3149,
+  "blobsAlreadyAtBase": 17,
+  "deletedPaths": 0,
+  "pathChecks": {"examined": 4047, "sensitive": 0, "symlinks": 0, "blocked": 0},
+  "newContent": {"bytes": 349925751, "textBlobs": 2730, "textBytes": 94430755, "binaryBlobs": 419, "binaryBytes": 255494996},
+  "commitMetadata": {"commits": 155, "bytes": 50690, "findings": 0},
+  "integrityFailures": 0,
+  "secretScan": {
+    "chunkBytes": 65536,
+    "overlapCharacters": 2048,
+    "findings": 0,
+    "patterns": ["private-key-material", "github-token", "github-fine-grained-token", "aws-access-key-id", "openai-secret-key", "slack-token", "slack-webhook", "google-api-key", "stripe-live-key", "npm-access-token", "gitlab-token", "sendgrid-token", "credential-in-url", "literal-secret-assignment", "literal-authorization-bearer", "bearer-token-text"]
+  },
+  "recordManifestSha256": "bc7b9ed37cb953a0a9ee2d4e15ee46bf7acb5e880b356ee1a4b2a577342546a0",
+  "binaryManifestSha256": "36f671c0c424e9f232f4195c18115ddc73067b5ad9e7e0a3e0db7a730d70f568",
+  "commitManifestSha256": "d1976747b69d41d2c06a741bdad18317ff208eef3bafda9098de50b0a60e60a7",
+  "preserved610EntryManifestSha256": "9d3651b224fdab8aac7da40c9468df401e522a6baa51a41f10c6a46eb625e13f",
+  "limitations": ["This fixed historical range excludes later working-tree changes and commits; the final candidate needs a separate scan.", "Pattern scanning does not prove absence of every possible secret or personal datum.", "Binary visual provenance and sampling are recorded separately."]
+}

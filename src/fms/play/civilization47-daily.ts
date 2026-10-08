@@ -12,6 +12,7 @@ import {settleDestinyMonth} from './destiny20-state';
 import {settleFleetFood47,settleArmyFoodConsequences47,finishDailyForces47,dailyEvent47,assertDailyResources47} from './civilization47-upkeep';
 import {TICKS_PER_DAY} from './clock';
 import {assertCombatPersonnel47,refreshLeaderCombat47} from './civilization47-combat-state';
+import {cloneMilitaryCandidate47} from './geography-content47';
 
 export type DailyEconomy47={version:1;lastDay:number;lastMusterMonth:number};
 export function assertDailyEconomy47(r:{world:{day:number};dailyEconomy:DailyEconomy47}){
@@ -26,7 +27,7 @@ export function settleCivilizationDay47<T extends FoundingForces47>(input:T,dail
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
   if(input.clock.tick!==(input.world.day+1)*TICKS_PER_DAY||input.forceClock.secondsPerTick!==input.life.secondsPerDay/TICKS_PER_DAY||input.transports.cargo.length)throw Error('只能结算真实日界，旧承运状态不得混入新规则。');
   const initial=actualForces47(input);assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)));assertLosses(input.losses,input.world,input.warfare,input.clock.tick);
-  const {terrain,...mutable}=input,r={...structuredClone(mutable),terrain} as T;r.world.day++;
+  const r=cloneMilitaryCandidate47(input);r.world.day++;
   // Native UpdateStateData refreshes the leader's cached per-enemy modifier.
   // This web monthly bridge runs before this day's autonomous orders.
   if(r.world.day%30===0)refreshLeaderCombat47(r,r.combatPersonnel);

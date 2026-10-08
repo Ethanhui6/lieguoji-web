@@ -1,0 +1,35 @@
+import type {FoundingForces47} from './civilization47-forces';
+import {isoWholeYears} from './native-economy/iso-calendar';
+import {PlayIcon} from './PlayIcon';
+
+export function nationFamily47(run:FoundingForces47,id:string){
+ const family=Object.values(run.kin.families).find(f=>f.nationId===id);
+ return {family,members:family?[...family.memberIds,...family.collateralMemberIds].map(pid=>run.kin.persons[pid]):[]};
+}
+
+/** Read the same accounts used by the simulation. No synthetic corruption,
+ * family influence or duplicate administrative levels are presented here. */
+export function nationOverview47(run:FoundingForces47,id:string){
+ const nation=run.world.nations.find(n=>n.id===id)!;
+ const provinces=run.world.provinces.filter(p=>p.controller===id),owned=new Set(provinces.map(p=>p.id));
+ const capital=run.world.cities.find(c=>c.id===nation.capitalId);
+ const armies=run.world.armies.filter(a=>a.nationId===id&&a.troops>0&&a.status!=='destroyed');
+ const fleets=run.navy.fleets.filter(f=>f.nationId===id&&f.status!=='lost'&&f.ships>0&&run.maritime.hulls[f.id]>0);
+ const population=run.world.statecraft!.provinces.filter(p=>owned.has(p.provinceId)).reduce((n,p)=>n+p.population,0);
+ return {extinct:Object.hasOwn(run.chronicle.ended,id),years:isoWholeYears(run.life.startDate,run.life.currentDate),capital:capital?.name??null,capitalHeld:!!capital&&owned.has(capital.provinceId),population,capacity:provinces.reduce((n,p)=>n+run.finance.provinces[p.id].maxPopulation,0),gold:run.finance.nations[id].gold,regions:provinces.length,cities:run.world.cities.filter(c=>owned.has(c.provinceId)).length,armies:armies.length,troops:armies.reduce((n,a)=>n+a.troops,0),fleets:fleets.length,ships:fleets.reduce((n,f)=>n+f.ships,0)};
+}
+const number=(n:number)=>Math.round(n).toLocaleString('zh-CN');
+export function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string}){
+ const v=nationOverview47(run,id);
+ return <section className="c47-overview" aria-label="国家实况" data-population={v.population} data-regions={v.regions} data-gold={v.gold}>
+  <div className="c47-capital-line"><PlayIcon name="city" size={17}/><div><small>{v.extinct?'原首都':'首都'}</small><strong>{v.capital??'无'}</strong></div><span className={v.extinct||!v.capitalHeld?'is-lost':''}>{v.extinct?'已覆亡':v.capitalHeld?'本国控制':'失守'}</span></div>
+  <dl className="c47-nation-stats">
+   <div><dt>实控人口</dt><dd>{number(v.population)}</dd><small>容量 {number(v.capacity)}</small></div>
+   <div><dt>国库</dt><dd>{number(v.gold)}</dd><small>已结账金币</small></div>
+   <div><dt>军团</dt><dd>{number(v.armies)}</dd><small>{number(v.troops)} 人</small></div>
+   <div><dt>舰队</dt><dd>{number(v.fleets)}</dd><small>{number(v.ships)} 艘编制舰</small></div>
+   <div><dt>实控地区</dt><dd>{number(v.regions)}</dd><small>{number(v.cities)} 座城市</small></div>
+   <div><dt>建国至今</dt><dd>{v.years>0?`${v.years} 年`:`${run.world.day} 日`}</dd><small>{v.extinct?'历史仍保留':'按本局历法'}</small></div>
+  </dl>
+ </section>;
+}

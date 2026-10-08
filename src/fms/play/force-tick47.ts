@@ -1,3 +1,4 @@
+import {waterRegions47} from './geography-content47';
 import type {War46Run} from './war46-model';
 import type {ArmyRouteWeights47} from './army-commands47';
 import {advanceActualForces47,actualForces47,type ForceRun47} from './force-runtime47';
@@ -11,6 +12,7 @@ import {advanceTacticsOccupation47,type ProvinceCombat47} from './war47-occupati
 import type {World} from '../../sim/types';
 import {TICKS_PER_DAY} from './clock';
 import type {War28World} from './war47-wars';
+import {cloneMilitaryCandidate47,shareUnchangedProvinceGeometry47} from './geography-content47';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
 export type MilitaryRules47<T extends MilitaryRun47> = {
@@ -21,10 +23,11 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
    * the generic military primitive also supports isolated no-family fixtures. */
   afterTick?: (candidate:T,dailyPending:boolean)=>void;
   afterOccupation?: (candidate:T)=>undefined;
+  afterOwnership?: (candidate:T,previousWorld:World)=>void;
   portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
 };
 function frame(r:MilitaryRun47) {
-  const {spatial,forces}=actualForces47(r),regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const)));
+  const {spatial,forces}=actualForces47(r),regions=waterRegions47(r.diplomaticGeography);
   assertForceContacts47(r.forceContacts,forces,spatial.graph,face=>regions.get(face)!);
   const contact=reconcileForceContactsOwned47(forces,spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),face=>regions.get(face)!);
   r.forceContacts=contact.contacts;
@@ -38,14 +41,16 @@ function frame(r:MilitaryRun47) {
 /** Candidate owner uses this after reconciling deaths/contacts outside a
  * military window; surviving eligible forces retain their exact deadlines. */
 export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
-  reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
-  assertForceClock47(r.forceClock,now,new Set(actualForces47(r).forces.map(forceKey47)));
+  const current=frame(r);
+  reconcileAttackClock47(r.forceClock,current.eligible,now);
+  assertForceClock47(r.forceClock,now,new Set(current.forces.map(forceKey47)));
 }
 function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>) {
   const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
   const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
-  r.world=out.world;r.occupation=out.occupation;
+  const previous=r.world;shareUnchangedProvinceGeometry47(previous,out.world);r.world=out.world;r.occupation=out.occupation;
   if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
+  rules.afterOwnership?.(r,previous);
 }
 /** Atomic military window for a future full47 session. Whole public ticks give
  * stable partition/reload behavior; within each tick, stop at every real gate,
@@ -60,7 +65,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
   const initial=actualForces47(input);
   assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)));
   assertForceDamage47(input.forceDamage,new Set([...input.world.armies.map(a=>forceKey47({kind:'army',id:a.id})),...input.navy.fleets.map(f=>forceKey47({kind:'fleet',id:f.id}))]));
-  const {terrain,...mutable}=input;let r={...structuredClone(mutable),terrain} as T;
+  let r=cloneMilitaryCandidate47(input);
   const volleys:{at:number;due:string[];hits:number;losses:number}[]=[];
   let now=input.clock.tick,eventCount=0;
   for(let tick=input.clock.tick+1;tick<=input.clock.tick+ticks;tick++) {
@@ -92,8 +97,9 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
     r.clock.tick=tick;r.forceClock.now=tick;
     rules.afterTick?.(r,tick===untilDay);
     // Expiry/peace/death can change attack eligibility without moving a point.
-    reconcileAttackClock47(r.forceClock,frame(r).eligible,tick);
-    assertForceClock47(r.forceClock,tick,new Set(actualForces47(r).forces.map(forceKey47)));
+    const current=frame(r);
+    reconcileAttackClock47(r.forceClock,current.eligible,tick);
+    assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)));
   }
   return {run:r,volleys,eventCount,dailyPending:r.clock.tick===untilDay};
 }

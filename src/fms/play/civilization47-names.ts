@@ -10,7 +10,7 @@ export type CulturalName47={value:string;mode:NamingMode47;sourceKey:string;cust
 export type NationIdentity47=CultureChoice47&{name:CulturalName47;origin:'new-world'|'secession';parentId:string|null};
 export type PersonName47={cultureId:CultureId47;name:string;given:string;house:string;gender:0|1;sourceKey:string;mode:NamingMode47};
 export type RulerIdentity47=PersonName47&{religionId:ReligionId47;polityAtAccession:NativePolity;regnalName:string;titleAtAccession:string};
-export type Civilization47={version:1;catalog:'real-cultures-v1';revision:number;mode:NamingMode47;peopleMode:'culture-generated';enabled:CultureId47[];nations:Record<string,NationIdentity47>;cities:Record<string,{cultureId:CultureId47;name:CulturalName47}>;rulers:Record<string,RulerIdentity47>};
+export type Civilization47={version:1;catalog:'real-cultures-zh-v2';revision:number;mode:NamingMode47;peopleMode:'culture-generated';enabled:CultureId47[];nations:Record<string,NationIdentity47>;cities:Record<string,{cultureId:CultureId47;name:CulturalName47}>;rulers:Record<string,RulerIdentity47>};
 const hash=(s:string)=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h;};
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const exact=(v:unknown,keys:readonly string[])=>record(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -36,18 +36,22 @@ function capacity(cultureId:CultureId47,mode:NamingMode47,kind:'state'|'city') {
 function freshName(cultureId:CultureId47,mode:NamingMode47,kind:'state'|'city',seed:string,used:ReadonlySet<string>):CulturalName47 {
   const size=capacity(cultureId,mode,kind),start=hash(seed)%size;
   for(let step=0;step<size;step++){const index=(start+step)%size,value=poolValue(cultureId,mode,kind,index);if(!used.has(value))return {value,mode,sourceKey:`${kind}/${cultureId}/${mode}/${index}`,custom:null};}
-  throw Error(`${culture47(cultureId).label}的${mode==='historical-names'?'历史名称':'生成名称'}库已用尽；请增加文化种类或减少${kind==='city'?'城市':'国家'}数量。原地图和世界未改动。`);
+  // Native city pool exhaustion reuses an authentic entry, without a numeric
+  // suffix. States use an explicit web policy of the same form: a repeated
+  // historical base never invents a historical country. Entity IDs stay unique.
+  if(mode==='historical-names')return {value:poolValue(cultureId,mode,kind,start),mode,sourceKey:`${kind}/${cultureId}/${mode}/${start}`,custom:null};
+  throw Error(`${culture47(cultureId).label}的生成名称库已用尽，原世界未改动。`);
 }
 export function initialCivilization47(seed:string,count:number,owners:readonly number[],setup:WorldCultureSetup47):Civilization47 {
   if(!Number.isInteger(count)||count<2||count>24||owners.some(n=>!Number.isInteger(n)||n<0||n>=count))throw Error('文化分配缺少有效国家身份。');
   validateCultureSetup47(setup,count);
-  const c:Civilization47={version:1,catalog:'real-cultures-v1',revision:0,mode:setup.mode,peopleMode:'culture-generated',enabled:[...setup.enabled],nations:{},cities:{},rulers:{}},states=new Set<string>(),cities=new Set<string>();
+  const c:Civilization47={version:1,catalog:'real-cultures-zh-v2',revision:0,mode:setup.mode,peopleMode:'culture-generated',enabled:[...setup.enabled],nations:{},cities:{},rulers:{}},states=new Set<string>(),cities=new Map<CultureId47,Set<string>>();
   for(let i=0;i<count;i++) {
     const id='n-'+i,profile=culture47(setup.enabled[i%setup.enabled.length]),choice=setup.nations&&Object.hasOwn(setup.nations,id)?setup.nations[id]:{cultureId:profile.id,religionId:profile.suggestedReligion,polity:profile.suggestedPolity};
     const name=freshName(choice.cultureId,c.mode,'state',`${seed}/state/${id}`,states);states.add(name.value);
     c.nations[id]={...choice,name,origin:'new-world',parentId:null};
   }
-  for(const [i,owner] of owners.entries()) {const cultureId=c.nations['n-'+owner].cultureId,name=freshName(cultureId,c.mode,'city',`${seed}/city/${i}`,cities);cities.add(name.value);c.cities['c-'+i]={cultureId,name};}
+  for(const [i,owner] of owners.entries()) {const cultureId=c.nations['n-'+owner].cultureId,used=cities.get(cultureId)??new Set<string>(),name=freshName(cultureId,c.mode,'city',`${seed}/city/${i}`,used);used.add(name.value);cities.set(cultureId,used);c.cities['c-'+i]={cultureId,name};}
   return c;
 }
 export const nationName47=(n:NationIdentity47)=>n.name.custom??stateTitle47(n.name.value,n.cultureId,n.polity,n.religionId);
@@ -123,7 +127,7 @@ export function assertRulerIdentity47(a:RulerIdentity47,mode:NamingMode47,enable
 export function assertCivilization47(c:Civilization47,w:World,chronicle:Chronicle) {
   const fail=()=>{throw Error('真实文化存档损坏或含未来规则，已保留原档。');};
   if(!validateCivilizationWorld47(w))return fail();
-  if(!exact(c,['version','catalog','revision','mode','peopleMode','enabled','nations','cities','rulers'])||c.version!==1||c.peopleMode!=='culture-generated'||c.catalog!=='real-cultures-v1'||!Number.isSafeInteger(c.revision)||c.revision<0||!record(c.nations)||!record(c.cities)||!record(c.rulers))return fail();
+  if(!exact(c,['version','catalog','revision','mode','peopleMode','enabled','nations','cities','rulers'])||c.version!==1||c.peopleMode!=='culture-generated'||c.catalog!=='real-cultures-zh-v2'||!Number.isSafeInteger(c.revision)||c.revision<0||!record(c.nations)||!record(c.cities)||!record(c.rulers))return fail();
   validateCultureSetup47({mode:c.mode,enabled:c.enabled},w.nations.length);
   if(!exact(c.nations,w.nations.map(n=>n.id))||!exact(c.cities,w.cities.map(n=>n.id)))return fail();
   for(const n of w.nations){const a=c.nations[n.id];if(!exact(a,['cultureId','religionId','polity','name','origin','parentId'])||!c.enabled.includes(a.cultureId)||!POLITIES47.includes(a.polity)||!['new-world','secession'].includes(a.origin)||a.origin==='new-world'&&a.parentId!==null||a.origin==='secession'&&(!a.parentId||a.parentId===n.id||!Object.hasOwn(c.nations,a.parentId)))return fail();religion47(a.religionId);assertName(a.name,a.cultureId,'state',c.mode);if(n.name!==nationName47(a))return fail();}

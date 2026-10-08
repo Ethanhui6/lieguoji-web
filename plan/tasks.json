@@ -2391,7 +2391,7 @@
       "newLocalChangesAuthorizedForUpload": false
     },
     "preview20261006": {
-      "status": "preview_verified_ci_pending",
+      "status": "previous_preview_verified_ci_cancelled_new_candidate_in_progress",
       "authorizationEvidence": "docs/GITHUB_UPLOAD_2026-10-06.md",
       "branch": "codex/ph06-world-generation",
       "repository": "https://github.com/Ethanhui6/lieguoji-web",
@@ -2421,8 +2421,8 @@
       },
       "cloudCi": {
         "id": 37488428210,
-        "status": "in_progress",
-        "conclusion": null,
+        "status": "completed",
+        "conclusion": "cancelled",
         "headSha": "8eb9b4ec5ec674b30b11c8732664070635b2fc7b",
         "url": "https://github.com/Ethanhui6/lieguoji-web/actions/runs/37488428210"
       },
@@ -7752,7 +7752,7 @@
       "next": "Bind native data, complete CB catalog conditions/weights, native sea neighbor and relationship history; version/freeze before replacing web AI. Continue existing WEB-04-37, then WEB-03-06; new full audit remains queued."
     },
     "nativeCasusState": {
-      "date": "2026-10-07T16:54:00.150Z",
+      "date": "2026-10-07T16:54:00.15Z",
       "status": "verified_native_fragments_not_production_integrated",
       "task": "WEB-04-37",
       "sourceCommit": "1e819102be972e39ec2183689ae5a1f1b12653ef",
@@ -8951,6 +8951,75 @@
       "entryIntegrated": true,
       "url": "http://127.0.0.1:5261/?fms=1",
       "evidenceDirectory": "docs/evidence/fms-culture-play47-2026-10-08"
+    },
+    "culture47ChineseReleaseCheckpoint": {
+      "status": "in_progress",
+      "baseCommit": "339c2e181a0737cf285ac8f7dcd642c92eabd5d2",
+      "evidence": [
+        "docs/evidence/fms-chinese-culture-release-2026-10-08/CONTRACT.md",
+        "docs/evidence/fms-continue-repair-2026-10-09/RESULT.md"
+      ],
+      "localCandidate": "http://127.0.0.1:5271/?fms=1",
+      "cloud": "not uploaded; new explicit user authorization awaiting checked bounded candidate",
+      "remaining": [
+        "finish full regression; isolate terrain-import/hydrology timeouts without raising limits",
+        "validate final artifact after canonical geometry cache guard and immediate save feedback",
+        "rerun final candidate review; reachable history and 425 media samples reviewed",
+        "bind preview20261006 then normal same-branch push",
+        "same-SHA Actions and Pages verification; real iPhone pending"
+      ],
+      "freshEvidence": {
+        "typesLintReleasePlan": "passed; late browser navigation edits need final lint",
+        "culture47MobileTablet": "4/4 passed, Chromium emulation only; .autopilot/culture47-priority.json",
+        "culture47Desktop": "2/2 passed on earlier checked candidate; final artifact recheck pending",
+        "legacyCourt": "real original-version appointment/succession passed",
+        "fullBrowser": "369-case5266 run stopped after191 for urgent playable repair; 6 failures recorded, not full PASS; .autopilot/culture47-full-final-browser.txt",
+        "nativeObservation": "10 user-provided original screenshots observed; native capture itself failed; not animation/play evidence",
+        "fullUnit": "5579/5586; 7 original-timeout failures; complete affected worker files 35/35 passed isolated without threshold changes",
+        "referenceBrowser": "3/3 desktop/mobile/tablet Chromium on5265; real national accounts, registered family, dated focused history, rename preservation and refresh"
+      },
+      "preserved": [
+        "5254 v46 player world",
+        "5261 culture-v1 world",
+        "main production",
+        "PH and physical/visual acceptance gates"
+      ],
+      "updatedAt": "2026-10-09",
+      "localUrl": "http://127.0.0.1:5271/?fms=1",
+      "screenshotStudy": "docs/evidence/fms-chinese-culture-release-2026-10-08/USER_SCREENSHOT_STUDY_2026-10-09.md",
+      "pendingPlayback": "v20 original 4x/100s target passed; urgent47 default-map continue fix verified locally; long-run replay performance still unaccepted",
+      "urgentResumeRepair": {
+        "status": "local_fix_verified",
+        "trigger": "Continue has no visible progress on normal generated map",
+        "url": "http://127.0.0.1:5271/?fms=1",
+        "points": 36864,
+        "advance5Ms": 1042.6748,
+        "checks": "40 affected/profile and4 clock checks; full types/lint/build;10 resume/reference browser cases on5270 and3 zero-size final5271 cases passed",
+        "normalMapDayMs": {
+          "desktop": 19456,
+          "mobileEmulation": 17625
+        },
+        "oldWorld": "5266 old artifact/journal preserved; new port does not migrate old progress",
+        "fingerprint": "47 changed honestly; all other engine fingerprints including18-46 unchanged",
+        "evidence": "docs/evidence/fms-continue-repair-2026-10-09/RESULT.md",
+        "remaining": [
+          "old47 explicit protected continuation design",
+          "long-run save replay performance",
+          "remaining full regression and bounded preview release"
+        ],
+        "actualVisiblePlay": {
+          "date": "2026-10-09",
+          "day": 19,
+          "tick": 2389,
+          "nations": 6,
+          "cities": 120,
+          "mode": "historical-names",
+          "saved": true,
+          "reloaded19Day": false,
+          "image": "docs/evidence/fms-continue-repair-2026-10-09/playable-day19.png",
+          "device": "Codex IAB 451x560, not physical iPhone"
+        }
+      }
     }
   }
 }

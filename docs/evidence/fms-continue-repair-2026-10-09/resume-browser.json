@@ -1,0 +1,522 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-resume.spec.ts",
+      "tests/fms-culture47-reference.spec.ts",
+      "--config",
+      ".autopilot/culture47-recovery.config.ts",
+      "--project",
+      "desktop-chromium",
+      "--project",
+      "mobile-chromium",
+      "--workers=1"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture47-recovery.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-recovery-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-recovery-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/culture47-recovery-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\游戏\\架空地图模拟器\\.autopilot\\culture47-recovery-browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-reference.spec.ts",
+      "file": "fms-culture47-reference.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "native screenshot reference: real national accounts, retained family and dated focused chronicle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15323,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:20:28.531Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "reference-scope",
+                      "contentType": "application/json",
+                      "body": "eyJyZWZlcmVuY2UiOiIxMCB1c2VyLWF0dGFjaGVkIGRlc2t0b3Agc2NyZWVuc2hvdHMsIDIwMjYtMTAtMDkiLCJvYnNlcnZlZCI6Im5hdGlvbmFsIGFjY291bnRzLCBmYW1pbHkgbGlzdCwgZGF0ZWQgaW1wb3J0YW50IGhpc3Rvcnkgd2l0aCBjb3VudHJ5IGNvbG9ycyIsInN5bnRoZXRpY0ZpeHR1cmUiOnRydWUsInBoeXNpY2FsSXBob25lIjpmYWxzZSwib3JpZ2luYWxBbmltYXRpb25FcXVpdmFsZW5jZSI6ZmFsc2UsImVycm9ycyI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b29da48d20d59f42105-fd71656a51bc2d77abae",
+          "file": "fms-culture47-reference.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "native screenshot reference: real national accounts, retained family and dated focused chronicle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15351,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:22:51.195Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "reference-scope",
+                      "contentType": "application/json",
+                      "body": "eyJyZWZlcmVuY2UiOiIxMCB1c2VyLWF0dGFjaGVkIGRlc2t0b3Agc2NyZWVuc2hvdHMsIDIwMjYtMTAtMDkiLCJvYnNlcnZlZCI6Im5hdGlvbmFsIGFjY291bnRzLCBmYW1pbHkgbGlzdCwgZGF0ZWQgaW1wb3J0YW50IGhpc3Rvcnkgd2l0aCBjb3VudHJ5IGNvbG9ycyIsInN5bnRoZXRpY0ZpeHR1cmUiOnRydWUsInBoeXNpY2FsSXBob25lIjpmYWxzZSwib3JpZ2luYWxBbmltYXRpb25FcXVpdmFsZW5jZSI6ZmFsc2UsImVycm9ycyI6W119"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b29da48d20d59f42105-5c014c5ca33f25c8e83f",
+          "file": "fms-culture47-reference.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-resume.spec.ts",
+      "file": "fms-culture47-resume.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=false",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4398,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:20:43.970Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOmZhbHNlLCJ0aWNrIjoxNSwiZXZpZGVuY2UiOlt7InR5cGUiOiJpbmplY3RlZC1lcnJvciJ9LHsidHlwZSI6ImxvYWQiLCJhY3Rpb25zIjowfV0sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-0a9fe1ffd99a2911e2df",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 4,
+          "column": 42
+        },
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=true",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4925,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:20:48.375Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOnRydWUsInRpY2siOjAsImV2aWRlbmNlIjpbeyJ0eXBlIjoiaW5qZWN0ZWQtZXJyb3IifSx7InR5cGUiOiJsb2FkIiwiYWN0aW9ucyI6MH1dLCJwaHlzaWNhbElwaG9uZSI6ZmFsc2V9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-798473659b8f91328b13",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 4,
+          "column": 42
+        },
+        {
+          "title": "the saved-world Continue button retries after its loading Worker fails, without replacing the save",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4986,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:20:53.308Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-85a9eb7a5c4a9de7f3a8",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "normal generated continent resumes, acknowledges busy controls and restores the exact saved tick",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 112175,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:20:58.301Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "resume-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJmaXh0dXJlIjoibm9ybWFsIEdlbmVyYXRlIENvbnRpbmVudCBVSSwgc2VlZCAxMzM3LCAzNjg2NCBwb2ludHMsIDYgbmF0aW9ucywgMTIwIGNpdGllczsgbm8gcHJpdmF0ZSBzYXZlIiwiZmlyc3REYXlNcyI6MTk0NTYsInNhdmVkVGljayI6IjI1NiIsImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-4c616f284bee3ee8dc3e",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=false",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4630,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:23:06.650Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOmZhbHNlLCJ0aWNrIjoyMCwiZXZpZGVuY2UiOlt7InR5cGUiOiJpbmplY3RlZC1lcnJvciJ9LHsidHlwZSI6ImxvYWQiLCJhY3Rpb25zIjowfV0sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-fac0517f1fef4b1f522a",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 4,
+          "column": 42
+        },
+        {
+          "title": "Continue recovers a terminated Worker from the acknowledged journal; cancel automatic resume=true",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5171,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:23:11.288Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "worker-recovery",
+                      "contentType": "application/json",
+                      "body": "eyJmYXVsdCI6InN5bnRoZXRpYyB3b3JrZXIgZXJyb3IgYmVmb3JlIGZpcnN0IGFkdmFuY2U7IHJlYWwgV29ya2VyIHJlc3RhcnQgYW5kIHplcm8tYWN0aW9uIGpvdXJuYWwgcmVwbGF5IiwiY2FuY2VsUmVjb3ZlcnkiOnRydWUsInRpY2siOjAsImV2aWRlbmNlIjpbeyJ0eXBlIjoiaW5qZWN0ZWQtZXJyb3IifSx7InR5cGUiOiJsb2FkIiwiYWN0aW9ucyI6MH1dLCJwaHlzaWNhbElwaG9uZSI6ZmFsc2V9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-4d21cf58befe82d1c95b",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 4,
+          "column": 42
+        },
+        {
+          "title": "the saved-world Continue button retries after its loading Worker fails, without replacing the save",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5066,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:23:16.466Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-0da8675ca9851ca05f42",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "normal generated continent resumes, acknowledges busy controls and restores the exact saved tick",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 113499,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T19:23:21.539Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "resume-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJmaXh0dXJlIjoibm9ybWFsIEdlbmVyYXRlIENvbnRpbmVudCBVSSwgc2VlZCAxMzM3LCAzNjg2NCBwb2ludHMsIDYgbmF0aW9ucywgMTIwIGNpdGllczsgbm8gcHJpdmF0ZSBzYXZlIiwiZmlyc3REYXlNcyI6MTc2MjUsInNhdmVkVGljayI6IjI1NyIsImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "02cac3a628d86992b3cc-d66f352e467f1f7bd8b5",
+          "file": "fms-culture47-resume.spec.ts",
+          "line": 41,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-08T19:20:28.058Z",
+    "duration": 287315.04099999997,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

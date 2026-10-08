@@ -1,3 +1,4 @@
+import {enterLegacyWorld,closeLegacyPanel,expandLegacyGroup} from './fms-legacy';
 import {test,expect,type Page} from '@playwright/test';
 
 type Frame={id:string;frame:number;width:number;observedAt?:number};
@@ -10,14 +11,14 @@ test('FMS: original battle clip follows a real naval contact, pauses and respect
   const canvas=page.getByTestId('fms-canvas'),b=(await canvas.boundingBox())!,size=Math.min(b.width*.12,85),cy=b.y+b.height*.47;
   for(const fraction of [.31,.69]){const cx=b.x+b.width*fraction;await page.mouse.move(cx-size,cy-size);await page.mouse.down();for(const [x,y]of [[cx+size,cy-size],[cx+size,cy+size],[cx-size,cy+size],[cx-size,cy-size]])await page.mouse.move(x,y,{steps:8});await page.mouse.up();}
   await expect.poll(async()=>Number(await page.getByTestId('fms-app').getAttribute('data-land-cells'))).toBeGreaterThan(0);
-  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 0 日',{timeout:30000});
+  await enterLegacyWorld(page,18);await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByLabel('战乱开局').check();await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 0 日',{timeout:30000});
   await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存');
   // Read only the generated fleet IDs/ports; never inject combat or a fixture save.
   const fleets=await page.evaluate(async()=>new Promise<{id:string;nationId:string;dockId:string}[]>((resolve,reject)=>{const q=indexedDB.open('lieguoji-fms-naming-v18');q.onerror=()=>reject(q.error);q.onsuccess=()=>{const db=q.result,t=db.transaction('saves'),r=t.objectStore('saves').get('current');r.onsuccess=()=>resolve(r.result.run.navy.fleets.map((f:{id:string;nationId:string;dockId:string})=>({id:f.id,nationId:f.nationId,dockId:f.dockId})));t.oncomplete=()=>db.close();};}));
   expect(fleets).toHaveLength(2);const [a,bFleet]=fleets;
   await page.getByRole('button',{name:'海军',exact:true}).click();
   await page.getByLabel('海军国家',{exact:true}).selectOption(bFleet.nationId);await page.getByLabel('选择舰队',{exact:true}).selectOption(bFleet.id);await page.getByLabel('本国港口间自动巡航',{exact:true}).click();await confirm(page);await expect(page.getByLabel('本国港口间自动巡航',{exact:true})).not.toBeChecked();
-  await page.getByLabel('海军国家',{exact:true}).selectOption(a.nationId);await page.getByLabel('选择舰队',{exact:true}).selectOption(a.id);await page.getByLabel('海战目标海岸',{exact:true}).selectOption(bFleet.dockId);await page.getByRole('button',{name:'预览驶向敌岸',exact:true}).click();await confirm(page);
+  await page.getByLabel('海军国家',{exact:true}).selectOption(a.nationId);await page.getByLabel('选择舰队',{exact:true}).selectOption(a.id);await expandLegacyGroup(page,'海战与撤离');await page.getByLabel('海战目标海岸',{exact:true}).selectOption(bFleet.dockId);await page.getByRole('button',{name:'预览驶向敌岸',exact:true}).click();await confirm(page);
   const status=page.locator('.play-maritime [role=status]');
   for(let day=0;day<50&&!((await status.textContent())??'').includes('交锋');day++){const before=await page.getByTestId('fms-play').getAttribute('data-day');await page.getByRole('button',{name:'＋1日',exact:true}).click();await expect(page.getByTestId('fms-play')).not.toHaveAttribute('data-day',before!);}
   await expect(status).toContainText('交锋');await page.getByRole('button',{name:'定位舰队',exact:true}).click();
@@ -38,7 +39,7 @@ test('FMS: original battle clip follows a real naval contact, pauses and respect
   await page.getByRole('button',{name:'开始时间',exact:true}).click();expect((await sample()).every(fs=>fs.find(f=>f.id===id)?.frame===0)).toBe(true);await page.getByRole('button',{name:'暂停',exact:true}).click();
   await page.getByRole('button',{name:'战争',exact:true}).click();await expect(page.getByRole('region',{name:'战役总览'})).toBeVisible();await page.locator('.play-war-list button').filter({hasText:'海上交锋'}).first().click();await expect(page.locator('.play-war-focus')).toContainText('2 国参战');await expect(page.locator('.play-war-country')).toHaveCount(2);await expect(page.locator('.play-war-focus')).toContainText('舰体总完整度');
   // The same visible marker opens the comparison, without issuing an order.
-  await page.getByRole('button',{name:'收起面板',exact:true}).click();
+  await closeLegacyPanel(page);
   const mark=await page.locator('.fms-play-map canvas').evaluate((canvas,id)=>(JSON.parse((canvas as HTMLCanvasElement).dataset.wars??'[]') as {x:number;y:number;ids:string[]}[]).find(m=>m.ids.includes(id)),id);
   expect(mark).toBeDefined();const bounds=(await page.locator('.fms-play-map canvas').boundingBox())!;await page.mouse.click(bounds.x+mark!.x,bounds.y+mark!.y);await expect(page.locator('.play-war-focus')).toContainText('2 国参战');
   await page.screenshot({path:info.outputPath('original-naval-contact.png')});

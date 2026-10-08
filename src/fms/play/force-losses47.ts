@@ -1,9 +1,11 @@
+import {waterRegions47} from './geography-content47';
 import type {UnitAssignments} from './military-profile';
 import {armyTravelLocation47, beginArmyTravel47, haltArmyTravel47} from './army-travel47-state';
 import {actualForces47, type ForceRun47} from './force-runtime47';
 import {assertForceContacts47, forceKey47, reconcileForceContactsOwned47} from './force-motion47';
 import {forceVolley47} from './force-volley47';
 import {nationsAtWar} from './realtime-statecraft';
+import {cloneMilitaryCandidate47} from './geography-content47';
 export type ForceDamage47 = {version: 1; carry: Record<string, number>; losses: Record<string, number>};
 export const initialForceDamage47 = (): ForceDamage47 => ({version: 1, carry: {}, losses: {}});
 type Run = ForceRun47 & {units: UnitAssignments; forceDamage: ForceDamage47};
@@ -20,11 +22,11 @@ export function assertForceDamage47(state: ForceDamage47, known: ReadonlySet<str
  * cargo loss is distinct from independent Army travelling on the same sea. */
 export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<string>, inputs: CombatInputs) {
   if (!Number.isFinite(inputs.navyCountToHull) || inputs.navyCountToHull <= 0) throw Error('海军数量与舰体换算无效。');
-  const {terrain, ...mutable} = input, next = {...structuredClone(mutable), terrain} as T;
+  const next=cloneMilitaryCandidate47(input);
   const {spatial, forces} = actualForces47(next), known = new Set([...next.world.armies.map(a => forceKey47({kind: 'army', id: a.id})), ...next.navy.fleets.map(f => forceKey47({kind: 'fleet', id: f.id}))]);
   const state = next.forceDamage;
   assertForceDamage47(state,known);
-  const regions = new Map(next.diplomaticGeography.water.flatMap(p => p.faces.map(face => [face, p.id] as const)));
+  const regions = waterRegions47(next.diplomaticGeography);
   assertForceContacts47(next.forceContacts, forces, spatial.graph, face => regions.get(face)!);
   const hits = forceVolley47(forces, next.forceContacts, due, {
     ...inputs, enemy: (a,b) => nationsAtWar(next.world,a,b),

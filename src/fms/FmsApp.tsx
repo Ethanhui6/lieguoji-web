@@ -92,7 +92,9 @@ export default function FmsApp() {
         setTerrainDisplay(state.requested);
         setDisplayNotice(state.error?'气候地貌暂不可用，已保留当前地图的高度视图；可重新选择重试。':state.pending?'正在计算气候与河流，暂显示高度；可以继续移动、缩放。':'');
       },error=>{if(!disposed){renderUnavailable.current=true;setFatal(messageOf(error));setNotice('地图显示未能更新，未保存的绘图仍可保存。');}}); await renderer.init(host.current!); if(disposed)return;
-      const viewport={width:host.current!.clientWidth,height:host.current!.clientHeight};
+      // A newly opened/hidden app panel can briefly have no layout size. Match
+      // the renderer's safe initial extent; ResizeObserver fits its real size.
+      const viewport={width:Math.max(1,host.current!.clientWidth),height:Math.max(1,host.current!.clientHeight)};
       const s = {history,renderer,viewport,camera:fitCamera(document,viewport),storedRevision:saved?.storedRevision??null,savedDocumentRevision:saved?document.revision:-1} as Session;
       s.gestures=new FmsGestures({camera:()=>s.camera,world:()=>s.history.document,viewport:()=>s.viewport,
         setCamera:camera=>{s.camera=camera;s.renderer.setCamera(camera);refresh(s);},

@@ -1,3 +1,4 @@
+import {enterLegacyWorld,expandLegacyGroup} from './fms-legacy';
 import {test,expect,type Page} from '@playwright/test';
 
 async function saved(page:Page){return page.evaluate(async()=>new Promise<{version:number;revision:number;id:string;tick:number;fleet:{id:string;node:number;progress:number;route:number[];targetId:string|null};hulls:Record<string,number>}>(resolve=>{const q=indexedDB.open('lieguoji-fms-naming-v18');q.onsuccess=()=>{const db=q.result,t=db.transaction('saves'),r=t.objectStore('saves').get('current');r.onsuccess=()=>{const s=r.result;resolve({version:s.run.version,revision:s.revision,id:s.run.id,tick:s.run.clock.tick,fleet:s.run.navy.fleets[0],hulls:s.run.maritime.hulls});};t.oncomplete=()=>db.close();};}));}
@@ -8,16 +9,16 @@ test('FMS: draw islands, create countries, command navy and restore the real voy
   for(const fraction of [.31,.69]){const cx=b.x+b.width*fraction;await page.mouse.move(cx-size,cy-size);await page.mouse.down();for(const [x,y]of [[cx+size,cy-size],[cx+size,cy+size],[cx-size,cy+size],[cx-size,cy-size]])await page.mouse.move(x,y,{steps:8});await page.mouse.up();}
   await expect.poll(async()=>Number(await app.getAttribute('data-land-cells'))).toBeGreaterThan(0);
   await page.locator('.fms-save').click();await expect(app).toHaveAttribute('data-dirty','false');
-  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
+  await enterLegacyWorld(page,18);await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByLabel('战乱开局').check();await page.getByRole('button',{name:'从当前地图开新局',exact:true}).click();
   await expect(page.locator('.play-header')).toContainText('第 0 日',{timeout:30000});await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存');const initial=await saved(page);expect(initial.version).toBe(18);
   await page.getByRole('button',{name:'海军',exact:true}).click();
   // Switching fleets must replace both panels, never retain duplicate sibling keys.
-  await page.getByLabel('选择舰队',{exact:true}).selectOption({index:1});
+  await page.getByLabel('选择舰队',{exact:true}).selectOption({index:1});await expandLegacyGroup(page,'海战与撤离');await expandLegacyGroup(page,'运输与登陆');
   for(const nation of [1,0,1,0]){await page.getByLabel('海战目标海岸',{exact:true}).selectOption({index:1});await page.getByLabel('海军撤离港口',{exact:true}).selectOption({index:1});await page.getByLabel('海军国家',{exact:true}).selectOption({index:nation});await page.getByLabel('选择舰队',{exact:true}).selectOption({index:1});await expect(page.getByRole('heading',{name:'跨海运输与登陆',exact:true})).toHaveCount(1);await expect(page.getByRole('heading',{name:'海上作战',exact:true})).toHaveCount(1);await expect(page.getByLabel('海战目标海岸',{exact:true})).toHaveValue('');await expect(page.getByLabel('海军撤离港口',{exact:true})).toHaveValue('');await expect(page.getByRole('button',{name:'预览驶向敌岸',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'预览撤离航线',exact:true})).toBeDisabled();}
   await expect(page.getByLabel('舰体完整度',{exact:true})).toHaveAttribute('value','100');
   await page.getByLabel('海战目标海岸',{exact:true}).selectOption({index:1});await page.getByRole('button',{name:'预览驶向敌岸',exact:true}).click();await expect(page.getByRole('dialog',{name:'命令确认'})).toContainText('真实海路');await page.getByRole('button',{name:'确认执行',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'命令确认'})).toBeHidden();await page.getByRole('button',{name:'＋1日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存第 1 日');const moved=await saved(page);expect(moved.tick).toBe(120);expect(moved.fleet.node!==initial.fleet.node||moved.fleet.progress>0).toBe(true);expect(moved.id).toBe(initial.id);
-  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续多文化版第 1 日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await expect(page.getByRole('button',{name:'开始时间',exact:true})).toBeVisible();
+  await page.reload();await enterLegacyWorld(page,18);await page.getByRole('button',{name:'继续多文化版第 1 日',exact:true}).click();await expect(page.locator('.play-header')).toContainText('第 1 日');await expect(page.getByRole('button',{name:'开始时间',exact:true})).toBeVisible();
   // Saving again observes what the Worker actually restored, not just the unchanged DB row.
   await page.getByRole('button',{name:'保存进度',exact:true}).click();await expect(page.locator('.play-notice')).toContainText('已保存第 1 日');expect(await saved(page)).toEqual({...moved,revision:moved.revision+1});expect(errors).toEqual([]);
 });

@@ -1,13 +1,15 @@
+import {waterRegions47} from './geography-content47';
 import type {War46Run} from './war46-model';
 import {assertArmyPositions47, type ArmyPositions47} from './army-presence47';
 import {armySpatialFor47} from './army-geography47';
 import {armyTravelPolicy47, type ArmyMotionRun47, type ArmyRouteWeights47} from './army-commands47';
-import {assertDiplomaticGeography} from './war30-geography';
+import {assertForceGeography47} from './force-geography-validation47';
 import {nationsAtWar} from './realtime-statecraft';
 import {militaryAccess46} from './war46-access';
 import {readArmySpace47} from './army-space47';
 import {advanceForceContacts47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
 import type {TravelCell47} from './army-travel47-graph';
+import {cloneMilitaryCandidate47} from './geography-content47';
 
 /** Army and Fleet have separate, equally authoritative travel ledgers. Fleet
  * legacy node/route is not rewritten to fake an arbitrary shore-gate origin.
@@ -16,7 +18,7 @@ export type ForceRun47 = ArmyMotionRun47 & Pick<War46Run, 'diplomaticGeography' 
 export function actualForces47(r: ForceRun47) {
   if (r.battles.engagements.length || r.maritime.contacts.length) throw Error('旧陆海交锋尚未明确转换，原世界保留原规则。');
   const spatial = armySpatialFor47(r);
-  assertDiplomaticGeography(r.diplomaticGeography, r);
+  assertForceGeography47(r.diplomaticGeography, r);
   assertArmyPositions47(r.fleetPositions, spatial.graph, spatial.binding, r.navy.fleets.map(f => f.id));
   if (!r.maritime.hulls || typeof r.maritime.hulls !== 'object' || Array.isArray(r.maritime.hulls) || Object.keys(r.maritime.hulls).length !== r.navy.fleets.length) throw Error('统一舰体账与舰队身份不一致。');
   for (const f of r.navy.fleets) {
@@ -34,9 +36,9 @@ export function actualForces47(r: ForceRun47) {
  * damage loops. Caller must bound seconds at day/diplomacy/combat events. */
 export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: number, weights: ArmyRouteWeights47, speed: (run: T, force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => number, stopAtEvent = false) {
   for (const book of [input.armyPositions, input.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
-  const {terrain, ...mutable} = input, next = {...structuredClone(mutable), terrain} as T;
+  const next=cloneMilitaryCandidate47(input);
   const {spatial, forces} = actualForces47(next);
-  const regions = new Map(next.diplomaticGeography.water.flatMap(p => p.faces.map(face => [face, p.id] as const)));
+  const regions = waterRegions47(next.diplomaticGeography);
   const policies = new Map(next.world.armies.map(a => [a.id, armyTravelPolicy47(next, a, weights, a.status === 'retreating')]));
   const out = advanceForceContacts47(forces, next.forceContacts, spatial.graph, seconds, {
     enemy: (a, b) => nationsAtWar(next.world, a, b), seaRegion: face => regions.get(face)!,

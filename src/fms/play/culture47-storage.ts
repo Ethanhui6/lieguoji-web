@@ -1,5 +1,7 @@
-import {Culture47Session,assertCulture47Journal,type Culture47Journal} from './culture47-session';
-export const CULTURE47_DATABASE='lieguoji-fms-culture47-journal-v1';
+import {Culture47Session,CULTURE47_RULE,assertCulture47Journal,type Culture47Journal} from './culture47-session';
+// The v1 database is left intact. New Chinese names must never replay and
+// overwrite an old world's Latin names, family identities or chronicle.
+export const CULTURE47_DATABASE='lieguoji-fms-culture47-zh-journal-v2';
 type Envelope={version:1;revision:number;checksum:string;journal:Culture47Journal};
 type Slots={current?:Envelope;backup?:Envelope;revision:number};
 export type SavedCulture47={journal:Culture47Journal;revision:number;recovered:boolean};
@@ -25,10 +27,21 @@ function future(e:Envelope|undefined){
   const unknown=(x:unknown,keys:string[])=>{if(x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).some(k=>!keys.includes(k)))fail();};
   unknown(e,['version','revision','checksum','journal']);if(e?.version>1)fail();
   const j=e?.journal;unknown(j,['format','version','rule','engine','id','opening','actions']);
-  if(j&&(j.version>1||typeof j.engine==='string'&&j.engine!==__CULTURE47_ENGINE__||typeof j.rule==='string'&&j.rule!=='real-culture-play-journal-1'))fail();
+  if(j&&(j.version>1||typeof j.engine==='string'&&j.engine!==__CULTURE47_ENGINE__||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
   const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup']);unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);
   if(Array.isArray(j?.actions))for(const a of j.actions as unknown as {kind?:string;edit?:{kind?:string;patch?:unknown}}[]){
+    if(a?.kind==='military'){
+      const p=a as unknown as {intent:{force?:string;command:{type?:string;kind?:string;target?:{kind?:string}}};expected:unknown};unknown(a,['kind','intent','expected']);unknown(p.intent,['force','command']);
+      if(p.intent?.force&&!['army','fleet'].includes(p.intent.force))fail();const c=p.intent?.command;
+      if(c?.type&&!['army-move','army-halt','fleet-sail','fleet-halt'].includes(c.type))fail();
+      unknown(c,['type','armyId','fleetId','kind','target']);unknown(c?.target,['kind','id']);
+      if(c?.kind&&!['march','retreat'].includes(c.kind)||c?.target?.kind&&!['cell','province','port'].includes(c.target.kind))fail();
+      // Known but broken discriminants are corrupt slots, not future rules.
+      // Strict journal validation rejects them and may recover a valid backup.
+      unknown(p.expected,['runId','day','nextEventId','tick','positionsRevision','binding','fleetRevision','armyRevision','portRevision']);continue;
+    }
+    if(a?.kind==='politics'){const p=a as unknown as {action:{type?:unknown};expected:unknown};unknown(a,['kind','action','expected']);unknown(p.action,['type','nationId','targetNationId']);if(p.action?.type&&!['declare-war','make-peace'].includes(String(p.action.type)))fail();unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='advance')unknown(a,['kind','ticks']);else if(a?.kind==='succession')unknown(a,['kind','nationId']);else if(a?.kind==='identity'){unknown(a,['kind','edit']);const v=a.edit;if(v?.kind==='city')unknown(v,['kind','id','customName']);else if(v?.kind==='nation'){unknown(v,['kind','id','patch']);unknown(v.patch,['polity','religionId','customName']);}else if(v?.kind)fail();}else if(a?.kind)fail();
   }
 }

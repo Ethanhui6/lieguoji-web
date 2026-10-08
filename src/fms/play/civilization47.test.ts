@@ -47,20 +47,25 @@ describe('real culture 47 actual founding chain',()=>{
   it('replays both naming modes deterministically and never mutates the input setup',()=>{
     for(const mode of ['culture-generated','historical-names'] as const){const s=setup(mode),before=structuredClone(s),owners=Array.from({length:60},(_,i)=>i%12),a=initialCivilization47('seed',12,owners,s);expect(initialCivilization47('seed',12,owners,s)).toEqual(a);expect(s).toEqual(before);}
   });
-  it('fails closed at historical capacity instead of mixing generated names or numeric suffixes',()=>{
-    const c=initialCivilization47('capacity',2,Array(32).fill(0),{mode:'historical-names',enabled:['english']});
-    expect(new Set(Object.values(c.cities).map(v=>v.name.value)).size).toBe(32);
-    expect(()=>initialCivilization47('capacity',2,Array(33).fill(0),{mode:'historical-names',enabled:['english']})).toThrow(/已用尽/);
-    const generated=initialCivilization47('capacity',2,Array(240).fill(0),{mode:'culture-generated',enabled:['english']});
-    expect(new Set(Object.values(generated.cities).map(v=>v.name.value)).size).toBe(240);
-    expect(Object.values(generated.cities).some(v=>/\d/.test(v.name.value))).toBe(false);
+  it.each(CULTURE_IDS47)('supports all 480 cities and 24 states in single %s culture in both Chinese naming modes',id=>{
+    for(const mode of ['culture-generated','historical-names'] as const){
+      const setup={mode,enabled:[id]},a=initialCivilization47('capacity',24,Array.from({length:480},(_,i)=>i%24),setup),names=Object.values(a.cities).map(c=>c.name.value);
+      expect(names).toHaveLength(480);expect(Object.keys(a.nations)).toHaveLength(24);expect(names.every(n=>/^[\p{Script=Han}·]+$/u.test(n))).toBe(true);
+      if(mode==='culture-generated')expect(new Set(names).size).toBe(480);
+      else {expect(new Set(names).size).toBe(CULTURES47[id].historicalCities.length);expect(names.every(n=>CULTURES47[id].historicalCities.includes(n))).toBe(true);}
+      expect(initialCivilization47('capacity',24,Array.from({length:480},(_,i)=>i%24),setup)).toEqual(a);
+    }
+    const c=CULTURES47[id];expect(new Set(c.cityRoots.flatMap(a=>c.cityEnds.map(b=>a+b))).size).toBeGreaterThanOrEqual(512);
   });
-  it('rejects impossible geography and an exhausted dictionary without changing terrain or an existing candidate',()=>{
+  it('rejects impossible geography without changing terrain or an existing candidate',()=>{
     const d=continent(),before=structuredClone(d),old=structuredClone(worlds['culture-generated']);
-    expect(()=>createCivilizationWorld47(d,2,60,'peace',{mode:'historical-names',enabled:['english']})).toThrow(/已用尽/);
+    expect(createCivilizationWorld47(d,2,60,'peace',{mode:'historical-names',enabled:['english']}).world.cities).toHaveLength(60);
     expect(()=>createCivilizationWorld47(grid(()=>0),2,24,'peace',setup('culture-generated'))).toThrow();
     expect(d).toEqual(before);expect(worlds['culture-generated']).toEqual(old);
   });
+  it('constructs all 480 actual city entities on a real drawable terrain in both modes',()=>{
+    for(const mode of ['culture-generated','historical-names'] as const){const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0),r=createCivilizationWorld47(d,24,480,'peace',{mode,enabled:['english']});expect(r.world.cities).toHaveLength(480);expect(r.world.provinces).toHaveLength(480);expect(new Set(r.world.cities.map(c=>c.id)).size).toBe(480);assertCivilization47(r.civilization,r.world,r.chronicle);expect(r.world.cities.every(c=>/^[\p{Script=Han}]+$/u.test(c.name))).toBe(true);}
+  },60000);
   it.each(['culture-generated','historical-names'] as const)('%s identity serializes without losing mode, source or person provenance',mode=>{
     const r=worlds[mode],c=JSON.parse(JSON.stringify(r.civilization));
     expect(c).toEqual(r.civilization);assertCivilization47(c,r.world,r.chronicle);
@@ -112,8 +117,8 @@ describe('catalogue and persisted-source contracts',()=>{
       expect(new Set(c.historicalCities).size).toBe(c.historicalCities.length);
       for(const p of c.historicalPeople){expect(validRegnalName(p.given),p.name).toBe(true);expect(p.name).not.toBe('');expect(p.house).not.toBe('');}
     }
-    expect(personalName47('roman','Prima','Julius',1)).toBe('Julia Prima');
-    expect(personalName47('arab','Yusuf','Banu Hashim',0)).toBe('Yusuf');
+    expect(personalName47('roman','普莉玛','尤利乌斯',1)).toBe('尤利娅·普莉玛');
+    expect(personalName47('arab','优素福','哈希姆',0)).toBe('优素福');
   });
   it('distinguishes culture-specific imperial offices from kingdoms and elective/theocratic offices',()=>{
     expect(rulerTitle47('chinese','Empire','chineseFolk',0)).toBe('皇帝');expect(rulerTitle47('japanese','Empire','shinto',0)).toBe('天皇');

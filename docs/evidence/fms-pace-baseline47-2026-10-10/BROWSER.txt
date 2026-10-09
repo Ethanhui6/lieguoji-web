@@ -1,0 +1,23 @@
+
+Running 8 tests using 1 worker
+
+(node:20112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-compat.spec.ts:33:27 › registered original engine-30fe.js continues without changing history or engine (6.5s)
+  ok 2 [desktop-chromium] › tests\fms-culture47-compat.spec.ts:67:1 › cancelling a queued save clears the pending action and never writes later (4.2s)
+{"samples":[{"speed":1,"fromTick":0,"toTick":2081,"ms":17790,"daysPerSecond":0.9747985759790144},{"speed":4,"fromTick":0,"toTick":1920,"ms":14982,"daysPerSecond":1.0679482045120812}],"errors":[]}
+  ok 3 [desktop-chromium] › tests\fms-culture47-throughput.spec.ts:4:1 › normal continent has measured authoritative throughput at 1x and 4x with details open (1.5m)
+(node:57164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [desktop-chromium] › tests\fms-culture47-motion.spec.ts:4:1 › actual army display changes continuously between slow Worker replies and keeps paused picking aligned (33.8s)
+(node:56740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 5 [mobile-chromium] › tests\fms-culture47-compat.spec.ts:33:27 › registered original engine-30fe.js continues without changing history or engine (6.4s)
+  ok 6 [mobile-chromium] › tests\fms-culture47-compat.spec.ts:67:1 › cancelling a queued save clears the pending action and never writes later (4.4s)
+{"samples":[{"speed":1,"fromTick":0,"toTick":2104,"ms":20178,"daysPerSecond":0.8689331615290581},{"speed":4,"fromTick":0,"toTick":1920,"ms":16275,"daysPerSecond":0.9831029185867897}],"errors":[]}
+  ok 7 [mobile-chromium] › tests\fms-culture47-throughput.spec.ts:4:1 › normal continent has measured authoritative throughput at 1x and 4x with details open (1.6m)
+(node:53640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 8 [mobile-chromium] › tests\fms-culture47-motion.spec.ts:4:1 › actual army display changes continuously between slow Worker replies and keeps paused picking aligned (32.7s)
+
+  8 passed (4.7m)

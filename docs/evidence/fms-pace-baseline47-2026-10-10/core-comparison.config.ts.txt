@@ -1,0 +1,3 @@
+import {mergeConfig,defineConfig} from 'vitest/config';
+import base from '../vite.config';
+export default mergeConfig(base,defineConfig({test:{include:['.autopilot/culture47-pace-compare.test.ts'],maxWorkers:1}}));

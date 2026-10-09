@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-10",
+  "baseCommit": "2760df08ad2a833ce3284f61f32a662ad1a5c078",
+  "sourceCommit": "06a25879450ce5e981e5e8b20f52053b46f667bf",
+  "engine": "49f726d47c9dcaeee01a5157c215a06327ea071716afd1d7c39c15e02a5e60a0",
+  "artifact": ".autopilot/culture47-pace-checked",
+  "localURL": "http://127.0.0.1:5286/?fms=1",
+  "serverPidAtStart": 37892,
+  "units": {
+    "files": 12,
+    "cases": 114,
+    "passed": true
+  },
+  "typecheck": true,
+  "lint": true,
+  "build": true,
+  "approvedDistArtifacts": 72,
+  "exactComparison": {
+    "days": 24,
+    "points": 36864,
+    "tick": 2880,
+    "runFrameMotion": true,
+    "priorEngine": "30feebab4ddc1b5a01558861ad560698338c3ca79c67c58cc3eb3256c448cdfa",
+    "warmDays": "21-24",
+    "prior": 775.4863000000041,
+    "current": 601.9380999999994,
+    "reductionPercent": 22.379273495870112
+  },
+  "browser": {
+    "startTime": "2026-10-09T17:47:38.667Z",
+    "duration": 279636.712,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "measurements": [
+      {
+        "project": "desktop-chromium",
+        "samples": [
+          {
+            "speed": 1,
+            "fromTick": 0,
+            "toTick": 2081,
+            "ms": 17790,
+            "daysPerSecond": 0.9747985759790144
+          },
+          {
+            "speed": 4,
+            "fromTick": 0,
+            "toTick": 1920,
+            "ms": 14982,
+            "daysPerSecond": 1.0679482045120812
+          }
+        ],
+        "errors": [],
+        "normalMap": true,
+        "sameOpening": true,
+        "detailsOpen": true,
+        "exactRestore": true,
+        "physicalIphone": false
+      },
+      {
+        "project": "mobile-chromium",
+        "samples": [
+          {
+            "speed": 1,
+            "fromTick": 0,
+            "toTick": 2104,
+            "ms": 20178,
+            "daysPerSecond": 0.8689331615290581
+          },
+          {
+            "speed": 4,
+            "fromTick": 0,
+            "toTick": 1920,
+            "ms": 16275,
+            "daysPerSecond": 0.9831029185867897
+          }
+        ],
+        "errors": [],
+        "normalMap": true,
+        "sameOpening": true,
+        "detailsOpen": true,
+        "exactRestore": true,
+        "physicalIphone": false
+      }
+    ],
+    "sameOpening": true,
+    "physicalIphone": false
+  },
+  "playback": {
+    "baseFactor": 4,
+    "speeds": [
+      0.5,
+      1,
+      2,
+      4
+    ],
+    "maxBatchNewProtocol": 480,
+    "nativeCalendarSecondsUnchanged": true,
+    "computeLimited": true,
+    "originalSpeedAccepted": false
+  },
+  "manualBrowser": {
+    "status": "webview-attachment-timeout",
+    "openInCodex": "queued",
+    "noManualSessionClaim": true
+  },
+  "frozen30fe": {
+    "bytes": 1338079,
+    "sha256": "ceefcb41be4a32f695f26c924d0fed5013858f19a8807f700e3548be549d271c"
+  },
+  "physicalIphone": false,
+  "originalVisualEquivalent": false,
+  "originalRuntimeTimed": false,
+  "pushed": false,
+  "pagesTriggered": false
+}

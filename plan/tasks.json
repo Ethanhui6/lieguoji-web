@@ -4740,9 +4740,11 @@
               "docs/evidence/fms-throughput-2026-10-09/RESULT.md",
               "docs/evidence/fms-throughput-2026-10-09/NATIVE_CADENCE.md",
               "docs/evidence/fms-throughput-2026-10-09/verification.json",
-              "docs/evidence/fms-phasework-performance47-2026-10-09/RESULT.md"
+              "docs/evidence/fms-phasework-performance47-2026-10-09/RESULT.md",
+              "docs/evidence/fms-pace-baseline47-2026-10-10/RESULT.md",
+              "docs/evidence/fms-pace-baseline47-2026-10-10/verification.json"
             ],
-            "progressScope": "2026-10-09 latest: phase-query reuse and variable-batch continuous motion are playable in real47 UI/Worker/save; 107 related tests, 8 final browser cases, fixed normal-map 8-day full state/trace equality. Actual browser throughput still below target. Read culture47PhaseWorkCheckpoint. 保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
+            "progressScope": "2026-10-10 latest: user-requested 4x playback base, owned occupation and certified static clone reuse; 114 related tests, 8 browser cases, exact24-day normal-map prior-engine state/trace comparison. Actual speed still below target and higher multipliers compute-limited. Read culture47PaceBaselineCheckpoint. 2026-10-09 latest: phase-query reuse and variable-batch continuous motion are playable in real47 UI/Worker/save; 107 related tests, 8 final browser cases, fixed normal-map 8-day full state/trace equality. Actual browser throughput still below target. Read culture47PhaseWorkCheckpoint. 保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
           },
           {
             "id": "WEB-04-38",
@@ -4849,7 +4851,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47PhaseWorkCheckpoint and AUTO_HANDOFF first. Continue actual later-war throughput profiling and continuous military display, preserving all military ticks/RNG/daily settlement. Current47 Worker/UI/Store and actual-motion pipeline already exist; do not rebuild them from old groundwork notes. Inspect latest live service and original save before acting. 1000-day/cross-sea/phone/visual and bounded preview release remain unverified.",
+    "nextRecoveryTarget": "Read culture47PaceBaselineCheckpoint and AUTO_HANDOFF. New1x targets former4x and occupation compute is reduced, but normal-map actual rates remain 0.87-1.07 days/sec: NOT accepted as original pace. Prioritize bounded event/unit scheduling to address 120 full updates/day; keep actual encounters, RNG, day/month settlement and continuous motion. Existing47 UI/Worker/Store already integrated; do not rebuild. Old30fe and six earlier engines remain byte frozen; do not silently migrate saved worlds. Recheck services and pending release/device gates.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -9385,6 +9387,116 @@
         "independentNewWorld": true
       },
       "completedLocalDate": "2026-10-10"
+    },
+    "culture47PaceBaselineCheckpoint": {
+      "date": "2026-10-10",
+      "task": "WEB-04-37",
+      "status": "local-baseline-rebased-compute-speed-not-accepted",
+      "sourceCommit": "06a25879450ce5e981e5e8b20f52053b46f667bf",
+      "baseCommit": "2760df08ad2a833ce3284f61f32a662ad1a5c078",
+      "engine": "49f726d47c9dcaeee01a5157c215a06327ea071716afd1d7c39c15e02a5e60a0",
+      "artifact": ".autopilot/culture47-pace-checked",
+      "localURL": "http://127.0.0.1:5286/?fms=1",
+      "evidence": "docs/evidence/fms-pace-baseline47-2026-10-10/RESULT.md",
+      "unitCases": 114,
+      "browserCases": 8,
+      "exactNormalMapDays": 24,
+      "approvedDistArtifacts": 72,
+      "playback": {
+        "baseFactor": 4,
+        "speeds": [
+          0.5,
+          1,
+          2,
+          4
+        ],
+        "maxBatchNewProtocol": 480,
+        "nativeCalendarSecondsUnchanged": true,
+        "computeLimited": true,
+        "originalSpeedAccepted": false
+      },
+      "coreComparison": {
+        "days": 24,
+        "points": 36864,
+        "tick": 2880,
+        "runFrameMotion": true,
+        "priorEngine": "30feebab4ddc1b5a01558861ad560698338c3ca79c67c58cc3eb3256c448cdfa",
+        "warmDays": "21-24",
+        "prior": 775.4863000000041,
+        "current": 601.9380999999994,
+        "reductionPercent": 22.379273495870112
+      },
+      "browserMeasurements": [
+        {
+          "project": "desktop-chromium",
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2081,
+              "ms": 17790,
+              "daysPerSecond": 0.9747985759790144
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 1920,
+              "ms": 14982,
+              "daysPerSecond": 1.0679482045120812
+            }
+          ],
+          "errors": [],
+          "normalMap": true,
+          "sameOpening": true,
+          "detailsOpen": true,
+          "exactRestore": true,
+          "physicalIphone": false
+        },
+        {
+          "project": "mobile-chromium",
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2104,
+              "ms": 20178,
+              "daysPerSecond": 0.8689331615290581
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 1920,
+              "ms": 16275,
+              "daysPerSecond": 0.9831029185867897
+            }
+          ],
+          "errors": [],
+          "normalMap": true,
+          "sameOpening": true,
+          "detailsOpen": true,
+          "exactRestore": true,
+          "physicalIphone": false
+        }
+      ],
+      "oldEngineFrozen": {
+        "bytes": 1338079,
+        "sha256": "ceefcb41be4a32f695f26c924d0fed5013858f19a8807f700e3548be549d271c"
+      },
+      "oldSaveMigration": false,
+      "physicalIphone": false,
+      "originalVisualEquivalent": false,
+      "pushed": false,
+      "pagesTriggered": false,
+      "server": {
+        "port": 5286,
+        "pidAtStart": 37892,
+        "script": ".autopilot/culture47-pace-server-5286.mjs"
+      },
+      "manualBrowser": {
+        "status": "webview-attachment-timeout",
+        "openInCodex": "queued",
+        "noManualSessionClaim": true
+      }
     }
   }
 }

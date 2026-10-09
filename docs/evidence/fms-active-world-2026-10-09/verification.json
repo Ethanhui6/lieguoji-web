@@ -1,0 +1,1028 @@
+{
+  "date": "2026-10-09",
+  "base": "84b5b12706bff218b299baaac1e6e1a19bafe3ef",
+  "buildCommit": "84b5b12706bff218b299baaac1e6e1a19bafe3ef",
+  "engine": "9e23fb69e7bda6b8dd99a2f9bfb31e83c786163c7101dc6ff0df472dcbeba71f",
+  "artifact": ".autopilot/culture47-active3-checked",
+  "localURL": "http://127.0.0.1:5278/?fms=1",
+  "physicalIphone": false,
+  "originalEquivalence": false,
+  "published": false,
+  "units": {
+    "files": 16,
+    "total": 197,
+    "passed": 197,
+    "failed": 0,
+    "note": "Combined affected-scope evidence: active4 (191/193) followed by active5 (38/38), replacing the three rechecked scopes and adding verification. Not a full-suite rerun.",
+    "scopes": [
+      {
+        "file": "fms/play/army-travel47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 21
+      },
+      {
+        "file": "fms/play/civilization47-army-ai.test.ts",
+        "source": ".autopilot/culture47-active5-regression.json",
+        "tests": 27
+      },
+      {
+        "file": "fms/play/civilization47-combat.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 23
+      },
+      {
+        "file": "fms/play/civilization47-daily.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 24
+      },
+      {
+        "file": "fms/play/civilization47-naval-ai.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 13
+      },
+      {
+        "file": "fms/play/civilization47-ports.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 10
+      },
+      {
+        "file": "fms/play/culture47-active-world.test.ts",
+        "source": ".autopilot/culture47-active5-regression.json",
+        "tests": 2
+      },
+      {
+        "file": "fms/play/culture47-orders.test.ts",
+        "source": ".autopilot/culture47-active5-regression.json",
+        "tests": 5
+      },
+      {
+        "file": "fms/play/force-geography-validation47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 12
+      },
+      {
+        "file": "fms/play/force-speed47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 13
+      },
+      {
+        "file": "fms/play/force-tick47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 16
+      },
+      {
+        "file": "fms/play/geography-content47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 5
+      },
+      {
+        "file": "fms/play/logistics-clock47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 2
+      },
+      {
+        "file": "fms/play/sea-geography47.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 2
+      },
+      {
+        "file": "fms/play/war47-spatial-consumers.test.ts",
+        "source": ".autopilot/culture47-active4-regression.json",
+        "tests": 18
+      },
+      {
+        "file": "fms/play/culture47-verification.test.ts",
+        "source": ".autopilot/culture47-active5-regression.json",
+        "tests": 4
+      }
+    ]
+  },
+  "browser": {
+    "startTime": "2026-10-09T05:13:51.853Z",
+    "duration": 238890.18,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "peaceful founding makes autonomous decisions and declares a real war in its first month",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 33719,
+      "attachments": [
+        {
+          "name": "actual-simulation",
+          "value": {
+            "fixture": "synthetic terrain; unchanged founding countries, resources, RNG and positions; no manual declaration",
+            "evidence": [
+              {
+                "day": 0,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 0,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 1,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 2,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 3,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 4,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 5,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 6,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 7,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 8,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 9,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 10,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 11,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 12,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 13,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 14,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 15,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 16,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 17,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 18,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 19,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 20,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 21,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 22,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 23,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 24,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 25,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 26,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 27,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 28,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 29,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 3,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 30,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 3,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 31,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 17,
+                "fleetOrders": 0,
+                "contacts": 0
+              }
+            ],
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "normal generated war world visibly moves armies and fleets while country details stay open, then restores",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 70219,
+      "attachments": [
+        {
+          "name": "normal-world-movement",
+          "value": {
+            "fixture": "Generate Continent UI, default seed 1337, 6 countries, 60 cities, war opening; no position/food edits",
+            "tick": "1125",
+            "elapsedMs": 24249,
+            "armyDistance": 6.239018933089691,
+            "fleetDistance": 7.871634034146615,
+            "evidence": [
+              {
+                "day": 0,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 0,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 1,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 2,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 3,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 4,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 5,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 6,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 7,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              },
+              {
+                "day": 8,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              },
+              {
+                "day": 9,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              }
+            ],
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "lost graphics context stops time and rebuilds the same world before Continue can resume",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 5709,
+      "attachments": [
+        {
+          "name": "graphics-recovery",
+          "value": {
+            "injected": "context loss event; real renderer reconstruction",
+            "stopped": "169",
+            "physicalGpuLoss": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "peaceful founding makes autonomous decisions and declares a real war in its first month",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 36151,
+      "attachments": [
+        {
+          "name": "actual-simulation",
+          "value": {
+            "fixture": "synthetic terrain; unchanged founding countries, resources, RNG and positions; no manual declaration",
+            "evidence": [
+              {
+                "day": 0,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 0,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 1,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 2,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 3,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 4,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 5,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 6,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 7,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 8,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 9,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 10,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 11,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 12,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 13,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 14,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 15,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 16,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 17,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 18,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 19,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 20,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 21,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 22,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 23,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 24,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 25,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 26,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 27,
+                "wars": 0,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 28,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 29,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 3,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 30,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 3,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 31,
+                "wars": 1,
+                "history": 7,
+                "armyOrders": 17,
+                "fleetOrders": 0,
+                "contacts": 0
+              }
+            ],
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "normal generated war world visibly moves armies and fleets while country details stay open, then restores",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 67627,
+      "attachments": [
+        {
+          "name": "normal-world-movement",
+          "value": {
+            "fixture": "Generate Continent UI, default seed 1337, 6 countries, 60 cities, war opening; no position/food edits",
+            "tick": "1132",
+            "elapsedMs": 23449,
+            "armyDistance": 6.456043670411002,
+            "fleetDistance": 7.9247759716168575,
+            "evidence": [
+              {
+                "day": 0,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 0,
+                "contacts": 0
+              },
+              {
+                "day": 0,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 0,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 1,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 2,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 3,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 4,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 5,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 0
+              },
+              {
+                "day": 6,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 40,
+                "fleetOrders": 6,
+                "contacts": 1
+              },
+              {
+                "day": 7,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              },
+              {
+                "day": 8,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              },
+              {
+                "day": 9,
+                "wars": 15,
+                "history": 6,
+                "armyOrders": 38,
+                "fleetOrders": 6,
+                "contacts": 1
+              }
+            ],
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "lost graphics context stops time and rebuilds the same world before Continue can resume",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 6430,
+      "attachments": [
+        {
+          "name": "graphics-recovery",
+          "value": {
+            "injected": "context loss event; real renderer reconstruction",
+            "stopped": "164",
+            "physicalGpuLoss": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "registered original engine-b365.js continues without changing history or engine",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 8016,
+      "attachments": [
+        {
+          "name": "compatibility",
+          "value": {
+            "engine": "b365886c0ed6418d6786a5701fc31db518190fe61c0bfad77c1effc8d33255de",
+            "workerHash": "4a94af6ee867c46b3314ac90434db48cd78ea55eb4a4e8386835a23d45a30851",
+            "tick": "180",
+            "errors": [],
+            "syntheticWorld": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "registered original engine-b365.js continues without changing history or engine",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 8762,
+      "attachments": [
+        {
+          "name": "compatibility",
+          "value": {
+            "engine": "b365886c0ed6418d6786a5701fc31db518190fe61c0bfad77c1effc8d33255de",
+            "workerHash": "4a94af6ee867c46b3314ac90434db48cd78ea55eb4a4e8386835a23d45a30851",
+            "tick": "299",
+            "errors": [],
+            "syntheticWorld": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    }
+  ],
+  "profile": {
+    "before": {
+      "points": 36864,
+      "triangles": 72962,
+      "keyChars": 3776637,
+      "createMs": 11842.8116,
+      "actualForcesMs": [
+        168.03679999999804,
+        170.2482999999993
+      ],
+      "advance5Ms": 10377.1014,
+      "tick": 240,
+      "armies": 40
+    },
+    "latest": {
+      "points": 36864,
+      "triangles": 72962,
+      "keyChars": 3776637,
+      "createMs": 14222.781500000001,
+      "actualForcesMs": [
+        191.48400000000038,
+        185.99779999999737
+      ],
+      "advance5Ms": 923.8737000000001,
+      "tick": 240,
+      "armies": 40
+    },
+    "actualTicksPerMeasurement": 120,
+    "note": "advance5Ms means 120 ticks. Latest CPU sample also changes physical native map scaling. Not isolated speedup or FPS."
+  },
+  "sources": [
+    {
+      "path": ".autopilot/culture47-active4-regression.json",
+      "sha256": "62af7d73dacdad5dcacdbf5801e452952aa95e0b1d4207f88d87c7d0b3ab0641"
+    },
+    {
+      "path": ".autopilot/culture47-active5-regression.json",
+      "sha256": "30b06a483c0e341e0d5e53f45af6f3b6b0ea5ee2e41980167722300ff16855b6"
+    },
+    {
+      "path": ".autopilot/culture47-active3-browser.json",
+      "sha256": "440027f9a66e8cb1fba86577b85dadd8aa9a50c0cde3e224a7440eeaf1f01958"
+    },
+    {
+      "path": ".autopilot/culture47-active-normal-before.json",
+      "sha256": "a2a6e03d741e39b09350947adf75c69539c912240a787e363a43afce1c0ec75c"
+    },
+    {
+      "path": ".autopilot/culture47-active-normal-profile.json",
+      "sha256": "55dce7a2f330ee3ad33720e76043906da1e078d324ce26fc87112eec2597819e"
+    },
+    {
+      "path": ".autopilot/culture47-active5-typecheck.txt",
+      "sha256": "270828b435bd0e95a29e657874960c3dd2d85064895ca7edd66b8f2abf351452"
+    },
+    {
+      "path": ".autopilot/culture47-active5-lint.txt",
+      "sha256": "09c5bac73abc669010a2cb9b52c3dac4a440e59173d08a008279a418e9ccd7c6"
+    },
+    {
+      "path": ".autopilot/culture47-active5-build.txt",
+      "sha256": "114b8d70c934e0163a6da82198b1a12b25573f50c0d09eeb0e0b6092db694afc"
+    }
+  ]
+}

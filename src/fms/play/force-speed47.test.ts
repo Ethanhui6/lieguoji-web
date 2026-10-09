@@ -33,10 +33,12 @@ describe('one saved motion and attack time scale, real family clock',()=>{
     // A scalar Fleet speed probe, independent of starter harbor eligibility.
     const fleet={kind:'fleet' as const,id:'speed-probe',nationId:army.nationId,withdrawing:false,travel:beginArmyTravel47('speed-probe',[sea.id],spatial.graph)};
     expect(dt).toBe(r.life.secondsPerDay/120);const terrain=r.terrainContext.provinces[land.provinceId!];terrain.mountain=true;terrain.plateau=false;
-    expect(actualForceSpeed47(r,army,land)).toBe(nativeArmyMovementSpeed({base:row.base,onLand:true,mountain:true,unitMultiplier:unitProfile(r.units[army.id]).speed})*dt);
-    terrain.mountain=false;terrain.plateau=true;expect(actualForceSpeed47(r,army,land)).toBe(nativeArmyMovementSpeed({base:row.base,onLand:true,plateau:true,unitMultiplier:unitProfile(r.units[army.id]).speed})*dt);
+    expect(actualForceSpeed47(r,army,land)).toBe(nativeArmyMovementSpeed({base:row.base,onLand:true,mountain:true,unitMultiplier:unitProfile(r.units[army.id]).speed})*(1000/240)*dt);
+    terrain.mountain=false;terrain.plateau=true;expect(actualForceSpeed47(r,army,land)).toBe(nativeArmyMovementSpeed({base:row.base,onLand:true,plateau:true,unitMultiplier:unitProfile(r.units[army.id]).speed})*(1000/240)*dt);
     const seaSpeed=actualForceSpeed47(r,army,sea);r.units={...r.units,[army.id]:'Cavalry'};expect(actualForceSpeed47(r,army,sea)).toBe(seaSpeed);
-    expect(actualForceSpeed47(r,fleet,sea)/dt).toBe(Math.fround(2.2));expect(()=>actualForceSpeed47(r,fleet,land)).toThrow(/陆地/);
+    expect(actualForceSpeed47(r,fleet,sea)/dt).toBeCloseTo(Math.fround(2.2)*(1000/240),9);expect(()=>actualForceSpeed47(r,fleet,land)).toThrow(/陆地/);
+    expect(actualForceSpeed47(r,fleet,sea)*120).toBeCloseTo(11/12,4);
+    expect(Math.ceil(100/actualForceSpeed47(r,fleet,sea)/120)+3).toBe(113);
     const before=actualForceSpeed47(r,army,sea);r.scale*=5;r.terrain.width*=2;expect(actualForceSpeed47(r,army,sea)).toBe(before);
   });
   it('keeps actual first and later deadlines through day boundaries and reload without redrawing',()=>{

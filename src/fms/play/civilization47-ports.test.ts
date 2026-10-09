@@ -3,6 +3,7 @@ import {createFoundingForces47,type FoundingForces47} from './civilization47-for
 import {grid} from './fixture.test-support';
 import {navalPresence47,advancePortIntervalOwned47,reconcilePortLandOwnersOwned47,settlePortPeaceOwned47} from './civilization47-ports';
 import {armyTravelLocation47,beginArmyTravel47} from './army-travel47-state';
+import {fleetRation47} from './logistics-clock47';
 import {initialForceContacts47,forceKey47} from './force-motion47';
 import {advanceMilitaryWindow47,type MilitaryRules47} from './force-tick47';
 import {advanceCivilizationMilitary47} from './civilization47-military';
@@ -72,6 +73,6 @@ describe('actual military interval port occupation',()=>{
   const r=structuredClone(base),view=navalPresence47(r),neutral=r.navy.fleets[0],port=view.sea.ports.find(p=>p.id===neutral.dockId)!,at=armyTravelLocation47(r.fleetPositions.records[neutral.id],view.spatial.graph),others=r.navy.fleets.filter(f=>f.nationId!==neutral.nationId).slice(0,2);
   expect(others).toHaveLength(2);for(const f of others)r.fleetPositions.records[f.id]=beginArmyTravel47(f.id,[at.cell.id],view.spatial.graph,at.point);
   r.world.statecraft!.relations.find(v=>[v.a,v.b].includes(others[0].nationId)&&[v.a,v.b].includes(others[1].nationId))!.status='war';neutral.food=neutral.crew*3;
-  const stock=r.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!,grain=stock.grain;settleFleetFood47(r);expect(neutral.food).toBe(neutral.crew*2);expect(stock.grain).toBe(grain);
+  const stock=r.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!,grain=stock.grain;settleFleetFood47(r);expect(neutral.food).toBe(neutral.crew*3-fleetRation47(neutral.crew));expect(stock.grain).toBe(grain);
  });
 });

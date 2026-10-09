@@ -8,7 +8,7 @@ import {previewFamilySuccession47,appointFamilyRuler47} from './civilization47-s
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
-import {prepareOwnedGeography47} from './geography-content47';
+import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
 import {sameCulture47Value} from './culture47-equal';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
@@ -86,7 +86,7 @@ export class Culture47Session {
     run.id=journal.id;run.world.custom!.id=journal.id;
     prepareOwnedGeography47(run);
     let completed=0,ticks=0;
-    for(const action of journal.actions){run=apply(run,action);prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
+    for(const action of journal.actions){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
     return {run,journal:structuredClone(journal)};
   }
   load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;return this.snapshot();}
@@ -106,7 +106,7 @@ export class Culture47Session {
   execute(action:Culture47Action,sequence:number){
     const s=this.state;if(!s||sequence!==s.journal.actions.length)throw Error('世界已经推进，请重新操作。');
     const journal={...s.journal,actions:[...s.journal.actions,structuredClone(action)]};assertCulture47Journal(journal);
-    const run=apply(s.run,action);prepareOwnedGeography47(run);this.state={run,journal};return this.snapshot();
+    const run=withOwnedNumericGeography47(s.run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);this.state={run,journal};return this.snapshot();
   }
   snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');return structuredClone({...this.state,frame:culture47Frame(this.state.run)});}
 }

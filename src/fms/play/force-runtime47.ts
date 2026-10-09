@@ -35,8 +35,19 @@ export function actualForces47(r: ForceRun47) {
  * candidate. Does not run the old v46 Army/Navy movers, old road contacts or
  * damage loops. Caller must bound seconds at day/diplomacy/combat events. */
 export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: number, weights: ArmyRouteWeights47, speed: (run: T, force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => number, stopAtEvent = false) {
-  for (const book of [input.armyPositions, input.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
-  const next=cloneMilitaryCandidate47(input);
+  return advanceCandidateForces47(cloneMilitaryCandidate47(input),seconds,weights,speed,stopAtEvent);
+}
+/** The military window already owns a complete private transaction. Movement
+ * only changes Army records and both travel books; retain a separate before
+ * view of those fields for exact port exposure, without copying every family,
+ * treasury and historical entry again at every fractional movement event.
+ * Only the window owner may subsequently mutate shared unrelated ledgers. */
+export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent=false){
+  const next={...input,world:{...input.world,armies:structuredClone(input.world.armies)},armyPositions:structuredClone(input.armyPositions),fleetPositions:structuredClone(input.fleetPositions)};
+  return advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent);
+}
+function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean){
+  for (const book of [next.armyPositions, next.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
   const {spatial, forces} = actualForces47(next);
   const regions = waterRegions47(next.diplomaticGeography);
   const policies = new Map(next.world.armies.map(a => [a.id, armyTravelPolicy47(next, a, weights, a.status === 'retreating')]));

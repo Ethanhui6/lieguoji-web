@@ -11,7 +11,8 @@ import {previewFleetCommand47,issueFleetOrderOwned47,type FleetCommand47} from '
 import type {ArmyRouteWeights47} from './army-commands47';
 import {actualForceSpeed47} from './force-speed47';
 import {TICKS_PER_DAY} from './clock';
-import {graphFor46} from './war46-geography';
+import {graphFor47 as graphFor46} from './sea-geography47';
+import {fleetRation47} from './logistics-clock47';
 import type {SeaGraph} from './sea-path';
 
 /** Real owned military candidate, once per whole tick. Native role quota,
@@ -63,13 +64,15 @@ export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRout
   const here=safe.find(atAnchor);
   if(low&&here){row.assignedPortId=here.id;order.targetId=null;note('resupply','实际停在安全本国锚点，等待日结从当地粮储补给。');continue;}
   const home=candidates.find(p=>p.id===row.homePortId),homeLost=!!home&&r.portControl.ports[home.provinceId].occupierId!==f.nationId;
-  const force={kind:'fleet' as const,id:f.id,nationId:f.nationId,withdrawing:false,travel:r.fleetPositions.records[f.id]},speed=actualForceSpeed47(r,force,actual.at.cell),affordable=(distance:number)=>f.food>=f.crew*(Math.ceil(distance/speed/TICKS_PER_DAY)+3);
+  const force={kind:'fleet' as const,id:f.id,nationId:f.nationId,withdrawing:false,travel:r.fleetPositions.records[f.id]},speed=actualForceSpeed47(r,force,actual.at.cell),ration=fleetRation47(f.crew),affordable=(distance:number)=>f.food>=ration*(Math.ceil(distance/speed/TICKS_PER_DAY)+3);
   if(!low&&nativeNavalAttacking(atWar,r.portControl.attackFleetIds.includes(f.id),homeLost,!!goalAttack)){
    // Use the actual path/speed for ration budget; no old NAVAL_SPEED=35 and
    // no claim of native voyage duration until the map-unit scale is measured.
    const options=candidates.filter(p=>nativePortTarget(r.portControl.ports[p.provinceId],f.nationId,enemy)).flatMap(port=>{
     if(atAnchor(port))return [{port,control:r.portControl.ports[port.provinceId],distance:0}];
-    const p=previewFleetCommand47(r,action(port.id),weights);return p.valid&&affordable(p.distance)?[{port,control:r.portControl.ports[port.provinceId],distance:p.distance}]:[];
+    // Keep the 30-day return threshold plus three days at the destination.
+    // Safe-port return uses its separate best-effort/three-day budget below.
+    const p=previewFleetCommand47(r,action(port.id),weights);return p.valid&&f.food>=ration*(Math.ceil(p.distance/speed/TICKS_PER_DAY)+3)+f.crew*30?[{port,control:r.portControl.ports[port.provinceId],distance:p.distance}]:[];
    });
    const best=nativeBestPort(options,f.nationId,enemy);
    if(best){order.targetId=best.port.provinceId;if(atAnchor(best.port)){row.assignedPortId=best.port.id;note('attacking','在实际敌港等待争夺完成。');}else start(best.port.id,'attacking',best.control.landOwnerId===f.nationId?'先夺回本国海港；沿真实海路航行。':'前往可在余粮范围内抵达的敌港。');continue;}

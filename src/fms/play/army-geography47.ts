@@ -27,6 +27,6 @@ export function armySpatialFor47(run: Input) {
     const witness=copyGeographyContent47(dependencies);if(witness)retainGeographyWitness47(cache,{...witness,binding,graph});
   }
   const input = {graph, binding, positions: run.armyPositions, cargoIds: run.transports.cargo.map(c => c.army.id)};
-  readArmySpace47(run.world, input);
-  return input;
+  const space=readArmySpace47(run.world, input);
+  return {...input,space};
 }

@@ -3,13 +3,14 @@ import type {GameEvent} from '../../sim/types';
 import {actualForces47} from './force-runtime47';
 import {readArmySpace47,landHolders47,canRefill47,rationPoints47} from './army-space47';
 import {armyTravelLocation47,haltArmyTravel47} from './army-travel47-state';
-import {graphFor46} from './war46-geography';
+import {graphFor47 as graphFor46} from './sea-geography47';
 import {portAvailable46} from './war46-ports';
 import {nationsAtWar} from './realtime-statecraft';
 import {lossRecorder} from './war27-losses';
 import {forceKey47,reconcileForceContactsOwned47} from './force-motion47';
 import {reconcileMilitaryClock47} from './force-tick47';
 import {navalPresence47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
+import {fleetRation47,LOGISTICS_DAY_FACTOR47} from './logistics-clock47';
 
 export function dailyEvent47(r:Pick<FoundingForces47,'world'>,kind:GameEvent['kind'],text:string,reason:string){
   if(!Number.isSafeInteger(r.world.nextEventId)||r.world.nextEventId<1||r.world.nextEventId>=Number.MAX_SAFE_INTEGER)throw Error('事件记录已达上限。');
@@ -42,7 +43,7 @@ export function settleFleetFood47(r:FoundingForces47){
       return at.cell.face===p.node&&Math.hypot(at.point.x-anchor.x,at.point.y-anchor.y)<=1e-8&&land.controller===fleet.nationId&&land.legalOwner===fleet.nationId&&portAvailable46(r.portControl,p.provinceId,fleet.nationId)&&!landHolders47(space,p.provinceId).some(a=>nationsAtWar(r.world,a.nationId,fleet.nationId));
     }):undefined;
     if(port){const stock=r.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!,amount=Math.max(0,Math.min(fleet.crew*60-fleet.food,stock.grain-stock.population*10));stock.grain-=amount;fleet.food+=amount;}
-    const starving=fleet.food<fleet.crew;fleet.food=Math.max(0,fleet.food-fleet.crew);if(!starving)continue;
+    const ration=fleetRation47(fleet.crew),starving=fleet.food<ration;fleet.food=Math.max(0,fleet.food-ration);if(!starving)continue;
     const lost=Math.min(fleet.crew,Math.max(1,Math.floor(fleet.crew*.05)));fleet.crew-=lost;loss(fleet.nationId,'crew',lost);
     dailyEvent47(r,'supply',`${fleet.name}断粮损失${lost}名船员`,'只有实际停在安全本国港口锚点才能补粮；不足一日粮按当前船员5%向下取整、至少1人减员。');
     if(fleet.crew)continue;
@@ -59,7 +60,7 @@ export function settleArmyFoodConsequences47(r:FoundingForces47){
   for(const v of space.byArmy.values()){
     const a=v.army;if(a.supplies>0){if(canRefill47(v)&&v.province!.controller===a.nationId&&!landHolders47(space,v.province!.id).some(other=>nationsAtWar(r.world,a.nationId,other.nationId)))a.morale=Math.min(100,a.morale+3);continue;}
     const lost=Math.min(a.troops,Math.max(1,Math.ceil(a.troops*.018)));a.troops-=lost;a.morale=Math.max(0,a.morale-6);loss(a.nationId,'starvation',lost);
-    dailyEvent47(r,'supply',`${a.name}断粮减员${lost}`,`本日口粮${rationPoints47(v)}点已在日粮账扣除；兵力损失1.8%、士气下降6。实际海上部队不能从历史陆地锚点补粮。`);
+    dailyEvent47(r,'supply',`${a.name}断粮减员${lost}`,`本日口粮${rationPoints47(v,LOGISTICS_DAY_FACTOR47)}点已在日粮账扣除；兵力损失1.8%、士气下降6。实际海上部队不能从历史陆地锚点补粮。`);
     if(a.troops)continue;
     a.status='destroyed';a.morale=0;a.supplies=0;a.route=[];a.progress=0;r.armyPositions.records[a.id]=haltArmyTravel47(v.travel,spatial.graph);
     delete r.battles.plans[a.id];delete r.reorganization.active[a.id];delete r.tactics.rounds[a.id];

@@ -29,7 +29,7 @@ function addNation(s:NativeDiplomacy46,r:Input,id:string,origin:DiplomaticNation
  const expansionism=parentId?s.nations[parentId]?.expansionism:nativeGenerateExpansionism(()=>Math.fround(diplomacyRandom46(s)));
  if(expansionism===undefined)throw Error('新国家缺少外交来源。');
  nativeInitializeWarPowers(pools,100,100,(min,max)=>Math.fround(min+Math.fround(Math.fround(diplomacyRandom46(s))*Math.fround(max-min))));
- s.nations[id]={origin,parentId,initializedTick:r.clock.tick,expansionism,activeTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,passiveTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,pools,updateDay:drawDay(s,r),updatedMonth:diplomacyMonth46(r)};
+ s.nations[id]={origin,parentId,initializedTick:r.clock.tick,expansionism,activeTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,passiveTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,pools,updateDay:drawDay(s,r),updatedMonth:diplomacyMonth46(r)-1};
 }
 export function initialNativeDiplomacy46(r:Input,origin:'new-world'|'explicit-copy'):NativeDiplomacy46{
  const s:NativeDiplomacy46={version:1,revision:0,originTick:r.clock.tick,originTime:r.life.gameTime,rng:seed(`${r.world.custom!.seed}/diplomacy30/${r.clock.tick}`),draws:0,month:diplomacyMonth46(r),lastDay:r.world.day,nations:{},relations:[],declarations:[]};
@@ -62,13 +62,14 @@ export function reconcileNativeDiplomacy46(s:NativeDiplomacy46,r:Input){
  for(const w of r.nativeWars.campaigns)if(w.endedTick!==null)for(const [a,b]of diplomaticEndPairs46(r.nativeWars,w)){const p=relation46(s,a,b);if(p.endedWarIds.includes(w.id))continue;p.endedWarIds.push(w.id);if(p.warCount!==null){if(p.warCount>=2147483647)throw Error('战争次数超过安全范围。');p.warCount++;}p.lastWar=Math.fround(r.life.gameTime);revise(s);}
 }
 /** One callback per living country's assigned day each calendar month. Caller
- * has already updated life/army state. Initial first update is not repeated. */
+ * has already updated life/army state. Initialization is not an evaluation;
+ * allow the first scheduled day (including a day already passed at creation). */
 export function advanceDiplomaticSchedule46(s:NativeDiplomacy46,r:Input,update:(id:string)=>void){
  reconcileNativeDiplomacy46(s,r);if(r.world.day===s.lastDay)return;if(r.world.day!==s.lastDay+1)throw Error('外交日历不连续，已取消本批。');
  const month=diplomacyMonth46(r),live=new Set(r.world.provinces.map(p=>p.controller));
  if(month!==s.month){if(month!==s.month+1)throw Error('外交月份不连续。');s.month=month;for(const n of r.world.nations)if(live.has(n.id))s.nations[n.id].updateDay=drawDay(s,r);}
  s.lastDay=r.world.day;revise(s);
- for(const n of r.world.nations){const d=s.nations[n.id];if(!live.has(n.id)||d.updateDay!==r.life.currentDate.day||d.updatedMonth===month)continue;nativeAccumulateDiplomaticPower(d.pools,20);d.updatedMonth=month;update(n.id);}
+ for(const n of r.world.nations){const d=s.nations[n.id];if(!live.has(n.id)||d.updateDay>r.life.currentDate.day||d.updatedMonth===month)continue;nativeAccumulateDiplomaticPower(d.pools,20);d.updatedMonth=month;update(n.id);}
 }
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const unknown=(v:unknown,keys:string[])=>record(v)&&Object.keys(v).some(k=>!keys.includes(k));
@@ -83,7 +84,7 @@ export function assertNativeDiplomacySchema46(v:unknown){const s=v as NativeDipl
 export function assertNativeDiplomacy46(s:NativeDiplomacy46,r:Input){
  assertNativeDiplomacySchema46(s);const fail=()=>{throw Error('国家外交历史损坏，已保留原档。');};const int=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;const f46=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&Math.fround(v)===v;
  if(!record(s)||Object.keys(s).length!==stateKeys.length||s.version!==1||!int(s.revision)||!int(s.originTick,0,r.clock.tick)||!f46(s.originTime)||s.originTime>r.life.gameTime||!int(s.rng,0,4294967295)||!int(s.draws)||s.month!==diplomacyMonth46(r)||s.lastDay!==r.world.day||!record(s.nations)||Object.keys(s.nations).length!==r.world.nations.length||!Array.isArray(s.relations)||!Array.isArray(s.declarations))return fail();
- for(const n of r.world.nations){const p=s.nations[n.id];if(!record(p)||Object.keys(p).length!==nationKeys.length||!int(p.initializedTick,s.originTick,r.clock.tick)||!f46(p.expansionism)||p.expansionism<1||p.expansionism>6||!int(p.updateDay,1,31)||!int(p.updatedMonth,12,s.month)||!record(p.pools)||Object.keys(p.pools).length!==4||Object.values(p.pools).some(v=>!f46(v)||v<0)||p.pools.efficiency!==20)return fail();
+ for(const n of r.world.nations){const p=s.nations[n.id];if(!record(p)||Object.keys(p).length!==nationKeys.length||!int(p.initializedTick,s.originTick,r.clock.tick)||!f46(p.expansionism)||p.expansionism<1||p.expansionism>6||!int(p.updateDay,1,31)||!int(p.updatedMonth,11,s.month)||!record(p.pools)||Object.keys(p.pools).length!==4||Object.values(p.pools).some(v=>!f46(v)||v<0)||p.pools.efficiency!==20)return fail();
   for(const time of [p.activeTime,p.passiveTime])if(time!==null&&time!==NATIVE_INITIAL_WAR_TIME&&(!f46(time)||time<0||time>r.life.gameTime))return fail();
   if(p.origin==='secession'){if(!p.parentId||p.parentId===n.id||!s.nations[p.parentId])return fail();}else if(!['new-world','explicit-copy'].includes(p.origin)||p.parentId!==null)return fail();
   if(p.origin!=='explicit-copy'&&(p.activeTime===null||p.passiveTime===null))return fail();

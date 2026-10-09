@@ -31,5 +31,5 @@ describe('private executed journal witness',()=>{
     const malicious={get field(){throw Error('getter should never run');}};
     expect(sameCulture47Value(malicious,{field:1})).toBe(false);
   },30000);
-  it('keeps both delivered original engines byte exact',()=>{expect(verifyFrozenCulture47().map(e=>e.bytes)).toEqual([1322000,1325561]);});
+  it('keeps all three delivered original engines byte exact',()=>{expect(verifyFrozenCulture47().map(e=>({file:e.file,bytes:e.bytes}))).toEqual([{file:'engine-42a3.js',bytes:1322000},{file:'engine-ce32.js',bytes:1325561},{file:'engine-b365.js',bytes:1326866}]);});
 });

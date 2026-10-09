@@ -7,6 +7,7 @@ import {seaGraph} from './sea-path';
 import {buildArmyTravelGraph47,findArmyTravelPath47,unrestrictedTravel47,armyTravelPathPoints47,type TravelGraph47} from './army-travel47-graph';
 import {advanceArmyTravel47,armyTravelLocation47,assertArmyTravel47,beginArmyTravel47,haltArmyTravel47,redirectArmyTravel47} from './army-travel47-state';
 import {nativeArmyCellDistance,nativeArmyRouteCost,nativeArmyMovementSpeed} from './native-war/army-path';
+import {armyPreviewTicks47} from './army-route-budget47';
 
 // Geometry-only fixture. It is not a valid saved game and never bypasses a run
 // validator. Each clipped land face is one province, without fabricated sea land.
@@ -45,6 +46,14 @@ describe('v47 actual clipped land/sea graph',()=>{
  });
 });
 describe('v47 same-Army continuous physical position',()=>{
+ it('budgets the same arrival time as actual movement across unequal land, sea and mountain speeds',()=>{
+  const g=strip(),origin={x:8,y:3},cells=[0,1,2],points=armyTravelPathPoints47(g,cells);points[0]=origin;
+  const speed=(cell:{id:number})=>[.12,.18,.04][cell.id],ticks=armyPreviewTicks47({valid:true,cells,points},g,speed),travel=beginArmyTravel47('budget',cells,g,origin);
+  expect(advanceArmyTravel47(travel,g,ticks-.01,speed,()=>true).travel.status).toBe('moving');
+  expect(advanceArmyTravel47(travel,g,ticks+.01,speed,()=>true).travel.status).toBe('arrived');
+  expect(armyPreviewTicks47({valid:true,cells:[0],points:[origin]},g,speed)).toBe(0);
+  expect(armyPreviewTicks47({valid:true,cells,points},g,()=>0)).toBe(Infinity);
+ });
  it('crosses land/sea edges with one identity and surface speed, not at the next center',()=>{
   const g=strip(),s=beginArmyTravel47('army-1',[0,1,2],g),a=advanceArmyTravel47(s,g,6,c=>c.surface==='sea'?1.5:1,()=>true);
   expect(a.entered).toEqual([1]);expect(a.travel.armyId).toBe('army-1');expect(armyTravelLocation47(a.travel,g)).toMatchObject({onLand:false,point:{x:11.5,y:5},cell:{id:1}});expect(s.offset).toBe(0);

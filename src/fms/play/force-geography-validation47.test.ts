@@ -21,6 +21,19 @@ describe('content-validated real47 geographic reuse',()=>{
   const next=structuredClone(base);next.world.day++;next.world.provinces[0].controller=next.world.nations[1].id;
   expect(()=>assertForceGeography47(next.diplomaticGeography,next)).not.toThrow();expect(()=>assertDiplomaticGeography(next.diplomaticGeography,next)).not.toThrow();
  });
+ it('keeps numeric aliases and unknown frozen schema replacements observable after repeated cache hits',()=>{
+  const r=structuredClone(base);prepareOwnedGeography47(r);
+  for(let i=0;i<3;i++)assertForceGeography47(r.diplomaticGeography,r);
+  const samples=r.terrain.elevations,alias=new Int32Array(samples.buffer,samples.byteOffset,samples.length);
+  for(const index of [0,Math.floor(samples.length/2),samples.length-1]){
+   const previous=alias[index];alias[index]=previous<20?45:0;
+   expect(()=>assertForceGeography47(r.diplomaticGeography,r)).toThrow();
+   alias[index]=previous;expect(()=>assertForceGeography47(r.diplomaticGeography,r)).not.toThrow();
+  }
+  r.diplomaticGeography={...r.diplomaticGeography,future:undefined} as typeof r.diplomaticGeography;
+  prepareOwnedGeography47(r);
+  expect(()=>assertForceGeography47(r.diplomaticGeography,r)).toThrow(/未来规则|未知字段/);
+ });
  it.each(['elevation','coast','neighbors','partition','area','center','unknown','missing','boxed'] as const)('does not trust a cached same-ID record after %s mutation',kind=>{
   assertForceGeography47(base.diplomaticGeography,base);const r=structuredClone(base);
   if(kind==='elevation')r.terrain.elevations[0]=25;

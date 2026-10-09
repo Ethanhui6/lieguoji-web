@@ -5,6 +5,8 @@ type TravelBody47={armyId:string;origin:Point;nodes:number[];leg:number;offset:n
  * never silently upgraded or made to move within their last cell. */
 export type ArmyTravel47=TravelBody47&({version:1}|{version:2;destination:Point});
 const keys=['version','armyId','origin','nodes','leg','offset','crossed','status'];
+const travelKeys=new Set([...keys,'destination']);
+const isPointShape=(p:Point)=>!!p&&typeof p==='object'&&Object.keys(p).length===2&&Object.hasOwn(p,'x')&&Object.hasOwn(p,'y');
 export type TravelSegment47={kind:'gate';a:TravelCell47;b:TravelCell47;start:Point;gate:Point;endPoint:Point;toGate:number;distance:number}|{kind:'local';cell:TravelCell47;start:Point;endPoint:Point;distance:number};
 const distance=(a:Point,b:Point)=>Math.hypot(a.x-b.x,a.y-b.y);
 /** Both movement engines and previews consume this geometry. */
@@ -19,11 +21,18 @@ export function armyTravelSegment47(s:ArmyTravel47,g:TravelGraph47):TravelSegmen
  * This geometry guard does not replace run/Army identity and diplomatic guards. */
 export function assertArmyTravel47(value:unknown,g:TravelGraph47):asserts value is ArmyTravel47{
  const s=value as ArmyTravel47;
- const allowed=s?.version===2?[...keys,'destination']:keys;
- if(!s||typeof s!=='object'||Object.keys(s).length!==allowed.length||Object.keys(s).some(k=>!allowed.includes(k))||![1,2].includes(s.version)||typeof s.armyId!=='string'||!s.armyId||!Array.isArray(s.nodes)||!s.nodes.length||s.nodes.length>g.cells.size+1||Array.from({length:s.nodes.length},(_,i)=>i).some(i=>!Object.hasOwn(s.nodes,i)||!Number.isSafeInteger(s.nodes[i])||!g.cells.has(s.nodes[i]))||!Number.isSafeInteger(s.leg)||s.leg<0||s.leg>=s.nodes.length||!Number.isFinite(s.offset)||s.offset<0||typeof s.crossed!=='boolean'||!['moving','arrived','blocked','halted'].includes(s.status))throw Error('海陆行军记录无效，已保留原档。');
- for(let i=1;i<s.nodes.length;i++)if(!g.cells.get(s.nodes[i-1])!.links.some(l=>l.to===s.nodes[i]))throw Error('海陆行军记录跨越了不相邻格。');
- if(!s.origin||Object.keys(s.origin).sort().join('/')!=='x/y'||!insideTravelCell47(g.cells.get(s.nodes[0])!,s.origin))throw Error('海陆行军起点不在实际格内。');
- if(s.version===2&&(!s.destination||Object.keys(s.destination).sort().join('/')!=='x/y'||!insideTravelCell47(g.cells.get(s.nodes.at(-1)!)!,s.destination)))throw Error('精确行军终点不在目标格内。');
+ if(!s||typeof s!=='object'||Object.keys(s).length!==(s.version===2?9:8)||Object.keys(s).some(k=>!travelKeys.has(k)||k==='destination'&&s.version!==2)||(s.version!==1&&s.version!==2)||typeof s.armyId!=='string'||!s.armyId||!Array.isArray(s.nodes)||!s.nodes.length||s.nodes.length>g.cells.size+1||!Number.isSafeInteger(s.leg)||s.leg<0||s.leg>=s.nodes.length||!Number.isFinite(s.offset)||s.offset<0||typeof s.crossed!=='boolean'||!['moving','arrived','blocked','halted'].includes(s.status))throw Error('海陆行军记录无效，已保留原档。');
+ // A single dense scan still rejects holes, unknown cells and broken edges.
+ // Avoid allocating an index array for every force at every sub-tick.
+ let previous:TravelCell47|undefined;
+ for(let i=0;i<s.nodes.length;i++){
+  const id=s.nodes[i],cell=g.cells.get(id);
+  if(!Object.hasOwn(s.nodes,i)||!Number.isSafeInteger(id)||!cell)throw Error('海陆行军记录无效，已保留原档。');
+  if(previous&&!previous.links.some(l=>l.to===id))throw Error('海陆行军记录跨越了不相邻格。');
+  previous=cell;
+ }
+ if(!isPointShape(s.origin)||!insideTravelCell47(g.cells.get(s.nodes[0])!,s.origin))throw Error('海陆行军起点不在实际格内。');
+ if(s.version===2&&(!isPointShape(s.destination)||!insideTravelCell47(g.cells.get(s.nodes.at(-1)!)!,s.destination)))throw Error('精确行军终点不在目标格内。');
  const link=armyTravelSegment47(s,g);
  if(link?.kind==='local'){
   if(s.crossed||s.status==='blocked'||s.offset>link.distance||s.status==='moving'&&s.offset===link.distance||s.status==='arrived'&&s.offset!==link.distance)throw Error('格内行军进度无效。');

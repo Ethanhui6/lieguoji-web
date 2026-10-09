@@ -1,13 +1,12 @@
 import {waterRegions47} from './geography-content47';
 import type {War46Run} from './war46-model';
 import type {ArmyRouteWeights47} from './army-commands47';
-import {advanceActualForces47,actualForces47,type ForceRun47} from './force-runtime47';
+import {advanceActualForces47,advanceOwnedActualForces47,actualForces47,type ForceRun47} from './force-runtime47';
 import {assertForceContacts47,forceKey47,reconcileForceContactsOwned47} from './force-motion47';
 import {assertForceClock47,reconcileAttackClock47,rescheduleAttack47,type ForceClock47} from './force-clock47';
 import {assertForceDamage47,type ForceDamage47} from './force-losses47';
 import {applyAccountedVolley47} from './force-accounting47';
 import {nationsAtWar} from './realtime-statecraft';
-import {readArmySpace47} from './army-space47';
 import {advanceTacticsOccupation47,type ProvinceCombat47} from './war47-occupation';
 import type {World} from '../../sim/types';
 import {TICKS_PER_DAY} from './clock';
@@ -31,7 +30,7 @@ function frame(r:MilitaryRun47) {
   assertForceContacts47(r.forceContacts,forces,spatial.graph,face=>regions.get(face)!);
   const contact=reconcileForceContactsOwned47(forces,spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),face=>regions.get(face)!);
   r.forceContacts=contact.contacts;
-  const space=readArmySpace47(r.world,{...spatial,positions:r.armyPositions}),eligible=new Set<string>();
+  const space=spatial.space,eligible=new Set<string>();
   for(const f of forces) {
     if(f.withdrawing)continue;const key=forceKey47(f),p=f.kind==='army'?space.byArmy.get(f.id)?.province:null;
     if(contact.held.has(key) || p && (nationsAtWar(r.world,f.nationId,p.controller) || r.occupation.sieges.some(s=>s.provinceId===p.id&&s.controller===f.nationId&&s.resistance<s.maximum))) eligible.add(key);
@@ -47,6 +46,12 @@ export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
 }
 function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>) {
   const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
+  // There is no occupation transaction when no siege exists and no real
+  // non-retreating army holds hostile land. Movement/contact validation above
+  // still runs; the full47 owner validates personnel before entering a window.
+  // In this case copying every city, family-era world event and economy ledger
+  // twice per tick cannot change a flag or resistance value.
+  if(!r.occupation.sieges.length&&![...f.spatial.space.byArmy.values()].some(v=>v.province&&v.army.status!=='retreating'&&nationsAtWar(r.world,v.army.nationId,v.province.controller)))return;
   const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
   const previous=r.world;shareUnchangedProvinceGeometry47(previous,out.world);r.world=out.world;r.occupation=out.occupation;
   if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
@@ -86,7 +91,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
       }
       if(now===tick)break;
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
-      const moved=advanceActualForces47(r,stop-now,weights,rules.speed,true);
+      const moved=advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true);
       // Assign an exact known endpoint when the interval was consumed; avoid
       // arithmetic residue causing a phantom delayed/missed attack at save.
       const end=moved.unusedSeconds===0?stop:now+moved.elapsed;

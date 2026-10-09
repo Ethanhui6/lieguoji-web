@@ -10,6 +10,7 @@ import {settleFiscalMonth47,assertMonthlyAccounts47} from './civilization47-fisc
 import {musterMonth47} from './civilization47-monthly-muster';
 import {settleDestinyMonth} from './destiny20-state';
 import {settleFleetFood47,settleArmyFoodConsequences47,finishDailyForces47,dailyEvent47,assertDailyResources47} from './civilization47-upkeep';
+import {LOGISTICS_DAY_FACTOR47} from './logistics-clock47';
 import {TICKS_PER_DAY} from './clock';
 import {assertCombatPersonnel47,refreshLeaderCombat47} from './civilization47-combat-state';
 import {cloneMilitaryCandidate47} from './geography-content47';
@@ -32,7 +33,7 @@ export function settleCivilizationDay47<T extends FoundingForces47>(input:T,dail
   // This web monthly bridge runs before this day's autonomous orders.
   if(r.world.day%30===0)refreshLeaderCombat47(r,r.combatPersonnel);
   settleFleetFood47(r);
-  const economy=createArmyEconomy47(r.finance,()=>({...actualForces47(r).spatial,positions:r.armyPositions}));
+  const economy=createArmyEconomy47(r.finance,()=>({...actualForces47(r).spatial,positions:r.armyPositions}),LOGISTICS_DAY_FACTOR47);
   economy.advanceEconomy(r.world,(world,kind,text,reason)=>dailyEvent47({world},kind,text,reason));
   settleArmyFoodConsequences47(r);finishDailyForces47(r);
   settleFiscalMonth47(r);

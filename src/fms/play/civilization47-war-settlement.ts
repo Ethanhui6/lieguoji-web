@@ -20,7 +20,7 @@ import {settlePortPeaceOwned47,reconcilePortLandOwnersOwned47} from './civilizat
 import {reconcileWar26} from './war26-state';
 import {war26Strength} from './war26-strength';
 import {reconcileLosses} from './war27-losses';
-import {graphFor46} from './war46-geography';
+import {graphFor47 as graphFor46} from './sea-geography47';
 import {announce} from './chronicle-records';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';

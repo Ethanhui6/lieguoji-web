@@ -2,12 +2,21 @@ import type {FmsDocument} from '../model';
 import type {World} from '../../sim/types';
 import type {DiplomaticGeography} from './war30-geography';
 
-/** Cache witnesses own their data. Every hit compares every dependency again;
- * neither object identity nor the legacy short binding proves equality. Exotic
- * objects miss the cache and still pass through the authoritative validator. */
+/** Cache witnesses own their data. Dependencies are compared by content;
+ * only deeply frozen leaves and the private, commit-checked numeric read
+ * window can reuse a comparison. Identity or the old short binding alone is
+ * not proof. Exotic objects still reach the authoritative validator. */
 const LIMIT=2_000_000;
 const immutable=new WeakMap<object,number>(),typedShapes=new WeakSet<object>();
+const numericWindows=new WeakMap<object,WeakMap<object,boolean>>();
 type Budget={left:number};
+// Keep the hot numeric scan separate from descriptor/prototype traversal so
+// the engine can optimize it as a dense typed-array loop. Buffers remain
+// writable: every sample is still compared, including same-buffer aliases.
+function sameSamples(a:Uint32Array|Int32Array,b:Uint32Array|Int32Array){
+ for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false;
+ return true;
+}
 function equal(a:unknown,b:unknown,budget:Budget,depth:number):boolean{
  if(--budget.left<0||depth>64)return false;
  if(typeof a==='number')return Number.isFinite(a)&&Object.is(a,b);
@@ -20,8 +29,9 @@ function equal(a:unknown,b:unknown,budget:Budget,depth:number):boolean{
   const x=a as Uint32Array|Int32Array,y=b as typeof x;
   if(x.length!==y.length||!typedShapes.has(x)&&(Object.getOwnPropertyNames(x).length!==x.length||Object.getOwnPropertySymbols(x).length))return false;
   budget.left-=x.length;if(budget.left<0)return false;
-  for(let i=0;i<x.length;i++)if(x[i]!==y[i])return false;
-  return true;
+  const window=numericWindows.get(x),known=window?.get(y);
+  if(known!==undefined)return known;
+  const matches=sameSamples(x,y);window?.set(y,matches);return matches;
  }
  if(proto!==Object.prototype&&proto!==Array.prototype)return false;
  if(Object.getOwnPropertySymbols(a).length)return false;
@@ -74,7 +84,8 @@ function freezePlain(value:unknown):number|null{
 }
 /** Only the private, successfully built/validated session calls this. Freezing
  * does not mark a live run or its mutable ledgers as trusted. Numeric buffers
- * remain writable and are compared element by element on every cache hit. */
+ * remain writable. Outside the private action window, every cache hit compares
+ * them element by element; the window also checks all samples before commit. */
 export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography:unknown}){
  freezePlain(r.terrain.points);freezePlain(r.diplomaticGeography);
  for(const p of r.world.provinces){freezePlain(p.polygon);freezePlain(p.neighbors);}
@@ -83,6 +94,25 @@ export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplo
   if((Object.getPrototypeOf(a)!==Uint32Array.prototype&&Object.getPrototypeOf(a)!==Int32Array.prototype)||!(a.buffer instanceof ArrayBuffer)||'resizable' in a.buffer&&a.buffer.resizable||Object.getOwnPropertyNames(a).length!==a.length||Object.getOwnPropertySymbols(a).length)continue;
   Object.preventExtensions(a);typedShapes.add(a);
  }
+}
+/** Only the synchronous, fixed Culture47Session action owner uses this window.
+ * It owns fresh numeric buffers, compares each cache witness exactly on first
+ * use, and checks the ENTIRE buffers again before returning to the commit.
+ * No external callback, async work or mutable buffer escapes during the action.
+ * A changed/detached buffer rejects the whole candidate; input stays untouched.
+ * Public geometry/command helpers outside this window still scan every call. */
+export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(input:T,action:(candidate:T)=>T):T{
+ const originals=[new Uint32Array(input.terrain.triangles),new Int32Array(input.terrain.elevations)] as const;
+ const triangles=new Uint32Array(originals[0]),elevations=new Int32Array(originals[1]);
+ const buffers=[triangles,elevations] as const;
+ const candidate={...input,terrain:{...input.terrain,triangles,elevations}};
+ for(const a of buffers){Object.preventExtensions(a);typedShapes.add(a);numericWindows.set(a,new WeakMap());}
+ try{
+  const result=action(candidate);
+  const returned=[result.terrain.triangles,result.terrain.elevations];
+  for(let i=0;i<buffers.length;i++)if(buffers[i].length!==originals[i].length||!sameSamples(buffers[i],originals[i])||returned[i].length!==originals[i].length||!sameSamples(returned[i],originals[i]))throw Error('推演期间地形发生变化，取消本次候选并保留原世界。');
+  return result;
+ }finally{for(const a of buffers)numericWindows.delete(a);}
 }
 export function shareUnchangedProvinceGeometry47(source:World,target:World){
  const byId=new Map(source.provinces.map(p=>[p.id,p]));

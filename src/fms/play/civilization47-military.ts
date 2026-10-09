@@ -9,7 +9,7 @@ import {assertCombatPersonnel47} from './civilization47-combat-state';
 import {combatReader47} from './civilization47-combat';
 import {advancePortIntervalOwned47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
 import {issueAutonomousNavalOrders47} from './civilization47-naval-ai';
-import {graphFor46} from './war46-geography';
+import {graphFor47 as graphFor46} from './sea-geography47';
 import type {World} from '../../sim/types';
 
 /** Fixed real47 military/calendar/personnel owner. No scalar combat override;
@@ -18,6 +18,9 @@ import type {World} from '../../sim/types';
 export function advanceCivilizationMilitary47<T extends FoundingForces47>(input:T,ticks:number,weights:ArmyRouteWeights47,ownership?:(candidate:T,previous:World)=>void,politicalTick?:(candidate:T)=>void){
   assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
+  // Validate live ruler/projection links once at entry even when every army
+  // is on friendly land and there is no occupation work in this window.
+  combatReader47(input);
   if(input.forceClock.secondsPerTick!==input.life.secondsPerDay/TICKS_PER_DAY)throw Error('军事与人物时间单位不一致，原世界保留。');
   // Geometry is immutable throughout this window. Reuse its sea graph across
   // private state clones; controllers, contacts and resources still read live.

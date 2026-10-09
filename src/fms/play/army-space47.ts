@@ -61,10 +61,11 @@ export const landHolders47 = (space: ArmySpace47, id: string) =>
 
 /** Existing web ration rates, not a recovered native food formula. Movement
  * comes from the unified ledger even while the legacy Army status is idle. */
-export function rationPoints47(location: LocatedArmy47): number {
-  if (location.army.status === 'fighting') return 8;
-  if (location.army.status === 'retreating') return 5;
-  return location.travel.status === 'moving' || location.travel.status === 'blocked' ? 6 : 4;
+export function rationPoints47(location: LocatedArmy47, dayFactor=1): number {
+  if(!Number.isFinite(dayFactor)||dayFactor<=0)throw Error('口粮日长无效。');
+  if (location.army.status === 'fighting') return 8*dayFactor;
+  if (location.army.status === 'retreating') return 5*dayFactor;
+  return (location.travel.status === 'moving' || location.travel.status === 'blocked' ? 6 : 4)*dayFactor;
 }
 export const canRefill47 = (location: LocatedArmy47) =>
   !!location.province && location.army.status === 'idle' &&

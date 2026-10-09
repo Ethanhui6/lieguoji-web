@@ -13,6 +13,8 @@ import {advanceMilitaryWindow47,type MilitaryRun47} from './force-tick47';
 import {assertLosses} from './war27-losses';
 import {assertWars47} from './war47-validation';
 import {assertOccupation} from './occupation';
+import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
+import {advanceActualForces47,advanceOwnedActualForces47} from './force-runtime47';
 
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
 let base:War46Run;
@@ -36,6 +38,21 @@ const advance=(r:MilitaryRun47,ticks:number)=>advanceMilitaryWindow47(r,ticks,we
 const jsonState=(r:MilitaryRun47):MilitaryRun47=>{const {terrain,...mutable}=r;return {...JSON.parse(JSON.stringify(mutable)),terrain};};
 
 describe('47 atomic motion, persisted timers, occupation and accounting',()=>{
+  it('matches the public deep-copy mover and preserves the before view for owned movement',()=>{
+    const f=fixture();f.b.troops=0;f.b.status='destroyed';
+    const from=[...f.graph.cells.values()].find(c=>c.surface==='sea'&&c.links.some(l=>f.graph.cells.get(l.to)!.surface==='sea'))!;
+    const to=from.links.find(l=>f.graph.cells.get(l.to)!.surface==='sea')!.to;
+    f.run.armyPositions.records[f.a.id]=beginArmyTravel47(f.a.id,[from.id,to],f.graph);
+    const before=structuredClone(f.run);
+    for(const seconds of [.5,40])expect(advanceOwnedActualForces47(f.run,seconds,weights,()=>3,true)).toEqual(advanceActualForces47(f.run,seconds,weights,()=>3,true));
+    expect(f.run).toEqual(before);
+  });
+  it('keeps the same actual military result with and without the private numeric read window',()=>{
+    const f=fixture();prepareOwnedGeography47(f.run);
+    const before=structuredClone(f.run),direct=advance(f.run,95).run;
+    const owned=withOwnedNumericGeography47(f.run,r=>advance(r,95).run);
+    expect(owned).toEqual(direct);expect(f.run).toEqual(before);
+  },20000);
   it('waits the first 20 ticks, settles at the exact endpoint and keeps raw damage separate from actual deaths',()=>{
     const f=fixture(),before=structuredClone(f.run),waiting=advance(f.run,19);
     expect(waiting.volleys).toEqual([]);expect(waiting.run.forceClock.deadlines).toEqual({[f.ak]:20,[f.bk]:20});expect(waiting.run.forceClock.draws).toBe(0);

@@ -3,7 +3,8 @@ import type {Culture47Journal,Culture47Progress} from './culture47-session';
 import {Culture47InvalidJournal,Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import old42 from '../../../compat/culture47/engine-42a3.js?url';
 import oldCe from '../../../compat/culture47/engine-ce32.js?url';
-const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe};
+import oldB365 from '../../../compat/culture47/engine-b365.js?url';
+const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365};
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
 
 export class Culture47Client {

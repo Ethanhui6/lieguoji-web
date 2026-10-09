@@ -41,13 +41,45 @@ beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>y>20&&y<230&&(x>20&&x<105
  * fixture inputs, not a claim to replay the user's 900-day world. */
 function islands(){const r=structuredClone(base),[west,east]=r.world.nations.map(n=>n.id),g=actualForces47(r).spatial.graph;
   for(const p of r.world.provinces)p.controller=p.legalOwner=p.center.x<500?west:east;
-  for(const a of r.world.armies){const p=r.world.provinces.find(p=>p.controller===a.nationId)!;r.armyPositions.records[a.id]=beginArmyTravel47(a.id,[locateTravelCell47(g,p.center,p.id)!.id],g,p.center);r.tactics.forces[a.id].homeId=p.id;}
+  // Start this shoreline-traversal fixture at the facing coast. Inland rally
+  // and finite supplies are covered independently below.
+  for(const a of r.world.armies){const owned=new Set(r.world.provinces.filter(p=>p.controller===a.nationId).map(p=>p.id)),cell=[...g.cells.values()].filter(c=>c.surface==='land'&&owned.has(c.provinceId!)).sort((a,b)=>Math.abs(a.center.x-500)+Math.abs(a.center.y-500)*.1-Math.abs(b.center.x-500)-Math.abs(b.center.y-500)*.1)[0];r.armyPositions.records[a.id]=beginArmyTravel47(a.id,[cell.id],g,cell.center);r.tactics.forces[a.id].homeId=cell.provinceId!;}
   r.harbors={...r.harbors,sites:[]};r.navy.fleets=[];r.fleetPositions.records={};r.maritime.hulls={};r.portControl.fleets={};r.portControl.attackFleetIds=[];
   // Direct daily-order phase fixture. Full-calendar day ownership is tested separately.
   r.clock.tick=120;r.world.day=1;return r;
 }
 function nextDay(r:FoundingForces47){r.clock.tick+=120;r.world.day++;}
 describe('real47 owned and autonomous Army orders',()=>{
+  it('deploys peaceful armies using native garrison pools and retains assignments across days and reload',()=>{
+    const r=islands();for(const rel of r.world.statecraft!.relations)rel.status='peace';for(const war of r.nativeWars.campaigns)war.endedTick=r.clock.tick;
+    issueAutonomousArmyOrders47(r,weights);expect(Object.values(r.armyAutonomy.armies).some(v=>v.decision==='garrison')).toBe(true);
+    const moving=r.world.armies.filter(a=>r.armyPositions.records[a.id].status==='moving');expect(moving.length).toBeGreaterThan(0);
+    const positions=structuredClone(r.armyPositions),targets=Object.values(r.armyAutonomy.armies).map(v=>v.targetId);nextDay(r);issueAutonomousArmyOrders47(r,weights);
+    expect(r.armyPositions).toEqual(positions);expect(Object.values(r.armyAutonomy.armies).map(v=>v.targetId)).toEqual(targets);
+    const reloaded=structuredClone(r);reloaded.armyAutonomy.armies[moving[0].id].decision='busy';nextDay(reloaded);issueAutonomousArmyOrders47(reloaded,weights);expect(reloaded.armyPositions).toEqual(positions);expect(reloaded.armyAutonomy.armies[moving[0].id].decision).toBe('garrison');expect(reloaded.armyAutonomy.armies[moving[0].id].reason).toContain('沿原定路线');
+  });
+  it('retains a provisionally unreachable garrison through rest, reload and retries, invalidating it on war or manual control',()=>{
+    let r=islands();for(const rel of r.world.statecraft!.relations)rel.status='peace';for(const war of r.nativeWars.campaigns)war.endedTick=r.clock.tick;
+    const a=r.world.armies[0],g=actualForces47(r).spatial.graph,origin=armyTravelLocation47(r.armyPositions.records[a.id],g).point;
+    const distant=r.world.provinces.filter(p=>p.controller===a.nationId).sort((p,q)=>Math.hypot(q.center.x-origin.x,q.center.y-origin.y)-Math.hypot(p.center.x-origin.x,p.center.y-origin.y))[0];
+    r.armyAutonomy.armies[a.id].garrisonId=distant.id;a.supplies=35;
+    const before=structuredClone(r.armyPositions.records[a.id]);issueAutonomousArmyOrders47(r,weights);
+    expect(r.armyAutonomy.armies[a.id].garrisonId).toBe(distant.id);expect(r.armyPositions.records[a.id]).toEqual(before);
+    a.supplies=20;nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].decision).toBe('resting');expect(r.armyAutonomy.armies[a.id].garrisonId).toBe(distant.id);
+    r=structuredClone(r);r.world.armies.find(v=>v.id===a.id)!.supplies=35;nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].garrisonId).toBe(distant.id);expect(r.armyPositions.records[a.id]).toEqual(before);
+    r.voyages.manualArmies=[a.id];nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].garrisonId).toBeNull();
+    r.voyages.manualArmies=[];r.armyAutonomy.armies[a.id].garrisonId=distant.id;for(const rel of r.world.statecraft!.relations)rel.status='war';for(const war of r.nativeWars.campaigns)war.endedTick=null;nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].garrisonId).toBeNull();
+  });
+  it('rallies an inland army toward a stocked coast without granting food or teleporting',()=>{
+    const r=islands(),a=r.world.armies[0],g=actualForces47(r).spatial.graph,p=r.world.provinces.filter(p=>p.controller===a.nationId).sort((a,b)=>a.center.x-b.center.x)[0];
+    r.armyPositions.records[a.id]=beginArmyTravel47(a.id,[locateTravelCell47(g,p.center,p.id)!.id],g,p.center);r.tactics.forces[a.id].homeId=p.id;
+    const start=armyTravelLocation47(r.armyPositions.records[a.id],g).point,food=a.supplies;
+    issueAutonomousArmyOrders47(r,weights);const row=r.armyAutonomy.armies[a.id];expect(row.decision,row.reason).toBe('staging');expect(r.world.provinces.find(p=>p.id===row.targetId)!.controller).toBe(a.nationId);expect(a.supplies).toBe(food);expect(armyTravelLocation47(r.armyPositions.records[a.id],g).point).toEqual(start);
+  });
+  it('declines a legal cross-water attack that cannot be provisioned, without consuming food',()=>{
+    const r=islands(),a=r.world.armies[0],before=structuredClone(r.armyPositions.records[a.id]);a.supplies=35;
+    issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].decision).not.toBe('attacking');expect(a.supplies).toBe(35);expect(r.armyPositions.records[a.id].origin).toEqual(before.origin);
+  });
   it('uses one command core without turning automated armies into manual units',()=>{
     const r=islands(),a=r.world.armies[0],p=r.world.provinces.find(p=>p.controller!==a.nationId)!,command={type:'army-move' as const,armyId:a.id,target:{kind:'province' as const,id:p.id},kind:'march' as const};
     const player=applyArmyCommand47(r,command,armyStamp47(r),weights),ai=structuredClone(r);issueArmyOrderOwned47(ai,command,weights,'autonomous');
@@ -83,7 +115,8 @@ describe('real47 owned and autonomous Army orders',()=>{
   });
   it('clears offensive intent after peace without restarting the old route or entering neutral land',()=>{
     const r=islands();issueAutonomousArmyOrders47(r,weights);const a=r.world.armies[0];for(const rel of r.world.statecraft!.relations)rel.status='peace';for(const war of r.nativeWars.campaigns)war.endedTick=r.clock.tick;nextDay(r);issueAutonomousArmyOrders47(r,weights);
-    expect(r.armyPositions.records[a.id].status).toBe('halted');expect(r.armyAutonomy.armies[a.id].decision).toBe('waiting');expect(r.armyAutonomy.armies[a.id].targetId).toBeNull();
+    const g=actualForces47(r).spatial.graph,p=r.armyPositions.records[a.id],row=r.armyAutonomy.armies[a.id],at=armyTravelLocation47(p,g);expect(row.campaignId).toBeNull();expect(at.onLand).toBe(true);expect(r.world.provinces.find(v=>v.id===row.garrisonId)!.controller).toBe(a.nationId);expect(r.world.provinces.find(v=>v.id===at.cell.provinceId)!.controller).toBe(a.nationId);
+    if(p.status==='moving')expect(r.world.provinces.find(v=>v.id===g.cells.get(p.nodes.at(-1)!)!.provinceId)!.controller).toBe(a.nationId);else expect(p.status).toBe('halted');
   });
   it('rests on actual home land when low on food rather than resetting a journey from the stale home anchor',()=>{
     let r=islands();issueAutonomousArmyOrders47(r,weights);r=advanceActualForces47(r,1,weights,actualForceSpeed47).run;const a=r.world.armies[0],g=actualForces47(r).spatial.graph,before=armyTravelLocation47(r.armyPositions.records[a.id],g).point;a.supplies=20;nextDay(r);issueAutonomousArmyOrders47(r,weights);
@@ -95,7 +128,9 @@ describe('real47 owned and autonomous Army orders',()=>{
     const other=r.world.nations.find(n=>n.id!==a.nationId)!.id;for(const p of r.world.provinces)p.controller=other;
     for(const rel of r.world.statecraft!.relations)rel.status='peace';for(const war of r.nativeWars.campaigns)war.endedTick=r.clock.tick;
     nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyAutonomy.armies[a.id].decision).toBe('no-route');expect(r.armyAutonomy.armies[a.id].targetId).toBeNull();expect(r.armyPositions.records[a.id].status).toBe('halted');expect(armyTravelLocation47(r.armyPositions.records[a.id],g).point).toEqual(before);
-    const stopped=structuredClone(r.armyPositions.records[a.id]),events=r.world.nextEventId;nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyPositions.records[a.id]).toEqual(stopped);expect(r.world.nextEventId).toBe(events);
+    // Other living countries now have native garrison deployment; only this
+    // halted army must not emit another stop command on the next day.
+    const stopped=structuredClone(r.armyPositions.records[a.id]),events=r.world.events.filter(e=>e.kind==='order'&&e.text.startsWith(a.name));nextDay(r);issueAutonomousArmyOrders47(r,weights);expect(r.armyPositions.records[a.id]).toEqual(stopped);expect(r.world.events.filter(e=>e.kind==='order'&&e.text.startsWith(a.name))).toEqual(events);
   });
   it('replans a stopped retreat from a newly lost province through a remaining friendly border',()=>{
     const r=islands(),a=r.world.armies[0],g=actualForces47(r).spatial.graph,owned=new Set(r.world.provinces.filter(p=>p.controller===a.nationId).map(p=>p.id)),cell=[...g.cells.values()].find(c=>c.surface==='land'&&owned.has(c.provinceId!)&&c.links.some(l=>{const n=g.cells.get(l.to)!;return n.surface==='land'&&n.provinceId!==c.provinceId&&owned.has(n.provinceId!);}))!;

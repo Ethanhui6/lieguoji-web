@@ -12,7 +12,8 @@ const contested = (world: World, p: Province, space: ArmySpace47) =>
  * schema validation remain separate; this does not run their old land-anchor
  * queries. Consumption rates, population and finite grain accounting persist.
  * Runtime supplies a current, trusted spatial input for each operation. */
-export function createArmyEconomy47(finance: FiscalState, spatial: () => ArmySpaceInput47) {
+export function createArmyEconomy47(finance: FiscalState, spatial: () => ArmySpaceInput47, dayFactor=1) {
+  if(!Number.isFinite(dayFactor)||dayFactor<=0)throw Error('口粮日长无效。');
   const capacity = (p: Province) => finance.provinces[p.id].maxPopulation;
   const production = (p: Province, population: number, occupied: boolean) =>
     Math.floor(Math.min(population, capacity(p)) * (p.terrain === 'plain' ? 1.12 : p.terrain === 'forest' ? 1.04 : 0.82) * (occupied ? 0.5 : 1));
@@ -27,7 +28,7 @@ export function createArmyEconomy47(finance: FiscalState, spatial: () => ArmySpa
       const armies = [...space.byArmy.values()].filter(v => v.army.nationId === nation.id);
       const population = provinces.reduce((sum, p) => sum + economies.get(p.id)!.population, 0);
       const productionPerDay = provinces.reduce((sum, p) => sum + production(p, economies.get(p.id)!.population, contested(world, p, space)), 0);
-      const militaryNeedPerDay = armies.reduce((sum, v) => sum + Math.ceil(rationPoints47(v) * (v.army.troops / 10) / 6), 0);
+      const militaryNeedPerDay = armies.reduce((sum, v) => sum + Math.ceil(rationPoints47(v,dayFactor) * (v.army.troops / 10) / 6), 0);
       return {
         nationId: nation.id, population, grain: provinces.reduce((sum, p) => sum + economies.get(p.id)!.grain, 0),
         productionPerDay, civilianNeedPerDay: population, militaryNeedPerDay,
@@ -47,7 +48,7 @@ export function createArmyEconomy47(finance: FiscalState, spatial: () => ArmySpa
     const management = world.statecraft!;
     const policies = new Map(management.nations.map(p => [p.nationId, p]));
     const provinces = new Map(world.provinces.map(p => [p.id, p]));
-    for (const v of space.byArmy.values()) v.army.supplies = Math.max(0, v.army.supplies - rationPoints47(v));
+    for (const v of space.byArmy.values()) v.army.supplies = Math.max(0, v.army.supplies - rationPoints47(v,dayFactor));
     for (const p of management.nations) p.lastLedger = {day: world.day, openingGrain: 0, production: 0, civilianConsumed: 0, militaryConsumed: 0, territoryTransfer: 0, closingGrain: 0, starvationDeaths: 0};
     for (const economy of management.provinces) {
       const province = provinces.get(economy.provinceId)!;

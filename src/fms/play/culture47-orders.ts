@@ -28,7 +28,7 @@ export function applyMilitary47(run:PoliticalRun47,intent:MilitaryIntent47,expec
  const next=intent.force==='army'?applyArmyCommand47(run,intent.command,expected as ArmyStamp47,weights):applyFleetCommand47(run,intent.command,expected as FleetStamp47,weights);
  if(intent.force==='army'){
   const row=next.armyAutonomy.armies[intent.command.armyId];
-  Object.assign(row,{decision:'manual',targetId:null,campaignId:null,issuedTick:next.clock.tick,nextTick:next.clock.tick,reason:'玩家军令生效，自主决策保留手动控制。'});next.armyAutonomy.revision++;
+  Object.assign(row,{decision:'manual',targetId:null,garrisonId:null,campaignId:null,issuedTick:next.clock.tick,nextTick:next.clock.tick,reason:'玩家军令生效，自主决策保留手动控制。'});next.armyAutonomy.revision++;
  }else{
   const row=next.navalAutonomy.fleets[intent.command.fleetId];
   Object.assign(row,{decision:'manual',assignedPortId:null,issuedTick:next.clock.tick,nextTick:next.clock.tick,reason:'玩家接管舰队，解除原自主目标预订。'});next.navalAutonomy.revision++;

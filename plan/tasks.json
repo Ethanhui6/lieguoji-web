@@ -9123,8 +9123,8 @@
         "approvedDistArtifacts": 67
       },
       "browser": {
-        "status": "running-not-pass",
-        "session": 44710,
+        "status": "interrupted-for-user-gameplay-bug-not-pass",
+        "session": null,
         "registered": 411,
         "expectedExistingSkips": 4,
         "log": ".autopilot/culture47-preview-browser.txt",
@@ -9132,7 +9132,8 @@
         "url": "http://127.0.0.1:5275",
         "serverSession": 70670,
         "artifact": ".autopilot/culture47-preview-52c5626",
-        "buildJsonSha256": "00d465961c8600c22b3669c0c8ab0bd718ea261e393cd10ebe31a41f0b60155e"
+        "buildJsonSha256": "00d465961c8600c22b3669c0c8ab0bd718ea261e393cd10ebe31a41f0b60155e",
+        "lastObservedPassingCase": 323
       },
       "candidatePrivacy": {
         "evidence": "docs/evidence/fms-preview-preparation-2026-10-09/source-candidate.json",
@@ -9162,6 +9163,88 @@
       "webCandidateChanged": false,
       "next": "After current playable candidate verification and bounded preview, freeze existing b365 engine before integrating title data/commands. Keep unexpanded helpers explicit.",
       "helperEvidence": "docs/evidence/fms-official-title-native-2026-10-09/HELPERS.md"
+    },
+    "culture47ActiveWorldCheckpoint": {
+      "date": "2026-10-09",
+      "status": "local-playable-affected-checks-passed-full-replica-incomplete",
+      "task": "WEB-04-37",
+      "baseCommit": "84b5b12706bff218b299baaac1e6e1a19bafe3ef",
+      "engine": "9e23fb69e7bda6b8dd99a2f9bfb31e83c786163c7101dc6ff0df472dcbeba71f",
+      "localURL": "http://127.0.0.1:5278/?fms=1",
+      "artifact": ".autopilot/culture47-active3-checked",
+      "changes": [
+        "Recovered native standard world scale 240x135; new speed mapping 1000/240, b365 frozen",
+        "First-month diplomatic schedule no longer skipped; actual native target-based garrisons with durable identities",
+        "Real army route ration/staging/coastal landing; finite food aligned to new calendar by explicit web bridge",
+        "Reduced repeated geography/sea-graph work and empty occupation copies without skipping ticks or validation",
+        "Actual contact/siege display, display-failure pause/rebuild, view details while time runs"
+      ],
+      "agents": [
+        "native_clock_audit: native PE time/map scale read-only",
+        "native_strategy_audit: native Idle/deployment and persistence review read-only",
+        "live_perf_audit: transaction/cache/position correctness review read-only"
+      ],
+      "evidence": "docs/evidence/fms-active-world-2026-10-09/verification.json",
+      "tests": {
+        "affectedFiles": 16,
+        "affectedCases": 197,
+        "combinedEvidence": true,
+        "wholeSuiteRerun": false,
+        "browserCases": 8,
+        "browserFailed": 0,
+        "browsers": [
+          "desktop Chromium",
+          "mobile-size Chromium"
+        ],
+        "physicalIphone": false,
+        "typecheck": true,
+        "lint": true,
+        "build": true,
+        "distArtifacts": 68
+      },
+      "normalWorld": {
+        "samples": 36864,
+        "countries": 6,
+        "cities": 60,
+        "opening": "war",
+        "desktop": {
+          "day": 9,
+          "elapsedMs": 24249,
+          "armyDistance": 6.2390189331,
+          "fleetDistance": 7.8716340341,
+          "contacts": 1
+        },
+        "mobileEmulation": {
+          "day": 9,
+          "elapsedMs": 23449,
+          "armyDistance": 6.4560436704,
+          "fleetDistance": 7.9247759716,
+          "contacts": 1
+        },
+        "saveReload": "exact tick and positions verified",
+        "pageErrors": 0
+      },
+      "release": "No push or Pages trigger; main, old 5273 world and old engines preserved. Current bounded preview requires full matching checks and privacy binding.",
+      "pending": [
+        "Manual day76 war opening still only six founding chronicle entries; wire actual important mobilization and campaign events without inventing them",
+        "900/1000-day stability and naval campaigns",
+        "Native unscaled naval scheduling and unified monthly owner",
+        "Long-run browser pacing still below original; no FPS equivalence",
+        "Map detail/style and physical iPhone/visual acceptance",
+        "Complete matching release checks and bounded preview fingerprint"
+      ],
+      "manualPlay": {
+        "tab": 13,
+        "day": 76,
+        "saved": true,
+        "errors": 0,
+        "selectedCountry": "建兴帝国",
+        "marchingArmies": 20,
+        "sailingFleets": 1,
+        "actualContacts": 6,
+        "screenshot": "docs/evidence/fms-active-world-2026-10-09/local-play-day76.png",
+        "coldReloadAt76": false
+      }
     }
   }
 }

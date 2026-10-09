@@ -4,7 +4,7 @@ import type {ArmyRouteWeights47} from './army-commands47';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47,haltArmyTravel47,redirectArmyTravelToPoint47,remainingArmyTravelPoints47} from './army-travel47-state';
 import {assertForceContacts47,forceKey47,reconcileForceContactsOwned47} from './force-motion47';
-import {graphFor46} from './war46-geography';
+import {graphFor47 as graphFor46} from './sea-geography47';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import {dailyEvent47} from './civilization47-upkeep';

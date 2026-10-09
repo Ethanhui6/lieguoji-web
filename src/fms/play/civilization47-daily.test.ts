@@ -17,6 +17,7 @@ import {nativeMonthlyEmergencyQuantity} from './native-economy/emergency-muster'
 import {personTraits} from './court16-people';
 import {nativeGoldBattleModifier,defaultPoliticalCombat} from './native-combat/upper-efficiency';
 import {economicEthnic47} from './civilization47-economy';
+import {fleetRation47} from './logistics-clock47';
 
 let base:FoundingForces47,dayOne:FoundingForces47,dayThirty:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -41,7 +42,7 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
   it('sea armies consume once without drawing grain from their stale land anchor',()=>{
     const r=structuredClone(dayOne),a=r.world.armies[0],home=a.provinceId;atSea(r,a.id);a.supplies=50;
     const out=settleCivilizationDay47(r,noOrders),after=out.world.armies.find(v=>v.id===a.id)!;
-    expect(after.supplies).toBe(46);expect(after.provinceId).toBe(home);expect(after.troops).toBe(a.troops);expect(after.morale).toBe(a.morale);
+    expect(after.supplies).toBeCloseTo(50-4/30,10);expect(after.provinceId).toBe(home);expect(after.troops).toBe(a.troops);expect(after.morale).toBe(a.morale);
     expect(armyTravelLocation47(out.armyPositions.records[a.id],actualForces47(out).spatial.graph).onLand).toBe(false);
   });
   it('safe stopped home armies replenish while idle-but-moving armies do not',()=>{
@@ -49,7 +50,7 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
     expect(link).toBeDefined();stock(r,a.provinceId).grain=1_000_000;a.supplies=50;a.morale=50;
     const stopped=settleCivilizationDay47(r,noOrders).world.armies.find(v=>v.id===a.id)!;expect(stopped.supplies).toBeGreaterThan(46);expect(stopped.morale).toBe(53);
     r.armyPositions.records[a.id]=beginArmyTravel47(a.id,[location.cell.id,link.to],graph,location.point);expect(a.status).toBe('idle');
-    const moving=settleCivilizationDay47(r,noOrders).world.armies.find(v=>v.id===a.id)!;expect(moving.supplies).toBe(44);expect(moving.morale).toBe(50);
+    const moving=settleCivilizationDay47(r,noOrders).world.armies.find(v=>v.id===a.id)!;expect(moving.supplies).toBeCloseTo(50-6/30,10);expect(moving.morale).toBe(50);
   });
   it('starvation removes a held force and its deadline without erasing history or inventing combat kills',()=>{
     const r=structuredClone(dayOne),a=r.world.armies[0],b=r.world.armies.find(v=>v.nationId!==a.nationId)!,sea=atSea(r,a.id),graph=actualForces47(r).spatial.graph;
@@ -114,18 +115,18 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
 describe('fleet food uses the actual stopped anchor, not legacy dock IDs',()=>{
   it('refills at the exact owned anchor even with no legacy dock, debiting grain once',()=>{
     const r=structuredClone(dayOne),fleet=r.navy.fleets[0],port=graphFor46(r).ports.find(p=>p.id===fleet.dockId)!,data=stock(r,port.provinceId);expect(fleet).toBeDefined();fleet.dockId=null;fleet.food=0;data.grain=data.population*10+fleet.crew*60+500;const opening=data.grain;settleFleetFood47(r);
-    expect(fleet.food).toBe(fleet.crew*59);expect(data.grain).toBe(opening-fleet.crew*60);expect(r.losses.nations[fleet.nationId].total.crew).toBe(0);
+    expect(fleet.food).toBe(fleet.crew*60-fleetRation47(fleet.crew));expect(data.grain).toBe(opening-fleet.crew*60);expect(r.losses.nations[fleet.nationId].total.crew).toBe(0);
   });
   it('stale dock IDs at sea cannot refill; last full ration does not kill crew',()=>{
-    const r=structuredClone(dayOne),fleet=fleetAway(r),crew=fleet.crew;expect(fleet.dockId).not.toBeNull();fleet.food=crew;settleFleetFood47(r);expect(fleet.food).toBe(0);expect(fleet.crew).toBe(crew);
+    const r=structuredClone(dayOne),fleet=fleetAway(r),crew=fleet.crew;expect(fleet.dockId).not.toBeNull();fleet.food=fleetRation47(crew);settleFleetFood47(r);expect(fleet.food).toBe(0);expect(fleet.crew).toBe(crew);
     settleFleetFood47(r);expect(fleet.crew).toBe(crew-Math.max(1,Math.floor(crew*.05)));expect(r.maritime.hulls[fleet.id]).toBe(fleet.ships*100);expect(r.losses.nations[fleet.nationId].unassigned.crew).toBe(Math.max(1,Math.floor(crew*.05)));
   });
   it('being stopped in the harbor face away from its anchor does not refill',()=>{
     const r=structuredClone(dayOne),fleet=r.navy.fleets[0],graph=actualForces47(r).spatial.graph,at=armyTravelLocation47(r.fleetPositions.records[fleet.id],graph),vertex=at.cell.polygon.find(p=>Math.hypot(p.x-at.point.x,p.y-at.point.y)>1e-4)!;
-    r.fleetPositions.records[fleet.id]=beginArmyTravel47(fleet.id,[at.cell.id],graph,{x:at.point.x*.99+vertex.x*.01,y:at.point.y*.99+vertex.y*.01});fleet.food=fleet.crew;settleFleetFood47(r);expect(fleet.food).toBe(0);
+    r.fleetPositions.records[fleet.id]=beginArmyTravel47(fleet.id,[at.cell.id],graph,{x:at.point.x*.99+vertex.x*.01,y:at.point.y*.99+vertex.y*.01});fleet.food=fleetRation47(fleet.crew);settleFleetFood47(r);expect(fleet.food).toBe(0);
   });
   it('retreating or occupied-port fleets cannot refill even at their old anchor',()=>{
-    for(const mode of ['retreat','occupied']){const r=structuredClone(dayOne),fleet=r.navy.fleets[0],port=graphFor46(r).ports.find(p=>p.id===fleet.dockId)!;fleet.food=fleet.crew;if(mode==='retreat')r.maritime.retreating[fleet.id]=r.clock.tick+1;else r.world.provinces.find(p=>p.id===port.provinceId)!.controller=r.world.nations.find(n=>n.id!==fleet.nationId)!.id;settleFleetFood47(r);expect(fleet.food).toBe(0);}
+    for(const mode of ['retreat','occupied']){const r=structuredClone(dayOne),fleet=r.navy.fleets[0],port=graphFor46(r).ports.find(p=>p.id===fleet.dockId)!;fleet.food=fleetRation47(fleet.crew);if(mode==='retreat')r.maritime.retreating[fleet.id]=r.clock.tick+1;else r.world.provinces.find(p=>p.id===port.provinceId)!.controller=r.world.nations.find(n=>n.id!==fleet.nationId)!.id;settleFleetFood47(r);expect(fleet.food).toBe(0);}
   });
   it('total crew starvation loses the ship at its real position and removes active orders and deadlines',()=>{
     const r=structuredClone(dayOne),fleet=fleetAway(r),position=structuredClone(r.fleetPositions.records[fleet.id]),hull=r.maritime.hulls[fleet.id];fleet.crew=1;fleet.food=0;const out=settleCivilizationDay47(r,noOrders),lost=out.navy.fleets.find(f=>f.id===fleet.id)!;

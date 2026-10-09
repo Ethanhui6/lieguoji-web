@@ -34,10 +34,17 @@ function actionSchema(action: ArmyCommand47) {
   if (action.type !== 'army-move' || !['march', 'retreat'].includes(action.kind) || !exact(action.target, ['kind', 'id']) || (action.target.kind === 'province' ? typeof action.target.id !== 'string' || !action.target.id : action.target.kind !== 'cell' || !integer(action.target.id))) throw Error('行军目标无效。');
 }
 export function armyTravelPolicy47(r: ArmyMotionRun47, a: Army, weights: ArmyRouteWeights47, retreat: boolean): TravelPolicy47 {
+  return armyTravelPolicyFactory47(r,weights)(a,retreat);
+}
+/** One immutable movement phase only. The closure captures this world; discard
+ * it after any ownership/diplomacy change instead of retaining old access. */
+export function armyTravelPolicyFactory47(r:ArmyMotionRun47,weights:ArmyRouteWeights47){
   const access = militaryAccess46(r), provinces = new Map(r.world.provinces.map(p => [p.id, p]));
+  return (a:Army,retreat:boolean):TravelPolicy47=>{
   return {...weights, allowLand: true, allowSea: !r.reorganization.active[a.id], canEnter: id => {
     const p = provinces.get(id); return !!p && (access(r.world, a.nationId, p.controller) || !retreat && nationsAtWar(r.world, a.nationId, p.controller));
   }};
+  };
 }
 const engaged = (r: ArmyMotionRun47, a: Army) => a.status === 'fighting' || r.battles.engagements.some(e => e.armies.includes(a.id)) || !!r.forceContacts?.pairs.some(p=>[p.a,p.b].includes(JSON.stringify(['army',a.id])));
 /** Web retreat contract: stopping at sea is not reaching safety. An actual

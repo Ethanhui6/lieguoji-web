@@ -11,6 +11,7 @@ test('normal war world records real opening goals and monthly mobilization while
  await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect.poll(async()=>Number(await app.getAttribute('data-day')),{timeout:180000,intervals:[500]}).toBeGreaterThanOrEqual(35);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:30000});
  const records=await history.locator('li article>p').allTextContents();expect(records.some(t=>/紧急动员|补充常备|新编|征募/.test(t))).toBe(true);expect(records.length).toBeGreaterThan(opening.length);expect(records.some(t=>t.includes('取得'))).toBe(false);
+ const muster=history.locator('li').filter({hasText:/新编\d+支常备军|紧急动员，征召\d+支军队/}).first();await expect(muster.locator('.c47-history-meta')).toContainText(/征募|紧急动员/);await muster.locator('summary').click();await expect(muster.locator('details')).not.toContainText(/内部人口|真实位置|网页|原月检/);
  const tick=await app.getAttribute('data-tick');await page.screenshot({path:info.outputPath('live-major-history.png')});
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',tick!,{timeout:90000});

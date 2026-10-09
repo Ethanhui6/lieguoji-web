@@ -1,0 +1,210 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-history.spec.ts",
+      "--project",
+      "desktop-chromium",
+      "--project",
+      "mobile-chromium",
+      "--output",
+      ".autopilot/history-ui47-browser-results"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/history-ui47-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/history-ui47-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/history-ui47-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-history.spec.ts",
+      "file": "fms-culture47-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "normal war world records real opening goals and monthly mobilization while history remains open",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 89611,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T21:30:06.818Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "major-history",
+                      "contentType": "application/json",
+                      "body": "eyJ0aWNrIjoiNDk3OSIsIm9wZW5pbmciOlsi56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95ZCR5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi6Jek5Y6f5bid5Zu95ZCR56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR5ZOI6L+q5qC86Zi/6YeM546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu977ya5qC85aWl5bCU5qC8wrfpn6blsJTlpKvlsLHku7vlm73njosiLCLnp5HlsJTlhoXlpaXph4zkuprluJ3lm73vvJrlpJrnsbPmj5DlqIXCt+enkeWwlOWGheiOieWoheWwseS7u+Wls+eahyIsIuWTiOi/quagvOmYv+mHjOeOi+Wbve+8muWusOW+t+WwseS7u+WbveeOiyIsIua0m+WIh+aWr+eJueeOi+Wbve+8mueOm+iSguWwlOi+vsK36I6r6JKC6buY5bCx5Lu75aWz546LIiwi6Jek5Y6f5bid5Zu977ya5b635bed5LmJ57uP5bCx5Lu75aSp55qHIiwi5YWD5Y2O5bid5Zu977ya5ZCV6ZKw5bCx5Lu75aWz55qHIl0sInJlY29yZHMiOlsi5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu957Sn5oCl5Yqo5ZGY77yM5b6B5Y+sOeaUr+WGm+mYnyIsIuWTiOi/quagvOmYv+mHjOeOi+WbveaWsOe8ljHmlK/luLjlpIflhpsiLCLlhYPljY7luJ3lm73ntKfmgKXliqjlkZjvvIzlvoHlj6w25pSv5Yab6ZifIiwi56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95ZCR5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi6Jek5Y6f5bid5Zu95ZCR56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR56eR5bCU5YaF5aWl6YeM5Lqa5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5YWD5Y2O5bid5Zu95ZCR5ZOI6L+q5qC86Zi/6YeM546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5rOV5bCU6IKv5biD5ZCV5YWL546L5Zu977ya5qC85aWl5bCU5qC8wrfpn6blsJTlpKvlsLHku7vlm73njosiLCLnp5HlsJTlhoXlpaXph4zkuprluJ3lm73vvJrlpJrnsbPmj5DlqIXCt+enkeWwlOWGheiOieWoheWwseS7u+Wls+eahyIsIuWTiOi/quagvOmYv+mHjOeOi+Wbve+8muWusOW+t+WwseS7u+WbveeOiyIsIua0m+WIh+aWr+eJueeOi+Wbve+8mueOm+iSguWwlOi+vsK36I6r6JKC6buY5bCx5Lu75aWz546LIiwi6Jek5Y6f5bid5Zu977ya5b635bed5LmJ57uP5bCx5Lu75aSp55qHIiwi5YWD5Y2O5bid5Zu977ya5ZCV6ZKw5bCx5Lu75aWz55qHIl0sImVycm9ycyI6W10sIm5vcm1hbE1hcCI6dHJ1ZSwiaGlzdG9yeU9wZW5XaGlsZVBsYXlpbmciOnRydWUsImV4YWN0UmVzdG9yZSI6dHJ1ZSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7220466d5552c6e77352-af5faa6124c6606299ad",
+          "file": "fms-culture47-history.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "normal war world records real opening goals and monthly mobilization while history remains open",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 88308,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T21:31:37.164Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "major-history",
+                      "contentType": "application/json",
+                      "body": "eyJ0aWNrIjoiNTAwNCIsIm9wZW5pbmciOlsi57u05pav5L2p5aWl57qz5bid5Zu95ZCR6ZyN5oGp55Om5bCU5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi55Ge5rO95bid5Zu95ZCR57u05pav5L2p5aWl57qz5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR6ZyN5oGp55Om5bCU5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR57u05pav5L2p5aWl57qz5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR55Om5bCU5b636LS+6L+q5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi6ZyN5oGp55Om5bCU5b63546L5Zu977ya5qC85aWl5bCU5qC8wrfpn6blsJTlpKvlsLHku7vlm73njosiLCLnu7Tmlq/kvanlpaXnurPluJ3lm73vvJrnp5HlsJTlhoXojonlqIXCt+enkeWwlOWGheiOieWoheWwseS7u+Wls+eahyIsIueTpuWwlOW+t+i0vui/quW+t+eOi+Wbve+8muWusOW+t+WwseS7u+WbveeOiyIsIuWFi+WIqeWkq+iPsuWwlOW+t+eOi+Wbve+8muacseiOieWuieWonMK36Zu35b6356aP5b635bCx5Lu75aWz546LIiwi55Ge5rO95bid5Zu977ya5rWF5LqV5bq35oiQ5bCx5Lu75aSp55qHIiwi5bm/5bqG5bid5Zu977ya6ZW/5a2Z5LqR5bCx5Lu75aWz55qHIl0sInJlY29yZHMiOlsi6ZyN5oGp55Om5bCU5b63546L5Zu957Sn5oCl5Yqo5ZGY77yM5b6B5Y+sMuaUr+WGm+mYnyIsIueTpuWwlOW+t+i0vui/quW+t+eOi+WbveaWsOe8ljHmlK/luLjlpIflhpsiLCLlub/luobluJ3lm73ntKfmgKXliqjlkZjvvIzlvoHlj6w35pSv5Yab6ZifIiwi57u05pav5L2p5aWl57qz5bid5Zu95ZCR6ZyN5oGp55Om5bCU5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi55Ge5rO95bid5Zu95ZCR57u05pav5L2p5aWl57qz5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR6ZyN5oGp55Om5bCU5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR57u05pav5L2p5aWl57qz5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi5bm/5bqG5bid5Zu95ZCR55Om5bCU5b636LS+6L+q5b63546L5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi6ZyN5oGp55Om5bCU5b63546L5Zu977ya5qC85aWl5bCU5qC8wrfpn6blsJTlpKvlsLHku7vlm73njosiLCLnu7Tmlq/kvanlpaXnurPluJ3lm73vvJrnp5HlsJTlhoXojonlqIXCt+enkeWwlOWGheiOieWoheWwseS7u+Wls+eahyIsIueTpuWwlOW+t+i0vui/quW+t+eOi+Wbve+8muWusOW+t+WwseS7u+WbveeOiyIsIuWFi+WIqeWkq+iPsuWwlOW+t+eOi+Wbve+8muacseiOieWuieWonMK36Zu35b6356aP5b635bCx5Lu75aWz546LIiwi55Ge5rO95bid5Zu977ya5rWF5LqV5bq35oiQ5bCx5Lu75aSp55qHIiwi5bm/5bqG5bid5Zu977ya6ZW/5a2Z5LqR5bCx5Lu75aWz55qHIl0sImVycm9ycyI6W10sIm5vcm1hbE1hcCI6dHJ1ZSwiaGlzdG9yeU9wZW5XaGlsZVBsYXlpbmciOnRydWUsImV4YWN0UmVzdG9yZSI6dHJ1ZSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7220466d5552c6e77352-b4ce358dddc7cf30c68a",
+          "file": "fms-culture47-history.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T21:30:06.287Z",
+    "duration": 179614.886,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

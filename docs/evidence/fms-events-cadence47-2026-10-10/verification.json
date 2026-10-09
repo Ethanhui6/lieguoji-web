@@ -6,7 +6,7 @@
   ],
   "status": "local-event-paths-verified-original-pace-and-lifecycle-incomplete",
   "baseCommit": "8b6f406b180805a04f3fdaeb9f7f1a58c7750f2e",
-  "sourceCommit": null,
+  "sourceCommit": "0bbbc15f60786516efce93502f7e3a5e6e61129f",
   "engine": "3d08bb34fe45923f9c65f3ec5c8e7b7545927e566cb35c9aff091641c1b2dd0c",
   "artifact": ".autopilot/culture47-observations-checked",
   "localURL": "http://127.0.0.1:5288/?fms=1",
@@ -49,7 +49,7 @@
     "long-term checkpoints beyond 1000-day replay cap"
   ],
   "unit": {
-    "files": 31,
+    "files": 14,
     "tests": 159,
     "failed": 0
   },
@@ -75,7 +75,7 @@
     "peacefulOpening": true,
     "automaticDeclarations": 2,
     "extinctionAndSettlementObserved": true,
-    "saved": false,
-    "reloaded": false
+    "saved": true,
+    "reloaded": true
   }
 }

@@ -8,7 +8,7 @@ import {assertDailyEconomy47} from './civilization47-daily';
 import {assertCombatPersonnel47} from './civilization47-combat-state';
 import {combatReader47,ownedOccupationCombatReader47} from './civilization47-combat';
 import {advancePortIntervalOwned47,advanceSessionPortInterval47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
-import {advanceSessionActualForces47,contactFrameFromSessionActual47} from './force-runtime47';
+import {advanceSessionActualForces47} from './force-runtime47';
 import {isOwnedTravelWindow47} from './owned-travel47';
 import {issueAutonomousNavalOrders47} from './civilization47-naval-ai';
 import {graphFor47 as graphFor46} from './sea-geography47';
@@ -48,7 +48,7 @@ export function advanceCivilizationMilitary47<T extends FoundingForces47>(input:
     const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed):undefined);
     const end=moved.unusedSeconds===0?stop:from+moved.elapsed;
     if(end>from)advanceSessionPortInterval47(before,moved.run,from,end,sea,start);
-    const {endActual,...result}=moved;return {...result,endFrame:contactFrameFromSessionActual47(moved.run,endActual)};
+    return moved;
   }:undefined,afterTick:fixed?undefined:(r,pending)=>{advanceFamilyCalendar47(r,r.clock.tick,pending);if(!pending)politicalTick?.(r);issueAutonomousNavalOrders47(r,weights,sea);}});
   assertFamilyCalendar47(out.run,out.dailyPending);assertForceSpeed47(out.run.forceSpeed,out.run.world,out.run.clock.tick);return out;
 }

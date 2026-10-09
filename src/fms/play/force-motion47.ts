@@ -82,8 +82,8 @@ export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingF
     seen.add(key);
   }
 }
-function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceContacts47, rules: Rules) {
-  const p = positions(forces, graph), pairs = new Map<string, ForceContact47>(), groups = new Map<string, string[]>();
+function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceContacts47, rules: Rules, ready?:Positions) {
+  const p = ready??positions(forces, graph), pairs = new Map<string, ForceContact47>(), groups = new Map<string, string[]>();
   const eligible = (a: MovingForce47, b: MovingForce47, area: string) => rules.enemy(a.nationId, b.nationId) && (area.startsWith('sea/') || !a.withdrawing && !b.withdrawing);
   for (const c of old.pairs) {
     const a = p.get(c.a), b = p.get(c.b);
@@ -153,8 +153,8 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
       const s=m.f.travel;if(m.edge.kind==='local'){s.offset=m.edge.end;s.status='arrived';}
       else if(s.crossed){s.leg++; s.offset = 0; s.crossed = false;if (s.leg === s.nodes.length - 1) s.status = 'arrived';}
     }
-    const before = positions(forces, graph);
     const requests = movers.filter(m => m.edge.kind==='gate' && m.time <= dt && m.f.travel.status!=='arrived' && !m.f.travel.crossed && m.f.travel.nodes[m.f.travel.leg] === m.edge.from.id && m.f.travel.offset === m.edge.toGate);
+    const before = requests.length?positions(forces, graph):new Map();
     const admitted = requests.filter(m => {if (rules.canEnter(m.f, m.edge.to)) return true; m.f.travel.status = 'blocked'; return false;});
     const stopped = new Set<string>(), meetings: {a: string; b: string; area: string}[] = [];
     // Simultaneous gate exchange is a real contact, never an ID-ordered swap.
@@ -180,7 +180,7 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     }
     const after = positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
-    current = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules);
+    current = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules,after);
     // Yield AFTER simultaneous admission. This also exposes empty-land entry
     // to occupation and changing terrain speed before any further movement.
     if (stopAtEvent && movers.some(reached)) break;
@@ -188,5 +188,5 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
   }
   const result = current;
   assertForceContacts47(result.contacts, forces, graph, rules.seaRegion);
-  return {forces, contacts: result.contacts, held: result.held, exposure, events, elapsed:seconds-remaining, unusedSeconds:remaining};
+  return {forces, contacts: result.contacts, held: result.held, positions:result.positions, exposure, events, elapsed:seconds-remaining, unusedSeconds:remaining};
 }

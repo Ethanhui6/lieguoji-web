@@ -13,6 +13,7 @@ import {settleCivilizationDay47} from './civilization47-daily';
 import {harborCells46} from './war46-harbor';
 import {withOwnedTravel47} from './owned-travel47';
 import {actualForceSpeed47} from './force-speed47';
+import {actualContactFrame47,advanceSessionActualForces47,advanceOwnedActualForces47} from './force-runtime47';
 
 let base:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -27,6 +28,22 @@ const rules:MilitaryRules47<FoundingForces47>={speed:()=>1,combat:()=>noCombat,a
 const json=(r:FoundingForces47):FoundingForces47=>{const {terrain,...mutable}=r;return {...JSON.parse(JSON.stringify(mutable)),terrain};};
 
 describe('actual military interval port occupation',()=>{
+ it.each(['march','retreat'])('reuses only END positions while retaining START and canonical Army references: %s',mode=>{
+  const r=structuredClone(base),army=r.world.armies[0];
+  for(const f of r.navy.fleets)f.patrol=false;
+  const initial=actualContactFrame47(r),at=armyTravelLocation47(r.armyPositions.records[army.id],initial.spatial.graph);
+  const link=at.cell.links.find(l=>initial.spatial.graph.cells.get(l.to)!.provinceId===at.cell.provinceId)!;expect(link).toBeDefined();
+  r.armyPositions.records[army.id]=beginArmyTravel47(army.id,mode==='march'?[at.cell.id,link.to]:[at.cell.id],initial.spatial.graph);
+  army.status=mode==='retreat'?'retreating':'idle';
+  const before=structuredClone(r),generic=advanceOwnedActualForces47(r,1,weights,actualForceSpeed47,true);
+  withOwnedTravel47(()=>{
+   const start=actualContactFrame47(r),startCopy=structuredClone(start),out=advanceSessionActualForces47(r,start,1,weights,actualForceSpeed47);
+   expect(out.run).toEqual(generic.run);expect(out.endFrame).toEqual(actualContactFrame47(out.run));expect(start).toEqual(startCopy);
+   for(const [id,located]of out.endFrame.spatial.space.byArmy){expect(located.army).toBe(out.run.world.armies.find(a=>a.id===id));expect(located.travel).toBe(out.run.armyPositions.records[id]);}
+   expect(out.endFrame.forces.map(forceKey47)).toEqual(start.forces.map(forceKey47));
+   if(mode==='retreat'){expect(out.run.world.armies[0].status).toBe('idle');expect(start.spatial.space.byArmy.get(army.id)!.army.status).toBe('retreating');}
+  });expect(r).toEqual(before);
+ });
  it.each(['ordinary','capture','arrival','contact','retreat'])('fixed session interval matches generic movement and preserves input: %s',scenario=>{
   const {r,fleet,port,sea,graph,cell}=fixture();
   if(scenario==='capture')r.portControl.ports[port.provinceId].value=.001;

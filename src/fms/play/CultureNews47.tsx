@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {NewsQueue,type NewsItem} from './news';
 import type {FoundingForces47} from './civilization47-forces';
-import {CultureHistoryText47,historyDate47} from './CultureHistory47';
+import {CultureHistoryText47,historyDate47,historyPresentation47} from './CultureHistory47';
 import {PlayIcon} from './PlayIcon';
 /** Source-backed 8s major-message dwell, with a 180ms web slide/fade.
  * No empty status strip and no fabricated events to keep it occupied. */
@@ -10,7 +10,7 @@ export function CultureNews47({run,open}:{run:FoundingForces47;open:(id:number|n
   const queue=useRef(new NewsQueue()),active=useRef<NewsItem|null>(null);
   const [shown,setShown]=useState<NewsItem|null>(null),[leaving,setLeaving]=useState(false),[pending,setPending]=useState(0);
   useEffect(()=>{
-    queue.current.ingest(chronicle.entries.filter(e=>e.kind!=='occupation').map(e=>({key:'history-'+e.id,day:e.day,text:e.text,reason:e.reason,priority:'major',location:null,historyId:e.id})));
+    queue.current.ingest(chronicle.entries.filter(e=>e.kind!=='occupation').map(e=>({key:'history-'+e.id,day:e.day,text:e.text,reason:historyPresentation47(e).reason,priority:'major',location:null,historyId:e.id})));
     if(!active.current){active.current=queue.current.next()??null;setLeaving(false);setShown(active.current);}
     setPending(queue.current.count);
   },[chronicle]);

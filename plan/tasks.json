@@ -9263,12 +9263,43 @@
       "browserCases": 12,
       "finalArtifactBrowserCases": 4,
       "physicalIphone": false,
-      "sourceCommit": null,
+      "sourceCommit": "73c54da6f20317974a28cdf5049ef2997a4fb494",
       "pending": [
-        "User now reports stop-start army motion: replace 750ms endpoint tween with real path display buffering",
+        "Superseded by culture47ContinuousDisplayCheckpoint; original speed and physical visual gates remain open",
         "Original military cadence / actual speed still below target",
         "Old worlds remain frozen, no automatic migration",
         "Long-run, full release checks, phone and visual acceptance"
+      ]
+    },
+    "culture47ContinuousDisplayCheckpoint": {
+      "date": "2026-10-09",
+      "task": "WEB-04-37",
+      "status": "local-continuous-display-verified-not-original-equivalent",
+      "sourceCommit": "70f63c5e34057fd2ebf8ce5a4225a332adbc7e4c",
+      "baseCommit": "73c54da6f20317974a28cdf5049ef2997a4fb494",
+      "engine": "f212364628ddb9925a769246d85fdbedac20018f397d8315fd27995a6677f9ba",
+      "localURL": "http://127.0.0.1:5284/?fms=1",
+      "artifact": ".autopilot/culture47-motion2-checked",
+      "evidence": "docs/evidence/fms-continuous-display47-2026-10-09/RESULT.md",
+      "uniqueUnitCases": 63,
+      "finalBrowserCases": 8,
+      "exactNormalMapDays": 4,
+      "approvedDistArtifacts": 70,
+      "physicalIphone": false,
+      "originalVisualEquivalent": false,
+      "pushed": false,
+      "livePlay": {
+        "day": 321,
+        "paused": true,
+        "saved": true,
+        "coldReloadAt321": false,
+        "screenshot": "docs/evidence/fms-continuous-display47-2026-10-09/local-play-day321.png"
+      },
+      "pending": [
+        "Original simulation speed: preserve rules while removing repeated military work",
+        "Long-run and actual frame-time measurement; selected far icon anchor shifts 12px",
+        "Frozen old worlds have conservative route reconstruction only; no silent migration",
+        "Original visual and physical iPhone acceptance, full checks and bounded preview release"
       ]
     }
   }

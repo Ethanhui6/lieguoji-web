@@ -1,8 +1,7 @@
-import {waterRegions47} from './geography-content47';
 import type {War46Run} from './war46-model';
 import type {ArmyRouteWeights47} from './army-commands47';
-import {advanceActualForces47,advanceOwnedActualForces47,actualForces47,type ForceRun47} from './force-runtime47';
-import {assertForceContacts47,forceKey47,reconcileForceContactsOwned47} from './force-motion47';
+import {advanceActualForces47,advanceOwnedActualForces47,actualForces47,actualContactFrame47,type ForceRun47} from './force-runtime47';
+import {forceKey47} from './force-motion47';
 import {assertForceClock47,reconcileAttackClock47,rescheduleAttack47,type ForceClock47} from './force-clock47';
 import {assertForceDamage47,type ForceDamage47} from './force-losses47';
 import {applyAccountedVolley47} from './force-accounting47';
@@ -28,9 +27,7 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   observeMotion?:ForceMotionObserver47;
 };
 function frame(r:MilitaryRun47) {
-  const {spatial,forces}=actualForces47(r),regions=waterRegions47(r.diplomaticGeography);
-  assertForceContacts47(r.forceContacts,forces,spatial.graph,face=>regions.get(face)!);
-  const contact=reconcileForceContactsOwned47(forces,spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),face=>regions.get(face)!);
+  const {spatial,forces,contact}=actualContactFrame47(r);
   r.forceContacts=contact.contacts;
   const space=spatial.space,eligible=new Set<string>();
   for(const f of forces) {

@@ -7,7 +7,7 @@ import {assertForceGeography47} from './force-geography-validation47';
 import {nationsAtWar} from './realtime-statecraft';
 import {militaryAccess46} from './war46-access';
 import {readArmySpace47} from './army-space47';
-import {advanceForceContacts47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
+import {advanceForceContacts47,assertContactRecordsOwned47,reconcileForceContactsOwned47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
 import type {TravelCell47} from './army-travel47-graph';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
@@ -31,6 +31,14 @@ export function actualForces47(r: ForceRun47) {
   const forces: MovingForce47[] = r.world.armies.filter(a => a.troops > 0 && a.status !== 'destroyed').map(a => ({kind: 'army', id: a.id, nationId: a.nationId, withdrawing: a.status === 'retreating', travel: r.armyPositions.records[a.id]}));
   forces.push(...r.navy.fleets.filter(f => f.status !== 'lost' && r.maritime.hulls[f.id] > 0).map(f => ({kind: 'fleet' as const, id: f.id, nationId: f.nationId, withdrawing: (r.maritime.retreating[f.id] ?? 0) > r.clock.tick, travel: r.fleetPositions.records[f.id]})));
   return {spatial, forces};
+}
+/** Validate a complete live position/contact view once in one synchronous
+ * phase. The view must be discarded after any command or owner callback. */
+export function actualContactFrame47(r:ForceRun47){
+  const actual=actualForces47(r),regions=waterRegions47(r.diplomaticGeography),region=(face:number)=>regions.get(face)!;
+  assertContactRecordsOwned47(r.forceContacts,actual.forces,actual.spatial.graph,region);
+  const contact=reconcileForceContactsOwned47(actual.forces,actual.spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),region);
+  return {...actual,contact};
 }
 /** Coupled Army+Fleet movement/contact phase of the private full-session
  * candidate. Does not run the old v46 Army/Navy movers, old road contacts or

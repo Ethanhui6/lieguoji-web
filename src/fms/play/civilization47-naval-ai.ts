@@ -5,7 +5,7 @@ import {nativeAttackFleets,nativeNavalAttacking} from './native-war/naval-roles'
 import {nativeIdlePortWeights,nativeChooseIdlePort,nativeIdleDelay} from './native-war/naval-deployment';
 import {nativePortTarget,nativeBestPort} from './native-war/port-occupation';
 import {nationsAtWar} from './realtime-statecraft';
-import {readArmySpace47,landHolders47} from './army-space47';
+import {landHolders47} from './army-space47';
 import {forceKey47} from './force-motion47';
 import {previewFleetCommand47,issueFleetOrderOwned47,type FleetCommand47} from './fleet-commands47';
 import type {ArmyRouteWeights47} from './army-commands47';
@@ -24,11 +24,20 @@ export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRout
  if(now===s.lastTick)return undefined;
  if(now!==s.lastTick+1||now>Number.MAX_SAFE_INTEGER-1280||s.revision>=Number.MAX_SAFE_INTEGER)throw Error('海军自主部署必须接续整 tick。');
  reconcilePortLandOwnersOwned47(r,sea);
- const view=navalPresence47(r,sea),space=readArmySpace47(r.world,{...view.spatial,positions:r.armyPositions}),war=(id:string)=>r.world.nations.some(n=>nationsAtWar(r.world,id,n.id)),portBefore=JSON.stringify(r.portControl);
+ const view=navalPresence47(r,sea),space=view.spatial.space,portBefore=JSON.stringify(r.portControl);
+ // These dependencies do not change while issuing this tick's fleet orders.
+ // Never retain the queries across ticks: peace, lost ports, grain and actual
+ // land holders can change without a position-book revision.
+ const firstIndex=<T,>(rows:readonly T[],id:(row:T)=>string)=>{const out=new Map<string,T>();for(const row of rows)if(!out.has(id(row)))out.set(id(row),row);return out;};
+ const landById=firstIndex(r.world.provinces,p=>p.id),stockById=firstIndex(r.world.statecraft!.provinces,p=>p.provinceId),portById=firstIndex(view.sea.ports,p=>p.id);
+ const wars=new Map<string,boolean>(),war=(id:string)=>{if(!wars.has(id))wars.set(id,r.world.nations.some(n=>nationsAtWar(r.world,id,n.id)));return wars.get(id)!;};
+ const portsByComponent=new Map<number,typeof sea.ports>(),safeByNation=new Map<string,typeof sea.ports>();
+ const candidatesIn=(component:number)=>{if(!portsByComponent.has(component))portsByComponent.set(component,view.sea.ports.filter(p=>view.sea.nodes.get(p.node)!.component===component));return portsByComponent.get(component)!;};
+ const safeIn=(nationId:string,component:number,low:boolean)=>{const key=JSON.stringify([nationId,component,low]);if(!safeByNation.has(key))safeByNation.set(key,candidatesIn(component).filter(p=>{const land=landById.get(p.provinceId)!,stock=stockById.get(p.provinceId)!;return land.controller===nationId&&land.legalOwner===nationId&&r.portControl.ports[p.provinceId].occupierId===nationId&&!landHolders47(space,p.provinceId).some(a=>nationsAtWar(r.world,nationId,a.nationId))&&(!low||stock.grain>stock.population*10);}));return safeByNation.get(key)!;};
  if(now>=s.nextRoleTick){
   r.portControl.attackFleetIds=r.world.nations.flatMap(n=>!war(n.id)?[]:nativeAttackFleets(view.fleets.filter(v=>v.fleet.nationId===n.id).map(({fleet:f})=>{
-   const home=view.sea.ports.find(p=>p.id===s.fleets[f.id].homePortId),p=home&&r.world.provinces.find(p=>p.id===home.provinceId);
-   const frontline=!!p&&(landHolders47(space,p.id).some(a=>nationsAtWar(r.world,n.id,a.nationId))||p.neighbors.some(id=>nationsAtWar(r.world,n.id,r.world.provinces.find(q=>q.id===id)!.controller)));
+   const home=portById.get(s.fleets[f.id].homePortId!),p=home&&landById.get(home.provinceId);
+   const frontline=!!p&&(landHolders47(space,p.id).some(a=>nationsAtWar(r.world,n.id,a.nationId))||p.neighbors.some(id=>nationsAtWar(r.world,n.id,landById.get(id)!.controller)));
    return {id:f.id,ordinal:r.navy.fleets.findIndex(v=>v.id===f.id),frontline,strength:Math.fround(r.maritime.hulls[f.id]/(f.ships*100))};
   })));
   s.nextRoleTick=now+NAVAL_SCHEDULE_TICKS47;
@@ -43,10 +52,7 @@ export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRout
   if(r.voyages.manualFleets.includes(f.id)||!f.patrol){row.assignedPortId=null;order.active=false;order.targetId=null;note('manual','保留玩家军令；恢复自主指挥后再重新评估。');continue;}
   if(view.held.has(forceKey47({kind:'fleet',id:f.id}))||r.maritime.retreating[f.id]>now){note('busy','实际海战或撤离尚未结束，保留当前航向。');continue;}
   const current=r.fleetPositions.records[f.id],moving=current.status==='moving',component=view.sea.nodes.get(actual.at.cell.face)!.component;
-  const candidates=view.sea.ports.filter(p=>view.sea.nodes.get(p.node)!.component===component),low=f.food<f.crew*30;
-  const safe=candidates.filter(p=>{const land=r.world.provinces.find(q=>q.id===p.provinceId)!,stock=r.world.statecraft!.provinces.find(q=>q.provinceId===p.provinceId)!;
-   return land.controller===f.nationId&&land.legalOwner===f.nationId&&r.portControl.ports[p.provinceId].occupierId===f.nationId&&!landHolders47(space,p.provinceId).some(a=>enemy(a.nationId))&&(!low||stock.grain>stock.population*10);
-  });
+  const candidates=candidatesIn(component),low=f.food<f.crew*30,safe=safeIn(f.nationId,component,low);
   const goal=row.assignedPortId&&candidates.find(p=>p.id===row.assignedPortId),goalAttack=goal&&order.targetId===goal.provinceId&&nativePortTarget(r.portControl.ports[goal.provinceId],f.nationId,enemy),goalHome=goal&&safe.some(p=>p.id===goal.id);
   // Invalidated destinations and new supply emergencies bypass idle reroll
   // cooldown. The old cooldown must never send a ship into a newly lost port.

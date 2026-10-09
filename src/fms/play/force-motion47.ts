@@ -50,13 +50,20 @@ function pair(a: string, b: string, p: Positions, area: string): ForceContact47 
  * At load, exact positions must match. A command may clear obsolete contacts
  * explicitly; it must not repair a corrupt saved contact by moving a unit. */
 export function assertForceContacts47(value: ForceContacts47, forces: MovingForce47[], graph: TravelGraph47, seaRegion: Rules['seaRegion']) {
+  for(const f of forces){assertArmyTravel47(f.travel,graph);if(f.kind==='fleet'&&f.travel.nodes.some(id=>graph.cells.get(id)!.surface!=='sea'))throw Error('舰队航线进入陆地。');}
+  assertContactRecordsOwned47(value,forces,graph,seaRegion);
+}
+/** Only the actualContactFrame47 composition may call this immediately after
+ * actualForces47 has validated both complete travel ledgers and fleet surfaces.
+ * No caller-supplied validation switch and no reusable/cross-tick witness. */
+export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingForce47[],graph:TravelGraph47,seaRegion:Rules['seaRegion']){
   const keys = new Set<string>();
   for (const f of forces) {
     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId || typeof f.withdrawing !== 'boolean' || f.travel.armyId !== f.id || keys.has(forceKey47(f))) throw Error('统一部队身份无效。');
-    keys.add(forceKey47(f)); assertArmyTravel47(f.travel, graph);
-    if (f.kind === 'fleet' && f.travel.nodes.some(id => graph.cells.get(id)!.surface !== 'sea')) throw Error('舰队航线进入陆地。');
+    keys.add(forceKey47(f));
   }
   if (!value || Object.keys(value).sort().join('/') !== 'pairs/version' || value.version !== 1 || !Array.isArray(value.pairs) || value.pairs.length > forces.length * Math.max(0, forces.length - 1) / 2) throw Error('统一交锋记录无效。');
+  if(!value.pairs.length)return;
   const p = positions(forces, graph), seen = new Set<string>();
   for (const c of value.pairs) {
     const a = p.get(c.a), b = p.get(c.b), key = pairKey(c.a, c.b);
@@ -119,9 +126,10 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
   // The military clock must see a contact beginning at time zero before it
   // chooses an attack deadline. Ordinary movement callers still consume dt.
   if (stopAtEvent && contactIdentity(initial.contacts) !== contactIdentity(book)) return {...initial, forces, exposure, events, elapsed:0, unusedSeconds:seconds};
+  let current=initial;
   while (remaining > 0) {
     if (++events > maxEvents) throw Error('统一行军事件超出预算，原世界未提交。');
-    const current = contacts(forces, graph, book, rules); book = current.contacts;
+    book = current.contacts;
     const movers = forces.flatMap(f => {
       if (current.held.has(forceKey47(f)) || ['arrived', 'halted'].includes(f.travel.status)) return [];
       const s = f.travel, edge = segment(f, graph)!;
@@ -171,13 +179,13 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     }
     const after = positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
-    book = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules).contacts;
+    current = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules);
     // Yield AFTER simultaneous admission. This also exposes empty-land entry
     // to occupation and changing terrain speed before any further movement.
     if (stopAtEvent && movers.some(reached)) break;
     if (dt === 0 && !admitted.length && !movers.some(m => m.time <= dt)) throw Error('统一行军未消费事件，原世界未提交。');
   }
-  const result = contacts(forces, graph, book, rules);
+  const result = current;
   assertForceContacts47(result.contacts, forces, graph, rules.seaRegion);
   return {forces, contacts: result.contacts, held: result.held, exposure, events, elapsed:seconds-remaining, unusedSeconds:remaining};
 }

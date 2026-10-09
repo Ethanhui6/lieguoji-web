@@ -17,6 +17,20 @@ function phase(r:FoundingForces47){r.clock.tick++;issueAutonomousNavalOrders47(r
 function offAnchor(){const r=structuredClone(base),view=navalPresence47(r),f=r.navy.fleets[0],at=armyTravelLocation47(r.fleetPositions.records[f.id],view.spatial.graph),v=at.cell.polygon.find(v=>Math.hypot(v.x-at.point.x,v.y-at.point.y)>1e-4)!;
  const point={x:at.point.x*.999+v.x*.001,y:at.point.y*.999+v.y*.001};r.fleetPositions.records[f.id]=beginArmyTravel47(f.id,[at.cell.id],view.spatial.graph,point);const home=view.sea.ports.find(p=>p.id===f.dockId)!;return{r,f,view,point,home};}
 describe('persistent actual-position naval autonomy',()=>{
+ it('does not share low-food exclusions with a stocked fleet of the same nation in either iteration order',()=>{
+  for(const reverse of [false,true]){
+   const r=structuredClone(base),view=navalPresence47(r),[low,stocked]=r.navy.fleets;expect(low).toBeDefined();expect(stocked).toBeDefined();
+   const at=armyTravelLocation47(r.fleetPositions.records[low.id],view.spatial.graph);stocked.nationId=low.nationId;
+   r.fleetPositions.records[stocked.id]=beginArmyTravel47(stocked.id,[at.cell.id],view.spatial.graph,at.point);
+   for(const p of r.world.provinces)p.controller=p.legalOwner=low.nationId;
+   for(const stock of r.world.statecraft!.provinces)stock.grain=0;
+   for(const f of r.navy.fleets)f.patrol=f===low||f===stocked;
+   low.food=low.crew;stocked.food=stocked.crew*60;reconcilePortLandOwnersOwned47(r);
+   if(reverse)r.navy.fleets.reverse();phase(r);
+   expect(r.navalAutonomy.fleets[low.id].decision).toBe('no-route');expect(r.navalAutonomy.fleets[low.id].assignedPortId).toBeNull();
+   expect(r.navalAutonomy.fleets[stocked.id].decision).toBe('guarding');expect(r.navalAutonomy.fleets[stocked.id].assignedPortId).not.toBeNull();
+  }
+ });
  it('records qualified founding homes and rejects unknown state without using legacy fleet node',()=>{
   assertNavalAutonomy47(base);for(const f of base.navy.fleets)expect(base.navalAutonomy.fleets[f.id].homePortId).toBe(f.dockId);
   const {r,f}=offAnchor();f.node=-1;f.food=f.crew*3;phase(r);expect(r.navalAutonomy.fleets[f.id].decision).toBe('resupply');

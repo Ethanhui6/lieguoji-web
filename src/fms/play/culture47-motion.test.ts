@@ -11,6 +11,20 @@ function snapshot(tick:number,sequence:number,point={x:0,y:0},path?:ForceTracePo
 const noGeometry=()=>{throw Error('Trace playback must not rebuild geography');};
 function graph():TravelGraph47{return{scale:1,polygonWork:0,byProvince:new Map(),cells:new Map([0,1,2].map(id=>[id,{id,face:id,surface:'sea',provinceId:null,center:{x:5+id*10,y:5},polygon:[{x:id*10,y:0},{x:id*10+10,y:0},{x:id*10+10,y:10},{x:id*10,y:10}],links:[...(id?[{to:id-1,gate:{x:id*10,y:5},distance:10,toGate:5}]:[]),...(id<2?[{to:id+1,gate:{x:id*10+10,y:5},distance:10,toGate:5}]:[])]}]))};}
 describe('actual47 completed-path presentation',()=>{
+ it('stretches only the accepted tail before a larger next request without predicting new positions',()=>{
+  const clock=new CultureMotion47();clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);clock.recordAdvance(10,2000);
+  clock.install(snapshot(10,1,{x:10,y:0},[p(0,0),p(10,10)]),2000,noGeometry);
+  const pose=clock.frame(2100).armies.get('a');clock.beginAdvance(40,2100);expect(clock.frame(2100).armies.get('a')).toEqual(pose);
+  expect(clock.frame(6000).armies.get('a')!.x).toBeGreaterThan(clock.frame(5000).armies.get('a')!.x);expect(clock.frame(10000).armies.get('a')!.x).toBeLessThan(10);
+  expect(clock.frame(100000).armies.get('a')).toMatchObject({x:10,y:0});
+ });
+ it('does not compress the tail to 160ms when a late reply arrives just after resume',()=>{
+  const clock=new CultureMotion47();clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);
+  clock.install(snapshot(10,1,{x:10,y:0},[p(0,0),p(10,10)]),1000,noGeometry);clock.setRunning(false,1300);
+  const paused=clock.frame(1300).armies.get('a');clock.setRunning(true,5000);expect(clock.frame(5000).armies.get('a')).toEqual(paused);
+  clock.install(snapshot(20,2,{x:20,y:0},[p(10,10),p(20,20)],10),5050,noGeometry);
+  expect(clock.frame(5250).armies.get('a')!.x).toBeLessThan(12);expect(clock.frame(5300).armies.get('a')!.x).toBeGreaterThan(clock.frame(5250).armies.get('a')!.x);
+ });
  it('reconstructs old routes through both real gates and exact V2 endpoints, rejecting route resets',()=>{
   const g=graph(),a=beginArmyTravel47('a',[0,1,2],g),b=advanceArmyTravel47(a,g,100,()=>1,()=>true).travel;
   expect(provedTravelTrack47(a,b,g)).toEqual([{x:5,y:5},{x:10,y:5},{x:15,y:5},{x:20,y:5},{x:25,y:5}]);

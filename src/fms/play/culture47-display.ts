@@ -1,4 +1,5 @@
 import type {Culture47Session,Culture47Journal} from './culture47-session';
+import type {ForceDisplayTrace47} from './force-display-trace47';
 
 type Snapshot=ReturnType<Culture47Session['snapshot']>;
 type Static={terrain:Snapshot['run']['terrain'];geography:Snapshot['run']['diplomaticGeography'];opening:Culture47Journal['opening']};
@@ -11,9 +12,9 @@ function freezeDisplayPlain(value:unknown):boolean {
  let immutable=true;for(const item of Object.values(value))if(!freezeDisplayPlain(item))immutable=false;
  Object.freeze(value);fixedPlain.set(value,immutable);return immutable;
 }
-export type Culture47DisplayPacket=
+export type Culture47DisplayPacket=(
  |{kind:'full';base:string;snapshot:Snapshot}
- |{kind:'update';base:string;from:number;run:DynamicRun;journal:Omit<Culture47Journal,'opening'>;frame:Snapshot['frame']};
+ |{kind:'update';base:string;from:number;run:DynamicRun;journal:Omit<Culture47Journal,'opening'>;frame:Snapshot['frame']})&{motion?:ForceDisplayTrace47};
 
 /** Exact structured data, including every terrain neighbor and lock sample.
  * Typed arrays are compared as bytes rather than allocating a property
@@ -65,16 +66,27 @@ export class Culture47DisplayDecoder {
  private world='';
  private engine='';
  private sequence=0;
- decode(packet:Culture47DisplayPacket,expected:{engine:string;sequence?:number;actions?:number}):Snapshot {
+ private tick=0;
+ decode(packet:Culture47DisplayPacket,expected:{engine:string;sequence?:number;actions?:number}):Snapshot&{motion?:ForceDisplayTrace47} {
   if(packet.kind==='full'){
    const s=packet.snapshot;
    if(expected.sequence!==undefined||s.journal.engine!==expected.engine||s.run.id!==s.journal.id||!packet.base)throw Error('显示基线不匹配。');
    this.baseline=fixed(s);freezeDisplayPlain(this.baseline);this.witness=structuredClone(this.baseline);freezeDisplayPlain(this.witness);this.base=packet.base;
-   this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;return s;
+   this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return s;
   }
   if(!this.baseline||!this.witness||packet.base!==this.base||packet.from!==this.sequence||expected.sequence!==this.sequence||packet.journal.actions.length!==this.sequence+(expected.actions??1)||packet.journal.id!==this.world||packet.journal.engine!==this.engine||packet.journal.engine!==expected.engine||packet.run.id!==this.world||'terrain'in packet.run||'diplomaticGeography'in packet.run||'opening'in packet.journal)throw Error('显示增量不匹配，保留最后确认的进度。');
   if(!sameDisplayStatic47(this.baseline,this.witness))throw Error('显示基图被修改，保留最后确认的进度。');
   const s:Snapshot={run:{...packet.run,terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...packet.journal,opening:this.baseline.opening},frame:packet.frame};
-  this.sequence=s.journal.actions.length;return s;
+  const motion=packet.motion;
+  if(motion){
+   if(motion.runId!==this.world||motion.fromSequence!==this.sequence||motion.toSequence!==s.journal.actions.length||motion.fromTick!==this.tick||motion.toTick!==s.run.clock.tick||motion.toTick<=motion.fromTick)throw Error('行军显示轨迹不属于当前推进。');
+   let size=0;for(const kind of ['armies','fleets'] as const)for(const [id,path] of Object.entries(motion[kind])){
+    if(!Array.isArray(path)||!path.length||path.length>8192)throw Error('行军显示轨迹无效。');
+    let tick=motion.fromTick;for(let i=0;i<path.length;i++){const p=path[i];if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(p.tick)||p.tick<tick||p.tick>motion.toTick||i>0&&p.tick===tick)throw Error('行军显示轨迹时间无效。');tick=p.tick;}
+    const end=s.frame[kind].get(id),last=path.at(-1)!;if(end&&Math.hypot(end.x-last.x,end.y-last.y)>1e-7)throw Error('行军显示终点不一致。');
+    size+=path.length;if(size>200000)throw Error('行军显示轨迹超出预算。');
+   }
+  }
+  this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return motion?{...s,motion}:s;
  }
 }

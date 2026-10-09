@@ -12,13 +12,13 @@ import {CULTURE_IDS47,CULTURES47,RELIGIONS47,POLITIES47,culture47,type CultureId
 import {currentRuler47,type CultureChoice47,type CivilizationEdit47} from './civilization47-names';
 import {Culture47Client} from './culture47-client';
 import {sameCulture47Value} from './culture47-equal';
-import {Culture47Unavailable} from './culture47-contract';
+import {Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import type {Culture47Snapshot,Culture47Request as WorkerRequest} from './culture47.worker';
 import type {Culture47Action,Culture47Journal} from './culture47-session';
 import {loadCulture47,saveCulture47,type SavedCulture47} from './culture47-storage';
 import {previewFamilySuccession47} from './civilization47-succession';
 import {graphFor46} from './war46-geography';
-import type {DisplayFrame} from './motion';
+import {CultureMotion47} from './CultureMotion47';
 import type {FoundingForces47} from './civilization47-forces';
 import type {NativePolity} from './native-combat/upper-efficiency';
 import './culture47.css';
@@ -74,6 +74,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
   const [actualRate,setActualRate]=useState<number|null>(null),rateSample=useRef<{at:number;tick:number}|null>(null);
+  const instantDisplay=useRef(false);
   useEffect(()=>{rateSample.current=null;setActualRate(null);},[playing,speed]);
   const storageAbort=useRef<AbortController|null>(null),operation=useRef<AbortController|null>(null);
   const [recovering,setRecovering]=useState(false),resumeAfterRecovery=useRef(false);
@@ -137,6 +138,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     const dispatched=command.type==='action'&&(command.action.kind==='advance'||command.action.kind==='identity'||command.action.kind==='succession')&&current.current?{...command,sequence:current.current.journal.actions.length}:command;
     try{const s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;
+      instantDisplay.current=isAdvance&&!background||command.type==='create'||command.type==='load';
       current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
     catch(e){if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice(failText(e)+(client.current?.isClosed?(current.current?' 点击继续可恢复最后确认的进度。':' 可以重新点击创建或继续世界；原档保留。'):''));}}
     finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);setAdvancing(false);drain();}}
@@ -154,9 +156,9 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     finally{operation.current=null;inflight.current=false;resumeAfterRecovery.current=false;if(!lifetime.current?.signal.aborted){setRecovering(false);setBusy(false);}}
   }
   useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
-  usePresentationClock({enabled:playing,policyKey:busy,tickMillis:(snapshot?.run.life.secondsPerDay??.1)*1000/120/speed,maxBatch:snapshot?.journal.engine===__CULTURE47_ENGINE__?Math.min(480,Math.max(120,Math.round(speed*120))):120,playing:()=>playing,
+  usePresentationClock({enabled:playing,policyKey:busy,tickMillis:(snapshot?.run.life.secondsPerDay??.1)*1000/120/speed,maxBatch:(snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2)?Math.min(480,Math.max(120,Math.round(speed*120))):120,playing:()=>playing,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
-    step:async ticks=>{const s=current.current;if(s)await send(s.journal.engine===__CULTURE47_ENGINE__?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
+    step:async ticks=>{const s=current.current;if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
   const requestMilitary=(intent:MilitaryIntent47)=>{setPlaying(false);setTargetMode(null);setPanel('military');void send({type:'military-preview',intent});};
   const chooseForce=(value:SelectedForce47)=>{previewEpoch.current.military++;selected.current.force=value;setForce(value);setMilitaryPreview(null);setTargetMode(null);setPanel('military');};
   const interaction=useRef({requestMilitary,chooseForce});interaction.current={requestMilitary,chooseForce};
@@ -169,15 +171,18 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   function requestClose(){setPlaying(false);if(inflight.current){if(!queued.current){queued.current={kind:'close'};setBusy(true);}return;}if(current.current&&lastSaved.current!==current.current.journal.actions.length)setLeaving(true);else onClose();}
   useEffect(()=>{const protect=(e:BeforeUnloadEvent)=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[]);
   const runId=snapshot?.run.id;
-  const transition=useRef<{id:string;from:DisplayFrame;to:DisplayFrame;start:number;duration:number}|null>(null);
-  function displayFrame(){const t=transition.current;if(!t)return current.current!.frame;const alpha=t.duration?Math.min(1,(performance.now()-t.start)/t.duration):1;const mix=(a:Map<string,{x:number;y:number}>,b:Map<string,{x:number;y:number}>)=>new Map([...b].map(([id,p])=>{const q=a.get(id)??p;return[id,{x:q.x+(p.x-q.x)*alpha,y:q.y+(p.y-q.y)*alpha}];}));return{armies:mix(t.from.armies,t.to.armies),fleets:mix(t.from.fleets,t.to.fleets),alpha};}
-  useEffect(()=>{if(!snapshot)return;const now=performance.now(),old=transition.current,from=old&&old.id===snapshot.run.id?displayFrame():snapshot.frame;transition.current={id:snapshot.run.id,from,to:snapshot.frame,start:now,duration:old&&old.id===snapshot.run.id?Math.min(750,Math.max(150,now-old.start)):0};},[snapshot]);
+  const motion=useRef(new CultureMotion47());
+  function displayFrame(){return motion.current.frame(performance.now());}
+  useEffect(()=>{if(snapshot)motion.current.install(snapshot,performance.now(),()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);},[snapshot]);
+  useEffect(()=>{motion.current.setRunning(playing&&!renderFault,performance.now());},[playing,renderFault]);
   useEffect(()=>{
     if(!runId||!host.current||!current.current)return;
     displayReady.current=false;
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,renderer=new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current()),orderLine=new Graphics(),combatLayer=new Graphics();
+    // Pulsing contact geometry must not invalidate the terrain/label render group.
+    combatLayer.enableRenderGroup();
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
     const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):fitCamera(source,viewport)};
     let combat:ReturnType<typeof combatMarkers47>=[],combatRun:FoundingForces47|null=null;
@@ -216,7 +221,20 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
-      let raf=0,settled:typeof transition.current=null;const animate=()=>{if(disposed||failed)return;try{const frame=displayFrame(),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');if(frame.alpha<1||settled!==transition.current){map.updateUnits(frame);if(animateCombat)drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(performance.now()/240));renderer.refresh();if(frame.alpha===1)settled=transition.current;}raf=requestAnimationFrame(animate);}catch(e){displayFailed(e);}};
+      let raf=0,settled=-1,lastDiagnostic=0;
+      const animate=()=>{if(disposed||failed)return;try{
+        const now=performance.now(),alpha=motion.current.alpha(now),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');
+        if(isPlaying.current&&alpha<1||settled!==motion.current.revision||animateCombat){
+          const frame=motion.current.frame(now);map.updateUnits(frame);
+          if(animateCombat)drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));
+          // Evidence sampling is independent of the display refresh rate.
+          if(now-lastDiagnostic>=100||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
+            canvas.dataset.displayTick=String(motion.current.tick(now));canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());lastDiagnostic=now;
+          }
+          renderer.refresh();settled=alpha===1||!isPlaying.current?motion.current.revision:-1;
+        }
+        raf=requestAnimationFrame(animate);
+      }catch(e){displayFailed(e);}};
       cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});

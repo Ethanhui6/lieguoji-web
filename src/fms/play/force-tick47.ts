@@ -12,6 +12,7 @@ import type {World} from '../../sim/types';
 import {TICKS_PER_DAY} from './clock';
 import type {War28World} from './war47-wars';
 import {cloneMilitaryCandidate47,shareUnchangedProvinceGeometry47} from './geography-content47';
+import type {ForceMotionObserver47} from './force-display-trace47';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
 export type MilitaryRules47<T extends MilitaryRun47> = {
@@ -24,6 +25,7 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   afterOccupation?: (candidate:T)=>undefined;
   afterOwnership?: (candidate:T,previousWorld:World)=>void;
   portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
+  observeMotion?:ForceMotionObserver47;
 };
 function frame(r:MilitaryRun47) {
   const {spatial,forces}=actualForces47(r),regions=waterRegions47(r.diplomaticGeography);
@@ -92,7 +94,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
       }
       if(now===tick)break;
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
-      const moved=advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true);
+      const moved=advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed):undefined);
       // Assign an exact known endpoint when the interval was consumed; avoid
       // arithmetic residue causing a phantom delayed/missed attack at save.
       const end=moved.unusedSeconds===0?stop:now+moved.elapsed;

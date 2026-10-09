@@ -16,8 +16,8 @@ async function installOriginal(page:Page,entry:typeof frozen[number]){
   if(!filename)throw Error('Missing reviewed frozen worker');
   const terrain=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);
   return page.evaluate(async({filename,terrain})=>{
-    const worker=new Worker('/assets/'+filename,{type:'module'});let id=0;
-    const send=(command:unknown)=>new Promise<{journal:Culture47Journal}>((resolve,reject)=>{worker.onmessage=e=>e.data.error?reject(Error(e.data.error)):resolve(e.data.snapshot);worker.onerror=()=>reject(Error('Original worker failed'));worker.postMessage({id:++id,command});});
+    const worker=new Worker('/assets/'+filename,{type:'module'});let id=0,lastJournal:Culture47Journal|undefined;
+    const send=(command:unknown)=>new Promise<{journal:Culture47Journal}>((resolve,reject)=>{worker.onmessage=e=>{if(e.data.progress)return;if(e.data.error){reject(Error(e.data.error));return;}const s=e.data.snapshot??e.data.display?.snapshot??e.data.display;lastJournal={...lastJournal,...s.journal};resolve({journal:lastJournal!});};worker.onerror=()=>reject(Error('Original worker failed'));worker.postMessage({id:++id,command});});
     const t={...terrain,triangles:new Uint32Array(terrain.triangles),elevations:new Int32Array(terrain.elevations)};
     await send({type:'create',opening:{terrain:t,count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}});
     const {journal}=await send({type:'action',sequence:0,action:{kind:'advance',ticks:5}});worker.terminate();

@@ -105,7 +105,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame,combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
@@ -203,7 +203,7 @@ export class PlayMap {
       if(active){directions.moveTo(points[0].x,points[0].y);for(const p of points.slice(1))directions.lineTo(p.x,p.y);directions.stroke({color:preview?0xffffff:0xffecc0,width:1.5*pixel,alpha:.8});for(const id of plan?.targets??[]){const p=provinces.get(id)!.center;directions.circle(p.x/scale,p.y/scale,3*pixel).stroke({color:0xfff2c9,width:pixel});}}
       if(combat&&(active||(detail!=='overview'&&foreign&&a.status==='marching'&&(perTarget.get(key)??0)<2&&arrows<(detail==='regional'?6:14)))){const color=preview?0xfff0b0:nationColor(nations.get(a.nationId)!);if(preview)drawAttackArrow(directions,points,pixel,color,true);else{const graphic=new Graphics();this.layer.addChild(graphic);this.arrowWidgets.push({id:a.id,graphic,points,pixel,color});drawAttackArrow(graphic,points,pixel,color,false,this.orderMotion.growth(a.id));}perTarget.set(key,(perTarget.get(key)??0)+1);arrows++;}
     }
-    for (const marker of armyMarkers(world,scale,{x:0,y:0,scale:zoom},armyId,frame?.armies)) {
+    for (const marker of armyMarkers(world,scale,{x:0,y:0,scale:zoom},armyId,frame?.armies,frame?.independentArmies)) {
       const army=byArmy.get(marker.ids[0])!,active=marker.ids.includes(armyId??'');
       const battle=combat?.state.engagements.find(e=>e.armies.includes(army.id));
       const force=marker.ids.reduce((sum,id)=>sum+(byArmy.get(id)?.troops??0),0);

@@ -13,6 +13,7 @@ import {sameCulture47Value} from './culture47-equal';
 import {Culture47DisplayEncoder} from './culture47-display';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
+import {ForceDisplayTraceCollector47,type ForceMotionObserver47} from './force-display-trace47';
 import type {DisplayFrame} from './motion';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {previewMilitary47,applyMilitary47,assertMilitaryIntent47,assertMilitaryExpected47,type MilitaryIntent47,type MilitaryExpected47} from './culture47-orders';
@@ -52,11 +53,11 @@ export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   throw Error('未知文化命令或未来字段，原世界未改动。');
 }
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
-function apply(r:PoliticalRun47,a:Culture47Action):PoliticalRun47 {
+function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47):PoliticalRun47 {
   assertCulture47Action(a);
   if(a.kind==='advance'){
     let next=r,remaining=a.ticks;
-    while(remaining){const take=Math.min(remaining,120-next.clock.tick%120),out=advanceCivilizationMilitary47(next,take,weights,recordPoliticalOccupation47,finishPoliticalTick47);next=out.dailyPending?settleArmyAutonomyDay47(out.run,weights):out.run;advancePolitics47(next,out.dailyPending);remaining-=take;}
+    while(remaining){const take=Math.min(remaining,120-next.clock.tick%120),out=advanceCivilizationMilitary47(next,take,weights,recordPoliticalOccupation47,finishPoliticalTick47,observe);next=out.dailyPending?settleArmyAutonomyDay47(out.run,weights):out.run;advancePolitics47(next,out.dailyPending);remaining-=take;}
     assertPopulation47(next);assertArmyAutonomy47(next);assertNavalAutonomy47(next);return next;
   }
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
@@ -110,12 +111,12 @@ export class Culture47Session {
   }
   executeDisplay(actions:Culture47Action[],sequence:number){
     if(!Array.isArray(actions)||actions.length<1||actions.length>4||actions.length>1&&actions.some(a=>a.kind!=='advance'))throw Error('推进批次无效，原进度保持。');
-    const previous=this.state;
-    try {this.append(actions,sequence);return this.displaySnapshot();}
+    const previous=this.state,trace=previous&&actions.every(a=>a.kind==='advance')?new ForceDisplayTraceCollector47(previous.run.id,sequence,previous.run.clock.tick):undefined;
+    try {this.append(actions,sequence,trace?.observe);const packet=this.displaySnapshot(),motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
     catch(error){this.state=previous;throw error;}
   }
   displaySnapshot(){if(!this.state)throw Error('请先创建世界。');const {run,journal}=this.state;return this.display.encode({run,journal,frame:culture47Frame(run)});}
-  private append(actions:Culture47Action[],sequence:number){
+  private append(actions:Culture47Action[],sequence:number,observe?:ForceMotionObserver47){
     const s=this.state;if(!s||sequence!==s.journal.actions.length)throw Error('世界已经推进，请重新操作。');
     const accepted=structuredClone(actions);let ticks=s.ticks;
     for(const action of accepted){assertCulture47Action(action);if(action.kind==='advance')ticks+=action.ticks;}
@@ -124,7 +125,7 @@ export class Culture47Session {
     // Header and previous actions are privately owned and validated at ingress.
     // Only commit after every action and numeric-geography window succeeds.
     let run=s.run;
-    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);}
+    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action,observe));prepareOwnedGeography47(run);}
     this.state={run,journal:{...s.journal,actions:[...s.journal.actions,...accepted]},ticks};
   }
   snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');const {run,journal}=this.state;return structuredClone({run,journal,frame:culture47Frame(run)});}

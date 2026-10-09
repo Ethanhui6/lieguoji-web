@@ -10,6 +10,7 @@ import {readArmySpace47} from './army-space47';
 import {advanceForceContacts47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
 import type {TravelCell47} from './army-travel47-graph';
 import {cloneMilitaryCandidate47} from './geography-content47';
+import type {ForceMotionObserver47} from './force-display-trace47';
 
 /** Army and Fleet have separate, equally authoritative travel ledgers. Fleet
  * legacy node/route is not rewritten to fake an arbitrary shore-gate origin.
@@ -42,16 +43,17 @@ export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: n
  * view of those fields for exact port exposure, without copying every family,
  * treasury and historical entry again at every fractional movement event.
  * Only the window owner may subsequently mutate shared unrelated ledgers. */
-export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent=false){
+export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent=false,observe?:ForceMotionObserver47){
   // The contact kernel clones each travel record before changing it. Copy the
   // two books/record tables here, retaining the original START view for port
   // exposure, without cloning those same routes twice per movement interval.
   const next={...input,world:{...input.world,armies:structuredClone(input.world.armies)},armyPositions:{...input.armyPositions,records:{...input.armyPositions.records}},fleetPositions:{...input.fleetPositions,records:{...input.fleetPositions.records}}};
-  return advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent);
+  return advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent,observe);
 }
-function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean){
+function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47){
   for (const book of [next.armyPositions, next.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
   const {spatial, forces} = actualForces47(next);
+  observe?.(forces,spatial.graph,0);
   const regions = waterRegions47(next.diplomaticGeography);
   const policies = new Map(next.world.armies.map(a => [a.id, armyTravelPolicy47(next, a, weights, a.status === 'retreating')]));
   const out = advanceForceContacts47(forces, next.forceContacts, spatial.graph, seconds, {
@@ -59,6 +61,7 @@ function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,we
     canEnter: (f, c) => f.kind === 'fleet' ? c.surface === 'sea' : c.surface === 'sea' ? policies.get(f.id)!.allowSea : policies.get(f.id)!.canEnter(c.provinceId!),
     speed: (f, c) => speed(next, f, c),
   }, 100000, stopAtEvent);
+  observe?.(out.forces,spatial.graph,out.elapsed);
   for (const f of out.forces) (f.kind === 'army' ? next.armyPositions : next.fleetPositions).records[f.id] = f.travel;
   next.forceContacts = out.contacts;
   const space = readArmySpace47(next.world, {...spatial, positions: next.armyPositions}), access = militaryAccess46(next);

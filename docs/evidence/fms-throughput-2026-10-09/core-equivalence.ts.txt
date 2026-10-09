@@ -1,0 +1,35 @@
+import {it,expect} from 'vitest';
+import {writeFileSync} from 'node:fs';
+import {Worker} from 'node:worker_threads';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+import {Session} from 'node:inspector';
+import {createFmsDocument} from '../src/fms/model';
+import {generateFmsLocalTemplate,prepareFmsTemplatePreview} from '../src/fms/local-template';
+import {Culture47Session} from '../src/fms/play/culture47-session';
+import {Culture47DisplayDecoder} from '../src/fms/play/culture47-display';
+it('normal 36864-point map: original engine equivalence and measured new display route',async()=>{
+ const d=await createFmsDocument(),options={x:d.width/2,y:d.height/2,template:'pangea' as const,seed:1337,preserveCoast:false},g=await generateFmsLocalTemplate(d,options);
+ const terrain=prepareFmsTemplatePreview(d,{worldId:d.worldId,baseRevision:d.revision,elevations:g.elevations},options).document;
+ const session=new Culture47Session(),s=session.create({terrain,count:6,cityCount:60,relations:'war',setup:{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman','german']}});
+ const decoder=new Culture47DisplayDecoder();decoder.decode(session.displaySnapshot(),{engine:s.journal.engine});
+ const worker=new Worker(`const {parentPort}=require('node:worker_threads');globalThis.self=globalThis;self.postMessage=v=>parentPort.postMessage(v);import(${JSON.stringify(pathToFileURL(resolve('compat/culture47/engine-9e23.js')).href)}).then(()=>parentPort.on('message',data=>self.onmessage({data})));`,{eval:true});
+ let id=0;const send=(command:unknown)=>new Promise<any>((ok,no)=>{const reply=(r:any)=>{if(r.progress)return;worker.off('message',reply);r.error?no(Error(r.error)):ok(r.snapshot);};worker.on('message',reply);worker.once('error',no);worker.postMessage({id:++id,command});});
+ try {
+  await send({type:'load',journal:{...s.journal,engine:'9e23fb69e7bda6b8dd99a2f9bfb31e83c786163c7101dc6ff0df472dcbeba71f'}});
+  const timings=[];let last=s;
+  const profiler=new Session();profiler.connect();const post=(method:string)=>new Promise<any>((ok,no)=>profiler.post(method,(e,r)=>e?no(e):ok(r)));
+  for(let day=0;day<4;day++){
+   const a={kind:'advance' as const,ticks:120};
+   const before=performance.now(),old=await send({type:'action',sequence:day,action:a}),oldMs=performance.now()-before;
+   if(day===1){await post('Profiler.enable');await post('Profiler.start');}
+   const start=performance.now(),packet=session.executeDisplay([a],day),workerMs=performance.now()-start;
+   const receive=performance.now();last=decoder.decode(structuredClone(packet),{engine:s.journal.engine,sequence:day});const decodeMs=performance.now()-receive;
+   if(day===1){const stopped=await post('Profiler.stop');writeFileSync('.autopilot/culture47-throughput.cpuprofile',JSON.stringify(stopped.profile));}
+   expect(last.run).toEqual(old.run);expect(last.frame).toEqual(old.frame);
+   timings.push({day:day+1,oldMs,workerMs,decodeMs});console.log(timings.at(-1));
+  }
+  profiler.disconnect();
+  writeFileSync('.autopilot/culture47-throughput-profile.json',JSON.stringify({points:terrain.points.length,timings,tick:last.run.clock.tick,exactOldRunAndFrame:true},null,2));
+ }finally{await worker.terminate();}
+},180000);

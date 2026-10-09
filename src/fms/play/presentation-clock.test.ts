@@ -2,6 +2,17 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {startPresentationClock} from './PresentationClock';
 describe('bounded visible-world playback',()=>{
  afterEach(()=>vi.useRealTimers());
+ it('honors 1x and 4x elapsed tick budgets when the Worker can keep up',async()=>{
+  vi.useFakeTimers();const totals:number[]=[];
+  for(const speed of [1,4]){let total=0;const stop=startPresentationClock({playing:()=>true,blocked:()=>false,tickMillis:100/120/speed,maxBatch:120*speed,step:async ticks=>{total+=ticks;}});await vi.advanceTimersByTimeAsync(1000);stop();totals.push(total);}
+  expect(totals[0]).toBeGreaterThanOrEqual(1180);expect(totals[1]).toBeGreaterThanOrEqual(4720);expect(totals[1]/totals[0]).toBeCloseTo(4,1);
+ });
+ it('dispatches the next bounded batch immediately after a slow ACK, not 32 ms later',async()=>{
+  vi.useFakeTimers();let resolve!:()=>void;const step=vi.fn(()=>new Promise<void>(r=>{resolve=r;}));
+  const stop=startPresentationClock({playing:()=>true,blocked:()=>false,tickMillis:.2,maxBatch:480,step});
+  await vi.advanceTimersByTimeAsync(32);await vi.advanceTimersByTimeAsync(500);expect(step).toHaveBeenCalledTimes(1);
+  resolve();await vi.advanceTimersByTimeAsync(1);expect(step.mock.calls[1]).toEqual([480]);stop();resolve();
+ });
  it('bounds each visible feedback batch independently from the one-day elapsed cap',async()=>{
   vi.useFakeTimers();let resolve!:()=>void;const step=vi.fn(()=>new Promise<void>(r=>{resolve=r;}));
   const stop=startPresentationClock({playing:()=>true,blocked:()=>false,tickMillis:6.25,maxBatch:12,step});

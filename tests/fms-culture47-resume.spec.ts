@@ -22,7 +22,7 @@ for(const cancelRecovery of [false,true])test(`Continue recovers a terminated Wo
    postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){
     const c=(message as {command?:{type:string;action?:{kind:string};journal:{actions:unknown[]}}})?.command;
     if(c?.type==='load'){evidence.push({type:'load',actions:c.journal.actions.length});if(delayRecovery){setTimeout(()=>super.postMessage(message),1000);return;}}
-    if(!failed&&c?.type==='action'&&c.action?.kind==='advance'){failed=true;evidence.push({type:'injected-error'});setTimeout(()=>this.dispatchEvent(new Event('error')),0);return;}
+    if(!failed&&(c?.type==='advance-batch'||c?.type==='action'&&c.action?.kind==='advance')){failed=true;evidence.push({type:'injected-error'});setTimeout(()=>this.dispatchEvent(new Event('error')),0);return;}
     if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);
    }
   };

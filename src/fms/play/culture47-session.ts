@@ -10,6 +10,7 @@ import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
 import {sameCulture47Value} from './culture47-equal';
+import {Culture47DisplayEncoder} from './culture47-display';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
 import type {DisplayFrame} from './motion';
@@ -74,10 +75,11 @@ export function culture47Frame(r:FoundingForces47):DisplayFrame {
   return {armies:points(r.armyPositions),fleets:points(r.fleetPositions),alpha:1};
 }
 export class Culture47Session {
-  private state?:{run:PoliticalRun47;journal:Culture47Journal};
+  private state?:{run:PoliticalRun47;journal:Culture47Journal;ticks:number};
+  private display=new Culture47DisplayEncoder();
   create(opening:Culture47Opening){
     const journal:Culture47Journal={format:'lieguoji-culture-play',version:1,rule:CULTURE47_RULE,engine:__CULTURE47_ENGINE__,id:'fms-'+crypto.randomUUID(),opening:structuredClone(opening),actions:[]};
-    const state=this.build(journal);this.state=state;return this.snapshot();
+    const state=this.build(journal);this.state=state;this.display=new Culture47DisplayEncoder();return this.snapshot();
   }
   private build(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){
     assertCulture47Journal(journal);const o=journal.opening;
@@ -87,9 +89,9 @@ export class Culture47Session {
     prepareOwnedGeography47(run);
     let completed=0,ticks=0;
     for(const action of journal.actions){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
-    return {run,journal:structuredClone(journal)};
+    return {run,journal:structuredClone(journal),ticks};
   }
-  load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;return this.snapshot();}
+  load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;this.display=new Culture47DisplayEncoder();return this.snapshot();}
   verify(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void):'witness'|'replay'{
     assertCulture47Journal(journal);
     const known=this.state?.journal;
@@ -104,9 +106,26 @@ export class Culture47Session {
   preview(action:PoliticalCommand47){if(!this.state)throw Error('请先创建世界。');return {...previewPoliticalCommand47(this.state.run,action),sequence:this.state.journal.actions.length};}
   previewOrder(intent:MilitaryIntent47){if(!this.state)throw Error('请先创建世界。');return {intent,preview:previewMilitary47(this.state.run,intent),sequence:this.state.journal.actions.length};}
   execute(action:Culture47Action,sequence:number){
-    const s=this.state;if(!s||sequence!==s.journal.actions.length)throw Error('世界已经推进，请重新操作。');
-    const journal={...s.journal,actions:[...s.journal.actions,structuredClone(action)]};assertCulture47Journal(journal);
-    const run=withOwnedNumericGeography47(s.run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);this.state={run,journal};return this.snapshot();
+    this.append([action],sequence);return this.snapshot();
   }
-  snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');return structuredClone({...this.state,frame:culture47Frame(this.state.run)});}
+  executeDisplay(actions:Culture47Action[],sequence:number){
+    if(!Array.isArray(actions)||actions.length<1||actions.length>4||actions.length>1&&actions.some(a=>a.kind!=='advance'))throw Error('推进批次无效，原进度保持。');
+    const previous=this.state;
+    try {this.append(actions,sequence);return this.displaySnapshot();}
+    catch(error){this.state=previous;throw error;}
+  }
+  displaySnapshot(){if(!this.state)throw Error('请先创建世界。');const {run,journal}=this.state;return this.display.encode({run,journal,frame:culture47Frame(run)});}
+  private append(actions:Culture47Action[],sequence:number){
+    const s=this.state;if(!s||sequence!==s.journal.actions.length)throw Error('世界已经推进，请重新操作。');
+    const accepted=structuredClone(actions);let ticks=s.ticks;
+    for(const action of accepted){assertCulture47Action(action);if(action.kind==='advance')ticks+=action.ticks;}
+    if(s.journal.actions.length+accepted.length>20000)throw Error('文化指令记录过长或无效，原档保留。');
+    if(ticks>120000)throw Error('本地文化试玩的重放上限为 1000 日，存档保留。');
+    // Header and previous actions are privately owned and validated at ingress.
+    // Only commit after every action and numeric-geography window succeeds.
+    let run=s.run;
+    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);}
+    this.state={run,journal:{...s.journal,actions:[...s.journal.actions,...accepted]},ticks};
+  }
+  snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');const {run,journal}=this.state;return structuredClone({run,journal,frame:culture47Frame(run)});}
 }

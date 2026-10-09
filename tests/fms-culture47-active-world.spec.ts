@@ -6,7 +6,7 @@ async function watchSimulation(page:Page){
   const Real=window.Worker,evidence:{day:number;wars:number;history:number;armyOrders:number;fleetOrders:number;contacts:number}[]=[];
   Object.defineProperty(window,'activeWorldEvidence',{value:evidence});
   window.Worker=class extends Real{constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',event=>{
-   const r=event.data.snapshot?.run;if(!r?.armyAutonomy)return;
+   const r=event.data.snapshot?.run??event.data.display?.snapshot?.run??event.data.display?.run;if(!r?.armyAutonomy)return;
    evidence.push({day:r.world.day,wars:r.nativeWars.campaigns.length,history:r.chronicle.entries.length,armyOrders:(Object.values(r.armyAutonomy.armies) as {decision:string}[]).filter(a=>a.decision==='attacking').length,fleetOrders:(Object.values(r.navalAutonomy.fleets) as {decision:string}[]).filter(a=>a.decision==='attacking').length,contacts:r.forceContacts.pairs.length});
   });}};
  });

@@ -1,0 +1,1 @@
+Publish audit: 69 approved game artifacts; only required root files, hashed JS/CSS and the exact reviewed battle atlas.

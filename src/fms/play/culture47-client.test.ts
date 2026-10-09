@@ -14,9 +14,17 @@ class FakeWorker{
   terminate(){this.terminated=true;}
   respond(data:Omit<Culture47Response,'id'>){this.onmessage?.({data:{id:this.request!.id,...data}});}
 }
-afterEach(()=>{vi.unstubAllGlobals();vi.useRealTimers();});
+afterEach(()=>{vi.unstubAllGlobals();vi.useRealTimers();Reflect.deleteProperty(FakeWorker,'latest');});
 const j={engine:__CULTURE47_ENGINE__,id:'fixture',actions:[]} as unknown as Culture47Journal;
 describe('culture worker request boundaries',()=>{
+  it('transport failure closes the already-advanced Worker so Continue can restore the last ACK',async()=>{
+    vi.stubGlobal('Worker',FakeWorker);const c=new Culture47Client(),p=c.verify(j);const rejected=expect(p).rejects.toBeInstanceOf(Culture47Unavailable);
+    await vi.waitFor(()=>expect(FakeWorker.latest.request).toBeDefined());FakeWorker.latest.respond({error:'postMessage failed',unavailable:true});await rejected;expect(c.isClosed).toBe(true);expect(FakeWorker.latest.terminated).toBe(true);
+  });
+  it('a rolled-back rule error keeps the Worker usable',async()=>{
+    vi.stubGlobal('Worker',FakeWorker);const c=new Culture47Client(),p=c.verify(j);const rejected=expect(p).rejects.toThrow('invalid command');
+    await vi.waitFor(()=>expect(FakeWorker.latest.request).toBeDefined());FakeWorker.latest.respond({error:'invalid command',unavailable:false});await rejected;expect(c.isClosed).toBe(false);c.close();
+  });
   it('a cancellable original replay is not declared stalled for lacking a progress protocol',async()=>{
     const entry=frozen[1],bytes=readFileSync('compat/culture47/'+entry.file),buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
     vi.stubGlobal('Worker',FakeWorker);vi.stubGlobal('fetch',async()=>({ok:true,arrayBuffer:async()=>buffer}));vi.useFakeTimers();

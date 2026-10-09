@@ -44,14 +44,14 @@ export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
   reconcileAttackClock47(r.forceClock,current.eligible,now);
   assertForceClock47(r.forceClock,now,new Set(current.forces.map(forceKey47)));
 }
-function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>) {
-  const f=frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
+function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>,known?:ReturnType<typeof frame>) {
+  const f=known??frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
   // There is no occupation transaction when no siege exists and no real
   // non-retreating army holds hostile land. Movement/contact validation above
   // still runs; the full47 owner validates personnel before entering a window.
   // In this case copying every city, family-era world event and economy ledger
   // twice per tick cannot change a flag or resistance value.
-  if(!r.occupation.sieges.length&&![...f.spatial.space.byArmy.values()].some(v=>v.province&&v.army.status!=='retreating'&&nationsAtWar(r.world,v.army.nationId,v.province.controller)))return;
+  if(!r.occupation.sieges.length&&![...f.spatial.space.byArmy.values()].some(v=>v.province&&v.army.status!=='retreating'&&nationsAtWar(r.world,v.army.nationId,v.province.controller)))return f;
   const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
   const previous=r.world;shareUnchangedProvinceGeometry47(previous,out.world);r.world=out.world;r.occupation=out.occupation;
   if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
@@ -73,11 +73,12 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
   let r=cloneMilitaryCandidate47(input);
   const volleys:{at:number;due:string[];hits:number;losses:number}[]=[];
   let now=input.clock.tick,eventCount=0;
+  let known:ReturnType<typeof frame>|undefined;
   for(let tick=input.clock.tick+1;tick<=input.clock.tick+ticks;tick++) {
     for(;;) {
       if(++eventCount>100000)throw Error('军事事件超出预算，原进度未提交。');
-      occupy(r,now,new Set(),rules);
-      reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
+      const occupied=occupy(r,now,new Set(),rules,known);known=occupied??frame(r);
+      reconcileAttackClock47(r.forceClock,known.eligible,now);
       const due=new Set(Object.keys(r.forceClock.deadlines).filter(k=>r.forceClock.deadlines[k]<=now).sort());
       if(due.size) {
         // Draw before casualties; every due unit fires from the same snapshot.
@@ -86,8 +87,8 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});
         // Web simultaneous-unit policy: even dying units fired the volley;
         // only surviving real holders attack/repair resistance or change flags.
-        occupy(r,now,due,rules);
-        reconcileAttackClock47(r.forceClock,frame(r).eligible,now);
+        const occupiedAfterVolley=occupy(r,now,due,rules);
+        known=occupiedAfterVolley??frame(r);reconcileAttackClock47(r.forceClock,known.eligible,now);
       }
       if(now===tick)break;
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
@@ -96,13 +97,13 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
       // arithmetic residue causing a phantom delayed/missed attack at save.
       const end=moved.unusedSeconds===0?stop:now+moved.elapsed;
       if(end>now&&rules.portInterval?.(r,moved.run,now,end)!==undefined)throw Error('港湾结算必须同步完成，原进度未提交。');
-      r=moved.run;now=end;
+      r=moved.run;now=end;known=undefined;
     }
     for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick)delete r.maritime.retreating[id];
     r.clock.tick=tick;r.forceClock.now=tick;
     rules.afterTick?.(r,tick===untilDay);
     // Expiry/peace/death can change attack eligibility without moving a point.
-    const current=frame(r);
+    const current=frame(r);known=current;
     reconcileAttackClock47(r.forceClock,current.eligible,tick);
     assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)));
   }

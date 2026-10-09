@@ -43,7 +43,10 @@ export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: n
  * treasury and historical entry again at every fractional movement event.
  * Only the window owner may subsequently mutate shared unrelated ledgers. */
 export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent=false){
-  const next={...input,world:{...input.world,armies:structuredClone(input.world.armies)},armyPositions:structuredClone(input.armyPositions),fleetPositions:structuredClone(input.fleetPositions)};
+  // The contact kernel clones each travel record before changing it. Copy the
+  // two books/record tables here, retaining the original START view for port
+  // exposure, without cloning those same routes twice per movement interval.
+  const next={...input,world:{...input.world,armies:structuredClone(input.world.armies)},armyPositions:{...input.armyPositions,records:{...input.armyPositions.records}},fleetPositions:{...input.fleetPositions,records:{...input.fleetPositions.records}}};
   return advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent);
 }
 function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean){

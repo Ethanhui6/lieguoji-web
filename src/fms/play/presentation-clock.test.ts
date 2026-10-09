@@ -1,7 +1,19 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {startPresentationClock} from './PresentationClock';
+import {culture47PlaybackBudget} from './culture47-pacing';
 describe('bounded visible-world playback',()=>{
  afterEach(()=>vi.useRealTimers());
+ it('rebases 1x to the previous 4x target without changing saved calendar seconds',async()=>{
+  vi.useFakeTimers();const seconds=Math.fround(.1),totals:number[]=[];
+  for(const speed of [1,4]){let total=0;const budget=culture47PlaybackBudget(seconds,speed,true);
+   expect(budget.maxBatch).toBe(480);
+   const stop=startPresentationClock({...budget,playing:()=>true,blocked:()=>false,step:async n=>{total+=n;}});
+   await vi.advanceTimersByTimeAsync(1000);stop();totals.push(total);
+  }
+  expect(totals[0]).toBeGreaterThanOrEqual(4700);expect(totals[1]/totals[0]).toBeCloseTo(4,1);
+  expect(culture47PlaybackBudget(seconds,1,false).maxBatch).toBe(120);
+  expect(culture47PlaybackBudget(seconds,1,true).tickMillis).toBe(seconds*1000/480);
+ });
  it('honors 1x and 4x elapsed tick budgets when the Worker can keep up',async()=>{
   vi.useFakeTimers();const totals:number[]=[];
   for(const speed of [1,4]){let total=0;const stop=startPresentationClock({playing:()=>true,blocked:()=>false,tickMillis:100/120/speed,maxBatch:120*speed,step:async ticks=>{total+=ticks;}});await vi.advanceTimersByTimeAsync(1000);stop();totals.push(total);}

@@ -1,6 +1,9 @@
 import type {FmsDocument} from '../model';
 import type {World} from '../../sim/types';
 import type {DiplomaticGeography} from './war30-geography';
+import type {FiscalState} from './fiscal15-state';
+import type {HarborLayout46} from './war46-geography';
+type StaticMilitaryLeaves47={finance?:FiscalState;harbors?:HarborLayout46};
 
 /** Cache witnesses own their data. Dependencies are compared by content;
  * only deeply frozen leaves and the private, commit-checked numeric read
@@ -86,8 +89,10 @@ function freezePlain(value:unknown):number|null{
  * does not mark a live run or its mutable ledgers as trusted. Numeric buffers
  * remain writable. Outside the private action window, every cache hit compares
  * them element by element; the window also checks all samples before commit. */
-export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography:unknown}){
+export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography:unknown}&StaticMilitaryLeaves47){
  freezePlain(r.terrain.points);freezePlain(r.diplomaticGeography);
+ if(r.harbors)freezePlain(r.harbors);
+ if(r.finance)for(const p of Object.values(r.finance.provinces))freezePlain(p.cellBiomes);
  for(const p of r.world.provinces){freezePlain(p.polygon);freezePlain(p.neighbors);}
  for(const a of [r.terrain.triangles,r.terrain.elevations]){
   if(typedShapes.has(a))continue;
@@ -121,14 +126,22 @@ export function shareUnchangedProvinceGeometry47(source:World,target:World){
   if(immutable.has(old.neighbors)&&sameGeographyContent47(p.neighbors,old.neighbors))p.neighbors=old.neighbors;
  }
 }
-export function cloneMilitaryCandidate47<T extends {terrain:FmsDocument;world:World;diplomaticGeography:object}>(input:T):T{
+export function cloneMilitaryCandidate47<T extends {terrain:FmsDocument;world:World;diplomaticGeography:object}&StaticMilitaryLeaves47>(input:T):T{
  const {terrain,...mutable}=input,fixedWater=immutable.has(input.diplomaticGeography);
  const polygons=input.world.provinces.map(p=>immutable.has(p.polygon)),neighbors=input.world.provinces.map(p=>immutable.has(p.neighbors));
  // Omit only certified immutable leaves from the copy itself, instead of
  // copying a complete sea partition just to discard that copy afterwards.
+ const fixedHarbors=input.harbors&&immutable.has(input.harbors),biomes=new Map<string,number[]>();
  const plain={...mutable,diplomaticGeography:fixedWater?null:input.diplomaticGeography,world:{...input.world,provinces:input.world.provinces.map((p,i)=>({...p,polygon:polygons[i]?null:p.polygon,neighbors:neighbors[i]?null:p.neighbors}))}};
+ if(fixedHarbors)plain.harbors=null as unknown as HarborLayout46;
+ if(input.finance)plain.finance={...input.finance,provinces:Object.fromEntries(Object.entries(input.finance.provinces).map(([id,p])=>{
+  if(!immutable.has(p.cellBiomes))return[id,p];
+  biomes.set(id,p.cellBiomes);return[id,{...p,cellBiomes:[]}];
+ }))};
  const next={...structuredClone(plain),terrain} as unknown as T;
  if(fixedWater)next.diplomaticGeography=input.diplomaticGeography;
+ if(fixedHarbors)next.harbors=input.harbors;
+ for(const [id,cells] of biomes)next.finance!.provinces[id].cellBiomes=cells;
  next.world.provinces.forEach((p,i)=>{if(polygons[i])p.polygon=input.world.provinces[i].polygon;if(neighbors[i])p.neighbors=input.world.provinces[i].neighbors;});
  return next;
 }

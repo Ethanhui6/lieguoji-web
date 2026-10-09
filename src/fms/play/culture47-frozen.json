@@ -52,5 +52,14 @@
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
     "source": "culture47-motion2-checked"
+  },
+  {
+    "engine": "30feebab4ddc1b5a01558861ad560698338c3ca79c67c58cc3eb3256c448cdfa",
+    "file": "engine-30fe.js",
+    "bytes": 1338079,
+    "sha256": "ceefcb41be4a32f695f26c924d0fed5013858f19a8807f700e3548be549d271c",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-phasework-motion-checked"
   }
 ]

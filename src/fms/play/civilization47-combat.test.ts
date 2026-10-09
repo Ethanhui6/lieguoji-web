@@ -2,14 +2,14 @@ import {describe,it,expect,beforeAll} from 'vitest';
 import {nativeLeadership47,nativeNavalCharacter47,nativeLeaderEnemies47,nativeDamageSnapshot47} from './native-combat/personnel47';
 import {grid} from './fixture.test-support';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
-import {combatReader47} from './civilization47-combat';
+import {combatReader47,ownedOccupationCombatReader47} from './civilization47-combat';
 import {assertCombatPersonnel47,militaryEnemyIds47,refreshLeaderCombat47,initializedArmyCombat47} from './civilization47-combat-state';
 import {actualForces47} from './force-runtime47';
 import {beginArmyTravel47} from './army-travel47-state';
 import {locateTravelCell47} from './army-travel47-graph';
 import {forceKey47} from './force-motion47';
 import {advanceCivilizationMilitary47} from './civilization47-military';
-import {advanceTacticsOccupation47} from './war47-occupation';
+import {advanceTacticsOccupation47,advanceOwnedTacticsOccupation47} from './war47-occupation';
 import {finishDailyForces47} from './civilization47-upkeep';
 import {advanceFamilyCalendar47} from './civilization47-calendar';
 import {settleCivilizationDay47} from './civilization47-daily';
@@ -42,6 +42,23 @@ describe('recovered character combat kernels',()=>{
   });
 });
 describe('real47 common personnel combat reader',()=>{
+  it('owned occupation matches copied captures and rejects a stale force view or damaged personnel',()=>{
+    const r=neutral(),graph=actualForces47(r).spatial.graph,invader=r.world.nations[0].id;
+    for(const a of r.world.armies){a.troops=0;a.status='destroyed';}
+    const targets=r.world.provinces.filter(p=>p.controller!==invader).slice(0,2);
+    const armies=r.world.armies.filter(a=>a.nationId===invader).slice(0,2);expect(armies).toHaveLength(2);
+    for(let i=0;i<2;i++){const a=armies[i],p=targets[i],cell=locateTravelCell47(graph,p.center,p.id)!;a.troops=100;a.status='idle';r.armyPositions.records[a.id]=beginArmyTravel47(a.id,[cell.id],graph,p.center);}
+    const expected=structuredClone(r),actual=structuredClone(r),terrain=(v:FoundingForces47)=>({...v.terrainContext,upper:v.upperCombat,finance:v.finance});
+    const copy=advanceTacticsOccupation47(expected.world,expected.occupation,expected.units,0,new Set(),'takeover',terrain(expected),{...actualForces47(expected).spatial,positions:expected.armyPositions},expected.portControl,w=>combatReader47(expected,w).province);
+    const spatial=actualForces47(actual).spatial;
+    const owned=advanceOwnedTacticsOccupation47(actual.world,actual.occupation,actual.units,0,new Set(),'takeover',terrain(actual),{...spatial,positions:actual.armyPositions},actual.portControl,()=>ownedOccupationCombatReader47(actual,spatial.space));
+    expect(owned).toEqual(copy);expect(actual.upperCombat).toEqual(expected.upperCombat);
+    expect(owned.world.provinces.filter(p=>targets.some(t=>t.id===p.id)).every(p=>p.controller===invader)).toBe(true);
+    const a=actual.world.armies.find(a=>a.id===armies[0].id)!,p=actual.world.provinces.find(p=>p.id===targets[0].id)!;
+    expect(()=>ownedOccupationCombatReader47(actual,actualForces47(r).spatial.space)(a,p)).toThrow(/当前候选/);
+    actual.people.persons[actual.people.nations[invader].leaderId!].base.military++;
+    expect(()=>ownedOccupationCombatReader47(actual,spatial.space)).toThrow();
+  });
   it('reads actual sea geography and the living leader skill without old-anchor terrain',()=>{
     const r=neutral(),a=seaArmy(r),first=combatReader47(r).army(a);expect(first.efficiency).toBe(1.125);expect(first.multiplier).toBe(1);
     const old=r.terrainContext.provinces[a.provinceId];old.mountain=true;old.biomes.fill(0);old.biomes[10]=1;expect(combatReader47(r).army(a)).toEqual(first);

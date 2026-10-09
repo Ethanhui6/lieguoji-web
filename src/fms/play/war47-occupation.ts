@@ -37,7 +37,14 @@ export function occupationForces47(w:World,id:string,units:UnitAssignments,spati
  * transaction and is reconciled on capture, just as in v46. The session must
  * clone world/upper/positions together before invoking this operation. */
 export function advanceTacticsOccupation47(world:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46,combatFactory?:(world:World)=>ProvinceCombat47){
-  const w=structuredClone({...world,provinces:[]}) as World;w.provinces=world.provinces.map(p=>({...p}));const s=structuredClone(reconcileOccupation(w,state).occupation),local=stationed(readArmySpace47(w,spatial));
+  const w=structuredClone({...world,provinces:[]}) as World;w.provinces=world.provinces.map(p=>({...p}));
+  return advanceOwnedTacticsOccupation47(w,structuredClone(state),units,tick,due,unopposed,terrain,spatial,ports,combatFactory);
+}
+/** Only a military window's already isolated candidate may use this form.
+ * Reconciliation and every sequential capture still run; a later failure is
+ * rolled back by discarding the outer candidate, including upper and economy. */
+export function advanceOwnedTacticsOccupation47(w:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46,combatFactory?:(world:World)=>ProvinceCombat47){
+  const s=reconcileOccupation(w,state).occupation,local=stationed(readArmySpace47(w,spatial));
   const combat=combatFactory?.(w);
   for(const p of w.provinces){const group=local.get(p.id)??[];let siege=s.sieges.find(v=>v.provinceId===p.id);if(!siege&&!group.some(a=>nationsAtWar(w,a.nationId,p.controller)))continue;const forces=forcesFromGroup(w,p.id,units,group,terrain,ports,undefined,combat);if(!forces.attacker&&!siege)continue;
     const attackers=group.filter(a=>a.nationId===forces.attacker);

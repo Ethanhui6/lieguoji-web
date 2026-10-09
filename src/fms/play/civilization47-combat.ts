@@ -1,7 +1,7 @@
 import type {Army,Province,World} from '../../sim/types';
 import type {FoundingForces47} from './civilization47-forces';
 import {actualForces47} from './force-runtime47';
-import {readArmySpace47} from './army-space47';
+import {readArmySpace47,type ArmySpace47} from './army-space47';
 import {assertCombatPersonnel47,livingCombatLeader47} from './civilization47-combat-state';
 import {nativeLeadership47,nativeNavalCharacter47} from './native-combat/personnel47';
 import {nativeUpperEfficiency,defaultPoliticalCombat} from './native-combat/upper-efficiency';
@@ -18,6 +18,21 @@ import type {MovingForce47} from './force-motion47';
 export function combatReader47(r:FoundingForces47,world:World=r.world){
   assertCombatPersonnel47(r.combatPersonnel,world,r.clock.tick,r);
   const {spatial}=actualForces47(r),space=readArmySpace47(world,{...spatial,positions:r.armyPositions});
+  return makeReader47(r,world,space);
+}
+/** Same synchronous occupation phase only. The military owner has already
+ * validated the complete force frame; never reuse this across motion, volley,
+ * commands or callbacks. Province ownership/defense remain live on each call. */
+export function ownedOccupationCombatReader47(r:FoundingForces47,space:ArmySpace47){
+  assertCombatPersonnel47(r.combatPersonnel,r.world,r.clock.tick,r);
+  const reader=makeReader47(r,r.world,space);
+  return (a:Army,p:Province)=>{
+    const at=space.byArmy.get(a.id);
+    if(at?.army!==a||at.province!==p)throw Error('占领战力视图不属于当前候选。');
+    return reader.province(a,p);
+  };
+}
+function makeReader47(r:FoundingForces47,world:World,space:ArmySpace47){
   const leaders=new Map(world.nations.map(n=>[n.id,livingCombatLeader47(r,n.id)]));
   const national=(id:string)=>{const n=r.upperCombat.nations[id];if(!n||n.polity!==r.civilization.nations[id]?.polity||n.destiny!==r.destiny.nations[id]?.destiny||!Number.isFinite(r.finance.nations[id]?.goldBattleModifier))throw Error('人物战力的国家、国运或财政缓存不一致。');return n;};
   const army=(a:Army)=>{

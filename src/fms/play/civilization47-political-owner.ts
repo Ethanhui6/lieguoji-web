@@ -10,7 +10,7 @@ import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {announce,recordHistory,nameSeed,type Ruler} from './chronicle-records';
 import {rulerFromPerson47} from './civilization47-names';
 import type {FoundingForces47} from './civilization47-forces';
-import type {World} from '../../sim/types';
+import type {PreviousOwnership47} from './force-tick47';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;targetNationId:string};
@@ -39,7 +39,7 @@ export function reconcileGovernmentContinuity47(r:FoundingForces47){
 }
 /** Called at each actual occupation transaction, before any family validation.
  * IDs come from the transfer itself, never substring matching visible names. */
-export function recordPoliticalOccupation47(r:FoundingForces47,before:World){
+export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOwnership47){
   let changed=false;
   for(const p of r.world.provinces){const old=before.provinces.find(v=>v.id===p.id);if(!old||old.controller===p.controller)continue;changed=true;
     const names=[old.controller,p.controller].map(id=>r.world.nations.find(n=>n.id===id)!.name);

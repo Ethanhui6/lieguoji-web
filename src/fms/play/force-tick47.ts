@@ -6,23 +6,25 @@ import {assertForceClock47,reconcileAttackClock47,rescheduleAttack47,type ForceC
 import {assertForceDamage47,type ForceDamage47} from './force-losses47';
 import {applyAccountedVolley47} from './force-accounting47';
 import {nationsAtWar} from './realtime-statecraft';
-import {advanceTacticsOccupation47,type ProvinceCombat47} from './war47-occupation';
-import type {World} from '../../sim/types';
+import {advanceOwnedTacticsOccupation47,type ProvinceCombat47} from './war47-occupation';
+import type {Province,World} from '../../sim/types';
 import {TICKS_PER_DAY} from './clock';
 import type {War28World} from './war47-wars';
-import {cloneMilitaryCandidate47,shareUnchangedProvinceGeometry47} from './geography-content47';
+import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
+import type {ArmySpace47} from './army-space47';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
+export type PreviousOwnership47={provinces:readonly Pick<Province,'id'|'controller'>[]};
 export type MilitaryRules47<T extends MilitaryRun47> = {
   speed: Parameters<typeof advanceActualForces47<T>>[3];
   combat: (snapshot:T)=>Parameters<typeof applyAccountedVolley47>[2];
-  occupation?: (snapshot:T,world:World)=>ProvinceCombat47;
+  occupation?: (snapshot:T,world:World,space:ArmySpace47)=>ProvinceCombat47;
   /** Owned candidate only. The real47 owner fixes this to its family calendar;
    * the generic military primitive also supports isolated no-family fixtures. */
   afterTick?: (candidate:T,dailyPending:boolean)=>void;
   afterOccupation?: (candidate:T)=>undefined;
-  afterOwnership?: (candidate:T,previousWorld:World)=>void;
+  afterOwnership?: (candidate:T,previousWorld:PreviousOwnership47)=>void;
   portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
   observeMotion?:ForceMotionObserver47;
 };
@@ -51,8 +53,9 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,
   // In this case copying every city, family-era world event and economy ledger
   // twice per tick cannot change a flag or resistance value.
   if(!r.occupation.sieges.length&&![...f.spatial.space.byArmy.values()].some(v=>v.province&&v.army.status!=='retreating'&&nationsAtWar(r.world,v.army.nationId,v.province.controller)))return f;
-  const out=advanceTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w):undefined);
-  const previous=r.world;shareUnchangedProvinceGeometry47(previous,out.world);r.world=out.world;r.occupation=out.occupation;
+  const previous={provinces:r.world.provinces.map(p=>({id:p.id,controller:p.controller}))};
+  const out=advanceOwnedTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w,f.spatial.space):undefined);
+  r.world=out.world;r.occupation=out.occupation;
   if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
   rules.afterOwnership?.(r,previous);
 }

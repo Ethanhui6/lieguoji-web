@@ -96,7 +96,11 @@ describe('47 atomic motion, persisted timers, occupation and accounting',()=>{
   it('captures an actually entered empty hostile land cell immediately, without waiting a combat timer',()=>{
     const f=fixture(),from=[...f.graph.cells.values()].find(c=>c.surface==='sea'&&c.links.some(l=>f.graph.cells.get(l.to)!.surface==='land'&&f.run.world.provinces.find(p=>p.id===f.graph.cells.get(l.to)!.provinceId)!.controller!==f.a.nationId))!,edge=from.links.find(l=>f.graph.cells.get(l.to)!.surface==='land'&&f.run.world.provinces.find(p=>p.id===f.graph.cells.get(l.to)!.provinceId)!.controller!==f.a.nationId)!,to=f.graph.cells.get(edge.to)!;
     f.b.troops=0;f.b.status='destroyed';f.run.tactics.unopposed='takeover';f.run.armyPositions.records[f.a.id]=beginArmyTravel47(f.a.id,[from.id,to.id],f.graph);
-    const before=f.run.world.provinces.map(p=>p.controller),out=advanceMilitaryWindow47(f.run,1,weights,{...rules,speed:()=>Math.hypot(edge.gate.x-from.center.x,edge.gate.y-from.center.y)*4});
+    const before=f.run.world.provinces.map(p=>p.controller),changes:string[]=[];
+    const out=advanceMilitaryWindow47(f.run,1,weights,{...rules,speed:()=>Math.hypot(edge.gate.x-from.center.x,edge.gate.y-from.center.y)*4,afterOwnership:(next,previous)=>{
+      for(const p of next.world.provinces)if(previous.provinces.find(v=>v.id===p.id)!.controller!==p.controller)changes.push(p.id);
+    }});
+    expect(changes).toEqual([to.provinceId]);
     expect(out.run.world.provinces.find(p=>p.id===to.provinceId)!.controller).toBe(f.a.nationId);expect(out.volleys).toEqual([]);
     expect(out.run.world.provinces.filter((p,i)=>p.controller!==before[i]).map(p=>p.id)).toEqual([to.provinceId]);
     expect(()=>assertOccupation(out.run.occupation,out.run.world,out.run.clock.tick)).not.toThrow();

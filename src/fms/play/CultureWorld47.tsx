@@ -19,6 +19,7 @@ import {loadCulture47,saveCulture47,type SavedCulture47} from './culture47-stora
 import {previewFamilySuccession47} from './civilization47-succession';
 import {graphFor46} from './war46-geography';
 import {CultureMotion47} from './CultureMotion47';
+import {culture47PlaybackBudget} from './culture47-pacing';
 import type {FoundingForces47} from './civilization47-forces';
 import type {NativePolity} from './native-combat/upper-efficiency';
 import './culture47.css';
@@ -159,7 +160,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     finally{operation.current=null;inflight.current=false;resumeAfterRecovery.current=false;if(!lifetime.current?.signal.aborted){setRecovering(false);setBusy(false);}}
   }
   useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
-  usePresentationClock({enabled:playing,policyKey:busy,tickMillis:(snapshot?.run.life.secondsPerDay??.1)*1000/120/speed,maxBatch:(snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2)?Math.min(480,Math.max(120,Math.round(speed*120))):120,playing:()=>playing,
+  usePresentationClock({enabled:playing,policyKey:busy,...culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2),playing:()=>playing,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
     step:async ticks=>{const s=current.current;if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
   const requestMilitary=(intent:MilitaryIntent47)=>{setPlaying(false);setTargetMode(null);setPanel('military');void send({type:'military-preview',intent});};

@@ -7,6 +7,20 @@ import {cloneMilitaryCandidate47,copyGeographyContent47,prepareOwnedGeography47,
 let base:FoundingForces47;
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),2,24,'peace',{mode:'culture-generated',enabled:['chinese']});},20000);
 describe('content-validated real47 geographic reuse',()=>{
+ it('shares only certified biome/harbor leaves while keeping mutable finance private',()=>{
+  const r=structuredClone(base),id=r.world.provinces[0].id,raw=cloneMilitaryCandidate47(r);
+  expect(raw.finance.provinces[id].cellBiomes).not.toBe(r.finance.provinces[id].cellBiomes);
+  expect(raw.harbors).not.toBe(r.harbors);
+  prepareOwnedGeography47(r);const next=cloneMilitaryCandidate47(r);
+  expect(next.finance.provinces[id].cellBiomes).toBe(r.finance.provinces[id].cellBiomes);
+  expect(next.harbors).toBe(r.harbors);expect(()=>next.finance.provinces[id].cellBiomes.push(3)).toThrow();
+  expect(next.finance.provinces[id]).not.toBe(r.finance.provinces[id]);
+  next.finance.provinces[id].maxPopulation++;next.finance.nations['n-0'].gold++;
+  expect(next.finance.provinces[id].maxPopulation).not.toBe(r.finance.provinces[id].maxPopulation);
+  expect(next.finance.nations['n-0'].gold).not.toBe(r.finance.nations['n-0'].gold);
+  const exported=structuredClone(next);exported.finance.provinces[id].cellBiomes[0]=99;
+  expect(next.finance.provinces[id].cellBiomes[0]).not.toBe(99);
+ });
  it('shares only certified immutable geometry and still rejects writable buffer or replacement mutations',()=>{
   const r=structuredClone(base);prepareOwnedGeography47(r);assertForceGeography47(r.diplomaticGeography,r);
   const snapshot=copyGeographyContent47({elevations:r.terrain.elevations})!;

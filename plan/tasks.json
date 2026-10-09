@@ -4857,7 +4857,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47EndViewCheckpoint, current AUTO_HANDOFF and END_VIEW_RESULT. Current4c48 engine has real declaration/muster/capital events and 120-step END view reuse; 196 relevant units, 14 runtime browser cases plus 2 final history presentation cases passed. Actual desktop 1x/4x still only 1.169/1.342 days/sec: pace NOT accepted. Next profile full request/Worker/decode/render chain and implement bounded actual-event or certified straight-line scheduling, not another cosmetic multiplier. Natural monthly death/succession and legal vacancy still need production connection; avoid pretending manual succession/ageing means autonomous events. Keep existing tasks and original review evidence; no new replacement plan. Before further runtime TS changes freeze delivered4c48 worker from culture47-history-ui-checked, retaining ten originals and existing saved worlds. 5288 day493/35 entries preserved and cold-reloaded. No push/Pages/physical-phone/visual pass.",
+    "nextRecoveryTarget": "Read culture47SiegeDisplayCheckpoint and AUTO_HANDOFF. Original pace remains failed (~1 day/sec), despite safe history and display fixes. Next reduce redundant per-day clone/validation through private Session advance ownership, preserving every tick, RNG, action check and rollback; freeze d01d delivered worker before runtime changes. Real natural death/succession, civil wars/independence, multiple families, alliances, monthly capital crisis and post1000-day checkpoint remain incomplete. Do not substitute manual succession for autonomous events. Existing saved worlds5288/5290 kept; no push/Pages/phone/original-visual acceptance.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -9593,7 +9593,7 @@
         "WEB-04-37"
       ],
       "baseCommit": "0bbbc15f60786516efce93502f7e3a5e6e61129f",
-      "sourceCommit": null,
+      "sourceCommit": "b52e7bed046d27fde8758f8e663f5e086c46253c",
       "engine": "4c48a3bae5fef145a798f00a4320cf666b4e99bb2b5d41e3ae6daad517f7e1d2",
       "artifact": ".autopilot/culture47-history-ui-checked",
       "localURL": "http://127.0.0.1:5290/?fms=1",
@@ -9672,6 +9672,46 @@
         "mode": "war",
         "notes": "Normal UI creation and playback; witnessed conquest/extinction, relocation, war settlement, regular and emergency muster. Not all political lifecycles."
       }
+    },
+    "culture47SiegeDisplayCheckpoint": {
+      "sourceCommit": null,
+      "engine": "d01d963324e95744c3bcab885deba01d2c2e3dac3f556671b6b253d0e2711e36",
+      "url": "http://127.0.0.1:5291/?fms=1",
+      "artifact": ".autopilot/culture47-siege-view-checked",
+      "scope": "ACK-only validated siege metadata; no succession preview when family details are closed; old workers and saves retained",
+      "checks": {
+        "unitFiles": 5,
+        "unitTests": 27,
+        "additionalOverlappingDisplayTests": 9,
+        "types": true,
+        "lint": true,
+        "build": true,
+        "approvedArtifacts": 76,
+        "initialBrowser": {
+          "passed": 11,
+          "failed": 1,
+          "current47Passed": 8
+        },
+        "followupBrowser": {
+          "passed": 4,
+          "failed": 0
+        }
+      },
+      "pace": {
+        "desktop": {
+          "one": 1.0616851886,
+          "four": 1.111188277
+        },
+        "mobileViewport": {
+          "one": 1.0337377101,
+          "four": 1.0731772755
+        },
+        "accepted": false
+      },
+      "physicalPhone": false,
+      "originalVisual": false,
+      "pushed": false,
+      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/SIEGE_DISPLAY_RESULT.md"
     }
   }
 }

@@ -16,6 +16,7 @@ import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
 import {ForceDisplayTraceCollector47,type ForceMotionObserver47} from './force-display-trace47';
 import type {DisplayFrame} from './motion';
+import {activeSiegesFromSpace47} from './siege-display47';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {previewMilitary47,applyMilitary47,assertMilitaryIntent47,assertMilitaryExpected47,type MilitaryIntent47,type MilitaryExpected47} from './culture47-orders';
 import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPoliticalTick47,recordPoliticalOccupation47,assertPoliticalCommand47,applyPoliticalCommand47,previewPoliticalCommand47,type PoliticalCommand47,type PoliticalStamp47} from './civilization47-political-owner';
@@ -71,10 +72,10 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
   const p=previewFamilySuccession47(r,a.nationId),next=appointFamilyRuler47(r,a.nationId,p.expected);
   refreshLeaderCombat47(next,next.combatPersonnel);return next;
 }
-export function culture47Frame(r:FoundingForces47):DisplayFrame {
+export function culture47Frame(r:FoundingForces47):DisplayFrame&{activeSieges?:string[]} {
   const {spatial}=actualForces47(r);
   const points=(book:FoundingForces47['armyPositions'])=>new Map(Object.entries(book.records).map(([id,s])=>[id,armyTravelLocation47(s,spatial.graph).point]));
-  return {armies:points(r.armyPositions),fleets:points(r.fleetPositions),alpha:1};
+  return {armies:points(r.armyPositions),fleets:points(r.fleetPositions),alpha:1,activeSieges:activeSiegesFromSpace47(r,spatial.space)};
 }
 export class Culture47Session {
   private state?:{run:PoliticalRun47;journal:Culture47Journal;ticks:number};

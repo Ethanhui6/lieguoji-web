@@ -9,10 +9,11 @@ import old6f84 from '../../../compat/culture47/engine-6f84.js?url';
 import oldF212 from '../../../compat/culture47/engine-f212.js?url';
 import old49f7 from '../../../compat/culture47/engine-49f7.js?url';
 import old8d16 from '../../../compat/culture47/engine-8d16.js?url';
+import old4c48 from '../../../compat/culture47/engine-4c48.js?url';
 import old3d08 from '../../../compat/culture47/engine-3d08.js?url';
 import old30fe from '../../../compat/culture47/engine-30fe.js?url';
-import {Culture47DisplayDecoder} from './culture47-display';
-const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe,'engine-49f7.js':old49f7,'engine-8d16.js':old8d16,'engine-3d08.js':old3d08};
+import {Culture47DisplayDecoder,checkSiegeDisplay47} from './culture47-display';
+const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe,'engine-49f7.js':old49f7,'engine-8d16.js':old8d16,'engine-3d08.js':old3d08,'engine-4c48.js':old4c48};
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
 
 export class Culture47Client {
@@ -68,6 +69,7 @@ export class Culture47Client {
     let s=result.snapshot;
     try {if(result.display){if(this.engine!==__CULTURE47_ENGINE__&&frozenCulture47(this.engine)?.protocol!==2)throw Error('原引擎显示协议不匹配。');s=this.display.decode(result.display,{engine:this.engine,...('sequence'in command?{sequence:command.sequence,actions:command.type==='advance-batch'?Math.ceil(command.ticks/120):1}:{})});}}
     catch(e){this.close();throw new Culture47Unavailable(e instanceof Error?e.message:'显示进度无法确认。');}
+    if(result.snapshot)try{checkSiegeDisplay47(result.snapshot);}catch(e){this.close();throw new Culture47Unavailable(e instanceof Error?e.message:'显示证据无法确认。');}
     if(!s||s.journal.engine!==this.engine||('journal'in command&&s.journal.id!==command.journal.id)){this.close();throw new Culture47Unavailable('文化模拟返回不匹配的世界，原档保持。');}return s;
   }
   async verify(journal:Culture47Journal,options:Options={}):Promise<'witness'|'replay'>{

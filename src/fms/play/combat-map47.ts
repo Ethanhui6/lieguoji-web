@@ -2,8 +2,8 @@ import type {Graphics} from 'pixi.js';
 import type {Point} from '../../sim/types';
 import type {FoundingForces47} from './civilization47-forces';
 import {armySpatialFor47} from './army-geography47';
-import {readArmySpace47,landHolders47} from './army-space47';
-import {nationsAtWar} from './realtime-statecraft';
+import {readArmySpace47} from './army-space47';
+import {activeSiegesFromSpace47} from './siege-display47';
 
 export type CombatMarker47={id:string;kind:'contact'|'siege';point:Point;participants:number;progress:number|null};
 /** Read the actual 47 contact ledger. Legacy battle/sea-contact collections
@@ -12,7 +12,7 @@ export type CombatMarker47={id:string;kind:'contact'|'siege';point:Point;partici
 export function activeSiegeProvinces47(r:FoundingForces47):Set<string>{
  if(!r.occupation.sieges.length)return new Set();
  const space=readArmySpace47(r.world,armySpatialFor47(r));
- return new Set(r.occupation.sieges.filter(s=>{const p=r.world.provinces.find(p=>p.id===s.provinceId);return p&&landHolders47(space,p.id).some(a=>nationsAtWar(r.world,a.nationId,p.controller));}).map(s=>s.provinceId));
+ return new Set(activeSiegesFromSpace47(r,space));
 }
 export function combatMarkers47(r:Pick<FoundingForces47,'forceContacts'|'occupation'|'world'>,activeSieges:ReadonlySet<string>):CombatMarker47[]{
  const areas=new Map<string,{x:number;y:number;count:number;forces:Set<string>}>();

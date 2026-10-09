@@ -31,5 +31,5 @@ describe('private executed journal witness',()=>{
     const malicious={get field(){throw Error('getter should never run');}};
     expect(sameCulture47Value(malicious,{field:1})).toBe(false);
   },30000);
-  it('keeps all ten delivered original engines byte exact',()=>{expect(verifyFrozenCulture47().map(e=>({file:e.file,bytes:e.bytes}))).toEqual([{file:'engine-42a3.js',bytes:1322000},{file:'engine-ce32.js',bytes:1325561},{file:'engine-b365.js',bytes:1326866},{file:'engine-9e23.js',bytes:1333678},{file:'engine-6f84.js',bytes:1336719},{file:'engine-f212.js',bytes:1337837},{file:'engine-30fe.js',bytes:1338079},{file:'engine-49f7.js',bytes:1338516},{file:'engine-8d16.js',bytes:1345177},{file:'engine-3d08.js',bytes:1348086}]);});
+  it('keeps all eleven delivered original engines byte exact',()=>{expect(verifyFrozenCulture47().map(e=>({file:e.file,bytes:e.bytes}))).toEqual([{file:'engine-42a3.js',bytes:1322000},{file:'engine-ce32.js',bytes:1325561},{file:'engine-b365.js',bytes:1326866},{file:'engine-9e23.js',bytes:1333678},{file:'engine-6f84.js',bytes:1336719},{file:'engine-f212.js',bytes:1337837},{file:'engine-30fe.js',bytes:1338079},{file:'engine-49f7.js',bytes:1338516},{file:'engine-8d16.js',bytes:1345177},{file:'engine-3d08.js',bytes:1348086},{file:'engine-4c48.js',bytes:1349394}]);});
 });

@@ -2,7 +2,8 @@ import {beforeAll,describe,it,expect,vi} from 'vitest';
 import * as military from './civilization47-military';
 import {grid} from './fixture.test-support';
 import {Culture47Session,type Culture47Journal,type Culture47Opening} from './culture47-session';
-import {Culture47DisplayDecoder,sameDisplayStatic47,type Culture47DisplayPacket} from './culture47-display';
+import {Culture47DisplayDecoder,checkSiegeDisplay47,sameDisplayStatic47,type Culture47DisplayPacket} from './culture47-display';
+import {activeSiegeProvinces47} from './combat-map47';
 const opening:Culture47Opening={terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'war',setup:{mode:'culture-generated',enabled:['chinese','japanese']}};
 let journal:Culture47Journal;
 beforeAll(()=>{journal=new Culture47Session().create(opening).journal;},30000);
@@ -10,6 +11,26 @@ const expected=(sequence?:number,actions=1)=>({engine:__CULTURE47_ENGINE__,seque
 const withoutMotion=(s:ReturnType<Culture47DisplayDecoder['decode']>)=>{const {motion,...state}=s;void motion;return state;};
 function ready(){const owner=new Culture47Session();owner.load(journal);const decoder=new Culture47DisplayDecoder(),full=owner.displaySnapshot(),snapshot=decoder.decode(full,expected());return{owner,decoder,snapshot,full};}
 describe('culture world compact transport and atomic batches',()=>{
+ it('binds siege display to each accepted snapshot and preserves legacy frames',()=>{
+  const {owner,decoder,snapshot,full}=ready();
+  expect(snapshot.frame.activeSieges).toEqual([...activeSiegeProvinces47(snapshot.run)]);
+  const packet=owner.executeDisplay([{kind:'advance',ticks:120}],0);
+  expect(packet.kind).toBe('update');if(packet.kind!=='update')throw Error('expected update');
+  for(const ids of [undefined,['missing'],['p-0','p-0'],new Array(1)]){
+   const bad=structuredClone(packet);bad.frame.activeSieges=ids;
+   expect(()=>decoder.decode(bad,expected(0))).toThrow(/围城/);
+  }
+  const result=decoder.decode(packet,expected(0));
+  expect(result.frame.activeSieges).toEqual([...activeSiegeProvinces47(result.run)]);
+  const sparse=structuredClone(result);sparse.run.occupation.sieges=[{provinceId:sparse.run.world.provinces[0].id} as typeof sparse.run.occupation.sieges[number]];sparse.frame.activeSieges=new Array(1);
+  expect(()=>checkSiegeDisplay47(sparse)).toThrow(/围城/);
+  expect(Object.isFrozen(result.frame.activeSieges)).toBe(true);
+  expect('activeSieges'in result.run).toBe(false);expect('activeSieges'in result.journal).toBe(false);
+  if(full.kind!=='full')throw Error('expected full');
+  const bad=structuredClone(full);delete bad.snapshot.frame.activeSieges;
+  const fresh=new Culture47DisplayDecoder();expect(()=>fresh.decode(bad,expected())).toThrow(/缺失/);expect(fresh.decode(full,expected())).toEqual(snapshot);
+  bad.snapshot.journal.engine='legacy-engine';expect(new Culture47DisplayDecoder().decode(bad,{engine:'legacy-engine'}).frame.activeSieges).toBeUndefined();
+ },30000);
  it('rolls back a later runtime failure without committing an earlier valid day',()=>{
   const {owner,decoder,snapshot}=ready(),original=military.advanceCivilizationMilitary47;let calls=0;
   const spy=vi.spyOn(military,'advanceCivilizationMilitary47').mockImplementation((...args)=>{if(++calls===2)throw Error('injected later-day failure');return original(...args);});

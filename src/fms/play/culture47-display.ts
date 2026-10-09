@@ -37,6 +37,15 @@ export function sameDisplayStatic47(a:unknown,b:unknown):boolean {
  if(same&&immutable){const entries=equalFixed.get(a)??new WeakSet<object>();entries.add(b);equalFixed.set(a,entries);}return same;
 }
 const fixed=(s:Snapshot):Static=>({terrain:s.run.terrain,geography:s.run.diplomaticGeography,opening:s.journal.opening});
+export function checkSiegeDisplay47(s:Snapshot){
+ const ids=s.frame.activeSieges;
+ // Frozen workers predate this optional display projection. Their original
+ // fallback remains available; current replies must always contain it.
+ if(ids===undefined){if(s.journal.engine===__CULTURE47_ENGINE__)throw Error('围城显示证据缺失。');return;}
+ const provinces=new Set(s.run.world.provinces.map(p=>p.id)),sieges=new Set(s.run.occupation.sieges.map(p=>p.provinceId));
+ if(!Array.isArray(ids)||ids.length>sieges.size||new Set(ids).size!==ids.length||Array.from(ids).some(id=>typeof id!=='string'||!provinces.has(id)||!sieges.has(id)))throw Error('围城显示证据不匹配。');
+ Object.freeze(ids);
+}
 
 /** Called synchronously by the private Session. No internal run/buffer is
  * returned: even the small update is cloned before it leaves the owner. */
@@ -71,12 +80,14 @@ export class Culture47DisplayDecoder {
   if(packet.kind==='full'){
    const s=packet.snapshot;
    if(expected.sequence!==undefined||s.journal.engine!==expected.engine||s.run.id!==s.journal.id||!packet.base)throw Error('显示基线不匹配。');
+   checkSiegeDisplay47(s);
    this.baseline=fixed(s);freezeDisplayPlain(this.baseline);this.witness=structuredClone(this.baseline);freezeDisplayPlain(this.witness);this.base=packet.base;
    this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return s;
   }
   if(!this.baseline||!this.witness||packet.base!==this.base||packet.from!==this.sequence||expected.sequence!==this.sequence||packet.journal.actions.length!==this.sequence+(expected.actions??1)||packet.journal.id!==this.world||packet.journal.engine!==this.engine||packet.journal.engine!==expected.engine||packet.run.id!==this.world||'terrain'in packet.run||'diplomaticGeography'in packet.run||'opening'in packet.journal)throw Error('显示增量不匹配，保留最后确认的进度。');
   if(!sameDisplayStatic47(this.baseline,this.witness))throw Error('显示基图被修改，保留最后确认的进度。');
   const s:Snapshot={run:{...packet.run,terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...packet.journal,opening:this.baseline.opening},frame:packet.frame};
+  checkSiegeDisplay47(s);
   const motion=packet.motion;
   if(motion){
    if(motion.runId!==this.world||motion.fromSequence!==this.sequence||motion.toSequence!==s.journal.actions.length||motion.fromTick!==this.tick||motion.toTick!==s.run.clock.tick||motion.toTick<=motion.fromTick)throw Error('行军显示轨迹不属于当前推进。');

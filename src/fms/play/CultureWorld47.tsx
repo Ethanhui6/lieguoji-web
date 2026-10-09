@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState,type ReactNode} from 'react';
+import {useEffect,useRef,useState,useMemo,type ReactNode} from 'react';
 import {CultureNationOverview47,nationFamily47} from './CultureNationOverview47';
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
@@ -45,7 +45,8 @@ function NationIdentity({run,id,cityId,busy,act,diplomacy,originalEngine=false}:
   const head=run.people.nations[id].leaderId,person=head===null?null:run.kin.persons[head],{family,members}=nationFamily47(run,id);
   const cities=run.world.cities.filter(c=>run.world.provinces.find(p=>p.id===c.provinceId)?.controller===id);
   const city=run.world.cities.find(c=>c.id===cityId)??cities.find(c=>c.id===nation.capitalId)??cities[0];
-  let heir:ReturnType<typeof previewFamilySuccession47>|null=null;try{if(!originalEngine)heir=previewFamilySuccession47(run,id);}catch{/* Unsupported office or no known heir; no pretend succession. */}
+  const [familyOpen,setFamilyOpen]=useState(false);
+  const heir=useMemo(()=>{if(!familyOpen||originalEngine)return null;try{return previewFamilySuccession47(run,id);}catch{return null;}},[familyOpen,originalEngine,run,id]);
   const edit=(e:CivilizationEdit47)=>act({kind:'identity',edit:e});
   return <>
     <div className="c47-identity"><i style={{background:nation.color}}/><div><small>{culture47(identity.cultureId).label}文化 · {polityLabels[identity.polity]}</small><h2>{nation.name}</h2><p>{RELIGIONS47[identity.religionId]}</p></div></div>
@@ -58,7 +59,7 @@ function NationIdentity({run,id,cityId,busy,act,diplomacy,originalEngine=false}:
       <button disabled={busy} type="submit">应用国家设置</button><small>国名留空时，国号随政体变化。国家宗教不会自动改变所有居民的信仰。</small>
     </form></details>
     <details open={cityId!==null||undefined}><summary>城市 · {cities.length}</summary>{city&&<CityIdentity key={city.id+'/'+run.civilization.cities[city.id].name.custom} cityId={city.id} run={run} busy={busy} edit={edit}/>}<div className="c47-city-list">{cities.map(c=><span key={c.id}>{c.id===nation.capitalId?'♛ ':''}{c.name}</span>)}</div></details>
-    <details><summary>{family?culture47(identity.cultureId).houseLabel+' · '+family.surname:'家族'}</summary>{family&&<><div className="c47-family-summary"><strong>族长 · {run.kin.persons[family.headId].identity.name}</strong><small>{members.filter(p=>p.isAlive).length} 位在世 · {members.length} 位登记成员</small></div><ul className="c47-family">{members.map(p=><li key={p.id}><strong>{p.identity.name}</strong><small>{p.isAlive?(p.id===head?'现任领袖':p.fatherId===head||p.motherId===head?'子女':person?.spouseId===p.id?'配偶':'亲属'):'已故'} · {p.age} 岁 · {RELIGIONS47[p.religionId as ReligionId47]??'无指定宗教'}</small></li>)}</ul></>}{heir&&<><p>继承候选：{heir.name}，{heir.age} 岁</p><button disabled={busy} onClick={()=>setPending(true)}>安排传位</button>{pending&&<div role="group" aria-label="确认传位"><p>由 {heir.name} 接任{heir.title}，成为第 {heir.order} 任。</p><button disabled={busy} onClick={()=>{act({kind:'succession',nationId:id});setPending(false);}}>确认传位</button><button onClick={()=>setPending(false)}>取消</button></div>}</>}</details>
+    <details onToggle={e=>setFamilyOpen(e.currentTarget.open)}><summary>{family?culture47(identity.cultureId).houseLabel+' · '+family.surname:'家族'}</summary>{family&&<><div className="c47-family-summary"><strong>族长 · {run.kin.persons[family.headId].identity.name}</strong><small>{members.filter(p=>p.isAlive).length} 位在世 · {members.length} 位登记成员</small></div><ul className="c47-family">{members.map(p=><li key={p.id}><strong>{p.identity.name}</strong><small>{p.isAlive?(p.id===head?'现任领袖':p.fatherId===head||p.motherId===head?'子女':person?.spouseId===p.id?'配偶':'亲属'):'已故'} · {p.age} 岁 · {RELIGIONS47[p.religionId as ReligionId47]??'无指定宗教'}</small></li>)}</ul></>}{heir&&<><p>继承候选：{heir.name}，{heir.age} 岁</p><button disabled={busy} onClick={()=>setPending(true)}>安排传位</button>{pending&&<div role="group" aria-label="确认传位"><p>由 {heir.name} 接任{heir.title}，成为第 {heir.order} 任。</p><button disabled={busy} onClick={()=>{act({kind:'succession',nationId:id});setPending(false);}}>确认传位</button><button onClick={()=>setPending(false)}>取消</button></div>}</>}</details>
   </>;
 }
 function CityIdentity({cityId,run,busy,edit}:{cityId:string;run:FoundingForces47;busy:boolean;edit:(e:CivilizationEdit47)=>void}){
@@ -199,7 +200,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
         const selection=selected.current;
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},displayFrame(),undefined,[],r.id,source);
-        if(combatRun!==r){combat=combatMarkers47(r,activeSiegeProvinces47(r));combatRun=r;canvas.dataset.combat=JSON.stringify(combat);}
+        if(combatRun!==r){combat=combatMarkers47(r,s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r));combatRun=r;canvas.dataset.combat=JSON.stringify(combat);}
         drawCombatMarkers47(combatLayer,combat,r.scale,view.camera.scale);
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}

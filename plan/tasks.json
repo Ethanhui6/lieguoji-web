@@ -9244,7 +9244,8 @@
         "actualContacts": 6,
         "screenshot": "docs/evidence/fms-active-world-2026-10-09/local-play-day76.png",
         "coldReloadAt76": false
-      }
+      },
+      "sourceCommit": "b4176f681c0679d694d6d4a9b1e66f3a7468e1e7"
     }
   }
 }

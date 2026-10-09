@@ -22,6 +22,7 @@ import {war26Strength} from './war26-strength';
 import {reconcileLosses} from './war27-losses';
 import {graphFor47 as graphFor46} from './sea-geography47';
 import {announce} from './chronicle-records';
+import {warHistoryDetails47} from './civilization47-war-history';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';
 export const peaceQueries47=(r:PoliticalRun47)=>war28Queries(r,r.nativeWars,{territoryLossThreshold:id=>WAR28_LOSS_THRESHOLD[r.civilization.nations[id].polity],autonomousDiplomacy:id=>r.diplomacy.nations[id]});
@@ -65,7 +66,7 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
   c.settlement=w?{reason,tick:r.clock.tick,winnerSide:plan?.winnerSide??null,outcomes:[...(plan?.outcomes??[])],enforcedGoals:[...(plan?.enforcedGoals??[])],transfers:structuredClone(plan?.appliedTransfers??[]),effects:structuredClone(plan?.effectResults??[]),confirmedOwnership}:null;
   c.endedTick=r.clock.tick;r.nativeWars.revision++;
   const label=WAR28_PEACE_LABELS[reason],names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name);
-  announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}其他仍在进行的战争保留。`,participants,null);
+  announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。`,participants,null);
   reconcileDiplomaticForces47(r,new Set(participants));reconcileNativeDiplomacy46(r.nativeDiplomacy,r);return true;
 }
 export function advancePeace47(r:PoliticalRun47,monthStart:boolean){

@@ -10,6 +10,7 @@ import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
 import {sameCulture47Value} from './culture47-equal';
+import {withOwnedTravel47} from './owned-travel47';
 import {Culture47DisplayEncoder} from './culture47-display';
 import {actualForces47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
@@ -17,7 +18,7 @@ import {ForceDisplayTraceCollector47,type ForceMotionObserver47} from './force-d
 import type {DisplayFrame} from './motion';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {previewMilitary47,applyMilitary47,assertMilitaryIntent47,assertMilitaryExpected47,type MilitaryIntent47,type MilitaryExpected47} from './culture47-orders';
-import {attachPolitics47,advancePolitics47,finishPoliticalTick47,recordPoliticalOccupation47,assertPoliticalCommand47,applyPoliticalCommand47,previewPoliticalCommand47,type PoliticalCommand47,type PoliticalStamp47} from './civilization47-political-owner';
+import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPoliticalTick47,recordPoliticalOccupation47,assertPoliticalCommand47,applyPoliticalCommand47,previewPoliticalCommand47,type PoliticalCommand47,type PoliticalStamp47} from './civilization47-political-owner';
 
 // This local owner stores creation inputs and accepted commands, never accepts
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
@@ -85,11 +86,12 @@ export class Culture47Session {
   private build(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){
     assertCulture47Journal(journal);const o=journal.opening;
     progress?.({stage:'opening',completed:0,total:journal.actions.length,ticks:0});
-    let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,o.relations,o.setup));
+    let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,'peace',o.setup));
     run.id=journal.id;run.world.custom!.id=journal.id;
+    if(o.relations==='war')initializeOpeningWars47(run);
     prepareOwnedGeography47(run);
     let completed=0,ticks=0;
-    for(const action of journal.actions){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
+    for(const action of journal.actions){run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
     return {run,journal:structuredClone(journal),ticks};
   }
   load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;this.display=new Culture47DisplayEncoder();return this.snapshot();}
@@ -125,7 +127,7 @@ export class Culture47Session {
     // Header and previous actions are privately owned and validated at ingress.
     // Only commit after every action and numeric-geography window succeeds.
     let run=s.run;
-    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>apply(candidate,action,observe));prepareOwnedGeography47(run);}
+    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action,observe)));prepareOwnedGeography47(run);}
     this.state={run,journal:{...s.journal,actions:[...s.journal.actions,...accepted]},ticks};
   }
   snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');const {run,journal}=this.state;return structuredClone({run,journal,frame:culture47Frame(run)});}

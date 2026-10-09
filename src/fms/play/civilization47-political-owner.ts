@@ -1,7 +1,9 @@
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {initialDiplomacy,assertDiplomacy} from './war29-diplomacy';
 import {initialNativeDiplomacy46,advanceDiplomaticSchedule46,reconcileNativeDiplomacy46,assertNativeDiplomacy46} from './civilization47-diplomatic-state';
-import {evaluateDeclaration47,declareWar47,previewDeclaration47} from './civilization47-declaration';
+import {evaluateDeclaration47,declareWar47,previewDeclaration47,diplomaticContext46} from './civilization47-declaration';
+import {claimEntry47} from './civilization47-diplomatic-world';
+import {relocateLostCapitals47} from './civilization47-capitals';
 import {advancePeace47,settleWar47,reconcileDiplomaticForces47} from './civilization47-war-settlement';
 import {coversPair46} from './war46-coalition';
 import {assertWars47} from './war47-validation';
@@ -18,6 +20,17 @@ export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,t
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
 export function attachPolitics47(r:FoundingForces47):PoliticalRun47 {
   return {...r,diplomacy:initialDiplomacy(r.world),nativeDiplomacy:initialNativeDiplomacy46(r,'new-world')};
+}
+/** New-world preset only. Existing wars with unknown history stay unknown.
+ * Stable relation order explicitly selects the initiator; this is not inferred
+ * history. Every created conflict goes through the live declaration contract. */
+export function initializeOpeningWars47(r:PoliticalRun47):void {
+  const relations=r.world.statecraft!.relations;
+  if(r.clock.tick!==0||r.world.day!==0||r.nativeWars.campaigns.length||r.nativeDiplomacy.declarations.length||relations.some(p=>p.status!=='peace')||r.alliances.records.length||r.vassals.records.length)throw Error('战乱开局只能初始化尚未推进的新世界。');
+  const c=diplomaticContext46(r),states=new Map(c.states.map(s=>[s.nationId,s]));
+  const pairs=relations.filter(({a,b})=>c.usable(1,states.get(a)!,states.get(b)!)&&claimEntry47(r,a,b)).map(({a,b})=>({a,b}));
+  for(const {a,b}of pairs)declareWar47(r,a,b);
+  reconcileDiplomaticForces47(r,new Set());reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }
 /** WEB real-identity lifecycle: extinction ends office, not the person's life.
  * Regaining land resumes the recorded living house head as a NEW reign, never
@@ -36,6 +49,7 @@ export function reconcileGovernmentContinuity47(r:FoundingForces47){
       announce(r.chronicle,r.world,r.clock.tick,'restoration',`${n.name}重获领土，${person.identity.name}复位`,'沿用已知存活家主并新增任次；网页身份延续规则，不重新生成人物。',[n.id],land[0].id,[reign]);
     }
   }if(changed)refreshLeaderCombat47(r,r.combatPersonnel);
+  relocateLostCapitals47(r);
 }
 /** Called at each actual occupation transaction, before any family validation.
  * IDs come from the transfer itself, never substring matching visible names. */

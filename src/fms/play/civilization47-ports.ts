@@ -9,13 +9,16 @@ import {assertPorts46} from './war46-ports';
 import {nationsAtWar} from './realtime-statecraft';
 import {nativePortAttack,nativePortRecovery,nativePortTarget,nativePortPeace} from './native-war/port-occupation';
 import type {SeaGraph} from './sea-path';
+import {isOwnedTravelWindow47} from './owned-travel47';
 
 type PortRun47=MilitaryRun47&{harbors:HarborLayout46};
 const revise=(r:PortRun47)=>{if(!Number.isSafeInteger(r.portControl.revision)||r.portControl.revision<0||r.portControl.revision>=Number.MAX_SAFE_INTEGER)throw Error('海港控制修订已达上限。');r.portControl.revision++;};
 /** Read the true travel/region contact state, including neutral observers held
  * inside a contested sea region. Does not install or mutate contact state. */
 export function navalPresence47(r:PortRun47,sea:SeaGraph=graphFor46(r)){
- const {spatial,contact}=actualContactFrame47(r);
+ return presenceFromFrame47(r,sea,actualContactFrame47(r));
+}
+function presenceFromFrame47(r:PortRun47,sea:SeaGraph,{spatial,contact}:ReturnType<typeof actualContactFrame47>){
  const fleets=r.navy.fleets.filter(f=>f.status!=='lost').map(f=>({fleet:f,at:armyTravelLocation47(r.fleetPositions.records[f.id],spatial.graph)}));
  return {spatial,sea,held:contact.held,fleets,atPort:(id:string)=>fleets.filter(v=>harborCells46(sea,id).has(v.at.cell.face))};
 }
@@ -32,11 +35,20 @@ export function reconcilePortLandOwnersOwned47(r:PortRun47,sea:SeaGraph=graphFor
  * at its end earns no preceding time. Recovery then stable fleet-order attacks
  * is a WEB scheduling policy, not a recovered native callback order. */
 export function advancePortIntervalOwned47(before:PortRun47,after:PortRun47,from:number,to:number,sea:SeaGraph=graphFor46(before)):undefined{
+ return settlePortInterval47(before,after,from,to,sea);
+}
+/** Fixed session only: the START frame predates movement, so arrivals do not
+ * receive time before arrival. This owner changes ports/events, never forces. */
+export function advanceSessionPortInterval47(before:PortRun47,after:PortRun47,from:number,to:number,sea:SeaGraph,start:ReturnType<typeof actualContactFrame47>):undefined{
+ if(!isOwnedTravelWindow47())throw Error('港湾位置复用仅允许私有同步推演。');
+ return settlePortInterval47(before,after,from,to,sea,start);
+}
+function settlePortInterval47(before:PortRun47,after:PortRun47,from:number,to:number,sea:SeaGraph,start?:ReturnType<typeof actualContactFrame47>):undefined{
  const seconds=(to-from)*before.forceClock.secondsPerTick;
  if(!Number.isFinite(from)||!Number.isFinite(to)||from<before.clock.tick||to>Math.floor(from)+1||to<=from||!Number.isFinite(seconds)||seconds<=0||after.forceClock.secondsPerTick!==before.forceClock.secondsPerTick)throw Error('港湾推进时间段无效。');
  if(before.transports.cargo.length)throw Error('旧承运记录不能进入实际舰队港湾结算。');
  assertPorts46(before.portControl,before,sea);
- const view=navalPresence47(before,sea),original=JSON.stringify(after.portControl),s=after.portControl;
+ const view=start?presenceFromFrame47(before,sea,start):navalPresence47(before,sea),original=JSON.stringify(after.portControl),s=after.portControl;
  for(const port of view.sea.ports){const p=s.ports[port.provinceId],present=view.atPort(port.id);
   nativePortRecovery(p,p.landOwnerId,present.some(v=>v.fleet.nationId===p.occupierId),present.some(v=>v.fleet.nationId!==p.landOwnerId),seconds);
  }

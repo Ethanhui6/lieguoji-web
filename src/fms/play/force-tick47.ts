@@ -13,6 +13,7 @@ import type {War28World} from './war47-wars';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
 import type {ArmySpace47} from './army-space47';
+import {isOwnedTravelWindow47} from './owned-travel47';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
 export type PreviousOwnership47={provinces:readonly Pick<Province,'id'|'controller'>[]};
@@ -26,17 +27,22 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   afterOccupation?: (candidate:T)=>undefined;
   afterOwnership?: (candidate:T,previousWorld:PreviousOwnership47)=>void;
   portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
+  /** Installed only by the fixed session owner. Generic callbacks never reuse
+   * a frame or share Army records through this branch. */
+  sessionInterval?: (before:T,start:ReturnType<typeof actualContactFrame47>,from:number,stop:number)=>ReturnType<typeof advanceOwnedActualForces47<T>>&{endFrame:ReturnType<typeof actualContactFrame47>};
+  sessionOccupationKey?: (candidate:T,space:ArmySpace47)=>string;
+  sessionAfterTick?: (candidate:T,dailyPending:boolean)=>'reuse'|'refresh';
   observeMotion?:ForceMotionObserver47;
 };
-function frame(r:MilitaryRun47) {
-  const {spatial,forces,contact}=actualContactFrame47(r);
+function frame(r:MilitaryRun47,ready?:ReturnType<typeof actualContactFrame47>) {
+  const {spatial,forces,contact}=ready??actualContactFrame47(r);
   r.forceContacts=contact.contacts;
   const space=spatial.space,eligible=new Set<string>();
   for(const f of forces) {
     if(f.withdrawing)continue;const key=forceKey47(f),p=f.kind==='army'?space.byArmy.get(f.id)?.province:null;
     if(contact.held.has(key) || p && (nationsAtWar(r.world,f.nationId,p.controller) || r.occupation.sieges.some(s=>s.provinceId===p.id&&s.controller===f.nationId&&s.resistance<s.maximum))) eligible.add(key);
   }
-  return {spatial,eligible,forces};
+  return {spatial,eligible,forces,contact};
 }
 /** Candidate owner uses this after reconciling deaths/contacts outside a
  * military window; surviving eligible forces retain their exact deadlines. */
@@ -67,6 +73,7 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,
  * At a day boundary, the returned candidate NEEDS daily settlement before it
  * can be exposed/saved. This is not a complete session or an enabled old save. */
 export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<T>) {
+  if((rules.sessionInterval||rules.sessionOccupationKey||rules.sessionAfterTick)&&!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
   const untilDay=(input.world.day+1)*TICKS_PER_DAY;
   if(!Number.isSafeInteger(ticks)||ticks<1||input.clock.tick<0||Math.floor(input.clock.tick/TICKS_PER_DAY)!==input.world.day||input.clock.tick+ticks>untilDay) throw Error('军事推进必须在当前日界内；先完成日结再推进。');
   const initial=actualForces47(input);
@@ -76,10 +83,19 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
   const volleys:{at:number;due:string[];hits:number;losses:number}[]=[];
   let now=input.clock.tick,eventCount=0;
   let known:ReturnType<typeof frame>|undefined;
+  let observedOccupation:string|undefined;
+  const observeOccupation=(due:ReadonlySet<string>,ready?:ReturnType<typeof frame>)=>{
+    const f=ready??frame(r);
+    if(due.size){observedOccupation=undefined;return occupy(r,now,due,rules,f);}
+    const key=rules.sessionOccupationKey?.(r,f.spatial.space);
+    if(key!==undefined&&key===observedOccupation)return f;
+    // Store before, not after: a transfer can change core/leader/port inputs.
+    const result=occupy(r,now,due,rules,f);observedOccupation=key;return result;
+  };
   for(let tick=input.clock.tick+1;tick<=input.clock.tick+ticks;tick++) {
     for(;;) {
       if(++eventCount>100000)throw Error('军事事件超出预算，原进度未提交。');
-      const occupied=occupy(r,now,new Set(),rules,known);known=occupied??frame(r);
+      const occupied=observeOccupation(new Set(),known);known=occupied??frame(r);
       reconcileAttackClock47(r.forceClock,known.eligible,now);
       const due=new Set(Object.keys(r.forceClock.deadlines).filter(k=>r.forceClock.deadlines[k]<=now).sort());
       if(due.size) {
@@ -89,23 +105,28 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});
         // Web simultaneous-unit policy: even dying units fired the volley;
         // only surviving real holders attack/repair resistance or change flags.
-        const occupiedAfterVolley=occupy(r,now,due,rules);
+        const occupiedAfterVolley=observeOccupation(due);
         known=occupiedAfterVolley??frame(r);reconcileAttackClock47(r.forceClock,known.eligible,now);
       }
       if(now===tick)break;
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
-      const moved=advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed):undefined);
+      const session=rules.sessionInterval?.(r,known,now,stop);
+      if(rules.sessionInterval&&(!session||!session.run||!session.endFrame||!Number.isFinite(session.elapsed)||!Number.isFinite(session.unusedSeconds)))throw Error('私有军事区间必须同步完成，原进度未提交。');
+      const moved=session??advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed):undefined);
       // Assign an exact known endpoint when the interval was consumed; avoid
       // arithmetic residue causing a phantom delayed/missed attack at save.
       const end=moved.unusedSeconds===0?stop:now+moved.elapsed;
-      if(end>now&&rules.portInterval?.(r,moved.run,now,end)!==undefined)throw Error('港湾结算必须同步完成，原进度未提交。');
-      r=moved.run;now=end;known=undefined;
+      if(!session&&end>now&&rules.portInterval?.(r,moved.run,now,end)!==undefined)throw Error('港湾结算必须同步完成，原进度未提交。');
+      r=moved.run;now=end;known=session?frame(r,session.endFrame):undefined;
     }
-    for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick)delete r.maritime.retreating[id];
+    let expired=false;
+    for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick){delete r.maritime.retreating[id];expired=true;}
     r.clock.tick=tick;r.forceClock.now=tick;
     rules.afterTick?.(r,tick===untilDay);
+    const observation=rules.sessionAfterTick?.(r,tick===untilDay);
+    if(rules.sessionAfterTick&&observation!=='reuse'&&observation!=='refresh')throw Error('私有观察必须同步完成，原进度未提交。');
     // Expiry/peace/death can change attack eligibility without moving a point.
-    const current=frame(r);known=current;
+    const current=observation==='reuse'&&!rules.afterTick&&!expired&&known?known:frame(r);known=current;
     reconcileAttackClock47(r.forceClock,current.eligible,tick);
     assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)));
   }

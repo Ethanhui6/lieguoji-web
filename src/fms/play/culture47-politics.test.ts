@@ -2,6 +2,8 @@ import {beforeAll,describe,it,expect} from 'vitest';
 import {grid} from './fixture.test-support';
 import {Culture47Session,type Culture47Journal,type Culture47Opening} from './culture47-session';
 import {assertPolitics47,applyPoliticalCommand47,politicalStamp47,reconcileGovernmentContinuity47,recordPoliticalOccupation47,advancePolitics47} from './civilization47-political-owner';
+import {createFoundingForces47} from './civilization47-forces';
+import {attachPolitics47} from './civilization47-political-owner';
 import {settleWar47,reconcileDiplomaticForces47} from './civilization47-war-settlement';
 import {diplomaticContext46,evaluateDeclaration47} from './civilization47-declaration';
 import {advanceFamilyCalendar47} from './civilization47-calendar';
@@ -43,9 +45,10 @@ describe('real culture diplomatic owner',()=>{
     expect(war.settlement?.reason).toBe(11);expect(war.settlement?.transfers).toEqual([]);expect(r.nativeDiplomacy.relations[0].warCount).toBe(1);expect(()=>applyPoliticalCommand47(r,command,politicalStamp47(r))).toThrow(/停战/);
   },30000);
   it('unknown opening wars may cease without invented goals, attacker or settlement',()=>{
-    const s=new Culture47Session(),first=s.create({...opening,relations:'war'}),w=first.run.nativeWars.campaigns[0];expect(w.history).toBe('unknown');
-    const action={type:'make-peace' as const,nationId:w.nations[0],targetNationId:w.nations[1]},p=s.preview(action);expect(p.valid,p.reason).toBe(true);const out=s.execute({kind:'politics',action,expected:p.expected},p.sequence),ended=out.run.nativeWars.campaigns.find(c=>c.id===w.id)!;
-    expect(ended.endedTick).toBe(0);expect(ended.attacker).toBeNull();expect(ended.settlement).toBeNull();expect(new Culture47Session().load(out.journal)).toEqual(out);
+    const r=attachPolitics47(createFoundingForces47(opening.terrain,opening.count,opening.cityCount,'war',opening.setup)),w=r.nativeWars.campaigns[0];expect(w.history).toBe('unknown');
+    const action={type:'make-peace' as const,nationId:w.nations[0],targetNationId:w.nations[1]},out=applyPoliticalCommand47(r,action,politicalStamp47(r)),ended=out.nativeWars.campaigns.find(c=>c.id===w.id)!;
+    expect(ended.endedTick).toBe(0);expect(ended.attacker).toBeNull();expect(ended.startTime).toBeNull();expect(ended.goals).toEqual([]);expect(ended.settlement).toBeNull();assertPolitics47(out);
+    const history=out.chronicle.entries.at(-1)!.reason;expect(history).not.toContain('进攻阵营');expect(history).not.toContain('防守阵营');expect(history).toContain('原始目标未记录');
   },30000);
   it('calendar diplomacy uses actual cultures/religions and persisted native monthly evaluation, without driving old movement',()=>{
     const r=load().snapshot().run;for(const id of Object.keys(r.nativeDiplomacy.nations)){r.nativeDiplomacy.nations[id].pools.startWar=100;}

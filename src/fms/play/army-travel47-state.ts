@@ -1,4 +1,5 @@
 import type {Point} from '../../sim/types';
+import {hasOwnedTravelProof47,rememberOwnedTravel47,cloneTravel47} from './owned-travel47';
 import {findArmyTravelPath47,insideTravelCell47,type TravelPolicy47,type TravelGraph47,type TravelCell47} from './army-travel47-graph';
 type TravelBody47={armyId:string;origin:Point;nodes:number[];leg:number;offset:number;crossed:boolean;status:'moving'|'arrived'|'blocked'|'halted'};
 /** V1 is unchanged. V2 explicitly saves an exact final point; old records are
@@ -24,6 +25,7 @@ export function assertArmyTravel47(value:unknown,g:TravelGraph47):asserts value 
  if(!s||typeof s!=='object'||Object.keys(s).length!==(s.version===2?9:8)||Object.keys(s).some(k=>!travelKeys.has(k)||k==='destination'&&s.version!==2)||(s.version!==1&&s.version!==2)||typeof s.armyId!=='string'||!s.armyId||!Array.isArray(s.nodes)||!s.nodes.length||s.nodes.length>g.cells.size+1||!Number.isSafeInteger(s.leg)||s.leg<0||s.leg>=s.nodes.length||!Number.isFinite(s.offset)||s.offset<0||typeof s.crossed!=='boolean'||!['moving','arrived','blocked','halted'].includes(s.status))throw Error('海陆行军记录无效，已保留原档。');
  // A single dense scan still rejects holes, unknown cells and broken edges.
  // Avoid allocating an index array for every force at every sub-tick.
+ if(!hasOwnedTravelProof47(s,g)){
  let previous:TravelCell47|undefined;
  for(let i=0;i<s.nodes.length;i++){
   const id=s.nodes[i],cell=g.cells.get(id);
@@ -33,6 +35,8 @@ export function assertArmyTravel47(value:unknown,g:TravelGraph47):asserts value 
  }
  if(!isPointShape(s.origin)||!insideTravelCell47(g.cells.get(s.nodes[0])!,s.origin))throw Error('海陆行军起点不在实际格内。');
  if(s.version===2&&(!isPointShape(s.destination)||!insideTravelCell47(g.cells.get(s.nodes.at(-1)!)!,s.destination)))throw Error('精确行军终点不在目标格内。');
+ rememberOwnedTravel47(s,g);
+ }
  const link=armyTravelSegment47(s,g);
  if(link?.kind==='local'){
   if(s.crossed||s.status==='blocked'||s.offset>link.distance||s.status==='moving'&&s.offset===link.distance||s.status==='arrived'&&s.offset!==link.distance)throw Error('格内行军进度无效。');
@@ -92,7 +96,6 @@ export function redirectArmyTravel47(input:ArmyTravel47,g:TravelGraph47,target:n
  assertArmyTravel47(input,g);const location=armyTravelLocation47(input,g),path=findArmyTravelPath47(g,location.cell.id,target,policy);if(!path)return null;
  return beginArmyTravel47(input.armyId,path.nodes,g,location.point);
 }
-function cloneTravel47(s:ArmyTravel47):ArmyTravel47{return s.version===2?{...s,origin:{...s.origin},nodes:[...s.nodes],destination:{...s.destination}}:{...s,origin:{...s.origin},nodes:[...s.nodes]};}
 function finishGate47(s:ArmyTravel47){s.leg++;s.offset=0;s.crossed=false;if(s.leg===s.nodes.length-1)s.status='arrived';}
 export function beginArmyTravelToPoint47(armyId:string,nodes:readonly number[],g:TravelGraph47,origin:Point,destination:Point):ArmyTravel47{
  const value:ArmyTravel47={version:2,armyId,origin:{...origin},destination:{...destination},nodes:[...nodes],leg:0,offset:0,crossed:false,status:nodes.length===1&&distance(origin,destination)===0?'arrived':'moving'};

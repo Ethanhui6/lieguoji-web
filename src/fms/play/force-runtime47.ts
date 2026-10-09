@@ -11,6 +11,7 @@ import {advanceForceContacts47,assertContactRecordsOwned47,reconcileForceContact
 import type {TravelCell47} from './army-travel47-graph';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
+import {isOwnedTravelWindow47} from './owned-travel47';
 
 /** Army and Fleet have separate, equally authoritative travel ledgers. Fleet
  * legacy node/route is not rewritten to fake an arbitrary shore-gate origin.
@@ -35,16 +36,25 @@ export function actualForces47(r: ForceRun47) {
 /** Validate a complete live position/contact view once in one synchronous
  * phase. The view must be discarded after any command or owner callback. */
 export function actualContactFrame47(r:ForceRun47){
-  const actual=actualForces47(r),regions=waterRegions47(r.diplomaticGeography),region=(face:number)=>regions.get(face)!;
+  return contactFrameFromActual47(r,actualForces47(r));
+}
+function contactFrameFromActual47(r:ForceRun47,actual:ReturnType<typeof actualForces47>){
+  const regions=waterRegions47(r.diplomaticGeography),region=(face:number)=>regions.get(face)!;
   assertContactRecordsOwned47(r.forceContacts,actual.forces,actual.spatial.graph,region);
   const contact=reconcileForceContactsOwned47(actual.forces,actual.spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),region);
   return {...actual,contact};
+}
+/** The fixed session interval has already validated this END actual view.
+ * Reconcile contacts again after status changes, without rebuilding positions. */
+export function contactFrameFromSessionActual47(r:ForceRun47,actual:ReturnType<typeof actualForces47>){
+  if(!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
+  return contactFrameFromActual47(r,actual);
 }
 /** Coupled Army+Fleet movement/contact phase of the private full-session
  * candidate. Does not run the old v46 Army/Navy movers, old road contacts or
  * damage loops. Caller must bound seconds at day/diplomacy/combat events. */
 export function advanceActualForces47<T extends ForceRun47>(input: T, seconds: number, weights: ArmyRouteWeights47, speed: (run: T, force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => number, stopAtEvent = false) {
-  return advanceCandidateForces47(cloneMilitaryCandidate47(input),seconds,weights,speed,stopAtEvent);
+  return publicMotionResult47(advanceCandidateForces47(cloneMilitaryCandidate47(input),seconds,weights,speed,stopAtEvent));
 }
 /** The military window already owns a complete private transaction. Movement
  * only changes Army records and both travel books; retain a separate before
@@ -56,11 +66,21 @@ export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds
   // two books/record tables here, retaining the original START view for port
   // exposure, without cloning those same routes twice per movement interval.
   const next={...input,world:{...input.world,armies:structuredClone(input.world.armies)},armyPositions:{...input.armyPositions,records:{...input.armyPositions.records}},fleetPositions:{...input.fleetPositions,records:{...input.fleetPositions.records}}};
-  return advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent,observe);
+  return publicMotionResult47(advanceCandidateForces47(next,seconds,weights,speed,stopAtEvent,observe));
 }
-function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47){
+/** Fixed speed/trace owners only. START comes from the current military phase;
+ * no external callback may mutate it. Keep generic movement deep-copy behavior. */
+export function advanceSessionActualForces47<T extends ForceRun47>(input:T,start:ReturnType<typeof actualForces47>,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,observe?:ForceMotionObserver47){
+  if(!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
+  const next={...input,world:{...input.world},armyPositions:{...input.armyPositions,records:{...input.armyPositions.records}},fleetPositions:{...input.fleetPositions,records:{...input.fleetPositions.records}}};
+  return advanceCandidateForces47(next,seconds,weights,speed,true,observe,start);
+}
+function publicMotionResult47<T extends ForceRun47>(v:ReturnType<typeof advanceCandidateForces47<T>>){
+  return {run:v.run,exposure:v.exposure,boundaryEvents:v.boundaryEvents,held:v.held,elapsed:v.elapsed,unusedSeconds:v.unusedSeconds};
+}
+function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47,certifiedStart?:ReturnType<typeof actualForces47>){
   for (const book of [next.armyPositions, next.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
-  const {spatial, forces} = actualForces47(next);
+  const {spatial, forces} = certifiedStart??actualForces47(next);
   observe?.(forces,spatial.graph,0);
   const regions = waterRegions47(next.diplomaticGeography);
   const policies = new Map(next.world.armies.map(a => [a.id, armyTravelPolicy47(next, a, weights, a.status === 'retreating')]));
@@ -75,11 +95,14 @@ function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,we
   const space = readArmySpace47(next.world, {...spatial, positions: next.armyPositions}), access = militaryAccess46(next);
   // All positions are installed before retreat completion or status changes.
   const safelyArrived = new Set([...space.byArmy].filter(([,v]) => v.army.status === 'retreating' && ['arrived', 'halted'].includes(v.travel.status) && v.province && access(next.world, v.army.nationId, v.province.controller) && !(space.land.get(v.province.id) ?? []).some(b => b.army.status !== 'retreating' && nationsAtWar(next.world, v.army.nationId, b.army.nationId))).map(([id]) => id));
-  for (const a of next.world.armies) if (a.troops > 0 && a.status !== 'destroyed') {
-    if (safelyArrived.has(a.id)) a.status = 'idle';
-    else if (a.status !== 'retreating') a.status = out.held.has(forceKey47({kind: 'army', id: a.id})) ? 'fighting' : 'idle';
+  let copied=false;
+  for (let i=0;i<next.world.armies.length;i++) {const a=next.world.armies[i];if(!(a.troops>0)||a.status==='destroyed')continue;
+    const status=safelyArrived.has(a.id)?'idle':a.status==='retreating'?'retreating':out.held.has(forceKey47({kind:'army',id:a.id}))?'fighting':'idle';
+    if(status===a.status)continue;
+    if(certifiedStart){if(!copied){next.world.armies=[...next.world.armies];copied=true;}next.world.armies[i]={...a,status};}
+    else a.status=status;
   }
   next.armyPositions.revision++; next.fleetPositions.revision++;
-  actualForces47(next);
-  return {run: next, exposure: out.exposure, boundaryEvents: out.events, held:out.held, elapsed:out.elapsed, unusedSeconds:out.unusedSeconds};
+  const endActual=actualForces47(next);
+  return {run: next, exposure: out.exposure, boundaryEvents: out.events, held:out.held, elapsed:out.elapsed, unusedSeconds:out.unusedSeconds,endActual};
 }

@@ -26,6 +26,7 @@ import {personSkills} from './court16-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {POLITIES} from './upper14-state';
 import {recordHistory} from './chronicle-records';
+import {warHistoryDetails47} from './civilization47-war-history';
 
 import {reconcileLosses} from './war27-losses';
 
@@ -76,8 +77,8 @@ function start(r:War46Run,d:NativeDeclaration<NativeDeclaredGoal>,c:ReturnType<t
  // Actual military and naval targets consume the selected declaration scope.
  // Actual47 Army autonomy consumes current campaigns and real land/sea paths.
  // The old port-to-port executor must not gate these declarations.
- const an=r.world.nations.find(n=>n.id===a.nationId)!.name,bn=r.world.nations.find(n=>n.id===b.nationId)!.name,reason=`${DECLARATION_LABELS46[d.casusBelliId]}：战争目标已记录；部队仍须实际行军、交战或登陆。`;
- r.world.events.push({id:r.world.nextEventId++,day:r.world.day,kind:'diplomacy',text:`${an}向${bn}宣战`,reason});r.world.events=r.world.events.slice(-160);setDecision(r.world,a.nationId,'宣战',reason);setDecision(r.world,b.nationId,'应战',reason);recordHistory(r.chronicle,r.world,r.clock.tick,'diplomacy',`${an}向${bn}宣战`,reason,members.map(m=>r.nativeWars.nationIds.find(n=>n[0]===m.stateId)![1]),null,[],r.world.nextEventId-1);return war;
+ const an=r.world.nations.find(n=>n.id===a.nationId)!.name,bn=r.world.nations.find(n=>n.id===b.nationId)!.name,reason=`${DECLARATION_LABELS46[d.casusBelliId]}。${warHistoryDetails47(r,war)}`;
+ r.world.events.push({id:r.world.nextEventId++,day:r.world.day,kind:'diplomacy',text:`${an}向${bn}宣战：${DECLARATION_LABELS46[d.casusBelliId]}`,reason});r.world.events=r.world.events.slice(-160);setDecision(r.world,a.nationId,'宣战',reason);setDecision(r.world,b.nationId,'应战',reason);recordHistory(r.chronicle,r.world,r.clock.tick,'diplomacy',`${an}向${bn}宣战：${DECLARATION_LABELS46[d.casusBelliId]}`,reason,members.map(m=>r.nativeWars.nationIds.find(n=>n[0]===m.stateId)![1]),null,[],r.world.nextEventId-1);return war;
 }
 export function evaluateDeclaration47(r:War46Run,id:string){
  if(!r.diplomacy.worldAuto||!r.diplomacy.nations[id]||overlord46(r,id)!==null)return null;

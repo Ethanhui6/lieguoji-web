@@ -8,6 +8,8 @@ import {armyTravelLocation47,beginArmyTravel47,haltArmyTravel47} from './army-tr
 import {advanceCivilizationMilitary47} from './civilization47-military';
 import {applyFleetCommand47,fleetStamp47} from './fleet-commands47';
 import {settleCivilizationDay47} from './civilization47-daily';
+import {createSessionNavalObserver47} from './naval-observer47';
+import {withOwnedTravel47} from './owned-travel47';
 
 let base:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -17,6 +19,40 @@ function phase(r:FoundingForces47){r.clock.tick++;issueAutonomousNavalOrders47(r
 function offAnchor(){const r=structuredClone(base),view=navalPresence47(r),f=r.navy.fleets[0],at=armyTravelLocation47(r.fleetPositions.records[f.id],view.spatial.graph),v=at.cell.polygon.find(v=>Math.hypot(v.x-at.point.x,v.y-at.point.y)>1e-4)!;
  const point={x:at.point.x*.999+v.x*.001,y:at.point.y*.999+v.y*.001};r.fleetPositions.records[f.id]=beginArmyTravel47(f.id,[at.cell.id],view.spatial.graph,point);const home=view.sea.ports.find(p=>p.id===f.dockId)!;return{r,f,view,point,home};}
 describe('persistent actual-position naval autonomy',()=>{
+ it('honors an upcoming cooldown after withdrawal ends while the previous busy note remains',()=>{
+  const ordinary=structuredClone(base),owned=structuredClone(base),sea=navalPresence47(base).sea,observe=createSessionNavalObserver47();
+  for(const r of [ordinary,owned]){const f=r.navy.fleets[0];r.maritime.retreating[f.id]=2;r.navalAutonomy.fleets[f.id].nextTick=6;r.navalAutonomy.nextRoleTick=30;}
+  withOwnedTravel47(()=>{for(let tick=1;tick<=10;tick++){
+   for(const r of [ordinary,owned]){r.clock.tick=tick;if(tick===2)delete r.maritime.retreating[r.navy.fleets[0].id];}
+   issueAutonomousNavalOrders47(ordinary,weights,sea);const executed=observe(owned,weights,sea);
+   if(tick===2)expect(owned.navalAutonomy.fleets[owned.navy.fleets[0].id].decision).toBe('busy');
+   if(tick===6)expect(executed).toBe(true);
+   expect(owned).toEqual(ordinary);
+  }});
+ });
+ it('deadline observation preserves every real decision, RNG and tick revision while skipping unchanged cooldown scans',()=>{
+  const ordinary=structuredClone(base),owned=structuredClone(base),sea=navalPresence47(base).sea,observe=createSessionNavalObserver47();let observations=0;
+  withOwnedTravel47(()=>{for(let tick=1;tick<=120;tick++){
+   ordinary.clock.tick=owned.clock.tick=tick;issueAutonomousNavalOrders47(ordinary,weights,sea);if(observe(owned,weights,sea))observations++;
+   expect(owned.navalAutonomy).toEqual(ordinary.navalAutonomy);expect(owned.portControl).toEqual(ordinary.portControl);
+  }});expect(owned).toEqual(ordinary);expect(observations).toBeLessThan(12);expect(owned.navalAutonomy.revision).toBe(120);
+ },30000);
+ it('port ownership, war, manual control and depleted food invalidate the observation immediately',()=>{
+  const ordinary=structuredClone(base),owned=structuredClone(base),sea=navalPresence47(base).sea,observe=createSessionNavalObserver47();
+  withOwnedTravel47(()=>{for(let tick=1;tick<=18;tick++){
+   for(const r of [ordinary,owned]){r.clock.tick=tick;const f=r.navy.fleets[0];
+    if(tick===3)r.world.statecraft!.relations[0].status='war';
+    if(tick===5)r.portControl.ports[sea.ports[0].provinceId].occupierId=r.world.nations.find(n=>n.id!==r.portControl.ports[sea.ports[0].provinceId].landOwnerId)!.id;
+    if(tick===7)r.voyages.manualFleets.push(f.id);
+    if(tick===9)r.voyages.manualFleets=[];
+    if(tick===11){f.food=0;for(const stock of r.world.statecraft!.provinces)stock.grain=0;}
+   }
+   issueAutonomousNavalOrders47(ordinary,weights,sea);const executed=observe(owned,weights,sea);if([3,5,7,9,11].includes(tick))expect(executed).toBe(true);
+   // The original low-food/no-route branch retries, even inside its cooldown.
+   if(tick>11&&ordinary.navalAutonomy.fleets[ordinary.navy.fleets[0].id].decision==='no-route')expect(executed).toBe(true);
+   expect(owned.navalAutonomy).toEqual(ordinary.navalAutonomy);expect(owned.portControl).toEqual(ordinary.portControl);
+  }});expect(owned).toEqual(ordinary);
+ },30000);
  it('does not share low-food exclusions with a stocked fleet of the same nation in either iteration order',()=>{
   for(const reverse of [false,true]){
    const r=structuredClone(base),view=navalPresence47(r),[low,stocked]=r.navy.fleets;expect(low).toBeDefined();expect(stocked).toBeDefined();

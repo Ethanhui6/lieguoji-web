@@ -61,5 +61,23 @@
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
     "source": "culture47-phasework-motion-checked"
+  },
+  {
+    "engine": "49f726d47c9dcaeee01a5157c215a06327ea071716afd1d7c39c15e02a5e60a0",
+    "file": "engine-49f7.js",
+    "bytes": 1338516,
+    "sha256": "38009557db4e882bb5fc28cc93fe832182e2775b2dc3d1a77e8f3bea41f675c4",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-pace-checked"
+  },
+  {
+    "engine": "8d162ded831fcffe1616d88a4cf4a5f388208cee3f56f15c22e932021b1ea6d6",
+    "file": "engine-8d16.js",
+    "bytes": 1345177,
+    "sha256": "8e2a7f7618afc6a8e44d1af423331b8a1166986b7dca46b08a0d7e0c4e9786d5",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-events-checked"
   }
 ]

@@ -11,6 +11,8 @@ import {nativePortAttack,nativePortRecovery} from './native-war/port-occupation'
 import {settleFleetFood47} from './civilization47-upkeep';
 import {settleCivilizationDay47} from './civilization47-daily';
 import {harborCells46} from './war46-harbor';
+import {withOwnedTravel47} from './owned-travel47';
+import {actualForceSpeed47} from './force-speed47';
 
 let base:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -25,6 +27,27 @@ const rules:MilitaryRules47<FoundingForces47>={speed:()=>1,combat:()=>noCombat,a
 const json=(r:FoundingForces47):FoundingForces47=>{const {terrain,...mutable}=r;return {...JSON.parse(JSON.stringify(mutable)),terrain};};
 
 describe('actual military interval port occupation',()=>{
+ it.each(['ordinary','capture','arrival','contact','retreat'])('fixed session interval matches generic movement and preserves input: %s',scenario=>{
+  const {r,fleet,port,sea,graph,cell}=fixture();
+  if(scenario==='capture')r.portControl.ports[port.provinceId].value=.001;
+  if(scenario==='arrival'){
+   const area=harborCells46(sea,port.id),to=[...graph.cells.values()].find(c=>c.surface==='sea'&&area.has(c.face)&&c.links.some(l=>graph.cells.get(l.to)!.surface==='sea'&&!area.has(graph.cells.get(l.to)!.face)))!,link=to.links.find(l=>graph.cells.get(l.to)!.surface==='sea'&&!area.has(graph.cells.get(l.to)!.face))!,from=graph.cells.get(link.to)!;
+   const travel=beginArmyTravel47(fleet.id,[from.id,to.id],graph),speed=actualForceSpeed47(r,{kind:'fleet',id:fleet.id,nationId:fleet.nationId,withdrawing:false,travel},from),distance=Math.hypot(from.center.x-link.gate.x,from.center.y-link.gate.y);
+   travel.offset=Math.max(0,distance-speed*.5);r.fleetPositions.records[fleet.id]=travel;
+  }
+  if(scenario==='contact'){
+   const enemy=r.navy.fleets.find(f=>f.nationId===r.portControl.ports[port.provinceId].landOwnerId)!;enemy.status='anchored';enemy.crew=40;r.maritime.hulls[enemy.id]=100;r.fleetPositions.records[enemy.id]=beginArmyTravel47(enemy.id,[cell.id],graph);
+   // A battle already awaiting its next volley, not an altered native first delay.
+   for(const f of [fleet,enemy])r.forceClock.deadlines[forceKey47({kind:'fleet',id:f.id})]=1;
+  }
+  if(scenario==='retreat'){const a=r.world.armies[0];a.troops=100;a.status='retreating';}
+  const before=structuredClone(r),ordinary=advanceCivilizationMilitary47(r,24,weights),owned=withOwnedTravel47(()=>advanceCivilizationMilitary47(r,24,weights));
+  expect(owned).toEqual(ordinary);expect(r).toEqual(before);
+  if(scenario==='capture')expect(owned.run.portControl.ports[port.provinceId].occupierId).toBe(fleet.nationId);
+  if(scenario==='arrival')expect(owned.run.portControl.ports[port.provinceId].value).toBeLessThan(100);
+  if(scenario==='contact')expect(owned.volleys.length).toBeGreaterThan(0);
+  if(scenario==='retreat')expect(owned.run.world.armies[0].status).toBe('idle');
+ },30000);
  it('uses real harbor presence and exact native dt/hull while preserving input and land ownership',()=>{
   const {r,fleet,port}=fixture(),before=structuredClone(r),expected=structuredClone(r.portControl.ports[port.provinceId]);fleet.node=-1;fleet.dockId=null;
   nativePortRecovery(expected,expected.landOwnerId,false,true,r.forceClock.secondsPerTick);nativePortAttack(expected,fleet.nationId,1,r.forceClock.secondsPerTick,()=>true);

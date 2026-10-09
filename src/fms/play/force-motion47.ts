@@ -1,4 +1,5 @@
 import type {Point} from '../../sim/types';
+import {cloneForceTravelRecords47} from './owned-travel47';
 import type {TravelCell47, TravelGraph47} from './army-travel47-graph';
 import {armyTravelLocation47, armyTravelSegment47, assertArmyTravel47, type ArmyTravel47} from './army-travel47-state';
 
@@ -118,7 +119,7 @@ const contactIdentity = (book: ForceContacts47) => JSON.stringify(book.pairs.map
  * Water partitions and clipped triangles are explicit web geometry adapters. */
 export function advanceForceContacts47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents = 100000, stopAtEvent = false) {
   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
-  const forces = structuredClone([...input]).sort((a, b) => forceKey47(a).localeCompare(forceKey47(b)));
+  const forces = cloneForceTravelRecords47(input).sort((a, b) => forceKey47(a).localeCompare(forceKey47(b)));
   assertForceContacts47(previous, forces, graph, rules.seaRegion);
   let book = structuredClone(previous), remaining = seconds, events = 0;
   const exposure: Record<string, number> = {};

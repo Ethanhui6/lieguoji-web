@@ -1,0 +1,133 @@
+{
+  "points": 36864,
+  "days": 24,
+  "tick": 2880,
+  "exactPriorRunFrameMotion": true,
+  "timings": [
+    {
+      "day": 1,
+      "priorCoreMs": 2181.0109999999986,
+      "currentCoreMs": 2143.5489000000016
+    },
+    {
+      "day": 2,
+      "priorCoreMs": 554.6750000000029,
+      "currentCoreMs": 375.3559000000023
+    },
+    {
+      "day": 3,
+      "priorCoreMs": 570.5051999999996,
+      "currentCoreMs": 409.26090000000113
+    },
+    {
+      "day": 4,
+      "priorCoreMs": 820.1659999999974,
+      "currentCoreMs": 657.9377000000022
+    },
+    {
+      "day": 5,
+      "priorCoreMs": 513.9579999999987,
+      "currentCoreMs": 432.2716999999975
+    },
+    {
+      "day": 6,
+      "priorCoreMs": 690.0230999999985,
+      "currentCoreMs": 465.21459999999934
+    },
+    {
+      "day": 7,
+      "priorCoreMs": 797.7583999999988,
+      "currentCoreMs": 603.8132000000041
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 581.7596999999951,
+      "currentCoreMs": 401.17520000000513
+    },
+    {
+      "day": 9,
+      "priorCoreMs": 701.5718000000052,
+      "currentCoreMs": 398.1785000000018
+    },
+    {
+      "day": 10,
+      "priorCoreMs": 715.3761999999988,
+      "currentCoreMs": 385.78749999999854
+    },
+    {
+      "day": 11,
+      "priorCoreMs": 674.5784000000058,
+      "currentCoreMs": 354.58610000000044
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 954.1202000000048,
+      "currentCoreMs": 613.1002000000008
+    },
+    {
+      "day": 13,
+      "priorCoreMs": 704.303899999999,
+      "currentCoreMs": 386.7482999999993
+    },
+    {
+      "day": 14,
+      "priorCoreMs": 731.3894999999975,
+      "currentCoreMs": 371.7147999999943
+    },
+    {
+      "day": 15,
+      "priorCoreMs": 682.2259000000049,
+      "currentCoreMs": 381.3061000000016
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 686.4920999999886,
+      "currentCoreMs": 406.44199999999546
+    },
+    {
+      "day": 17,
+      "priorCoreMs": 727.647100000002,
+      "currentCoreMs": 369.48480000000563
+    },
+    {
+      "day": 18,
+      "priorCoreMs": 668.6445999999996,
+      "currentCoreMs": 375.363400000002
+    },
+    {
+      "day": 19,
+      "priorCoreMs": 717.994399999996,
+      "currentCoreMs": 358.4438999999984
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 807.6436000000103,
+      "currentCoreMs": 498.25
+    },
+    {
+      "day": 21,
+      "priorCoreMs": 791.8932999999961,
+      "currentCoreMs": 450.35929999999644
+    },
+    {
+      "day": 22,
+      "priorCoreMs": 715.0245999999897,
+      "currentCoreMs": 444.12859999999637
+    },
+    {
+      "day": 23,
+      "priorCoreMs": 749.918399999995,
+      "currentCoreMs": 475.77449999999953
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 678.3418999999994,
+      "currentCoreMs": 475.89049999999406
+    }
+  ],
+  "warmMedian": {
+    "prior": 749.918399999995,
+    "current": 475.77449999999953
+  },
+  "note": "Node worker core vs source core, excludes transport/decode; not browser FPS or full equivalence"
+}

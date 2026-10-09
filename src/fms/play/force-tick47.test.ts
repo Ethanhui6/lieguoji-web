@@ -38,6 +38,10 @@ const advance=(r:MilitaryRun47,ticks:number)=>advanceMilitaryWindow47(r,ticks,we
 const jsonState=(r:MilitaryRun47):MilitaryRun47=>{const {terrain,...mutable}=r;return {...JSON.parse(JSON.stringify(mutable)),terrain};};
 
 describe('47 atomic motion, persisted timers, occupation and accounting',()=>{
+  it('refuses a session-only interval outside its synchronous private window',()=>{
+    const f=fixture(),before=structuredClone(f.run);let called=false;
+    expect(()=>advanceMilitaryWindow47(f.run,1,weights,{...rules,sessionInterval:()=>{called=true;throw Error('must not execute');}})).toThrow(/私有同步/);expect(called).toBe(false);expect(f.run).toEqual(before);
+  });
   it('matches the public deep-copy mover and preserves the before view for owned movement',()=>{
     const f=fixture();f.b.troops=0;f.b.status='destroyed';
     const from=[...f.graph.cells.values()].find(c=>c.surface==='sea'&&c.links.some(l=>f.graph.cells.get(l.to)!.surface==='sea'))!;

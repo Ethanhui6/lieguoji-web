@@ -7,9 +7,11 @@ import oldB365 from '../../../compat/culture47/engine-b365.js?url';
 import old9e23 from '../../../compat/culture47/engine-9e23.js?url';
 import old6f84 from '../../../compat/culture47/engine-6f84.js?url';
 import oldF212 from '../../../compat/culture47/engine-f212.js?url';
+import old49f7 from '../../../compat/culture47/engine-49f7.js?url';
+import old8d16 from '../../../compat/culture47/engine-8d16.js?url';
 import old30fe from '../../../compat/culture47/engine-30fe.js?url';
 import {Culture47DisplayDecoder} from './culture47-display';
-const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe};
+const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe,'engine-49f7.js':old49f7,'engine-8d16.js':old8d16};
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
 
 export class Culture47Client {

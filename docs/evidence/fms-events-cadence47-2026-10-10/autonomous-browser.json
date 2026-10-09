@@ -1,0 +1,168 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-autonomous-history.spec.ts",
+      "--project",
+      "desktop-chromium",
+      "--output",
+      ".autopilot/events47-autonomous-final-results"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/events47-autonomous-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/events47-autonomous-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/.autopilot/events47-autonomous-final-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-autonomous-history.spec.ts",
+      "file": "fms-culture47-autonomous-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "peaceful normal world autonomously declares actual wars with live goals and persistent history",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 72359,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T20:47:00.718Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "autonomous-history",
+                      "contentType": "application/json",
+                      "body": "eyJ0aWNrIjoiODMyOCIsIm9wZW5pbmciOlsi56aP5bCU5pav54m56ZyN5aSr546L5Zu977ya5LmM5aGUwrflt7TnmbvlsLHku7vlpbPnjosiLCLnu7TlsJTpmL/mi4nluJ3lm73vvJrnpo/mlq/lm77mlq/Ct+azleavlOS5jOaWr+WwseS7u+eah+W4nSIsIuadsOaLnOWLkuaymeWwlOWfuueOi+Wbve+8muiOseaLieWwseS7u+Wls+eOiyIsIuWlpeWwlOW+t+S8jeW+t+eOi+Wbve+8mumYv+WwlOW8l+mbt+W+t8K35pav5Z2m5Yip5bCx5Lu75Zu9546LIiwi6Iul6Ziz5bid5Zu977ya5bKb5rSl5rGf5bCx5Lu75aSp55qHIiwi5rC45ZKM5bid5Zu977ya6JKL546E54Oo5bCx5Lu755qH5bidIl0sInJlY29yZHMiOlsi5p2w5ouc5YuS5rKZ5bCU5Z+6546L5Zu95ZCR5rC45ZKM5bid5Zu95a6j5oiY77ya6aKG5Zyf5LqJ5aS6Iiwi56aP5bCU5pav54m56ZyN5aSr546L5Zu977ya5LmM5aGUwrflt7TnmbvlsLHku7vlpbPnjosiLCLnu7TlsJTpmL/mi4nluJ3lm73vvJrnpo/mlq/lm77mlq/Ct+azleavlOS5jOaWr+WwseS7u+eah+W4nSIsIuadsOaLnOWLkuaymeWwlOWfuueOi+Wbve+8muiOseaLieWwseS7u+Wls+eOiyIsIuWlpeWwlOW+t+S8jeW+t+eOi+Wbve+8mumYv+WwlOW8l+mbt+W+t8K35pav5Z2m5Yip5bCx5Lu75Zu9546LIiwi6Iul6Ziz5bid5Zu977ya5bKb5rSl5rGf5bCx5Lu75aSp55qHIiwi5rC45ZKM5bid5Zu977ya6JKL546E54Oo5bCx5Lu755qH5bidIl0sImVycm9ycyI6W10sIm5vcm1hbE1hcCI6dHJ1ZSwicGVhY2VmdWxPcGVuaW5nIjp0cnVlLCJub1NjcmlwdGVkV2FyIjp0cnVlLCJleGFjdFJlc3RvcmUiOnRydWUsInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd49de303f6cc35ec0c7-493754cbbe4441008ea5",
+          "file": "fms-culture47-autonomous-history.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T20:47:00.172Z",
+    "duration": 73368.39099999999,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

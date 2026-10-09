@@ -1,0 +1,2 @@
+Final artifact .autopilot/culture47-phasework-motion-checked
+71 artifacts approved by unchanged scripts/check-dist.mjs with only root path adapted. All six original Worker bytes verified.

@@ -1,0 +1,29 @@
+import {it,expect} from 'vitest';
+import {writeFileSync} from 'node:fs';
+import {Worker} from 'node:worker_threads';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+import {createFmsDocument} from '../src/fms/model';
+import {generateFmsLocalTemplate,prepareFmsTemplatePreview} from '../src/fms/local-template';
+import {Culture47Session} from '../src/fms/play/culture47-session';
+import {Culture47DisplayDecoder} from '../src/fms/play/culture47-display';
+it('normal map: phase query reductions retain exact prior simulation and motion',async()=>{
+ const d=await createFmsDocument(),options={x:d.width/2,y:d.height/2,template:'pangea' as const,seed:1337,preserveCoast:false},g=await generateFmsLocalTemplate(d,options);
+ const terrain=prepareFmsTemplatePreview(d,{worldId:d.worldId,baseRevision:d.revision,elevations:g.elevations},options).document;
+ const session=new Culture47Session(),s=session.create({terrain,count:6,cityCount:60,relations:'war',setup:{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman','german']}}),oldEngine='f212364628ddb9925a769246d85fdbedac20018f397d8315fd27995a6677f9ba';
+ const decoder=new Culture47DisplayDecoder(),prior=new Culture47DisplayDecoder();decoder.decode(session.displaySnapshot(),{engine:s.journal.engine});
+ const worker=new Worker(`const {parentPort}=require('node:worker_threads');globalThis.self=globalThis;let start=0;self.postMessage=v=>parentPort.postMessage({...v,coreMs:performance.now()-start});import(${JSON.stringify(pathToFileURL(resolve('compat/culture47/engine-f212.js')).href)}).then(()=>parentPort.on('message',data=>{start=performance.now();self.onmessage({data})}));`,{eval:true});
+ let id=0;const send=(command:unknown)=>new Promise<any>((ok,no)=>{const reply=(r:any)=>{if(r.progress)return;worker.off('message',reply);r.error?no(Error(r.error)):ok(r);};worker.on('message',reply);worker.once('error',no);worker.postMessage({id:++id,command});});
+ try{
+  const loaded=await send({type:'load',journal:{...s.journal,engine:oldEngine}});prior.decode(loaded.display,{engine:oldEngine});
+  const timings=[];let last=s;
+  for(let day=0;day<8;day++){
+   const action={kind:'advance' as const,ticks:120};const oldReply=await send({type:'action',sequence:day,action}),old=prior.decode(oldReply.display,{engine:oldEngine,sequence:day});
+   const start=performance.now(),packet=session.executeDisplay([action],day),currentCoreMs=performance.now()-start;last=decoder.decode(structuredClone(packet),{engine:s.journal.engine,sequence:day});
+   expect(last.run).toEqual(old.run);expect(last.frame).toEqual(old.frame);expect(last.motion).toEqual(old.motion);
+   timings.push({day:day+1,priorCoreMs:oldReply.coreMs,currentCoreMs});
+  }
+  const median=(ns:number[])=>[...ns].sort((a,b)=>a-b)[Math.floor(ns.length/2)],warm=timings.slice(2);
+  const result={points:terrain.points.length,days:8,tick:last.run.clock.tick,exactPriorRunFrameMotion:true,timings,warmMedian:{prior:median(warm.map(t=>t.priorCoreMs)),current:median(warm.map(t=>t.currentCoreMs))},note:'Node worker core vs source core, excludes transport/decode; not browser FPS or full equivalence'};writeFileSync('.autopilot/culture47-phasework-profile.json',JSON.stringify(result,null,2));console.log(result.warmMedian);
+ }finally{await worker.terminate();}
+},180000);

@@ -1,0 +1,6 @@
+
+> lieguoji-web@0.5.0-preview.46 typecheck
+> tsc --noEmit
+
+src/fms/play/culture47-news.test.ts(5,80): error TS2352: Conversion of type '{ id: number; day: number; text: string; kind: HistoricalKind; reason: string; nationIds: string[]; people: never[]; place: null; }' to type 'HistoricalEntry' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: number; day: number; text: string; kind: HistoricalKind; reason: string; nationIds: string[]; people: never[]; place: null; }' is missing the following properties from type 'HistoricalEntry': tick, sourceEventId

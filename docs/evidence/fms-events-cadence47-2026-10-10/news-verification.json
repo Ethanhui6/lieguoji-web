@@ -1,0 +1,152 @@
+{
+  "sourceBaseline": "94260a5c3a2cf1d908ee6ff406c68fd287081fcd",
+  "sourceCommit": null,
+  "engine": "3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632",
+  "artifact": ".autopilot/culture47-news-priority-checked",
+  "url": "http://127.0.0.1:5297/?fms=1",
+  "localOnly": true,
+  "serverPid": 44664,
+  "scope": "UI-only priority, normal 1s / major 8s plus 180ms exit; bounded queue drops old normal before major; persisted history unchanged",
+  "unit": {
+    "passed": 8,
+    "failed": 0
+  },
+  "checks": {
+    "types": true,
+    "lint": true,
+    "build": true,
+    "artifacts": 79,
+    "engineUnchanged": true
+  },
+  "browser": {
+    "first": {
+      "startTime": "2026-10-10T03:00:52.869Z",
+      "duration": 100813.692,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "repair": {
+      "startTime": "2026-10-10T03:07:32.007Z",
+      "duration": 89652.679,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "note": "First run history desktop/mobile passed; news fixture failed because peaceful full garrisons produced no recruitment. Repaired test uses normal generated war world without injected events/timers. Types first failed on incomplete test fixture; tick/sourceEventId added."
+  },
+  "timings": [
+    {
+      "project": "desktop-chromium",
+      "durations": [
+        {
+          "text": "",
+          "at": 3059.294999986887,
+          "ms": 12027.710000008345
+        },
+        {
+          "text": "奥古斯伊努姆帝国向罗森堡王国宣战：领土争夺",
+          "at": 15087.004999995232,
+          "ms": 8484.229999989271
+        },
+        {
+          "text": "",
+          "at": 23571.234999984503,
+          "ms": 6244.574999988079
+        },
+        {
+          "text": "弘靖帝国紧急动员，征召10支军队",
+          "at": 29815.809999972582,
+          "ms": 8326.980000019073
+        },
+        {
+          "text": "罗森堡王国紧急动员，征召3支军队",
+          "at": 38142.789999991655,
+          "ms": 8192.745000004768
+        },
+        {
+          "text": "达赫卜卡比尔王国新编1支常备军",
+          "at": 46335.534999996424,
+          "ms": 1198.8400000035763
+        }
+      ],
+      "records": [
+        "罗森堡王国紧急动员，征召3支军队",
+        "达赫卜卡比尔王国新编1支常备军",
+        "弘靖帝国紧急动员，征召10支军队",
+        "奥古斯伊努姆帝国向罗森堡王国宣战：领土争夺",
+        "秋宫帝国向奥古斯伊努姆帝国宣战：领土争夺",
+        "弘靖帝国向罗森堡王国宣战：领土争夺",
+        "弘靖帝国向奥古斯伊努姆帝国宣战：领土争夺",
+        "弘靖帝国向达赫卜卡比尔王国宣战：领土争夺",
+        "罗森堡王国：玛格达莱娜·艾兴瓦尔德就任女王",
+        "奥古斯伊努姆帝国：努梅里乌斯·图利乌斯就任皇帝",
+        "达赫卜卡比尔王国：纳迪娅就任女王",
+        "怀特伯里王国：亨利·斯宾塞就任国王",
+        "秋宫帝国：细川清子就任天皇",
+        "弘靖帝国：沈问天就任皇帝"
+      ],
+      "errors": [],
+      "normalGeneratedTerrain": true,
+      "realWorkerEvents": true,
+      "physicalIphone": false
+    },
+    {
+      "project": "mobile-chromium",
+      "durations": [
+        {
+          "text": "",
+          "at": 2838.3400000035763,
+          "ms": 11432.424999982119
+        },
+        {
+          "text": "哈德里乌姆帝国向法尔肯豪森王国宣战：领土争夺",
+          "at": 14270.764999985695,
+          "ms": 8465.90000000596
+        },
+        {
+          "text": "",
+          "at": 22736.664999991655,
+          "ms": 7044.375
+        },
+        {
+          "text": "景熙帝国紧急动员，征召9支军队",
+          "at": 29781.039999991655,
+          "ms": 8251.409999996424
+        },
+        {
+          "text": "阿萨德阿卜耶德王国新编1支常备军",
+          "at": 38032.44999998808,
+          "ms": 1183.6599999964237
+        }
+      ],
+      "records": [
+        "阿萨德阿卜耶德王国新编1支常备军",
+        "景熙帝国紧急动员，征召9支军队",
+        "哈德里乌姆帝国向法尔肯豪森王国宣战：领土争夺",
+        "高岛帝国向哈德里乌姆帝国宣战：领土争夺",
+        "景熙帝国向法尔肯豪森王国宣战：领土争夺",
+        "景熙帝国向哈德里乌姆帝国宣战：领土争夺",
+        "景熙帝国向阿萨德阿卜耶德王国宣战：领土争夺",
+        "法尔肯豪森王国：伊丽莎白·霍恩费尔斯就任女王",
+        "哈德里乌姆帝国：奥卢斯·艾米利乌斯就任皇帝",
+        "阿萨德阿卜耶德王国：麦尔彦就任女王",
+        "温德顿王国：威廉·奥尔德米尔就任国王",
+        "高岛帝国：武田道子就任天皇",
+        "景熙帝国：褚星就任皇帝"
+      ],
+      "errors": [],
+      "normalGeneratedTerrain": true,
+      "realWorkerEvents": true,
+      "physicalIphone": false
+    }
+  ],
+  "originalCadenceAccepted": false,
+  "physicalPhoneAccepted": false,
+  "release": {
+    "push": false,
+    "pages": false
+  }
+}

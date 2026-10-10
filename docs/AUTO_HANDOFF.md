@@ -1,3 +1,13 @@
+# 当前检查点：大事记重要消息优先已验证（2026-10-10）
+
+第八批根独占写，子智能体只读。先读webRebuild.culture47NewsPriorityCheckpoint及docs/evidence/fms-events-cadence47-2026-10-10/NEWS_RESULT.md。上批源码94260a5c3a2cf1d908ee6ff406c68fd287081fcd。UI普通征募/遣散1秒、重大8秒+180ms退场，普通洪峰不挤掉major，完整史书不删。引擎3c1408不变、14旧引擎保持。
+
+本机 http://127.0.0.1:5297/?fms=1，不可变产物.autopilot/culture47-news-priority-checked，启动PID44664；5296已从原产物恢复PID44332，其他旧端口不保证运行，续接核实。8单测/类型/lint/build/79产物；首次浏览器2/4后，正常战乱夹具消息时序2/2。不同测试集合不累加冒充统一4/4。真实普通约1.18秒、重大约8.2—8.5秒含退场/调度。
+
+下一批：固定Session END位置复用减少重复接触几何计算，必须保留校验并做完整原引擎对照；随后内战/独立、多家族/联盟、1000日安全检查点。完整战争节奏、真机/视觉未通过，WEB-04-21 blocked、当前有限工作WEB-04-37 in_progress。没有push或Pages。
+
+---
+
 # 当前检查点：真实人物事件已接；占领观察缓存与完整对照通过（2026-10-10）
 
 第七批根独占写、子智能体只读。读取webRebuild.culture47OccupationCacheCheckpoint和docs/evidence/fms-events-cadence47-2026-10-10/OCCUPATION_CACHE_RESULT.md。上批源码439e81bc56751a9fa884607af1262215700d98c8。本批固定Session复用纯移动期间占领签名，实际副作用全部失效，PRE key保留，14旧引擎原字节保留。

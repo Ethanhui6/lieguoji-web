@@ -1,0 +1,15 @@
+
+Running 6 tests using 1 worker
+
+(node:28752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-continuation.spec.ts:6:1 › original frozen 998-day world forks through UI, crosses 1000, cold restores and leaves original intact (2.5m)
+  ok 2 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:48 › future original slot cannot leak its lock or be overwritten by new-world creation (2.8s)
+  ok 3 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:48 › future new slot cannot leak its lock or be overwritten by new-world creation (1.6s)
+(node:46944) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [mobile-chromium] › tests\fms-culture47-continuation.spec.ts:6:1 › original frozen 998-day world forks through UI, crosses 1000, cold restores and leaves original intact (2.5m)
+  ok 5 [mobile-chromium] › tests\fms-culture47-save-scope.spec.ts:4:48 › future original slot cannot leak its lock or be overwritten by new-world creation (2.7s)
+  ok 6 [mobile-chromium] › tests\fms-culture47-save-scope.spec.ts:4:48 › future new slot cannot leak its lock or be overwritten by new-world creation (2.0s)
+
+  6 passed (5.2m)

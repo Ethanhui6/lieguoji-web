@@ -2847,11 +2847,13 @@
       "docs/evidence/fms-live-observation-v5-2026-10-08/unit.log.txt",
       "docs/evidence/fms-live-observation-v5-2026-10-08/plan-check.log.txt",
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-browser.mjs",
-      "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs"
+      "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs",
+      "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md"
     ],
     "nextBatch": [
-      "WEB-04-37",
-      "WEB-03-06"
+      "WEB-04-42",
+      "WEB-04-43",
+      "WEB-04-37"
     ],
     "phases": [
       {
@@ -4806,6 +4808,54 @@
               "docs/evidence/fms-house-governance47-2026-10-10/browser-repair-results.json"
             ],
             "progressScope": "58 affected checks, strengthened7 overlapping; types/lint/build82 artifacts. Browser4/6 then failed2 repaired2/2 on same artifact. Autonomous grants and extinct-house returns are playable; no full civil war or1000day continuation."
+          },
+          {
+            "id": "WEB-04-41",
+            "title": "无固定截止的连续推演与原档保护续玩副本（限定切片）",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-40"
+            ],
+            "acceptance": "v2无固定天数、指令总数和永久史书上限；前代dfd9完整前史双Worker对照一致后显式副本，原库、来源归档与新版库分离，CAS/取消/未来锁写保持。实际越过1000/2000日，保存冷恢复后继续；不包含完整无限代际、分段快速恢复、原作等价或真机验收。",
+            "evidence": [
+              "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md",
+              "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md",
+              "docs/evidence/fms-continuous-play47-2026-10-10/verification.json",
+              "docs/evidence/fms-continuous-play47-2026-10-10/first-unit-failure.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/repaired-longrun.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/final-regression.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/types.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/lint.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/build.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/browser.log",
+              "docs/evidence/fms-continuous-play47-2026-10-10/browser-results.json",
+              "docs/evidence/fms-continuous-play47-2026-10-10/saved-day5548.jpg"
+            ],
+            "progressScope": "Production frozen998day→1001save/cold restore→1002;6 desktop/mobile Chromium flows. Real2005day Session cold restore exact; actual local visible world5548day UI save confirmed, this actual save not cold-reloaded."
+          },
+          {
+            "id": "WEB-04-42",
+            "title": "退役军队归档与活动征募名额释放",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-41"
+            ],
+            "acceptance": "仅在新规则显式启用后归档已结束任务的零兵军队；清理位置/指挥/战损引用，历史与单调ID保留。累计500但活动不足500时仍可真实补军，保存恢复一致；旧前史原引擎保持。",
+            "evidence": [
+              "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md"
+            ]
+          },
+          {
+            "id": "WEB-04-43",
+            "title": "真实出生与下一代成家的最小长期家谱闭环",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-04-41"
+            ],
+            "acceptance": "真实父母/生日/家谱双向引用和独立持久随机流；支系出生账不篡改原grant快照；适龄、近亲与配偶约束；跨代成长继任、保存冷恢复，新规则边界保护旧前史。未恢复原作触发明确标网页适配。",
+            "evidence": [
+              "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md"
+            ]
           }
         ]
       },
@@ -4900,7 +4950,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47HouseGovernanceCheckpoint, latest AUTO_HANDOFF and fms-house-governance47-2026-10-10/NEXT.md. Source b875d63, local5300 engine dfd9fa. Latest normal6nation60city world observed998day at1000day replay cap; do not reset. Priority safe long-term checkpoint and full-state validation, then real multi-cause civil war/new-state registration. Monthly household grants and extinct-house returns already done; do not redo or replace with performance micro-tuning. Preserve17frozen engines, old origins, original release gates; freeze delivereddfd9fa before runtime changes.",
+    "nextRecoveryTarget": "Read culture47ContinuousPlayCheckpoint and latest AUTO_HANDOFF/continuous-play47 RESULT+NEXT. Source99c7190; same local5300 now9c932c,18 frozen engines. No fixed v2 day/action/history cutoff; do not redo 1000→2000 extension. Production frozen998→1002 and actual2005day cold restore passed. Current visible world5548day save UI confirmed then resumed, not manually cold-reloaded or asserted same998world. Next retire inactive armies safely then real births/adult households; rules activation must preserve predecessor prefix. Freeze9c932c before runtime changes. WEB37 in_progress,21 blocked; full PH05/phone/visual/publish gates unchanged.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -10515,6 +10565,94 @@
         "docs/evidence/fms-house-governance47-2026-10-10/browser-repair.log",
         "docs/evidence/fms-house-governance47-2026-10-10/browser-repair-results.json",
         "docs/evidence/fms-house-governance47-2026-10-10/normal-world-branches.png"
+      ]
+    },
+    "culture47ContinuousPlayCheckpoint": {
+      "date": "2026-10-10",
+      "sourceCommit": "99c71902b6e6627dcffee5a72479100030ce4622",
+      "buildMetadataCommit": "789b84fbbe2dacfc7c5e27c8289b06c5d16c60de",
+      "engine": "9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343",
+      "artifact": ".autopilot/culture47-continuous-history-final-checked",
+      "url": "http://127.0.0.1:5300/?fms=1",
+      "bind": "127.0.0.1",
+      "serverPidAtStart": 43604,
+      "approvedArtifacts": 83,
+      "historicalEngines": 18,
+      "scope": "WEB-04-41 no fixed gameplay day/action/history cutoff; explicit protected continuation and full journal replay, not complete generational simulation",
+      "checks": {
+        "firstExpandedUnit": {
+          "passed": 40,
+          "failed": 1,
+          "reason": "expanded native date sentinel overflowed signed month input; fixed"
+        },
+        "repaired": {
+          "files": 5,
+          "passed": 34,
+          "actualDay": 2005,
+          "actualTick": 240600,
+          "coldRestoreExact": true,
+          "engine": "6dce573bf627fc96459dee2cae6f76bd5997b00433aff50e72c152777107147e"
+        },
+        "finalRelated": {
+          "files": 4,
+          "passed": 26,
+          "overlapsRepair": true
+        },
+        "types": "passed",
+        "lint": "passed",
+        "build": "passed",
+        "browser": {
+          "passed": 6,
+          "failed": 0,
+          "projects": [
+            "desktop-chromium",
+            "mobile-chromium"
+          ],
+          "frozenOriginalDay": 998,
+          "restoredDay": 1001,
+          "continuedDay": 1002,
+          "sourceSlotsUnchanged": true,
+          "sourceArchiveRetained": true
+        },
+        "physicalIphone": "not_run",
+        "visualEquivalence": "not_accepted",
+        "cloud": "not_run",
+        "plan": {
+          "validation": "passed",
+          "tests": 15
+        },
+        "releaseStatus": "not ready; report-only; unchanged"
+      },
+      "actualPlay": {
+        "savedDay": 5548,
+        "savedTick": 665760,
+        "calendar": "公元16年3月3日",
+        "save": "UI confirmed",
+        "resumedAfterSave": true,
+        "coldRestoreOfThisSave": "not_run",
+        "source998Identity": "not asserted; observed country names differ from earlier record"
+      },
+      "limits": [
+        "full cold replay cost grows with history; no raw-live snapshot import or segmented checkpoint implemented",
+        "retired armies still occupy cumulative500 slots",
+        "no births or later marriages; family grant4096 cap remains",
+        "only dfd9 source copy enabled after complete run/frame match; special9999-entry predecessor month boundary may safely reject",
+        "not complete original simulation, phone or visual acceptance"
+      ],
+      "evidence": [
+        "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md",
+        "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md",
+        "docs/evidence/fms-continuous-play47-2026-10-10/verification.json",
+        "docs/evidence/fms-continuous-play47-2026-10-10/first-unit-failure.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/repaired-longrun.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/final-regression.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/types.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/lint.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/build.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/browser.log",
+        "docs/evidence/fms-continuous-play47-2026-10-10/browser-results.json",
+        "docs/evidence/fms-continuous-play47-2026-10-10/saved-day5548.jpg",
+        "docs/evidence/fms-continuous-play47-2026-10-10/plan-tests.log"
       ]
     }
   }

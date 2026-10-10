@@ -1,3 +1,19 @@
+# 当前检查点：无固定截止续玩已接；实际长局5548日保存（2026-10-10）
+
+源码 **99c71902b6e6627dcffee5a72479100030ce4622**，分支codex/ph06-world-generation。根独占写，两个子智能体只读复查。先读webRebuild.culture47ContinuousPlayCheckpoint及docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md、NEXT.md。WEB-04-41限定完成，42/43待做；37进行中、21 blocked、完整PH05/真机/视觉/发布门不变。
+
+用户本轮明确“要无限续玩”。v2取消固定1000/2000日、指令总数、10000条永久史书上限，保留精度和每请求预算。dfd9旧局双Worker完整run/frame对照后显式建副本，三库分离、来源归档原子写入与CAS/未来/取消保护；18旧Worker原字节保留。本批采用完整历史重放，未做原始live47导入或分段快速检查点；下面历史交接的原始状态方案不是当前唯一续玩实现。
+
+本机仍 **http://127.0.0.1:5300/?fms=1**，不可变产物.autopilot/culture47-continuous-history-final-checked，engine9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343。新服务启动PID43604，旧house产物保留作旧hashed assets回退；续接核实，不换端口冒充旧档。83产物；build metadata仍789b84f构建基线，不伪造为随后99c7190提交。
+
+真实当前可见世界已到5548日/665760tick、公元16年3月3日，UI确认保存后恢复运行，saved-day5548.jpg；这份实际局未冷刷新。当前国名与此前998日记录不同，根未操作该可见局的建局/分叉，不宣称就是998旧局人工迁移。旧998→1002来源不变证据是独立生产冻结Worker浏览器回归。不要新开局替换任一存档。
+
+初轮扩展检查40/41抓住历法哨兵int32错误；修复后34项含真实2005日完整冷恢复。最终相关26项、types/lint/build和最终6/6桌面/手机尺寸Chromium通过；不同集合不累加，不冒充iPhone/Safari。真实冷恢复/来源保留、未来槽隔离已测；用户视觉与原作节奏仍未验收。
+
+下一实质工作：退役军队不再占累计500征募名额；真实出生与成年成家，支系出生账保持历史grant不变。再接内战独立/政治及重大消息积压。不能把日期可继续称为完整无限代际；冷恢复、内存、grant4096及人物/实体长期约束仍在。修改规则先冻结本版并建立前史后启用边界。无push/Pages/正式站变更。
+
+---
+
 # 当前检查点：真实家族已能自主分封与绝嗣归还（2026-10-10）
 
 源码 **b875d636f94e30e1f12423cc0a1943d398f3f3f7**，分支 codex/ph06-world-generation。根独占写入，两个子智能体只读审核。先读 webRebuild.culture47HouseGovernanceCheckpoint 和 docs/evidence/fms-house-governance47-2026-10-10/RESULT.md、NEXT.md。WEB-04-40限定完成，37仍进行中、21 blocked、完整PH05/真机/视觉门不变。

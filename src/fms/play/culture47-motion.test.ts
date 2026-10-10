@@ -78,3 +78,9 @@ describe('actual47 completed-path presentation',()=>{
   const before=JSON.stringify(collector.value);expect(before).not.toContain('journal');
  });
 });
+
+it('finishes the already accepted route and date together after an explicit UI pause, including a late reply',()=>{
+ const clock=new CultureMotion47();clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);clock.install(snapshot(10,1,{x:10,y:0},[p(0,0),p(10,10)]),1000,noGeometry);
+ clock.setRunning(false,1300);const pose=clock.frame(1300).armies.get('a')!;clock.finishAccepted(1300);expect(clock.frame(1300).armies.get('a')).toEqual(pose);expect(clock.frame(1400).armies.get('a')!.x).toBeGreaterThan(pose.x);expect(clock.tick(1550)).toBe(10);expect(clock.frame(1550).armies.get('a')).toMatchObject({x:10,y:0});
+ clock.install(snapshot(20,2,{x:10,y:10},[p(10,10),p(20,10,10)],10),1800,noGeometry);clock.finishAccepted(1800);expect(clock.frame(1800).armies.get('a')).toMatchObject({x:10,y:0});expect(clock.frame(1900).armies.get('a')!.y).toBeGreaterThan(0);expect(clock.tick(2050)).toBe(20);expect(clock.frame(2050).armies.get('a')).toMatchObject({x:10,y:10});expect(clock.tick(10000)).toBe(20);
+});

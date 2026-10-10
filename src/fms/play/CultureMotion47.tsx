@@ -40,11 +40,17 @@ function legacyTrace(previous:Culture47Snapshot,next:Culture47Snapshot,graph:()=
 export class CultureMotion47 {
  private snapshot?:Culture47Snapshot;private tracks:Paths={armies:new Map(),fleets:new Map()};
  private from=0;private to=0;private anchor=0;private duration=1;private fraction=1;private running=false;private received=0;private interval=0;
- private costPerTick=0;private pausedAt:number|null=null;
+ private finishing=false;private costPerTick=0;private pausedAt:number|null=null;
  revision=0;
- alpha(now:number){return Math.min(1,this.fraction+(this.running?Math.max(0,now-this.anchor)/this.duration:0));}
+ alpha(now:number){if(this.finishing&&now-this.anchor>=250)return 1;return Math.min(1,this.fraction+(this.running||this.finishing?Math.max(0,now-this.anchor)/this.duration:0));}
  tick(now:number){return this.from+(this.to-this.from)*this.alpha(now);}
- setRunning(value:boolean,now:number){if(value===this.running)return;this.fraction=this.alpha(now);this.anchor=now;this.running=value;if(value){if(this.pausedAt!==null)this.received+=now-this.pausedAt;this.pausedAt=null;}else this.pausedAt=now;}
+ setRunning(value:boolean,now:number){if(value===this.running)return;this.fraction=this.alpha(now);this.anchor=now;this.running=value;this.finishing=false;if(value){if(this.pausedAt!==null)this.received+=now-this.pausedAt;this.pausedAt=null;}else this.pausedAt=now;}
+ /** Stop requesting simulation, but finish the already committed path before
+  * presenting a stable pause/save date. Rendering and date share this clock. */
+ finishAccepted(now:number){
+  if(this.running||this.finishing)return;this.fraction=this.alpha(now);this.anchor=now;this.finishing=this.fraction<1;
+  if(this.finishing)this.duration=250/(1-this.fraction);
+ }
  /** Size the remaining accepted path for the next real request. This only
   * changes its playback rate, never the route or authoritative clock. */
  beginAdvance(ticks:number,now:number){
@@ -63,7 +69,7 @@ export class CultureMotion47 {
  install(next:Culture47Snapshot,now:number,graph:()=>TravelGraph47,immediate=false){
   const previous=this.snapshot,oldTick=this.tick(now),remaining=(1-this.alpha(now))*this.duration,end=next.run.clock.tick;this.snapshot=next;
   if(!previous||previous.run.id!==next.run.id||previous.journal.engine!==next.journal.engine||end<previous.run.clock.tick||immediate){
-   this.tracks={armies:new Map([...next.frame.armies].map(([id,p])=>[id,[{...p,tick:end}]])),fleets:new Map([...next.frame.fleets].map(([id,p])=>[id,[{...p,tick:end}]]))};this.from=this.to=end;this.fraction=1;this.anchor=this.received=now;this.interval=this.costPerTick=0;this.pausedAt=this.running?null:now;this.revision++;return;
+   this.tracks={armies:new Map([...next.frame.armies].map(([id,p])=>[id,[{...p,tick:end}]])),fleets:new Map([...next.frame.fleets].map(([id,p])=>[id,[{...p,tick:end}]]))};this.from=this.to=end;this.fraction=1;this.finishing=false;this.anchor=this.received=now;this.interval=this.costPerTick=0;this.pausedAt=this.running?null:now;this.revision++;return;
   }
   if(end===previous.run.clock.tick){ // Previews and edits do not restart motion.
    for(const kind of ['armies','fleets'] as const){const living=new Set((kind==='armies'?next.run.world.armies.filter(a=>a.troops>0&&a.status!=='destroyed'):next.run.navy.fleets.filter(f=>f.status!=='lost')).map(a=>a.id));for(const id of this.tracks[kind].keys())if(!living.has(id))this.tracks[kind].delete(id);for(const [id,p]of next.frame[kind])if(living.has(id)&&(!this.tracks[kind].has(id)||!near(this.tracks[kind].get(id)!.at(-1)!,p)))this.tracks[kind].set(id,[{...p,tick:end}]);}this.revision++;return;
@@ -77,7 +83,7 @@ export class CultureMotion47 {
     fresh[kind].set(id,rest.length?[...rest,...path.filter(p=>p.tick>rest.at(-1)!.tick)]:path);
    }else fresh[kind].set(id,[{...point,tick:end}]);
   }
-  const elapsed=Math.max(16,now-this.received);this.interval=this.interval?Math.max(elapsed,this.interval*.8+elapsed*.2):elapsed;
+  this.finishing=false;const elapsed=Math.max(16,now-this.received);this.interval=this.interval?Math.max(elapsed,this.interval*.8+elapsed*.2):elapsed;
   this.duration=Math.max(160,remaining,Math.min(30000,Math.max(this.interval,this.costPerTick*(end-previous.run.clock.tick))*1.18));this.received=this.anchor=now;if(!this.running)this.pausedAt=now;this.from=Math.min(oldTick,previous.run.clock.tick);this.to=end;this.fraction=0;this.tracks=fresh;this.revision++;
  }
 }

@@ -47,3 +47,11 @@ for(const previous of [false,true])test(`real frozen 9c ${previous?'forked':'nat
  expect(await read(sourceDb)).toEqual(before);expect(persisted).toContain('enable-retirement');expect(persisted).toContain('previous');expect(errors).toEqual([]);
  await info.attach('retirement-evidence',{body:JSON.stringify({source:previous?'dfd9 -> 9c':'native 9c',productionFrozen:true,completeStateComparedBeforeEnable:true,coldRestoredDay:startDay+2,continuedDay:startDay+3,allSourceSlotsUnchanged:true,errors,physicalIphone:false}),contentType:'application/json'});
 });
+
+
+test('pausing finishes accepted motion and calendar before save without requesting more simulation',async({page},info)=>{
+ test.setTimeout(120000);await enter(page);await page.getByLabel('国家数量',{exact:true}).selectOption('2');await page.getByLabel('城市数量',{exact:true}).selectOption('24');await page.getByRole('button',{name:'从当前地图创建文化世界',exact:true}).click();const app=page.getByTestId('culture47-app');await expect(page.getByTestId('culture47-map')).toBeVisible();
+ await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect.poll(async()=>Number(await app.getAttribute('data-day'))).toBeGreaterThanOrEqual(4);await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');
+ const tick=await app.getAttribute('data-tick');await expect(page.locator('.c47-calendar')).toHaveAttribute('data-display-tick',tick!);await expect(page.locator('.c47-map canvas')).toHaveAttribute('data-display-tick',tick!);await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');await expect(app).toHaveAttribute('data-tick',tick!);
+ await page.screenshot({path:info.outputPath('paused-calendar-matches-save.png')});await info.attach('pause-date-evidence',{body:JSON.stringify({tick,calendarAndArmyAtCommittedTick:true,noExtraSimulation:true}),contentType:'application/json'});
+});

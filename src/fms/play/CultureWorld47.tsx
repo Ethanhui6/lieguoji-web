@@ -219,8 +219,8 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const runId=snapshot?.run.id;
   const motion=useRef(new CultureMotion47());
   function displayFrame(){return motion.current.frame(performance.now());}
-  useEffect(()=>{if(snapshot)motion.current.install(snapshot,performance.now(),()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);},[snapshot]);
-  useEffect(()=>{motion.current.setRunning(playing&&!renderFault,performance.now());},[playing,renderFault]);
+  useEffect(()=>{if(snapshot){const now=performance.now();motion.current.install(snapshot,now,()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);}},[snapshot,renderFault]);
+  useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
   useEffect(()=>{
     if(!runId||!host.current||!current.current)return;
     displayReady.current=false;
@@ -270,14 +270,14 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       let raf=0,settled=-1,lastDiagnostic=0;
       const animate=()=>{if(disposed||failed)return;try{
         const now=performance.now(),alpha=motion.current.alpha(now),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');
-        if(isPlaying.current&&alpha<1||settled!==motion.current.revision||animateCombat){
+        if(alpha<1||settled!==motion.current.revision||animateCombat){
           const frame=motion.current.frame(now);map.updateUnits(frame);
           if(animateCombat)drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));
           // Evidence sampling is independent of the display refresh rate.
           if(now-lastDiagnostic>=100||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
             canvas.dataset.displayTick=String(motion.current.tick(now));canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());lastDiagnostic=now;
           }
-          renderer.refresh();settled=alpha===1||!isPlaying.current?motion.current.revision:-1;
+          renderer.refresh();settled=alpha===1?motion.current.revision:-1;
         }
         raf=requestAnimationFrame(animate);
       }catch(e){displayFailed(e);}};

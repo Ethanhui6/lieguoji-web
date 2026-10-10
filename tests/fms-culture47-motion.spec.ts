@@ -11,10 +11,10 @@ test('actual army display changes continuously between slow Worker replies and k
  const motion=[...groups.values()].flatMap(rows=>{if(rows.length<3)return[];return rows[0].armies.map(([id])=>{const points=rows.flatMap(r=>{const p=r.armies.find(a=>a[0]===id)?.[1];return p?[{...p,at:r.at}]:[];});const later=points.filter(p=>p.at-points[0].at>800);return{id,ms:rows.at(-1)!.at-rows[0].at,distinct:new Set(points.map(p=>`${p.x}/${p.y}`)).size,after800:new Set(later.map(p=>`${p.x}/${p.y}`)).size};});});
  expect(motion.some(m=>m.ms>1000&&m.distinct>=10&&m.after800>=3)).toBe(true);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:30000});
- // Worker completion can precede the pause paint. Compare actual coordinates
- // and presentation time after that paint, not incidental trace metadata
+ // Pause settles the already accepted tail; compare actual coordinates
+ // after its terminal paint, not incidental trace metadata
  // (endpoint points carry a tick while interpolated points contain x/y only).
- await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await expect(map).toHaveAttribute('data-display-tick',(await app.getAttribute('data-tick'))!);
  const pose=async()=>{const value=JSON.parse((await map.getAttribute('data-display-positions'))!) as Record<'armies'|'fleets',[string,{x:number;y:number}][]>;return {armies:value.armies.map(([id,{x,y}])=>[id,x,y]),fleets:value.fleets.map(([id,{x,y}])=>[id,x,y])};};
  const paused=await pose(),pausedTick=await map.getAttribute('data-display-tick');await page.waitForTimeout(400);expect(await pose()).toEqual(paused);expect(await map.getAttribute('data-display-tick')).toBe(pausedTick);
  await page.getByRole('button',{name:'军事模式',exact:true}).click();const dismiss=page.getByRole('button',{name:'收起详情',exact:true});if(await dismiss.isVisible())await dismiss.click();

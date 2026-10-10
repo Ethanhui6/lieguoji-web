@@ -1,3 +1,4 @@
+import {enableArmyRetirement47,ARMY_RETIREMENT_RULE47} from './army-retirement47';
 import {assertFmsDocument,type FmsDocument} from '../model';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
 import {validateCultureSetup47,editCivilization47,type WorldCultureSetup47,type CivilizationEdit47} from './civilization47-names';
@@ -27,9 +28,12 @@ import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPolitic
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
 export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
 export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47};
-export type Culture47Action={kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
+export type Culture47Action={kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export const CULTURE47_CONTINUATION_SOURCE='dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8';
-export type Culture47Fork={engine:typeof CULTURE47_CONTINUATION_SOURCE;id:string;sequence:number};
+export const CULTURE47_RETIREMENT_SOURCE='9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343';
+export type LegacyCulture47Fork={engine:typeof CULTURE47_CONTINUATION_SOURCE;id:string;sequence:number};
+export type Culture47Fork=LegacyCulture47Fork|{engine:typeof CULTURE47_RETIREMENT_SOURCE;id:string;sequence:number;previous:LegacyCulture47Fork|null};
+const legacyFork=(f:unknown,length:number):f is LegacyCulture47Fork=>exact(f,['engine','id','sequence'])&&f.engine===CULTURE47_CONTINUATION_SOURCE&&typeof f.id==='string'&&/^fms-[0-9a-f-]{36}$/i.test(f.id)&&integer(f.sequence,0,Math.min(length,20000));
 export type Culture47Journal={format:'lieguoji-culture-play';version:1|2;rule:typeof CULTURE47_RULE;engine:string;id:string;opening:Culture47Opening;actions:Culture47Action[];fork?:Culture47Fork|null};
 // A game has no fixed finish date. Bound each request, never the number of
 // accepted requests over its lifetime. V1 retains its historical contract.
@@ -46,9 +50,14 @@ export function assertCulture47Journal(value:unknown):asserts value is Culture47
   const budget=culture47Budget(version);
   if(!Array.isArray(value.actions)||value.actions.length>budget.actions)throw Error('文化指令记录过长或无效，原档保留。');
   const fork=version===2?value.fork:null;
-  if(fork!==null&&(!exact(fork,['engine','id','sequence'])||fork.engine!==CULTURE47_CONTINUATION_SOURCE||typeof fork.id!=='string'||!/^fms-[0-9a-f-]{36}$/i.test(fork.id)||fork.id===value.id||!integer(fork.sequence,0,Math.min(value.actions.length,20000))))throw Error('续玩来源或分叉边界无效，原档保留。');
+  if(fork!==null){
+    if(!legacyFork(fork,value.actions.length)&&(!exact(fork,['engine','id','sequence','previous'])||fork.engine!==CULTURE47_RETIREMENT_SOURCE||typeof fork.id!=='string'||!/^fms-[0-9a-f-]{36}$/i.test(fork.id)||!integer(fork.sequence,0,value.actions.length)||fork.previous!==null&&!legacyFork(fork.previous,Number(fork.sequence))))throw Error('续玩来源或分叉边界无效，原档保留。');
+    const checked=fork as Culture47Fork;
+    if(checked.id===value.id||'previous' in checked&&checked.previous&&(checked.previous.id===checked.id||checked.previous.id===value.id))throw Error('续玩身份重复，原档保留。');
+  }
+  const typedFork=fork as Culture47Fork|null,legacy=typedFork&&('previous'in typedFork?typedFork.previous:typedFork);
   let ticks=0;
-  for(const [i,a] of value.actions.entries()){assertCulture47Action(a);if(a.kind==='advance')ticks+=a.ticks;if(fork&&i<Number(fork.sequence)&&ticks>120000)throw Error('来源超过原引擎预算，原档保留。');}
+  for(const [i,a] of value.actions.entries()){assertCulture47Action(a);if(a.kind==='advance')ticks+=a.ticks;if(legacy&&i<Number(legacy.sequence)&&ticks>120000)throw Error('来源超过原引擎预算，原档保留。');}
   if(!Number.isSafeInteger(ticks)||ticks>budget.ticks)throw Error(budget.days===null?'世界时钟已超出精确数值范围，存档保留。':`本地文化试玩的重放上限为 ${budget.days} 日，存档保留。`);
 }
 /** Only this direct predecessor has identical simulation rules. Keep every
@@ -56,6 +65,10 @@ export function assertCulture47Journal(value:unknown):asserts value is Culture47
  * The caller must independently load the frozen source and compare both runs
  * before persisting the candidate. No external live snapshot is imported. */
 export function continuationJournal47(source:Culture47Journal):Culture47Journal {
+  if(source.engine===CULTURE47_RETIREMENT_SOURCE&&source.version===2&&(!source.fork||source.fork.engine===CULTURE47_CONTINUATION_SOURCE)){
+    assertCulture47Journal({...source,engine:__CULTURE47_ENGINE__});
+    return {...structuredClone(source),engine:__CULTURE47_ENGINE__,id:'fms-'+crypto.randomUUID(),fork:{engine:CULTURE47_RETIREMENT_SOURCE,id:source.id,sequence:source.actions.length,previous:structuredClone(source.fork??null)}};
+  }
   if(source.engine!==CULTURE47_CONTINUATION_SOURCE||source.version!==1||Object.keys(source).length!==7)throw Error('此版本尚未通过续玩对照，原档保持。');
   assertCulture47Journal({...source,engine:__CULTURE47_ENGINE__});
   return {...structuredClone(source),version:2,engine:__CULTURE47_ENGINE__,id:'fms-'+crypto.randomUUID(),fork:{engine:CULTURE47_CONTINUATION_SOURCE,id:source.id,sequence:source.actions.length}};
@@ -63,6 +76,7 @@ export function continuationJournal47(source:Culture47Journal):Culture47Journal 
 export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   if(!a||typeof a!=='object')throw Error('文化命令无效。');
   const v=a as Culture47Action;
+  if(v.kind==='enable-retirement'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_RETIREMENT_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='family-policy'&&exact(v,['kind','nationId','enabled','expected'])&&typeof v.nationId==='string'&&typeof v.enabled==='boolean'&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='military'&&exact(v,['kind','intent','expected'])){assertMilitaryIntent47(v.intent);assertMilitaryExpected47(v.expected,v.intent.force);return;}
   if(v.kind==='politics'&&exact(v,['kind','action','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization'])){assertPoliticalCommand47(v.action);return;}
@@ -85,6 +99,7 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
     // advancePolitics47 just validated population and both autonomy ledgers.
     return next;
   }
+  if(a.kind==='enable-retirement')return enableArmyRetirement47(r,a.expected);
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
   if(a.kind==='family')return grantHouse47(r,a.intent,a.expected);
   if(a.kind==='family-policy')return setHousePolicy47(r,a.nationId,a.enabled,a.expected);
@@ -114,12 +129,14 @@ export class Culture47Session {
     progress?.({stage:'opening',completed:0,total:journal.actions.length,ticks:0});
     let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,'peace',o.setup));
     const fork=journal.fork;
-    run.id=fork?.id??journal.id;run.world.custom!.id=run.id;
+    const previous=fork&&'previous'in fork?fork.previous:null;
+    run.id=previous?.id??fork?.id??journal.id;run.world.custom!.id=run.id;
+    const switchIdentity=(sequence:number)=>{if(previous&&sequence===previous.sequence){run.id=fork!.id;run.world.custom!.id=run.id;}if(fork&&sequence===fork.sequence){run.id=journal.id;run.world.custom!.id=run.id;}};
     if(o.relations==='war')initializeOpeningWars47(run);
     prepareOwnedGeography47(run);
     let completed=0,ticks=0;
-    for(const action of journal.actions){if(fork&&completed===fork.sequence){run.id=journal.id;run.world.custom!.id=journal.id;}run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
-    if(fork&&completed===fork.sequence){run.id=journal.id;run.world.custom!.id=journal.id;}
+    for(const action of journal.actions){switchIdentity(completed);run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
+    switchIdentity(completed);
     return {run,journal:structuredClone(journal),ticks};
   }
   load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;this.display=new Culture47DisplayEncoder();return this.snapshot();}

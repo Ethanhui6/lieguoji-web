@@ -1,3 +1,4 @@
+import {assertArmyRetirement47} from './army-retirement47';
 import type {FoundingForces47} from './civilization47-forces';
 import {assertFamilyCalendar47,advanceFamilyCalendar47} from './civilization47-calendar';
 import {advanceMilitaryWindow47,advanceSessionMilitaryWindow47,type PreviousOwnership47,type MilitaryRules47} from './force-tick47';
@@ -29,7 +30,7 @@ export function advanceSessionCivilizationMilitary47(lease:SessionAdvanceLease47
     rules=>advanceSessionMilitaryWindow47(lease,ticks,weights,rules));
 }
 function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,ticks:number,weights:ArmyRouteWeights47,ownership?: (candidate:T,previous:PreviousOwnership47)=>void,politicalTick?: (candidate:T)=>void,observeMotion?:ForceMotionObserver47,ownedWindow?:(rules:MilitaryRules47<T>)=>ReturnType<typeof advanceMilitaryWindow47<T>>){
-  assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
+  assertArmyRetirement47(input);assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
   // Validate live ruler/projection links once at entry even when every army
   // is on friendly land and there is no occupation work in this window.

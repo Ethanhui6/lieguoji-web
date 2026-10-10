@@ -1,3 +1,4 @@
+import {isoPlusDays} from './civilization47-iso-calendar';
 import type {Culture47Snapshot} from './culture47.worker';
 import type {MilitaryIntent47} from './culture47-orders';
 import {PlayIcon} from './PlayIcon';
@@ -6,10 +7,13 @@ export const intentMatchesForce47=(intent:MilitaryIntent47,selected:SelectedForc
 export function CultureMilitary47({snapshot,selected,busy,preview,choose,target,request,confirm,cancel}:{snapshot:Culture47Snapshot;selected:SelectedForce47|null;busy:boolean;preview:Culture47Snapshot['militaryPreview']|null;choose:(s:SelectedForce47)=>void;target:(mode:'march'|'retreat')=>void;request:(i:MilitaryIntent47)=>void;confirm:()=>void;cancel:()=>void}){
  const r=snapshot.run,army=selected?.kind==='army'?r.world.armies.find(a=>a.id===selected.id):null,fleet=selected?.kind==='fleet'?r.navy.fleets.find(f=>f.id===selected.id&&f.status!=='lost'):null,unit=army??fleet;
  if(preview&&!intentMatchesForce47(preview.intent,selected))preview=null;
+ const date=(day:number)=>{const d=isoPlusDays(r.life.startDate,day);return `公元${d.year}年${d.month}月${d.day}日`;};
  const name=(id:string)=>r.world.nations.find(n=>n.id===id)?.name??id,stale=preview&&preview.sequence!==snapshot.journal.actions.length;
  return <><h2>军队与舰队</h2><label>选择部队<select aria-label="选择部队" value={selected?selected.kind+'/'+selected.id:''} onChange={e=>{const [kind,id]=e.target.value.split('/');choose({kind:kind as SelectedForce47['kind'],id});}}><option value="" disabled>点选地图上的部队</option><optgroup label="陆军">{r.world.armies.filter(a=>a.troops>0).map(a=><option key={a.id} value={'army/'+a.id}>{name(a.nationId)} · {a.name}</option>)}</optgroup><optgroup label="海军">{r.navy.fleets.filter(f=>f.status!=='lost').map(f=><option key={f.id} value={'fleet/'+f.id}>{name(f.nationId)} · {f.name}</option>)}</optgroup></select></label>
  {unit&&<><small>{name(unit.nationId)}</small><h3>{unit.name}</h3><dl className="c47-military-stats">{army?<><div><dt>兵力</dt><dd>{Math.round(army.troops).toLocaleString('zh-CN')}</dd></div><div><dt>士气</dt><dd>{Math.round(army.morale)}%</dd></div><div><dt>随军口粮</dt><dd>{Math.round(army.supplies)}</dd></div></>:fleet&&<><div><dt>水手</dt><dd>{Math.round(fleet.crew)}</dd></div><div><dt>舰船</dt><dd>{Math.round(fleet.ships)}</dd></div><div><dt>口粮</dt><dd>{Math.round(fleet.food)}</dd></div></>}</dl>
  <div className="c47-order-actions"><button disabled={busy} onClick={()=>target('march')}><PlayIcon name="locate"/>{army?'调遣':'航行'}</button>{army&&<button disabled={busy} onClick={()=>target('retreat')}>撤退</button>}<button disabled={busy} onClick={()=>request(army?{force:'army',command:{type:'army-halt',armyId:army.id}}:{force:'fleet',command:{type:'fleet-halt',fleetId:fleet!.id}})}>停止</button></div><small>发令时暂停以便确认；普通查看不暂停。</small></>}
+ {r.armyRetirement&&<details aria-label="退役军队名册"><summary>退役名册 · {Object.keys(r.armyRetirement.records).length}</summary><small>历史保留，退出现役后释放征募编制。此处时间为归档日期，不推定阵亡原因。</small>{Object.values(r.armyRetirement.records).slice(-20).reverse().map(v=><p key={v.army.id}>{name(v.army.nationId)} · {v.army.name}<br/><small>{date(v.archivedDay)}归档 · 累计交锋损失 {v.combatLosses.toLocaleString('zh-CN')} 人</small></p>)}</details>}
+ {selected?.kind==='army'&&r.armyRetirement?.records[selected.id]&&<p role="status">该军队已退役，其经历保留在退役名册。</p>}
  {preview&&<section className="c47-order-preview" role="group" aria-label="确认军令"><p>{preview.preview.reason}</p>{preview.preview.warnings.map(w=><small key={w}>{w}</small>)}{stale?<><p>时间或世界已变化，请重新预览。</p><button disabled={busy} onClick={()=>request(preview.intent)}>重新预览军令</button></>:preview.preview.valid&&<button disabled={busy} onClick={confirm}>确认军令</button>}<button onClick={cancel}>取消军令</button></section>}
  </>;
 }

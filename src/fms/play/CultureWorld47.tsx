@@ -1,3 +1,4 @@
+import {populationStamp47} from './civilization47-population-types';
 import {CultureHouses47} from './CultureHouses47';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
@@ -18,8 +19,9 @@ import {sameCulture47Value} from './culture47-equal';
 import {Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import type {Culture47Snapshot,Culture47Request as WorkerRequest} from './culture47.worker';
 import type {Culture47Action,Culture47Journal} from './culture47-session';
-import {loadCulture47,saveCulture47,CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
-import {CULTURE47_CONTINUATION_SOURCE} from './culture47-session';
+import {loadCulture47,saveCulture47,CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_FRESH_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
+import {ARMY_RETIREMENT_RULE47} from './army-retirement47';
+import {CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE} from './culture47-session';
 import {continuationJournal47,assertContinuationMatch47} from './culture47-continuation';
 import {previewFamilySuccession47} from './civilization47-succession';
 import {graphFor46} from './war46-geography';
@@ -121,7 +123,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
         candidate.value={client:restored,snapshot:loaded,journal:structuredClone(j)};
       }catch(error){restored.close();throw error;}
     };
-    const readWorld=async()=>{const databases:Culture47Database[]=storageChoice==='auto'?[CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_DATABASE]:[storageChoice];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db);if(found)return found;}return null;};
+    const readWorld=async()=>{const databases:Culture47Database[]=storageChoice==='auto'?[CULTURE47_RETIREMENT_DATABASE,CULTURE47_FRESH_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_DATABASE]:[storageChoice];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db);if(found)return found;}return null;};
     void readWorld().then(s=>{
       if(controller.signal.aborted||reading.signal.aborted){discard();return;}
       const held=candidate.value;
@@ -151,12 +153,13 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     const dispatched=command.type==='action'&&(command.action.kind==='advance'||command.action.kind==='identity'||command.action.kind==='succession')&&current.current?{...command,sequence:current.current.journal.actions.length}:command;
     const motionTicks=background?(dispatched.type==='advance-batch'?dispatched.ticks:dispatched.type==='action'&&dispatched.action.kind==='advance'?dispatched.action.ticks:0):0,started=performance.now();
     if(motionTicks)motion.current.beginAdvance(motionTicks,started);
-    const inspectNewSlot=command.type==='create'&&(storageDatabase.current!==CULTURE47_NEW_DATABASE||locked);
-    try{const newSlot=inspectNewSlot?await loadCulture47(indexedDB,j=>verifyJournal(j,op.signal,{progress:replayProgress}),op.signal,CULTURE47_NEW_DATABASE):undefined;
-      const s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
+    const inspectNewSlot=command.type==='create'&&(storageDatabase.current!==CULTURE47_FRESH_DATABASE||locked);
+    try{const newSlot=inspectNewSlot?await loadCulture47(indexedDB,j=>verifyJournal(j,op.signal,{progress:replayProgress}),op.signal,CULTURE47_FRESH_DATABASE):undefined;
+      let s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
+      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(motionTicks)motion.current.recordAdvance(motionTicks,performance.now()-started);
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;
-      if(command.type==='create'){if(inspectNewSlot)revision.current=newSlot?.revision??null;storageDatabase.current=CULTURE47_NEW_DATABASE;setLocked(false);}
+      if(command.type==='create'){if(inspectNewSlot)revision.current=newSlot?.revision??null;storageDatabase.current=CULTURE47_FRESH_DATABASE;setLocked(false);}
       instantDisplay.current=isAdvance&&!background||command.type==='create'||command.type==='load';
       current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
     catch(e){if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice(failText(e)+(client.current?.isClosed?(current.current?' 点击继续可恢复最后确认的进度。':' 可以重新点击创建或继续世界；原档保留。'):''));}}
@@ -165,22 +168,24 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const act=(action:Culture47Action)=>{const s=current.current;if(s)void send({type:'action',action,sequence:s.journal.actions.length});};
   async function continueLongPlay(){
     const source=current.current,original=client.current;
-    if(!source||!original||inflight.current||busy||locked||storageReading||source.journal.engine!==CULTURE47_CONTINUATION_SOURCE)return;
+    if(!source||!original||inflight.current||busy||locked||storageReading||![CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(source.journal.engine))return;
     setPlaying(false);inflight.current=true;setBusy(true);setNotice('正在对照原版历史，完成后保存独立续玩副本…');
     const op=new AbortController(),candidateClient=new Culture47Client();operation.current=op;
     let installed=false;
     try{
       await original.verify(source.journal,{signal:op.signal,progress:replayProgress,longReplay:true});
-      const journal=continuationJournal47(source.journal),candidate=await candidateClient.send({type:'load',journal},{signal:op.signal,progress:replayProgress,longReplay:true});
-      op.signal.throwIfAborted();assertContinuationMatch47(source,candidate,journal);
-      const next=await saveCulture47(journal,null,indexedDB,op.signal,async j=>{const c=j.engine===candidateClient.engine?candidateClient:original;await c.verify(j,{signal:op.signal,longReplay:true,progress:replayProgress});},CULTURE47_LONGPLAY_DATABASE,source.journal);
+      const copied=continuationJournal47(source.journal);let candidate=await candidateClient.send({type:'load',journal:copied},{signal:op.signal,progress:replayProgress,longReplay:true});
+      op.signal.throwIfAborted();assertContinuationMatch47(source,candidate,copied);
+      candidate=await candidateClient.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(candidate.run)},sequence:copied.actions.length},{signal:op.signal});
+      const journal=candidate.journal,target=source.journal.engine===CULTURE47_RETIREMENT_SOURCE?CULTURE47_RETIREMENT_DATABASE:CULTURE47_LONGPLAY_DATABASE;
+      const next=await saveCulture47(journal,null,indexedDB,op.signal,async j=>{const c=j.engine===candidateClient.engine?candidateClient:original;await c.verify(j,{signal:op.signal,longReplay:true,progress:replayProgress});},target,source.journal);
       // A successful transaction is already durable. Never write after abort;
       // if the view disappeared, the new slot will be found on the next read.
       if(lifetime.current?.signal.aborted)return;
       client.current=candidateClient;installed=true;original.close();readyWorld.current=null;
-      storageDatabase.current=CULTURE47_LONGPLAY_DATABASE;revision.current=next;lastSaved.current=journal.actions.length;
+      storageDatabase.current=target;revision.current=next;lastSaved.current=journal.actions.length;
       previewEpoch.current={military:previewEpoch.current.military+1,political:previewEpoch.current.political+1};queued.current=null;setMilitaryPreview(null);setPoliticalPreview(null);setForce(null);setTargetMode(null);setPanel(null);
-      instantDisplay.current=true;current.current=candidate;setSnapshot(candidate);setSaved({journal,revision:next,recovered:false});setNotice('续玩副本已保存。原局和开局以来的历史均保留；现在可继续越过 1000 日。');
+      instantDisplay.current=true;current.current=candidate;setSnapshot(candidate);setSaved({journal,revision:next,recovered:false});setNotice('续玩副本已保存。原局和开局以来的历史均保留；已启用退役归档和持续补军，没有固定结束日期。');
     }catch(e){if(!lifetime.current?.signal.aborted)setNotice('续玩副本未建立，原世界保持。'+failText(e));}
     finally{if(!installed)candidateClient.close();operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);drain();}}
   }
@@ -300,12 +305,12 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       <button className="c47-primary" disabled={busy||storageReading||!enabled.length} onClick={()=>void send({type:'create',opening:{terrain,count,cityCount,relations:war?'war':'peace',setup:{mode,enabled,nations:Object.fromEntries(Array.from({length:count},(_,i)=>['n-'+i,choice(i)]))}}})}>{busy?'正在建立文明…':'从当前地图创建文化世界'}</button>
       {locked&&!storageReading&&<button onClick={()=>setStorageAttempt(n=>n+1)}>重新读取存档</button>}
       {saved&&<button disabled={busy} onClick={()=>void send({type:'load',journal:saved.journal})}>{busy?'正在恢复文化世界…':'继续文化世界'}{saved.recovered?'（已找到有效备份）':''}</button>}
-      <details><summary>选择存档位置</summary><div className="c47-segment">{([[CULTURE47_LONGPLAY_DATABASE,'续玩副本'],[CULTURE47_NEW_DATABASE,'新版世界'],[CULTURE47_DATABASE,'原版世界']] as const).map(([db,label])=><button key={db} disabled={busy||storageReading} onClick={()=>{setSaved(null);setStorageChoice(db);setStorageAttempt(n=>n+1);}}>{label}</button>)}</div><small>三个位置互相独立。创建新世界不会覆盖原版世界或续玩副本。</small></details>
+      <details><summary>选择存档位置</summary><div className="c47-segment">{([[CULTURE47_RETIREMENT_DATABASE,'补军续玩副本'],[CULTURE47_FRESH_DATABASE,'新版世界'],[CULTURE47_LONGPLAY_DATABASE,'旧续玩副本'],[CULTURE47_NEW_DATABASE,'上版世界'],[CULTURE47_DATABASE,'原版世界']] as const).map(([db,label])=><button key={db} disabled={busy||storageReading} onClick={()=>{setSaved(null);setStorageChoice(db);setStorageAttempt(n=>n+1);}}>{label}</button>)}</div><small>这些位置互相独立。创建新世界不会覆盖原版世界或续玩副本。</small></details>
       <button onClick={onLegacy} disabled={busy}>继续旧世界 / 原版本功能</button>
       <details className="c47-scope"><summary>本次可试玩的范围</summary><p>真实文化、独立信仰与政体、两种命名、家族传位、财政动员和实际位置行军已接入。可预览宣战及停战；自主外交和有完整宣战史的外战结算已接续。分裂、宗教传播、宗属与内战仍待完善，海陆速度比例尚待校准。</p><p>新世界独立保存；旧世界使用原版本。新版没有固定日数或指令总量的结束门槛，保留完整历史；长历史冷恢复仍需要时间，存储容量取决于设备。旧版保持原 1000 日预算，已验证的版本可明确建立独立续玩副本。已登记版本由原引擎继续，未知版本保留并锁定。旧版兼容入口暂不提供传位预览及任意海面军令。原试玩入口仍保留。</p></details>
     </section>}
     {r&&<>
-      {snapshot.journal.engine===CULTURE47_CONTINUATION_SOURCE&&<section className="c47-continuation" aria-label="安全续玩"><span>旧版最多 1000 日 · 副本保留全部前史，独立保存</span><button disabled={busy||advancing||locked||storageReading} onClick={()=>void continueLongPlay()}>建立续玩副本</button></section>}
+      {[CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(snapshot.journal.engine)&&<section className="c47-continuation" aria-label="安全续玩"><span>升级补军规则 · 副本保留全部前史，独立保存</span><button disabled={busy||advancing||locked||storageReading} onClick={()=>void continueLongPlay()}>建立续玩副本</button></section>}
       <CultureNews47 displayTick={()=>motion.current.tick(performance.now())} key={r.id} run={r} open={id=>{setHistoryEpoch(n=>n+1);setHistoryFocus(id);setPanel('history');}}/>
       <div className="c47-nations" aria-label="国家列表">{r.world.nations.map(n=><button key={n.id} aria-pressed={nationId===n.id&&panel==='nation'} onClick={()=>{setNationId(n.id);setCityId(null);setPanel('nation');}}><i style={{background:n.color}}/>{n.name}</button>)}</div>
       <div className="c47-zoom"><button aria-label="放大地图" onClick={()=>mapControl.current?.zoom(1.6)}><PlayIcon name="plus"/></button><button aria-label="缩小地图" onClick={()=>mapControl.current?.zoom(1/1.6)}><PlayIcon name="minus"/></button><button aria-label="显示全图" onClick={()=>mapControl.current?.fit()}><PlayIcon name="fit"/></button></div>

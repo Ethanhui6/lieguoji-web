@@ -1,3 +1,5 @@
+import {enableArmyRetirement47,retireArmiesOwned47,assertArmyRetirement47} from './army-retirement47';
+import {populationStamp47} from './civilization47-population-types';
 import {beforeAll,describe,it,expect} from 'vitest';
 import {grid} from './fixture.test-support';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
@@ -11,7 +13,7 @@ import {settleFleetFood47,finishDailyForces47} from './civilization47-upkeep';
 import {monthlyArmyFees47} from './civilization47-fiscal';
 import {musterMonth47} from './civilization47-monthly-muster';
 import {graphFor46} from './war46-geography';
-import {assertForceSpeed47} from './force-speed47';
+import {assertForceSpeed47,initializedArmySpeed47} from './force-speed47';
 import {sourceLegionStrength} from './muster21-rules';
 import {nativeMonthlyEmergencyQuantity} from './native-economy/emergency-muster';
 import {personTraits} from './court16-people';
@@ -134,4 +136,42 @@ describe('fleet food uses the actual stopped anchor, not legacy dock IDs',()=>{
     expect(lost.status).toBe('lost');expect(lost.crew).toBe(0);expect(out.maritime.hulls[fleet.id]).toBe(0);expect(out.fleetPositions.records[fleet.id]).toEqual({...position,status:'halted'});expect(out.portControl.fleets[fleet.id]).toMatchObject({active:false,targetId:null,forwardBaseId:null});expect(out.portControl.attackFleetIds).not.toContain(fleet.id);
     expect(out.losses.nations[fleet.nationId].unassigned).toMatchObject({crew:1,hull,ships:fleet.ships,combat:0});expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(121);
   });
+});
+
+
+describe('opt-in retired roster frees real recruitment capacity',()=>{
+ it('archives sea starvation after accounting, clears all live references and continues next tick',()=>{
+  const r=enableArmyRetirement47(structuredClone(dayOne),populationStamp47(dayOne)),a=r.world.armies[0],b=r.world.armies.find(v=>v.nationId!==a.nationId)!,sea=atSea(r,a.id),graph=actualForces47(r).spatial.graph;
+  r.armyPositions.records[b.id]=beginArmyTravel47(b.id,[sea.id],graph);for(const rel of r.world.statecraft!.relations)if([a.nationId,b.nationId].includes(rel.a)&&[a.nationId,b.nationId].includes(rel.b))rel.status='war';
+  a.troops=1;a.supplies=0;b.supplies=100;finishDailyForces47(r);const key=forceKey47({kind:'army',id:a.id});r.forceDamage.carry[key]=.4;r.forceDamage.losses[key]=3;r.voyages.manualArmies.push(a.id);r.reorganization.completed[a.id]=2;
+  const before=structuredClone(r),out=settleCivilizationDay47(r,noOrders),v=out.armyRetirement!.records[a.id];expect(r).toEqual(before);
+  expect(v).toMatchObject({army:{id:a.id,status:'destroyed',troops:0},combatLosses:3,damageCarry:.4,completedReorganizations:2,archivedTick:120,archivedDay:1});expect(v.travel).toMatchObject({armyId:a.id,status:'halted'});
+  expect(armyTravelLocation47(v.travel,actualForces47(out).spatial.graph).onLand).toBe(false);
+  for(const table of [out.units,out.tactics.forces,out.tactics.rounds,out.armyPositions.records,out.forceSpeed.armies,out.combatPersonnel.armies,out.upperCombat.armies,out.armyAutonomy.armies,out.reorganization.completed,out.battles.plans])expect(table[a.id]).toBeUndefined();
+  expect(out.voyages.revision).toBe(r.voyages.revision+1);expect(out.world.armies.some(v=>v.id===a.id)).toBe(false);expect(out.voyages.manualArmies).not.toContain(a.id);expect(out.forceDamage.carry[key]).toBeUndefined();expect(out.forceDamage.losses[key]).toBeUndefined();expect(out.forceClock.deadlines[key]).toBeUndefined();expect(out.forceContacts.pairs.some(p=>p.a===key||p.b===key)).toBe(false);
+  expect(out.losses.nations[a.nationId].total).toMatchObject({starvation:1,combat:0});expect(out.tactics.nextArmyId).toBe(r.tactics.nextArmyId);expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(121);
+  const done=structuredClone(out);retireArmiesOwned47(out);expect(out).toEqual(done);assertArmyRetirement47(out);
+ });
+ it('500 lifetime entities no longer block monthly recruitment; population debits and IDs remain real',()=>{
+  const input=structuredClone(dayThirty),template=input.world.armies[0],tables=[input.units,input.tactics.forces,input.armyPositions.records,input.forceSpeed.armies,input.combatPersonnel.armies,input.upperCombat.armies,input.armyAutonomy.armies];
+  while(input.world.armies.length<500){const id='force-'+input.tactics.nextArmyId++;input.world.armies.push({...structuredClone(template),id});for(const table of tables)table[id]=structuredClone(table[template.id]);input.armyPositions.records[id].armyId=id;input.forceSpeed.armies[id]=initializedArmySpeed47(input.world.custom!.seed,id,template.nationId,0,false);}
+  const survivor=input.world.armies.at(-1)!.id;for(const a of input.world.armies)if(a.id!==survivor){a.troops=0;a.status='destroyed';a.morale=0;a.supplies=0;}
+  finishDailyForces47(input);const oldIds=new Set(input.world.armies.map(a=>a.id)),blocked=settleCivilizationDay47(input,noOrders);expect(blocked.world.armies.filter(a=>!oldIds.has(a.id))).toHaveLength(0);
+  const r=enableArmyRetirement47(input,populationStamp47(input));let populationBefore=0;
+  const out=settleCivilizationDay47(r,owned=>{expect(owned.world.armies.map(a=>a.id)).toEqual([survivor]);populationBefore=owned.world.statecraft!.provinces.reduce((n,p)=>n+p.population,0);return undefined;});
+  const recruits=out.world.armies.filter(a=>!oldIds.has(a.id));expect(recruits.length).toBeGreaterThan(0);expect(Object.keys(out.armyRetirement!.records)).toHaveLength(499);expect(out.tactics.nextArmyId).toBeGreaterThan(input.tactics.nextArmyId);
+  expect(out.world.statecraft!.provinces.reduce((n,p)=>n+p.population,0)).toBe(populationBefore-recruits.reduce((n,a)=>n+Math.round(a.troops/10),0));expect(recruits.every(a=>!out.armyRetirement!.records[a.id]&&out.forceSpeed.armies[a.id]&&out.armyPositions.records[a.id])).toBe(true);expect(advanceCivilizationMilitary47(out,1,weights).run.clock.tick).toBe(3601);
+ },30000);
+ it('late failure, bad archive and overflow leave the original pending day untouched',()=>{
+  for(const mode of ['late','overflow','corrupt']){const r=enableArmyRetirement47(dayOne,populationStamp47(dayOne));r.world.armies[0].status='destroyed';r.world.armies[0].troops=0;if(mode==='overflow')r.armyAutonomy.revision=Number.MAX_SAFE_INTEGER;if(mode==='corrupt')r.armyRetirement!.enabledTick=r.clock.tick+1;const before=structuredClone(r);expect(()=>settleCivilizationDay47(r,()=>{if(mode==='late')throw Error('late retirement fixture');return undefined;})).toThrow();expect(r).toEqual(before);}
+ });
+ it('does not change pre-opt-in days and rejects repeated or stale enabling',()=>{
+  const before=structuredClone(dayOne);expect(()=>enableArmyRetirement47(dayOne,{...populationStamp47(dayOne),tick:0})).toThrow();const r=enableArmyRetirement47(dayOne,populationStamp47(dayOne));expect(()=>enableArmyRetirement47(r,populationStamp47(r))).toThrow();expect(dayOne).toEqual(before);expect(settleCivilizationDay47(dayOne,noOrders).armyRetirement).toBeUndefined();
+ });
+});
+
+it('opt-in peace disbanding archives at this month end without erasing any warfare accounts',()=>{
+ const r=enableArmyRetirement47(dayThirty,populationStamp47(dayThirty)),nation=r.world.armies[0].nationId,forces=r.world.armies.filter(a=>a.nationId===nation).slice(0,3);for(const a of forces)r.tactics.forces[a.id].kind='emergency';atSea(r,forces[0].id,true);atSea(r,forces[1].id);
+ const out=settleCivilizationDay47(r,noOrders);expect(out.world.armies.some(a=>a.id===forces[0].id)).toBe(true);expect(out.world.armies.some(a=>a.id===forces[1].id)).toBe(true);expect(out.world.armies.some(a=>a.id===forces[2].id)).toBe(false);expect(out.armyRetirement!.records[forces[2].id].archivedDay).toBe(30);
+ expect(out.losses).toEqual(r.losses);expect(out.nativeWars).toEqual(r.nativeWars);expect(out.warfare).toEqual(r.warfare);
 });

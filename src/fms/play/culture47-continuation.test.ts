@@ -1,15 +1,16 @@
+import {ARMY_RETIREMENT_RULE47} from './army-retirement47';
 import {beforeAll,describe,it,expect} from 'vitest';
 import {IDBFactory} from 'fake-indexeddb';
-import {Culture47Session,CULTURE47_CONTINUATION_SOURCE,assertCulture47Journal,type Culture47Journal} from './culture47-session';
+import {Culture47Session,CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE,assertCulture47Journal,type Culture47Journal} from './culture47-session';
 import {continuationJournal47,assertContinuationMatch47} from './culture47-continuation';
 import {populationStamp47} from './civilization47-population-types';
 import {grid} from './fixture.test-support';
-import {CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,loadCulture47,saveCulture47} from './culture47-storage';
+import {CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_RETIREMENT_DATABASE,loadCulture47,saveCulture47} from './culture47-storage';
 import {sameCulture47Value} from './culture47-equal';
 let initial:Culture47Journal;
 beforeAll(()=>{const j=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:6,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).journal;const {fork:_,...v1}=j;void _;initial={...v1,version:1};},30000);
 function source(){const s=new Culture47Session(),r=s.load(initial);s.execute({kind:'family-policy',nationId:'n-0',enabled:false,expected:populationStamp47(r.run)},0);const snap=s.execute({kind:'advance',ticks:120},1);snap.journal.engine=CULTURE47_CONTINUATION_SOURCE;return snap;}
-const verify=(j:Culture47Journal)=>{new Culture47Session().load(j.engine===CULTURE47_CONTINUATION_SOURCE?{...j,engine:__CULTURE47_ENGINE__}:j);};
+const verify=(j:Culture47Journal)=>{new Culture47Session().load([CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(j.engine)?{...j,engine:__CULTURE47_ENGINE__}:j);};
 async function slots(f:IDBFactory,name:string,mutate?:(s:IDBObjectStore)=>void){const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=f.open(name);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise<unknown[]>((resolve,reject)=>{const tx=db.transaction('slots',mutate?'readwrite':'readonly'),s=tx.objectStore('slots');mutate?.(s);const r=s.getAll();tx.oncomplete=()=>resolve(r.result);tx.onabort=tx.onerror=()=>reject(tx.error);});}finally{db.close();}}
 describe('open-ended continuation keeps the executed source history',()=>{
  it('replays old stamps before the fork, uses the new ID afterward and cold restores the exact tail',()=>{
@@ -68,4 +69,39 @@ describe('open-ended continuation keeps the executed source history',()=>{
   expect(()=>assertCulture47Journal({...fresh,actions:[{kind:'advance',ticks:121}]})).toThrow();
   for(const days of [2001,40001])expect(()=>assertCulture47Journal({...fresh,actions:Array.from({length:days},()=>({kind:'advance',ticks:120}))})).not.toThrow();
  });
+});
+
+// Shape/transaction fixtures only. Production frozen-worker parity is covered
+// separately by fms-culture47-retirement.spec.ts.
+function retirementSource(previous:boolean){const s=new Culture47Session(),start=previous?continuationJournal47(source().journal):{...initial,version:2 as const,fork:null},opened=s.load(start);s.execute({kind:'family-policy',nationId:'n-0',enabled:true,expected:populationStamp47(opened.run)},start.actions.length);const snap=s.snapshot();snap.journal.engine=CULTURE47_RETIREMENT_SOURCE;return snap;}
+function upgraded(old:ReturnType<typeof retirementSource>){const j=continuationJournal47(old.journal),s=new Culture47Session(),copy=s.load(j);assertContinuationMatch47(old,copy,j);const enabled=s.execute({kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(copy.run)},j.actions.length);return {s,enabled};}
+describe('9c v2 retirement copy keeps both identity boundaries',()=>{
+ it.each([false,true])('preserves the complete source and cold replays enabled batches, previous fork=%s',previous=>{
+  const old=retirementSource(previous),before=structuredClone(old),{s,enabled}=upgraded(old);expect(enabled.run.armyRetirement?.enabledTick).toBe(old.run.clock.tick);expect(enabled.journal.actions.slice(0,-1)).toEqual(old.journal.actions);
+  const daily=new Culture47Session();daily.load(enabled.journal);for(let i=0;i<4;i++)daily.execute({kind:'advance',ticks:120},enabled.journal.actions.length+i);
+  s.executeDisplay(Array.from({length:4},()=>({kind:'advance' as const,ticks:120})),enabled.journal.actions.length);expect(s.snapshot()).toEqual(daily.snapshot());expect(new Culture47Session().load(s.snapshot().journal)).toEqual(s.snapshot());expect(old).toEqual(before);
+ },30000);
+ it('switches both identities even when zero-length boundaries coincide and has no new 20k source cap',()=>{
+  const {fork:_,...header}=initial;void _;const old={...header,engine:CULTURE47_CONTINUATION_SOURCE},first=continuationJournal47(old),second=continuationJournal47({...first,engine:CULTURE47_RETIREMENT_SOURCE});expect(new Culture47Session().load(second).run.id).toBe(second.id);
+  const huge={...initial,version:2 as const,fork:null,engine:CULTURE47_RETIREMENT_SOURCE,actions:Array.from({length:20001},()=>({kind:'advance' as const,ticks:1}))};expect(()=>assertCulture47Journal(continuationJournal47(huge))).not.toThrow();
+ });
+ it.each([false,true])('atomically archives direct source v2, protects it through backup recovery and rejects nested future fields, previous=%s',async previous=>{
+  const f=new IDBFactory(),old=retirementSource(previous),{s,enabled}=upgraded(old),db=previous?CULTURE47_LONGPLAY_DATABASE:CULTURE47_NEW_DATABASE;
+  const origin=previous?source():null;
+  // Use the exact earlier source represented by this fixture's v2 prefix.
+  if(origin&&old.journal.fork){origin.journal.id=old.journal.fork.id;origin.journal.actions=structuredClone(old.journal.actions.slice(0,old.journal.fork.sequence));origin.journal.opening=old.journal.opening;}
+  await saveCulture47(old.journal,null,f,undefined,verify,db,origin?.journal);const before=await slots(f,db);
+  const bare=continuationJournal47(old.journal);await expect(saveCulture47(bare,null,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE,old.journal)).rejects.toThrow('尚未启用');
+  await saveCulture47(enabled.journal,null,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE,old.journal);
+  const next=s.execute({kind:'advance',ticks:120},enabled.journal.actions.length);await saveCulture47(next.journal,1,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE);
+  await slots(f,CULTURE47_RETIREMENT_DATABASE,store=>{const q=store.get('current');q.onsuccess=()=>store.put({...q.result,checksum:'broken'},'current');});
+  expect((await loadCulture47(f,verify,undefined,CULTURE47_RETIREMENT_DATABASE))?.recovered).toBe(true);await saveCulture47(next.journal,2,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE);await saveCulture47(next.journal,3,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE);
+  expect(await slots(f,db)).toEqual(before);expect(new Culture47Session().load((await loadCulture47(f,verify,undefined,CULTURE47_RETIREMENT_DATABASE))!.journal)).toEqual(next);
+  await slots(f,CULTURE47_RETIREMENT_DATABASE,store=>{const q=store.get('backup');q.onsuccess=()=>store.put({...q.result,journal:{...q.result.journal,fork:{...q.result.journal.fork,previous:{engine:'future',id:old.journal.id,sequence:0}}}},'backup');});await expect(loadCulture47(f,verify,undefined,CULTURE47_RETIREMENT_DATABASE)).rejects.toThrow('未来');expect(await slots(f,db)).toEqual(before);
+ },30000);
+ it('v2 copy cancellation and competing saves never alter its original',async()=>{
+  const f=new IDBFactory(),old=retirementSource(false),{enabled}=upgraded(old),abort=new AbortController();await saveCulture47(old.journal,null,f,undefined,verify,CULTURE47_NEW_DATABASE);const before=await slots(f,CULTURE47_NEW_DATABASE);
+  await expect(saveCulture47(enabled.journal,null,f,abort.signal,j=>{verify(j);if(j.engine===CULTURE47_RETIREMENT_SOURCE)abort.abort();},CULTURE47_RETIREMENT_DATABASE,old.journal)).rejects.toThrow();expect(await loadCulture47(f,verify,undefined,CULTURE47_RETIREMENT_DATABASE)).toBeNull();
+  const save=()=>saveCulture47(enabled.journal,null,f,undefined,verify,CULTURE47_RETIREMENT_DATABASE,old.journal);expect((await Promise.allSettled([save(),save()])).filter(v=>v.status==='fulfilled')).toHaveLength(1);expect(await slots(f,CULTURE47_NEW_DATABASE)).toEqual(before);
+ },30000);
 });

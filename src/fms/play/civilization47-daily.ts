@@ -1,3 +1,4 @@
+import {assertArmyRetirement47,retireArmiesOwned47} from './army-retirement47';
 import type {FoundingForces47} from './civilization47-forces';
 import {assertFamilyCalendar47} from './civilization47-calendar';
 import {assertForceSpeed47} from './force-speed47';
@@ -32,7 +33,7 @@ export function settleSessionCivilizationDay47(lease:SessionAdvanceLease47,daily
   const input=readSessionAdvanceCandidate47(lease);return settleCivilizationDayCore47(input,dailyOrders,input);
 }
 function settleCivilizationDayCore47<T extends FoundingForces47>(input:T,dailyOrders:(owned:T)=>undefined,owned?:T):T{
-  assertFamilyCalendar47(input,true);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);assertDailyResources47(input);assertMonthlyAccounts47(input);
+  assertArmyRetirement47(input);assertFamilyCalendar47(input,true);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);assertDailyResources47(input);assertMonthlyAccounts47(input);
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
   if(input.clock.tick!==(input.world.day+1)*TICKS_PER_DAY||input.forceClock.secondsPerTick!==input.life.secondsPerDay/TICKS_PER_DAY||input.transports.cargo.length)throw Error('只能结算真实日界，旧承运状态不得混入新规则。');
   const initial=actualForces47(input);assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)));assertLosses(input.losses,input.world,input.warfare,input.clock.tick);
@@ -43,14 +44,14 @@ function settleCivilizationDayCore47<T extends FoundingForces47>(input:T,dailyOr
   settleFleetFood47(r);
   const economy=createArmyEconomy47(r.finance,()=>({...actualForces47(r).spatial,positions:r.armyPositions}),LOGISTICS_DAY_FACTOR47);
   economy.advanceEconomy(r.world,(world,kind,text,reason)=>dailyEvent47({world},kind,text,reason));
-  settleArmyFoodConsequences47(r);finishDailyForces47(r);
+  settleArmyFoodConsequences47(r);finishDailyForces47(r);retireArmiesOwned47(r);
   settleFiscalMonth47(r);
   const result:unknown=dailyOrders(r);
   // A Promise must never continue mutating a returned candidate after final
   // validation. Discard this private candidate; observe rejection only to
   // avoid an unhandled asynchronous error, never to resume the transaction.
   if(result!==undefined){if(result&&typeof (result as {then?:unknown}).then==='function')void Promise.resolve(result).catch(()=>undefined);throw Error('日结命令阶段必须同步完成并返回 undefined。');}
-  musterMonth47(r);settleDestinyMonth(r,r.destiny);finishDailyForces47(r,true);
+  musterMonth47(r);settleDestinyMonth(r,r.destiny);finishDailyForces47(r,true);retireArmiesOwned47(r);
   r.dailyEconomy.lastDay=r.world.day;
   assertFamilyCalendar47(r);assertDailyEconomy47(r);assertForceSpeed47(r.forceSpeed,r.world,r.clock.tick);assertDailyResources47(r);assertMonthlyAccounts47(r);assertLosses(r.losses,r.world,r.warfare,r.clock.tick);
   assertCombatPersonnel47(r.combatPersonnel,r.world,r.clock.tick,r);

@@ -11,6 +11,7 @@ import {forceKey47,reconcileForceContactsOwned47} from './force-motion47';
 import {reconcileMilitaryClock47} from './force-tick47';
 import {navalPresence47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
 import {fleetRation47,LOGISTICS_DAY_FACTOR47} from './logistics-clock47';
+import {waterRegions47} from './geography-content47';
 
 export function dailyEvent47(r:Pick<FoundingForces47,'world'>,kind:GameEvent['kind'],text:string,reason:string){
   if(!Number.isSafeInteger(r.world.nextEventId)||r.world.nextEventId<1||r.world.nextEventId>=Number.MAX_SAFE_INTEGER)throw Error('事件记录已达上限。');
@@ -69,7 +70,7 @@ export function settleArmyFoodConsequences47(r:FoundingForces47){
 /** All death/retirement/roster changes finish in the daily candidate before
  * the next tick validates contacts and deadlines. Keep history/damage carry. */
 export function finishDailyForces47(r:FoundingForces47,commitPositions=false){
-  const {spatial,forces}=actualForces47(r),regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const)));
+  const {spatial,forces}=actualForces47(r),regions=waterRegions47(r.diplomaticGeography);
   const next=reconcileForceContactsOwned47(forces,spatial.graph,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),face=>regions.get(face)!);r.forceContacts=next.contacts;
   for(const a of r.world.armies)if(a.status==='fighting'&&!next.held.has(forceKey47({kind:'army',id:a.id})))a.status='idle';
   reconcileMilitaryClock47(r,r.clock.tick);

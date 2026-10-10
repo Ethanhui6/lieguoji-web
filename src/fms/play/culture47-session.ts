@@ -6,8 +6,7 @@ import {settleArmyAutonomyDay47} from './civilization47-army-ai';
 import {assertPopulation47} from './civilization47-population-validation';
 import {previewFamilySuccession47,appointFamilyRuler47} from './civilization47-succession';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
-import {assertArmyAutonomy47} from './civilization47-army-ai-state';
-import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
+import {advanceSessionBatch47} from './session-advance47';
 import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
 import {sameCulture47Value} from './culture47-equal';
 import {withOwnedTravel47} from './owned-travel47';
@@ -60,7 +59,8 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
   if(a.kind==='advance'){
     let next=r,remaining=a.ticks;
     while(remaining){const take=Math.min(remaining,120-next.clock.tick%120),out=advanceCivilizationMilitary47(next,take,weights,recordPoliticalOccupation47,finishPoliticalTick47,observe);next=out.dailyPending?settleArmyAutonomyDay47(out.run,weights):out.run;advancePolitics47(next,out.dailyPending);remaining-=take;}
-    assertPopulation47(next);assertArmyAutonomy47(next);assertNavalAutonomy47(next);return next;
+    // advancePolitics47 just validated population and both autonomy ledgers.
+    return next;
   }
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
   if(a.kind==='military')return applyMilitary47(r,a.intent,a.expected);
@@ -128,7 +128,8 @@ export class Culture47Session {
     // Header and previous actions are privately owned and validated at ingress.
     // Only commit after every action and numeric-geography window succeeds.
     let run=s.run;
-    for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action,observe)));prepareOwnedGeography47(run);}
+    if(accepted.every(a=>a.kind==='advance'))run=advanceSessionBatch47(run,accepted,weights,observe);
+    else for(const action of accepted){run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action,observe)));prepareOwnedGeography47(run);}
     this.state={run,journal:{...s.journal,actions:[...s.journal.actions,...accepted]},ticks};
   }
   snapshot(){if(!this.state)throw Error('请先创建或继续文化世界。');const {run,journal}=this.state;return structuredClone({run,journal,frame:culture47Frame(run)});}

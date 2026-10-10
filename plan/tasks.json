@@ -4857,7 +4857,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47SiegeDisplayCheckpoint and AUTO_HANDOFF. Original pace remains failed (~1 day/sec), despite safe history and display fixes. Next reduce redundant per-day clone/validation through private Session advance ownership, preserving every tick, RNG, action check and rollback; freeze d01d delivered worker before runtime changes. Real natural death/succession, civil wars/independence, multiple families, alliances, monthly capital crisis and post1000-day checkpoint remain incomplete. Do not substitute manual succession for autonomous events. Existing saved worlds5288/5290 kept; no push/Pages/phone/original-visual acceptance.",
+    "nextRecoveryTarget": "Read culture47OwnedBatchCheckpoint and AUTO_HANDOFF. Latest local5293 engine bbff; three local performance slices verified with 32-day exact d01d comparison. Original pace still failed; preserve12 frozen engines and old5288/5290/5291 saves. Next connect real monthly natural death, known-person succession/emergency appointment with legal vacancy and death history; civil-war/independence/multi-family/alliance/monthly capital crisis/post1000-day checkpoint remain incomplete. Do not substitute manual succession or fabricated periodic events. Freeze latest delivered worker before runtime changes. No push/Pages/phone/original-visual acceptance.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -9674,7 +9674,7 @@
       }
     },
     "culture47SiegeDisplayCheckpoint": {
-      "sourceCommit": null,
+      "sourceCommit": "96aad930e4efd4f9cf725972476ec4bb3a4ea6cf",
       "engine": "d01d963324e95744c3bcab885deba01d2c2e3dac3f556671b6b253d0e2711e36",
       "url": "http://127.0.0.1:5291/?fms=1",
       "artifact": ".autopilot/culture47-siege-view-checked",
@@ -9711,7 +9711,125 @@
       "physicalPhone": false,
       "originalVisual": false,
       "pushed": false,
-      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/SIEGE_DISPLAY_RESULT.md"
+      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/SIEGE_DISPLAY_RESULT.md",
+      "manualPlay": {
+        "url": "http://127.0.0.1:5291/?fms=1",
+        "day": 845,
+        "entries": 56,
+        "paused": true,
+        "saved": true,
+        "coldReloaded": false,
+        "note": "Real UI observed, no direct state injection; mixed war opening. Only this PC."
+      }
+    },
+    "culture47OwnedBatchCheckpoint": {
+      "status": "implemented-locally-original-pace-not-accepted",
+      "baseCommit": "96aad930e4efd4f9cf725972476ec4bb3a4ea6cf",
+      "scope": [
+        "One private mutable advance candidate; public/replay paths retain copy/rollback",
+        "Prepared empty-contact START and interior step reuse, all numeric ticks/END checks retained",
+        "Promote sea cache frozen leaves after exact comparison; use47 graph in diplomacy and shared immutable sea membership in daily upkeep"
+      ],
+      "checks": {
+        "unit": {
+          "initial": {
+            "files": 12,
+            "passed": 143,
+            "failed": 1,
+            "failures": [
+              {
+                "title": "promotes a pre-freeze sea witness without rescanning the mesh or trusting mutable samples",
+                "message": "AssertionError: expected true to be false // Object.is equality"
+              }
+            ]
+          },
+          "repair": {
+            "files": 2,
+            "passed": 8,
+            "failed": 0
+          },
+          "note": "Initial new mesh-rescan regression failed; fixed cache lookup order, affected geography tests rerun. Counts overlap and are not added."
+        },
+        "types": true,
+        "lint": true,
+        "build": true,
+        "approvedArtifacts": 77,
+        "browserCases": 10,
+        "exactDays": 32
+      },
+      "oldEnginePreserved": "d01d",
+      "savedWorldsUnchanged": true,
+      "pushed": false,
+      "profile": "docs/evidence/fms-events-cadence47-2026-10-10/current-core-profile.json",
+      "engine": "bbffdf05cb77fe70ee6dc382495fa1093f391fd876e339bc1add68a7fc7799aa",
+      "url": "http://127.0.0.1:5293/?fms=1",
+      "artifact": ".autopilot/culture47-geo-final-checked",
+      "sourceCommit": null,
+      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/OWNED_BATCH_RESULT.md",
+      "rates": [
+        {
+          "project": "desktop-chromium",
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2106,
+              "ms": 6024,
+              "daysPerSecond": 2.913346613545817
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 2400,
+              "ms": 4730,
+              "daysPerSecond": 4.2283298097251585
+            }
+          ],
+          "errors": [],
+          "normalMap": true,
+          "sameOpening": true,
+          "detailsOpen": true,
+          "exactRestore": true,
+          "physicalIphone": false
+        },
+        {
+          "project": "mobile-chromium",
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2093,
+              "ms": 6350,
+              "daysPerSecond": 2.746719160104987
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 1920,
+              "ms": 5466,
+              "daysPerSecond": 2.9271862422246615
+            }
+          ],
+          "errors": [],
+          "normalMap": true,
+          "sameOpening": true,
+          "detailsOpen": true,
+          "exactRestore": true,
+          "physicalIphone": false
+        }
+      ],
+      "acceptance": {
+        "originalWarPace": false,
+        "naturalDeathAndAutomaticSuccession": false,
+        "civilWarsIndependence": false,
+        "multiFamilyPolitics": false,
+        "post1000DayCheckpoint": false,
+        "iphonePhysical": false,
+        "originalVisual": false,
+        "fullProjectCI": false,
+        "pushed": false,
+        "pagesTriggered": false
+      }
     }
   }
 }

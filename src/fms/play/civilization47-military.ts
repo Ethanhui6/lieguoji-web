@@ -1,6 +1,6 @@
 import type {FoundingForces47} from './civilization47-forces';
 import {assertFamilyCalendar47,advanceFamilyCalendar47} from './civilization47-calendar';
-import {advanceMilitaryWindow47,type PreviousOwnership47} from './force-tick47';
+import {advanceMilitaryWindow47,advanceSessionMilitaryWindow47,type PreviousOwnership47,type MilitaryRules47} from './force-tick47';
 import type {ArmyRouteWeights47} from './army-commands47';
 import {assertForceSpeed47,actualForceSpeed47} from './force-speed47';
 import {TICKS_PER_DAY} from './clock';
@@ -16,11 +16,19 @@ import type {ForceMotionObserver47} from './force-display-trace47';
 import {createSessionNavalObserver47} from './naval-observer47';
 import {occupationObservationKey47} from './occupation-observer47';
 import {recordPoliticalOccupation47,finishPoliticalTick47} from './civilization47-political-owner';
+import {readSessionAdvanceCandidate47,type SessionAdvanceLease47} from './session-advance47';
 
 /** Fixed real47 military/calendar/personnel owner. No scalar combat override;
  * callers cannot omit calendar or choose fake speed/leadership/damage.
  * This returns PRIVATE dailyPending state, not a complete tick/save session. */
 export function advanceCivilizationMilitary47<T extends FoundingForces47>(input:T,ticks:number,weights:ArmyRouteWeights47,ownership?:(candidate:T,previous:PreviousOwnership47)=>void,politicalTick?:(candidate:T)=>void,observeMotion?:ForceMotionObserver47){
+  return advanceCivilizationMilitaryCore47(input,ticks,weights,ownership,politicalTick,observeMotion);
+}
+export function advanceSessionCivilizationMilitary47(lease:SessionAdvanceLease47,ticks:number,weights:ArmyRouteWeights47,observeMotion?:ForceMotionObserver47){
+  return advanceCivilizationMilitaryCore47(readSessionAdvanceCandidate47(lease),ticks,weights,recordPoliticalOccupation47,finishPoliticalTick47,observeMotion,
+    rules=>advanceSessionMilitaryWindow47(lease,ticks,weights,rules));
+}
+function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,ticks:number,weights:ArmyRouteWeights47,ownership?: (candidate:T,previous:PreviousOwnership47)=>void,politicalTick?: (candidate:T)=>void,observeMotion?:ForceMotionObserver47,ownedWindow?:(rules:MilitaryRules47<T>)=>ReturnType<typeof advanceMilitaryWindow47<T>>){
   assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
   // Validate live ruler/projection links once at entry even when every army
@@ -44,11 +52,12 @@ export function advanceCivilizationMilitary47<T extends FoundingForces47>(input:
     const navalWork=navalObserver!(r,weights,sea);
     return politicalWork||navalWork?'refresh':'reuse';
   };
-  const out=advanceMilitaryWindow47(input,ticks,weights,{observeMotion,sessionOccupationKey:fixed?occupationObservationKey47:undefined,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
+  const rules:MilitaryRules47<T>={observeMotion,sessionOccupationKey:fixed?occupationObservationKey47:undefined,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
     const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed):undefined);
     const end=moved.unusedSeconds===0?stop:from+moved.elapsed;
     if(end>from)advanceSessionPortInterval47(before,moved.run,from,end,sea,start);
     return moved;
-  }:undefined,afterTick:fixed?undefined:(r,pending)=>{advanceFamilyCalendar47(r,r.clock.tick,pending);if(!pending)politicalTick?.(r);issueAutonomousNavalOrders47(r,weights,sea);}});
+  }:undefined,afterTick:fixed?undefined:(r,pending)=>{advanceFamilyCalendar47(r,r.clock.tick,pending);if(!pending)politicalTick?.(r);issueAutonomousNavalOrders47(r,weights,sea);}};
+  const out=ownedWindow?ownedWindow(rules):advanceMilitaryWindow47(input,ticks,weights,rules);
   assertFamilyCalendar47(out.run,out.dailyPending);assertForceSpeed47(out.run.forceSpeed,out.run.world,out.run.clock.tick);return out;
 }

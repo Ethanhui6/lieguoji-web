@@ -1,0 +1,1704 @@
+{
+  "stats": {
+    "startTime": "2026-10-09T23:55:55.950Z",
+    "duration": 378367.91099999996,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "registered original engine-d01d.js continues without changing history or engine",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 6742,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "compatibility",
+          "data": {
+            "engine": "d01d963324e95744c3bcab885deba01d2c2e3dac3f556671b6b253d0e2711e36",
+            "workerHash": "ce8df7ba12149dfcde06c9d74abc3a5d3d7afac97302f6eeaab0bd5f9448f434",
+            "tick": "959",
+            "errors": [],
+            "syntheticWorld": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "cancelling a queued save clears the pending action and never writes later",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 4293,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "title": "registered original engine-d01d.js continues without changing history or engine",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 6633,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "compatibility",
+          "data": {
+            "engine": "d01d963324e95744c3bcab885deba01d2c2e3dac3f556671b6b253d0e2711e36",
+            "workerHash": "ce8df7ba12149dfcde06c9d74abc3a5d3d7afac97302f6eeaab0bd5f9448f434",
+            "tick": "592",
+            "errors": [],
+            "syntheticWorld": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "cancelling a queued save clears the pending action and never writes later",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 4576,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "title": "normal war world records real opening goals and monthly mobilization while history remains open",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 64193,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "major-history",
+          "data": {
+            "tick": "4955",
+            "opening": [
+              "卢克阿维亚帝国向阿德勒贝格王国宣战：领土争夺",
+              "春城帝国向卢克阿维亚帝国宣战：领土争夺",
+              "兴顺帝国向阿德勒贝格王国宣战：领土争夺",
+              "兴顺帝国向卢克阿维亚帝国宣战：领土争夺",
+              "兴顺帝国向纳吉姆盖尔比王国宣战：领土争夺",
+              "阿德勒贝格王国：奥托·黑森就任国王",
+              "卢克阿维亚帝国：尤利娅·德基玛就任女皇",
+              "纳吉姆盖尔比王国：希沙姆就任国王",
+              "布鲁克汉姆王国：伊迪丝·德维尔就任女王",
+              "春城帝国：黑田秀忠就任天皇",
+              "兴顺帝国：欧阳流云就任女皇"
+            ],
+            "records": [
+              "阿德勒贝格王国紧急动员，征召5支军队",
+              "兴顺帝国紧急动员，征召2支军队",
+              "卢克阿维亚帝国向阿德勒贝格王国宣战：领土争夺",
+              "春城帝国向卢克阿维亚帝国宣战：领土争夺",
+              "兴顺帝国向阿德勒贝格王国宣战：领土争夺",
+              "兴顺帝国向卢克阿维亚帝国宣战：领土争夺",
+              "兴顺帝国向纳吉姆盖尔比王国宣战：领土争夺",
+              "阿德勒贝格王国：奥托·黑森就任国王",
+              "卢克阿维亚帝国：尤利娅·德基玛就任女皇",
+              "纳吉姆盖尔比王国：希沙姆就任国王",
+              "布鲁克汉姆王国：伊迪丝·德维尔就任女王",
+              "春城帝国：黑田秀忠就任天皇",
+              "兴顺帝国：欧阳流云就任女皇"
+            ],
+            "errors": [],
+            "normalMap": true,
+            "historyOpenWhilePlaying": true,
+            "exactRestore": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "normal war world records real opening goals and monthly mobilization while history remains open",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 67641,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "major-history",
+          "data": {
+            "tick": "5003",
+            "opening": [
+              "维尔阿维亚帝国向诺伊恩贝格王国宣战：领土争夺",
+              "秋城帝国向维尔阿维亚帝国宣战：领土争夺",
+              "崇顺帝国向诺伊恩贝格王国宣战：领土争夺",
+              "崇顺帝国向维尔阿维亚帝国宣战：领土争夺",
+              "崇顺帝国向阿迈勒盖尔比王国宣战：领土争夺",
+              "诺伊恩贝格王国：奥托·沃尔夫斯堡就任国王",
+              "维尔阿维亚帝国：苏尔皮基娅·克劳迪娅就任女皇",
+              "阿迈勒盖尔比王国：伊斯梅尔就任国王",
+              "霍克汉姆王国：菲利帕·博蒙特就任女王",
+              "秋城帝国：毛利秀忠就任天皇",
+              "崇顺帝国：云璇就任女皇"
+            ],
+            "records": [
+              "诺伊恩贝格王国紧急动员，征召3支军队",
+              "阿迈勒盖尔比王国新编1支常备军",
+              "维尔阿维亚帝国向诺伊恩贝格王国宣战：领土争夺",
+              "秋城帝国向维尔阿维亚帝国宣战：领土争夺",
+              "崇顺帝国向诺伊恩贝格王国宣战：领土争夺",
+              "崇顺帝国向维尔阿维亚帝国宣战：领土争夺",
+              "崇顺帝国向阿迈勒盖尔比王国宣战：领土争夺",
+              "诺伊恩贝格王国：奥托·沃尔夫斯堡就任国王",
+              "维尔阿维亚帝国：苏尔皮基娅·克劳迪娅就任女皇",
+              "阿迈勒盖尔比王国：伊斯梅尔就任国王",
+              "霍克汉姆王国：菲利帕·博蒙特就任女王",
+              "秋城帝国：毛利秀忠就任天皇",
+              "崇顺帝国：云璇就任女皇"
+            ],
+            "errors": [],
+            "normalMap": true,
+            "historyOpenWhilePlaying": true,
+            "exactRestore": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 34650,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "continuous-motion",
+          "data": {
+            "frames": 99,
+            "movingIntervals": [
+              {
+                "id": "force-1",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-2",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-4",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-5",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-6",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-7",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-8",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-9",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-12",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-13",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-14",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-15",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-16",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-17",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-18",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-19",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-25",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-26",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-27",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-28",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-30",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-31",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-32",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-33",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-34",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-35",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-36",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-37",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-38",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-39",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-40",
+                "ms": 1338.6649999916553,
+                "distinct": 10,
+                "after800": 5
+              },
+              {
+                "id": "force-1",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-2",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-4",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-5",
+                "ms": 2472.975000023842,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-6",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-7",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-8",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-9",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-13",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-14",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-15",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-16",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-17",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-18",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-19",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-25",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-26",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-27",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-28",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-30",
+                "ms": 2472.975000023842,
+                "distinct": 11,
+                "after800": 5
+              },
+              {
+                "id": "force-31",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-32",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-33",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-34",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-35",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-36",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-37",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-38",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-39",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-40",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-41",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-42",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-43",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-44",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-45",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-46",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-47",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-48",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-49",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              },
+              {
+                "id": "force-50",
+                "ms": 2472.975000023842,
+                "distinct": 14,
+                "after800": 8
+              }
+            ],
+            "selected": {
+              "id": "force-19",
+              "ids": [
+                "force-19"
+              ],
+              "kind": "army",
+              "display": "dot",
+              "x": 774.494299289528,
+              "y": 361.4909096188934
+            },
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 33456,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "continuous-motion",
+          "data": {
+            "frames": 114,
+            "movingIntervals": [
+              {
+                "id": "force-1",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-2",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-4",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-5",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-6",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-7",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-8",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-9",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-11",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-12",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-13",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-14",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-15",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-16",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-17",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-18",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-19",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-23",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-24",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-25",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-26",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-27",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-28",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-29",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-30",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-31",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-32",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-33",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-34",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-35",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-36",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-37",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-38",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-39",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-40",
+                "ms": 1149.0100000202656,
+                "distinct": 10,
+                "after800": 3
+              },
+              {
+                "id": "force-1",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-2",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-4",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-5",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-6",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-7",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-8",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-9",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-11",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-12",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-13",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-14",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-15",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-16",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-17",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-18",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-19",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-24",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-25",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-26",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-27",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-28",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-29",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-30",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-31",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-32",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-33",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-34",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-35",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-36",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-37",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-38",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-39",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-40",
+                "ms": 1456.9799999892712,
+                "distinct": 12,
+                "after800": 6
+              },
+              {
+                "id": "force-1",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-2",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-4",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-5",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-6",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-7",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-8",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-9",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-11",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-12",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-13",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-14",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-15",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-16",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-17",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-18",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-19",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-24",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-25",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-26",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-27",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-28",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-29",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-30",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-31",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-32",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-33",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-34",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-35",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-36",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-37",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-38",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-39",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-40",
+                "ms": 1978.2849999964237,
+                "distinct": 16,
+                "after800": 9
+              },
+              {
+                "id": "force-1",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-2",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-4",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-5",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-6",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-7",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-8",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-9",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-11",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-12",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-13",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-14",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-15",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-16",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-17",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-18",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-19",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-25",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-26",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-27",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-28",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-29",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-30",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-31",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-32",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-33",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-34",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-35",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-36",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-37",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-39",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-40",
+                "ms": 1671.0349999964237,
+                "distinct": 14,
+                "after800": 7
+              },
+              {
+                "id": "force-1",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-2",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-4",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-6",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-7",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-8",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-9",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-12",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-13",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-14",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-15",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-16",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-17",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-18",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-19",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-25",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-26",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-27",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-28",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-30",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-31",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-32",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-33",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-34",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-35",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-36",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-37",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-39",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              },
+              {
+                "id": "force-40",
+                "ms": 1917.0499999821186,
+                "distinct": 15,
+                "after800": 9
+              }
+            ],
+            "selected": {
+              "id": "force-19",
+              "ids": [
+                "force-19"
+              ],
+              "kind": "army",
+              "display": "dot",
+              "x": 231.87746718749867,
+              "y": 367.2018071889504
+            },
+            "errors": [],
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "normal continent has measured authoritative throughput at 1x and 4x with details open",
+      "project": "desktop-chromium",
+      "status": "passed",
+      "durationMs": 74841,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "measured-throughput",
+          "data": {
+            "samples": [
+              {
+                "speed": 1,
+                "fromTick": 0,
+                "toTick": 2106,
+                "ms": 6024,
+                "daysPerSecond": 2.913346613545817
+              },
+              {
+                "speed": 4,
+                "fromTick": 0,
+                "toTick": 2400,
+                "ms": 4730,
+                "daysPerSecond": 4.2283298097251585
+              }
+            ],
+            "errors": [],
+            "normalMap": true,
+            "sameOpening": true,
+            "detailsOpen": true,
+            "exactRestore": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    },
+    {
+      "title": "normal continent has measured authoritative throughput at 1x and 4x with details open",
+      "project": "mobile-chromium",
+      "status": "passed",
+      "durationMs": 78238,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "measured-throughput",
+          "data": {
+            "samples": [
+              {
+                "speed": 1,
+                "fromTick": 0,
+                "toTick": 2093,
+                "ms": 6350,
+                "daysPerSecond": 2.746719160104987
+              },
+              {
+                "speed": 4,
+                "fromTick": 0,
+                "toTick": 1920,
+                "ms": 5466,
+                "daysPerSecond": 2.9271862422246615
+              }
+            ],
+            "errors": [],
+            "normalMap": true,
+            "sameOpening": true,
+            "detailsOpen": true,
+            "exactRestore": true,
+            "physicalIphone": false
+          }
+        }
+      ]
+    }
+  ]
+}

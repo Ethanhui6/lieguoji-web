@@ -1,6 +1,16 @@
-# 当前检查点：显示重复计算减负；整体战争节奏仍未通过（2026-10-10）
+# 当前检查点：推演地理热路径修复，原作节奏仍未验收（2026-10-10）
 
-第三批源码检查点待提交后补录。先读webRebuild.culture47SiegeDisplayCheckpoint及docs/evidence/fms-events-cadence47-2026-10-10/SIEGE_DISPLAY_RESULT.md。根唯一写入，三个子智能体只读。
+根独占写入。接续webRebuild.culture47OwnedBatchCheckpoint和docs/evidence/fms-events-cadence47-2026-10-10/OWNED_BATCH_RESULT.md。本批3项：隔离单批候选/lease回滚；固定空接触START与内部步；海图冻结见证提升、47外交图入口及日粮海域索引复用。原120ticks、RNG、战争规则和港口积分不改。完整32日run/frame/motion与d01d相同，后四批4日核心上中位2128.3→878.4ms。最初性能回归143/144，修复后相关8项通过；最终types/lint/build/77产物、10浏览器通过，失败记录保留。
+
+最新试玩http://127.0.0.1:5293/?fms=1，仅本机；.autopilot/culture47-geo-final-checked，engine bbffdf05cb77fe70ee6dc382495fa1093f391fd876e339bc1add68a7fc7799aa，本轮隐藏服务PID37468，续接先核实。desktop-chromium: 1×=2.913日/秒，4×=4.228日/秒；mobile-chromium: 1×=2.747日/秒，4×=2.927日/秒；原作日速/倍率未通过。新建世界使用提速引擎；12份旧引擎保留，旧档按原规则继续。5291真实845日56条史记暂停保存（未冷恢复）、5290的369日和5288的493日保留。
+
+下一批实际缺口：原作月检自然死亡→按政体已知人物继任/紧急补位→独立家主与合法空位；不造随机新闻、不把共和备用候选称完整选举。随后内战/独立、多家族、联盟、满月首都危机和1000日后安全检查点。WEB-04-21/37仍进行中，真机/视觉未验收，没有push、Pages或正式站更新。修改运行时前冻结本次实际交付bbff。
+
+---
+
+# 历史检查点：显示重复计算减负；整体战争节奏仍未通过（2026-10-10）
+
+第三批源码检查点96aad930e4efd4f9cf725972476ec4bb3a4ea6cf。先读webRebuild.culture47SiegeDisplayCheckpoint及docs/evidence/fms-events-cadence47-2026-10-10/SIEGE_DISPLAY_RESULT.md。根唯一写入，三个子智能体只读。
 
 当前ACK附带真实围城列表，完整/增量/直接预览均校验，旧引擎回退；收起家族详情不计算传位预览。只改显示链，不是自然死亡/自动继任。27单测及重叠显示9项、types/lint/build/76产物通过；浏览器初轮11/12（当前47范围8/8），旧24手机测试缺少展开工具步骤已修复，后续史书/双岛4/4通过。首次失败保留。
 

@@ -37,7 +37,8 @@ describe('actual military interval port occupation',()=>{
   army.status=mode==='retreat'?'retreating':'idle';
   const before=structuredClone(r),generic=advanceOwnedActualForces47(r,1,weights,actualForceSpeed47,true);
   withOwnedTravel47(()=>{
-   const start=actualContactFrame47(r),startCopy=structuredClone(start),out=advanceSessionActualForces47(r,start,1,weights,actualForceSpeed47);
+   const start=actualContactFrame47(r),startCopy=structuredClone(start);r.forceContacts=start.contact.contacts;
+   const out=advanceSessionActualForces47(r,start,1,weights,actualForceSpeed47);
    expect(out.run).toEqual(generic.run);expect(out.endFrame).toEqual(actualContactFrame47(out.run));expect(start).toEqual(startCopy);
    for(const [id,located]of out.endFrame.spatial.space.byArmy){expect(located.army).toBe(out.run.world.armies.find(a=>a.id===id));expect(located.travel).toBe(out.run.armyPositions.records[id]);}
    expect(out.endFrame.forces.map(forceKey47)).toEqual(start.forces.map(forceKey47));

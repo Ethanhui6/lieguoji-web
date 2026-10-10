@@ -1,0 +1,45 @@
+import type {PoliticalRun47} from './civilization47-diplomatic-world';
+import type {ArmyRouteWeights47} from './army-commands47';
+import type {ForceMotionObserver47} from './force-display-trace47';
+import {cloneMilitaryCandidate47,prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
+import {withOwnedTravel47} from './owned-travel47';
+import {advanceSessionCivilizationMilitary47} from './civilization47-military';
+import {settleSessionArmyAutonomyDay47} from './civilization47-army-ai';
+import {advancePolitics47} from './civilization47-political-owner';
+
+declare const ownership:unique symbol;
+export type SessionAdvanceLease47={readonly [ownership]:true};
+const candidates=new WeakMap<SessionAdvanceLease47,PoliticalRun47>();
+
+/** Only the fixed scheduler below can mint/update a lease. A caller cannot
+ * certify an arbitrary live input, copy the token, or reuse it after failure. */
+export function readSessionAdvanceCandidate47(lease:SessionAdvanceLease47):PoliticalRun47{
+ const run=candidates.get(lease);if(!run)throw Error('推演候选凭证无效或已经关闭。');return run;
+}
+
+/** A batch owns one isolated dynamic candidate; numeric buffers are separately
+ * isolated and checked after EVERY accepted action. Public/replay paths keep
+ * their original copies and validation, and remain an independent oracle. */
+export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kind:'advance';ticks:number}[],weights:ArmyRouteWeights47,observe?:ForceMotionObserver47):PoliticalRun47{
+ if(!actions.length||actions.length>4||actions.some(a=>a.kind!=='advance'||!Number.isSafeInteger(a.ticks)||a.ticks<1||a.ticks>120))throw Error('私有推进批次无效。');
+ const lease=Object.freeze({}) as SessionAdvanceLease47;
+ let run=cloneMilitaryCandidate47(input);
+ try{
+  for(const action of actions){
+   run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>{
+    candidates.set(lease,candidate);let remaining=action.ticks;
+    while(remaining){
+     const current=readSessionAdvanceCandidate47(lease),take=Math.min(remaining,120-current.clock.tick%120);
+     const out=advanceSessionCivilizationMilitary47(lease,take,weights,observe);
+     candidates.set(lease,out.run);
+     if(out.dailyPending)candidates.set(lease,settleSessionArmyAutonomyDay47(lease,weights));
+     advancePolitics47(readSessionAdvanceCandidate47(lease),out.dailyPending);
+     remaining-=take;
+    }
+    return readSessionAdvanceCandidate47(lease);
+   }));
+   prepareOwnedGeography47(run);
+  }
+  return run;
+ }finally{candidates.delete(lease);}
+}

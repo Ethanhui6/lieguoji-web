@@ -1,4 +1,4 @@
-import {beforeAll,it,expect} from 'vitest';
+import {beforeAll,it,expect,vi} from 'vitest';
 import {grid} from './fixture.test-support';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
 import {graphFor47} from './sea-geography47';
@@ -14,4 +14,17 @@ it('reuses exactly equal geography across private numeric buffers, retaining har
 it('detects in-place numeric and harbor alias edits rather than returning an identity hit',()=>{
  const r=structuredClone(base),first=graphFor47(r);const sample=r.terrain.elevations.findIndex(h=>h<20);new Int32Array(r.terrain.elevations.buffer)[sample]=19;
  expect(graphFor47(r)).not.toBe(first);const second=graphFor47(r);r.harbors.sites[0].shore.x+=.1;expect(graphFor47(r)).not.toBe(second);
+});
+it('promotes a pre-freeze sea witness without rescanning the mesh or trusting mutable samples',()=>{
+ const r=structuredClone(base),first=graphFor47(r);prepareOwnedGeography47(r);expect(graphFor47(r)).toBe(first);
+ const names=vi.spyOn(Object,'getOwnPropertyNames');
+ try{
+  withOwnedNumericGeography47(r,next=>{expect(graphFor47(next)).toBe(first);return next;});
+  expect(names.mock.calls.some(([value])=>value===r.terrain.points)).toBe(false);
+ }finally{names.mockRestore();}
+ const before=new Int32Array(r.terrain.elevations);
+ expect(()=>withOwnedNumericGeography47(r,next=>{expect(graphFor47(next)).toBe(first);next.terrain.elevations[0]++;return next;})).toThrow(/地形发生变化/);
+ expect(r.terrain.elevations).toEqual(before);
+ // Outside the private action, a promoted witness must still inspect samples.
+ r.terrain.elevations[0]++;expect(graphFor47(r)).not.toBe(first);
 });

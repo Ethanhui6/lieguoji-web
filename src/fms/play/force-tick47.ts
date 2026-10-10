@@ -14,6 +14,7 @@ import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
 import type {ArmySpace47} from './army-space47';
 import {isOwnedTravelWindow47} from './owned-travel47';
+import {readSessionAdvanceCandidate47,type SessionAdvanceLease47} from './session-advance47';
 
 export type MilitaryRun47 = ForceRun47 & Pick<War46Run,'units'|'occupation'|'tactics'|'terrainContext'|'upperCombat'|'finance'|'losses'|'warfare'|'nativeWars'|'people'|'portControl'> & Pick<War28World,'life'> & {forceClock:ForceClock47;forceDamage:ForceDamage47};
 export type PreviousOwnership47={provinces:readonly Pick<Province,'id'|'controller'>[]};
@@ -73,15 +74,24 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,
  * At a day boundary, the returned candidate NEEDS daily settlement before it
  * can be exposed/saved. This is not a complete session or an enabled old save. */
 export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<T>) {
+  return advanceMilitaryWindowCore47(input,ticks,weights,rules);
+}
+export function advanceSessionMilitaryWindow47(lease:SessionAdvanceLease47,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<ReturnType<typeof readSessionAdvanceCandidate47>>){
+  const input=readSessionAdvanceCandidate47(lease);
+  return advanceMilitaryWindowCore47(input,ticks,weights,rules,input);
+}
+function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<T>,owned?:T) {
   if((rules.sessionInterval||rules.sessionOccupationKey||rules.sessionAfterTick)&&!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
   const untilDay=(input.world.day+1)*TICKS_PER_DAY;
   if(!Number.isSafeInteger(ticks)||ticks<1||input.clock.tick<0||Math.floor(input.clock.tick/TICKS_PER_DAY)!==input.world.day||input.clock.tick+ticks>untilDay) throw Error('军事推进必须在当前日界内；先完成日结再推进。');
   const initial=actualForces47(input);
   assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)));
   assertForceDamage47(input.forceDamage,new Set([...input.world.armies.map(a=>forceKey47({kind:'army',id:a.id})),...input.navy.fleets.map(f=>forceKey47({kind:'fleet',id:f.id}))]));
-  let r=cloneMilitaryCandidate47(input);
+  // Capture before the owned branch can update the input's clock in place.
+  const startTick=input.clock.tick,endTick=startTick+ticks;
+  let r=owned??cloneMilitaryCandidate47(input);
   const volleys:{at:number;due:string[];hits:number;losses:number}[]=[];
-  let now=input.clock.tick,eventCount=0;
+  let now=startTick,eventCount=0;
   let known:ReturnType<typeof frame>|undefined;
   let observedOccupation:string|undefined;
   const observeOccupation=(due:ReadonlySet<string>,ready?:ReturnType<typeof frame>)=>{
@@ -92,7 +102,7 @@ export function advanceMilitaryWindow47<T extends MilitaryRun47>(input:T,ticks:n
     // Store before, not after: a transfer can change core/leader/port inputs.
     const result=occupy(r,now,due,rules,f);observedOccupation=key;return result;
   };
-  for(let tick=input.clock.tick+1;tick<=input.clock.tick+ticks;tick++) {
+  for(let tick=startTick+1;tick<=endTick;tick++) {
     for(;;) {
       if(++eventCount>100000)throw Error('军事事件超出预算，原进度未提交。');
       const occupied=observeOccupation(new Set(),known);known=occupied??frame(r);

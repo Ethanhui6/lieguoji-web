@@ -32,8 +32,8 @@ describe('culture world compact transport and atomic batches',()=>{
   bad.snapshot.journal.engine='legacy-engine';expect(new Culture47DisplayDecoder().decode(bad,{engine:'legacy-engine'}).frame.activeSieges).toBeUndefined();
  },30000);
  it('rolls back a later runtime failure without committing an earlier valid day',()=>{
-  const {owner,decoder,snapshot}=ready(),original=military.advanceCivilizationMilitary47;let calls=0;
-  const spy=vi.spyOn(military,'advanceCivilizationMilitary47').mockImplementation((...args)=>{if(++calls===2)throw Error('injected later-day failure');return original(...args);});
+  const {owner,decoder,snapshot}=ready(),original=military.advanceSessionCivilizationMilitary47;let calls=0;
+  const spy=vi.spyOn(military,'advanceSessionCivilizationMilitary47').mockImplementation((...args)=>{const out=original(...args);if(++calls===2)throw Error('injected later-day failure after military writes');return out;});
   try {expect(()=>owner.executeDisplay([{kind:'advance',ticks:120},{kind:'advance',ticks:120}],0)).toThrow(/later-day/);expect(calls).toBe(2);expect(owner.snapshot()).toEqual(snapshot);}finally{spy.mockRestore();}
   expect(decoder.decode(owner.executeDisplay([{kind:'advance',ticks:120}],0),expected(0)).run.world.day).toBe(1);
  },30000);

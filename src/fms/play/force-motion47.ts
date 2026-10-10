@@ -1,5 +1,5 @@
 import type {Point} from '../../sim/types';
-import {cloneForceTravelRecords47} from './owned-travel47';
+import {cloneForceTravelRecords47,isOwnedTravelWindow47} from './owned-travel47';
 import type {TravelCell47, TravelGraph47} from './army-travel47-graph';
 import {armyTravelLocation47, armyTravelSegment47, assertArmyTravel47, type ArmyTravel47} from './army-travel47-state';
 
@@ -9,6 +9,8 @@ export type ForceContact47 = {a: string; b: string; cellA: number; cellB: number
 export type ForceContacts47 = {version: 1; pairs: ForceContact47[]};
 export const forceKey47 = (f: ForceRef47) => JSON.stringify([f.kind, f.id]);
 export const initialForceContacts47 = (): ForceContacts47 => ({version: 1, pairs: []});
+/** All queries are pure and stable throughout one motion phase. In particular,
+ * diplomacy and sea membership cannot depend on the number of lookups. */
 type Rules = {
   enemy: (a: string, b: string) => boolean;
   canEnter: (force: Readonly<MovingForce47>, cell: Readonly<TravelCell47>) => boolean;
@@ -118,15 +120,29 @@ const contactIdentity = (book: ForceContacts47) => JSON.stringify(book.pairs.map
  * access callbacks must be pure. This is a motion/contact phase, not a clock.
  * Water partitions and clipped triangles are explicit web geometry adapters. */
 export function advanceForceContacts47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents = 100000, stopAtEvent = false) {
+  return advanceForceContactsCore47(input,previous,graph,seconds,rules,maxEvents,stopAtEvent);
+}
+/** Fixed Session movement owner only, immediately after its START frame was
+ * reconciled and installed in the run. No external observers/commands may run
+ * between that frame and this call. Keep the START rows untouched for ports.
+ * This is not a load/save validator or a reusable cross-phase certificate. */
+export function advanceSessionForceContacts47(input:readonly MovingForce47[],previous:ForceContacts47,graph:TravelGraph47,seconds:number,rules:Rules,start:ReturnType<typeof reconcileForceContactsOwned47>){
+  if(!isOwnedTravelWindow47()||start.contacts!==previous)throw Error('行军起始接触必须来自当前私有阶段。');
+  // Nonempty contacts retain the original sorted-force reconstruction: its
+  // held/exposure insertion order and boundary-pair isolation are observable.
+  const empty=!start.contacts.pairs.length&&!start.held.size&&!input.some(f=>f.withdrawing);
+  return advanceForceContactsCore47(input,previous,graph,seconds,rules,100000,true,empty?start:undefined);
+}
+function advanceForceContactsCore47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents:number, stopAtEvent:boolean,ready?:ReturnType<typeof reconcileForceContactsOwned47>) {
   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
   const forces = cloneForceTravelRecords47(input).sort((a, b) => forceKey47(a).localeCompare(forceKey47(b)));
-  assertForceContacts47(previous, forces, graph, rules.seaRegion);
-  let book = structuredClone(previous), remaining = seconds, events = 0;
+  if(!ready)assertForceContacts47(previous, forces, graph, rules.seaRegion);
+  let book = ready?.contacts??structuredClone(previous), remaining = seconds, events = 0;
   const exposure: Record<string, number> = {};
-  const initial = contacts(forces, graph, book, rules);
+  const initial = ready??contacts(forces, graph, book, rules);
   // The military clock must see a contact beginning at time zero before it
   // chooses an attack deadline. Ordinary movement callers still consume dt.
-  if (stopAtEvent && contactIdentity(initial.contacts) !== contactIdentity(book)) return {...initial, forces, exposure, events, elapsed:0, unusedSeconds:seconds};
+  if (!ready&&stopAtEvent && contactIdentity(initial.contacts) !== contactIdentity(book)) return {...initial, forces, exposure, events, elapsed:0, unusedSeconds:seconds};
   let current=initial;
   while (remaining > 0) {
     if (++events > maxEvents) throw Error('统一行军事件超出预算，原世界未提交。');
@@ -149,6 +165,19 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
     }
     // Center normalization is not a second move; gate admission stays pending.
     const reached=(m:typeof movers[number])=>m.time<=dt||m.edge.kind==='local'&&m.f.travel.offset===m.end;
+    // No endpoint was reached and no force changed its cell: the just-computed
+    // empty region groups cannot gain an enemy pair merely by moving inside
+    // those same cells. Keep every integration/speed step and END validation.
+    // Test the actual updated offsets, including local float rounding, instead
+    // of predicting arrival with a second (potentially different) expression.
+    let interiorEnd:Positions|undefined;
+    if(remaining===0&&!book.pairs.length&&!current.held.size&&!forces.some(f=>f.withdrawing)&&!movers.some(reached)){
+      interiorEnd=positions(forces,graph);
+      if([...interiorEnd].every(([key,p])=>p.cell.id===current.positions.get(key)?.cell.id)){
+        current={contacts:initialForceContacts47(),held:new Set(),positions:interiorEnd};
+        break;
+      }
+    }
     for (const m of movers) if (reached(m)) {
       const s=m.f.travel;if(m.edge.kind==='local'){s.offset=m.edge.end;s.status='arrived';}
       else if(s.crossed){s.leg++; s.offset = 0; s.crossed = false;if (s.leg === s.nodes.length - 1) s.status = 'arrived';}
@@ -178,7 +207,7 @@ export function advanceForceContacts47(input: readonly MovingForce47[], previous
       // event even if no frame time remains; do not retain invalid full offset.
       if(s.offset===m.edge.end){s.leg++;s.offset=0;s.crossed=false;if(s.leg===s.nodes.length-1)s.status='arrived';}
     }
-    const after = positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
+    const after = interiorEnd??positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
     current = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules,after);
     // Yield AFTER simultaneous admission. This also exposes empty-land entry

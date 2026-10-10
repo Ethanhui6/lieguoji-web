@@ -20,7 +20,7 @@ import {NativeWarIdSet,nativeGrowClaimComponent,nativeProvinceDistance} from './
 import {registerWar46,stateNumber,orderedWar28Provinces} from './war47-wars';
 import {war26Strength} from './war26-strength';
 import {reconcileWar26} from './war26-state';
-import {graphFor46 as graphFor} from './war46-geography';
+import {graphFor47 as graphFor} from './sea-geography47';
 import {nationsAtWar,setDecision} from './realtime-statecraft';
 import {personSkills} from './court16-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';

@@ -7,7 +7,7 @@ import {assertForceGeography47} from './force-geography-validation47';
 import {nationsAtWar} from './realtime-statecraft';
 import {militaryAccess46} from './war46-access';
 import {readArmySpace47,type ArmySpace47} from './army-space47';
-import {advanceForceContacts47,assertContactRecordsOwned47,reconcileForceContactsOwned47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
+import {advanceForceContacts47,advanceSessionForceContacts47,assertContactRecordsOwned47,reconcileForceContactsOwned47, forceKey47, type ForceContacts47, type MovingForce47} from './force-motion47';
 import type {TravelCell47} from './army-travel47-graph';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
@@ -64,8 +64,8 @@ export function advanceOwnedActualForces47<T extends ForceRun47>(input:T,seconds
 }
 /** Fixed speed/trace owners only. START comes from the current military phase;
  * no external callback may mutate it. Keep generic movement deep-copy behavior. */
-export function advanceSessionActualForces47<T extends ForceRun47>(input:T,start:ReturnType<typeof actualForces47>,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,observe?:ForceMotionObserver47){
-  if(!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
+export function advanceSessionActualForces47<T extends ForceRun47>(input:T,start:ReturnType<typeof actualContactFrame47>,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,observe?:ForceMotionObserver47){
+  if(!isOwnedTravelWindow47()||start.contact.contacts!==input.forceContacts)throw Error('位置复用仅允许当前私有同步推演。');
   const next={...input,world:{...input.world},armyPositions:{...input.armyPositions,records:{...input.armyPositions.records}},fleetPositions:{...input.fleetPositions,records:{...input.fleetPositions.records}}};
   const out=advanceCandidateForces47(next,seconds,weights,speed,true,observe,start);
   if(!out.endFrame)throw Error('私有移动末尾视图缺失，原进度未提交。');
@@ -74,18 +74,19 @@ export function advanceSessionActualForces47<T extends ForceRun47>(input:T,start
 function publicMotionResult47<T extends ForceRun47>(v:ReturnType<typeof advanceCandidateForces47<T>>){
   return {run:v.run,exposure:v.exposure,boundaryEvents:v.boundaryEvents,held:v.held,elapsed:v.elapsed,unusedSeconds:v.unusedSeconds};
 }
-function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47,certifiedStart?:ReturnType<typeof actualForces47>){
+function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47,certifiedStart?:ReturnType<typeof actualContactFrame47>){
   for (const book of [next.armyPositions, next.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
   const {spatial, forces} = certifiedStart??actualForces47(next);
   observe?.(forces,spatial.graph,0);
   const regions = waterRegions47(next.diplomaticGeography);
   const policy=armyTravelPolicyFactory47(next,weights);
   const policies = new Map(next.world.armies.map(a => [a.id, policy(a, a.status === 'retreating')]));
-  const out = advanceForceContacts47(forces, next.forceContacts, spatial.graph, seconds, {
-    enemy: (a, b) => nationsAtWar(next.world, a, b), seaRegion: face => regions.get(face)!,
-    canEnter: (f, c) => f.kind === 'fleet' ? c.surface === 'sea' : c.surface === 'sea' ? policies.get(f.id)!.allowSea : policies.get(f.id)!.canEnter(c.provinceId!),
-    speed: (f, c) => speed(next, f, c),
-  }, 100000, stopAtEvent);
+  const motionRules={
+    enemy: (a:string, b:string) => nationsAtWar(next.world, a, b), seaRegion: (face:number) => regions.get(face)!,
+    canEnter: (f:Readonly<MovingForce47>, c:Readonly<TravelCell47>) => f.kind === 'fleet' ? c.surface === 'sea' : c.surface === 'sea' ? policies.get(f.id)!.allowSea : policies.get(f.id)!.canEnter(c.provinceId!),
+    speed: (f:Readonly<MovingForce47>, c:Readonly<TravelCell47>) => speed(next, f, c),
+  };
+  const out = certifiedStart?advanceSessionForceContacts47(forces,next.forceContacts,spatial.graph,seconds,motionRules,certifiedStart.contact):advanceForceContacts47(forces,next.forceContacts,spatial.graph,seconds,motionRules,100000,stopAtEvent);
   observe?.(out.forces,spatial.graph,out.elapsed);
   for (const f of out.forces) (f.kind === 'army' ? next.armyPositions : next.fleetPositions).records[f.id] = f.travel;
   next.forceContacts = out.contacts;

@@ -9,7 +9,8 @@ import {previewArmyCommand47,issueArmyOrderOwned47,type ArmyRouteWeights47,type 
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import {forceKey47} from './force-motion47';
-import {settleCivilizationDay47} from './civilization47-daily';
+import {settleCivilizationDay47,settleSessionCivilizationDay47} from './civilization47-daily';
+import type {SessionAdvanceLease47} from './session-advance47';
 import {TICKS_PER_DAY} from './clock';
 import {armyPreviewTicks47} from './army-route-budget47';
 import {actualForceSpeed47} from './force-speed47';
@@ -159,4 +160,7 @@ export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRoute
 /** Army-autonomy daily owner, not the complete political/naval/save session. */
 export function settleArmyAutonomyDay47<T extends FoundingForces47>(input:T,weights:ArmyRouteWeights47):T{
   return settleCivilizationDay47(input,owned=>issueAutonomousArmyOrders47(owned,weights));
+}
+export function settleSessionArmyAutonomyDay47(lease:SessionAdvanceLease47,weights:ArmyRouteWeights47){
+  return settleSessionCivilizationDay47(lease,owned=>issueAutonomousArmyOrders47(owned,weights));
 }

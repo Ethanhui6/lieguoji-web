@@ -4089,14 +4089,16 @@
               "WEB-04-20"
             ],
             "acceptance": "核实原作WarV2及CapitalFallServiceV2限定入口；在权威扣损时按国家/成因累计保存，参与方和初始领土可追溯。首都失守立即改选合法首都，另登记月度危机；满月复核原首都持有者，收复或停战取消危机。后续吞并/内战完整条件待恢复；有ID大事记，不从滚动160条文字倒推。",
-            "status": "in_progress",
+            "status": "blocked",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
               "docs/evidence/fms-battle-animation-v5-2026-10-06/CAPITAL_CRISIS.md",
               "docs/evidence/fms-events-cadence47-2026-10-10/REFERENCE_AND_GAPS.md",
               "docs/evidence/fms-events-cadence47-2026-10-10/RESULT.md",
-              "docs/evidence/fms-events-cadence47-2026-10-10/END_VIEW_RESULT.md"
-            ]
+              "docs/evidence/fms-events-cadence47-2026-10-10/END_VIEW_RESULT.md",
+              "docs/evidence/fms-events-cadence47-2026-10-10/LIFECYCLE_RESULT.md"
+            ],
+            "blockedReason": "完整验收仍依赖未完成WEB-04-13；已交付的真实事件/迁都切片保留证据，当前限定可玩接线归WEB-04-37，不声称完整战争记录与满月首都危机已通过。"
           },
           {
             "id": "WEB-04-22",
@@ -9764,7 +9766,7 @@
       "engine": "bbffdf05cb77fe70ee6dc382495fa1093f391fd876e339bc1add68a7fc7799aa",
       "url": "http://127.0.0.1:5293/?fms=1",
       "artifact": ".autopilot/culture47-geo-final-checked",
-      "sourceCommit": null,
+      "sourceCommit": "7db3d565c775abae8cbe1a798521889435c3d3b7",
       "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/OWNED_BATCH_RESULT.md",
       "rates": [
         {
@@ -9830,6 +9832,97 @@
         "pushed": false,
         "pagesTriggered": false
       }
+    },
+    "culture47LifecycleCheckpoint": {
+      "status": "bounded-slice-verified",
+      "sourceBaseline": "7db3d56",
+      "scope": [
+        "native monthly age/natural death",
+        "known-person polity emergency succession and vacancies",
+        "independent family head and exact-tick office history"
+      ],
+      "checkedArtifactBeforeThisBatch": {
+        "url": "http://127.0.0.1:5293/?fms=1",
+        "engine": "bbffdf05cb77fe70ee6dc382495fa1093f391fd876e339bc1add68a7fc7799aa"
+      },
+      "sourceAudit": [
+        "native character-month.ts/character-death.ts/natural-death.ts",
+        "native family-succession.ts/patriarch-succession.ts/succession-candidates.ts"
+      ],
+      "notClaimed": [
+        "full elections",
+        "birth/marriage",
+        "multiple families",
+        "civil war/independence",
+        "native global RNG equality",
+        "original pace acceptance",
+        "phone acceptance"
+      ],
+      "oldEngines": 13,
+      "release": "no push or Pages trigger",
+      "checks": {
+        "typecheck": true,
+        "lint": true,
+        "productionBuild": true,
+        "approvedArtifacts": 78
+      },
+      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/LIFECYCLE_RESULT.md",
+      "unit": {
+        "unified": {
+          "success": false,
+          "passed": 155,
+          "failed": 1,
+          "skipped": 0
+        },
+        "politicsRepair": {
+          "success": true,
+          "passed": 14,
+          "failed": 0,
+          "skipped": 0
+        },
+        "naturalReplay": {
+          "success": true,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 6
+        },
+        "note": "Counts overlap. Initial failures retained; fixture corrections include typed terrain serialization, complete simulation while crossing month, explicit young family heir; no checks removed."
+      },
+      "browser": {
+        "first": {
+          "startTime": "2026-10-10T01:03:34.617Z",
+          "duration": 124241.456,
+          "expected": 6,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "naturalFirst": {
+          "startTime": "2026-10-10T01:07:29.118Z",
+          "duration": 34656.353,
+          "expected": 2,
+          "skipped": 0,
+          "unexpected": 2,
+          "flaky": 0
+        },
+        "naturalRepair": {
+          "startTime": "2026-10-10T01:10:50.725Z",
+          "duration": 24330.109,
+          "expected": 2,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "note": "Natural first failed ambiguous text locator matching both death and succession; narrowed to death sentence. bbff old engine passed in first natural set."
+      },
+      "playable": {
+        "url": "http://127.0.0.1:5294/?fms=1",
+        "artifact": ".autopilot/culture47-lifecycle-checked",
+        "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
+        "localOnly": true
+      },
+      "sourceCommit": null,
+      "planCheckRepair": "Initial check found WEB-04-21 incorrectly in_progress while WEB-04-13 incomplete; retained original dependency and partial evidence, marked full21 blocked, bounded work remains in WEB-04-37. No validator or gate relaxed."
     }
   }
 }

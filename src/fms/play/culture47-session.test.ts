@@ -1,3 +1,5 @@
+import {IDBFactory} from 'fake-indexeddb';
+import {saveCulture47,loadCulture47} from './culture47-storage';
 import {beforeAll,describe,it,expect} from 'vitest';
 import {grid} from './fixture.test-support';
 import {Culture47Session,assertCulture47Journal,type Culture47Opening,type Culture47Journal} from './culture47-session';
@@ -29,6 +31,14 @@ describe('playable real culture owner',()=>{
     const invalid=structuredClone(journal);Object.assign(invalid,{future:true});expect(()=>owner.load(invalid)).toThrow();expect(owner.snapshot()).toEqual(s);
     const another=structuredClone(journal);another.actions=[{kind:'identity',edit:{kind:'city',id:'missing',customName:'bad'}}];expect(()=>owner.load(another)).toThrow();expect(owner.snapshot()).toEqual(s);
   },30000);
+  it('replays monthly population through the real IndexedDB save path with military and diplomacy active',async()=>{
+    const owner=new Culture47Session();owner.create({...opening,terrain:{...opening.terrain,worldId:'00000000-0000-4000-8000-00000000065b'}});
+    for(let day=0;day<32;day++)owner.executeDisplay([{kind:'advance',ticks:120}],day);
+    const result=owner.snapshot();expect(result.run.kin.lifecycle.deaths).toContainEqual(expect.objectContaining({personId:2,day:31,tick:3720,wasLeaderOf:'n-1'}));expect(result.run.people.nations['n-1'].leaderId).toBe(10);expect(result.run.world.day).toBe(32);expect(result.run.kin.lifecycle.lastMonth).toBe(13);expect(result.run.kin.lifecycle.random.draws).toBeGreaterThan(0);
+    const db=new IDBFactory();await saveCulture47(result.journal,null,db);const saved=await loadCulture47(db);expect(saved).not.toBeNull();const other=new Culture47Session(),restored=other.load(saved!.journal);expect(restored).toEqual(result);
+    for(let day=32;day<62;day++){owner.executeDisplay([{kind:'advance',ticks:120}],day);other.executeDisplay([{kind:'advance',ticks:120}],day);}
+    expect(other.snapshot()).toEqual(owner.snapshot());expect(other.snapshot().run.kin.lifecycle.lastMonth).toBe(14);
+  },120000);
   it('fails closed on a different engine, sparse log and oversized steps',()=>{
     expect(()=>assertCulture47Journal({...journal,engine:'0'.repeat(64)})).toThrow();expect(()=>assertCulture47Journal({...journal,actions:new Array(1)})).toThrow();expect(()=>assertCulture47Journal({...journal,actions:[{kind:'advance',ticks:121}]})).toThrow();
   });

@@ -1,8 +1,8 @@
 import {expect,type Page} from '@playwright/test';
 import {grid} from '../src/fms/play/fixture.test-support';
-export async function enter(page:Page){
+export async function enter(page:Page,worldId?:string){
  await page.goto('/campaign/culture?fms=1');
- const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0),data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};
+ const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};
  await page.evaluate(async data=>{
   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};
   const checksum=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(base))))].map(n=>n.toString(16).padStart(2,'0')).join('');

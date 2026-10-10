@@ -11,6 +11,7 @@ import {editCivilization47,assertPersonName47,currentRuler47} from './civilizati
 import {nativeFindSuccessor} from './native-economy/family-succession';
 import {nativeGetYearSince} from './native-economy/character-calendar';
 import {createNativeIsoCalendar} from './native-economy/iso-calendar';
+import {diePersonOwned47} from './civilization47-lifecycle';
 
 type Candidate=ReturnType<typeof createCivilizationWorld47>;
 let base:Candidate,historical:Candidate;
@@ -24,7 +25,9 @@ const copy=()=>structuredClone(base);
 // These dictionaries use JSON; terrain typed arrays require the separate map
 // codec. Do not imply this fixture is the full IndexedDB save implementation.
 const population=({id,world,clock,chronicle,civilization,people,life,kin,sovereignty}:Population47):Population47=>({id,world,clock,chronicle,civilization,people,life,kin,sovereignty});
-function setAlive(r:Population47,id:number,alive:boolean){r.kin.persons[id].isAlive=alive;if(r.people.persons[id])r.people.persons[id].alive=alive;}
+// Synthetic selection fixtures use a complete death transaction. They do not
+// assert that these casualties occur naturally (several candidates are minors).
+function setAlive(r:Population47,id:number,alive:boolean){if(alive)throw Error('Fixture never resurrects');diePersonOwned47(r,r.kin.persons[id]);}
 
 describe('native family generation with independent real-culture names',()=>{
   it('builds reciprocal families and complete birth records for all twelve cultures',()=>{
@@ -75,7 +78,7 @@ describe('known-heir atomic accession',()=>{
     const before=copy(),preview=previewFamilySuccession47(base,'n-0'),person=base.kin.persons[preview.personId],birth=base.life.persons[person.id];
     expect(base).toEqual(before);const next=appointFamilyRuler47(base,'n-0',preview.expected);
     expect(next.people.nations['n-0'].leaderId).toBe(person.id);expect(next.people.nextPersonId).toBe(base.people.nextPersonId);
-    expect(next.kin.persons[person.id]).toEqual(person);expect(next.life.persons[person.id]).toEqual(birth);
+    expect({...next.kin.persons[person.id],roles:person.roles}).toEqual(person);expect(next.kin.persons[person.id].roles).toHaveLength(person.roles.length+1);expect(next.kin.persons[person.id].roles.at(-1)).toMatchObject({nativeKind:'leader',holderId:person.id});expect(next.life.persons[person.id]).toEqual(birth);
     expect(next.people.persons[person.id].base).toEqual(person.base);expect(next.people.persons[person.id].traits).toEqual(person.traits);
     expect(next.kin.persons[base.people.nations['n-0'].leaderId!].isAlive).toBe(true);
     expect(next.chronicle.leaders['n-0'][0]).toEqual({...base.chronicle.leaders['n-0'][0],endedDay:0});

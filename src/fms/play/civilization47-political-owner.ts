@@ -9,8 +9,10 @@ import {coversPair46} from './war46-coalition';
 import {assertWars47} from './war47-validation';
 import {assertPopulation47} from './civilization47-population-validation';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
-import {announce,recordHistory,nameSeed,type Ruler} from './chronicle-records';
-import {rulerFromPerson47} from './civilization47-names';
+import {announce,recordHistory} from './chronicle-records';
+import {closeLeaderRole47} from './civilization47-roles';
+import {appointKnownPersonOwned47} from './civilization47-succession';
+import {resolveKnownSuccessionOwned47} from './civilization47-lifecycle';
 import type {FoundingForces47} from './civilization47-forces';
 import type {PreviousOwnership47} from './force-tick47';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
@@ -33,20 +35,22 @@ export function initializeOpeningWars47(r:PoliticalRun47):void {
   reconcileDiplomaticForces47(r,new Set());reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }
 /** WEB real-identity lifecycle: extinction ends office, not the person's life.
- * Regaining land resumes the recorded living house head as a NEW reign, never
+ * Regaining land uses the eligible previous ruler or a known candidate, never
  * resurrects or regenerates a person. Full native restoration selection remains
  * separate from this deliberately stated continuation policy. */
 export function reconcileGovernmentContinuity47(r:FoundingForces47){
   let changed=false;
   for(const n of r.world.nations){const land=r.world.provinces.filter(p=>p.controller===n.id),ended=Object.hasOwn(r.chronicle.ended,n.id),history=r.chronicle.leaders[n.id],last=history.at(-1)!;
-    if(!land.length&&!ended){r.chronicle.ended[n.id]=r.world.day;if(last.endedDay===null)last.endedDay=r.world.day;r.people.nations[n.id].leaderId=null;r.people.revision++;changed=true;
+    if(!land.length&&!ended){closeLeaderRole47(r,n.id,'extinction');r.chronicle.ended[n.id]=r.world.day;if(last.endedDay===null)last.endedDay=r.world.day;r.people.nations[n.id].leaderId=null;r.people.revision++;delete r.kin.lifecycle.vacancies[n.id];r.kin.revision++;changed=true;
       announce(r.chronicle,r.world,r.clock.tick,'extinction',`${n.name}失去全部领土，国家覆亡`,'实控领土归零，结束当前任期；人物、家族、城市与历史保留。',[n.id],null,[last]);
     }else if(land.length&&ended){
-      const family=r.kin.families[r.people.nations[n.id].id],person=r.kin.persons[family.headId];if(!person?.isAlive)throw Error('复国缺少已知存活家主，需先接完整继承登记。');
-      delete r.chronicle.ended[n.id];const order=history.length+1,id=`ruler-${n.id}-${order}`,identity=rulerFromPerson47(person.identity,r.civilization.nations[n.id],last.regnalName),regnalOrdinal=history.filter(h=>h.regnalName===last.regnalName).length+1;
-      const reign:Ruler={id,name:identity.name,family:identity.house,order,regnalName:last.regnalName,regnalOrdinal,ascendedDay:r.world.day,endedDay:null,termEndDay:r.world.day+(12+nameSeed(id)%14)*365};
-      history.push(reign);r.civilization.rulers[id]=identity;r.civilization.revision++;r.sovereignty.reigns[id]=person.id;r.sovereignty.restorations[n.id]++;r.sovereignty.revision++;r.people.nations[n.id].leaderId=person.id;r.people.revision++;changed=true;
-      announce(r.chronicle,r.world,r.clock.tick,'restoration',`${n.name}重获领土，${person.identity.name}复位`,'沿用已知存活家主并新增任次；网页身份延续规则，不重新生成人物。',[n.id],land[0].id,[reign]);
+      const previous=r.kin.persons[r.sovereignty.reigns[last.id]],polity=r.civilization.nations[n.id].polity;
+      delete r.chronicle.ended[n.id];
+      if(previous.isAlive&&(!['Republic','Federation'].includes(polity)||previous.age>=25)&&(polity!=='Tribal'||previous.age>=12))appointKnownPersonOwned47(r,n.id,previous,'restoration',last.regnalName);
+      else resolveKnownSuccessionOwned47(r,n.id,previous,'restoration');
+      r.sovereignty.restorations[n.id]++;r.sovereignty.revision++;changed=true;
+      const reign=history.at(-1)!,active=reign.endedDay===null;
+      announce(r.chronicle,r.world,r.clock.tick,'restoration',`${n.name}重获领土${active?`，${reign.name}${r.sovereignty.reigns[reign.id]===previous.id?'复位':'接任'}`:'，领袖暂缺'}`,'保留已知身份，符合本政体年龄资格的在世前任复位；否则按政体选已知候选，没有合法候选则保持空位。',[n.id],land[0].id,active?[reign]:[]);
     }
   }if(changed)refreshLeaderCombat47(r,r.combatPersonnel);
   relocateLostCapitals47(r);

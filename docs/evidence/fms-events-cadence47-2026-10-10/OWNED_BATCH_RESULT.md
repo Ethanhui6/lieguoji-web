@@ -23,3 +23,5 @@
 自然死亡/按政体自动继任、内战独立、多家族、联盟演变、满月首都危机、1000日后安全长期检查点仍未完成。手机尺寸不是iPhone Safari/Chrome真机，未宣称原作视觉通过；没有push、Pages触发或整仓云CI。
 
 原作视频及来源见同目录REFERENCE_AND_GAPS.md；本次诊断见current-core-profile.json，原始工具输出留.autopilot，不把未完成的早期probe写成通过。
+
+源码本地检查点：7db3d565c775abae8cbe1a798521889435c3d3b7。

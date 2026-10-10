@@ -15,6 +15,7 @@ import {TICKS_PER_DAY} from './clock';
 import {assertCombatPersonnel47,refreshLeaderCombat47} from './civilization47-combat-state';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import {readSessionAdvanceCandidate47,type SessionAdvanceLease47} from './session-advance47';
+import {advancePeopleMonthOwned47} from './civilization47-lifecycle';
 
 export type DailyEconomy47={version:1;lastDay:number;lastMusterMonth:number};
 export function assertDailyEconomy47(r:{world:{day:number};dailyEconomy:DailyEconomy47}){
@@ -38,7 +39,7 @@ function settleCivilizationDayCore47<T extends FoundingForces47>(input:T,dailyOr
   const r=owned??cloneMilitaryCandidate47(input);r.world.day++;
   // Native UpdateStateData refreshes the leader's cached per-enemy modifier.
   // This web monthly bridge runs before this day's autonomous orders.
-  if(r.world.day%30===0)refreshLeaderCombat47(r,r.combatPersonnel);
+  if(advancePeopleMonthOwned47(r)||r.world.day%30===0)refreshLeaderCombat47(r,r.combatPersonnel);
   settleFleetFood47(r);
   const economy=createArmyEconomy47(r.finance,()=>({...actualForces47(r).spatial,positions:r.armyPositions}),LOGISTICS_DAY_FACTOR47);
   economy.advanceEconomy(r.world,(world,kind,text,reason)=>dailyEvent47({world},kind,text,reason));

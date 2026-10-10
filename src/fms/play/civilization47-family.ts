@@ -7,7 +7,11 @@ import {nativeBirthTimeFromAge,nativeUpdateCharacterAge,nativeGetYearSince} from
 import {createNativeIsoCalendar} from './native-economy/iso-calendar';
 import {nativeGenerateLeaderSpouse,nativeGenerateLeaderChildren,nativeGenerateCollateralMembers,nativeGenerateCollateralHousehold,nativeSpouseRoleDefaults,type NativeFamilyMemberPorts} from './native-economy/family-members';
 import {assertPopulation47} from './civilization47-population-validation';
-import type {PopulationBase47,Kin47,FamilyPerson47,Life47} from './civilization47-population-types';
+import type {PopulationBase47,Kin47,FamilyPerson47,Life47,PersonRole47} from './civilization47-population-types';
+import type {NativePastRole} from './native-economy/role-history';
+import {nativeLeaderRoleDefaults} from './native-economy/leader-appointment';
+import {nativeDeathStatsDefaults} from './native-economy/character-month';
+import {nameSeed} from './chronicle-records';
 import type {Sovereignty} from './restoration19-sovereignty';
 
 /** The original family kernels mutate; this owner isolates registry, name,
@@ -15,7 +19,7 @@ import type {Sovereignty} from './restoration19-sovereignty';
 export function attachFamilies47<T extends PopulationBase47>(input:T) {
   assertCivilization47(input.civilization,input.world,input.chronicle);
   if(input.world.day!==0||input.clock.tick!==0||'kin' in input||'sovereignty' in input)throw Error('家族只能在新世界初始化一次。');
-  const r=structuredClone(input),life:Life47=r.life,kin:Kin47={version:1,origin:'native-family-real-culture-v1',revision:0,ageTime:0,lastAgeMonth:12,persons:{},families:{}},calendar=createNativeIsoCalendar(life.startDate);
+  const r=structuredClone(input),life:Life47=r.life,kin:Kin47={version:1,origin:'native-family-real-culture-v1',revision:0,ageTime:0,lastAgeMonth:12,persons:{},families:{},lifecycle:{version:1,rule:'native-month-death-known-emergency-v1',revision:0,lastMonth:12,random:{state:nameSeed(input.world.custom!.seed+'/life47'),draws:0},stats:nativeDeathStatsDefaults(),deaths:[],vacancies:{}}},calendar=createNativeIsoCalendar(life.startDate);
   const sovereignty:Sovereignty={version:1,revision:0,provinces:{},reigns:{},restorations:{},nativeRebels:{}};
   for(const p of r.world.provinces){const city=r.world.cities.find(c=>c.provinceId===p.id);if(!city)throw Error('辖区缺少真实城市。');sovereignty.provinces[p.id]={mapCultureId:r.civilization.cities[city.id].cultureId,sourceCityId:city.id,recordedDay:0,origin:'new-world'};}
   const registry={nextId:r.people.nextPersonId,characters:new Map<number,FamilyPerson47>()};
@@ -23,9 +27,10 @@ export function attachFamilies47<T extends PopulationBase47>(input:T) {
     const court=r.people.persons[r.people.nations[n.id].leaderId!],identity=r.civilization.rulers[court.rulerId],birth=life.persons[court.id],familyId=r.people.nations[n.id].id;
     if(!birth||birth.source!=='native-founding'||birth.age===null||birth.birthTime===null)throw Error('创始人物缺少已核出生记录。');
     const name=personNameFromParts47(identity.cultureId,identity.given,identity.house,identity.gender);
-    const p:FamilyPerson47={...nativeCharacterDefaults<string,ReturnType<typeof nativeSpouseRoleDefaults>>(),id:court.id,firstName:name.given,lastName:name.house,cultureName:name.cultureId,gender:name.gender,age:birth.age,birthTime:birth.birthTime,familyId,originalFamilyId:familyId,stateId:court.stateId,religionId:identity.religionId,base:structuredClone(court.base),traits:[...court.traits],source:'founding',initialAge:birth.initialAge,identity:name};
+    const p:FamilyPerson47={...nativeCharacterDefaults<string,PersonRole47,NativePastRole>(),id:court.id,firstName:name.given,lastName:name.house,cultureName:name.cultureId,gender:name.gender,age:birth.age,birthTime:birth.birthTime,familyId,originalFamilyId:familyId,stateId:court.stateId,religionId:identity.religionId,base:structuredClone(court.base),traits:[...court.traits],source:'founding',initialAge:birth.initialAge,identity:name};
+    p.roles.push({...nativeLeaderRoleDefaults(()=>life.gameTime),nativeKind:'leader',holderId:p.id,stateId:p.stateId,title:identity.titleAtAccession});
     registry.characters.set(p.id,p);kin.persons[p.id]=p;
-    kin.families[familyId]={id:familyId,surname:name.house,cultureName:name.cultureId,nationId:n.id,stateId:court.stateId,headId:p.id,allowFemaleInheritance:false,memberIds:[p.id],collateralMemberIds:[]};
+    kin.families[familyId]={id:familyId,surname:name.house,cultureName:name.cultureId,nationId:n.id,stateId:court.stateId,headId:p.id,heirId:0,allowFemaleInheritance:false,memberIds:[p.id],collateralMemberIds:[]};
     sovereignty.reigns[court.rulerId]=court.id;sovereignty.restorations[n.id]=0;
   }
   for(const family of Object.values(kin.families)){
@@ -35,7 +40,7 @@ export function attachFamilies47<T extends PopulationBase47>(input:T) {
       if(first===null||last===null||culture===null||![0,1].includes(gender))throw Error('人物文化或姓名缺失。');
       const identity=personNameFromParts47(culture47(culture).id,first,last,gender as 0|1);
       return nativeCreateNamedCharacter(first,last,gender,culture,{
-        createBlank:()=>{if(registry.nextId>=2147483647)throw Error('人物编号已达上限。');return nativeCreateBlankCharacter(registry,{construct:():FamilyPerson47=>({...nativeCharacterDefaults<string,ReturnType<typeof nativeSpouseRoleDefaults>>(),source:'initial-family',initialAge:null,religionId,identity}),gameTime:()=>life.gameTime});},random,
+        createBlank:()=>{if(registry.nextId>=2147483647)throw Error('人物编号已达上限。');return nativeCreateBlankCharacter(registry,{construct:():FamilyPerson47=>({...nativeCharacterDefaults<string,PersonRole47,NativePastRole>(),source:'initial-family',initialAge:null,religionId,identity}),gameTime:()=>life.gameTime});},random,
         selectTraits:count=>nativeRandomTraits(count,NATIVE_CHARACTER_POOL,random).map(t=>t.name),
       });
     };
@@ -45,7 +50,7 @@ export function attachFamilies47<T extends PopulationBase47>(input:T) {
         getLastName:p=>kin.families[p.originalFamilyId]?.surname??kin.families[p.familyId]?.surname??p.lastName,createCharacter:create,
       }).character,
       getCharacter:id=>registry.characters.get(id)??null,lastName:p=>kin.families[p.originalFamilyId]?.surname??kin.families[p.familyId]?.surname??p.lastName,random,
-      birthTimeFromAge:age=>nativeBirthTimeFromAge(age,life.gameTime,life.secondsPerDay),updateAge:p=>nativeUpdateCharacterAge(p,b=>nativeGetYearSince(b,life.gameTime,life.secondsPerDay,calendar)),gameTime:()=>life.gameTime,createSpouseRole:nativeSpouseRoleDefaults,
+      birthTimeFromAge:age=>nativeBirthTimeFromAge(age,life.gameTime,life.secondsPerDay),updateAge:p=>nativeUpdateCharacterAge(p,b=>nativeGetYearSince(b,life.gameTime,life.secondsPerDay,calendar)),gameTime:()=>life.gameTime,createSpouseRole:()=>({...nativeSpouseRoleDefaults(),nativeKind:'spouse'}),
       reportMissingSpouse:()=>{throw Error('初始配偶缺失，原世界未改动。');},generateCollateralHousehold:(p,f,c,isCousin)=>nativeGenerateCollateralHousehold(p,f,c,isCousin,ports),
     };
     nativeGenerateLeaderSpouse(leader,family,{i:family.stateId},family.cultureName,ports);

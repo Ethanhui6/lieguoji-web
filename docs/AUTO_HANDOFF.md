@@ -1,3 +1,15 @@
+# 当前检查点：自然死亡与自动继任已接实际模拟（2026-10-10）
+
+第五批本地切片已验证，根独占写、三个子智能体只读。先读webRebuild.culture47LifecycleCheckpoint及docs/evidence/fms-events-cadence47-2026-10-10/LIFECYCLE_RESULT.md。原始月检顺序、已知人物按六政体补位、家主独立、职位履历与合法空位。当前不是完整选举/多家族/内战/出生婚姻。
+
+当前试玩http://127.0.0.1:5294/?fms=1，仅本机，engine dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e；.autopilot/culture47-lifecycle-checked，服务启动PID36944（续接核实）。原13份引擎冻结；5293的997日66条要闻已保存UI确认，未冷恢复。没有移走/升级真实旧档，1000日重放上限仍存在。
+
+11文件155/156后实际完整军事夹具修复，政治14/14；加强自然死亡→IndexedDB→恢复后第二月完整相等1/1。类型/lint/build/78产物通过。真实浏览器普通历史/手动传位/取消6项，旧bbff2项，自然死亡保存恢复续月2项通过；自然测试首次选择器误匹配两条消息的失败已保留。不冒充真机/视觉/原作速度达标。
+
+下一批：仅自动播放请求日界对齐，减少半日起步后四日批拆八个军事窗口；原总tick与credit不增加、≤480、不改Worker/日志/旧档。随后内战独立、多家族、联盟、满月首都危机、1000日安全检查点。WEB-04-21/37仍进行中；本轮没有push/Pages/正式站变更。
+
+---
+
 # 当前检查点：推演地理热路径修复，原作节奏仍未验收（2026-10-10）
 
 根独占写入。接续webRebuild.culture47OwnedBatchCheckpoint和docs/evidence/fms-events-cadence47-2026-10-10/OWNED_BATCH_RESULT.md。本批3项：隔离单批候选/lease回滚；固定空接触START与内部步；海图冻结见证提升、47外交图入口及日粮海域索引复用。原120ticks、RNG、战争规则和港口积分不改。完整32日run/frame/motion与d01d相同，后四批4日核心上中位2128.3→878.4ms。最初性能回归143/144，修复后相关8项通过；最终types/lint/build/77产物、10浏览器通过，失败记录保留。
@@ -1115,3 +1127,5 @@ WEB-04-31/32 的有限本地范围已完成：战争逐军补给/围攻轮次/�
 [详细计划](FMS_DISTRICTS_CHRONICLE_PLAN_2026-10-06.md) · [交付范围](evidence/fms-chronicle2-v5-2026-10-06/DELIVERY.md) · [本地检查](evidence/fms-chronicle2-v5-2026-10-06/checks.json) · [云端构建](evidence/fms-chronicle2-v5-2026-10-06/cloud-build.json) · [HTTPS](evidence/fms-chronicle2-v5-2026-10-06/https-verification.json) · [云端回执](evidence/fms-chronicle2-v5-2026-10-06/cloud-release.json)
 
 上传后回执、tasks与本交接留在本地作为检查点，尚未另推状态提交；游戏源码已在上述Git提交。
+
+第五批计划检查：首次发现WEB-04-21依赖未完成WEB-04-13却标in_progress。保留依赖和实际已做证据，完整21改为blocked；有限当前接线仍归WEB-04-37。没有改验证器或把前置标完成。

@@ -7,12 +7,17 @@ import type {LifePerson,LifeState} from './life22-state';
 import type {Sovereignty} from './restoration19-sovereignty';
 import type {NativeRegisteredCharacter} from './native-economy/character-registry';
 import type {NativeSpouseRole} from './native-economy/family-members';
+import type {NativeLeaderRole} from './native-economy/leader-appointment';
+import type {NativePastRole} from './native-economy/role-history';
+import type {NativeMonthlyDeathStats} from './native-economy/natural-death';
 
-export type FamilyPerson47=NativeRegisteredCharacter<string,NativeSpouseRole>&{
+export type PersonRole47=({nativeKind:'spouse'}&NativeSpouseRole)|({nativeKind:'leader'}&NativeLeaderRole);
+export type FamilyPerson47=NativeRegisteredCharacter<string,PersonRole47,NativePastRole>&{
   source:'founding'|'initial-family';initialAge:number|null;identity:PersonName47;
 };
-export type Family47={id:number;surname:string;cultureName:CultureId47;nationId:string;stateId:number;headId:number;allowFemaleInheritance:boolean;memberIds:number[];collateralMemberIds:number[]};
-export type Kin47={version:1;origin:'native-family-real-culture-v1';revision:number;ageTime:number;lastAgeMonth:number;persons:Record<string,FamilyPerson47>;families:Record<string,Family47>};
+export type Family47={id:number;surname:string;cultureName:CultureId47;nationId:string;stateId:number;headId:number;heirId:number;allowFemaleInheritance:boolean;memberIds:number[];collateralMemberIds:number[]};
+export type Lifecycle47={version:1;rule:'native-month-death-known-emergency-v1';revision:number;lastMonth:number;random:{state:number;draws:number};stats:NativeMonthlyDeathStats;deaths:{personId:number;day:number;tick:number;age:number;wasLeaderOf:string|null;deathHistoryId:number|null}[];vacancies:Record<string,{sinceDay:number;previousPersonId:number;reason:'no-known-candidate'|'restoration-no-known-candidate'}>};
+export type Kin47={version:1;origin:'native-family-real-culture-v1';revision:number;ageTime:number;lastAgeMonth:number;persons:Record<string,FamilyPerson47>;families:Record<string,Family47>;lifecycle:Lifecycle47};
 /** Birthdays of relatives are real recorded inputs, never an unknown birthday
  * assigned when that relative first becomes a ruler. This is a new47 type. */
 export type FamilyLife47={source:'native-family';birthTime:number;age:number;initialAge:null;updatedMonth:number};

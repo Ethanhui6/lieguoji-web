@@ -1,0 +1,102 @@
+{
+  "sourceBaseline": "7db3d565c775abae8cbe1a798521889435c3d3b7",
+  "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
+  "artifact": ".autopilot/culture47-lifecycle-checked",
+  "url": "http://127.0.0.1:5294/?fms=1",
+  "serverPid": 36944,
+  "localOnly": true,
+  "unit": {
+    "unified": {
+      "success": false,
+      "passed": 155,
+      "failed": 1,
+      "skipped": 0
+    },
+    "politicsRepair": {
+      "success": true,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "naturalReplay": {
+      "success": true,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 6
+    },
+    "note": "Counts overlap. Initial failures retained; fixture corrections include typed terrain serialization, complete simulation while crossing month, explicit young family heir; no checks removed."
+  },
+  "browser": {
+    "first": {
+      "startTime": "2026-10-10T01:03:34.617Z",
+      "duration": 124241.456,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "naturalFirst": {
+      "startTime": "2026-10-10T01:07:29.118Z",
+      "duration": 34656.353,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "naturalRepair": {
+      "startTime": "2026-10-10T01:10:50.725Z",
+      "duration": 24330.109,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "note": "Natural first failed ambiguous text locator matching both death and succession; narrowed to death sentence. bbff old engine passed in first natural set."
+  },
+  "checks": {
+    "typecheck": true,
+    "lint": true,
+    "productionBuild": true,
+    "approvedArtifacts": 78
+  },
+  "naturalWitness": {
+    "seed": "00000000-0000-4000-8000-00000000065b",
+    "syntheticTerrain": true,
+    "month": 13,
+    "day": 31,
+    "tick": 3720,
+    "personId": 2,
+    "name": "橘秀忠",
+    "successorId": 10,
+    "successor": "橘赖朝",
+    "nativeProbability": 0.000800000037997961,
+    "actualRoll": 0.0004445100203156471,
+    "probabilityModified": false,
+    "rngInjected": false,
+    "realSessionDeathSavedAndRestored": true,
+    "restoredAndOriginalSessionsComparedAtDay": 62,
+    "browserContinuesPastSecondMonth": true
+  },
+  "limits": [
+    "no full election",
+    "no birth/marriage",
+    "single family per state",
+    "no civil war/independence integration",
+    "web RNG is not Unity global RNG",
+    "1000 day journal cap",
+    "original cadence not accepted",
+    "no physical iPhone or original visual acceptance"
+  ],
+  "previousManualWorld": {
+    "url": "http://127.0.0.1:5293/?fms=1",
+    "day": 997,
+    "importantEntries": 66,
+    "saveUiConfirmed": true,
+    "coldReload": false,
+    "stoppedBy1000DayCap": true
+  },
+  "release": {
+    "pushed": false,
+    "pagesTriggered": false
+  }
+}

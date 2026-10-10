@@ -1,0 +1,13 @@
+Captured current-turn tool results; not a rerun or a full-suite claim.
+First affected run: 57 passed, 1 fixture failure (4 files).
+Repaired/expanded run: 79 passed, 0 failed (7 files), 70.88s.
+Typecheck and whole-source eslint exited 0.
+After portrait test edit: focused eslint exited 0.
+Production builds: 84 approved game artifacts.
+Initial browser flows: 6/6; final portrait repair: overlapping 2/2.
+Both source fixtures are real frozen 9c Workers: native v2 and dfd9-to-9c v2.
+Pause motion: first 11/12 exposed floating terminal issue; final 12/12 passed.
+Post-pause types and affected ESLint passed.
+Final checked build 912dabc, unchanged fe7 engine; browser 5/5 with two overlapping upgrade paths.
+Actual manual normal six-country world1968days/187archives saved, not cold reloaded.
+Committed logs normalize trailing whitespace/terminal blank lines only; test content and failures retained.

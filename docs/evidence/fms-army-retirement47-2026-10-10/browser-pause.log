@@ -1,0 +1,14 @@
+
+Running 5 tests using 1 worker
+
+(node:50748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload (14.3s)
+  ok 2 [desktop-chromium] › tests\fms-culture47-retirement.spec.ts:8:36 › real frozen 9c native world safely enables retirement and cold resumes (7.6s)
+  ok 3 [desktop-chromium] › tests\fms-culture47-retirement.spec.ts:8:36 › real frozen 9c forked world safely enables retirement and cold resumes (8.0s)
+  ok 4 [desktop-chromium] › tests\fms-culture47-retirement.spec.ts:52:1 › pausing finishes accepted motion and calendar before save without requesting more simulation (3.2s)
+(node:28056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 5 [desktop-chromium] › tests\fms-culture47-motion.spec.ts:4:1 › actual army display changes continuously between slow Worker replies and keeps paused picking aligned (33.1s)
+
+  5 passed (1.1m)

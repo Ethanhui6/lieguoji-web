@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-10",
+  "phase": "WEB-04-42",
+  "sourceCommit": "912dabcac323f2b6953fc3145ce356cb84b6ccfa",
+  "coreCommit": "4bf87722d02c315565159c2e3f6a51cbc2087aa1",
+  "engine": "fe7a64ad764f776b80547e14a4bcb0f2b005ca65a9b9f63555b78ba42058e5cc",
+  "artifact": ".autopilot/culture47-retirement-pause-checked",
+  "url": "http://127.0.0.1:5305/?fms=1",
+  "serverPidAtStart": 52044,
+  "historicalEngines": 19,
+  "approvedArtifacts": 84,
+  "checks": {
+    "firstUnit": {
+      "files": 4,
+      "passed": 57,
+      "failed": 1,
+      "reason": "500-army synthetic fixture copied per-ID deterministic speed instead of initializing each new ID; fixture repaired"
+    },
+    "finalUnit": {
+      "command": "npm test -- src/fms/play/civilization47-daily.test.ts src/fms/play/culture47-continuation.test.ts src/fms/play/culture47-storage.test.ts src/fms/play/culture47-verification.test.ts src/fms/play/session-advance47.test.ts src/fms/play/culture47-session.test.ts src/fms/play/culture47-display.test.ts",
+      "files": 7,
+      "passed": 79,
+      "failed": 0,
+      "durationSeconds": 70.88
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exitCode": 0
+    },
+    "finalTestLint": {
+      "command": "npx eslint tests/fms-culture47-retirement.spec.ts",
+      "exitCode": 0
+    },
+    "build": "passed",
+    "browserFirst": {
+      "passed": 6,
+      "failed": 0,
+      "durationSeconds": 27.5,
+      "artifact": ".autopilot/culture47-retirement-checked"
+    },
+    "browserFinal": {
+      "passed": 2,
+      "failed": 0,
+      "durationSeconds": 17,
+      "overlapsFirst": true,
+      "change": "portrait sheet/zoom and animation-settled screenshot",
+      "artifact": ".autopilot/culture47-retirement-final-checked"
+    },
+    "phone": "not_run",
+    "originalVisualEquivalence": "not_accepted",
+    "pauseFirst": {
+      "passed": 11,
+      "failed": 1,
+      "reason": "250ms endpoint floating error 9.999999999999998; explicit deadline endpoint fixed"
+    },
+    "pauseFinal": {
+      "passed": 12,
+      "failed": 0,
+      "durationSeconds": 0.594
+    },
+    "pauseTypes": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "pauseLint": {
+      "command": "eslint affected six source/test files",
+      "exitCode": 0
+    },
+    "browserPause": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "durationSeconds": 68.217,
+      "overlapsEarlierForkTests": true,
+      "artifact": ".autopilot/culture47-retirement-pause-checked",
+      "scope": [
+        "two real frozen v2 source paths and protected cold restore",
+        "pause terminal canvas/calendar equal committed tick then save",
+        "normal generated terrain continuous army motion and paused picking",
+        "house appointment and continuous calendar cold restoration"
+      ]
+    },
+    "plan": {
+      "validation": "passed",
+      "tests": 15
+    },
+    "releaseStatus": "not ready; report-only; full gate unchanged"
+  },
+  "oldActualWorld": {
+    "url": "http://127.0.0.1:5300/?fms=1",
+    "day": 29288,
+    "tick": 3514560,
+    "save": "UI confirmed",
+    "coldReload": "not_run",
+    "upgraded": "not_run",
+    "serverPid": 43604,
+    "dateLabelBeforePauseFix": "公元81年3月4日",
+    "lastObservedTab": "6",
+    "tabAtFinal": "not in browser inventory; original server remains PID43604, no source slots cleared"
+  },
+  "constraints": [
+    "Archive and opt-in copy are web persistence rules; no new native parity claim",
+    "Active500 cap retained; zero-troop destroyed entities no longer consume it after daily collection",
+    "Full history replay remains; long-world load cost grows",
+    "Births/adult new households, political fragmentation and complete native tactics remain unfinished",
+    "One current retirement-copy slot: another distinct copy cannot overwrite an occupied source archive",
+    "No cloud push, preview, main change or physical iPhone/visual gate passed"
+  ],
+  "buildMetadataCommit": "912dabcac323f2b6953fc3145ce356cb84b6ccfa",
+  "actualNewWorld": {
+    "url": "http://127.0.0.1:5304/?fms=1",
+    "sourceCommit": "b045f9fe9d524d5ca5dfa5e7c84f61ba203617f6",
+    "normalGeneratedTerrain": true,
+    "nations": 6,
+    "cities": 60,
+    "day": 1968,
+    "tick": 236160,
+    "archivedArmyRecords": 187,
+    "save": "UI confirmed",
+    "coldRestoreOfThisActualSave": "not_run",
+    "consoleErrorsWarnings": [],
+    "observed": [
+      "recruitment",
+      "emergency mobilisation",
+      "declarations"
+    ],
+    "displayPauseLag": "Observed here, fixed and separately browser verified in 912dabc build; saved authoritative day is 1968"
+  },
+  "pauseFix": {
+    "settleAcceptedMilliseconds": 250,
+    "authoritativeTickUnchanged": true,
+    "calendarAndArmySharedClock": true,
+    "terminalPaintVerified": true,
+    "lateAckTested": true
+  },
+  "localServerBoundary": "Original5300 and earlier5304 actual worlds retained. Auto approval rejected a stop/restart helper attempt, no process was stopped; separate5305 serves checked artifact. Origins have separate browser storage, no actual old world was migrated.",
+  "actualFinalWorld": {
+    "url": "http://127.0.0.1:5305/?fms=1",
+    "sourceCommit": "912dabcac323f2b6953fc3145ce356cb84b6ccfa",
+    "normalGeneratedTerrain": true,
+    "nations": 6,
+    "cities": 60,
+    "day": 690,
+    "tick": 82800,
+    "calendar": "公元2年11月22日",
+    "calendarDisplayTick": 82800,
+    "canvasDisplayTick": 82800,
+    "archivedArmyRecords": 92,
+    "save": "UI confirmed",
+    "coldRestoreOfThisActualSave": "not_run",
+    "consoleErrorsWarnings": [],
+    "state": "paused, saved, military archive expanded, zoomed for inspection",
+    "tab": "8",
+    "screenshot": "docs/evidence/fms-army-retirement47-2026-10-10/final-normal-world-day690.png"
+  }
+}

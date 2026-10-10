@@ -1,0 +1,17 @@
+
+> lieguoji-web@0.5.0-preview.46 test:e2e
+> playwright test tests/fms-culture47-retirement.spec.ts tests/fms-culture47-save-scope.spec.ts --project=desktop-chromium
+
+
+Running 6 tests using 1 worker
+
+(node:3800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-retirement.spec.ts:8:36 › real frozen 9c native world safely enables retirement and cold resumes (7.8s)
+  ok 2 [desktop-chromium] › tests\fms-culture47-retirement.spec.ts:8:36 › real frozen 9c forked world safely enables retirement and cold resumes (7.4s)
+  ok 3 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:66 › future original slot cannot leak its lock or be overwritten by new-world creation (3.2s)
+  ok 4 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:66 › future previous slot cannot leak its lock or be overwritten by new-world creation (2.7s)
+  ok 5 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:66 › future copy slot cannot leak its lock or be overwritten by new-world creation (2.8s)
+  ok 6 [desktop-chromium] › tests\fms-culture47-save-scope.spec.ts:4:66 › future new slot cannot leak its lock or be overwritten by new-world creation (1.7s)
+
+  6 passed (27.5s)

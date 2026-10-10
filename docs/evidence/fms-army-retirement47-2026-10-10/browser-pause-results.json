@@ -1,0 +1,348 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-retirement.spec.ts",
+      "tests/fms-culture47-motion.spec.ts",
+      "tests/fms-culture47-houses.spec.ts",
+      "--project=desktop-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-houses.spec.ts",
+      "file": "fms-culture47-houses.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "opening history, real branch appointment and continuous calendar survive ordinary save/reload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14346,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T09:32:19.990Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "branch-and-clock",
+                      "contentType": "application/json",
+                      "body": "eyJmYW1pbHlSb3dzIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDQg5L2N5Zyo5LiWMTEg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTYsMjk3Iiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNDM0Iiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNjY2Il0sInNhdmVkUm93cyI6WyLorrjmsI8gwrcg5Li75a625peP6ZW/IOiuuOaZk+aipiDCtyAzIOS9jeWcqOS4ljEwIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTUxLDcxMyIsIuiuuOawjyDCtyDmnb7mtKXmlK/ns7vml4/plb8g6K645a2Q5pyfIMK3IDEg5L2N5Zyo5LiWMSDlpITlrp7mjqflsIHlnLAgwrcg5Lq65Y+jIDEzLDUxNyIsIuiuuOawjyDCtyDkuJzpmLPmlK/ns7vml4/plb8g6K645a2Q6KGhIMK3IDIg5L2N5Zyo5LiWMSDlpITlrp7mjqflsIHlnLAgwrcg5Lq65Y+jIDE4LDc0OSIsIuiuuOawjyDCtyDpq5jmtabmlK/ns7vml4/plb8g6K645pmv5piOIMK3IDEg5L2N5Zyo5LiWMSDlpITlrp7mjqflsIHlnLAgwrcg5Lq65Y+jIDUsMzMxIl0sInJlc3RvcmVkIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDMg5L2N5Zyo5LiWMTAg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTEsNzEzIiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNTE3Iiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNzQ5Iiwi6K645rCPIMK3IOmrmOa1puaUr+ezu+aXj+mVvyDorrjmma/mmI4gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgNSwzMzEiXSwic2F2ZWRUaWNrIjoiOTk2MCIsInRpbWVsaW5lIjpbeyJkYXkiOjMsInRpY2siOjQyMi44NzE3MzE0MjUxNDIsImVuZHBvaW50Ijo4NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDTml6UifSx7ImRheSI6NCwidGljayI6NTIyLjIxOTk4OTA2NjI2MDYsImVuZHBvaW50Ijo4NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDXml6UifSx7ImRheSI6NSwidGljayI6NjAxLjgxMjI5ODQ0MjQ3NjQsImVuZHBvaW50Ijo4NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDbml6UifSx7ImRheSI6NSwidGljayI6NzAzLjAzODY5MDk1OTcyMjcsImVuZHBvaW50Ijo4NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDbml6UifSx7ImRheSI6NiwidGljayI6ODI1LjAyMjE3ODEyOTA4NzMsImVuZHBvaW50IjoxMzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIg35pelIn0seyJkYXkiOjcsInRpY2siOjk1Ni4zOTkxMzcxMzA2ODc2LCJlbmRwb2ludCI6MTMyMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIOOaXpSJ9LHsiZGF5Ijo5LCJ0aWNrIjoxMTA0LjI5MDM5NTgwNjgwODksImVuZHBvaW50IjoxODAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxMOaXpSJ9LHsiZGF5IjoxMCwidGljayI6MTMxMC40OTE1NjMwNzE0MjU4LCJlbmRwb2ludCI6MTgwMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTHml6UifSx7ImRheSI6MTIsInRpY2siOjE0OTkuODg3NDgzMDIxNDIxOCwiZW5kcG9pbnQiOjE4MDAsInRleHQiOiLlhazlhYMx5bm0MeaciDEz5pelIn0seyJkYXkiOjE0LCJ0aWNrIjoxNjg0LjIzMTkyMjYwMTQzOTcsImVuZHBvaW50IjoxODAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxNeaXpSJ9LHsiZGF5IjoxNCwidGljayI6MTc3MS40MzQ5NDM5MjkwMzQ1LCJlbmRwb2ludCI6MjI4MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTXml6UifSx7ImRheSI6MTUsInRpY2siOjE4NzMuNDI0MjM2MjU4NDM3MywiZW5kcG9pbnQiOjIyODAsInRleHQiOiLlhazlhYMx5bm0MeaciDE25pelIn0seyJkYXkiOjE2LCJ0aWNrIjoxOTg2LjE0OTE3NjM2NzY2MzgsImVuZHBvaW50IjoyMjgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxN+aXpSJ9LHsiZGF5IjoxNywidGljayI6MjA5Ni43NTU2OTExNjE0MDcsImVuZHBvaW50IjoyNzYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxOOaXpSJ9LHsiZGF5IjoxOCwidGljayI6MjIzNi41MzY5ODE2NDgwMTM0LCJlbmRwb2ludCI6Mjc2MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTnml6UifSx7ImRheSI6MTksInRpY2siOjIzNTkuNDY2NzA3MTcyMzAwNiwiZW5kcG9pbnQiOjI3NjAsInRleHQiOiLlhazlhYMx5bm0MeaciDIw5pelIn0seyJkYXkiOjIxLCJ0aWNrIjoyNTg5LjUxMjkzNjYxMzEwMTQsImVuZHBvaW50IjozMjQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyMuaXpSJ9LHsiZGF5IjoyMywidGljayI6Mjc2Ny40MzA1NTkzMDA0NzU2LCJlbmRwb2ludCI6MzI0MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjTml6UifSx7ImRheSI6MjMsInRpY2siOjI4NTMuMTcyMzY0NDc5OTY3LCJlbmRwb2ludCI6MzI0MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjTml6UifSx7ImRheSI6MjQsInRpY2siOjI5NDUuNzY1NjU1OTQ1MDgzLCJlbmRwb2ludCI6MzcyMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjXml6UifSx7ImRheSI6MjUsInRpY2siOjMwNjYuODMzMjgyNTc0MTQ1NCwiZW5kcG9pbnQiOjM3MjAsInRleHQiOiLlhazlhYMx5bm0MeaciDI25pelIn0seyJkYXkiOjI2LCJ0aWNrIjozMTc5LjkzOTExNzcxNzQxNjYsImVuZHBvaW50IjozNzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyN+aXpSJ9LHsiZGF5IjoyNywidGljayI6MzMyOC40MzYyNjEwOTMxNzQsImVuZHBvaW50IjozNzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyOOaXpSJ9LHsiZGF5IjoyOCwidGljayI6MzQ3NC44NTY3OTgwNDI3NzE1LCJlbmRwb2ludCI6MzcyMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjnml6UifSx7ImRheSI6MjksInRpY2siOjM1NDYuMzM3NjQwNTE2NjIwNSwiZW5kcG9pbnQiOjQyMDAsInRleHQiOiLlhazlhYMx5bm0MeaciDMw5pelIn0seyJkYXkiOjMwLCJ0aWNrIjozNjg0Ljg2NjM5OTk1MTU2OCwiZW5kcG9pbnQiOjQyMDAsInRleHQiOiLlhazlhYMx5bm0MeaciDMx5pelIn0seyJkYXkiOjMxLCJ0aWNrIjozNzUxLjY3OTI2NTE5MzgyMTMsImVuZHBvaW50Ijo0MjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgx5pelIn0seyJkYXkiOjMxLCJ0aWNrIjozODIxLjc0NDE2NzI4NjY2OCwiZW5kcG9pbnQiOjQyMDAsInRleHQiOiLlhazlhYMx5bm0MuaciDHml6UifSx7ImRheSI6MzIsInRpY2siOjM5NTcuNjAzOTA1NTk3ODkxLCJlbmRwb2ludCI6NDIwMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMuaXpSJ9LHsiZGF5IjozNCwidGljayI6NDA5NC41MDA1MjUzMDM1OTQsImVuZHBvaW50Ijo0MjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg05pelIn0seyJkYXkiOjM1LCJ0aWNrIjo0MjU2LjUxMTM5MzA3NDYyNiwiZW5kcG9pbnQiOjQ2ODAsInRleHQiOiLlhazlhYMx5bm0MuaciDXml6UifSx7ImRheSI6MzUsInRpY2siOjQzMDYuNzU0MTgzNDg2MDYzLCJlbmRwb2ludCI6NDY4MCwidGV4dCI6IuWFrOWFgzHlubQy5pyINeaXpSJ9LHsiZGF5IjozNiwidGljayI6NDQxMS4zNzQ0NTIxODg2NTUsImVuZHBvaW50Ijo1MTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg25pelIn0seyJkYXkiOjM4LCJ0aWNrIjo0NTc0LjcwMzg4MzY5ODI2NiwiZW5kcG9pbnQiOjUxNjAsInRleHQiOiLlhazlhYMx5bm0MuaciDjml6UifSx7ImRheSI6MzksInRpY2siOjQ3MzMuMDgyMTQ4NzAxOTIsImVuZHBvaW50Ijo1MTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg55pelIn0seyJkYXkiOjQwLCJ0aWNrIjo0ODY3LjI4OTI5MTgxMTgxNiwiZW5kcG9pbnQiOjU2NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDEw5pelIn0seyJkYXkiOjQxLCJ0aWNrIjo1MDE2LjY1MzIwMTY1OTQ0MywiZW5kcG9pbnQiOjU2NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDEx5pelIn0seyJkYXkiOjQyLCJ0aWNrIjo1MTExLjEzMDM3MzY2MDY5MSwiZW5kcG9pbnQiOjU2NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDEy5pelIn0seyJkYXkiOjQzLCJ0aWNrIjo1MjA5Ljk5OTkwNTMxMjk2NiwiZW5kcG9pbnQiOjU2NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDEz5pelIn0seyJkYXkiOjQ0LCJ0aWNrIjo1Mzg1LjYzNTA5ODg1Njk4NSwiZW5kcG9pbnQiOjU2NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDE05pelIn0seyJkYXkiOjQ2LCJ0aWNrIjo1NTk5Ljc0NTgxMzkxMDAwNSwiZW5kcG9pbnQiOjYxMjAsInRleHQiOiLlhazlhYMx5bm0MuaciDE25pelIn0seyJkYXkiOjQ3LCJ0aWNrIjo1NjkzLjkyOTk4NDYxNjU3OSwiZW5kcG9pbnQiOjYxMjAsInRleHQiOiLlhazlhYMx5bm0MuaciDE35pelIn0seyJkYXkiOjQ4LCJ0aWNrIjo1Nzc1LjQ1NzQ4NzgwMTY2OSwiZW5kcG9pbnQiOjYxMjAsInRleHQiOiLlhazlhYMx5bm0MuaciDE45pelIn0seyJkYXkiOjUwLCJ0aWNrIjo2MDMwLjYwMzg1NjY3Mjk5MiwiZW5kcG9pbnQiOjY2MDAsInRleHQiOiLlhazlhYMx5bm0MuaciDIw5pelIn0seyJkYXkiOjUxLCJ0aWNrIjo2MTMwLjMwNDU2ODI2Mjk2NDUsImVuZHBvaW50Ijo2NjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgyMeaXpSJ9LHsiZGF5Ijo1MiwidGljayI6NjI0NC44ODk2NzU1NzgxMjI1LCJlbmRwb2ludCI6NzA4MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjLml6UifSx7ImRheSI6NTMsInRpY2siOjY0NzEuNjI5MDM5OTYyOTQxNSwiZW5kcG9pbnQiOjcwODAsInRleHQiOiLlhazlhYMx5bm0MuaciDIz5pelIn0seyJkYXkiOjU0LCJ0aWNrIjo2NTg4LjQzNTExODkxMDExMzUsImVuZHBvaW50Ijo3MDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgyNOaXpSJ9LHsiZGF5Ijo1NiwidGljayI6Njc3NS42NTU3NTUwOTU5MTA1LCJlbmRwb2ludCI6NzA4MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjbml6UifSx7ImRheSI6NTgsInRpY2siOjY5NjYuMDk1NzA4OTE1MTE3LCJlbmRwb2ludCI6NzA4MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjjml6UifSx7ImRheSI6NTksInRpY2siOjcwODAsImVuZHBvaW50Ijo3MDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgx5pelIn0seyJkYXkiOjU5LCJ0aWNrIjo3MDgwLCJlbmRwb2ludCI6NzU2MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMeaXpSJ9LHsiZGF5Ijo1OSwidGljayI6NzE2NS42Mjk4Njk1NzA4OTIsImVuZHBvaW50Ijo3NTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgx5pelIn0seyJkYXkiOjYwLCJ0aWNrIjo3MjM0LjA5Nzg3MzU4ODI2NDUsImVuZHBvaW50Ijo3NTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgy5pelIn0seyJkYXkiOjYwLCJ0aWNrIjo3MzA0LjM1MTAxMzg1MzM0NSwiZW5kcG9pbnQiOjc1NjAsInRleHQiOiLlhazlhYMx5bm0M+aciDLml6UifSx7ImRheSI6NjEsInRpY2siOjczNDEuMjg3NzY2NDkxNDI4LCJlbmRwb2ludCI6ODA0MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIM+aXpSJ9LHsiZGF5Ijo2MSwidGljayI6NzM2Ny4wNTQ0NDAxOTM2NjIsImVuZHBvaW50Ijo4MDQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgz5pelIn0seyJkYXkiOjYyLCJ0aWNrIjo3NDU2LjI4OTQ2NjY4MzM3MiwiZW5kcG9pbnQiOjgwNDAsInRleHQiOiLlhazlhYMx5bm0M+aciDTml6UifV0sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c3e0d9287a4f8b7c4db7-3d5b1ed30d959f1ad53c",
+          "file": "fms-culture47-houses.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-motion.spec.ts",
+      "file": "fms-culture47-motion.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33090,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T09:32:53.981Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "continuous-motion",
+                      "contentType": "application/json",
+                      "body": "eyJmcmFtZXMiOjEwMywibW92aW5nSW50ZXJ2YWxzIjpbeyJpZCI6ImZvcmNlLTEiLCJtcyI6MTM2OS4zNzAwMDAwMDQ3Njg0LCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS00IiwibXMiOjEzNjkuMzcwMDAwMDA0NzY4NCwiZGlzdGluY3QiOjEwLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTM2OS4zNzAwMDAwMDQ3Njg0LCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS03IiwibXMiOjEzNjkuMzcwMDAwMDA0NzY4NCwiZGlzdGluY3QiOjEwLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTM2OS4zNzAwMDAwMDQ3Njg0LCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yOSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxMzY5LjM3MDAwMDAwNDc2ODQsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjIwMzguMTAwMDAwMDIzODQxOSwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoyMDM4LjEwMDAwMDAyMzg0MTksImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjl9LHsiaWQiOiJmb3JjZS01IiwibXMiOjIwMzguMTAwMDAwMDIzODQxOSwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTYiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoyMDM4LjEwMDAwMDAyMzg0MTksImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjl9LHsiaWQiOiJmb3JjZS04IiwibXMiOjIwMzguMTAwMDAwMDIzODQxOSwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTkiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTEiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTMiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTYiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMTkiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMjciLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMjkiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzEiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzQiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzciLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6MjAzOC4xMDAwMDAwMjM4NDE5LCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtMSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtNSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtOCIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTEzIiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTE2IiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTE5IiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTI3IiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MTcsImFmdGVyODAwIjoxMn0seyJpZCI6ImZvcmNlLTMxIiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTM0IiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX0seyJpZCI6ImZvcmNlLTM3IiwibXMiOjI5NjkuNDUwMDAwMDQ3NjgzNywiZGlzdGluY3QiOjIwLCJhZnRlcjgwMCI6MTV9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoyOTY5LjQ1MDAwMDA0NzY4MzcsImRpc3RpbmN0IjoyMCwiYWZ0ZXI4MDAiOjE1fSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6Mjk2OS40NTAwMDAwNDc2ODM3LCJkaXN0aW5jdCI6MjAsImFmdGVyODAwIjoxNX1dLCJzZWxlY3RlZCI6eyJpZCI6ImZvcmNlLTE5IiwiaWRzIjpbImZvcmNlLTE5Il0sImtpbmQiOiJhcm15IiwiZGlzcGxheSI6ImRvdCIsIngiOjc3NC43NjgwODI2MTgxMjcyLCJ5IjozNjAuOTU3MDc5MTE2MzQ3OH0sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-motion-actua-d8660-eeps-paused-picking-aligned-desktop-chromium\\video.webm"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8898f7ed0deb33696d35-c18a13e3a469c75365b5",
+          "file": "fms-culture47-motion.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-retirement.spec.ts",
+      "file": "fms-culture47-retirement.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real frozen 9c native world safely enables retirement and cold resumes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7594,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T09:32:34.559Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "retirement-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzb3VyY2UiOiJuYXRpdmUgOWMiLCJwcm9kdWN0aW9uRnJvemVuIjp0cnVlLCJjb21wbGV0ZVN0YXRlQ29tcGFyZWRCZWZvcmVFbmFibGUiOnRydWUsImNvbGRSZXN0b3JlZERheSI6MywiY29udGludWVkRGF5Ijo0LCJhbGxTb3VyY2VTbG90c1VuY2hhbmdlZCI6dHJ1ZSwiZXJyb3JzIjpbXSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-a96e355748ce5a78fdb4",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 8,
+          "column": 36
+        },
+        {
+          "title": "real frozen 9c forked world safely enables retirement and cold resumes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8002,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T09:32:42.166Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "retirement-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJzb3VyY2UiOiJkZmQ5IC0+IDljIiwicHJvZHVjdGlvbkZyb3plbiI6dHJ1ZSwiY29tcGxldGVTdGF0ZUNvbXBhcmVkQmVmb3JlRW5hYmxlIjp0cnVlLCJjb2xkUmVzdG9yZWREYXkiOjQsImNvbnRpbnVlZERheSI6NSwiYWxsU291cmNlU2xvdHNVbmNoYW5nZWQiOnRydWUsImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-c6c8056cc16dbad7c00c",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 8,
+          "column": 36
+        },
+        {
+          "title": "pausing finishes accepted motion and calendar before save without requesting more simulation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3230,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T09:32:50.177Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "pause-date-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJ0aWNrIjoiMTgwMCIsImNhbGVuZGFyQW5kQXJteUF0Q29tbWl0dGVkVGljayI6dHJ1ZSwibm9FeHRyYVNpbXVsYXRpb24iOnRydWV9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-9af36df806599722102d",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 52,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T09:32:19.348Z",
+    "duration": 68216.557,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

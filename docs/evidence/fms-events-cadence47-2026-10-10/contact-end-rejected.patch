@@ -1,0 +1,59 @@
+diff --git a/src/fms/play/force-motion47.ts b/src/fms/play/force-motion47.ts
+index 85a7881..1a09094 100644
+--- a/src/fms/play/force-motion47.ts
++++ b/src/fms/play/force-motion47.ts
+@@ -53,13 +53,21 @@ function pair(a: string, b: string, p: Positions, area: string): ForceContact47
+  * At load, exact positions must match. A command may clear obsolete contacts
+  * explicitly; it must not repair a corrupt saved contact by moving a unit. */
+ export function assertForceContacts47(value: ForceContacts47, forces: MovingForce47[], graph: TravelGraph47, seaRegion: Rules['seaRegion']) {
+-  for(const f of forces){assertArmyTravel47(f.travel,graph);if(f.kind==='fleet'&&f.travel.nodes.some(id=>graph.cells.get(id)!.surface!=='sea'))throw Error('舰队航线进入陆地。');}
++  assertTravelLedgers(forces,graph);
+   assertContactRecordsOwned47(value,forces,graph,seaRegion);
+ }
++function assertTravelLedgers(forces:MovingForce47[],graph:TravelGraph47){
++  for(const f of forces){assertArmyTravel47(f.travel,graph);if(f.kind==='fleet'&&f.travel.nodes.some(id=>graph.cells.get(id)!.surface!=='sea'))throw Error('舰队航线进入陆地。');}
++}
+ /** Only the actualContactFrame47 composition may call this immediately after
+  * actualForces47 has validated both complete travel ledgers and fleet surfaces.
+  * No caller-supplied validation switch and no reusable/cross-tick witness. */
+ export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingForce47[],graph:TravelGraph47,seaRegion:Rules['seaRegion']){
++  assertContactRecords(value,forces,graph,seaRegion);
++}
++/** Only this module can reuse its just-computed END positions. Public/load
++ * validators always derive their own; every record/ledger check still runs. */
++function assertContactRecords(value:ForceContacts47,forces:MovingForce47[],graph:TravelGraph47,seaRegion:Rules['seaRegion'],endPositions?:Positions){
+   const keys = new Set<string>();
+   for (const f of forces) {
+     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId || typeof f.withdrawing !== 'boolean' || f.travel.armyId !== f.id || keys.has(forceKey47(f))) throw Error('统一部队身份无效。');
+@@ -67,7 +75,7 @@ export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingF
+   }
+   if (!value || Object.keys(value).sort().join('/') !== 'pairs/version' || value.version !== 1 || !Array.isArray(value.pairs) || value.pairs.length > forces.length * Math.max(0, forces.length - 1) / 2) throw Error('统一交锋记录无效。');
+   if(!value.pairs.length)return;
+-  const p = positions(forces, graph), seen = new Set<string>();
++  const p = endPositions??positions(forces, graph), seen = new Set<string>();
+   for (const c of value.pairs) {
+     const a = p.get(c.a), b = p.get(c.b), key = pairKey(c.a, c.b);
+     if (!c || Object.keys(c).sort().join('/') !== 'a/area/b/cellA/cellB/pointA/pointB' || !a || !b || !(c.a < c.b) || seen.has(key) || typeof c.area !== 'string' || !c.area || c.cellA !== a.cell.id || c.cellB !== b.cell.id || !c.pointA || !c.pointB || Object.keys(c.pointA).sort().join('/') !== 'x/y' || Object.keys(c.pointB).sort().join('/') !== 'x/y' || !same(c.pointA, a.point) || !same(c.pointB, b.point)) throw Error('交锋位置与真实部队不一致。');
+@@ -131,9 +139,9 @@ export function advanceSessionForceContacts47(input:readonly MovingForce47[],pre
+   // Nonempty contacts retain the original sorted-force reconstruction: its
+   // held/exposure insertion order and boundary-pair isolation are observable.
+   const empty=!start.contacts.pairs.length&&!start.held.size&&!input.some(f=>f.withdrawing);
+-  return advanceForceContactsCore47(input,previous,graph,seconds,rules,100000,true,empty?start:undefined);
++  return advanceForceContactsCore47(input,previous,graph,seconds,rules,100000,true,empty?start:undefined,true);
+ }
+-function advanceForceContactsCore47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents:number, stopAtEvent:boolean,ready?:ReturnType<typeof reconcileForceContactsOwned47>) {
++function advanceForceContactsCore47(input: readonly MovingForce47[], previous: ForceContacts47, graph: TravelGraph47, seconds: number, rules: Rules, maxEvents:number, stopAtEvent:boolean,ready?:ReturnType<typeof reconcileForceContactsOwned47>,sessionOwned=false) {
+   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
+   const forces = cloneForceTravelRecords47(input).sort((a, b) => forceKey47(a).localeCompare(forceKey47(b)));
+   if(!ready)assertForceContacts47(previous, forces, graph, rules.seaRegion);
+@@ -216,6 +224,9 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
+     if (dt === 0 && !admitted.length && !movers.some(m => m.time <= dt)) throw Error('统一行军未消费事件，原世界未提交。');
+   }
+   const result = current;
+-  assertForceContacts47(result.contacts, forces, graph, rules.seaRegion);
++  if(sessionOwned){
++    assertTravelLedgers(forces,graph);
++    assertContactRecords(result.contacts,forces,graph,rules.seaRegion,result.positions);
++  }else assertForceContacts47(result.contacts, forces, graph, rules.seaRegion);
+   return {forces, contacts: result.contacts, held: result.held, positions:result.positions, exposure, events, elapsed:seconds-remaining, unusedSeconds:remaining};
+ }

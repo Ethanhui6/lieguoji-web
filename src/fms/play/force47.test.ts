@@ -22,7 +22,7 @@ const place = (f: MovingForce47, g: TravelGraph47) => armyTravelLocation47(f.tra
 const byId = (fs: MovingForce47[], id: string) => fs.find(f => f.id === id)!;
 
 describe('47 synchronous Army and Fleet contact motion', () => {
-  it.each(['interior','zero-speed','stopped','rounded-local','gate','center','withdrawal','neutral-held','blocked'] as const)('prepared private START preserves complete public motion and input: %s',scenario=>{
+  it.each(['interior','zero-speed','stopped','rounded-local','gate','center','withdrawal','neutral-held','blocked','land-held','different-gates','gate-destination','withdrawal-leaves'] as const)('prepared private START preserves complete public motion and input: %s',scenario=>{
     const sea=scenario==='neutral-held'||scenario==='withdrawal',g=strip(sea?['sea','sea','sea']:undefined);
     let fs=[unit(g,'z','a',[0,1,2]),unit(g,'a','b',[sea?2:3])],seconds=1;
     let activeRules={...rules};
@@ -35,6 +35,13 @@ describe('47 synchronous Army and Fleet contact motion', () => {
     if(scenario==='center'){fs=[unit(g,'z','a',[0,1,2])];fs[0].travel.crossed=true;fs[0].travel.offset=9;}
     if(sea){fs=[unit(g,'z','a',[0,1]),unit(g,'a','b',[2,1],'fleet'),unit(g,'neutral','n',[1])];activeRules={...rules,seaRegion:()=>81,enemy:(a,b)=>a!==b&&a!=='n'&&b!=='n'};if(scenario==='withdrawal')fs[0].withdrawing=true;}
     if(scenario==='blocked'){fs=[unit(g,'z','a',[0,1])];fs[0].travel.status='blocked';activeRules={...rules,canEnter:()=>false};}
+    if(scenario==='land-held')fs=[unit(g,'z','a',[1,2]),unit(g,'a','b',[1])];
+    if(scenario==='different-gates'){fs=[unit(g,'z','a',[0,1]),unit(g,'a','b',[1,2])];seconds=5;}
+    if(scenario==='gate-destination'){fs=[unit(g,'z','a',[0,1]),unit(g,'a','b',[1,2])];fs[0].travel=beginArmyTravelToPoint47('z',[0,1],g,{x:5,y:5},{x:10,y:5});seconds=5;}
+    if(scenario==='withdrawal-leaves'){
+      for(const c of g.cells.values()){c.surface='sea';c.provinceId=null;}
+      fs=[unit(g,'z','a',[0,1,2]),unit(g,'a','b',[0],'fleet')];fs[0].withdrawing=true;seconds=5;
+    }
     const before=structuredClone(fs),start=reconcileForceContactsOwned47(fs,g,initialForceContacts47(),activeRules.enemy,activeRules.seaRegion),startBefore=structuredClone(start);
     assertForceContacts47(start.contacts,fs,g,activeRules.seaRegion);
     const ordinary=advanceForceContacts47(fs,start.contacts,g,seconds,activeRules,100000,true);
@@ -43,6 +50,10 @@ describe('47 synchronous Army and Fleet contact motion', () => {
     expect(Object.keys(owned.exposure)).toEqual(Object.keys(ordinary.exposure));expect([...owned.held]).toEqual([...ordinary.held]);
     expect([...owned.positions.keys()]).toEqual(owned.forces.map(forceKey47));
     for(const f of owned.forces)expect(owned.positions.get(forceKey47(f))!.force).toBe(f);
+    if(scenario==='gate-destination'){
+      expect(byId(owned.forces,'z').travel).toMatchObject({status:'arrived',leg:1,offset:0,crossed:false});
+      expect(owned.contacts.pairs).toHaveLength(1);expect(owned.contacts.pairs[0].area).toBe('land/p1');
+    }
   });
   it('requires the installed private START and keeps public zero-time contacts observable',()=>{
     const g=strip(),fs=[unit(g,'a','a',[0]),unit(g,'b','b',[0])],book=initialForceContacts47(),start=reconcileForceContactsOwned47(fs,g,book,rules.enemy,rules.seaRegion);

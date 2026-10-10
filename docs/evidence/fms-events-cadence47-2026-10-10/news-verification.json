@@ -1,6 +1,6 @@
 {
   "sourceBaseline": "94260a5c3a2cf1d908ee6ff406c68fd287081fcd",
-  "sourceCommit": null,
+  "sourceCommit": "ea1e763314d931139d67157d3544013e5910369b",
   "engine": "3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632",
   "artifact": ".autopilot/culture47-news-priority-checked",
   "url": "http://127.0.0.1:5297/?fms=1",

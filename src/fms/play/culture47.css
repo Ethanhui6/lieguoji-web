@@ -18,3 +18,5 @@
 .c47-house-policy{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.c47-house-policy small{font-size:11px;color:var(--c47-muted,#6e6c67)}
 
 .c47-continuation{position:absolute;left:50%;bottom:88px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;max-width:min(92vw,520px);padding:9px 12px;border-radius:16px;background:rgba(251,248,240,.96);box-shadow:0 4px 20px #30200b22;z-index:12;font-size:12px}.c47-continuation button{flex-shrink:0;border:0;border-radius:10px;padding:10px;background:#38585b;color:white}.c47-continuation span{line-height:1.5}
+
+@media(max-width:600px){.c47-app:has(.c47-panel) .c47-zoom{display:none}}

@@ -43,7 +43,7 @@ for(const previous of [false,true])test(`real frozen 9c ${previous?'forked':'nat
  await page.screenshot({path:info.outputPath(`retirement-${previous?'fork':'native'}-desktop.png`)});
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+2));
  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+3));await page.getByRole('button',{name:'军事模式',exact:true}).click();await expect(page.getByLabel('退役军队名册',{exact:true})).toBeVisible();
- await page.setViewportSize({width:428,height:926});await page.screenshot({path:info.outputPath(`retirement-${previous?'fork':'native'}-portrait.png`)});
+ await page.setViewportSize({width:428,height:926});await expect.poll(()=>page.locator('.c47-panel').evaluate(el=>getComputedStyle(el).opacity)).toBe('1');await expect(page.getByRole('button',{name:'放大地图',exact:true})).toBeHidden();await page.screenshot({path:info.outputPath(`retirement-${previous?'fork':'native'}-portrait.png`)});
  expect(await read(sourceDb)).toEqual(before);expect(persisted).toContain('enable-retirement');expect(persisted).toContain('previous');expect(errors).toEqual([]);
  await info.attach('retirement-evidence',{body:JSON.stringify({source:previous?'dfd9 -> 9c':'native 9c',productionFrozen:true,completeStateComparedBeforeEnable:true,coldRestoredDay:startDay+2,continuedDay:startDay+3,allSourceSlotsUnchanged:true,errors,physicalIphone:false}),contentType:'application/json'});
 });

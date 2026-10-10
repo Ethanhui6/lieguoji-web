@@ -27,16 +27,20 @@ export class CultureNewsQueue47{
 }
 /** Source-backed 8s major / 1s normal dwell, with a 180ms web slide/fade.
  * No empty status strip and no fabricated events to keep it occupied. */
-export function CultureNews47({run,open}:{run:FoundingForces47;open:(id:number|null)=>void}){
+export const newsEntriesAtTick47=(entries:HistoricalEntry[],tick:number)=>entries.filter(e=>e.kind!=='occupation'&&e.tick<=tick);
+export function CultureNews47({run,open,displayTick}:{run:FoundingForces47;open:(id:number|null)=>void;displayTick?:()=>number}){
   const chronicle=run.chronicle;
   const queue=useRef(new CultureNewsQueue47()),active=useRef<NewsItem|null>(null);
   const [shown,setShown]=useState<NewsItem|null>(null),[leaving,setLeaving]=useState(false),[pending,setPending]=useState(0);
+  const source=useRef({run,displayTick});source.current={run,displayTick};
   useEffect(()=>{
+   const ingest=()=>{const {run,displayTick}=source.current;
     const deaths=new Set(run.kin.lifecycle?.deaths.map(d=>d.deathHistoryId));
-    queue.current.ingest(chronicle.entries.filter(e=>e.kind!=='occupation').map(e=>cultureNewsItem47(e,deaths.has(e.id))));
+    queue.current.ingest(newsEntriesAtTick47(run.chronicle.entries,displayTick?.()??run.clock.tick).map(e=>cultureNewsItem47(e,deaths.has(e.id))));
     if(!active.current){active.current=queue.current.next()??null;setLeaving(false);setShown(active.current);}
     setPending(queue.current.count);
-  },[chronicle,run.kin.lifecycle]);
+   };ingest();const timer=setInterval(ingest,80);return()=>clearInterval(timer);
+  },[run.id]);
   useEffect(()=>{
     if(!shown)return;
     let exit:ReturnType<typeof setTimeout>|undefined;

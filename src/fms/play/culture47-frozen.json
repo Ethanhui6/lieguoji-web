@@ -124,5 +124,23 @@
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
     "source": "culture47-aligned-clock-checked"
+  },
+  {
+    "engine": "3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632",
+    "file": "engine-3c14.js",
+    "bytes": 1369958,
+    "sha256": "cb47b43e2835ac6bf9465f61f04dbf0ce5e705cbfb87877c89a70ecca956d4e9",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-news-priority-checked"
+  },
+  {
+    "engine": "f9406d5fb3bb9a0c0823f3f43c1db7beb707615aa5498ab06059ce7808428384",
+    "file": "engine-f940.js",
+    "bytes": 1379231,
+    "sha256": "6e21f9f0c78ee8c1c8ce37e71d62629151fb5d1f510686a933dc4097d794e383",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-origins-houses-checked"
   }
 ]

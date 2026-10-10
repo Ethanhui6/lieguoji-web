@@ -6,6 +6,8 @@ import {settleArmyAutonomyDay47} from './civilization47-army-ai';
 import {assertPopulation47} from './civilization47-population-validation';
 import {previewFamilySuccession47,appointFamilyRuler47} from './civilization47-succession';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
+import {grantHouse47,type HouseIntent47} from './civilization47-houses';
+import type {PopulationStamp47} from './civilization47-population-types';
 import {advanceSessionBatch47} from './session-advance47';
 import {prepareOwnedGeography47,withOwnedNumericGeography47} from './geography-content47';
 import {sameCulture47Value} from './culture47-equal';
@@ -24,7 +26,7 @@ import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPolitic
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
 export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
 export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47};
-export type Culture47Action={kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
+export type Culture47Action={kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export type Culture47Journal={format:'lieguoji-culture-play';version:1;rule:typeof CULTURE47_RULE;engine:string;id:string;opening:Culture47Opening;actions:Culture47Action[]};
 export type Culture47Progress={stage:'opening'|'replay';completed:number;total:number;ticks:number};
 const exact=(x:unknown,keys:string[]):x is Record<string,unknown>=>!!x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
@@ -44,6 +46,7 @@ export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   const v=a as Culture47Action;
   if(v.kind==='military'&&exact(v,['kind','intent','expected'])){assertMilitaryIntent47(v.intent);assertMilitaryExpected47(v.expected,v.intent.force);return;}
   if(v.kind==='politics'&&exact(v,['kind','action','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization'])){assertPoliticalCommand47(v.action);return;}
+  if(v.kind==='family'&&exact(v,['kind','intent','expected'])&&exact(v.intent,['nationId','personId','provinceId'])&&typeof v.intent.nationId==='string'&&integer(v.intent.personId,1,2147483647)&&typeof v.intent.provinceId==='string'&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='advance'&&exact(v,['kind','ticks'])&&integer(v.ticks,1,120))return;
   if(v.kind==='succession'&&exact(v,['kind','nationId'])&&typeof v.nationId==='string'&&/^n-\d+$/.test(v.nationId))return;
   if(v.kind==='identity'&&exact(v,['kind','edit'])&&v.edit&&typeof v.edit==='object'){
@@ -63,6 +66,7 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
     return next;
   }
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
+  if(a.kind==='family')return grantHouse47(r,a.intent,a.expected);
   if(a.kind==='military')return applyMilitary47(r,a.intent,a.expected);
   if(a.kind==='identity'){
     const next=editCivilization47(r,a.edit,r.civilization.revision);

@@ -1,5 +1,5 @@
 import type {FoundingForces47} from './civilization47-forces';
-import {isoWholeYears} from './native-economy/iso-calendar';
+import {nationAge47} from './civilization47-origins';
 import {PlayIcon} from './PlayIcon';
 import {forceKey47} from './force-motion47';
 
@@ -17,7 +17,7 @@ export function nationOverview47(run:FoundingForces47,id:string){
  const armies=run.world.armies.filter(a=>a.nationId===id&&a.troops>0&&a.status!=='destroyed');
  const fleets=run.navy.fleets.filter(f=>f.nationId===id&&f.status!=='lost'&&f.ships>0&&run.maritime.hulls[f.id]>0);
  const population=run.world.statecraft!.provinces.filter(p=>owned.has(p.provinceId)).reduce((n,p)=>n+p.population,0);
- return {extinct:Object.hasOwn(run.chronicle.ended,id),years:isoWholeYears(run.life.startDate,run.life.currentDate),capital:capital?.name??null,capitalHeld:!!capital&&owned.has(capital.provinceId),population,capacity:provinces.reduce((n,p)=>n+run.finance.provinces[p.id].maxPopulation,0),gold:run.finance.nations[id].gold,regions:provinces.length,cities:run.world.cities.filter(c=>owned.has(c.provinceId)).length,armies:armies.length,troops:armies.reduce((n,a)=>n+a.troops,0),fleets:fleets.length,ships:fleets.reduce((n,f)=>n+f.ships,0)};
+ return {extinct:Object.hasOwn(run.chronicle.ended,id),years:nationAge47(run,id).years,capital:capital?.name??null,capitalHeld:!!capital&&owned.has(capital.provinceId),population,capacity:provinces.reduce((n,p)=>n+run.finance.provinces[p.id].maxPopulation,0),gold:run.finance.nations[id].gold,regions:provinces.length,cities:run.world.cities.filter(c=>owned.has(c.provinceId)).length,armies:armies.length,troops:armies.reduce((n,a)=>n+a.troops,0),fleets:fleets.length,ships:fleets.reduce((n,f)=>n+f.ships,0)};
 }
 const number=(n:number)=>Math.round(n).toLocaleString('zh-CN');
 export function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string}){
@@ -34,7 +34,7 @@ export function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string
    <div><dt>军团</dt><dd>{number(v.armies)}</dd><small>{number(v.troops)} 人</small></div>
    <div><dt>舰队</dt><dd>{number(v.fleets)}</dd><small>{number(v.ships)} 艘编制舰</small></div>
    <div><dt>实控地区</dt><dd>{number(v.regions)}</dd><small>{number(v.cities)} 座城市</small></div>
-   <div><dt>建国至今</dt><dd>{v.years>0?`${v.years} 年`:`${run.world.day} 日`}</dd><small>{v.extinct?'历史仍保留':'按本局历法'}</small></div>
+   <div><dt>建国至今</dt><dd>{v.years>0?`${v.years} 年`:`${run.world.day} 日`}</dd><small>{v.extinct?'历史仍保留':run.origins?'始于开篇之前':'按本局历法'}</small></div>
   </dl>
   <details className="c47-activity" data-moving-armies={moving} data-moving-fleets={sailing} data-contact-areas={contacts}><summary>当前动向 · {moving} 支行军 · {sailing} 支出航{contacts?` · ${contacts} 处交锋`:''}</summary>{reasons.map(reason=><p key={reason}>{reason}</p>)}</details>
  </section>;

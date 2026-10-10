@@ -10,6 +10,8 @@ import type {NativeSpouseRole} from './native-economy/family-members';
 import type {NativeLeaderRole} from './native-economy/leader-appointment';
 import type {NativePastRole} from './native-economy/role-history';
 import type {NativeMonthlyDeathStats} from './native-economy/natural-death';
+import type {Origins47} from './civilization47-origins';
+import type {Houses47} from './civilization47-houses';
 
 export type PersonRole47=({nativeKind:'spouse'}&NativeSpouseRole)|({nativeKind:'leader'}&NativeLeaderRole);
 export type FamilyPerson47=NativeRegisteredCharacter<string,PersonRole47,NativePastRole>&{
@@ -23,6 +25,6 @@ export type Kin47={version:1;origin:'native-family-real-culture-v1';revision:num
 export type FamilyLife47={source:'native-family';birthTime:number;age:number;initialAge:null;updatedMonth:number};
 export type Life47=Omit<LifeState,'persons'>&{persons:Record<string,LifePerson|FamilyLife47>};
 export type PopulationBase47={id:string;world:World;clock:{version:1;tick:number};chronicle:Chronicle;civilization:Civilization47;people:CourtPeople;life:Life47};
-export type Population47=PopulationBase47&{kin:Kin47;sovereignty:Sovereignty};
+export type Population47=PopulationBase47&{kin:Kin47;sovereignty:Sovereignty;origins?:Origins47;houses?:Houses47};
 export const populationStamp47=(r:Population47)=>({id:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,civilization:r.civilization.revision,kin:r.kin.revision,people:r.people.revision,sovereignty:r.sovereignty.revision,nextEntryId:r.chronicle.nextEntryId});
 export type PopulationStamp47=ReturnType<typeof populationStamp47>;

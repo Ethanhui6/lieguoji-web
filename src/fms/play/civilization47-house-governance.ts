@@ -2,8 +2,8 @@ import type {Population47,PopulationStamp47} from './civilization47-population-t
 import {populationStamp47} from './civilization47-population-types';
 import {assertPopulation47} from './civilization47-population-validation';
 import {grantHouseOwned47,houseHousehold47,houseLands47,houseTitle47} from './civilization47-houses';
-import {announce} from './chronicle-records';
-import {isoPlusDays} from './native-economy/iso-calendar';
+import {announce} from './civilization47-history';
+import {isoPlusDays} from './civilization47-iso-calendar';
 
 type HouseReturn47={familyId:number;provinceId:string;day:number;tick:number;entryId:number};
 export type HouseGovernance47={version:1;rule:'household-fiefs-web-v1';lastMonth:number;enabled:Record<string,boolean>;automatic:number[];returns:HouseReturn47[]};
@@ -32,7 +32,7 @@ export function advanceHouseGovernance47(r:Population47):void {
   const land=r.world.provinces.find(p=>p.id===g.provinceId)!;
   // Occupation is not extinction, and foreign-held titles cannot be confiscated here.
   if(land.legalOwner!==g.nationId||land.controller!==g.nationId)continue;
-  if(r.chronicle.entries.length>=9999||r.kin.revision>=2147483647)break;
+  if(r.kin.revision>=2147483647)break;
   const e=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===g.nationId)!.name}：${land.name}支系绝嗣，封地归还主家`,'该支系所有已登记成员均已去世，本国仍实控且拥有法理权属。保留家谱、历任家主与分封记录，释放封地供后续分配。',[g.nationId],g.provinceId);
   s.returns.push({familyId:g.familyId,provinceId:g.provinceId,day:r.world.day,tick:r.clock.tick,entryId:e.id});r.kin.revision++;
  }
@@ -47,7 +47,7 @@ export function advanceHouseGovernance47(r:Population47):void {
   if(lands.length<=Math.max(3,Math.ceil(controlled.length/2)))continue;
   const province=lands.filter(p=>p.id!==capital).sort((a,b)=>a.id.localeCompare(b.id,'en'))[0];
   const person=Object.values(r.kin.persons).filter(p=>p.familyId===main).sort((a,b)=>b.age-a.age||a.id-b.id).find(p=>houseHousehold47(r,p.id)!==null);
-  if(!province||!person||r.houses!.nextFamilyId>=2147483647||r.houses!.grants.length>=4096||r.chronicle.entries.length>=9999||r.kin.revision>=2147483647)continue;
+  if(!province||!person||r.houses!.nextFamilyId>=2147483647||r.houses!.grants.length>=4096||r.kin.revision>=2147483647)continue;
   const id=grantHouseOwned47(r,{nationId:n.id,personId:person.id,provinceId:province.id});s.automatic.push(id);
  }
  assertPopulation47(r);

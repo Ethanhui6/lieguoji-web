@@ -3,6 +3,8 @@
 export function sameCulture47Value(a:unknown,b:unknown):boolean {
   if(Object.is(a,b))return true;
   if(!a||!b||typeof a!=='object'||typeof b!=='object'||Object.getPrototypeOf(a)!==Object.getPrototypeOf(b))return false;
+  if(a instanceof Map&&b instanceof Map){if(a.size!==b.size)return false;const entries=Array.from(b);return Array.from(a).every(([k,v],i)=>sameCulture47Value(k,entries[i][0])&&sameCulture47Value(v,entries[i][1]));}
+  if(a instanceof Set&&b instanceof Set){if(a.size!==b.size)return false;const entries=Array.from(b);return Array.from(a).every((v,i)=>sameCulture47Value(v,entries[i]));}
   if(ArrayBuffer.isView(a)||ArrayBuffer.isView(b)){
     if(!ArrayBuffer.isView(a)||!ArrayBuffer.isView(b)||a.constructor!==b.constructor||a.byteLength!==b.byteLength)return false;
     const x=new Uint8Array(a.buffer,a.byteOffset,a.byteLength),y=new Uint8Array(b.buffer,b.byteOffset,b.byteLength);

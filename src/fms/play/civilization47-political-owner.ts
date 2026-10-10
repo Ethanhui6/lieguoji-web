@@ -9,7 +9,7 @@ import {coversPair46} from './war46-coalition';
 import {assertWars47} from './war47-validation';
 import {assertPopulation47} from './civilization47-population-validation';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
-import {announce,recordHistory} from './chronicle-records';
+import {announce,recordHistory} from './civilization47-history';
 import {closeLeaderRole47} from './civilization47-roles';
 import {appointKnownPersonOwned47} from './civilization47-succession';
 import {resolveKnownSuccessionOwned47} from './civilization47-lifecycle';

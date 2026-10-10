@@ -6,7 +6,8 @@
     "sha256": "c34fb1d1d8baf5f7344df6d13c67c501822509151a4778330a1cdec2428b7590",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 1,
-    "source": "culture47-reference-final-checked"
+    "source": "culture47-reference-final-checked",
+    "journalVersion": 1
   },
   {
     "engine": "ce32a48b19680557c4795a5c9a9b8bdc70d0c98812e0c485378ef5b2969fa177",
@@ -15,7 +16,8 @@
     "sha256": "d3050a3b01a9639c83480c6049330a095feef894ae79ed388cb400e94136cdc3",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 1,
-    "source": "culture47-visible-panel-checked"
+    "source": "culture47-visible-panel-checked",
+    "journalVersion": 1
   },
   {
     "engine": "b365886c0ed6418d6786a5701fc31db518190fe61c0bfad77c1effc8d33255de",
@@ -24,7 +26,8 @@
     "sha256": "4a94af6ee867c46b3314ac90434db48cd78ea55eb4a4e8386835a23d45a30851",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 1,
-    "source": "culture47-preview-52c5626"
+    "source": "culture47-preview-52c5626",
+    "journalVersion": 1
   },
   {
     "engine": "9e23fb69e7bda6b8dd99a2f9bfb31e83c786163c7101dc6ff0df472dcbeba71f",
@@ -33,7 +36,8 @@
     "sha256": "84faf6d73f1e38dc171433bf6f60c5490fe31708c2d851bc0d783a82b38019c1",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 1,
-    "source": "culture47-active3-checked"
+    "source": "culture47-active3-checked",
+    "journalVersion": 1
   },
   {
     "engine": "6f8450fa40c35da07ebf1c18f3d051df58904a82d97d27d3f55fe99f7f753a2b",
@@ -42,7 +46,8 @@
     "sha256": "2afde57246d33a440167a0162ef40e72805b100a5b1f4eec2f087b9c492ab7fa",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-throughput3-checked"
+    "source": "culture47-throughput3-checked",
+    "journalVersion": 1
   },
   {
     "engine": "f212364628ddb9925a769246d85fdbedac20018f397d8315fd27995a6677f9ba",
@@ -51,7 +56,8 @@
     "sha256": "d583366c42df96c63ffd5b041378934f7516069c91bb883289463e8c5df8bcee",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-motion2-checked"
+    "source": "culture47-motion2-checked",
+    "journalVersion": 1
   },
   {
     "engine": "30feebab4ddc1b5a01558861ad560698338c3ca79c67c58cc3eb3256c448cdfa",
@@ -60,7 +66,8 @@
     "sha256": "ceefcb41be4a32f695f26c924d0fed5013858f19a8807f700e3548be549d271c",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-phasework-motion-checked"
+    "source": "culture47-phasework-motion-checked",
+    "journalVersion": 1
   },
   {
     "engine": "49f726d47c9dcaeee01a5157c215a06327ea071716afd1d7c39c15e02a5e60a0",
@@ -69,7 +76,8 @@
     "sha256": "38009557db4e882bb5fc28cc93fe832182e2775b2dc3d1a77e8f3bea41f675c4",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-pace-checked"
+    "source": "culture47-pace-checked",
+    "journalVersion": 1
   },
   {
     "engine": "8d162ded831fcffe1616d88a4cf4a5f388208cee3f56f15c22e932021b1ea6d6",
@@ -78,7 +86,8 @@
     "sha256": "8e2a7f7618afc6a8e44d1af423331b8a1166986b7dca46b08a0d7e0c4e9786d5",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-events-checked"
+    "source": "culture47-events-checked",
+    "journalVersion": 1
   },
   {
     "engine": "3d08bb34fe45923f9c65f3ec5c8e7b7545927e566cb35c9aff091641c1b2dd0c",
@@ -87,7 +96,8 @@
     "sha256": "a0e5025ca2fcaf8d3942e54c165e53f50c7b97573852931a7d15d7e5b588b857",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-observations-checked"
+    "source": "culture47-observations-checked",
+    "journalVersion": 1
   },
   {
     "engine": "4c48a3bae5fef145a798f00a4320cf666b4e99bb2b5d41e3ae6daad517f7e1d2",
@@ -96,7 +106,8 @@
     "sha256": "a98adb977b5eab9dbe9a38cfb1b8f777819a11fe481007b2b00213b6db290799",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-history-ui-checked"
+    "source": "culture47-history-ui-checked",
+    "journalVersion": 1
   },
   {
     "engine": "d01d963324e95744c3bcab885deba01d2c2e3dac3f556671b6b253d0e2711e36",
@@ -105,7 +116,8 @@
     "sha256": "ce8df7ba12149dfcde06c9d74abc3a5d3d7afac97302f6eeaab0bd5f9448f434",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-siege-view-checked"
+    "source": "culture47-siege-view-checked",
+    "journalVersion": 1
   },
   {
     "engine": "bbffdf05cb77fe70ee6dc382495fa1093f391fd876e339bc1add68a7fc7799aa",
@@ -114,7 +126,8 @@
     "sha256": "d32a1998c6ba89671b5ad33228be192f904624115172a4db93ab0b52983ef36a",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-geo-final-checked"
+    "source": "culture47-geo-final-checked",
+    "journalVersion": 1
   },
   {
     "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
@@ -123,7 +136,8 @@
     "sha256": "960b3b1eb049643a79b648d0dbee19761857f925c2095e47ea9c49ac21bd722d",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-aligned-clock-checked"
+    "source": "culture47-aligned-clock-checked",
+    "journalVersion": 1
   },
   {
     "engine": "3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632",
@@ -132,7 +146,8 @@
     "sha256": "cb47b43e2835ac6bf9465f61f04dbf0ce5e705cbfb87877c89a70ecca956d4e9",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-news-priority-checked"
+    "source": "culture47-news-priority-checked",
+    "journalVersion": 1
   },
   {
     "engine": "f9406d5fb3bb9a0c0823f3f43c1db7beb707615aa5498ab06059ce7808428384",
@@ -141,7 +156,8 @@
     "sha256": "6e21f9f0c78ee8c1c8ce37e71d62629151fb5d1f510686a933dc4097d794e383",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-origins-houses-checked"
+    "source": "culture47-origins-houses-checked",
+    "journalVersion": 1
   },
   {
     "engine": "a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec",
@@ -150,6 +166,17 @@
     "sha256": "3f3db65c5e3512550f6f2245ef9b3deac206253cf487925f7443aad50c7a35db",
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
-    "source": "culture47-origins-houses-final-checked"
+    "source": "culture47-origins-houses-final-checked",
+    "journalVersion": 1
+  },
+  {
+    "engine": "dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8",
+    "file": "engine-dfd9.js",
+    "bytes": 1385130,
+    "sha256": "bbfa5278673cdd3bb981553a9355f7b8329ab6467c1edb7ebcbfcabf10152d62",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-house-governance-checked",
+    "journalVersion": 1
   }
 ]

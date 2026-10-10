@@ -1,6 +1,6 @@
 import type {Population47} from './civilization47-population-types';
 import {nameSeed} from './chronicle-records';
-import {isoPlusDays,isoWholeYears} from './native-economy/iso-calendar';
+import {isoPlusDays,isoWholeYears} from './civilization47-iso-calendar';
 
 /** Generated opening facts, NOT a simulation of unplayed historical wars.
  * The independent seed must never consume combat, politics or life RNG. */

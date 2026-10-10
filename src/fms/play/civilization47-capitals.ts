@@ -1,5 +1,5 @@
 import type {FoundingForces47} from './civilization47-forces';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 import {reconcileCore} from './upper14-state';
 
 /** Live candidate transition after land ownership changes. Native July 2026

@@ -6,7 +6,7 @@ import type {War27Run} from './war27-model';
 import type {NativeSettlementGoal} from './native-war/settlement-verdict';
 import type {NativeExecutableWar} from './native-war/settlement-execute';
 import {nativeGetMonthSince} from './native-economy/character-calendar';
-import {createNativeIsoCalendar} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar} from './civilization47-iso-calendar';
 import {assertWars47} from './war47-validation';
 import type {War28Settlement} from './war28-settlement';
 import type {NativeSideMember} from './native-war/side-builder';

@@ -25,7 +25,7 @@ import {nationsAtWar,setDecision} from './realtime-statecraft';
 import {personSkills} from './court16-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {POLITIES} from './upper14-state';
-import {recordHistory} from './chronicle-records';
+import {recordHistory} from './civilization47-history';
 import {warHistoryDetails47} from './civilization47-war-history';
 
 import {reconcileLosses} from './war27-losses';

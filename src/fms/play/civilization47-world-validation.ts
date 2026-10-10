@@ -6,7 +6,8 @@ import {validateManagement} from '../../compat/v0_4/sim/statecraft';
  * New creation permits zero armies before real muster; no placeholder force
  * or filtered fake world is passed through the frozen legacy validator.
  * This validates the World payload, not a complete run47/storage envelope. */
-const MAX_DAY=1_000_000_000,MAX_EVENTS=160;
+// No gameplay end date. Keep enough safe-integer space for the 120-tick day.
+const MAX_DAY=Math.floor((Number.MAX_SAFE_INTEGER-1_000_000)/120),MAX_EVENTS=160;
 function isRecord(value: unknown): value is Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);

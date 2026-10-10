@@ -4,7 +4,7 @@ import {nativeCharacterDefaults,nativeCreateBlankCharacter,nativeCreateNamedChar
 import {seededCharacterRandom,nativeRandomTraits,NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {nativeGenerateInitCharacter} from './native-culture/character-init';
 import {nativeBirthTimeFromAge,nativeUpdateCharacterAge,nativeGetYearSince} from './native-economy/character-calendar';
-import {createNativeIsoCalendar} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar} from './civilization47-iso-calendar';
 import {nativeGenerateLeaderSpouse,nativeGenerateLeaderChildren,nativeGenerateCollateralMembers,nativeGenerateCollateralHousehold,nativeSpouseRoleDefaults,type NativeFamilyMemberPorts} from './native-economy/family-members';
 import {assertPopulation47} from './civilization47-population-validation';
 import type {PopulationBase47,Kin47,FamilyPerson47,Life47,PersonRole47} from './civilization47-population-types';

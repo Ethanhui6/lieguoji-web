@@ -21,7 +21,7 @@ import {reconcileWar26} from './war26-state';
 import {war26Strength} from './war26-strength';
 import {reconcileLosses} from './war27-losses';
 import {graphFor47 as graphFor46} from './sea-geography47';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 import {warHistoryDetails47} from './civilization47-war-history';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';

@@ -3,7 +3,7 @@ import {nativeProcessNaturalDeath,nativeFillLeaderDeathEvent,type NativeLeaderDe
 import {nativeCharacterDie} from './native-economy/character-death';
 import {nativeGetYearSince} from './native-economy/character-calendar';
 import {nativeExpiredCharacterIds} from './native-economy/character-lifecycle';
-import {createNativeIsoCalendar} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar} from './civilization47-iso-calendar';
 import {nativeFindSuccessor,nativeFamilyFallback} from './native-economy/family-succession';
 import {nativeHandlePatriarchSuccession} from './native-economy/patriarch-succession';
 import {nativeRepublicEmergencyLeader,nativeTheocracyEmergencyLeader,nativeTribalEmergencyLeader} from './native-economy/succession-candidates';
@@ -11,7 +11,7 @@ import {nativeCharacterSkills} from './native-economy/character-income';
 import {combatTraits47} from './civilization47-combat-state';
 import {appointKnownPersonOwned47} from './civilization47-succession';
 import {pastRole47} from './civilization47-roles';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 import type {Population47,FamilyPerson47,Family47,Lifecycle47,PersonRole47} from './civilization47-population-types';
 
 /** A dedicated persisted web RNG, not Unity's unrecovered global stream. */

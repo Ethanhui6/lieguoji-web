@@ -5,7 +5,7 @@ import {assertLifecycle47} from './civilization47-lifecycle-validation';
 import {assertPeople} from './restoration19-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {nativeBirthTimeFromAge,nativeGetYearSince} from './native-economy/character-calendar';
-import {createNativeIsoCalendar,isoPlusDays} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
 import type {Population47} from './civilization47-population-types';
 import {assertOrigins47} from './civilization47-origins';
 import {assertHouses47} from './civilization47-houses';
@@ -23,7 +23,7 @@ export function assertPopulation47(r:Population47) {
   const s=r.kin,l=r.life,v=r.sovereignty;
   if(!exact(s,['version','origin','revision','ageTime','lastAgeMonth','persons','families','lifecycle'])||s.version!==1||s.origin!=='native-family-real-culture-v1'||!integer(s.revision)||!record(s.persons)||!record(s.families))return fail();
   assertChronicleState47(r);
-  if(!exact(l,['version','schedule','revision','originDay','startDate','secondsPerDay','gameTime','lastTick','currentDate','lastAgeMonth','persons'])||l.version!==1||l.schedule!=='iso-age-web-ticks-v1'||!integer(l.revision)||l.originDay!==0||!exact(l.startDate,['year','month','day'])||l.startDate.year!==1||l.startDate.month!==1||l.startDate.day!==1||l.secondsPerDay!==Math.fround(.1)||!exact(r.clock,['version','tick'])||r.clock.version!==1||!integer(r.clock.tick,0,120_000_000_000)||Math.floor(r.clock.tick/120)!==r.world.day||l.lastTick!==r.clock.tick||l.gameTime!==Math.fround(r.clock.tick/120*l.secondsPerDay)||!exact(l.currentDate,['year','month','day'])||!exact(l.persons,Object.keys(s.persons)))return fail();
+  if(!exact(l,['version','schedule','revision','originDay','startDate','secondsPerDay','gameTime','lastTick','currentDate','lastAgeMonth','persons'])||l.version!==1||l.schedule!=='iso-age-web-ticks-v1'||!integer(l.revision)||l.originDay!==0||!exact(l.startDate,['year','month','day'])||l.startDate.year!==1||l.startDate.month!==1||l.startDate.day!==1||l.secondsPerDay!==Math.fround(.1)||!exact(r.clock,['version','tick'])||r.clock.version!==1||!integer(r.clock.tick,0,(Number.MAX_SAFE_INTEGER-1000000))||Math.floor(r.clock.tick/120)!==r.world.day||l.lastTick!==r.clock.tick||l.gameTime!==Math.fround(r.clock.tick/120*l.secondsPerDay)||!exact(l.currentDate,['year','month','day'])||!exact(l.persons,Object.keys(s.persons)))return fail();
   const date=isoPlusDays(l.startDate,r.world.day),month=date.year*12+date.month-1,calendar=createNativeIsoCalendar(l.startDate),ageTime=Math.fround((r.world.day-date.day+1)*l.secondsPerDay);
   if(l.currentDate.year!==date.year||l.currentDate.month!==date.month||l.currentDate.day!==date.day||l.lastAgeMonth!==month||s.lastAgeMonth!==month||s.ageTime!==ageTime)return fail();
   if(!exact(v,['version','revision','provinces','reigns','restorations','nativeRebels'])||v.version!==1||!integer(v.revision)||!exact(v.provinces,r.world.provinces.map(p=>p.id))||!exact(v.restorations,r.world.nations.map(n=>n.id))||!exact(v.reigns,Object.keys(r.civilization.rulers))||!record(v.nativeRebels))return fail();

@@ -10,11 +10,11 @@ const text=(s:unknown,max=800)=>typeof s==='string'&&s.length>0&&s.length<=max&&
 export function assertChronicleState47(r:Population47){
   const c=r.chronicle,w=r.world,tick=r.clock.tick;
   const fail=()=>{throw Error('史书含未知字段或无效历史，已锁定读写。');};
-  if(!exact(c,['version','originDay','nextEntryId','nextNationId','leaders','entries','unrest','ended'])||c.version!==1||!integer(c.originDay,0,w.day)||!integer(c.nextEntryId,1)||!integer(c.nextNationId,1)||!record(c.leaders)||!record(c.unrest)||!record(c.ended)||!Array.isArray(c.entries)||c.entries.length>10000)fail();
+  if(!exact(c,['version','originDay','nextEntryId','nextNationId','leaders','entries','unrest','ended'])||c.version!==1||!integer(c.originDay,0,w.day)||!integer(c.nextEntryId,1)||!integer(c.nextNationId,1)||!record(c.leaders)||!record(c.unrest)||!record(c.ended)||!Array.isArray(c.entries))fail();
   const nationIds=new Set(w.nations.map(n=>n.id)),provinceIds=new Set(w.provinces.map(p=>p.id)),rulerIds=new Set<string>(),rulerById=new Map<string,Chronicle['leaders'][string][number]>();
   if(Object.keys(c.leaders).length!==nationIds.size||Object.keys(c.unrest).length!==provinceIds.size)fail();
   for(const [id,history]of Object.entries(c.leaders)){
-    if(!nationIds.has(id)||!Array.isArray(history)||history.length>10000)fail();
+    if(!nationIds.has(id)||!Array.isArray(history))fail();
     const ordinals=new Map<string,number>();
     for(const [index,r]of history.entries()){
       if(!exact(r,['id','name','family','order','regnalName','regnalOrdinal','ascendedDay','endedDay','termEndDay'])||r.id!==`ruler-${id}-${index+1}`||rulerIds.has(r.id)||!text(r.name,80)||!text(r.family,20)||r.order!==index+1||!validRegnalName(r.regnalName)||r.regnalOrdinal!==(ordinals.get(r.regnalName)??0)+1||!integer(r.ascendedDay,c.originDay,w.day)||!integer(r.termEndDay,r.ascendedDay+1)||(r.endedDay!==null&&!integer(r.endedDay,r.ascendedDay,w.day))||(index<history.length-1&&r.endedDay===null))fail();

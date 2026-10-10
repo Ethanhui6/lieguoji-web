@@ -1,5 +1,5 @@
 import {useEffect,useRef} from 'react';
-import {isoPlusDays,type IsoDate} from './native-economy/iso-calendar';
+import {isoPlusDays,type IsoDate} from './civilization47-iso-calendar';
 
 /** The date follows the same committed presentation clock as moving armies.
  * It never jumps ahead to a multi-day Worker endpoint or invents future time. */

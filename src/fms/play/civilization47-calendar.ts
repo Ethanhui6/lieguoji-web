@@ -1,5 +1,5 @@
 import {nativeGetYearSince,nativeBirthTimeFromAge} from './native-economy/character-calendar';
-import {createNativeIsoCalendar,isoPlusDays} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
 import {assertPopulation47} from './civilization47-population-validation';
 import type {Population47} from './civilization47-population-types';
 import {TICKS_PER_DAY} from './clock';
@@ -10,7 +10,7 @@ export type FamilyCalendarRun47=Pick<Population47,'clock'|'life'|'kin'>&{world:{
  * economic settlement or a full save. Pending is an explicit PRIVATE phase. */
 export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false):void{
   const fail=()=>{throw Error('真实人物运行日历不一致，原世界保留。');},l=r.life,k=r.kin,tick=r.clock.tick,day=Math.floor(tick/TICKS_PER_DAY),integer=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=2147483647;
-  if(!Number.isSafeInteger(tick)||tick<0||tick>120_000_000_000||r.world.day!==day-(dailyPending?1:0)||dailyPending&&(tick===0||tick%TICKS_PER_DAY!==0)||l.version!==1||l.schedule!=='iso-age-web-ticks-v1'||l.originDay!==0||l.secondsPerDay!==Math.fround(.1)||l.lastTick!==tick||l.gameTime!==Math.fround(tick/TICKS_PER_DAY*l.secondsPerDay)||k.version!==1||k.origin!=='native-family-real-culture-v1'||!integer(l.revision)||!integer(k.revision))return fail();
+  if(!Number.isSafeInteger(tick)||tick<0||tick>(Number.MAX_SAFE_INTEGER-1000000)||r.world.day!==day-(dailyPending?1:0)||dailyPending&&(tick===0||tick%TICKS_PER_DAY!==0)||l.version!==1||l.schedule!=='iso-age-web-ticks-v1'||l.originDay!==0||l.secondsPerDay!==Math.fround(.1)||l.lastTick!==tick||l.gameTime!==Math.fround(tick/TICKS_PER_DAY*l.secondsPerDay)||k.version!==1||k.origin!=='native-family-real-culture-v1'||!integer(l.revision)||!integer(k.revision))return fail();
   const date=isoPlusDays(l.startDate,day),ageDay=dailyPending&&date.day===1?day-1:day,ageDate=isoPlusDays(l.startDate,ageDay),month=ageDate.year*12+ageDate.month-1,ageTime=Math.fround((ageDay-ageDate.day+1)*l.secondsPerDay),calendar=createNativeIsoCalendar(l.startDate);
   if(l.startDate.year!==1||l.startDate.month!==1||l.startDate.day!==1||l.currentDate.year!==date.year||l.currentDate.month!==date.month||l.currentDate.day!==date.day||l.lastAgeMonth!==month||k.lastAgeMonth!==month||k.lifecycle.lastMonth!==month||k.ageTime!==ageTime||!l.persons||!k.persons||Array.isArray(l.persons)||Array.isArray(k.persons)||Object.keys(l.persons).length!==Object.keys(k.persons).length)return fail();
   for(const [id,p] of Object.entries(k.persons)){
@@ -37,7 +37,7 @@ export function advanceFamilyCalendar47(r:FamilyCalendarRun47,tick:number,dailyP
  * tick: active military worlds must advance through the full47 simulation. */
 export function advanceFoundingPopulation47<T extends Population47>(input:T,ticks:number):T {
   assertPopulation47(input);
-  if(input.world.armies.length||!Number.isSafeInteger(ticks)||ticks<1||ticks>120*366||input.clock.tick+ticks>120_000_000_000)throw Error('仅支持未征募候选的有界人物日历验证。');
+  if(input.world.armies.length||!Number.isSafeInteger(ticks)||ticks<1||ticks>120*366||input.clock.tick+ticks>(Number.MAX_SAFE_INTEGER-1000000))throw Error('仅支持未征募候选的有界人物日历验证。');
   const r=structuredClone(input);
   for(let i=0;i<ticks;i++){r.clock.tick++;r.world.day=Math.floor(r.clock.tick/120);advanceFamilyCalendar47(r,r.clock.tick);if(r.clock.tick%120===0)advancePeopleMonthOwned47(r);}
   assertPopulation47(r);return r;

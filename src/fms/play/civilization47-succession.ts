@@ -4,7 +4,7 @@ import {rulerFromPerson47} from './civilization47-names';
 import {assertPopulation47} from './civilization47-population-validation';
 import {populationStamp47,type Population47,type PopulationStamp47,type FamilyPerson47} from './civilization47-population-types';
 import {closeLeaderRole47,leaderRole47} from './civilization47-roles';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 
 export function familyHeir47(r:Population47,nationId:string) {
   if(!Object.hasOwn(r.people.nations,nationId))return null;
@@ -31,7 +31,7 @@ export function appointFamilyRuler47<T extends Population47>(input:T,nationId:st
   assertPopulation47(input);const stamp=populationStamp47(input),keys=Object.keys(stamp) as (keyof PopulationStamp47)[];
   if(!expected||typeof expected!=='object'||Object.keys(expected).length!==keys.length||keys.some(k=>!Object.hasOwn(expected,k)||expected[k]!==stamp[k]))throw Error('传位预览已过期，请重新查看候选。');
   const preview=previewFamilySuccession47(input,nationId,requestedName);
-  if(preview.order>10000||input.chronicle.entries.length>=10000||input.world.nextEventId>=Number.MAX_SAFE_INTEGER-100001||!Number.isSafeInteger(input.chronicle.nextEntryId+1)||[input.kin.revision,input.sovereignty.revision,input.people.revision,input.civilization.revision].some(n=>n>=2147483647))throw Error('历史或版本记录已达上限，原任职者保持。');
+  if(!Number.isSafeInteger(preview.order)||input.world.nextEventId>=Number.MAX_SAFE_INTEGER-100001||!Number.isSafeInteger(input.chronicle.nextEntryId+1)||[input.kin.revision,input.sovereignty.revision,input.people.revision,input.civilization.revision].some(n=>n>=2147483647))throw Error('历史或版本记录已达上限，原任职者保持。');
   const r=structuredClone(input);closeLeaderRole47(r,nationId,'abdication');
   appointKnownPersonOwned47(r,nationId,r.kin.persons[preview.personId],'abdication',preview.regnalName);
   assertPopulation47(r);return r;
@@ -40,7 +40,7 @@ export function appointFamilyRuler47<T extends Population47>(input:T,nationId:st
  * separate; appointment never kills the predecessor or changes the patriarch. */
 export function appointKnownPersonOwned47(r:Population47,nationId:string,heir:FamilyPerson47,cause:'abdication'|'death'|'vacancy'|'restoration',requestedName=heir.identity.given){
   const history=r.chronicle.leaders[nationId],old=history.at(-1)!,order=history.length+1,id=`ruler-${nationId}-${order}`,nation=r.civilization.nations[nationId];
-  if(!heir.isAlive||r.kin.persons[heir.id]!==heir||heir.stateId!==r.people.nations[nationId].id||heir.roles.some(v=>v.nativeKind==='leader')||!validRegnalName(requestedName)||order>10000)throw Error('接任候选或任次无效。');
+  if(!heir.isAlive||r.kin.persons[heir.id]!==heir||heir.stateId!==r.people.nations[nationId].id||heir.roles.some(v=>v.nativeKind==='leader')||!validRegnalName(requestedName)||!Number.isSafeInteger(order))throw Error('接任候选或任次无效。');
   const identity=rulerFromPerson47(heir.identity,nation,requestedName),seed=nameSeed(`${r.world.custom!.seed}/${nationId}/${order}`),regnalOrdinal=history.filter(h=>h.regnalName===requestedName).length+1;
   const reign:Ruler={id,name:identity.name,family:identity.house,order,regnalName:requestedName,regnalOrdinal,ascendedDay:r.world.day,endedDay:null,termEndDay:r.world.day+(12+seed%14)*365};
   if(old.endedDay===null)old.endedDay=r.world.day;

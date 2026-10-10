@@ -11,7 +11,7 @@ import {unitProfiles} from './military-profile';
 import {personTraits} from './court16-people';
 import {nativeMonthlyEmergencyQuantity} from './native-economy/emergency-muster';
 import {nationsAtWar} from './realtime-statecraft';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 import {initializedArmyCombat47} from './civilization47-combat-state';
 import {initialArmyDecision47} from './civilization47-army-ai-state';
 

@@ -1,15 +1,19 @@
-import {Culture47Session,CULTURE47_RULE,type Culture47Journal} from './culture47-session';
-import {assertStoredCulture47,supportsCulture47,Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
+import {Culture47Session,CULTURE47_RULE,CULTURE47_CONTINUATION_SOURCE,type Culture47Journal} from './culture47-session';
+import {assertStoredCulture47,supportsCulture47,culture47JournalVersion,Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
+import {sameCulture47Value} from './culture47-equal';
 // The v1 database is left intact. New Chinese names must never replay and
 // overwrite an old world's Latin names, family identities or chronicle.
 export const CULTURE47_DATABASE='lieguoji-fms-culture47-zh-journal-v2';
+export const CULTURE47_LONGPLAY_DATABASE='lieguoji-fms-culture47-longplay-v1';
+export const CULTURE47_NEW_DATABASE='lieguoji-fms-culture47-newworld-v2';
+export type Culture47Database=typeof CULTURE47_DATABASE|typeof CULTURE47_LONGPLAY_DATABASE|typeof CULTURE47_NEW_DATABASE;
 type Envelope={version:1;revision:number;checksum:string;journal:Culture47Journal};
-type Slots={current?:Envelope;backup?:Envelope;revision:number};
+type Slots={current?:Envelope;backup?:Envelope;origin?:Envelope;revision:number};
 export type SavedCulture47={journal:Culture47Journal;revision:number;recovered:boolean};
 const serialize=(v:unknown)=>JSON.stringify(v,(_,x)=>ArrayBuffer.isView(x)?Array.from(x as unknown as ArrayLike<number>):x);
 async function digest(j:Culture47Journal){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(serialize(j)))),n=>n.toString(16).padStart(2,'0')).join('');}
-function open(factory:IDBFactory,signal?:AbortSignal):Promise<IDBDatabase>{return new Promise((resolve,reject)=>{
-  let ended=false;const r=factory.open(CULTURE47_DATABASE,1);
+function open(factory:IDBFactory,signal?:AbortSignal,database:Culture47Database=CULTURE47_DATABASE):Promise<IDBDatabase>{return new Promise((resolve,reject)=>{
+  let ended=false;const r=factory.open(database,1);
   const finish=(error:Error)=>{if(ended)return;ended=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);reject(error);};
   const abort=()=>finish(Error('存档操作已取消。')),timer=setTimeout(()=>finish(Error('打开文化存档超时，请关闭其他占用页面后重试。')),8000);
   signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
@@ -18,17 +22,18 @@ function open(factory:IDBFactory,signal?:AbortSignal):Promise<IDBDatabase>{retur
   r.onsuccess=()=>{const db=r.result;if(ended){db.close();return;}ended=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);db.onversionchange=()=>db.close();resolve(db);};
 });}
 function read(db:IDBDatabase,signal?:AbortSignal):Promise<Slots>{return new Promise((resolve,reject)=>{
-  const tx=db.transaction('slots','readonly'),s=tx.objectStore('slots'),a=s.get('current'),b=s.get('backup'),v=s.get('revision');
+  const tx=db.transaction('slots','readonly'),s=tx.objectStore('slots'),a=s.get('current'),b=s.get('backup'),o=s.get('origin'),v=s.get('revision');
   const abort=()=>{try{tx.abort();}catch{/* closed */}},cleanup=()=>signal?.removeEventListener('abort',abort);signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
-  tx.oncomplete=()=>{cleanup();resolve({current:a.result,backup:b.result,revision:v.result??0});};tx.onerror=tx.onabort=()=>{cleanup();reject(tx.error??Error('读取文化存档中断。'));};
+  tx.oncomplete=()=>{cleanup();resolve({current:a.result,backup:b.result,origin:o.result,revision:v.result??0});};tx.onerror=tx.onabort=()=>{cleanup();reject(tx.error??Error('读取文化存档中断。'));};
 });}
 function future(e:Envelope|undefined){
   if(e===undefined)return;
   const fail=()=>{throw Error('文化存档含未来格式或不同规则，已锁定读写。');};
   const unknown=(x:unknown,keys:string[])=>{if(x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).some(k=>!keys.includes(k)))fail();};
   unknown(e,['version','revision','checksum','journal']);if(e?.version>1)fail();
-  const j=e?.journal;unknown(j,['format','version','rule','engine','id','opening','actions']);
-  if(j&&(j.version>1||typeof j.engine==='string'&&!supportsCulture47(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
+  const j=e?.journal;unknown(j,['format','version','rule','engine','id','opening','actions',...(j?.version===2?['fork']:[])]);unknown(j?.fork,['engine','id','sequence']);
+  if(j&&(j.version>culture47JournalVersion(j.engine)||typeof j.engine==='string'&&!supportsCulture47(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
+  if(j?.fork&&typeof j.fork.engine==='string'&&j.fork.engine!==CULTURE47_CONTINUATION_SOURCE)fail();
   const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup']);unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);
   if(Array.isArray(j?.actions))for(const a of j.actions as unknown as {kind?:string;edit?:{kind?:string;patch?:unknown}}[]){
@@ -54,10 +59,11 @@ async function checked(s:Slots,verify:Culture47Verifier){
   if(!Number.isSafeInteger(s.revision)||s.revision<0)throw Error('文化存档版本损坏，原档保留。');
   // Unknown schemas lock both slots. A known, checksum-corrupted current may
   // recover backup without replacing it with the damaged bytes on next save.
-  future(s.current);future(s.backup);
+  future(s.current);future(s.backup);future(s.origin);
+  if(s.origin){assertStoredCulture47(s.origin.journal);if(s.origin.version!==1||s.origin.revision!==1||await digest(s.origin.journal)!==s.origin.checksum)throw Error('续玩来源归档损坏，已保留并锁定。');}
   const valid=async(e:Envelope|undefined,current:boolean)=>{
     if(!e||e.version!==1||!Number.isSafeInteger(e.revision)||e.revision<1||(current?e.revision!==s.revision:e.revision>s.revision)||typeof e.checksum!=='string')return;
-    try{assertStoredCulture47(e.journal);}catch{return;}
+    try{assertStoredCulture47(e.journal);checkOrigin(e.journal,s.origin?.journal);}catch{return;}
     if(await digest(e.journal)!==e.checksum)return;
     try{await verify(e.journal);return e;}catch(error){
       // Transport failure or cancellation is not evidence of a corrupt slot.
@@ -66,28 +72,38 @@ async function checked(s:Slots,verify:Culture47Verifier){
   };
   return {current:await valid(s.current,true),backup:await valid(s.backup,false)};
 }
-export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay,signal?:AbortSignal):Promise<SavedCulture47|null>{
-  signal?.throwIfAborted();const db=await open(factory,signal);try{const s=await read(db,signal),v=await checked(s,verify),chosen=v.current??v.backup;signal?.throwIfAborted();
+function checkOrigin(j:Culture47Journal,origin?:Culture47Journal){
+  if(!j.fork)return;
+  if(!origin||origin.version!==1||origin.engine!==j.fork.engine||origin.id!==j.fork.id||origin.actions.length!==j.fork.sequence||!sameCulture47Value(origin.opening,j.opening)||!sameCulture47Value(origin.actions,j.actions.slice(0,j.fork.sequence)))throw Error('续玩前史与不可轮换来源不一致，原档保留。');
+}
+export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay,signal?:AbortSignal,database:Culture47Database=CULTURE47_DATABASE):Promise<SavedCulture47|null>{
+  signal?.throwIfAborted();const db=await open(factory,signal,database);try{const s=await read(db,signal),v=await checked(s,verify),chosen=v.current??v.backup;signal?.throwIfAborted();
     if(!chosen){if(s.current||s.backup||s.revision)throw Error('文化存档校验失败，两个槽位均保留。');return null;}
     return {journal:chosen.journal,revision:s.revision,recovered:!v.current};
   }finally{db.close();}
 }
-export async function saveCulture47(journal:Culture47Journal,expected:number|null,factory:IDBFactory=indexedDB,signal?:AbortSignal,verify:Culture47Verifier=replay):Promise<number>{
+export async function saveCulture47(journal:Culture47Journal,expected:number|null,factory:IDBFactory=indexedDB,signal?:AbortSignal,verify:Culture47Verifier=replay,database:Culture47Database=CULTURE47_DATABASE,source?:Culture47Journal):Promise<number>{
   const candidate=structuredClone(journal);assertStoredCulture47(candidate);signal?.throwIfAborted();await verify(candidate);signal?.throwIfAborted();
-  const checksum=await digest(candidate);signal?.throwIfAborted();const db=await open(factory,signal);
+  if(database===CULTURE47_LONGPLAY_DATABASE&&!candidate.fork||candidate.fork&&database!==CULTURE47_LONGPLAY_DATABASE)throw Error('续玩副本与普通新世界必须分开保存。');
+  const origin=source?structuredClone(source):undefined;
+  if(origin){if(database!==CULTURE47_LONGPLAY_DATABASE||expected!==null||!candidate.fork)throw Error('只能在空的独立续玩库建立来源归档。');assertStoredCulture47(origin);checkOrigin(candidate,origin);await verify(origin);signal?.throwIfAborted();}
+  const archived=origin?{version:1 as const,revision:1,checksum:await digest(origin),journal:origin}:undefined;
+  const checksum=await digest(candidate);signal?.throwIfAborted();const db=await open(factory,signal,database);
   try{const before=await read(db,signal),prior=await checked(before,verify);signal?.throwIfAborted();
     if(before.revision!==(expected??0))throw Error('另一个页面已保存文化世界，请先重新读取；当前世界未覆盖。');
+    if(archived&&(before.current||before.backup||before.origin||before.revision))throw Error('续玩库已有内容，来源归档不可覆盖。');
+    checkOrigin(candidate,archived?.journal??before.origin?.journal);
     if(!Number.isSafeInteger(before.revision+1))throw Error('文化存档版本已达上限。');
     const previous=prior.current??prior.backup;
     if((before.current||before.backup)&&!previous)throw Error('旧文化存档无法验证，禁止覆盖。');
     return await new Promise<number>((resolve,reject)=>{
-      const tx=db.transaction('slots','readwrite'),s=tx.objectStore('slots'),a=s.get('current'),b=s.get('backup'),v=s.get('revision');let failure:Error|null=null;
+      const tx=db.transaction('slots','readwrite'),s=tx.objectStore('slots'),a=s.get('current'),b=s.get('backup'),o=s.get('origin'),v=s.get('revision');let failure:Error|null=null;
       const abort=()=>{failure=Error('保存已取消，原存档保持。');try{tx.abort();}catch{/* already completed */}};
       signal?.addEventListener('abort',abort,{once:true});
       v.onsuccess=()=>{
         if(signal?.aborted)return abort();
-        if((v.result??0)!==before.revision||serialize(a.result)!==serialize(before.current)||serialize(b.result)!==serialize(before.backup)){failure=Error('另一个页面已修改存档，请重新读取。');tx.abort();return;}
-        if(previous)s.put(previous,'backup');s.put({version:1,revision:before.revision+1,checksum,journal:candidate} satisfies Envelope,'current');s.put(before.revision+1,'revision');
+        if((v.result??0)!==before.revision||serialize(a.result)!==serialize(before.current)||serialize(b.result)!==serialize(before.backup)||serialize(o.result)!==serialize(before.origin)){failure=Error('另一个页面已修改存档，请重新读取。');tx.abort();return;}
+        if(archived)s.put(archived,'origin');if(previous)s.put(previous,'backup');s.put({version:1,revision:before.revision+1,checksum,journal:candidate} satisfies Envelope,'current');s.put(before.revision+1,'revision');
       };
       tx.oncomplete=()=>{signal?.removeEventListener('abort',abort);resolve(before.revision+1);};
       tx.onabort=tx.onerror=()=>{signal?.removeEventListener('abort',abort);reject(failure??tx.error??Error('文化保存未完成，原存档保持。'));};

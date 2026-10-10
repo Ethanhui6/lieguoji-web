@@ -7,7 +7,7 @@ import {nativeAccumulateDiplomaticPower,nativeInitializeWarPowers,type NativeDip
 import {nativeGenerateExpansionism} from './native-war/state-initialization';
 import {NATIVE_INITIAL_WAR_TIME,nativeTruceYears} from './native-war/diplomatic-relations';
 import {nativeGetMonthSince,nativeGetYearSince} from './native-economy/character-calendar';
-import {createNativeIsoCalendar,isoPlusDays} from './native-economy/iso-calendar';
+import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
 
 type Input=Pick<FoundingForces47,'world'|'clock'|'life'|'people'|'nativeWars'>;
 export type DiplomaticNation46={origin:'new-world'|'explicit-copy'|'secession';parentId:string|null;initializedTick:number;expansionism:number;activeTime:number|null;passiveTime:number|null;pools:NativeDiplomaticPower;updateDay:number;updatedMonth:number};

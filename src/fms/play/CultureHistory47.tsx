@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import type {HistoricalEntry} from './chronicle-records';
-import {isoPlusDays,type IsoDate} from './native-economy/iso-calendar';
+import {isoPlusDays,type IsoDate} from './civilization47-iso-calendar';
 import {historyKinds} from './chronicle-query';
 import {PlayIcon} from './PlayIcon';
 

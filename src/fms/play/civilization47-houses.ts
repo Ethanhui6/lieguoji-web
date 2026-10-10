@@ -1,7 +1,7 @@
 import type {Population47,PopulationStamp47} from './civilization47-population-types';
 import {populationStamp47} from './civilization47-population-types';
 import {assertPopulation47} from './civilization47-population-validation';
-import {announce} from './chronicle-records';
+import {announce} from './civilization47-history';
 import {nativeCreateFamily,type NativeCreatedFamily} from './native-economy/family-create';
 
 export type HouseGrant47={familyId:number;parentId:number;founderId:number;nationId:string;provinceId:string;memberIds:number[];day:number;tick:number;entryId:number};
@@ -40,7 +40,7 @@ export function previewHouseGrant47(r:Population47,intent:HouseIntent47){
  if(!n||!p?.isAlive||p.age<18||!f||f.nationId!==nationId||f.id!==f.stateId||p.id===f.headId||r.people.nations[nationId].leaderId===p.id||p.roles.some(v=>v.nativeKind==='leader'))throw Error('请选择主家中已成年的非族长、非现任领袖成员。');
  if(!land||land.controller!==nationId||land.legalOwner!==nationId||r.world.cities.find(c=>c.id===n.capitalId)?.provinceId===provinceId||houseTitle47(r,provinceId)!==null)throw Error('分封需要本国实控且未分封的非首都辖区。');
  const members=houseHousehold47(r,p.id);if(!members)throw Error('该家庭不能完整分出：需保留主家始祖、族长及现任领袖的原家谱归属。');
- if(h.nextFamilyId>=2147483647||h.grants.length>=4096||r.chronicle.entries.length>=9999||r.kin.revision>=2147483647)throw Error('家族记录已达上限。');
+ if(h.nextFamilyId>=2147483647||h.grants.length>=4096||r.kin.revision>=2147483647)throw Error('家族记录已达上限。');
  return {...intent,parentId:f.id,familyId:h.nextFamilyId,memberIds:members,expected:populationStamp47(r)};
 }
 export function grantHouse47<T extends Population47>(input:T,intent:HouseIntent47,expected:PopulationStamp47):T{

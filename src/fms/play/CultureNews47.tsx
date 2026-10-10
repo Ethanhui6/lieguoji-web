@@ -8,7 +8,7 @@ import type {HistoricalEntry} from './chronicle-records';
  * channel. Wars, emergency mobilization and political/person events stay major.
  * This changes only presentation priority, never the persisted chronicle. */
 export function cultureNewsItem47(e:HistoricalEntry,death=false):NewsItem{
-  const presentation=historyPresentation47(e,death),normal=presentation.kind==='征募'||presentation.kind==='遣散';
+  const presentation=historyPresentation47(e,death),normal=['征募','遣散','出生','成婚'].includes(presentation.kind);
   return {key:'history-'+e.id,day:e.day,text:e.text,reason:presentation.reason,priority:normal?'normal':'major',location:null,historyId:e.id};
 }
 export const cultureNewsDwell47=(item:NewsItem)=>item.priority==='major'?8000:1000;

@@ -38,12 +38,12 @@ export function assertLifecycle47(r:Population47){
     if(!entry||!exact(role,['nativeKind','holderId','startTime','roleType','title','reignStartTime','stateId'])||role.roleType!=='NationalLeader'||role.holderId!==p.id||role.stateId!==p.stateId||n.leaderId!==p.id||last.endedDay!==null||role.startTime!==0||role.reignStartTime!==Math.fround(entry.tick/120*r.life.secondsPerDay)||role.title!==r.civilization.rulers[last.id].titleAtAccession)return fail();
    }else if(role.nativeKind==='spouse'){
     const spouse=r.kin.persons[role.spouseOfId];
-    if(!exact(role,['nativeKind','roleType','holderId','startTime','spouseOfId','stateId'])||role.roleType!=='Spouse'||role.holderId!==p.id||role.stateId!==p.stateId||role.startTime!==0||!spouse||spouse.familyId!==p.familyId||spouse.isAlive&&p.spouseId!==spouse.id||!spouse.isAlive&&p.spouseId!==0)return fail();
+    if(!exact(role,['nativeKind','roleType','holderId','startTime','spouseOfId','stateId'])||role.roleType!=='Spouse'||role.holderId!==p.id||role.stateId!==p.stateId||(role.startTime!==0&&!r.generations?.marriages.some(m=>(m.aId===p.id&&m.bId===role.spouseOfId||m.bId===p.id&&m.aId===role.spouseOfId)&&role.startTime===Math.fround(m.tick/120*r.life.secondsPerDay)))||!spouse||spouse.familyId!==p.familyId||spouse.isAlive&&p.spouseId!==spouse.id||!spouse.isAlive&&p.spouseId!==0)return fail();
    }else return fail();
   }
   const nation=r.people.nations[r.kin.families[p.familyId].nationId];if(nation.leaderId===p.id&&leaderRoles.length!==1)return fail();
   for(const role of p.pastRoles){
-   if(!exact(role,roleKeys)||!['NationalLeader','Spouse'].includes(role.roleType??'')||!['death','abdication','extinction'].includes(role.endReason??'')||role.startTime!==0||!Number.isFinite(role.endTime)||role.endTime<0||role.endTime>nativeRoundToEven(r.life.gameTime,2)||role.familyId!==0||role.officeId!==null||role.officeScopeKind!==0||role.officeScopeId!==0||role.officeWarSystemKind!==0||role.politicalSystemAtAppointment!==0)return fail();
+   if(!exact(role,roleKeys)||!['NationalLeader','Spouse'].includes(role.roleType??'')||!['death','abdication','extinction'].includes(role.endReason??'')||(role.startTime!==0&&!(role.roleType==='Spouse'&&r.generations?.marriages.some(m=>(m.aId===p.id||m.bId===p.id)&&role.startTime===nativeRoundToEven(Math.fround(m.tick/120*r.life.secondsPerDay),2))))||!Number.isFinite(role.endTime)||role.endTime<0||role.endTime>nativeRoundToEven(r.life.gameTime,2)||role.familyId!==0||role.officeId!==null||role.officeScopeKind!==0||role.officeScopeId!==0||role.officeWarSystemKind!==0||role.politicalSystemAtAppointment!==0)return fail();
    if(role.endReason==='death'&&(!d||role.endTime!==nativeRoundToEven(p.deathTime,2)))return fail();
    if(role.roleType==='Spouse'){if(role.roleTitle!==null||role.stateId!==0||role.endReason!=='death')return fail();}
    else {

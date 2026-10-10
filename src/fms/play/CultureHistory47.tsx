@@ -14,6 +14,8 @@ export function historyPresentation47(e:Pick<HistoricalEntry,'kind'|'text'|'reas
   if(/紧急动员，征召\d+支军队$/.test(e.text))return {kind:'紧急动员',reason:'国家核心地区面临战争威胁，征召应急部队加强防御。连续动员受到年度与五年冷却限制。'};
   if(/新编\d+支常备军$/.test(e.text))return {kind:'征募',reason:'在本土城镇征集常备部队，补充各地编制。'+(e.reason.match(/本次扣内部人口(\d+)/)?.[1]?`本次征募消耗人口${e.reason.match(/本次扣内部人口(\d+)/)![1]}。`:'')};
   if(/遣散\d+支应急军$/.test(e.text))return {kind:'遣散',reason:'战事平息，已返回本国并停驻的应急部队解除编制；尚在途中或海外的部队继续保留。'};
+  if(/的孩子.+出生$/.test(e.text))return {kind:'出生',reason:e.reason};
+  if(/与.+成婚$/.test(e.text))return {kind:'成婚',reason:e.reason};
   if(e.text.includes('宣战：'))return {kind:'宣战',reason:e.reason};
   if(e.text.includes('的战争结束：'))return {kind:'战争结束',reason:e.reason};
  }

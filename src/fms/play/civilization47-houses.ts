@@ -3,6 +3,7 @@ import {populationStamp47} from './civilization47-population-types';
 import {assertPopulation47} from './civilization47-population-validation';
 import {announce} from './civilization47-history';
 import {nativeCreateFamily,type NativeCreatedFamily} from './native-economy/family-create';
+import {generationMembership47} from './civilization47-generations-ledger';
 
 export type HouseGrant47={familyId:number;parentId:number;founderId:number;nationId:string;provinceId:string;memberIds:number[];day:number;tick:number;entryId:number};
 export type Houses47={version:1;nextFamilyId:number;grants:HouseGrant47[]};
@@ -28,7 +29,7 @@ export function houseHousehold47(r:Population47,personId:number):number[]|null {
  const p=r.kin.persons[personId],f=p&&r.kin.families[p.familyId];
  if(!p?.isAlive||p.age<18||!f||f.id!==f.stateId||p.id===f.headId||r.people.nations[f.nationId].leaderId===p.id||p.roles.some(v=>v.nativeKind==='leader'))return null;
  const members=new Set<number>();let eligible=true;
- const visit=(id:number)=>{if(members.has(id)||!eligible)return;const v=r.kin.persons[id];if(!v||v.source==='founding'||v.familyId!==f.id||v.id===f.headId||v.roles.some(role=>role.nativeKind==='leader')){eligible=false;return;}members.add(id);if(v.spouseId)visit(v.spouseId);for(const old of Object.values(r.kin.persons))if(!old.isAlive&&old.spouseId===id)visit(old.id);for(const role of v.roles)if(role.nativeKind==='spouse')visit(role.spouseOfId);for(const child of v.childrenIds)visit(child);};visit(personId);
+ const visit=(id:number)=>{if(members.has(id)||!eligible)return;const v=r.kin.persons[id];if(!v||v.source==='founding'||v.familyId!==f.id||v.id===f.headId||v.roles.some(role=>role.nativeKind==='leader')){eligible=false;return;}members.add(id);if(v.spouseId)visit(v.spouseId);for(const old of Object.values(r.kin.persons))if(!old.isAlive&&old.spouseId===id)visit(old.id);for(const role of v.roles)if(role.nativeKind==='spouse')visit(role.spouseOfId);for(const child of v.childrenIds){if(r.generations&&r.kin.persons[child]?.familyId!==f.id&&r.kin.persons[child]?.age>=18&&(r.generations.marriages.some(m=>m.movingPersonId===child)||r.houses?.grants.some(g=>g.memberIds.includes(child))))continue;visit(child);}};visit(personId);
  return eligible?[...members].sort((a,b)=>a-b):null;
 }
 /** A recorded appointment, not the still-unrecovered automatic split trigger.
@@ -63,9 +64,9 @@ export function grantHouseOwned47(r:Population47,intent:HouseIntent47){
  h.nextFamilyId=registry.nextId;
  parent.memberIds=parent.memberIds.filter(id=>!preview.memberIds.includes(id));parent.collateralMemberIds=parent.collateralMemberIds.filter(id=>!preview.memberIds.includes(id));if(preview.memberIds.includes(parent.heirId))parent.heirId=0;
  for(const id of preview.memberIds)r.kin.persons[id].familyId=created.id;
- r.kin.families[created.id]={...structuredClone(parent),id:created.id,headId:person.id,heirId:0,memberIds:preview.memberIds,collateralMemberIds:[]};
+ r.kin.families[created.id]={...structuredClone(parent),id:created.id,headId:person.id,heirId:0,memberIds:[...preview.memberIds],collateralMemberIds:[]};
  const event=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===intent.nationId)!.name}分封${province.name}，${person.identity.name}建立${parent.surname}氏支系`,'由已登记同族成员携实际家庭分出，取得本国辖区封地。亲属身份与父母关系保留；分封不等于国家独立，敌占或正式割让的土地不计为可支配封地。',[intent.nationId],province.id);
- h.grants.push({familyId:created.id,parentId:parent.id,founderId:person.id,nationId:intent.nationId,provinceId:province.id,memberIds:preview.memberIds,day:r.world.day,tick:r.clock.tick,entryId:event.id});
+ h.grants.push({familyId:created.id,parentId:parent.id,founderId:person.id,nationId:intent.nationId,provinceId:province.id,memberIds:[...preview.memberIds],day:r.world.day,tick:r.clock.tick,entryId:event.id});
  r.kin.revision++;return created.id;
 }
 export function assertHouses47(r:Population47){
@@ -75,9 +76,10 @@ export function assertHouses47(r:Population47){
  const moved=new Set<number>(),lands=new Set<string>();let tick=0,entryId=0;
  for(const [i,g] of h.grants.entries()){
   const f=r.kin.families[g?.familyId],parent=r.kin.families[g?.parentId],p=r.kin.persons[g?.founderId],e=r.chronicle.entries.find(e=>e.id===g?.entryId);
-  if(!exact(g,['familyId','parentId','founderId','nationId','provinceId','memberIds','day','tick','entryId'])||g.familyId!==first+i||!f||!parent||parent.id!==parent.stateId||!p||p.familyId!==f.id||f.stateId!==parent.stateId||f.nationId!==g.nationId||f.surname!==parent.surname||f.cultureName!==parent.cultureName||!Array.isArray(g.memberIds)||new Set(g.memberIds).size!==g.memberIds.length||!g.memberIds.includes(g.founderId)||g.memberIds.length!==f.memberIds.length+f.collateralMemberIds.length||g.memberIds.some(id=>moved.has(id)||r.kin.persons[id]?.familyId!==f.id)||!e||e.kind!=='diplomacy'||e.place?.id!==g.provinceId||e.nationIds.length!==1||e.nationIds[0]!==g.nationId||e.day!==g.day||e.tick!==g.tick||g.tick<tick||(!r.houseGovernance&&lands.has(g.provinceId))||!r.world.provinces.some(p=>p.id===g.provinceId))return fail();
+  if(!exact(g,['familyId','parentId','founderId','nationId','provinceId','memberIds','day','tick','entryId'])||g.familyId!==first+i||!f||!parent||parent.id!==parent.stateId||!p||p.familyId!==f.id||f.stateId!==parent.stateId||f.nationId!==g.nationId||f.surname!==parent.surname||f.cultureName!==parent.cultureName||!Array.isArray(g.memberIds)||new Set(g.memberIds).size!==g.memberIds.length||!g.memberIds.includes(g.founderId)||(!r.generations&&(g.memberIds.length!==f.memberIds.length+f.collateralMemberIds.length||g.memberIds.some(id=>moved.has(id)||r.kin.persons[id]?.familyId!==f.id)))||!e||e.kind!=='diplomacy'||e.place?.id!==g.provinceId||e.nationIds.length!==1||e.nationIds[0]!==g.nationId||e.day!==g.day||e.tick!==g.tick||g.tick<tick||(!r.houseGovernance&&lands.has(g.provinceId))||!r.world.provinces.some(p=>p.id===g.provinceId))return fail();
   if(g.entryId<=entryId)return fail();entryId=g.entryId;
   tick=g.tick;lands.add(g.provinceId);g.memberIds.forEach(id=>moved.add(id));
  }
- for(const p of Object.values(r.kin.persons))if(!moved.has(p.id)&&p.familyId!==p.stateId)return fail();
+ if(r.generations){const members=generationMembership47(r);for(const p of Object.values(r.kin.persons))if(members.get(p.id)!==p.familyId)return fail();}
+ else for(const p of Object.values(r.kin.persons))if(!moved.has(p.id)&&p.familyId!==p.stateId)return fail();
 }

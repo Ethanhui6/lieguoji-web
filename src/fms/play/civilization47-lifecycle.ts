@@ -12,6 +12,7 @@ import {combatTraits47} from './civilization47-combat-state';
 import {appointKnownPersonOwned47} from './civilization47-succession';
 import {pastRole47} from './civilization47-roles';
 import {announce} from './civilization47-history';
+import {advanceGenerationsMonthOwned47} from './civilization47-generations';
 import type {Population47,FamilyPerson47,Family47,Lifecycle47,PersonRole47} from './civilization47-population-types';
 
 /** A dedicated persisted web RNG, not Unity's unrecovered global stream. */
@@ -83,5 +84,5 @@ export function advancePeopleMonthOwned47(r:Population47){
  });
  for(const [id,v] of Object.entries(s.vacancies))if(r.world.provinces.some(p=>p.controller===id))resolveKnownSuccessionOwned47(r,id,k.persons[v.previousPersonId],'vacancy');
  s.stats=manager.stats;s.lastMonth=month;s.revision++;k.ageTime=l.gameTime;k.lastAgeMonth=month;k.revision++;l.lastAgeMonth=month;l.revision++;
- return true;
+ advanceGenerationsMonthOwned47(r);return true;
 }

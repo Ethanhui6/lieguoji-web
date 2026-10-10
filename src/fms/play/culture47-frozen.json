@@ -188,5 +188,15 @@
     "protocol": 2,
     "source": "culture47-continuous-history-final-checked",
     "journalVersion": 2
+  },
+  {
+    "engine": "fe7a64ad764f776b80547e14a4bcb0f2b005ca65a9b9f63555b78ba42058e5cc",
+    "file": "engine-fe7a.js",
+    "bytes": 1391304,
+    "sha256": "b2c051f40753f41410c1f07831cfd27e179a2b6df358687bae8845221397b932",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-retirement-pause-checked",
+    "journalVersion": 2
   }
 ]

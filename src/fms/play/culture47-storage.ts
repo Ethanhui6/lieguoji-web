@@ -1,3 +1,4 @@
+import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {Culture47Session,CULTURE47_RULE,CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE,type Culture47Journal} from './culture47-session';
 import {assertStoredCulture47,supportsCulture47,culture47JournalVersion,Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
 import {sameCulture47Value} from './culture47-equal';
@@ -8,7 +9,8 @@ export const CULTURE47_LONGPLAY_DATABASE='lieguoji-fms-culture47-longplay-v1';
 export const CULTURE47_NEW_DATABASE='lieguoji-fms-culture47-newworld-v2';
 export const CULTURE47_RETIREMENT_DATABASE='lieguoji-fms-culture47-retirement-copy-v1';
 export const CULTURE47_FRESH_DATABASE='lieguoji-fms-culture47-newworld-v3';
-export type Culture47Database=typeof CULTURE47_RETIREMENT_DATABASE|typeof CULTURE47_FRESH_DATABASE|typeof CULTURE47_DATABASE|typeof CULTURE47_LONGPLAY_DATABASE|typeof CULTURE47_NEW_DATABASE;
+export const CULTURE47_GENERATIONS_DATABASE='lieguoji-fms-culture47-generations-v1';
+export type Culture47Database=typeof CULTURE47_GENERATIONS_DATABASE|typeof CULTURE47_RETIREMENT_DATABASE|typeof CULTURE47_FRESH_DATABASE|typeof CULTURE47_DATABASE|typeof CULTURE47_LONGPLAY_DATABASE|typeof CULTURE47_NEW_DATABASE;
 type Envelope={version:1;revision:number;checksum:string;journal:Culture47Journal};
 type Slots={current?:Envelope;backup?:Envelope;origin?:Envelope;revision:number};
 export type SavedCulture47={journal:Culture47Journal;revision:number;recovered:boolean};
@@ -40,6 +42,7 @@ function future(e:Envelope|undefined){
   const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup']);unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);
   if(Array.isArray(j?.actions))for(const a of j.actions as unknown as {kind?:string;edit?:{kind?:string;patch?:unknown}}[]){
+    if(a?.kind==='enable-generations'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==GENERATIONS_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-retirement'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!=='retired-roster-web-v1')fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family-policy'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','enabled','expected']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family'){const p=a as unknown as {intent:unknown;expected:unknown};unknown(a,['kind','intent','expected']);unknown(p.intent,['nationId','personId','provinceId']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
@@ -82,14 +85,19 @@ function checkOrigin(j:Culture47Journal,origin?:Culture47Journal){
   if(j.fork.engine===CULTURE47_RETIREMENT_SOURCE&&j.actions[j.fork.sequence]?.kind!=='enable-retirement')throw Error('退役续玩规则尚未启用，原档保留。');
   if(!origin||origin.version!==(j.fork.engine===CULTURE47_RETIREMENT_SOURCE?2:1)||origin.engine!==j.fork.engine||origin.id!==j.fork.id||origin.actions.length!==j.fork.sequence||!sameCulture47Value(origin.opening,j.opening)||!sameCulture47Value(origin.actions,j.actions.slice(0,j.fork.sequence)))throw Error('续玩前史与不可轮换来源不一致，原档保留。');
 }
+function checkGenerationScope(j:Culture47Journal,database:Culture47Database){
+  const enabled=j.actions.some(a=>a.kind==='enable-generations');
+  if(enabled!==(database===CULTURE47_GENERATIONS_DATABASE)||enabled&&(j.version!==2||j.fork!==null))throw Error('婚育世界须使用独立的新世界存档，旧档保持。');
+}
 export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay,signal?:AbortSignal,database:Culture47Database=CULTURE47_DATABASE):Promise<SavedCulture47|null>{
   signal?.throwIfAborted();const db=await open(factory,signal,database);try{const s=await read(db,signal),v=await checked(s,verify),chosen=v.current??v.backup;signal?.throwIfAborted();
     if(!chosen){if(s.current||s.backup||s.revision)throw Error('文化存档校验失败，两个槽位均保留。');return null;}
+    checkGenerationScope(chosen.journal,database);
     return {journal:chosen.journal,revision:s.revision,recovered:!v.current};
   }finally{db.close();}
 }
 export async function saveCulture47(journal:Culture47Journal,expected:number|null,factory:IDBFactory=indexedDB,signal?:AbortSignal,verify:Culture47Verifier=replay,database:Culture47Database=CULTURE47_DATABASE,source?:Culture47Journal):Promise<number>{
-  const candidate=structuredClone(journal);assertStoredCulture47(candidate);signal?.throwIfAborted();await verify(candidate);signal?.throwIfAborted();
+  const candidate=structuredClone(journal);assertStoredCulture47(candidate);checkGenerationScope(candidate,database);signal?.throwIfAborted();await verify(candidate);signal?.throwIfAborted();
   const target=candidate.fork?.engine===CULTURE47_RETIREMENT_SOURCE?CULTURE47_RETIREMENT_DATABASE:CULTURE47_LONGPLAY_DATABASE;
   if(candidate.fork?database!==target:database===CULTURE47_LONGPLAY_DATABASE||database===CULTURE47_RETIREMENT_DATABASE)throw Error('续玩副本与普通新世界必须分开保存。');
   const origin=source?structuredClone(source):undefined;
@@ -101,6 +109,7 @@ export async function saveCulture47(journal:Culture47Journal,expected:number|nul
     if(archived&&(before.current||before.backup||before.origin||before.revision))throw Error('续玩库已有内容，来源归档不可覆盖。');
     checkOrigin(candidate,archived?.journal??before.origin?.journal);
     if(!Number.isSafeInteger(before.revision+1))throw Error('文化存档版本已达上限。');
+    for(const value of [prior.current,prior.backup])if(value)checkGenerationScope(value.journal,database);
     const previous=prior.current??prior.backup;
     if((before.current||before.backup)&&!previous)throw Error('旧文化存档无法验证，禁止覆盖。');
     return await new Promise<number>((resolve,reject)=>{

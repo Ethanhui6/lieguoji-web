@@ -4,6 +4,7 @@ import {assertPopulation47} from './civilization47-population-validation';
 import {grantHouseOwned47,houseHousehold47,houseLands47,houseTitle47} from './civilization47-houses';
 import {announce} from './civilization47-history';
 import {isoPlusDays} from './civilization47-iso-calendar';
+import {familyMembersAt47} from './civilization47-generations-ledger';
 
 type HouseReturn47={familyId:number;provinceId:string;day:number;tick:number;entryId:number};
 export type HouseGovernance47={version:1;rule:'household-fiefs-web-v1';lastMonth:number;enabled:Record<string,boolean>;automatic:number[];returns:HouseReturn47[]};
@@ -28,7 +29,8 @@ export function advanceHouseGovernance47(r:Population47):void {
  assertPopulation47(r);if(month!==s.lastMonth+1)throw Error('家族分封月份不连续。');
  s.lastMonth=month;
  for(const g of r.houses!.grants){
-  if(houseTitle47(r,g.provinceId)!==g.familyId||g.memberIds.some(id=>r.kin.persons[id].isAlive))continue;
+  const members=r.generations?familyMembersAt47(r,g.familyId):g.memberIds;
+  if(houseTitle47(r,g.provinceId)!==g.familyId||members.some(id=>r.kin.persons[id].isAlive))continue;
   const land=r.world.provinces.find(p=>p.id===g.provinceId)!;
   // Occupation is not extinction, and foreign-held titles cannot be confiscated here.
   if(land.legalOwner!==g.nationId||land.controller!==g.nationId)continue;
@@ -60,7 +62,7 @@ export function assertHouseGovernance47(r:Population47):void {
  const returned=new Set<number>();let previousEntry=0;
  for(const v of s.returns){
   const g=grants.find(g=>g.familyId===v?.familyId),e=r.chronicle.entries.find(e=>e.id===v?.entryId);
-  if(!exact(v,['familyId','provinceId','day','tick','entryId'])||!g||returned.has(v.familyId)||v.provinceId!==g.provinceId||v.entryId<=g.entryId||v.entryId<=previousEntry||!e||e.kind!=='diplomacy'||e.day!==v.day||e.tick!==v.tick||e.place?.id!==g.provinceId||e.nationIds.length!==1||e.nationIds[0]!==g.nationId||entryMonth47(r,v.day)>s.lastMonth||g.memberIds.some(id=>{const d=r.kin.lifecycle.deaths.find(d=>d.personId===id);return r.kin.persons[id].isAlive||!d||d.tick>v.tick;}))return fail();
+  if(!exact(v,['familyId','provinceId','day','tick','entryId'])||!g||returned.has(v.familyId)||v.provinceId!==g.provinceId||v.entryId<=g.entryId||v.entryId<=previousEntry||!e||e.kind!=='diplomacy'||e.day!==v.day||e.tick!==v.tick||e.place?.id!==g.provinceId||e.nationIds.length!==1||e.nationIds[0]!==g.nationId||entryMonth47(r,v.day)>s.lastMonth||(r.generations?familyMembersAt47(r,g.familyId,v.entryId):g.memberIds).some(id=>{const d=r.kin.lifecycle.deaths.find(d=>d.personId===id);return r.kin.persons[id].isAlive||!d||d.tick>v.tick;}))return fail();
   returned.add(v.familyId);previousEntry=v.entryId;
  }
  const titles=new Map<string,number>();

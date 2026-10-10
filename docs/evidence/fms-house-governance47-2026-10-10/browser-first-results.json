@@ -1,0 +1,462 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-house-governance.spec.ts",
+      "tests/fms-culture47-houses.spec.ts",
+      "tests/fms-culture47-motion.spec.ts",
+      "--project=desktop-chromium",
+      "--project=mobile-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-house-governance.spec.ts",
+      "file": "fms-culture47-house-governance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary play creates households monthly, keeps details running and saves the autonomy setting",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9948,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:15:51.211Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "governance-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJkYXkiOiI1OSIsInRpY2siOiI3MDgwIiwicm93cyI6WyLorrjmsI8gwrcg5Li75a625peP6ZW/IOiuuOaZk+aipiDCtyA2IOS9jeWcqOS4ljEyIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTc1LDU1MyIsIuiuuOawjyDCtyDmnb7mtKXmlK/ns7vml4/plb8g6K645pmv5piOIMK3IDEg5L2N5Zyo5LiWMSDlpITlrp7mjqflsIHlnLAgwrcg5Lq65Y+jIDEzLDQ5MyJdLCJlcnJvcnMiOltdLCJwaHlzaWNhbElwaG9uZSI6ZmFsc2V9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f295788edf95d0463f4-086702579fb81ea6a289",
+          "file": "fms-culture47-house-governance.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "ordinary play creates households monthly, keeps details running and saves the autonomy setting",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9728,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:16:50.521Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "governance-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJkYXkiOiI1MSIsInRpY2siOiI2MTIwIiwicm93cyI6WyLorrjmsI8gwrcg5Li75a625peP6ZW/IOiuuOaZk+aipiDCtyA2IOS9jeWcqOS4ljEyIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTc1LDQ3MyIsIuiuuOawjyDCtyDmnb7mtKXmlK/ns7vml4/plb8g6K645pmv5piOIMK3IDEg5L2N5Zyo5LiWMSDlpITlrp7mjqflsIHlnLAgwrcg5Lq65Y+jIDEzLDQ4NSJdLCJlcnJvcnMiOltdLCJwaHlzaWNhbElwaG9uZSI6ZmFsc2V9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f295788edf95d0463f4-0384b05ae9f09e5bea4a",
+          "file": "fms-culture47-house-governance.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-houses.spec.ts",
+      "file": "fms-culture47-houses.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "opening history, real branch appointment and continuous calendar survive ordinary save/reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 14379,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts:27:100",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                      "column": 100,
+                      "line": 27
+                    },
+                    "snippet": "  25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});\n  26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();\n> 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);\n     |                                                                                                    ^\n  28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});\n  29 | });\n  30 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                        "column": 100,
+                        "line": 27
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m\n\n  25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});\n  26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();\n> 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);\n     |                                                                                                    ^\n  28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});\n  29 | });\n  30 |\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts:27:100"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:16:01.346Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                    "column": 100,
+                    "line": 27
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c3e0d9287a4f8b7c4db7-3d5b1ed30d959f1ad53c",
+          "file": "fms-culture47-houses.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "opening history, real branch appointment and continuous calendar survive ordinary save/reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 14155,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts:27:100",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                      "column": 100,
+                      "line": 27
+                    },
+                    "snippet": "  25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});\n  26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();\n> 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);\n     |                                                                                                    ^\n  28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});\n  29 | });\n  30 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                        "column": 100,
+                        "line": 27
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m4\u001b[39m\n\n  25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});\n  26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();\n> 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);\n     |                                                                                                    ^\n  28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});\n  29 | });\n  30 |\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts:27:100"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:17:00.383Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-houses.spec.ts",
+                    "column": 100,
+                    "line": 27
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c3e0d9287a4f8b7c4db7-e1946c5fb1b2b7450b2d",
+          "file": "fms-culture47-houses.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-motion.spec.ts",
+      "file": "fms-culture47-motion.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33304,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:16:16.617Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "continuous-motion",
+                      "contentType": "application/json",
+                      "body": "eyJmcmFtZXMiOjEwOSwibW92aW5nSW50ZXJ2YWxzIjpbeyJpZCI6ImZvcmNlLTEiLCJtcyI6MTUzNS4yMzQ5OTk5ODQ1MDI4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS00IiwibXMiOjE1MzUuMjM0OTk5OTg0NTAyOCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTUzNS4yMzQ5OTk5ODQ1MDI4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS03IiwibXMiOjE1MzUuMjM0OTk5OTg0NTAyOCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTUzNS4yMzQ5OTk5ODQ1MDI4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xMSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yOSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zOCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxNTM1LjIzNDk5OTk4NDUwMjgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjE0MjYuNzkwMDAwMDIxNDU3NywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoxNDI2Ljc5MDAwMDAyMTQ1NzcsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS01IiwibXMiOjE0MjYuNzkwMDAwMDIxNDU3NywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTYiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoxNDI2Ljc5MDAwMDAyMTQ1NzcsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS04IiwibXMiOjE0MjYuNzkwMDAwMDIxNDU3NywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTkiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTMiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTYiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTkiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjciLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzEiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzQiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzciLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6MTQyNi43OTAwMDAwMjE0NTc3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMSIsIm1zIjoxMzAxLjU2OTk5OTk5Mjg0NzQsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQiLCJtcyI6MTMwMS41Njk5OTk5OTI4NDc0LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNSIsIm1zIjoxMzAxLjU2OTk5OTk5Mjg0NzQsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS02IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTciLCJtcyI6MTMwMS41Njk5OTk5OTI4NDc0LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtOCIsIm1zIjoxMzAxLjU2OTk5OTk5Mjg0NzQsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS05IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEyIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEzIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE0IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE1IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE2IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE3IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE4IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE5IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI1IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI2IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI3IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI4IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMwIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMxIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMyIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMzIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM0IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM1IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM2IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM3IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM5IiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQwIiwibXMiOjEzMDEuNTY5OTk5OTkyODQ3NCwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEiLCJtcyI6MTQzMy45Mzk5OTk5OTc2MTU4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS00IiwibXMiOjE0MzMuOTM5OTk5OTk3NjE1OCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTQzMy45Mzk5OTk5OTc2MTU4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS03IiwibXMiOjE0MzMuOTM5OTk5OTk3NjE1OCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTQzMy45Mzk5OTk5OTc2MTU4LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxNDMzLjkzOTk5OTk5NzYxNTgsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MTI4NC42NDQ5OTk5ODA5MjY1LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoxMjg0LjY0NDk5OTk4MDkyNjUsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS02IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTciLCJtcyI6MTI4NC42NDQ5OTk5ODA5MjY1LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtOCIsIm1zIjoxMjg0LjY0NDk5OTk4MDkyNjUsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS05IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEyIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEzIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE0IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE1IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE2IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE3IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE4IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE5IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI1IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI2IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI3IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI4IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMwIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMxIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMyIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMzIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM0IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM1IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM2IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM3IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM5IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQwIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQxIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQyIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQzIiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQ0IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQ1IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQ2IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQ3IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTQ4IiwibXMiOjEyODQuNjQ0OTk5OTgwOTI2NSwiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX1dLCJzZWxlY3RlZCI6eyJpZCI6ImZvcmNlLTE5IiwiaWRzIjpbImZvcmNlLTE5Il0sImtpbmQiOiJhcm15IiwiZGlzcGxheSI6ImRvdCIsIngiOjc3Ni45MDU1NzU2NzM5Mzg4LCJ5IjozNTkuMzg2NTcxOTExNzg3Mn0sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-motion-actua-d8660-eeps-paused-picking-aligned-desktop-chromium\\video.webm"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8898f7ed0deb33696d35-c18a13e3a469c75365b5",
+          "file": "fms-culture47-motion.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33848,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T05:17:15.496Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "continuous-motion",
+                      "contentType": "application/json",
+                      "body": "eyJmcmFtZXMiOjExMywibW92aW5nSW50ZXJ2YWxzIjpbeyJpZCI6ImZvcmNlLTEiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yIiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS02IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS05IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE0IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTE3IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI1IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTI4IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTMyIiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM1IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTM4IiwibXMiOjE0NDcuMjA1MDAwMDEzMTEzLCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MTQ0Ny4yMDUwMDAwMTMxMTMsImRpc3RpbmN0IjoxMSwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxNDQ3LjIwNTAwMDAxMzExMywiZGlzdGluY3QiOjExLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTEiLCJtcyI6MTY1OS43OTUwMDAwMTY2ODkzLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS00IiwibXMiOjE2NTkuNzk1MDAwMDE2Njg5MywiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTY1OS43OTUwMDAwMTY2ODkzLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS03IiwibXMiOjE2NTkuNzk1MDAwMDE2Njg5MywiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTY1OS43OTUwMDAwMTY2ODkzLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxNjU5Ljc5NTAwMDAxNjY4OTMsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjE2MjcuODc5OTk5OTk1MjMxNiwiZGlzdGluY3QiOjEzLCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTIiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoxNjI3Ljg3OTk5OTk5NTIzMTYsImRpc3RpbmN0IjoxMywiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS01IiwibXMiOjE2MjcuODc5OTk5OTk1MjMxNiwiZGlzdGluY3QiOjEzLCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTYiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoxNjI3Ljg3OTk5OTk5NTIzMTYsImRpc3RpbmN0IjoxMywiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS04IiwibXMiOjE2MjcuODc5OTk5OTk1MjMxNiwiZGlzdGluY3QiOjEzLCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTkiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTMiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTYiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTkiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjciLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzEiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzQiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzciLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6MTYyNy44Nzk5OTk5OTUyMzE2LCJkaXN0aW5jdCI6MTMsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMSIsIm1zIjoyMDIwLjM4NDk5OTk5MDQ2MzMsImRpc3RpbmN0IjoxNSwiYWZ0ZXI4MDAiOjl9LHsiaWQiOiJmb3JjZS0yIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQiLCJtcyI6MjAyMC4zODQ5OTk5OTA0NjMzLCJkaXN0aW5jdCI6MTUsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtNSIsIm1zIjoyMDIwLjM4NDk5OTk5MDQ2MzMsImRpc3RpbmN0IjoxNSwiYWZ0ZXI4MDAiOjl9LHsiaWQiOiJmb3JjZS02IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTciLCJtcyI6MjAyMC4zODQ5OTk5OTA0NjMzLCJkaXN0aW5jdCI6MTUsImFmdGVyODAwIjo5fSx7ImlkIjoiZm9yY2UtOCIsIm1zIjoyMDIwLjM4NDk5OTk5MDQ2MzMsImRpc3RpbmN0IjoxNSwiYWZ0ZXI4MDAiOjl9LHsiaWQiOiJmb3JjZS05IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTEzIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE0IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE1IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE2IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE3IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE4IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTE5IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTIyIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTI0IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTI1IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTI2IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTI3IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTI4IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTMwIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTMxIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTMyIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTMzIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTM0IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTM1IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTM2IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTM3IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTM5IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQwIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQxIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQyIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQzIiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQ0IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQ1IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQ2IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQ3IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX0seyJpZCI6ImZvcmNlLTQ4IiwibXMiOjIwMjAuMzg0OTk5OTkwNDYzMywiZGlzdGluY3QiOjE1LCJhZnRlcjgwMCI6OX1dLCJzZWxlY3RlZCI6eyJpZCI6ImZvcmNlLTE5IiwiaWRzIjpbImZvcmNlLTE5Il0sImtpbmQiOiJhcm15IiwiZGlzcGxheSI6ImRvdCIsIngiOjIyOS41NDI5MDU0Mzk2NTIzLCJ5IjozNjguMzYwOTAwODYxMTIwN30sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-motion-actua-d8660-eeps-paused-picking-aligned-mobile-chromium\\video.webm"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8898f7ed0deb33696d35-c168c18489e4c5077e86",
+          "file": "fms-culture47-motion.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T05:15:50.678Z",
+    "duration": 118870.057,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

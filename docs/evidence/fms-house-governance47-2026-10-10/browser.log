@@ -1,0 +1,83 @@
+
+Running 6 tests using 1 worker
+
+(node:31088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-house-governance.spec.ts:4:1 › ordinary play creates households monthly, keeps details running and saves the autonomy setting (9.9s)
+  x  2 [desktop-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload (14.4s)
+(node:26148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [desktop-chromium] › tests\fms-culture47-motion.spec.ts:4:1 › actual army display changes continuously between slow Worker replies and keeps paused picking aligned (33.3s)
+(node:56968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [mobile-chromium] › tests\fms-culture47-house-governance.spec.ts:4:1 › ordinary play creates households monthly, keeps details running and saves the autonomy setting (9.7s)
+  x  5 [mobile-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload (14.2s)
+(node:13828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 6 [mobile-chromium] › tests\fms-culture47-motion.spec.ts:4:1 › actual army display changes continuously between slow Worker replies and keeps paused picking aligned (33.8s)
+
+
+  1) [desktop-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 4
+
+      25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});
+      26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();
+    > 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);
+         |                                                                                                    ^
+      28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});
+      29 | });
+      30 |
+        at D:\游戏\架空地图模拟器\tests\fms-culture47-houses.spec.ts:27:100
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 4
+
+      25 |  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});
+      26 |  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();
+    > 27 |  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);
+         |                                                                                                    ^
+      28 |  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});
+      29 | });
+      30 |
+        at D:\游戏\架空地图模拟器\tests\fms-culture47-houses.spec.ts:27:100
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\fms-culture47-houses-openi-be1bc-urvive-ordinary-save-reload-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload 
+    [mobile-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload 
+  4 passed (2.0m)

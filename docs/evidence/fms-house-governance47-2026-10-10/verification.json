@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b875d636f94e30e1f12423cc0a1943d398f3f3f7",
+  "buildMetadataCommit": "908972b02f67b98f73ef0b55c964f20619dfb84a",
+  "engine": "dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8",
+  "artifact": ".autopilot/culture47-house-governance-checked",
+  "url": "http://127.0.0.1:5300/?fms=1",
+  "bind": "127.0.0.1",
+  "serverPidAtStart": 47032,
+  "approvedArtifacts": 82,
+  "historicalEngines": 17,
+  "scope": "WEB-04-40 bounded real household governance; full PH05 remains pending",
+  "checks": {
+    "unit": {
+      "files": 6,
+      "passed": 58
+    },
+    "strongerCooldown": {
+      "passed": 7,
+      "overlapsUnit": true
+    },
+    "types": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "browserFirst": {
+      "passed": 4,
+      "failed": 2
+    },
+    "browserRepair": {
+      "passed": 2,
+      "failed": 0
+    },
+    "browserNote": "Same artifact. Fixed old test to compare paused save-point families, including automatic branches, with exact restored rows. Not a fresh combined6/6.",
+    "physicalIphone": "not_run",
+    "visualEquivalence": "not_accepted",
+    "originalCadence": "not_accepted",
+    "cloud": "not_run"
+  },
+  "limits": [
+    "automatic scheduling is a disclosed web adaptation, not recovered original redistribution",
+    "no birth/marriage or multi-cause independent-state registration",
+    "1000-day cap remains; observed latest5300world998day before limit",
+    "no migration of old saves or remote publication"
+  ],
+  "evidence": [
+    "docs/evidence/fms-house-governance47-2026-10-10/RESULT.md",
+    "docs/evidence/fms-house-governance47-2026-10-10/NEXT.md",
+    "docs/evidence/fms-house-governance47-2026-10-10/unit-final.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/unit-cooldown.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/types-final.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/lint-final.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/build.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/browser.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/browser-first-results.json",
+    "docs/evidence/fms-house-governance47-2026-10-10/browser-repair.log",
+    "docs/evidence/fms-house-governance47-2026-10-10/browser-repair-results.json",
+    "docs/evidence/fms-house-governance47-2026-10-10/normal-world-branches.png"
+  ]
+}

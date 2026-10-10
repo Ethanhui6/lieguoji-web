@@ -1,0 +1,11 @@
+
+Running 2 tests using 1 worker
+
+(node:55204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload (13.9s)
+(node:40596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [mobile-chromium] › tests\fms-culture47-houses.spec.ts:4:1 › opening history, real branch appointment and continuous calendar survive ordinary save/reload (14.3s)
+
+  2 passed (29.6s)

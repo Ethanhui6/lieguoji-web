@@ -1,3 +1,19 @@
+# 当前检查点：真实家族已能自主分封与绝嗣归还（2026-10-10）
+
+源码 **b875d636f94e30e1f12423cc0a1943d398f3f3f7**，分支 codex/ph06-world-generation。根独占写入，两个子智能体只读审核。先读 webRebuild.culture47HouseGovernanceCheckpoint 和 docs/evidence/fms-house-governance47-2026-10-10/RESULT.md、NEXT.md。WEB-04-40限定完成，37仍进行中、21 blocked、完整PH05/真机/视觉门不变。
+
+月检选择实际成年家庭与可用非首都封地；同国半年间隔，保留主家土地。真实家谱/已故配偶引用不重造，原作CreateFamily/继承核复用。绝嗣后仅回收本国仍控制且有法理权的封地，保留旧授封史并允许再授；自主设置进Worker日志，查看详情不暂停。自动节奏/比例/回收策略明确网页适配，原作完整再分配算法尚未恢复。
+
+本机入口 **http://127.0.0.1:5300/?fms=1**，不可变产物 .autopilot/culture47-house-governance-checked，engine dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8，启动PID47032（续接先核实）。82产物，17旧引擎字节保留。原5299/旧保存不覆盖；运行时再改前冻结dfd9fa。build.json记录构建基线908972b，随后源码提交b875d63，没有伪造构建提交。
+
+普通生成大陆、6国60城战乱世界已实际出现主家加三个支系，截图normal-world-branches.png。首次人工暂停保存公元2年1月30日；之后该页再次推进至998日/119760tick、4倍，已触及下一批将超过1000日的限制。不要称这局能无限继续或直接重置。998日最新局已再次点击保存并得到UI成功确认，saved-day998.png保留证据；独立浏览器冷恢复通过，人工998日局未冷重放。
+
+检查58/58，强化半年正向7/7重叠；types/lint/build通过。浏览器初轮4/6，旧测试错误比较开局三家与跨月四家；保留失败，改成暂停存档时完整行比较后2/2通过，不冒充新统一6/6或真机。正常页控制台无error/warn。
+
+下一项优先1000日安全长期续玩，需完整live47验证/新版本检查点与tail/绝对序号/原子双CAS，不能只删上限。再接真实内战独立与国家人物战争注册、出生联姻与家族政治。新观察：顶部重大消息积压需汇总，不用旧消息伪装刚发生。详见NEXT；无push/远程写/Pages/正式站变化。
+
+---
+
 # 当前检查点：连续历法、开篇国史和真实分封已可玩（2026-10-10）
 
 源码 **e885dc951a34c2dd65b37b6489b8e2306aa6f3ca**，分支 codex/ph06-world-generation。根独占写入，两子智能体只读审核。先读 webRebuild.culture47OriginsHousesCheckpoint 和 docs/evidence/fms-origins-houses47-2026-10-10/RESULT.md、REMAINING.md；不要照下方旧检查点再次把缓存性能放到用户当前功能要求之前。

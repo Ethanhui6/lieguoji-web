@@ -4783,6 +4783,29 @@
               "docs/evidence/fms-origins-houses47-2026-10-10/browser-final-results.json"
             ],
             "progressScope": "39 final affected checks; types/lint/build with81 approved artifacts;4 desktop/mobile Chromium flows. Actual manual branches and origin facts, not native automatic split or earlier simulated history."
+          },
+          {
+            "id": "WEB-04-40",
+            "title": "真实家庭月度自主分封、绝嗣封地归还与策略保存（限定切片）",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-39"
+            ],
+            "acceptance": "真实月检、实际成年家庭与本国实控法理封地形成支系；无合适家庭不造事件。月内幂等、半年冷却、主家余地；绝嗣归还与同地再授保持不可变家谱及历史凭据。查看详情不停时，设置在途保护；Session批量与普通重放一致、保存冷恢复与未来/CAS保护、旧引擎字节不变。本地功能通过，不代表完整原作触发/政治/真机/视觉等价。",
+            "evidence": [
+              "docs/evidence/fms-house-governance47-2026-10-10/RESULT.md",
+              "docs/evidence/fms-house-governance47-2026-10-10/NEXT.md",
+              "docs/evidence/fms-house-governance47-2026-10-10/unit-final.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/unit-cooldown.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/types-final.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/lint-final.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/build.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/browser.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/browser-first-results.json",
+              "docs/evidence/fms-house-governance47-2026-10-10/browser-repair.log",
+              "docs/evidence/fms-house-governance47-2026-10-10/browser-repair-results.json"
+            ],
+            "progressScope": "58 affected checks, strengthened7 overlapping; types/lint/build82 artifacts. Browser4/6 then failed2 repaired2/2 on same artifact. Autonomous grants and extinct-house returns are playable; no full civil war or1000day continuation."
           }
         ]
       },
@@ -4814,7 +4837,7 @@
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
             ],
-            "partialProgress": "WEB-04-39已接真实人物手动支系与封地，原始家主/月检继承保持；完整PH05依赖、自动分化、出生联姻与政治影响仍未完成。本项状态不改为完成。"
+            "partialProgress": "WEB-04-39手动真实家庭分封及WEB-04-40月度自主分封/绝嗣归還已接，月检/家主原核复用；自动节奏是网页适配，影响力/战功/出生联姻/流亡及完整PH05仍未完成，状态保持。"
           },
           {
             "id": "WEB-05-02",
@@ -4877,7 +4900,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47OriginsHousesCheckpoint and latest AUTO_HANDOFF first. Source e885dc9, final local5299 engine a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec. Preserve16 frozen engines and old5297/5298 origins. 用户最新优先级：连续年月日、已有国史、家族分化及以前遗漏的原作功能。已完成e885dc9有界切片；接续真实家族自动分化/国家内战独立所需人物地权与战争登记，及1000日安全检查点，不能用缓存微调或虚构新闻替代。完整PH05/真机/视觉门保持未验收。 Freeze latest delivered worker before runtime changes. No push/Pages authorization added.",
+    "nextRecoveryTarget": "Read culture47HouseGovernanceCheckpoint, latest AUTO_HANDOFF and fms-house-governance47-2026-10-10/NEXT.md. Source b875d63, local5300 engine dfd9fa. Latest normal6nation60city world observed998day at1000day replay cap; do not reset. Priority safe long-term checkpoint and full-state validation, then real multi-cause civil war/new-state registration. Monthly household grants and extinct-house returns already done; do not redo or replace with performance micro-tuning. Preserve17frozen engines, old origins, original release gates; freeze delivereddfd9fa before runtime changes.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -10434,6 +10457,65 @@
       ],
       "scope": "WEB-PH04 bounded playable slice; full WEB-PH05 unchanged",
       "next": "用户最新优先级：连续年月日、已有国史、家族分化及以前遗漏的原作功能。已完成e885dc9有界切片；接续真实家族自动分化/国家内战独立所需人物地权与战争登记，及1000日安全检查点，不能用缓存微调或虚构新闻替代。完整PH05/真机/视觉门保持未验收。"
+    },
+    "culture47HouseGovernanceCheckpoint": {
+      "date": "2026-10-10",
+      "sourceCommit": "b875d636f94e30e1f12423cc0a1943d398f3f3f7",
+      "buildMetadataCommit": "908972b02f67b98f73ef0b55c964f20619dfb84a",
+      "engine": "dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8",
+      "artifact": ".autopilot/culture47-house-governance-checked",
+      "url": "http://127.0.0.1:5300/?fms=1",
+      "bind": "127.0.0.1",
+      "serverPidAtStart": 47032,
+      "approvedArtifacts": 82,
+      "historicalEngines": 17,
+      "scope": "WEB-04-40 bounded real household governance; full PH05 remains pending",
+      "checks": {
+        "unit": {
+          "files": 6,
+          "passed": 58
+        },
+        "strongerCooldown": {
+          "passed": 7,
+          "overlapsUnit": true
+        },
+        "types": "passed",
+        "lint": "passed",
+        "build": "passed",
+        "browserFirst": {
+          "passed": 4,
+          "failed": 2
+        },
+        "browserRepair": {
+          "passed": 2,
+          "failed": 0
+        },
+        "browserNote": "Same artifact. Fixed old test to compare paused save-point families, including automatic branches, with exact restored rows. Not a fresh combined6/6.",
+        "physicalIphone": "not_run",
+        "visualEquivalence": "not_accepted",
+        "originalCadence": "not_accepted",
+        "cloud": "not_run"
+      },
+      "limits": [
+        "automatic scheduling is a disclosed web adaptation, not recovered original redistribution",
+        "no birth/marriage or multi-cause independent-state registration",
+        "1000-day cap remains; observed latest5300world998day before limit",
+        "no migration of old saves or remote publication"
+      ],
+      "evidence": [
+        "docs/evidence/fms-house-governance47-2026-10-10/RESULT.md",
+        "docs/evidence/fms-house-governance47-2026-10-10/NEXT.md",
+        "docs/evidence/fms-house-governance47-2026-10-10/unit-final.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/unit-cooldown.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/types-final.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/lint-final.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/build.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/browser.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/browser-first-results.json",
+        "docs/evidence/fms-house-governance47-2026-10-10/browser-repair.log",
+        "docs/evidence/fms-house-governance47-2026-10-10/browser-repair-results.json",
+        "docs/evidence/fms-house-governance47-2026-10-10/normal-world-branches.png"
+      ]
     }
   }
 }

@@ -11,7 +11,12 @@ test('actual army display changes continuously between slow Worker replies and k
  const motion=[...groups.values()].flatMap(rows=>{if(rows.length<3)return[];return rows[0].armies.map(([id])=>{const points=rows.flatMap(r=>{const p=r.armies.find(a=>a[0]===id)?.[1];return p?[{...p,at:r.at}]:[];});const later=points.filter(p=>p.at-points[0].at>800);return{id,ms:rows.at(-1)!.at-rows[0].at,distinct:new Set(points.map(p=>`${p.x}/${p.y}`)).size,after800:new Set(later.map(p=>`${p.x}/${p.y}`)).size};});});
  expect(motion.some(m=>m.ms>1000&&m.distinct>=10&&m.after800>=3)).toBe(true);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:30000});
- const paused=await map.getAttribute('data-display-positions');await page.waitForTimeout(400);expect(await map.getAttribute('data-display-positions')).toBe(paused);
+ // Worker completion can precede the pause paint. Compare actual coordinates
+ // and presentation time after that paint, not incidental trace metadata
+ // (endpoint points carry a tick while interpolated points contain x/y only).
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ const pose=async()=>{const value=JSON.parse((await map.getAttribute('data-display-positions'))!) as Record<'armies'|'fleets',[string,{x:number;y:number}][]>;return {armies:value.armies.map(([id,{x,y}])=>[id,x,y]),fleets:value.fleets.map(([id,{x,y}])=>[id,x,y])};};
+ const paused=await pose(),pausedTick=await map.getAttribute('data-display-tick');await page.waitForTimeout(400);expect(await pose()).toEqual(paused);expect(await map.getAttribute('data-display-tick')).toBe(pausedTick);
  await page.getByRole('button',{name:'军事模式',exact:true}).click();const dismiss=page.getByRole('button',{name:'收起详情',exact:true});if(await dismiss.isVisible())await dismiss.click();
  const units=JSON.parse((await map.getAttribute('data-display-units'))!) as {id:string;kind:string;x:number;y:number}[],box=await map.boundingBox();const target=units.find(u=>u.kind==='army'&&u.x>70&&u.y>180&&u.x<box!.width-70&&u.y<box!.height-150&&units.every(v=>v.id===u.id||Math.hypot(u.x-v.x,u.y-v.y)>22));expect(target).toBeDefined();
  await map.click({position:{x:target!.x,y:target!.y}});await expect(page.getByRole('complementary',{name:'军队与舰队'})).toBeVisible();

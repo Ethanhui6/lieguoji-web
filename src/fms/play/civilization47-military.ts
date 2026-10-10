@@ -14,7 +14,7 @@ import {issueAutonomousNavalOrders47} from './civilization47-naval-ai';
 import {graphFor47 as graphFor46} from './sea-geography47';
 import type {ForceMotionObserver47} from './force-display-trace47';
 import {createSessionNavalObserver47} from './naval-observer47';
-import {occupationObservationKey47} from './occupation-observer47';
+import {occupationObservationKey47,createSessionOccupationObserver47} from './occupation-observer47';
 import {recordPoliticalOccupation47,finishPoliticalTick47} from './civilization47-political-owner';
 import {readSessionAdvanceCandidate47,type SessionAdvanceLease47} from './session-advance47';
 
@@ -42,6 +42,7 @@ function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,t
   // caller hooks. Only the fixed session combination (or no hook) may skip.
   const fixed=isOwnedTravelWindow47()&&(!ownership||ownership===recordPoliticalOccupation47)&&(!politicalTick||politicalTick===finishPoliticalTick47);
   const navalObserver=fixed?createSessionNavalObserver47():undefined;
+  const occupationObserver=fixed&&ownedWindow?createSessionOccupationObserver47():undefined;
   let observedPolitics:string|undefined;
   const observeTick=(r:T,pending:boolean):'reuse'|'refresh'=>{
     advanceFamilyCalendar47(r,r.clock.tick,pending);let politicalWork=false;
@@ -52,7 +53,7 @@ function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,t
     const navalWork=navalObserver!(r,weights,sea);
     return politicalWork||navalWork?'refresh':'reuse';
   };
-  const rules:MilitaryRules47<T>={observeMotion,sessionOccupationKey:fixed?occupationObservationKey47:undefined,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
+  const rules:MilitaryRules47<T>={observeMotion,sessionOccupationKey:occupationObserver?.read??(fixed?occupationObservationKey47:undefined),invalidateSessionOccupation:occupationObserver?.invalidate,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
     const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed):undefined);
     const end=moved.unusedSeconds===0?stop:from+moved.elapsed;
     if(end>from)advanceSessionPortInterval47(before,moved.run,from,end,sea,start);

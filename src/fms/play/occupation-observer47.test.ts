@@ -6,8 +6,10 @@ import {recordPoliticalOccupation47,finishPoliticalTick47} from './civilization4
 import {actualForces47} from './force-runtime47';
 import {beginArmyTravel47} from './army-travel47-state';
 import {withOwnedTravel47} from './owned-travel47';
-import {occupationObservationKey47} from './occupation-observer47';
+import {occupationObservationKey47,createSessionOccupationObserver47} from './occupation-observer47';
 import {reconcileCore} from './upper14-state';
+import {advanceSessionBatch47} from './session-advance47';
+import {advancePolitics47} from './civilization47-political-owner';
 
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
 let base:ReturnType<Culture47Session['snapshot']>['run'];
@@ -27,6 +29,29 @@ function fixture(){
  return {r,x,early,late,ax,az,spare};
 }
 describe('fixed session occupation observation',()=>{
+ it.each(['takeover','resistance'] as const)('leased cache keeps late capture and earlier-province reobservation exact: %s',mode=>{
+  const {r}=fixture();r.tactics.unopposed=mode;
+  const before=structuredClone(r),ordinary=advanceCivilizationMilitary47(r,8,weights,recordPoliticalOccupation47,finishPoliticalTick47);
+  advancePolitics47(ordinary.run,ordinary.dailyPending);
+  expect(advanceSessionBatch47(r,[{kind:'advance',ticks:8}],weights)).toEqual(ordinary.run);
+  expect(r).toEqual(before);
+ },30000);
+ it('tracks in-place army and port edits, and explicit combat invalidation without trusting shared references',()=>{
+  const {r,ax}=fixture(),observer=createSessionOccupationObserver47(),space=actualForces47(r).spatial.space;
+  expect(()=>observer.read(r,space)).toThrow(/私有/);
+  withOwnedTravel47(()=>{
+   const key=observer.read(r,space);expect(observer.read(r,space)).toBe(key);
+   // Position within a province does not change the real occupation inputs.
+   const moving={...space,byArmy:new Map([...space.byArmy].map(([id,v])=>[id,{...v,point:{x:v.point.x+.001,y:v.point.y}}]))};
+   expect(observer.read(r,moving)).toBe(key);
+   ax.troops--;expect(observer.read(r,space)).not.toBe(key);expect(observer.read(r,space)).toBe(occupationObservationKey47(r,space));
+   const beforePort=observer.read(r,space),port=Object.values(r.portControl.ports)[0];
+   port.occupierId=r.world.nations.find(n=>n.id!==port.occupierId)!.id;
+   expect(observer.read(r,space)).not.toBe(beforePort);expect(observer.read(r,space)).toBe(occupationObservationKey47(r,space));
+   Object.values(r.upperCombat.armies)[0].base++;observer.invalidate();
+   expect(observer.read(r,space)).toBe(occupationObservationKey47(r,space));
+  });
+ });
  it.each(['takeover','resistance'] as const)('preserves capture, leadership, siege and event order: %s',mode=>{
   const {r,x,early,late}=fixture();r.tactics.unopposed=mode;const before=structuredClone(r);
   const ordinary=advanceCivilizationMilitary47(r,8,weights,recordPoliticalOccupation47,finishPoliticalTick47);

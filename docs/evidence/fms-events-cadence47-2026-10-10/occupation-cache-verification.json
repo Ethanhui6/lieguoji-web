@@ -1,0 +1,148 @@
+{
+  "sourceBaseline": "439e81bc56751a9fa884607af1262215700d98c8",
+  "sourceCommit": null,
+  "engine": "3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632",
+  "artifact": ".autopilot/culture47-occupation-cache-checked",
+  "url": "http://127.0.0.1:5296/?fms=1",
+  "serverPid": 19228,
+  "localOnly": true,
+  "scope": "Lease-only scalar occupation observation with explicit invalidation; complete original key remains the authority",
+  "unit": {
+    "initial": {
+      "passed": 50,
+      "failed": 0
+    },
+    "integration": {
+      "passed": 14,
+      "failed": 0
+    },
+    "note": "Overlapping sets; second set adds real lease late-capture path and natural death/IndexedDB/reload/second month"
+  },
+  "exactPriorRunFrameMotion": true,
+  "comparedDays": 32,
+  "comparedPoints": 36864,
+  "priorFrozenEngine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
+  "coreWarmMedian": {
+    "prior": 811.241200000004,
+    "current": 782.3197
+  },
+  "coreReductionPercent": 3.5650926013131357,
+  "browser": {
+    "first": {
+      "startTime": "2026-10-10T02:15:08.176Z",
+      "duration": 401410.066,
+      "expected": 9,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "motionRepair": {
+      "startTime": "2026-10-10T02:25:32.752Z",
+      "duration": 69543.023,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "note": "Initial mobile pause comparison failed only because trace tick metadata appeared; actual x/y identical. Wait for pause paint and check actual x/y plus presentation tick; desktop/mobile replay passes. Production artifact unchanged."
+  },
+  "rates": [
+    {
+      "project": "desktop-chromium",
+      "mode": "cold-start",
+      "samples": [
+        {
+          "speed": 1,
+          "fromTick": 0,
+          "toTick": 2040,
+          "ms": 5206,
+          "daysPerSecond": 3.265462927391471
+        },
+        {
+          "speed": 4,
+          "fromTick": 0,
+          "toTick": 1920,
+          "ms": 4744,
+          "daysPerSecond": 3.3726812816188874
+        }
+      ],
+      "errors": []
+    },
+    {
+      "project": "mobile-chromium",
+      "mode": "cold-start",
+      "samples": [
+        {
+          "speed": 1,
+          "fromTick": 0,
+          "toTick": 2040,
+          "ms": 5637,
+          "daysPerSecond": 3.0157885400035482
+        },
+        {
+          "speed": 4,
+          "fromTick": 0,
+          "toTick": 1920,
+          "ms": 4747,
+          "daysPerSecond": 3.370549820939541
+        }
+      ],
+      "errors": []
+    },
+    {
+      "project": "desktop-chromium",
+      "mode": "four-day-replay-warmup",
+      "samples": [
+        {
+          "speed": 1,
+          "fromTick": 480,
+          "toTick": 2520,
+          "ms": 4213,
+          "daysPerSecond": 4.035129361500118
+        },
+        {
+          "speed": 4,
+          "fromTick": 480,
+          "toTick": 2400,
+          "ms": 4426,
+          "daysPerSecond": 3.615002259376412
+        }
+      ],
+      "errors": []
+    },
+    {
+      "project": "mobile-chromium",
+      "mode": "four-day-replay-warmup",
+      "samples": [
+        {
+          "speed": 1,
+          "fromTick": 480,
+          "toTick": 2520,
+          "ms": 4593,
+          "daysPerSecond": 3.701284563466144
+        },
+        {
+          "speed": 4,
+          "fromTick": 480,
+          "toTick": 2400,
+          "ms": 4813,
+          "daysPerSecond": 3.3243299397465202
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "checks": {
+    "types": true,
+    "lint": true,
+    "build": true,
+    "approvedArtifacts": 79,
+    "frozenOriginalEngines": 14
+  },
+  "originalCadenceAccepted": false,
+  "physicalPhoneAccepted": false,
+  "release": {
+    "push": false,
+    "pages": false
+  }
+}

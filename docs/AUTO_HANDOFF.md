@@ -1,3 +1,13 @@
+# 当前检查点：真实人物事件已接；占领观察缓存与完整对照通过（2026-10-10）
+
+第七批根独占写、子智能体只读。读取webRebuild.culture47OccupationCacheCheckpoint和docs/evidence/fms-events-cadence47-2026-10-10/OCCUPATION_CACHE_RESULT.md。上批源码439e81bc56751a9fa884607af1262215700d98c8。本批固定Session复用纯移动期间占领签名，实际副作用全部失效，PRE key保留，14旧引擎原字节保留。
+
+本机试玩http://127.0.0.1:5296/?fms=1；产物.autopilot/culture47-occupation-cache-checked，engine 3c1408b2a3e7f14c242e25c1d2f6c31031b7129f584f8addd99916fea76bc632；启动PID19228，续接核实。50相关单测、重叠加强14项、32日dbb完整run/frame/motion对照、types/lint/build/79产物；浏览器初轮9/10，暂停诊断断言修正后桌面/手机2/2复核通过。核心暖机上中位仅减少3.57%，不能宣称原作节奏达标。冷/热身实测见记录，真机/原作视觉未通过。
+
+当前实质未完成：原作战争节奏、内战独立、多家族联盟、1000日安全检查点。WEB-04-21完整依赖未满足保持blocked，当前有界工作归WEB-04-37 in_progress。5293旧997日66条要闻已UI确认保存但未冷恢复；端口不同不自动迁档。没有push/Pages/正式站改动。
+
+---
+
 # 当前检查点：实际事件已接线；倍速仍受计算上限（2026-10-10）
 
 第六批自动播放日界对齐已验证，根独占写、子智能体只读审查。先读webRebuild.culture47AlignedClockCheckpoint与docs/evidence/fms-events-cadence47-2026-10-10/ALIGNED_CLOCK_RESULT.md。第五批自然死亡/继任源码df6be3be8e718d7f9a3e10948399bbec3d48f99c。

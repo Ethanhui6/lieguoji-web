@@ -32,6 +32,7 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
    * a frame or share Army records through this branch. */
   sessionInterval?: (before:T,start:ReturnType<typeof actualContactFrame47>,from:number,stop:number)=>ReturnType<typeof advanceOwnedActualForces47<T>>&{endFrame:ReturnType<typeof actualContactFrame47>};
   sessionOccupationKey?: (candidate:T,space:ArmySpace47)=>string;
+  invalidateSessionOccupation?:()=>void;
   sessionAfterTick?: (candidate:T,dailyPending:boolean)=>'reuse'|'refresh';
   observeMotion?:ForceMotionObserver47;
 };
@@ -81,7 +82,7 @@ export function advanceSessionMilitaryWindow47(lease:SessionAdvanceLease47,ticks
   return advanceMilitaryWindowCore47(input,ticks,weights,rules,input);
 }
 function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:number,weights:ArmyRouteWeights47,rules:MilitaryRules47<T>,owned?:T) {
-  if((rules.sessionInterval||rules.sessionOccupationKey||rules.sessionAfterTick)&&!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
+  if((rules.sessionInterval||rules.sessionOccupationKey||rules.invalidateSessionOccupation||rules.sessionAfterTick)&&!isOwnedTravelWindow47())throw Error('位置复用仅允许私有同步推演。');
   const untilDay=(input.world.day+1)*TICKS_PER_DAY;
   if(!Number.isSafeInteger(ticks)||ticks<1||input.clock.tick<0||Math.floor(input.clock.tick/TICKS_PER_DAY)!==input.world.day||input.clock.tick+ticks>untilDay) throw Error('军事推进必须在当前日界内；先完成日结再推进。');
   const initial=actualForces47(input);
@@ -96,11 +97,11 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
   let observedOccupation:string|undefined;
   const observeOccupation=(due:ReadonlySet<string>,ready?:ReturnType<typeof frame>)=>{
     const f=ready??frame(r);
-    if(due.size){observedOccupation=undefined;return occupy(r,now,due,rules,f);}
+    if(due.size){observedOccupation=undefined;rules.invalidateSessionOccupation?.();const result=occupy(r,now,due,rules,f);rules.invalidateSessionOccupation?.();return result;}
     const key=rules.sessionOccupationKey?.(r,f.spatial.space);
     if(key!==undefined&&key===observedOccupation)return f;
     // Store before, not after: a transfer can change core/leader/port inputs.
-    const result=occupy(r,now,due,rules,f);observedOccupation=key;return result;
+    const result=occupy(r,now,due,rules,f);rules.invalidateSessionOccupation?.();observedOccupation=key;return result;
   };
   for(let tick=startTick+1;tick<=endTick;tick++) {
     for(;;) {
@@ -134,6 +135,7 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
     r.clock.tick=tick;r.forceClock.now=tick;
     rules.afterTick?.(r,tick===untilDay);
     const observation=rules.sessionAfterTick?.(r,tick===untilDay);
+    if(expired||observation==='refresh')rules.invalidateSessionOccupation?.();
     if(rules.sessionAfterTick&&observation!=='reuse'&&observation!=='refresh')throw Error('私有观察必须同步完成，原进度未提交。');
     // Expiry/peace/death can change attack eligibility without moving a point.
     const current=observation==='reuse'&&!rules.afterTick&&!expired&&known?known:frame(r);known=current;

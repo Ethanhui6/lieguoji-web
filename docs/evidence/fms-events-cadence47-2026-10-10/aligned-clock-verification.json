@@ -1,6 +1,6 @@
 {
   "sourceBaseline": "df6be3be8e718d7f9a3e10948399bbec3d48f99c",
-  "sourceCommit": null,
+  "sourceCommit": "439e81bc56751a9fa884607af1262215700d98c8",
   "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
   "scope": "UI automatic playback requests end on day boundaries without exceeding earned tick credit or 480 tick cap",
   "rulesChanged": false,

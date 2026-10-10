@@ -115,5 +115,14 @@
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
     "source": "culture47-geo-final-checked"
+  },
+  {
+    "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
+    "file": "engine-dbb1.js",
+    "bytes": 1369201,
+    "sha256": "960b3b1eb049643a79b648d0dbee19761857f925c2095e47ea9c49ac21bd722d",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-aligned-clock-checked"
   }
 ]

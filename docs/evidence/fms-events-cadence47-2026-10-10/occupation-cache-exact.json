@@ -1,0 +1,55 @@
+{
+  "points": 36864,
+  "days": 32,
+  "tick": 3840,
+  "draws": 2,
+  "musterMonth": 1,
+  "exactPriorRunFrameMotion": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 1193.7281999999977,
+      "currentCoreMs": 1088.6052000000054
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 528.8983999999982,
+      "currentCoreMs": 463.5717999999979
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 509.36729999999807,
+      "currentCoreMs": 440.85889999999927
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 491.1229000000021,
+      "currentCoreMs": 423.7787000000026
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 524.8081999999995,
+      "currentCoreMs": 458.82189999999537
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 786.3190000000031,
+      "currentCoreMs": 733.5921999999991
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 811.241200000004,
+      "currentCoreMs": 782.3197
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 866.9298999999955,
+      "currentCoreMs": 816.8028999999951
+    }
+  ],
+  "warmMedian": {
+    "prior": 811.241200000004,
+    "current": 782.3197
+  },
+  "note": "Node worker core vs source core, four day batches, excludes transport/decode; not browser FPS or full equivalence"
+}

@@ -4855,14 +4855,19 @@
           {
             "id": "WEB-04-43",
             "title": "真实出生与下一代成家的最小长期家谱闭环",
-            "status": "todo",
+            "status": "done",
             "dependsOn": [
               "WEB-04-41"
             ],
             "acceptance": "真实父母/生日/家谱双向引用和独立持久随机流；支系出生账不篡改原grant快照；适龄、近亲与配偶约束；跨代成长继任、保存冷恢复，新规则边界保护旧前史。未恢复原作触发明确标网页适配。",
             "evidence": [
-              "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md"
-            ]
+              "docs/evidence/fms-continuous-play47-2026-10-10/NEXT.md",
+              "docs/evidence/fms-generations47-2026-10-10/RESULT.md",
+              "docs/evidence/fms-generations47-2026-10-10/NEXT.md",
+              "docs/evidence/fms-generations47-2026-10-10/verification.json",
+              "docs/evidence/fms-generations47-2026-10-10/generations-portrait.png"
+            ],
+            "progressScope": "New worlds explicitly enable the isolated generations ledger and storage only. Real parents, birthdays, person/family double references, spouse and close-kin constraints, immutable grant snapshots, adult marriage, later-generation birth, succession eligibility and cold restoration are covered. Dedicated 60-year 9/9 and final desktop Chromium 6/6 recheck passed; birth scheduling is disclosed web adaptation, old worlds and frozen engines remain unchanged."
           }
         ]
       },

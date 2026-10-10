@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-11",
+  "task": "WEB-04-43",
+  "implementationCommit": "a4a79b1",
+  "scope": "isolated new-world births, marriages and multi-generation family continuity",
+  "rule": "known-couples-birth-household-web-v1",
+  "storage": "lieguoji-fms-culture47-generations-v1",
+  "checkedArtifact": ".autopilot/culture47-generations-checked",
+  "localUrl": "http://127.0.0.1:5306/?fms=1",
+  "checks": {
+    "focusedVitest": {
+      "files": 8,
+      "passed": 75,
+      "note": "Pre-final targeted set; later dedicated multi-generation file ran separately."
+    },
+    "generationVitest": {
+      "file": "src/fms/play/civilization47-generations.test.ts",
+      "passed": 9,
+      "includes": "60-year newborn-to-marriage-to-next-generation regression"
+    },
+    "build": {
+      "command": "npm run build",
+      "passed": true,
+      "approvedArtifacts": 85
+    },
+    "browser": {
+      "project": "desktop-chromium",
+      "passed": 6,
+      "finalRecheck": "browser-recheck.log; browser-recheck-results.json",
+      "environmentRetry": "The first final recheck could not connect because the temporary 5306 server had exited; same checked artifact was relaunched on 5306, HTTP 200 confirmed, then all six flows passed.",
+      "includes": [
+        "new world birth/history/family/cold restore",
+        "frozen pre-generation family compatibility",
+        "household persistence",
+        "retirement source protection",
+        "pause calendar endpoint"
+      ]
+    },
+    "manualLocal": {
+      "normalGeneratedWorld": true,
+      "nations": 6,
+      "cities": 60,
+      "observedDate": "公元2年5月7日",
+      "saveColdRestore": "not claimed"
+    },
+    "physicalIphone": false,
+    "originalVisualEquivalence": false,
+    "cloud": false
+  },
+  "limits": [
+    "The birth and spouse scheduling is a disclosed web adaptation, not recovered original source behavior.",
+    "Existing worlds are not migrated or upgraded.",
+    "A local 127.0.0.1 port is not a phone-accessible or published preview.",
+    "Long-history replay cost and large family-scale limits remain separately unmeasured."
+  ]
+}

@@ -7,7 +7,7 @@ test('opening history, real branch appointment and continuous calendar survive o
  const app=page.getByTestId('culture47-app'),clock=page.getByLabel('当前日期',{exact:true});await expect(clock).toHaveText('公元1年1月1日');
  await page.getByRole('button',{name:'查看大事记',exact:true}).click();const history=page.getByRole('region',{name:'文化世界史书'});await expect(history).toContainText('开篇：建国已');await expect(history).not.toContainText('开国就任');
  await history.locator('.c47-history-nations button').last().click();await expect(page.getByRole('region',{name:'国家实况'})).toContainText('始于开篇之前');
- const houses=page.locator('.c47-houses');await houses.locator('summary').click();
+ const houses=page.locator('.c47-houses');await houses.locator(':scope > summary').click();
  // Try actual registered adults; no synthetic person IDs are inserted.
  const form=async()=>{const candidates=await page.getByLabel('支系家主',{exact:true}).locator('option').evaluateAll(nodes=>nodes.map(n=>(n as HTMLOptionElement).value));
   for(const id of candidates){await page.getByLabel('支系家主',{exact:true}).selectOption(id);await page.getByRole('button',{name:'预览分封',exact:true}).click();if(await page.getByRole('group',{name:'确认家族分封'}).isVisible())return;}
@@ -27,7 +27,7 @@ test('opening history, real branch appointment and continuous calendar survive o
  for(const row of familyRows)expect(savedRows.some(s=>s.startsWith(row.split('族长')[0]))).toBe(true);
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:60000});const savedTick=await app.getAttribute('data-tick');
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});
- await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();
+ await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator(':scope > summary').click();
  const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored).toEqual(savedRows);expect(errors).toEqual([]);
  await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,savedRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});
 });

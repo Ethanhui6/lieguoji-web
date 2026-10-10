@@ -1,0 +1,587 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-generations.spec.ts",
+      "tests/fms-culture47-house-governance.spec.ts",
+      "tests/fms-culture47-retirement.spec.ts",
+      "--project=desktop-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-generations.spec.ts",
+      "file": "fms-culture47-generations.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "normal play births appear in the family and chronicle, continue while inspected, then cold restore",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 437,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-generations.spec.ts:8:104",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-generations.spec.ts:8:104"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:37:57.794Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--8e832-inspected-then-cold-restore-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--8e832-inspected-then-cold-restore-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--8e832-inspected-then-cold-restore-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "40b95ce21e94d2748cb3-6b8f8d93164403e6af90",
+          "file": "fms-culture47-generations.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "frozen fe7 keeps original families and no birth-rule upgrade when loaded in the new UI",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 185,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-generations.spec.ts:26:32",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-generations.spec.ts:26:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:37:59.446Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--a0504-e-when-loaded-in-the-new-UI-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--a0504-e-when-loaded-in-the-new-UI-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-generations--a0504-e-when-loaded-in-the-new-UI-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "40b95ce21e94d2748cb3-f495f169c07a95216e9c",
+          "file": "fms-culture47-generations.spec.ts",
+          "line": 25,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-house-governance.spec.ts",
+      "file": "fms-culture47-house-governance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary play creates households monthly, keeps details running and saves the autonomy setting",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 193,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-house-governance.spec.ts:6:8",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-house-governance.spec.ts:6:8"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:38:00.148Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-house-govern-e50b4--saves-the-autonomy-setting-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-house-govern-e50b4--saves-the-autonomy-setting-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-house-govern-e50b4--saves-the-autonomy-setting-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f295788edf95d0463f4-086702579fb81ea6a289",
+          "file": "fms-culture47-house-governance.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-retirement.spec.ts",
+      "file": "fms-culture47-retirement.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real frozen 9c native world safely enables retirement and cold resumes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 199,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:9:104",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:9:104"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:38:00.841Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-8aaf0-retirement-and-cold-resumes-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-8aaf0-retirement-and-cold-resumes-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-8aaf0-retirement-and-cold-resumes-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-a96e355748ce5a78fdb4",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 8,
+          "column": 36
+        },
+        {
+          "title": "real frozen 9c forked world safely enables retirement and cold resumes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 233,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:9:104",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:9:104"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:38:01.530Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-15cc7-retirement-and-cold-resumes-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-15cc7-retirement-and-cold-resumes-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-r-15cc7-retirement-and-cold-resumes-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-c6c8056cc16dbad7c00c",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 8,
+          "column": 36
+        },
+        {
+          "title": "pausing finishes accepted motion and calendar before save without requesting more simulation",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 195,
+                  "error": {
+                    "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n",
+                    "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:53:32",
+                    "location": {
+                      "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                      "column": 13,
+                      "line": 4
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mfms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                        "column": 13,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5306/campaign/culture?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5306/campaign/culture?fms=1\", waiting until \"load\"\u001b[22m\n\n\n   at fms-culture47-fixture.ts:4\n\n  2 | import {grid} from '../src/fms/play/fixture.test-support';\n  3 | export async function enter(page:Page,worldId?:string){\n> 4 |  await page.goto('/campaign/culture?fms=1');\n    |             ^\n  5 |  const d=grid((x,y)=>x>0&&x<250&&y>0&&y<250?45:0);if(worldId)d.worldId=worldId;const data={...d,triangles:[...d.triangles],elevations:[...d.elevations]};\n  6 |  await page.evaluate(async data=>{\n  7 |   const document={...data,triangles:new Uint32Array(data.triangles),elevations:new Int32Array(data.elevations)},base={format:'lieguoji-fms-document',version:1,storedRevision:1,storedAt:'2026-10-08T00:00:00.000Z',document:data};\n    at enter (D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts:4:13)\n    at D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-retirement.spec.ts:53:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T19:38:02.278Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-p-f377e--requesting-more-simulation-desktop-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-p-f377e--requesting-more-simulation-desktop-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-retirement-p-f377e--requesting-more-simulation-desktop-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\游戏\\架空地图模拟器\\tests\\fms-culture47-fixture.ts",
+                    "column": 13,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "c0b5c2d787966bbd614b-9af36df806599722102d",
+          "file": "fms-culture47-retirement.spec.ts",
+          "line": 52,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T19:37:57.248Z",
+    "duration": 5364.406,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

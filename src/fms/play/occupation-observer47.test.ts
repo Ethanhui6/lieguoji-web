@@ -58,7 +58,7 @@ describe('fixed session occupation observation',()=>{
   const optimized=withOwnedTravel47(()=>advanceCivilizationMilitary47(r,8,weights,recordPoliticalOccupation47,finishPoliticalTick47));
   expect(optimized).toEqual(ordinary);expect(r).toEqual(before);
   if(mode==='resistance')expect(optimized.run.occupation.sieges.some(s=>s.provinceId===early.id)).toBe(true);
-  if(mode==='takeover'){expect(optimized.run.people.nations[x].leaderId).toBeNull();expect(optimized.run.world.provinces.find(p=>p.id===late.id)!.controller).not.toBe(x);expect(optimized.run.chronicle.entries.some(e=>e.kind==='extinction')).toBe(true);}
+  if(mode==='takeover'){const controller=optimized.run.world.provinces.find(p=>p.id===late.id)!.controller,capture=optimized.run.chronicle.entries.find(e=>e.kind==='occupation'&&e.place?.id===late.id);expect(optimized.run.people.nations[x].leaderId).toBeNull();expect(controller).not.toBe(x);expect(capture?.nationIds).toEqual([x,controller]);expect(optimized.run.chronicle.entries.some(e=>e.kind==='extinction')).toBe(true);}
  },30000);
  it('invalidates for real ownership, port, leadership, combat and peaceful relationships',()=>{
   const {r}=fixture(),key=()=>occupationObservationKey47(r,actualForces47(r).spatial.space);let previous=key();

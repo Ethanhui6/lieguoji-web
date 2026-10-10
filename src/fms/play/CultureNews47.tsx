@@ -8,7 +8,7 @@ import type {HistoricalEntry} from './chronicle-records';
  * channel. Wars, emergency mobilization and political/person events stay major.
  * This changes only presentation priority, never the persisted chronicle. */
 export function cultureNewsItem47(e:HistoricalEntry,death=false):NewsItem{
-  const presentation=historyPresentation47(e,death),normal=['征募','遣散','出生','成婚'].includes(presentation.kind);
+  const presentation=historyPresentation47(e,death),normal=e.kind==='occupation'||['征募','遣散','出生','成婚'].includes(presentation.kind);
   return {key:'history-'+e.id,day:e.day,text:e.text,reason:presentation.reason,priority:normal?'normal':'major',location:null,historyId:e.id};
 }
 export const cultureNewsDwell47=(item:NewsItem)=>item.priority==='major'?8000:1000;
@@ -27,7 +27,7 @@ export class CultureNewsQueue47{
 }
 /** Source-backed 8s major / 1s normal dwell, with a 180ms web slide/fade.
  * No empty status strip and no fabricated events to keep it occupied. */
-export const newsEntriesAtTick47=(entries:HistoricalEntry[],tick:number)=>entries.filter(e=>e.kind!=='occupation'&&e.tick<=tick);
+export const newsEntriesAtTick47=(entries:HistoricalEntry[],tick:number)=>entries.filter(e=>e.tick<=tick);
 export function CultureNews47({run,open,displayTick}:{run:FoundingForces47;open:(id:number|null)=>void;displayTick?:()=>number}){
   const chronicle=run.chronicle;
   const queue=useRef(new CultureNewsQueue47()),active=useRef<NewsItem|null>(null);
@@ -51,5 +51,5 @@ export function CultureNews47({run,open,displayTick}:{run:FoundingForces47;open:
   },[shown?.key]);
   if(!shown)return null;
   const entry=chronicle.entries.find(e=>e.id===shown.historyId),date=historyDate47(run.life.startDate,shown.day),related=run.world.nations.filter(n=>entry?.nationIds.includes(n.id));
-  return <button className={`c47-news${leaving?' is-leaving':''}`} aria-label="顶部重要事件" title={shown.reason} onClick={()=>open(shown.historyId??null)}><PlayIcon name="book" size={17}/><span key={shown.key} className="c47-news-copy" aria-live="polite"><small>{date.year}年{date.month}月{date.day}日</small><strong><CultureHistoryText47 text={shown.text} nations={related}/></strong></span>{pending>0&&<small>+{pending}</small>}<PlayIcon name="chevron" size={14}/></button>;
+  return <button className={`c47-news${leaving?' is-leaving':''}`} aria-label="顶部事件" title={shown.reason} onClick={()=>open(shown.historyId??null)}><PlayIcon name="book" size={17}/><span key={shown.key} className="c47-news-copy" aria-live="polite"><small>{date.year}年{date.month}月{date.day}日</small><strong><CultureHistoryText47 text={shown.text} nations={related}/></strong></span>{pending>0&&<small>+{pending}</small>}<PlayIcon name="chevron" size={14}/></button>;
 }

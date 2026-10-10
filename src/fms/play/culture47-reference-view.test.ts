@@ -5,7 +5,8 @@ import {Culture47Session} from './culture47-session';
 import {grid} from './fixture.test-support';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationFamily47,nationOverview47} from './CultureNationOverview47';
-import {CultureHistoryText47,historyDate47} from './CultureHistory47';
+import {CultureHistoryText47,historyDate47,historyEntries47} from './CultureHistory47';
+import type {HistoricalEntry} from './chronicle-records';
 let run:FoundingForces47;
 beforeAll(()=>{run=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).run;},30000);
 describe('native screenshot driven real47 read-only views',()=>{
@@ -38,5 +39,10 @@ describe('native screenshot driven real47 read-only views',()=>{
  });
  it('uses the actual Gregorian calendar across leap days and year boundaries',()=>{
   expect(historyDate47({year:4,month:2,day:28},1)).toEqual({year:4,month:2,day:29});expect(historyDate47({year:1,month:1,day:1},365)).toEqual({year:2,month:1,day:1});
+ });
+ it('keeps real land transfers in the complete ledger without making them default headlines',()=>{
+  const entry=(id:number,kind:HistoricalEntry['kind']):HistoricalEntry=>({id,day:id,tick:id,kind,text:kind==='occupation'?'甲国取得临海郡':'甲国对乙国宣战：边境争议',reason:'测试',nationIds:['n-0','n-1'],place:null,people:[],sourceEventId:null});
+  const occupation=entry(1,'occupation'),declaration=entry(2,'diplomacy');
+  expect(historyEntries47([occupation,declaration],'important')).toEqual([declaration]);expect(historyEntries47([occupation,declaration],'all')).toEqual([declaration,occupation]);
  });
 });

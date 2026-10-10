@@ -20,6 +20,11 @@ describe('actual history message priorities',()=>{
   const death=cultureNewsItem47(entry(4,'领袖去世'),true);expect(death.priority).toBe('major');expect(death.reason).toContain('自然去世');
   expect(cultureNewsItem47(entry(5,'甲国遣散3支应急军')).priority).toBe('normal');
  });
+ it('keeps a real single-province transfer visible but ordinary, behind a declaration',()=>{
+  const capture=entry(1,'甲国取得临海郡','occupation'),declaration=entry(2,'乙国对甲国宣战：边境争议'),queue=new CultureNewsQueue47();
+  expect(newsEntriesAtTick47([capture,declaration],1200)).toEqual([capture,declaration]);expect(cultureNewsItem47(capture).priority).toBe('normal');expect(cultureNewsDwell47(cultureNewsItem47(capture))).toBe(1000);
+  queue.ingest([]);queue.ingest([cultureNewsItem47(capture),cultureNewsItem47(declaration)]);expect(queue.next()!.historyId).toBe(declaration.id);expect(queue.next()!.historyId).toBe(capture.id);
+ });
  it('keeps waiting major news through an ordinary flood without reviving evicted news',()=>{
   const queue=new CultureNewsQueue47();queue.ingest([]);
   const major=cultureNewsItem47(entry(1,'甲国对乙国宣战：边境争议')),ordinary=Array.from({length:80},(_,i)=>cultureNewsItem47(entry(i+2,'甲国新编3支常备军')));

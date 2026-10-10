@@ -9921,8 +9921,86 @@
         "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
         "localOnly": true
       },
-      "sourceCommit": null,
+      "sourceCommit": "df6be3be8e718d7f9a3e10948399bbec3d48f99c",
       "planCheckRepair": "Initial check found WEB-04-21 incorrectly in_progress while WEB-04-13 incomplete; retained original dependency and partial evidence, marked full21 blocked, bounded work remains in WEB-04-37. No validator or gate relaxed."
+    },
+    "culture47AlignedClockCheckpoint": {
+      "sourceBaseline": "df6be3be8e718d7f9a3e10948399bbec3d48f99c",
+      "sourceCommit": null,
+      "engine": "dbb11af70cc35d558d411004248e4f1c136d8080696c967497bee74eb05e702e",
+      "scope": "UI automatic playback requests end on day boundaries without exceeding earned tick credit or 480 tick cap",
+      "rulesChanged": false,
+      "url": "http://127.0.0.1:5295/?fms=1",
+      "artifact": ".autopilot/culture47-aligned-clock-checked",
+      "localOnly": true,
+      "unit": {
+        "passed": 11,
+        "failed": 0
+      },
+      "browser": {
+        "startTime": "2026-10-10T01:30:09.688Z",
+        "duration": 265074.572,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "throughput": {
+        "desktop": {
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2040,
+              "ms": 6374,
+              "daysPerSecond": 2.6670850329463445
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 1920,
+              "ms": 5549,
+              "daysPerSecond": 2.883402414849522
+            }
+          ],
+          "errors": []
+        },
+        "mobileChromiumEmulation": {
+          "samples": [
+            {
+              "speed": 1,
+              "fromTick": 0,
+              "toTick": 2040,
+              "ms": 6790,
+              "daysPerSecond": 2.503681885125184
+            },
+            {
+              "speed": 4,
+              "fromTick": 0,
+              "toTick": 1920,
+              "ms": 7213,
+              "daysPerSecond": 2.2182171079994455
+            }
+          ],
+          "errors": []
+        }
+      },
+      "checks": {
+        "typecheck": true,
+        "lint": true,
+        "build": true,
+        "approvedArtifacts": 78
+      },
+      "originalCadenceAccepted": false,
+      "performanceClaim": "No demonstrated throughput improvement in this run. Compute saturation remains; 4x not reliably faster. Different runs are not controlled A/B.",
+      "release": {
+        "push": false,
+        "pages": false
+      },
+      "physicalPhoneAccepted": false,
+      "status": "bounded-ui-slice-verified",
+      "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/ALIGNED_CLOCK_RESULT.md",
+      "next": "Profile current authoritative core; fix measured repeated work without skipping simulation ticks. Full political integration and long-term checkpoints remain."
     }
   }
 }

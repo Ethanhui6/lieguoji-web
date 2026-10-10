@@ -1,3 +1,13 @@
+# 当前检查点：实际事件已接线；倍速仍受计算上限（2026-10-10）
+
+第六批自动播放日界对齐已验证，根独占写、子智能体只读审查。先读webRebuild.culture47AlignedClockCheckpoint与docs/evidence/fms-events-cadence47-2026-10-10/ALIGNED_CLOCK_RESULT.md。第五批自然死亡/继任源码df6be3be8e718d7f9a3e10948399bbec3d48f99c。
+
+最新本机试玩http://127.0.0.1:5295/?fms=1，产物.autopilot/culture47-aligned-clock-checked，启动PID14856（续接重新核实）；与5294相同dbb引擎，仅UI调度修复。11单测/10浏览器与types/lint/build/78产物通过。实测桌面1×2.667/4×2.883、手机仿真1×2.504/4×2.218日秒；没有达成原作速度或4倍倍率，不宣称性能提升。
+
+下一步当前core采样，处理实际热点，再接内战/独立、多家族/联盟及1000日安全检查点。完整WEB-04-21因13未完成保持blocked，部分工作归WEB-04-37 in_progress；下方旧记录中21进行中描述已被更正。真机/原作视觉未通过，无push/Pages。
+
+---
+
 # 当前检查点：自然死亡与自动继任已接实际模拟（2026-10-10）
 
 第五批本地切片已验证，根独占写、三个子智能体只读。先读webRebuild.culture47LifecycleCheckpoint及docs/evidence/fms-events-cadence47-2026-10-10/LIFECYCLE_RESULT.md。原始月检顺序、已知人物按六政体补位、家主独立、职位履历与合法空位。当前不是完整选举/多家族/内战/出生婚姻。

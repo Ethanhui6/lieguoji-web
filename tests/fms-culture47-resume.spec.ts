@@ -32,7 +32,8 @@ for(const cancelRecovery of [false,true])test(`Continue recovers a terminated Wo
  await page.getByRole('button',{name:'继续时间',exact:true}).click();
  if(cancelRecovery){await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('推演已恢复',{timeout:30000});await page.waitForTimeout(600);await expect(app).toHaveAttribute('data-tick','0');await expect(page.getByRole('button',{name:'继续时间',exact:true})).toBeVisible();}
  else{await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:30000}).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');}
- const tick=Number(await app.getAttribute('data-tick'));expect(tick).toBeLessThan(120);
+ const tick=Number(await app.getAttribute('data-tick'));expect(tick%120).toBe(0);if(cancelRecovery)expect(tick).toBe(0);else expect(tick).toBeGreaterThanOrEqual(120);
+ await page.waitForTimeout(600);await expect(app).toHaveAttribute('data-tick',String(tick));
  const evidence=await page.evaluate(()=>(window as unknown as {resumeWorkerEvidence:unknown}).resumeWorkerEvidence);expect(evidence).toEqual([{type:'injected-error'},{type:'load',actions:0}]);
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
  await info.attach('worker-recovery',{body:JSON.stringify({fault:'synthetic worker error before first advance; real Worker restart and zero-action journal replay',cancelRecovery,tick,evidence,physicalIphone:false}),contentType:'application/json'});

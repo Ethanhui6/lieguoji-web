@@ -17,7 +17,7 @@ test('normal continent has measured authoritative throughput at 1x and 4x with d
   const fromTick=Number(await app.getAttribute('data-tick')),start=Date.now();await page.getByRole('button',{name:'继续时间',exact:true}).click();
   await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:70000,intervals:[100]}).toBeGreaterThanOrEqual(fromTick+1200);
   await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:20000});
-  const toTick=Number(await app.getAttribute('data-tick')),ms=Date.now()-start;samples.push({speed,fromTick,toTick,ms,daysPerSecond:(toTick-fromTick)/120/(ms/1000)});
+  const toTick=Number(await app.getAttribute('data-tick')),ms=Date.now()-start;expect(toTick%120).toBe(0);samples.push({speed,fromTick,toTick,ms,daysPerSecond:(toTick-fromTick)/120/(ms/1000)});
  }
  await page.screenshot({path:info.outputPath('normal-world-throughput.png')});
  const tick=await app.getAttribute('data-tick'),positions=await page.getByTestId('culture47-map').getAttribute('data-force-positions');

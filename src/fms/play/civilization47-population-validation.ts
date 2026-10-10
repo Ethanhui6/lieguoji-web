@@ -9,6 +9,7 @@ import {createNativeIsoCalendar,isoPlusDays} from './native-economy/iso-calendar
 import type {Population47} from './civilization47-population-types';
 import {assertOrigins47} from './civilization47-origins';
 import {assertHouses47} from './civilization47-houses';
+import {assertHouseGovernance47} from './civilization47-house-governance';
 
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&(Object.getPrototypeOf(v)===Object.prototype||Object.getPrototypeOf(v)===null);
 const exact=(v:unknown,keys:readonly string[])=>record(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -33,6 +34,7 @@ export function assertPopulation47(r:Population47) {
   assertPeople(r.people,r,v);
   // Extra houses need an exact recorded split; never accept arbitrary new IDs.
   assertHouses47(r);
+  assertHouseGovernance47(r);
   if(!exact(s.families,[...Object.values(r.people.nations).map(n=>String(n.id)),...(r.houses?.grants??[]).map(g=>String(g.familyId))]))return fail();
   const listed=new Set<number>();
   for(const [id,f] of Object.entries(s.families)){

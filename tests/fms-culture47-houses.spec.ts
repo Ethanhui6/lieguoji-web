@@ -21,9 +21,13 @@ test('opening history, real branch appointment and continuous calendar survive o
  const timeline=await page.evaluate(async()=>{const rows:{day:number;tick:number;endpoint:number;text:string}[]=[];const end=performance.now()+4000;while(performance.now()<end){const n=document.querySelector<HTMLElement>('.c47-calendar')!,app=document.querySelector<HTMLElement>('[data-testid="culture47-app"]')!;rows.push({day:Number(n.dataset.day),tick:Number(n.dataset.displayTick),endpoint:Number(app.dataset.tick),text:n.textContent!});await new Promise(r=>setTimeout(r,25));}return rows;});
  expect(timeline.length).toBeGreaterThan(20);expect(timeline.every(v=>v.day===Math.floor(v.tick/120)&&v.tick<=v.endpoint)).toBe(true);expect(timeline.at(-1)!.tick).toBeGreaterThan(timeline[0].tick);expect(timeline.some(v=>v.tick<v.endpoint)).toBe(true);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:30000});await page.waitForTimeout(100);const pause=await clock.textContent();await page.waitForTimeout(350);await expect(clock).toHaveText(pause!);
+ // Simulation can now establish an additional branch while the clock runs.
+ // Restoration must match the actual paused save point, not the earlier day-zero census.
+ const savedRows=await houses.locator('[data-family-id]').allTextContents();expect(savedRows.length).toBeGreaterThanOrEqual(familyRows.length);
+ for(const row of familyRows)expect(savedRows.some(s=>s.startsWith(row.split('族长')[0]))).toBe(true);
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:60000});const savedTick=await app.getAttribute('data-tick');
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',savedTick!,{timeout:60000});
  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText('建立');await history.locator('.c47-history-nations button').last().click();await houses.locator('summary').click();
- const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored.length).toBe(familyRows.length);expect(restored.map(s=>s.split('人口')[0])).toEqual(familyRows.map(s=>s.split('人口')[0]));expect(errors).toEqual([]);
- await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});
+ const restored=await houses.locator('[data-family-id]').allTextContents();expect(restored).toEqual(savedRows);expect(errors).toEqual([]);
+ await info.attach('branch-and-clock',{body:JSON.stringify({familyRows,savedRows,restored,savedTick,timeline,errors,physicalIphone:false}),contentType:'application/json'});
 });

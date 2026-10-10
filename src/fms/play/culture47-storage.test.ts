@@ -4,10 +4,19 @@ import {grid} from './fixture.test-support';
 import {Culture47Session,type Culture47Journal} from './culture47-session';
 import {CULTURE47_DATABASE,saveCulture47,loadCulture47} from './culture47-storage';
 import {Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
+import {populationStamp47} from './civilization47-population-types';
 let journal:Culture47Journal;
 beforeAll(()=>{journal=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).journal;},30000);
 async function mutate(factory:IDBFactory,fn:(s:IDBObjectStore)=>void){const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=factory.open(CULTURE47_DATABASE,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{await new Promise<void>((resolve,reject)=>{const t=db.transaction('slots','readwrite');fn(t.objectStore('slots'));t.oncomplete=()=>resolve();t.onerror=()=>reject(t.error);});}finally{db.close();}}
 describe('independent culture journal storage',()=>{
+  it('retains a policy action and locks both slots if either policy stamp gains an unknown field',async()=>{
+    const s=new Culture47Session(),initial=s.load(journal),withPolicy=s.execute({kind:'family-policy',nationId:'n-0',enabled:false,expected:populationStamp47(initial.run)},0).journal;
+    for(const slot of ['current','backup']){
+      const f=new IDBFactory();await saveCulture47(withPolicy,null,f);await saveCulture47(withPolicy,1,f);expect((await loadCulture47(f))?.journal).toEqual(withPolicy);
+      await mutate(f,store=>{const q=store.get(slot);q.onsuccess=()=>{const row=q.result;row.journal.actions[0].expected.futurePolicy=1;store.put(row,slot);};});
+      await expect(loadCulture47(f)).rejects.toThrow('未来');await expect(saveCulture47(withPolicy,2,f)).rejects.toThrow('未来');
+    }
+  },30000);
   it('keeps the second CAS check even when a slot changes without its revision',async()=>{
     const f=new IDBFactory();await saveCulture47(journal,null,f);let calls=0;
     await expect(saveCulture47(journal,1,f,undefined,async()=>{if(++calls===2)await mutate(f,s=>{const r=s.get('current');r.onsuccess=()=>s.put({...r.result,checksum:'concurrent-slot-write'},'current');});})).rejects.toThrow('另一个页面已修改');

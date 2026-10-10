@@ -10,6 +10,7 @@ import {initialPeopleAndLife22} from './life22-people';
 import {attachFamilies47} from './civilization47-family';
 import {attachOrigins47} from './civilization47-origins';
 import {attachHouses47} from './civilization47-houses';
+import {attachHouseGovernance47} from './civilization47-house-governance';
 
 /** Actual terrain/world/founding-person creation phase for full47. No call to
  * old create/initialNaming, no temporary fake EasternFantasy identity. This is
@@ -33,5 +34,5 @@ export function createCivilizationWorld47(document:FmsDocument,count:number,city
   if(!validateCivilizationWorld47(world))throw Error('文化世界治理初始化无效，原稿未改动。');
   const clock={version:1 as const,tick:0},chronicle=initialCivilizationChronicle47(world,civilization),{people,life}=initialPeopleAndLife22({world,clock,chronicle});
   assertCivilization47(civilization,world,chronicle);
-  return attachHouses47(attachOrigins47(attachFamilies47({id,terrain,scale,world,clock,civilization,chronicle,people,life})));
+  return attachHouseGovernance47(attachHouses47(attachOrigins47(attachFamilies47({id,terrain,scale,world,clock,civilization,chronicle,people,life}))));
 }

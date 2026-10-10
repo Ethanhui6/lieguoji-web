@@ -142,5 +142,14 @@
     "rule": "real-culture-zh-politics-journal-2",
     "protocol": 2,
     "source": "culture47-origins-houses-checked"
+  },
+  {
+    "engine": "a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec",
+    "file": "engine-a78e.js",
+    "bytes": 1379345,
+    "sha256": "3f3db65c5e3512550f6f2245ef9b3deac206253cf487925f7443aad50c7a35db",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-origins-houses-final-checked"
   }
 ]

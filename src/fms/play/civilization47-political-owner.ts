@@ -17,6 +17,7 @@ import type {FoundingForces47} from './civilization47-forces';
 import type {PreviousOwnership47} from './force-tick47';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
+import {advanceHouseGovernance47} from './civilization47-house-governance';
 export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;targetNationId:string};
 export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
@@ -67,7 +68,7 @@ export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOw
 export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}
 export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean){
   reconcileGovernmentContinuity47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
-  if(dayChanged)advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateDeclaration47(r,id);});
+  if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateDeclaration47(r,id);});}
   reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}

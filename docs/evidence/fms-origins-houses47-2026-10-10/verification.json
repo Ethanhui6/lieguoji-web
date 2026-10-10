@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "e885dc951a34c2dd65b37b6489b8e2306aa6f3ca",
+  "buildMetadataCommit": "42560fd296031c8a85eef73ee87ff7451824d82e",
+  "buildCommitNote": "Built from the dirty feature tree on 42560fd; source was committed unchanged as e885dc9 afterward. This is not a cloud build.",
+  "engine": "a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec",
+  "artifact": ".autopilot/culture47-origins-houses-final-checked",
+  "url": "http://127.0.0.1:5299/?fms=1",
+  "bind": "127.0.0.1",
+  "serverPidAtStart": 48840,
+  "approvedArtifacts": 81,
+  "historicalEngines": 16,
+  "checks": {
+    "unitFinal": {
+      "files": 5,
+      "passed": 39
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "browserFinal": {
+      "passed": 4,
+      "projects": [
+        "desktop-chromium",
+        "mobile-chromium"
+      ]
+    },
+    "firstUnitFailureRetained": true,
+    "physicalIphone": "not_run",
+    "originalCadence": "not_accepted",
+    "visualEquivalence": "not_accepted",
+    "cloud": "not_run"
+  },
+  "limits": [
+    "opening facts are a generated web rule, not simulated earlier wars",
+    "manual recorded grants, not automatic family politics",
+    "real iPhone Safari/Chrome not tested",
+    "1000 day replay cap remains; old5297 and5298 worlds not reset"
+  ],
+  "evidence": [
+    "docs/evidence/fms-origins-houses47-2026-10-10/RESULT.md",
+    "docs/evidence/fms-origins-houses47-2026-10-10/REMAINING.md",
+    "docs/evidence/fms-origins-houses47-2026-10-10/unit-final.log",
+    "docs/evidence/fms-origins-houses47-2026-10-10/browser-final.log",
+    "docs/evidence/fms-origins-houses47-2026-10-10/browser-final-results.json",
+    "docs/evidence/fms-origins-houses47-2026-10-10/artifact-files.json"
+  ]
+}

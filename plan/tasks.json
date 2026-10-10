@@ -2850,9 +2850,8 @@
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs"
     ],
     "nextBatch": [
-      "WEB-03-06",
       "WEB-04-37",
-      "WEB-04-38"
+      "WEB-03-06"
     ],
     "phases": [
       {
@@ -4766,6 +4765,24 @@
               "docs/evidence/fms-live-observation-v5-2026-10-08/CONTRACT.md"
             ],
             "progressScope": "Contract only. No ocean ownership or conquest currently in the playable v46 UI build."
+          },
+          {
+            "id": "WEB-04-39",
+            "title": "连续历法、既有开篇国史与真实人物手动分封（限定切片）",
+            "status": "done",
+            "dependsOn": [
+              "WEB-04-27",
+              "WEB-04-36"
+            ],
+            "acceptance": "年月日与军队使用同一已确认显示时钟，快讯不提前；新局既有国龄和现任任期独立确定且不制造历代事件；真实成员携家庭分封有预览取消、Worker重验、独立家主、实控封地和保存重放。旧引擎原样运行。仅本地功能验收，不包含自动分家、完整内战/联盟、长期续玩或原作节奏/真机/视觉验收。",
+            "evidence": [
+              "docs/evidence/fms-origins-houses47-2026-10-10/RESULT.md",
+              "docs/evidence/fms-origins-houses47-2026-10-10/verification.json",
+              "docs/evidence/fms-origins-houses47-2026-10-10/unit-final.log",
+              "docs/evidence/fms-origins-houses47-2026-10-10/browser-final.log",
+              "docs/evidence/fms-origins-houses47-2026-10-10/browser-final-results.json"
+            ],
+            "progressScope": "39 final affected checks; types/lint/build with81 approved artifacts;4 desktop/mobile Chromium flows. Actual manual branches and origin facts, not native automatic split or earlier simulated history."
           }
         ]
       },
@@ -4796,7 +4813,8 @@
             "status": "todo",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
-            ]
+            ],
+            "partialProgress": "WEB-04-39已接真实人物手动支系与封地，原始家主/月检继承保持；完整PH05依赖、自动分化、出生联姻与政治影响仍未完成。本项状态不改为完成。"
           },
           {
             "id": "WEB-05-02",
@@ -4859,7 +4877,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47OwnedBatchCheckpoint and AUTO_HANDOFF. Latest local5293 engine bbff; three local performance slices verified with 32-day exact d01d comparison. Original pace still failed; preserve12 frozen engines and old5288/5290/5291 saves. Next connect real monthly natural death, known-person succession/emergency appointment with legal vacancy and death history; civil-war/independence/multi-family/alliance/monthly capital crisis/post1000-day checkpoint remain incomplete. Do not substitute manual succession or fabricated periodic events. Freeze latest delivered worker before runtime changes. No push/Pages/phone/original-visual acceptance.",
+    "nextRecoveryTarget": "Read culture47OriginsHousesCheckpoint and latest AUTO_HANDOFF first. Source e885dc9, final local5299 engine a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec. Preserve16 frozen engines and old5297/5298 origins. 用户最新优先级：连续年月日、已有国史、家族分化及以前遗漏的原作功能。已完成e885dc9有界切片；接续真实家族自动分化/国家内战独立所需人物地权与战争登记，及1000日安全检查点，不能用缓存微调或虚构新闻替代。完整PH05/真机/视觉门保持未验收。 Freeze latest delivered worker before runtime changes. No push/Pages authorization added.",
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",
       "scope": "native monthly gold settlement, province income, population initialization and resources",
@@ -6394,9 +6412,10 @@
       "acceptanceClaimsUnchanged": true,
       "releasePolicyUnchanged": true,
       "evidence": [
-        "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md"
+        "docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md",
+        "docs/evidence/fms-origins-houses47-2026-10-10/RESULT.md"
       ],
-      "nextFocus": "当前用户要求：细辖区/分裂国名/有效首都/史书及有限上帝政治干预。完整家族、信仰、附庸和原作政治体系仍留WEB-PH05。"
+      "nextFocus": "用户最新优先级：连续年月日、已有国史、家族分化及以前遗漏的原作功能。已完成e885dc9有界切片；接续真实家族自动分化/国家内战独立所需人物地权与战争登记，及1000日安全检查点，不能用缓存微调或虚构新闻替代。完整PH05/真机/视觉门保持未验收。"
     },
     "playablePrototype": {
       "status": "local-core-loop-verified",
@@ -10365,6 +10384,56 @@
         "pages": false
       },
       "evidence": "docs/evidence/fms-events-cadence47-2026-10-10/CONTACT_END_REVIEW.md"
+    },
+    "culture47OriginsHousesCheckpoint": {
+      "date": "2026-10-10",
+      "sourceCommit": "e885dc951a34c2dd65b37b6489b8e2306aa6f3ca",
+      "buildMetadataCommit": "42560fd296031c8a85eef73ee87ff7451824d82e",
+      "buildCommitNote": "Built from the dirty feature tree on 42560fd; source was committed unchanged as e885dc9 afterward. This is not a cloud build.",
+      "engine": "a78efd776fb40f7b2860e5b1ae79146c37cbf2b7b2d628eda49edef106c2eaec",
+      "artifact": ".autopilot/culture47-origins-houses-final-checked",
+      "url": "http://127.0.0.1:5299/?fms=1",
+      "bind": "127.0.0.1",
+      "serverPidAtStart": 48840,
+      "approvedArtifacts": 81,
+      "historicalEngines": 16,
+      "checks": {
+        "unitFinal": {
+          "files": 5,
+          "passed": 39
+        },
+        "typecheck": "passed",
+        "lint": "passed",
+        "build": "passed",
+        "browserFinal": {
+          "passed": 4,
+          "projects": [
+            "desktop-chromium",
+            "mobile-chromium"
+          ]
+        },
+        "firstUnitFailureRetained": true,
+        "physicalIphone": "not_run",
+        "originalCadence": "not_accepted",
+        "visualEquivalence": "not_accepted",
+        "cloud": "not_run"
+      },
+      "limits": [
+        "opening facts are a generated web rule, not simulated earlier wars",
+        "manual recorded grants, not automatic family politics",
+        "real iPhone Safari/Chrome not tested",
+        "1000 day replay cap remains; old5297 and5298 worlds not reset"
+      ],
+      "evidence": [
+        "docs/evidence/fms-origins-houses47-2026-10-10/RESULT.md",
+        "docs/evidence/fms-origins-houses47-2026-10-10/REMAINING.md",
+        "docs/evidence/fms-origins-houses47-2026-10-10/unit-final.log",
+        "docs/evidence/fms-origins-houses47-2026-10-10/browser-final.log",
+        "docs/evidence/fms-origins-houses47-2026-10-10/browser-final-results.json",
+        "docs/evidence/fms-origins-houses47-2026-10-10/artifact-files.json"
+      ],
+      "scope": "WEB-PH04 bounded playable slice; full WEB-PH05 unchanged",
+      "next": "用户最新优先级：连续年月日、已有国史、家族分化及以前遗漏的原作功能。已完成e885dc9有界切片；接续真实家族自动分化/国家内战独立所需人物地权与战争登记，及1000日安全检查点，不能用缓存微调或虚构新闻替代。完整PH05/真机/视觉门保持未验收。"
     }
   }
 }

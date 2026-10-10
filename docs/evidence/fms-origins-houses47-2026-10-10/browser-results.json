@@ -1,0 +1,305 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\游戏\\架空地图模拟器\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/fms-culture47-houses.spec.ts",
+      "tests/fms-culture47-motion.spec.ts",
+      "--project=desktop-chromium",
+      "--project=mobile-chromium"
+    ],
+    "configFile": "D:\\游戏\\架空地图模拟器\\playwright.config.ts",
+    "rootDir": "D:/游戏/架空地图模拟器/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-chromium",
+        "name": "desktop-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "D:/游戏/架空地图模拟器/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-chromium",
+        "name": "tablet-chromium",
+        "testDir": "D:/游戏/架空地图模拟器/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "fms-culture47-houses.spec.ts",
+      "file": "fms-culture47-houses.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "opening history, real branch appointment and continuous calendar survive ordinary save/reload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14297,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T04:08:35.064Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "branch-and-clock",
+                      "contentType": "application/json",
+                      "body": "eyJmYW1pbHlSb3dzIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDQg5L2N5Zyo5LiWMTEg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTYsMjk3Iiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNDM0Iiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNjY2Il0sInJlc3RvcmVkIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDQg5L2N5Zyo5LiWMTEg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTcsMTc5Iiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNTMyIiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNzY0Il0sInNhdmVkVGljayI6IjExNzYwIiwidGltZWxpbmUiOlt7ImRheSI6NCwidGljayI6NTQ2Ljc0MTY0ODcyMTQ4OTEsImVuZHBvaW50IjoxMjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIg15pelIn0seyJkYXkiOjUsInRpY2siOjY0NS4yNzMzNTg3NzQ0NjY3LCJlbmRwb2ludCI6MTIwMCwidGV4dCI6IuWFrOWFgzHlubQx5pyINuaXpSJ9LHsiZGF5Ijo1LCJ0aWNrIjo2NDUuMjczMzU4Nzc0NDY2NywiZW5kcG9pbnQiOjEyMDAsInRleHQiOiLlhazlhYMx5bm0MeaciDbml6UifSx7ImRheSI6NywidGljayI6OTMzLjEzNTYzMTcyMjY0MTMsImVuZHBvaW50IjoxMjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIg45pelIn0seyJkYXkiOjksInRpY2siOjEwODUuNDY2MjE3Mjk3ODA3OCwiZW5kcG9pbnQiOjE2ODAsInRleHQiOiLlhazlhYMx5bm0MeaciDEw5pelIn0seyJkYXkiOjEwLCJ0aWNrIjoxMjUyLjQzMDMyNzI4MDgxMTUsImVuZHBvaW50IjoxNjgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxMeaXpSJ9LHsiZGF5IjoxMCwidGljayI6MTMxOC41NjExODgyNDcwNzk4LCJlbmRwb2ludCI6MjE2MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTHml6UifSx7ImRheSI6MTMsInRpY2siOjE1OTMuNjc0OTI4NDI4NzE1MiwiZW5kcG9pbnQiOjIxNjAsInRleHQiOiLlhazlhYMx5bm0MeaciDE05pelIn0seyJkYXkiOjE0LCJ0aWNrIjoxNjg1Ljc2MTMyNzU3MTE0NjIsImVuZHBvaW50IjoyNjQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxNeaXpSJ9LHsiZGF5IjoxNSwidGljayI6MTg0NS45OTQwODcyNTY1MzQ0LCJlbmRwb2ludCI6MjY0MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTbml6UifSx7ImRheSI6MTcsInRpY2siOjIxMTkuNzc0ODU3MDkxMjUyNywiZW5kcG9pbnQiOjI2NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDE45pelIn0seyJkYXkiOjE5LCJ0aWNrIjoyMzI3Ljc3ODM3ODY4MjMxOTcsImVuZHBvaW50IjozMTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyMOaXpSJ9LHsiZGF5IjoyMSwidGljayI6MjU1MS44OTE4OTgyOTM0MzE1LCJlbmRwb2ludCI6MzEyMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjLml6UifSx7ImRheSI6MjIsInRpY2siOjI3MzcuODUyNTcwMTQ5MzQ0NSwiZW5kcG9pbnQiOjM2MDAsInRleHQiOiLlhazlhYMx5bm0MeaciDIz5pelIn0seyJkYXkiOjI1LCJ0aWNrIjozMDg2LjgwOTA3OTg3NjgzODUsImVuZHBvaW50IjozNjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyNuaXpSJ9LHsiZGF5IjoyNywidGljayI6MzI1OC4zOTA3NDk4ODg2MjksImVuZHBvaW50Ijo0MDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyOOaXpSJ9LHsiZGF5IjoyOSwidGljayI6MzQ4OC45NDQwNzA0MTQwNzg0LCJlbmRwb2ludCI6NDA4MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMzDml6UifSx7ImRheSI6MzEsInRpY2siOjM3NTAuNjI2NDcwNzMwNzY1LCJlbmRwb2ludCI6NDA4MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMeaXpSJ9LHsiZGF5IjozMywidGljayI6NDAyMC42MDAyNzY0MjcxMDc1LCJlbmRwb2ludCI6NDU2MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIM+aXpSJ9LHsiZGF5IjozNCwidGljayI6NDE0NS41MzA3NTczOTkzMjcsImVuZHBvaW50Ijo0NTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg05pelIn0seyJkYXkiOjM1LCJ0aWNrIjo0MjcxLjY5OTgxNjQyNzA1MzUsImVuZHBvaW50Ijo0NTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg15pelIn0seyJkYXkiOjM2LCJ0aWNrIjo0MzMyLjI0ODUzNzAwNjUyMSwiZW5kcG9pbnQiOjQ1NjAsInRleHQiOiLlhazlhYMx5bm0MuaciDbml6UifSx7ImRheSI6MzcsInRpY2siOjQ0NTcuOTE1MDAzMjYyNjYyLCJlbmRwb2ludCI6NDU2MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIN+aXpSJ9LHsiZGF5IjozNywidGljayI6NDUzMC40MzMyMzgzNTQwNzgsImVuZHBvaW50Ijo1MDQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg35pelIn0seyJkYXkiOjM4LCJ0aWNrIjo0NjYzLjk2MzEzMjQyOTIxNiwiZW5kcG9pbnQiOjUwNDAsInRleHQiOiLlhazlhYMx5bm0MuaciDjml6UifSx7ImRheSI6MzksInRpY2siOjQ3NjAuNDc3NTg2NDk3NTQxLCJlbmRwb2ludCI6NTUyMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIOeaXpSJ9LHsiZGF5Ijo0MSwidGljayI6NDk3NC4zODY5NzUxNjg4MTMsImVuZHBvaW50Ijo2MDAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgxMeaXpSJ9LHsiZGF5Ijo0MywidGljayI6NTI1My40NDIxNzQwMTU5MjgsImVuZHBvaW50Ijo2MDAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgxM+aXpSJ9LHsiZGF5Ijo0NywidGljayI6NTY2NS41Mzc3MDk4MTkzMTEsImVuZHBvaW50Ijo2NDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgxN+aXpSJ9LHsiZGF5Ijo0OCwidGljayI6NTg2Ny4xNDgyOTM4MTM3MzksImVuZHBvaW50Ijo2NDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgxOOaXpSJ9LHsiZGF5Ijo1MiwidGljayI6NjMwMC4zODk4MjM5MzIyNDgsImVuZHBvaW50Ijo2OTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgyMuaXpSJ9LHsiZGF5Ijo1NCwidGljayI6NjU4NS4yODE1MTU0MjQ2NCwiZW5kcG9pbnQiOjY5NjAsInRleHQiOiLlhazlhYMx5bm0MuaciDI05pelIn0seyJkYXkiOjU2LCJ0aWNrIjo2NzI1LjY1NjQ0Njg5MzQ1LCJlbmRwb2ludCI6Njk2MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjbml6UifSx7ImRheSI6NTcsInRpY2siOjY4NTAuNjMwNzc2MzQ1MTg3LCJlbmRwb2ludCI6Njk2MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjfml6UifSx7ImRheSI6NTgsInRpY2siOjY5NjAsImVuZHBvaW50Ijo2OTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgyOOaXpSJ9LHsiZGF5Ijo1OCwidGljayI6Njk2MCwiZW5kcG9pbnQiOjc0NDAsInRleHQiOiLlhazlhYMx5bm0MuaciDI45pelIn0seyJkYXkiOjU4LCJ0aWNrIjo3MDc2LjI5MjE2NjYwNjE0LCJlbmRwb2ludCI6NzQ0MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjjml6UifSx7ImRheSI6NTksInRpY2siOjcxNzAuOTM3MjgyNTYyNDQyLCJlbmRwb2ludCI6NzQ0MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMeaXpSJ9LHsiZGF5Ijo2MCwidGljayI6NzI2Ny42NTY2ODI3NzI3NywiZW5kcG9pbnQiOjc5MjAsInRleHQiOiLlhazlhYMx5bm0M+aciDLml6UifSx7ImRheSI6NjEsInRpY2siOjc0MDUuMTE1Nzg1MTQzNDk1LCJlbmRwb2ludCI6NzkyMCwidGV4dCI6IuWFrOWFgzHlubQz5pyIM+aXpSJ9LHsiZGF5Ijo2MiwidGljayI6NzUzNS40Nzg3ODI1Mzk5NDQsImVuZHBvaW50Ijo3OTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIg05pelIn0seyJkYXkiOjYzLCJ0aWNrIjo3NjUwLjA5MzUzMzEyMjU0NCwiZW5kcG9pbnQiOjg0MDAsInRleHQiOiLlhazlhYMx5bm0M+aciDXml6UifSx7ImRheSI6NjUsInRpY2siOjc4ODkuMzM2MDQ4OTYzNjQzLCJlbmRwb2ludCI6ODQwMCwidGV4dCI6IuWFrOWFgzHlubQz5pyIN+aXpSJ9LHsiZGF5Ijo2NywidGljayI6ODA1Ny4xMTE0MDMzNDgzODU1LCJlbmRwb2ludCI6ODQwMCwidGV4dCI6IuWFrOWFgzHlubQz5pyIOeaXpSJ9LHsiZGF5Ijo2NywidGljayI6ODEzNy40ODUxMzY5NTgyOTksImVuZHBvaW50Ijo4ODgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIg55pelIn0seyJkYXkiOjY5LCJ0aWNrIjo4MzA0LjMxMTEyOTY4ODUxMywiZW5kcG9pbnQiOjg4ODAsInRleHQiOiLlhazlhYMx5bm0M+aciDEx5pelIn0seyJkYXkiOjcwLCJ0aWNrIjo4NDU5LjQ4NDgzMTMzMjMxMSwiZW5kcG9pbnQiOjg4ODAsInRleHQiOiLlhazlhYMx5bm0M+aciDEy5pelIn0seyJkYXkiOjcxLCJ0aWNrIjo4NTk3Ljc5MzUxNTg0Mzk0OSwiZW5kcG9pbnQiOjkzNjAsInRleHQiOiLlhazlhYMx5bm0M+aciDEz5pelIn0seyJkYXkiOjcyLCJ0aWNrIjo4NzQ0LjIzMDcxMjM3Mjg2NCwiZW5kcG9pbnQiOjkzNjAsInRleHQiOiLlhazlhYMx5bm0M+aciDE05pelIn0seyJkYXkiOjc0LCJ0aWNrIjo4OTE2LjYwMDkzOTcyMDE3OCwiZW5kcG9pbnQiOjkzNjAsInRleHQiOiLlhazlhYMx5bm0M+aciDE25pelIn0seyJkYXkiOjc1LCJ0aWNrIjo5MDY2Ljg4MTEyMDI2ODc0MywiZW5kcG9pbnQiOjk4NDAsInRleHQiOiLlhazlhYMx5bm0M+aciDE35pelIn0seyJkYXkiOjc2LCJ0aWNrIjo5MjMwLjEzMDgzNjg0ODUzOSwiZW5kcG9pbnQiOjk4NDAsInRleHQiOiLlhazlhYMx5bm0M+aciDE45pelIn0seyJkYXkiOjc4LCJ0aWNrIjo5NDE4LjY2NzY3NzcyMzc5NCwiZW5kcG9pbnQiOjk4NDAsInRleHQiOiLlhazlhYMx5bm0M+aciDIw5pelIn0seyJkYXkiOjc5LCJ0aWNrIjo5NTE4LjAxMDkwNzAzNDI2MiwiZW5kcG9pbnQiOjk4NDAsInRleHQiOiLlhazlhYMx5bm0M+aciDIx5pelIn0seyJkYXkiOjgwLCJ0aWNrIjo5NjE2LjUwNzA1MjM0NTM0NywiZW5kcG9pbnQiOjEwMzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgyMuaXpSJ9LHsiZGF5Ijo4MCwidGljayI6OTY1Ni4yNzYyOTA3NzA5NjYsImVuZHBvaW50IjoxMDMyMCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMjLml6UifSx7ImRheSI6ODIsInRpY2siOjk4NzguNDEyMzAzMjcyMDksImVuZHBvaW50IjoxMDMyMCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMjTml6UifV0sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c3e0d9287a4f8b7c4db7-3d5b1ed30d959f1ad53c",
+          "file": "fms-culture47-houses.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "opening history, real branch appointment and continuous calendar survive ordinary save/reload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14049,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T04:09:24.018Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "branch-and-clock",
+                      "contentType": "application/json",
+                      "body": "eyJmYW1pbHlSb3dzIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDQg5L2N5Zyo5LiWMTEg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTYsMjk3Iiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNDM0Iiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNjY2Il0sInJlc3RvcmVkIjpbIuiuuOawjyDCtyDkuLvlrrbml4/plb8g6K645pmT5qKmIMK3IDQg5L2N5Zyo5LiWMTEg5aSE5a6e5o6n5bCB5ZywIMK3IOS6uuWPoyAxNTcsMjY5Iiwi6K645rCPIMK3IOadvua0peaUr+ezu+aXj+mVvyDorrjlrZDmnJ8gwrcgMSDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTMsNTQyIiwi6K645rCPIMK3IOS4nOmYs+aUr+ezu+aXj+mVvyDorrjlrZDooaEgwrcgMiDkvY3lnKjkuJYxIOWkhOWunuaOp+WwgeWcsCDCtyDkurrlj6MgMTgsNzc0Il0sInNhdmVkVGljayI6IjEyOTYwIiwidGltZWxpbmUiOlt7ImRheSI6NCwidGljayI6NTUzLjExMDE0ODUwNTY5NDQsImVuZHBvaW50Ijo5NjAsInRleHQiOiLlhazlhYMx5bm0MeaciDXml6UifSx7ImRheSI6NiwidGljayI6Nzk0LjM2ODk4NDU2NTU4MzgsImVuZHBvaW50IjoxNDQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIg35pelIn0seyJkYXkiOjgsInRpY2siOjEwMDIuODg5NTcyMDI2NTU4OSwiZW5kcG9pbnQiOjE0NDAsInRleHQiOiLlhazlhYMx5bm0MeaciDnml6UifSx7ImRheSI6OSwidGljayI6MTEyMy4yMTk1ODUxMjQ1NDEsImVuZHBvaW50IjoxOTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxMOaXpSJ9LHsiZGF5IjoxMCwidGljayI6MTMxMy43MzAyMzQ3MjgyNzQ0LCJlbmRwb2ludCI6MTkyMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTHml6UifSx7ImRheSI6MTIsInRpY2siOjE0NDQuMTEyMTQ4Nzk0OTc3NywiZW5kcG9pbnQiOjE5MjAsInRleHQiOiLlhazlhYMx5bm0MeaciDEz5pelIn0seyJkYXkiOjEzLCJ0aWNrIjoxNTc2LjQ0OTE1Njk2NzgyMDcsImVuZHBvaW50IjoyNDAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxNOaXpSJ9LHsiZGF5IjoxNCwidGljayI6MTc4Ny4xNDg3NjQzNTc3NzA3LCJlbmRwb2ludCI6MjQwMCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMTXml6UifSx7ImRheSI6MTYsInRpY2siOjE5MzMuMzc3MjkwNDQwOTA3MiwiZW5kcG9pbnQiOjI0MDAsInRleHQiOiLlhazlhYMx5bm0MeaciDE35pelIn0seyJkYXkiOjE4LCJ0aWNrIjoyMjYxLjQ4MzA1ODE1MDgyNjgsImVuZHBvaW50IjoyNDAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgxOeaXpSJ9LHsiZGF5IjoxOSwidGljayI6MjM3MS45NjU0MzY5OTYwNywiZW5kcG9pbnQiOjI4ODAsInRleHQiOiLlhazlhYMx5bm0MeaciDIw5pelIn0seyJkYXkiOjE5LCJ0aWNrIjoyMzkwLjUyMTQ3MzUwMjA1MiwiZW5kcG9pbnQiOjI4ODAsInRleHQiOiLlhazlhYMx5bm0MeaciDIw5pelIn0seyJkYXkiOjIxLCJ0aWNrIjoyNTI0LjQxMzU2ODkzNjE2NiwiZW5kcG9pbnQiOjI4ODAsInRleHQiOiLlhazlhYMx5bm0MeaciDIy5pelIn0seyJkYXkiOjIxLCJ0aWNrIjoyNTc0LjUzMDY1NTE4Mjk1OTQsImVuZHBvaW50IjozMzYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyMuaXpSJ9LHsiZGF5IjoyMiwidGljayI6Mjc1Ni43NTcwMDcwNjM1MDc0LCJlbmRwb2ludCI6MzM2MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjPml6UifSx7ImRheSI6MjQsInRpY2siOjI5MTYuMTM4NTY1ODE4MzM2MiwiZW5kcG9pbnQiOjMzNjAsInRleHQiOiLlhazlhYMx5bm0MeaciDI15pelIn0seyJkYXkiOjI2LCJ0aWNrIjozMjAzLjY3ODg2OTgxNzk2NzYsImVuZHBvaW50IjozODQwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDHmnIgyN+aXpSJ9LHsiZGF5IjoyNywidGljayI6MzMyNC4yNDkzNTYyNDI5MDU0LCJlbmRwb2ludCI6Mzg0MCwidGV4dCI6IuWFrOWFgzHlubQx5pyIMjjml6UifSx7ImRheSI6MjgsInRpY2siOjM0NTQuNzUyMTgyMjg0MDU3NywiZW5kcG9pbnQiOjQzMjAsInRleHQiOiLlhazlhYMx5bm0MeaciDI55pelIn0seyJkYXkiOjMxLCJ0aWNrIjozNzg0LjI1MjEyNTExODAwMzcsImVuZHBvaW50Ijo0MzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgx5pelIn0seyJkYXkiOjMyLCJ0aWNrIjozOTAzLjE1ODIzNzM3MDU1MDUsImVuZHBvaW50Ijo0MzIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIgy5pelIn0seyJkYXkiOjM0LCJ0aWNrIjo0MTAxLjk0OTA4NDg4MjQyNSwiZW5kcG9pbnQiOjQzMjAsInRleHQiOiLlhazlhYMx5bm0MuaciDTml6UifSx7ImRheSI6MzUsInRpY2siOjQyODguNDg5ODY2NjM0MzYyLCJlbmRwb2ludCI6NDMyMCwidGV4dCI6IuWFrOWFgzHlubQy5pyINeaXpSJ9LHsiZGF5IjozNiwidGljayI6NDQwNC4yNzE2MDQ2MjIzNjEsImVuZHBvaW50Ijo0ODAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg25pelIn0seyJkYXkiOjM3LCJ0aWNrIjo0NTE5LjU4MzUzNDU2NjY1MiwiZW5kcG9pbnQiOjQ4MDAsInRleHQiOiLlhazlhYMx5bm0MuaciDfml6UifSx7ImRheSI6MzgsInRpY2siOjQ1NzYuMzY4Nzc4Mjk5NDY3LCJlbmRwb2ludCI6NDgwMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIOOaXpSJ9LHsiZGF5IjozOCwidGljayI6NDY2OS40MzYxOTE0MzgxMzQsImVuZHBvaW50Ijo1MjgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDLmnIg45pelIn0seyJkYXkiOjQwLCJ0aWNrIjo0ODExLjgxMDMwOTc1MjAwMywiZW5kcG9pbnQiOjUyODAsInRleHQiOiLlhazlhYMx5bm0MuaciDEw5pelIn0seyJkYXkiOjQwLCJ0aWNrIjo0ODY2LjczNjU1MTAxMTYwMSwiZW5kcG9pbnQiOjU3NjAsInRleHQiOiLlhazlhYMx5bm0MuaciDEw5pelIn0seyJkYXkiOjQyLCJ0aWNrIjo1MDg2Ljg4NjIwMzA4NzcyLCJlbmRwb2ludCI6NTc2MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTLml6UifSx7ImRheSI6NDMsInRpY2siOjUyNzMuODcwNTM5OTQ4MTEyLCJlbmRwb2ludCI6NjI0MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTPml6UifSx7ImRheSI6NDYsInRpY2siOjU1MjEuODA1MTcwNDg3NzI3LCJlbmRwb2ludCI6NjI0MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTbml6UifSx7ImRheSI6NDYsInRpY2siOjU2MzAuODM1MzUwOTQwNjYzLCJlbmRwb2ludCI6NjI0MCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTbml6UifSx7ImRheSI6NDcsInRpY2siOjU3NDcuNTQ0MDQwNTAxMzk5LCJlbmRwb2ludCI6NjcyMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTfml6UifSx7ImRheSI6NDksInRpY2siOjU5NzQuNzgxMjIyMDA4NTAyLCJlbmRwb2ludCI6NjcyMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMTnml6UifSx7ImRheSI6NTEsInRpY2siOjYxMjguNzI3OTk4OTcwOTc4LCJlbmRwb2ludCI6NjcyMCwidGV4dCI6IuWFrOWFgzHlubQy5pyIMjHml6UifSx7ImRheSI6NTIsInRpY2siOjYyODguNTc2ODk5NzExOTk4NSwiZW5kcG9pbnQiOjcyMDAsInRleHQiOiLlhazlhYMx5bm0MuaciDIy5pelIn0seyJkYXkiOjU0LCJ0aWNrIjo2NTMwLjEwMDg2MzQwNzY0NCwiZW5kcG9pbnQiOjcyMDAsInRleHQiOiLlhazlhYMx5bm0MuaciDI05pelIn0seyJkYXkiOjU1LCJ0aWNrIjo2NjkxLjUyNTg0OTU2MzQ3MiwiZW5kcG9pbnQiOjcyMDAsInRleHQiOiLlhazlhYMx5bm0MuaciDI15pelIn0seyJkYXkiOjU3LCJ0aWNrIjo2ODQ5Ljk3Mzc3Njc0NjIyMSwiZW5kcG9pbnQiOjcyMDAsInRleHQiOiLlhazlhYMx5bm0MuaciDI35pelIn0seyJkYXkiOjU5LCJ0aWNrIjo3MTQ1LjgyOTA2NTk4MTE3NSwiZW5kcG9pbnQiOjcyMDAsInRleHQiOiLlhazlhYMx5bm0M+aciDHml6UifSx7ImRheSI6NjAsInRpY2siOjcyMDAsImVuZHBvaW50Ijo3MjAwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgy5pelIn0seyJkYXkiOjYwLCJ0aWNrIjo3MjAwLCJlbmRwb2ludCI6NzY4MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMuaXpSJ9LHsiZGF5Ijo2MCwidGljayI6NzIxOS4wMjE4OTQzODIxMjU1LCJlbmRwb2ludCI6NzY4MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMuaXpSJ9LHsiZGF5Ijo2MSwidGljayI6NzMyOC4yODc2MjE0OTk0ODQsImVuZHBvaW50Ijo3NjgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgz5pelIn0seyJkYXkiOjYxLCJ0aWNrIjo3MzY5LjU1MDY4ODM1MjQyOTUsImVuZHBvaW50Ijo3NjgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgz5pelIn0seyJkYXkiOjYyLCJ0aWNrIjo3NDQ5Ljk1MzkxNDE1NzIxNiwiZW5kcG9pbnQiOjgxNjAsInRleHQiOiLlhazlhYMx5bm0M+aciDTml6UifSx7ImRheSI6NjMsInRpY2siOjc1NjcuNTMyMzQwODc2NjQ4LCJlbmRwb2ludCI6ODE2MCwidGV4dCI6IuWFrOWFgzHlubQz5pyINeaXpSJ9LHsiZGF5Ijo2MywidGljayI6NzY0OC41MzE5Nzc1MTY0NDQsImVuZHBvaW50Ijo4MTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIg15pelIn0seyJkYXkiOjY1LCJ0aWNrIjo3OTA5LjQ1MzUzMjgwODk3NiwiZW5kcG9pbnQiOjg2NDAsInRleHQiOiLlhazlhYMx5bm0M+aciDfml6UifSx7ImRheSI6NjcsInRpY2siOjgxMTguNTUyNjMwODIwMTQ1LCJlbmRwb2ludCI6ODY0MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIOeaXpSJ9LHsiZGF5Ijo2OCwidGljayI6ODI0Ny45Mjk1NDUxODI0NTgsImVuZHBvaW50Ijo5MTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgxMOaXpSJ9LHsiZGF5Ijo3MCwidGljayI6ODQyOC40OTQ3NDMzMzM5OTcsImVuZHBvaW50Ijo5MTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgxMuaXpSJ9LHsiZGF5Ijo3MSwidGljayI6ODU1MC42OTIyMTQ1ODM0OSwiZW5kcG9pbnQiOjkxMjAsInRleHQiOiLlhazlhYMx5bm0M+aciDEz5pelIn0seyJkYXkiOjcyLCJ0aWNrIjo4NjgwLjc2NDI1NTg3NjMzMSwiZW5kcG9pbnQiOjk2MDAsInRleHQiOiLlhazlhYMx5bm0M+aciDE05pelIn0seyJkYXkiOjc0LCJ0aWNrIjo4ODg3LjkyNjU5NjU3ODk1MywiZW5kcG9pbnQiOjk2MDAsInRleHQiOiLlhazlhYMx5bm0M+aciDE25pelIn0seyJkYXkiOjc1LCJ0aWNrIjo5MDI2LjU5NjcwNTQxOTU2OCwiZW5kcG9pbnQiOjk2MDAsInRleHQiOiLlhazlhYMx5bm0M+aciDE35pelIn0seyJkYXkiOjc4LCJ0aWNrIjo5NDAwLjk4NjQwMDQ3MzYzLCJlbmRwb2ludCI6MTAwODAsInRleHQiOiLlhazlhYMx5bm0M+aciDIw5pelIn0seyJkYXkiOjgwLCJ0aWNrIjo5NjYwLjQ3MjU2OTQ2MjU4MSwiZW5kcG9pbnQiOjEwMDgwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgyMuaXpSJ9LHsiZGF5Ijo4MiwidGljayI6OTg0OS40NTQ1OTY4MDk3ODUsImVuZHBvaW50IjoxMDA4MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMjTml6UifSx7ImRheSI6ODQsInRpY2siOjEwMTIzLjk1OTc3NDEzNDc4OCwiZW5kcG9pbnQiOjEwNTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgyNuaXpSJ9LHsiZGF5Ijo4NSwidGljayI6MTAyMDIuODI4MzQyNDY2NTc3LCJlbmRwb2ludCI6MTA1NjAsInRleHQiOiLlhazlhYMx5bm0M+aciDI35pelIn0seyJkYXkiOjg1LCJ0aWNrIjoxMDI4OC41MjgxMzIxNzYzMTYsImVuZHBvaW50IjoxMDU2MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMjfml6UifSx7ImRheSI6ODYsInRpY2siOjEwMzcyLjM3MDc4NTM1NTUyNiwiZW5kcG9pbnQiOjEwNTYwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgyOOaXpSJ9LHsiZGF5Ijo4NywidGljayI6MTA0ODAuOTc1MjU4NDAyMzU5LCJlbmRwb2ludCI6MTA1NjAsInRleHQiOiLlhazlhYMx5bm0M+aciDI55pelIn0seyJkYXkiOjg4LCJ0aWNrIjoxMDY3NC4wMjQ2Mjg1MDA0MzQsImVuZHBvaW50IjoxMTA0MCwidGV4dCI6IuWFrOWFgzHlubQz5pyIMzDml6UifSx7ImRheSI6ODksInRpY2siOjEwNzc5Ljk3MjEyOTMyMDA0NSwiZW5kcG9pbnQiOjExNTIwLCJ0ZXh0Ijoi5YWs5YWDMeW5tDPmnIgzMeaXpSJ9XSwiZXJyb3JzIjpbXSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c3e0d9287a4f8b7c4db7-e1946c5fb1b2b7450b2d",
+          "file": "fms-culture47-houses.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "fms-culture47-motion.spec.ts",
+      "file": "fms-culture47-motion.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop-chromium",
+              "projectName": "desktop-chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33341,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T04:08:50.017Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "continuous-motion",
+                      "contentType": "application/json",
+                      "body": "eyJmcmFtZXMiOjExNCwibW92aW5nSW50ZXJ2YWxzIjpbeyJpZCI6ImZvcmNlLTEiLCJtcyI6MTI0Ny4zNDAwMDAwMDM1NzYzLCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo0fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS00IiwibXMiOjEyNDcuMzQwMDAwMDAzNTc2MywiZGlzdGluY3QiOjEwLCJhZnRlcjgwMCI6NH0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTI0Ny4zNDAwMDAwMDM1NzYzLCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo0fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS03IiwibXMiOjEyNDcuMzQwMDAwMDAzNTc2MywiZGlzdGluY3QiOjEwLCJhZnRlcjgwMCI6NH0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTI0Ny4zNDAwMDAwMDM1NzYzLCJkaXN0aW5jdCI6MTAsImFmdGVyODAwIjo0fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zOCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxMjQ3LjM0MDAwMDAwMzU3NjMsImRpc3RpbmN0IjoxMCwiYWZ0ZXI4MDAiOjR9XSwic2VsZWN0ZWQiOnsiaWQiOiJmb3JjZS0xOSIsImlkcyI6WyJmb3JjZS0xOSJdLCJraW5kIjoiYXJteSIsImRpc3BsYXkiOiJkb3QiLCJ4Ijo3NjguMDUwNDU3Mjg2NjQ2MiwieSI6MzYzLjM4MzA5MDg3MjA4NzE3fSwiZXJyb3JzIjpbXSwicGh5c2ljYWxJcGhvbmUiOmZhbHNlfQ=="
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-motion-actua-d8660-eeps-paused-picking-aligned-desktop-chromium\\video.webm"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8898f7ed0deb33696d35-c18a13e3a469c75365b5",
+          "file": "fms-culture47-motion.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "actual army display changes continuously between slow Worker replies and keeps paused picking aligned",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32955,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T04:09:38.638Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "continuous-motion",
+                      "contentType": "application/json",
+                      "body": "eyJmcmFtZXMiOjEwOSwibW92aW5nSW50ZXJ2YWxzIjpbeyJpZCI6ImZvcmNlLTEiLCJtcyI6MTMxMi4zMjUwMDAwMTc4ODE0LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS00IiwibXMiOjEzMTIuMzI1MDAwMDE3ODgxNCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MTMxMi4zMjUwMDAwMTc4ODE0LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtNiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS03IiwibXMiOjEzMTIuMzI1MDAwMDE3ODgxNCwiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6NX0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MTMxMi4zMjUwMDAwMTc4ODE0LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtOSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xNyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yMyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yOCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0yOSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zOCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0zOSIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxMzEyLjMyNTAwMDAxNzg4MTQsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjV9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjE1NTYuOTkwMDAwMDA5NTM2NywiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoxNTU2Ljk5MDAwMDAwOTUzNjcsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS01IiwibXMiOjE1NTYuOTkwMDAwMDA5NTM2NywiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTYiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoxNTU2Ljk5MDAwMDAwOTUzNjcsImRpc3RpbmN0IjoxMiwiYWZ0ZXI4MDAiOjZ9LHsiaWQiOiJmb3JjZS04IiwibXMiOjE1NTYuOTkwMDAwMDA5NTM2NywiZGlzdGluY3QiOjEyLCJhZnRlcjgwMCI6Nn0seyJpZCI6ImZvcmNlLTkiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTEiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTMiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTYiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMTkiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjQiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTEsImFmdGVyODAwIjo1fSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjciLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMjkiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzEiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzQiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzciLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6MTU1Ni45OTAwMDAwMDk1MzY3LCJkaXN0aW5jdCI6MTIsImFmdGVyODAwIjo2fSx7ImlkIjoiZm9yY2UtMSIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTIiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS00IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtNSIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTYiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS03IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtOCIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTkiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xMiIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTEzIiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xNSIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTE2IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0xOCIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTE5IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0yNiIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTI3IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMCIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTMxIiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zMyIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTM0IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS0zNiIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTM3IiwibXMiOjE2NDcuOTA1MDAwMDAxMTkyLCJkaXN0aW5jdCI6MTQsImFmdGVyODAwIjo3fSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MTY0Ny45MDUwMDAwMDExOTIsImRpc3RpbmN0IjoxNCwiYWZ0ZXI4MDAiOjd9LHsiaWQiOiJmb3JjZS00MCIsIm1zIjoxNjQ3LjkwNTAwMDAwMTE5MiwiZGlzdGluY3QiOjE0LCJhZnRlcjgwMCI6N30seyJpZCI6ImZvcmNlLTEiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTQiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTUiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTYiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTciLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTgiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTkiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTEyIiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0xMyIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTE1IiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0xNiIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTE4IiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0xOSIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTI2IiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0yNyIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTMwIiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0zMSIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTMzIiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0zNCIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTM2IiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0zNyIsIm1zIjoyMDYzLjQ0NTAwMDAyMjY0OTgsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MjA2My40NDUwMDAwMjI2NDk4LCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTQwIiwibXMiOjIwNjMuNDQ1MDAwMDIyNjQ5OCwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS0xIiwibXMiOjIwNDQuMzAwMDAwMDExOTIxLCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTIiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtNCIsIm1zIjoyMDQ0LjMwMDAwMDAxMTkyMSwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS01IiwibXMiOjIwNDQuMzAwMDAwMDExOTIxLCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTYiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtNyIsIm1zIjoyMDQ0LjMwMDAwMDAxMTkyMSwiZGlzdGluY3QiOjE2LCJhZnRlcjgwMCI6MTB9LHsiaWQiOiJmb3JjZS04IiwibXMiOjIwNDQuMzAwMDAwMDExOTIxLCJkaXN0aW5jdCI6MTYsImFmdGVyODAwIjoxMH0seyJpZCI6ImZvcmNlLTkiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTIiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTMiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTQiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTUiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTYiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTciLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTgiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMTkiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjUiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjYiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjciLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMjgiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzAiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzEiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzIiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzMiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzQiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzUiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzYiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzciLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtMzkiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfSx7ImlkIjoiZm9yY2UtNDAiLCJtcyI6MjA0NC4zMDAwMDAwMTE5MjEsImRpc3RpbmN0IjoxNiwiYWZ0ZXI4MDAiOjEwfV0sInNlbGVjdGVkIjp7ImlkIjoiZm9yY2UtMTkiLCJpZHMiOlsiZm9yY2UtMTkiXSwia2luZCI6ImFybXkiLCJkaXNwbGF5IjoiZG90IiwieCI6MjMxLjMxMjUzODcwOTQ4NjE1LCJ5IjozNjcuNDU0MTEwMjAxMzg4N30sImVycm9ycyI6W10sInBoeXNpY2FsSXBob25lIjpmYWxzZX0="
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\游戏\\架空地图模拟器\\test-results\\fms-culture47-motion-actua-d8660-eeps-paused-picking-aligned-mobile-chromium\\video.webm"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8898f7ed0deb33696d35-c168c18489e4c5077e86",
+          "file": "fms-culture47-motion.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T04:08:34.551Z",
+    "duration": 97250.12,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -4964,7 +4964,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47ContinuousPlayCheckpoint and latest AUTO_HANDOFF/continuous-play47 RESULT+NEXT. Source99c7190; same local5300 now9c932c,18 frozen engines. No fixed v2 day/action/history cutoff; do not redo 1000→2000 extension. Production frozen998→1002 and actual2005day cold restore passed. Current visible world5548day save UI confirmed then resumed, not manually cold-reloaded or asserted same998world. Next retire inactive armies safely then real births/adult households; rules activation must preserve predecessor prefix. Freeze9c932c before runtime changes. WEB37 in_progress,21 blocked; full PH05/phone/visual/publish gates unchanged.",
+    "nextRecoveryTarget": "Read culture47CampaignCardCheckpoint and latest AUTO_HANDOFF/war-campaign47 RESULT+verification. Source7f7bd19 plus screenshot test8448e3c; current local-only build5309. WEB-04-37 remains in progress, WEB-04-21 blocked, and full PH05/phone/visual/publish gates unchanged. Next: change only the display timing of already acknowledged routes using the selected pacing budget; preserve Worker ticks, daily boundaries, combat, RNG, journal and replay; replace the obsolete 4x slow-motion browser contract before measuring achieved days/second again.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5004,6 +5004,49 @@
         "docs/evidence/fms-war-visibility47-2026-10-11/normal-war-active.png"
       ],
       "next": "Continue WEB-04-37 with a truthful live-campaign view from already committed participants/goals/war state; do not invent casualties, battles or territorial results from visual interpolation."
+    },
+    "culture47CampaignCardCheckpoint": {
+      "date": "2026-10-11",
+      "task": "WEB-04-37",
+      "sourceCommits": [
+        "7f7bd19",
+        "8448e3c"
+      ],
+      "status": "local-live-campaign-card-verified-full-war-task-in-progress",
+      "scope": "Read-only campaign projection and UI only. Worker, simulation, AI, RNG, persistence schema and old worlds remain unchanged.",
+      "implementation": [
+        "shows only a campaign whose relationId is still an active war relation",
+        "uses current participants for current sides, historical departures separately, and explicit unknown-history degradation",
+        "links complete-history declaration reason by warId and labels native deaths as original score rather than fatalities",
+        "uses frame activeSieges as a global verified count while preserving per-campaign siege and occupation attribution as unavailable"
+      ],
+      "checks": {
+        "unit": {
+          "files": 5,
+          "passed": 25,
+          "failed": 0
+        },
+        "lint": true,
+        "typecheck": true,
+        "build": {
+          "passed": true,
+          "approvedArtifacts": 85
+        },
+        "desktopChromium": {
+          "normalWarWorld": "passed",
+          "historyScope": "passed",
+          "scope": "Generated 6-country/60-city war world kept country detail open while advancing, rendered a campaign card, then saved and restored equal tick and force positions."
+        },
+        "physicalIphone": false,
+        "originalVisualParity": false
+      },
+      "localBoundary": "Fresh local-only build at http://127.0.0.1:5309/?fms=1; no old save migration, cloud write, push or Pages trigger.",
+      "evidence": [
+        "docs/evidence/fms-war-campaign47-2026-10-11/RESULT.md",
+        "docs/evidence/fms-war-campaign47-2026-10-11/verification.json",
+        "docs/evidence/fms-war-campaign47-2026-10-11/normal-war-campaign.png"
+      ],
+      "next": "Make acknowledged route playback speed-aware without changing any authoritative simulation or replay behavior, then benchmark actual days per second separately."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

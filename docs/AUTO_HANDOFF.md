@@ -1,3 +1,15 @@
+# 当前检查点：真实战役卡片已接入国家详情（2026-10-11）
+
+源码提交 **7f7bd19**，截图回归提交 **8448e3c**，分支 `codex/ph06-world-generation`。根独占写入，两个只读子审计分别核对战役数据合同与显示节奏。先读 `webRebuild.culture47CampaignCardCheckpoint`、`docs/evidence/fms-war-campaign47-2026-10-11/RESULT.md` 与 `verification.json`，再核实 Git 和本机服务。`WEB-04-37` 仍进行中；`WEB-04-21` 仍 blocked；完整 PH05、真机、视觉与发布门不变。
+
+国家详情的外交区现在按当前有效 `relationId` 显示战役卡片：完整历史显示当前进攻／防守双方、声明理由、目标数、已确认时长、两侧 native `deaths` 原作战分和全局当前有效围城；当前双方只读 `participants`，离场国家另列。unknown 开局战争明确降级为记录方，不虚构宣战者、理由、目标或原始时长。没有可靠 campaign 归属的逐笔易手、单战役围城、海军／饥饿／撤退损失均不伪造数字，完整史书仍是控制权账本。
+
+本批是纯读投影：不改 Worker、每 tick 的移动／战斗／AI、RNG、存档 schema 或旧世界。独立浏览器观察表明国家详情打开／切换时仍在推演；正式 5309 Chromium 回归生成 6 国 60 城战乱世界、显示战役卡片和真实行动、保存刷新后同 tick／部队位置恢复。定向 25/25、typecheck、lint、build（85 允许产物）、战乱世界与史书浏览器各 1/1 通过。截图 `normal-war-campaign.png` 已将卡片滚动到可见处；仅代表本机桌面 Chromium，不是 iPhone、原作视觉或完整战争等价。
+
+当前新构建是 **http://127.0.0.1:5309/?fms=1**，只监听本机并与旧端口存储隔离；未覆盖或迁移旧档。下一实质项继续用户最明显的体验缺口：仅缩短 **已确认** 轨迹的显示慢放，并把速度选择显式传给显示时钟，保留实际 tick、日界、战斗、事件、随机数和重放不变；先替换旧的“4×必须慢放超过一秒”浏览器合同，再重新测量实际日／秒。无 push、远程写、Pages 或正式站变更。
+
+---
+
 # 当前检查点：真实战争状态已接入可读界面（2026-10-11）
 
 源码提交 **fd6fbc6**，分支 `codex/ph06-world-generation`。根独占写入，战役字段审计仅只读。先读 `webRebuild.culture47WarVisibilityCheckpoint`、`docs/evidence/fms-war-visibility47-2026-10-11/RESULT.md` 与 `verification.json`，再核实 Git 和本机服务。`WEB-04-37` 仍进行中；`WEB-04-21` 仍 blocked；完整 PH05、真机、视觉与发布门不变。

@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-11",
+  "task": "WEB-04-37",
+  "sourceCommit": "d8efd88",
+  "scope": "Playback and diagnostics for already Worker-acknowledged force positions only; no authoritative simulation or save-schema change.",
+  "checks": {
+    "unit": {"command": "npx vitest run src/fms/play/culture47-motion.test.ts src/fms/play/culture47-session.test.ts", "passed": 22, "failed": 0},
+    "typecheck": {"command": "npm run typecheck", "exitCode": 0},
+    "lint": {"command": "npm run lint", "exitCode": 0},
+    "build": {"command": "npm run build", "exitCode": 0, "approvedArtifacts": 85},
+    "browserMotion": {"command": "GAME_BASE_URL=http://127.0.0.1:5315 npx playwright test tests/fms-culture47-motion.spec.ts --project=desktop-chromium", "passed": 1, "failed": 0, "samples": 62, "selectedForce": "force-1", "distinctPositionsPerAcknowledgedInterval": [7, 9, 11, 9, 14], "maxAdjacentChangedPoseGapMs": [146.5, 215.4, 214.5, 137.3, 216.6], "displayNeverAheadOfAuthoritativeTick": true, "pausedPoseAndPickingAligned": true, "pageErrors": 0},
+    "browserWorldRegression": {"command": "GAME_BASE_URL=http://127.0.0.1:5315 npx playwright test tests/fms-culture47-active-world.spec.ts --project=desktop-chromium --grep 'normal generated war world'", "passed": 1, "failed": 0, "scope": "Generated six-country, sixty-city war world; actual army/fleet movement; detail-open advance; save/refresh recovery"}
+  },
+  "limitations": {"simulationThroughputImproved": false, "nativeParity": false, "physicalIphone": false, "originalVisualAcceptance": false, "cloudWrites": false},
+  "localUrl": "http://127.0.0.1:5315/?fms=1",
+  "evidence": ["continuous-army-playback.webm", "continuous-army-selected.png"]
+}

@@ -1,3 +1,13 @@
+# 当前检查点：真实军令轨迹连续显示已本地验证（2026-10-11）
+
+源码提交 **d8efd88**，分支 `codex/ph06-world-generation`。先核实 Git，再读 `webRebuild.culture47AcknowledgedPacingCheckpoint` 和 `docs/evidence/fms-pacing47-2026-10-11/RESULT.md`／`verification.json`。本批只处理已确认军队／舰队位置的播放与普通帧诊断负载；Worker 权威推进、逐日结算、AI、战斗、随机流、存档 schema 和旧档均未更改。`WEB-04-37` 仍进行中，`WEB-04-21` blocked；完整 PH05、真机、用户视觉和发布门均未通过。
+
+玩家实际调遣军队后，本机桌面 Chromium 在 4× 的五个 480-tick 已确认区间观察到同一部队 7／9／11／9／14 个不同位置，显示 tick 从未超过权威 tick；暂停后日期、位置与地图点选一致。自动生成 6 国 60 城战乱世界、自动陆海行动、打开国家详情仍推进、保存刷新同 tick／位置恢复的原有回归 1/1 通过。定向 22/22、typecheck、lint、生产构建 85 允许产物通过。录像和暂停截图在本批 evidence 目录；浏览器首次候选及测试操作失败、修复过程也如实记在 RESULT。新本机入口 **http://127.0.0.1:5315/?fms=1**，仅此电脑，端口存储与旧局隔离，未迁移或清理旧档。
+
+**画面连续不等于实际天数/秒提升**：Worker 每 tick 战乱世界仍慢，地图每次 ACK 的大范围重绘仍可能停顿。下一批优先测量 Worker ACK 阶段耗时与确定性热点，做规则不变的吞吐优化，并重新用真实世界测天数/秒和保存刷新。原作视觉、战争节奏、iPhone Safari/Chrome、用户主观验收未过；没有 push、Pages、Cloudflare 或正式站变更。
+
+---
+
 # 当前检查点：真实战役卡片已接入国家详情（2026-10-11）
 
 源码提交 **7f7bd19**，截图回归提交 **8448e3c**，分支 `codex/ph06-world-generation`。根独占写入，两个只读子审计分别核对战役数据合同与显示节奏。先读 `webRebuild.culture47CampaignCardCheckpoint`、`docs/evidence/fms-war-campaign47-2026-10-11/RESULT.md` 与 `verification.json`，再核实 Git 和本机服务。`WEB-04-37` 仍进行中；`WEB-04-21` 仍 blocked；完整 PH05、真机、视觉与发布门不变。

@@ -9,6 +9,7 @@
     "lint": {"passed": true},
     "build": {"passed": true, "approvedArtifacts": 85},
     "mobileChromiumNormalWarSaveRestore": {"passed": 1, "failed": 0},
+    "desktopChromiumLandPickWholeWorld": {"passed": 1, "failed": 0},
     "mobileChromiumLandPickWholeWorld": {"passed": 1, "failed": 0, "framedCitySpanCssPx": 285.24073984939673, "wholeWorldCitySpanCssPx": 81.30226632356639, "pickedCityId": "c-1", "pageErrors": []}
   },
   "screenshots": ["land-framed-portrait.png", "whole-ocean-portrait.png"],

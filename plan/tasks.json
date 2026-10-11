@@ -5112,7 +5112,8 @@
         "typecheck": true,
         "lint": true,
         "build": {"passed": true, "approvedArtifacts": 85},
-        "mobileSizeChromium": {"normalWarWorldAndSaveRecovery": "passed", "landPickingAndWholeWorldFit": "passed", "physicalIphone": false, "originalVisualParity": false}
+        "mobileSizeChromium": {"normalWarWorldAndSaveRecovery": "passed", "landPickingAndWholeWorldFit": "passed", "physicalIphone": false, "originalVisualParity": false},
+        "desktopChromium": {"landPickingAndWholeWorldFit": "passed"}
       },
       "measuredCitySpanCssPx": {"landFramed": 285.24073984939673, "wholeWorld": 81.30226632356639},
       "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; old ports/saves unchanged; no push, Pages or production write.",

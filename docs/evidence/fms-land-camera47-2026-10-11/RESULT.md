@@ -7,4 +7,4 @@
 
 同一正常“生成大陆 → 保存地图 → 建立六国、60 城文化世界”的手机尺寸 Chromium 浏览器流程中，初始城市横向投影跨度为 **285.24 CSS px**，按“显示全图”后为 **81.30 CSS px**。在放大的地图上实际点击城市 `c-1` 成功打开国家详情，再收起并返回全图；浏览器脚本异常为 0。两张**同一运行**截图分别为 [陆地开局取景](land-framed-portrait.png) 和 [完整海域取景](whole-ocean-portrait.png)。这是取景和可点选性改善，不代表原作同等地形密度、标签、颜色或 UI；顶部事件条仍会遮挡部分北方岛屿标签。
 
-验证：开局镜头定向单测 2/2；`npm run typecheck`、`npm run lint`、`npm run build`（85 个允许产物）通过；正常战乱世界的陆海行动、详情、保存刷新恢复在手机尺寸 Chromium 1/1，通过这次专用取景／地图点击／全图流程 1/1。以上不是 iPhone 13 Pro Max 的 Safari 或 Chrome 真机验收。仍需减轻移动期间的整图重绘并实测实际日/秒、完整画面与原作手感。没有 push、Pages、Cloudflare 或正式站变更。
+验证：开局镜头定向单测 2/2；`npm run typecheck`、`npm run lint`、`npm run build`（85 个允许产物）通过；正常战乱世界的陆海行动、详情、保存刷新恢复在手机尺寸 Chromium 1/1，专用取景／地图点击／全图流程在手机尺寸和桌面 Chromium 各 1/1。以上不是 iPhone 13 Pro Max 的 Safari 或 Chrome 真机验收。仍需减轻移动期间的整图重绘并实测实际日/秒、完整画面与原作手感。没有 push、Pages、Cloudflare 或正式站变更。

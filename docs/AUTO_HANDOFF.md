@@ -1,3 +1,13 @@
+# 当前检查点：手机详情遮挡与城市标记点选已本地修复（2026-10-11）
+
+用户已明确取消本轮上传：**先不上传 GitHub 或 Cloudflare**，仍需继续修 bug 和关键功能。没有远端写入、Pages 触发、正式站或旧存档更改。源码提交 **75ac953**，分支 `codex/ph06-world-generation`；续接先核实 Git、`webRebuild.culture47MobileSheetCheckpoint` 和 [本批证据](evidence/fms-mobile-sheet47-2026-10-11/RESULT.md)。本机试玩仍为 **http://127.0.0.1:5315/?fms=1**，仅此电脑，不是手机可直接访问的地址。
+
+手机详情默认收起到约 34dvh，地图仍可点；展开可查看长记录，375×667 矮屏也未盖住国家横条。点击真实城市标记优先打开对应城市，切换国家清除旧滚动位置，城市选择定位到城市段。手机尺寸 Chromium 的收起/展开高度为 285.25/594 CSS px，城市 `c-0` 点选成功，打开详情后继续时间到 tick 1080、页面异常 0；正常战乱世界的行军/舰队、详情期间推进、保存刷新恢复在桌面和手机尺寸 Chromium 各 1/1。typecheck、lint、build 和 85 项 dist 允许产物检查通过；见两张本机截图与 verification。过程中的失败断言已修复并重跑最终构建。真机 iPhone Safari/Chrome、原作视觉/操作验收尚未完成，WEB-04-37 仍进行中，WEB-04-21 blocked，发布门不变。
+
+下一批先量化真实战乱世界的 Worker 吞吐与全图重绘成本，再处理影响看海与交互的最明显缺口；简单跳过移动帧会伤害刚修好的行军连续性，不能当作性能修复。保持现有存档保护，继续用正常生成世界做浏览器与刷新恢复回归。
+
+---
+
 # 当前检查点：文化世界开局按真实陆地取景（2026-10-11）
 
 源码提交 **abac627**，分支 `codex/ph06-world-generation`。续接先核实 Git，读 `webRebuild.culture47LandCameraCheckpoint` 与 `docs/evidence/fms-land-camera47-2026-10-11/RESULT.md`／`verification.json`。仅本机 **http://127.0.0.1:5315/?fms=1**，旧端口和存档没有迁移、清理或覆盖。`WEB-04-37` 仍进行中、`WEB-04-21` blocked，完整 PH05、真机、用户视觉与发布门未过。

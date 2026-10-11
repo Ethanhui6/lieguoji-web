@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-11",
+  "task": "WEB-04-37",
+  "sourceCommit": "75ac953308e329c2295047a15242c3349c595ed2",
+  "scope": "Local portrait detail sheet, scroll targeting and visible city marker picking",
+  "url": "http://127.0.0.1:5315/?fms=1",
+  "localOnly": true,
+  "checks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": {"passed": true, "approvedArtifacts": 85},
+    "planCheck": "passed",
+    "planTests": {"passed": 15, "failed": 0},
+    "mobileSheetChromium": {"passed": 1, "failed": 0},
+    "normalWarWorldDesktopAndMobileChromium": {"passed": 2, "failed": 0}
+  },
+  "portraitMetricsCssPx": {
+    "collapsedHeight": 285.2499694824219,
+    "expandedHeight": 594,
+    "collapsedTop": 464.8429260253906,
+    "shortViewport": {"width": 375, "height": 667, "expandedTop": 154, "nationBarBottom": 144}
+  },
+  "pickedCity": "c-0",
+  "tickWhileDetailsOpen": 1080,
+  "pageErrors": [],
+  "physicalIphone": false,
+  "originalVisualAccepted": false,
+  "cloudWrite": false,
+  "screenshots": ["portrait-details-map-visible.png", "portrait-details-expanded.png"]
+}

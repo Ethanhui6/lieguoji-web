@@ -4971,7 +4971,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47LandCameraCheckpoint, latest AUTO_HANDOFF and fms-land-camera47 RESULT+verification. Source abac627, local-only build 5315. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/phone/visual/publish gates unchanged. Mobile-sized browser now frames real land and map pick/full-world fit works. Next separate/cache static map and dynamic force/combat rendering, then measure actual days/second, save/refresh and visible mobile quality; 250ms combat glow cap remains transitional. No push/Pages/main.",
+    "nextRecoveryTarget": "Read culture47MobileSheetCheckpoint, latest AUTO_HANDOFF and fms-mobile-sheet47 RESULT+verification. Source 75ac953, local-only build 5315. User canceled upload: no GitHub/Pages/Cloudflare write until newly authorized. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical phone/visual/publish gates unchanged. Portrait detail sheet and visible city picking passed local mobile Chromium; normal war-world/save recovery passed desktop and mobile Chromium. Next measure actual war-world throughput and full-map render cost, then fix the highest-impact gameplay/interaction gap without weakening movement or save protection.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5124,6 +5124,29 @@
         "docs/evidence/fms-land-camera47-2026-10-11/whole-ocean-portrait.png"
       ],
       "next": "Separate/cache static terrain and text from moving forces and combat decoration, then remeasure real browser days/second and save/refresh without claiming phone or original parity."
+    },
+    "culture47MobileSheetCheckpoint": {
+      "date": "2026-10-11",
+      "task": "WEB-04-37",
+      "sourceCommit": "75ac953308e329c2295047a15242c3349c595ed2",
+      "status": "local-portrait-detail-and-city-pick-verified-full-war-task-in-progress",
+      "scope": "Portrait detail sheet starts at 34dvh, expands on demand while leaving short-screen nation bar visible; nation/city changes reset or focus sheet scroll. Visible city marker hit takes priority over underlying province only for map inspection. No Worker/simulation/save schema change.",
+      "checks": {
+        "typecheck": true,
+        "lint": true,
+        "build": {"passed": true, "approvedArtifacts": 85},
+        "mobileSizeChromium": {"portraitDetailAndCityPick": "passed", "normalWarWorldAndSaveRecovery": "passed", "physicalIphone": false, "originalVisualParity": false},
+        "desktopChromium": {"normalWarWorldAndSaveRecovery": "passed"}
+      },
+      "measuredCssPx": {"collapsedHeight": 285.2499694824219, "expandedHeight": 594, "shortScreenExpandedTop": 154, "shortScreenNationBarBottom": 144},
+      "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; old ports/saves unchanged; user canceled upload; no push, Pages, Cloudflare or production write.",
+      "evidence": [
+        "docs/evidence/fms-mobile-sheet47-2026-10-11/RESULT.md",
+        "docs/evidence/fms-mobile-sheet47-2026-10-11/verification.json",
+        "docs/evidence/fms-mobile-sheet47-2026-10-11/portrait-details-map-visible.png",
+        "docs/evidence/fms-mobile-sheet47-2026-10-11/portrait-details-expanded.png"
+      ],
+      "next": "Measure real war-world throughput and map render cost; fix highest-impact gameplay/interaction gap with normal-world browser and save/refresh evidence."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

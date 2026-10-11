@@ -20,3 +20,13 @@
 .c47-continuation{position:absolute;left:50%;bottom:88px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;max-width:min(92vw,520px);padding:9px 12px;border-radius:16px;background:rgba(251,248,240,.96);box-shadow:0 4px 20px #30200b22;z-index:12;font-size:12px}.c47-continuation button{flex-shrink:0;border:0;border-radius:10px;padding:10px;background:#38585b;color:white}.c47-continuation span{line-height:1.5}
 
 @media(max-width:600px){.c47-app:has(.c47-panel) .c47-zoom{display:none}}
+
+/* Leave the world visible while inspecting it on a portrait phone. The full
+   inspector remains one tap away and scrolls without pausing the simulation. */
+.c47-panel>.c47-sheet-size{display:none}
+@media(max-width:600px){
+  .c47-panel,.c47-panel:has(.c47-order-preview){max-height:34vh;max-height:34dvh;min-height:min(180px,34vh)}
+  .c47-panel.is-expanded,.c47-panel.is-expanded:has(.c47-order-preview){max-height:min(74vh,calc(100vh - 245px));max-height:min(74dvh,calc(100dvh - 245px))}
+  .c47-app .c47-panel>.c47-sheet-size{display:inline-flex;position:sticky;top:0;float:left;z-index:2;width:44px;height:44px;min-height:44px;margin:-14px 8px 0 -16px;padding:0;border-radius:12px;background:#e5eeea;font-size:24px;line-height:1}
+  .c47-app .c47-panel>.c47-dismiss{width:44px;height:44px;min-height:44px}
+}

@@ -3,7 +3,7 @@ import {populationStamp47} from './civilization47-population-types';
 import {CultureHouses47} from './CultureHouses47';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
-import {useEffect,useRef,useState,useMemo,type ReactNode} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState,useMemo,type ReactNode} from 'react';
 import {CultureNationOverview47,nationFamily47} from './CultureNationOverview47';
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
@@ -70,7 +70,7 @@ function NationIdentity({run,id,cityId,busy,act,diplomacy,pause,originalEngine=f
       <label>国家宗教<select aria-label="国家宗教" value={religion} onChange={e=>setReligion(e.target.value as ReligionId47)}>{Object.entries(RELIGIONS47).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
       <button disabled={busy} type="submit">应用国家设置</button><small>国名留空时，国号随政体变化。国家宗教不会自动改变所有居民的信仰。</small>
     </form></details>
-    <details open={cityId!==null||undefined}><summary>城市 · {cities.length}</summary>{city&&<CityIdentity key={city.id+'/'+run.civilization.cities[city.id].name.custom} cityId={city.id} run={run} busy={busy} edit={edit}/>}<div className="c47-city-list">{cities.map(c=><span key={c.id}>{c.id===nation.capitalId?'♛ ':''}{c.name}</span>)}</div></details>
+    <details className="c47-cities-section" open={cityId!==null||undefined}><summary>城市 · {cities.length}</summary>{city&&<CityIdentity key={city.id+'/'+run.civilization.cities[city.id].name.custom} cityId={city.id} run={run} busy={busy} edit={edit}/>}<div className="c47-city-list">{cities.map(c=><span key={c.id}>{c.id===nation.capitalId?'♛ ':''}{c.name}</span>)}</div></details>
     {run.houses&&familyCapable&&<CultureHouses47 run={run} id={id} busy={busy} act={act} pause={pause}/>}
     <details onToggle={e=>setFamilyOpen(e.currentTarget.open)}><summary>{family?culture47(identity.cultureId).houseLabel+' · '+family.surname:'家族'}</summary>{family&&<><div className="c47-family-summary"><strong>族长 · {run.kin.persons[family.headId]?.identity.name??'暂缺'}</strong><small>{members.filter(p=>p.isAlive).length} 位在世 · {members.length} 位登记成员</small></div><CultureFamilyPeople47 run={run} ids={members.map(p=>p.id)} leaderId={head??undefined}/></>}{heir&&<><p>继承候选：{heir.name}，{heir.age} 岁</p><button disabled={busy} onClick={()=>setPending(true)}>安排传位</button>{pending&&<div role="group" aria-label="确认传位"><p>由 {heir.name} 接任{heir.title}，成为第 {heir.order} 任。</p><button disabled={busy} onClick={()=>{act({kind:'succession',nationId:id});setPending(false);}}>确认传位</button><button onClick={()=>setPending(false)}>取消</button></div>}</>}</details>
   </>;
@@ -84,7 +84,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const [count,setCount]=useState(6),[cityCount,setCityCount]=useState(60),[mode,setMode]=useState<NamingMode47>('culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(false);
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
-  const [nationId,setNationId]=useState('n-0'),[cityId,setCityId]=useState<string|null>(null),[panel,setPanel]=useState<'nation'|'history'|'military'|null>(null);
+  const [nationId,setNationId]=useState('n-0'),[cityId,setCityId]=useState<string|null>(null),[panel,setPanel]=useState<'nation'|'history'|'military'|null>(null),[panelExpanded,setPanelExpanded]=useState(false);
   const [mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
@@ -92,6 +92,29 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const playbackBudget=culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2);
   const instantDisplay=useRef(false);
   useEffect(()=>{rateSample.current=null;setActualRate(null);},[playing,speed]);
+  const panelScroll=useRef<HTMLElement>(null);
+  useLayoutEffect(()=>{
+    setPanelExpanded(false);
+    const sheet=panelScroll.current;
+    if(!sheet)return;
+    const focus=()=>{
+      if(panelScroll.current!==sheet)return;
+      sheet.scrollTop=0;
+      if(panel==='nation'&&cityId){
+        const cities=sheet.querySelector('.c47-cities-section');
+        if(cities)sheet.scrollTop=Math.max(0,cities.getBoundingClientRect().top-sheet.getBoundingClientRect().top+sheet.scrollTop-56);
+      }
+    };
+    focus();
+    const frame=requestAnimationFrame(focus);
+    return ()=>cancelAnimationFrame(frame);
+  },[panel,nationId,cityId,historyEpoch]);
+  useLayoutEffect(()=>{
+    const sheet=panelScroll.current,preview=sheet?.querySelector('.c47-diplomatic-preview,.c47-order-preview');
+    if(!sheet||!preview||(!politicalPreview&&!militaryPreview))return;
+    setPanelExpanded(true);
+    sheet.scrollTop=Math.max(0,preview.getBoundingClientRect().top-sheet.getBoundingClientRect().top+sheet.scrollTop-56);
+  },[politicalPreview,militaryPreview]);
   const storageAbort=useRef<AbortController|null>(null),operation=useRef<AbortController|null>(null);
   const [recovering,setRecovering]=useState(false),resumeAfterRecovery=useRef(false);
   const [renderFault,setRenderFault]=useState(''),[rendererEpoch,setRendererEpoch]=useState(0);
@@ -268,6 +291,8 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
           else {const port=sea.ports.filter(v=>v.provinceId===province?.id).sort((a,b)=>Math.hypot(sea.nodes.get(a.node)!.center.x-at.x,sea.nodes.get(a.node)!.center.y-at.y)-Math.hypot(sea.nodes.get(b.node)!.center.x-at.x,sea.nodes.get(b.node)!.center.y-at.y))[0];if(province&&!port){setNotice('请选择海面或沿岸港口。');return;}interaction.current.requestMilitary({force:'fleet',command:{type:'fleet-sail',fleetId:s.force.id,target:port?{kind:'port',id:port.id}:{kind:'cell',id:cell.id}}});}return;
         }
         if(s.military){const hit=map.pickUnits(p)[0];if(hit){interaction.current.chooseForce({kind:hit.kind as SelectedForce47['kind'],id:hit.id});return;}}
+        const city=map.cityPositions().map(c=>({...c,distance:Math.hypot(c.x-p.x,c.y-p.y)})).filter(c=>c.distance<=14).sort((a,b)=>a.distance-b.distance||a.id.localeCompare(b.id))[0];
+        if(city){const cityProvince=r.world.provinces.find(v=>v.id===city.provinceId);if(cityProvince){setNationId(cityProvince.controller);setCityId(city.id);setPanel('nation');return;}}
         if(province){setNationId(province.controller);setCityId(r.world.cities.find(c=>c.provinceId===id)?.id??null);setPanel('nation');}};
       const cancel=()=>{tap=null;ids.clear();gestures.interrupt();},wheel=(e:WheelEvent)=>{e.preventDefault();gestures.wheel(point(e),e.deltaY);};
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
@@ -336,7 +361,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       <CultureNews47 displayTick={()=>motion.current.tick(performance.now())} key={r.id} run={r} open={id=>{setHistoryEpoch(n=>n+1);setHistoryFocus(id);setPanel('history');}}/>
       <div className="c47-nations" aria-label="国家列表">{r.world.nations.map(n=><button key={n.id} aria-pressed={nationId===n.id&&panel==='nation'} onClick={()=>{setNationId(n.id);setCityId(null);setPanel('nation');}}><i style={{background:n.color}}/>{n.name}</button>)}</div>
       <div className="c47-zoom"><button aria-label="放大地图" onClick={()=>mapControl.current?.zoom(1.6)}><PlayIcon name="plus"/></button><button aria-label="缩小地图" onClick={()=>mapControl.current?.zoom(1/1.6)}><PlayIcon name="minus"/></button><button aria-label="显示全图" onClick={()=>mapControl.current?.fit()}><PlayIcon name="fit"/></button></div>
-      {panel&&<aside className="c47-panel" aria-label={panel==='nation'?'文化与国家详情':panel==='military'?'军队与舰队':'大事记'}><button className="c47-dismiss" aria-label="收起详情" onClick={()=>setPanel(null)}>×</button>{panel==='nation'?<><NationIdentity key={r.id+'/'+nationId} run={r} id={nationId} cityId={cityId} busy={busy||advancing} originalEngine={snapshot.journal.engine!==__CULTURE47_ENGINE__} familyCapable={[__CULTURE47_ENGINE__,'fe7a64ad764f776b80547e14a4bcb0f2b005ca65a9b9f63555b78ba42058e5cc'].includes(snapshot.journal.engine)} act={act} pause={()=>setPlaying(false)} diplomacy={<CultureDiplomacy47 key={r.id+'/'+nationId+'/diplomacy'} run={r} id={nationId} activeSiegeIds={snapshot.frame.activeSieges??[]} busy={busy} preview={politicalPreview} sequence={snapshot.journal.actions.length} onCancel={()=>{previewEpoch.current.political++;setPoliticalPreview(null);}} onPreview={action=>{setPlaying(false);void send({type:'political-preview',action});}} onConfirm={()=>{if(politicalPreview)void send({type:'action',sequence:politicalPreview.sequence,action:{kind:'politics',action:politicalPreview.action,expected:politicalPreview.expected}});}}/>}/></>:panel==='military'?<CultureMilitary47 snapshot={snapshot} selected={force} busy={busy} preview={militaryPreview} choose={chooseForce} target={mode=>{setPlaying(false);setMilitaryPreview(null);setTargetMode(mode);setPanel(null);}} request={requestMilitary} cancel={()=>{previewEpoch.current.military++;setMilitaryPreview(null);setTargetMode(null);}} confirm={()=>{if(militaryPreview&&intentMatchesForce47(militaryPreview.intent,force))void send({type:'action',sequence:militaryPreview.sequence,action:{kind:'military',intent:militaryPreview.intent,expected:militaryPreview.preview.basedOn}});}}/>:<CultureHistory47 key={r.id+'/'+historyEpoch} run={r} focusId={historyFocus} selectNation={id=>{setNationId(id);setCityId(null);setPanel('nation');}}/>}</aside>}
+      {panel&&<aside ref={panelScroll} className={`c47-panel${panelExpanded?' is-expanded':''}`} aria-label={panel==='nation'?'文化与国家详情':panel==='military'?'军队与舰队':'大事记'}><button className="c47-sheet-size" aria-label={panelExpanded?'收起为半屏':'展开详情面板'} aria-expanded={panelExpanded} onClick={()=>setPanelExpanded(v=>!v)}><span aria-hidden="true">{panelExpanded?'⌄':'⌃'}</span></button><button className="c47-dismiss" aria-label="收起详情" onClick={()=>setPanel(null)}>×</button>{panel==='nation'?<><NationIdentity key={r.id+'/'+nationId} run={r} id={nationId} cityId={cityId} busy={busy||advancing} originalEngine={snapshot.journal.engine!==__CULTURE47_ENGINE__} familyCapable={[__CULTURE47_ENGINE__,'fe7a64ad764f776b80547e14a4bcb0f2b005ca65a9b9f63555b78ba42058e5cc'].includes(snapshot.journal.engine)} act={act} pause={()=>setPlaying(false)} diplomacy={<CultureDiplomacy47 key={r.id+'/'+nationId+'/diplomacy'} run={r} id={nationId} activeSiegeIds={snapshot.frame.activeSieges??[]} busy={busy} preview={politicalPreview} sequence={snapshot.journal.actions.length} onCancel={()=>{previewEpoch.current.political++;setPoliticalPreview(null);}} onPreview={action=>{setPlaying(false);void send({type:'political-preview',action});}} onConfirm={()=>{if(politicalPreview)void send({type:'action',sequence:politicalPreview.sequence,action:{kind:'politics',action:politicalPreview.action,expected:politicalPreview.expected}});}}/>}/></>:panel==='military'?<CultureMilitary47 snapshot={snapshot} selected={force} busy={busy} preview={militaryPreview} choose={chooseForce} target={mode=>{setPlaying(false);setMilitaryPreview(null);setTargetMode(mode);setPanel(null);}} request={requestMilitary} cancel={()=>{previewEpoch.current.military++;setMilitaryPreview(null);setTargetMode(null);}} confirm={()=>{if(militaryPreview&&intentMatchesForce47(militaryPreview.intent,force))void send({type:'action',sequence:militaryPreview.sequence,action:{kind:'military',intent:militaryPreview.intent,expected:militaryPreview.preview.basedOn}});}}/>:<CultureHistory47 key={r.id+'/'+historyEpoch} run={r} focusId={historyFocus} selectNation={id=>{setNationId(id);setCityId(null);setPanel('nation');}}/>}</aside>}
       {targetMode&&<div className="c47-order-hint" role="status">{force?.kind==='fleet'?'点击海面或港口':'点击行军目的地'}<button aria-label="取消选择目标" onClick={()=>{setTargetMode(null);setPanel('military');}}>×</button></div>}
       <div className="c47-playback-status" role="status" aria-live="off">{busy?'正在处理…':advancing?'正在推演…':playing?'推演中':'已暂停'}{playing&&actualRate!==null&&(' · 实际 '+actualRate.toFixed(1)+' 日/秒')}</div><footer className="c47-controls"><button aria-label={playing||(recovering&&resumeAfterRecovery.current)?'暂停时间':'继续时间'} title={playing?'暂停':'继续'} aria-pressed={playing} onClick={()=>void resume()}><PlayIcon name={playing?'pause':'play'}/></button><button aria-label="切换推演速度" title="推演速度" onClick={()=>setSpeed(v=>v===.5?1:v===1?2:v===2?4:.5)}>{speed}×</button><button aria-label="推进一天" title="推进一天" disabled={busy} onClick={()=>act({kind:'advance',ticks:120})}><PlayIcon name="step"/></button><button aria-label="查看大事记" title="大事记" aria-pressed={panel==='history'} onClick={()=>{setHistoryEpoch(n=>n+1);setHistoryFocus(null);setPanel(panel==='history'?null:'history');}}><PlayIcon name="book"/></button></footer>
     </>}

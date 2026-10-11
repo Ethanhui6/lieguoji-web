@@ -10,6 +10,7 @@ import type {FmsDocument} from '../model';
 import {FmsRenderer} from '../renderer';
 import {FmsGestures} from '../gestures';
 import {fitCamera,screenToWorld,resizeCamera,zoomCameraAt} from '../../world/camera';
+import {initialLandCamera47} from './land-camera47';
 import {PlayMap} from './map';
 import {provinceAt} from './world';
 import {PlayIcon} from './PlayIcon';
@@ -235,7 +236,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     // Pulsing contact geometry must not invalidate the terrain/label render group.
     combatLayer.enableRenderGroup();
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
-    const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):fitCamera(source,viewport)};
+    const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):initialLandCamera47(source,viewport)};
     let combat:ReturnType<typeof combatMarkers47>=[],combatRun:FoundingForces47|null=null;
     const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
     const sea=graphFor46(current.current.run);

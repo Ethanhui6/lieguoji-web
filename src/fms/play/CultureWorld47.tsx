@@ -272,7 +272,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
-      let raf=0,settled=-1,lastDiagnostic=0;
+      let raf=0,settled=-1,lastDiagnostic=0,lastCombatPaint=0;
       // Full force snapshots are test evidence, not gameplay. Serializing every
       // army/fleet and querying every visual marker on each interpolated frame
       // steals time from the same main thread that must paint the map. An
@@ -281,9 +281,13 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
       const animate=()=>{if(disposed||failed)return;try{
         const now=performance.now(),alpha=motion.current.alpha(now),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');
-        if(alpha<1||settled!==motion.current.revision||animateCombat){
+        // Contact glow is cosmetic. Re-rendering the entire terrain every RAF
+        // when any war contact exists can monopolize the main thread and starve
+        // confirmed Worker replies. Actual force motion still paints each RAF.
+        const combatPulse=animateCombat&&now-lastCombatPaint>=250;
+        if(alpha<1||settled!==motion.current.revision||combatPulse){
           const frame=motion.current.frame(now);map.updateUnits(frame);
-          if(animateCombat)drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));
+          if(combatPulse){drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));lastCombatPaint=now;}
           // The renderer itself updates every RAF. Rich diagnostics are opted
           // in by the regression URL; ordinary play keeps only the small
           // display tick at a settled cadence instead of serializing the full

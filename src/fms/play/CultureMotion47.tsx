@@ -40,11 +40,26 @@ function legacyTrace(previous:Culture47Snapshot,next:Culture47Snapshot,graph:()=
 export class CultureMotion47 {
  private snapshot?:Culture47Snapshot;private tracks:Paths={armies:new Map(),fleets:new Map()};
  private from=0;private to=0;private anchor=0;private duration=1;private fraction=1;private running=false;private received=0;private interval=0;
- private finishing=false;private costPerTick=0;private pausedAt:number|null=null;
+ private finishing=false;private costPerTick=0;private pausedAt:number|null=null;private presentationTickMillis:number|null=null;
  revision=0;
  alpha(now:number){if(this.finishing&&now-this.anchor>=250)return 1;return Math.min(1,this.fraction+(this.running||this.finishing?Math.max(0,now-this.anchor)/this.duration:0));}
  tick(now:number){return this.from+(this.to-this.from)*this.alpha(now);}
  setRunning(value:boolean,now:number){if(value===this.running)return;this.fraction=this.alpha(now);this.anchor=now;this.running=value;this.finishing=false;if(value){if(this.pausedAt!==null)this.received+=now-this.pausedAt;this.pausedAt=null;}else this.pausedAt=now;}
+ /** A selected display rate only changes playback of Worker-acknowledged
+  * movement. It never changes the pending simulation request or its result. */
+ setPresentationTickMillis(value:number,now:number){
+  if(!Number.isFinite(value)||value<=0)throw Error('显示节奏无效。');
+  const changed=this.presentationTickMillis!==value;this.presentationTickMillis=value;
+  if(!changed||!this.running||this.finishing||this.to<=this.from)return;
+  const fraction=this.alpha(now);if(fraction>=1)return;const remainingTicks=Math.max(0,this.to-this.tick(now)),remaining=this.acknowledgedDuration(remainingTicks);
+  this.fraction=fraction;this.anchor=now;this.duration=remaining/Math.max(1e-9,1-fraction);
+ }
+ // A short route must survive several real browser paint opportunities. The
+ // normal generated map can spend roughly half a second preparing a rendered
+ // acknowledgement, so a 360ms floor still collapsed to two visible poses.
+ // This changes only presentation of an already accepted interval; it neither
+ // delays the next Worker request nor consumes simulation throughput.
+ private acknowledgedDuration(ticks:number){return Math.max(960,Math.min(30000,Math.max(0,ticks)*this.presentationTickMillis!));}
  /** Stop requesting simulation, but finish the already committed path before
   * presenting a stable pause/save date. Rendering and date share this clock. */
  finishAccepted(now:number){
@@ -84,6 +99,7 @@ export class CultureMotion47 {
    }else fresh[kind].set(id,[{...point,tick:end}]);
   }
   this.finishing=false;const elapsed=Math.max(16,now-this.received);this.interval=this.interval?Math.max(elapsed,this.interval*.8+elapsed*.2):elapsed;
-  this.duration=Math.max(160,remaining,Math.min(30000,Math.max(this.interval,this.costPerTick*(end-previous.run.clock.tick))*1.18));this.received=this.anchor=now;if(!this.running)this.pausedAt=now;this.from=Math.min(oldTick,previous.run.clock.tick);this.to=end;this.fraction=0;this.tracks=fresh;this.revision++;
+  const acceptedTicks=Math.max(0,end-oldTick),legacyDuration=Math.min(30000,Math.max(this.interval,this.costPerTick*(end-previous.run.clock.tick))*1.18);
+  this.duration=this.presentationTickMillis===null?Math.max(160,remaining,legacyDuration):this.acknowledgedDuration(acceptedTicks);this.received=this.anchor=now;if(!this.running)this.pausedAt=now;this.from=Math.min(oldTick,previous.run.clock.tick);this.to=end;this.fraction=0;this.tracks=fresh;this.revision++;
  }
 }

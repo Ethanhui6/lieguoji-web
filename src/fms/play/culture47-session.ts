@@ -163,6 +163,10 @@ export class Culture47Session {
   executeDisplay(actions:Culture47Action[],sequence:number){
     if(!Array.isArray(actions)||actions.length<1||actions.length>4||actions.length>1&&actions.some(a=>a.kind!=='advance'))throw Error('推进批次无效，原进度保持。');
     const previous=this.state,trace=previous&&actions.every(a=>a.kind==='advance')?new ForceDisplayTraceCollector47(previous.run.id,sequence,previous.run.clock.tick):undefined;
+    // A display trace must include the real position at the first confirmed
+    // tick. Without this anchor, a linear route has only its endpoint and the
+    // renderer can only jump after the next Worker acknowledgement.
+    if(trace&&previous){const frame=culture47Frame(previous.run);for(const [id,point]of frame.armies)trace.record('army',id,previous.run.clock.tick,point);for(const [id,point]of frame.fleets)trace.record('fleet',id,previous.run.clock.tick,point);}
     try {this.append(actions,sequence,trace?.observe);const packet=this.displaySnapshot(),motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
     catch(error){this.state=previous;throw error;}
   }

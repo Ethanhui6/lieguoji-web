@@ -88,6 +88,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
   const [actualRate,setActualRate]=useState<number|null>(null),rateSample=useRef<{at:number;tick:number}|null>(null);
+  const playbackBudget=culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2);
   const instantDisplay=useRef(false);
   useEffect(()=>{rateSample.current=null;setActualRate(null);},[playing,speed]);
   const storageAbort=useRef<AbortController|null>(null),operation=useRef<AbortController|null>(null);
@@ -154,7 +155,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     // stamp; never refresh their sequence behind the player's confirmation.
     const dispatched=command.type==='action'&&(command.action.kind==='advance'||command.action.kind==='identity'||command.action.kind==='succession')&&current.current?{...command,sequence:current.current.journal.actions.length}:command;
     const motionTicks=background?(dispatched.type==='advance-batch'?dispatched.ticks:dispatched.type==='action'&&dispatched.action.kind==='advance'?dispatched.action.ticks:0):0,started=performance.now();
-    if(motionTicks)motion.current.beginAdvance(motionTicks,started);
+    if(motionTicks){motion.current.setPresentationTickMillis(playbackBudget.tickMillis,started);motion.current.beginAdvance(motionTicks,started);}
     const inspectNewSlot=command.type==='create'&&(storageDatabase.current!==CULTURE47_GENERATIONS_DATABASE||locked);
     try{const newSlot=inspectNewSlot?await loadCulture47(indexedDB,j=>verifyJournal(j,op.signal,{progress:replayProgress}),op.signal,CULTURE47_GENERATIONS_DATABASE):undefined;
       let s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
@@ -204,7 +205,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     finally{operation.current=null;inflight.current=false;resumeAfterRecovery.current=false;if(!lifetime.current?.signal.aborted){setRecovering(false);setBusy(false);}}
   }
   useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
-  usePresentationClock({enabled:playing,policyKey:busy,...culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2),playing:()=>playing,
+  usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,playing:()=>playing,
     batchBoundary:()=>120-(current.current?.run.clock.tick??0)%120,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
     step:async ticks=>{const s=current.current;if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
@@ -221,6 +222,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   useEffect(()=>{const protect=(e:BeforeUnloadEvent)=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[]);
   const runId=snapshot?.run.id;
   const motion=useRef(new CultureMotion47());
+  useEffect(()=>{motion.current.setPresentationTickMillis(playbackBudget.tickMillis,performance.now());},[playbackBudget.tickMillis]);
   function displayFrame(){return motion.current.frame(performance.now());}
   useEffect(()=>{if(snapshot){const now=performance.now();motion.current.install(snapshot,now,()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);}},[snapshot,renderFault]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
@@ -271,14 +273,26 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
       let raf=0,settled=-1,lastDiagnostic=0;
+      // Full force snapshots are test evidence, not gameplay. Serializing every
+      // army/fleet and querying every visual marker on each interpolated frame
+      // steals time from the same main thread that must paint the map. An
+      // explicit local query keeps that expensive read-only instrumentation out
+      // of ordinary play while retaining it for the browser motion regression.
+      const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
       const animate=()=>{if(disposed||failed)return;try{
         const now=performance.now(),alpha=motion.current.alpha(now),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');
         if(alpha<1||settled!==motion.current.revision||animateCombat){
           const frame=motion.current.frame(now);map.updateUnits(frame);
           if(animateCombat)drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));
-          // Evidence sampling is independent of the display refresh rate.
-          if(now-lastDiagnostic>=100||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
-            canvas.dataset.displayTick=String(motion.current.tick(now));canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());lastDiagnostic=now;
+          // The renderer itself updates every RAF. Rich diagnostics are opted
+          // in by the regression URL; ordinary play keeps only the small
+          // display tick at a settled cadence instead of serializing the full
+          // unit set each frame.
+          const diagnosticInterval=richDiagnostics&&alpha<1?16:100;
+          if(now-lastDiagnostic>=diagnosticInterval||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
+            canvas.dataset.displayTick=String(motion.current.tick(now));
+            if(richDiagnostics){canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());}
+            lastDiagnostic=now;
           }
           renderer.refresh();settled=alpha===1?motion.current.revision:-1;
         }

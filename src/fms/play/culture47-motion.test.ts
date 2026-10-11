@@ -25,6 +25,17 @@ describe('actual47 completed-path presentation',()=>{
   clock.install(snapshot(20,2,{x:20,y:0},[p(10,10),p(20,20)],10),5050,noGeometry);
   expect(clock.frame(5250).armies.get('a')!.x).toBeLessThan(12);expect(clock.frame(5300).armies.get('a')!.x).toBeGreaterThan(clock.frame(5250).armies.get('a')!.x);
  });
+ it('plays an acknowledged route at the selected display rate without ever showing a future tick',()=>{
+  const clock=new CultureMotion47();clock.setPresentationTickMillis(.05,0);clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);
+  clock.install(snapshot(480,1,{x:48,y:0},[p(0,0),p(480,48)]),1000,noGeometry);
+  const samples=[1000,1120,1959,1960].map(now=>clock.tick(now));expect(samples.every(tick=>tick>=0&&tick<=480)).toBe(true);
+  expect(clock.frame(1120).armies.get('a')!.x).toBeGreaterThan(0);expect(clock.frame(1120).armies.get('a')!.x).toBeLessThan(48);expect(clock.tick(1960)).toBe(480);
+ });
+ it('rebases an in-flight acknowledged route when the selected display rate changes',()=>{
+  const clock=new CultureMotion47();clock.setPresentationTickMillis(20,0);clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);
+  clock.install(snapshot(100,1,{x:100,y:0},[p(0,0),p(100,100)]),1000,noGeometry);const before=clock.frame(1050).armies.get('a')!;
+  clock.setPresentationTickMillis(10,1050);expect(clock.frame(1050).armies.get('a')).toEqual(before);expect(clock.frame(1070).armies.get('a')!.x).toBeGreaterThan(before.x);expect(clock.tick(2050)).toBe(100);
+ });
  it('reconstructs old routes through both real gates and exact V2 endpoints, rejecting route resets',()=>{
   const g=graph(),a=beginArmyTravel47('a',[0,1,2],g),b=advanceArmyTravel47(a,g,100,()=>1,()=>true).travel;
   expect(provedTravelTrack47(a,b,g)).toEqual([{x:5,y:5},{x:10,y:5},{x:15,y:5},{x:20,y:5},{x:25,y:5}]);

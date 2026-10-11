@@ -13,6 +13,10 @@ describe('playable real culture owner',()=>{
   it('creates both actual world naming modes and returns real position maps',()=>{
     for(const mode of ['culture-generated','historical-names'] as const){const s=new Culture47Session().create({...opening,setup:{...opening.setup,mode}});expect(s.run.civilization.mode).toBe(mode);expect(currentRuler47(s.run.civilization,s.run.chronicle,'n-1')?.title).toBe('天皇');expect(s.run.world.armies.length).toBeGreaterThan(0);expect(s.frame.armies.size).toBe(s.run.world.armies.length);expect(s.run.world.cities.every(c=>!/[0-9]/.test(c.name))).toBe(true);}
   },30000);
+  it('anchors every display batch at the real first confirmed force position',()=>{
+    const owner=new Culture47Session(),initial=owner.load(journal),[id,point]=[...initial.frame.armies][0],display=owner.executeDisplay([{kind:'advance',ticks:120}],0),trace=display.motion?.armies[id];
+    expect(display.motion).toMatchObject({fromTick:0,toTick:120});expect(trace?.[0]).toEqual({...point,tick:0});
+  },30000);
   it('plays through daily closeout, edits polity/religion/city and reproduces all state from saved commands',()=>{
     const owner=new Culture47Session();owner.load(journal);owner.execute({kind:'advance',ticks:120},0);
     owner.execute({kind:'identity',edit:{kind:'nation',id:'n-0',patch:{polity:'Republic',religionId:'catholic',customName:null}}},1);

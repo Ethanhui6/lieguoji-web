@@ -1,3 +1,13 @@
+# 当前检查点：战乱局整图重绘减负已本地验证（2026-10-11）
+
+源码提交 **c6cc736**，分支 `codex/ph06-world-generation`。续接先核实 Git，读 `webRebuild.culture47RenderCadenceCheckpoint` 和 `docs/evidence/fms-render-cadence47-2026-10-11/RESULT.md`／`verification.json`。`WEB-04-37` 仍进行中，`WEB-04-21` blocked；完整 PH05、真机、用户视觉与发布门未过。仅本机 **http://127.0.0.1:5315/?fms=1**，旧端口和存档没有迁移或清理。
+
+浏览器真实性能排查发现战斗接触装饰光效令整张 Pixi 地图每 RAF 重绘，主线程长任务几乎不断。本批只把**静止于已确认轨迹时**的光效整图刷新限制为最多每 250ms 一次；实际军队移动仍逐帧绘制，Worker 战斗/AI/战史/日期/存档完全不改。同一 `1337` 种子、6 国 60 城战乱开局、4×、十秒桌面 Chromium，两次旧构建实测分别确认 3、4 个四日批次，候选确认 8 个；仍存在 57–70ms 频繁长任务，不能宣称已达到原作或真机目标。原始 CPU profile、方法和局限在 evidence。
+
+本批 typecheck、lint、build（85 允许产物）通过；真实调遣连续轨迹/暂停拾取桌面 Chromium 1/1，正常战乱世界陆海行动、打开国家详情仍推进、保存刷新恢复在桌面与手机尺寸 Chromium 各 1/1。**手机尺寸截图仍见大陆太小、大片空海和详情面板遮挡地图，视觉体验没有通过。** 仿真也不等于 iPhone Safari/Chrome。光效 250ms 是过渡性能取舍；下一批先修仅视图层的初始陆地取景，再把静态地形/文字与动态部队、接触视觉分层或缓存，复测主线程、实际天数/秒与真实存档。没有 push、Pages、Cloudflare 或正式站变更。
+
+---
+
 # 当前检查点：真实军令轨迹连续显示已本地验证（2026-10-11）
 
 源码提交 **d8efd88**，分支 `codex/ph06-world-generation`。先核实 Git，再读 `webRebuild.culture47AcknowledgedPacingCheckpoint` 和 `docs/evidence/fms-pacing47-2026-10-11/RESULT.md`／`verification.json`。本批只处理已确认军队／舰队位置的播放与普通帧诊断负载；Worker 权威推进、逐日结算、AI、战斗、随机流、存档 schema 和旧档均未更改。`WEB-04-37` 仍进行中，`WEB-04-21` blocked；完整 PH05、真机、用户视觉和发布门均未通过。

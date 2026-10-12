@@ -11,6 +11,10 @@ test('portrait details leave the map available and expand for long country recor
  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
  await create(page);
  const map=page.getByTestId('culture47-map'),app=page.getByTestId('culture47-app');
+ const news=page.getByRole('button',{name:'顶部事件'});
+ await expect(news).toBeVisible();
+ const newsHeight=(await news.boundingBox())!.height;
+ expect(newsHeight).toBeLessThanOrEqual(46);
  await page.locator('.c47-nations button').first().click();
  const panel=page.getByRole('complementary',{name:'文化与国家详情'});
  const collapsed=await panel.boundingBox(),viewport=page.viewportSize();
@@ -46,5 +50,5 @@ test('portrait details leave the map available and expand for long country recor
  await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:90000}).toBeGreaterThan(0);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();
  expect(errors).toEqual([]);
- await info.attach('portrait-panel',{body:JSON.stringify({collapsedHeight:collapsed!.height,expandedHeight:expanded!.height,exposedMapTop:collapsed!.y,shortViewportExpandedTop:shortPanel.y,shortViewportNationBarBottom:nationBar.y+nationBar.height,pickedCity:visible!.id,tick:await app.getAttribute('data-tick'),errors,physicalIphone:false}),contentType:'application/json'});
+ await info.attach('portrait-panel',{body:JSON.stringify({collapsedHeight:collapsed!.height,expandedHeight:expanded!.height,exposedMapTop:collapsed!.y,shortViewportExpandedTop:shortPanel.y,shortViewportNationBarBottom:nationBar.y+nationBar.height,newsHeight,pickedCity:visible!.id,tick:await app.getAttribute('data-tick'),errors,physicalIphone:false}),contentType:'application/json'});
 });

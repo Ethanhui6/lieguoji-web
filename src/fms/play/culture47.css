@@ -29,4 +29,7 @@
   .c47-panel.is-expanded,.c47-panel.is-expanded:has(.c47-order-preview){max-height:min(74vh,calc(100vh - 245px));max-height:min(74dvh,calc(100dvh - 245px))}
   .c47-app .c47-panel>.c47-sheet-size{display:inline-flex;position:sticky;top:0;float:left;z-index:2;width:44px;height:44px;min-height:44px;margin:-14px 8px 0 -16px;padding:0;border-radius:12px;background:#e5eeea;font-size:24px;line-height:1}
   .c47-app .c47-panel>.c47-dismiss{width:44px;height:44px;min-height:44px}
+  .c47-app .c47-news{top:145px;height:44px;min-height:44px;box-sizing:border-box;padding:5px 10px;gap:6px;border-radius:13px}
+  .c47-news-copy small{display:none}
+  .c47-news-copy strong{-webkit-line-clamp:1;font-size:12px;line-height:1.4}
 }

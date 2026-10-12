@@ -4970,7 +4970,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47MobileSheetCheckpoint, latest AUTO_HANDOFF and fms-mobile-sheet47 RESULT+verification. Source 75ac953, local-only build 5315. User canceled upload: no GitHub/Pages/Cloudflare write until newly authorized. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical phone/visual/publish gates unchanged. Portrait detail sheet and visible city picking passed local mobile Chromium; normal war-world/save recovery passed desktop and mobile Chromium. Next measure actual war-world throughput and full-map render cost, then fix the highest-impact gameplay/interaction gap without weakening movement or save protection.",
+    "nextRecoveryTarget": "Read culture47CompactNewsCheckpoint, latest AUTO_HANDOFF and fms-compact-news47 RESULT+verification. Source 6aea756; 5315 no longer listening, ephemeral local 4173 preview was used. User canceled upload: no GitHub/Pages/Cloudflare write until newly authorized. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical phone/visual/publish gates unchanged. Portrait news reduced to 44 CSS px, normal mobile war-world/save recovery passed. Same-day warm baseline 1x 3.45 and 4x 3.70 actual days/sec, so do not claim speed target met. Next fix wounded standing-army recovery/recruitment deadlock with explicit version/old-save protection and verify normal world plus save replay.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5146,6 +5146,25 @@
         "docs/evidence/fms-mobile-sheet47-2026-10-11/portrait-details-expanded.png"
       ],
       "next": "Measure real war-world throughput and map render cost; fix highest-impact gameplay/interaction gap with normal-world browser and save/refresh evidence."
+    },
+    "culture47CompactNewsCheckpoint": {
+      "date": "2026-10-12",
+      "task": "WEB-04-37",
+      "sourceCommit": "6aea75673cfacf0529e998dbb310f530b54394e9",
+      "status": "local-portrait-news-compact-and-throughput-measured-full-war-task-in-progress",
+      "scope": "Portrait headline one line and 44 CSS px; no Worker or save change.",
+      "checks": {
+        "typecheck": "passed", "lint": "passed", "buildApprovedArtifacts": 85,
+        "mobileSheet": "1/1", "normalMobileWarWorld": "3/3", "desktopWarmThroughput": "1/1",
+        "physicalIphone": "not_run", "originalVisualParity": "not_accepted", "cloud": "not_run"
+      },
+      "measured": {"newsHeightCssPx": 44, "oneTimesDaysPerSecond": 3.4545824019508227, "fourTimesDaysPerSecond": 3.702846563295534},
+      "evidence": [
+        "docs/evidence/fms-compact-news47-2026-10-12/RESULT.md",
+        "docs/evidence/fms-compact-news47-2026-10-12/verification.json",
+        "docs/evidence/fms-compact-news47-2026-10-12/portrait-compact-news.png"
+      ],
+      "next": "Fix wounded standing armies that rest forever while retaining muster slots, with old-save boundary and normal-world replay evidence; then measure deterministic throughput improvements."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

@@ -1,3 +1,11 @@
+# 当前检查点：手机快讯压缩；4× 实际吞吐基线已量化（2026-10-12）
+
+用户本轮再次确认**先不上传**，本机继续修 Bug 和缺少的关键功能。源码提交 **6aea756**（顶部快讯 44 CSS px，单行标题），分支 `codex/ph06-world-generation`，没有 push、Pages 或 Cloudflare 写入。先核实 Git，再读 `webRebuild.culture47CompactNewsCheckpoint` 与 [本批结果](evidence/fms-compact-news47-2026-10-12/RESULT.md)。原 `5315` 服务本轮不再监听；本轮生产预览在 **http://127.0.0.1:4173/?fms=1**，只限此电脑且端口存储隔离，后续续接须先确认服务仍在。
+
+手机尺寸 Chromium 的快讯 44 CSS px、详情折叠 285.25/展开 594；正常战乱世界浏览器回归 3/3，手机详情流程 1/1，typecheck/lint/build 和 dist 85 允许产物通过。同一第 4 日存档暖机基线：桌面 Chromium 1× **3.45 日/秒**，4× **3.70 日/秒**，4× 实际提速远不足；保存刷新 tick 和部队位置一致。下批先修受损常备军低于阈值后永久休整、占征募名额的模拟缺口，再以确定性和实际测量寻找性能收益。不得把移动仿真、短区间速度或截图冒充真机/原作等价。WEB-04-37 仍进行中，完整 PH05/视觉/真机门不变。
+
+---
+
 # 当前检查点：手机详情遮挡与城市标记点选已本地修复（2026-10-11）
 
 用户已明确取消本轮上传：**先不上传 GitHub 或 Cloudflare**，仍需继续修 bug 和关键功能。没有远端写入、Pages 触发、正式站或旧存档更改。源码提交 **75ac953**，分支 `codex/ph06-world-generation`；续接先核实 Git、`webRebuild.culture47MobileSheetCheckpoint` 和 [本批证据](evidence/fms-mobile-sheet47-2026-10-11/RESULT.md)。本机试玩仍为 **http://127.0.0.1:5315/?fms=1**，仅此电脑，不是手机可直接访问的地址。

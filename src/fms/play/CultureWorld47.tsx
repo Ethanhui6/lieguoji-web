@@ -24,6 +24,7 @@ import type {Culture47Action,Culture47Journal} from './culture47-session';
 import {loadCulture47,saveCulture47,CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_FRESH_DATABASE,CULTURE47_GENERATIONS_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {ARMY_RETIREMENT_RULE47} from './army-retirement47';
+import {ARMY_RECOVERY_RULE47} from './army-recovery47';
 import {CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE} from './culture47-session';
 import {continuationJournal47,assertContinuationMatch47} from './culture47-continuation';
 import {previewFamilySuccession47} from './civilization47-succession';
@@ -184,6 +185,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     try{const newSlot=inspectNewSlot?await loadCulture47(indexedDB,j=>verifyJournal(j,op.signal,{progress:replayProgress}),op.signal,CULTURE47_GENERATIONS_DATABASE):undefined;
       let s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
+      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-recovery',rule:ARMY_RECOVERY_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-generations',rule:GENERATIONS_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(motionTicks)motion.current.recordAdvance(motionTicks,performance.now()-started);
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;

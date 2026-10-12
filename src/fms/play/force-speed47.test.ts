@@ -7,6 +7,7 @@ import {actualForces47} from './force-runtime47';
 import {nativeArmyMovementSpeed} from './native-war/army-path';
 import {unitProfile} from './military-profile';
 import {advanceCivilizationMilitary47} from './civilization47-military';
+import {settleCivilizationDay47} from './civilization47-daily';
 import {assertFamilyCalendar47,advanceFamilyCalendar47} from './civilization47-calendar';
 import {beginArmyTravel47} from './army-travel47-state';
 import {forceKey47} from './force-motion47';
@@ -77,9 +78,11 @@ describe('one saved motion and attack time scale, real family clock',()=>{
     // Explicit settlement stub: only verifies no second calendar update.
     out.run.world.day=1;out.run.dailyEconomy.lastDay=1;const next=advanceCivilizationMilitary47(out.run,1,weights);expect(next.run.life.lastTick).toBe(121);expect(next.run.life.currentDate).toEqual(out.run.life.currentDate);
   });
-  it('updates non-court relatives at the ISO month boundary and preserves birthdays and relations',()=>{
+  it('keeps monthly ages pending at the ISO boundary until the daily settlement',()=>{
     const r=atTick(31*120-1),relative=Object.values(r.kin.persons).find(p=>!r.people.persons[p.id])!,birth=relative.birthTime,out=advanceCivilizationMilitary47(r,1,weights);
-    expect(out.run.world.day).toBe(30);expect(out.run.life.currentDate).toEqual({year:1,month:2,day:1});expect(out.run.life.persons[relative.id].updatedMonth).toBe(13);expect(out.run.kin.persons[relative.id].birthTime).toBe(birth);expect(out.run.kin.persons[relative.id].childrenIds).toEqual(relative.childrenIds);expect(out.run.kin.revision).toBe(r.kin.revision+1);expect(out.run.life.revision).toBe(r.life.revision+1);assertFamilyCalendar47(out.run,true);
+    expect(out.run.world.day).toBe(30);expect(out.run.life.currentDate).toEqual({year:1,month:2,day:1});expect(out.run.life.persons[relative.id].updatedMonth).toBe(12);expect(out.run.kin.persons[relative.id].birthTime).toBe(birth);expect(out.run.kin.persons[relative.id].childrenIds).toEqual(relative.childrenIds);expect(out.run.kin.revision).toBe(r.kin.revision);expect(out.run.life.revision).toBe(r.life.revision);assertFamilyCalendar47(out.run,true);
+    const settled=settleCivilizationDay47(out.run,()=>undefined);
+    expect(settled.life.persons[relative.id].updatedMonth).toBe(13);expect(settled.kin.revision).toBe(r.kin.revision+1);expect(settled.life.revision).toBe(r.life.revision+1);expect(settled.kin.persons[relative.id].birthTime).toBe(birth);expect(settled.kin.persons[relative.id].childrenIds).toEqual(relative.childrenIds);
   });
   it.each([-1e-4,0,1e-4])('processes an attack %s ticks relative to the day edge without double firing',offset=>{
     const r=atTick(119),{spatial}=actualForces47(r),sea=[...spatial.graph.cells.values()].find(c=>c.surface==='sea')!,a=r.world.armies[0],b=r.world.armies.find(v=>v.nationId!==a.nationId)!,keys=[a,b].map(a=>forceKey47({kind:'army',id:a.id}));

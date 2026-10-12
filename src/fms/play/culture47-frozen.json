@@ -198,5 +198,15 @@
     "protocol": 2,
     "source": "culture47-retirement-pause-checked",
     "journalVersion": 2
+  },
+  {
+    "engine": "c35eed0f809c986f026b72b9b906b52ad76f9ec717187baa697e7fb91675a31a",
+    "file": "engine-c35e.js",
+    "bytes": 1403543,
+    "sha256": "e42eeea2ea379178d3363f9ecba32563ecdce1a3311465ac7e549b0cfb254dde",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-before-wounded-recovery-local-checked",
+    "journalVersion": 2
   }
 ]

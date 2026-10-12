@@ -1,6 +1,7 @@
 import {enableGenerations47} from './civilization47-generations';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {enableArmyRetirement47,ARMY_RETIREMENT_RULE47} from './army-retirement47';
+import {enableArmyRecovery47,ARMY_RECOVERY_RULE47} from './army-recovery47';
 import {assertFmsDocument,type FmsDocument} from '../model';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
 import {validateCultureSetup47,editCivilization47,type WorldCultureSetup47,type CivilizationEdit47} from './civilization47-names';
@@ -30,7 +31,7 @@ import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPolitic
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
 export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
 export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47};
-export type Culture47Action={kind:'enable-generations';rule:typeof GENERATIONS_RULE47;expected:PopulationStamp47}|{kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
+export type Culture47Action={kind:'enable-generations';rule:typeof GENERATIONS_RULE47;expected:PopulationStamp47}|{kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'enable-recovery';rule:typeof ARMY_RECOVERY_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export const CULTURE47_CONTINUATION_SOURCE='dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8';
 export const CULTURE47_RETIREMENT_SOURCE='9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343';
 export type LegacyCulture47Fork={engine:typeof CULTURE47_CONTINUATION_SOURCE;id:string;sequence:number};
@@ -80,6 +81,7 @@ export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   const v=a as Culture47Action;
   if(v.kind==='enable-generations'&&exact(v,['kind','rule','expected'])&&v.rule===GENERATIONS_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='enable-retirement'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_RETIREMENT_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
+  if(v.kind==='enable-recovery'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_RECOVERY_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='family-policy'&&exact(v,['kind','nationId','enabled','expected'])&&typeof v.nationId==='string'&&typeof v.enabled==='boolean'&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='military'&&exact(v,['kind','intent','expected'])){assertMilitaryIntent47(v.intent);assertMilitaryExpected47(v.expected,v.intent.force);return;}
   if(v.kind==='politics'&&exact(v,['kind','action','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization'])){assertPoliticalCommand47(v.action);return;}
@@ -104,6 +106,7 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
   }
   if(a.kind==='enable-generations')return enableGenerations47(r,a.expected);
   if(a.kind==='enable-retirement')return enableArmyRetirement47(r,a.expected);
+  if(a.kind==='enable-recovery')return enableArmyRecovery47(r,a.expected);
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
   if(a.kind==='family')return grantHouse47(r,a.intent,a.expected);
   if(a.kind==='family-policy')return setHousePolicy47(r,a.nationId,a.enabled,a.expected);

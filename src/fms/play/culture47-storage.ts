@@ -1,4 +1,5 @@
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
+import {ARMY_RECOVERY_RULE47} from './army-recovery47';
 import {Culture47Session,CULTURE47_RULE,CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE,type Culture47Journal} from './culture47-session';
 import {assertStoredCulture47,supportsCulture47,culture47JournalVersion,Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
 import {sameCulture47Value} from './culture47-equal';
@@ -44,6 +45,7 @@ function future(e:Envelope|undefined){
   if(Array.isArray(j?.actions))for(const a of j.actions as unknown as {kind?:string;edit?:{kind?:string;patch?:unknown}}[]){
     if(a?.kind==='enable-generations'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==GENERATIONS_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-retirement'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!=='retired-roster-web-v1')fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
+    if(a?.kind==='enable-recovery'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_RECOVERY_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family-policy'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','enabled','expected']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family'){const p=a as unknown as {intent:unknown;expected:unknown};unknown(a,['kind','intent','expected']);unknown(p.intent,['nationId','personId','provinceId']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='military'){

@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-13",
+  "branch": "codex/ph06-world-generation",
+  "sourceCommits": ["0810505", "7a328c5"],
+  "scope": "culture-world-only paper ocean appearance, unchanged coast and world data",
+  "reference": "user-provided Fantasy Map Simulator screenshot codex-clipboard-b8a3c718-f12f-4702-a3b1-40c1dc80b8c3.png",
+  "referenceOpenSeaRgb": [225, 200, 152],
+  "beforeOpenSeaRgb": [20, 135, 255],
+  "afterOpenSeaRgb": [225, 200, 152],
+  "checks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed; 86 approved artifacts; build.json bound to 7a328c5",
+    "oceanAppearanceAndCoastUnit": "13/13 passed",
+    "oceanSurfaceUnit": "4/4 passed",
+    "desktopAndMobileViewportBrowser": "4/4 passed; Chromium viewport emulation only",
+    "editorAndPlayableAlgorithmData": "equal in browser flow",
+    "playableSaveReload": "passed in browser flow",
+    "browserPageErrors": 0,
+    "fullUnitSuite": "not rerun; previous 445-file run interrupted and relevant targeted correction passed",
+    "physicalIphone": "not run",
+    "originalVisualParity": "not accepted",
+    "cloudCi": "not run"
+  },
+  "evidence": ["before-land-framed.png", "after-land-framed.png", "before-whole-ocean.png", "after-whole-ocean.png", "after-mobile-portrait.png"],
+  "remoteWrites": false
+}

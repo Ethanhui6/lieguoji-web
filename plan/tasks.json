@@ -3481,9 +3481,11 @@
             "acceptance": "同输入直接地形/Atlas转换对照，无接缝跳变，显示/拾取/保存一致",
             "evidence": [
               "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
-              "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg"
+              "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg",
+              "docs/evidence/fms-paper-ocean47-2026-10-13/RESULT.md",
+              "docs/evidence/fms-paper-ocean47-2026-10-13/verification.json"
             ],
-            "progress": "本批直接网格4/16/40倍同相机对照保留；01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照。"
+            "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。同视角前后图仍显示全图大陆过小；01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。"
           },
           {
             "id": "WEB-02-03",
@@ -4970,7 +4972,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47ArmyRecoveryCheckpoint, latest AUTO_HANDOFF and fms-army-recovery47 RESULT+verification, then verify Git and local preview. Source c2185fe (core 00e49f6); user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. New worlds explicitly enable resource-debited wounded-army recovery; eligible 9c93/dfd9 legacy forks explicitly enable retirement then recovery, originals unchanged. c35e old engine stays frozen and has no fork eligibility. Full 445-file npm test interrupted after stale month-boundary assertion; corrected targeted file 13/13, do not claim full pass. Next bounded visual slice: culture-world-only warm paper ocean preset using actual existing coastline and distance field, before/after normal-world browser screenshots and no editor/map/save mutation; speed target still unmet.",
+    "nextRecoveryTarget": "Read culture47PaperOceanCheckpoint, latest AUTO_HANDOFF and fms-paper-ocean47 RESULT+verification, then verify Git and local preview. Source 7a328c5; user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. Culture-only paper sea is a display palette, not original-equivalent map data. Full-map screenshot still shows tiny continent and broad blank ocean. Next quantify actual land fraction, city/geographic sampling and whole-map camera scale, then implement one bounded real-data or camera improvement with before/after browser views and picking/edit/save compatibility. 4x throughput also remains unmet. Full 445-file npm test was interrupted in prior batch and not rerun; do not claim full pass.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5208,6 +5210,35 @@
         "docs/evidence/fms-compact-news47-2026-10-12/normal-world-warm-throughput.png"
       ],
       "next": "Culture-world-only warm paper ocean palette with real coastline/shore distance, visual browser comparisons and unchanged editor/map/picking/save; then deterministic strategic throughput work."
+    },
+    "culture47PaperOceanCheckpoint": {
+      "date": "2026-10-13",
+      "task": "WEB-02-02",
+      "sourceCommit": "7a328c5",
+      "status": "local-display-palette-verified-full-map-experience-not-accepted",
+      "scope": "Only playable culture-world FmsRenderer ocean shallow/deep/background palette changes; editor source sea, actual coast/height/distance field, world data, picking, simulation and save schema unchanged.",
+      "checks": {
+        "oceanAppearanceAndCoastUnit": "13/13 passed",
+        "oceanSurfaceUnit": "4/4 passed",
+        "desktopAndMobileViewportBrowser": "4/4 passed in Chromium; mobile is viewport emulation",
+        "typecheck": "passed",
+        "lint": "passed",
+        "buildApprovedArtifacts": 86,
+        "physicalIphone": "not_run",
+        "originalVisualParity": "not_accepted",
+        "cloud": "not_run"
+      },
+      "comparison": "Reference screenshot one open-sea sample RGB 225,200,152; local before 20,135,255 and after 225,200,152. Color point only; full-map after image still shows tiny continent and broad flat ocean.",
+      "evidence": [
+        "docs/evidence/fms-paper-ocean47-2026-10-13/RESULT.md",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/verification.json",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/before-land-framed.png",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/after-land-framed.png",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/before-whole-ocean.png",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/after-whole-ocean.png",
+        "docs/evidence/fms-paper-ocean47-2026-10-13/after-mobile-portrait.png"
+      ],
+      "next": "Quantify actual land fraction and geography density against original screenshot, distinguish full-map camera scale from real-world size, then implement a bounded data or camera fix. 4x actual throughput remains below intended pace."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

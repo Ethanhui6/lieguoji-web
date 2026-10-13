@@ -6,6 +6,7 @@ import {actualForces47,advanceActualForces47} from './force-runtime47';
 import {armyTravelLocation47,beginArmyTravel47} from './army-travel47-state';
 import {actualForceSpeed47} from './force-speed47';
 import {settleFleetFood47} from './civilization47-upkeep';
+import {fleetRation47} from './logistics-clock47';
 import {graphFor46} from './war46-geography';
 let base:FoundingForces47;
 const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
@@ -26,12 +27,15 @@ describe('actual47 sea-only fleet commands and exact docking',()=>{
  it('requires real arrival before daily food transfer and follows the same unified movement speed',()=>{
   const {r,fleet,port,anchor,graph}=displaced(),stock=r.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!;fleet.food=fleet.crew*3;stock.grain=stock.population*10+fleet.crew*100;
   const action={type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'port' as const,id:port.id}},preview=previewFleetCommand47(r,action,weights),out=applyFleetCommand47(r,action,preview.basedOn,weights),sailing=out.navy.fleets.find(f=>f.id===fleet.id)!,opening=out.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain;
+  const ration=fleetRation47(fleet.crew);
   // Phase checks: these calls do not pretend to advance economic days.
-  settleFleetFood47(out);expect(sailing.food).toBe(fleet.crew*2);expect(out.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain).toBe(opening);
+  settleFleetFood47(out);expect(sailing.food).toBe(fleet.crew*3-ration);expect(out.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain).toBe(opening);
   const f=actualForces47(out).forces.find(f=>f.kind==='fleet'&&f.id===fleet.id)!,v=actualForceSpeed47(out,f,graph.cells.get(out.fleetPositions.records[fleet.id].nodes[0])!),seconds=preview.distance/v;
   const halfway=advanceActualForces47(out,seconds/2,weights,actualForceSpeed47).run;expect(halfway.fleetPositions.records[fleet.id].status).toBe('moving');
+  const midDay=structuredClone(halfway);settleFleetFood47(midDay);expect(midDay.navy.fleets.find(f=>f.id===fleet.id)!.food).toBe(fleet.crew*3-ration*2);expect(midDay.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain).toBe(opening);
   const arrived=advanceActualForces47(halfway,seconds,weights,actualForceSpeed47).run;expect(armyTravelLocation47(arrived.fleetPositions.records[fleet.id],graph).point).toEqual(anchor);expect(arrived.fleetPositions.records[fleet.id].status).toBe('arrived');expect(arrived.navy.fleets.find(f=>f.id===fleet.id)!.dockId).toBeNull();
-  settleFleetFood47(arrived);expect(arrived.navy.fleets.find(f=>f.id===fleet.id)!.food).toBe(fleet.crew*59);expect(arrived.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain).toBe(opening-fleet.crew*58);
+  const delivered=fleet.crew*60-sailing.food;
+  settleFleetFood47(arrived);expect(arrived.navy.fleets.find(f=>f.id===fleet.id)!.food).toBe(fleet.crew*60-ration);expect(arrived.world.statecraft!.provinces.find(p=>p.provinceId===port.provinceId)!.grain).toBe(opening-delivered);
  });
  it('uses the same route for autonomous orders while honoring manual takeover and patrol opt-out',()=>{
   const {r,fleet,port}=displaced(),action={type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'port' as const,id:port.id}},manual=applyFleetCommand47(r,action,fleetStamp47(r),weights),auto=structuredClone(r);

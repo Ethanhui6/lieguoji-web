@@ -11,6 +11,21 @@ import { FMS_COLOR_GLSL, FMS_HEIGHT_PALETTE_CONTRACT, srgbToLinear, type FmsTerr
 import type { FmsBiomeSurface } from './biome-surface';
 import { FmsBiomeDisplay, type FmsBiomeDisplayState } from './biome-display';
 
+export type FmsOceanAppearance = 'source' | 'paper';
+
+// Display palettes only. `source` is the recovered level0 ocean color and
+// existing Pixi clear color; `paper` is a WEB visual adaptation to the user's
+// parchment reference, not a recovered original material or copied texture.
+export const FMS_OCEAN_APPEARANCES = {
+  source: { shallow: FMS_OCEAN_SHALLOW, deep: FMS_OCEAN_DEEP, background: '#1487ff' },
+  paper: { shallow: [232 / 255, 216 / 255, 176 / 255], deep: [189 / 255, 166 / 255, 119 / 255], background: '#bda677' },
+} as const;
+
+function oceanLinearColors(appearance: FmsOceanAppearance): { shallow: Float32Array; deep: Float32Array } {
+  const palette = FMS_OCEAN_APPEARANCES[appearance];
+  return { shallow: Float32Array.from(palette.shallow, srgbToLinear), deep: Float32Array.from(palette.deep, srgbToLinear) };
+}
+
 // This direct source mesh is a web rendering adapter. Interpolated elevation is
 // authoritative; the derived ocean texture changes only color, never coastline.
 const vertex = `#version 300 es
@@ -40,6 +55,8 @@ uniform sampler2D uOceanDistance;
 uniform vec2 uMapSize;
 uniform float uHeightView;
 uniform float uBiomeView;
+uniform vec3 uOceanShallow;
+uniform vec3 uOceanDeep;
 out vec4 finalColor;
 ${FMS_COLOR_GLSL}
 void main(){
@@ -48,7 +65,7 @@ void main(){
  // Shader191: smoothstep(0,EdgeIntensity,max(-SDF.r,0)). The web texture
  // stores unsigned exterior distance / EdgeIntensity, capped at 1.
  float t=clamp(dot(texture(uOceanDistance,vMapPosition/uMapSize).rg,vec2(256.0/257.0,1.0/257.0)),0.0,1.0);
- vec3 sea=fmsToDisplay(mix(vec3(${FMS_OCEAN_SHALLOW.map(srgbToLinear).join(',')}),vec3(${FMS_OCEAN_DEEP.map(srgbToLinear).join(',')}),t*t*(3.0-2.0*t)));
+ vec3 sea=fmsToDisplay(mix(uOceanShallow,uOceanDeep,t*t*(3.0-2.0*t)));
  vec3 low=vec3(.75,.76,.57), hills=vec3(.48,.57,.37), mountain=vec3(.62,.60,.46);
  vec3 land=mix(low,hills,smoothstep(24.0,55.0,h));
  land=mix(land,mountain,smoothstep(54.0,78.0,h));
@@ -86,20 +103,41 @@ export class FmsRenderer {
   private mesh?: Mesh<Geometry, Shader>;
   private contextLost = false;
   private terrainDisplay: FmsTerrainDisplay = 'height';
+  private oceanAppearanceState: FmsOceanAppearance = 'source';
   private worldId?: string;
   private bound?: Graphics;
   constructor(private onDisplayState:(state:FmsBiomeDisplayState)=>void=()=>{},private onDisplayError:(error:unknown)=>void=error=>{throw error;}){}
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
+  get oceanAppearance(): FmsOceanAppearance { return this.oceanAppearanceState; }
   /** A caller-owned gameplay overlay shares this exact terrain/camera. */
   attachGameplayLayer(layer: Container): void { this.scene.addChild(layer); this.draw(); }
   refresh(): void { this.draw(); }
   async init(host: HTMLElement): Promise<void> {
-    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#1487ff', preference: 'webgl' });
+    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: FMS_OCEAN_APPEARANCES[this.oceanAppearanceState].background, preference: 'webgl' });
     this.initialized = true;
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
+    // A caller may switch palettes while the asynchronous Pixi init is pending.
+    this.app.renderer.background.color = FMS_OCEAN_APPEARANCES[this.oceanAppearanceState].background;
     this.canvas.setAttribute('aria-label','创世地图画布'); this.canvas.setAttribute('data-testid','fms-canvas'); this.canvas.tabIndex = 0;
+    this.canvas.dataset.oceanAppearance = this.oceanAppearanceState;
     host.appendChild(this.canvas); this.app.stage.addChild(this.scene);
     this.canvas.addEventListener('webglcontextlost', () => { this.contextLost = true; this.biomeFields.close(); });
+  }
+  /** Change only ocean colors and clear color; geometry, coast-distance texture, picking and saved data stay intact.
+   * Safe before init or after context loss: the requested appearance is retained without touching an unavailable GPU. */
+  setOceanAppearance(appearance: FmsOceanAppearance): void {
+    if (this.destroyed) return;
+    this.oceanAppearanceState = appearance;
+    if (this.initialized) this.canvas.dataset.oceanAppearance = appearance;
+    if (!this.initialized || this.contextLost) return;
+    this.app.renderer.background.color = FMS_OCEAN_APPEARANCES[appearance].background;
+    if (this.oceanUniforms) {
+      const colors = oceanLinearColors(appearance);
+      this.oceanUniforms.uniforms.uOceanShallow = colors.shallow;
+      this.oceanUniforms.uniforms.uOceanDeep = colors.deep;
+      this.oceanUniforms.update();
+    }
+    this.draw();
   }
   setDocument(doc: FmsDocument, drainage?: FmsDrainage): void {
     if (this.destroyed || this.contextLost) return;
@@ -124,7 +162,9 @@ export class FmsRenderer {
       this.geometry = new Geometry({ attributes: { aPosition: { buffer: positions, format: 'float32x2' }, aHeight: { buffer: Float32Array.from(doc.elevations), format: 'float32' }, aShade: { buffer: surface.shade, format: 'float32' }, aLakeDepth: { buffer: surface.drainage.lakeDepth, format: 'float32' }, aBiomeColor:{buffer:new Float32Array(doc.points.length*3),format:'float32x3'} }, indexBuffer: doc.triangles.slice() });
       this.geometry.autoGarbageCollect = false;
       this.oceanSource = createFmsOceanSource(ocean);
-      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:1,type:'f32'},uBiomeView:{value:0,type:'f32'} });
+      const oceanColors = oceanLinearColors(this.oceanAppearanceState);
+      this.oceanUniforms = new UniformGroup({ uMapSize: { value: new Float32Array([doc.width,doc.height]), type: 'vec2<f32>' }, uHeightView:{value:1,type:'f32'},uBiomeView:{value:0,type:'f32'},
+        uOceanShallow:{value:oceanColors.shallow,type:'vec3<f32>'},uOceanDeep:{value:oceanColors.deep,type:'vec3<f32>'} });
       this.shader = new Shader({ glProgram: new GlProgram({ vertex, fragment, name: 'fms-source-height-ocean-v3' }), resources: { oceanUniforms:this.oceanUniforms,uOceanDistance:this.oceanSource } });
       this.shader.addResource('globalUniforms',100,0); this.shader.addResource('localUniforms',101,0);
       this.mesh = new Mesh({ geometry: this.geometry, shader: this.shader });

@@ -259,6 +259,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,renderer=new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current()),orderLine=new Graphics(),combatLayer=new Graphics();
+    renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
     combatLayer.enableRenderGroup();
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};

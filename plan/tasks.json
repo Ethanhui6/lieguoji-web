@@ -4970,7 +4970,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47CompactNewsCheckpoint, latest AUTO_HANDOFF and fms-compact-news47 RESULT+verification. Source 6aea756; 5315 no longer listening, ephemeral local 4173 preview was used. User canceled upload: no GitHub/Pages/Cloudflare write until newly authorized. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical phone/visual/publish gates unchanged. Portrait news reduced to 44 CSS px, normal mobile war-world/save recovery passed. Same-day warm baseline 1x 3.45 and 4x 3.70 actual days/sec, so do not claim speed target met. Next fix wounded standing-army recovery/recruitment deadlock with explicit version/old-save protection and verify normal world plus save replay.",
+    "nextRecoveryTarget": "Read culture47ArmyRecoveryCheckpoint, latest AUTO_HANDOFF and fms-army-recovery47 RESULT+verification, then verify Git and local preview. Source c2185fe (core 00e49f6); user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. New worlds explicitly enable resource-debited wounded-army recovery; eligible 9c93/dfd9 legacy forks explicitly enable retirement then recovery, originals unchanged. c35e old engine stays frozen and has no fork eligibility. Full 445-file npm test interrupted after stale month-boundary assertion; corrected targeted file 13/13, do not claim full pass. Next bounded visual slice: culture-world-only warm paper ocean preset using actual existing coastline and distance field, before/after normal-world browser screenshots and no editor/map/save mutation; speed target still unmet.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5165,6 +5165,49 @@
         "docs/evidence/fms-compact-news47-2026-10-12/portrait-compact-news.png"
       ],
       "next": "Fix wounded standing armies that rest forever while retaining muster slots, with old-save boundary and normal-world replay evidence; then measure deterministic throughput improvements."
+    },
+    "culture47ArmyRecoveryCheckpoint": {
+      "date": "2026-10-13",
+      "task": "WEB-04-37",
+      "sourceCommit": "c2185fec9e767560c680c9c138b089e687ea8589",
+      "coreRuleCommit": "00e49f6ede0436bdb917e74591530eb023c50a47",
+      "status": "local-wounded-army-and-eligible-fork-recovery-verified-full-war-task-in-progress",
+      "scope": "New cultural worlds explicitly add resource-debited stationary wounded-army recovery after daily losses, food and retirement; eligible 9c93 and dfd9-to-9c93 independent legacy forks explicitly add the rule after retirement. Original slots and c35e original engine remain unchanged.",
+      "checks": {
+        "newRuleUnit": "4/4 passed",
+        "relatedDailySessionStorageUnit": "54/54 passed",
+        "monthBoundaryTargetedUnit": "13/13 passed after correcting stale phase expectation",
+        "normalMobileChromium": "4/4 passed, viewport emulation only",
+        "newWorldRecoveryBrowser": "1/1 passed",
+        "c35eOldWorldBrowser": "1/1 passed without upgrade",
+        "eligibleOldForkBrowser": "2/2 passed, original slots unchanged and cold restore",
+        "typecheck": "passed",
+        "lint": "passed",
+        "buildApprovedArtifacts": 86,
+        "releasePolicyUnit": "24/24 passed",
+        "planUnit": "15/15 passed",
+        "fullUnitSuite": "interrupted after stale month-boundary assertion; 445 files not completed",
+        "physicalIphone": "not_run",
+        "originalVisualParity": "not_accepted",
+        "cloud": "not_run"
+      },
+      "measured": {
+        "sameDay4Before1xDaysPerSecond": 3.4545824019508227,
+        "sameDay4Before4xDaysPerSecond": 3.702846563295534,
+        "sameDay4After1xDaysPerSecond": 4.4833,
+        "sameDay4After4xDaysPerSecond": 5.4333,
+        "interpretation": "Short local samples, not attributable causally to recovery; 4x throughput target unmet"
+      },
+      "localBoundary": "http://127.0.0.1:4173/?fms=1 verified HTTP 200 at checkpoint, this PC only; different port storage remains isolated; no upload.",
+      "evidence": [
+        "docs/evidence/fms-army-recovery47-2026-10-12/RESULT.md",
+        "docs/evidence/fms-army-recovery47-2026-10-12/verification.json",
+        "docs/evidence/fms-army-recovery47-2026-10-12/warm-after.png",
+        "docs/evidence/fms-army-recovery47-2026-10-12/unit-all-first-failure-interrupted.log",
+        "docs/evidence/fms-army-recovery47-2026-10-12/build-core-before-fork.log",
+        "docs/evidence/fms-compact-news47-2026-10-12/normal-world-warm-throughput.png"
+      ],
+      "next": "Culture-world-only warm paper ocean palette with real coastline/shore distance, visual browser comparisons and unchanged editor/map/picking/save; then deterministic strategic throughput work."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

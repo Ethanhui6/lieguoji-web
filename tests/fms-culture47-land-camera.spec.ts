@@ -18,6 +18,11 @@ test('the first playable view frames real land, keeps map picking, and can retur
  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
  await create(page);
  const map=page.getByTestId('culture47-map');
+ // The default "生成大陆" topology is 1536 × 1536 world units.
+ const landArea=Number(await map.getAttribute('data-land-area'));
+ const landFraction=landArea/(1536*1536);
+ expect(landArea).toBeGreaterThan(0);
+ expect(landFraction).toBeLessThan(1);
  await expect.poll(async()=>Math.max(0,...(await screenCities(page)).map(c=>c.x))-Math.min(...(await screenCities(page)).map(c=>c.x)),{timeout:30000}).toBeGreaterThan(150);
  const framed=await screenCities(page),box=await map.boundingBox();expect(box).not.toBeNull();
  const city=framed.filter(c=>c.x>box!.width*.18&&c.x<box!.width*.82&&c.y>box!.height*.25&&c.y<box!.height*.73)
@@ -33,5 +38,5 @@ test('the first playable view frames real land, keeps map picking, and can retur
  expect(span(whole)).toBeLessThan(span(framed)*.75);
  await page.screenshot({path:info.outputPath('whole-ocean-portrait.png')});
  expect(errors).toEqual([]);
- await info.attach('land-camera',{body:JSON.stringify({framedCitySpan:span(framed),wholeCitySpan:span(whole),pickedCity:city.id,errors,device:'mobile Chromium emulation, not iPhone Safari'}),contentType:'application/json'});
+ await info.attach('land-camera',{body:JSON.stringify({landArea,landFraction,framedCitySpan:span(framed),wholeCitySpan:span(whole),pickedCity:city.id,errors,device:info.project.name==='mobile-chromium'?'mobile Chromium viewport emulation, not iPhone Safari':'desktop Chromium'}),contentType:'application/json'});
 });

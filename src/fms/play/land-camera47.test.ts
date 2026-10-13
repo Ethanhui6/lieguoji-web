@@ -19,4 +19,23 @@ describe('first playable land camera',()=>{
   sea.elevations[150]=45;const camera=initialLandCamera47(sea,viewport),whole=fitCamera(sea,viewport);
   expect(camera.scale).toBeLessThanOrEqual(whole.scale*12);expect(cameraWorldBounds(camera,viewport).maxX).toBeGreaterThan(cameraWorldBounds(camera,viewport).minX);
  });
+ it('does not pull the opening camera away from a mainland for a distant microisland',()=>{
+  const mainland=(x:number,y:number)=>x>=90&&x<=150&&y>=70&&y<=190?45:0;
+  const viewport={width:393,height:800},base=grid(mainland);
+  const islands=grid((x,y)=>mainland(x,y)||x===240&&y===240?45:0),before=structuredClone(islands);
+  const camera=initialLandCamera47(islands,viewport);
+  expect(camera).toEqual(initialLandCamera47(base,viewport));
+  expect(camera.scale).toBeGreaterThan(fitCamera(islands,viewport).scale*2);
+  expect(worldToScreen(camera,{x:240,y:240}).x).toBeGreaterThan(viewport.width);
+  expect(islands).toEqual(before);
+ });
+ it('includes both substantial disconnected continents and remains deterministic',()=>{
+  const left=(x:number,y:number)=>x>=20&&x<=80&&y>=60&&y<=180;
+  const right=(x:number,y:number)=>x>=170&&x<=230&&y>=60&&y<=180;
+  const viewport={width:393,height:800},doc=grid((x,y)=>left(x,y)||right(x,y)?45:0);
+  const camera=initialLandCamera47(doc,viewport),bounds=cameraWorldBounds(camera,viewport);
+  expect(bounds.minX).toBeLessThan(20);expect(bounds.maxX).toBeGreaterThan(230);
+  expect(camera.scale).toBeLessThan(initialLandCamera47(grid((x,y)=>left(x,y)?45:0),viewport).scale);
+  expect(initialLandCamera47(doc,viewport)).toEqual(camera);
+ });
 });

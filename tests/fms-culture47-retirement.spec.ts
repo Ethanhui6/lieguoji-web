@@ -40,12 +40,18 @@ for(const previous of [false,true])test(`real frozen 9c ${previous?'forked':'nat
  await page.getByRole('button',{name:'军事模式',exact:true}).click();await expect(page.getByLabel('退役军队名册',{exact:true})).toBeVisible();
  for(let i=1;i<=2;i++){await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+i));}
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');const persisted=await read(targetDb);
+ const slots=JSON.parse(persisted) as {keys:string[];values:{journal?:Culture47Journal}[]};
+ const forked=slots.values[slots.keys.indexOf('current')]?.journal;
+ expect(forked?.fork?.engine).toBe('9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343');
+ const forkAt=forked?.fork?.sequence??-1;expect(forkAt).toBeGreaterThanOrEqual(0);
+ expect(forked?.actions.slice(forkAt,forkAt+2).map(action=>action.kind)).toEqual(['enable-retirement','enable-recovery']);
+ expect(forked?.actions[forkAt+1]).toMatchObject({rule:'wounded-army-recovery-web-v1'});
  await page.screenshot({path:info.outputPath(`retirement-${previous?'fork':'native'}-desktop.png`)});
- await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+2));
+ await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+2));expect(await read(targetDb)).toEqual(persisted);
  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(startDay+3));await page.getByRole('button',{name:'军事模式',exact:true}).click();await expect(page.getByLabel('退役军队名册',{exact:true})).toBeVisible();
  await page.setViewportSize({width:428,height:926});await expect.poll(()=>page.locator('.c47-panel').evaluate(el=>getComputedStyle(el).opacity)).toBe('1');await expect(page.getByRole('button',{name:'放大地图',exact:true})).toBeHidden();await page.screenshot({path:info.outputPath(`retirement-${previous?'fork':'native'}-portrait.png`)});
- expect(await read(sourceDb)).toEqual(before);expect(persisted).toContain('enable-retirement');expect(persisted).toContain('previous');expect(errors).toEqual([]);
- await info.attach('retirement-evidence',{body:JSON.stringify({source:previous?'dfd9 -> 9c':'native 9c',productionFrozen:true,completeStateComparedBeforeEnable:true,coldRestoredDay:startDay+2,continuedDay:startDay+3,allSourceSlotsUnchanged:true,errors,physicalIphone:false}),contentType:'application/json'});
+ expect(await read(sourceDb)).toEqual(before);expect(before).not.toContain('enable-recovery');expect(persisted).toContain('enable-retirement');expect(persisted).toContain('enable-recovery');expect(persisted).toContain('previous');expect(errors).toEqual([]);
+ await info.attach('retirement-evidence',{body:JSON.stringify({source:previous?'dfd9 -> 9c':'native 9c',productionFrozen:true,completeStateComparedBeforeEnable:true,recoveryEnabledAfterRetirement:true,coldRestoredDay:startDay+2,continuedDay:startDay+3,allSourceSlotsUnchanged:true,errors,physicalIphone:false}),contentType:'application/json'});
 });
 
 

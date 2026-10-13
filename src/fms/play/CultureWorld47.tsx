@@ -207,6 +207,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const copied=continuationJournal47(source.journal);let candidate=await candidateClient.send({type:'load',journal:copied},{signal:op.signal,progress:replayProgress,longReplay:true});
       op.signal.throwIfAborted();assertContinuationMatch47(source,candidate,copied);
       candidate=await candidateClient.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(candidate.run)},sequence:copied.actions.length},{signal:op.signal});
+      candidate=await candidateClient.send({type:'action',action:{kind:'enable-recovery',rule:ARMY_RECOVERY_RULE47,expected:populationStamp47(candidate.run)},sequence:candidate.journal.actions.length},{signal:op.signal});
       const journal=candidate.journal,target=source.journal.engine===CULTURE47_RETIREMENT_SOURCE?CULTURE47_RETIREMENT_DATABASE:CULTURE47_LONGPLAY_DATABASE;
       const next=await saveCulture47(journal,null,indexedDB,op.signal,async j=>{const c=j.engine===candidateClient.engine?candidateClient:original;await c.verify(j,{signal:op.signal,longReplay:true,progress:replayProgress});},target,source.journal);
       // A successful transaction is already durable. Never write after abort;

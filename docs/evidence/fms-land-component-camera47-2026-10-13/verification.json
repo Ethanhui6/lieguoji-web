@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-13",
+  "sourceCommit": "9871d81e3f327e816e48e730d6ba44e85c4d36e0",
+  "branch": "codex/ph06-world-generation",
+  "scope": "initial culture-world camera frames significant real h20 land components; full-map camera and data unchanged",
+  "defaultWorld": {
+    "worldWidth": 1536,
+    "worldHeight": 1536,
+    "landArea": 45278.843550130565,
+    "landFraction": 0.01919167563126058
+  },
+  "beforeAfterCitySpanCssPx": {
+    "desktopInitial": [556.7123057305469, 988.554690784363],
+    "desktopWhole": [189.4421739578246, 189.4421739578246],
+    "mobileInitial": [285.24073984939673, 282.8364809744149],
+    "mobileWhole": [81.30226632356639, 81.30226632356639],
+    "caveat": "separate culture runs on the same fixed geography; nation/city placement and names can differ, so spans are observational"
+  },
+  "checks": {
+    "cameraUnit": "4/4 passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed; 86 approved artifacts; build.json bound to 9871d81",
+    "desktopAndMobileViewportBrowser": "4/4 passed together with paper-ocean flow",
+    "mapPickingAndWholeView": "passed in desktop/mobile Chromium browser test",
+    "cultureSaveReload": "passed in desktop/mobile Chromium browser test",
+    "browserPageErrors": 0,
+    "fullUnitSuite": "not rerun; prior 445-file run was interrupted and targeted correction passed",
+    "physicalIphone": "not run",
+    "originalVisualParity": "not accepted",
+    "cloudCi": "not run"
+  },
+  "evidence": ["before-desktop-land.png", "after-desktop-land.png", "before-desktop-whole.png", "after-desktop-whole.png", "before-mobile-land.png", "after-mobile-land.png", "before-mobile-whole.png", "after-mobile-whole.png"],
+  "remoteWrites": false
+}

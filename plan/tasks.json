@@ -3483,9 +3483,11 @@
               "docs/evidence/fms-naturalization-2026-10-04/NATURALIZATION.md",
               "docs/evidence/fms-naturalization-2026-10-04/portrait-relief-zoom.jpg",
               "docs/evidence/fms-paper-ocean47-2026-10-13/RESULT.md",
-              "docs/evidence/fms-paper-ocean47-2026-10-13/verification.json"
+              "docs/evidence/fms-paper-ocean47-2026-10-13/verification.json",
+              "docs/evidence/fms-land-component-camera47-2026-10-13/RESULT.md",
+              "docs/evidence/fms-land-component-camera47-2026-10-13/verification.json"
             ],
-            "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。同视角前后图仍显示全图大陆过小；01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。"
+            "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。"
           },
           {
             "id": "WEB-02-03",
@@ -4972,7 +4974,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47PaperOceanCheckpoint, latest AUTO_HANDOFF and fms-paper-ocean47 RESULT+verification, then verify Git and local preview. Source 7a328c5; user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-04-37 remains in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. Culture-only paper sea is a display palette, not original-equivalent map data. Full-map screenshot still shows tiny continent and broad blank ocean. Next quantify actual land fraction, city/geographic sampling and whole-map camera scale, then implement one bounded real-data or camera improvement with before/after browser views and picking/edit/save compatibility. 4x throughput also remains unmet. Full 445-file npm test was interrupted in prior batch and not rerun; do not claim full pass.",
+    "nextRecoveryTarget": "Read culture47LandComponentCameraCheckpoint, latest AUTO_HANDOFF and fms-land-component-camera47 RESULT+verification, then verify Git and local preview. Source 9871d81; user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-02-02 remains todo/partial, WEB-04-37 in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. Camera now frames significant actual h20 land components, desktop clearer but mobile unchanged. Default one-click land is 45278.84/1536²=1.919%; whole-map remains tiny and capitals on microislands remain visible. Next measure existing recovered full-map terrain generator against click mode with fixed seed: land fraction, connectedness, coastline quality, build time and founding capacity. Only if evidence supports it, expose an optional preview/cancel/undo whole-world creation mode, preserving click mode and old saves. 4x throughput remains unmet. Full 445-file npm test was interrupted previously and not rerun; do not claim full pass.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5239,6 +5241,40 @@
         "docs/evidence/fms-paper-ocean47-2026-10-13/after-mobile-portrait.png"
       ],
       "next": "Quantify actual land fraction and geography density against original screenshot, distinguish full-map camera scale from real-world size, then implement a bounded data or camera fix. 4x actual throughput remains below intended pace."
+    },
+    "culture47LandComponentCameraCheckpoint": {
+      "date": "2026-10-13",
+      "task": "WEB-02-02",
+      "sourceCommit": "9871d81e3f327e816e48e730d6ba44e85c4d36e0",
+      "status": "local-initial-camera-verified-full-map-experience-not-accepted",
+      "scope": "Initial culture-world camera includes largest and >=5%-of-total-area h20 connected land components; saved views, full-map control, terrain, picking, simulation and old saves unchanged.",
+      "checks": {
+        "cameraUnit": "4/4 passed",
+        "desktopAndMobileViewportBrowser": "4/4 passed with ocean/save flow; mobile viewport emulation only",
+        "typecheck": "passed",
+        "lint": "passed",
+        "buildApprovedArtifacts": 86,
+        "physicalIphone": "not_run",
+        "originalVisualParity": "not_accepted",
+        "cloud": "not_run"
+      },
+      "measured": {
+        "defaultLandArea": 45278.843550130565,
+        "worldArea": 2359296,
+        "landFraction": 0.01919167563126058,
+        "desktopInitialCitySpanBeforeAfterCssPx": [556.7123057305469, 988.554690784363],
+        "mobileInitialCitySpanBeforeAfterCssPx": [285.24073984939673, 282.8364809744149],
+        "limitation": "Same fixed geography but separate cultures may place cities differently; desktop visual improved, portrait barely changed; whole-map still small."
+      },
+      "evidence": [
+        "docs/evidence/fms-land-component-camera47-2026-10-13/RESULT.md",
+        "docs/evidence/fms-land-component-camera47-2026-10-13/verification.json",
+        "docs/evidence/fms-land-component-camera47-2026-10-13/before-desktop-land.png",
+        "docs/evidence/fms-land-component-camera47-2026-10-13/after-desktop-land.png",
+        "docs/evidence/fms-land-component-camera47-2026-10-13/before-mobile-land.png",
+        "docs/evidence/fms-land-component-camera47-2026-10-13/after-mobile-land.png"
+      ],
+      "next": "Measure current recovered full-map generator against tiny click template; if sound, add optional atomic editor preview/cancel/undo instead of masking 1.92% world area with camera zoom."
     },
     "lastRecovery": {
       "at": "2026-10-06T19:52:20.629Z",

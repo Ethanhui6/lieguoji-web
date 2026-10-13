@@ -21,8 +21,9 @@ test('paper sea belongs to the playable world while editor geometry and save rem
  const playedOcean=await canvas.evaluate(el=>({algorithm:(el as HTMLCanvasElement).dataset.oceanAlgorithm,segments:(el as HTMLCanvasElement).dataset.oceanSegments,landArea:(el as HTMLCanvasElement).dataset.landArea}));
  expect(playedOcean).toEqual(originalOcean);
  const screenshot=await canvas.screenshot({path:info.outputPath('paper-ocean-canvas.png')}),png=PNG.sync.read(screenshot);
- const x=32,y=32,index=(y*png.width+x)*4,sea=[...png.data.subarray(index,index+3)];
- // This fixed viewport point is open ocean in the deterministic generated fixture.
+ const x=Math.round(png.width*.03),y=Math.round(png.height*.58),index=(y*png.width+x)*4,sea=[...png.data.subarray(index,index+3)];
+ // The upper-left corner is covered by the HTML toolbar. This side channel at
+ // 58% canvas height is open ocean in both fixed desktop and portrait viewports.
  // Its red-over-blue paper color distinguishes the playable preset from source blue.
  expect(png.width).toBeGreaterThan(300);expect(png.height).toBeGreaterThan(300);
  expect(sea[0]).toBeGreaterThan(sea[2]+25);

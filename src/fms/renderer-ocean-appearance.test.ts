@@ -16,7 +16,7 @@ describe('renderer ocean appearance', () => {
     const renderer = new FmsRenderer();
     renderer.setOceanAppearance('paper');
     expect(renderer.oceanAppearance).toBe('paper');
-    expect(FMS_OCEAN_APPEARANCES.paper.background).toBe('#bda677');
+    expect(FMS_OCEAN_APPEARANCES.paper.background).toBe('#e1c898');
     expect(FMS_OCEAN_APPEARANCES.paper.deep).not.toEqual(FMS_OCEAN_APPEARANCES.source.deep);
     renderer.setOceanAppearance('source');
     expect(renderer.oceanAppearance).toBe('source');

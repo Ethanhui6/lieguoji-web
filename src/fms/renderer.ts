@@ -18,7 +18,7 @@ export type FmsOceanAppearance = 'source' | 'paper';
 // parchment reference, not a recovered original material or copied texture.
 export const FMS_OCEAN_APPEARANCES = {
   source: { shallow: FMS_OCEAN_SHALLOW, deep: FMS_OCEAN_DEEP, background: '#1487ff' },
-  paper: { shallow: [232 / 255, 216 / 255, 176 / 255], deep: [189 / 255, 166 / 255, 119 / 255], background: '#bda677' },
+  paper: { shallow: [234 / 255, 214 / 255, 173 / 255], deep: [225 / 255, 200 / 255, 152 / 255], background: '#e1c898' },
 } as const;
 
 function oceanLinearColors(appearance: FmsOceanAppearance): { shallow: Float32Array; deep: Float32Array } {

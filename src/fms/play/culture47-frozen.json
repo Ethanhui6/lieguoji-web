@@ -208,5 +208,35 @@
     "protocol": 2,
     "source": "culture47-before-wounded-recovery-local-checked",
     "journalVersion": 2
+  },
+  {
+    "engine": "2af70ae754ec129cd588cf640c5c01c74c88534160d2d6362852adca69fe122d",
+    "file": "engine-2af7.js",
+    "bytes": 1405707,
+    "sha256": "5a7a521f6d471b6806d98671e15202f230b8fed08c21bd9af24f8a4fa3ca6e38",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-local-dist-4cf8555-original-bytes",
+    "journalVersion": 2
+  },
+  {
+    "engine": "571868c1b4d387ebabe73aa6ed868194b36fb3bbc13c4ded13c8d0680aa75267",
+    "file": "engine-5718.js",
+    "bytes": 1405707,
+    "sha256": "24983bf2d7f02f12d12454e3974c257c5381c806350a1851e2a478c294d627a5",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-git-4cf8555-source-rebuilt-compatibility",
+    "journalVersion": 2
+  },
+  {
+    "engine": "d736f4683a718dc2b7e3ae6682013da1b48fa66276492f09ff4f01e1f6fa31b1",
+    "file": "engine-d736.js",
+    "bytes": 1410350,
+    "sha256": "42990d183f6ce246ac641fc652e735e388aee118635b3743ad2adc9ffb314edd",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-local-partial-browser-save-gap-original-bytes",
+    "journalVersion": 2
   }
 ]

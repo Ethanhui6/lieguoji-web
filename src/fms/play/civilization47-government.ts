@@ -1,4 +1,5 @@
 import {assertFmsDocument,type FmsDocument} from '../model';
+import type {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
 import type {Population47} from './civilization47-population-types';
 import {assertPopulation47} from './civilization47-population-validation';
 import {editCivilization47,type CivilizationEdit47,type WorldCultureSetup47} from './civilization47-names';
@@ -69,8 +70,8 @@ export function attachGovernment47<T extends GovernmentInput47>(input:T,setup:Ec
   const destiny=openingDestiny47({...initial,upperCombat}),graph=buildArmyTravelGraph47(r.terrain,r.world),armyPositions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
   const result={...initial,terrainContext,upperCombat,finance,economy,destiny,armyPositions,governmentOpening};assertGovernmentOpening47(result);return result;
 }
-export function createGovernmentWorld47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={}){
-  return attachGovernment47(createCivilizationWorld47(terrain,count,cityCount,relations,culture),economy);
+export function createGovernmentWorld47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM){
+  return attachGovernment47(createCivilizationWorld47(terrain,count,cityCount,relations,culture,settlementAlgorithm),economy);
 }
 /** The run47 command owner must use this synchronized projection. Reforms do
  * not repeat initial recruitment or retroactively rewrite credited gold. */

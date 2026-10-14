@@ -5,10 +5,54 @@ import {Culture47Session,type Culture47Journal} from './culture47-session';
 import {CULTURE47_DATABASE,saveCulture47,loadCulture47} from './culture47-storage';
 import {Culture47Unavailable,Culture47InvalidJournal} from './culture47-contract';
 import {populationStamp47} from './civilization47-population-types';
-let journal:Culture47Journal;
-beforeAll(()=>{journal=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).journal;},30000);
+import {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
+let journal:Culture47Journal,partitionJournal:Culture47Journal;
+beforeAll(()=>{
+  journal=new Culture47Session().create({terrain:grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),count:2,cityCount:24,relations:'peace',setup:{mode:'culture-generated',enabled:['chinese','japanese']}}).journal;
+  partitionJournal=new Culture47Session().create({...journal.opening,settlementAlgorithm:SETTLEMENT47_ALGORITHM}).journal;
+},30000);
 async function mutate(factory:IDBFactory,fn:(s:IDBObjectStore)=>void){const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=factory.open(CULTURE47_DATABASE,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{await new Promise<void>((resolve,reject)=>{const t=db.transaction('slots','readwrite');fn(t.objectStore('slots'));t.oncomplete=()=>resolve();t.onerror=()=>reject(t.error);});}finally{db.close();}}
+async function slots(factory:IDBFactory){
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=factory.open(CULTURE47_DATABASE,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  try{return await new Promise<{keys:IDBValidKey[];values:unknown[]}>((resolve,reject)=>{
+    const tx=db.transaction('slots','readonly'),store=tx.objectStore('slots'),keys=store.getAllKeys(),values=store.getAll();
+    tx.oncomplete=()=>resolve({keys:keys.result,values:values.result});tx.onabort=tx.onerror=()=>reject(tx.error);
+  });}finally{db.close();}
+}
 describe('independent culture journal storage',()=>{
+  it('saves and cold-replays the known partition marker while preserving legacy five-field openings',async()=>{
+    const session=new Culture47Session();session.load(partitionJournal);
+    const advanced=session.execute({kind:'advance',ticks:120},0),f=new IDBFactory();
+    expect(await saveCulture47(partitionJournal,null,f)).toBe(1);
+    expect(await saveCulture47(advanced.journal,1,f)).toBe(2);
+    const restored=await loadCulture47(f);
+    expect(restored).toMatchObject({revision:2,recovered:false});
+    expect(restored?.journal).toEqual(advanced.journal);
+    expect(restored?.journal.opening.settlementAlgorithm).toBe(SETTLEMENT47_ALGORITHM);
+    expect(new Culture47Session().load(restored!.journal)).toEqual(advanced);
+    const legacy=new IDBFactory();await saveCulture47(journal,null,legacy);
+    expect((await loadCulture47(legacy))?.journal).toEqual(journal);
+    expect(Object.keys(journal.opening)).toHaveLength(5);
+    expect(Object.hasOwn((await loadCulture47(legacy))!.journal.opening,'settlementAlgorithm')).toBe(false);
+  },30000);
+  it.each(['current','backup','origin'] as const)('locks every slot for an unknown partition ID or extra opening field in %s',async slot=>{
+    for(const fault of ['unknown-id','extra-field']){
+      const f=new IDBFactory();await saveCulture47(partitionJournal,null,f);await saveCulture47(partitionJournal,1,f);
+      // Keep a checksum-valid backup and origin so an unknown contract cannot
+      // be mistaken for ordinary corruption eligible for backup recovery.
+      await mutate(f,store=>{const r=store.get('backup');r.onsuccess=()=>store.put(r.result,'origin');});
+      expect((await loadCulture47(f))?.journal).toEqual(partitionJournal);
+      await mutate(f,store=>{const r=store.get(slot);r.onsuccess=()=>{
+        const row=r.result;if(fault==='unknown-id')row.journal.opening.settlementAlgorithm='future-partition-v2';
+        else row.journal.opening.futurePartitionField=true;
+        store.put(row,slot);
+      };});
+      const before=await slots(f);
+      await expect(loadCulture47(f,()=>{throw Error('verifier must not run for an unknown opening');})).rejects.toThrow('未来');
+      await expect(saveCulture47(partitionJournal,2,f)).rejects.toThrow('未来');
+      expect(await slots(f)).toEqual(before);
+    }
+  },30000);
   it('retains a policy action and locks both slots if either policy stamp gains an unknown field',async()=>{
     const s=new Culture47Session(),initial=s.load(journal),withPolicy=s.execute({kind:'family-policy',nationId:'n-0',enabled:false,expected:populationStamp47(initial.run)},0).journal;
     for(const slot of ['current','backup']){

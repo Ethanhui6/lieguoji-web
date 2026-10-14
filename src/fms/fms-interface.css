@@ -3,6 +3,11 @@
 .fms-app button { border-radius:13px;transition:background 140ms,transform 120ms;display:inline-flex;align-items:center;justify-content:center;gap:7px; }
 .fms-empty { max-width:calc(100vw - 32px);white-space:normal; }
 .fms-empty .fms-first-land { pointer-events:auto;min-height:48px;padding:10px 16px;border:1px solid #ffffffab;background:#faf9f6;color:#27323e;box-shadow:0 3px 14px #15394b22;gap:10px; }
+.fms-empty .fms-world-options { display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 12px; }
+.fms-empty .fms-world-options label { pointer-events:auto;display:flex;align-items:center;gap:5px;color:#f2f5ee;font-size:12px; }
+.fms-empty .fms-world-options select,.fms-empty .fms-world-options input { min-height:40px;padding:7px 10px;border:1px solid #ffffffad;border-radius:11px;background:#faf9f6;color:#27323e;font-size:16px; }
+.fms-empty .fms-world-seed input { width:86px; }
+.fms-empty .fms-first-local { pointer-events:auto;display:flex;margin:10px auto 0;padding:6px 12px;min-height:36px;border:1px solid #ffffff88;background:#f6f8f1d9;color:#27323e;font-size:12px; }
 .fms-empty small { display:block;margin-top:10px;color:#eef4fa;font-size:11px;letter-spacing:.03em; }
 .fms-app button:hover:not(:disabled) { background:#e6f0f8; }.fms-app button:active:not(:disabled) { transform:scale(.96); }
 .fms-header { top:max(12px,env(safe-area-inset-top));left:14px;right:14px; }
@@ -29,6 +34,7 @@
 .fms-empty>span { font-family:inherit;letter-spacing:0;font-size:22px;font-weight:600; }.fms-empty p { margin:12px 0 18px;letter-spacing:0;color:#e8f2fa; }
 @keyframes fms-interface-in { from {opacity:.3;transform:translateY(5px)} to {opacity:1;transform:translateY(0)} }
 @media(max-width:600px) {
+ .fms-empty .fms-world-options { flex-wrap:wrap;gap:7px; }
  .fms-toolbar { flex-direction:column;width:270px;gap:2px; }.fms-toolbar nav { justify-content:space-between; }.fms-toolbar nav button { flex:1;min-width:0; }
  .fms-actions { border-left:0;border-top:1px solid #e0e7ee;justify-content:center;padding:2px 0 0; }.fms-actions button { flex:1;min-height:38px; }
  .fms-settings { align-self:center;width:min(380px,calc(100vw - 20px));max-height:48dvh; }.fms-header h1 { font-size:16px; }

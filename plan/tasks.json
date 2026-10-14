@@ -4766,7 +4766,8 @@
               "docs/evidence/fms-render-cadence47-2026-10-11/RESULT.md",
               "docs/evidence/fms-render-cadence47-2026-10-11/verification.json",
               "docs/evidence/fms-full-map47-2026-10-14/RESULT.md",
-              "docs/evidence/fms-full-map47-2026-10-14/verification.json"
+              "docs/evidence/fms-full-map47-2026-10-14/verification.json",
+              "docs/evidence/fms-live-fixes47-2026-10-15/RESULT.md"
             ],
             "progressScope": "2026-10-10 latest: user-requested 4x playback base, owned occupation and certified static clone reuse; 114 related tests, 8 browser cases, exact24-day normal-map prior-engine state/trace comparison. Actual speed still below target and higher multipliers compute-limited. Read culture47PaceBaselineCheckpoint. 2026-10-09 latest: phase-query reuse and variable-batch continuous motion are playable in real47 UI/Worker/save; 107 related tests, 8 final browser cases, fixed normal-map 8-day full state/trace equality. Actual browser throughput still below target. Read culture47PhaseWorkCheckpoint. 保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
           },
@@ -4978,7 +4979,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47FullMapCheckpoint and latest AUTO_HANDOFF, verify Git and current local service. Source 07603cfb24b1c265ce3008367b068bff11705be5. Explicit full-map preview/cancel/undo plus 6-nation60-city live play and cold restore verified locally; physical phone, visual and full release gates remain open. User on2026-10-15 requests generation performance, occasional playback stall requiring pause/resume, army health and contact marker fixes. Profile one normal generated world, separate authoritative Worker vs presentation lag, preserve old engine journals and byte artifacts. WEB-04-37 stays in_progress; no push/Pages/Cloudflare.",
+    "nextRecoveryTarget": "Read culture47LiveFixesCheckpoint, latest AUTO_HANDOFF and actual Git/service first. New-world engine b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639 on local5330 fixes reproduced repeated-search wait, founding geometry overhead, actual registered army strength bars and contact markers synced to icon frames. Existing journals keep their frozen engines. Verify any user-specific remaining map/long-history pauses with reproducible inputs; achieved4x, physical iPhone and native visual acceptance remain open. WEB-04-37 stays in_progress, WEB-04-21 blocked and all local-only release locks remain. Do not push/Pages/Cloudflare.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -11282,6 +11283,172 @@
         "docs/evidence/fms-full-map47-2026-10-14/measurement.json"
       ],
       "next": "2026-10-15 user: investigate slow generation, occasional playback stall relieved by pause/resume, army health and contact positions; retain same simulation/state checks and old-save protection."
+    },
+    "culture47LiveFixesCheckpoint": {
+      "date": "2026-10-15",
+      "sourceCommit": "c3d44e1bf2bb3bafe0b425d87f6ee266350bb9cd",
+      "buildMetadataCommit": "03a5b4bb5371dc9879e22e73f8dd12e70934ecf6",
+      "buildNote": "Checked working tree built on 03a5b4b, then committed as sourceCommit. Engine independently compared with current source. No cloud build.",
+      "engine": "b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639",
+      "artifact": ".autopilot/fms-live-fixes47-checked",
+      "url": "http://127.0.0.1:5330/?fms=1",
+      "checks": {
+        "regression": {
+          "files": 13,
+          "passed": 181,
+          "exitCode": 0
+        },
+        "additionalAndRepeated": {
+          "files": 2,
+          "passed": 38,
+          "exitCode": 0,
+          "note": "Includes the owned search expiration and frozen geometry comparison tests; overlaps regression, do not sum."
+        },
+        "types": {
+          "exitCode": 0
+        },
+        "lint": {
+          "exitCode": 0
+        },
+        "build": {
+          "exitCode": 0,
+          "approvedArtifacts": 91
+        },
+        "flow": {
+          "passed": 6,
+          "failed": 0,
+          "desktop": 3,
+          "mobileEmulated": 3
+        },
+        "original3a65": {
+          "passed": 1,
+          "failed": 0,
+          "byteExact": true
+        },
+        "normalBrowser": {
+          "tick": 15960,
+          "days": 133,
+          "sampleSeconds": 65,
+          "maximumConcurrentAdvance": 1,
+          "maximumContacts": 8,
+          "maximumMarkerErrorPx": 0.00009277564423504216,
+          "injuredSamples": 49,
+          "saveAndColdRestoreExactly": true,
+          "pageErrors": []
+        },
+        "fullSuite": "not_run",
+        "physicalIphone": "not_run",
+        "visualEquivalence": "not_accepted",
+        "cloud": "not_run",
+        "exactWorker": {
+          "states": 7,
+          "allEqual": true,
+          "oldEngine": "3a65998ffc9db25e737cba63d38e5a30d4bd8bd4477ca63c05f7b18dc5f742e5",
+          "newEngine": "b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639"
+        },
+        "plan": {
+          "exitCode": 0
+        }
+      },
+      "measurements": {
+        "priorBrowser": {
+          "terrainPreviewMs": 2108,
+          "foundingMs": 17469,
+          "firstAdvance": "No reply in 24 second observation; main thread remained responsive"
+        },
+        "currentBrowser": {
+          "startupMs": 2093,
+          "terrainPreviewMs": 4001,
+          "foundingMs": 15077,
+          "firstAdvanceAckMs": 4651.514999985695,
+          "minimumLaterAckMs": 1200.0849999785423,
+          "maximumLaterAckMs": 3853.7549999952316,
+          "note": "Rich diagnostics enabled and other browser regression jobs ran concurrently. These are observations, not controlled speed ratios. Standalone Worker comparison is separate."
+        },
+        "exactWorker": [
+          {
+            "command": "create",
+            "tick": 0,
+            "oldMs": 21387.8471,
+            "newMs": 13797.9489,
+            "oldRunSha256": "5dafea1f60c58fc3a4bfdb0f3163cb0314b0bfb3d710945e2b8171ccf48945c5",
+            "newRunSha256": "5dafea1f60c58fc3a4bfdb0f3163cb0314b0bfb3d710945e2b8171ccf48945c5",
+            "equal": true
+          },
+          {
+            "command": "action",
+            "action": "enable-retirement",
+            "tick": 0,
+            "oldMs": 288.8044000000009,
+            "newMs": 273.5156999999999,
+            "oldRunSha256": "45b3bdf5992aa085c244af141e11bcd59af00f2bbb6db8d5bff8b5c8fe8fdc8d",
+            "newRunSha256": "45b3bdf5992aa085c244af141e11bcd59af00f2bbb6db8d5bff8b5c8fe8fdc8d",
+            "equal": true
+          },
+          {
+            "command": "action",
+            "action": "enable-recovery",
+            "tick": 0,
+            "oldMs": 66.99049999999988,
+            "newMs": 119.78499999999985,
+            "oldRunSha256": "24c5dcf6a106d2e283cd60a4b7d6a49c6955a9d1a3eda5496cfdecb5080c1f4d",
+            "newRunSha256": "24c5dcf6a106d2e283cd60a4b7d6a49c6955a9d1a3eda5496cfdecb5080c1f4d",
+            "equal": true
+          },
+          {
+            "command": "action",
+            "action": "enable-generations",
+            "tick": 0,
+            "oldMs": 392.4907999999996,
+            "newMs": 377.3140999999996,
+            "oldRunSha256": "10fc7969247eeb563a52958ec7d6af8a358b3e727229ed258e8e6f0dbaab401d",
+            "newRunSha256": "10fc7969247eeb563a52958ec7d6af8a358b3e727229ed258e8e6f0dbaab401d",
+            "equal": true
+          },
+          {
+            "command": "advance-batch",
+            "tick": 480,
+            "oldMs": 40577.0794,
+            "newMs": 5723.4295999999995,
+            "oldRunSha256": "98eeb24fecae00813dfdc64f08091579fa509f265990c4f5801012a4bbe67d14",
+            "newRunSha256": "98eeb24fecae00813dfdc64f08091579fa509f265990c4f5801012a4bbe67d14",
+            "equal": true
+          },
+          {
+            "command": "advance-batch",
+            "tick": 960,
+            "oldMs": 578.8291000000027,
+            "newMs": 621.9344999999994,
+            "oldRunSha256": "15296a6065562e805ab06202d19e0f88608d1af8e9e622620e70c0975579f680",
+            "newRunSha256": "15296a6065562e805ab06202d19e0f88608d1af8e9e622620e70c0975579f680",
+            "equal": true
+          },
+          {
+            "command": "advance-batch",
+            "tick": 1440,
+            "oldMs": 559.1454999999987,
+            "newMs": 578.6008999999976,
+            "oldRunSha256": "9f618825e29b74db680ebfb6ef1399a52b1e52fa0306fb282480716df7cd40bf",
+            "newRunSha256": "9f618825e29b74db680ebfb6ef1399a52b1e52fa0306fb282480716df7cd40bf",
+            "equal": true
+          }
+        ]
+      },
+      "limits": [
+        "Playback 4x is a requested rate; achieved simulation throughput is lower and reported by the UI.",
+        "The reproduced long Worker wait is fixed in this checked new-world sample. Unobserved long-history/device-specific stalls are not declared impossible.",
+        "Existing journals retain their original Worker and rule fingerprint, so old simulation performance remains original. Start a new world on5330 to try the optimized engine.",
+        "Original GetMaxArmyCount refers to formation capacity; this web bar uses the existing registered tactics.fullStrength. Full native visual equivalence needs user acceptance.",
+        "The first exploratory browser harness used a wrong restore button selector and timed out; retained as failed probe evidence. Corrected probe and full flows passed."
+      ],
+      "status": "local-reproduced-worker-wait-strength-and-contact-alignment-fixed",
+      "task": "WEB-04-37",
+      "evidence": [
+        "docs/evidence/fms-live-fixes47-2026-10-15/RESULT.md",
+        "docs/evidence/fms-live-fixes47-2026-10-15/verification.json",
+        "docs/evidence/fms-live-fixes47-2026-10-15/normal-world.json",
+        "docs/evidence/fms-live-fixes47-2026-10-15/exact-worker-comparison.json"
+      ]
     }
   }
 }

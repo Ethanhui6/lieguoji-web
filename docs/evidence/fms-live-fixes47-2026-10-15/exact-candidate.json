@@ -1,0 +1,55 @@
+{
+  "variant": "candidate",
+  "samples": [
+    {
+      "command": "create",
+      "ms": 13797.9489,
+      "tick": 0,
+      "runSha256": "5dafea1f60c58fc3a4bfdb0f3163cb0314b0bfb3d710945e2b8171ccf48945c5"
+    },
+    {
+      "command": "action",
+      "action": "enable-retirement",
+      "ms": 273.5156999999999,
+      "tick": 0,
+      "runSha256": "45b3bdf5992aa085c244af141e11bcd59af00f2bbb6db8d5bff8b5c8fe8fdc8d"
+    },
+    {
+      "command": "action",
+      "action": "enable-recovery",
+      "ms": 119.78499999999985,
+      "tick": 0,
+      "runSha256": "24c5dcf6a106d2e283cd60a4b7d6a49c6955a9d1a3eda5496cfdecb5080c1f4d"
+    },
+    {
+      "command": "action",
+      "action": "enable-generations",
+      "ms": 377.3140999999996,
+      "tick": 0,
+      "runSha256": "10fc7969247eeb563a52958ec7d6af8a358b3e727229ed258e8e6f0dbaab401d"
+    },
+    {
+      "command": "advance-batch",
+      "ticks": 480,
+      "ms": 5723.4295999999995,
+      "tick": 480,
+      "runSha256": "98eeb24fecae00813dfdc64f08091579fa509f265990c4f5801012a4bbe67d14"
+    },
+    {
+      "command": "advance-batch",
+      "ticks": 480,
+      "ms": 621.9344999999994,
+      "tick": 960,
+      "runSha256": "15296a6065562e805ab06202d19e0f88608d1af8e9e622620e70c0975579f680"
+    },
+    {
+      "command": "advance-batch",
+      "ticks": 480,
+      "ms": 578.6008999999976,
+      "tick": 1440,
+      "runSha256": "9f618825e29b74db680ebfb6ef1399a52b1e52fa0306fb282480716df7cd40bf"
+    }
+  ],
+  "engine": "b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639",
+  "scope": "Same real 1337 terrain,6 nations60 cities,war; retirement,recovery,generations enabled; current Node and immutable original Worker bytes; entire run digest normalizes only generated run id."
+}

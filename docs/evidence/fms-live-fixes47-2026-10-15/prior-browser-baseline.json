@@ -1,0 +1,350 @@
+{
+  "stages": {
+    "startupMs": 1671,
+    "terrainPreviewMs": 2108,
+    "foundingMs": 17469
+  },
+  "runMs": 27513,
+  "samples": [
+    {
+      "at": 23081.739999949932,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 24096.679999947548,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 25109.834999978542,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 26121.889999985695,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 27137.52999997139,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 28147.394999980927,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 30082.7349999547,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 31095.78499996662,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 32102.369999945164,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 33113.92999994755,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 34124.77999997139,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 35136.689999997616,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 36147.14999997616,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 37469.07999998331,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 38482.48999994993,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 39497.55999994278,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 40509.51999998093,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 41519.20999997854,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 42530.32499998808,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 43545.14999997616,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 44555.76999998093,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 45571.86499994993,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 46583.93499994278,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    },
+    {
+      "at": 47596.95999997854,
+      "tick": 0,
+      "displayTick": 0,
+      "advancing": "true",
+      "contacts": 0
+    }
+  ],
+  "probe": {
+    "commands": [
+      {
+        "worker": 2,
+        "id": 1,
+        "command": "create",
+        "at": 4169.014999985695
+      },
+      {
+        "worker": 2,
+        "id": 2,
+        "command": "action",
+        "action": "enable-retirement",
+        "at": 19762.719999969006
+      },
+      {
+        "worker": 2,
+        "id": 3,
+        "command": "action",
+        "action": "enable-recovery",
+        "at": 19957.924999952316
+      },
+      {
+        "worker": 2,
+        "id": 4,
+        "command": "action",
+        "action": "enable-generations",
+        "at": 19977.274999976158
+      },
+      {
+        "worker": 2,
+        "id": 5,
+        "command": "advance-batch",
+        "ticks": 120,
+        "at": 22096.514999985695
+      }
+    ],
+    "acks": [
+      {
+        "worker": 2,
+        "id": 1,
+        "command": "create",
+        "at": 4169.014999985695,
+        "elapsed": 15416.800000011921,
+        "error": null,
+        "kind": "full"
+      },
+      {
+        "worker": 2,
+        "id": 2,
+        "command": "action",
+        "action": "enable-retirement",
+        "at": 19762.719999969006,
+        "elapsed": 113.05000001192093,
+        "error": null,
+        "kind": "update"
+      },
+      {
+        "worker": 2,
+        "id": 3,
+        "command": "action",
+        "action": "enable-recovery",
+        "at": 19957.924999952316,
+        "elapsed": 17.780000030994415,
+        "error": null,
+        "kind": "update"
+      },
+      {
+        "worker": 2,
+        "id": 4,
+        "command": "action",
+        "action": "enable-generations",
+        "at": 19977.274999976158,
+        "elapsed": 222.95999997854233,
+        "error": null,
+        "kind": "update"
+      }
+    ],
+    "longTasks": [
+      {
+        "at": 653.164999961853,
+        "duration": 145
+      },
+      {
+        "at": 802.0349999666214,
+        "duration": 133
+      },
+      {
+        "at": 935.1999999880791,
+        "duration": 217
+      },
+      {
+        "at": 1707.614999949932,
+        "duration": 99
+      },
+      {
+        "at": 2030.7699999809265,
+        "duration": 80
+      },
+      {
+        "at": 3167.75,
+        "duration": 96
+      },
+      {
+        "at": 3504.3849999904633,
+        "duration": 120
+      },
+      {
+        "at": 3624.9949999451637,
+        "duration": 146
+      },
+      {
+        "at": 3804.889999985695,
+        "duration": 96
+      },
+      {
+        "at": 3901.239999949932,
+        "duration": 89
+      },
+      {
+        "at": 4021.1699999570847,
+        "duration": 52
+      },
+      {
+        "at": 19543.03499996662,
+        "duration": 219
+      },
+      {
+        "at": 19873.144999980927,
+        "duration": 84
+      },
+      {
+        "at": 20210,
+        "duration": 231
+      },
+      {
+        "at": 20460.6099999547,
+        "duration": 378
+      },
+      {
+        "at": 20838.889999985695,
+        "duration": 728
+      },
+      {
+        "at": 21944.44999998808,
+        "duration": 112
+      },
+      {
+        "at": 28186.269999980927,
+        "duration": 786
+      },
+      {
+        "at": 28972.679999947548,
+        "duration": 95
+      },
+      {
+        "at": 36187.80999994278,
+        "duration": 110
+      },
+      {
+        "at": 36348.689999997616,
+        "duration": 102
+      },
+      {
+        "at": 47652.47499996424,
+        "duration": 116
+      }
+    ],
+    "frames": []
+  },
+  "errors": [],
+  "scope": "Fresh desktop Chromium, normal1337 multi-continent war, 6nations60cities; no personal saves"
+}

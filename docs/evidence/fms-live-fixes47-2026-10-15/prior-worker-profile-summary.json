@@ -1,0 +1,2074 @@
+[
+  {
+    "name": "ia",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361104,
+    "ms": 17766.814000000017,
+    "samples": 9850
+  },
+  {
+    "name": "ia",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361104,
+    "ms": 2945.8689999999983,
+    "samples": 1653
+  },
+  {
+    "name": "canEnter",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393319,
+    "ms": 1355.8029999999999,
+    "samples": 750
+  },
+  {
+    "name": "(garbage collector)",
+    "url": "",
+    "line": -1,
+    "column": -1,
+    "ms": 582.287,
+    "samples": 324
+  },
+  {
+    "name": "ra",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361019,
+    "ms": 376.13299999999975,
+    "samples": 208
+  },
+  {
+    "name": "Gp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1087848,
+    "ms": 366.96000000000015,
+    "samples": 205
+  },
+  {
+    "name": "io",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387159,
+    "ms": 339.71799999999996,
+    "samples": 191
+  },
+  {
+    "name": "R",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387250,
+    "ms": 336.5800000000001,
+    "samples": 186
+  },
+  {
+    "name": "ia",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361104,
+    "ms": 293.8700000000001,
+    "samples": 164
+  },
+  {
+    "name": "post",
+    "url": "node:inspector",
+    "line": 114,
+    "column": 6,
+    "ms": 266.8,
+    "samples": 1
+  },
+  {
+    "name": "ma",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365857,
+    "ms": 109.823,
+    "samples": 60
+  },
+  {
+    "name": "ia",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361104,
+    "ms": 57.77899999999999,
+    "samples": 31
+  },
+  {
+    "name": "Ti",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 347761,
+    "ms": 55.809,
+    "samples": 35
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1088661,
+    "ms": 33.407,
+    "samples": 19
+  },
+  {
+    "name": "Di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348313,
+    "ms": 32.524,
+    "samples": 19
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 371095,
+    "ms": 32.234,
+    "samples": 19
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 26.213,
+    "samples": 16
+  },
+  {
+    "name": "ga",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366158,
+    "ms": 26.1,
+    "samples": 15
+  },
+  {
+    "name": "Ea",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367721,
+    "ms": 23.182999999999996,
+    "samples": 12
+  },
+  {
+    "name": "f.sessionAfterTick",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1139801,
+    "ms": 22.741000000000003,
+    "samples": 13
+  },
+  {
+    "name": "canEnter",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393319,
+    "ms": 22.612000000000002,
+    "samples": 12
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 21.534,
+    "samples": 10
+  },
+  {
+    "name": "Gp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1087848,
+    "ms": 21.018,
+    "samples": 12
+  },
+  {
+    "name": "Em",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1107770,
+    "ms": 21.000999999999998,
+    "samples": 11
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 20.627000000000002,
+    "samples": 11
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1088676,
+    "ms": 19.807999999999996,
+    "samples": 11
+  },
+  {
+    "name": "Di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348313,
+    "ms": 16.62,
+    "samples": 10
+  },
+  {
+    "name": "d",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361432,
+    "ms": 15.524999999999999,
+    "samples": 9
+  },
+  {
+    "name": "Zp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1097014,
+    "ms": 15.078000000000003,
+    "samples": 9
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 14.740999999999998,
+    "samples": 8
+  },
+  {
+    "name": "Mo",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393840,
+    "ms": 13.212000000000002,
+    "samples": 6
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362292,
+    "ms": 13.018,
+    "samples": 7
+  },
+  {
+    "name": "aa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362260,
+    "ms": 12.565000000000001,
+    "samples": 7
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 12.498,
+    "samples": 7
+  },
+  {
+    "name": "Na",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 370970,
+    "ms": 12.334,
+    "samples": 6
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 12.236,
+    "samples": 7
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367802,
+    "ms": 11.081,
+    "samples": 5
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 10.658999999999999,
+    "samples": 6
+  },
+  {
+    "name": "$f",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1063659,
+    "ms": 10.028000000000002,
+    "samples": 6
+  },
+  {
+    "name": "$p",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1098360,
+    "ms": 9.975000000000001,
+    "samples": 6
+  },
+  {
+    "name": "Ea",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367721,
+    "ms": 9.703000000000001,
+    "samples": 6
+  },
+  {
+    "name": "da",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 364869,
+    "ms": 9.476999999999999,
+    "samples": 5
+  },
+  {
+    "name": "ra",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361019,
+    "ms": 9.445,
+    "samples": 5
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 371413,
+    "ms": 9.423,
+    "samples": 5
+  },
+  {
+    "name": "Da",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367885,
+    "ms": 9.030000000000001,
+    "samples": 5
+  },
+  {
+    "name": "Hs",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 415767,
+    "ms": 8.950999999999999,
+    "samples": 5
+  },
+  {
+    "name": "structuredClone",
+    "url": "node:internal/worker/js_transferable",
+    "line": 112,
+    "column": 24,
+    "ms": 8.044999999999998,
+    "samples": 4
+  },
+  {
+    "name": "qo",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 402873,
+    "ms": 7.664999999999999,
+    "samples": 4
+  },
+  {
+    "name": "Di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348313,
+    "ms": 7.609,
+    "samples": 5
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 7.57,
+    "samples": 4
+  },
+  {
+    "name": "Vp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1086470,
+    "ms": 7.537,
+    "samples": 4
+  },
+  {
+    "name": "jm",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1109270,
+    "ms": 7.521,
+    "samples": 4
+  },
+  {
+    "name": "R",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387250,
+    "ms": 7.44,
+    "samples": 4
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 7.204000000000001,
+    "samples": 4
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 6.992999999999999,
+    "samples": 4
+  },
+  {
+    "name": "Oi",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348767,
+    "ms": 6.986,
+    "samples": 4
+  },
+  {
+    "name": "read",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1099014,
+    "ms": 6.9830000000000005,
+    "samples": 4
+  },
+  {
+    "name": "$i",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358407,
+    "ms": 6.795,
+    "samples": 4
+  },
+  {
+    "name": "_h",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1141196,
+    "ms": 6.531,
+    "samples": 4
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 6.43,
+    "samples": 4
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 6.093999999999999,
+    "samples": 3
+  },
+  {
+    "name": "Ei",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348132,
+    "ms": 6.016,
+    "samples": 3
+  },
+  {
+    "name": "Ko",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 400751,
+    "ms": 5.9670000000000005,
+    "samples": 3
+  },
+  {
+    "name": "Sh",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1142589,
+    "ms": 5.955,
+    "samples": 3
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 5.945,
+    "samples": 3
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1088676,
+    "ms": 5.939,
+    "samples": 3
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 5.934,
+    "samples": 3
+  },
+  {
+    "name": "Ip",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1084042,
+    "ms": 5.772,
+    "samples": 5
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 5.632,
+    "samples": 3
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 5.584999999999999,
+    "samples": 3
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 5.57,
+    "samples": 4
+  },
+  {
+    "name": "$f",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1063659,
+    "ms": 5.46,
+    "samples": 3
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367802,
+    "ms": 5.398,
+    "samples": 3
+  },
+  {
+    "name": "No",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 395609,
+    "ms": 5.359999999999999,
+    "samples": 3
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 5.035,
+    "samples": 3
+  },
+  {
+    "name": "Zi",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358077,
+    "ms": 4.9670000000000005,
+    "samples": 3
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 4.862,
+    "samples": 3
+  },
+  {
+    "name": "Qi",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358123,
+    "ms": 4.846,
+    "samples": 3
+  },
+  {
+    "name": "io",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387159,
+    "ms": 4.787000000000001,
+    "samples": 3
+  },
+  {
+    "name": "Si",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 347566,
+    "ms": 4.696,
+    "samples": 4
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358512,
+    "ms": 4.659,
+    "samples": 3
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 4.654999999999999,
+    "samples": 3
+  },
+  {
+    "name": "Di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348313,
+    "ms": 4.4350000000000005,
+    "samples": 3
+  },
+  {
+    "name": "B",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398247,
+    "ms": 4.3629999999999995,
+    "samples": 3
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1109891,
+    "ms": 4.242,
+    "samples": 2
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 4.232,
+    "samples": 3
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 395056,
+    "ms": 4.232,
+    "samples": 3
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 4.198,
+    "samples": 2
+  },
+  {
+    "name": "R",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387250,
+    "ms": 4.045,
+    "samples": 2
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 4.039,
+    "samples": 2
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 4.007,
+    "samples": 2
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 4.003,
+    "samples": 2
+  },
+  {
+    "name": "canEnter",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393319,
+    "ms": 4,
+    "samples": 2
+  },
+  {
+    "name": "wa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367482,
+    "ms": 3.999,
+    "samples": 2
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 3.979,
+    "samples": 2
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 3.978,
+    "samples": 2
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 3.942,
+    "samples": 2
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 3.932,
+    "samples": 2
+  },
+  {
+    "name": "canEnter",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393319,
+    "ms": 3.904,
+    "samples": 3
+  },
+  {
+    "name": "de",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 239445,
+    "ms": 3.846,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 402431,
+    "ms": 3.682,
+    "samples": 2
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 3.681,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 395977,
+    "ms": 3.6750000000000003,
+    "samples": 2
+  },
+  {
+    "name": "_a",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366272,
+    "ms": 3.664,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1140945,
+    "ms": 3.6049999999999995,
+    "samples": 2
+  },
+  {
+    "name": "B",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398247,
+    "ms": 3.59,
+    "samples": 2
+  },
+  {
+    "name": "structuredClone",
+    "url": "node:internal/worker/js_transferable",
+    "line": 112,
+    "column": 24,
+    "ms": 3.557,
+    "samples": 2
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 3.556,
+    "samples": 3
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 3.5149999999999997,
+    "samples": 2
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 3.5060000000000002,
+    "samples": 2
+  },
+  {
+    "name": "me",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 239817,
+    "ms": 3.437,
+    "samples": 2
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 3.4130000000000003,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 402409,
+    "ms": 3.289,
+    "samples": 1
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 3.241,
+    "samples": 2
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 3.175,
+    "samples": 2
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 3.134,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398994,
+    "ms": 3.129,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1090291,
+    "ms": 3.114,
+    "samples": 2
+  },
+  {
+    "name": "ma",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365857,
+    "ms": 3.0620000000000003,
+    "samples": 2
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 3.016,
+    "samples": 2
+  },
+  {
+    "name": "B",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398247,
+    "ms": 3.012,
+    "samples": 2
+  },
+  {
+    "name": "d",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361432,
+    "ms": 2.932,
+    "samples": 2
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 2.895,
+    "samples": 3
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367509,
+    "ms": 2.618,
+    "samples": 2
+  },
+  {
+    "name": "ca",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362706,
+    "ms": 2.589,
+    "samples": 2
+  },
+  {
+    "name": "record",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1178442,
+    "ms": 2.189,
+    "samples": 2
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 344612,
+    "ms": 2.16,
+    "samples": 1
+  },
+  {
+    "name": "wa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367482,
+    "ms": 2.148,
+    "samples": 1
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 2.146,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 2.132,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 2.093,
+    "samples": 1
+  },
+  {
+    "name": "Bp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1086350,
+    "ms": 2.09,
+    "samples": 1
+  },
+  {
+    "name": "B",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398247,
+    "ms": 2.064,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 2.057,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1112786,
+    "ms": 2.055,
+    "samples": 1
+  },
+  {
+    "name": "Ei",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348132,
+    "ms": 2.05,
+    "samples": 1
+  },
+  {
+    "name": "wm",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1107322,
+    "ms": 2.05,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385668,
+    "ms": 2.044,
+    "samples": 1
+  },
+  {
+    "name": "Ji",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 357325,
+    "ms": 2.044,
+    "samples": 1
+  },
+  {
+    "name": "ro",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 386666,
+    "ms": 2.042,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1097803,
+    "ms": 2.04,
+    "samples": 1
+  },
+  {
+    "name": "Ji",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 357325,
+    "ms": 2.039,
+    "samples": 1
+  },
+  {
+    "name": "Oa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 369517,
+    "ms": 2.039,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 391878,
+    "ms": 2.039,
+    "samples": 2
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 2.038,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1177538,
+    "ms": 2.032,
+    "samples": 1
+  },
+  {
+    "name": "ve",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 243573,
+    "ms": 2.027,
+    "samples": 1
+  },
+  {
+    "name": "ca",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362706,
+    "ms": 2.02,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 241585,
+    "ms": 2.019,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 401037,
+    "ms": 2.019,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 2.017,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 2.013,
+    "samples": 1
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 2.013,
+    "samples": 1
+  },
+  {
+    "name": "i",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 240748,
+    "ms": 2.01,
+    "samples": 1
+  },
+  {
+    "name": "Np",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1083615,
+    "ms": 2.007,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1097277,
+    "ms": 2.005,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 2.004,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363022,
+    "ms": 2.002,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1111646,
+    "ms": 2,
+    "samples": 1
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 2,
+    "samples": 1
+  },
+  {
+    "name": "L",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 366664,
+    "ms": 1.994,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 391878,
+    "ms": 1.992,
+    "samples": 1
+  },
+  {
+    "name": "ha",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365967,
+    "ms": 1.991,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1092132,
+    "ms": 1.99,
+    "samples": 1
+  },
+  {
+    "name": "Mo",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393840,
+    "ms": 1.989,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1083571,
+    "ms": 1.983,
+    "samples": 1
+  },
+  {
+    "name": "dispatch",
+    "url": "",
+    "line": -1,
+    "column": -1,
+    "ms": 1.983,
+    "samples": 1
+  },
+  {
+    "name": "observe",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1178886,
+    "ms": 1.98,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 1.977,
+    "samples": 1
+  },
+  {
+    "name": "fe",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 239602,
+    "ms": 1.9769999999999999,
+    "samples": 2
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 1.976,
+    "samples": 1
+  },
+  {
+    "name": "Ei",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348132,
+    "ms": 1.974,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.971,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.966,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 1.963,
+    "samples": 1
+  },
+  {
+    "name": "Ep",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1079412,
+    "ms": 1.958,
+    "samples": 1
+  },
+  {
+    "name": "Da",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 367885,
+    "ms": 1.955,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.949,
+    "samples": 1
+  },
+  {
+    "name": "Kp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1090125,
+    "ms": 1.948,
+    "samples": 1
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 1.945,
+    "samples": 1
+  },
+  {
+    "name": "Wo",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 400224,
+    "ms": 1.944,
+    "samples": 1
+  },
+  {
+    "name": "Xi",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 357661,
+    "ms": 1.938,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.928,
+    "samples": 1
+  },
+  {
+    "name": "Lo",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 396984,
+    "ms": 1.917,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 415518,
+    "ms": 1.915,
+    "samples": 1
+  },
+  {
+    "name": "_f",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1046459,
+    "ms": 1.913,
+    "samples": 1
+  },
+  {
+    "name": "u",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361338,
+    "ms": 1.89,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363379,
+    "ms": 1.874,
+    "samples": 1
+  },
+  {
+    "name": "ca",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362706,
+    "ms": 1.866,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398994,
+    "ms": 1.856,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 1.845,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.838,
+    "samples": 1
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 1.811,
+    "samples": 1
+  },
+  {
+    "name": "h",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1143179,
+    "ms": 1.7639999999999998,
+    "samples": 2
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 1.681,
+    "samples": 3
+  },
+  {
+    "name": "ca",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362706,
+    "ms": 1.658,
+    "samples": 1
+  },
+  {
+    "name": "ih",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1137801,
+    "ms": 1.62,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393223,
+    "ms": 1.602,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 239202,
+    "ms": 1.595,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.593,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 1.583,
+    "samples": 1
+  },
+  {
+    "name": "Fp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1083953,
+    "ms": 1.57,
+    "samples": 1
+  },
+  {
+    "name": "C",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1094490,
+    "ms": 1.568,
+    "samples": 1
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 1.568,
+    "samples": 1
+  },
+  {
+    "name": "Ma",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 370784,
+    "ms": 1.559,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.549,
+    "samples": 1
+  },
+  {
+    "name": "ps",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 408792,
+    "ms": 1.537,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1087407,
+    "ms": 1.53,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 349034,
+    "ms": 1.527,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1088661,
+    "ms": 1.523,
+    "samples": 1
+  },
+  {
+    "name": "Up",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1087674,
+    "ms": 1.523,
+    "samples": 1
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 1.516,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.516,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398994,
+    "ms": 1.515,
+    "samples": 1
+  },
+  {
+    "name": "os",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 407386,
+    "ms": 1.51,
+    "samples": 1
+  },
+  {
+    "name": "Yp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1091491,
+    "ms": 1.506,
+    "samples": 1
+  },
+  {
+    "name": "Jf",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1062020,
+    "ms": 1.506,
+    "samples": 1
+  },
+  {
+    "name": "B",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 398247,
+    "ms": 1.502,
+    "samples": 1
+  },
+  {
+    "name": "So",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 392089,
+    "ms": 1.5,
+    "samples": 1
+  },
+  {
+    "name": "v",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1110655,
+    "ms": 1.5,
+    "samples": 1
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 1.497,
+    "samples": 1
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 1.495,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 1.494,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1088676,
+    "ms": 1.489,
+    "samples": 1
+  },
+  {
+    "name": "vp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1073594,
+    "ms": 1.489,
+    "samples": 1
+  },
+  {
+    "name": "je",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 247950,
+    "ms": 1.484,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.479,
+    "samples": 1
+  },
+  {
+    "name": "Ei",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348132,
+    "ms": 1.476,
+    "samples": 1
+  },
+  {
+    "name": "io",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 387159,
+    "ms": 1.472,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363989,
+    "ms": 1.47,
+    "samples": 1
+  },
+  {
+    "name": "ko",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 393173,
+    "ms": 1.459,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 1.451,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363022,
+    "ms": 1.451,
+    "samples": 1
+  },
+  {
+    "name": "fh",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1139312,
+    "ms": 1.446,
+    "samples": 1
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 1.411,
+    "samples": 1
+  },
+  {
+    "name": "l",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 361287,
+    "ms": 1.332,
+    "samples": 1
+  },
+  {
+    "name": "wf",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1048577,
+    "ms": 1.315,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358485,
+    "ms": 1.251,
+    "samples": 1
+  },
+  {
+    "name": "ca",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362706,
+    "ms": 1.125,
+    "samples": 1
+  },
+  {
+    "name": "ua",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363273,
+    "ms": 1.042,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 0.988,
+    "samples": 1
+  },
+  {
+    "name": "Xp",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 1096960,
+    "ms": 0.867,
+    "samples": 1
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 0.862,
+    "samples": 2
+  },
+  {
+    "name": "di",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342910,
+    "ms": 0.693,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 0.692,
+    "samples": 1
+  },
+  {
+    "name": "Ba",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 377724,
+    "ms": 0.326,
+    "samples": 1
+  },
+  {
+    "name": "Oa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 369517,
+    "ms": 0.29600000000000004,
+    "samples": 2
+  },
+  {
+    "name": "Ei",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 348132,
+    "ms": 0.274,
+    "samples": 1
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 0.261,
+    "samples": 1
+  },
+  {
+    "name": "",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 363379,
+    "ms": 0.141,
+    "samples": 1
+  },
+  {
+    "name": "T",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 236379,
+    "ms": 0.138,
+    "samples": 1
+  },
+  {
+    "name": "ui",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 342833,
+    "ms": 0.11,
+    "samples": 1
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 0.097,
+    "samples": 1
+  },
+  {
+    "name": "Qi",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 358123,
+    "ms": 0.086,
+    "samples": 1
+  },
+  {
+    "name": "la",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 362752,
+    "ms": 0.06,
+    "samples": 1
+  },
+  {
+    "name": "fa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 365091,
+    "ms": 0.057,
+    "samples": 1
+  },
+  {
+    "name": "(program)",
+    "url": "",
+    "line": -1,
+    "column": -1,
+    "ms": 0.035,
+    "samples": 1
+  },
+  {
+    "name": "Qa",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 385547,
+    "ms": 0.018,
+    "samples": 1
+  },
+  {
+    "name": "Ri",
+    "url": "file:///D:/%E6%B8%B8%E6%88%8F/%E6%9E%B6%E7%A9%BA%E5%9C%B0%E5%9B%BE%E6%A8%A1%E6%8B%9F%E5%99%A8/.autopilot/fms-full-map47-checked/assets/culture47.worker-dNoyefgq.js",
+    "line": 0,
+    "column": 351147,
+    "ms": 0.017,
+    "samples": 1
+  }
+]

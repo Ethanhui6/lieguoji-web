@@ -33,3 +33,4 @@
   .c47-news-copy small{display:none}
   .c47-news-copy strong{-webkit-line-clamp:1;font-size:12px;line-height:1.4}
 }
+.c47-military-stats progress{display:block;width:100%;height:5px;margin-top:5px;accent-color:#55765b}

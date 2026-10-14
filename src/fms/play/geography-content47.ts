@@ -11,6 +11,7 @@ type StaticMilitaryLeaves47={finance?:FiscalState;harbors?:HarborLayout46};
  * not proof. Exotic objects still reach the authoritative validator. */
 const LIMIT=2_000_000;
 const immutable=new WeakMap<object,number>(),typedShapes=new WeakSet<object>();
+const immutableMatches=new WeakMap<object,WeakSet<object>>();
 const numericWindows=new WeakMap<object,WeakMap<object,boolean>>();
 type Budget={left:number};
 // Keep the hot numeric scan separate from descriptor/prototype traversal so
@@ -25,7 +26,7 @@ function equal(a:unknown,b:unknown,budget:Budget,depth:number):boolean{
  if(typeof a==='number')return Number.isFinite(a)&&Object.is(a,b);
  if(a===null||typeof a==='string'||typeof a==='boolean')return a===b;
  if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;
- const fixed=immutable.get(a);if(a===b&&fixed!==undefined){budget.left-=fixed-1;return budget.left>=0;}
+ const fixed=immutable.get(a);if(fixed!==undefined&&(a===b||immutable.has(b)&&immutableMatches.get(a)?.has(b))){budget.left-=fixed-1;return budget.left>=0;}
  const proto=Object.getPrototypeOf(a);
  if(proto!==Object.getPrototypeOf(b))return false;
  if(proto===Uint32Array.prototype||proto===Int32Array.prototype){
@@ -45,6 +46,7 @@ function equal(a:unknown,b:unknown,budget:Budget,depth:number):boolean{
   const d=Object.getOwnPropertyDescriptor(a,k),e=Object.getOwnPropertyDescriptor(b,k);
   if(k==='toJSON'||!d||!e||!('value'in d)||!('value'in e)||d.enumerable!==e.enumerable||!equal(d.value,e.value,budget,depth+1))return false;
  }
+ if(fixed!==undefined&&immutable.has(b)){let matches=immutableMatches.get(a);if(!matches){matches=new WeakSet();immutableMatches.set(a,matches);}matches.add(b);}
  return true;
 }
 export function sameGeographyContent47(a:unknown,b:unknown){return equal(a,b,{left:LIMIT},0);}
@@ -89,7 +91,7 @@ function freezePlain(value:unknown):number|null{
  * does not mark a live run or its mutable ledgers as trusted. Numeric buffers
  * remain writable. Outside the private action window, every cache hit compares
  * them element by element; the window also checks all samples before commit. */
-export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography:unknown}&StaticMilitaryLeaves47){
+export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography?:unknown}&StaticMilitaryLeaves47){
  freezePlain(r.terrain.points);freezePlain(r.diplomaticGeography);
  if(r.harbors)freezePlain(r.harbors);
  if(r.finance)for(const p of Object.values(r.finance.provinces))freezePlain(p.cellBiomes);

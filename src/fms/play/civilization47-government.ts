@@ -21,7 +21,8 @@ import type {FiscalState} from './restoration19-state';
 import {initialEconomy47,economicEthnic47,validateEconomySetup47,type Economy47,type EconomySetup47} from './civilization47-economy';
 import {emptyTactics47,musterFoundingArmies47,type InitialMuster47,type Recruitment47} from './civilization47-muster';
 import {initialArmyPositions47,type ArmyPositions47} from './army-presence47';
-import {buildArmyTravelGraph47} from './army-travel47-graph';
+import {armyGeographyFor47} from './army-geography47';
+import {prepareOwnedGeography47} from './geography-content47';
 import {geographyBinding} from './war30-geography';
 import {assertGovernmentOpening47} from './civilization47-government-validation';
 
@@ -49,7 +50,7 @@ export function openingDestiny47(r:Pick<Government47,'world'|'upperCombat'|'tact
 export function attachGovernment47<T extends GovernmentInput47>(input:T,setup:EconomySetup47={}):T&Government47{
   assertPopulation47(input);assertFmsDocument(input.terrain);validateEconomySetup47(setup,input.world.nations.map(n=>n.id));
   if(input.world.day!==0||input.clock.tick!==0||input.world.armies.length||['governmentOpening','upperCombat','finance','economy','destiny','tactics','units','armyPositions','terrainContext'].some(k=>k in input)||input.scale!==1000/Math.max(input.terrain.width,input.terrain.height))throw Error('国家财政与征募只能在全新创建候选初始化一次。');
-  const r=structuredClone(input),seed=r.world.custom!.seed,terrainContext=buildTerrainContext(r.terrain,r.world,r.scale),cells=buildProvinceCells(r.terrain,r.world,r.scale);
+  const r=structuredClone(input);prepareOwnedGeography47(r);const seed=r.world.custom!.seed,terrainContext=buildTerrainContext(r.terrain,r.world,r.scale),cells=buildProvinceCells(r.terrain,r.world,r.scale);
   const upperCombat:UpperCombat={version:1,initialization:'native-combat-web-inputs-v1',nations:Object.fromEntries(r.world.nations.map(n=>[n.id,{polity:r.civilization.nations[n.id].polity,traits:[],destiny:0,coreThreshold:2,coreYear:0,provinceOrder:[]}])),armies:{},provinces:buildProvinceCombat(r.terrain,r.world,r.scale,terrainContext)};
   reconcileCore(r.world,upperCombat);
   const finance:FiscalState={version:1,initialization:'native-fiscal-web-cells-v1',provinces:{},nations:{}},governmentOpening:Opening47={version:1,rule:'population-muster-first-gold-v1',population:{},recruitments:[],accounts:{}};
@@ -67,7 +68,7 @@ export function attachGovernment47<T extends GovernmentInput47>(input:T,setup:Ec
     governmentOpening.accounts[n.id]={polity,destiny:0,input:structuredClone(value)};
     finance.nations[n.id]={gold:out.gold,goldPerMonth:out.goldPerMonth,armyCostGold:0,goldBattleModifier:out.goldBattleModifier,initializedDay:0,lastMonth:0,ledger:{...out,day:0,openingGold:0,reorganizationCost:0,distanceSuspended:owned.some(id=>!upperCombat.provinces[id].connected)}};
   }
-  const destiny=openingDestiny47({...initial,upperCombat}),graph=buildArmyTravelGraph47(r.terrain,r.world),armyPositions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
+  const destiny=openingDestiny47({...initial,upperCombat}),graph=armyGeographyFor47(r).graph,armyPositions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
   const result={...initial,terrainContext,upperCombat,finance,economy,destiny,armyPositions,governmentOpening};assertGovernmentOpening47(result);return result;
 }
 export function createGovernmentWorld47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM){

@@ -238,5 +238,15 @@
     "protocol": 2,
     "source": "culture47-local-partial-browser-save-gap-original-bytes",
     "journalVersion": 2
+  },
+  {
+    "engine": "3a65998ffc9db25e737cba63d38e5a30d4bd8bd4477ca63c05f7b18dc5f742e5",
+    "file": "engine-3a65.js",
+    "bytes": 1410350,
+    "sha256": "08cdc329af58124178d8731b734235673d8b77cd0b754ea094af95cbac51880a",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-full-map47-checked-07603cf-original-bytes",
+    "journalVersion": 2
   }
 ]

@@ -1,7 +1,14 @@
 import {describe,it,expect} from 'vitest';
-import {copyGeographyContent47,sameGeographyContent47,retainGeographyWitness47,withOwnedNumericGeography47} from './geography-content47';
+import {copyGeographyContent47,sameGeographyContent47,retainGeographyWitness47,withOwnedNumericGeography47,prepareOwnedGeography47} from './geography-content47';
 import {grid} from './fixture.test-support';
 describe('exact private geography witnesses',()=>{
+ it('reuses only deeply frozen equality and still checks every mutable terrain sample',()=>{
+  const a={terrain:grid(()=>45),world:{provinces:[]}} as unknown as Parameters<typeof prepareOwnedGeography47>[0],b=structuredClone(a);prepareOwnedGeography47(a);prepareOwnedGeography47(b);
+  expect(sameGeographyContent47(a.terrain.points,b.terrain.points)).toBe(true);expect(sameGeographyContent47(a.terrain.points,b.terrain.points)).toBe(true);
+  expect(()=>{b.terrain.points[0][0]++;}).toThrow();
+  expect(sameGeographyContent47(a.terrain.elevations,b.terrain.elevations)).toBe(true);b.terrain.elevations[0]=0;expect(sameGeographyContent47(a.terrain.elevations,b.terrain.elevations)).toBe(false);
+  const different=structuredClone(a);different.terrain.points[0][0]++;prepareOwnedGeography47(different);expect(sameGeographyContent47(a.terrain.points,different.terrain.points)).toBe(false);
+ });
  it('owns all nested data and notices in-place changes, including typed samples',()=>{
   const data={points:[[1,2],[3,4]],triangles:new Uint32Array([0,1,2]),elevations:new Int32Array([0,45,50]),water:{center:{x:2,y:3}}};
   const saved=copyGeographyContent47(data)!;expect(saved).not.toBeNull();expect(sameGeographyContent47(structuredClone(data),saved.value)).toBe(true);

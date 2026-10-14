@@ -19,6 +19,8 @@ import type {OccupationState} from './occupation';
 import {drawAttackArrow} from './attack-map';
 import {BattleFeedback} from './battle-feedback';
 import {warDetail,warSites,warMarkers,type WarMarker,type WarDetail} from './war-view';
+import {armyStrength47} from './army-strength47';
+import type {TacticsState} from './tactics-model';
 
 export class PlayMap {
   readonly layer = new Container();
@@ -49,7 +51,7 @@ export class PlayMap {
   private impacts:{id:string;graphic:Graphics}[]=[];
   private reorganizationWidgets:{id:string;bar:Graphics;pixel:number;r:number;full:number;text?:Text}[]=[];
   updateReorganization(world:World){for(const v of this.reorganizationWidgets){const a=world.armies.find(a=>a.id===v.id);if(!a)continue;v.bar.clear().rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel,2*v.pixel).fill(0x26332d).rect(-v.r*v.pixel,-(v.r+5)*v.pixel,2*v.r*v.pixel*Math.min(1,a.troops/v.full),2*v.pixel).fill(0xf0ce7b);if(v.text)v.text.text=`重编 ${a.troops}`;}}
-  private unitGroups:{ids:string[];container:Container;offset:Point;display:'dot'|'detail'}[]=[];
+  private unitGroups:{ids:string[];container:Container;offset:Point;display:'dot'|'detail';strength?:ReturnType<typeof armyStrength47>}[]=[];
   private labelLayout:{detail:WarDetail;countries:LabelBox[];capitals:LabelBox[];towns:{id:string;x:number;y:number}[]}={detail:'overview',countries:[],capitals:[],towns:[]};
   labelDiagnostics(){return this.labelLayout;}
   private shipLayer?:ReturnType<typeof drawNavy>;
@@ -84,7 +86,10 @@ export class PlayMap {
   sinkDiagnostics(){return this.sinkMotion.diagnostics();}
   sinkAnimations(){return this.sinkMotion.frames().map(f=>({id:f.id,scale:f.scale,alpha:f.alpha,rotation:f.rotation}));}
   battleAnimations(){return this.battleSprites.map(({id,sprite})=>({id,frame:Math.round(sprite.texture.frame.x/258)+Math.round(sprite.texture.frame.y/194)*5,x:sprite.x*this.projection.zoom+this.projection.x,y:sprite.y*this.projection.zoom+this.projection.y,width:sprite.width*this.projection.zoom}));}
-  unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',display:g.display,x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
+  unitPositions(){const p=this.projection;return [...this.unitGroups.map(g=>({id:g.ids[0],ids:g.ids,kind:'army',display:g.display,strength:g.strength,x:g.container.x*p.zoom+p.x,y:g.container.y*p.zoom+p.y})),...(this.shipLayer?.positions()??[]).map(s=>({id:s.id,ids:[s.id],kind:'fleet',x:s.x*p.zoom+p.x,y:s.y*p.zoom+p.y}))];}
+  /** Icon centers after collision layout, in the same world coordinates as
+   * the contact overlay. Use these after updateUnits, including camera changes. */
+  displayForcePoints(frame?:DisplayFrame){const p=this.projection,points=new Map<string,Point>();if(frame){for(const [id,point]of frame.armies)points.set(JSON.stringify(['army',id]),point);for(const [id,point]of frame.fleets)points.set(JSON.stringify(['fleet',id]),point);}for(const g of this.unitGroups)for(const id of g.ids)points.set(JSON.stringify(['army',id]),{x:g.container.x*p.scale,y:g.container.y*p.scale});for(const s of this.shipLayer?.positions()??[])points.set(JSON.stringify(['fleet',s.id]),{x:s.x*p.scale,y:s.y*p.scale});return points;}
   pickUnits(point:Point){return this.unitPositions().map(p=>({...p,distance:Math.hypot(p.x-point.x,p.y-point.y)})).filter(p=>p.distance<=(p.kind==='army'?22:18)).sort((a,b)=>a.distance-b.distance);}
   updatePortControl(controls:NavalView['portControl']){this.shipLayer?.updatePorts(controls);}
   updateUnits(frame:DisplayFrame){
@@ -105,7 +110,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={}): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={},formationForces?:TacticsState['forces']): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
@@ -218,13 +223,16 @@ export class PlayMap {
       if(battle){const sides=[...new Set(battle.armies.map(id=>byArmy.get(id)!.nationId))].sort(),side=sides.indexOf(army.nationId),angle=Math.PI+side*2*Math.PI/sides.length;marker.x+=Math.cos(angle)*17;marker.y+=Math.sin(angle)*17-8;}
       const container=new Container(),marks=new Graphics();container.addChild(marks);this.layer.addChild(container);container.position.set(marker.x/zoom,marker.y/zoom);
       const points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!));
-      this.unitGroups.push({ids:marker.ids,container,display:'detail',offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
+      const strength=formationForces?armyStrength47(marker.ids.map(id=>byArmy.get(id)!),formationForces):undefined;
+      this.unitGroups.push({ids:marker.ids,container,display:'detail',strength,offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
       // Marker size reflects real soldiers in this unit/group, not an invented hierarchy.
       // The independent 22px picking radius still makes small units easy to select.
       const x=0,y=0,r=(force>=12000?8:force>=5000?6.5:5)+(active?2:marker.near?0:-1.5);
       const unit=units?unitProfile(units[army.id]):undefined,texture=unit&&this.textures.get(unit.key);
       if(active)marks.circle(x,y,(r+3)*pixel).fill({color:0x263931,alpha:.35}).stroke({color:0xffe6a6,width:1.5*pixel});
-      marks.roundRect(-r*pixel,(r-1)*pixel,2*r*pixel,3*pixel,pixel).fill(nationColor(nations.get(army.nationId)!)).stroke({color:0x263931,width:.65*pixel});
+      marks.roundRect(-r*pixel,(r-1)*pixel,2*r*pixel,3*pixel,pixel).fill(0x263931);
+      const fraction=strength?.fraction??1;if(fraction>0)marks.rect(-r*pixel,(r-1)*pixel,2*r*pixel*fraction,3*pixel).fill(nationColor(nations.get(army.nationId)!));
+      marks.roundRect(-r*pixel,(r-1)*pixel,2*r*pixel,3*pixel,pixel).stroke({color:0x263931,width:.65*pixel});
       if(marker.ids.length>1)label(String(marker.ids.length),x,y+5*pixel,9,'#f9f1d4',container);
       else if((marker.near||active)&&texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=(r*2-3)*pixel;sprite.height=(r*2-3)*pixel;sprite.position.set(x,y);container.addChild(sprite);}
       else marks.moveTo(x-2*pixel,y+3*pixel).lineTo(x-2*pixel,y-3*pixel).lineTo(x+3*pixel,y-1*pixel).stroke({color:0xfff3d4,width:pixel});

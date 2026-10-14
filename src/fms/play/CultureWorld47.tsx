@@ -39,7 +39,7 @@ import {CultureDiplomacy47} from './CultureDiplomacy47';
 import {CultureNews47} from './CultureNews47';
 import {usePresentationClock} from './PresentationClock';
 import {Graphics} from 'pixi.js';
-import {activeSiegeProvinces47,combatMarkers47,drawCombatMarkers47} from './combat-map47';
+import {activeSiegeProvinces47,combatMarkers47,displayCombatMarkers47,drawCombatMarkers47} from './combat-map47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
 import {actualForces47} from './force-runtime47';
 import type {MilitaryIntent47} from './culture47-orders';
@@ -274,9 +274,11 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
         const selection=selected.current;
-        map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},displayFrame(),undefined,[],r.id,source);
+        const frame=displayFrame();
+        map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
         if(combatRun!==r){combat=combatMarkers47(r,s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r));combatRun=r;canvas.dataset.combat=JSON.stringify(combat);}
-        drawCombatMarkers47(combatLayer,combat,r.scale,view.camera.scale);
+        const displayedCombat=displayCombatMarkers47(combat,map.displayForcePoints(frame));canvas.dataset.combat=JSON.stringify(displayedCombat);canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
+        drawCombatMarkers47(combatLayer,displayedCombat,r.scale,view.camera.scale);
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
         canvas.dataset.day=String(r.world.day);canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
@@ -318,7 +320,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
         const combatPulse=animateCombat&&now-lastCombatPaint>=250;
         if(alpha<1||settled!==motion.current.revision||combatPulse){
           const frame=motion.current.frame(now);map.updateUnits(frame);
-          if(combatPulse){drawCombatMarkers47(combatLayer,combat,current.current!.run.scale,view.camera.scale,.5+.5*Math.sin(now/240));lastCombatPaint=now;}
+          if(combat.length){const displayedCombat=displayCombatMarkers47(combat,map.displayForcePoints(frame));drawCombatMarkers47(combatLayer,displayedCombat,current.current!.run.scale,view.camera.scale,animateCombat ? .5+.5*Math.sin(now/240) : 0);if(richDiagnostics)canvas.dataset.combat=JSON.stringify(displayedCombat);if(combatPulse)lastCombatPaint=now;}
           // The renderer itself updates every RAF. Rich diagnostics are opted
           // in by the regression URL; ordinary play keeps only the small
           // display tick at a settled cadence instead of serializing the full

@@ -5,7 +5,7 @@ import {actualForces47} from './force-runtime47';
 import {readArmySpace47,landHolders47} from './army-space47';
 import {armyTravelLocation47} from './army-travel47-state';
 import {locateTravelCell47,type TravelGraph47} from './army-travel47-graph';
-import {previewArmyCommand47,issueArmyOrderOwned47,type ArmyRouteWeights47,type ArmyCommand47} from './army-commands47';
+import {previewArmyCommand47,issueArmyOrderOwned47,createArmyCommandSearch47,type ArmyRouteWeights47,type ArmyCommand47} from './army-commands47';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import {forceKey47} from './force-motion47';
@@ -86,22 +86,23 @@ export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRoute
       }
       for(const p of r.world.provinces)if(enemies.has(p.controller)&&coasts.has(p.id))attackIds.add(p.id);
     }
+    const search=createArmyCommandSearch47(r,weights,a.id);
     const location=armyTravelLocation47(here.travel,g),home=places.get(r.tactics.forces[a.id].homeId);if(!home)throw Error('自主军令缺少真实故乡。');
     let candidates:RegularTarget47[]=[...attackIds].map(id=>({id,center:places.get(id)!.center,feature:provinceFeatures.get(id)!,protruding:false,port:ports.has(id)}));
     let chosen:RegularTarget47|null=null,reason='';
     const unfunded:{target:RegularTarget47;preview:ReturnType<typeof previewArmyCommand47>}[]=[];
     const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,cell=>actualForceSpeed47(r,{kind:'army',id:a.id,nationId:a.nationId,withdrawing:false,travel:here.travel},cell))/TICKS_PER_DAY)+3);
     while(candidates.length){const p=nativeRegularTarget47(location.point,home.center,features.get(location.cell.id)!,candidates);if(!p)break;
-      const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights);
+      const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
       if(preview.valid){
         // WEB ration policy: time-normalized march cost plus three days of
         // reserve. Retreat remains best-effort; this does not promise battle supply.
-        if(a.supplies>=rationCost(preview)){issueArmyOrderOwned47(r,action,weights,'autonomous');chosen=p;break;}
+        if(a.supplies>=rationCost(preview)){issueArmyOrderOwned47(r,action,weights,'autonomous',search);chosen=p;break;}
         // A landing need only reach real hostile land, not march to the city
         // center on the same rations. Province occupation already reads cells.
         if(preview.hasSea){
           const shores=(g.byProvince.get(p.id)??[]).map(id=>g.cells.get(id)!).filter(c=>c.links.some(l=>g.cells.get(l.to)!.surface==='sea')).sort((a,b)=>Math.hypot(a.center.x-here.point.x,a.center.y-here.point.y)-Math.hypot(b.center.x-here.point.x,b.center.y-here.point.y)).slice(0,4);
-          for(const cell of shores){const landing:ArmyCommand47={...action,target:{kind:'cell',id:cell.id}},route=previewArmyCommand47(r,landing,weights);if(route.valid&&a.supplies>=rationCost(route)){issueArmyOrderOwned47(r,landing,weights,'autonomous');chosen=p;break;}}
+          for(const cell of shores){const landing:ArmyCommand47={...action,target:{kind:'cell',id:cell.id}},route=previewArmyCommand47(r,landing,weights,search);if(route.valid&&a.supplies>=rationCost(route)){issueArmyOrderOwned47(r,landing,weights,'autonomous',search);chosen=p;break;}}
           if(chosen)break;
         }
         unfunded.push({target:p,preview});reason='现有军粮不足以走完这条路线并保留三日余粮。';candidates=candidates.filter(v=>v!==p);continue;
@@ -121,9 +122,9 @@ export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRoute
       // water. Avoid searching every map cell or rerouting daily mid-march.
       const stages=route.cells.slice(1,water<0?undefined:water).map((id,index)=>({cell:g.cells.get(id)!,index:index+1})).reverse().filter(({cell,index})=>stocked.has(cell.provinceId!)&&a.supplies>=rationCost({...route,cells:route.cells.slice(0,index+1),points:route.points.slice(0,2*index+1)}));
       let staged=false;
-      for(const {cell:p} of stages){const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'cell',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights);
+      for(const {cell:p} of stages){const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'cell',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
         if(!preview.valid||preview.hasSea||a.supplies<rationCost(preview))continue;
-        issueArmyOrderOwned47(r,action,weights,'autonomous');row.targetId=p.provinceId!;row.campaignId=null;row.issuedTick=r.clock.tick;note('staging','远征粮程不足，先在本国向前集结，抵达后从当地补给再评估。');staged=true;break;
+        issueArmyOrderOwned47(r,action,weights,'autonomous',search);row.targetId=p.provinceId!;row.campaignId=null;row.issuedTick=r.clock.tick;note('staging','远征粮程不足，先在本国向前集结，抵达后从当地补给再评估。');staged=true;break;
       }
       if(staged)continue;
     }
@@ -140,20 +141,20 @@ export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRoute
       }
       if(id){
         row.garrisonId=id;
-        if(here.province.id===id){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous');row.targetId=id;row.campaignId=null;row.issuedTick??=r.clock.tick;note('garrison','驻守已分配的本国地区，保留驻地，不每天重抽。');continue;}
-        const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id},kind:'march'},preview=previewArmyCommand47(r,action,weights);
-        if(preview.valid&&a.supplies>=rationCost(preview)){issueArmyOrderOwned47(r,action,weights,'autonomous');row.targetId=id;row.campaignId=null;row.issuedTick=r.clock.tick;note('garrison','按原作首都圈与边境驻防权重部署，沿真实路线前往驻地。');continue;}
+        if(here.province.id===id){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);row.targetId=id;row.campaignId=null;row.issuedTick??=r.clock.tick;note('garrison','驻守已分配的本国地区，保留驻地，不每天重抽。');continue;}
+        const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
+        if(preview.valid&&a.supplies>=rationCost(preview)){issueArmyOrderOwned47(r,action,weights,'autonomous',search);row.targetId=id;row.campaignId=null;row.issuedTick=r.clock.tick;note('garrison','按原作首都圈与边境驻防权重部署，沿真实路线前往驻地。');continue;}
         reason=preview.valid?'前往既定驻地的粮程不足，补给后重试。':preview.reason;
       }
     }
     // No feasible new task at home: keep the exact position. Outside home,
     // choose a reachable owned province; never jump to the historical anchor.
-    if(here.province?.controller===a.nationId){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous');note(attackIds.size?'no-route':'waiting',reason||'当前没有可执行的常规战争目标，留在本国驻地。',true);continue;}
+    if(here.province?.controller===a.nationId){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);note(attackIds.size?'no-route':'waiting',reason||'当前没有可执行的常规战争目标，留在本国驻地。',true);continue;}
     const homes=[...owned].sort((x,y)=>Math.hypot(x.center.x-here.point.x,x.center.y-here.point.y)-Math.hypot(y.center.x-here.point.x,y.center.y-here.point.y));let returning=false;
-    for(const p of homes){const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'retreat'},preview=previewArmyCommand47(r,action,weights);if(!preview.valid){reason=preview.reason;continue;}
-      issueArmyOrderOwned47(r,action,weights,'autonomous');row.targetId=p.id;row.campaignId=null;row.issuedTick=r.clock.tick;note('returning',low?'部队状态不足，从实际位置撤回本国。':'原目标已结束，从实际位置撤回本国。');returning=true;break;
+    for(const p of homes){const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'retreat'},preview=previewArmyCommand47(r,action,weights,search);if(!preview.valid){reason=preview.reason;continue;}
+      issueArmyOrderOwned47(r,action,weights,'autonomous',search);row.targetId=p.id;row.campaignId=null;row.issuedTick=r.clock.tick;note('returning',low?'部队状态不足，从实际位置撤回本国。':'原目标已结束，从实际位置撤回本国。');returning=true;break;
     }
-    if(!returning){if(ongoing&&(!here.province||!nationsAtWar(r.world,a.nationId,here.province.controller)))issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous');note('no-route',reason||'暂时没有符合当前通行权的返乡路线，保留实际位置。',true);}
+    if(!returning){if(ongoing&&(!here.province||!nationsAtWar(r.world,a.nationId,here.province.controller)))issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);note('no-route',reason||'暂时没有符合当前通行权的返乡路线，保留实际位置。',true);}
   }
   state.lastDay=r.world.day;state.revision++;assertArmyAutonomy47(r);return undefined;
 }

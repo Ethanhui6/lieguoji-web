@@ -14,7 +14,8 @@ import {reconcileCore,traitProjection,type UpperCombat} from './upper14-state';
 import {initializedArmyBase} from './native-combat/state-traits';
 import {emptyTactics47,musterFoundingArmies47} from './civilization47-muster';
 import {initialArmyPositions47} from './army-presence47';
-import {buildArmyTravelGraph47} from './army-travel47-graph';
+import {armyGeographyFor47} from './army-geography47';
+
 import {geographyBinding} from './war30-geography';
 
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -54,7 +55,7 @@ export function assertGovernmentOpening47(r:Government47){
   for(const a of r.world.armies)expectedUpper.armies[a.id]={base:initializedArmyBase(traitProjection(expectedUpper.nations[a.nationId].traits)),initializedTick:0};
   const destiny=openingDestiny47({world:preMuster,upperCombat:expectedUpper,tactics:replay.tactics});
   if(!equal(r.upperCombat,expectedUpper)||!equal(r.destiny,destiny))return fail();
-  const graph=buildArmyTravelGraph47(r.terrain,r.world),positions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
+  const graph=armyGeographyFor47(r).graph,positions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
   if(!equal(r.armyPositions,positions))return fail();
   for(const n of r.world.nations){
     const account=r.governmentOpening.accounts[n.id],ethnic=economicEthnic47(r.economy,n.id),owned=expectedUpper.nations[n.id].provinceOrder;

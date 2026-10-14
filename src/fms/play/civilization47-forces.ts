@@ -22,7 +22,8 @@ import {initialWar28,importUnknownWars28} from './war47-wars';
 import {initialForceContacts47} from './force-motion47';
 import {initialForceClock47} from './force-clock47';
 import {initialForceDamage47} from './force-losses47';
-import {buildArmyTravelGraph47} from './army-travel47-graph';
+import {armyGeographyFor47} from './army-geography47';
+import {prepareOwnedGeography47} from './geography-content47';
 import {beginArmyTravel47} from './army-travel47-state';
 import type {ArmyPositions47} from './army-presence47';
 import type {MilitaryRun47} from './force-tick47';
@@ -45,9 +46,9 @@ const seed=(text:string)=>{let h=2166136261;for(const c of text)h=Math.imul(h^c.
  * one affordable fleet at a qualified harbor, crew/grain debited exactly once.
  * Never run the old creation/refund/version-wrap pipeline. */
 function build<T extends Government47>(input:T):T&FoundingForces47{
-  const r=structuredClone(input),harbors=buildHarbors46(r),sea=graphFor46({...r,harbors}),firstEventId=r.world.nextEventId,next=initialNavy(r.world,sea);
+  const r=structuredClone(input);prepareOwnedGeography47(r);const harbors=buildHarbors46(r),sea=graphFor46({...r,harbors}),firstEventId=r.world.nextEventId,next=initialNavy(r.world,sea);
   const navalOpening:NavalOpening47={version:1,rule:'qualified-starter-debit-v1',firstEventId,charges:next.navy.fleets.map(f=>({fleetId:f.id,homeId:sea.ports.find(p=>p.id===f.dockId)!.provinceId,crew:f.crew,grain:f.food}))};
-  const world=next.world,navy=next.navy,graph=buildArmyTravelGraph47(r.terrain,world);
+  const world=next.world,navy=next.navy,graph=armyGeographyFor47({...r,world}).graph;
   const fleetPositions:ArmyPositions47={version:1,binding:r.armyPositions.binding,revision:0,records:{}};
   // The graph constructor preserves wet face n as cell2n+1. Use that exact
   // identity: tolerance-based global picking can select a land half at a very

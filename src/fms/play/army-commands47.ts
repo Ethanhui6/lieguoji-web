@@ -3,8 +3,8 @@ import type {War46Run} from './war46-model';
 import type {ArmyPositions47} from './army-presence47';
 import {readArmySpace47, type ArmySpace47, type LocatedArmy47} from './army-space47';
 import {armySpatialFor47} from './army-geography47';
-import {armyTravelPathPoints47, type TravelCell47, type TravelPolicy47} from './army-travel47-graph';
-import {advanceArmyTravel47, armyTravelLocation47, haltArmyTravel47, redirectArmyTravel47} from './army-travel47-state';
+import {armyTravelPathPoints47, createArmyTravelSearch47, type TravelCell47, type TravelPolicy47} from './army-travel47-graph';
+import {advanceArmyTravel47, armyTravelLocation47, beginArmyTravel47, haltArmyTravel47, redirectArmyTravel47} from './army-travel47-state';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import type {ForceContacts47} from './force-motion47';
@@ -54,7 +54,22 @@ function safeRetreatEnd(r: ArmyMotionRun47, here: LocatedArmy47, space: ArmySpac
   return !!here.province && !engaged(r, here.army) && militaryAccess46(r)(r.world, here.army.nationId, here.province.controller) &&
     !(space.land.get(here.province.id) ?? []).some(v => v.army.status !== 'retreating' && nationsAtWar(r.world, here.army.nationId, v.army.nationId));
 }
-function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47) {
+/** Private owned-phase optimization; never accepted in a Worker command.
+ * A preview and its immediately issued order can share a search. It cannot be
+ * reused after another order, tick, position revision or run replacement. */
+export function createArmyCommandSearch47(r:ArmyMotionRun47,weights:ArmyRouteWeights47,armyId:string){
+ const expected=armyStamp47(r),g=armySpatialFor47(r).graph,a=r.world.armies.find(a=>a.id===armyId);
+ if(!a)throw Error('寻路军队不存在。');
+ const start=armyTravelLocation47(r.armyPositions.records[armyId],g).cell.id;
+ const searches=new Map<boolean,ReturnType<typeof createArmyTravelSearch47>>();
+ return(run:ArmyMotionRun47,id:string,target:number,retreat:boolean)=>{
+  if(run!==r||id!==armyId)throw Error('寻路阶段已经更换。');assertExpected(run,expected);
+  if(!searches.has(retreat))searches.set(retreat,createArmyTravelSearch47(g,start,armyTravelPolicy47(r,a,weights,retreat)));
+  return searches.get(retreat)!(target);
+ };
+}
+type ArmyCommandSearch47=ReturnType<typeof createArmyCommandSearch47>;
+function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47,search?:ArmyCommandSearch47) {
   assertWritable(r); actionSchema(action);
   const spatial = armySpatialFor47(r), space = readArmySpace47(r.world, spatial), here = space.byArmy.get(action.armyId);
   if (!here) throw Error('这支军队不存在或已失去战斗力。');
@@ -86,7 +101,8 @@ function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWe
   }
   if (target === undefined) throw Error('目标不在当前地图的实际海陆网格中。');
   if (target === here.travel.nodes.at(-1) && here.travel.status === 'moving') throw Error('军队正在前往这个目标。');
-  const travel = redirectArmyTravel47(here.travel, spatial.graph, target, armyTravelPolicy47(r, a, weights, action.kind === 'retreat'));
+  const path=search?.(r,a.id,target,action.kind==='retreat');
+  const travel = search?(path?beginArmyTravel47(a.id,path.nodes,spatial.graph,here.point):null):redirectArmyTravel47(here.travel, spatial.graph, target, armyTravelPolicy47(r, a, weights, action.kind === 'retreat'));
   if (!travel) throw Error(r.reorganization.active[a.id] ? '重编期间保留陆上行军，暂不能进入海域。' : '没有符合当前外交通行限制的海陆路线。');
   // A one-cell redirect explicitly stops at the exact point; do not draw a
   // fake trip back to the cell center when the movement primitive stays put.
@@ -94,10 +110,10 @@ function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWe
   return {spatial, a, travel, points, targetName};
 }
 
-export function previewArmyCommand47(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47): ArmyPreview47 {
+export function previewArmyCommand47(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47,search?:ArmyCommandSearch47): ArmyPreview47 {
   const basedOn = armyStamp47(r);
   try {
-    const value = resolve(r, action, weights), cells = action.type === 'army-halt' ? [armyTravelLocation47(value.travel, value.spatial.graph).cell.id] : value.travel.nodes.slice(value.travel.leg), hasSea = cells.some(id => value.spatial.graph.cells.get(id)!.surface === 'sea');
+    const value = resolve(r, action, weights,search), cells = action.type === 'army-halt' ? [armyTravelLocation47(value.travel, value.spatial.graph).cell.id] : value.travel.nodes.slice(value.travel.leg), hasSea = cells.some(id => value.spatial.graph.cells.get(id)!.surface === 'sea');
     return {valid: true, reason: action.type === 'army-halt' ? '在当前位置停止行军，保留这支军队和随身物资。' : `从当前位置前往${value.targetName}；途中遇敌、失去通行权或断粮会改变进程。`, basedOn, points: value.points, cells, distance: value.points.reduce((sum, p, i) => i ? sum + Math.hypot(p.x - value.points[i - 1].x, p.y - value.points[i - 1].y) : sum, 0), hasSea, warnings: hasSea ? ['海上消耗随身口粮，不能从上次靠岸的城市补给。'] : []};
   } catch (error) {
     return {valid: false, reason: error instanceof Error ? error.message : '军令无法执行。', basedOn, points: [], cells: [], distance: 0, hasSea: false, warnings: []};
@@ -133,10 +149,10 @@ export function applyArmyCommand47<T extends ArmyMotionRun47>(r: T, action: Army
 /** Private transaction owner only. Player commands and AI use identical actual
  * geography/permission/retreat checks; only player commands claim manual control.
  * Never expose this mutating entry directly to Worker messages or UI actions. */
-export function issueArmyOrderOwned47(next:ArmyMotionRun47,action:ArmyCommand47,weights:ArmyRouteWeights47,source:'player'|'autonomous'):void {
+export function issueArmyOrderOwned47(next:ArmyMotionRun47,action:ArmyCommand47,weights:ArmyRouteWeights47,source:'player'|'autonomous',search?:ArmyCommandSearch47):void {
   if(source!=='player'&&source!=='autonomous')throw Error('军令来源无效。');
   if(source==='autonomous'&&next.voyages.manualArmies.includes(action.armyId))throw Error('玩家接管的军队不能被自动军令覆盖。');
-  const value=resolve(next,action,weights);
+  const value=resolve(next,action,weights,search);
   if (next.world.nextEventId >= Number.MAX_SAFE_INTEGER) throw Error('事件编号已达安全上限，已保留原世界。');
   next.armyPositions.records[action.armyId] = value.travel;
   // Legacy fields remain valid historical references, never fake sea routes.

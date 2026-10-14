@@ -7,7 +7,7 @@ import {buildArmyTravelGraph47} from './army-travel47-graph';
 import {initialArmyPositions47} from './army-presence47';
 import {armySpatialFor47} from './army-geography47';
 import {readArmySpace47} from './army-space47';
-import {armyStamp47, previewArmyCommand47, applyArmyCommand47, advanceArmyMovement47, type ArmyCommand47, type ArmyRouteWeights47} from './army-commands47';
+import {armyStamp47, previewArmyCommand47, applyArmyCommand47, advanceArmyMovement47, createArmyCommandSearch47,issueArmyOrderOwned47,type ArmyCommand47, type ArmyRouteWeights47} from './army-commands47';
 import {createArmyEconomy47} from './war47-economy';
 import {advanceTacticsOccupation47} from './war47-occupation';
 import {initialOccupation} from './occupation';
@@ -35,6 +35,16 @@ const at = (r: ReturnType<typeof fixture>['run'], id: string) => readArmySpace47
 const silent = () => {};
 
 describe('Army47 intent preview and atomic confirmation', () => {
+  it('shares searches only in the same owned phase and rejects reuse after an issued order',()=>{
+    const {run,move,armyId}=fixture(),search=createArmyCommandSearch47(run,weights,armyId);
+    for(const p of run.world.provinces.slice(0,8)){
+      const action={...move,target:{kind:'province',id:p.id}} as ArmyCommand47;expect(previewArmyCommand47(run,action,weights,search)).toEqual(previewArmyCommand47(run,action,weights));
+    }
+    const before=structuredClone(run),preview=previewArmyCommand47(run,move,weights,search);expect(preview.valid).toBe(true);expect(run).toEqual(before);
+    issueArmyOrderOwned47(run,move,weights,'autonomous',search);
+    const newer={...move,target:{kind:'province',id:run.world.provinces[0].id}} as ArmyCommand47;
+    expect(previewArmyCommand47(run,newer,weights,search).valid).toBe(false);
+  });
   it('previews without mutation, then takes over the old route and plan without resetting identity or resources', () => {
     const {run, move, armyId} = fixture(), army = run.world.armies[0];
     army.route = [run.world.provinces.find(p => p.id !== army.provinceId)!.id]; army.progress = .3;

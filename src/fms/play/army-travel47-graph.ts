@@ -66,20 +66,36 @@ const permitted=(n:TravelCell47,p:TravelPolicy47)=>n.surface==='sea'?p.allowSea:
  * the unscaled native octile A* heuristic is not admissible for .02 sea-route
  * edges. Native equal-cost tie order/cache are not claimed reproduced. */
 export function findArmyTravelPath47(g:TravelGraph47,start:number,end:number,p:TravelPolicy47):{nodes:number[];cost:number}|null{
- const first=g.cells.get(start),last=g.cells.get(end);if(!first||!last||!permitted(first,{...p,canEnter:()=>true})||!permitted(last,p))return null;
+ return createArmyTravelSearch47(g,start,p)(end);
+}
+/** One immutable decision phase and origin. Continue the same ordered Dijkstra
+ * frontier for successive targets; discard on any policy/geography change.
+ * Settled routes retain the exact Float32 costs and equal-cost node ordering. */
+export function createArmyTravelSearch47(g:TravelGraph47,start:number,p:TravelPolicy47){
+ const first=g.cells.get(start),allowed=new Map<string,boolean>();
+ const enter=(n:TravelCell47)=>{if(n.surface==='sea')return p.allowSea;if(!p.allowLand)return false;const id=n.provinceId!;if(!allowed.has(id))allowed.set(id,p.canEnter(id));return allowed.get(id)!;};
+ const valid=!!first&&permitted(first,{...p,canEnter:()=>true});
  const cost=new Map([[start,0]]),prev=new Map<number,number>(),heap:{id:number;cost:number}[]=[];
+ const settled=new Set<number>();
  const before=(a:{id:number;cost:number},b:{id:number;cost:number})=>a.cost<b.cost||a.cost===b.cost&&a.id<b.id;
  const push=(v:{id:number;cost:number})=>{let i=heap.length;heap.push(v);while(i){const j=(i-1)>>1;if(!before(v,heap[j]))break;heap[i]=heap[j];i=j;}heap[i]=v;};
  const pop=()=>{const v=heap[0],tail=heap.pop()!;if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&before(heap[j+1],heap[j]))j++;if(!before(heap[j],tail))break;heap[i]=heap[j];i=j;}heap[i]=tail;}return v;};
- push({id:start,cost:0});while(heap.length){const current=pop();if(cost.get(current.id)!==current.cost)continue;if(current.id===end){const nodes=[end];while(nodes[0]!==start)nodes.unshift(prev.get(nodes[0])!);return{nodes,cost:current.cost};}
-  const a=g.cells.get(current.id)!;for(const link of a.links){const b=g.cells.get(link.to)!;if(!permitted(b,p))continue;
+ if(valid)push({id:start,cost:0});
+ return(end:number):{nodes:number[];cost:number}|null=>{
+ const last=g.cells.get(end);if(!valid||!last||!enter(last))return null;
+ while(!settled.has(end)&&heap.length){const current=pop();if(cost.get(current.id)!==current.cost||settled.has(current.id))continue;settled.add(current.id);
+  // Expand even the requested target so a later query can continue from it.
+  const a=g.cells.get(current.id)!;for(const link of a.links){const b=g.cells.get(link.to)!;if(!enter(b)||settled.has(b.id))continue;
    // Native weights use cell-coordinate distance, while web movement follows
    // both sides of the real gate. Keep cost units in source terrain space.
    const from={x:a.center.x/g.scale,y:a.center.y/g.scale},to={x:b.center.x/g.scale,y:b.center.y/g.scale};
    const value=nativeArmyRouteCost(nativeArmyCellDistance(from,to),b.surface==='sea'&&p.oceanRouteFaces.has(b.face),p.preferPorts,a.surface!==b.surface,p.portSeaFaces.has((a.surface==='sea'?a:b).face));
    const next=Math.fround(current.cost+value);if(!Number.isFinite(next))throw Error('行军路径代价溢出。');if(next<(cost.get(b.id)??Infinity)){cost.set(b.id,next);prev.set(b.id,a.id);push({id:b.id,cost:next});}
   }
- }return null;
+ }
+ if(!settled.has(end))return null;
+ const nodes=[end];while(nodes.at(-1)!==start)nodes.push(prev.get(nodes.at(-1)!)!);nodes.reverse();return{nodes,cost:cost.get(end)!};
+ };
 }
 export function armyTravelPathPoints47(g:TravelGraph47,nodes:readonly number[]):Point[]{
  const points:Point[]=[];nodes.forEach((id,i)=>{const n=g.cells.get(id);if(!n)throw Error('行军路径格不存在。');if(i){const link=g.cells.get(nodes[i-1])!.links.find(v=>v.to===id);if(!link)throw Error('行军路径不相邻。');points.push({...link.gate});}points.push({...n.center});});return points;

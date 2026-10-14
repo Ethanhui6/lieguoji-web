@@ -1,0 +1,81 @@
+
+Running 4 tests using 1 worker
+
+(node:26520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-full-map.spec.ts:6:1 › FMS full-world terrain stays a cancellable edit and survives undo, redo, and reload (11.2s)
+  x  2 [desktop-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation (3.1m)
+(node:29620) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [mobile-chromium] › tests\fms-full-map.spec.ts:6:1 › FMS full-world terrain stays a cancellable edit and survives undo, redo, and reload (10.6s)
+  x  4 [mobile-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation (3.1m)
+
+
+  1) [desktop-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation 
+
+    Test timeout of 180000ms exceeded.
+
+    Error: locator.click: Test timeout of 180000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '继续文化世界', exact: true })
+
+
+      125 |   await page.reload();
+      126 |   await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
+    > 127 |   await page.getByRole('button',{name:'继续文化世界',exact:true}).click();
+          |                                                             ^
+      128 |   await expect(app).toHaveAttribute('data-tick',tick,{timeout:120000});
+      129 |   await expect(map).toHaveAttribute('data-force-positions',positions!);
+      130 |   await page.screenshot({path:resolve(evidence,'07-restored-live-world.png'),fullPage:true});
+        at D:\游戏\架空地图模拟器\tests\fms-full-map.spec.ts:127:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [mobile-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation 
+
+    Test timeout of 180000ms exceeded.
+
+    Error: locator.click: Test timeout of 180000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '继续文化世界', exact: true })
+
+
+      125 |   await page.reload();
+      126 |   await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
+    > 127 |   await page.getByRole('button',{name:'继续文化世界',exact:true}).click();
+          |                                                             ^
+      128 |   await expect(app).toHaveAttribute('data-tick',tick,{timeout:120000});
+      129 |   await expect(map).toHaveAttribute('data-force-positions',positions!);
+      130 |   await page.screenshot({path:resolve(evidence,'07-restored-live-world.png'),fullPage:true});
+        at D:\游戏\架空地图模拟器\tests\fms-full-map.spec.ts:127:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-mobile-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-mobile-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\fms-full-map-a-default-ful-e182e-and-advance-live-simulation-mobile-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation 
+    [mobile-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation 
+  2 passed (6.6m)

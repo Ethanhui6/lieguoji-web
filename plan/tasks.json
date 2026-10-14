@@ -3485,7 +3485,9 @@
               "docs/evidence/fms-paper-ocean47-2026-10-13/RESULT.md",
               "docs/evidence/fms-paper-ocean47-2026-10-13/verification.json",
               "docs/evidence/fms-land-component-camera47-2026-10-13/RESULT.md",
-              "docs/evidence/fms-land-component-camera47-2026-10-13/verification.json"
+              "docs/evidence/fms-land-component-camera47-2026-10-13/verification.json",
+              "docs/evidence/fms-full-map47-2026-10-14/RESULT.md",
+              "docs/evidence/fms-full-map47-2026-10-14/verification.json"
             ],
             "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。"
           },
@@ -4762,7 +4764,9 @@
               "docs/evidence/fms-pacing47-2026-10-11/verification.json",
               "docs/evidence/fms-pacing47-2026-10-11/continuous-army-playback.webm",
               "docs/evidence/fms-render-cadence47-2026-10-11/RESULT.md",
-              "docs/evidence/fms-render-cadence47-2026-10-11/verification.json"
+              "docs/evidence/fms-render-cadence47-2026-10-11/verification.json",
+              "docs/evidence/fms-full-map47-2026-10-14/RESULT.md",
+              "docs/evidence/fms-full-map47-2026-10-14/verification.json"
             ],
             "progressScope": "2026-10-10 latest: user-requested 4x playback base, owned occupation and certified static clone reuse; 114 related tests, 8 browser cases, exact24-day normal-map prior-engine state/trace comparison. Actual speed still below target and higher multipliers compute-limited. Read culture47PaceBaselineCheckpoint. 2026-10-09 latest: phase-query reuse and variable-batch continuous motion are playable in real47 UI/Worker/save; 107 related tests, 8 final browser cases, fixed normal-map 8-day full state/trace equality. Actual browser throughput still below target. Read culture47PhaseWorkCheckpoint. 保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
           },
@@ -4974,7 +4978,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47LandComponentCameraCheckpoint, latest AUTO_HANDOFF and fms-land-component-camera47 RESULT+verification, then verify Git and local preview. Source 9871d81; user canceled upload, so no GitHub/Pages/Cloudflare write. WEB-02-02 remains todo/partial, WEB-04-37 in progress, WEB-04-21 blocked; PH05/physical iPhone/visual/publish gates unchanged. Camera now frames significant actual h20 land components, desktop clearer but mobile unchanged. Default one-click land is 45278.84/1536²=1.919%; whole-map remains tiny and capitals on microislands remain visible. Next measure existing recovered full-map terrain generator against click mode with fixed seed: land fraction, connectedness, coastline quality, build time and founding capacity. Only if evidence supports it, expose an optional preview/cancel/undo whole-world creation mode, preserving click mode and old saves. 4x throughput remains unmet. Full 445-file npm test was interrupted previously and not rerun; do not claim full pass.",
+    "nextRecoveryTarget": "Read culture47FullMapCheckpoint and latest AUTO_HANDOFF, verify Git and current local service. Source 07603cfb24b1c265ce3008367b068bff11705be5. Explicit full-map preview/cancel/undo plus 6-nation60-city live play and cold restore verified locally; physical phone, visual and full release gates remain open. User on2026-10-15 requests generation performance, occasional playback stall requiring pause/resume, army health and contact marker fixes. Profile one normal generated world, separate authoritative Worker vs presentation lag, preserve old engine journals and byte artifacts. WEB-04-37 stays in_progress; no push/Pages/Cloudflare.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -5065,11 +5069,22 @@
       "status": "local-acknowledged-force-playback-verified-war-task-in-progress",
       "scope": "Committed-route display and ordinary-frame diagnostic load only; no authoritative simulation, AI, combat, RNG or save-schema change.",
       "checks": {
-        "unit": {"passed": 22, "failed": 0},
+        "unit": {
+          "passed": 22,
+          "failed": 0
+        },
         "typecheck": true,
         "lint": true,
-        "build": {"passed": true, "approvedArtifacts": 85},
-        "desktopChromium": {"motion": "passed", "normalGeneratedWarWorldAndRecovery": "passed", "physicalIphone": false, "originalVisualParity": false}
+        "build": {
+          "passed": true,
+          "approvedArtifacts": 85
+        },
+        "desktopChromium": {
+          "motion": "passed",
+          "normalGeneratedWarWorldAndRecovery": "passed",
+          "physicalIphone": false,
+          "originalVisualParity": false
+        }
       },
       "result": "Player-issued reachable march at 4x had 7/9/11/9/14 distinct confirmed poses in five sampled 480-tick intervals; all display ticks remained <= authoritative tick; paused picking and save/reload world regression passed.",
       "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; separate browser origin from old saves; no push, Pages, Cloudflare or production write.",
@@ -5090,9 +5105,18 @@
       "checks": {
         "typecheck": true,
         "lint": true,
-        "build": {"passed": true, "approvedArtifacts": 85},
-        "desktopChromium": {"motion": "passed", "normalWarWorldAndSaveRecovery": "passed"},
-        "mobileSizeChromium": {"normalWarWorldAndSaveRecovery": "passed", "physicalIphone": false}
+        "build": {
+          "passed": true,
+          "approvedArtifacts": 85
+        },
+        "desktopChromium": {
+          "motion": "passed",
+          "normalWarWorldAndSaveRecovery": "passed"
+        },
+        "mobileSizeChromium": {
+          "normalWarWorldAndSaveRecovery": "passed",
+          "physicalIphone": false
+        }
       },
       "observedPacing": "Same seed 1337, six-country 60-city war world at 4x: two prior ten-second desktop runs accepted 3 and 4 four-day batches; candidate accepted 8. Main-thread long tasks remain frequent. Not a phone, original-game or repeatable FPS guarantee.",
       "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; old saves/ports unchanged; no push, Pages or production write.",
@@ -5111,14 +5135,30 @@
       "status": "local-land-framing-and-map-pick-verified-full-war-task-in-progress",
       "scope": "First-entry camera from real land vertices only; saved view and whole-world control remain, terrain and simulation data unchanged.",
       "checks": {
-        "unit": {"passed": 2, "failed": 0},
+        "unit": {
+          "passed": 2,
+          "failed": 0
+        },
         "typecheck": true,
         "lint": true,
-        "build": {"passed": true, "approvedArtifacts": 85},
-        "mobileSizeChromium": {"normalWarWorldAndSaveRecovery": "passed", "landPickingAndWholeWorldFit": "passed", "physicalIphone": false, "originalVisualParity": false},
-        "desktopChromium": {"landPickingAndWholeWorldFit": "passed"}
+        "build": {
+          "passed": true,
+          "approvedArtifacts": 85
+        },
+        "mobileSizeChromium": {
+          "normalWarWorldAndSaveRecovery": "passed",
+          "landPickingAndWholeWorldFit": "passed",
+          "physicalIphone": false,
+          "originalVisualParity": false
+        },
+        "desktopChromium": {
+          "landPickingAndWholeWorldFit": "passed"
+        }
       },
-      "measuredCitySpanCssPx": {"landFramed": 285.24073984939673, "wholeWorld": 81.30226632356639},
+      "measuredCitySpanCssPx": {
+        "landFramed": 285.24073984939673,
+        "wholeWorld": 81.30226632356639
+      },
       "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; old ports/saves unchanged; no push, Pages or production write.",
       "evidence": [
         "docs/evidence/fms-land-camera47-2026-10-11/RESULT.md",
@@ -5137,11 +5177,26 @@
       "checks": {
         "typecheck": true,
         "lint": true,
-        "build": {"passed": true, "approvedArtifacts": 85},
-        "mobileSizeChromium": {"portraitDetailAndCityPick": "passed", "normalWarWorldAndSaveRecovery": "passed", "physicalIphone": false, "originalVisualParity": false},
-        "desktopChromium": {"normalWarWorldAndSaveRecovery": "passed"}
+        "build": {
+          "passed": true,
+          "approvedArtifacts": 85
+        },
+        "mobileSizeChromium": {
+          "portraitDetailAndCityPick": "passed",
+          "normalWarWorldAndSaveRecovery": "passed",
+          "physicalIphone": false,
+          "originalVisualParity": false
+        },
+        "desktopChromium": {
+          "normalWarWorldAndSaveRecovery": "passed"
+        }
       },
-      "measuredCssPx": {"collapsedHeight": 285.2499694824219, "expandedHeight": 594, "shortScreenExpandedTop": 154, "shortScreenNationBarBottom": 144},
+      "measuredCssPx": {
+        "collapsedHeight": 285.2499694824219,
+        "expandedHeight": 594,
+        "shortScreenExpandedTop": 154,
+        "shortScreenNationBarBottom": 144
+      },
       "localBoundary": "http://127.0.0.1:5315/?fms=1 on this PC only; old ports/saves unchanged; user canceled upload; no push, Pages, Cloudflare or production write.",
       "evidence": [
         "docs/evidence/fms-mobile-sheet47-2026-10-11/RESULT.md",
@@ -5158,11 +5213,21 @@
       "status": "local-portrait-news-compact-and-throughput-measured-full-war-task-in-progress",
       "scope": "Portrait headline one line and 44 CSS px; no Worker or save change.",
       "checks": {
-        "typecheck": "passed", "lint": "passed", "buildApprovedArtifacts": 85,
-        "mobileSheet": "1/1", "normalMobileWarWorld": "3/3", "desktopWarmThroughput": "1/1",
-        "physicalIphone": "not_run", "originalVisualParity": "not_accepted", "cloud": "not_run"
+        "typecheck": "passed",
+        "lint": "passed",
+        "buildApprovedArtifacts": 85,
+        "mobileSheet": "1/1",
+        "normalMobileWarWorld": "3/3",
+        "desktopWarmThroughput": "1/1",
+        "physicalIphone": "not_run",
+        "originalVisualParity": "not_accepted",
+        "cloud": "not_run"
       },
-      "measured": {"newsHeightCssPx": 44, "oneTimesDaysPerSecond": 3.4545824019508227, "fourTimesDaysPerSecond": 3.702846563295534},
+      "measured": {
+        "newsHeightCssPx": 44,
+        "oneTimesDaysPerSecond": 3.4545824019508227,
+        "fourTimesDaysPerSecond": 3.702846563295534
+      },
       "evidence": [
         "docs/evidence/fms-compact-news47-2026-10-12/RESULT.md",
         "docs/evidence/fms-compact-news47-2026-10-12/verification.json",
@@ -5262,8 +5327,14 @@
         "defaultLandArea": 45278.843550130565,
         "worldArea": 2359296,
         "landFraction": 0.01919167563126058,
-        "desktopInitialCitySpanBeforeAfterCssPx": [556.7123057305469, 988.554690784363],
-        "mobileInitialCitySpanBeforeAfterCssPx": [285.24073984939673, 282.8364809744149],
+        "desktopInitialCitySpanBeforeAfterCssPx": [
+          556.7123057305469,
+          988.554690784363
+        ],
+        "mobileInitialCitySpanBeforeAfterCssPx": [
+          285.24073984939673,
+          282.8364809744149
+        ],
         "limitation": "Same fixed geography but separate cultures may place cities differently; desktop visual improved, portrait barely changed; whole-map still small."
       },
       "evidence": [
@@ -11152,6 +11223,65 @@
         "tab": "8",
         "screenshot": "docs/evidence/fms-army-retirement47-2026-10-10/final-normal-world-day690.png"
       }
+    },
+    "culture47FullMapCheckpoint": {
+      "date": "2026-10-14",
+      "task": "WEB-04-37",
+      "sourceCommit": "07603cfb24b1c265ce3008367b068bff11705be5",
+      "buildMetadataCommit": "4cf8555c65851ef4aeb0c751555b7fadac0d78e9",
+      "engine": "3a65998ffc9db25e737cba63d38e5a30d4bd8bd4477ca63c05f7b18dc5f742e5",
+      "status": "local-full-map-edit-founding-and-cold-restore-verified",
+      "artifact": ".autopilot/fms-full-map47-checked",
+      "url": "http://127.0.0.1:5320/?fms=1",
+      "checks": {
+        "targeted": {
+          "files": 5,
+          "passed": 36,
+          "exitCode": 0,
+          "terminalSession": 54357
+        },
+        "regression": {
+          "files": 6,
+          "passed": 157,
+          "exitCode": 0
+        },
+        "types": {
+          "exitCode": 0
+        },
+        "lint": {
+          "exitCode": 0
+        },
+        "build": {
+          "exitCode": 0,
+          "approvedArtifacts": 90
+        },
+        "browser": {
+          "passed": 4,
+          "failed": 0
+        },
+        "newFrozenCompatibility": {
+          "passed": 3,
+          "failed": 0,
+          "engines": [
+            "2af7",
+            "5718",
+            "d736"
+          ]
+        },
+        "plan": {
+          "exitCode": 0
+        },
+        "fullSuite": "not_run",
+        "physicalIphone": "not_run",
+        "visualEquivalence": "not_accepted",
+        "cloud": "not_run"
+      },
+      "evidence": [
+        "docs/evidence/fms-full-map47-2026-10-14/RESULT.md",
+        "docs/evidence/fms-full-map47-2026-10-14/verification.json",
+        "docs/evidence/fms-full-map47-2026-10-14/measurement.json"
+      ],
+      "next": "2026-10-15 user: investigate slow generation, occasional playback stall relieved by pause/resume, army health and contact positions; retain same simulation/state checks and old-save protection."
     }
   }
 }

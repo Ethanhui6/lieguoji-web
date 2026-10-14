@@ -1,3 +1,13 @@
+# 当前检查点：整图生成、60城开局与冷恢复已本地验证；接续实际卡顿及战斗显示修复（2026-10-15）
+
+源码 07603cfb24b1c265ce3008367b068bff11705be5，分支 codex/ph06-world-generation。用户保留本地开发要求，未push、未Pages/Cloudflare写入。先读 webRebuild.culture47FullMapCheckpoint 与 [本批证据](evidence/fms-full-map47-2026-10-14/RESULT.md)。构建工作树基于4cf8555，引擎 3a65998ffc9db25e737cba63d38e5a30d4bd8bd4477ca63c05f7b18dc5f742e5，本机检查产物 .autopilot/fms-full-map47-checked；临时入口 http://127.0.0.1:5320/?fms=1，重启后重查服务，旧端口/旧档未覆盖。
+
+空白海洋可显式预览四种整图模板，计算可取消、原图对照、确认后撤销重做并保存。默认1337多大陆实际陆地25.27%，旧单点1.92%；四模板固定种子皆可划分60辖区。新局显式分区标记，原算法优先，几何停滞才回退；新标记保存识别及冷恢复已修，未知规则保护不放宽。针对性36+相关157，浏览器桌面/手机尺寸4/4，新增冻结引擎原规则继续/保存刷新3/3，typecheck/lint/build（90允许产物）、plan检查通过。完整测试未运行，真机、视觉、用户验收未过。WEB-02-02仍todo/部分证据、WEB-04-37仍in_progress、WEB-04-21blocked，发布锁不变。
+
+最新用户明确要求：解决生成慢、偶尔卡顿须暂停再开始、军队血量及交战点，并排查相关遗漏。下一批以同一正常整图战乱世界测 Worker/主线程/显示时间，不用缩小实际地图、跳日或假血条掩盖。先复现并找原因；真实47交锋未接旧陆军血条，当前交战标记按行政区合并需要核对。保留刚检查产物，改规则或源指纹前冻结真实worker；不得读取用户个人档、认证/SDK配置或修改原安装包。
+
+---
+
 # 当前检查点：开局以显著陆地连片取景；默认地图真实陆地仅 1.92%（2026-10-13）
 
 用户取消上传，本轮仅本地开发。源码提交 `9871d81`，分支 `codex/ph06-world-generation`；没有 push、Pages、Cloudflare、正式站或旧档变更。先核实 Git，读 `webRebuild.culture47LandComponentCameraCheckpoint`、[结果](evidence/fms-land-component-camera47-2026-10-13/RESULT.md) 与 `verification.json`。本机临时预览 **http://127.0.0.1:4173/?fms=1** 于本批 HTTP 200，仅当前电脑；续接须重查服务，端口存储与旧入口隔离。

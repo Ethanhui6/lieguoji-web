@@ -1,0 +1,13 @@
+
+Running 4 tests using 1 worker
+
+(node:24476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chromium] › tests\fms-full-map.spec.ts:6:1 › FMS full-world terrain stays a cancellable edit and survives undo, redo, and reload (10.0s)
+  ok 2 [desktop-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation (2.0m)
+(node:33996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [mobile-chromium] › tests\fms-full-map.spec.ts:6:1 › FMS full-world terrain stays a cancellable edit and survives undo, redo, and reload (11.0s)
+  ok 4 [mobile-chromium] › tests\fms-full-map.spec.ts:92:1 › a default full-world map can found countries and advance live simulation (1.5m)
+
+  4 passed (4.0m)

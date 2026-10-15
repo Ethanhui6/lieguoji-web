@@ -43,4 +43,10 @@ describe('battle density follows the camera without changing combat',()=>{
   const visible=visibleCombatMarkers47(markers,r,1,{x:0,y:0,scale:1},{width:300,height:300});expect(visible).toHaveLength(2);
   expect(visible[0]).toMatchObject({point:markers[0].point,participants:3});expect(visible[1].point).toEqual(markers[2].point);
  });
+ it('does not confuse naval ranking weight with five thousand troops in the overview',()=>{
+  const fleets=[{id:'f1',ships:1,status:'sailing'},{id:'f2',ships:1,status:'sailing'}],naval={world,navy:{fleets}} as unknown as FoundingForces47;
+  const markers=[{...marker('sea/3/1',10,'a','b'),pairs:[[JSON.stringify(['fleet','f1']),JSON.stringify(['fleet','f2'])]] as [string,string][]}];
+  expect(visibleCombatMarkers47(markers,naval,1,{x:0,y:0,scale:.1},{width:300,height:300})).toEqual([]);
+  fleets[0].ships=4;expect(visibleCombatMarkers47(markers,naval,1,{x:0,y:0,scale:.1},{width:300,height:300})).toHaveLength(1);
+ });
 });

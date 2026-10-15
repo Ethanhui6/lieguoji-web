@@ -31,9 +31,9 @@ export function displayCombatMarkers47(markers:readonly CombatMarker47[],points:
  * far-away skirmishes and combine nearby marks of the same actual site. Use a
  * representative real contact point, never an average across distant battles. */
 export function visibleCombatMarkers47(markers:readonly CombatMarker47[],r:Pick<FoundingForces47,'world'|'navy'>,mapScale:number,camera:{x:number;y:number;scale:number},viewport:{width:number;height:number}):CombatMarker47[]{
- const detail=warDetail(r.world,mapScale,camera.scale),strength=new Map<string,number>();
- for(const a of r.world.armies)strength.set(JSON.stringify(['army',a.id]),a.status==='destroyed'?0:a.troops);
- for(const f of r.navy.fleets)strength.set(JSON.stringify(['fleet',f.id]),f.status==='lost'?0:f.ships*5000);
+ const detail=warDetail(r.world,mapScale,camera.scale),strength=new Map<string,number>(),ships=new Map<string,number>(),armies=new Set<string>();
+ for(const a of r.world.armies){const key=JSON.stringify(['army',a.id]);strength.set(key,a.status==='destroyed'?0:a.troops);if(a.troops>0&&a.status!=='destroyed')armies.add(key);}
+ for(const f of r.navy.fleets){const key=JSON.stringify(['fleet',f.id]),count=f.status==='lost'?0:f.ships;ships.set(key,count);strength.set(key,count*5000);}
  const forces=(m:CombatMarker47)=>new Set((m.pairs??[]).flat()),weight=(m:CombatMarker47)=>[...forces(m)].reduce((n,id)=>n+(strength.get(id)??0),0);
  const ranked=[...markers].sort((a,b)=>weight(b)-weight(a)||a.id.localeCompare(b.id)),result:CombatMarker47[]=[];
  for(const m of ranked){
@@ -44,5 +44,5 @@ export function visibleCombatMarkers47(markers:readonly CombatMarker47[],r:Pick<
   if(group&&m.kind==='contact'){group.pairs=[...(group.pairs??[]),...(m.pairs??[])];group.participants=forces(group).size;}
   else if(m.kind==='contact'||detail!=='overview')result.push({...m,pairs:m.pairs?.slice()});
  }
- return result.filter(m=>detail!=='overview'||m.kind==='contact'&&(m.participants>=4||weight(m)>=5000)).slice(0,detail==='overview'?8:detail==='regional'?20:64);
+ return result.filter(m=>{if(detail!=='overview')return true;if(m.kind!=='contact')return false;const ids=[...forces(m)],land=ids.filter(id=>armies.has(id));return land.length>=4||land.reduce((n,id)=>n+(strength.get(id)??0),0)>=5000||ids.reduce((n,id)=>n+(ships.get(id)??0),0)>=5;}).slice(0,detail==='overview'?8:detail==='regional'?20:64);
 }

@@ -1,3 +1,15 @@
+# 当前检查点：详细还原提示词已执行首批；地图地名改墨色并验证稳定性（2026-10-15）
+
+用户要求“继续朝原作设计，写详细提示词并执行”。本批源码 `187b72e9d15e114d13954a8eed2d27adb36e6072`，分支 `codex/ph06-world-generation`。续接先核实Git/服务，读取 `webRebuild.culture47MapTypographyCheckpoint`、[详细提示词](FMS_ORIGINAL_STYLE_EXECUTION_PROMPT_2026-10-15.md)、[结果及对照](evidence/fms-map-typography47-2026-10-15/RESULT.md)和verification。旧整图闭环及下节性能/战斗显示修复已保留，不重建。无push、Pages/Cloudflare、main、原作安装包或个人档写入。
+
+政治地图普通地名用黑褐墨色/常规字重/细浅边，首都减薄描边，地形模式独立可读样式；国名连片/方向/锚点、地图与模拟数据不变。两种尺寸同一自建世界，在全景/4/16/40倍逐项确认相机、名字、坐标、tick、部队前后相同；平移24×17时33个连片锚点不变。桌面与428×926竖屏均真实城市点选、视图切换、推进tick600、保存冷恢复位置一致，无页面异常。新局浏览器1/1、冻结b489旧引擎继续/保存恢复1/1、定向5文件23项、typecheck/lint/build92允许产物通过；任务与发布检查见本批最终verification。未跑完整套件/真机/原作视觉验收。
+
+检查产物 `.autopilot/fms-map-typography47-checked`，本机入口 **http://127.0.0.1:5331/?fms=1**；build元数据精确绑定187b72e，新引擎b40d1ffdfeacd50d7c7a0589f2aacae8414ed9ea6fc352d9a5cdeca34819f95f。原b489实际Worker字节1,411,371/sha b60be7d8053c2e2c7e5d1e8bcf7cf9d71592b3a89f46ae9d41d8c79257e08857已冻结，不静默改旧档；26项冻结字节检查通过。5330/5320旧产物保留。仅本机，不是手机可访问地址，续接重查监听。
+
+仍有明显折线海岸、粗地形色块、稀疏近景城市和UI占图；顶部提示/快讯的冷启动播放时刻不同，不把前后UI截图称同一动画帧。字体依赖系统回退，真机可读性与用户主观验收尚未完成。下一批按详细提示词核实同输入海岸/地形/近景差距，选一项量测后实际改进；可复现玩法阻断优先。WEB-02-02保持todo/部分证据，WEB-04-37 in_progress、WEB-04-21 blocked、4×目标与真机/视觉/全部发布锁保持。
+
+---
+
 # 当前检查点：建国与首批推进提速，兵力条和交战标记已接真实47数据（2026-10-15）
 
 用户取消上传，本批仅本地。源码提交 c3d44e1bf2bb3bafe0b425d87f6ee266350bb9cd，分支 codex/ph06-world-generation；只读原作方法分析，安装包未写入，个人档/旧站/旧入口保留。续接读 webRebuild.culture47LiveFixesCheckpoint、[结果](evidence/fms-live-fixes47-2026-10-15/RESULT.md) 和 verification.json，先核实 Git 和服务。当前检查产物 .autopilot/fms-live-fixes47-checked，引擎 b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639；本机试玩 http://127.0.0.1:5330/?fms=1，重新启动后重查。上一版5320继续保留。构建元数据仍绑定 03a5b4bb5371dc9879e22e73f8dd12e70934ecf6，实际改动提交见 sourceCommit；不是云端构建。

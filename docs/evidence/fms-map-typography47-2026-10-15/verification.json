@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-15",
+  "sourceCommit": "187b72e9d15e114d13954a8eed2d27adb36e6072",
+  "buildMetadataCommit": "187b72e9d15e114d13954a8eed2d27adb36e6072",
+  "engine": "b40d1ffdfeacd50d7c7a0589f2aacae8414ed9ea6fc352d9a5cdeca34819f95f",
+  "artifact": ".autopilot/fms-map-typography47-checked",
+  "url": "http://127.0.0.1:5331/?fms=1",
+  "scope": "Local only; fresh synthetic context; no personal saves or installation writes.",
+  "checks": {
+    "unit": {
+      "files": 5,
+      "passed": 23,
+      "exit": 0
+    },
+    "typecheck": {
+      "exit": 0
+    },
+    "lint": {
+      "exit": 0
+    },
+    "build": {
+      "exit": 0,
+      "approvedArtifacts": 92
+    },
+    "beforeAfterBrowser": {
+      "contexts": 4,
+      "passed": 4,
+      "emulatedPortrait": 2
+    },
+    "originalEngineBrowser": {
+      "passed": 1,
+      "engine": "b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639"
+    },
+    "newWorldBrowser": {
+      "passed": 1,
+      "scope": "Desktop Chromium default full-map6nations60cities, actual advance, save and cold reload"
+    },
+    "fullSuite": "not_run",
+    "physicalIphone": "not_run",
+    "originalVisualAcceptance": "not_accepted",
+    "cloud": "not_run",
+    "plan": {
+      "exit": 0
+    },
+    "test-plan": {
+      "exit": 0,
+      "passed": 15
+    },
+    "test-release": {
+      "exit": 0,
+      "passed": 24
+    }
+  },
+  "comparison": [
+    {
+      "device": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "matchedViews": [
+        1,
+        4,
+        16,
+        40
+      ],
+      "sameWorldCameraNamesAndForces": true,
+      "pan": {
+        "dx": 24,
+        "dy": 17,
+        "stableAnchors": 33,
+        "countryBoxes": 33
+      },
+      "selected": {
+        "id": "c-0",
+        "name": "松阳"
+      },
+      "reloaded": {
+        "tick": "600",
+        "exactForces": true
+      },
+      "errors": []
+    },
+    {
+      "device": "portrait",
+      "viewport": {
+        "width": 428,
+        "height": 926
+      },
+      "matchedViews": [
+        1,
+        4,
+        16,
+        40
+      ],
+      "sameWorldCameraNamesAndForces": true,
+      "pan": {
+        "dx": 24,
+        "dy": 17,
+        "stableAnchors": 33,
+        "countryBoxes": 33
+      },
+      "selected": {
+        "id": "c-0",
+        "name": "云阳"
+      },
+      "reloaded": {
+        "tick": "600",
+        "exactForces": true
+      },
+      "errors": []
+    }
+  ],
+  "frozen": {
+    "engine": "b489d7b7275b84a86dc1f5472412ef474d132757461106f57ea52c05bd437639",
+    "file": "engine-b489.js",
+    "bytes": 1411371,
+    "sha256": "b60be7d8053c2e2c7e5d1e8bcf7cf9d71592b3a89f46ae9d41d8c79257e08857",
+    "source": ".autopilot\\fms-live-fixes47-checked\\assets\\culture47.worker-Byfkgjjh.js",
+    "byteEqual": true,
+    "registered": 26
+  },
+  "limitations": [
+    "Map text visual adaptation only; original geography, shaders, city density and overall appearance still differ.",
+    "Screen UI toast/news playback timing differs between cold loads; map camera, names, actual world and tick matched exactly.",
+    "Font fallback depends on installed system fonts; no new font package or original-font equivalence claim.",
+    "Portrait428x926 is desktop Chromium emulation, not iPhone Safari or Chrome."
+  ]
+}

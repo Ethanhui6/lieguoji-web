@@ -35,7 +35,7 @@
 - 候选分别点击真实“松阳”“云阳”打开对应城市/国家详情，切换政治/地形显示，再连续推进到tick600。保存冷恢复后tick与实际部队位置精确一致，两种尺寸页面异常均0。
 - 新引擎新建整图6国60城、实际推进、保存刷新恢复，桌面Chromium专用流程1/1通过（49.1秒是整条测试耗时，不能称世界创建耗时）。
 - 单独使用实际冻结原`b489` Worker创建、继续、保存、刷新，保留原engine/id/history的浏览器回归1/1通过。
-- `plan:check`、`test:plan`（15/15）和`test:release`（24/24）通过。实际检查日志保存为本目录的11个`.txt`文件，路径见[verification.json](verification.json)的`logs`；截图和日志的字节数及SHA256见[artifact-checksums.json](artifact-checksums.json)。完整测试套件未重跑；没有真实云端CI或手机真机结果。
+- `plan:check`、`test:plan`（15/15）和`test:release`（24/24）通过。实际检查日志保存为本目录的11个`.txt`文件，路径见[verification.json](verification.json)的`logs`；只规范换行和行尾空白，原`.log`仍在本地。截图和这些文本的字节数及SHA256见[artifact-checksums.json](artifact-checksums.json)。完整测试套件未重跑；没有真实云端CI或手机真机结果。
 
 原`b489`字节已冻结到 `compat/culture47/engine-b489.js`：1,411,371字节，SHA256 `b60be7d8053c2e2c7e5d1e8bcf7cf9d71592b3a89f46ae9d41d8c79257e08857`。来源是实际检查产物原字节，未替换指纹常量；注册表现为26项。仅因本项目保守运行源指纹涵盖地图TS，排版变化也创建新引擎标识，旧世界仍由其原Worker运行。
 

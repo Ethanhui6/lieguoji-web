@@ -11485,8 +11485,10 @@
         },
         "beforeAfterBrowser": {
           "contexts": 4,
-          "passed": 4,
-          "emulatedPortrait": 2
+          "baselineCaptureContexts": 2,
+          "candidateFunctionalContexts": 2,
+          "candidateFunctionalPassed": 2,
+          "emulatedPortraitContexts": 2
         },
         "originalEngineBrowser": {
           "passed": 1,

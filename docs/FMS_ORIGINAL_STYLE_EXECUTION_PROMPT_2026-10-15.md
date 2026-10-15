@@ -93,4 +93,4 @@
 - 地图文字：`src/fms/play/map.ts`、`territory-axis.ts`、`territory-labels.ts`、`city-labels.ts`、`map-label-layout.ts`。
 - 当前世界绘制、操作：`src/fms/play/CultureWorld47.tsx`；原旧局入口：`src/fms/play/FmsGame.tsx`。
 - 浏览器稳定性既有检查：`tests/fms-cartography.spec.ts`、`tests/fms-full-map.spec.ts`、`tests/fms-culture47-compat.spec.ts`。旧入口检查不能代替当前47入口。
-- 正式记录会在本批实际检查后追加到 `docs/evidence/fms-map-typography47-2026-10-15/`，本文件不预先宣布其通过。
+- 首批已执行：源码 `187b72e9d15e114d13954a8eed2d27adb36e6072`，结果、同视角截图、检查日志与未通过边界见 `docs/evidence/fms-map-typography47-2026-10-15/RESULT.md`、`verification.json`。后续执行仍须刷新Git与交接，不用本文编写时的基线覆盖最新状态。

@@ -1,0 +1,2 @@
+{"stage":"before","device":"desktop","tick":"0","cityCount":60,"pan":null,"selected":null,"reloaded":null,"errors":[]}
+{"stage":"before","device":"portrait","tick":"0","cityCount":60,"pan":null,"selected":null,"reloaded":null,"errors":[]}

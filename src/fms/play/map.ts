@@ -148,6 +148,18 @@ export class PlayMap {
       const t=key?this.retainedText(key,text,style):new Text({text,style});
       t.anchor.set(.5, 1); t.scale.set(pixel); t.position.set(x, y); parent.addChild(t);return t;
     };
+    // Place names belong to the map's paper/ink hierarchy, independently of
+    // high-contrast troop counts and battle feedback. Keep terrain readable.
+    const placeStyle=(size:number,capital=false):TextStyleOptions=>({
+      fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:size,
+      fontWeight:capital?'600':'400',
+      fill:mode==='political'?'#3b3429':'#f6efd9',
+      stroke:{color:mode==='political'?'#f7ebd1':'#354338',width:capital?1.3:.8},
+    });
+    const placeName=(text:string,x:number,y:number,size:number,key:string)=>{
+      const t=this.retainedText(`place:${mode}:${key}`,text,placeStyle(size));
+      t.anchor.set(.5,1);t.scale.set(pixel);t.position.set(x,y);this.layer.addChild(t);return t;
+    };
     if(combat?.occupation){for(const siege of combat.occupation.sieges){if(detail!=='local'&&!selectedWars.includes(`siege:${siege.provinceId}`))continue;const p=provinces.get(siege.provinceId)!;
       // A progress marker is not a fictitious cell-level ownership front.
       marks.poly(p.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xe2b568,width:1.7*pixel,alpha:.85});
@@ -180,7 +192,7 @@ export class PlayMap {
     ];
     const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
     this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
-    for(const c of cityText){label(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9,'#f9f1d4',this.layer,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
+    for(const c of cityText){placeName(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
@@ -192,7 +204,7 @@ export class PlayMap {
       const x=p.center.x/scale,y=p.center.y/scale;
       if(this.wars.some(w=>Math.hypot(w.x-(x*zoom+this.projection.x),w.y-(y*zoom+this.projection.y))<30))continue;
       if(countryLabels.some(c=>Math.abs(c.point.x-p.center.x)/scale*zoom<(c.width+p.name.length*10)/2&&Math.abs(c.point.y-p.center.y)/scale*zoom<c.size+14))continue;
-      label(p.name,x,y-5*pixel,10,'#e2e9cb');
+      placeName(p.name,x,y-5*pixel,10,`province:${p.id}`);
     }
     const byArmy=new Map(world.armies.map(a=>[a.id,a]));
     this.battles=(combat?.state.engagements??[]).map(e=>{const p=engagementPoint(world,e);return {id:e.id,x:p.x/scale*zoom+this.projection.x,y:p.y/scale*zoom+this.projection.y,armies:e.armies,losses:e.losses};});
@@ -258,8 +270,8 @@ export class PlayMap {
       icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
     }
     for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
-      const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:0xeee8cd,width:.8*pixel,alpha:.6});capitalLayer.addChild(line);
-      const name=this.retainedText(`capital:${c.id}:${capitalFont}`,c.name,{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:capitalFont,fontWeight:'bold',fill:'#182623',stroke:{color:'#fff9e6',width:3}});name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
+      const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:mode==='political'?0x665842:0xeee8cd,width:.65*pixel,alpha:.45});capitalLayer.addChild(line);
+      const name=this.retainedText(`capital:${mode}:${c.id}:${capitalFont}`,c.name,placeStyle(capitalFont,true));name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
     }
     if(frame)this.updateUnits(frame);
     // Draw the one actively inspected small city above moving units and effects.

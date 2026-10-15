@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-15",
+  "sourceCommit": "556e39836e22600f65c172024b15b3a298d13d36",
+  "engine": "1c7d4309c1820dc00c4425789eb7ef24a1df8780bbbbb71a6ce80a022bbf2a74",
+  "artifact": ".autopilot/fms-pacing-titles47-checked",
+  "url": "http://127.0.0.1:5334/?fms=1",
+  "checks": {
+    "unit": {
+      "files": 6,
+      "passed": 103,
+      "exit": 0
+    },
+    "lint": 0,
+    "typecheck": 0,
+    "build": {
+      "exit": 0,
+      "approvedArtifacts": 94
+    },
+    "exactFullContinents": {
+      "passed": 1,
+      "points": 36864,
+      "days": 24,
+      "war": true,
+      "currentFeatures": 3,
+      "runFrameMotionEqual": true
+    },
+    "currentBrowser": {
+      "passed": 1,
+      "normalFullMap": true,
+      "nations": 6,
+      "cities": 60,
+      "mode": "war",
+      "speed": 4,
+      "detailsOpen": true,
+      "saveColdRestoreExact": true,
+      "errors": []
+    },
+    "prior22dbBrowser": {
+      "passed": 1,
+      "originalHistoryAndEnginePreserved": true
+    },
+    "portrait": "428x926 layout only",
+    "fullSuite": "not_run",
+    "physicalIphone": "not_run",
+    "originalVisualAcceptance": "not_accepted",
+    "cloud": "not_run",
+    "plan": {
+      "exit": 0
+    },
+    "planTests": {
+      "passed": 15,
+      "exit": 0
+    },
+    "releaseTests": {
+      "passed": 24,
+      "exit": 0
+    }
+  },
+  "measured": {
+    "beforeDaysPerSecond": 1.419914298029869,
+    "afterDaysPerSecond": 1.868528274466042,
+    "beforeFirstAckMs": 3876.75,
+    "afterFirstAckMs": 1588.7750000357628
+  },
+  "remaining": [
+    "4x actual throughput target not met; warm core did not show general improvement",
+    "Map detail, UI density, war strategy and long-run cross-sea acceptance remain",
+    "Cross-cultural migrated heir accession-office historical consistency remains for separate audit",
+    "No era/temple/posthumous-title model was added; no historical equivalence claim"
+  ],
+  "boundary": "Local only; source commit and checked artifact bound. Synthetic contexts only. Old workers, saves, official site and release/device/visual gates preserved. No background promise."
+}

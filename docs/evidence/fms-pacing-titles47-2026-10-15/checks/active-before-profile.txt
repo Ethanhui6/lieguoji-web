@@ -1,0 +1,25 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../vite.config" without a file extension (.autopilot/pacing-titles47-profile.config.ts:2:18). Add the file extension
+  - import "./scripts/fms-war46-fingerprint" without a file extension (vite.config.ts:3:43). Add the file extension
+  - import "./scripts/fms-war45-fingerprint" without a file extension (vite.config.ts:4:43). Add the file extension
+  - import "./scripts/fms-war44-fingerprint" without a file extension (vite.config.ts:5:43). Add the file extension
+  - import "./scripts/fms-war43-fingerprint" without a file extension (vite.config.ts:6:43). Add the file extension
+  - import "./scripts/fms-war42-fingerprint" without a file extension (vite.config.ts:7:43). Add the file extension
+  - import "./scripts/fms-war41-fingerprint" without a file extension (vite.config.ts:8:43). Add the file extension
+  - import "./scripts/fms-war40-fingerprint" without a file extension (vite.config.ts:9:43). Add the file extension
+  - import "./scripts/fms-war39-fingerprint" without a file extension (vite.config.ts:10:43). Add the file extension
+  - import "./scripts/fms-war38-fingerprint" without a file extension (vite.config.ts:11:43). Add the file extension
+  - import "./scripts/fms-war37-fingerprint" without a file extension (vite.config.ts:12:43). Add the file extension
+  - import "./scripts/fms-war36-fingerprint" without a file extension (vite.config.ts:13:43). Add the file extension
+  - import "./scripts/fms-war35-fingerprint" without a file extension (vite.config.ts:14:43). Add the file extension
+  - import "./scripts/fms-war34-fingerprint" without a file extension (vite.config.ts:15:43). Add the file extension
+  - import "./scripts/fms-war33-fingerprint" without a file extension (vite.config.ts:16:43). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.1 D:/游戏/架空地图模拟器
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  14:39:11
+   Duration  27.40s (tests 79%, transform 17%, import 4%)

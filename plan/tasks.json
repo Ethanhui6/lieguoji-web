@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47CombatCartographyCheckpoint, latest AUTO_HANDOFF, detailed original-style prompt and actual Git/services first. Source ec7f29b at local5333 has time-aligned real contacts, recovered BattleSword playback/LOD and same-input map ink/slope checks. Old b40d Worker preserved and browser-checked. Do not repeat these or rewrite planning. Use the existing map-scale-measurement.json (36,864 points;40x median mesh edge205.64CSSpx/coast segment103.70CSSpx). Next compare bounded real-data refinement and its shape/save/performance costs, implement and verify consistent picking/editing/simulation/save, not decorative smoothing. Do not repeat this measurement. Reproduced gameplay blockers take priority. War strategy, 4x throughput,47 click-battle detail, long-run cross-sea, physical iPhone/user visual and existing phase/release locks remain open.",
+    "nextRecoveryTarget": "Read culture47PacingTitlesCheckpoint and latest AUTO_HANDOFF, verify Git/services. Source556e398 checked local5334 fixes cultural leader labels and repeated naval candidate path searches. 6files103 + full-map24day exact old/new run/frame/motion + UI save cold restore + frozen22db browser passed. Cold ACK improved, sustained4x target still unmet; do not redo only cold search or rewrite plans. Next measure warm Worker vs transport/render/display buffering on the existing same normal full-war map and fix the dominant actual bottleneck, then continue existing data-consistent map refinement/contact/visual gaps. Old engines/saves and all phase/physical/visual/release gates remain.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -11638,6 +11638,70 @@
       ],
       "release": "local-only-no-push-no-pages",
       "mapScaleDiagnosis": "docs/evidence/fms-combat-cartography47-2026-10-15/map-scale-measurement.json"
+    },
+    "culture47PacingTitlesCheckpoint": {
+      "date": "2026-10-15",
+      "sourceCommit": "556e39836e22600f65c172024b15b3a298d13d36",
+      "engine": "1c7d4309c1820dc00c4425789eb7ef24a1df8780bbbbb71a6ce80a022bbf2a74",
+      "artifact": ".autopilot/fms-pacing-titles47-checked",
+      "url": "http://127.0.0.1:5334/?fms=1",
+      "checks": {
+        "unit": {
+          "files": 6,
+          "passed": 103,
+          "exit": 0
+        },
+        "lint": 0,
+        "typecheck": 0,
+        "build": {
+          "exit": 0,
+          "approvedArtifacts": 94
+        },
+        "exactFullContinents": {
+          "passed": 1,
+          "points": 36864,
+          "days": 24,
+          "war": true,
+          "currentFeatures": 3,
+          "runFrameMotionEqual": true
+        },
+        "currentBrowser": {
+          "passed": 1,
+          "normalFullMap": true,
+          "nations": 6,
+          "cities": 60,
+          "mode": "war",
+          "speed": 4,
+          "detailsOpen": true,
+          "saveColdRestoreExact": true,
+          "errors": []
+        },
+        "prior22dbBrowser": {
+          "passed": 1,
+          "originalHistoryAndEnginePreserved": true
+        },
+        "portrait": "428x926 layout only",
+        "fullSuite": "not_run",
+        "physicalIphone": "not_run",
+        "originalVisualAcceptance": "not_accepted",
+        "cloud": "not_run"
+      },
+      "measured": {
+        "beforeDaysPerSecond": 1.419914298029869,
+        "afterDaysPerSecond": 1.868528274466042,
+        "beforeFirstAckMs": 3876.75,
+        "afterFirstAckMs": 1588.7750000357628
+      },
+      "remaining": [
+        "4x actual throughput target not met; warm core did not show general improvement",
+        "Map detail, UI density, war strategy and long-run cross-sea acceptance remain",
+        "Cross-cultural migrated heir accession-office historical consistency remains for separate audit",
+        "No era/temple/posthumous-title model was added; no historical equivalence claim"
+      ],
+      "boundary": "Local only; source commit and checked artifact bound. Synthetic contexts only. Old workers, saves, official site and release/device/visual gates preserved. No background promise.",
+      "status": "partial",
+      "task": "WEB-04-37",
+      "evidence": "docs/evidence/fms-pacing-titles47-2026-10-15/RESULT.md"
     }
   }
 }

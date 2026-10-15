@@ -1,0 +1,4 @@
+after {"ms":1141,"tick":0,"displayTick":0}
+after {"ms":12994,"tick":3360,"displayTick":3200.3174999952316}
+after {"ms":25350,"tick":5280,"displayTick":5183.262499988079}
+{"stage":"after","foundingMs":13801,"daysPerSecond":1.868528274466042,"firstAckMs":1588.7750000357628,"tick":8640,"errors":[]}

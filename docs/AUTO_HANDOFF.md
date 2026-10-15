@@ -1,3 +1,17 @@
+# 当前检查点：文化君主称名已修，海军冷批提速；持续4×仍未达标（2026-10-15）
+
+用户追问为何进度不明显。本批实际完成文化称名与舰队候选港重复寻路；没有新增地图/UI/玩法模块，不能称全方位还原。源码 556e39836e22600f65c172024b15b3a298d13d36，分支codex/ph06-world-generation，Git只本地提交。续接读webRebuild.culture47PacingTitlesCheckpoint、[结果与截图](evidence/fms-pacing-titles47-2026-10-15/RESULT.md)和verification，再核实服务；不要重跑已有冻结/重建计划。
+
+检查产物 .autopilot/fms-pacing-titles47-checked，引擎 1c7d4309c1820dc00c4425789eb7ef24a1df8780bbbbb71a6ce80a022bbf2a74；**http://127.0.0.1:5334/?fms=1** 仅当前电脑，隐藏服务PID14736（续接重查）。新局试提速；旧档仍原Worker。5333与更旧入口保留。没有push、Pages/Cloudflare/main、原安装包或个人存档写入，发布锁保持。
+
+中华/日本主名及新传位不套西式世号；已在UI见上官子建皇帝、前田清子天皇，改共和国后上官子建总统，英格兰保留拉尔夫一世国王。现有政体国号/自定国名保留，无年号/庙号/谥号推断；旧事件不改。跨文化继承的就任职位记录一致性尚待单独核对。
+
+6文件103项、lint/typecheck/build94允许产物通过。整图36,864点6国60城战乱＋3feature、连续24日新旧完整run/frame/motion精确一致；首4日5261→2433ms，暖机无普遍提速。同图顺序Chromium4×国家详情打开实测 1.42→1.87日/秒、首ACK 3877→1589ms；仍不满足4×目标，非原作速度/稳定倍速保证。当前UI改制保存冷恢复tick8640/位置/称号一致，零页面异常；旧22db继续/保存/恢复1/1，冻结原字节28项通过。428×926仅布局，不是真机，完整套件和视觉未验收。
+
+下一批优先把暖机慢分解为Worker/消息与主线程/显示缓冲再实际优化，不减少校验或仅抬倍速数字；既有地图细化/交战点/视觉未完成项保留。WEB-04-37 in_progress、WEB-04-21 blocked、WEB-02-02 todo/部分证据保持。进度卡点是持续吞吐与尚未交付的可见还原，不是等用户再次确认普通工程。
+
+---
+
 # 当前检查点：真实接触时间线、原作交战动画与地图文字/山坡明暗（2026-10-15）
 
 用户反馈交战点bug和地图/文字仍欠原作。本批继续原计划，无上传。源码 `f50e93b`，最终 `ec7f29bf2edea7157bad8e1a63afab6d5c3645ce`，分支 `codex/ph06-world-generation`。续接先核实Git/执行者/服务，读 `webRebuild.culture47CombatCartographyCheckpoint`、[结果及同图对照](evidence/fms-combat-cartography47-2026-10-15/RESULT.md)、verification与详细提示词；不要从旧国家顺序重建或重复已验证恢复。

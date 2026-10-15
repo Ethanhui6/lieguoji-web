@@ -1,0 +1,4 @@
+before {"ms":1165,"tick":0,"displayTick":0}
+before {"ms":13332,"tick":2880,"displayTick":2880}
+before {"ms":25809,"tick":4320,"displayTick":4320}
+{"stage":"before","foundingMs":13017,"daysPerSecond":1.419914298029869,"firstAckMs":3876.75,"tick":6720,"errors":[]}

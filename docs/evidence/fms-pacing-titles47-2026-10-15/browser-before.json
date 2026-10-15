@@ -1,0 +1,298 @@
+{
+  "stage": "before",
+  "url": "http://127.0.0.1:5333",
+  "foundingMs": 13017,
+  "firstLabel": "皇帝 · 本局记载第 1 任上官子建子建 1 世 · 36 岁 · 在位11年",
+  "fromTick": 0,
+  "toTick": 6720,
+  "wallMs": 39439,
+  "daysPerSecond": 1.419914298029869,
+  "samples": [
+    {
+      "ms": 1165,
+      "tick": 0,
+      "displayTick": 0
+    },
+    {
+      "ms": 2178,
+      "tick": 0,
+      "displayTick": 0
+    },
+    {
+      "ms": 3192,
+      "tick": 0,
+      "displayTick": 0
+    },
+    {
+      "ms": 4206,
+      "tick": 480,
+      "displayTick": 153.69499999284744
+    },
+    {
+      "ms": 5598,
+      "tick": 960,
+      "displayTick": 630.192500025034
+    },
+    {
+      "ms": 6733,
+      "tick": 1440,
+      "displayTick": 1117.869999974966
+    },
+    {
+      "ms": 8041,
+      "tick": 1920,
+      "displayTick": 1452.3149999976158
+    },
+    {
+      "ms": 9401,
+      "tick": 1920,
+      "displayTick": 1920
+    },
+    {
+      "ms": 10631,
+      "tick": 2400,
+      "displayTick": 2183.0875000059605
+    },
+    {
+      "ms": 11807,
+      "tick": 2880,
+      "displayTick": 2402.8225000202656
+    },
+    {
+      "ms": 13332,
+      "tick": 2880,
+      "displayTick": 2880
+    },
+    {
+      "ms": 14548,
+      "tick": 3360,
+      "displayTick": 3048.189999997616
+    },
+    {
+      "ms": 16026,
+      "tick": 3360,
+      "displayTick": 3360
+    },
+    {
+      "ms": 17254,
+      "tick": 3360,
+      "displayTick": 3360
+    },
+    {
+      "ms": 18483,
+      "tick": 3360,
+      "displayTick": 3360
+    },
+    {
+      "ms": 19614,
+      "tick": 3840,
+      "displayTick": 3362.925000011921
+    },
+    {
+      "ms": 20974,
+      "tick": 3840,
+      "displayTick": 3840
+    },
+    {
+      "ms": 22194,
+      "tick": 3840,
+      "displayTick": 3840
+    },
+    {
+      "ms": 23440,
+      "tick": 3840,
+      "displayTick": 3840
+    },
+    {
+      "ms": 24681,
+      "tick": 4320,
+      "displayTick": 4008.5999999940395
+    },
+    {
+      "ms": 25809,
+      "tick": 4320,
+      "displayTick": 4320
+    },
+    {
+      "ms": 27019,
+      "tick": 4320,
+      "displayTick": 4320
+    },
+    {
+      "ms": 28158,
+      "tick": 4800,
+      "displayTick": 4522.572499990463
+    },
+    {
+      "ms": 29761,
+      "tick": 4800,
+      "displayTick": 4800
+    },
+    {
+      "ms": 30991,
+      "tick": 4800,
+      "displayTick": 4800
+    },
+    {
+      "ms": 32109,
+      "tick": 5280,
+      "displayTick": 4975.574999988079
+    },
+    {
+      "ms": 33389,
+      "tick": 5280,
+      "displayTick": 5280
+    },
+    {
+      "ms": 34572,
+      "tick": 5280,
+      "displayTick": 5280
+    },
+    {
+      "ms": 35753,
+      "tick": 5760,
+      "displayTick": 5558.490000009537
+    },
+    {
+      "ms": 36979,
+      "tick": 5760,
+      "displayTick": 5760
+    }
+  ],
+  "probe": {
+    "acks": [
+      {
+        "command": "create",
+        "at": 1258.1299999952316,
+        "ms": 10853.375,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-retirement",
+        "at": 12295.324999988079,
+        "ms": 129.1599999666214,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-recovery",
+        "at": 12507.139999985695,
+        "ms": 20.540000021457672,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-generations",
+        "at": 12529.264999985695,
+        "ms": 240.80500000715256,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 15922.8599999547,
+        "ms": 3876.75,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 19909.099999964237,
+        "ms": 832.8550000190735,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 21055.2349999547,
+        "ms": 1183.8400000333786,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 22348.625,
+        "ms": 1220.8050000071526,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 23900.7349999547,
+        "ms": 1677.9350000023842,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 25898.055000007153,
+        "ms": 1620.9449999928474,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 27841.40499997139,
+        "ms": 2143.4050000309944,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 30311.944999992847,
+        "ms": 4813.964999973774,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 35477.19999998808,
+        "ms": 4269.524999976158,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 40085.94999998808,
+        "ms": 3492.985000014305,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 43965.75999999046,
+        "ms": 3326.899999976158,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 47645.764999985695,
+        "ms": 3063.6949999928474,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 51041.97499996424,
+        "ms": 2007.7950000166893,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 53389.94499999285,
+        "ms": 1433.289999961853,
+        "error": null
+      }
+    ],
+    "maxActive": 1,
+    "engine": {
+      "version": 1,
+      "tick": 6720
+    }
+  },
+  "errors": [],
+  "scope": "Same synthetic full continents terrain, fresh UI creation, default6cultures60cities, war + current three feature flags, desktop Chromium4x with nation details open; sequential runs, not physical iPhone or original equivalence."
+}

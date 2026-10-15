@@ -2848,9 +2848,12 @@
       "docs/evidence/fms-live-observation-v5-2026-10-08/plan-check.log.txt",
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-browser.mjs",
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs",
-      "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md"
+      "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md",
+      "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+      "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
     ],
     "nextBatch": [
+      "WEB-02-02",
       "WEB-04-37"
     ],
     "phases": [
@@ -3489,9 +3492,12 @@
               "docs/evidence/fms-full-map47-2026-10-14/RESULT.md",
               "docs/evidence/fms-full-map47-2026-10-14/verification.json",
               "docs/evidence/fms-map-typography47-2026-10-15/RESULT.md",
-              "docs/evidence/fms-map-typography47-2026-10-15/verification.json"
+              "docs/evidence/fms-map-typography47-2026-10-15/verification.json",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
-            "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。"
+            "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。",
+            "latest47Observation": "2026-10-15: same saved full-map input full/4/16/40x desktop and portrait checked for world/camera stability, font hierarchy and height-derived shade. Angular coast, coarse triangles, sparse40x detail and original visual/device acceptance remain open; this batch did not change geometry."
           },
           {
             "id": "WEB-02-03",
@@ -3574,7 +3580,9 @@
               "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
               "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md",
               "docs/evidence/fms-map-typography47-2026-10-15/RESULT.md",
-              "docs/evidence/fms-map-typography47-2026-10-15/verification.json"
+              "docs/evidence/fms-map-typography47-2026-10-15/verification.json",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
             "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
           },
@@ -3593,7 +3601,9 @@
               "docs/evidence/fms-chronicle-v5-2026-10-06/browser.json",
               "docs/evidence/fms-chronicle-v5-2026-10-06/NATIVE_EVIDENCE.md",
               "docs/evidence/fms-map-typography47-2026-10-15/RESULT.md",
-              "docs/evidence/fms-map-typography47-2026-10-15/verification.json"
+              "docs/evidence/fms-map-typography47-2026-10-15/verification.json",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
             "completionScope": "本次有限网页功能与实际检查完成；完整PH、原作等价、iPhone真机和用户视觉仍待验收。"
           },
@@ -4087,10 +4097,13 @@
               "docs/evidence/fms-tactics-v5-2026-10-06/checks.json",
               "docs/evidence/fms-tactics-v5-2026-10-06/e2e-summary.json",
               "docs/evidence/fms-tactics-v5-2026-10-06/browser-production.json",
-              "docs/evidence/fms-battle-animation-v5-2026-10-06/browser-production.json"
+              "docs/evidence/fms-battle-animation-v5-2026-10-06/browser-production.json",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
             "progressNote": "全图大型战役、区域/近景、选中例外及点选各国在场兵力已接，生产浏览器三设备通过。",
-            "completionScope": "真实部队ID去重和在场统计；不把共同参战当同盟，不声称全战争累计伤亡。"
+            "completionScope": "真实部队ID去重和在场统计；不把共同参战当同盟，不声称全战争累计伤亡。",
+            "current47Acceptance": "2026-10-15: real47 contact time, original authored clip and LOD checked in actual browser. The historical done scope above belongs to the earlier entry; full current47 click-battle country comparison has not passed and must not inherit that acceptance."
           },
           {
             "id": "WEB-04-21",
@@ -4775,7 +4788,9 @@
               "docs/evidence/fms-full-map47-2026-10-14/verification.json",
               "docs/evidence/fms-live-fixes47-2026-10-15/RESULT.md",
               "docs/evidence/fms-map-typography47-2026-10-15/RESULT.md",
-              "docs/evidence/fms-map-typography47-2026-10-15/verification.json"
+              "docs/evidence/fms-map-typography47-2026-10-15/verification.json",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+              "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
             "progressScope": "2026-10-10 latest: user-requested 4x playback base, owned occupation and certified static clone reuse; 114 related tests, 8 browser cases, exact24-day normal-map prior-engine state/trace comparison. Actual speed still below target and higher multipliers compute-limited. Read culture47PaceBaselineCheckpoint. 2026-10-09 latest: phase-query reuse and variable-batch continuous motion are playable in real47 UI/Worker/save; 107 related tests, 8 final browser cases, fixed normal-map 8-day full state/trace equality. Actual browser throughput still below target. Read culture47PhaseWorkCheckpoint. 保留v31–v42宗属、贡金、独立、多国战争、联盟、借道、陆海驻防、海港争夺、舰队进攻分工、港湾游弋、战后撤回与真实补给。v43新世界按地方城市邻海和合格外海生成港口，first qualified seed锚点及五层真实湿网格范围共享给模拟/海路/造船/UI/保存；60城夹具28个沿海辖区港口收敛为7个城市港口，不移动城市。新局舰队重新初始化保持人口粮食守恒；旧v42原样执行，明确复制保留旧布局和航线。生产浏览器取消/真实抵港/造船/刷新/CAS/Worker及普通新局通过。Voronoi与三角空间尺度不等价；完整海陆协同、军事细则、真机/视觉仍未过。 v44接入原作海港封锁→陆战协同：只加强真实港口地区的正向对军/抵抗伤害×2，守军修复、海战、途中遭遇不加成；菜单和围攻贡献共用规则。生产浏览器实际推进预设将失守港湾完成夺港，陆地未吞并、贡献19.3→38.7、刷新/CAS/取消及普通新局通过；v43引擎与港湾保存不变。统一海陆Army路径、跨海限制生命周期和完整军事细则仍未齐备。 v45接入当前安装版月度海军补建：受控港口配额、6月基础工期、海洋/商业族群与活着的现任君主造船特性、失港工期×2；真实港口扣船员/配粮并生成实体舰队。已保存月份与独立随机序列，Worker/刷新/CAS/取消和普通新局通过。超额旧舰队保留、资源不足等待和一船40船员为明确网页适配，原作自动裁舰及统一Army跨海仍未完成。确认当前CalculateLandArmySeaCrossingRestriction返回false、正常UpdateNavy清零，不再凭pressure字段猜禁航规则。 v46: existing fleets physically rendezvous with a real army at another home port, wait for joint presence and provisions, sail and land preserving identity. Immediate expedition ship creation removed. Relevant checks, production Worker transport/newgame and persistence flows verified; original unified Army sea path and full task acceptance remain open. 2026-10-08 observation/UI slice: map and detail browsing preserve running time; deferred command previews use the settled Worker snapshot; opening ruler history derives from saved records without invented events. Apple UI Designer and Emil skill-based compact controls, mobile tools, interruptible sheets, drag dismissal and reduced motion passed real desktop-browser flows. v46 engine/store unchanged; unified Army v47 groundwork remains unintegrated. 2026-10-08 latest UI request: no skills; local SVG tools, four country categories, compact army/navy/editor disclosures completed and production-browser verified at 5252, source bac6b56; evidence fms-compact-ui-v5-2026-10-08. Unified Army remains incomplete; read NEXT_ARMY_AUDIT before integration. 2026-10-08 Army47 spatial-consumer slice: frozen46 verified; actual-position food/report/occupation/timer consumers implemented and 47 related tests passed. Not yet run47/Worker/Store/UI integration or playable cross-sea; see army47SpatialConsumersCheckpoint. 2026-10-08 Army47 command slice: actual geography derived on confirmation, stale/replay-safe intents, atomic movement candidate, halt/redirect/retreat and fleet release regressions; 71 related tests passed. Not integrated as a playable run47. Native base-speed initialization corrected by bounded static evidence. See army47CommandCheckpoint. 2026-10-08 force47 slice: coupled Army/Fleet boundary events, validated persistent contacts, independent native Navy budgets and atomic losses; 100 related tests passed, still no run47/Worker/Store/UI. Existing Atlas v46 at5254 adds an explicit reversible first-continent preview, browser verified through six-country creation. See force47ContactCheckpoint and atlasFirstLandCheckpoint. 2026-10-08 persisted attack-clock slice: actual events and independent RNG, simultaneous unit volleys, actual-loss/raw-war accounting, survivor occupation and whole-window rollback verified (115 tests). Full47/day settlement/Store49/Worker/UI remain pending; no playable activation. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
           },
@@ -4987,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47MapTypographyCheckpoint, latest AUTO_HANDOFF, detailed original-style prompt and actual Git/service first. Map ink hierarchy is checked at same world/camera full/4/16/40 views on local5331, source187b72e; old b489 engine byte-preserved. Do not redo completed full-map/replay/AI-search/strength/contact work. Next visible original-design batch: fix a measured coast/terrain/near-view gap using the same actual map data and references; prioritize any reproduced playable blocker first. Preserve existing phase states, unknown native mechanisms, physical iPhone/user visual gates and local-only release lock.",
+    "nextRecoveryTarget": "Read culture47CombatCartographyCheckpoint, latest AUTO_HANDOFF, detailed original-style prompt and actual Git/services first. Source ec7f29b at local5333 has time-aligned real contacts, recovered BattleSword playback/LOD and same-input map ink/slope checks. Old b40d Worker preserved and browser-checked. Do not repeat these or rewrite planning. Use the existing map-scale-measurement.json (36,864 points;40x median mesh edge205.64CSSpx/coast segment103.70CSSpx). Next compare bounded real-data refinement and its shape/save/performance costs, implement and verify consistent picking/editing/simulation/save, not decorative smoothing. Do not repeat this measurement. Reproduced gameplay blockers take priority. War strategy, 4x throughput,47 click-battle detail, long-run cross-sea, physical iPhone/user visual and existing phase/release locks remain open.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -11522,6 +11537,107 @@
         "Physical iPhone and user visual gate"
       ],
       "release": "local-only-no-push-no-pages"
+    },
+    "culture47CombatCartographyCheckpoint": {
+      "date": "2026-10-15",
+      "status": "local-timed-contact-authored-clip-map-ink-slope-checked",
+      "sourceCommit": "ec7f29bf2edea7157bad8e1a63afab6d5c3645ce",
+      "engine": "22db1a6db6b530c2f9bf20e875cec7c2cda6d7d47af2292770dd93f1f123c2ad",
+      "prompt": "docs/FMS_ORIGINAL_STYLE_EXECUTION_PROMPT_2026-10-15.md",
+      "evidence": "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
+      "verification": "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json",
+      "artifact": ".autopilot/fms-combat-cartography47-final-checked",
+      "url": "http://127.0.0.1:5333/?fms=1",
+      "checks": {
+        "unitCore": {
+          "files": 9,
+          "passed": 64,
+          "exit": 0,
+          "source": "Pre-final-navaldensity source; see following owner and final-density checks"
+        },
+        "unitOwnerAfterObserverRefinement": {
+          "files": 3,
+          "passed": 31,
+          "exit": 0,
+          "overlapsCore": true
+        },
+        "unitFinalDensity": {
+          "files": 2,
+          "passed": 11,
+          "exit": 0,
+          "overlapsCore": true,
+          "includesAddedNavyThresholdCase": true
+        },
+        "lint": {
+          "exit": 0
+        },
+        "typecheck": {
+          "exit": 0
+        },
+        "build": {
+          "exit": 0,
+          "approvedArtifacts": 93
+        },
+        "actualWarBrowser": {
+          "passed": 1,
+          "contexts": 1,
+          "tick": 15480,
+          "days": 129,
+          "contactTraceFrames": 71,
+          "maxContacts": 14,
+          "maxVisible": 10,
+          "maxAlignmentErrorPx": 2.2737367544323206e-13,
+          "authoredAnimationChanges": true,
+          "pauseFreezesFrames": true,
+          "coldReplayExact": true,
+          "errors": []
+        },
+        "frozenB40dBrowser": {
+          "passed": 1,
+          "exit": 0
+        },
+        "continuousMotionBrowser": {
+          "passed": 1,
+          "exit": 0,
+          "recording": "continuous-motion.webm"
+        },
+        "sameFixtureMapBrowser": {
+          "contexts": 2,
+          "passed": 2,
+          "factors": [
+            1,
+            4,
+            16,
+            40
+          ],
+          "portraitIsEmulation": true,
+          "reusesPreviousBaselineCapture": true
+        },
+        "fullSuite": "not_run",
+        "physicalIphone": "not_run",
+        "originalVisualAcceptance": "not_accepted",
+        "cloud": "not_run",
+        "plan": {
+          "exit": 0
+        },
+        "test-plan": {
+          "exit": 0,
+          "passed": 15
+        },
+        "test-release": {
+          "exit": 0,
+          "passed": 24
+        }
+      },
+      "remaining": [
+        "Coarse angular coast and large triangles at near view",
+        "Sparse city/detail density and large flat political areas at40x",
+        "4x actual throughput target not met",
+        "War strategy, cross-sea long-run behavior and current47 click-battle detail need further actual acceptance",
+        "Physical iPhone Safari/Chrome and user original-visual gate remain open"
+      ],
+      "release": "local-only-no-push-no-pages",
+      "mapScaleDiagnosis": "docs/evidence/fms-combat-cartography47-2026-10-15/map-scale-measurement.json"
     }
   }
 }

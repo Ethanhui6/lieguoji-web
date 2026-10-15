@@ -94,3 +94,4 @@
 - 当前世界绘制、操作：`src/fms/play/CultureWorld47.tsx`；原旧局入口：`src/fms/play/FmsGame.tsx`。
 - 浏览器稳定性既有检查：`tests/fms-cartography.spec.ts`、`tests/fms-full-map.spec.ts`、`tests/fms-culture47-compat.spec.ts`。旧入口检查不能代替当前47入口。
 - 首批已执行：源码 `187b72e9d15e114d13954a8eed2d27adb36e6072`，结果、同视角截图、检查日志与未通过边界见 `docs/evidence/fms-map-typography47-2026-10-15/RESULT.md`、`verification.json`。后续执行仍须刷新Git与交接，不用本文编写时的基线覆盖最新状态。
+- 交战/地图追加批已执行：源码 `ec7f29bf2edea7157bad8e1a63afab6d5c3645ce`，真实接触时间线、已有原作图集接入、远景战斗密度、国名字体和高程坡面明暗；同图4/16/40倍与正常战争/旧档浏览器证据见 `docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md`、`verification.json`，最新续接键为 `webRebuild.culture47CombatCartographyCheckpoint`。海岸/近景、4×吞吐、真机与用户视觉仍未达标，不重复已有切片。

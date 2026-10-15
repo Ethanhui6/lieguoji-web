@@ -1,0 +1,120 @@
+[
+  {
+    "device": "desktop",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "baselineSource": "187b72e9d15e114d13954a8eed2d27adb36e6072",
+    "baselineCapture": "Reused previous batch after capture, same saved synthetic fixture",
+    "candidateSource": "ec7f29bf2edea7157bad8e1a63afab6d5c3645ce",
+    "sameActualWorldAndCamera": true,
+    "factors": [
+      1,
+      4,
+      16,
+      40
+    ],
+    "pan": {
+      "dx": 24,
+      "dy": 17,
+      "stableAnchors": 33,
+      "countryBoxes": 33
+    },
+    "selected": {
+      "id": "c-0",
+      "name": "松阳"
+    },
+    "reloaded": {
+      "tick": "600",
+      "exactForces": true
+    },
+    "files": [
+      {
+        "name": "01-full.png",
+        "beforeSha256": "9293bfedda6f3ee12fff450109316e1524f25db23ff65b38a255f407e2f8439e",
+        "afterSha256": "3284a896d970bd35b30fb672452f5cccb8552aa999275f2041144c08607b6b1a"
+      },
+      {
+        "name": "zoom-4.png",
+        "beforeSha256": "571ee08a09ff989e2e4d324870cb190a2367a22407e50de68d728838503f9a4e",
+        "afterSha256": "1b8194d133ec0c39933b7f7e8e90e3a3db3dfcff7f12a5b6fc17776ca1191af5"
+      },
+      {
+        "name": "zoom-16.png",
+        "beforeSha256": "328a9c34c63718d477b6ebd151d62a098cb17e86686c1370b3e641f4559f5418",
+        "afterSha256": "64797b8456c50dada10ab934f2cec4d94488477d4aa8b23a42c7c6641428b956"
+      },
+      {
+        "name": "zoom-40.png",
+        "beforeSha256": "a3124dc329397dcec53c4c3daa66fb114f13cfc292be0a25e98f6f67aea26dde",
+        "afterSha256": "e751d5f466477b6a12b12a738c8e07871df5d3fc894a71119ed2c8bb095a2a3e"
+      },
+      {
+        "name": "terrain.png",
+        "beforeSha256": "e26b0a191efa3c7822d48282937e526810abbe71a452e36e31f5a7d4b3be2cbf",
+        "afterSha256": "b105976319a633e74b9c7cf2e73627b02b0b201e35ed874344fe84e7f0449905"
+      }
+    ],
+    "fixtureSha256": "32a4d46b47a726fff081aff9874e6bc648360424ce1b383224a964bafb04a25b"
+  },
+  {
+    "device": "portrait",
+    "viewport": {
+      "width": 428,
+      "height": 926
+    },
+    "baselineSource": "187b72e9d15e114d13954a8eed2d27adb36e6072",
+    "baselineCapture": "Reused previous batch after capture, same saved synthetic fixture",
+    "candidateSource": "ec7f29bf2edea7157bad8e1a63afab6d5c3645ce",
+    "sameActualWorldAndCamera": true,
+    "factors": [
+      1,
+      4,
+      16,
+      40
+    ],
+    "pan": {
+      "dx": 24,
+      "dy": 17,
+      "stableAnchors": 33,
+      "countryBoxes": 33
+    },
+    "selected": {
+      "id": "c-0",
+      "name": "云阳"
+    },
+    "reloaded": {
+      "tick": "600",
+      "exactForces": true
+    },
+    "files": [
+      {
+        "name": "01-full.png",
+        "beforeSha256": "581f7473fe95b5fcf456c71826736a3bd437380fc53706edd5770efb147eb0fa",
+        "afterSha256": "186e5b375eb1f37c82885befc2738ab6919df99e45bdf6aaa736ff4ad3f21609"
+      },
+      {
+        "name": "zoom-4.png",
+        "beforeSha256": "00aa7dbfcf192adfbf34e6c70a43657b5f36169ac45cc0bf5d65effeb971879c",
+        "afterSha256": "8181e8e3af759966fb122956eaca95f44ef759fb74d16b965f89d86161cb7f0d"
+      },
+      {
+        "name": "zoom-16.png",
+        "beforeSha256": "d0f9e7818a65c5583bcdf5a50c9a1d427cb8bb23002f5f762fc667f7cde13e05",
+        "afterSha256": "03a7141da8b3e64007357b150adb81e10904109a1aaddc3021ccf319245867d8"
+      },
+      {
+        "name": "zoom-40.png",
+        "beforeSha256": "217703bab1a4aa10c22dac24083e1b83bfe28b763f44b7e22eb4705402626817",
+        "afterSha256": "d6b205623220255a33e700459b312a03b208a971cee2dabd62a962668072fe9f"
+      },
+      {
+        "name": "terrain.png",
+        "beforeSha256": "7f1c2b63a5dd143f5e05eaf295787262514bd2f7b70deaf9c8cb45803629d19d",
+        "afterSha256": "2926293a89c542478e7ff701269c5bc70c4f959a198c7c4c41caafc370f841a0"
+      }
+    ],
+    "fixtureSha256": "688348fc51cbb697794a7d0f4dd7af048d5329f524c2c00f646b092ac1b4a125"
+  }
+]

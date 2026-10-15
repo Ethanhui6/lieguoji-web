@@ -1,0 +1,86 @@
+{
+  "fixtureSha256": "32a4d46b47a726fff081aff9874e6bc648360424ce1b383224a964bafb04a25b",
+  "width": 1536,
+  "height": 1536,
+  "points": 36864,
+  "triangles": 72962,
+  "uniqueEdgeWorld": {
+    "count": 109825,
+    "p50": 9.139684852786628,
+    "p95": 13.324132216212254,
+    "max": 18.07937336163336
+  },
+  "visibleH20ContourSegmentWorld": {
+    "count": 3202,
+    "p50": 4.608944997522744,
+    "p95": 10.648066332264614,
+    "max": 14.753568344314873
+  },
+  "scales": [
+    {
+      "factor": 1,
+      "terrainCameraZoom": 0.5625,
+      "uniqueEdgeCssPx": {
+        "count": 109825,
+        "p50": 5.141072729692478,
+        "p95": 7.4948243716193925,
+        "max": 10.169647515918765
+      },
+      "h20CoastSegmentCssPx": {
+        "count": 3202,
+        "p50": 2.592531561106543,
+        "p95": 5.989537311898846,
+        "max": 8.298882193677116
+      }
+    },
+    {
+      "factor": 4,
+      "terrainCameraZoom": 2.2500000257370822,
+      "uniqueEdgeCssPx": {
+        "count": 109825,
+        "p50": 20.564291153998735,
+        "p95": 29.979297829401858,
+        "max": 40.678590528985374
+      },
+      "h20CoastSegmentCssPx": {
+        "count": 3202,
+        "p50": 10.37012636304697,
+        "p95": 23.95814952164554,
+        "max": 33.19552915442227
+      }
+    },
+    {
+      "factor": 16,
+      "terrainCameraZoom": 9.00000020589666,
+      "uniqueEdgeCssPx": {
+        "count": 109825,
+        "p50": 82.25716555691024,
+        "p95": 119.9171926893046,
+        "max": 162.7143639771828
+      },
+      "h20CoastSegmentCssPx": {
+        "count": 3202,
+        "p50": 41.48050592667107,
+        "p95": 95.83259918278281,
+        "max": 132.7821181365443
+      }
+    },
+    {
+      "factor": 40,
+      "terrainCameraZoom": 22.500000032680575,
+      "uniqueEdgeCssPx": {
+        "count": 109825,
+        "p50": 205.64290948638927,
+        "p95": 299.792975300216,
+        "max": 406.7859012275949
+      },
+      "h20CoastSegmentCssPx": {
+        "count": 3202,
+        "p50": 103.70126259488471,
+        "p95": 239.58149282393873,
+        "max": 331.9552882292397
+      }
+    }
+  ],
+  "scope": "Global actual fixed-triangle edges and h20 linear shoreline segments in the exact saved synthetic map. CSS uses renderer terrain camera zoom; run.scale converts simulation coordinates only. Segment size is a geometry diagnosis, not an original comparison, smoothing acceptance or GPU performance result. No map data changed."
+}

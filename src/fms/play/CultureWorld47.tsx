@@ -17,6 +17,7 @@ import {provinceAt} from './world';
 import {PlayIcon} from './PlayIcon';
 import {CULTURE_IDS47,CULTURES47,RELIGIONS47,POLITIES47,culture47,type CultureId47,type NamingMode47,type ReligionId47} from './civilization47-catalog';
 import {currentRuler47,type CultureChoice47,type CivilizationEdit47} from './civilization47-names';
+import {rulerDisplayName47} from './civilization47-ruler-label';
 import {Culture47Client} from './culture47-client';
 import {sameCulture47Value} from './culture47-equal';
 import {Culture47Unavailable,frozenCulture47} from './culture47-contract';
@@ -52,7 +53,7 @@ const polityLabels:Record<NativePolity,string>={Kingdom:'王国',Empire:'帝国'
 const failText=(e:unknown)=>e instanceof Error?e.message:String(e);
 async function verifyJournal(journal:Culture47Journal,signal?:AbortSignal,progress?:Parameters<Culture47Client['verify']>[1]){const client=new Culture47Client(journal.engine);try{await client.verify(journal,{...progress,signal,longReplay:true});}finally{client.close();}}
 const defaultCultures:CultureId47[]=['chinese','japanese','english','arab','roman','german'];
-function originalRuler(run:FoundingForces47,id:string){const reign=run.chronicle.leaders[id]?.at(-1);if(!reign||reign.endedDay!==null||Object.hasOwn(run.chronicle.ended,id))return null;const r=run.civilization.rulers[reign.id];return {...reign,name:r.name,title:r.titleAtAccession+'（就任时）'};}
+function originalRuler(run:FoundingForces47,id:string){const reign=run.chronicle.leaders[id]?.at(-1);if(!reign||reign.endedDay!==null||Object.hasOwn(run.chronicle.ended,id))return null;const r=run.civilization.rulers[reign.id];return {...reign,name:r.name,given:r.given,title:r.titleAtAccession+'（就任时）'};}
 function NationIdentity({run,id,cityId,busy,act,diplomacy,pause,originalEngine=false,familyCapable=false}:{originalEngine?:boolean;familyCapable?:boolean;run:FoundingForces47;id:string;cityId:string|null;busy:boolean;act:(a:Culture47Action)=>void;diplomacy:ReactNode;pause:()=>void}){
   const nation=run.world.nations.find(n=>n.id===id)!,identity=run.civilization.nations[id],ruler=originalEngine?originalRuler(run,id):currentRuler47(run.civilization,run.chronicle,id);
   const [name,setName]=useState(identity.name.custom??''),[religion,setReligion]=useState(identity.religionId),[polity,setPolity]=useState(identity.polity),[pending,setPending]=useState(false);
@@ -66,7 +67,7 @@ function NationIdentity({run,id,cityId,busy,act,diplomacy,pause,originalEngine=f
   return <>
     <div className="c47-identity"><i style={{background:nation.color}}/><div><small>{culture47(identity.cultureId).label}文化 · {polityLabels[identity.polity]}</small><h2>{nation.name}</h2><p>{RELIGIONS47[identity.religionId]}</p></div></div>
     {!ruler&&run.kin.lifecycle?.vacancies[id]&&<section className="c47-ruler"><PlayIcon name="crown"/><div><small>领袖暂缺</small><strong>尚无符合当前政体的接任者</strong></div></section>}
-    {ruler&&<section className="c47-ruler"><PlayIcon name="crown"/><div><small>{ruler.title} · {run.origins?'本局记载第':'第'} {ruler.order} 任</small><strong>{ruler.name}</strong><span>{['Kingdom','Empire','Tribal'].includes(identity.polity)?`${ruler.regnalName} ${ruler.regnalOrdinal} 世`:''}{person?` · ${person.age} 岁`:''}{reignAge?` · 在位${reignAge.years>0?`${reignAge.years}年`:`${reignAge.days}日`}`:''}</span></div></section>}
+    {ruler&&<section className="c47-ruler"><PlayIcon name="crown"/><div><small>{ruler.title} · 本局记载第 {ruler.order} 任</small><strong>{rulerDisplayName47(identity,ruler,ruler.title)}</strong><span>{ruler.name}{person?` · ${person.age} 岁`:''}{reignAge?` · 在位${reignAge.years>0?`${reignAge.years}年`:`${reignAge.days}日`}`:''}</span></div></section>}
     <CultureNationOverview47 run={run} id={id}/>{diplomacy}
     <details><summary>国家制度与名称</summary><form onSubmit={e=>{e.preventDefault();edit({kind:'nation',id,patch:{polity,religionId:religion,customName:name.trim()||null}});}}>
       <label>自定国名<input aria-label="自定国名" value={name} maxLength={100} placeholder={identity.name.value} onChange={e=>setName(e.target.value)}/></label>

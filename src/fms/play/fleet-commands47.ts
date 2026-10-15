@@ -2,7 +2,9 @@ import type {Point} from '../../sim/types';
 import type {FoundingForces47} from './civilization47-forces';
 import type {ArmyRouteWeights47} from './army-commands47';
 import {actualForces47} from './force-runtime47';
-import {armyTravelLocation47,haltArmyTravel47,redirectArmyTravelToPoint47,remainingArmyTravelPoints47} from './army-travel47-state';
+import {armyTravelLocation47,assertArmyTravel47,beginArmyTravelToPoint47,haltArmyTravel47,redirectArmyTravelToPoint47,remainingArmyTravelPoints47} from './army-travel47-state';
+import {createArmyTravelSearch47,type TravelGraph47} from './army-travel47-graph';
+import {waterRegions47} from './geography-content47';
 import {assertForceContacts47,forceKey47,reconcileForceContactsOwned47} from './force-motion47';
 import {graphFor47 as graphFor46} from './sea-geography47';
 import {militaryAccess46} from './war46-access';
@@ -14,12 +16,33 @@ export const fleetStamp47=(r:FoundingForces47)=>({runId:r.id,day:r.world.day,tic
 export type FleetStamp47=ReturnType<typeof fleetStamp47>;
 const exact=(v:unknown,keys:string[]):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 const validCounter=(v:number)=>Number.isSafeInteger(v)&&v>=0&&v<Number.MAX_SAFE_INTEGER;
-function resolve(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47){
+declare const fleetSearch:unique symbol;
+export type FleetCommandSearch47={readonly [fleetSearch]:true};
+type FleetSearchState47={run:FoundingForces47;fleetId:string;tick:number;weights:ArmyRouteWeights47;graph?:TravelGraph47;cell?:number;point?:Point;search?:ReturnType<typeof createArmyTravelSearch47>};
+const searches=new WeakMap<FleetCommandSearch47,FleetSearchState47>();
+/** One synchronous fleet decision phase. Only the sea-only route frontier is
+ * reused; every preview/issue still validates its current force, contacts,
+ * destination and diplomatic permission. Never persist or share across fleets. */
+export function createFleetCommandSearch47(run:FoundingForces47,weights:ArmyRouteWeights47,fleetId:string):FleetCommandSearch47{
+ const token=Object.freeze({}) as FleetCommandSearch47;
+ searches.set(token,{run,fleetId,tick:run.clock.tick,weights:{preferPorts:weights.preferPorts,portSeaFaces:new Set(weights.portSeaFaces),oceanRouteFaces:new Set(weights.oceanRouteFaces)}});
+ return token;
+}
+function routeFromSearch47(token:FleetCommandSearch47|undefined,r:FoundingForces47,fleetId:string,g:TravelGraph47,at:{cell:{id:number};point:Point},end:number,weights:ArmyRouteWeights47){
+ const s=token&&searches.get(token),sameSet=(a:ReadonlySet<number>,b:ReadonlySet<number>)=>a.size===b.size&&[...a].every(v=>b.has(v));
+ if(!s||s.run!==r||s.fleetId!==fleetId||s.tick!==r.clock.tick||s.weights.preferPorts!==weights.preferPorts||!sameSet(s.weights.portSeaFaces,weights.portSeaFaces)||!sameSet(s.weights.oceanRouteFaces,weights.oceanRouteFaces))return undefined;
+ assertArmyTravel47(r.fleetPositions.records[fleetId],g);
+ if(s.graph!==g||s.cell!==at.cell.id||s.point?.x!==at.point.x||s.point?.y!==at.point.y){
+  s.graph=g;s.cell=at.cell.id;s.point={...at.point};s.search=createArmyTravelSearch47(g,at.cell.id,{...s.weights,allowLand:false,allowSea:true,canEnter:()=>false});
+ }
+ return s.search!(end);
+}
+function resolve(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47,search?:FleetCommandSearch47){
  if(!exact(action,action?.type==='fleet-halt'?['type','fleetId']:['type','fleetId','target'])||typeof action.fleetId!=='string'||!action.fleetId||!['fleet-halt','fleet-sail'].includes(action.type))throw Error('舰队军令格式无效。');
  if(action.type==='fleet-sail'&&(!exact(action.target,['kind','id'])||(action.target.kind==='port'?typeof action.target.id!=='string'||!action.target.id:action.target.kind!=='cell'||!validCounter(action.target.id))))throw Error('舰队目标格式无效。');
  if(!r.id||r.world.scenario!=='custom-world'||r.world.nextEventId<1||![r.world.day,r.clock.tick,r.world.nextEventId,r.fleetPositions.revision,r.armyPositions.revision,r.portControl.revision].every(validCounter))throw Error('舰队状态无法安全更新。');
  const {spatial,forces}=actualForces47(r),g=spatial.graph,f=r.navy.fleets.find(f=>f.id===action.fleetId&&f.status!=='lost');if(!f||!f.crew)throw Error('舰队不存在或已经失去战斗力。');
- const regions=new Map(r.diplomaticGeography.water.flatMap(p=>p.faces.map(face=>[face,p.id] as const))),region=(face:number)=>regions.get(face)!;
+ const regions=waterRegions47(r.diplomaticGeography),region=(face:number)=>regions.get(face)!;
  assertForceContacts47(r.forceContacts,forces,g,region);
  const contact=reconcileForceContactsOwned47(forces,g,r.forceContacts,(a,b)=>nationsAtWar(r.world,a,b),region);
  if(contact.held.has(forceKey47({kind:'fleet',id:f.id}))||r.maritime.retreating[f.id]>r.clock.tick)throw Error('舰队正在交锋或脱离战场，普通改令不能取消这段过程。');
@@ -35,20 +58,21 @@ function resolve(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeigh
  const destination=port?sea.nodes.get(port.node)!.center:cell.center;
  if(current.status==='moving'&&current.version===2&&current.nodes.at(-1)===cellId&&current.destination.x===destination.x&&current.destination.y===destination.y)throw Error('舰队正在前往这个精确目标。');
  if(['arrived','halted'].includes(current.status)&&at.cell.id===cellId&&at.point.x===destination.x&&at.point.y===destination.y)throw Error('舰队已经抵达这个位置。');
- const travel=redirectArmyTravelToPoint47(current,g,cellId,destination,{...weights,allowLand:false,allowSea:true,canEnter:()=>false});if(!travel)throw Error('当前海域与目标之间没有相连的水路。');
+ const path=routeFromSearch47(search,r,f.id,g,at,cellId,weights);
+ const travel=path===undefined?redirectArmyTravelToPoint47(current,g,cellId,destination,{...weights,allowLand:false,allowSea:true,canEnter:()=>false}):path?beginArmyTravelToPoint47(f.id,path.nodes,g,at.point,destination):null;if(!travel)throw Error('当前海域与目标之间没有相连的水路。');
  return{f,g,travel,points:remainingArmyTravelPoints47(travel,g),portId:port?.id??null,name:port?(r.world.cities.find(c=>c.provinceId===port.provinceId)?.name??r.world.provinces.find(p=>p.id===port.provinceId)!.name)+'港':'所选海域'};
 }
 export type FleetPreview47={valid:boolean;reason:string;basedOn:FleetStamp47;points:Point[];distance:number;warnings:string[]};
-export function previewFleetCommand47(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47):FleetPreview47{
- const basedOn=fleetStamp47(r);try{const value=resolve(r,action,weights);return{valid:true,reason:action.type==='fleet-halt'?'停在当前位置。':`沿真实水路驶往${value.name}。`,basedOn,points:value.points,distance:value.points.reduce((n,p,i)=>i?n+Math.hypot(p.x-value.points[i-1].x,p.y-value.points[i-1].y):n,0),warnings:['航行和改令不自动补粮；实际停在安全本国港口锚点后才按日结补给。']};}
+export function previewFleetCommand47(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47,search?:FleetCommandSearch47):FleetPreview47{
+ const basedOn=fleetStamp47(r);try{const value=resolve(r,action,weights,search);return{valid:true,reason:action.type==='fleet-halt'?'停在当前位置。':`沿真实水路驶往${value.name}。`,basedOn,points:value.points,distance:value.points.reduce((n,p,i)=>i?n+Math.hypot(p.x-value.points[i-1].x,p.y-value.points[i-1].y):n,0),warnings:['航行和改令不自动补粮；实际停在安全本国港口锚点后才按日结补给。']};}
  catch(error){return{valid:false,reason:error instanceof Error?error.message:'舰令无法执行。',basedOn,points:[],distance:0,warnings:[]};}
 }
 /** Private candidate only; same owned core for manual and future AI orders. */
-export function issueFleetOrderOwned47(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47,source:'player'|'autonomous'):void{
+export function issueFleetOrderOwned47(r:FoundingForces47,action:FleetCommand47,weights:ArmyRouteWeights47,source:'player'|'autonomous',search?:FleetCommandSearch47):void{
  if(source!=='player'&&source!=='autonomous')throw Error('舰令来源无效。');
  if(source==='autonomous'&&(r.voyages.manualFleets.includes(action.fleetId)||r.navy.fleets.find(f=>f.id===action.fleetId)?.patrol===false))throw Error('玩家控制或关闭自动调度的舰队保留当前命令。');
  if(source==='player'&&!validCounter(r.voyages.revision))throw Error('舰队接管版本已达上限。');
- const value=resolve(r,action,weights);
+ const value=resolve(r,action,weights,search);
  // No legacy movement or fake dock assignment. Only the actual travel is
  // authoritative; food/crew/hull and contact clocks do not change here.
  r.fleetPositions.records[action.fleetId]=value.travel;r.fleetPositions.revision++;

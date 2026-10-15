@@ -1,7 +1,7 @@
 import {beforeAll,describe,it,expect} from 'vitest';
 import {createFoundingForces47,type FoundingForces47} from './civilization47-forces';
 import {grid} from './fixture.test-support';
-import {applyFleetCommand47,previewFleetCommand47,issueFleetOrderOwned47,fleetStamp47} from './fleet-commands47';
+import {applyFleetCommand47,createFleetCommandSearch47,previewFleetCommand47,issueFleetOrderOwned47,fleetStamp47} from './fleet-commands47';
 import {actualForces47,advanceActualForces47} from './force-runtime47';
 import {armyTravelLocation47,beginArmyTravel47} from './army-travel47-state';
 import {actualForceSpeed47} from './force-speed47';
@@ -58,5 +58,37 @@ describe('actual47 sea-only fleet commands and exact docking',()=>{
   const relation=r.world.statecraft!.relations.find(v=>[v.a,v.b].includes(enemy.nationId)&&[v.a,v.b].includes(fleet.nationId))!;relation.status='war';
   const action={type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'cell' as const,id:at.cell.id}},before=structuredClone(r);expect(previewFleetCommand47(r,action,weights).reason).toMatch(/交锋/);expect(()=>applyFleetCommand47(r,action,fleetStamp47(r),weights)).toThrow(/交锋/);expect(r).toEqual(before);
   relation.status='peace';r.maritime.retreating[fleet.id]=r.clock.tick+1;expect(previewFleetCommand47(r,action,weights).reason).toMatch(/脱离/);
+ });
+ it('keeps every candidate preview and the accepted order exact while sharing one sea frontier',()=>{
+  const {r,fleet}=displaced();for(const v of r.world.statecraft!.relations)v.status='war';
+  const search=createFleetCommandSearch47(r,weights,fleet.id),before=structuredClone(r),ports=graphFor46(r).ports;
+  const actions=ports.map(p=>({type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'port' as const,id:p.id}}));
+  // Visit far/near candidates in both orders, including the same-cell target.
+  for(const action of [...actions,...[...actions].reverse()])expect(previewFleetCommand47(r,action,weights,search)).toEqual(previewFleetCommand47(r,action,weights));
+  expect(r).toEqual(before);
+  const action=actions.find(a=>previewFleetCommand47(r,a,weights,search).valid)!,ordinary=structuredClone(r);
+  issueFleetOrderOwned47(ordinary,action,weights,'autonomous');issueFleetOrderOwned47(r,action,weights,'autonomous',search);expect(r).toEqual(ordinary);
+ });
+ it('rechecks foreign port permission and active withdrawal after warming a route',()=>{
+  const {r,fleet}=displaced(),foreign=graphFor46(r).ports.find(p=>r.world.provinces.find(v=>v.id===p.provinceId)!.controller!==fleet.nationId)!,owner=r.world.provinces.find(p=>p.id===foreign.provinceId)!.controller;
+  const relation=r.world.statecraft!.relations.find(v=>[v.a,v.b].includes(owner)&&[v.a,v.b].includes(fleet.nationId))!,search=createFleetCommandSearch47(r,weights,fleet.id),action={type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'port' as const,id:foreign.id}};
+  relation.status='war';expect(previewFleetCommand47(r,action,weights,search).valid).toBe(true);
+  relation.status='peace';expect(previewFleetCommand47(r,action,weights,search)).toEqual(previewFleetCommand47(r,action,weights));expect(previewFleetCommand47(r,action,weights,search).reason).toMatch(/通行权/);
+  relation.status='war';r.maritime.retreating[fleet.id]=r.clock.tick+1;
+  expect(previewFleetCommand47(r,action,weights,search).reason).toMatch(/脱离/);
+ });
+ it('starts a fresh frontier for changed origins and never reuses another fleet, run or policy',()=>{
+  const {r,fleet,graph,port}=displaced();for(const v of r.world.statecraft!.relations)v.status='war';
+  const search=createFleetCommandSearch47(r,weights,fleet.id),action={type:'fleet-sail' as const,fleetId:fleet.id,target:{kind:'port' as const,id:port.id}};
+  expect(previewFleetCommand47(r,action,weights,search).valid).toBe(true);
+  const old=armyTravelLocation47(r.fleetPositions.records[fleet.id],graph),vertex=old.cell.polygon[0],point={x:old.point.x*.99+vertex.x*.01,y:old.point.y*.99+vertex.y*.01};
+  r.fleetPositions.records[fleet.id]=beginArmyTravel47(fleet.id,[old.cell.id],graph,point);
+  expect(previewFleetCommand47(r,action,weights,search)).toEqual(previewFleetCommand47(r,action,weights));
+  const other=r.navy.fleets.find(f=>f.id!==fleet.id)!,otherAction={...action,fleetId:other.id};
+  expect(previewFleetCommand47(r,otherAction,weights,search)).toEqual(previewFleetCommand47(r,otherAction,weights));
+  const changed={...weights,preferPorts:true,oceanRouteFaces:new Set([old.cell.face])};
+  expect(previewFleetCommand47(r,action,changed,search)).toEqual(previewFleetCommand47(r,action,changed));
+  const copied=structuredClone(r);expect(previewFleetCommand47(copied,action,weights,search)).toEqual(previewFleetCommand47(copied,action,weights));
+  r.clock.tick++;expect(previewFleetCommand47(r,action,weights,search)).toEqual(previewFleetCommand47(r,action,weights));
  });
 });

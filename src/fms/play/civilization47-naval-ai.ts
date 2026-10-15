@@ -7,7 +7,7 @@ import {nativePortTarget,nativeBestPort} from './native-war/port-occupation';
 import {nationsAtWar} from './realtime-statecraft';
 import {landHolders47} from './army-space47';
 import {forceKey47} from './force-motion47';
-import {previewFleetCommand47,issueFleetOrderOwned47,type FleetCommand47} from './fleet-commands47';
+import {createFleetCommandSearch47,previewFleetCommand47,issueFleetOrderOwned47,type FleetCommand47} from './fleet-commands47';
 import type {ArmyRouteWeights47} from './army-commands47';
 import {actualForceSpeed47} from './force-speed47';
 import {TICKS_PER_DAY} from './clock';
@@ -65,8 +65,9 @@ export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRout
   if(!moving&&goalAttack&&!low&&view.atPort(goal!.id).some(v=>v.fleet.id===f.id)){note('attacking','已在目标港湾，按实际存在时间争夺海港。');continue;}
   if(moving){issueFleetOrderOwned47(r,{type:'fleet-halt',fleetId:f.id},weights,'autonomous');row.assignedPortId=null;order.targetId=null;}
   const atAnchor=(p:typeof candidates[number])=>p.node===actual.at.cell.face&&Math.hypot(actual.at.point.x-view.sea.nodes.get(p.node)!.center.x,actual.at.point.y-view.sea.nodes.get(p.node)!.center.y)<=1e-8;
+  const search=createFleetCommandSearch47(r,weights,f.id);
   const action=(id:string):FleetCommand47=>({type:'fleet-sail',fleetId:f.id,target:{kind:'port',id}});
-  const start=(id:string,decision:NavalDecision47['decision'],reason:string)=>{issueFleetOrderOwned47(r,action(id),weights,'autonomous');row.assignedPortId=id;row.issuedTick=now;note(decision,reason);};
+  const start=(id:string,decision:NavalDecision47['decision'],reason:string)=>{issueFleetOrderOwned47(r,action(id),weights,'autonomous',search);row.assignedPortId=id;row.issuedTick=now;note(decision,reason);};
   const here=safe.find(atAnchor);
   if(low&&here){row.assignedPortId=here.id;order.targetId=null;note('resupply','实际停在安全本国锚点，等待日结从当地粮储补给。');continue;}
   const home=candidates.find(p=>p.id===row.homePortId),homeLost=!!home&&r.portControl.ports[home.provinceId].occupierId!==f.nationId;
@@ -78,14 +79,14 @@ export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRout
     if(atAnchor(port))return [{port,control:r.portControl.ports[port.provinceId],distance:0}];
     // Keep the 30-day return threshold plus three days at the destination.
     // Safe-port return uses its separate best-effort/three-day budget below.
-    const p=previewFleetCommand47(r,action(port.id),weights);return p.valid&&f.food>=ration*(Math.ceil(p.distance/speed/TICKS_PER_DAY)+3)+f.crew*30?[{port,control:r.portControl.ports[port.provinceId],distance:p.distance}]:[];
+    const p=previewFleetCommand47(r,action(port.id),weights,search);return p.valid&&f.food>=ration*(Math.ceil(p.distance/speed/TICKS_PER_DAY)+3)+f.crew*30?[{port,control:r.portControl.ports[port.provinceId],distance:p.distance}]:[];
    });
    const best=nativeBestPort(options,f.nationId,enemy);
    if(best){order.targetId=best.port.provinceId;if(atAnchor(best.port)){row.assignedPortId=best.port.id;note('attacking','在实际敌港等待争夺完成。');}else start(best.port.id,'attacking',best.control.landOwnerId===f.nationId?'先夺回本国海港；沿真实海路航行。':'前往可在余粮范围内抵达的敌港。');continue;}
   }
   // Low-food return is explicitly best-effort to the nearest reachable safe
   // port. Routine redeployment must budget the complete route plus reserve.
-  const available=safe.flatMap(port=>{const p=atAnchor(port)?null:previewFleetCommand47(r,action(port.id),weights);return p===null||p.valid&&(low||affordable(p.distance))?[{port,distance:p?.distance??0}]:[];});
+  const available=safe.flatMap(port=>{const p=atAnchor(port)?null:previewFleetCommand47(r,action(port.id),weights,search);return p===null||p.valid&&(low||affordable(p.distance))?[{port,distance:p?.distance??0}]:[];});
   let chosen:typeof available[number]|undefined;
   if(low)chosen=available.sort((a,b)=>a.distance-b.distance)[0];
   else {const rows=nativeIdlePortWeights(available.map(v=>({id:v.port.id,present:view.atPort(v.port.id).filter(v=>v.fleet.nationId===f.nationId).length,assigned:view.fleets.filter(({fleet:other})=>other.nationId===f.nationId&&other.patrol&&!r.voyages.manualFleets.includes(other.id)&&!view.held.has(forceKey47({kind:'fleet',id:other.id}))&&!(r.maritime.retreating[other.id]>now)&&s.fleets[other.id].decision==='guarding'&&s.fleets[other.id].assignedPortId===v.port.id).length})),atWar,row.assignedPortId,here?.id??null,row.homePortId),pick=nativeChooseIdlePort(rows,()=>drawNaval47(s));chosen=available.find(v=>v.port.id===pick?.id);}

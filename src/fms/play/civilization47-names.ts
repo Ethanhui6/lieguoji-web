@@ -64,7 +64,7 @@ export function currentRuler47(c:Civilization47,chronicle:Chronicle,nationId:str
   if(!reign||reign.endedDay!==null||Object.hasOwn(chronicle.ended,nationId))return null;
   const n=c.nations[nationId],a=c.rulers[reign.id];
   assertRulerIdentity47(a,c.peopleMode,c.enabled);
-  return {name:a.name,title:rulerTitle47(n.cultureId,n.polity,n.religionId,a.gender),order:reign.order,regnalName:reign.regnalName,regnalOrdinal:reign.regnalOrdinal};
+  return {name:a.name,given:a.given,title:rulerTitle47(n.cultureId,n.polity,n.religionId,a.gender),order:reign.order,regnalName:reign.regnalName,regnalOrdinal:reign.regnalOrdinal};
 }
 /** The user's two-mode choice concerns states/cities. People are cultural
  * generated individuals, so native families never splice historical biographies. */

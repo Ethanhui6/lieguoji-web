@@ -55,7 +55,7 @@ function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,t
     return politicalWork||navalWork?'refresh':'reuse';
   };
   const rules:MilitaryRules47<T>={observeMotion,sessionOccupationKey:occupationObserver?.read??(fixed?occupationObservationKey47:undefined),invalidateSessionOccupation:occupationObserver?.invalidate,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
-    const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed):undefined);
+    const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed,contacts)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed,contacts):undefined);
     const end=moved.unusedSeconds===0?stop:from+moved.elapsed;
     if(end>from)advanceSessionPortInterval47(before,moved.run,from,end,sea,start);
     return moved;

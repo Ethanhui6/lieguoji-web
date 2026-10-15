@@ -30,7 +30,7 @@ export class PlayMap {
   textDiagnostics(){return {created:this.labelCreations,retained:this.retainedLabels.size};}
   private retainedText(key:string,text:string,style:TextStyleOptions){
     this.usedLabels.add(key);let label=this.retainedLabels.get(key);
-    if(!label){label=new Text({text,style});this.retainedLabels.set(key,label);this.labelCreations++;}
+    if(!label){label=new Text({text,style,resolution:2});this.retainedLabels.set(key,label);this.labelCreations++;}
     else if(label.text!==text)label.text=text;
     // Layout measures unscaled glyphs. A previous camera pose must not feed
     // back into the next territory fit or make its letters shrink repeatedly.
@@ -99,7 +99,7 @@ export class PlayMap {
     this.sinkMotion.move(frame.fleets);
     for(const effect of this.battleSprites){if(!effect.fleets)continue;const a=frame.fleets.get(effect.fleets[0]),b=frame.fleets.get(effect.fleets[1]);if(a&&b)effect.sprite.position.set((a.x+b.x)/2/p.scale,(a.y+b.y)/2/p.scale);}
   }
-  constructor(refresh=()=>{}){for(const [key,url] of Object.entries(icons)){const img=new Image();img.onload=()=>{if(this.disposed)return;this.textures.set(key as UnitKey,Texture.from(img));refresh();};img.src=url;}const img=new Image();img.onload=()=>{if(this.disposed)return;this.battleAtlas=Texture.from(img);this.battleTextures=Array.from({length:40},(_,i)=>new Texture({source:this.battleAtlas!.source,frame:new Rectangle(i%5*258,Math.floor(i/5)*194,258,194)}));refresh();};img.src=battleAtlasUrl;}
+  constructor(refresh=()=>{},legacyBattleEffects=true){for(const [key,url] of Object.entries(icons)){const img=new Image();img.onload=()=>{if(this.disposed)return;this.textures.set(key as UnitKey,Texture.from(img));refresh();};img.src=url;}if(!legacyBattleEffects)return;const img=new Image();img.onload=()=>{if(this.disposed)return;this.battleAtlas=Texture.from(img);this.battleTextures=Array.from({length:40},(_,i)=>new Texture({source:this.battleAtlas!.source,frame:new Rectangle(i%5*258,Math.floor(i/5)*194,258,194)}));refresh();};img.src=battleAtlasUrl;}
   dispose(){this.disposed=true;for(const text of this.retainedLabels.values()){text.removeFromParent();text.destroy();}this.retainedLabels.clear();for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();for(const texture of this.battleTextures)texture.destroy(false);this.battleTextures=[];this.battleAtlas?.destroy(true);}
 
   private politicalGraphic=new Graphics();
@@ -154,7 +154,7 @@ export class PlayMap {
       fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:size,
       fontWeight:capital?'600':'400',
       fill:mode==='political'?'#3b3429':'#f6efd9',
-      stroke:{color:mode==='political'?'#f7ebd1':'#354338',width:capital?1.3:.8},
+      stroke:{color:mode==='political'?'#f7ebd1':'#354338',width:capital?.6:.35},
     });
     const placeName=(text:string,x:number,y:number,size:number,key:string)=>{
       const t=this.retainedText(`place:${mode}:${key}`,text,placeStyle(size));
@@ -170,7 +170,7 @@ export class PlayMap {
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
       const n=nations.get(territory.nationId)!,point=territory.point,factor=zoom/scale;
-      const t=this.retainedText(`country:${territory.componentId}`,n.name,{fontFamily:'Georgia, "Microsoft YaHei", serif',fontSize:26,fill:'#263a30',fontWeight:'500',stroke:{color:'#fffae5',width:1.6},letterSpacing:2.4});
+      const t=this.retainedText(`country:${mode}:${territory.componentId}`,n.name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:mode==='political'?'#332c24':'#f6efd9',fontWeight:'400',stroke:{color:mode==='political'?'#f3e7ca':'#354338',width:.45},letterSpacing:2});
       // Fit the measured glyphs in the world-space band, then cap readability.
       // Tiny enclaves keep their name at their true anchor; zoom reveals it.
       const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;

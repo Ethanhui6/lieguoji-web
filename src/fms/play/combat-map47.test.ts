@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {combatMarkers47,displayCombatMarkers47} from './combat-map47';
+import {combatMarkers47,displayCombatMarkers47,visibleCombatMarkers47} from './combat-map47';
 import type {FoundingForces47} from './civilization47-forces';
 import {activeSiegesFromSpace47} from './siege-display47';
 import type {ArmySpace47} from './army-space47';
@@ -26,5 +26,21 @@ describe('actual 47 battle display',()=>{
   const r={world:{provinces:[]},occupation:{sieges:[]},forceContacts:{pairs:[{area:'land/p',a:'a',b:'b',cellA:2,cellB:4,pointA:{x:10,y:20},pointB:{x:12,y:20}},{area:'land/p',a:'c',b:'d',cellA:200,cellB:202,pointA:{x:800,y:900},pointB:{x:802,y:900}}]}} as unknown as FoundingForces47;
   const markers=combatMarkers47(r,new Set());expect(markers.map(m=>m.point)).toEqual([{x:11,y:20},{x:801,y:900}]);
   expect(displayCombatMarkers47(markers,new Map([['a',{x:5,y:6}],['b',{x:9,y:6}],['c',{x:80,y:90}],['d',{x:82,y:90}]] )).map(m=>m.point)).toEqual([{x:7,y:6},{x:81,y:90}]);
+ });
+});
+describe('battle density follows the camera without changing combat',()=>{
+ const world={provinces:[{polygon:[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}]}],armies:['a','b','c','d'].map(id=>({id,troops:1000,status:'fighting'}))};
+ const r={world,navy:{fleets:[]}} as unknown as FoundingForces47;
+ const marker=(id:string,x:number,a:string,b:string)=>({id,kind:'contact' as const,point:{x,y:10},participants:2,progress:null,pairs:[[JSON.stringify(['army',a]),JSON.stringify(['army',b])]] as [string,string][]});
+ it('hides tiny overview clashes, reveals them on zoom and culls outside the viewport',()=>{
+  const markers=[marker('land/p/1',10,'a','b')],original=structuredClone(markers);
+  expect(visibleCombatMarkers47(markers,r,1,{x:0,y:0,scale:.1},{width:300,height:300})).toEqual([]);
+  expect(visibleCombatMarkers47(markers,r,1,{x:0,y:0,scale:1},{width:300,height:300})).toHaveLength(1);
+  expect(visibleCombatMarkers47(markers,r,1,{x:-1000,y:0,scale:1},{width:300,height:300})).toEqual([]);expect(markers).toEqual(original);
+ });
+ it('combines neighboring contacts with unique forces while preserving distant real battle sites',()=>{
+  const markers=[marker('land/p/1',10,'a','b'),marker('land/p/2',15,'a','c'),marker('land/p/3',150,'c','d')];
+  const visible=visibleCombatMarkers47(markers,r,1,{x:0,y:0,scale:1},{width:300,height:300});expect(visible).toHaveLength(2);
+  expect(visible[0]).toMatchObject({point:markers[0].point,participants:3});expect(visible[1].point).toEqual(markers[2].point);
  });
 });

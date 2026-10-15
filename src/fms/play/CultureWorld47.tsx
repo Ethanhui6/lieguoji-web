@@ -39,7 +39,9 @@ import {CultureDiplomacy47} from './CultureDiplomacy47';
 import {CultureNews47} from './CultureNews47';
 import {usePresentationClock} from './PresentationClock';
 import {Graphics} from 'pixi.js';
-import {activeSiegeProvinces47,combatMarkers47,displayCombatMarkers47,drawCombatMarkers47} from './combat-map47';
+import {activeSiegeProvinces47,combatMarkers47,displayCombatMarkers47,visibleCombatMarkers47} from './combat-map47';
+import {CombatTimeline47} from './combat-timeline47';
+import {CombatOverlay47} from './CombatOverlay47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
 import {actualForces47} from './force-runtime47';
 import type {MilitaryIntent47} from './culture47-orders';
@@ -250,35 +252,41 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   useEffect(()=>{const protect=(e:BeforeUnloadEvent)=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[]);
   const runId=snapshot?.run.id;
   const motion=useRef(new CultureMotion47());
+  const combatTimeline=useRef(new CombatTimeline47());
   useEffect(()=>{motion.current.setPresentationTickMillis(playbackBudget.tickMillis,performance.now());},[playbackBudget.tickMillis]);
   function displayFrame(){return motion.current.frame(performance.now());}
-  useEffect(()=>{if(snapshot){const now=performance.now();motion.current.install(snapshot,now,()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);}},[snapshot,renderFault]);
+  useEffect(()=>{if(snapshot){const now=performance.now();combatTimeline.current.install(snapshot,motion.current.tick(now),instantDisplay.current);motion.current.install(snapshot,now,()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);}},[snapshot,renderFault]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
   useEffect(()=>{
     if(!runId||!host.current||!current.current)return;
     displayReady.current=false;
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
-    const element=host.current,source=current.current.run.terrain,renderer=new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current()),orderLine=new Graphics(),combatLayer=new Graphics();
+    const element=host.current,source=current.current.run.terrain,renderer=new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current());
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
-    combatLayer.enableRenderGroup();
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
     const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):initialLandCamera47(source,viewport)};
-    let combat:ReturnType<typeof combatMarkers47>=[],combatRun:FoundingForces47|null=null;
+    const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
+    let combat:ReturnType<typeof combatMarkers47>=[],contactPairs:ReturnType<CombatTimeline47['pairs']>|null=null,combatRun:FoundingForces47|null=null;
+    const drawCombat=(frame:ReturnType<typeof displayFrame>,now:number)=>{
+      const s=current.current!,r=s.run,pairs=combatTimeline.current.pairs(motion.current.tick(now));
+      if(contactPairs!==pairs||combatRun!==r){combat=combatMarkers47({...r,forceContacts:{version:1,pairs}},motion.current.tick(now)>=r.clock.tick?(s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r)):new Set());contactPairs=pairs;combatRun=r;}
+      const displayed=displayCombatMarkers47(combat,map.displayForcePoints(frame)),visible=visibleCombatMarkers47(displayed,r,r.scale,view.camera,view.viewport);
+      combatOverlay.draw(visible,combat.filter(m=>m.kind==='contact').map(m=>m.id),r.scale,view.camera.scale,now,isPlaying.current,reducedMotion.matches);
+      if(renderer.canvas){renderer.canvas.dataset.combat=JSON.stringify(displayed);renderer.canvas.dataset.visibleCombat=JSON.stringify(visible);if(richDiagnostics)renderer.canvas.dataset.combatAnimation=JSON.stringify(combatOverlay.diagnostics());}
+    };
     const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
     const sea=graphFor46(current.current.run);
     void renderer.init(element).then(()=>{
-      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatLayer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
+      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
         const selection=selected.current;
         const frame=displayFrame();
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
-        if(combatRun!==r){combat=combatMarkers47(r,s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r));combatRun=r;canvas.dataset.combat=JSON.stringify(combat);}
-        const displayedCombat=displayCombatMarkers47(combat,map.displayForcePoints(frame));canvas.dataset.combat=JSON.stringify(displayedCombat);canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
-        drawCombatMarkers47(combatLayer,displayedCombat,r.scale,view.camera.scale);
+        drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
         canvas.dataset.day=String(r.world.day);canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
@@ -305,22 +313,19 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
-      let raf=0,settled=-1,lastDiagnostic=0,lastCombatPaint=0;
+      let raf=0,settled=-1,lastDiagnostic=0;
       // Full force snapshots are test evidence, not gameplay. Serializing every
       // army/fleet and querying every visual marker on each interpolated frame
       // steals time from the same main thread that must paint the map. An
       // explicit local query keeps that expensive read-only instrumentation out
       // of ordinary play while retaining it for the browser motion regression.
-      const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
       const animate=()=>{if(disposed||failed)return;try{
-        const now=performance.now(),alpha=motion.current.alpha(now),animateCombat=isPlaying.current&&!reducedMotion.matches&&combat.some(m=>m.kind==='contact');
-        // Contact glow is cosmetic. Re-rendering the entire terrain every RAF
-        // when any war contact exists can monopolize the main thread and starve
-        // confirmed Worker replies. Actual force motion still paints each RAF.
-        const combatPulse=animateCombat&&now-lastCombatPaint>=250;
-        if(alpha<1||settled!==motion.current.revision||combatPulse){
+        const now=performance.now(),alpha=motion.current.alpha(now),combatFrame= combatOverlay.animate(now,isPlaying.current,reducedMotion.matches);
+        // The authored clip changes at 12 Hz. Keep its clock anchored while
+        // paused/offscreen without making a full-map redraw on every RAF.
+        if(alpha<1||settled!==motion.current.revision||combatFrame){
           const frame=motion.current.frame(now);map.updateUnits(frame);
-          if(combat.length){const displayedCombat=displayCombatMarkers47(combat,map.displayForcePoints(frame));drawCombatMarkers47(combatLayer,displayedCombat,current.current!.run.scale,view.camera.scale,animateCombat ? .5+.5*Math.sin(now/240) : 0);if(richDiagnostics)canvas.dataset.combat=JSON.stringify(displayedCombat);if(combatPulse)lastCombatPaint=now;}
+          drawCombat(frame,now);
           // The renderer itself updates every RAF. Rich diagnostics are opted
           // in by the regression URL; ordinary play keeps only the small
           // display tick at a settled cadence instead of serializing the full
@@ -338,7 +343,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});
-    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;renderer.destroy();map.dispose();};
+    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();renderer.destroy();map.dispose();};
   },[runId,rendererEpoch]);
   useEffect(()=>{paint.current();},[snapshot,nationId,cityId,panel,force,mapMode,militaryPreview]);
   const choice=(i:number):CultureChoice47=>{const c=culture47(enabled[i%enabled.length]??'chinese');return choices['n-'+i]&&enabled.includes(choices['n-'+i].cultureId)?choices['n-'+i]:{cultureId:c.id,religionId:c.suggestedReligion,polity:c.suggestedPolity};};

@@ -2,10 +2,12 @@ import type {Point} from '../../sim/types';
 import type {MovingForce47} from './force-motion47';
 import type {TravelGraph47} from './army-travel47-graph';
 import {armyTravelLocation47} from './army-travel47-state';
+import type {ForceContact47,ForceContacts47} from './force-motion47';
 
 export type ForceTracePoint47=Point&{tick:number};
-export type ForceDisplayTrace47={runId:string;fromSequence:number;toSequence:number;fromTick:number;toTick:number;armies:Record<string,ForceTracePoint47[]>;fleets:Record<string,ForceTracePoint47[]>};
-export type ForceMotionObserver47=(forces:readonly MovingForce47[],graph:TravelGraph47,tick:number)=>void;
+export type ContactTraceFrame47={tick:number;pairs:ForceContact47[]};
+export type ForceDisplayTrace47={runId:string;fromSequence:number;toSequence:number;fromTick:number;toTick:number;armies:Record<string,ForceTracePoint47[]>;fleets:Record<string,ForceTracePoint47[]>;contacts?:ContactTraceFrame47[]};
+export type ForceMotionObserver47=(forces:readonly MovingForce47[],graph:TravelGraph47,tick:number,contacts?:ForceContacts47)=>void;
 /** Request-local presentation evidence. Sample only actual event endpoints;
  * never persist it or feed it back into movement, damage, access or saves. */
 export class ForceDisplayTraceCollector47 {
@@ -23,6 +25,12 @@ export class ForceDisplayTraceCollector47 {
    if(Math.abs(before.x+(sample.x-before.x)*t-last.x)<1e-9&&Math.abs(before.y+(sample.y-before.y)*t-last.y)<1e-9){path[path.length-1]=sample;return;}}
   path.push(sample);if(++this.size>200000||path.length>8192)this.overflow=true;
  }
- observe:ForceMotionObserver47=(forces,graph,tick)=>{if(this.overflow)return;for(const force of forces)this.record(force.kind,force.id,tick,armyTravelLocation47(force.travel,graph).point);};
+ recordContacts(tick:number,contacts:ForceContacts47){
+  if(this.overflow)return;const frames=this.value.contacts??(this.value.contacts=[]),last=frames.at(-1);
+  if(last?.tick===tick)frames.pop();
+  const previous=frames.at(-1);if(previous&&JSON.stringify(previous.pairs)===JSON.stringify(contacts.pairs))return;
+  frames.push({tick,pairs:structuredClone(contacts.pairs)});this.size+=contacts.pairs.length+1;if(this.size>200000)this.overflow=true;
+ }
+ observe:ForceMotionObserver47=(forces,graph,tick,contacts)=>{if(this.overflow)return;for(const force of forces)this.record(force.kind,force.id,tick,armyTravelLocation47(force.travel,graph).point);if(contacts)this.recordContacts(tick,contacts);};
  finish(toSequence:number,toTick:number){if(this.overflow)return undefined;this.value.toSequence=toSequence;this.value.toTick=toTick;return this.value;}
 }

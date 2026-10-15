@@ -1,9 +1,9 @@
-import type {Graphics} from 'pixi.js';
 import type {Point} from '../../sim/types';
 import type {FoundingForces47} from './civilization47-forces';
 import {armySpatialFor47} from './army-geography47';
 import {readArmySpace47} from './army-space47';
 import {activeSiegesFromSpace47} from './siege-display47';
+import {warDetail} from './war-view';
 
 export type CombatMarker47={id:string;kind:'contact'|'siege';point:Point;participants:number;progress:number|null;pairs?:[string,string][]};
 /** Read the actual 47 contact ledger. Legacy battle/sea-contact collections
@@ -27,17 +27,22 @@ export function combatMarkers47(r:Pick<FoundingForces47,'forceContacts'|'occupat
 export function displayCombatMarkers47(markers:readonly CombatMarker47[],points:ReadonlyMap<string,Point>):CombatMarker47[]{
  return markers.flatMap(m=>{if(m.kind==='siege')return[m];let x=0,y=0,count=0;const forces=new Set<string>();for(const [a,b]of m.pairs??[]){const left=points.get(a),right=points.get(b);if(!left||!right)continue;x+=(left.x+right.x)/2;y+=(left.y+right.y)/2;count++;forces.add(a);forces.add(b);}return count?[{...m,point:{x:x/count,y:y/count},participants:forces.size}]:[];});
 }
-/** Pulse denotes an ongoing contact, never fabricated damage. All coordinates
- * share the real terrain transform; stopped/reduced-motion views stay still. */
-export function drawCombatMarkers47(g:Graphics,markers:CombatMarker47[],mapScale:number,cameraScale:number,pulse=0){
- g.clear();const unit=1/cameraScale;
- for(const m of markers){const x=m.point.x/mapScale,y=m.point.y/mapScale;
-  if(m.kind==='contact'){
-   g.circle(x,y,(10+2*pulse)*unit).fill({color:0x672b28,alpha:.18}).stroke({color:0x793b35,width:1.3*unit,alpha:.6});
-   g.moveTo(x-4*unit,y-4*unit).lineTo(x+4*unit,y+4*unit).moveTo(x+4*unit,y-4*unit).lineTo(x-4*unit,y+4*unit).stroke({color:0xfff1d6,width:2.5*unit});
-  }else{
-   g.roundRect(x-10*unit,y+10*unit,20*unit,4*unit,2*unit).fill({color:0x493f31,alpha:.8});
-   g.roundRect(x-10*unit,y+10*unit,20*unit*(m.progress??0),4*unit,2*unit).fill({color:0xf3cc75,alpha:1});
-  }
+/** Screen detail is presentation only. Keep the complete ledger, hide small
+ * far-away skirmishes and combine nearby marks of the same actual site. Use a
+ * representative real contact point, never an average across distant battles. */
+export function visibleCombatMarkers47(markers:readonly CombatMarker47[],r:Pick<FoundingForces47,'world'|'navy'>,mapScale:number,camera:{x:number;y:number;scale:number},viewport:{width:number;height:number}):CombatMarker47[]{
+ const detail=warDetail(r.world,mapScale,camera.scale),strength=new Map<string,number>();
+ for(const a of r.world.armies)strength.set(JSON.stringify(['army',a.id]),a.status==='destroyed'?0:a.troops);
+ for(const f of r.navy.fleets)strength.set(JSON.stringify(['fleet',f.id]),f.status==='lost'?0:f.ships*5000);
+ const forces=(m:CombatMarker47)=>new Set((m.pairs??[]).flat()),weight=(m:CombatMarker47)=>[...forces(m)].reduce((n,id)=>n+(strength.get(id)??0),0);
+ const ranked=[...markers].sort((a,b)=>weight(b)-weight(a)||a.id.localeCompare(b.id)),result:CombatMarker47[]=[];
+ for(const m of ranked){
+  const x=m.point.x/mapScale*camera.scale+camera.x,y=m.point.y/mapScale*camera.scale+camera.y;
+  if(x<-30||y<-30||x>viewport.width+30||y>viewport.height+30)continue;
+  const radius=detail==='overview'?48:detail==='regional'?28:14;
+  const group=result.find(g=>g.kind===m.kind&&g.id.split('/').slice(0,2).join('/')===m.id.split('/').slice(0,2).join('/')&&Math.hypot(g.point.x-m.point.x,g.point.y-m.point.y)/mapScale*camera.scale<radius);
+  if(group&&m.kind==='contact'){group.pairs=[...(group.pairs??[]),...(m.pairs??[])];group.participants=forces(group).size;}
+  else if(m.kind==='contact'||detail!=='overview')result.push({...m,pairs:m.pairs?.slice()});
  }
+ return result.filter(m=>detail!=='overview'||m.kind==='contact'&&(m.participants>=4||weight(m)>=5000)).slice(0,detail==='overview'?8:detail==='regional'?20:64);
 }

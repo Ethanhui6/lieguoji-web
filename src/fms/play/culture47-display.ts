@@ -97,6 +97,19 @@ export class Culture47DisplayDecoder {
     const end=s.frame[kind].get(id),last=path.at(-1)!;if(end&&Math.hypot(end.x-last.x,end.y-last.y)>1e-7)throw Error('行军显示终点不一致。');
     size+=path.length;if(size>200000)throw Error('行军显示轨迹超出预算。');
    }
+   if(motion.contacts!==undefined){
+    if(!Array.isArray(motion.contacts)||!motion.contacts.length||motion.contacts.length>200000)throw Error('交战显示轨迹无效。');
+    let tick=motion.fromTick;
+    for(let i=0;i<motion.contacts.length;i++){const frame=motion.contacts[i];
+     if(!frame||!Number.isFinite(frame.tick)||frame.tick<tick||frame.tick>motion.toTick||i===0&&frame.tick!==motion.fromTick||i>0&&frame.tick===tick||!Array.isArray(frame.pairs))throw Error('交战显示轨迹时间无效。');
+     tick=frame.tick;size+=frame.pairs.length+1;if(size>200000)throw Error('交战显示轨迹超出预算。');
+     const seen=new Set<string>();for(const pair of frame.pairs){
+      if(!pair||typeof pair.a!=='string'||typeof pair.b!=='string'||pair.a===pair.b||typeof pair.area!=='string'||!Number.isSafeInteger(pair.cellA)||pair.cellA<0||!Number.isSafeInteger(pair.cellB)||pair.cellB<0||![pair.pointA?.x,pair.pointA?.y,pair.pointB?.x,pair.pointB?.y].every(Number.isFinite))throw Error('交战显示接触无效。');
+      const key=JSON.stringify([pair.a,pair.b].sort());if(seen.has(key))throw Error('交战显示接触重复。');seen.add(key);
+     }
+    }
+    if(!sameDisplayStatic47(motion.contacts.at(-1)!.pairs,s.run.forceContacts.pairs))throw Error('交战显示终点不一致。');
+   }
   }
   this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return motion?{...s,motion}:s;
  }

@@ -77,7 +77,7 @@ function publicMotionResult47<T extends ForceRun47>(v:ReturnType<typeof advanceC
 function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,weights:ArmyRouteWeights47,speed:(run:T,force:Readonly<MovingForce47>,cell:Readonly<TravelCell47>)=>number,stopAtEvent:boolean,observe?:ForceMotionObserver47,certifiedStart?:ReturnType<typeof actualContactFrame47>){
   for (const book of [next.armyPositions, next.fleetPositions]) if (!Number.isSafeInteger(book.revision) || book.revision < 0 || book.revision >= Number.MAX_SAFE_INTEGER) throw Error('统一部队位置版本不能安全推进。');
   const {spatial, forces} = certifiedStart??actualForces47(next);
-  observe?.(forces,spatial.graph,0);
+  observe?.(forces,spatial.graph,0,certifiedStart?.contact.contacts??next.forceContacts);
   const regions = waterRegions47(next.diplomaticGeography);
   const policy=armyTravelPolicyFactory47(next,weights);
   const policies = new Map(next.world.armies.map(a => [a.id, policy(a, a.status === 'retreating')]));
@@ -87,7 +87,7 @@ function advanceCandidateForces47<T extends ForceRun47>(next:T,seconds:number,we
     speed: (f:Readonly<MovingForce47>, c:Readonly<TravelCell47>) => speed(next, f, c),
   };
   const out = certifiedStart?advanceSessionForceContacts47(forces,next.forceContacts,spatial.graph,seconds,motionRules,certifiedStart.contact):advanceForceContacts47(forces,next.forceContacts,spatial.graph,seconds,motionRules,100000,stopAtEvent);
-  observe?.(out.forces,spatial.graph,out.elapsed);
+  observe?.(out.forces,spatial.graph,out.elapsed,out.contacts);
   for (const f of out.forces) (f.kind === 'army' ? next.armyPositions : next.fleetPositions).records[f.id] = f.travel;
   next.forceContacts = out.contacts;
   // The contact kernel has already checked every live END travel. Rebuild only

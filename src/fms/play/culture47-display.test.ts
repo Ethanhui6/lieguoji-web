@@ -89,4 +89,12 @@ describe('culture world compact transport and atomic batches',()=>{
   const endpoint=structuredClone(packet),path=Object.values(endpoint.motion!.armies)[0];path.at(-1)!.x+=10;expect(()=>decoder.decode(endpoint,expected(0))).toThrow(/终点/);
   expect(withoutMotion(decoder.decode(packet,expected(0)))).toEqual(owner.snapshot());expect('motion'in owner.snapshot()).toBe(false);
  },30000);
+ it('rejects malformed contact timing, duplicates and an altered terminal ledger without committing the decoder',()=>{
+  const {owner,decoder}=ready(),packet=owner.executeDisplay([{kind:'advance',ticks:5}],0);if(!packet.motion?.contacts)throw Error('expected contact timing evidence');
+  const pair={a:'["army","a"]',b:'["army","b"]',area:'land/p',cellA:0,cellB:1,pointA:{x:1,y:2},pointB:{x:2,y:2}};
+  for(const frames of [[{tick:1,pairs:[]}],[{tick:0,pairs:[]},{tick:6,pairs:[]}],[{tick:0,pairs:[pair,pair]}],[{tick:0,pairs:[{...pair,pointA:{x:NaN,y:2}}]}],[{tick:0,pairs:[pair]}]]){
+   const wrong=structuredClone(packet);wrong.motion!.contacts=frames;expect(()=>decoder.decode(wrong,expected(0))).toThrow(/交战/);
+  }
+  expect(withoutMotion(decoder.decode(packet,expected(0)))).toEqual(owner.snapshot());expect('motion'in owner.snapshot()).toBe(false);
+ },30000);
 });

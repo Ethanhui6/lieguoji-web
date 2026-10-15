@@ -123,7 +123,7 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
       const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
       const session=rules.sessionInterval?.(r,known,now,stop);
       if(rules.sessionInterval&&(!session||!session.run||!session.endFrame||!Number.isFinite(session.elapsed)||!Number.isFinite(session.unusedSeconds)))throw Error('私有军事区间必须同步完成，原进度未提交。');
-      const moved=session??advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed):undefined);
+      const moved=session??advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed,contacts)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed,contacts):undefined);
       // Assign an exact known endpoint when the interval was consumed; avoid
       // arithmetic residue causing a phantom delayed/missed attack at save.
       const end=moved.unusedSeconds===0?stop:now+moved.elapsed;
@@ -139,6 +139,9 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
     if(rules.sessionAfterTick&&observation!=='reuse'&&observation!=='refresh')throw Error('私有观察必须同步完成，原进度未提交。');
     // Expiry/peace/death can change attack eligibility without moving a point.
     const current=observation==='reuse'&&!rules.afterTick&&!expired&&known?known:frame(r);known=current;
+    // Tick settlement may end combat without movement. Record only that ledger;
+    // the movement observer already sampled these same positions at its endpoint.
+    rules.observeMotion?.([],current.spatial.graph,tick,current.contact.contacts);
     reconcileAttackClock47(r.forceClock,current.eligible,tick);
     assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)));
   }

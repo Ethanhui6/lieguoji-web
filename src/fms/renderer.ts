@@ -72,7 +72,9 @@ void main(){
  land=mix(land,vec3(.88,.88,.80),smoothstep(78.0,96.0,h));
  land*=vShade;
  if(uHeightView>.5)land=fmsHeightColor(h);
- if(uBiomeView>.5)land=fmsToDisplay(vBiomeColor);
+ // The biome palette must retain relief from this same stored height field.
+ // Replacing the palette without its shade erased actual mountain slopes.
+ if(uBiomeView>.5)land=fmsToDisplay(vBiomeColor)*vShade;
  // Filled depressions are derived from the same elevation graph, never painted decor.
  float lake=smoothstep(.2,.8,vLakeDepth)*smoothstep(20.0,21.5,h);
  land=mix(land,mix(shallow,deep,smoothstep(0.0,16.0,vLakeDepth)),lake);

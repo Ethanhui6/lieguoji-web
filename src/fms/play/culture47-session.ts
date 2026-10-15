@@ -172,8 +172,8 @@ export class Culture47Session {
     // A display trace must include the real position at the first confirmed
     // tick. Without this anchor, a linear route has only its endpoint and the
     // renderer can only jump after the next Worker acknowledgement.
-    if(trace&&previous){const frame=culture47Frame(previous.run);for(const [id,point]of frame.armies)trace.record('army',id,previous.run.clock.tick,point);for(const [id,point]of frame.fleets)trace.record('fleet',id,previous.run.clock.tick,point);}
-    try {this.append(actions,sequence,trace?.observe);const packet=this.displaySnapshot(),motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
+    if(trace&&previous){const frame=culture47Frame(previous.run);for(const [id,point]of frame.armies)trace.record('army',id,previous.run.clock.tick,point);for(const [id,point]of frame.fleets)trace.record('fleet',id,previous.run.clock.tick,point);trace.recordContacts(previous.run.clock.tick,previous.run.forceContacts);}
+    try {this.append(actions,sequence,trace?.observe);const packet=this.displaySnapshot();trace?.recordContacts(this.state!.run.clock.tick,this.state!.run.forceContacts);const motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
     catch(error){this.state=previous;throw error;}
   }
   displaySnapshot(){if(!this.state)throw Error('请先创建世界。');const {run,journal}=this.state;return this.display.encode({run,journal,frame:culture47Frame(run)});}

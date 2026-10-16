@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'vitest';
 import type {TravelGraph47} from './army-travel47-graph';
-import {armyTravelLocation47, beginArmyTravel47,beginArmyTravelToPoint47} from './army-travel47-state';
+import {armyTravelLocation47,assertArmyTravel47, beginArmyTravel47,beginArmyTravelToPoint47} from './army-travel47-state';
 import {advanceForceContacts47,advanceSessionForceContacts47,reconcileForceContactsOwned47, assertForceContacts47, forceKey47, initialForceContacts47, type MovingForce47, type ForceContacts47} from './force-motion47';
-import {withOwnedTravel47} from './owned-travel47';
+import {withOwnedTravel47,cloneTravel47,ownedTravelAllSea47} from './owned-travel47';
 import {nativeNavalFactor47, nativeNavyHit47} from './native-war/naval-damage47';
 import {forceVolley47} from './force-volley47';
 
@@ -22,6 +22,62 @@ const place = (f: MovingForce47, g: TravelGraph47) => armyTravelLocation47(f.tra
 const byId = (fs: MovingForce47[], id: string) => fs.find(f => f.id === id)!;
 
 describe('47 synchronous Army and Fleet contact motion', () => {
+  it('keeps exact JSON typed identity encoding when contacts reuse validated keys',()=>{
+    const g=strip(['sea','sea']),id='a"b\\c\n',army=unit(g,id,'a',[0]),fleet=unit(g,id,'b',[1],'fleet');
+    expect(forceKey47(army)).toBe('["army","a\\"b\\\\c\\n"]');
+    expect(forceKey47(fleet)).toBe('["fleet","a\\"b\\\\c\\n"]');
+    expect(forceKey47({kind:'army',id:'a/b'})).toBe('["army","a/b"]');
+    const result=advanceForceContacts47([fleet,army],initialForceContacts47(),g,1,{...rules,seaRegion:()=>81});
+    expect(result.contacts.pairs).toEqual([{a:forceKey47(army),b:forceKey47(fleet),cellA:0,cellB:1,pointA:{x:5,y:5},pointB:{x:15,y:5},area:'sea/81'}]);
+    withOwnedTravel47(()=>{
+      expect(()=>assertForceContacts47(result.contacts,[...result.forces].reverse(),g,()=>81)).not.toThrow();
+      expect(()=>assertForceContacts47(initialForceContacts47(),[army,{...army,nationId:'other'}],g,()=>81)).toThrow(/身份/);
+    });
+  });
+  it('preserves input order for distinct identities whose locale sort keys compare equally',()=>{
+    const g=strip(['land']),composed=unit(g,'\u00e9','same',[0]),decomposed=unit(g,'e\u0301','same',[0]);
+    expect(forceKey47(composed)).not.toBe(forceKey47(decomposed));expect(forceKey47(composed).localeCompare(forceKey47(decomposed))).toBe(0);
+    for(const fs of [[composed,decomposed],[decomposed,composed]]){
+      const ordinary=advanceForceContacts47(fs,initialForceContacts47(),g,1,rules);
+      const owned=withOwnedTravel47(()=>advanceForceContacts47(fs,initialForceContacts47(),g,1,rules));
+      expect(ordinary.forces.map(f=>f.id)).toEqual(fs.map(f=>f.id));expect(owned).toEqual(ordinary);
+    }
+  });
+  it('rejects a future land leg both without a certificate and with a known-false private certificate',()=>{
+    const g=strip(['sea','land','sea']),f=unit(g,'fleet','a',[0,1,2],'fleet');
+    expect(ownedTravelAllSea47(f.travel,g)).toBeUndefined();
+    expect(()=>assertForceContacts47(initialForceContacts47(),[f],g,rules.seaRegion)).toThrow(/陆地/);
+    withOwnedTravel47(()=>{
+      assertArmyTravel47(f.travel,g);expect(ownedTravelAllSea47(f.travel,g)).toBe(false);
+      const copy={...f,travel:cloneTravel47(f.travel)};expect(ownedTravelAllSea47(copy.travel,g)).toBe(false);
+      expect(()=>assertForceContacts47(initialForceContacts47(),[copy],g,rules.seaRegion)).toThrow(/陆地/);
+      expect(()=>advanceForceContacts47([copy],initialForceContacts47(),g,1,rules)).toThrow(/陆地/);
+    });
+  });
+  it('rescans the complete fleet route publicly after a private window ends',()=>{
+    const g=strip(['sea','sea','sea']),f=unit(g,'fleet','a',[0,1,2],'fleet');
+    const copy=withOwnedTravel47(()=>{
+      assertForceContacts47(initialForceContacts47(),[f],g,rules.seaRegion);
+      expect(ownedTravelAllSea47(f.travel,g)).toBe(true);
+      return {...f,travel:cloneTravel47(f.travel)};
+    });
+    expect(ownedTravelAllSea47(copy.travel,g)).toBeUndefined();
+    g.cells.get(2)!.surface='land';
+    expect(place(copy,g).cell.surface).toBe('sea');
+    expect(()=>assertForceContacts47(initialForceContacts47(),[copy],g,rules.seaRegion)).toThrow(/陆地/);
+    expect(()=>advanceForceContacts47([copy],initialForceContacts47(),g,1,rules)).toThrow(/陆地/);
+  });
+  it('retains every gate progress guard for a cloned fleet with an all-sea private certificate',()=>{
+    const g=strip(['sea','sea']),f=unit(g,'fleet','a',[0,1],'fleet');
+    withOwnedTravel47(()=>{
+      assertArmyTravel47(f.travel,g);
+      for(const change of [{offset:NaN},{offset:-1},{offset:10},{status:'arrived' as const},{crossed:true,offset:4},{crossed:false,offset:6},{status:'blocked' as const,offset:1},{leg:1},{leg:.5}]){
+        const bad={...f,travel:cloneTravel47(f.travel)};Object.assign(bad.travel,change);
+        expect(ownedTravelAllSea47(bad.travel,g)).toBe(true);
+        expect(()=>assertForceContacts47(initialForceContacts47(),[bad],g,rules.seaRegion)).toThrow(/行军/);
+      }
+    });
+  });
   it.each(['interior','zero-speed','stopped','rounded-local','gate','center','withdrawal','neutral-held','blocked','land-held','different-gates','gate-destination','withdrawal-leaves'] as const)('prepared private START preserves complete public motion and input: %s',scenario=>{
     const sea=scenario==='neutral-held'||scenario==='withdrawal',g=strip(sea?['sea','sea','sea']:undefined);
     let fs=[unit(g,'z','a',[0,1,2]),unit(g,'a','b',[sea?2:3])],seconds=1;

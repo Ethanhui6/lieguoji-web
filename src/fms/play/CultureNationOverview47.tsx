@@ -1,3 +1,4 @@
+import {memo} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationAge47} from './civilization47-origins';
 import {PlayIcon} from './PlayIcon';
@@ -21,7 +22,10 @@ export function nationOverview47(run:FoundingForces47,id:string){
  return {extinct:Object.hasOwn(run.chronicle.ended,id),years:nationAge47(run,id).years,capital:capital?.name??null,capitalHeld:!!capital&&owned.has(capital.provinceId),population,capacity:provinces.reduce((n,p)=>n+run.finance.provinces[p.id].maxPopulation,0),gold:run.finance.nations[id].gold,regions:provinces.length,cities:run.world.cities.filter(c=>owned.has(c.provinceId)).length,armies:armies.length,troops:armies.reduce((n,a)=>n+a.troops,0),fleets:fleets.length,ships:fleets.reduce((n,f)=>n+f.ships,0)};
 }
 const number=(n:number)=>Math.round(n).toLocaleString('zh-CN');
-export function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string}){
+// Worker snapshots replace run rather than mutating the displayed snapshot.
+// Parent busy/advancing changes must not rebuild the same force activity graph;
+// a new run reference or selected nation still recomputes every live value.
+export const CultureNationOverview47=memo(function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string}){
  const v=nationOverview47(run,id);
  const armies=run.world.armies.filter(a=>a.nationId===id&&a.troops>0&&a.status!=='destroyed'),fleets=run.navy.fleets.filter(f=>f.nationId===id&&f.status!=='lost'&&run.maritime.hulls[f.id]>0);
  const moving=armies.filter(a=>run.armyPositions.records[a.id]?.status==='moving').length,sailing=fleets.filter(f=>run.fleetPositions.records[f.id]?.status==='moving').length;
@@ -39,4 +43,4 @@ export function CultureNationOverview47({run,id}:{run:FoundingForces47;id:string
   </dl>
   <details className="c47-activity" data-moving-armies={moving} data-moving-fleets={sailing} data-contact-areas={contacts} data-active-sieges={activeSieges.size}><summary>当前动向 · {moving} 支行军 · {sailing} 支出航{contacts?` · ${contacts} 处交锋`:''}{activeSieges.size?` · ${activeSieges.size} 处围城`:''}</summary>{activeActivities.length?<ol className="c47-force-activity">{activeActivities.slice(0,3).map(activity=><li key={`${activity.kind}/${activity.id}`} data-force-id={activity.id}><strong>{activity.name} · {activity.decisionLabel}</strong><span>{activity.location.label}{activity.target?` → ${activity.target.label}`:''}</span>{activity.siege&&<small>{activity.siege.provinceName}城防 {Math.round((1-activity.siege.progress)*100)}%</small>}<small>{activity.provisions.label} {Math.round(activity.provisions.current).toLocaleString('zh-CN')} · {activity.reason}</small></li>)}</ol>:<p>当前没有需要报告的行军、围城或海上行动。</p>}{activeActivities.length>3&&<small className="c47-activity-more">另有 {activeActivities.length-3} 支部队正在行动，可在军事面板查看。</small>}</details>
  </section>;
-}
+});

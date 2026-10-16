@@ -278,5 +278,15 @@
     "protocol": 2,
     "source": "culture47-combat-cartography47-final-checked-original-bytes",
     "journalVersion": 2
+  },
+  {
+    "engine": "1c7d4309c1820dc00c4425789eb7ef24a1df8780bbbbb71a6ce80a022bbf2a74",
+    "file": "engine-1c7d.js",
+    "bytes": 1413079,
+    "sha256": "2c9cc2726a4d9cbfd758927701d4244d140816cbbd557bf604bf459c44d7d5dc",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-pacing-titles47-checked-original-bytes",
+    "journalVersion": 2
   }
 ]

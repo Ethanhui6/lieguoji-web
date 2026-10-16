@@ -1,4 +1,5 @@
 import {isoPlusDays} from './civilization47-iso-calendar';
+import {useMemo} from 'react';
 import type {Culture47Snapshot} from './culture47.worker';
 import type {MilitaryIntent47} from './culture47-orders';
 import {PlayIcon} from './PlayIcon';
@@ -7,7 +8,9 @@ import {armyStrength47} from './army-strength47';
 export type SelectedForce47={kind:'army'|'fleet';id:string};
 export const intentMatchesForce47=(intent:MilitaryIntent47,selected:SelectedForce47|null)=>!!selected&&intent.force===selected.kind&&(intent.force==='army'?intent.command.armyId:intent.command.fleetId)===selected.id;
 export function CultureMilitary47({snapshot,selected,busy,preview,choose,target,request,confirm,cancel}:{snapshot:Culture47Snapshot;selected:SelectedForce47|null;busy:boolean;preview:Culture47Snapshot['militaryPreview']|null;choose:(s:SelectedForce47)=>void;target:(mode:'march'|'retreat')=>void;request:(i:MilitaryIntent47)=>void;confirm:()=>void;cancel:()=>void}){
- const r=snapshot.run,army=selected?.kind==='army'?r.world.armies.find(a=>a.id===selected.id):null,fleet=selected?.kind==='fleet'?r.navy.fleets.find(f=>f.id===selected.id&&f.status!=='lost'):null,unit=army??fleet,activity=selected?forceActivity47(r,selected.kind,selected.id,snapshot.frame.activeSieges):null;
+ const r=snapshot.run,army=selected?.kind==='army'?r.world.armies.find(a=>a.id===selected.id):null,fleet=selected?.kind==='fleet'?r.navy.fleets.find(f=>f.id===selected.id&&f.status!=='lost'):null,unit=army??fleet;
+ const kind=selected?.kind,id=selected?.id,activeSieges=snapshot.frame.activeSieges;
+ const activity=useMemo(()=>kind&&id?forceActivity47(r,kind,id,activeSieges):null,[r,kind,id,activeSieges]);
  if(preview&&!intentMatchesForce47(preview.intent,selected))preview=null;
  const strength=army?armyStrength47([army],r.tactics.forces):null;
  const date=(day:number)=>{const d=isoPlusDays(r.life.startDate,day);return `公元${d.year}年${d.month}月${d.day}日`;};

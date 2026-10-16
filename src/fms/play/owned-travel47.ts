@@ -1,7 +1,7 @@
 import type {ArmyTravel47} from './army-travel47-state';
 import type {TravelGraph47,TravelCell47} from './army-travel47-graph';
 
-type Proof={graph:TravelGraph47;version:number;nodes:number[];origin:object;destination:object|undefined};
+type Proof={graph:TravelGraph47;version:number;nodes:number[];origin:object;destination:object|undefined;allSea:boolean};
 type Window={proofs:WeakMap<object,Proof>;graphs:Map<TravelGraph47,{size:number;cells:Map<number,{ref:TravelCell47;content:string}>}>};
 let active:Window|undefined;
 export const isOwnedTravelWindow47=()=>!!active;
@@ -26,13 +26,20 @@ export function hasOwnedTravelProof47(s:ArmyTravel47,g:TravelGraph47):boolean {
   const p=active?.proofs.get(s);
   return !!p&&p.graph===g&&p.version===s.version&&p.nodes===s.nodes&&p.origin===s.origin&&p.destination===(s.version===2?s.destination:undefined);
 }
+/** Same private static proof as the route topology, including a known false.
+ * No public or cross-window result is retained. Changed graph cells still
+ * reject the complete candidate at the existing per-cell commit check. */
+export function ownedTravelAllSea47(s:ArmyTravel47,g:TravelGraph47):boolean|undefined {
+  return hasOwnedTravelProof47(s,g)?active!.proofs.get(s)!.allSea:undefined;
+}
 /** Called only AFTER the public static topology/endpoints have been checked. */
 export function rememberOwnedTravel47(s:ArmyTravel47,g:TravelGraph47):void {
   if(!active)return;
   let witness=active.graphs.get(g);if(!witness){witness={size:g.cells.size,cells:new Map()};active.graphs.set(g,witness);}
-  for(const id of s.nodes)if(!witness.cells.has(id)){const cell=g.cells.get(id)!;witness.cells.set(id,{ref:cell,content:JSON.stringify(cell)});}
+  let allSea=true;
+  for(const id of s.nodes){const cell=g.cells.get(id)!;if(cell.surface!=='sea')allSea=false;if(!witness.cells.has(id))witness.cells.set(id,{ref:cell,content:JSON.stringify(cell)});}
   Object.freeze(s.nodes);Object.freeze(s.origin);if(s.version===2)Object.freeze(s.destination);
-  active.proofs.set(s,{graph:g,version:s.version,nodes:s.nodes,origin:s.origin,destination:s.version===2?s.destination:undefined});
+  active.proofs.set(s,{graph:g,version:s.version,nodes:s.nodes,origin:s.origin,destination:s.version===2?s.destination:undefined,allSea});
 }
 /** Outside a private window (including generic observers), keep a deep copy.
  * Within it, share only leaves frozen by a completed geometry validation. */

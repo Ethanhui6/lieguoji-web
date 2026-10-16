@@ -11,7 +11,7 @@ import {advanceForceContacts47,advanceSessionForceContacts47,assertContactRecord
 import type {TravelCell47} from './army-travel47-graph';
 import {cloneMilitaryCandidate47} from './geography-content47';
 import type {ForceMotionObserver47} from './force-display-trace47';
-import {isOwnedTravelWindow47} from './owned-travel47';
+import {isOwnedTravelWindow47,ownedTravelAllSea47} from './owned-travel47';
 
 /** Army and Fleet have separate, equally authoritative travel ledgers. Fleet
  * legacy node/route is not rewritten to fake an arbitrary shore-gate origin.
@@ -26,7 +26,8 @@ export function actualForces47(r: ForceRun47) {
   for (const f of r.navy.fleets) {
     const hull = r.maritime.hulls[f.id];
     if (!Number.isSafeInteger(f.ships) || f.ships <= 0 || f.ships > 5 || !Number.isSafeInteger(f.crew) || f.crew < 0 || f.crew > f.ships * 40 || !Object.hasOwn(r.maritime.hulls, f.id) || !Number.isSafeInteger(hull) || hull < 0 || hull > f.ships * 100 || (hull === 0) !== (f.status === 'lost')) throw Error('统一舰体或船员数据无效。');
-    if (r.fleetPositions.records[f.id].nodes.some(id => spatial.graph.cells.get(id)!.surface !== 'sea')) throw Error('舰队航线进入陆地。');
+    const travel=r.fleetPositions.records[f.id],allSea=ownedTravelAllSea47(travel,spatial.graph);
+    if (allSea===false||allSea===undefined&&travel.nodes.some(id => spatial.graph.cells.get(id)!.surface !== 'sea')) throw Error('舰队航线进入陆地。');
   }
   for (const [id, until] of Object.entries(r.maritime.retreating)) if (!r.navy.fleets.some(f => f.id === id && f.status !== 'lost') || !Number.isSafeInteger(until) || until <= r.clock.tick || until > r.clock.tick + 120) throw Error('统一舰队撤退引用无效。');
   const forces: MovingForce47[] = r.world.armies.filter(a => a.troops > 0 && a.status !== 'destroyed').map(a => ({kind: 'army', id: a.id, nationId: a.nationId, withdrawing: a.status === 'retreating', travel: r.armyPositions.records[a.id]}));

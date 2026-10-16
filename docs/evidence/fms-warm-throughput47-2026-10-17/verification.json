@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-17",
+  "sourceCommit": "86c5fe90641a3ccf24b8bd58349e1c482359e7e9",
+  "engine": "02c7e4f68bbcef454f552c41a847f3c6dac317a45e513eb12d47e0b6d6a9cae2",
+  "artifact": ".autopilot/fms-warm-throughput47-checked",
+  "url": "http://127.0.0.1:5335/?fms=1",
+  "binding": "127.0.0.1 only; same computer; restart and recheck after session/process exits",
+  "serverPidAtCheck": 1876,
+  "checks": {
+    "unit": {
+      "files": 7,
+      "passed": 99,
+      "exit": 0
+    },
+    "lint": 0,
+    "typecheck": 0,
+    "build": {
+      "exit": 0,
+      "approvedArtifacts": 95
+    },
+    "plan": 0,
+    "planTests": {
+      "passed": 15,
+      "exit": 0
+    },
+    "releasePolicyTests": {
+      "passed": 24,
+      "exit": 0
+    },
+    "compiledExact": {
+      "passed": 1,
+      "days": 56,
+      "checkpoints": 14,
+      "points": 36864,
+      "runFrameMotionAndActionsEqual": true
+    },
+    "currentBrowser": {
+      "passed": 1,
+      "nations": 6,
+      "cities": 60,
+      "war": true,
+      "threeCurrentFeatures": true,
+      "detailsAdvance": true,
+      "fleetSelectionUpdated": true,
+      "saveColdRestoreExact": true,
+      "restoredTick": 11040,
+      "errors": []
+    },
+    "prior1c7dBrowser": {
+      "passed": 1,
+      "originalHistoryAndEnginePreserved": true
+    },
+    "frozenEngines": {
+      "verified": 29,
+      "priorBytes": 1413079,
+      "priorSha256": "2c9cc2726a4d9cbfd758927701d4244d140816cbbd557bf604bf459c44d7d5dc"
+    },
+    "portrait": "428x926 Chromium layout only",
+    "fullSuite": "not_run",
+    "physicalIphone": "not_run",
+    "originalVisualAcceptance": "not_accepted",
+    "cloud": "not_run",
+    "finalPlanAfterCheckpoint": 0,
+    "finalPlanTestsAfterCheckpoint": {
+      "passed": 15,
+      "exit": 0
+    },
+    "localHttp": {
+      "checkedAt": "2026-10-16T19:03:37.270Z",
+      "sourceCommit": "86c5fe90641a3ccf24b8bd58349e1c482359e7e9",
+      "engine": "02c7e4f68bbcef454f552c41a847f3c6dac317a45e513eb12d47e0b6d6a9cae2",
+      "homeStatus": 200,
+      "deepStatus": 200,
+      "deepSameEntry": true,
+      "worker": {
+        "file": "culture47.worker-BElznMeQ.js",
+        "status": 200,
+        "contentType": "text/javascript; charset=utf-8"
+      }
+    }
+  },
+  "measured": {
+    "browser": {
+      "before": {
+        "daysPerSecond": 1.9692690384266576,
+        "wallMs": 38593,
+        "days": 76,
+        "firstAckMs": 1626.1549999713898,
+        "advanceAcks": 19,
+        "warmAckMeanMs": 1763.5963888863723,
+        "ackToNextPostMeanMs": 275.22750000490083,
+        "maxActive": 1,
+        "errors": []
+      },
+      "after": {
+        "daysPerSecond": 2.2455690111476465,
+        "wallMs": 37407,
+        "days": 84,
+        "firstAckMs": 1567.7949999570847,
+        "advanceAcks": 21,
+        "warmAckMeanMs": 1495.7385000050067,
+        "ackToNextPostMeanMs": 287.23924999535086,
+        "maxActive": 1,
+        "errors": []
+      },
+      "rateIncreasePercent": 14.030585325290957,
+      "scope": "2026-10-17 same machine sequential fresh Chromium contexts, synthetic 36864-point full-map default6cultures60cities, war, current3features, 4x selected and nation detail open; lightweight Worker ACK probe and fmsDiagnostics both runs. Single paired trial, no CPU profiler. Includes pause/drain in wall time; no stable FPS/device/original-speed claim."
+    },
+    "compiledCore": {
+      "days": 56,
+      "checkpoints": 14,
+      "everyDays": 4,
+      "exactRunFrameMotionAndActions": true,
+      "warmDays": 52,
+      "priorWarmMeanMsPer4Days": 931.8096230769224,
+      "currentWarmMeanMsPer4Days": 777.7517000000007,
+      "coreTimeReductionPercent": 16.533197260638723,
+      "scope": "Sequential previous and current production-compiled Node Workers, same initial world/id/actions. Excludes first4days from warm average. Browser paint and message delivery not timed."
+    }
+  },
+  "remaining": [
+    "4x actual sustained target not met; browser ACK-to-next-post gap did not improve",
+    "Map coast/mesh/near-view detail, UI density, war strategy and long-run cross-sea acceptance remain",
+    "Cross-cultural heir accession-office history consistency and original era/temple/posthumous naming remain separate unfinished work"
+  ],
+  "boundary": "Local only; old engines, saves and official site preserved. No push, remote issue/PR, Pages/Cloudflare or main writes. No physical/visual/PH completion claim. No ongoing-background claim.",
+  "status": "partial",
+  "task": "WEB-04-37",
+  "evidence": "docs/evidence/fms-warm-throughput47-2026-10-17/RESULT.md"
+}

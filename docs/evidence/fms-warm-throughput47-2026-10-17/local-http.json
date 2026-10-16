@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-16T19:03:37.270Z",
+  "sourceCommit": "86c5fe90641a3ccf24b8bd58349e1c482359e7e9",
+  "engine": "02c7e4f68bbcef454f552c41a847f3c6dac317a45e513eb12d47e0b6d6a9cae2",
+  "homeStatus": 200,
+  "deepStatus": 200,
+  "deepSameEntry": true,
+  "worker": {
+    "file": "culture47.worker-BElznMeQ.js",
+    "status": 200,
+    "contentType": "text/javascript; charset=utf-8"
+  }
+}

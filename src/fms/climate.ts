@@ -55,7 +55,7 @@ export function recoveredBiome(moisture: number, temperature: number, height: nu
  * boundary instead of reading the next row or an undefined off-map elevation.
  */
 export function generateFmsClimateGrid(heights: Uint8Array, columns: number, rows: number, options: FmsClimateOptions=FMS_CLIMATE_DEFAULTS) {
-  if(!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||columns>192||rows>192
+  if(!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||columns>512||rows>512
     ||!(heights instanceof Uint8Array)||heights.length!==columns*rows||heights.some(h=>h>100)
     ||!options||!Number.isFinite(options.north)||!Number.isFinite(options.south)||options.north>90||options.south < -90||options.north<=options.south
     ||!Number.isFinite(options.precipitation)||options.precipitation<=0||options.precipitation>200

@@ -41,7 +41,9 @@ describe('bounded recovery of original climate rules',()=>{
     expect(a.precipitation).toBeInstanceOf(Uint8Array);
   });
   it('rejects invalid or oversized grids and unbounded climate parameters',()=>{
-    expect(()=>generateFmsClimateGrid(new Uint8Array(193),193,1)).toThrow();
+    // The original 40k grid is 266 columns; the guard only bounds absurd sizes.
+    expect(()=>generateFmsClimateGrid(new Uint8Array(513),513,1)).toThrow();
+    expect(generateFmsClimateGrid(new Uint8Array(266*150),266,150).precipitation).toHaveLength(266*150);
     expect(()=>generateFmsClimateGrid(Uint8Array.of(101),1,1)).toThrow();
     for(const options of [{precipitation:0},{north:NaN},{south:1},{temperatureOffset:Infinity}]){
       expect(()=>generateFmsClimateGrid(Uint8Array.of(0),1,1,{...FMS_CLIMATE_DEFAULTS,...options})).toThrow();

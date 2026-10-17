@@ -7,10 +7,13 @@ import type { FmsOceanAppearance } from '../renderer';
 import type { OriginalGrid } from './original-grid';
 import { OriginalCellMesh, originalCellColor, originalCoast, originalSeaTexture } from './original-layers';
 import { ORIGINAL_PRESETS, originalParchmentRect, type OriginalPreset } from './original-style';
+import { originalRiverGeometry, originalRiverMesh } from './original-rivers';
+import type { Geometry, Mesh, Shader } from 'pixi.js';
 
 /** The playable world drawn the original's way, with the same surface the
  * culture world uses from FmsRenderer. Scene order mirrors the original
  * frame: sea quad, province cells (height background + state colors),
+ * rivers (z -0.19, under state lines and the coastline),
  * gameplay layers (borders, coast ink, labels, forces), then the
  * ParchmentEffect multiply over all of it. Display only. */
 export class OriginalPlayRenderer {
@@ -24,6 +27,8 @@ export class OriginalPlayRenderer {
   private destroyed = false;
   private preset: OriginalPreset = ORIGINAL_PRESETS[0];
   private heights?: ArrayLike<number>;
+  private document?: FmsDocument;
+  private rivers?: { source: FmsDocument; mesh: Mesh<Geometry, Shader> };
   private states: { owner: Int32Array; color: (province: number) => number | null } | null = null;
   readonly coast: ReturnType<typeof originalCoast>;
   constructor(private grid: OriginalGrid, heights: ArrayLike<number>, private onDisplayError: (error: unknown) => void = error => { throw error; }) {
@@ -45,7 +50,7 @@ export class OriginalPlayRenderer {
     this.build(); this.draw();
   }
   /** The play terrain is fixed for the open world; elevations select land cells. */
-  setDocument(doc: FmsDocument): void { this.heights = doc.elevations; if (this.initialized && !this.destroyed) { this.build(); this.draw(); } }
+  setDocument(doc: FmsDocument): void { this.heights = doc.elevations; this.document = doc; if (this.initialized && !this.destroyed) { this.build(); this.draw(); } }
   setTerrainDisplay(): void {}
   /** 'paper' (the user's parchment screenshot sea) = preset 8, white sea under
    * parchment; 'source' = preset 1, the level0 blue sea. */
@@ -73,7 +78,23 @@ export class OriginalPlayRenderer {
       this.scene.addChildAt(this.cells.mesh, this.scene.getChildIndex(this.sea) + 1);
       this.recolor();
       this.canvas.dataset.originalCells = String(this.cells.cells.length);
+      this.buildRivers();
     } catch (error) { this.onDisplayError(error); }
+  }
+  private buildRivers(): void {
+    const doc = this.document; if (!doc || !this.cells) return;
+    if (this.rivers?.source !== doc) {
+      this.destroyRivers();
+      const geometry = originalRiverGeometry(this.grid, doc);
+      this.rivers = { source: doc, mesh: originalRiverMesh(geometry) };
+      this.canvas.dataset.originalRivers = JSON.stringify(geometry.stats);
+    }
+    this.scene.addChildAt(this.rivers.mesh, this.scene.getChildIndex(this.cells.mesh) + 1);
+  }
+  private destroyRivers(): void {
+    if (!this.rivers) return;
+    const { geometry, shader } = this.rivers.mesh;
+    this.rivers.mesh.destroy(); geometry.destroy(true); shader?.destroy(true); this.rivers = undefined;
   }
   private recolor(): void {
     const cells = this.cells, heights = this.heights; if (!cells || !heights) return;
@@ -84,5 +105,5 @@ export class OriginalPlayRenderer {
     });
   }
   private draw(): void { if (this.initialized && !this.destroyed) this.app.render(); }
-  destroy(): void { if (this.destroyed) return; this.destroyed = true; this.cells?.destroy(); if (this.initialized) this.app.destroy(true, { children: true }); }
+  destroy(): void { if (this.destroyed) return; this.destroyed = true; this.cells?.destroy(); this.destroyRivers(); if (this.initialized) this.app.destroy(true, { children: true }); }
 }

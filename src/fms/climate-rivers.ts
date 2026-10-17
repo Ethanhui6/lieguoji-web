@@ -6,6 +6,8 @@ export const FMS_CLIMATE_RIVERS = 'recovered-rainfall-flux-web-graph-v1';
 export interface FmsClimateRivers {
   flux:Uint16Array; riverIds:Uint16Array; receiver:Int32Array; routingHeight:Float32Array;
   segments:[number,number][];
+  /** Accepted original river lists (>=3 entries; sea or -1 terminal). */
+  paths:number[][];
   shape:FmsRiverShape;
   stats:{algorithm:string;riverCount:number;riverCells:number;segmentCount:number;unreachedLand:number;overflowWrites:number;maxFlux:number;bytes:number};
 }
@@ -17,7 +19,8 @@ export interface FmsClimateRivers {
  * no erosion, lake outlet climate or off-map drawing. Derived display curves
  * do not feed back into routing, precipitation, ids or moisture.
  */
-export function deriveFmsClimateRivers(doc:FmsDocument,precipitation:Uint8Array):FmsClimateRivers {
+/** `withShape=false` skips the triangle-mesh ribbon; the original-grid map draws its own. */
+export function deriveFmsClimateRivers(doc:FmsDocument,precipitation:Uint8Array,withShape=true):FmsClimateRivers {
   const count=doc.points.length;
   if(precipitation.length!==count||!(precipitation instanceof Uint8Array))throw new FmsClimateError();
   const height=Uint8Array.from(doc.elevations,h=>Math.min(100,Math.max(0,h)));
@@ -89,9 +92,10 @@ export function deriveFmsClimateRivers(doc:FmsDocument,precipitation:Uint8Array)
       const key=`${a}:${b}`;if(!seen.has(key)){seen.add(key);segments.push([a,b]);}
     }
   }
-  const shape=deriveFmsRiverShape(doc,paths.filter(path=>path.length>=3));
+  const accepted=paths.filter(path=>path.length>=3);
+  const shape=withShape?deriveFmsRiverShape(doc,accepted):{positions:new Float32Array(0),stats:{algorithm:'skipped',paths:0,curves:0,mouths:0,triangles:0,bytes:0}};
   const bytes=flux.byteLength+riverIds.byteLength+receiver.byteLength+routingHeight.byteLength+segments.length*16+shape.stats.bytes;
-  return {flux,riverIds,receiver,routingHeight,segments,shape,stats:{algorithm:FMS_CLIMATE_RIVERS,riverCount,riverCells:riverIds.reduce((s,id)=>s+(id>0?1:0),0),segmentCount:segments.length,unreachedLand:land.filter(i=>!visited[i]).length,overflowWrites,maxFlux:Math.max(...flux),bytes}};
+  return {flux,riverIds,receiver,routingHeight,segments,paths:accepted,shape,stats:{algorithm:FMS_CLIMATE_RIVERS,riverCount,riverCells:riverIds.reduce((s,id)=>s+(id>0?1:0),0),segmentCount:segments.length,unreachedLand:land.filter(i=>!visited[i]).length,overflowWrites,maxFlux:Math.max(...flux),bytes}};
 }
 
 /** Original Biomes.calculateMoisture: only the self sample gets river bonus;

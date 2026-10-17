@@ -9,6 +9,11 @@ import {CultureNationOverview47,nationFamily47} from './CultureNationOverview47'
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
 import {FmsRenderer} from '../renderer';
+import {OriginalPlayRenderer} from '../original/original-play-renderer';
+import {originalGridFor} from '../original/original-document';
+import {originalCellProvinces} from '../original/original-politics';
+import {nationColor} from './politics';
+import type {OriginalGrid} from '../original/original-grid';
 import {extractFmsOceanCoast} from '../ocean-coast';
 import {FMS_STATE_LINE,FMS_STATE_LINE_WIDTH} from '../state-line';
 import {deriveFmsCoastCurves,FMS_COAST_CURVE,FMS_COAST_LINE_COLOR,FMS_COAST_LINE_WIDTH} from '../coast-curve';
@@ -278,12 +283,21 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   // latest ACK. It must never reinstall an already superseded accepted path.
   useEffect(()=>{if(snapshot&&snapshot===current.current)installAcceptedDisplay(snapshot,instantDisplay.current);},[snapshot,renderFault]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
+  // Worlds made on the original's BasicMap grid are drawn the original way.
+  const [terrainGrid,setTerrainGrid]=useState<{runId:string;grid:OriginalGrid|null}|null>(null);
   useEffect(()=>{
-    if(!runId||!host.current||!current.current)return;
+    if(!runId||!current.current)return;let live=true;
+    void originalGridFor(current.current.run.terrain).then(grid=>{if(live)setTerrainGrid({runId,grid});},()=>{if(live)setTerrainGrid({runId,grid:null});});
+    return()=>{live=false;};
+  },[runId]);
+  useEffect(()=>{
+    if(!runId||!host.current||!current.current||terrainGrid?.runId!==runId)return;
     displayReady.current=false;
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
-    const element=host.current,source=current.current.run.terrain,renderer=new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current());
+    const element=host.current,source=current.current.run.terrain,grid=terrainGrid.grid,original=grid?new OriginalPlayRenderer(grid,source.elevations,displayFailed):null;
+    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current());
+    let cellOwners:Int32Array|null=null,stateKey='';
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
@@ -305,13 +319,20 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
-      const coast=deriveFmsCoastCurves(extractFmsOceanCoast(source));map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
+      const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original)map.useCellPolitics(true);map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
       canvas.dataset.coastline=JSON.stringify({algorithm:FMS_COAST_CURVE,chains:coast.chains,sourceSegments:coast.sourceSegments,points:coast.points,width:FMS_COAST_LINE_WIDTH,color:FMS_COAST_LINE_COLOR});
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
         const selection=selected.current;
         const frame=displayFrame();
+        if(original){
+          // Cell colors follow the current controller; recolor only when ownership or view changes.
+          const key=selection.mapMode+'|'+r.world.provinces.map(p=>p.controller).join(',')+'|'+r.world.nations.map(n=>nationColor(n)).join(',');
+          if(key!==stateKey){stateKey=key;cellOwners??=originalCellProvinces(source,r.world.provinces,r.scale);
+            const nations=new Map(r.world.nations.map(n=>[n.id,Number.parseInt(nationColor(n).slice(1),16)]));
+            original.setStates(selection.mapMode==='political'?cellOwners:null,i=>nations.get(r.world.provinces[i]?.controller)??null);}
+        }
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
         drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
@@ -372,7 +393,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});
     return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();renderer.destroy();map.dispose();};
-  },[runId,rendererEpoch]);
+  },[runId,rendererEpoch,terrainGrid]);
   useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview]);
   const choice=(i:number):CultureChoice47=>{const c=culture47(enabled[i%enabled.length]??'chinese');return choices['n-'+i]&&enabled.includes(choices['n-'+i].cultureId)?choices['n-'+i]:{cultureId:c.id,religionId:c.suggestedReligion,polity:c.suggestedPolity};};
   const setChoice=(i:number,patch:Partial<CultureChoice47>)=>setChoices(old=>({...old,['n-'+i]:{...choice(i),...patch}}));

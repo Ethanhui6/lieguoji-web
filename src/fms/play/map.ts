@@ -118,6 +118,10 @@ export class PlayMap {
   private stateOutlineKey='';
   private stateOutlines=new Map<string,[number,number][][]>();
   useOriginalStateLines(enabled:boolean){this.originalStateLines=enabled;this.politicalKey='';}
+  // The original colors states per Voronoi cell in the terrain renderer; the
+  // province polygons then only carry outlines, borders and selection.
+  private cellPolitics=false;
+  useCellPolitics(enabled:boolean){this.cellPolitics=enabled;this.politicalKey='';}
   stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points};}
   coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
@@ -151,8 +155,9 @@ export class PlayMap {
     const originalLines=this.originalStateLines&&mode==='political';
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
     for (const p of world.provinces) {
-      g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: nationColor(nations.get(p.controller)!), alpha: style.fill });
-      if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });
+      if(this.cellPolitics){if(zoom>.6)g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
+      else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: nationColor(nations.get(p.controller)!), alpha: style.fill });
+      if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
       if (p.id === selected&&!originalLines) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
       for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==p.controller;}else borders.set(key,{a,b,owner:p.controller,shared:false,foreign:false});}
     }

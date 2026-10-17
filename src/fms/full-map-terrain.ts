@@ -2,10 +2,18 @@ import { assertFmsDocument, commitFmsEdit, FMS_SEA_LEVEL, FmsModelError, type Fm
 import { generateTerrainResearch, validSeedTerrainRequest, type SeedTerrainTemplate } from '../world/seed-terrain';
 import { createTerrainTopology } from '../world/recovered-terrain/topology';
 import type { AtlasControl } from '../world/model';
+import { generateRecoveredHeights } from '../world/recovered-terrain/engine';
+import { originalGridFor, originalGridIdOf } from './original/original-document';
 
+/** square-v1: the reviewed research grid. original-grid: the original's own
+ * BasicMap sites with the same recovered templates (see original/). */
+export type FmsFullMapAlgorithm = 'recovered-height-square-v1' | 'recovered-height-original-grid-v1';
+export async function fmsFullMapAlgorithm(doc: Pick<FmsDocument, 'width' | 'height' | 'points'>): Promise<FmsFullMapAlgorithm> {
+  return await originalGridIdOf(doc) ? 'recovered-height-original-grid-v1' : 'recovered-height-square-v1';
+}
 export interface FmsFullMapOptions { seed: string; template: SeedTerrainTemplate }
 export interface FmsFullMapStats extends FmsFullMapOptions {
-  algorithm: 'recovered-height-square-v1'; changedCells: number; landCells: number; seaCells: number;
+  algorithm: FmsFullMapAlgorithm; changedCells: number; landCells: number; seaCells: number;
 }
 
 export function validFmsFullMapOptions(raw: unknown): raw is FmsFullMapOptions {
@@ -23,6 +31,7 @@ export async function assertFmsFullMapSource(doc: FmsDocument, control?: AtlasCo
   if (doc.elevations.some(height => height !== 0) || doc.terrainLocks?.some(Boolean)) {
     throw new FmsModelError('invalid-edit', '整图生成只适用于尚未绘制或保护的空白海洋；已有地形请用局部模板。');
   }
+  if (await originalGridIdOf(doc)) { control?.signal?.throwIfAborted(); return; }
   const canonical = await createTerrainTopology('square-v1', control);
   control?.signal?.throwIfAborted();
   if (doc.width !== canonical.width || doc.height !== canonical.height || doc.points.length !== canonical.points.length
@@ -49,6 +58,12 @@ export async function assertFmsFullMapSource(doc: FmsDocument, control?: AtlasCo
 export async function generateFmsFullMap(doc: FmsDocument, options: FmsFullMapOptions, control?: AtlasControl): Promise<{ elevations: Int32Array; stats: FmsFullMapStats }> {
   if (!validFmsFullMapOptions(options)) throw new FmsModelError('invalid-edit', '整图模板或种子无效。');
   await assertFmsFullMapSource(doc, control);
+  const original = await originalGridFor(doc);
+  if (original) {
+    const heights = await generateRecoveredHeights(original, options.seed, options.template, control);
+    control?.signal?.throwIfAborted();
+    return summarize(Array.from(heights), options, 'recovered-height-original-grid-v1');
+  }
   const bytes = await generateTerrainResearch({ ...options, layout: 'square-v1' }, control);
   control?.signal?.throwIfAborted();
   const raw: unknown = JSON.parse(new TextDecoder().decode(bytes));
@@ -59,17 +74,21 @@ export async function generateFmsFullMap(doc: FmsDocument, options: FmsFullMapOp
     || result.count !== doc.points.length || !Array.isArray(result.heights) || result.heights.length !== doc.points.length) {
     throw new Error('整图生成数据与当前地图不一致。');
   }
-  const elevations = new Int32Array(doc.points.length);
+  return summarize(result.heights, options, 'recovered-height-square-v1');
+}
+
+function summarize(heights: unknown[], options: FmsFullMapOptions, algorithm: FmsFullMapAlgorithm): { elevations: Int32Array; stats: FmsFullMapStats } {
+  const elevations = new Int32Array(heights.length);
   let changedCells = 0, landCells = 0;
   for (let i = 0; i < elevations.length; i++) {
-    const height = result.heights[i];
+    const height = heights[i];
     if (typeof height !== 'number' || !Number.isInteger(height) || height < 0 || height > 100) throw new Error('整图高度越界。');
     elevations[i] = height;
     if (height !== 0) changedCells++;
     if (height >= FMS_SEA_LEVEL) landCells++;
   }
   if (landCells === 0) throw new Error('整图模板未生成陆地。');
-  return { elevations, stats: { ...options, algorithm: 'recovered-height-square-v1', changedCells, landCells, seaCells: elevations.length - landCells } };
+  return { elevations, stats: { ...options, algorithm, changedCells, landCells, seaCells: elevations.length - landCells } };
 }
 
 /** Repeat eligibility and revision checks when preparing the preview. Undo/redo and
@@ -83,7 +102,7 @@ export async function prepareFmsFullMapPreview(doc: FmsDocument, candidate: {
   }
   await assertFmsFullMapSource(doc);
   if (!(candidate.elevations instanceof Int32Array) || candidate.elevations.length !== doc.elevations.length
-    || !candidate.stats || candidate.stats.algorithm !== 'recovered-height-square-v1' || candidate.stats.seed !== options.seed
+    || !candidate.stats || candidate.stats.algorithm !== await fmsFullMapAlgorithm(doc) || candidate.stats.seed !== options.seed
     || candidate.stats.template !== options.template) throw new FmsModelError('invalid-edit', '整图预览与种子或地图不一致。');
   const changes: { cell: number; previous: number; next: number }[] = [];
   let landCells = 0;

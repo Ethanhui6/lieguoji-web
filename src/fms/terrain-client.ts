@@ -97,7 +97,7 @@ function validTemplateStats(raw: unknown, elevations: Int32Array, source: Snapsh
 function validFullMapStats(raw: unknown, elevations: Int32Array, source: Snapshot): raw is FmsFullMapStats {
   const options = source.fullMap;
   if (!options || !exact(raw, ['algorithm', 'seed', 'template', 'changedCells', 'landCells', 'seaCells'])
-    || raw.algorithm !== 'recovered-height-square-v1' || raw.seed !== options.seed || raw.template !== options.template) return false;
+    || (raw.algorithm !== 'recovered-height-square-v1' && raw.algorithm !== 'recovered-height-original-grid-v1') || raw.seed !== options.seed || raw.template !== options.template) return false;
   let changed = 0, land = 0;
   for (let cell = 0; cell < elevations.length; cell++) {
     const height = elevations[cell];

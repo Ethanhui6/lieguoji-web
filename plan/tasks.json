@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read originalPlayCheckpoint and docs/FMS_PORT_ANALYSIS_2026-10-17.md. Playable worlds now run on the original 20k grid with the original drawing (5352). Next: original renderer in the editor, rivers/biome colors/city icons/fonts, then batch-scheduled simulation toward 10 days/s, then level0 UI. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read originalRiversCheckpoint and latest AUTO_HANDOFF. Original-grid worlds now draw original rivers (TradeLine 0.125 world units, riverColor, GetSharedEdgeMid mouths); engines f8e2 and 417e frozen; artifact .autopilot/fms-rivers47-checked on 5354. Next: editor original-grid rendering, biome mode-0 colors, burg icons, map fonts, then original batch scheduling (10 days/s) and original UI. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12457,6 +12457,127 @@
       "productionUnchanged": true,
       "evidence": "docs/evidence/fms-original-play-2026-10-17/RESULT.md",
       "boundary": "Local only; no uploads. Old engines/saves preserved."
+    },
+    "originalRiversCheckpoint": {
+      "date": "2026-10-17",
+      "status": "partial",
+      "task": "WEB-02-02",
+      "sourceCommit": "93d338e5f5c69e1dfc9ad2c693a70835848bcbdd",
+      "implementationCommit": "9b6c2a2",
+      "freezeCommits": [
+        "09424e7",
+        "93d338e"
+      ],
+      "engine": "d7e73e161a50762e7f004c30799cd213383faeeedcf0c0cbb7f7b27dcb6165c1",
+      "artifact": ".autopilot/fms-rivers47-checked",
+      "url": "http://127.0.0.1:5354/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "Original-grid rivers: grid climate and main.mjs Rivers.generate on the original cells, accepted original paths, GetSharedEdgeMid mouths, getBorderPoint, addMeandering, BuildRiverPath sampled by world length with Math.Round, Prefab/TradeLine 0.125 world units tapered (0.7+i*0.7/N)*1.5, World.riverColor, under borders and coastline",
+        "Climate grid guard widened 192->512 columns for the 30k/40k original grids",
+        "Froze f8e2 (5352 playable build) and 417e (5353 speed-check build)"
+      ],
+      "simulationRulesChanged": false,
+      "displayOnly": true,
+      "recovered": {
+        "prefab": "Prefab/TradeLine (resources.assets GO 2412, Polyline 8672): thickness 0.125 Meters, opaque, joins round; prefab color 0.717 gray is overridden per point by World.riverColor",
+        "riverColor": [
+          0.030526895076036453,
+          0.8741216659545898,
+          0.9245283007621765
+        ],
+        "riverZ": -0.19
+      },
+      "checks": {
+        "unit": {
+          "files": 8,
+          "passed": 47
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 116,
+        "browserDesktop": {
+          "expected": 8,
+          "passed": 8
+        },
+        "browserMobile": {
+          "expected": 1,
+          "passed": 1
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run"
+      },
+      "frozen": [
+        {
+          "engine": "f8e2f3ae1b5c95fcc47380d77bc1522ef47fb2efeb172aff696f103be0e56bc9",
+          "file": "engine-f8e2.js",
+          "bytes": 1413669,
+          "sha256": "f88fb81179109b42a5b0241cdee7ddb6d92ef212ca52e33c7753514150995cef",
+          "rule": "real-culture-zh-politics-journal-2",
+          "protocol": 2,
+          "source": "culture47-fms-original-play-checked-original-bytes",
+          "journalVersion": 2,
+          "byteEqual": true,
+          "registered": 36
+        },
+        {
+          "engine": "417ec4ba127bdede2f607b7e4b890629c915d5f750e0b3b5a1401c4d31555852",
+          "file": "engine-417e.js",
+          "bytes": 1413747,
+          "sha256": "2c26cbcd03282f119957cc751ae9b2a2e8e91ab7712b3e3c922b04586ab05083",
+          "rule": "real-culture-zh-politics-journal-2",
+          "protocol": 2,
+          "source": "culture47-fms-speed-checked-original-bytes",
+          "journalVersion": 2,
+          "byteEqual": true,
+          "registered": 37
+        }
+      ],
+      "measured": {
+        "seed1337continents20k": {
+          "rivers": 292,
+          "points": 17923,
+          "triangles": 35262
+        },
+        "nodeMs": {
+          "20k": {
+            "rivers": [
+              50,
+              66
+            ],
+            "geometry": [
+              73,
+              81
+            ]
+          },
+          "40k": {
+            "rivers": [
+              101,
+              114
+            ],
+            "geometry": [
+              155,
+              171
+            ]
+          }
+        }
+      },
+      "remaining": [
+        "Editor original grid still uses triangle renderer and old ribbons",
+        "No lakes",
+        "Biome mode 0 colors, burg icons, map fonts, original batch scheduling (10 days/s) and original UI pending",
+        "No physical iPhone/user visual acceptance"
+      ],
+      "physicalIphone": false,
+      "userVisualAcceptance": false,
+      "originalEquivalent": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only recovery; no PH/device/visual completion claim.",
+      "evidence": "docs/evidence/fms-rivers47-2026-10-17/RESULT.md"
     }
   }
 }

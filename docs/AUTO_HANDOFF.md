@@ -1,3 +1,9 @@
+# 当前检查点：原作格网世界画出原作河流（2026-10-17）
+
+原作格网上的可玩世界现在按原作画河：直接在原作行优先格上算格网气候与 main.mjs Rivers.generate，取原作已接受路径；入海口取 World.GetSharedEdgeMid（Voronoi 公共边中点），出图端 getBorderPoint；addMeandering 中点；BuildRiverPath 曲线按世界长度采样（Math.Round，6–12）；线宽为 Prefab/TradeLine 的 0.125 世界单位（0.833 地图单位）乘 (0.7+i·0.7/N)·1.5 渐宽，颜色 World.riverColor，层次在国界与海岸线之下（z −0.19）。纯显示。气候保护上限放宽到 512 列以支持 3 万/4 万格。源码 9b6c2a2；冻结 f8e2（5352 可玩构建，09424e7）与 417e（5353 测速构建，93d338e）；产物 .autopilot/fms-rivers47-checked，引擎 d7e7…，本机 http://127.0.0.1:5354/?fms=1（会话后需重启）。单测 47、lint/typecheck/build116、桌面浏览器 8/8＋手机 1/1、plan/15/24 通过；同视角前后图见 [结果](evidence/fms-rivers47-2026-10-17/RESULT.md)，键 webRebuild.originalRiversCheckpoint。下一批：编辑器换原作渲染、地貌色、城市图标、地图字体，然后原作分批调度模拟（每秒10日）与原作界面。未跑完整套件，无真机/用户视觉验收，无上传。
+
+---
+
 # 当前检查点：可玩世界已迁到原作格网与原作画法（2026-10-17）
 
 新整图默认原作2万格（可选3万/4万/旧方形，确认时才切换格网）；原作模板直接在原作格网生成；原作格网上的文化世界用 OriginalPlayRenderer：逐格灰度高程+按格国家色（预设透明度，alpha 含义为推断）、SDF海、原作海岸、羊皮纸相乘，省份多边形只画轮廓/国界。模拟规则与存档不变，旧方形世界仍用旧渲染。源码e0cf9c7，冻结6c81，产物 .autopilot/fms-original-play-checked，本机 http://127.0.0.1:5352/?fms=1。单测65、浏览器回归7/7、桌面与手机尺寸完整流程通过；见 [结果](evidence/fms-original-play-2026-10-17/RESULT.md)，键 webRebuild.originalPlayCheckpoint。下一批：编辑器换原作渲染、河流/地貌色/城市图标/字体，然后原作分批调度模拟（每秒10日）与原作界面。无上传。

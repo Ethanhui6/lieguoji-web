@@ -109,6 +109,10 @@ test('a default full-world map can found countries and advance live simulation',
   const cities=JSON.parse((await map.getAttribute('data-cities'))!);
   expect(countries).toHaveLength(6);
   expect(cities).toHaveLength(60);
+  // The default world is on the original grid: recovered rivers are drawn there.
+  await expect(map).toHaveAttribute('data-renderer','original');
+  const rivers=JSON.parse((await map.getAttribute('data-original-rivers'))!);
+  expect(rivers.algorithm).toBe('recovered-original-grid-rivers-v1');expect(rivers.rivers).toBeGreaterThan(20);expect(rivers.triangles).toBeGreaterThan(rivers.rivers);
   const initialPositions=await map.getAttribute('data-force-positions');
   await page.getByRole('button',{name:'继续时间',exact:true}).click();
   await expect.poll(async()=>Number(await app.getAttribute('data-day')),{timeout:90000}).toBeGreaterThanOrEqual(4);

@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read originalRiversCheckpoint and latest AUTO_HANDOFF. Original-grid worlds now draw original rivers (TradeLine 0.125 world units, riverColor, GetSharedEdgeMid mouths); engines f8e2 and 417e frozen; artifact .autopilot/fms-rivers47-checked on 5354. Next: editor original-grid rendering, biome mode-0 colors, burg icons, map fonts, then original batch scheduling (10 days/s) and original UI. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read originalEditorIconsCheckpoint and latest AUTO_HANDOFF. Editor on original grids now draws the original way; original city/capital icons on original-grid worlds; d7e7 frozen; artifact .autopilot/fms-icons47-checked on 5356. Next: 4 pre-existing failing compat save tests, lakes, biome mode-0, port/fortress icons, map fonts, original batch scheduling (10 days/s), original UI. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12578,6 +12578,134 @@
       "productionUnchanged": true,
       "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only recovery; no PH/device/visual completion claim.",
       "evidence": "docs/evidence/fms-rivers47-2026-10-17/RESULT.md"
+    },
+    "originalEditorIconsCheckpoint": {
+      "date": "2026-10-18",
+      "status": "partial",
+      "task": "WEB-02-02",
+      "sourceCommit": "1966b1723c206fa27d0ac635f025e1c872d0a27b",
+      "implementationCommit": "aa8ef46",
+      "fixCommit": "1966b17",
+      "freezeCommit": "174dfec",
+      "engine": "2db0821ff0f4797180fc2be067d5b6b2aebceb94ec81e667ccda15696e4593e0",
+      "artifact": ".autopilot/fms-icons47-checked",
+      "url": "http://127.0.0.1:5356/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "Editor on original BasicMap grids draws OriginalEditorLayer: SDF sea, flat cells (Shader189 mode 2 in height view, mode 1 otherwise), original rivers, smoothed coast, parchment",
+        "Original city icons on original-grid worlds: CityMain and CityCapitalFinal Shapes discs at prefab scale 0.23 world units",
+        "Fix: stale original-grid lookup never applied to a different document",
+        "Froze d7e7"
+      ],
+      "simulationRulesChanged": false,
+      "displayOnly": true,
+      "recovered": {
+        "cityMain": {
+          "discs": [
+            {
+              "color": "black",
+              "radius": 1
+            },
+            {
+              "color": "white",
+              "radius": 0.56
+            }
+          ],
+          "scale": 0.23
+        },
+        "capital": {
+          "discs": [
+            {
+              "color": "black",
+              "radius": 1.3
+            },
+            {
+              "color": "white",
+              "radius": 0.885
+            },
+            {
+              "color": "black",
+              "radius": 0.43
+            }
+          ],
+          "scale": 0.23
+        },
+        "portAndFortress": "parsed, runtime scale not recovered, not drawn"
+      },
+      "measured": {
+        "strokeToRedrawMs": [
+          727,
+          643,
+          657
+        ]
+      },
+      "checks": {
+        "unit": {
+          "files": 6,
+          "passed": 23
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 117,
+        "browserDesktopFinal": {
+          "expected": 8,
+          "passed": 8
+        },
+        "browserMobile": {
+          "expected": 1,
+          "passed": 1
+        },
+        "firstRun": {
+          "passed": 47,
+          "failed": 5,
+          "fixed": "fms-full-map cancel/undo (stale lookup)",
+          "preexisting": [
+            "compat normal repeated saves",
+            "compat cancel during backup validation",
+            "compat losing loaded candidate",
+            "compat new world discards candidate"
+          ],
+          "preexistingEvidence": "browser-prior-compat.log on 5354"
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run"
+      },
+      "frozen": {
+        "engine": "d7e73e161a50762e7f004c30799cd213383faeeedcf0c0cbb7f7b27dcb6165c1",
+        "file": "engine-d7e7.js",
+        "bytes": 1413747,
+        "sha256": "6f3ef793bf2060b381e4479f3439e772ecdfa59e9ea8169f00c3df6e8cc0afe8",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-fms-rivers47-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 38
+      },
+      "intermediateEngine": {
+        "fingerprint": "eeb603112422a7abacd4460b152437d099f0ecf6090154741467fe8419332587",
+        "servedOnly": "127.0.0.1:5355 for own checks, stopped",
+        "frozen": false
+      },
+      "remaining": [
+        "Lakes",
+        "Biome mode 0 colors",
+        "Port and fortress icons",
+        "Map fonts",
+        "Original batch scheduling 10 days/s",
+        "Original UI",
+        "4 pre-existing compat save tests failing"
+      ],
+      "physicalIphone": false,
+      "userVisualAcceptance": false,
+      "originalEquivalent": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only; no PH/device/visual completion claim.",
+      "evidence": "docs/evidence/fms-icons47-2026-10-18/RESULT.md"
     }
   }
 }

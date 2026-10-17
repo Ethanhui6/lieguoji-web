@@ -1,0 +1,12 @@
+{
+  "engine": "d7e73e161a50762e7f004c30799cd213383faeeedcf0c0cbb7f7b27dcb6165c1",
+  "file": "engine-d7e7.js",
+  "bytes": 1413747,
+  "sha256": "6f3ef793bf2060b381e4479f3439e772ecdfa59e9ea8169f00c3df6e8cc0afe8",
+  "rule": "real-culture-zh-politics-journal-2",
+  "protocol": 2,
+  "source": "culture47-fms-rivers47-checked-original-bytes",
+  "journalVersion": 2,
+  "byteEqual": true,
+  "registered": 38
+}

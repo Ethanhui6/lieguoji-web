@@ -10,7 +10,7 @@ import type { FmsCoastSegment } from './ocean-coast';
  * units, z -0.2, below the coastline at z -0.25) in AdjustColor(DeepColor,
  * +0.2 saturation, -0.2 value); MaterialManager.UpdateStateColor 0x3EDEE0
  * sets DeepColor = AdjustColor(color, +0.1, -0.05). The web chains the actual
- * province polygon perimeter, not Voronoi cell edges. */
+ * province polygons, not Voronoi cell edges (see fmsStateOutlines). */
 export const FMS_STATE_LINE = 'recovered-state-outline-curve-basis-4-v1';
 export const FMS_STATE_LINE_WIDTH = Math.fround(0.25) / (240 / 1600);
 
@@ -43,26 +43,34 @@ export function fmsStateLineColor(color: string): number {
 
 export interface FmsStateRegion { controller: string; polygon: readonly { x: number; y: number }[] }
 
-/** Each owner's full perimeter: an edge is interior only when two regions of
- * the same owner share it. Coordinates are divided by `scale` into map units. */
+/** Each owner's border with other owners. The original also outlines coastal
+ * cell edges, but there the state line and the coastline come from the same
+ * Voronoi edges and SmoothBorderLines, and the coastline (z -0.25) covers it.
+ * Web province polygons do not follow the rendered h20 contour, so their
+ * coastal edges are left to the coastline ink rather than drawn offshore. An
+ * edge is interior when two regions of the same owner share it. Coordinates
+ * are divided by `scale` into map units. */
 export function fmsStateOutlines(regions: readonly FmsStateRegion[], scale: number): Map<string, [number, number][][]> {
-  const edges = new Map<string, { owner: string; count: number; segment: FmsCoastSegment }>();
+  const edges = new Map<string, { owners: Map<string, number>; segment: FmsCoastSegment }>();
   for (const region of regions) {
     const polygon = region.polygon;
     for (let i = 0; i < polygon.length; i++) {
       const a = polygon[i], b = polygon[(i + 1) % polygon.length];
       if (a.x === b.x && a.y === b.y) continue;
-      const ka = `${a.x},${a.y}`, kb = `${b.x},${b.y}`, key = `${region.controller}|${ka < kb ? ka + '/' + kb : kb + '/' + ka}`;
-      const edge = edges.get(key);
-      if (edge) edge.count++;
-      else edges.set(key, { owner: region.controller, count: 1, segment: [a.x / scale, a.y / scale, b.x / scale, b.y / scale] });
+      const ka = `${a.x},${a.y}`, kb = `${b.x},${b.y}`, key = ka < kb ? ka + '/' + kb : kb + '/' + ka;
+      let edge = edges.get(key);
+      if (!edge) edges.set(key, edge = { owners: new Map(), segment: [a.x / scale, a.y / scale, b.x / scale, b.y / scale] });
+      edge.owners.set(region.controller, (edge.owners.get(region.controller) ?? 0) + 1);
     }
   }
   const perimeter = new Map<string, FmsCoastSegment[]>();
-  for (const { owner, count, segment } of edges.values()) {
-    if (count !== 1) continue;
-    const list = perimeter.get(owner);
-    if (list) list.push(segment); else perimeter.set(owner, [segment]);
+  for (const { owners, segment } of edges.values()) {
+    if (owners.size < 2) continue;
+    for (const [owner, count] of owners) {
+      if (count !== 1) continue;
+      const list = perimeter.get(owner);
+      if (list) list.push(segment); else perimeter.set(owner, [segment]);
+    }
   }
   return new Map([...perimeter].map(([owner, segments]) => [owner, fmsSmoothBorderLines(chainFmsCoastSegments(segments))]));
 }

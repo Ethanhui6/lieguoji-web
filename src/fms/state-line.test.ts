@@ -22,20 +22,19 @@ describe('recovered state outlines', () => {
     expect(FMS_STATE_LINE_WIDTH).toBeCloseTo(1.6667, 4);
   });
 
-  it('outlines each owner perimeter, dropping only same-owner shared edges', () => {
+  it('draws only borders between different owners; coasts and same-owner seams are left out', () => {
     const outlines = fmsStateOutlines([
       { controller: 'a', polygon: square(0, 0) }, { controller: 'a', polygon: square(10, 0) }, { controller: 'b', polygon: square(20, 0) },
+      { controller: 'c', polygon: square(100, 100) },
     ], 2);
     expect([...outlines.keys()].sort()).toEqual(['a', 'b']);
-    const [a] = outlines.get('a')!, [b] = outlines.get('b')!;
-    expect(outlines.get('a')).toHaveLength(1);
-    // Closed, smoothed, inside the owner's scaled box (corners are cut, never exceeded).
-    expect(a[0]).toEqual(a[a.length - 1]); expect(b[0]).toEqual(b[b.length - 1]);
-    // Float32 curve arithmetic may land within 1e-5 of an edge.
-    for (const [x, y] of a) { expect(x).toBeGreaterThanOrEqual(-1e-5); expect(x).toBeLessThanOrEqual(10 + 1e-5); expect(y).toBeGreaterThanOrEqual(-1e-5); expect(y).toBeLessThanOrEqual(5 + 1e-5); }
-    // The interior a|a edge at x=5 is removed: the curve reaches both ends of the 10-wide box.
-    const xs = a.map(p => p[0]);
-    expect(Math.max(...xs)).toBeGreaterThan(9); expect(Math.min(...xs)).toBeLessThan(1);
+    for (const owner of ['a', 'b']) {
+      const lines = outlines.get(owner)!;
+      expect(lines).toHaveLength(1);
+      // The single shared edge x=20 (scaled 10), y 0..10 (scaled 0..5), smoothed with clamped ends.
+      for (const [x, y] of lines[0]) { expect(x).toBeCloseTo(10, 5); expect(y).toBeGreaterThanOrEqual(-1e-5); expect(y).toBeLessThanOrEqual(5 + 1e-5); }
+    }
+    expect(outlines.get('a')).toEqual(outlines.get('b'));
   });
 });
 

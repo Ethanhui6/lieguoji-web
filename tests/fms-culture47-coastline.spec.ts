@@ -18,6 +18,10 @@ test('recovered B-spline coastline ink follows the played terrain without changi
  expect(coast.chains).toBeGreaterThan(0);
  // Four samples per contour span, minus shared joints and 0.001 duplicates.
  expect(coast.points).toBeGreaterThan(segments*2);expect(coast.points).toBeLessThanOrEqual(segments*4+coast.chains*2);
+ const lines=JSON.parse(await canvas.getAttribute('data-state-lines')??'null');
+ expect(lines).toMatchObject({algorithm:'recovered-state-outline-curve-basis-4-v1',enabled:true});
+ expect(lines.width).toBeCloseTo(.25/(240/1600),6);expect(lines.nations).toBeGreaterThan(1);expect(lines.points).toBeGreaterThan(lines.lines*2);
+ expect(await canvas.getAttribute('data-ocean-algorithm')).toBe('recovered-shader191-smoothed-coast-band-distance-v3');
  const tick=await app.getAttribute('data-tick');
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:40000});
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click({timeout:40000});

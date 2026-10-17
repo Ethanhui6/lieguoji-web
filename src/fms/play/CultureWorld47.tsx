@@ -10,6 +10,7 @@ import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
 import {FmsRenderer} from '../renderer';
 import {extractFmsOceanCoast} from '../ocean-coast';
+import {FMS_STATE_LINE,FMS_STATE_LINE_WIDTH} from '../state-line';
 import {deriveFmsCoastCurves,FMS_COAST_CURVE,FMS_COAST_LINE_COLOR,FMS_COAST_LINE_WIDTH} from '../coast-curve';
 import {FmsGestures} from '../gestures';
 import {fitCamera,screenToWorld,resizeCamera,zoomCameraAt} from '../../world/camera';
@@ -304,7 +305,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
-      const coast=deriveFmsCoastCurves(extractFmsOceanCoast(source));map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);
+      const coast=deriveFmsCoastCurves(extractFmsOceanCoast(source));map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
       canvas.dataset.coastline=JSON.stringify({algorithm:FMS_COAST_CURVE,chains:coast.chains,sourceSegments:coast.sourceSegments,points:coast.points,width:FMS_COAST_LINE_WIDTH,color:FMS_COAST_LINE_COLOR});
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);
@@ -315,7 +316,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
         drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
-        canvas.dataset.day=String(r.world.day);canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
+        canvas.dataset.day=String(r.world.day);canvas.dataset.stateLines=JSON.stringify({algorithm:FMS_STATE_LINE,width:FMS_STATE_LINE_WIDTH,...map.stateLineDiagnostics()});canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
       };
       const setCamera=(c:typeof view.camera)=>{view.camera=c;renderer.setCamera(c);paint.current();};
       mapControl.current={zoom:n=>setCamera(zoomCameraAt(view.camera,n,{x:view.viewport.width/2,y:view.viewport.height/2},source,view.viewport)),fit:()=>setCamera(fitCamera(source,view.viewport))};

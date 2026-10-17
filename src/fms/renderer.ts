@@ -191,6 +191,7 @@ export class FmsRenderer {
     const oceanMetrics=this.oceanFields.metrics();
     this.canvas.dataset.oceanAlgorithm=FMS_OCEAN_CONTRACT;
     this.canvas.dataset.oceanSegments=String(ocean.segmentCount);
+    this.canvas.dataset.oceanContourSegments=String(ocean.contourSegments??ocean.segmentCount);
     this.canvas.dataset.oceanTexture=`${ocean.width}x${ocean.height}`;
     this.canvas.dataset.oceanBytes=String(ocean.pixels.byteLength);
     this.canvas.dataset.oceanCacheBytes=String(oceanMetrics.bytes);

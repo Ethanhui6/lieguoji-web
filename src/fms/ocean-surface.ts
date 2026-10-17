@@ -1,13 +1,20 @@
 import { BufferImageSource } from 'pixi.js';
 import type { FmsDocument } from './model';
 import { deriveFmsOceanField, type FmsOceanField } from './ocean-coast';
+import { deriveFmsSmoothedCoast } from './coast-curve';
 
 // level0 World serialized colors, as bound by SetDeep/ShallowWaterColor.
 // The original shader names are reversed: _DeepColor receives shallowColor.
 export const FMS_OCEAN_SHALLOW = [.23584888875484467, .6113743782043457, .9999999403953552] as const;
 export const FMS_OCEAN_DEEP = [.0784313753247261, .529411792755127, 1] as const;
 export const FMS_OCEAN_EDGE_INTENSITY = .02;
-export const FMS_OCEAN_CONTRACT = 'recovered-shader191-linear-web-contour-distance-v2';
+// StateLineRenderer#31729 shallowLineThickness 1.2 world units is the SDF
+// camera's coast band; half of it, at 0.15 world units per map unit (1600x900).
+// Its ±0.1 world-unit side offset depends on an unrecovered direction sign.
+export const FMS_OCEAN_SDF_BAND_HALF_WIDTH = Math.fround(1.2) / 2 / (240 / 1600);
+// StateLineRenderer draws the SDF camera's coast source from the same
+// SmoothBorderLines output as the visible ink, so distance follows the curve.
+export const FMS_OCEAN_CONTRACT = 'recovered-shader191-smoothed-coast-band-distance-v3';
 
 interface Entry {
   points: FmsDocument['points']; triangles: FmsDocument['triangles']; elevations: FmsDocument['elevations'];
@@ -29,7 +36,8 @@ export class FmsOceanFields {
     // max(mapWidth,mapHeight) onto its square RT. Preserve that world-space
     // scale with our aspect-preserving texture. resolutionScale=1 is a web
     // default; camera zoom never changes the world-space band width.
-    const field = deriveFmsOceanField(doc, Math.max(doc.width, doc.height) * FMS_OCEAN_EDGE_INTENSITY);
+    const coast = deriveFmsSmoothedCoast(doc);
+    const field = { ...deriveFmsOceanField(doc, Math.max(doc.width, doc.height) * FMS_OCEAN_EDGE_INTENSITY, 512, coast.segments, FMS_OCEAN_SDF_BAND_HALF_WIDTH), contourSegments: coast.sourceSegments };
     this.elapsed = performance.now() - started; this.builds++;
     this.entries.unshift({ points: doc.points, triangles: doc.triangles, elevations: doc.elevations, width: doc.width, height: doc.height, field });
     if (this.entries.length > 3) this.entries.pop();

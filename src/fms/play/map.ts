@@ -20,6 +20,7 @@ import {drawAttackArrow} from './attack-map';
 import {BattleFeedback} from './battle-feedback';
 import {warDetail,warSites,warMarkers,type WarMarker,type WarDetail} from './war-view';
 import {armyStrength47} from './army-strength47';
+import {fmsStateLineColor,fmsStateOutlines,FMS_STATE_LINE_WIDTH} from '../state-line';
 import type {TacticsState} from './tactics-model';
 
 export class PlayMap {
@@ -112,6 +113,12 @@ export class PlayMap {
     for(const line of lines){if(line.length<2)continue;g.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)g.lineTo(line[i][0],line[i][1]);this.coastPoints+=line.length;}
     if(this.coastPoints)g.stroke({width,color,join:'round',cap:'round'});
   }
+  // Recovered StateLineRenderer state outlines, opt-in for the culture world.
+  private originalStateLines=false;
+  private stateOutlineKey='';
+  private stateOutlines=new Map<string,[number,number][][]>();
+  useOriginalStateLines(enabled:boolean){this.originalStateLines=enabled;this.politicalKey='';}
+  stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points};}
   coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
   private politicalKey='';
@@ -141,14 +148,26 @@ export class PlayMap {
     const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
     g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
+    const originalLines=this.originalStateLines&&mode==='political';
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
     for (const p of world.provinces) {
       g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: nationColor(nations.get(p.controller)!), alpha: style.fill });
       if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });
-      if (p.id === selected) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
+      if (p.id === selected&&!originalLines) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
       for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==p.controller;}else borders.set(key,{a,b,owner:p.controller,shared:false,foreign:false});}
     }
-    for(const edge of borders.values())if(edge.foreign){
+    if(originalLines){
+      const outlineKey=territoryKey+'/'+scale;
+      if(outlineKey!==this.stateOutlineKey){this.stateOutlineKey=outlineKey;this.stateOutlines=fmsStateOutlines(world.provinces,scale);}
+      for(const [owner,lines]of this.stateOutlines){
+        let drawn=false;
+        for(const line of lines){if(line.length<2)continue;g.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)g.lineTo(line[i][0],line[i][1]);drawn=true;}
+        if(drawn)g.stroke({color:fmsStateLineColor(nationColor(nations.get(owner)!)),width:FMS_STATE_LINE_WIDTH,join:'round',cap:'round'});
+      }
+      const chosen=selected?provinces.get(selected):undefined;
+      if(chosen)g.poly(chosen.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xffe7a7,width:2.5*pixel});
+    }
+    else for(const edge of borders.values())if(edge.foreign){
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0xfff5db,width:(style.border+1.5)*pixel,alpha:.8});
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0x35453a,width:style.border*pixel,alpha:.9});
     }

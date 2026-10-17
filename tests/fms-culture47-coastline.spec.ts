@@ -7,7 +7,7 @@ test('recovered B-spline coastline ink follows the played terrain without changi
  await page.goto('/?fms=1');
  await page.getByRole('button',{name:'生成大陆',exact:true}).click();
  await page.getByRole('button',{name:'确认原作地形',exact:true}).click({timeout:90000});
- const segments=Number(await page.getByTestId('fms-canvas').getAttribute('data-ocean-segments'));
+ const segments=Number(await page.getByTestId('fms-canvas').getAttribute('data-ocean-contour-segments'));
  await page.getByRole('button',{name:'保存地图',exact:true}).click();
  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
  await create(page);

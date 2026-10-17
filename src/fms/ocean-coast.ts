@@ -89,16 +89,20 @@ export function createFmsCoastDistance(segments: readonly FmsCoastSegment[], cap
 export interface FmsOceanField {
   readonly pixels: Uint8Array; readonly width: number; readonly height: number;
   readonly segmentCount: number; readonly distanceCap: number; readonly maxSampleError: number;
+  /** Rendered h20 contour segments the distance source was derived from. */
+  readonly contourSegments?: number;
 }
 
 /** RG stores a linear 16-bit distance ratio, B=0/A=255. Decoding after bilinear
  * filtering is linear too, including byte carries; no float-texture extension.
  * Distance is visual-only: vHeight still decides every sea/land fragment. */
-export function deriveFmsOceanField(doc: Surface, distanceCap: number, resolution = 512): FmsOceanField {
+/** `bandHalfWidth` measures distance from the edge of a stroked source band
+ * instead of its centerline; 0 keeps the plain contour distance. */
+export function deriveFmsOceanField(doc: Surface, distanceCap: number, resolution = 512, segments: readonly FmsCoastSegment[] = extractFmsOceanCoast(doc), bandHalfWidth = 0): FmsOceanField {
   if (!Number.isInteger(resolution) || resolution < 2 || resolution > 1024) throw new Error('海洋纹理尺寸无效。');
   const maxSize = Math.max(doc.width, doc.height);
   const width = Math.max(2, Math.round(resolution * doc.width / maxSize)), height = Math.max(2, Math.round(resolution * doc.height / maxSize));
-  const segments = extractFmsOceanCoast(doc), distance = createFmsCoastDistance(segments, distanceCap);
+  const centerline = createFmsCoastDistance(segments, distanceCap + bandHalfWidth), distance = (x: number, y: number) => Math.min(distanceCap, Math.max(0, centerline(x, y) - bandHalfWidth));
   const pixels = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const value = Math.round(distance((x + .5) * doc.width / width, (y + .5) * doc.height / height) / distanceCap * 65535), offset = (y * width + x) * 4;

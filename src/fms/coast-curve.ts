@@ -1,4 +1,4 @@
-import type { FmsCoastSegment } from './ocean-coast';
+import { extractFmsOceanCoast, type FmsCoastSegment } from './ocean-coast';
 
 /** Recovered from the user's FantasyMapSimulator GameAssembly.dll (static,
  * read-only): MathUtility.Basis 0x3EE280, CurveBasis 0x3EEBD0,
@@ -115,4 +115,17 @@ export interface FmsCoastCurves { lines: [number, number][][]; chains: number; s
 export function deriveFmsCoastCurves(segments: readonly FmsCoastSegment[]): FmsCoastCurves {
   const chains = chainFmsCoastSegments(segments), lines = fmsSmoothBorderLines(chains);
   return { lines, chains: chains.length, sourceSegments: segments.length, points: lines.reduce((sum, line) => sum + line.length, 0) };
+}
+
+/** Consecutive smoothed samples as distance-query segments. */
+export function fmsCurveSegments(lines: readonly (readonly FmsCurvePoint[])[]): FmsCoastSegment[] {
+  const segments: FmsCoastSegment[] = [];
+  for (const line of lines) for (let i = 1; i < line.length; i++) segments.push([line[i - 1][0], line[i - 1][1], line[i][0], line[i][1]]);
+  return segments;
+}
+
+/** Same smoothed coastline used by the ink, from the rendered h20 contour. */
+export function deriveFmsSmoothedCoast(doc: Parameters<typeof extractFmsOceanCoast>[0]): FmsCoastCurves & { segments: FmsCoastSegment[] } {
+  const curves = deriveFmsCoastCurves(extractFmsOceanCoast(doc));
+  return { ...curves, segments: fmsCurveSegments(curves.lines) };
 }

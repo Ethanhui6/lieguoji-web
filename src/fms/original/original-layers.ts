@@ -73,7 +73,11 @@ export class OriginalCellMesh {
     this.cells.forEach((cell, i) => { const c = colorOf(cell); for (let j = 0; j < this.counts[i]; j++) data.set(c, (this.starts[i] + j) * 3); });
     buffer.update();
   }
-  destroy(): void { this.mesh.destroy(); this.mesh.geometry.destroy(true); this.mesh.shader?.destroy(true); }
+  destroy(): void {
+    // Mesh.destroy() releases its references; keep them to free GPU data.
+    const { geometry, shader } = this.mesh;
+    this.mesh.destroy(); geometry.destroy(true); shader?.destroy(true);
+  }
 }
 
 const channels = (color: number) => [(color >> 16 & 255) / 255, (color >> 8 & 255) / 255, (color & 255) / 255];

@@ -318,5 +318,15 @@
     "protocol": 2,
     "source": "culture47-residual47-checked-original-bytes",
     "journalVersion": 2
+  },
+  {
+    "engine": "d4f020333d1a4bf9883074eb49a5cee0dfc9c9e570bf25c46d529d9e635ab037",
+    "file": "engine-d4f0.js",
+    "bytes": 1413669,
+    "sha256": "ced2cd900b374e3620afb7ce8d81fab1db79e28fa1e5dfbdcd9c5cfe4663a2c9",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-coastline47-checked-original-bytes",
+    "journalVersion": 2
   }
 ]

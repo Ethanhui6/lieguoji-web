@@ -40,7 +40,7 @@ import {CultureDiplomacy47} from './CultureDiplomacy47';
 import {CultureNews47} from './CultureNews47';
 import {usePresentationClock} from './PresentationClock';
 import {Graphics} from 'pixi.js';
-import {activeSiegeProvinces47,combatMarkers47,displayCombatMarkers47,visibleCombatMarkers47} from './combat-map47';
+import {activeSiegeProvinces47,combatMarkers47,createCombatStrengthIndex47,displayCombatMarkers47,visibleCombatMarkers47} from './combat-map47';
 import {CombatTimeline47} from './combat-timeline47';
 import {CombatOverlay47} from './CombatOverlay47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
@@ -85,7 +85,11 @@ function CityIdentity({cityId,run,busy,edit}:{cityId:string;run:FoundingForces47
   return <form onSubmit={e=>{e.preventDefault();edit({kind:'city',id:cityId,customName:value.trim()||null});}}><label>{city.name} · {culture47(row.cultureId).label}文化<input aria-label="自定城市名" value={value} maxLength={100} placeholder={row.name.value} onChange={e=>setValue(e.target.value)}/></label><button disabled={busy}>应用城市名</button></form>;
 }
 export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;onClose:()=>void;onLegacy:()=>void}){
-  const [snapshot,setSnapshot]=useState<Culture47Snapshot|null>(null),[busy,setBusy]=useState(false),[playing,setPlaying]=useState(false),[notice,setNotice]=useState(''),[saved,setSaved]=useState<SavedCulture47|null>(null),[locked,setLocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+  const [snapshot,setSnapshot]=useState<Culture47Snapshot|null>(null),[busy,setBusy]=useState(false),[playing,setPlayingState]=useState(false),[notice,setNotice]=useState(''),[saved,setSaved]=useState<SavedCulture47|null>(null),[locked,setLocked]=useState(false),[storageReady,setStorageReady]=useState(false);
+  // ACK continuations can run before React commits a queued pause. Keep the
+  // playback gate synchronous for pause, foreground previews, close and errors.
+  const isPlaying=useRef(false);
+  function setPlaying(next:boolean|((value:boolean)=>boolean)){const value=typeof next==='function'?next(isPlaying.current):next;isPlaying.current=value;setPlayingState(value);}
   const [count,setCount]=useState(6),[cityCount,setCityCount]=useState(60),[mode,setMode]=useState<NamingMode47>('culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(false);
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
@@ -124,7 +128,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const [recovering,setRecovering]=useState(false),resumeAfterRecovery=useRef(false);
   const [renderFault,setRenderFault]=useState(''),[rendererEpoch,setRendererEpoch]=useState(0);
   const displayReady=useRef(false);
-  const lastView=useRef<{id:string;camera:ReturnType<typeof fitCamera>;viewport:{width:number;height:number}}|null>(null),isPlaying=useRef(playing);isPlaying.current=playing;
+  const lastView=useRef<{id:string;camera:ReturnType<typeof fitCamera>;viewport:{width:number;height:number}}|null>(null);
   const previewEpoch=useRef({military:0,political:0}),requestEpoch=useRef(new WeakMap<Culture47Request,number>());
   const client=useRef<Culture47Client|null>(null),current=useRef(snapshot),inflight=useRef(false),revision=useRef<number|null>(null),lifetime=useRef<AbortController|null>(null),host=useRef<HTMLDivElement>(null);
   const readyWorld=useRef<ReadyCulture47|null>(null);
@@ -195,6 +199,9 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;
       if(command.type==='create'){if(inspectNewSlot)revision.current=newSlot?.revision??null;storageDatabase.current=CULTURE47_GENERATIONS_DATABASE;setLocked(false);}
       instantDisplay.current=isAdvance&&!background||command.type==='create'||command.type==='load';
+      // Install every accepted path before allowing the next Worker request.
+      // React may coalesce fast snapshots; it must not discard intermediate turns.
+      installAcceptedDisplay(s,instantDisplay.current);
       current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
     catch(e){if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice(failText(e)+(client.current?.isClosed?(current.current?' 点击继续可恢复最后确认的进度。':' 可以重新点击创建或继续世界；原档保留。'):''));}}
     finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);setAdvancing(false);drain();}}
@@ -236,7 +243,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     finally{operation.current=null;inflight.current=false;resumeAfterRecovery.current=false;if(!lifetime.current?.signal.aborted){setRecovering(false);setBusy(false);}}
   }
   useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
-  usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,playing:()=>playing,
+  usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,acknowledgedContinuation:true,playing:()=>isPlaying.current,
     batchBoundary:()=>120-(current.current?.run.clock.tick??0)%120,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
     step:async ticks=>{const s=current.current;if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
@@ -254,9 +261,17 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   const runId=snapshot?.run.id;
   const motion=useRef(new CultureMotion47());
   const combatTimeline=useRef(new CombatTimeline47());
+  const installedDisplay=useRef<Culture47Snapshot|null>(null);
   useEffect(()=>{motion.current.setPresentationTickMillis(playbackBudget.tickMillis,performance.now());},[playbackBudget.tickMillis]);
   function displayFrame(){return motion.current.frame(performance.now());}
-  useEffect(()=>{if(snapshot){const now=performance.now();combatTimeline.current.install(snapshot,motion.current.tick(now),instantDisplay.current);motion.current.install(snapshot,now,()=>actualForces47(snapshot.run).spatial.graph,instantDisplay.current);if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);}},[snapshot,renderFault]);
+  function installAcceptedDisplay(next:Culture47Snapshot,immediate:boolean){
+    if(installedDisplay.current===next)return;
+    const now=performance.now();combatTimeline.current.install(next,motion.current.tick(now),immediate);motion.current.install(next,now,()=>actualForces47(next.run).spatial.graph,immediate);installedDisplay.current=next;
+    if(!isPlaying.current&&!renderFault)motion.current.finishAccepted(now);
+  }
+  // Loads and recovery also enter through this fallback. ACKs have already
+  // installed their paths synchronously, so rendering cannot install them twice.
+  useEffect(()=>{if(snapshot)installAcceptedDisplay(snapshot,instantDisplay.current);},[snapshot,renderFault]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
   useEffect(()=>{
     if(!runId||!host.current||!current.current)return;
@@ -270,10 +285,12 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):initialLandCamera47(source,viewport)};
     const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
     let combat:ReturnType<typeof combatMarkers47>=[],contactPairs:ReturnType<CombatTimeline47['pairs']>|null=null,combatRun:FoundingForces47|null=null;
+    let strengthRun:FoundingForces47|null=null,strengthIndex:ReturnType<typeof createCombatStrengthIndex47>|undefined,paintCount=0;
     const drawCombat=(frame:ReturnType<typeof displayFrame>,now:number)=>{
       const s=current.current!,r=s.run,pairs=combatTimeline.current.pairs(motion.current.tick(now));
+      if(strengthRun!==r){strengthIndex=createCombatStrengthIndex47(r);strengthRun=r;}
       if(contactPairs!==pairs||combatRun!==r){combat=combatMarkers47({...r,forceContacts:{version:1,pairs}},motion.current.tick(now)>=r.clock.tick?(s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r)):new Set());contactPairs=pairs;combatRun=r;}
-      const displayed=displayCombatMarkers47(combat,map.displayForcePoints(frame)),visible=visibleCombatMarkers47(displayed,r,r.scale,view.camera,view.viewport);
+      const displayed=displayCombatMarkers47(combat,map.displayForcePoints(frame)),visible=visibleCombatMarkers47(displayed,r,r.scale,view.camera,view.viewport,strengthIndex);
       combatOverlay.draw(visible,combat.filter(m=>m.kind==='contact').map(m=>m.id),r.scale,view.camera.scale,now,isPlaying.current,reducedMotion.matches);
       if(renderer.canvas){renderer.canvas.dataset.combat=JSON.stringify(displayed);renderer.canvas.dataset.visibleCombat=JSON.stringify(visible);if(richDiagnostics)renderer.canvas.dataset.combatAnimation=JSON.stringify(combatOverlay.diagnostics());}
     };
@@ -283,6 +300,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
+        if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
         const selection=selected.current;
         const frame=displayFrame();
@@ -334,7 +352,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
           const diagnosticInterval=richDiagnostics&&alpha<1?16:100;
           if(now-lastDiagnostic>=diagnosticInterval||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
             canvas.dataset.displayTick=String(motion.current.tick(now));
-            if(richDiagnostics){canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());}
+            if(richDiagnostics){canvas.dataset.motionRevision=String(motion.current.revision);canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());}
             lastDiagnostic=now;
           }
           renderer.refresh();settled=alpha===1?motion.current.revision:-1;
@@ -346,7 +364,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     }).catch(e=>{if(!disposed)displayFailed(e);});
     return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();renderer.destroy();map.dispose();};
   },[runId,rendererEpoch]);
-  useEffect(()=>{paint.current();},[snapshot,nationId,cityId,panel,force,mapMode,militaryPreview]);
+  useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview]);
   const choice=(i:number):CultureChoice47=>{const c=culture47(enabled[i%enabled.length]??'chinese');return choices['n-'+i]&&enabled.includes(choices['n-'+i].cultureId)?choices['n-'+i]:{cultureId:c.id,religionId:c.suggestedReligion,polity:c.suggestedPolity};};
   const setChoice=(i:number,patch:Partial<CultureChoice47>)=>setChoices(old=>({...old,['n-'+i]:{...choice(i),...patch}}));
   const r=snapshot?.run;

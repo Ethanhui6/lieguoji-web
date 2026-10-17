@@ -3,6 +3,28 @@ import {startPresentationClock} from './PresentationClock';
 import {culture47PlaybackBudget} from './culture47-pacing';
 describe('bounded visible-world playback',()=>{
  afterEach(()=>vi.useRealTimers());
+ it('posts the next credited Worker batch before the queued display task when opted in',async()=>{
+  vi.useFakeTimers();let tick=0,resolve!:()=>void;const order:string[]=[];
+  const stop=startPresentationClock({tickMillis:.2,maxBatch:480,acknowledgedContinuation:true,batchBoundary:()=>120-tick%120,playing:()=>true,blocked:()=>false,step:n=>{order.push('post');return new Promise<void>(done=>{resolve=()=>{tick+=n;setTimeout(()=>order.push('display'),0);done();};});}});
+  await vi.advanceTimersByTimeAsync(32);await vi.advanceTimersByTimeAsync(500);
+  expect(order).toEqual(['post']);resolve();
+  for(let i=0;i<6;i++)await Promise.resolve();
+  expect(order).toEqual(['post','post']);expect(tick%120).toBe(0);
+  stop();resolve();await vi.advanceTimersByTimeAsync(1000);expect(order.filter(v=>v==='post')).toHaveLength(2);
+ });
+ it.each(['pause','cancel','foreground'] as const)('rechecks %s before a prioritized ACK continuation',async reason=>{
+  vi.useFakeTimers();let playing=true,blocked=false,resolve!:()=>void;const step=vi.fn(()=>new Promise<void>(done=>{resolve=done;}));
+  const stop=startPresentationClock({tickMillis:.2,maxBatch:480,acknowledgedContinuation:true,playing:()=>playing,blocked:()=>blocked,step});
+  await vi.advanceTimersByTimeAsync(32);await vi.advanceTimersByTimeAsync(500);
+  if(reason==='pause')playing=false;else if(reason==='cancel')stop();else blocked=true;
+  resolve();for(let i=0;i<6;i++)await Promise.resolve();await vi.advanceTimersByTimeAsync(100);
+  expect(step).toHaveBeenCalledTimes(1);stop();
+ });
+ it('does not microtask-spin idle or immediately acknowledged work',async()=>{
+  vi.useFakeTimers();let tick=0;const step=vi.fn(async(n:number)=>{tick+=n;});
+  const stop=startPresentationClock({tickMillis:2,maxBatch:480,acknowledgedContinuation:true,batchBoundary:()=>120-tick%120,playing:()=>true,blocked:()=>false,step});
+  await vi.advanceTimersByTimeAsync(1000);stop();expect(tick).toBe(480);expect(step).toHaveBeenCalledTimes(4);
+ });
  it.each([0,66])('aligns automatic endpoints from tick %s without spending unearned credit',async(initial)=>{
   vi.useFakeTimers();let tick=initial;const batches:{count:number;time:number;end:number}[]=[];
   const stop=startPresentationClock({tickMillis:2,maxBatch:480,batchBoundary:()=>120-tick%120,playing:()=>true,blocked:()=>false,step:async n=>{tick+=n;batches.push({count:n,time:performance.now(),end:tick});}});

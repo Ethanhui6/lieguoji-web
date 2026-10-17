@@ -11,6 +11,17 @@ function snapshot(tick:number,sequence:number,point={x:0,y:0},path?:ForceTracePo
 const noGeometry=()=>{throw Error('Trace playback must not rebuild geography');};
 function graph():TravelGraph47{return{scale:1,polygonWork:0,byProvince:new Map(),cells:new Map([0,1,2].map(id=>[id,{id,face:id,surface:'sea',provinceId:null,center:{x:5+id*10,y:5},polygon:[{x:id*10,y:0},{x:id*10+10,y:0},{x:id*10+10,y:10},{x:id*10,y:10}],links:[...(id?[{to:id-1,gate:{x:id*10,y:5},distance:10,toGate:5}]:[]),...(id<2?[{to:id+1,gate:{x:id*10+10,y:5},distance:10,toGate:5}]:[])]}]))};}
 describe('actual47 completed-path presentation',()=>{
+ it('retains every turn when multiple accepted replies install before the next display frame',()=>{
+  const clock=new CultureMotion47();clock.setPresentationTickMillis(10,0);clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);
+  clock.install(snapshot(10,1,{x:10,y:0},[p(0,0),p(10,10)]),100,noGeometry);
+  clock.install(snapshot(20,2,{x:10,y:10},[p(10,10),p(20,10,10)],10),100,noGeometry);
+  clock.install(snapshot(30,3,{x:0,y:10},[p(20,10,10),p(30,0,10)],20),100,noGeometry);
+  expect(clock.revision).toBe(4);
+  expect(clock.frame(100).armies.get('a')).toMatchObject({x:0,y:0});
+  expect(clock.frame(420).armies.get('a')).toMatchObject({x:10,y:0});
+  expect(clock.frame(740).armies.get('a')).toMatchObject({x:10,y:10});
+  expect(clock.frame(1060).armies.get('a')).toMatchObject({x:0,y:10});
+ });
  it('stretches only the accepted tail before a larger next request without predicting new positions',()=>{
   const clock=new CultureMotion47();clock.install(snapshot(0,0),0,noGeometry);clock.setRunning(true,0);clock.recordAdvance(10,2000);
   clock.install(snapshot(10,1,{x:10,y:0},[p(0,0),p(10,10)]),2000,noGeometry);

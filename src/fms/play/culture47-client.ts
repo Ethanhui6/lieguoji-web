@@ -21,6 +21,7 @@ import old22db from '../../../compat/culture47/engine-22db.js?url';
 import old1c7d from '../../../compat/culture47/engine-1c7d.js?url';
 import old02c7 from '../../../compat/culture47/engine-02c7.js?url';
 import oldD06f from '../../../compat/culture47/engine-d06f.js?url';
+import old96c3 from '../../../compat/culture47/engine-96c3.js?url';
 import old9c93 from '../../../compat/culture47/engine-9c93.js?url';
 import oldDfd9 from '../../../compat/culture47/engine-dfd9.js?url';
 import oldA78e from '../../../compat/culture47/engine-a78e.js?url';
@@ -33,7 +34,7 @@ import old4c48 from '../../../compat/culture47/engine-4c48.js?url';
 import old3d08 from '../../../compat/culture47/engine-3d08.js?url';
 import old30fe from '../../../compat/culture47/engine-30fe.js?url';
 import {Culture47DisplayDecoder,checkSiegeDisplay47} from './culture47-display';
-const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe,'engine-49f7.js':old49f7,'engine-8d16.js':old8d16,'engine-3d08.js':old3d08,'engine-4c48.js':old4c48,'engine-d01d.js':oldd01d,'engine-bbff.js':oldbbff,'engine-dbb1.js':olddbb1,'engine-3c14.js':old3c14,'engine-f940.js':oldF940,'engine-a78e.js':oldA78e,'engine-dfd9.js':oldDfd9,'engine-9c93.js':old9c93,'engine-fe7a.js':oldFe7a,'engine-c35e.js':oldC35e,'engine-2af7.js':old2af7,'engine-5718.js':rebuilt5718,'engine-d736.js':oldD736,'engine-3a65.js':old3a65,'engine-b489.js':oldB489,'engine-b40d.js':oldB40d,'engine-22db.js':old22db,'engine-1c7d.js':old1c7d,'engine-02c7.js':old02c7,'engine-d06f.js':oldD06f};
+const urls:Record<string,string>={'engine-42a3.js':old42,'engine-ce32.js':oldCe,'engine-b365.js':oldB365,'engine-9e23.js':old9e23,'engine-6f84.js':old6f84,'engine-f212.js':oldF212,'engine-30fe.js':old30fe,'engine-49f7.js':old49f7,'engine-8d16.js':old8d16,'engine-3d08.js':old3d08,'engine-4c48.js':old4c48,'engine-d01d.js':oldd01d,'engine-bbff.js':oldbbff,'engine-dbb1.js':olddbb1,'engine-3c14.js':old3c14,'engine-f940.js':oldF940,'engine-a78e.js':oldA78e,'engine-dfd9.js':oldDfd9,'engine-9c93.js':old9c93,'engine-fe7a.js':oldFe7a,'engine-c35e.js':oldC35e,'engine-2af7.js':old2af7,'engine-5718.js':rebuilt5718,'engine-d736.js':oldD736,'engine-3a65.js':old3a65,'engine-b489.js':oldB489,'engine-b40d.js':oldB40d,'engine-22db.js':old22db,'engine-1c7d.js':old1c7d,'engine-02c7.js':old02c7,'engine-d06f.js':oldD06f,'engine-96c3.js':old96c3};
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
 
 export class Culture47Client {

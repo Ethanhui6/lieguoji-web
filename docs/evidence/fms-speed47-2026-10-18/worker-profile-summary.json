@@ -1,0 +1,263 @@
+{
+  "engine": "6c6f3bc4f063fd5a2f793f427b5a06f49c54b1e81cab78d58586f8c046641f67",
+  "timings": [
+    392.22569999999905,
+    423.46080000000075,
+    407.4395000000004,
+    399.3888999999999,
+    391.40770000000157,
+    748.965900000001,
+    671.8063000000002,
+    658.7276000000002,
+    678.2705999999998,
+    703.3878999999997
+  ],
+  "ranked": [
+    {
+      "ms": 469.54,
+      "name": "Ra",
+      "line": 0,
+      "column": 372004,
+      "source": "(e=>e.withdrawing)?a:void 0)}function Ra(e,t,n,r,i,a,o,s){if(!Number.isFinite(r)||r<=0||!Number.isSafeInteger(a)||a<1)throw Error(`统一行军时间或事件预算无效。`);let c=Ni(e).map(e=>({force:e,key:L(e)})).sort((e,t)=>e.key.localeCompare(t.key)).map(e=>e.force);s||ja(t,c,n,i.s"
+    },
+    {
+      "ms": 368.602,
+      "name": "post",
+      "line": 114,
+      "column": 6,
+      "source": "node:inspector"
+    },
+    {
+      "ms": 267.276,
+      "name": "Eh.f.sessionAfterTick",
+      "line": 0,
+      "column": 1142606,
+      "source": "pation:u?.invalidate,sessionAfterTick:c?(e,t)=>{np(e,e.clock.tick,t);let r=!1;if(!t&&i){let t=JSON.stringify([e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.nations.map(e=>[e.id,e.capitalId]),e.world.statecraft.relations,e.nativeWars,e.chro"
+    },
+    {
+      "ms": 226.719,
+      "name": "Ei",
+      "line": 0,
+      "column": 348016,
+      "source": ".set(e,r),r}let P,Ti=()=>!!P;function Ei(e){if(P)throw Error(`不能嵌套私有行军事务。`);let t={proofs:/* @__PURE__ */ new WeakMap,graphs:/* @__PURE__ */ new Map};P=t;try{let n=e();for(let[e,n]of t.graphs){if(e.cells.size!==n.size)throw Error(`行军拓扑在推演期间改变，候选未提交。`);for(let["
+    },
+    {
+      "ms": 197.676,
+      "name": "ji",
+      "line": 0,
+      "column": 348847,
+      "source": ").set(e.leg,{...n})}return n}function ji(e,t){if(!P)return;let n=P.graphs.get(t);n||(n={size:t.cells.size,cells:/* @__PURE__ */ new Map},P.graphs.set(t,n));let r=!0;for(let i of e.nodes){let e=t.cells.get(i);e.surface!==`sea`&&(r=!1),n.cells.has(i)||n.cells.se"
+    },
+    {
+      "ms": 191.878,
+      "name": "$o",
+      "line": 0,
+      "column": 402338,
+      "source": "usedSeconds:e.unusedSeconds}}function $o(e,t,n,r,i,a,o){for(let t of[e.armyPositions,e.fleetPositions])if(!Number.isSafeInteger(t.revision)||t.revision<0||t.revision>=2**53-1)throw Error(`统一部队位置版本不能安全推进。`);let{spatial:s,forces:c}=o??B(e);a?.(c,s.graph,0,o?.con"
+    },
+    {
+      "ms": 188.884,
+      "name": "(garbage collector)",
+      "line": -1,
+      "column": -1,
+      "source": ""
+    },
+    {
+      "ms": 138.387,
+      "name": "",
+      "line": 0,
+      "column": 359080,
+      "source": "(n)??[]).map(t=>e.cells.get(t))).filter(e=>na(e,t)).sort((e,t)=>e.id-t.id)[0]??null}let ia=(e,t)=>{let n=`${e.x},${e.y}`,r=`${t.x},${t.y}`;return n<r?n+`/`+r:r+`/`+n},aa=e=>[...e].sort((e,t)=>e-t).join(`/`);function oa(e,t){let n=1e3/Math.max(e.width,e.height)"
+    },
+    {
+      "ms": 136.418,
+      "name": "um",
+      "line": 0,
+      "column": 1099778,
+      "source": "leg+ +!!e.crossed],e.status];function um(e){return JSON.stringify([e.world.nations.map(e=>e.id),e.world.statecraft.relations.map(e=>[e.a,e.b,e.status]),e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.statecraft.provinces.map(e=>[e.provinceId"
+    },
+    {
+      "ms": 132.912,
+      "name": "Ma",
+      "line": 0,
+      "column": 368870,
+      "source": "ror(`舰队航线进入陆地。`)}Ma(e,t,n,r)}function Ma(e,t,n,r){let i=/* @__PURE__ */ new Set,a=[];for(let e of t){if(![`army`,`fleet`].includes(e.kind)||!e.id||!e.nationId||typeof e.withdrawing!=`boolean`||e.travel.armyId!==e.id)throw Error(`统一部队身份无效。`);let t=L(e);if(i.has"
+    },
+    {
+      "ms": 126.681,
+      "name": "Na",
+      "line": 0,
+      "column": 370551,
+      "source": "于两支部队的实际地区或入出边界。`);s.add(a)}}function Na(e,t,n,r,i){let a=i??ka(e,t),o=/* @__PURE__ */ new Map,s=/* @__PURE__ */ new Map,c=(e,t,n)=>r.enemy(e.nationId,t.nationId)&&(n.startsWith(`sea/`)||!e.withdrawing&&!t.withdrawing);for(let e of n.pairs){let t=a.get(e.a),n="
+    },
+    {
+      "ms": 122.39,
+      "name": "",
+      "line": 0,
+      "column": 362375,
+      "source": "=t}return e};return o&&f({id:t,cost:0}),r=>{let i=e.cells.get(r);if(!o||!i||!a(i))return null;for(;!u.has(r)&&l.length;){let t=p();if(s.get(t.id)!==t.cost||u.has(t.id))continue;u.add(t.id);let r=e.cells.get(t.id);for(let i of r.links){let o=e.cells.get(i.to);i"
+    },
+    {
+      "ms": 110.801,
+      "name": "es",
+      "line": 0,
+      "column": 404508,
+      "source": "onds,endActual:y,endFrame:v}}function es(e,t){let n=new Map(e.world.provinces.map(e=>[e.id,e])),r={byArmy:/* @__PURE__ */ new Map,land:/* @__PURE__ */ new Map,sea:/* @__PURE__ */ new Map};for(let i of e.world.armies){if(!(i.troops>0)||i.status===`destroyed`)co"
+    },
+    {
+      "ms": 106.393,
+      "name": "Tg",
+      "line": 0,
+      "column": 1179726,
+      "source": "ject.freeze(e),Sg.set(e,n),n}function Tg(e,t){if(Object.is(e,t))return!0;if(!e||!t||typeof e!=`object`||typeof t!=`object`||Object.getPrototypeOf(e)!==Object.getPrototypeOf(t))return!1;let n=Sg.get(e)===!0&&Sg.get(t)===!0;if(n&&Cg.get(e)?.has(t))return!0;if(Ar"
+    },
+    {
+      "ms": 79.848,
+      "name": "",
+      "line": 0,
+      "column": 1112626,
+      "source": ".id)),(i.byProvince.get(t.id)??[]).some(e=>i.cells.get(e).links.some(e=>i.cells.get(e.to).surface===`sea`))&&d.add(t.id)}let p=new Map(e.world.nations.map(t=>[t.id,Um(e,t.id)]));for(let r of e.world.armies){let m=n.armies[r.id],h=o.byArmy.get(r.id),g=p.get(r.n"
+    },
+    {
+      "ms": 76.975,
+      "name": "ra",
+      "line": 0,
+      "column": 358975,
+      "source": ":n.x+c*a,y:n.y+c*o})<=1e-8})}function ra(e,t,n){return(n===void 0?[...e.cells.values()]:(e.byProvince.get(n)??[]).map(t=>e.cells.get(t))).filter(e=>na(e,t)).sort((e,t)=>e.id-t.id)[0]??null}let ia=(e,t)=>{let n=`${e.x},${e.y}`,r=`${t.x},${t.y}`;return n<r?n+`/`"
+    },
+    {
+      "ms": 72.619,
+      "name": "(idle)",
+      "line": -1,
+      "column": -1,
+      "source": ""
+    },
+    {
+      "ms": 71.128,
+      "name": "structuredClone",
+      "line": 112,
+      "column": 24,
+      "source": "node:internal/worker/js_transferable"
+    },
+    {
+      "ms": 68.165,
+      "name": "structuredClone",
+      "line": 112,
+      "column": 24,
+      "source": "node:internal/worker/js_transferable"
+    },
+    {
+      "ms": 67.05,
+      "name": "fm",
+      "line": 0,
+      "column": 1101124,
+      "source": "x(o+1,r.nextTick))}return!0}}function fm(e,t){return JSON.stringify([[...t.byArmy.values()].map(({army:e,province:t})=>[e.id,e.nationId,e.troops,e.status===`retreating`,t?.id??null]),e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.statecraft"
+    },
+    {
+      "ms": 63.716,
+      "name": "ha",
+      "line": 0,
+      "column": 364201,
+      "source": ":c,distance:c+pa(a.gate,s)})}function ha(e,t){let n=e;if(!n||typeof n!=`object`||Object.keys(n).length!==(n.version===2?9:8)||Object.keys(n).some(e=>!da.has(e)||e===`destination`&&n.version!==2)||n.version!==1&&n.version!==2||typeof n.armyId!=`string`||!n.army"
+    },
+    {
+      "ms": 56.825,
+      "name": "me",
+      "line": 0,
+      "column": 239819,
+      "source": ".hasOwn(e,n)).every(Boolean)}function me(e){if(!E(e)||!se(e,[`schemaVersion`,`rulesVersion`,`scenario`,`mode`,`day`,`nations`,`provinces`,`cities`,`armies`,`events`,`nextEventId`,...e.scenario===`custom-world`?[`custom`]:[],...e.schemaVersion===2?[`statecraft`"
+    },
+    {
+      "ms": 50.847,
+      "name": "",
+      "line": 0,
+      "column": 1180419,
+      "source": ".keys(t),a=r.length===i.length&&r.every(n=>Object.hasOwn(t,n)&&Tg(e[n],t[n]));if(a&&n){let n=Cg.get(e)??/* @__PURE__ */ new WeakSet;n.add(t),Cg.set(e,n)}return a}let Eg=e=>({terrain:e.run.terrain,geography:e.run.diplomaticGeography,opening:e.journal.opening});"
+    },
+    {
+      "ms": 46.483,
+      "name": "_a",
+      "line": 0,
+      "column": 366019,
+      "source": "`:`moving`};return ha(a,n),a}function _a(e,t){let n=t.cells.get(e.nodes[e.leg]),r=ma(e,t);if(r?.kind===`local`){let t=r.distance>0?e.offset/r.distance:1;return{point:t===1?{...r.endPoint}:t===0?{...r.start}:{x:r.start.x+(r.endPoint.x-r.start.x)*t,y:r.start.y+("
+    },
+    {
+      "ms": 45.445,
+      "name": "Fh",
+      "line": 0,
+      "column": 1145398,
+      "source": "i=Oh(e);return Fh(i,t,n,r,i)}function Fh(e,t,n,r,i){if((r.sessionInterval||r.sessionOccupationKey||r.invalidateSessionOccupation||r.sessionAfterTick)&&!Ti())throw Error(`位置复用仅允许私有同步推演。`);let a=(e.world.day+1)*120;if(!Number.isSafeInteger(t)||t<1||e.clock.tick<"
+    },
+    {
+      "ms": 44.158,
+      "name": "L",
+      "line": 0,
+      "column": 367592,
+      "source": "&r(i.gate),r(i.endPoint)}return n}let L=e=>JSON.stringify([e.kind,e.id]),Ca=()=>({version:1,pairs:[]}),wa=(e,t)=>e.x===t.x&&e.y===t.y,Ta=(e,t)=>JSON.stringify([e,t].sort()),Ea=(e,t)=>{if(e.surface===`land`)return`land/`+e.provinceId;let n=t.seaRegion(e.face);i"
+    },
+    {
+      "ms": 43.499,
+      "name": "L",
+      "line": 0,
+      "column": 367592,
+      "source": "&r(i.gate),r(i.endPoint)}return n}let L=e=>JSON.stringify([e.kind,e.id]),Ca=()=>({version:1,pairs:[]}),wa=(e,t)=>e.x===t.x&&e.y===t.y,Ta=(e,t)=>JSON.stringify([e,t].sort()),Ea=(e,t)=>{if(e.surface===`land`)return`land/`+e.provinceId;let n=t.seaRegion(e.face);i"
+    },
+    {
+      "ms": 40.683,
+      "name": "_a",
+      "line": 0,
+      "column": 366019,
+      "source": "`:`moving`};return ha(a,n),a}function _a(e,t){let n=t.cells.get(e.nodes[e.leg]),r=ma(e,t);if(r?.kind===`local`){let t=r.distance>0?e.offset/r.distance:1;return{point:t===1?{...r.endPoint}:t===0?{...r.start}:{x:r.start.x+(r.endPoint.x-r.start.x)*t,y:r.start.y+("
+    },
+    {
+      "ms": 40.563,
+      "name": "recordContacts",
+      "line": 0,
+      "column": 1181773,
+      "source": "8192)&&(this.overflow=!0)}recordContacts(e,t){if(this.overflow)return;let n=this.value.contacts??(this.value.contacts=[]);n.at(-1)?.tick===e&&n.pop();let r=n.at(-1);r&&JSON.stringify(r.pairs)===JSON.stringify(t.pairs)||(n.push({tick:e,pairs:structuredClone(t.p"
+    },
+    {
+      "ms": 40.354,
+      "name": "ka",
+      "line": 0,
+      "column": 368410,
+      "source": "r.destination,i.gate)?i:null}function ka(e,t,n){return new Map(e.map((e,r)=>[n?n[r]:L(e),{..._a(e.travel,t),force:e}]))}function Aa(e,t,n,r){t<e&&([e,t]=[t,e]);let i=n.get(e),a=n.get(t);return{a:e,b:t,cellA:i.cell.id,cellB:a.cell.id,pointA:{...i.point},pointB:"
+    },
+    {
+      "ms": 39.479,
+      "name": "L",
+      "line": 0,
+      "column": 367592,
+      "source": "&r(i.gate),r(i.endPoint)}return n}let L=e=>JSON.stringify([e.kind,e.id]),Ca=()=>({version:1,pairs:[]}),wa=(e,t)=>e.x===t.x&&e.y===t.y,Ta=(e,t)=>JSON.stringify([e,t].sort()),Ea=(e,t)=>{if(e.surface===`land`)return`land/`+e.provinceId;let n=t.seaRegion(e.face);i"
+    },
+    {
+      "ms": 39.145,
+      "name": "fi",
+      "line": 0,
+      "column": 342882,
+      "source": "=/* @__PURE__ */ new WeakMap;function fi(e,t){for(let n=0;n<e.length;n++)if(e[n]!==t[n])return!1;return!0}function pi(e,t,n,r){if(--n.left<0||r>64)return!1;if(typeof e==`number`)return Number.isFinite(e)&&Object.is(e,t);if(e===null||typeof e==`string`||typeof "
+    },
+    {
+      "ms": 37.52,
+      "name": "Ah",
+      "line": 0,
+      "column": 1144005,
+      "source": "turn a}finally{Dh.delete(i)}}function Ah(e,t){let{spatial:n,forces:r,contact:i}=t??Jo(e);e.forceContacts=i.contacts;let a=n.space,o=/* @__PURE__ */ new Set;for(let t of r){if(t.withdrawing)continue;let n=L(t),r=t.kind===`army`?a.byArmy.get(t.id)?.province:null"
+    },
+    {
+      "ms": 36.44,
+      "name": "_a",
+      "line": 0,
+      "column": 366019,
+      "source": "`:`moving`};return ha(a,n),a}function _a(e,t){let n=t.cells.get(e.nodes[e.leg]),r=ma(e,t);if(r?.kind===`local`){let t=r.distance>0?e.offset/r.distance:1;return{point:t===1?{...r.endPoint}:t===0?{...r.start}:{x:r.start.x+(r.endPoint.x-r.start.x)*t,y:r.start.y+("
+    },
+    {
+      "ms": 35.305,
+      "name": "",
+      "line": 0,
+      "column": 241587,
+      "source": "turn!1;let e=t.polygon;if(new Set(e.map(e=>`${e.x},${e.y}`)).size!==e.length||Math.abs(e.reduce((t,n,r)=>{let i=e[(r+1)%e.length];return t+n.x*i.y-i.x*n.y},0))<.01)return!1}let o=e.provinces,s=new Map(o.map(e=>[e.id,e])),c=new Set(o.map(e=>e.id));for(let e of "
+    }
+  ],
+  "scope": "Production Worker (5360 build, engine 6c6f), original 20k grid seed1337 continents, 6 nations 60 cities war, 40 warm days with inspector overhead; diagnosis only"
+}

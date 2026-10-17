@@ -1,3 +1,9 @@
+# 当前检查点：1× 改为原作每秒 10 日（2026-10-18）
+
+按用户要求恢复原作 TimeManager.secondsPerDay=0.1：1×/2×/4× = 10/20/40 日/秒（此前网页把原 4 倍当 1×）。日历、行军、战斗与存档不变。硬件 GPU 的 Chromium 实测原作 2 万格战乱开局三档都约 8–9.7 日/秒——已到 Worker 计算上限，1× 实际约 7.8 日/秒，未稳定达到 10；此前 2–3 日/秒主要是无头软件渲染的测量偏差。提交 6b05a18，冻结 6c6f（f8844fb）；产物 .autopilot/fms-speed47-checked，引擎 96d2…，本机 http://127.0.0.1:5361/?fms=1（会话后需重启）。单测 25、lint/typecheck/build119、桌面 10/10（含两项吞吐）＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-speed47-2026-10-18/RESULT.md)，键 webRebuild.originalPaceCheckpoint。下一批：Worker 提速 20–30%（带 56 日完全一致对照）或按原作分批调度新建规则版本；之后原作界面/字体、要塞/圣城图标、4 个既有 compat 存档用例。无上传。
+
+---
+
 # 当前检查点：原作地貌色、首都比例与港口图标（2026-10-18）
 
 原作格网世界的地形视图与编辑器气候地貌显示改用原作 Shader189 模式 0：颜色取 Unity Biomes..cctor 的 13 色（非 main.mjs 调色板），本格×10 加非海洋邻格平均（线性空间）。首都图标按 World.CreateCity/GetCityScale ×1.5；港口按原作 specifyBurgs + IsBurgPortQualified 判定并画 PortFinal 锚形。湖泊在原作中未启用（内陆水即海面色）。提交 4e15c6f…2e59d71，冻结 2db0；产物 .autopilot/fms-biomes47-checked，引擎 6c6f…，本机 http://127.0.0.1:5360/?fms=1（会话后需重启）。单测 41、lint/typecheck/build118、桌面 8/8＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-biomes47-2026-10-18/RESULT.md)，键 webRebuild.originalBiomesPortsCheckpoint。下一批：地图字体、原作分批调度（每秒10日）、原作界面、要塞/圣城图标，之后修 4 个既有 compat 存档用例。无上传。

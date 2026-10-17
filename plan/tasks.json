@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read originalBiomesPortsCheckpoint and latest AUTO_HANDOFF. Original biome mode-0 colors, capital x1.5, original port rule/anchor; 2db0 frozen; artifact .autopilot/fms-biomes47-checked on 5360. Next: map fonts, original batch scheduling (10 days/s), original UI, fortress/holy icons, then the 4 pre-existing compat save tests. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read originalPaceCheckpoint and latest AUTO_HANDOFF. 1x is now the original 10 days/s (2x 20, 4x 40); achieved ~8-9.7 days/s with hardware GPU (compute-bound); 6c6f frozen; artifact .autopilot/fms-speed47-checked on 5361. Next: worker 20-30% faster with 56-day exact replay (force-motion47 per-tick clone/sort/JSON keys, observers), or an original batch-rotation rules version; then original UI/fonts, fortress/holy icons, 4 pre-existing compat save tests. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12808,6 +12808,90 @@
       "productionUnchanged": true,
       "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only; no PH/device/visual completion claim.",
       "evidence": "docs/evidence/fms-biomes47-2026-10-18/RESULT.md"
+    },
+    "originalPaceCheckpoint": {
+      "date": "2026-10-18",
+      "status": "partial",
+      "task": "WEB-04-37",
+      "sourceCommit": "f8844fbe04ce2a26c76d080c4e6aa14e87f1ac7e",
+      "commits": [
+        "6b05a18",
+        "f8844fb"
+      ],
+      "engine": "96d2b34eeb6b9c30c01a110319718a76516f634dbde26132981d473405dad48e",
+      "artifact": ".autopilot/fms-speed47-checked",
+      "url": "http://127.0.0.1:5361/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "CULTURE47_PLAYBACK_BASE 4 -> 1: 1x/2x/4x = 10/20/40 game days per second (original secondsPerDay 0.1)",
+        "Froze 6c6f"
+      ],
+      "simulationRulesChanged": false,
+      "measured": {
+        "gpuNew": {
+          "x1": 7.79,
+          "x2": 9.65,
+          "x4": 8.21
+        },
+        "gpuOldBase4x1": 8.17,
+        "headlessNewX1": 2.66,
+        "headlessOldX1": 2.09,
+        "workerNodeMsPer4Days": [
+          379,
+          754
+        ],
+        "targetMet": false,
+        "neededSpeedupPercent": "20-30"
+      },
+      "checks": {
+        "unit": {
+          "files": 3,
+          "passed": 25
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 119,
+        "browserDesktop": {
+          "expected": 10,
+          "passed": 10
+        },
+        "browserMobile": {
+          "expected": 1,
+          "passed": 1
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run"
+      },
+      "frozen": {
+        "engine": "6c6f3bc4f063fd5a2f793f427b5a06f49c54b1e81cab78d58586f8c046641f67",
+        "file": "engine-6c6f.js",
+        "bytes": 1413747,
+        "sha256": "1f6f4db14378d90e31698ee583cfaea22df3564f6d661a9b38900d9e43793ddd",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-fms-biomes47-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 40
+      },
+      "unknown": [
+        "Original speed button multipliers (set via UI delegates)"
+      ],
+      "remaining": [
+        "Worker 20-30% faster or original batch-rotation rules version with exact replay",
+        "Original UI and fonts",
+        "Fortress/holy icons",
+        "4 pre-existing compat save tests"
+      ],
+      "physicalIphone": false,
+      "userVisualAcceptance": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Pacing only; no PH/device/visual completion claim.",
+      "evidence": "docs/evidence/fms-speed47-2026-10-18/RESULT.md"
     }
   }
 }

@@ -9,6 +9,8 @@ import {CultureNationOverview47,nationFamily47} from './CultureNationOverview47'
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
 import {FmsRenderer} from '../renderer';
+import {extractFmsOceanCoast} from '../ocean-coast';
+import {deriveFmsCoastCurves,FMS_COAST_CURVE,FMS_COAST_LINE_COLOR,FMS_COAST_LINE_WIDTH} from '../coast-curve';
 import {FmsGestures} from '../gestures';
 import {fitCamera,screenToWorld,resizeCamera,zoomCameraAt} from '../../world/camera';
 import {initialLandCamera47} from './land-camera47';
@@ -301,6 +303,9 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     void renderer.init(element).then(()=>{
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
+      // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
+      const coast=deriveFmsCoastCurves(extractFmsOceanCoast(source));map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);
+      canvas.dataset.coastline=JSON.stringify({algorithm:FMS_COAST_CURVE,chains:coast.chains,sourceSegments:coast.sourceSegments,points:coast.points,width:FMS_COAST_LINE_WIDTH,color:FMS_COAST_LINE_COLOR});
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);

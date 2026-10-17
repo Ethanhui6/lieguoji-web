@@ -100,9 +100,19 @@ export class PlayMap {
     for(const effect of this.battleSprites){if(!effect.fleets)continue;const a=frame.fleets.get(effect.fleets[0]),b=frame.fleets.get(effect.fleets[1]);if(a&&b)effect.sprite.position.set((a.x+b.x)/2/p.scale,(a.y+b.y)/2/p.scale);}
   }
   constructor(refresh=()=>{},legacyBattleEffects=true){for(const [key,url] of Object.entries(icons)){const img=new Image();img.onload=()=>{if(this.disposed)return;this.textures.set(key as UnitKey,Texture.from(img));refresh();};img.src=url;}if(!legacyBattleEffects)return;const img=new Image();img.onload=()=>{if(this.disposed)return;this.battleAtlas=Texture.from(img);this.battleTextures=Array.from({length:40},(_,i)=>new Texture({source:this.battleAtlas!.source,frame:new Rectangle(i%5*258,Math.floor(i/5)*194,258,194)}));refresh();};img.src=battleAtlasUrl;}
-  dispose(){this.disposed=true;for(const text of this.retainedLabels.values()){text.removeFromParent();text.destroy();}this.retainedLabels.clear();for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();for(const texture of this.battleTextures)texture.destroy(false);this.battleTextures=[];this.battleAtlas?.destroy(true);}
+  dispose(){this.disposed=true;this.coastGraphic.destroy();for(const text of this.retainedLabels.values()){text.removeFromParent();text.destroy();}this.retainedLabels.clear();for(const texture of this.textures.values())texture.destroy(true);this.textures.clear();for(const texture of this.battleTextures)texture.destroy(false);this.battleTextures=[];this.battleAtlas?.destroy(true);}
 
   private politicalGraphic=new Graphics();
+  // Recovered StateLineRenderer coastline: ink over the political fill, under
+  // marks, labels and forces. Display only; it never decides picking or land.
+  private coastGraphic=new Graphics();
+  private coastPoints=0;
+  setCoastline(lines:readonly (readonly (readonly [number,number])[])[],width:number,color:number){
+    const g=this.coastGraphic.clear();this.coastPoints=0;
+    for(const line of lines){if(line.length<2)continue;g.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)g.lineTo(line[i][0],line[i][1]);this.coastPoints+=line.length;}
+    if(this.coastPoints)g.stroke({width,color,join:'round',cap:'round'});
+  }
+  coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
   private politicalKey='';
   private politicalBuilds=0;
@@ -115,12 +125,12 @@ export class PlayMap {
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
     for(const text of this.retainedLabels.values())text.removeFromParent();this.usedLabels.clear();
-    for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic)child.destroy({ children: true });
+    for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic&&child!==this.coastGraphic)child.destroy({ children: true });
     this.unitGroups=[];this.reorganizationWidgets=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     const detail=warDetail(world,scale,zoom),sites=warSites(world,combat?.state,combat?.occupation,naval);
     this.wars=warMarkers(world,sites,naval,scale,{x:this.projection.x,y:this.projection.y,scale:zoom},{width:this.projection.width,height:this.projection.height},selectedWars);
     this.capitals=world.nations.flatMap(n=>{const c=currentCapital(world,n.id);return c?[{nationId:n.id,cityId:c.id,name:c.name,point:c.position}]:[];});
-    const g = this.politicalGraphic, marks = new Graphics(); this.layer.addChild(g, marks);
+    const g = this.politicalGraphic, marks = new Graphics(); this.layer.addChild(g, this.coastGraphic, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
     const pixel = 1 / zoom, style=politicalStyle(mode);
     const territoryKey=`${world.custom?.id}/${world.provinces.map(p=>`${p.id}:${p.controller}`).join('|')}`;

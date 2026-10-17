@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-17T04:42:55.617Z",
+  "home": 200,
+  "deep": 200,
+  "deepSameEntry": true,
+  "worker": {
+    "file": "culture47.worker-B55Lv1qQ.js",
+    "status": 200,
+    "mime": "text/javascript; charset=utf-8",
+    "byteEqual": true,
+    "sha256": "59017af33ebb5aee450ec28f6dea3aed754cfdf80b8d604935869defe8f0ae58"
+  },
+  "sourceCommit": "a047449bdcc05ad7876250bfa431a60e790df348",
+  "engine": "96c362995bdc39475bcde278f8eea4737e6c1dde3539da9554ad6d8d42149d5e",
+  "binding": "127.0.0.1 only; same computer"
+}

@@ -1,0 +1,28 @@
+{
+  "warmCore": {
+    "priorMeanMs": 809.5909000000012,
+    "currentMeanMs": 782.3684153846144,
+    "observedReductionPercent": 3.3624988392763178,
+    "days": 52,
+    "excludesFirstBatch": true
+  },
+  "browser": {
+    "before": {
+      "foundingMs": 13354,
+      "daysPerSecond": 2.2761572527771596,
+      "days": 92,
+      "wallMs": 40419,
+      "maxConcurrent": 1,
+      "errors": []
+    },
+    "after": {
+      "foundingMs": 12674,
+      "daysPerSecond": 2.944888514934792,
+      "days": 112,
+      "wallMs": 38032,
+      "maxConcurrent": 1,
+      "errors": []
+    }
+  },
+  "limitations": "One sequential matched production-Worker56day pair, warm52days excluding first4; current always follows prior per checkpoint, host/JIT/order variability remain. Browser pair uses same synthetic map/settings but fresh IDs and differing time/history intervals;2.28→2.94 observed days/sec cannot be attributed as a guaranteed29% improvement. No stable4x/FPS/device/original-speed claim. CPU profile only diagnoses old compiled engine and adds inspector overhead."
+}

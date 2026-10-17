@@ -1,0 +1,948 @@
+{
+  "url": "http://127.0.0.1:5337/?fms=1",
+  "sourceCommit": "a047449bdcc05ad7876250bfa431a60e790df348",
+  "views": [
+    {
+      "factor": 1,
+      "projection": {
+        "scale": 0.6510416666666666,
+        "zoom": 0.5625,
+        "x": 288,
+        "y": 48
+      },
+      "combat": [
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195117,
+            "y": 640.1660726571415
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 639.3837437824604
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 619.2932563757508
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/23050:30272",
+          "kind": "contact",
+          "point": {
+            "x": 729.8229287068049,
+            "y": 449.7820673717393
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-19\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-4/8570:14096",
+          "kind": "contact",
+          "point": {
+            "x": 496.20209996584117,
+            "y": 355.19534136459794
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-2\"]",
+              "[\"army\",\"force-25\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/30272:35166",
+          "kind": "contact",
+          "point": {
+            "x": 753.0013058239065,
+            "y": 436.77139185503074
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-20\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-15/20342:20786",
+          "kind": "contact",
+          "point": {
+            "x": 432.719905042051,
+            "y": 322.608138916657
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-27\"]",
+              "[\"army\",\"force-6\"]"
+            ],
+            [
+              "[\"army\",\"force-28\"]",
+              "[\"army\",\"force-6\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-15",
+          "kind": "siege",
+          "point": {
+            "x": 376.24722056918677,
+            "y": 333.62594578001233
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-28",
+          "kind": "siege",
+          "point": {
+            "x": 761.54891649882,
+            "y": 441.17891788482666
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-4",
+          "kind": "siege",
+          "point": {
+            "x": 488.9501068327162,
+            "y": 374.4741943147447
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "visible": [
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 619.2932563757508
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ],
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-15/20342:20786",
+          "kind": "contact",
+          "point": {
+            "x": 432.719905042051,
+            "y": 322.608138916657
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-27\"]",
+              "[\"army\",\"force-6\"]"
+            ],
+            [
+              "[\"army\",\"force-28\"]",
+              "[\"army\",\"force-6\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/30272:35166",
+          "kind": "contact",
+          "point": {
+            "x": 753.0013058239065,
+            "y": 436.77139185503074
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-20\"]",
+              "[\"army\",\"force-30\"]"
+            ],
+            [
+              "[\"army\",\"force-19\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-4/8570:14096",
+          "kind": "contact",
+          "point": {
+            "x": 496.20209996584117,
+            "y": 355.19534136459794
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-2\"]",
+              "[\"army\",\"force-25\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195117,
+            "y": 640.1660726571415
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-15",
+          "kind": "siege",
+          "point": {
+            "x": 376.24722056918677,
+            "y": 333.62594578001233
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-28",
+          "kind": "siege",
+          "point": {
+            "x": 761.54891649882,
+            "y": 441.17891788482666
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-4",
+          "kind": "siege",
+          "point": {
+            "x": 488.9501068327162,
+            "y": 374.4741943147447
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "tick": "4320"
+    },
+    {
+      "factor": 4,
+      "projection": {
+        "scale": 0.6510416666666666,
+        "zoom": 2.2500000257370822,
+        "x": -1014.0000198575888,
+        "y": -1557.0000244788248
+      },
+      "combat": [
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195116,
+            "y": 629.7494059507571
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 628.9670770760761
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 614.0849230225585
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/23050:30272",
+          "kind": "contact",
+          "point": {
+            "x": 729.8229287068049,
+            "y": 439.36540066535485
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-19\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-4/8570:14096",
+          "kind": "contact",
+          "point": {
+            "x": 496.20209996584117,
+            "y": 344.7786746582135
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-2\"]",
+              "[\"army\",\"force-25\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/30272:35166",
+          "kind": "contact",
+          "point": {
+            "x": 753.0013058239065,
+            "y": 426.35472514864637
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-20\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-15/20342:20786",
+          "kind": "contact",
+          "point": {
+            "x": 432.719905042051,
+            "y": 312.1914722102727
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-27\"]",
+              "[\"army\",\"force-6\"]"
+            ],
+            [
+              "[\"army\",\"force-28\"]",
+              "[\"army\",\"force-6\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-15",
+          "kind": "siege",
+          "point": {
+            "x": 376.24722056918677,
+            "y": 333.62594578001233
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-28",
+          "kind": "siege",
+          "point": {
+            "x": 761.54891649882,
+            "y": 441.17891788482666
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-4",
+          "kind": "siege",
+          "point": {
+            "x": 488.9501068327162,
+            "y": 374.4741943147447
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "visible": [
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 614.0849230225585
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195116,
+            "y": 629.7494059507571
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 628.9670770760761
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "tick": "4320"
+    },
+    {
+      "factor": 16,
+      "projection": {
+        "scale": 0.6510416666666666,
+        "zoom": 9.00000020589666,
+        "x": -6222.000158860712,
+        "y": -7977.0001958306
+      },
+      "combat": [
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195117,
+            "y": 627.1452393039494
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 626.3629104292683
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 612.7828396991547
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/23050:30272",
+          "kind": "contact",
+          "point": {
+            "x": 729.8229287068049,
+            "y": 436.76123401854704
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-19\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-4/8570:14096",
+          "kind": "contact",
+          "point": {
+            "x": 496.20209996584117,
+            "y": 342.1745080114057
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-2\"]",
+              "[\"army\",\"force-25\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/30272:35166",
+          "kind": "contact",
+          "point": {
+            "x": 753.0013058239065,
+            "y": 423.75055850183855
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-20\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-15/20342:20786",
+          "kind": "contact",
+          "point": {
+            "x": 432.719905042051,
+            "y": 309.5873055634649
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-27\"]",
+              "[\"army\",\"force-6\"]"
+            ],
+            [
+              "[\"army\",\"force-28\"]",
+              "[\"army\",\"force-6\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-15",
+          "kind": "siege",
+          "point": {
+            "x": 376.24722056918677,
+            "y": 333.62594578001233
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-28",
+          "kind": "siege",
+          "point": {
+            "x": 761.54891649882,
+            "y": 441.17891788482666
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-4",
+          "kind": "siege",
+          "point": {
+            "x": 488.9501068327162,
+            "y": 374.4741943147447
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "visible": [
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.9584425338362,
+            "y": 612.7828396991547
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 626.3629104292683
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        }
+      ],
+      "tick": "4320"
+    },
+    {
+      "factor": 40,
+      "projection": {
+        "scale": 0.6510416666666666,
+        "zoom": 22.500000032680575,
+        "x": -16638.00002521488,
+        "y": -20817.00003108286
+      },
+      "combat": [
+        {
+          "id": "land/p-9/11174:16744",
+          "kind": "contact",
+          "point": {
+            "x": 618.8220986195117,
+            "y": 626.6244059899705
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-14\"]",
+              "[\"army\",\"force-35\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 625.8420771152894
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.95844253383626,
+            "y": 612.5224230421652
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/23050:30272",
+          "kind": "contact",
+          "point": {
+            "x": 729.8229287068049,
+            "y": 436.2404007045683
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-19\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-4/8570:14096",
+          "kind": "contact",
+          "point": {
+            "x": 496.20209996584117,
+            "y": 341.65367469742694
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-2\"]",
+              "[\"army\",\"force-25\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-28/30272:35166",
+          "kind": "contact",
+          "point": {
+            "x": 753.0013058239065,
+            "y": 423.2297251878597
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-20\"]",
+              "[\"army\",\"force-30\"]"
+            ]
+          ]
+        },
+        {
+          "id": "land/p-15/20342:20786",
+          "kind": "contact",
+          "point": {
+            "x": 432.719905042051,
+            "y": 309.0664722494861
+          },
+          "participants": 3,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-27\"]",
+              "[\"army\",\"force-6\"]"
+            ],
+            [
+              "[\"army\",\"force-28\"]",
+              "[\"army\",\"force-6\"]"
+            ]
+          ]
+        },
+        {
+          "id": "siege/p-15",
+          "kind": "siege",
+          "point": {
+            "x": 376.24722056918677,
+            "y": 333.62594578001233
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-28",
+          "kind": "siege",
+          "point": {
+            "x": 761.54891649882,
+            "y": 441.17891788482666
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-9",
+          "kind": "siege",
+          "point": {
+            "x": 645.4632414711846,
+            "y": 635.7218556933933
+          },
+          "participants": 0,
+          "progress": 0
+        },
+        {
+          "id": "siege/p-4",
+          "kind": "siege",
+          "point": {
+            "x": 488.9501068327162,
+            "y": 374.4741943147447
+          },
+          "participants": 0,
+          "progress": 0
+        }
+      ],
+      "visible": [
+        {
+          "id": "sea/63/2667:10067",
+          "kind": "contact",
+          "point": {
+            "x": 502.95844253383626,
+            "y": 612.5224230421652
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"fleet\",\"fleet-13-5\"]"
+            ]
+          ]
+        },
+        {
+          "id": "sea/63/5123:10067",
+          "kind": "contact",
+          "point": {
+            "x": 496.45987273381695,
+            "y": 625.8420771152894
+          },
+          "participants": 2,
+          "progress": null,
+          "pairs": [
+            [
+              "[\"army\",\"force-15\"]",
+              "[\"army\",\"force-32\"]"
+            ]
+          ]
+        }
+      ],
+      "tick": "4320"
+    }
+  ],
+  "anchor": {
+    "x": 722.5560943492345,
+    "y": 583.0693735086487
+  },
+  "worldDataUnchanged": true,
+  "noSimulationCommandDuringCamera": true,
+  "errors": [],
+  "scope": "Actual fresh UI-created synthetic full map6culture60city war, pause then continuous wheel1/4/16/40x, combat LOD and unchanged world; desktop Chromium only, not original visual or physical iPhone acceptance."
+}

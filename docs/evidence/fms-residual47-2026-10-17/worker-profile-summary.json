@@ -1,0 +1,263 @@
+{
+  "engine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+  "timings": [
+    524.0120999999999,
+    550.1514999999999,
+    580.612000000001,
+    569.9477000000006,
+    854.5851999999977,
+    1220.449199999999,
+    1049.2044999999998,
+    1029.9762999999984,
+    1001.9304000000011,
+    847.2822999999989
+  ],
+  "ranked": [
+    {
+      "ms": 705.11,
+      "name": "post",
+      "line": 114,
+      "column": 6,
+      "source": "node:inspector"
+    },
+    {
+      "ms": 355.542,
+      "name": "Di",
+      "line": 0,
+      "column": 347939,
+      "source": "et(e,r),r}let Ti,Ei=()=>!!Ti;function Di(e){if(Ti)throw Error(`不能嵌套私有行军事务。`);let t={proofs:/* @__PURE__ */ new WeakMap,graphs:/* @__PURE__ */ new Map};Ti=t;try{let n=e();for(let[e,n]of t.graphs){if(e.cells.size!==n.size)throw Error(`行军拓扑在推演期间改变，候选未提交。`);for(le"
+    },
+    {
+      "ms": 288.908,
+      "name": "um",
+      "line": 0,
+      "column": 1100776,
+      "source": "x(o+1,r.nextTick))}return!0}}function um(e,t){return JSON.stringify([[...t.byArmy.values()].map(({army:e,province:t})=>[e.id,e.nationId,e.troops,e.status===`retreating`,t?.id??null]),e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.statecraft"
+    },
+    {
+      "ms": 267.815,
+      "name": "cm",
+      "line": 0,
+      "column": 1099430,
+      "source": "leg+ +!!e.crossed],e.status];function cm(e){return JSON.stringify([e.world.nations.map(e=>e.id),e.world.statecraft.relations.map(e=>[e.a,e.b,e.status]),e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.statecraft.provinces.map(e=>[e.provinceId"
+    },
+    {
+      "ms": 254.341,
+      "name": "(garbage collector)",
+      "line": -1,
+      "column": -1,
+      "source": ""
+    },
+    {
+      "ms": 247.169,
+      "name": "Ai",
+      "line": 0,
+      "column": 348554,
+      "source": ".proofs.get(e).allSea:void 0}function Ai(e,t){if(!Ti)return;let n=Ti.graphs.get(t);n||(n={size:t.cells.size,cells:/* @__PURE__ */ new Map},Ti.graphs.set(t,n));let r=!0;for(let i of e.nodes){let e=t.cells.get(i);e.surface!==`sea`&&(r=!1),n.cells.has(i)||n.cells"
+    },
+    {
+      "ms": 236.81,
+      "name": "f.sessionAfterTick",
+      "line": 0,
+      "column": 1142256,
+      "source": "pation:u?.invalidate,sessionAfterTick:c?(e,t)=>{ep(e,e.clock.tick,t);let r=!1;if(!t&&i){let t=JSON.stringify([e.world.provinces.map(e=>[e.id,e.controller,e.legalOwner]),e.world.nations.map(e=>[e.id,e.capitalId]),e.world.statecraft.relations,e.nativeWars,e.chro"
+    },
+    {
+      "ms": 208.011,
+      "name": "Cg",
+      "line": 0,
+      "column": 1179378,
+      "source": "ject.freeze(e),bg.set(e,n),n}function Cg(e,t){if(Object.is(e,t))return!0;if(!e||!t||typeof e!=`object`||typeof t!=`object`||Object.getPrototypeOf(e)!==Object.getPrototypeOf(t))return!1;let n=bg.get(e)===!0&&bg.get(t)===!0;if(n&&xg.get(e)?.has(t))return!0;if(Ar"
+    },
+    {
+      "ms": 197.846,
+      "name": "Ia",
+      "line": 0,
+      "column": 371667,
+      "source": "(e=>e.withdrawing)?a:void 0)}function Ia(e,t,n,r,i,a,o,s){if(!Number.isFinite(r)||r<=0||!Number.isSafeInteger(a)||a<1)throw Error(`统一行军时间或事件预算无效。`);let c=Mi(e).map(e=>({force:e,key:L(e)})).sort((e,t)=>e.key.localeCompare(t.key)).map(e=>e.force);s||ka(t,c,n,i.s"
+    },
+    {
+      "ms": 160.352,
+      "name": "Aa",
+      "line": 0,
+      "column": 368533,
+      "source": "ror(`舰队航线进入陆地。`)}Aa(e,t,n,r)}function Aa(e,t,n,r){let i=/* @__PURE__ */ new Set,a=[];for(let e of t){if(![`army`,`fleet`].includes(e.kind)||!e.id||!e.nationId||typeof e.withdrawing!=`boolean`||e.travel.armyId!==e.id)throw Error(`统一部队身份无效。`);let t=L(e);if(i.has"
+    },
+    {
+      "ms": 145.826,
+      "name": "na",
+      "line": 0,
+      "column": 358689,
+      "source": ":n.x+c*a,y:n.y+c*o})<=1e-8})}function na(e,t,n){return(n===void 0?[...e.cells.values()]:(e.byProvince.get(n)??[]).map(t=>e.cells.get(t))).filter(e=>ta(e,t)).sort((e,t)=>e.id-t.id)[0]??null}let ra=(e,t)=>{let n=`${e.x},${e.y}`,r=`${t.x},${t.y}`;return n<r?n+`/`"
+    },
+    {
+      "ms": 143.027,
+      "name": "Zo",
+      "line": 0,
+      "column": 401998,
+      "source": "usedSeconds:e.unusedSeconds}}function Zo(e,t,n,r,i,a,o){for(let t of[e.armyPositions,e.fleetPositions])if(!Number.isSafeInteger(t.revision)||t.revision<0||t.revision>=2**53-1)throw Error(`统一部队位置版本不能安全推进。`);let{spatial:s,forces:c}=o??B(e);a?.(c,s.graph,0,o?.con"
+    },
+    {
+      "ms": 135.832,
+      "name": "ja",
+      "line": 0,
+      "column": 370214,
+      "source": "于两支部队的实际地区或入出边界。`);s.add(a)}}function ja(e,t,n,r,i){let a=i??Da(e,t),o=/* @__PURE__ */ new Map,s=/* @__PURE__ */ new Map,c=(e,t,n)=>r.enemy(e.nationId,t.nationId)&&(n.startsWith(`sea/`)||!e.withdrawing&&!t.withdrawing);for(let e of n.pairs){let t=a.get(e.a),n="
+    },
+    {
+      "ms": 135.818,
+      "name": "structuredClone",
+      "line": 112,
+      "column": 24,
+      "source": "node:internal/worker/js_transferable"
+    },
+    {
+      "ms": 105.334,
+      "name": "Wp",
+      "line": 0,
+      "column": 1085614,
+      "source": "推演。`);return Wp(e,t,n,r,i,a)}function Wp(e,t,n,r,i,a){let o=(r-n)*e.forceClock.secondsPerTick;if(!Number.isFinite(n)||!Number.isFinite(r)||n<e.clock.tick||r>Math.floor(n)+1||r<=n||!Number.isFinite(o)||o<=0||t.forceClock.secondsPerTick!==e.forceClock.secondsPer"
+    },
+    {
+      "ms": 104.39,
+      "name": "Qo",
+      "line": 0,
+      "column": 404168,
+      "source": "onds,endActual:y,endFrame:v}}function Qo(e,t){let n=new Map(e.world.provinces.map(e=>[e.id,e])),r={byArmy:/* @__PURE__ */ new Map,land:/* @__PURE__ */ new Map,sea:/* @__PURE__ */ new Map};for(let i of e.world.armies){if(!(i.troops>0)||i.status===`destroyed`)co"
+    },
+    {
+      "ms": 98.19,
+      "name": "",
+      "line": 0,
+      "column": 362089,
+      "source": "=t}return e};return o&&f({id:t,cost:0}),r=>{let i=e.cells.get(r);if(!o||!i||!a(i))return null;for(;!u.has(r)&&l.length;){let t=p();if(s.get(t.id)!==t.cost||u.has(t.id))continue;u.add(t.id);let r=e.cells.get(t.id);for(let i of r.links){let o=e.cells.get(i.to);i"
+    },
+    {
+      "ms": 80.821,
+      "name": "ma",
+      "line": 0,
+      "column": 363869,
+      "source": "e:s,distance:s+fa(i.gate,o)}}function ma(e,t){let n=e;if(!n||typeof n!=`object`||Object.keys(n).length!==(n.version===2?9:8)||Object.keys(n).some(e=>!ua.has(e)||e===`destination`&&n.version!==2)||n.version!==1&&n.version!==2||typeof n.armyId!=`string`||!n.army"
+    },
+    {
+      "ms": 78.629,
+      "name": "qs",
+      "line": 0,
+      "column": 417062,
+      "source": "ror(`海港控制含未来规则或未知字段，已锁定读写。`)}function qs(e,t,n){Ks(e);let r=()=>{throw Error(`海港控制记录损坏，已保留原档。`)},i=e=>typeof e==`number`&&Number.isSafeInteger(e)&&e>=0;if(!Ws(e)||Object.keys(e).length!==Vs.length||e.version!==1||!i(e.revision)||!i(e.nextRoleTick)||e.nextRoleT"
+    },
+    {
+      "ms": 70.29,
+      "name": "structuredClone",
+      "line": 112,
+      "column": 24,
+      "source": "node:internal/worker/js_transferable"
+    },
+    {
+      "ms": 69.919,
+      "name": "Yp",
+      "line": 0,
+      "column": 1088042,
+      "source": "`)===[...t].sort().join(`/`);function Yp(e){let t=e.navalAutonomy,n=(e,t=2**53-1)=>Number.isSafeInteger(e)&&e>=0&&e<=t,r=()=>{throw Error(`海军自主部署记录无效。`)};if(!Jp(t,[`version`,`rule`,`timing`,`revision`,`rng`,`lastTick`,`nextRoleTick`,`fleets`])||t.version!==1||"
+    },
+    {
+      "ms": 69.008,
+      "name": "Oh",
+      "line": 0,
+      "column": 1143655,
+      "source": "turn a}finally{Th.delete(i)}}function Oh(e,t){let{spatial:n,forces:r,contact:i}=t??Ko(e);e.forceContacts=i.contacts;let a=n.space,o=/* @__PURE__ */ new Set;for(let t of r){if(t.withdrawing)continue;let n=L(t),r=t.kind===`army`?a.byArmy.get(t.id)?.province:null"
+    },
+    {
+      "ms": 68.385,
+      "name": "pe",
+      "line": 0,
+      "column": 239817,
+      "source": ".hasOwn(e,n)).every(Boolean)}function pe(e){if(!E(e)||!D(e,[`schemaVersion`,`rulesVersion`,`scenario`,`mode`,`day`,`nations`,`provinces`,`cities`,`armies`,`events`,`nextEventId`,...e.scenario===`custom-world`?[`custom`]:[],...e.schemaVersion===2?[`statecraft`]"
+    },
+    {
+      "ms": 66.94,
+      "name": "Ai",
+      "line": 0,
+      "column": 348554,
+      "source": ".proofs.get(e).allSea:void 0}function Ai(e,t){if(!Ti)return;let n=Ti.graphs.get(t);n||(n={size:t.cells.size,cells:/* @__PURE__ */ new Map},Ti.graphs.set(t,n));let r=!0;for(let i of e.nodes){let e=t.cells.get(i);e.surface!==`sea`&&(r=!1),n.cells.has(i)||n.cells"
+    },
+    {
+      "ms": 66.073,
+      "name": "(idle)",
+      "line": -1,
+      "column": -1,
+      "source": ""
+    },
+    {
+      "ms": 65.951,
+      "name": "om",
+      "line": 0,
+      "column": 1093887,
+      "source": ";return im(c,t,r,`player`),c}function om(e,t,n=ls(e)){Yp(e);let r=e.navalAutonomy,i=e.clock.tick;if(i===r.lastTick)return;if(i!==r.lastTick+1||i>2**53-1-1280||r.revision>=2**53-1)throw Error(`海军自主部署必须接续整 tick。`);Vp(e,n);let a=zp(e,n),o=a.spatial.space,s=JSON.s"
+    },
+    {
+      "ms": 64.233,
+      "name": "fi",
+      "line": 0,
+      "column": 342881,
+      "source": "=/* @__PURE__ */ new WeakMap;function fi(e,t){for(let n=0;n<e.length;n++)if(e[n]!==t[n])return!1;return!0}function pi(e,t,n,r){if(--n.left<0||r>64)return!1;if(typeof e==`number`)return Number.isFinite(e)&&Object.is(e,t);if(e===null||typeof e==`string`||typeof "
+    },
+    {
+      "ms": 62.398,
+      "name": "I",
+      "line": 0,
+      "column": 365686,
+      "source": "d`:`moving`};return ma(a,n),a}function I(e,t){let n=t.cells.get(e.nodes[e.leg]),r=pa(e,t);if(r?.kind===`local`){let t=r.distance>0?e.offset/r.distance:1;return{point:t===1?{...r.endPoint}:t===0?{...r.start}:{x:r.start.x+(r.endPoint.x-r.start.x)*t,y:r.start.y+("
+    },
+    {
+      "ms": 62.291,
+      "name": "Nh",
+      "line": 0,
+      "column": 1145048,
+      "source": "i=Eh(e);return Nh(i,t,n,r,i)}function Nh(e,t,n,r,i){if((r.sessionInterval||r.sessionOccupationKey||r.invalidateSessionOccupation||r.sessionAfterTick)&&!Ei())throw Error(`位置复用仅允许私有同步推演。`);let a=(e.world.day+1)*120;if(!Number.isSafeInteger(t)||t<1||e.clock.tick<"
+    },
+    {
+      "ms": 62.262,
+      "name": "Cg",
+      "line": 0,
+      "column": 1179378,
+      "source": "ject.freeze(e),bg.set(e,n),n}function Cg(e,t){if(Object.is(e,t))return!0;if(!e||!t||typeof e!=`object`||typeof t!=`object`||Object.getPrototypeOf(e)!==Object.getPrototypeOf(t))return!1;let n=bg.get(e)===!0&&bg.get(t)===!0;if(n&&xg.get(e)?.has(t))return!0;if(Ar"
+    },
+    {
+      "ms": 58.49,
+      "name": "I",
+      "line": 0,
+      "column": 365686,
+      "source": "d`:`moving`};return ma(a,n),a}function I(e,t){let n=t.cells.get(e.nodes[e.leg]),r=pa(e,t);if(r?.kind===`local`){let t=r.distance>0?e.offset/r.distance:1;return{point:t===1?{...r.endPoint}:t===0?{...r.start}:{x:r.start.x+(r.endPoint.x-r.start.x)*t,y:r.start.y+("
+    },
+    {
+      "ms": 58.166,
+      "name": "recordContacts",
+      "line": 0,
+      "column": 1181425,
+      "source": "8192)&&(this.overflow=!0)}recordContacts(e,t){if(this.overflow)return;let n=this.value.contacts??(this.value.contacts=[]);n.at(-1)?.tick===e&&n.pop();let r=n.at(-1);r&&JSON.stringify(r.pairs)===JSON.stringify(t.pairs)||(n.push({tick:e,pairs:structuredClone(t.p"
+    },
+    {
+      "ms": 54.068,
+      "name": "",
+      "line": 0,
+      "column": 358794,
+      "source": "(n)??[]).map(t=>e.cells.get(t))).filter(e=>ta(e,t)).sort((e,t)=>e.id-t.id)[0]??null}let ra=(e,t)=>{let n=`${e.x},${e.y}`,r=`${t.x},${t.y}`;return n<r?n+`/`+r:r+`/`+n},ia=e=>[...e].sort((e,t)=>e-t).join(`/`);function aa(e,t){let n=1e3/Math.max(e.width,e.height)"
+    },
+    {
+      "ms": 53.373,
+      "name": "Yp",
+      "line": 0,
+      "column": 1088042,
+      "source": "`)===[...t].sort().join(`/`);function Yp(e){let t=e.navalAutonomy,n=(e,t=2**53-1)=>Number.isSafeInteger(e)&&e>=0&&e<=t,r=()=>{throw Error(`海军自主部署记录无效。`)};if(!Jp(t,[`version`,`rule`,`timing`,`revision`,`rng`,`lastTick`,`nextRoleTick`,`fleets`])||t.version!==1||"
+    },
+    {
+      "ms": 52.035,
+      "name": "",
+      "line": 0,
+      "column": 1180071,
+      "source": ".keys(t),a=r.length===i.length&&r.every(n=>Object.hasOwn(t,n)&&Cg(e[n],t[n]));if(a&&n){let n=xg.get(e)??/* @__PURE__ */ new WeakSet;n.add(t),xg.set(e,n)}return a}let wg=e=>({terrain:e.run.terrain,geography:e.run.diplomaticGeography,opening:e.journal.opening});"
+    }
+  ],
+  "scope": "Production compiled actual Worker, synthetic 36864 points6nations60citieswar3features, warm40days CPU sample; profile adds overhead, not throughput measurement."
+}

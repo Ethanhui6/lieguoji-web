@@ -1,0 +1,396 @@
+{
+  "stage": "after",
+  "url": "http://127.0.0.1:5337",
+  "foundingMs": 12674,
+  "firstLabel": "皇帝 · 本局记载第 1 任上官子建皇帝上官子建 · 36 岁 · 在位11年",
+  "fromTick": 0,
+  "toTick": 13440,
+  "wallMs": 38032,
+  "daysPerSecond": 2.944888514934792,
+  "samples": [
+    {
+      "ms": 1050,
+      "tick": 0,
+      "displayTick": 0
+    },
+    {
+      "ms": 2069,
+      "tick": 480,
+      "displayTick": 111.66943259369135
+    },
+    {
+      "ms": 3187,
+      "tick": 960,
+      "displayTick": 506.5659121290184
+    },
+    {
+      "ms": 4334,
+      "tick": 1920,
+      "displayTick": 1265.9036050653783
+    },
+    {
+      "ms": 5836,
+      "tick": 2400,
+      "displayTick": 1986.2276248539245
+    },
+    {
+      "ms": 6999,
+      "tick": 2880,
+      "displayTick": 2578.6255077536016
+    },
+    {
+      "ms": 8178,
+      "tick": 3360,
+      "displayTick": 3057.8274826701436
+    },
+    {
+      "ms": 9343,
+      "tick": 3360,
+      "displayTick": 3360
+    },
+    {
+      "ms": 10494,
+      "tick": 3840,
+      "displayTick": 3450.340952845536
+    },
+    {
+      "ms": 11649,
+      "tick": 3840,
+      "displayTick": 3627.9419323863635
+    },
+    {
+      "ms": 12711,
+      "tick": 4320,
+      "displayTick": 3900.6182994594583
+    },
+    {
+      "ms": 13906,
+      "tick": 4800,
+      "displayTick": 4236.654051554509
+    },
+    {
+      "ms": 15387,
+      "tick": 4800,
+      "displayTick": 4547.544454066101
+    },
+    {
+      "ms": 16573,
+      "tick": 5280,
+      "displayTick": 4828.47651123283
+    },
+    {
+      "ms": 17723,
+      "tick": 5760,
+      "displayTick": 5153.260536647866
+    },
+    {
+      "ms": 18894,
+      "tick": 6240,
+      "displayTick": 5599.994088681076
+    },
+    {
+      "ms": 20073,
+      "tick": 6720,
+      "displayTick": 6113.66426508751
+    },
+    {
+      "ms": 21265,
+      "tick": 7200,
+      "displayTick": 6638.000157019103
+    },
+    {
+      "ms": 22445,
+      "tick": 7680,
+      "displayTick": 7181.721510763715
+    },
+    {
+      "ms": 23748,
+      "tick": 8160,
+      "displayTick": 7710.7502128287015
+    },
+    {
+      "ms": 24960,
+      "tick": 8640,
+      "displayTick": 8234.62761741883
+    },
+    {
+      "ms": 26155,
+      "tick": 9120,
+      "displayTick": 8698.026701172808
+    },
+    {
+      "ms": 27337,
+      "tick": 9600,
+      "displayTick": 9164.847726155258
+    },
+    {
+      "ms": 28541,
+      "tick": 10080,
+      "displayTick": 9684.96948881678
+    },
+    {
+      "ms": 29731,
+      "tick": 10560,
+      "displayTick": 10199.19076487354
+    },
+    {
+      "ms": 30919,
+      "tick": 10560,
+      "displayTick": 10560
+    },
+    {
+      "ms": 32104,
+      "tick": 11040,
+      "displayTick": 10673.431682815823
+    },
+    {
+      "ms": 33291,
+      "tick": 11520,
+      "displayTick": 10962.855618208176
+    },
+    {
+      "ms": 34495,
+      "tick": 12000,
+      "displayTick": 11404.973853187837
+    },
+    {
+      "ms": 35718,
+      "tick": 12480,
+      "displayTick": 11896.86744630771
+    }
+  ],
+  "probe": {
+    "acks": [
+      {
+        "command": "create",
+        "at": 1191.6500000953674,
+        "ms": 10600.105000019073,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-retirement",
+        "at": 11954.550000071526,
+        "ms": 134.4650000333786,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-recovery",
+        "at": 12175.090000033379,
+        "ms": 19.389999985694885,
+        "error": null
+      },
+      {
+        "command": "action",
+        "action": "enable-generations",
+        "at": 12196.030000090599,
+        "ms": 218.72500002384186,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 15099.480000019073,
+        "ms": 1567.4000000953674,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 16669.865000009537,
+        "ms": 938.0350000858307,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 17610.025000095367,
+        "ms": 836.539999961853,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 18448.515000104904,
+        "ms": 833.2999999523163,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 19283.825000047684,
+        "ms": 992.3550000190735,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 20278.230000019073,
+        "ms": 1061.0350000858307,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 21341.175000071526,
+        "ms": 1266.7799999713898,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 22609.895000100136,
+        "ms": 2406.219999909401,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 25018.055000066757,
+        "ms": 1822.9850000143051,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 26843.1550000906,
+        "ms": 2025.5149999856949,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 28870.63000011444,
+        "ms": 2027.4049999713898,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 30900.00500011444,
+        "ms": 1374.9649999141693,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 32276.885000109673,
+        "ms": 1053.9199999570847,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 33332.705000042915,
+        "ms": 1187.1050000190735,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 34521.71500003338,
+        "ms": 1185.3500000238419,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 35709.02500009537,
+        "ms": 1392.0099999904633,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 37103.08500003815,
+        "ms": 990.1299999952316,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 38095.18500006199,
+        "ms": 1293.7200000286102,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 39390.81500005722,
+        "ms": 1317.4049999713898,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 40710.235000014305,
+        "ms": 1186.3050000667572,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 41898.395000100136,
+        "ms": 1075.1999999284744,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 42975.59000003338,
+        "ms": 1201.960000038147,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 44179.515000104904,
+        "ms": 2359.5,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 46540.91000008583,
+        "ms": 1197.6499999761581,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 47740.610000014305,
+        "ms": 1102.6399999856949,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 48846.93500006199,
+        "ms": 1535.3300000429153,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 50384.205000042915,
+        "ms": 1390.039999961853,
+        "error": null
+      },
+      {
+        "command": "advance-batch",
+        "ticks": 480,
+        "at": 51776.19000005722,
+        "ms": 752.8400000333786,
+        "error": null
+      }
+    ],
+    "maxActive": 1,
+    "engine": {
+      "version": 1,
+      "tick": 13440
+    }
+  },
+  "errors": [],
+  "scope": "Same synthetic full continents terrain, fresh UI creation, default6cultures60cities, war + current three feature flags, desktop Chromium4x with nation details open; sequential runs, not physical iPhone or original equivalence."
+}

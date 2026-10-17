@@ -11998,6 +11998,124 @@
       ],
       "boundary": "Local only; old engines/saves and official site preserved. No push, remote PR/Issue/Milestone, Pages/Cloudflare or main writes. No physical/visual/PH completion or background-development claim.",
       "evidence": "docs/evidence/fms-main-gap47-2026-10-17/RESULT.md"
+    },
+    "culture47ResidualReuseCheckpoint": {
+      "date": "2026-10-17",
+      "status": "partial",
+      "task": "WEB-04-37",
+      "sourceCommit": "a047449bdcc05ad7876250bfa431a60e790df348",
+      "engine": "96c362995bdc39475bcde278f8eea4737e6c1dde3539da9554ad6d8d42149d5e",
+      "artifact": ".autopilot/fms-residual47-checked",
+      "url": "http://127.0.0.1:5337/?fms=1",
+      "binding": "127.0.0.1 only; not listening at 2026-10-17 resumption, restart needed",
+      "changes": [
+        "Accepted-snapshot combat geometry reuse with live fallback and empty-marker fast return",
+        "Per-leg static travel segment reuse only inside certified private synchronous window; dynamic guards and full cell commit witnesses retained"
+      ],
+      "simulationRulesChanged": false,
+      "checks": {
+        "unit": {
+          "files": 8,
+          "passed": 73
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "artifactAudit": {
+          "approved": 97,
+          "root": ".autopilot/fms-residual47-checked",
+          "reboundOnlyRootFromOriginalChecker": true
+        },
+        "initialAudit": {
+          "passed": false,
+          "reason": "Initial command used scripts/check-dist.mjs, which hardcodes dist and ignores GAME_BUILD_DIR; checked old dist missing newly registered d06f. The production build succeeded; same unmodified audit body rebound only root passed on actual candidate. Original log retained."
+        },
+        "browser": {
+          "startTime": "2026-10-17T04:26:04.565Z",
+          "duration": 43599,
+          "expected": 3,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "frozenOriginalByteEntries": 31,
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24
+      },
+      "compiledComparison": {
+        "days": 56,
+        "checkpoints": 14,
+        "runFrameMotionActionsExact": true
+      },
+      "measured": {
+        "warmCore": {
+          "priorMeanMs": 809.5909000000012,
+          "currentMeanMs": 782.3684153846144,
+          "observedReductionPercent": 3.3624988392763178,
+          "days": 52,
+          "excludesFirstBatch": true
+        },
+        "browser": {
+          "before": {
+            "foundingMs": 13354,
+            "daysPerSecond": 2.2761572527771596,
+            "days": 92,
+            "wallMs": 40419,
+            "maxConcurrent": 1,
+            "errors": []
+          },
+          "after": {
+            "foundingMs": 12674,
+            "daysPerSecond": 2.944888514934792,
+            "days": 112,
+            "wallMs": 38032,
+            "maxConcurrent": 1,
+            "errors": []
+          }
+        },
+        "limitations": "One sequential matched production-Worker56day pair, warm52days excluding first4; current always follows prior per checkpoint, host/JIT/order variability remain. Browser pair uses same synthetic map/settings but fresh IDs and differing time/history intervals;2.28→2.94 observed days/sec cannot be attributed as a guaranteed29% improvement. No stable4x/FPS/device/original-speed claim. CPU profile only diagnoses old compiled engine and adds inspector overhead."
+      },
+      "functional": {
+        "acceptedAdvances": 28,
+        "motionRevisions": [
+          1,
+          29
+        ],
+        "panelPaints": {
+          "paintsBefore": 30,
+          "paintsAfter": 30
+        },
+        "selectionRepaints": true,
+        "statsFollowAuthority": true,
+        "saveColdRestoreExact": true,
+        "restoredTick": 14400,
+        "pendingPreviewSave": true,
+        "pendingRestoreTick": 4320,
+        "maxConcurrentWorkerRequests": 1,
+        "pageErrors": [],
+        "zoom": "1/4/16/40x continuous wheel, no world mutation/no simulation command",
+        "portrait": "428x926 desktop Chromium layout only"
+      },
+      "frozen": {
+        "engine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+        "file": "engine-d06f.js",
+        "bytes": 1413398,
+        "sha256": "4a5c79388f82a68637fc6490056ee4aaee440bc661460960af15e3b63fc4edb9",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-main-gap47-final-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 31
+      },
+      "remaining": [
+        "Sustained4x target still unmet; measured warm reduction about3.4% is small and not a universal promise",
+        "Default full-map creation still omits existing real coastline smoothing; next bounded reversible preview integration must handle revision and final-document drainage",
+        "40x inland triangles/details, typography/UI density, contact/war strategy, cross-sea and long-run history/family gaps remain"
+      ],
+      "boundary": "Local only; old engines/saves and official site preserved. No push, remote PR/Issue/Milestone, Pages/Cloudflare or main writes. No physical/visual/PH completion claim.",
+      "evidence": "docs/evidence/fms-residual47-2026-10-17/RESULT.md"
     }
   }
 }

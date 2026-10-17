@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-17",
+  "sourceCommit": "a047449bdcc05ad7876250bfa431a60e790df348",
+  "priorEngine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+  "currentEngine": "96c362995bdc39475bcde278f8eea4737e6c1dde3539da9554ad6d8d42149d5e",
+  "points": 36864,
+  "days": 56,
+  "tick": 6720,
+  "relations": "war",
+  "features": 3,
+  "exactRunFrameMotionAndActions": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 2112.758099999999,
+      "currentCoreMs": 2151.365700000002
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 628.9080000000031,
+      "currentCoreMs": 549.445799999994
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 549.1861999999965,
+      "currentCoreMs": 552.1255000000019
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 612.1583000000028,
+      "currentCoreMs": 557.0106999999989
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 611.2548999999999,
+      "currentCoreMs": 600.5809000000008
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 594.1522000000041,
+      "currentCoreMs": 575.2823999999964
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 789.6987000000008,
+      "currentCoreMs": 726.2776999999987
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 1213.011400000003,
+      "currentCoreMs": 1130.4845999999961
+    },
+    {
+      "day": 36,
+      "priorCoreMs": 1059.3133000000016,
+      "currentCoreMs": 1048.7790000000023
+    },
+    {
+      "day": 40,
+      "priorCoreMs": 1028.2455000000045,
+      "currentCoreMs": 1100.6808999999994
+    },
+    {
+      "day": 44,
+      "priorCoreMs": 1078.819199999998,
+      "currentCoreMs": 1073.2569999999978
+    },
+    {
+      "day": 48,
+      "priorCoreMs": 956.1503999999986,
+      "currentCoreMs": 828.5720000000001
+    },
+    {
+      "day": 52,
+      "priorCoreMs": 722.5055000000066,
+      "currentCoreMs": 738.3539999999994
+    },
+    {
+      "day": 56,
+      "priorCoreMs": 681.2780999999959,
+      "currentCoreMs": 689.938900000001
+    }
+  ],
+  "scope": "Sequential original and current production-compiled Node Workers, same synthetic opening/world id/three current feature flags; exact every4days. No browser paint, physical device or original equivalence claim."
+}

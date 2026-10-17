@@ -1,0 +1,12 @@
+{
+  "engine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+  "file": "engine-d06f.js",
+  "bytes": 1413398,
+  "sha256": "4a5c79388f82a68637fc6490056ee4aaee440bc661460960af15e3b63fc4edb9",
+  "rule": "real-culture-zh-politics-journal-2",
+  "protocol": 2,
+  "source": "culture47-main-gap47-final-checked-original-bytes",
+  "journalVersion": 2,
+  "byteEqual": true,
+  "registered": 31
+}

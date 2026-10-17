@@ -1,3 +1,9 @@
+# 当前检查点：原作国界描边与平滑海岸海洋渐变（2026-10-17）
+
+只读静态恢复原作 UpdateStateLine/SetStateLines：国界与海岸同用 SmoothBorderLines（CurveBasis 4），线宽 stateLineThickness 0.25 世界单位（1.667 地图单位），颜色 AdjustColor(DeepColor,+0.2,−0.2)、DeepColor=AdjustColor(color,+0.1,−0.05)，海岸线 z 更靠前盖住海岸段国界。文化世界政区视图现按此描相邻两国陆上国界（网页省份多边形与海陆分界不重合，海岸段交给海岸线，属适配）。海洋距离场改为到同一条平滑海岸曲线、减去原作 SDF 源线半带宽 4 地图单位（1.2 世界单位，静态推断）。源码 52910cb/c28ec7a（冻结 d4f0 原 Worker）/358a0ee，产物 .autopilot/fms-borders47-checked，引擎 f2b7…，本机 http://127.0.0.1:5340/?fms=1（会话后需重启）；中间 f1f6 仅自检、已停服未冻结。单测 33、lint/typecheck/build99、桌面浏览器 5/5＋手机 1/1、plan/15/24 通过；同视角前后图见 [结果](evidence/fms-borders47-2026-10-17/RESULT.md)，恢复细节 ORIGINAL_BORDERS.md，键 webRebuild.culture47BordersCheckpoint。下一批：省份多边形超出海岸的小块、玩家国/选中国界线宽，再到 40 倍内陆细节与文字。未跑完整套件，无真机/用户视觉验收，无上传。
+
+---
+
 # 当前检查点：原作B样条海岸墨线已恢复并接入文化世界地图（2026-10-17）
 
 从用户自有安装包只读静态恢复 MathUtility.Basis/CurveBasis/CurveBasisClosed 与 SmoothBorderLines（CurveBasis(points,4)），以及 UpdateCoastLine/IsCoastLineEdge 链路、场景 coastLineThickness=0.25 世界单位、SetResolution(1600,900)⇒1地图单位=0.15世界单位、羊皮纸预设海岸色#5f5f5f。网页把真实h20交线串链后套用原作曲线，以1.667地图单位墨线画在国家填色之上；纯显示，陆地/拾取/模拟/存档不变。已有边界松弛平滑在默认整图上只降约2.3%折角，未采用。源码8e69084（海岸）＋730dae0（冻结96c3原Worker 1,413,669字节），产物 .autopilot/fms-coastline47-checked，引擎d4f0…，本机 http://127.0.0.1:5338/?fms=1（会话后需重启）。单测22、lint/typecheck/build98、浏览器桌面4/4＋手机尺寸1/1、plan/15/24通过；同视角1/4/16/40倍前后图见 [结果](evidence/fms-coastline47-2026-10-17/RESULT.md)，恢复细节见 ORIGINAL_COASTLINE.md，键 webRebuild.culture47CoastlineCheckpoint。下一批：海洋SDF改用平滑源线、国界按原作 stateLineThickness/curveAmount/interpolationPoints 平滑，再处理40倍内陆细节与文字。未跑完整套件，无真机/用户视觉验收，无上传。

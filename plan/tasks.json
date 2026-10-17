@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47CoastlineCheckpoint and latest AUTO_HANDOFF. Recovered original B-spline coastline (CurveBasis n=4, 0.25 world units=1.667 map units, #5f5f5f) on culture47 map; engine 96c3 frozen; artifact .autopilot/fms-coastline47-checked on 5338. Next: ocean SDF from smoothed source line, original state-border smoothing (stateLineThickness 0.25, curveAmount 0.5, interpolationPoints 5), then 40x interior detail/typography. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read culture47BordersCheckpoint and latest AUTO_HANDOFF. Recovered original state outlines (CurveBasis 4, 1.667 map units, AdjustColor(DeepColor,+.2,-.2), land borders only) and ocean distance from smoothed coast band (half width 4); engine d4f0 frozen; artifact .autopilot/fms-borders47-checked on 5340. Next: province polygons poking past the coastline, player/selected state line widths, then 40x interior detail/typography. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12195,6 +12195,105 @@
       "productionUnchanged": true,
       "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only recovery; no PH/device/visual completion claim.",
       "evidence": "docs/evidence/fms-coastline47-2026-10-17/RESULT.md"
+    },
+    "culture47BordersCheckpoint": {
+      "date": "2026-10-17",
+      "status": "partial",
+      "task": "WEB-02-02",
+      "sourceCommit": "358a0ee5b1ec1ffcfbbea1abb5477091eac426f8",
+      "implementationCommits": [
+        "52910cb",
+        "c28ec7a",
+        "358a0ee"
+      ],
+      "engine": "f2b7865d7890e40d4ceb9e8e5ffd3df7f2f9932987fd86346df3f8f57d34c11c",
+      "artifact": ".autopilot/fms-borders47-checked",
+      "url": "http://127.0.0.1:5340/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "Recovered state outlines: SmoothBorderLines CurveBasis(4), stateLineThickness 0.25 world=1.667 map units, AdjustColor(DeepColor,+0.2,-0.2) with DeepColor=AdjustColor(color,+0.1,-0.05); culture47 political view, land borders only",
+        "Ocean distance from smoothed coastline minus SDF source band half width 4 map units (1.2 world units); contract recovered-shader191-smoothed-coast-band-distance-v3",
+        "Freeze previous engine d4f0 original worker bytes"
+      ],
+      "simulationRulesChanged": false,
+      "displayOnly": true,
+      "evidenceLevel": {
+        "stateLineColorWidthCurve": "static recovery",
+        "landBordersOnly": "web adaptation",
+        "oceanBandHalfWidth": "static inference",
+        "bandSideOffset": "not adopted, sign unrecovered"
+      },
+      "checks": {
+        "unit": {
+          "files": 6,
+          "passed": 33
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 99,
+        "browserDesktop": {
+          "expected": 5,
+          "passed": 5
+        },
+        "browserMobile": {
+          "expected": 1,
+          "passed": 1
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run",
+        "intermediateFailure": "Own bad assertion (editor canvas count) on f1f6 build, removed; logs kept"
+      },
+      "frozen": {
+        "engine": "d4f020333d1a4bf9883074eb49a5cee0dfc9c9e570bf25c46d529d9e635ab037",
+        "file": "engine-d4f0.js",
+        "bytes": 1413669,
+        "sha256": "ced2cd900b374e3620afb7ce8d81fab1db79e28fa1e5dfbdcd9c5cfe4663a2c9",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-coastline47-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 33
+      },
+      "intermediateEngine": {
+        "fingerprint": "f1f6c45cbf7b56d67929f4100ead4ed29b86482e14b57d3db6411f5377eaf92d",
+        "servedOnly": "127.0.0.1:5339 for own checks, stopped",
+        "frozen": false
+      },
+      "measured": {
+        "defaultFullMap": {
+          "contourSegments": 4011,
+          "curveSegments": 14363,
+          "fieldMsLinear": [
+            98,
+            70
+          ],
+          "fieldMsCurve": [
+            108,
+            88
+          ],
+          "curveDeriveMs": [
+            37,
+            28
+          ]
+        }
+      },
+      "remaining": [
+        "Province polygons still poke past the coastline (pre-existing)",
+        "Player-state double width and original selected-state outline not implemented",
+        "shallowLines purpose unknown",
+        "No physical iPhone/user visual acceptance; sustained 4x unmet"
+      ],
+      "physicalIphone": false,
+      "userVisualAcceptance": false,
+      "originalEquivalent": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only recovery; no PH/device/visual completion claim.",
+      "evidence": "docs/evidence/fms-borders47-2026-10-17/RESULT.md"
     }
   }
 }

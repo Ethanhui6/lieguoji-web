@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47WarmThroughputCheckpoint and latest AUTO_HANDOFF, verify Git/services. Source86c5fe9 checked local5335 completes warm force/sea-route reuse and same-snapshot detail memo. 7files99 + 56day14checkpoints exact full run/frame/motion/actions + current UI detail advance/save cold restore + original1c7d browser passed. Sequential fresh same-map browser actual1.969 to2.246 days/sec (~14%); compiled warm core931.81 to777.75ms/4days (~16.53% less). Sustained4x target remains unmet and ACK-to-next-post gap did not improve. Next fix measured main-thread overlay/delivery/redundant geographic work without skipping safety or actual simulation, then continue existing map geometry/contact/visual/war gaps. Old engines/saves and all phase/physical/visual/release gates remain; no uploads.",
+    "nextRecoveryTarget": "Read culture47AckPipelineCheckpoint and latest AUTO_HANDOFF; verify Git/current executors and checked local5336 service. Source2885924, d06f engine, final checked artifact. Three real changes: priority ACK continuation with synchronous gates; per-ACK motion install/old-effect guard; accepted-run combat index and panel-only repaint avoidance. 6files54, lint/type/build96, plan15/release24, final3/3 desktop browser including real pending preview/save and original02c7 compatibility passed. 56day14checkpoints exact run/frame/motion/actions executed43deb83 and final Worker bytes identical. Repeated ACK-to-next-post gap282-295ms to~2ms; total rates old1.46-2.17 vs new2.73-3.11 days/sec vary, no stable percentage/4x promise. Next improve remaining actual Worker/map-render cost based on measured work, then current coast/detail/typography/contact/cross-sea/history gaps. Do not repeat original02c7 freeze or rebuild plan. Preserve every phase/device/visual/release gate; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -11832,6 +11832,172 @@
       "status": "partial",
       "task": "WEB-04-37",
       "evidence": "docs/evidence/fms-warm-throughput47-2026-10-17/RESULT.md"
+    },
+    "culture47AckPipelineCheckpoint": {
+      "date": "2026-10-17",
+      "status": "partial",
+      "task": "WEB-04-37",
+      "sourceCommit": "2885924f46201b5db6327cac6b53dac9fc6e8ca0",
+      "implementationCommit": "43deb8396ff91808b997aeb87ca2c434f9dec951",
+      "engine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+      "artifact": ".autopilot/fms-main-gap47-final-checked",
+      "url": "http://127.0.0.1:5336/?fms=1",
+      "binding": "127.0.0.1 only; same computer; recheck after process/session exits",
+      "serverPidAtCheck": 31972,
+      "changes": [
+        "Prioritize earned next Worker request after ACK, synchronous pause/foreground gate and single-inflight ownership",
+        "Install every accepted motion/contact interval before continuation; reject superseded React effects; independent ACK-bounded display checks",
+        "Reuse combat strengths per immutable accepted run; precompute sort participants; avoid panel-only map redraw"
+      ],
+      "checks": {
+        "lint": true,
+        "typecheck": true,
+        "unit": {
+          "files": 6,
+          "passed": 54
+        },
+        "productionBuild": true,
+        "distArtifacts": 96,
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "frozenOriginalByteEntries": 30,
+        "browser": {
+          "startTime": "2026-10-17T02:10:10.452Z",
+          "duration": 44399.318999999996,
+          "expected": 3,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "finalUnitOnSourceCommit": "2885924f46201b5db6327cac6b53dac9fc6e8ca0",
+        "finalPlanAfterCheckpoint": true,
+        "finalPlanTestsAfterCheckpoint": 15
+      },
+      "compiledComparison": {
+        "days": 56,
+        "checkpoints": 14,
+        "runFrameMotionActionsExact": true,
+        "executedSourceCommit": "43deb8396ff91808b997aeb87ca2c434f9dec951",
+        "finalWorkerByteEqual": true
+      },
+      "measured": {
+        "before-initial": {
+          "foundingMs": 13034,
+          "fromTick": 0,
+          "toTick": 9600,
+          "days": 80,
+          "wallMs": 36933,
+          "daysPerSecond": 2.1660845314488397,
+          "ackCount": 20,
+          "firstAckMs": 1675.5249999761581,
+          "warmAckMs": 1553.1089473711818,
+          "ackToNextPostMs": 281.6534210506238,
+          "maxActive": 1,
+          "errors": []
+        },
+        "after-initial": {
+          "foundingMs": 12581,
+          "fromTick": 0,
+          "toTick": 12480,
+          "days": 104,
+          "wallMs": 38059,
+          "daysPerSecond": 2.7325993851651385,
+          "ackCount": 26,
+          "firstAckMs": 1516.3450000286102,
+          "warmAckMs": 1439.8161999940871,
+          "ackToNextPostMs": 2.034200005531311,
+          "maxActive": 1,
+          "errors": []
+        },
+        "before": {
+          "foundingMs": 14931,
+          "fromTick": 0,
+          "toTick": 6720,
+          "days": 56,
+          "wallMs": 38371,
+          "daysPerSecond": 1.459435511193349,
+          "ackCount": 14,
+          "firstAckMs": 1905.1699999570847,
+          "warmAckMs": 2470.785384609149,
+          "ackToNextPostMs": 294.6734615472647,
+          "maxActive": 1,
+          "errors": []
+        },
+        "after": {
+          "foundingMs": 12594,
+          "fromTick": 0,
+          "toTick": 14400,
+          "days": 120,
+          "wallMs": 38635,
+          "daysPerSecond": 3.105991976187395,
+          "ackCount": 30,
+          "firstAckMs": 1559.3700000047684,
+          "warmAckMs": 1260.4201724077093,
+          "ackToNextPostMs": 1.9672413858874092,
+          "maxActive": 1,
+          "errors": []
+        },
+        "observedChangeOnly": {
+          "matchedDaysPerSecondPercent": 112.82146092551169,
+          "initialDaysPerSecondPercent": 26.153866365380086,
+          "gapReductionPercent": 99.33239953962672
+        },
+        "limitations": "Four sequential fresh UI-created worlds with identical synthetic terrain/settings on this machine. Fresh run identifiers, history/work intervals and host load can vary. Overall rates vary substantially; neither percentage is a guaranteed speedup. Initial before endpoint did not explicitly wait for accepted motion settling, while initial after and both final runs did. The robust repeated observation is ACK-to-next-post about282-295ms before versus about2ms after. No stable4x/FPS/device/original-speed claim."
+      },
+      "functional": {
+        "acceptedAdvances": 30,
+        "motionRevisions": [
+          1,
+          31
+        ],
+        "panelPaints": {
+          "paintsBefore": 32,
+          "paintsAfter": 32
+        },
+        "selectionRepaints": true,
+        "statsFollowAuthority": true,
+        "saveColdRestoreExact": true,
+        "restoredTick": 15360,
+        "pendingPreviewAndSaveBrowser": true,
+        "pendingSaveRestoredTick": 4320,
+        "maxConcurrentWorkerRequests": 1,
+        "pageErrors": [],
+        "portrait": "428x926 desktop Chromium layout only",
+        "physicalIphone": false,
+        "fullSuite": "not_run",
+        "userVisualAcceptance": false,
+        "originalEquivalent": false
+      },
+      "http": {
+        "checkedAt": "2026-10-17T02:20:50.625Z",
+        "sourceCommit": "2885924f46201b5db6327cac6b53dac9fc6e8ca0",
+        "engine": "d06f2b666afc7262c169cbfd5bb9a315bfe493d37561d9125addd0665b134000",
+        "homeStatus": 200,
+        "deepStatus": 200,
+        "deepSameEntry": true,
+        "worker": {
+          "file": "culture47.worker-otwwugIX.js",
+          "status": 200,
+          "contentType": "text/javascript; charset=utf-8"
+        },
+        "binding": "127.0.0.1 only",
+        "serverPidAtCheck": 31972
+      },
+      "frozen": {
+        "originalEngine": "02c7e4f68bbcef454f552c41a847f3c6dac317a45e513eb12d47e0b6d6a9cae2",
+        "entries": 30,
+        "bytes": 1413398,
+        "sha256": "3aaa7844024d1e2253d78c72c0058be3d9d4b705244ca46bc8f1e3115cc5bfd5",
+        "oldBrowserOriginalHistoryPreserved": true
+      },
+      "remaining": [
+        "Sustained4x target still unmet; observed full-browser throughput varies and is not a guaranteed percentage improvement",
+        "Remaining authoritative simulation and actual accepted-map render cost; do not remove safety or drop game work",
+        "Coast/mesh/40x detail, typography/UI density, contact/war strategy, cross-sea and long-run history/family gaps remain according to existing plan"
+      ],
+      "boundary": "Local only; old engines/saves and official site preserved. No push, remote PR/Issue/Milestone, Pages/Cloudflare or main writes. No physical/visual/PH completion or background-development claim.",
+      "evidence": "docs/evidence/fms-main-gap47-2026-10-17/RESULT.md"
     }
   }
 }

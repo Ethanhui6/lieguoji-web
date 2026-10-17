@@ -59,8 +59,11 @@ export function copyGeographyContent47<T>(value:T):{value:T;cost:number}|null{
   if(!v||typeof v!=='object'||immutable.has(v))return v;
   if(v instanceof Uint32Array)return new Uint32Array(v);
   if(v instanceof Int32Array)return new Int32Array(v);
-  if(Array.isArray(v))return v.map(copy);
-  return Object.fromEntries(Object.keys(v).map(k=>[k,copy((v as Record<string,unknown>)[k])]));
+  // The witness copy is private to its cache and never written, so its plain
+  // subtrees are certified too. Otherwise a certified live polygon never
+  // memoizes its match with the witness and every lookup re-walks all points.
+  if(Array.isArray(v)){const out=v.map(copy);freezePlain(out);return out;}
+  const out=Object.fromEntries(Object.keys(v).map(k=>[k,copy((v as Record<string,unknown>)[k])]));freezePlain(out);return out;
  };
  return {value:copy(value) as T,cost:LIMIT-budget.left};
 }

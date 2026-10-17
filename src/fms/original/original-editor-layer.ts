@@ -6,9 +6,11 @@ import type { FmsDocument } from '../model';
 import type { OriginalGrid } from './original-grid';
 import { OriginalCellMesh, originalCellColor, originalCoast, originalSeaTexture } from './original-layers';
 import { originalRiverGeometry, originalRiverMesh } from './original-rivers';
+import { originalBiomeIds, originalBiomeLinear, originalClimate } from './original-biomes';
 import { originalParchmentRect, type OriginalLandMode, type OriginalPreset } from './original-style';
 
-export interface OriginalEditorStats { landCells: number; coastChains: number; rivers: number; buildMs: number; mode: OriginalLandMode }
+export type OriginalEditorMode = OriginalLandMode | 'biome';
+export interface OriginalEditorStats { landCells: number; coastChains: number; rivers: number; buildMs: number; mode: OriginalEditorMode }
 
 /** The editor's map on an original grid, drawn as the original's editor:
  * ocean quad (Shader191 SDF), flat province cells (Shader189; mode 2 in the
@@ -23,7 +25,8 @@ export class OriginalEditorLayer {
   private coast = new Graphics();
   private parchment = new Sprite();
   private built?: { grid: OriginalGrid; elevations: FmsDocument['elevations']; preset: OriginalPreset };
-  private mode: OriginalLandMode = 'height-palette';
+  private mode: OriginalEditorMode = 'height-palette';
+  private biome?: Float32Array;
   private destroyed = false;
   constructor(private onReady: () => void = () => {}) {
     this.parchment.blendMode = 'multiply';
@@ -31,7 +34,7 @@ export class OriginalEditorLayer {
     void Assets.load<Texture>(parchmentUrl).then(texture => { if (this.destroyed) return; this.parchment.texture = texture; this.onReady(); });
   }
   /** Rebuild only when the grid, heights or preset changed. */
-  update(grid: OriginalGrid, doc: FmsDocument, preset: OriginalPreset, mode: OriginalLandMode): OriginalEditorStats | null {
+  update(grid: OriginalGrid, doc: FmsDocument, preset: OriginalPreset, mode: OriginalEditorMode): OriginalEditorStats | null {
     if (this.destroyed) return null;
     const started = performance.now();
     if (this.built?.grid !== grid || this.built.elevations !== doc.elevations || this.built.preset !== preset) {
@@ -41,7 +44,8 @@ export class OriginalEditorLayer {
       this.cells?.destroy(); this.cells = new OriginalCellMesh(grid, doc.elevations);
       this.container.addChildAt(this.cells.mesh, this.container.getChildIndex(this.sea) + 1);
       this.destroyRivers();
-      const rivers = originalRiverGeometry(grid, doc); this.riverCount = rivers.stats.rivers;
+      const climate = originalClimate(grid, doc), rivers = originalRiverGeometry(grid, doc, climate); this.riverCount = rivers.stats.rivers;
+      this.biome = originalBiomeLinear(grid, originalBiomeIds(grid, doc, climate));
       this.rivers = originalRiverMesh(rivers);
       this.container.addChildAt(this.rivers, this.container.getChildIndex(this.cells.mesh) + 1);
       this.coast.clear();
@@ -50,10 +54,14 @@ export class OriginalEditorLayer {
       const rect = originalParchmentRect(grid.width, grid.height);
       this.parchment.visible = preset.parchment; this.parchment.position.set(rect.x, rect.y); this.parchment.width = rect.width; this.parchment.height = rect.height;
       this.built = { grid, elevations: doc.elevations, preset };
-      this.mode = mode === 'height-palette' ? 'height-background' : 'height-palette';
+      this.mode = mode === 'height-palette' ? 'biome' : 'height-palette';
       this.coastChains = coast.chains;
     }
-    if (this.mode !== mode) { const heights = doc.elevations; this.cells!.setColors(cell => originalCellColor(heights[cell], mode, null, 0)); this.mode = mode; }
+    if (this.mode !== mode) {
+      const heights = doc.elevations, biome = mode === 'biome' ? this.biome : undefined, land = mode === 'biome' ? 'height-background' : mode;
+      this.cells!.setColors(cell => originalCellColor(heights[cell], land, null, 0, biome?.subarray(cell * 3, cell * 3 + 3)));
+      this.mode = mode;
+    }
     return { landCells: this.cells!.cells.length, coastChains: this.coastChains, rivers: this.riverCount, buildMs: performance.now() - started, mode };
   }
   private coastChains = 0;

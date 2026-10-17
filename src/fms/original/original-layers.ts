@@ -83,8 +83,9 @@ export class OriginalCellMesh {
 const channels = (color: number) => [(color >> 16 & 255) / 255, (color >> 8 & 255) / 255, (color & 255) / 255];
 /** Land color with an optional state color laid over at the preset's
  * StateMapTransparency (inferred alpha = _Transparency), mixed in linear space. */
-export function originalCellColor(height: number, mode: OriginalLandMode, state: number | null, alpha: number): [number, number, number] {
-  const base = originalLandLinear(height, mode);
+export function originalCellColor(height: number, mode: OriginalLandMode, state: number | null, alpha: number, linearBase?: ArrayLike<number>): [number, number, number] {
+  // linearBase: Shader189 mode 0, the per-vertex biome color (already linear).
+  const base = linearBase ? [linearBase[0], linearBase[1], linearBase[2]] : originalLandLinear(height, mode);
   if (state === null) return base.map(linearToSrgb) as [number, number, number];
   const s = channels(state).map(srgbToLinear);
   return base.map((v, i) => linearToSrgb(v + (s[i] - v) * alpha)) as [number, number, number];

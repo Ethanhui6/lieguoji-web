@@ -23,8 +23,24 @@ import {armyStrength47} from './army-strength47';
 import {fmsStateLineColor,fmsStateOutlines,FMS_STATE_LINE_WIDTH} from '../state-line';
 import type {TacticsState} from './tactics-model';
 
-/** One prefab Disc radius (1 local unit x 0.23 scale) in map units. */
+/** One prefab local unit in map units: World.CreateCity sets localScale =
+ * _burgCityLabelScale (1) x cityCircleScale (.23) x GetCityScale(type), where
+ * Capital/HolyCity are 1.5 and Port/Fortress/City 1; 0.15 world per map unit. */
 const ORIGINAL_CITY_UNIT=Math.fround(.23)/(240/1600);
+const ORIGINAL_CAPITAL_UNIT=ORIGINAL_CITY_UNIT*1.5;
+/** PortFinal/Harbor (child scale 2): black disc .4, shaft (0,-.36)-(0,-1.24)
+ * and an arc r .69 at (0,-.683) from -2.5307 to -.6109 rad, both .3 thick,
+ * white disc .15 on top. Unity y-up is flipped to map y-down. Its two small
+ * Triangle flukes are not drawn: their rotation was not recovered. */
+function originalPortIcon(g:Graphics,x:number,y:number){
+  const k=ORIGINAL_CITY_UNIT*2,w=.3*k;
+  g.circle(x,y,.4*k).fill(0x000000);
+  g.moveTo(x,y+.36*k).lineTo(x,y+1.24*k).stroke({width:w,color:0x000000});
+  const cy=y+.683*k,r=.69*k;g.moveTo(x+Math.cos(-2.5307)*r,cy-Math.sin(-2.5307)*r);
+  for(let i=1;i<=24;i++){const a=-2.5307+(-.6109+2.5307)*i/24;g.lineTo(x+Math.cos(a)*r,cy-Math.sin(a)*r);}
+  g.stroke({width:w,color:0x000000});
+  g.circle(x,y,.15*k).fill(0xffffff);
+}
 
 export class PlayMap {
   readonly layer = new Container();
@@ -224,7 +240,8 @@ export class PlayMap {
     for (const city of world.cities) {
       const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
       this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:false});
-      if(!capital&&this.originalIcons)marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);
+      if(!capital&&this.originalIcons&&naval?.portControl?.[city.provinceId])originalPortIcon(marks,x,y);
+      else if(!capital&&this.originalIcons)marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);
       else if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
     const capitalFont=detail==='overview'?13:15;
@@ -309,7 +326,7 @@ export class PlayMap {
     // center. Keep capitals above terrain/country labels and ordinary cities.
     const capitalLayer=new Container();this.layer.addChild(capitalLayer);
     for(const capital of this.capitals){const x=capital.point.x/scale,y=capital.point.y/scale,icon=new Graphics();capitalLayer.addChild(icon);
-      if(this.originalIcons)icon.circle(x,y,1.3*ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.885*ORIGINAL_CITY_UNIT).fill(0xffffff).circle(x,y,.43*ORIGINAL_CITY_UNIT).fill(0x000000);
+      if(this.originalIcons)icon.circle(x,y,1.3*ORIGINAL_CAPITAL_UNIT).fill(0x000000).circle(x,y,.885*ORIGINAL_CAPITAL_UNIT).fill(0xffffff).circle(x,y,.43*ORIGINAL_CAPITAL_UNIT).fill(0x000000);
       else icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
     }
     for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;

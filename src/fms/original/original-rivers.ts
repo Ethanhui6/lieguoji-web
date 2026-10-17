@@ -1,6 +1,5 @@
 import { Geometry, GlProgram, Mesh, Shader } from 'pixi.js';
-import { generateFmsClimateGrid } from '../climate';
-import { deriveFmsClimateRivers } from '../climate-rivers';
+import { originalClimate, type OriginalClimate } from './original-biomes';
 import { recoveredRiverControls, recoveredRiverThickness } from '../river-shape';
 import type { FmsDocument, FmsPoint } from '../model';
 import type { OriginalGrid } from './original-grid';
@@ -37,12 +36,8 @@ export function originalRiverInterpolation(mapLength: number): number {
 export interface OriginalRiverData { paths: number[][]; flux: Uint16Array; precipitation: Uint8Array }
 
 /** generateFmsClimateGrid + deriveFmsClimateRivers on the grid's own cells. */
-export function originalRivers(grid: OriginalGrid, doc: FmsDocument): OriginalRiverData {
-  const heights = Uint8Array.from(doc.elevations, h => Math.min(100, Math.max(0, h)));
-  const { precipitation } = generateFmsClimateGrid(heights, grid.cellsX, grid.cellsY);
-  // Voronoi neighbors (shared visible edges), not raw Delaunay hull fans.
-  const rivers = deriveFmsClimateRivers({ ...doc, neighbors: grid.neighbors }, precipitation, false);
-  return { paths: rivers.paths, flux: rivers.flux, precipitation };
+export function originalRivers(grid: OriginalGrid, doc: FmsDocument, climate: OriginalClimate = originalClimate(grid, doc)): OriginalRiverData {
+  return { paths: climate.rivers.paths, flux: climate.rivers.flux, precipitation: climate.precipitation };
 }
 
 /** World.GetSharedEdgeMid for every adjacent cell pair. */
@@ -115,8 +110,8 @@ export function originalRiverRibbon(path: readonly FmsPoint[], out: number[]): v
 
 export interface OriginalRiverGeometry { positions: Float32Array; stats: { algorithm: string; rivers: number; points: number; triangles: number } }
 
-export function originalRiverGeometry(grid: OriginalGrid, doc: FmsDocument): OriginalRiverGeometry {
-  const { paths } = originalRivers(grid, doc), mids = originalSharedEdgeMids(grid), out: number[] = [];
+export function originalRiverGeometry(grid: OriginalGrid, doc: FmsDocument, climate?: OriginalClimate): OriginalRiverGeometry {
+  const { paths } = originalRivers(grid, doc, climate), mids = originalSharedEdgeMids(grid), out: number[] = [];
   let points = 0;
   for (const cells of paths) { const path = originalRiverPath(originalRiverPoints(grid, doc.elevations, cells, mids)); points += path.length; originalRiverRibbon(path, out); }
   const positions = Float32Array.from(out);

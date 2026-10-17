@@ -8,6 +8,7 @@ import type { OriginalGrid } from './original-grid';
 import { OriginalCellMesh, originalCellColor, originalCoast, originalSeaTexture } from './original-layers';
 import { ORIGINAL_PRESETS, originalParchmentRect, type OriginalPreset } from './original-style';
 import { originalRiverGeometry, originalRiverMesh } from './original-rivers';
+import { originalBiomeIds, originalBiomeLinear, originalClimate } from './original-biomes';
 import type { Geometry, Mesh, Shader } from 'pixi.js';
 
 /** The playable world drawn the original's way, with the same surface the
@@ -28,7 +29,7 @@ export class OriginalPlayRenderer {
   private preset: OriginalPreset = ORIGINAL_PRESETS[0];
   private heights?: ArrayLike<number>;
   private document?: FmsDocument;
-  private rivers?: { source: FmsDocument; mesh: Mesh<Geometry, Shader> };
+  private rivers?: { source: FmsDocument; mesh: Mesh<Geometry, Shader>; biome: Float32Array };
   private states: { owner: Int32Array; color: (province: number) => number | null } | null = null;
   readonly coast: ReturnType<typeof originalCoast>;
   constructor(private grid: OriginalGrid, heights: ArrayLike<number>, private onDisplayError: (error: unknown) => void = error => { throw error; }) {
@@ -76,17 +77,19 @@ export class OriginalPlayRenderer {
       this.buildSea();
       this.cells?.destroy(); this.cells = new OriginalCellMesh(this.grid, this.heights);
       this.scene.addChildAt(this.cells.mesh, this.scene.getChildIndex(this.sea) + 1);
+      this.buildRivers();
       this.recolor();
       this.canvas.dataset.originalCells = String(this.cells.cells.length);
-      this.buildRivers();
     } catch (error) { this.onDisplayError(error); }
   }
   private buildRivers(): void {
     const doc = this.document; if (!doc || !this.cells) return;
     if (this.rivers?.source !== doc) {
       this.destroyRivers();
-      const geometry = originalRiverGeometry(this.grid, doc);
-      this.rivers = { source: doc, mesh: originalRiverMesh(geometry) };
+      const climate = originalClimate(this.grid, doc), ids = originalBiomeIds(this.grid, doc, climate), geometry = originalRiverGeometry(this.grid, doc, climate);
+      this.rivers = { source: doc, mesh: originalRiverMesh(geometry), biome: originalBiomeLinear(this.grid, ids) };
+      const counts = new Array<number>(13).fill(0); this.cells.cells.forEach(cell => counts[ids[cell]]++);
+      this.canvas.dataset.originalBiomes = JSON.stringify(counts);
       this.canvas.dataset.originalRivers = JSON.stringify(geometry.stats);
     }
     this.scene.addChildAt(this.rivers.mesh, this.scene.getChildIndex(this.cells.mesh) + 1);
@@ -99,9 +102,13 @@ export class OriginalPlayRenderer {
   private recolor(): void {
     const cells = this.cells, heights = this.heights; if (!cells || !heights) return;
     const states = this.states, alpha = this.preset.stateMapTransparency, mode = this.preset.heightBackground ? 'height-background' : 'height-palette';
+    // Without the political overlay (terrain view) the land is Shader189
+    // mode 0: the per-cell biome color (DisplayBiomHeightMap).
+    const biome = !states ? this.rivers?.biome : undefined;
+    if (this.initialized) this.canvas.dataset.originalLand = biome ? 'biome' : mode;
     cells.setColors(cell => {
       const province = states ? states.owner[cell] : -1, color = province >= 0 ? states!.color(province) : null;
-      return originalCellColor(heights[cell], mode, color, alpha);
+      return originalCellColor(heights[cell], mode, color, alpha, biome?.subarray(cell * 3, cell * 3 + 3));
     });
   }
   private draw(): void { if (this.initialized && !this.destroyed) this.app.render(); }

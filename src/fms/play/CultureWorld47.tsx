@@ -271,7 +271,9 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
   }
   // Loads and recovery also enter through this fallback. ACKs have already
   // installed their paths synchronously, so rendering cannot install them twice.
-  useEffect(()=>{if(snapshot)installAcceptedDisplay(snapshot,instantDisplay.current);},[snapshot,renderFault]);
+  // A queued passive effect may belong to an older React commit than the
+  // latest ACK. It must never reinstall an already superseded accepted path.
+  useEffect(()=>{if(snapshot&&snapshot===current.current)installAcceptedDisplay(snapshot,instantDisplay.current);},[snapshot,renderFault]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
   useEffect(()=>{
     if(!runId||!host.current||!current.current)return;
@@ -352,6 +354,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
           const diagnosticInterval=richDiagnostics&&alpha<1?16:100;
           if(now-lastDiagnostic>=diagnosticInterval||alpha===1&&settled!==motion.current.revision||!isPlaying.current){
             canvas.dataset.displayTick=String(motion.current.tick(now));
+            if(richDiagnostics)canvas.dataset.acceptedTick=String(current.current!.run.clock.tick);
             if(richDiagnostics){canvas.dataset.motionRevision=String(motion.current.revision);canvas.dataset.displayPositions=JSON.stringify({armies:[...frame.armies],fleets:[...frame.fleets]});canvas.dataset.displayUnits=JSON.stringify(map.unitPositions());}
             lastDiagnostic=now;
           }

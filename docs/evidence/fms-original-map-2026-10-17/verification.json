@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-17",
+  "status": "partial",
+  "task": "WEB-02-02",
+  "sourceCommit": "5806ae6d8edb9617ed6fdbd46402652a30505988",
+  "implementationCommit": "35a83b2",
+  "engine": "6c81a872b487ad24505b3a6cd05fec48be6ff0b19311a9e791102c6baff97e99",
+  "artifact": ".autopilot/fms-original-map-checked",
+  "url": "http://127.0.0.1:5351/?original=1",
+  "binding": "127.0.0.1 only; restart needed after session",
+  "recovered": {
+    "basicMapFormat": "AES-256-CBC zero IV -> Base64 -> GZip -> JSON (SaveSystem.DecryptString); key kept private, not in repo/dist",
+    "grids": {
+      "20k": [
+        188,
+        106,
+        19928
+      ],
+      "30k": [
+        231,
+        130,
+        30030
+      ],
+      "40k": [
+        267,
+        150,
+        40050
+      ],
+      "80k": [
+        377,
+        212,
+        79924
+      ]
+    },
+    "timeManager": {
+      "secondsPerDay": 0.1
+    },
+    "parchmentEffect": "Custom/ParchmentEffect sharedassets0#187: c=m+strength*(p*m*color-m); level0 strength1 white -> m*p; tiling 249.3x137.2 world units",
+    "landModes": "Shader189 mode1 gray=1-h/100 (UseHeightMapBackground), mode2 palette",
+    "presets": 8,
+    "zoom": "PlayerController ZoomMin 5 (interpreted as ortho half-height)"
+  },
+  "checks": {
+    "unit": {
+      "files": 3,
+      "passed": 16
+    },
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "distArtifacts": 113,
+    "browser": {
+      "expected": 2,
+      "passed": 2
+    },
+    "screenshots": [
+      "p1-full",
+      "p1-zoom",
+      "p8-full",
+      "palette-full",
+      "mobile-full",
+      "g40-full"
+    ],
+    "fullSuite": "not_run"
+  },
+  "frozen": {
+    "engine": "f2b7865d7890e40d4ceb9e8e5ffd3df7f2f9932987fd86346df3f8f57d34c11c",
+    "file": "engine-f2b7.js",
+    "bytes": 1413669,
+    "sha256": "233bd1847872546355cc63a478dfd7964de56c6c8f45c461074809a8a24a1dfe",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-borders47-checked-original-bytes",
+    "journalVersion": 2,
+    "byteEqual": true,
+    "registered": 34
+  },
+  "remaining": [
+    "States/burgs/cultures on the original grid; biome mode-0 colors",
+    "Playable world still on the old 1536 square triangle model",
+    "Original UI from level0 RectTransforms not yet rebuilt",
+    "Simulation batch scheduling (10 days/s) not yet ported",
+    "No physical iPhone/user visual acceptance"
+  ],
+  "physicalIphone": false,
+  "userVisualAcceptance": false,
+  "originalEquivalent": false,
+  "uploaded": false,
+  "productionUnchanged": true
+}

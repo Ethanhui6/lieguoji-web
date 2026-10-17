@@ -1,3 +1,9 @@
+# 当前检查点：移植路线重定，原作格网+原作画法地图首批（2026-10-17）
+
+用户认为网页全盘不像原作并给出安装目录。分析见 [FMS_PORT_ANALYSIS_2026-10-17.md](FMS_PORT_ANALYSIS_2026-10-17.md)：无源工程，走“以原作数据为准的重建”。已恢复内置地图存档格式（密钥私有）、原作1600×900抖动格网四档、SecondsPerDay=0.1（每秒10日）、ParchmentEffect整帧乘羊皮纸、Shader189灰度底图、8个显示预设。新预览 ?original=1：原作格网上运行已恢复模板，逐格纯色、SDF海、原作海岸、羊皮纸。源码35a83b2/5806ae6（冻结f2b7），产物 .autopilot/fms-original-map-checked，本机 http://127.0.0.1:5351/?original=1。检查见 [结果](evidence/fms-original-map-2026-10-17/RESULT.md)，键 webRebuild.originalMapPortCheckpoint。下一批：原作格网上的国家/城市/地貌显示，然后把可玩世界迁到原作格网与渲染，再做原作界面与分批调度模拟。无上传。
+
+---
+
 # 当前检查点：原作国界描边与平滑海岸海洋渐变（2026-10-17）
 
 只读静态恢复原作 UpdateStateLine/SetStateLines：国界与海岸同用 SmoothBorderLines（CurveBasis 4），线宽 stateLineThickness 0.25 世界单位（1.667 地图单位），颜色 AdjustColor(DeepColor,+0.2,−0.2)、DeepColor=AdjustColor(color,+0.1,−0.05)，海岸线 z 更靠前盖住海岸段国界。文化世界政区视图现按此描相邻两国陆上国界（网页省份多边形与海陆分界不重合，海岸段交给海岸线，属适配）。海洋距离场改为到同一条平滑海岸曲线、减去原作 SDF 源线半带宽 4 地图单位（1.2 世界单位，静态推断）。源码 52910cb/c28ec7a（冻结 d4f0 原 Worker）/358a0ee，产物 .autopilot/fms-borders47-checked，引擎 f2b7…，本机 http://127.0.0.1:5340/?fms=1（会话后需重启）；中间 f1f6 仅自检、已停服未冻结。单测 33、lint/typecheck/build99、桌面浏览器 5/5＋手机 1/1、plan/15/24 通过；同视角前后图见 [结果](evidence/fms-borders47-2026-10-17/RESULT.md)，恢复细节 ORIGINAL_BORDERS.md，键 webRebuild.culture47BordersCheckpoint。下一批：省份多边形超出海岸的小块、玩家国/选中国界线宽，再到 40 倍内陆细节与文字。未跑完整套件，无真机/用户视觉验收，无上传。

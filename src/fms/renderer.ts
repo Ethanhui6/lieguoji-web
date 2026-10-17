@@ -225,7 +225,7 @@ export class FmsRenderer {
     this.draw();
   }
   private selectOriginal(doc: FmsDocument): void {
-    if (doc.width !== 1600 || doc.height !== 900) { this.applyOriginal(null); return; }
+    if (doc.width !== 1600 || doc.height !== 900) { this.applyOriginal(null); this.original = undefined; return; }
     if (this.original?.points === doc.points) { this.applyOriginal(this.original.grid); return; }
     this.applyOriginal(null);
     const entry: NonNullable<typeof this.original> = { points: doc.points, grid: null };this.original = entry;
@@ -233,7 +233,8 @@ export class FmsRenderer {
   }
   private applyOriginal(grid: OriginalGrid | null): void {
     const doc = this.currentDocument, entry = this.original;
-    if (!grid || !doc || !entry) {
+    // A late grid lookup must never be applied to a different document.
+    if (!grid || !doc || !entry || entry.points !== doc.points || grid.points.length !== doc.points.length) {
       if (entry?.layer) { entry.layer.destroy(); entry.layer = undefined; }
       if (this.mesh) this.mesh.visible = true; this.rivers.visible = true; if (this.riverMesh) this.riverMesh.visible = true;
       if (this.initialized) delete this.canvas.dataset.editorRenderer;

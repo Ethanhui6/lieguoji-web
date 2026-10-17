@@ -237,10 +237,12 @@ export class PlayMap {
       return {point,size,width:box.width};
     });
     this.cities=[];
+    // Province.GetProvinceCityType: a city on a sea-route port province is a Port.
+    const portProvinces=new Set(naval?.graph.ports.map(port=>port.provinceId)??[]);
     for (const city of world.cities) {
       const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
       this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:false});
-      if(!capital&&this.originalIcons&&naval?.portControl?.[city.provinceId])originalPortIcon(marks,x,y);
+      if(!capital&&this.originalIcons&&portProvinces.has(city.provinceId))originalPortIcon(marks,x,y);
       else if(!capital&&this.originalIcons)marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);
       else if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }

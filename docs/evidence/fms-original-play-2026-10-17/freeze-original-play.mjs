@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const dir='.autopilot/fms-original-map-checked',meta=JSON.parse(fs.readFileSync(dir+'/build.json')),file='engine-6c81.js',manifest='src/fms/play/culture47-frozen.json',entries=JSON.parse(fs.readFileSync(manifest));
+if(meta.culture47Fingerprint!=='6c81a872b487ad24505b3a6cd05fec48be6ff0b19311a9e791102c6baff97e99')throw Error('wrong original engine');
+if(entries.some(e=>e.engine===meta.culture47Fingerprint||e.file===file))throw Error('already frozen');
+const src=dir+'/assets/'+fs.readdirSync(dir+'/assets').find(f=>/^culture47.worker-.*\.js$/.test(f)),bytes=fs.readFileSync(src),target='compat/culture47/'+file;
+fs.writeFileSync(target,bytes,{flag:'wx'});
+const entry={engine:meta.culture47Fingerprint,file,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex'),rule:'real-culture-zh-politics-journal-2',protocol:2,source:'culture47-original-map-checked-original-bytes',journalVersion:2};
+entries.push(entry);fs.writeFileSync(manifest,JSON.stringify(entries,null,2)+'\n');
+const test='src/fms/play/culture47-verification.test.ts';let t=fs.readFileSync(test,'utf8');const old="{file:'engine-f2b7.js',bytes:1413669}";
+if(!t.includes(old))throw Error('test insertion not found');fs.writeFileSync(test,t.replace(old,old+",{file:'"+file+"',bytes:"+bytes.length+"}"));
+const f='src/fms/play/culture47-client.ts';let s=fs.readFileSync(f,'utf8');const anchor="'engine-f2b7.js':oldF2b7",imp="import oldF2b7 from '../../../compat/culture47/engine-f2b7.js?url';";
+if(!s.includes(anchor)||!s.includes(imp))throw Error('client insertion not found');
+s=s.replace(imp,imp+"\nimport old6c81 from '../../../compat/culture47/engine-6c81.js?url';").replace(anchor,anchor+",'engine-6c81.js':old6c81");fs.writeFileSync(f,s);
+fs.mkdirSync('.autopilot/fms-original-play',{recursive:true});fs.writeFileSync('.autopilot/fms-original-play/frozen.json',JSON.stringify({...entry,byteEqual:fs.readFileSync(target).equals(bytes),registered:entries.length},null,2)+'\n');console.log(JSON.stringify(entry));

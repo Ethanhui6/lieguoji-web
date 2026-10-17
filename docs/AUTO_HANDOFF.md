@@ -1,3 +1,9 @@
+# 当前检查点：可玩世界已迁到原作格网与原作画法（2026-10-17）
+
+新整图默认原作2万格（可选3万/4万/旧方形，确认时才切换格网）；原作模板直接在原作格网生成；原作格网上的文化世界用 OriginalPlayRenderer：逐格灰度高程+按格国家色（预设透明度，alpha 含义为推断）、SDF海、原作海岸、羊皮纸相乘，省份多边形只画轮廓/国界。模拟规则与存档不变，旧方形世界仍用旧渲染。源码e0cf9c7，冻结6c81，产物 .autopilot/fms-original-play-checked，本机 http://127.0.0.1:5352/?fms=1。单测65、浏览器回归7/7、桌面与手机尺寸完整流程通过；见 [结果](evidence/fms-original-play-2026-10-17/RESULT.md)，键 webRebuild.originalPlayCheckpoint。下一批：编辑器换原作渲染、河流/地貌色/城市图标/字体，然后原作分批调度模拟（每秒10日）与原作界面。无上传。
+
+---
+
 # 当前检查点：移植路线重定，原作格网+原作画法地图首批（2026-10-17）
 
 用户认为网页全盘不像原作并给出安装目录。分析见 [FMS_PORT_ANALYSIS_2026-10-17.md](FMS_PORT_ANALYSIS_2026-10-17.md)：无源工程，走“以原作数据为准的重建”。已恢复内置地图存档格式（密钥私有）、原作1600×900抖动格网四档、SecondsPerDay=0.1（每秒10日）、ParchmentEffect整帧乘羊皮纸、Shader189灰度底图、8个显示预设。新预览 ?original=1：原作格网上运行已恢复模板，逐格纯色、SDF海、原作海岸、羊皮纸。源码35a83b2/5806ae6（冻结f2b7），产物 .autopilot/fms-original-map-checked，本机 http://127.0.0.1:5351/?original=1。检查见 [结果](evidence/fms-original-map-2026-10-17/RESULT.md)，键 webRebuild.originalMapPortCheckpoint。下一批：原作格网上的国家/城市/地貌显示，然后把可玩世界迁到原作格网与渲染，再做原作界面与分批调度模拟。无上传。

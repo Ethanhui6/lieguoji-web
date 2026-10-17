@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-17",
+  "status": "partial",
+  "task": "WEB-03-01",
+  "sourceCommit": "e0cf9c73775c8ffcca33223208a1264288a75d7e",
+  "engine": "f8e2f3ae1b5c95fcc47380d77bc1522ef47fb2efeb172aff696f103be0e56bc9",
+  "artifact": ".autopilot/fms-original-play-checked",
+  "url": "http://127.0.0.1:5352/?fms=1",
+  "binding": "127.0.0.1 only; restart needed after session",
+  "changes": [
+    "New full maps default to the original 20k BasicMap grid (20k/30k/40k or old square selectable); grid switch only on confirm",
+    "Recovered templates generate directly on the original grid",
+    "Culture worlds on an original grid render with OriginalPlayRenderer: flat Voronoi cells, Shader189 gray background, per-cell state color at StateMapTransparency (alpha inferred), SDF sea, Voronoi-edge coastline, ParchmentEffect multiply",
+    "Cell-to-province display mapping by triangle-centroid votes; every province keeps a cell",
+    "Play zoom capped at the original ZoomMin on original grids",
+    "Froze previous checked engine 6c81"
+  ],
+  "simulationRulesChanged": false,
+  "checks": {
+    "unit": {
+      "files": 6,
+      "passed": 65
+    },
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "distArtifacts": 114,
+    "browser": {
+      "expected": 7,
+      "passed": 7
+    },
+    "flows": {
+      "desktop": "full map -> 60 cities -> run -> save -> cold restore tick 3000, no errors",
+      "mobile": "430x932 same flow tick 2520, no errors"
+    },
+    "fullSuite": "not_run"
+  },
+  "frozen": {
+    "engine": "6c81a872b487ad24505b3a6cd05fec48be6ff0b19311a9e791102c6baff97e99",
+    "file": "engine-6c81.js",
+    "bytes": 1413669,
+    "sha256": "a7c8d4066805ddbb6ce633a3ab58786b2eb6458c7280d4117bf1e5e451e1509a",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-original-map-checked-original-bytes",
+    "journalVersion": 2,
+    "byteEqual": true,
+    "registered": 35
+  },
+  "observed": {
+    "gridCells": 19928,
+    "landCells": 9032,
+    "foundingSeconds": "~8 in browser",
+    "note": "1x advanced 3000-3480 ticks (25-29 days) in ~8s on 20k grid; not a controlled benchmark"
+  },
+  "remaining": [
+    "Editor still draws the original grid with the old triangle renderer",
+    "Rivers, biome (mode 0) colors, city icons and label fonts not yet original",
+    "Small cities count (24) fails on many-island maps (existing partitioner limit)",
+    "Batch-scheduled simulation at 10 days/s not yet ported",
+    "No physical iPhone/user visual acceptance"
+  ],
+  "physicalIphone": false,
+  "userVisualAcceptance": false,
+  "originalEquivalent": false,
+  "uploaded": false,
+  "productionUnchanged": true
+}

@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import type {FoundingForces47} from './civilization47-forces';
 import {createCombatStrengthIndex47,visibleCombatMarkers47,type CombatMarker47} from './combat-map47';
-import {warDetail} from './war-view';
+import {createWarDetailGeometry,warDetail,type WarDetail} from './war-view';
 
 type Run=Pick<FoundingForces47,'world'|'navy'>;
 const key=(kind:'army'|'fleet',id:string)=>JSON.stringify([kind,id]);
@@ -12,11 +12,16 @@ const makeRun=()=>({
  navy:{fleets:[{id:'f',ships:3,status:'sailing'},{id:'g',ships:2,status:'sailing'}]}
 }) as unknown as Run;
 const contact=(id:string,a:string,b:string,x=10,y=10):CombatMarker47=>({id,kind:'contact',point:{x,y},participants:2,progress:null,pairs:[[a,b]]});
+function previousDetail(world:Run['world'],scale:number,zoom:number):WarDetail{
+ const area=world.provinces.reduce((sum,p)=>sum+Math.abs(p.polygon.reduce((s,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return s+a.x*b.y-b.x*a.y;},0))/2,0);
+ const diameter=Math.sqrt(area/Math.max(1,world.provinces.length))*zoom/scale;
+ return diameter<32?'overview':diameter<70?'regional':'local';
+}
 
 /** Before-index presentation contract. Keep this independent of the new
  * implementation to compare ranking, aggregation and limits across cameras. */
 function previousVisible(markers:readonly CombatMarker47[],r:Run,mapScale:number,view:typeof camera,size:typeof viewport):CombatMarker47[]{
- const detail=warDetail(r.world,mapScale,view.scale),strength=new Map<string,number>(),ships=new Map<string,number>(),armies=new Set<string>();
+ const detail=previousDetail(r.world,mapScale,view.scale),strength=new Map<string,number>(),ships=new Map<string,number>(),armies=new Set<string>();
  for(const a of r.world.armies){const id=key('army',a.id);strength.set(id,a.status==='destroyed'?0:a.troops);if(a.troops>0&&a.status!=='destroyed')armies.add(id);}
  for(const f of r.navy.fleets){const id=key('fleet',f.id),count=f.status==='lost'?0:f.ships;ships.set(id,count);strength.set(id,count*5000);}
  const forces=(m:CombatMarker47)=>new Set((m.pairs??[]).flat()),weight=(m:CombatMarker47)=>[...forces(m)].reduce((n,id)=>n+(strength.get(id)??0),0);
@@ -33,16 +38,55 @@ function previousVisible(markers:readonly CombatMarker47[],r:Run,mapScale:number
 }
 
 describe('explicit combat strength display snapshot',()=>{
- it('reuses indexed strengths without reading every army or fleet again',()=>{
-  const run=makeRun();let troopReads=0,shipReads=0;
+ it('reuses indexed strengths and geometry without reading forces or polygon coordinates again',()=>{
+  const run=makeRun();let troopReads=0,shipReads=0,coordinateReads=0;
   Object.defineProperty(run.world.armies[0],'troops',{get:()=>{troopReads++;return 3000;}});
   Object.defineProperty(run.navy.fleets[0],'ships',{get:()=>{shipReads++;return 3;}});
-  const index=createCombatStrengthIndex47(run);troopReads=0;shipReads=0;
+  for(const point of run.world.provinces[0].polygon){const {x,y}=point;Object.defineProperties(point,{x:{get:()=>{coordinateReads++;return x;}},y:{get:()=>{coordinateReads++;return y;}}});}
+  const index=createCombatStrengthIndex47(run);expect(coordinateReads).toBeGreaterThan(0);troopReads=0;shipReads=0;coordinateReads=0;
   const markers=[contact('land/a/1',key('army','a'),key('army','b'))];
-  for(let i=0;i<5;i++)expect(visibleCombatMarkers47(markers,run,1,camera,viewport,index)).toHaveLength(1);
-  expect({troopReads,shipReads}).toEqual({troopReads:0,shipReads:0});
+  for(const zoom of [.1,.32,.7,1,2])expect(visibleCombatMarkers47(markers,run,1,{...camera,scale:zoom},viewport,index)).toHaveLength(1);
+  expect({troopReads,shipReads,coordinateReads}).toEqual({troopReads:0,shipReads:0,coordinateReads:0});
   visibleCombatMarkers47(markers,run,1,camera,viewport);
-  expect(troopReads).toBeGreaterThan(0);expect(shipReads).toBeGreaterThan(0);
+  expect(troopReads).toBeGreaterThan(0);expect(shipReads).toBeGreaterThan(0);expect(coordinateReads).toBeGreaterThan(0);
+ });
+ it('skips geometry and force collections when there are no combat markers',()=>{
+  const run=makeRun(),index=createCombatStrengthIndex47(run);let reads=0;
+  const {provinces,armies}=run.world,{fleets}=run.navy;
+  Object.defineProperties(run.world,{provinces:{get:()=>{reads++;return provinces;}},armies:{get:()=>{reads++;return armies;}}});
+  Object.defineProperty(run.navy,'fleets',{get:()=>{reads++;return fleets;}});
+  expect(visibleCombatMarkers47([],run,1,camera,viewport,index)).toEqual([]);
+  expect(visibleCombatMarkers47([],run,1,camera,viewport)).toEqual([]);
+  expect(reads).toBe(0);
+ });
+ it('keeps geometry live for unindexed callers after in-place polygon edits',()=>{
+  const run=makeRun(),view={...camera,scale:.2},markers=[contact('land/a/1',key('army','c'),key('army','d'))];
+  expect(warDetail(run.world,1,view.scale)).toBe('overview');
+  expect(visibleCombatMarkers47(markers,run,1,view,viewport)).toEqual([]);
+  for(const point of run.world.provinces[0].polygon){point.x*=2;point.y*=2;}
+  expect(warDetail(run.world,1,view.scale)).toBe('regional');
+  expect(visibleCombatMarkers47(markers,run,1,view,viewport)).toHaveLength(1);
+  for(const point of run.world.provinces[0].polygon){point.x*=2;point.y*=2;}
+  expect(warDetail(run.world,1,view.scale)).toBe('local');
+  expect(visibleCombatMarkers47(markers,run,1,view,viewport)).toHaveLength(1);
+ });
+ it('rejects old geometry for a replacement world even when its navy is unchanged',()=>{
+  const run=makeRun(),index=createCombatStrengthIndex47(run),next={world:structuredClone(run.world),navy:run.navy},view={...camera,scale:.2};
+  for(const point of next.world.provinces[0].polygon){point.x*=2;point.y*=2;}
+  expect(warDetail(run.world,1,view.scale,index.geometry)).toBe('overview');
+  expect(warDetail(next.world,1,view.scale,index.geometry)).toBe('regional');
+  const markers=[contact('land/a/1',key('army','c'),key('army','d'))];
+  expect(visibleCombatMarkers47(markers,next,1,view,viewport,index)).toEqual(previousVisible(markers,next,1,view,viewport));
+  expect(visibleCombatMarkers47(markers,next,1,view,viewport,index)).toHaveLength(1);
+ });
+ it('preserves the exact 32 and 70 pixel detail boundaries across map scales',()=>{
+  const run=makeRun(),geometry=createWarDetailGeometry(run.world);
+  const cases:[number,WarDetail][]=[[.31999999,'overview'],[.32,'regional'],[.69999999,'regional'],[.7,'local']];
+  for(const scale of [1,2,5])for(const [zoom,detail]of cases){
+   expect(previousDetail(run.world,scale,zoom*scale)).toBe(detail);
+   expect(warDetail(run.world,scale,zoom*scale)).toBe(detail);
+   expect(warDetail(run.world,scale,zoom*scale,geometry)).toBe(detail);
+  }
  });
  it('reads new snapshot troop loss, destruction and lost fleets even if given an old index',()=>{
   const original=makeRun(),oldIndex=createCombatStrengthIndex47(original);

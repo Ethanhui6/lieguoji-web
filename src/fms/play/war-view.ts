@@ -13,10 +13,19 @@ export interface WarSite{
   resistance?:{remaining:number;maximum:number};
 }
 export type WarDetail='overview'|'regional'|'local';
-/** Detail depends on the actual size of provinces on screen, not device pixels. */
-export function warDetail(world:World,scale:number,zoom:number):WarDetail{
+export type WarDetailGeometry={readonly world:World;readonly meanProvinceDiameter:number};
+function meanProvinceDiameter(world:World){
   const area=world.provinces.reduce((sum,p)=>sum+Math.abs(p.polygon.reduce((s,a,i)=>{const b=p.polygon[(i+1)%p.polygon.length];return s+a.x*b.y-b.x*a.y;},0))/2,0);
-  const diameter=Math.sqrt(area/Math.max(1,world.provinces.length))*zoom/scale;
+  return Math.sqrt(area/Math.max(1,world.provinces.length));
+}
+/** Explicit accepted-snapshot geometry. Do not mutate the world's provinces
+ * or polygon coordinates while reusing it. Ordinary calls remain live. */
+export function createWarDetailGeometry(world:World):WarDetailGeometry{
+  return {world,meanProvinceDiameter:meanProvinceDiameter(world)};
+}
+/** Detail depends on the actual size of provinces on screen, not device pixels. */
+export function warDetail(world:World,scale:number,zoom:number,geometry?:WarDetailGeometry):WarDetail{
+  const diameter=(geometry?.world===world?geometry.meanProvinceDiameter:meanProvinceDiameter(world))*zoom/scale;
   return diameter<32?'overview':diameter<70?'regional':'local';
 }
 /** A site is an existing contact or siege, never a decorative war simulation. */

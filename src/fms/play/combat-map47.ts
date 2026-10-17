@@ -3,13 +3,14 @@ import type {FoundingForces47} from './civilization47-forces';
 import {armySpatialFor47} from './army-geography47';
 import {readArmySpace47} from './army-space47';
 import {activeSiegesFromSpace47} from './siege-display47';
-import {warDetail} from './war-view';
+import {createWarDetailGeometry,warDetail,type WarDetailGeometry} from './war-view';
 
 export type CombatMarker47={id:string;kind:'contact'|'siege';point:Point;participants:number;progress:number|null;pairs?:[string,string][]};
 type CombatStrengthRun47=Pick<FoundingForces47,'world'|'navy'>;
 export type CombatStrengthIndex47={
  readonly world:CombatStrengthRun47['world'];readonly navy:CombatStrengthRun47['navy'];
  readonly strength:ReadonlyMap<string,number>;readonly ships:ReadonlyMap<string,number>;readonly armies:ReadonlySet<string>;
+ readonly geometry:WarDetailGeometry;
 };
 /** Explicitly index one accepted display snapshot. Its world/navy must not be
  * mutated while the index is reused: reference checks reject another snapshot,
@@ -18,7 +19,7 @@ export function createCombatStrengthIndex47(r:CombatStrengthRun47):CombatStrengt
  const strength=new Map<string,number>(),ships=new Map<string,number>(),armies=new Set<string>();
  for(const a of r.world.armies){const key=JSON.stringify(['army',a.id]);strength.set(key,a.status==='destroyed'?0:a.troops);if(a.troops>0&&a.status!=='destroyed')armies.add(key);}
  for(const f of r.navy.fleets){const key=JSON.stringify(['fleet',f.id]),count=f.status==='lost'?0:f.ships;ships.set(key,count);strength.set(key,count*5000);}
- return {world:r.world,navy:r.navy,strength,ships,armies};
+ return {world:r.world,navy:r.navy,strength,ships,armies,geometry:createWarDetailGeometry(r.world)};
 }
 /** Read the actual 47 contact ledger. Legacy battle/sea-contact collections
  * intentionally stay empty; neither old province anchors nor clock pulses
@@ -45,7 +46,8 @@ export function displayCombatMarkers47(markers:readonly CombatMarker47[],points:
  * far-away skirmishes and combine nearby marks of the same actual site. Use a
  * representative real contact point, never an average across distant battles. */
 export function visibleCombatMarkers47(markers:readonly CombatMarker47[],r:CombatStrengthRun47,mapScale:number,camera:{x:number;y:number;scale:number},viewport:{width:number;height:number},index?:CombatStrengthIndex47):CombatMarker47[]{
- const detail=warDetail(r.world,mapScale,camera.scale),{strength,ships,armies}=index?.world===r.world&&index.navy===r.navy?index:createCombatStrengthIndex47(r);
+ if(!markers.length)return [];
+ const {strength,ships,armies,geometry}=index?.world===r.world&&index.navy===r.navy?index:createCombatStrengthIndex47(r),detail=warDetail(r.world,mapScale,camera.scale,geometry);
  const ranked=markers.map(marker=>{
   const forces=new Set((marker.pairs??[]).flat()),weight=[...forces].reduce((n,id)=>n+(strength.get(id)??0),0);
   return {marker,forces,weight,site:marker.id.split('/').slice(0,2).join('/')};

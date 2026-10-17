@@ -1,7 +1,7 @@
-import type {ArmyTravel47} from './army-travel47-state';
+import type {ArmyTravel47,TravelSegment47} from './army-travel47-state';
 import type {TravelGraph47,TravelCell47} from './army-travel47-graph';
 
-type Proof={graph:TravelGraph47;version:number;nodes:number[];origin:object;destination:object|undefined;allSea:boolean};
+type Proof={graph:TravelGraph47;version:number;nodes:number[];origin:object;destination:object|undefined;allSea:boolean;segments?:Map<number,TravelSegment47>};
 type Window={proofs:WeakMap<object,Proof>;graphs:Map<TravelGraph47,{size:number;cells:Map<number,{ref:TravelCell47;content:string}>}>};
 let active:Window|undefined;
 export const isOwnedTravelWindow47=()=>!!active;
@@ -31,6 +31,25 @@ export function hasOwnedTravelProof47(s:ArmyTravel47,g:TravelGraph47):boolean {
  * reject the complete candidate at the existing per-cell commit check. */
 export function ownedTravelAllSea47(s:ArmyTravel47,g:TravelGraph47):boolean|undefined {
   return hasOwnedTravelProof47(s,g)?active!.proofs.get(s)!.allSea:undefined;
+}
+/** Static segment geometry belongs to the same private proof, not a position
+ * or progress witness. Clones share its frozen route leaves but choose their
+ * own leg. Never expose the cached wrapper: callers may decorate a result.
+ * Its original cell/point references keep graph edits visible to the existing
+ * full JSON commit check; they are not independently certified or frozen. */
+export function ownedTravelSegment47(s:ArmyTravel47,g:TravelGraph47):TravelSegment47|undefined {
+  if(!hasOwnedTravelProof47(s,g))return;
+  const segment=active!.proofs.get(s)!.segments?.get(s.leg);
+  return segment?{...segment}:undefined;
+}
+/** Called only with freshly computed geometry; null terminal segments need no
+ * cache allocation. Keep a separate wrapper on the first read as well. */
+export function rememberOwnedTravelSegment47(s:ArmyTravel47,g:TravelGraph47,segment:TravelSegment47):TravelSegment47 {
+  if(hasOwnedTravelProof47(s,g)){
+    const proof=active!.proofs.get(s)!;
+    (proof.segments??=new Map()).set(s.leg,{...segment});
+  }
+  return segment;
 }
 /** Called only AFTER the public static topology/endpoints have been checked. */
 export function rememberOwnedTravel47(s:ArmyTravel47,g:TravelGraph47):void {

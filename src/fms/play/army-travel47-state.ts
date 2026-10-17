@@ -1,5 +1,5 @@
 import type {Point} from '../../sim/types';
-import {hasOwnedTravelProof47,rememberOwnedTravel47,cloneTravel47} from './owned-travel47';
+import {hasOwnedTravelProof47,rememberOwnedTravel47,cloneTravel47,ownedTravelSegment47,rememberOwnedTravelSegment47} from './owned-travel47';
 import {findArmyTravelPath47,insideTravelCell47,type TravelPolicy47,type TravelGraph47,type TravelCell47} from './army-travel47-graph';
 type TravelBody47={armyId:string;origin:Point;nodes:number[];leg:number;offset:number;crossed:boolean;status:'moving'|'arrived'|'blocked'|'halted'};
 /** V1 is unchanged. V2 explicitly saves an exact final point; old records are
@@ -12,11 +12,12 @@ export type TravelSegment47={kind:'gate';a:TravelCell47;b:TravelCell47;start:Poi
 const distance=(a:Point,b:Point)=>Math.hypot(a.x-b.x,a.y-b.y);
 /** Both movement engines and previews consume this geometry. */
 export function armyTravelSegment47(s:ArmyTravel47,g:TravelGraph47):TravelSegment47|null{
- if(s.version===2&&s.nodes.length===1)return{kind:'local',cell:g.cells.get(s.nodes[0])!,start:s.origin,endPoint:s.destination,distance:distance(s.origin,s.destination)};
+ const known=ownedTravelSegment47(s,g);if(known)return known;
+ if(s.version===2&&s.nodes.length===1)return rememberOwnedTravelSegment47(s,g,{kind:'local',cell:g.cells.get(s.nodes[0])!,start:s.origin,endPoint:s.destination,distance:distance(s.origin,s.destination)});
  const a=g.cells.get(s.nodes[s.leg])!,b=g.cells.get(s.nodes[s.leg+1]);if(!b)return null;
  const link=a.links.find(l=>l.to===b.id);if(!link)return null;
  const start=s.leg===0?s.origin:a.center,endPoint=s.version===2&&s.leg===s.nodes.length-2?s.destination:b.center,toGate=distance(start,link.gate);
- return{kind:'gate',a,b,start,gate:link.gate,endPoint,toGate,distance:toGate+distance(link.gate,endPoint)};
+ return rememberOwnedTravelSegment47(s,g,{kind:'gate',a,b,start,gate:link.gate,endPoint,toGate,distance:toGate+distance(link.gate,endPoint)});
 }
 /** Validate real topology and distance before accepting a saved mixed path.
  * This geometry guard does not replace run/Army identity and diplomatic guards. */

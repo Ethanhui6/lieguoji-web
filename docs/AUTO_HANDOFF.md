@@ -1,3 +1,9 @@
+# 当前检查点：原作地貌色、首都比例与港口图标（2026-10-18）
+
+原作格网世界的地形视图与编辑器气候地貌显示改用原作 Shader189 模式 0：颜色取 Unity Biomes..cctor 的 13 色（非 main.mjs 调色板），本格×10 加非海洋邻格平均（线性空间）。首都图标按 World.CreateCity/GetCityScale ×1.5；港口按原作 specifyBurgs + IsBurgPortQualified 判定并画 PortFinal 锚形。湖泊在原作中未启用（内陆水即海面色）。提交 4e15c6f…2e59d71，冻结 2db0；产物 .autopilot/fms-biomes47-checked，引擎 6c6f…，本机 http://127.0.0.1:5360/?fms=1（会话后需重启）。单测 41、lint/typecheck/build118、桌面 8/8＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-biomes47-2026-10-18/RESULT.md)，键 webRebuild.originalBiomesPortsCheckpoint。下一批：地图字体、原作分批调度（每秒10日）、原作界面、要塞/圣城图标，之后修 4 个既有 compat 存档用例。无上传。
+
+---
+
 # 当前检查点：编辑器原作画法与原作城市图标（2026-10-18）
 
 编辑器在原作格网上改用 OriginalEditorLayer：SDF 海、逐格纯色（高度视图用 Shader189 模式 2，其余模式 1）、原作河流、平滑海岸墨线、羊皮纸；笔刷/保护区/诊断不变。原作格网世界的城市改为原作 Shapes 预制件 CityMain（黑 1/白 0.56）与 CityCapitalFinal（黑 1.3/白 0.885/黑 0.43），缩放 0.23 世界单位，随地图缩放。修复了过期格网查询套到其他文档的问题。源码 aa8ef46/1966b17，冻结 d7e7（174dfec）；产物 .autopilot/fms-icons47-checked，引擎 2db0…，本机 http://127.0.0.1:5356/?fms=1（会话后需重启）。单测 23、lint/typecheck/build117、桌面浏览器 8/8＋手机 1/1、plan/15/24 通过；4 个 compat 存档用例在上一产物也失败，属既有问题。见 [结果](evidence/fms-icons47-2026-10-18/RESULT.md)，键 webRebuild.originalEditorIconsCheckpoint。下一批：既有 compat 失败、湖泊、地貌色、港口/要塞图标、字体、原作分批调度（每秒10日）、原作界面。无上传。

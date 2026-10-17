@@ -113,6 +113,11 @@ test('a default full-world map can found countries and advance live simulation',
   await expect(map).toHaveAttribute('data-renderer','original');
   const rivers=JSON.parse((await map.getAttribute('data-original-rivers'))!);
   expect(rivers.algorithm).toBe('recovered-original-grid-rivers-v1');expect(rivers.rivers).toBeGreaterThan(20);expect(rivers.triangles).toBeGreaterThan(rivers.rivers);
+  const icons=JSON.parse((await map.getAttribute('data-city-icons'))!);expect(icons).toMatchObject({original:true,capitals:6});expect(icons.cities+icons.ports).toBe(54);
+  await expect(map).toHaveAttribute('data-original-land','height-background');
+  await page.getByRole('button',{name:'切换地形地图'}).click();await expect(map).toHaveAttribute('data-original-land','biome');
+  const biomes=JSON.parse((await map.getAttribute('data-original-biomes'))!);expect(biomes[0]).toBe(0);expect(biomes.filter((n:number)=>n>0).length).toBeGreaterThan(2);
+  await page.getByRole('button',{name:'切换地形地图'}).click();await expect(map).toHaveAttribute('data-original-land','height-background');
   const initialPositions=await map.getAttribute('data-force-positions');
   await page.getByRole('button',{name:'继续时间',exact:true}).click();
   await expect.poll(async()=>Number(await app.getAttribute('data-day')),{timeout:90000}).toBeGreaterThanOrEqual(4);

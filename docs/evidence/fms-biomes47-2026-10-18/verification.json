@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-18",
+  "status": "partial",
+  "task": "WEB-02-02",
+  "sourceCommit": "2e59d71cda0b3c95ba5c1330124a5ce245ce3dce",
+  "commits": [
+    "4e15c6f",
+    "3b0e1d1",
+    "9191950",
+    "8c0884d",
+    "2e59d71"
+  ],
+  "engine": "6c6f3bc4f063fd5a2f793f427b5a06f49c54b1e81cab78d58586f8c046641f67",
+  "artifact": ".autopilot/fms-biomes47-checked",
+  "url": "http://127.0.0.1:5360/?fms=1",
+  "binding": "127.0.0.1 only; restart needed after session",
+  "changes": [
+    "Shader189 mode 0 biome colors from Biomes..cctor with GetDrawProvinceMeshVertices neighbor blend; terrain view and editor climate display",
+    "Capital icon x1.5 per World.CreateCity/GetCityScale",
+    "Original port classification (main.mjs specifyBurgs + IsBurgPortQualified) and PortFinal anchor icon",
+    "Froze 2db0"
+  ],
+  "simulationRulesChanged": false,
+  "displayOnly": true,
+  "measured": {
+    "seed1337": {
+      "capitals": 6,
+      "ports": 1,
+      "cities": 53,
+      "biomeCounts": [
+        0,
+        1599,
+        296,
+        2015,
+        473,
+        2322,
+        234,
+        1908,
+        86,
+        16,
+        6,
+        77,
+        0
+      ]
+    }
+  },
+  "checks": {
+    "unit": {
+      "files": 9,
+      "passed": 41
+    },
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "distArtifacts": 118,
+    "browserDesktop": {
+      "expected": 8,
+      "passed": 8
+    },
+    "browserMobile": {
+      "expected": 1,
+      "passed": 1
+    },
+    "plan": true,
+    "planTests": 15,
+    "releasePolicyTests": 24,
+    "fullSuite": "not_run"
+  },
+  "frozen": {
+    "engine": "2db0821ff0f4797180fc2be067d5b6b2aebceb94ec81e667ccda15696e4593e0",
+    "file": "engine-2db0.js",
+    "bytes": 1413747,
+    "sha256": "a57fa315651c3e7001831d4b8e766ee4ff52e1b9ba78217c7a5c772315b1e2e0",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-fms-icons47-checked-original-bytes",
+    "journalVersion": 2,
+    "byteEqual": true,
+    "registered": 39
+  },
+  "intermediateEngines": [
+    "9a0ea0ab",
+    "36b6b000",
+    "a636b02b"
+  ],
+  "lakes": "Original lake calls are commented out in main.mjs; inland water shows the sea quad, already true on the original grid",
+  "remaining": [
+    "Fortress and holy city icons",
+    "Port fluke triangles",
+    "Map fonts",
+    "Original batch scheduling 10 days/s",
+    "Original UI",
+    "4 pre-existing compat save tests"
+  ],
+  "physicalIphone": false,
+  "userVisualAcceptance": false,
+  "originalEquivalent": false,
+  "uploaded": false,
+  "productionUnchanged": true
+}

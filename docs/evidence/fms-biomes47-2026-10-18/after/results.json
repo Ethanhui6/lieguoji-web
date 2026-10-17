@@ -1,0 +1,84 @@
+{
+  "port": "5360",
+  "tag": "after",
+  "build": {
+    "commit": "2e59d71cda0b3c95ba5c1330124a5ce245ce3dce",
+    "engine": "6c6f3bc4f063fd5a2f793f427b5a06f49c54b1e81cab78d58586f8c046641f67"
+  },
+  "anchor": {
+    "x": 720,
+    "y": 450
+  },
+  "views": [
+    {
+      "factor": 1,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 0.81,
+        "x": 72,
+        "y": 85.5
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "icons": {
+        "original": true,
+        "cities": 53,
+        "ports": 1,
+        "capitals": 6,
+        "portCities": 1
+      },
+      "tick": "0"
+    },
+    {
+      "factor": 4,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 3.240000037061398,
+        "x": -1872.0000296491185,
+        "y": -1008.000016677629
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "icons": {
+        "original": true,
+        "cities": 53,
+        "ports": 1,
+        "capitals": 6,
+        "portCities": 1
+      },
+      "tick": "0"
+    },
+    {
+      "factor": 12,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 9.720000118577238,
+        "x": -7056.00009486179,
+        "y": -3924.0000533597567
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "icons": {
+        "original": true,
+        "cities": 53,
+        "ports": 1,
+        "capitals": 6,
+        "portCities": 1
+      },
+      "tick": "0"
+    }
+  ],
+  "errors": []
+}

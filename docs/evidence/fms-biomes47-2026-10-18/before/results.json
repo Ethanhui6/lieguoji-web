@@ -1,0 +1,63 @@
+{
+  "port": "5356",
+  "tag": "before",
+  "build": {
+    "commit": "1966b1723c206fa27d0ac635f025e1c872d0a27b",
+    "engine": "2db0821ff0f4797180fc2be067d5b6b2aebceb94ec81e667ccda15696e4593e0"
+  },
+  "anchor": {
+    "x": 720,
+    "y": 450
+  },
+  "views": [
+    {
+      "factor": 1,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 0.81,
+        "x": 72,
+        "y": 85.5
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "tick": "0"
+    },
+    {
+      "factor": 4,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 3.240000037061398,
+        "x": -1872.0000296491185,
+        "y": -1008.000016677629
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "tick": "0"
+    },
+    {
+      "factor": 12,
+      "projection": {
+        "scale": 0.625,
+        "zoom": 9.720000118577238,
+        "x": -7056.00009486179,
+        "y": -3924.0000533597567
+      },
+      "rivers": {
+        "algorithm": "recovered-original-grid-rivers-v1",
+        "rivers": 292,
+        "points": 17923,
+        "triangles": 35262
+      },
+      "tick": "0"
+    }
+  ],
+  "errors": []
+}

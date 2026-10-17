@@ -9,6 +9,9 @@ const files = [];
 // Exact authorized clip atlas; accepting this artifact does not allow other images or raw Unity files.
 const battleAtlasName=/^battle-sword-[A-Za-z0-9_-]{8}\.png$/;
 const battleAtlasHash='12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3f21b3b3';
+// Exact parchment derived from the original's sharedassets0 parchmentfinal2 (2048x2048 JPEG).
+const parchmentName=/^parchment-[A-Za-z0-9_-]{8}\.jpg$/;
+const parchmentHash='a8bb5bed39f2ebd43a812e025b2e65b636aaaa082a2d33381463d54b4eb3633e';
 
 function reject(file, reason) {
   throw new Error(`Publish audit rejected ${file}: ${reason}`);
@@ -41,8 +44,10 @@ function walk(directory, relative = '') {
     }
     if (!stat.isFile()) reject(name, 'only regular files are allowed');
     const battleAtlas=relative==='assets'&&battleAtlasName.test(entry);
+    const parchment=relative==='assets'&&parchmentName.test(entry);
+    if(parchment){const bytes=fs.readFileSync(absolute);if(bytes.length!==840709||createHash('sha256').update(bytes).digest('hex')!==parchmentHash)reject(name,'parchment texture differs from reviewed source');}
     if(battleAtlas){const bytes=fs.readFileSync(absolute);if(bytes.length!==482109||createHash('sha256').update(bytes).digest('hex')!==battleAtlasHash)reject(name,'battle animation atlas differs from reviewed source');}
-    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas);
+    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas||parchment);
     if (!allowed) reject(name, 'not an approved root file or hashed JS/CSS asset');
     files.push(name);
   }
@@ -83,4 +88,4 @@ for(const e of JSON.parse(fs.readFileSync('src/fms/play/culture47-frozen.json','
   const bytes=fs.readFileSync(path.join(root,matches[0]));
   if(bytes.length!==e.bytes||createHash('sha256').update(bytes).digest('hex')!==e.sha256)reject(e.file,'old culture Worker must retain original bytes');
 }
-console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS and the exact reviewed battle atlas.`);
+console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas and parchment.`);

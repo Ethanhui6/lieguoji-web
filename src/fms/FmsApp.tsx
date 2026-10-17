@@ -44,7 +44,7 @@ interface Session {
 interface Stroke { points: CameraPoint[]; tool: Tool; radius: number; height: number; hillHeight: number; hillDecay: number; seed: string; localTemplate: ClickTemplate; preserveCoast: boolean }
 type TerrainPhase = 'idle' | 'generating' | 'preview';
 type TerrainCandidate = { kind:'terrain'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; coastalWidth:number }
-  | { kind:'full-map'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; changedCells:number; landCells:number; template:SeedTerrainTemplate }
+  | { kind:'full-map'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; changedCells:number; landCells:number; template:SeedTerrainTemplate; switchTo?:FmsDocument }
   | { kind:'template'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; changedCells:number; newLandCells:number; preserveCoast:boolean }
   | { kind:'hill'; patch:FmsEditPatch; document:FmsDocument; drainage:FmsDrainage; changedCells:number }
   | { kind:'coast'; document:FmsDocument; result:FmsCoastResult; options:FmsCoastOptions }
@@ -178,9 +178,9 @@ export default function FmsApp() {
   };
   function cancelTerrain(announce=true) {
     generationToken.current++;terrainAbort.current?.abort();terrainAbort.current=null;
-    const s=session.current, hadPreview=terrainCandidate.current!==null;
+    const s=session.current, hadPreview=terrainCandidate.current!==null, resized=terrainCandidate.current?.kind==='full-map'&&!!terrainCandidate.current.switchTo;
     terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);
-    if(s&&hadPreview&&!renderUnavailable.current)showDocument(s,s.history.document);
+    if(s&&hadPreview&&!renderUnavailable.current){showDocument(s,s.history.document);if(resized){s.camera=fitCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);}}
     if(announce)setNotice('已取消地形预览，原地图保持不变。');
   }
   async function generateTemplate(options:FmsTemplateOptions){
@@ -215,24 +215,24 @@ export default function FmsApp() {
     s.gestures.interrupt();setExpanded(false);setShowOriginal(false);setGenerationKind('full-map');setTerrainPhase('generating');setNotice('正在生成整张地图；现有地图在确认前不会改变。');
     const token=++generationToken.current,controller=new AbortController();terrainAbort.current=controller;
     try {
+      // A different blank grid is only a candidate: the map changes when the preview is confirmed.
       const current=s.history.document,have=await originalGridIdOf(current)??'square';
-      if(generationToken.current!==token||session.current!==s)return;
+      let switchTo:FmsDocument|undefined;
       if(have!==fullMapGrid){
-        // An undoable, saved grid switch on the still-empty ocean.
         const base={worldId:current.worldId,revision:current.revision+1,version:current.version};
         const fresh=fullMapGrid==='square'?await createFmsDocument():await createFmsOriginalDocument(fullMapGrid,base);
-        const next:FmsDocument=fullMapGrid==='square'?{...fresh,...base,...(base.version===2?{terrainLocks:new Uint8Array(fresh.points.length)}:{})}:fresh;
-        if(generationToken.current!==token||session.current!==s)return;
-        s.history=switchBlankGrid(s.history,next);const switched=s.history.document;showDocument(s,switched);s.camera=fitCamera(switched,s.viewport);s.renderer.setCamera(s.camera);refresh(s);
+        switchTo=fullMapGrid==='square'?{...fresh,...base,...(base.version===2?{terrainLocks:new Uint8Array(fresh.points.length)}:{})}:fresh;
       }
+      if(generationToken.current!==token||session.current!==s)return;
+      const source=switchTo??current;
       const client=terrainClient.current??(terrainClient.current=new FmsTerrainClient());
-      const result=await client.fullMap(s.history.document,options,{signal:controller.signal});
+      const result=await client.fullMap(source,options,{signal:controller.signal});
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
-      const prepared=await prepareFmsFullMapPreview(s.history.document,result,options);
+      const prepared=await prepareFmsFullMapPreview(source,result,options);
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       if(!prepared.patch.changes.length){setTerrainPhase('idle');setNotice('该种子没有生成可见地形，原地图保持不变。');return;}
-      terrainCandidate.current={kind:'full-map',...prepared,drainage:result.drainage,changedCells:result.stats.changedCells,landCells:result.stats.landCells,template:options.template};
-      showDocument(s,prepared.document,result.drainage);setTerrainPhase('preview');setNotice('整图地形已预览；可移动缩放、对照原图，确认后仍可撤销和保存。');
+      terrainCandidate.current={kind:'full-map',...prepared,drainage:result.drainage,changedCells:result.stats.changedCells,landCells:result.stats.landCells,template:options.template,switchTo};
+      showDocument(s,prepared.document,result.drainage);if(switchTo){s.camera=fitCamera(prepared.document,s.viewport);s.renderer.setCamera(s.camera);}setTerrainPhase('preview');setNotice('整图地形已预览；可移动缩放、对照原图，确认后仍可撤销和保存。');
     }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   }
@@ -287,6 +287,7 @@ export default function FmsApp() {
     const s=session.current,candidate=terrainCandidate.current;if(!s||!candidate||renderUnavailable.current)return;
     s.gestures.interrupt();
     try {
+      if(candidate.kind==='full-map'&&candidate.switchTo)s.history=switchBlankGrid(s.history,candidate.switchTo);
       const doc=candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template'||candidate.kind==='full-map'?s.history.commit(candidate.patch):s.history.replaceDocument(candidate.kind==='coast'?prepareFmsCoastPreview(s.history.document,candidate.result,candidate.options):prepareFmsCoastSmoothPreview(s.history.document,candidate.result,candidate.options),s.history.document.revision);
       showDocument(s,doc,candidate.kind==='terrain'||candidate.kind==='hill'||candidate.kind==='template'||candidate.kind==='full-map'?candidate.drainage:undefined);terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);refresh(s);
       setNotice(candidate.kind==='full-map'?'整图地形已应用，可整步撤销；保存后刷新保留实际版图。':candidate.kind==='template'?'原作模板地形已应用，可整步撤销；保存后刷新保留实际地形。':candidate.kind==='hill'?'山丘已应用，可整步撤销；保存后刷新保留实际高度。':candidate.kind==='terrain'?'自然地形已应用，可整步撤销。保存后刷新仍保留山地和河湖。':candidate.kind==='smooth'?'海岸轮廓已平滑，可整步撤销；保存后刷新保留实际位置。每次确认以当前地图为基准。':'海岸细化已应用，可整步撤销；保存后刷新保留实际轮廓。重调这次细化请先撤销。');

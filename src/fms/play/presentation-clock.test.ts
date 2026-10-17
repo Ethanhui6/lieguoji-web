@@ -43,16 +43,16 @@ describe('bounded visible-world playback',()=>{
   let stop=startPresentationClock({...opts,tickMillis:2});await vi.advanceTimersByTimeAsync(100);expect(counts).toEqual([]);blocked=true;await vi.advanceTimersByTimeAsync(500);stop();blocked=false;
   stop=startPresentationClock({...opts,tickMillis:.5});await vi.advanceTimersByTimeAsync(32);stop();expect(counts).toEqual([54]);expect(tick).toBe(120);
  });
- it('rebases 1x to the previous 4x target without changing saved calendar seconds',async()=>{
+ it('runs 1x at the original 10 days per second without changing saved calendar seconds',async()=>{
   vi.useFakeTimers();const seconds=Math.fround(.1),totals:number[]=[];
   for(const speed of [1,4]){let total=0;const budget=culture47PlaybackBudget(seconds,speed,true);
    expect(budget.maxBatch).toBe(480);
    const stop=startPresentationClock({...budget,playing:()=>true,blocked:()=>false,step:async n=>{total+=n;}});
    await vi.advanceTimersByTimeAsync(1000);stop();totals.push(total);
   }
-  expect(totals[0]).toBeGreaterThanOrEqual(4700);expect(totals[1]/totals[0]).toBeCloseTo(4,1);
+  expect(totals[0]).toBeGreaterThanOrEqual(1180);expect(totals[0]).toBeLessThanOrEqual(1220);expect(totals[1]/totals[0]).toBeCloseTo(4,1);
   expect(culture47PlaybackBudget(seconds,1,false).maxBatch).toBe(120);
-  expect(culture47PlaybackBudget(seconds,1,true).tickMillis).toBe(seconds*1000/480);
+  expect(culture47PlaybackBudget(seconds,1,true).tickMillis).toBe(seconds*1000/120);
  });
  it('honors 1x and 4x elapsed tick budgets when the Worker can keep up',async()=>{
   vi.useFakeTimers();const totals:number[]=[];

@@ -140,6 +140,8 @@ export class PlayMap {
   // filled Discs at prefab scale 0.23 world units, 0.15 world units per map unit.
   private originalIcons=false;
   useOriginalIcons(enabled:boolean){this.originalIcons=enabled;}
+  private iconCounts={cities:0,ports:0,capitals:0,portProvinces:0};
+  iconDiagnostics(){return {original:this.originalIcons,...this.iconCounts};}
   useOriginalStateLines(enabled:boolean){this.originalStateLines=enabled;this.politicalKey='';}
   // The original colors states per Voronoi cell in the terrain renderer; the
   // province polygons then only carry outlines, borders and selection.
@@ -239,12 +241,14 @@ export class PlayMap {
     this.cities=[];
     // Province.GetProvinceCityType: a city on a sea-route port province is a Port.
     const portProvinces=new Set(naval?.graph.ports.map(port=>port.provinceId)??[]);
+    this.iconCounts={cities:0,ports:0,capitals:this.capitals.length,portProvinces:portProvinces.size};
     for (const city of world.cities) {
       const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
       this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:false});
-      if(!capital&&this.originalIcons&&portProvinces.has(city.provinceId))originalPortIcon(marks,x,y);
-      else if(!capital&&this.originalIcons)marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);
-      else if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
+      if(capital){/* capitals are drawn in their own layer below */}
+      else if(this.originalIcons&&portProvinces.has(city.provinceId)){originalPortIcon(marks,x,y);this.iconCounts.ports++;}
+      else if(this.originalIcons){marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);this.iconCounts.cities++;}
+      else marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
     const capitalFont=detail==='overview'?13:15;
     const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);

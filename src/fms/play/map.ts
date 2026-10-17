@@ -23,6 +23,9 @@ import {armyStrength47} from './army-strength47';
 import {fmsStateLineColor,fmsStateOutlines,FMS_STATE_LINE_WIDTH} from '../state-line';
 import type {TacticsState} from './tactics-model';
 
+/** One prefab Disc radius (1 local unit x 0.23 scale) in map units. */
+const ORIGINAL_CITY_UNIT=Math.fround(.23)/(240/1600);
+
 export class PlayMap {
   readonly layer = new Container();
   private retainedLabels=new Map<string,Text>();
@@ -117,6 +120,10 @@ export class PlayMap {
   private originalStateLines=false;
   private stateOutlineKey='';
   private stateOutlines=new Map<string,[number,number][][]>();
+  // Original Shapes city prefabs (sharedassets0 CityMain/CityCapitalFinal):
+  // filled Discs at prefab scale 0.23 world units, 0.15 world units per map unit.
+  private originalIcons=false;
+  useOriginalIcons(enabled:boolean){this.originalIcons=enabled;}
   useOriginalStateLines(enabled:boolean){this.originalStateLines=enabled;this.politicalKey='';}
   // The original colors states per Voronoi cell in the terrain renderer; the
   // province polygons then only carry outlines, borders and selection.
@@ -217,7 +224,8 @@ export class PlayMap {
     for (const city of world.cities) {
       const capital = this.capitals.some(c=>c.cityId===city.id), x = city.position.x / scale, y = city.position.y / scale;
       this.cities.push({id:city.id,provinceId:city.provinceId,name:city.name,x:x*zoom+this.projection.x,y:y*zoom+this.projection.y,capital,label:false});
-      if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
+      if(!capital&&this.originalIcons)marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);
+      else if(!capital)marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
     const capitalFont=detail==='overview'?13:15;
     const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);
@@ -301,7 +309,8 @@ export class PlayMap {
     // center. Keep capitals above terrain/country labels and ordinary cities.
     const capitalLayer=new Container();this.layer.addChild(capitalLayer);
     for(const capital of this.capitals){const x=capital.point.x/scale,y=capital.point.y/scale,icon=new Graphics();capitalLayer.addChild(icon);
-      icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
+      if(this.originalIcons)icon.circle(x,y,1.3*ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.885*ORIGINAL_CITY_UNIT).fill(0xffffff).circle(x,y,.43*ORIGINAL_CITY_UNIT).fill(0x000000);
+      else icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
     }
     for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
       const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:mode==='political'?0x665842:0xeee8cd,width:.65*pixel,alpha:.45});capitalLayer.addChild(line);

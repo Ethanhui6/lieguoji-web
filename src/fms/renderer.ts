@@ -10,6 +10,10 @@ import { createFmsOceanSource, FmsOceanFields, FMS_OCEAN_CONTRACT, FMS_OCEAN_DEE
 import { FMS_COLOR_GLSL, FMS_HEIGHT_PALETTE_CONTRACT, srgbToLinear, type FmsTerrainDisplay } from './height-palette';
 import type { FmsBiomeSurface } from './biome-surface';
 import { FmsBiomeDisplay, type FmsBiomeDisplayState } from './biome-display';
+import { originalGridFor } from './original/original-document';
+import { OriginalEditorLayer } from './original/original-editor-layer';
+import { ORIGINAL_PRESETS } from './original/original-style';
+import type { OriginalGrid } from './original/original-grid';
 
 export type FmsOceanAppearance = 'source' | 'paper';
 
@@ -108,6 +112,8 @@ export class FmsRenderer {
   private oceanAppearanceState: FmsOceanAppearance = 'source';
   private worldId?: string;
   private bound?: Graphics;
+  /** Documents on an original BasicMap grid are drawn the original way. */
+  private original?: { points: FmsDocument['points']; grid: OriginalGrid | null; layer?: OriginalEditorLayer };
   constructor(private onDisplayState:(state:FmsBiomeDisplayState)=>void=()=>{},private onDisplayError:(error:unknown)=>void=error=>{throw error;}){}
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
   get oceanAppearance(): FmsOceanAppearance { return this.oceanAppearanceState; }
@@ -139,6 +145,7 @@ export class FmsRenderer {
       this.oceanUniforms.uniforms.uOceanDeep = colors.deep;
       this.oceanUniforms.update();
     }
+    if (this.original?.grid) this.applyOriginal(this.original.grid);
     this.draw();
   }
   setDocument(doc: FmsDocument, drainage?: FmsDrainage): void {
@@ -214,7 +221,28 @@ export class FmsRenderer {
     this.canvas.dataset.lockedCells=String(doc.terrainLocks?.reduce((sum,value)=>sum+value,0)??0);
     this.canvas.dataset.lockedTriangles=String(lockedTriangles);
     this.biomeFields.select(doc,this.terrainDisplay);
+    this.selectOriginal(doc);
     this.draw();
+  }
+  private selectOriginal(doc: FmsDocument): void {
+    if (doc.width !== 1600 || doc.height !== 900) { this.applyOriginal(null); return; }
+    if (this.original?.points === doc.points) { this.applyOriginal(this.original.grid); return; }
+    this.applyOriginal(null);
+    const entry: NonNullable<typeof this.original> = { points: doc.points, grid: null };this.original = entry;
+    void originalGridFor(doc).then(grid => { if (this.original !== entry || this.destroyed || this.contextLost) return; entry.grid = grid; this.applyOriginal(grid); this.draw(); }, error => this.onDisplayError(error));
+  }
+  private applyOriginal(grid: OriginalGrid | null): void {
+    const doc = this.currentDocument, entry = this.original;
+    if (!grid || !doc || !entry) {
+      if (entry?.layer) { entry.layer.destroy(); entry.layer = undefined; }
+      if (this.mesh) this.mesh.visible = true; this.rivers.visible = true; if (this.riverMesh) this.riverMesh.visible = true;
+      if (this.initialized) delete this.canvas.dataset.editorRenderer;
+      return;
+    }
+    if (!entry.layer) { entry.layer = new OriginalEditorLayer(() => this.draw()); this.scene.addChildAt(entry.layer.container, 0); }
+    if (this.mesh) this.mesh.visible = false; this.rivers.visible = false; if (this.riverMesh) this.riverMesh.visible = false;
+    const stats = entry.layer.update(grid, doc, ORIGINAL_PRESETS[this.oceanAppearanceState === 'paper' ? 7 : 0], this.terrainDisplay === 'height' ? 'height-palette' : 'height-background');
+    if (stats && this.initialized) { this.canvas.dataset.editorRenderer = 'original'; this.canvas.dataset.originalEditor = JSON.stringify({ ...stats, grid: grid.id }); }
   }
   /** Display only: keep candidate geometry, camera, history and caches intact. */
   setTerrainDisplay(display: FmsTerrainDisplay): void {
@@ -231,6 +259,7 @@ export class FmsRenderer {
       if(this.initialized){this.canvas.dataset.terrainDisplay=display;this.canvas.dataset.terrainRequested=state.requested;this.canvas.dataset.biomePending=String(state.pending);this.canvas.dataset.biomeExecution='worker';}
       this.updateBiomeMetrics(surface);
       if(this.currentDocument)this.drawRivers(this.currentDocument,surface);
+      if(this.original?.grid)this.applyOriginal(this.original.grid);
       this.draw();this.onDisplayState(state);
     }catch(error){this.onDisplayError(error);}
   }
@@ -305,5 +334,5 @@ void main(){finalColor=vec4(.322,.498,.533,1.);}`})});
     if(!this.riverMesh)return;
     const {geometry,shader}=this.riverMesh;this.riverMesh.destroy();geometry.destroy(true);shader?.destroy(true);this.riverMesh=undefined;
   }
-  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.close();this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
+  destroy(): void { if(this.destroyed)return; this.destroyed=true;this.oceanFields.clear();this.biomeFields.close();this.original?.layer?.destroy();this.original=undefined;this.currentDocument=undefined; if(!this.initialized)return; this.clearMesh(); this.app.destroy(true,{children:true}); }
 }

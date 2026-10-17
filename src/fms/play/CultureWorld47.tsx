@@ -12,6 +12,7 @@ import {FmsRenderer} from '../renderer';
 import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
+import {originalPortCities} from '../original/original-ports';
 import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
 import {extractFmsOceanCoast} from '../ocean-coast';
@@ -319,7 +320,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
-      const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original){map.useCellPolitics(true);map.useOriginalIcons(true);}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
+      const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original&&grid){map.useCellPolitics(true);map.useOriginalIcons(true);const w=current.current!.run;map.setOriginalPorts(originalPortCities(grid,source,w.world.cities.map(c=>({id:c.id,position:c.position,capital:false})),w.scale));}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
       canvas.dataset.coastline=JSON.stringify({algorithm:FMS_COAST_CURVE,chains:coast.chains,sourceSegments:coast.sourceSegments,points:coast.points,width:FMS_COAST_LINE_WIDTH,color:FMS_COAST_LINE_COLOR});
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);

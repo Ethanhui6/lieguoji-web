@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read culture47AckPipelineCheckpoint and latest AUTO_HANDOFF; verify Git/current executors and checked local5336 service. Source2885924, d06f engine, final checked artifact. Three real changes: priority ACK continuation with synchronous gates; per-ACK motion install/old-effect guard; accepted-run combat index and panel-only repaint avoidance. 6files54, lint/type/build96, plan15/release24, final3/3 desktop browser including real pending preview/save and original02c7 compatibility passed. 56day14checkpoints exact run/frame/motion/actions executed43deb83 and final Worker bytes identical. Repeated ACK-to-next-post gap282-295ms to~2ms; total rates old1.46-2.17 vs new2.73-3.11 days/sec vary, no stable percentage/4x promise. Next improve remaining actual Worker/map-render cost based on measured work, then current coast/detail/typography/contact/cross-sea/history gaps. Do not repeat original02c7 freeze or rebuild plan. Preserve every phase/device/visual/release gate; no uploads.",
+    "nextRecoveryTarget": "Read culture47CoastlineCheckpoint and latest AUTO_HANDOFF. Recovered original B-spline coastline (CurveBasis n=4, 0.25 world units=1.667 map units, #5f5f5f) on culture47 map; engine 96c3 frozen; artifact .autopilot/fms-coastline47-checked on 5338. Next: ocean SDF from smoothed source line, original state-border smoothing (stateLineThickness 0.25, curveAmount 0.5, interpolationPoints 5), then 40x interior detail/typography. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12116,6 +12116,85 @@
       ],
       "boundary": "Local only; old engines/saves and official site preserved. No push, remote PR/Issue/Milestone, Pages/Cloudflare or main writes. No physical/visual/PH completion claim.",
       "evidence": "docs/evidence/fms-residual47-2026-10-17/RESULT.md"
+    },
+    "culture47CoastlineCheckpoint": {
+      "date": "2026-10-17",
+      "status": "partial",
+      "task": "WEB-02-02",
+      "sourceCommit": "730dae038331dc8b1426a5edab9ab4537abf4f60",
+      "implementationCommit": "8e6908473a222b7c14e7b28da00025119304b6fd",
+      "engine": "d4f020333d1a4bf9883074eb49a5cee0dfc9c9e570bf25c46d529d9e635ab037",
+      "artifact": ".autopilot/fms-coastline47-checked",
+      "url": "http://127.0.0.1:5338/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "Recovered MathUtility.Basis/CurveBasis/CurveBasisClosed and SmoothBorderLines(CurveBasis(points,4)) as Float32 web module",
+        "Chain rendered h20 contour (web bridge for Voronoi coast edges) and stroke original coastLineThickness 0.25 world units = 1.667 map units in parchment ink #5f5f5f over political fill",
+        "Freeze previous engine 96c3 original worker bytes"
+      ],
+      "simulationRulesChanged": false,
+      "displayOnly": true,
+      "checks": {
+        "unit": {
+          "files": 3,
+          "passed": 22
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 98,
+        "browserDesktop": {
+          "expected": 4,
+          "passed": 4
+        },
+        "browserMobileCoastline": {
+          "expected": 1,
+          "passed": 1
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run"
+      },
+      "frozen": {
+        "engine": "96c362995bdc39475bcde278f8eea4737e6c1dde3539da9554ad6d8d42149d5e",
+        "file": "engine-96c3.js",
+        "bytes": 1413669,
+        "sha256": "59017af33ebb5aee450ec28f6dea3aed754cfdf80b8d604935869defe8f0ae58",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-residual47-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 32
+      },
+      "measured": {
+        "defaultFullMap": {
+          "coastSegments": 4011,
+          "chains": 300,
+          "curvePoints": 14663
+        },
+        "existingRelaxation": {
+          "maxDisplacement": 1.539,
+          "turningEnergyReductionPercent": 2.28,
+          "ms": 1920,
+          "adopted": false
+        }
+      },
+      "remaining": [
+        "Ocean SDF still from linear contour; original uses smoothed SDF source line",
+        "State borders not yet smoothed with curveAmount/interpolationPoints",
+        "shallowLines purpose unknown",
+        "Web 40x exceeds candidate original zoom range; line ~37px there",
+        "No physical iPhone/user visual acceptance; sustained 4x unmet"
+      ],
+      "physicalIphone": false,
+      "userVisualAcceptance": false,
+      "originalEquivalent": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Display-only recovery; no PH/device/visual completion claim.",
+      "evidence": "docs/evidence/fms-coastline47-2026-10-17/RESULT.md"
     }
   }
 }

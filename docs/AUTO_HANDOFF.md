@@ -1,3 +1,9 @@
+# 当前检查点：原作B样条海岸墨线已恢复并接入文化世界地图（2026-10-17）
+
+从用户自有安装包只读静态恢复 MathUtility.Basis/CurveBasis/CurveBasisClosed 与 SmoothBorderLines（CurveBasis(points,4)），以及 UpdateCoastLine/IsCoastLineEdge 链路、场景 coastLineThickness=0.25 世界单位、SetResolution(1600,900)⇒1地图单位=0.15世界单位、羊皮纸预设海岸色#5f5f5f。网页把真实h20交线串链后套用原作曲线，以1.667地图单位墨线画在国家填色之上；纯显示，陆地/拾取/模拟/存档不变。已有边界松弛平滑在默认整图上只降约2.3%折角，未采用。源码8e69084（海岸）＋730dae0（冻结96c3原Worker 1,413,669字节），产物 .autopilot/fms-coastline47-checked，引擎d4f0…，本机 http://127.0.0.1:5338/?fms=1（会话后需重启）。单测22、lint/typecheck/build98、浏览器桌面4/4＋手机尺寸1/1、plan/15/24通过；同视角1/4/16/40倍前后图见 [结果](evidence/fms-coastline47-2026-10-17/RESULT.md)，恢复细节见 ORIGINAL_COASTLINE.md，键 webRebuild.culture47CoastlineCheckpoint。下一批：海洋SDF改用平滑源线、国界按原作 stateLineThickness/curveAmount/interpolationPoints 平滑，再处理40倍内陆细节与文字。未跑完整套件，无真机/用户视觉验收，无上传。
+
+---
+
 # 当前检查点：战斗几何与私有行军段复用已记录（2026-10-17）
 
 上一批实现 a047449 的证据此前未提交，本次补记：接受快照战斗几何复用、私有同步窗口行军段复用；规则不变。8文件73项、lint/typecheck/build97允许产物、浏览器3/3、56日14检查点全等、d06f原字节31项冻结、plan/15项plan测试/24项发布策略测试通过。暖态核心约少3.4%，浏览器2.28→2.94日/秒仅观察。5337服务续接时已不在监听。读 webRebuild.culture47ResidualReuseCheckpoint 与 [结果](evidence/fms-residual47-2026-10-17/RESULT.md)。下一批：默认整图创建接入已有真实海岸平滑（有界、可预览、可撤销），再处理40倍近景/文字/UI。持续4×未达；全部真机/视觉/PH/发布门不变，无上传。

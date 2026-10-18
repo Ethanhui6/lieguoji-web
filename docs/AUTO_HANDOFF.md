@@ -1,3 +1,13 @@
+# 当前检查点：方案 C 陆军五次帧轮转已接真实军令（2026-10-18）
+
+源码 5306cfa；新世界日志 enable-army-batch/native-five-army-orders-web-v1，每20tick帧按持久游标消费5次军令决策，小列表环绕、玩家接管优先，日结不重复全军AI。原作5默认已由ctor/单例和4份内置地图证实；完整原AI状态机、省/国调度和箭头仍未实现。旧b283原字节冻结；当前引擎 c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71。
+
+40项单测、20项桌面浏览器、1项手机尺寸通过；56日旧规则14检查点全等，新规则480/100拆分除独立世界ID外全等，日志回放tick6720相同。全仓lint/typecheck、构建122允许产物通过。1×依次20秒旧9.99/新9.94日每秒，不声称提速；2×/4×、长期大战和真机未复测。见[结果](evidence/fms-army-batch50-2026-10-18/RESULT.md)，任务键 webRebuild.armyBatch50Checkpoint。
+
+本机 http://127.0.0.1:5364/?fms=1；产物 .autopilot/fms-batch50-checked（与当前dist相同），新建世界体验；旧5363和旧档保留，下次先核实监听。下一批先核实省/国分批实际副作用，再接进攻箭头/原AI；每日经济不可误改每帧。无上传，全部真机/视觉/完整PH门不变。
+
+---
+
 # 当前检查点：接续 Claude 方案 C，保存恢复验收 60/60（2026-10-18）
 
 已核对干净基线 fabb9811，接续 docs/FMS_PORT_ANALYSIS_2026-10-17.md 与 frame49 方案 C。修复三个浏览器测试的旧库/旧初始化规则假设，并消除空值比较误报：42 个冻结引擎兼容与当前世界重复保存、恢复取消、故障恢复、六库未来格式保护，共 60/60 桌面 Chromium 通过，零跳过/重试；相关 ESLint、全仓 TypeScript 通过。生产代码没有改动，未重建或宣称提速。详细 [证据](evidence/fms-frame49-save-repair-2026-10-18/RESULT.md)，任务键 webRebuild.frame49SaveRepairCheckpoint；此前 frame49 的 18/24 历史记录不回写。

@@ -1,0 +1,21 @@
+{
+  "days": 56,
+  "tick": 6720,
+  "batches": [
+    480,
+    100
+  ],
+  "equal": true,
+  "normalized": [
+    "run.id",
+    "run.world.custom.id"
+  ],
+  "reason": "independent new worlds receive distinct generated IDs; all other run data equal",
+  "armyBatch": {
+    "version": 1,
+    "rule": "native-five-army-orders-web-v1",
+    "cursor": 3,
+    "lastTick": 6720,
+    "calls": 1680
+  }
+}

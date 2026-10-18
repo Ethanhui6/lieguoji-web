@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-18",
+  "sourceCommit": "5306cfa83cb95bf4cb8562a5d43ef7ac42881c1a",
+  "priorEngine": "b28381cefe433e367967f088a429cd6969a3de011f630e1a7466ad43f9a5d7a2",
+  "currentEngine": "c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71",
+  "points": 19928,
+  "days": 56,
+  "tick": 6720,
+  "relations": "war",
+  "grid": "original-20k seed1337 continents",
+  "features": 4,
+  "exactRunFrameMotionAndActions": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 653.2088000000003,
+      "currentCoreMs": 1363.7373999999982
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 535.8185999999987,
+      "currentCoreMs": 381.7904000000017
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 310.16219999999885,
+      "currentCoreMs": 293.52670000000217
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 313.4621999999981,
+      "currentCoreMs": 336.8120999999992
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 259.64870000000155,
+      "currentCoreMs": 346.3646000000008
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 320.65090000000055,
+      "currentCoreMs": 563.1807000000008
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 333.0623999999989,
+      "currentCoreMs": 306.56029999999737
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 605.8053,
+      "currentCoreMs": 712.7554999999993
+    },
+    {
+      "day": 36,
+      "priorCoreMs": 435.7292000000016,
+      "currentCoreMs": 635.7692999999999
+    },
+    {
+      "day": 40,
+      "priorCoreMs": 394.29279999999926,
+      "currentCoreMs": 460.72529999999824
+    },
+    {
+      "day": 44,
+      "priorCoreMs": 484.54019999999946,
+      "currentCoreMs": 435.5285999999978
+    },
+    {
+      "day": 48,
+      "priorCoreMs": 425.8947999999982,
+      "currentCoreMs": 578.5567999999985
+    },
+    {
+      "day": 52,
+      "priorCoreMs": 472.6327999999994,
+      "currentCoreMs": 429.9923000000017
+    },
+    {
+      "day": 56,
+      "priorCoreMs": 395.69840000000113,
+      "currentCoreMs": 377.58650000000125
+    }
+  ],
+  "scope": "Sequential compiled Workers, original 20k/6 nations/60 cities/war, retirement/recovery/generations/frame-loop flags, no new army-batch flag. Exact run/frame/motion/actions at 14 checkpoints."
+}

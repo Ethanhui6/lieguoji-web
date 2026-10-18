@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read frame49SaveRepairCheckpoint, originalFrameLoopCheckpoint and latest AUTO_HANDOFF. Claude Plan C frame loop is implemented; 6 stale browser failures and vacuous save assertions repaired, all 60 affected desktop tests passed. Next implement versioned native per-army batch consumption after confirming original defaults and freezing b283 Worker; then province/state scheduling, attack arrows and AI. Do not repeat old coastline work. Artifact .autopilot/fms-frame49-checked on 5363, local only; no uploads.",
+    "nextRecoveryTarget": "Read armyBatch50Checkpoint and latest AUTO_HANDOFF. Plan C: new worlds now journal five-call army order rotation per20tick frame; old b283 frozen. 40 unit,20 desktop,1 mobile-size checks and56day old/split/replay evidence passed. Next verify province/state actual batch defaults and consumers; original arrows and Army.UpdateState branches remain. Do not redo save test repair or rerun old map work. Keep daily economy/month close separate; freeze current Worker before new rules. Local5364, no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13093,6 +13093,28 @@
       "physicalIphone": false,
       "uploaded": false,
       "remaining": "Plan C native batch rotation, original attack arrows and per-army AI remain outstanding; full visual/device gates unchanged."
+    },
+    "armyBatch50Checkpoint": {
+      "date": "2026-10-18",
+      "status": "completed_bounded_slice",
+      "sourceCommit": "5306cfa83cb95bf4cb8562a5d43ef7ac42881c1a",
+      "engine": "c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71",
+      "artifact": ".autopilot/fms-batch50-checked",
+      "url": "http://127.0.0.1:5364/?fms=1",
+      "evidence": "docs/evidence/fms-army-batch50-2026-10-18/RESULT.md",
+      "checks": {
+        "unit": 40,
+        "browserDesktop": 20,
+        "mobileEmulation": 1,
+        "oldRuleExactDays": 56,
+        "splitExactDays": 56,
+        "lint": true,
+        "typecheck": true,
+        "build": true
+      },
+      "originalArmyStateMachineComplete": false,
+      "physicalDevice": false,
+      "uploaded": false
     }
   }
 }

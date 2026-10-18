@@ -1,0 +1,402 @@
+{
+  "date": "2026-10-18",
+  "sourceCommit": "5306cfa83cb95bf4cb8562a5d43ef7ac42881c1a",
+  "engine": "c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71",
+  "artifact": ".autopilot/fms-batch50-checked",
+  "url": "http://127.0.0.1:5364/?fms=1",
+  "checks": {
+    "unitPassed": 40,
+    "unitFiles": 4,
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "approvedArtifacts": 122,
+    "browser": {
+      "startTime": "2026-10-18T09:17:22.338Z",
+      "duration": 77388.467,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "compat": {
+      "startTime": "2026-10-18T09:20:36.941Z",
+      "duration": 45469.165,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "mobileEmulation": {
+      "startTime": "2026-10-18T09:20:47.437Z",
+      "duration": 8261.225,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "physicalDevice": false,
+    "fullSuite": false
+  },
+  "pace": {
+    "prior": {
+      "port": "5363",
+      "tag": "batch50-prior",
+      "log": [
+        [
+          "in",
+          35033,
+          "id,display",
+          222
+        ],
+        [
+          "out",
+          35075,
+          "advance-batch",
+          223
+        ],
+        [
+          "in",
+          35135,
+          "id,display",
+          223
+        ],
+        [
+          "out",
+          35174,
+          "advance-batch",
+          224
+        ],
+        [
+          "in",
+          35233,
+          "id,display",
+          224
+        ],
+        [
+          "out",
+          35277,
+          "advance-batch",
+          225
+        ],
+        [
+          "in",
+          35350,
+          "id,display",
+          225
+        ],
+        [
+          "out",
+          35377,
+          "advance-batch",
+          226
+        ],
+        [
+          "in",
+          35438,
+          "id,display",
+          226
+        ],
+        [
+          "out",
+          35476,
+          "advance-batch",
+          227
+        ],
+        [
+          "in",
+          35537,
+          "id,display",
+          227
+        ],
+        [
+          "out",
+          35575,
+          "advance-batch",
+          228
+        ],
+        [
+          "in",
+          35636,
+          "id,display",
+          228
+        ],
+        [
+          "out",
+          35676,
+          "advance-batch",
+          229
+        ],
+        [
+          "in",
+          35744,
+          "id,display",
+          229
+        ],
+        [
+          "out",
+          35774,
+          "advance-batch",
+          230
+        ],
+        [
+          "in",
+          35847,
+          "id,display",
+          230
+        ],
+        [
+          "out",
+          35875,
+          "advance-batch",
+          231
+        ],
+        [
+          "in",
+          35939,
+          "id,display",
+          231
+        ],
+        [
+          "out",
+          35976,
+          "advance-batch",
+          232
+        ],
+        [
+          "in",
+          36037,
+          "id,display",
+          232
+        ],
+        [
+          "out",
+          36075,
+          "advance-batch",
+          233
+        ],
+        [
+          "in",
+          36136,
+          "id,display",
+          233
+        ],
+        [
+          "out",
+          36176,
+          "advance-batch",
+          234
+        ]
+      ],
+      "speed": "1×",
+      "daysPerSecond": 9.99,
+      "days": 202,
+      "wall": 20.211,
+      "perSecond": [
+        10,
+        10,
+        10,
+        10,
+        11,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        11,
+        10,
+        10,
+        10
+      ],
+      "errors": []
+    },
+    "current": {
+      "port": "5364",
+      "tag": "batch50-new",
+      "log": [
+        [
+          "in",
+          34520,
+          "id,display",
+          204
+        ],
+        [
+          "out",
+          34521,
+          "advance-batch",
+          205
+        ],
+        [
+          "in",
+          34617,
+          "id,display",
+          205
+        ],
+        [
+          "out",
+          34618,
+          "advance-batch",
+          206
+        ],
+        [
+          "in",
+          34718,
+          "id,display",
+          206
+        ],
+        [
+          "out",
+          34720,
+          "advance-batch",
+          207
+        ],
+        [
+          "in",
+          34855,
+          "id,display",
+          207
+        ],
+        [
+          "out",
+          34917,
+          "advance-batch",
+          208
+        ],
+        [
+          "in",
+          35058,
+          "id,display",
+          208
+        ],
+        [
+          "out",
+          35059,
+          "advance-batch",
+          209
+        ],
+        [
+          "in",
+          35144,
+          "id,display",
+          209
+        ],
+        [
+          "out",
+          35145,
+          "advance-batch",
+          210
+        ],
+        [
+          "in",
+          35248,
+          "id,display",
+          210
+        ],
+        [
+          "out",
+          35249,
+          "advance-batch",
+          211
+        ],
+        [
+          "in",
+          35360,
+          "id,display",
+          211
+        ],
+        [
+          "out",
+          35361,
+          "advance-batch",
+          212
+        ],
+        [
+          "in",
+          35457,
+          "id,display",
+          212
+        ],
+        [
+          "out",
+          35458,
+          "advance-batch",
+          213
+        ],
+        [
+          "in",
+          35580,
+          "id,display",
+          213
+        ],
+        [
+          "out",
+          35581,
+          "advance-batch",
+          214
+        ],
+        [
+          "in",
+          35674,
+          "id,display",
+          214
+        ],
+        [
+          "out",
+          35675,
+          "advance-batch",
+          215
+        ],
+        [
+          "in",
+          35764,
+          "id,display",
+          215
+        ],
+        [
+          "out",
+          35765,
+          "advance-batch",
+          216
+        ]
+      ],
+      "speed": "1×",
+      "daysPerSecond": 9.94,
+      "days": 203,
+      "wall": 20.432,
+      "perSecond": [
+        10,
+        11,
+        10,
+        10,
+        10,
+        11,
+        9,
+        11,
+        10,
+        10,
+        10,
+        10,
+        9,
+        6,
+        14,
+        13,
+        10,
+        10,
+        10
+      ],
+      "errors": []
+    }
+  },
+  "simulationRulesChanged": "New worlds only via journalled enable-army-batch; unchanged old world behavior proved separately.",
+  "replay": {
+    "tick": 6720,
+    "actions": 61,
+    "equal": true
+  },
+  "uploaded": false
+}

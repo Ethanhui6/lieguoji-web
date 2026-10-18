@@ -1,4 +1,5 @@
 import type {War46Run} from './war46-model';
+import {frameTicks47,type FrameLoop47} from './frame-loop47';
 import type {ArmyRouteWeights47} from './army-commands47';
 import {advanceActualForces47,advanceOwnedActualForces47,actualForces47,actualContactFrame47,type ForceRun47} from './force-runtime47';
 import {forceKey47} from './force-motion47';
@@ -24,7 +25,10 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   occupation?: (snapshot:T,world:World,space:ArmySpace47)=>ProvinceCombat47;
   /** Owned candidate only. The real47 owner fixes this to its family calendar;
    * the generic military primitive also supports isolated no-family fixtures. */
-  afterTick?: (candidate:T,dailyPending:boolean)=>void;
+  afterTick?: (candidate:T,dailyPending:boolean,frameBoundary:boolean)=>void;
+  /** Virtual frame length (frame-loop47.ts). Movement, combat and per-frame
+   * observers run only at frame boundaries; undefined keeps per-tick rules. */
+  frameTicks?: number;
   afterOccupation?: (candidate:T)=>undefined;
   afterOwnership?: (candidate:T,previousWorld:PreviousOwnership47)=>void;
   portInterval?: (before:T,after:T,from:number,to:number)=>undefined;
@@ -33,7 +37,7 @@ export type MilitaryRules47<T extends MilitaryRun47> = {
   sessionInterval?: (before:T,start:ReturnType<typeof actualContactFrame47>,from:number,stop:number)=>ReturnType<typeof advanceOwnedActualForces47<T>>&{endFrame:ReturnType<typeof actualContactFrame47>};
   sessionOccupationKey?: (candidate:T,space:ArmySpace47)=>string;
   invalidateSessionOccupation?:()=>void;
-  sessionAfterTick?: (candidate:T,dailyPending:boolean)=>'reuse'|'refresh';
+  sessionAfterTick?: (candidate:T,dailyPending:boolean,frameBoundary:boolean)=>'reuse'|'refresh';
   observeMotion?:ForceMotionObserver47;
 };
 function frame(r:MilitaryRun47,ready?:ReturnType<typeof actualContactFrame47>) {
@@ -49,9 +53,9 @@ function frame(r:MilitaryRun47,ready?:ReturnType<typeof actualContactFrame47>) {
 /** Candidate owner uses this after reconciling deaths/contacts outside a
  * military window; surviving eligible forces retain their exact deadlines. */
 export function reconcileMilitaryClock47(r:MilitaryRun47,now:number){
-  const current=frame(r);
-  reconcileAttackClock47(r.forceClock,current.eligible,now);
-  assertForceClock47(r.forceClock,now,new Set(current.forces.map(forceKey47)));
+  const current=frame(r),frameTicks=frameTicks47(r as {frameLoop?:FrameLoop47});
+  reconcileAttackClock47(r.forceClock,current.eligible,now,frameTicks);
+  assertForceClock47(r.forceClock,now,new Set(current.forces.map(forceKey47)),frameTicks);
 }
 function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,rules:MilitaryRules47<T>,known?:ReturnType<typeof frame>) {
   const f=known??frame(r),armyDue=new Set(f.forces.filter(v=>v.kind==='army'&&due.has(forceKey47(v))).map(v=>v.id));
@@ -86,13 +90,16 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
   const untilDay=(input.world.day+1)*TICKS_PER_DAY;
   if(!Number.isSafeInteger(ticks)||ticks<1||input.clock.tick<0||Math.floor(input.clock.tick/TICKS_PER_DAY)!==input.world.day||input.clock.tick+ticks>untilDay) throw Error('军事推进必须在当前日界内；先完成日结再推进。');
   const initial=actualForces47(input);
-  assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)));
+  const F=rules.frameTicks;
+  if(F!==undefined&&(!Number.isSafeInteger(F)||F<1||TICKS_PER_DAY%F!==0))throw Error('原作帧长度无效。');
+  assertForceClock47(input.forceClock,input.clock.tick,new Set(initial.forces.map(forceKey47)),F);
   assertForceDamage47(input.forceDamage,new Set([...input.world.armies.map(a=>forceKey47({kind:'army',id:a.id})),...input.navy.fleets.map(f=>forceKey47({kind:'fleet',id:f.id}))]));
   // Capture before the owned branch can update the input's clock in place.
   const startTick=input.clock.tick,endTick=startTick+ticks;
   let r=owned??cloneMilitaryCandidate47(input);
   const volleys:{at:number;due:string[];hits:number;losses:number}[]=[];
-  let now=startTick,eventCount=0;
+  // Frame worlds hold positions at the last frame boundary between boundaries.
+  let now=F?Math.floor(startTick/F)*F:startTick,eventCount=0;
   let known:ReturnType<typeof frame>|undefined;
   let observedOccupation:string|undefined;
   const observeOccupation=(due:ReadonlySet<string>,ready?:ReturnType<typeof frame>)=>{
@@ -104,23 +111,25 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
     const result=occupy(r,now,due,rules,f);rules.invalidateSessionOccupation?.();observedOccupation=key;return result;
   };
   for(let tick=startTick+1;tick<=endTick;tick++) {
-    for(;;) {
+    const boundary=!F||tick%F===0;
+    if(boundary)for(;;) {
       if(++eventCount>100000)throw Error('军事事件超出预算，原进度未提交。');
       const occupied=observeOccupation(new Set(),known);known=occupied??frame(r);
-      reconcileAttackClock47(r.forceClock,known.eligible,now);
+      reconcileAttackClock47(r.forceClock,known.eligible,now,F);
       const due=new Set(Object.keys(r.forceClock.deadlines).filter(k=>r.forceClock.deadlines[k]<=now).sort());
       if(due.size) {
         // Draw before casualties; every due unit fires from the same snapshot.
-        for(const key of due)rescheduleAttack47(r.forceClock,key,now);
+        for(const key of due)rescheduleAttack47(r.forceClock,key,now,F);
         const out=applyAccountedVolley47(r,due,rules.combat(r));r=out.run;
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});
         // Web simultaneous-unit policy: even dying units fired the volley;
         // only surviving real holders attack/repair resistance or change flags.
         const occupiedAfterVolley=observeOccupation(due);
-        known=occupiedAfterVolley??frame(r);reconcileAttackClock47(r.forceClock,known.eligible,now);
+        known=occupiedAfterVolley??frame(r);reconcileAttackClock47(r.forceClock,known.eligible,now,F);
       }
       if(now===tick)break;
-      const stop=Math.min(tick,...Object.values(r.forceClock.deadlines));
+      // A frame world integrates the whole frame; due attacks wait for its end.
+      const stop=F?tick:Math.min(tick,...Object.values(r.forceClock.deadlines));
       const session=rules.sessionInterval?.(r,known,now,stop);
       if(rules.sessionInterval&&(!session||!session.run||!session.endFrame||!Number.isFinite(session.elapsed)||!Number.isFinite(session.unusedSeconds)))throw Error('私有军事区间必须同步完成，原进度未提交。');
       const moved=session??advanceOwnedActualForces47(r,stop-now,weights,rules.speed,true,rules.observeMotion?(forces,graph,elapsed,contacts)=>rules.observeMotion!(forces,graph,elapsed===stop-now?stop:now+elapsed,contacts):undefined);
@@ -133,17 +142,20 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
     let expired=false;
     for(const [id,until] of Object.entries(r.maritime.retreating))if(until<=tick){delete r.maritime.retreating[id];expired=true;}
     r.clock.tick=tick;r.forceClock.now=tick;
-    rules.afterTick?.(r,tick===untilDay);
-    const observation=rules.sessionAfterTick?.(r,tick===untilDay);
+    rules.afterTick?.(r,tick===untilDay,boundary);
+    const observation=rules.sessionAfterTick?.(r,tick===untilDay,boundary);
     if(expired||observation==='refresh')rules.invalidateSessionOccupation?.();
     if(rules.sessionAfterTick&&observation!=='reuse'&&observation!=='refresh')throw Error('私有观察必须同步完成，原进度未提交。');
+    // Between frame boundaries nothing moves, fires or is observed; only the
+    // calendar advanced. The next boundary rebuilds the frame from the run.
+    if(!boundary){if(rules.afterTick||expired||observation==='refresh')known=undefined;assertForceClock47(r.forceClock,tick,new Set(Object.keys(r.forceClock.deadlines)),F);continue;}
     // Expiry/peace/death can change attack eligibility without moving a point.
     const current=observation==='reuse'&&!rules.afterTick&&!expired&&known?known:frame(r);known=current;
     // Tick settlement may end combat without movement. Record only that ledger;
     // the movement observer already sampled these same positions at its endpoint.
     rules.observeMotion?.([],current.spatial.graph,tick,current.contact.contacts);
-    reconcileAttackClock47(r.forceClock,current.eligible,tick);
-    assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)));
+    reconcileAttackClock47(r.forceClock,current.eligible,tick,F);
+    assertForceClock47(r.forceClock,tick,new Set(current.forces.map(forceKey47)),F);
   }
   return {run:r,volleys,eventCount,dailyPending:r.clock.tick===untilDay};
 }

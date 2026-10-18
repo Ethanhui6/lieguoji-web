@@ -17,6 +17,7 @@ import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
 import {extractFmsOceanCoast} from '../ocean-coast';
 import {FMS_STATE_LINE,FMS_STATE_LINE_WIDTH} from '../state-line';
+import {FRAME_LOOP_RULE47} from './frame-loop47';
 import {deriveFmsCoastCurves,FMS_COAST_CURVE,FMS_COAST_LINE_COLOR,FMS_COAST_LINE_WIDTH} from '../coast-curve';
 import {FmsGestures} from '../gestures';
 import {fitCamera,screenToWorld,resizeCamera,zoomCameraAt} from '../../world/camera';
@@ -204,6 +205,8 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-recovery',rule:ARMY_RECOVERY_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-generations',rule:GENERATIONS_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
+      // New worlds run the original frame loop (frame-loop47.ts); loaded saves keep their own rules.
+      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-frame-loop',rule:FRAME_LOOP_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(motionTicks)motion.current.recordAdvance(motionTicks,performance.now()-started);
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;
       if(command.type==='create'){if(inspectNewSlot)revision.current=newSlot?.revision??null;storageDatabase.current=CULTURE47_GENERATIONS_DATABASE;setLocked(false);}

@@ -1,4 +1,5 @@
 import type {FoundingForces47} from './civilization47-forces';
+import {frameTicks47} from './frame-loop47';
 import type {ArmyRouteWeights47} from './army-commands47';
 import type {SeaGraph} from './sea-path';
 import {issueAutonomousNavalOrders47} from './civilization47-naval-ai';
@@ -48,7 +49,7 @@ export function createSessionNavalObserver47(){
   const s=r.navalAutonomy,now=r.clock.tick;
   assertNavalAutonomy47(r);
   if(now===s.lastTick)return false;
-  if(now!==s.lastTick+1||now>Number.MAX_SAFE_INTEGER-1280||s.revision>=Number.MAX_SAFE_INTEGER)throw Error('海军自主部署必须接续整 tick。');
+  if(now!==s.lastTick+(frameTicks47(r)??1)||now>Number.MAX_SAFE_INTEGER-1280||s.revision>=Number.MAX_SAFE_INTEGER)throw Error('海军自主部署必须接续整 tick。');
   const parts=precheck(r),current=samePrecheck(observedParts,parts)?observed:signature(r);
   if(observed===current&&now<next){s.lastTick=now;s.revision++;assertNavalAutonomy47(r);return false;}
   issueAutonomousNavalOrders47(r,weights,sea);

@@ -1,4 +1,5 @@
 import type {FoundingForces47} from './civilization47-forces';
+import {frameTicks47} from './frame-loop47';
 import {assertNavalAutonomy47,drawNaval47,NAVAL_SCHEDULE_TICKS47,type NavalDecision47} from './civilization47-naval-ai-state';
 import {navalPresence47,reconcilePortLandOwnersOwned47} from './civilization47-ports';
 import {nativeAttackFleets,nativeNavalAttacking} from './native-war/naval-roles';
@@ -22,7 +23,7 @@ import type {SeaGraph} from './sea-path';
 export function issueAutonomousNavalOrders47(r:FoundingForces47,weights:ArmyRouteWeights47,sea:SeaGraph=graphFor46(r)):undefined{
  assertNavalAutonomy47(r);const s=r.navalAutonomy,now=r.clock.tick;
  if(now===s.lastTick)return undefined;
- if(now!==s.lastTick+1||now>Number.MAX_SAFE_INTEGER-1280||s.revision>=Number.MAX_SAFE_INTEGER)throw Error('海军自主部署必须接续整 tick。');
+ if(now!==s.lastTick+(frameTicks47(r)??1)||now>Number.MAX_SAFE_INTEGER-1280||s.revision>=Number.MAX_SAFE_INTEGER)throw Error('海军自主部署必须接续整 tick。');
  reconcilePortLandOwnersOwned47(r,sea);
  const view=navalPresence47(r,sea),space=view.spatial.space,portBefore=JSON.stringify(r.portControl);
  // These dependencies do not change while issuing this tick's fleet orders.

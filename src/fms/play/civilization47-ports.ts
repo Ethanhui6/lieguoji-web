@@ -1,4 +1,5 @@
 import type {MilitaryRun47} from './force-tick47';
+import {frameTicks47,type FrameLoop47} from './frame-loop47';
 import {actualContactFrame47} from './force-runtime47';
 import {armyTravelLocation47} from './army-travel47-state';
 import {forceKey47} from './force-motion47';
@@ -44,8 +45,10 @@ export function advanceSessionPortInterval47(before:PortRun47,after:PortRun47,fr
  return settlePortInterval47(before,after,from,to,sea,start);
 }
 function settlePortInterval47(before:PortRun47,after:PortRun47,from:number,to:number,sea:SeaGraph,start?:ReturnType<typeof actualContactFrame47>):undefined{
- const seconds=(to-from)*before.forceClock.secondsPerTick;
- if(!Number.isFinite(from)||!Number.isFinite(to)||from<before.clock.tick||to>Math.floor(from)+1||to<=from||!Number.isFinite(seconds)||seconds<=0||after.forceClock.secondsPerTick!==before.forceClock.secondsPerTick)throw Error('港湾推进时间段无效。');
+ const seconds=(to-from)*before.forceClock.secondsPerTick,frame=frameTicks47(before as {frameLoop?:FrameLoop47});
+ // Frame worlds integrate one whole virtual frame from its start boundary.
+ const first=frame?Math.floor(before.clock.tick/frame)*frame:before.clock.tick,span=frame??1;
+ if(!Number.isFinite(from)||!Number.isFinite(to)||from<first||to>Math.floor(from)+span||to<=from||!Number.isFinite(seconds)||seconds<=0||after.forceClock.secondsPerTick!==before.forceClock.secondsPerTick)throw Error('港湾推进时间段无效。');
  if(before.transports.cargo.length)throw Error('旧承运记录不能进入实际舰队港湾结算。');
  assertPorts46(before.portControl,before,sea);
  const view=start?presenceFromFrame47(before,sea,start):navalPresence47(before,sea),original=JSON.stringify(after.portControl),s=after.portControl;

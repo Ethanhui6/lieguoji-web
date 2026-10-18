@@ -1,3 +1,9 @@
+# 当前检查点：原作帧循环，1× 基本稳定每秒 10 日（2026-10-18）
+
+方案 C 第 1 批：新世界创建时写入日志动作 enable-frame-loop（original-frame-loop-v1），行军、战斗和每帧观察器按原作虚拟帧推进（每日 6 帧＝每帧 20 tick，与倍速和设备帧率无关），日历与日/月结算不变；进攻截止对齐帧边界，港口区间与海军观察连续性允许一帧。旧存档无此字段，按旧规则运行：65b5 与候选构建 56 日 14 检查点完全一致。新规则分批 480/100 tick 结果相同，日志回放（tick 6720，72 动作）相同。硬件 GPU 浏览器 1× 两轮 9.91/9.99，693 日长跑平均 9.78（后期大战掉到 4–7）；2×/4× 约 16/20，仍受计算限制。提交 d11d06f，冻结 65b5（8eb9f14）；产物 .autopilot/fms-frame49-checked，引擎 b283…，本机 http://127.0.0.1:5363/?fms=1。单测 37、lint/typecheck/build121、桌面 18/24（6 项在 5362 上同样失败，属既有）、手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-frame49-2026-10-18/RESULT.md)，键 webRebuild.originalFrameLoopCheckpoint。下一批：原作每帧分批轮转（5 军/10 省/1 国）、原作进攻箭头、原作 AI 军队。无上传。
+
+---
+
 # 当前检查点：Worker 提速（完全一致约束下仅约 3%）（2026-10-18）
 
 在“56 日完全一致”约束下：缓存默认 Intl.Collator（与无参 localeCompare 等价）用于每 tick 部队/交锋排序；海军观察签名先做基本值预检。原作 2 万格开局 56 日 14 检查点 run/frame/motion/actions 与 96d2 完全一致。硬件 GPU 浏览器 1× 交替三轮：新约 9.4 日/秒，旧约 8.4（单次波动 ±10%），仍未稳定 10。剩余热点分散，等价改写无法补足；稳定 10 日/秒需用户选择规则版本：A 原作分批轮转更新，或 B 降低行军 tick 粒度（均不可能与旧规则完全一致，旧档仍由冻结引擎按原规则运行）。提交 da0fa28，冻结 96d2（dbefa98）；产物 .autopilot/fms-speed48-checked，引擎 65b5…，本机 http://127.0.0.1:5362/?fms=1。单测 34、lint/typecheck/build120、桌面 10/10＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-speed48-2026-10-18/RESULT.md)，键 webRebuild.workerSpeedCheckpoint。无上传。

@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-18",
+  "status": "partial",
+  "task": "WEB-04-37",
+  "sourceCommit": "8eb9f145eb40a55a4b955c3ce8498bf336d9aa0b",
+  "commits": [
+    "d11d06f",
+    "8eb9f14"
+  ],
+  "engine": "b28381cefe433e367967f088a429cd6969a3de011f630e1a7466ad43f9a5d7a2",
+  "artifact": ".autopilot/fms-frame49-checked",
+  "url": "http://127.0.0.1:5363/?fms=1",
+  "binding": "127.0.0.1 only; restart needed after session",
+  "changes": [
+    "Journalled enable-frame-loop (original-frame-loop-v1) for new culture worlds: virtual frame = 20 ticks (6 per day, TimeManager secondsPerDay 0.1 at 60fps)",
+    "Movement/combat/per-frame observers step on frame boundaries; calendar and settlement unchanged",
+    "Attack clock deadlines aligned to frames; port interval and naval observer continuity allow one frame",
+    "Old runs without frameLoop keep per-tick rules; froze 65b5"
+  ],
+  "simulationRulesChanged": "new worlds only (rule version switch); old saves unchanged",
+  "compiledComparisonOldRules": {
+    "days": 56,
+    "checkpoints": 14,
+    "exact": true,
+    "prior": "65b5",
+    "current": "97b7 (pre-freeze candidate)"
+  },
+  "frameRuleDeterminism": {
+    "batch480vs100Day56Equal": true,
+    "journalReplayTick": 6720,
+    "journalActions": 72,
+    "replayEqual": true
+  },
+  "measured": {
+    "gpuX1": [
+      9.91,
+      9.99
+    ],
+    "gpuX1Long": {
+      "days": 693,
+      "avg": 9.78,
+      "lateWarDips": "4-7"
+    },
+    "gpuX2": 15.85,
+    "gpuX4": 19.61,
+    "targetX1Met": true,
+    "targetX2X4Met": false
+  },
+  "checks": {
+    "unit": {
+      "files": 3,
+      "passed": 37
+    },
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "distArtifacts": 121,
+    "browserDesktop": {
+      "expected": 24,
+      "passed": 18,
+      "failedPreexistingOn5362": 6
+    },
+    "browserMobile": {
+      "expected": 1,
+      "passed": 1
+    },
+    "plan": true,
+    "planTests": 15,
+    "releasePolicyTests": 24,
+    "fullSuite": "not_run"
+  },
+  "frozen": {
+    "engine": "65b509dfd119b410a0cf0db2630523d544f49442c88bc1c75c3a686a7107c57d",
+    "file": "engine-65b5.js",
+    "bytes": 1415060,
+    "sha256": "423c2ffcb4787118fa0c0a2e0d3b3e079422ec129905866ac827d31f8bad81db",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-fms-speed48-checked-original-bytes",
+    "journalVersion": 2,
+    "byteEqual": true,
+    "registered": 42
+  },
+  "physicalIphone": false,
+  "uploaded": false,
+  "productionUnchanged": true,
+  "next": [
+    "Original per-frame batch rotation 5 armies/10 provinces/1 state",
+    "Original attack arrows",
+    "Original AI army state machine"
+  ],
+  "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. No PH/device/visual completion claim."
+}

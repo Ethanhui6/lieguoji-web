@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-18",
+  "sourceCommit": "1b2cfe4999cc9e66b9faf2a6e7cc81e40a19e9b9",
+  "priorEngine": "65b509dfd119b410a0cf0db2630523d544f49442c88bc1c75c3a686a7107c57d",
+  "currentEngine": "97b78afd53f4b524f5a868fa42eda5b1cc5712af82f301bf3ee3b89644ed563b",
+  "points": 19928,
+  "days": 56,
+  "tick": 6720,
+  "relations": "war",
+  "grid": "original-20k seed1337 continents",
+  "features": 3,
+  "exactRunFrameMotionAndActions": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 746.4062999999987,
+      "currentCoreMs": 725.1575999999986
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 390.6166999999987,
+      "currentCoreMs": 399.79869999999937
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 377.6606000000029,
+      "currentCoreMs": 367.9294000000009
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 395.193299999999,
+      "currentCoreMs": 396.59070000000065
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 381.15769999999975,
+      "currentCoreMs": 368.88470000000234
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 375.0113999999994,
+      "currentCoreMs": 383.8284999999996
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 374.3273999999983,
+      "currentCoreMs": 383.20660000000134
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 706.3472000000002,
+      "currentCoreMs": 637.6150999999991
+    },
+    {
+      "day": 36,
+      "priorCoreMs": 618.7409999999982,
+      "currentCoreMs": 631.2777999999998
+    },
+    {
+      "day": 40,
+      "priorCoreMs": 614.8521999999975,
+      "currentCoreMs": 593.1082999999999
+    },
+    {
+      "day": 44,
+      "priorCoreMs": 650.6615999999995,
+      "currentCoreMs": 640.8894
+    },
+    {
+      "day": 48,
+      "priorCoreMs": 657.5207000000009,
+      "currentCoreMs": 663.1309999999976
+    },
+    {
+      "day": 52,
+      "priorCoreMs": 680.6652999999969,
+      "currentCoreMs": 687.5792000000001
+    },
+    {
+      "day": 56,
+      "priorCoreMs": 705.9051,
+      "currentCoreMs": 691.2893999999978
+    }
+  ],
+  "scope": "Sequential original and current production-compiled Node Workers, same synthetic opening/world id/three current feature flags; exact every4days. No browser paint, physical device or original equivalence claim."
+}

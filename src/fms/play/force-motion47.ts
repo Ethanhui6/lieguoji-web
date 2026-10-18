@@ -18,6 +18,10 @@ type Rules = {
   /** Verified persisted water-province membership. Never screen proximity. */
   seaRegion: (face: number) => number;
 };
+// ECMA-402: argument-less String.prototype.localeCompare is the compare of a
+// Collator built with default locale and options. One cached instance gives
+// the identical order without rebuilding it on every comparison.
+const collate = new Intl.Collator().compare;
 const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 const pairKey = (a: string, b: string) => JSON.stringify([a, b].sort());
 const areaOf = (cell: TravelCell47, rules: Pick<Rules, 'seaRegion'>) => {
@@ -112,7 +116,7 @@ function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceConta
     if (war && area.startsWith('sea/')) for (const id of group) if (!p.get(id)!.force.withdrawing) held.add(id);
   }
   for (const c of pairs.values()) for (const id of [c.a, c.b]) if (!p.get(id)!.force.withdrawing) held.add(id);
-  return {contacts: {version: 1 as const, pairs: [...pairs.values()].sort((a, b) => pairKey(a.a, a.b).localeCompare(pairKey(b.a, b.b)))}, held, positions: p};
+  return {contacts: {version: 1 as const, pairs: [...pairs.values()].sort((a, b) => collate(pairKey(a.a, a.b), pairKey(b.a, b.b)))}, held, positions: p};
 }
 /** Only after an owned transaction has validated the old contacts. Deaths,
  * withdrawals and peace may remove entries; never use this to repair a save. */
@@ -143,7 +147,7 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
   // Clone before decorating; no caller/rules callback runs between keying and
   // this stable sort. Keep the public exact JSON encoding and locale ties.
-  const forces = cloneForceTravelRecords47(input).map(force=>({force,key:forceKey47(force)})).sort((a,b)=>a.key.localeCompare(b.key)).map(row=>row.force);
+  const forces = cloneForceTravelRecords47(input).map(force=>({force,key:forceKey47(force)})).sort((a,b)=>collate(a.key,b.key)).map(row=>row.force);
   if(!ready)assertForceContacts47(previous, forces, graph, rules.seaRegion);
   let book = ready?.contacts??structuredClone(previous), remaining = seconds, events = 0;
   const exposure: Record<string, number> = {};

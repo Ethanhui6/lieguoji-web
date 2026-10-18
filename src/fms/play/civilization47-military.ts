@@ -1,3 +1,5 @@
+import {assertArmyBatch47} from './army-batch47';
+import {issueArmyBatchOrders47} from './civilization47-army-ai';
 import {assertArmyRetirement47} from './army-retirement47';
 import {frameTicks47,assertFrameLoop47} from './frame-loop47';
 import type {FoundingForces47} from './civilization47-forces';
@@ -31,7 +33,7 @@ export function advanceSessionCivilizationMilitary47(lease:SessionAdvanceLease47
     rules=>advanceSessionMilitaryWindow47(lease,ticks,weights,rules));
 }
 function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,ticks:number,weights:ArmyRouteWeights47,ownership?: (candidate:T,previous:PreviousOwnership47)=>void,politicalTick?: (candidate:T)=>void,observeMotion?:ForceMotionObserver47,ownedWindow?:(rules:MilitaryRules47<T>)=>ReturnType<typeof advanceMilitaryWindow47<T>>){
-  assertArmyRetirement47(input);assertFrameLoop47(input);assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
+  assertArmyBatch47(input);assertArmyRetirement47(input);assertFrameLoop47(input);assertFamilyCalendar47(input);assertDailyEconomy47(input);assertForceSpeed47(input.forceSpeed,input.world,input.clock.tick);
   assertCombatPersonnel47(input.combatPersonnel,input.world,input.clock.tick,input);
   // Validate live ruler/projection links once at entry even when every army
   // is on friendly land and there is no occupation work in this window.
@@ -54,15 +56,16 @@ function advanceCivilizationMilitaryCore47<T extends FoundingForces47>(input:T,t
       const key=JSON.stringify([r.world.provinces.map(p=>[p.id,p.controller,p.legalOwner]),r.world.nations.map(n=>[n.id,n.capitalId]),r.world.statecraft!.relations,r.nativeWars,r.chronicle.ended,r.people.nations]);
       if(key!==observedPolitics){politicalTick(r);observedPolitics=key;politicalWork=true;}
     }
+    const armyWork=issueArmyBatchOrders47(r,weights);
     const navalWork=navalObserver!(r,weights,sea);
-    return politicalWork||navalWork?'refresh':'reuse';
+    return politicalWork||navalWork||armyWork?'refresh':'reuse';
   };
   const rules:MilitaryRules47<T>={observeMotion,sessionOccupationKey:occupationObserver?.read??(fixed?occupationObservationKey47:undefined),invalidateSessionOccupation:occupationObserver?.invalidate,sessionAfterTick:fixed?observeTick:undefined,speed:actualForceSpeed47,combat:r=>combatReader47(r).volley,occupation:(r,_w,space)=>ownedOccupationCombatReader47(r,space),afterOccupation:r=>reconcilePortLandOwnersOwned47(r,sea),afterOwnership:ownership,portInterval:(before,after,from,to)=>advancePortIntervalOwned47(before,after,from,to,sea),sessionInterval:isOwnedTravelWindow47()?(before,start,from,stop)=>{
     const moved=advanceSessionActualForces47(before,start,stop-from,weights,actualForceSpeed47,observeMotion?(forces,graph,elapsed,contacts)=>observeMotion(forces,graph,elapsed===stop-from?stop:from+elapsed,contacts):undefined);
     const end=moved.unusedSeconds===0?stop:from+moved.elapsed;
     if(end>from)advanceSessionPortInterval47(before,moved.run,from,end,sea,start);
     return moved;
-  }:undefined,afterTick:fixed?undefined:(r,pending,boundary)=>{advanceFamilyCalendar47(r,r.clock.tick,pending);if(!boundary)return;if(!pending)politicalTick?.(r);issueAutonomousNavalOrders47(r,weights,sea);},frameTicks:frameTicks47(input)};
+  }:undefined,afterTick:fixed?undefined:(r,pending,boundary)=>{advanceFamilyCalendar47(r,r.clock.tick,pending);if(!boundary)return;if(!pending)politicalTick?.(r);issueArmyBatchOrders47(r,weights);issueAutonomousNavalOrders47(r,weights,sea);},frameTicks:frameTicks47(input)};
   const out=ownedWindow?ownedWindow(rules):advanceMilitaryWindow47(input,ticks,weights,rules);
   assertFamilyCalendar47(out.run,out.dailyPending);assertForceSpeed47(out.run.forceSpeed,out.run.world,out.run.clock.tick);return out;
 }

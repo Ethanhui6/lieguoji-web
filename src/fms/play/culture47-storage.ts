@@ -1,3 +1,4 @@
+import {ARMY_BATCH_RULE47} from './army-batch47';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {FRAME_LOOP_RULE47} from './frame-loop47';
 import {ARMY_RECOVERY_RULE47} from './army-recovery47';
@@ -50,6 +51,7 @@ function future(e:Envelope|undefined){
     if(a?.kind==='enable-generations'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==GENERATIONS_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-retirement'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!=='retired-roster-web-v1')fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-recovery'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_RECOVERY_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
+    if(a?.kind==='enable-army-batch'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_BATCH_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-frame-loop'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FRAME_LOOP_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family-policy'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','enabled','expected']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='family'){const p=a as unknown as {intent:unknown;expected:unknown};unknown(a,['kind','intent','expected']);unknown(p.intent,['nationId','personId','provinceId']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}

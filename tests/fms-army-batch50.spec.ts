@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+import {enter,create} from './fms-culture47-fixture';
+import type {FoundingForces47} from '../src/fms/play/civilization47-forces';
+type Probe=Window&{batchRun?:FoundingForces47};
+test('new-world army rotation issues real early orders and survives pause, save and cold resume',async({page},info)=>{
+ test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{const Real=window.Worker;window.Worker=class extends Real{constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',e=>{const d=e.data?.display,run=d?.snapshot?.run??d?.run??e.data?.snapshot?.run;if(run)(window as unknown as Probe).batchRun=structuredClone(run);});}};});
+ await enter(page);await create(page,24);const app=page.getByTestId('culture47-app');
+ expect(await page.evaluate(()=>(window as unknown as Probe).batchRun?.armyBatch)).toMatchObject({calls:0,lastTick:0});
+ await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(app).toHaveAttribute('data-day','1');
+ const first=await page.evaluate(()=>{const r=(window as unknown as Probe).batchRun!;return{batch:r.armyBatch,issued:Object.values(r.armyAutonomy.armies).map(a=>a.issuedTick),moving:Object.values(r.armyPositions.records).filter(p=>p.status==='moving').length};});
+ expect(first.batch).toMatchObject({calls:30,lastTick:120});expect(first.issued.some(t=>t!==null&&t<120)).toBe(true);expect(first.moving).toBeGreaterThan(0);
+ await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect.poll(async()=>Number(await app.getAttribute('data-day'))).toBeGreaterThan(1);
+ await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');
+ await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');
+ const saved=await page.evaluate(()=>{const r=(window as unknown as Probe).batchRun!;return{tick:r.clock.tick,batch:r.armyBatch,orders:r.armyAutonomy,positions:r.armyPositions};});
+ await page.waitForTimeout(300);await expect(app).toHaveAttribute('data-tick',String(saved.tick));
+ await page.screenshot({path:info.outputPath('army-rotation-world.png')});
+ await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',String(saved.tick));
+ expect(await page.evaluate(()=>{const r=(window as unknown as Probe).batchRun!;return{tick:r.clock.tick,batch:r.armyBatch,orders:r.armyAutonomy,positions:r.armyPositions};})).toEqual(saved);
+ expect(errors).toEqual([]);await info.attach('real-army-rotation',{body:JSON.stringify({first,restoredTick:saved.tick,batch:saved.batch,errors,physicalDevice:false}),contentType:'application/json'});
+});

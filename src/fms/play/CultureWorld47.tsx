@@ -1,3 +1,4 @@
+import {ARMY_BATCH_RULE47} from './army-batch47';
 import {CultureFamilyPeople47} from './CultureFamilyPeople47';
 import {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
 import {populationStamp47} from './civilization47-population-types';
@@ -207,6 +208,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-generations',rule:GENERATIONS_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       // New worlds run the original frame loop (frame-loop47.ts); loaded saves keep their own rules.
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-frame-loop',rule:FRAME_LOOP_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
+      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-army-batch',rule:ARMY_BATCH_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(motionTicks)motion.current.recordAdvance(motionTicks,performance.now()-started);
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;
       if(command.type==='create'){if(inspectNewSlot)revision.current=newSlot?.revision??null;storageDatabase.current=CULTURE47_GENERATIONS_DATABASE;setLocked(false);}

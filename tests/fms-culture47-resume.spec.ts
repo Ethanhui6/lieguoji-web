@@ -44,7 +44,7 @@ for(const cancelRecovery of [false,true])test(`Continue recovers a terminated Wo
  await enter(page);await create(page,60);const app=page.getByTestId('culture47-app');await expect(app).toHaveAttribute('data-tick','0');
  const initial=await page.evaluate(()=>(window as unknown as ResumeWindow).resumeWorkerProbe.acknowledged);expect(initial).not.toBeNull();if(!initial)throw Error('No acknowledged creation journal');
  expect(initial.actions.map(action=>'rule'in action?[action.kind,action.rule]:[action.kind])).toEqual([
-  ['enable-retirement','retired-roster-web-v1'],['enable-recovery','wounded-army-recovery-web-v1'],['enable-generations','known-couples-birth-household-web-v1'],['enable-frame-loop','original-frame-loop-v1'],
+  ['enable-retirement','retired-roster-web-v1'],['enable-recovery','wounded-army-recovery-web-v1'],['enable-generations','known-couples-birth-household-web-v1'],['enable-frame-loop','original-frame-loop-v1'],['enable-army-batch','native-five-army-orders-web-v1'],
  ]);
  for(const action of initial.actions){expect(action).toMatchObject({expected:{id:initial.id,day:0,tick:0}});expect(Object.keys(action).sort()).toEqual(['expected','kind','rule']);}
  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('点击继续可恢复');await expect(app).toHaveAttribute('data-tick','0');

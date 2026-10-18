@@ -13,7 +13,7 @@ const bootstrapRules=[
   ['enable-retirement','retired-roster-web-v1'],
   ['enable-recovery','wounded-army-recovery-web-v1'],
   ['enable-generations','known-couples-birth-household-web-v1'],
-  ['enable-frame-loop','original-frame-loop-v1'],
+  ['enable-frame-loop','original-frame-loop-v1'],['enable-army-batch','native-five-army-orders-web-v1'],
 ] as const;
 function expectNewJournal(journal:Culture47Journal,tail:Culture47Journal['actions']=[]){
   expect(journal.actions).toHaveLength(bootstrapRules.length+tail.length);

@@ -1,3 +1,4 @@
+import type {ArmyBatch47} from './army-batch47';
 import type {ArmyRetirement47} from './army-retirement47';
 import type {FrameLoop47} from './frame-loop47';
 import type {ArmyRecovery47} from './army-recovery47';
@@ -40,7 +41,7 @@ export type NavalOpening47={version:1;rule:'qualified-starter-debit-v1';firstEve
 /** All fields consumed by the real47 military phase, using real-culture
  * creation. This still needs daily settlement/live validation/Store49 before
  * it is a complete playable run; no version or legacy culture is fabricated. */
-export type FoundingForces47=Government47&MilitaryRun47&{armyRetirement?:ArmyRetirement47;armyRecovery?:ArmyRecovery47;frameLoop?:FrameLoop47;harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47;dailyEconomy:DailyEconomy47;combatPersonnel:CombatPersonnel47;armyAutonomy:ArmyAutonomy47;navalAutonomy:NavalAutonomy47};
+export type FoundingForces47=Government47&MilitaryRun47&{armyRetirement?:ArmyRetirement47;armyRecovery?:ArmyRecovery47;frameLoop?:FrameLoop47;armyBatch?:ArmyBatch47;harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47;dailyEconomy:DailyEconomy47;combatPersonnel:CombatPersonnel47;armyAutonomy:ArmyAutonomy47;navalAutonomy:NavalAutonomy47};
 const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening','forceSpeed','dailyEconomy','combatPersonnel','armyAutonomy','navalAutonomy'] as const;
 const seed=(text:string)=>{let h=2166136261;for(const c of text)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 /** Private construction. The starter allocation is the existing WEB rule:

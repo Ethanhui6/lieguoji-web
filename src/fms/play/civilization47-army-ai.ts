@@ -1,3 +1,4 @@
+import {assertArmyBatch47,consumeArmyBatch47} from './army-batch47';
 import type {FoundingForces47} from './civilization47-forces';
 import {nativeRegularTarget47,type RegularTarget47} from './native-war/army-target47';
 import {assertArmyAutonomy47,type ArmyDecision47} from './civilization47-army-ai-state';
@@ -43,18 +44,31 @@ export function regularCampaigns47(r:FoundingForces47,nationId:string){
  * reused; web actual contacts, eligibility and food gates are declared bridges.
  * No movement, damage, cargo, war declaration or ownership is written here. */
 export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRouteWeights47):undefined{
+  if(r.armyBatch){assertArmyBatch47(r);r.armyAutonomy.lastDay=r.world.day;assertArmyAutonomy47(r);return undefined;}
+  return issueArmySelection47(r,weights);
+}
+/** Real per-frame orders. The native rotation chooses calls; existing WEB
+ * target, ration and diplomacy policies remain explicit adaptations. */
+export function issueArmyBatchOrders47(r:FoundingForces47,weights:ArmyRouteWeights47):boolean{
+  if(!r.armyBatch)return false;
+  const ids=consumeArmyBatch47(r);
+  if(!ids.length)return false;
+  issueArmySelection47(r,weights,ids);return true;
+}
+function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?:readonly string[]):undefined{
   assertArmyAutonomy47(r);const state=r.armyAutonomy;
-  if(r.clock.tick!==r.world.day*TICKS_PER_DAY||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
-  if(state.lastDay===r.world.day)return undefined;
+  if((!ids&&r.clock.tick!==r.world.day*TICKS_PER_DAY)||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
+  if(!ids&&state.lastDay===r.world.day)return undefined;
   const {spatial}=actualForces47(r),g=spatial.graph,features=travelFeatures47(g),space=readArmySpace47(r.world,spatial),access=militaryAccess46(r),held=new Set(r.forceContacts.pairs.flatMap(p=>[p.a,p.b]));
   const places=new Map(r.world.provinces.map(p=>[p.id,p])),ports=new Set(r.harbors.sites.map(p=>p.provinceId)),coasts=new Set<string>(),provinceFeatures=new Map<string,string>();
   for(const p of r.world.provinces){const cell=locateTravelCell47(g,p.center,p.id);if(!cell)throw Error('自主目标中心不在真实陆地。');provinceFeatures.set(p.id,features.get(cell.id)!);
     if((g.byProvince.get(p.id)??[]).some(id=>g.cells.get(id)!.links.some(l=>g.cells.get(l.to)!.surface==='sea')))coasts.add(p.id);
   }
   const enemyMaps=new Map(r.world.nations.map(n=>[n.id,regularCampaigns47(r,n.id)]));
-  for(const a of r.world.armies){
+  const retry=ids?20:TICKS_PER_DAY;
+  for(const a of ids?ids.map(id=>r.world.armies.find(a=>a.id===id)!):r.world.armies){
     const row=state.armies[a.id],here=space.byArmy.get(a.id),enemies=enemyMaps.get(a.nationId)!;
-    const note=(decision:ArmyDecision47['decision'],reason:string,clear=false)=>{row.decision=decision;row.reason=reason;row.nextTick=r.clock.tick+TICKS_PER_DAY;if(clear){row.targetId=null;row.campaignId=null;row.issuedTick=null;}};
+    const note=(decision:ArmyDecision47['decision'],reason:string,clear=false)=>{row.decision=decision;row.reason=reason;row.nextTick=r.clock.tick+retry;if(clear){row.targetId=null;row.campaignId=null;row.issuedTick=null;}};
     if(enemies.size||row.garrisonId!==null&&places.get(row.garrisonId)?.controller!==a.nationId)row.garrisonId=null;
     if(!here){row.garrisonId=null;note('lost','部队已失去战斗力，保留既有军令历史。',true);continue;}
     if(r.voyages.manualArmies.includes(a.id)){row.garrisonId=null;note('manual','玩家已接管，自主指挥保留其军令。',true);continue;}
@@ -67,7 +81,7 @@ export function issueAutonomousArmyOrders47(r:FoundingForces47,weights:ArmyRoute
     // are reselected only after capture/peace; their remaining travel is not reset daily.
     if(ongoing&&!(low&&here.province?.controller===a.nationId)&&(!row.targetId||targetEnemy||row.decision==='returning'&&target?.controller===a.nationId||row.decision==='staging'&&target?.controller===a.nationId&&enemies.size>0||row.garrisonId===target?.id&&target?.controller===a.nationId&&enemies.size===0||a.status==='retreating')){
       if(row.garrisonId===target?.id&&target?.controller===a.nationId&&!enemies.size)note('garrison','正在沿原定路线前往驻地，保留既有行军进度。');
-      else row.nextTick=r.clock.tick+TICKS_PER_DAY;
+      else row.nextTick=r.clock.tick+retry;
       continue;
     }
     if(a.status!=='retreating'&&here.province&&nationsAtWar(r.world,a.nationId,here.province.controller)){note('busy','部队已在敌方真实陆地，等待交锋或地区抵抗结算。');continue;}

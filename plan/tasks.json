@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read coreRefresh51Checkpoint and latest AUTO_HANDOFF. Claude Plan C: core refresh prerequisite extracted; synchronous defense consistency retained; c7ca frozen. Next recover actual borderNeighborCells producer and State.Update border consumers before versioned 10 province / 1 state scan scheduling. No full scheduling, arrows or original equivalence claim yet. Do not repeat cache/save slice. Local5365 checked source f6a84e7; no uploads.",
+    "nextRecoveryTarget": "Claude Plan C: read border52Checkpoint and coreRefresh51Checkpoint. RecalculateNeighborProvince only clears borderNeighborCells and fills neighbor province set; visual IdentifyBorderCells outputs own border cells, not outside neighbors. Two native kernels tested, NOT wired to production. Locate actual nonempty list writer and timing or establish installed-version behavior; then State.Update border consumers and versioned 10 province / 1 state scheduling. Keep immediate defense refresh and daily fiscal semantics. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13126,6 +13126,15 @@
       "browserTests": 9,
       "fullProvinceStateScheduling": false,
       "physicalDeviceAccepted": false,
+      "uploaded": false
+    },
+    "border52Checkpoint": {
+      "date": "2026-10-19",
+      "status": "recovered-kernels-tested-production-not-connected",
+      "evidence": "docs/evidence/fms-border52-2026-10-19/RESULT.md",
+      "unitTests": 44,
+      "productionBehaviorChanged": false,
+      "missing": "actual writer of Province.borderNeighborCells; not visual border cells",
       "uploaded": false
     }
   }

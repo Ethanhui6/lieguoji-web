@@ -1,0 +1,26 @@
+# Claude方案C：省份边境计算恢复（2026-10-19）
+
+接续80a1582，保持当前可玩版本不变。本批为原作函数恢复和可执行规则验证，不是已上线的突出部战术，也不是完整10省/1国轮转。
+
+## 新核实的边界
+
+只读授权安装目录的GameAssembly.dll，SHA256 d42658a922155f6cc60295a64c02207e5eaa1d3a55fd5ed18dc8ecc562f9b82b。使用已有IL2CPP地址/字段索引和Capstone解码，没有运行原游戏、读取个人存档或认证配置。原始反汇编仅在忽略目录.autopilot内。
+
+- Province.IsProtruding：RVA458930，560字节，SHA256 70ca0521e6334aeb47f2faa28b4d8310fcc15593384b7e92341d24e7e3112f55。逐项读取borderNeighborCells，异国State项按float32累加，除以列表长度，严格大于0.5。重复项不去重，State0不排除，没有外交过滤。空列表0/0比较为false。
+- Province.RecalculateNeighborProvince：RVA45AC20，768字节，SHA256 d0646dc17a47f2d8b655858f79450dcff74e3e2bcbb23d4c77f0be037505af77。45ACBF清neighbors HashSet；45ACDB—45ACF1清borderNeighborCells列表；遍历自身cells的World.GetNeighborCells，读取CellData.Province，排除本省ID后加入neighbors。函数内没有填回borderNeighborCells。这是本批新增证据，不能凭函数名字推断它会生成突出部输入。
+- BorderDataProcessor.UpdateProvinceBorder：RVA3721D0，3056字节，SHA256 d9a4359afa08c65e0421857c7e3426caf01a2f73c4fad7cdb7b0462a7508e784。调用IdentifyBorderCells生成绘图边界；不能把BorderDataProcessor自身0xB0字段当成Province的同偏移字段。
+- BorderCalculationHelper.IdentifyBorderCells<int>：RVABC5F70，624字节，SHA256 2999627df7ec4fe06d59171a2d17c6cfb6d3d80b0173112750f693737036698e。BC6146追加的是当前cell，而不是外部邻接cell，因此绘图边界不等于突出部边界邻接列表。
+
+## 实现范围
+
+新增native-combat/province-border52.ts：上述突出部计算、邻省重算纯函数；明确接受真实cell输入，不接受邻省计数近似。无效引用抛错属于网页验证边界。没有导入生产引擎，没有覆盖旧引擎/存档，也没有把当前protruding:false擅自替换为推测数据。
+
+测试覆盖空列表、严格半数、重复格、State0、越界引用、邻省去重和清空副作用，并把计算结果传入现有原生军队选敌函数：同大陆9单位普通目标与10单位突出目标，原评分选择后者，去掉突出部则选择前者。此为规则连接验证，不是浏览器战争体验证明。
+
+## 下一步
+
+验证结果：3个测试文件44项通过；新增文件ESLint、全仓TypeScript通过；任务结构检查与15项V5计划测试通过。未执行新浏览器流程：本批代码没有生产调用，既有5365监听已核实，但不把旧页面当作本批功能验收。
+
+继续查找Province.borderNeighborCells的真实写入者及其调用时机；当前只核实了构造/清空/读取，尚未证明它在该安装版本是否会被非空填充。不要重复从RecalculateNeighborProvince或绘图边界猜测。随后核实State.Update边界消费者再接版本化调度；日财政与防御即时刷新保持独立。
+
+本批不重建生产产物、不声称提速或新可玩效果；已有5365需续接时验证监听。未上传；真机、视觉和完整原作等价未通过。

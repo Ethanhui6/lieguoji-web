@@ -1,6 +1,6 @@
 import type {FoundingForces47} from './civilization47-forces';
 import {announce} from './civilization47-history';
-import {reconcileCore} from './upper14-state';
+import {reconcileCore} from './core-refresh51';
 
 /** Live candidate transition after land ownership changes. Native July 2026
  * behavior separates immediate relocation from the later capital-fall crisis.

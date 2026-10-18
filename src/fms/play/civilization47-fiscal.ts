@@ -3,7 +3,7 @@ import {actualForces47} from './force-runtime47';
 import {readArmySpace47} from './army-space47';
 import {forceKey47} from './force-motion47';
 import {nationsAtWar} from './realtime-statecraft';
-import {reconcileCore} from './upper14-state';
+import {reconcileCore} from './core-refresh51';
 import {economicEthnic47} from './civilization47-economy';
 import {courtIncome} from './court16-people';
 import {defaultPoliticalCombat} from './native-combat/upper-efficiency';

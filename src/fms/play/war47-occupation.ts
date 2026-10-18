@@ -1,7 +1,7 @@
 import type {Ports46} from './war46-ports';
 import {landAttackMultiplier46,provinceDamage46} from './war46-blockade';
 import type {TerrainContext} from './fiscal15-state';
-import {reconcileCore} from './upper14-state';
+import {reconcileCore} from './core-refresh51';
 /** v47 uses entered land cells for occupation; frozen v46 keeps its province-anchor rules. */
 import type {World,Army,Province} from '../../sim/types';
 import {nationsAtWar,transferEconomy} from '../../compat/v0_4/sim/statecraft';

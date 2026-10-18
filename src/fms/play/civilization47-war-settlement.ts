@@ -10,7 +10,7 @@ import {nativeDecidePeaceReason,nativeHasAutonomousDiplomacyParticipant,nativeMa
 import {WAR28_PEACE_LABELS} from './war28-settlement';
 import {participantNationIds46,opposedPairs46,coversPair46} from './war46-coalition';
 import {transferEconomy} from '../../compat/v0_4/sim/statecraft';
-import {reconcileCore} from './upper14-state';
+import {reconcileCore} from './core-refresh51';
 import {reconcileOccupation} from './occupation';
 import {actualForces47} from './force-runtime47';
 import {reconcileForceContactsOwned47,forceKey47} from './force-motion47';

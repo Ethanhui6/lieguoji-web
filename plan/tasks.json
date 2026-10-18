@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read armyBatch50Checkpoint and latest AUTO_HANDOFF. Plan C: new worlds now journal five-call army order rotation per20tick frame; old b283 frozen. 40 unit,20 desktop,1 mobile-size checks and56day old/split/replay evidence passed. Next verify province/state actual batch defaults and consumers; original arrows and Army.UpdateState branches remain. Do not redo save test repair or rerun old map work. Keep daily economy/month close separate; freeze current Worker before new rules. Local5364, no uploads.",
+    "nextRecoveryTarget": "Read coreRefresh51Checkpoint and latest AUTO_HANDOFF. Claude Plan C: core refresh prerequisite extracted; synchronous defense consistency retained; c7ca frozen. Next recover actual borderNeighborCells producer and State.Update border consumers before versioned 10 province / 1 state scan scheduling. No full scheduling, arrows or original equivalence claim yet. Do not repeat cache/save slice. Local5365 checked source f6a84e7; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13114,6 +13114,18 @@
       },
       "originalArmyStateMachineComplete": false,
       "physicalDevice": false,
+      "uploaded": false
+    },
+    "coreRefresh51Checkpoint": {
+      "date": "2026-10-19",
+      "status": "bounded-prerequisite-implemented-verified",
+      "sourceCommit": "f6a84e7",
+      "engine": "10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5",
+      "evidence": "docs/evidence/fms-core51-2026-10-19/RESULT.md",
+      "unitTests": 41,
+      "browserTests": 9,
+      "fullProvinceStateScheduling": false,
+      "physicalDeviceAccepted": false,
       "uploaded": false
     }
   }

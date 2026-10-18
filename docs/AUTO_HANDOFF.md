@@ -1,3 +1,11 @@
+# 当前检查点：方案 C 国家刷新前置切片（2026-10-19）
+
+源码 f6a84e7，当前引擎 10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5。单国核心距离缓存已接当前迁都/占领/财政/动员/战争结算，同步防御一致性保留。c7ca原字节冻结，旧upper14未改。41单测、9浏览器、lint/typecheck/build123通过；56日14点与旧引擎全等。不是完整10省/1国调度，无提速/视觉/真机完成声明。
+
+本机 http://127.0.0.1:5365/?fms=1，独立产物 .autopilot/fms-core51-checked，旧dist/5364保留。见 [证据](evidence/fms-core51-2026-10-19/RESULT.md)，任务键 webRebuild.coreRefresh51Checkpoint。下一批恢复 borderNeighborCells 输入与 State.Update 边界消费者，之后版本化分批、箭头和原AI；日财政不得改为每帧。无上传，发布锁及旧档保护不变。
+
+---
+
 # 当前检查点：方案 C 陆军五次帧轮转已接真实军令（2026-10-18）
 
 源码 5306cfa；新世界日志 enable-army-batch/native-five-army-orders-web-v1，每20tick帧按持久游标消费5次军令决策，小列表环绕、玩家接管优先，日结不重复全军AI。原作5默认已由ctor/单例和4份内置地图证实；完整原AI状态机、省/国调度和箭头仍未实现。旧b283原字节冻结；当前引擎 c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71。

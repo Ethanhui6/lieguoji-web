@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-19",
+  "sourceCommit": "f6a84e7fced52c1a8c5caa74a6602776e03f32d5",
+  "priorEngine": "c7cab18312008c829958d5f9204b8fe7ea8797b8ae71ad0e6690c66d6107ae71",
+  "currentEngine": "10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5",
+  "points": 19928,
+  "days": 56,
+  "tick": 6720,
+  "relations": "war",
+  "grid": "original-20k seed1337 continents",
+  "features": 5,
+  "exactRunFrameMotionAndActions": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 635.8898000000008,
+      "currentCoreMs": 707.8816000000024
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 367.9785000000011,
+      "currentCoreMs": 383.9402000000009
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 346.6187000000027,
+      "currentCoreMs": 370.5797999999995
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 367.0010999999977,
+      "currentCoreMs": 377.3166999999994
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 325.40529999999853,
+      "currentCoreMs": 349.67909999999756
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 369.8643000000011,
+      "currentCoreMs": 371.7414000000026
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 306.0525000000016,
+      "currentCoreMs": 356.4021999999968
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 566.653199999997,
+      "currentCoreMs": 586.6574
+    },
+    {
+      "day": 36,
+      "priorCoreMs": 466.8686000000016,
+      "currentCoreMs": 471.9477000000006
+    },
+    {
+      "day": 40,
+      "priorCoreMs": 424.8876999999993,
+      "currentCoreMs": 434.2879999999968
+    },
+    {
+      "day": 44,
+      "priorCoreMs": 437.97869999999966,
+      "currentCoreMs": 444.23909999999887
+    },
+    {
+      "day": 48,
+      "priorCoreMs": 407.96540000000095,
+      "currentCoreMs": 408.45620000000054
+    },
+    {
+      "day": 52,
+      "priorCoreMs": 433.321100000001,
+      "currentCoreMs": 459.2417000000023
+    },
+    {
+      "day": 56,
+      "priorCoreMs": 473.1118999999999,
+      "currentCoreMs": 473.61069999999745
+    }
+  ],
+  "scope": "Sequential original and current production-compiled Node Workers, same synthetic opening/world id/five current feature flags; exact every4days. No browser paint, physical device or original equivalence claim."
+}

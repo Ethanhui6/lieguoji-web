@@ -1,5 +1,10 @@
 import {test,expect} from '@playwright/test';
 import {enter,create} from './fms-culture47-fixture';
+import type {Culture47Journal} from '../src/fms/play/culture47-session';
+import type {Culture47Request,Culture47Response} from '../src/fms/play/culture47.worker';
+
+type ResumeProbe={acknowledged:Culture47Journal|null;failedJournal:Culture47Journal|null;loads:Culture47Journal[];events:{type:string;actions?:number}[]};
+type ResumeWindow=Window&{resumeWorkerProbe:ResumeProbe};
 
 test('a zero-sized app panel can open and become visible without breaking the map or Continue controls',async({page})=>{
  test.setTimeout(90000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
@@ -17,26 +22,41 @@ for(const cancelRecovery of [false,true])test(`Continue recovers a terminated Wo
  // the actual built Worker and its complete journal validation/replay.
  await page.addInitScript(({delayRecovery})=>{
   const RealWorker=window.Worker;let failed=false;
-  const evidence:{type:string;actions?:number}[]=[];Object.defineProperty(window,'resumeWorkerEvidence',{value:evidence});
+  const probe:ResumeProbe={acknowledged:null,failedJournal:null,loads:[],events:[]};Object.defineProperty(window,'resumeWorkerProbe',{value:probe});
   window.Worker=class extends RealWorker{
+   constructor(url:string|URL,options?:WorkerOptions){
+    super(url,options);
+    this.addEventListener('message',event=>{
+     const result=event.data as Culture47Response;if(result.error||result.progress)return;
+     if(result.display?.kind==='full')probe.acknowledged=structuredClone(result.display.snapshot.journal);
+     else if(result.display?.kind==='update'&&probe.acknowledged)probe.acknowledged={...structuredClone(result.display.journal),opening:probe.acknowledged.opening};
+     else if(result.snapshot)probe.acknowledged=structuredClone(result.snapshot.journal);
+    });
+   }
    postMessage(message:unknown,transfer:Transferable[]|StructuredSerializeOptions=[]){
-    const c=(message as {command?:{type:string;action?:{kind:string};journal:{actions:unknown[]}}})?.command;
-    if(c?.type==='load'){evidence.push({type:'load',actions:c.journal.actions.length});if(delayRecovery){setTimeout(()=>super.postMessage(message),1000);return;}}
-    if(!failed&&(c?.type==='advance-batch'||c?.type==='action'&&c.action?.kind==='advance')){failed=true;evidence.push({type:'injected-error'});setTimeout(()=>this.dispatchEvent(new Event('error')),0);return;}
+    const c=(message as {command?:Culture47Request})?.command;
+    if(c?.type==='load'){probe.events.push({type:'load',actions:c.journal.actions.length});probe.loads.push(structuredClone(c.journal));if(delayRecovery){setTimeout(()=>super.postMessage(message),1000);return;}}
+    if(!failed&&(c?.type==='advance-batch'||c?.type==='action'&&c.action?.kind==='advance')){failed=true;probe.failedJournal=structuredClone(probe.acknowledged);probe.events.push({type:'injected-error'});setTimeout(()=>this.dispatchEvent(new Event('error')),0);return;}
     if(Array.isArray(transfer))super.postMessage(message,transfer);else super.postMessage(message,transfer);
    }
   };
  },{delayRecovery:cancelRecovery});
  await enter(page);await create(page,60);const app=page.getByTestId('culture47-app');await expect(app).toHaveAttribute('data-tick','0');
+ const initial=await page.evaluate(()=>(window as unknown as ResumeWindow).resumeWorkerProbe.acknowledged);expect(initial).not.toBeNull();if(!initial)throw Error('No acknowledged creation journal');
+ expect(initial.actions.map(action=>'rule'in action?[action.kind,action.rule]:[action.kind])).toEqual([
+  ['enable-retirement','retired-roster-web-v1'],['enable-recovery','wounded-army-recovery-web-v1'],['enable-generations','known-couples-birth-household-web-v1'],['enable-frame-loop','original-frame-loop-v1'],
+ ]);
+ for(const action of initial.actions){expect(action).toMatchObject({expected:{id:initial.id,day:0,tick:0}});expect(Object.keys(action).sort()).toEqual(['expected','kind','rule']);}
  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('点击继续可恢复');await expect(app).toHaveAttribute('data-tick','0');
+ expect(await page.evaluate(()=>(window as unknown as ResumeWindow).resumeWorkerProbe.failedJournal)).toEqual(initial);
  await page.getByRole('button',{name:'继续时间',exact:true}).click();
  if(cancelRecovery){await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('推演已恢复',{timeout:30000});await page.waitForTimeout(600);await expect(app).toHaveAttribute('data-tick','0');await expect(page.getByRole('button',{name:'继续时间',exact:true})).toBeVisible();}
  else{await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:30000}).toBeGreaterThan(0);await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');}
  const tick=Number(await app.getAttribute('data-tick'));expect(tick%120).toBe(0);if(cancelRecovery)expect(tick).toBe(0);else expect(tick).toBeGreaterThanOrEqual(120);
  await page.waitForTimeout(600);await expect(app).toHaveAttribute('data-tick',String(tick));
- const evidence=await page.evaluate(()=>(window as unknown as {resumeWorkerEvidence:unknown}).resumeWorkerEvidence);expect(evidence).toEqual([{type:'injected-error'},{type:'load',actions:0}]);
+ const evidence=await page.evaluate(()=>(window as unknown as ResumeWindow).resumeWorkerProbe);expect(evidence.events).toEqual([{type:'injected-error'},{type:'load',actions:initial.actions.length}]);expect(evidence.loads).toEqual([initial]);
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
- await info.attach('worker-recovery',{body:JSON.stringify({fault:'synthetic worker error before first advance; real Worker restart and zero-action journal replay',cancelRecovery,tick,evidence,physicalIphone:false}),contentType:'application/json'});
+ await info.attach('worker-recovery',{body:JSON.stringify({fault:'synthetic worker error before first advance; real Worker restart and exact acknowledged bootstrap journal replay',cancelRecovery,tick,evidence:{events:evidence.events,acknowledgedId:initial.id,bootstrap:initial.actions,exactLoad:true},physicalIphone:false}),contentType:'application/json'});
 });
 
 test('the saved-world Continue button retries after its loading Worker fails, without replacing the save',async({page})=>{

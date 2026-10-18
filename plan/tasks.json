@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read originalFrameLoopCheckpoint and latest AUTO_HANDOFF. Plan C batch 1 done: new worlds use journalled original frame loop (20-tick frames), 1x ~10 days/s on GPU browser; old saves unchanged (65b5 frozen). Next: original per-frame batch rotation (5 armies/10 provinces/1 state), original attack arrows, original AI armies. Artifact .autopilot/fms-frame49-checked on 5363. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read frame49SaveRepairCheckpoint, originalFrameLoopCheckpoint and latest AUTO_HANDOFF. Claude Plan C frame loop is implemented; 6 stale browser failures and vacuous save assertions repaired, all 60 affected desktop tests passed. Next implement versioned native per-army batch consumption after confirming original defaults and freezing b283 Worker; then province/state scheduling, attack arrows and AI. Do not repeat old coastline work. Artifact .autopilot/fms-frame49-checked on 5363, local only; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13072,6 +13072,27 @@
       ],
       "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. No PH/device/visual completion claim.",
       "evidence": "docs/evidence/fms-frame49-2026-10-18/RESULT.md"
+    },
+    "frame49SaveRepairCheckpoint": {
+      "date": "2026-10-18",
+      "status": "completed_bounded_validation",
+      "baseline": "fabb9811",
+      "artifact": ".autopilot/fms-frame49-checked",
+      "url": "http://127.0.0.1:5363/?fms=1",
+      "engine": "b28381cefe433e367967f088a429cd6969a3de011f630e1a7466ad43f9a5d7a2",
+      "evidence": "docs/evidence/fms-frame49-save-repair-2026-10-18/RESULT.md",
+      "checks": {
+        "browserDesktopPassed": 60,
+        "skipped": 0,
+        "failed": 0,
+        "retries": 0,
+        "changedFilesEslint": true,
+        "typecheck": true
+      },
+      "runtimeChanged": false,
+      "physicalIphone": false,
+      "uploaded": false,
+      "remaining": "Plan C native batch rotation, original attack arrows and per-army AI remain outstanding; full visual/device gates unchanged."
     }
   }
 }

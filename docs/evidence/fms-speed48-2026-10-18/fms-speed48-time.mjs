@@ -1,0 +1,15 @@
+import {Worker} from 'node:worker_threads';
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const dir=process.argv[2],out='.autopilot/fms-speed47';
+const file=path.resolve(dir+'/assets/'+fs.readdirSync(dir+'/assets').find(n=>/^culture47\.worker-.*\.js$/.test(n)));
+const t=JSON.parse(fs.readFileSync(out+'/terrain20k.json','utf8'));const opening={terrain:{...t,triangles:new Uint32Array(t.triangles),elevations:new Int32Array(t.elevations)},count:6,cityCount:60,relations:'war',setup:{mode:'culture-generated',enabled:['chinese','japanese','english']}};
+const worker=new Worker(`const {parentPort}=require('node:worker_threads');const inspector=require('node:inspector');const s=new inspector.Session();s.connect();const rpc=(m,p={})=>new Promise((ok,no)=>s.post(m,p,(e,r)=>e?no(e):ok(r)));globalThis.self=globalThis;let at=0;self.postMessage=v=>parentPort.postMessage({...v,coreMs:performance.now()-at});import(${JSON.stringify(pathToFileURL(file).href)}).then(()=>parentPort.on('message',async data=>{if(data.profile==='start'){await rpc('Profiler.enable');await rpc('Profiler.start');parentPort.postMessage({profile:'started'});}else if(data.profile==='stop'){parentPort.postMessage({profile:(await rpc('Profiler.stop')).profile});}else {at=performance.now();self.onmessage({data});}}));`,{eval:true});
+let id=0,snapshot;const send=command=>new Promise((ok,no)=>{const fail=e=>no(e),reply=r=>{if(r.progress)return;worker.off('message',reply);worker.off('error',fail);if(r.error)return no(Error(r.error));const p=r.display;if(p?.kind==='full')snapshot=p.snapshot;else if(p)snapshot={run:{...p.run,terrain:snapshot.run.terrain,diplomaticGeography:snapshot.run.diplomaticGeography},journal:{...p.journal,opening:snapshot.journal.opening},frame:p.frame,...(p.motion?{motion:p.motion}:{})};ok({s:snapshot,ms:r.coreMs});};worker.on('message',reply);worker.once('error',fail);worker.postMessage({id:++id,command});});
+const control=profile=>new Promise(ok=>{worker.once('message',ok);worker.postMessage({profile});});
+try{
+ let r=await send({type:'create',opening});console.log('created',r.ms);for(const [kind,rule]of [['enable-retirement','retired-roster-web-v1'],['enable-recovery','wounded-army-recovery-web-v1'],['enable-generations','known-couples-birth-household-web-v1']]){const q=r.s.run;r=await send({type:'action',sequence:r.s.journal.actions.length,action:{kind,rule,expected:{id:q.id,day:q.world.day,tick:q.clock.tick,nextEventId:q.world.nextEventId,civilization:q.civilization.revision,kin:q.kin.revision,people:q.people.revision,sovereignty:q.sovereignty.revision,nextEntryId:q.chronicle.nextEntryId}}});}
+ for(let i=0;i<0;i++)r=await send({type:'advance-batch',ticks:480,sequence:r.s.journal.actions.length});
+ const timings=[];for(let i=0;i<14;i++){const t=performance.now();r=await send({type:'advance-batch',ticks:480,sequence:r.s.journal.actions.length});timings.push([Math.round(r.ms),Math.round(performance.now()-t)]);}const core=timings.map(t=>t[0]);console.log(JSON.stringify({dir,core,sum:core.reduce((a,b)=>a+b,0)}));
+}finally{await worker.terminate();}

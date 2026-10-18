@@ -1,3 +1,9 @@
+# 当前检查点：Worker 提速（完全一致约束下仅约 3%）（2026-10-18）
+
+在“56 日完全一致”约束下：缓存默认 Intl.Collator（与无参 localeCompare 等价）用于每 tick 部队/交锋排序；海军观察签名先做基本值预检。原作 2 万格开局 56 日 14 检查点 run/frame/motion/actions 与 96d2 完全一致。硬件 GPU 浏览器 1× 交替三轮：新约 9.4 日/秒，旧约 8.4（单次波动 ±10%），仍未稳定 10。剩余热点分散，等价改写无法补足；稳定 10 日/秒需用户选择规则版本：A 原作分批轮转更新，或 B 降低行军 tick 粒度（均不可能与旧规则完全一致，旧档仍由冻结引擎按原规则运行）。提交 da0fa28，冻结 96d2（dbefa98）；产物 .autopilot/fms-speed48-checked，引擎 65b5…，本机 http://127.0.0.1:5362/?fms=1。单测 34、lint/typecheck/build120、桌面 10/10＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-speed48-2026-10-18/RESULT.md)，键 webRebuild.workerSpeedCheckpoint。无上传。
+
+---
+
 # 当前检查点：1× 改为原作每秒 10 日（2026-10-18）
 
 按用户要求恢复原作 TimeManager.secondsPerDay=0.1：1×/2×/4× = 10/20/40 日/秒（此前网页把原 4 倍当 1×）。日历、行军、战斗与存档不变。硬件 GPU 的 Chromium 实测原作 2 万格战乱开局三档都约 8–9.7 日/秒——已到 Worker 计算上限，1× 实际约 7.8 日/秒，未稳定达到 10；此前 2–3 日/秒主要是无头软件渲染的测量偏差。提交 6b05a18，冻结 6c6f（f8844fb）；产物 .autopilot/fms-speed47-checked，引擎 96d2…，本机 http://127.0.0.1:5361/?fms=1（会话后需重启）。单测 25、lint/typecheck/build119、桌面 10/10（含两项吞吐）＋手机 1/1、plan/15/24 通过。见 [结果](evidence/fms-speed47-2026-10-18/RESULT.md)，键 webRebuild.originalPaceCheckpoint。下一批：Worker 提速 20–30%（带 56 日完全一致对照）或按原作分批调度新建规则版本；之后原作界面/字体、要塞/圣城图标、4 个既有 compat 存档用例。无上传。

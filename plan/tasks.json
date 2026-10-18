@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read originalPaceCheckpoint and latest AUTO_HANDOFF. 1x is now the original 10 days/s (2x 20, 4x 40); achieved ~8-9.7 days/s with hardware GPU (compute-bound); 6c6f frozen; artifact .autopilot/fms-speed47-checked on 5361. Next: worker 20-30% faster with 56-day exact replay (force-motion47 per-tick clone/sort/JSON keys, observers), or an original batch-rotation rules version; then original UI/fonts, fortress/holy icons, 4 pre-existing compat save tests. Preserve all gates; no uploads.",
+    "nextRecoveryTarget": "Read workerSpeedCheckpoint and latest AUTO_HANDOFF. Exact-preserving worker work gave ~3% (GPU browser ~9.4 vs ~8.4 days/s at 1x, noisy); stable 10 days/s needs a user-chosen rules version (A original batch rotation, B coarser motion ticks). 96d2 frozen; artifact .autopilot/fms-speed48-checked on 5362. Preserve all gates; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -12892,6 +12892,92 @@
       "productionUnchanged": true,
       "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Pacing only; no PH/device/visual completion claim.",
       "evidence": "docs/evidence/fms-speed47-2026-10-18/RESULT.md"
+    },
+    "workerSpeedCheckpoint": {
+      "date": "2026-10-18",
+      "status": "partial",
+      "task": "WEB-04-37",
+      "sourceCommit": "dbefa980865ff551a80b2d59931d9cb3aef7e794",
+      "commits": [
+        "da0fa28",
+        "dbefa98"
+      ],
+      "engine": "65b509dfd119b410a0cf0db2630523d544f49442c88bc1c75c3a686a7107c57d",
+      "artifact": ".autopilot/fms-speed48-checked",
+      "url": "http://127.0.0.1:5362/?fms=1",
+      "binding": "127.0.0.1 only; restart needed after session",
+      "changes": [
+        "Cached default Intl.Collator for per-tick force/contact sorts (ECMA-402 equivalent to argument-less localeCompare)",
+        "Naval observer primitive precheck before full JSON signature",
+        "Froze 96d2"
+      ],
+      "simulationRulesChanged": false,
+      "compiledComparison": {
+        "days": 56,
+        "checkpoints": 14,
+        "exact": true,
+        "prior": "96d2",
+        "current": "65b5",
+        "candidateAlsoExact": "db2a"
+      },
+      "measured": {
+        "gpuX1New": [
+          9.96,
+          8.81,
+          9.28
+        ],
+        "gpuX1Old": [
+          8.84,
+          7.16,
+          9.25
+        ],
+        "workerReductionPercent": 3,
+        "targetMet": false
+      },
+      "rejected": [
+        "String memo for force/pair keys (slower)",
+        "Deep-freezing travel cells (conflicts with mutable-cell commit contract and 4 tests)"
+      ],
+      "decisionNeeded": "Stable 10 days/s at 1x needs a rules version (original batch rotation, or coarser motion ticks); cannot be 56-day exact by definition",
+      "checks": {
+        "unit": {
+          "files": 3,
+          "passed": 34
+        },
+        "lint": true,
+        "typecheck": true,
+        "productionBuild": true,
+        "distArtifacts": 120,
+        "browserDesktop": {
+          "expected": 10,
+          "passed": 10
+        },
+        "browserMobile": {
+          "expected": 1,
+          "passed": 1
+        },
+        "plan": true,
+        "planTests": 15,
+        "releasePolicyTests": 24,
+        "fullSuite": "not_run"
+      },
+      "frozen": {
+        "engine": "96d2b34eeb6b9c30c01a110319718a76516f634dbde26132981d473405dad48e",
+        "file": "engine-96d2.js",
+        "bytes": 1413747,
+        "sha256": "7eed24501794d17c77fcd412ce271b15a550411e990dabfa9a0cdb311a46e7bb",
+        "rule": "real-culture-zh-politics-journal-2",
+        "protocol": 2,
+        "source": "culture47-fms-speed47-checked-original-bytes",
+        "journalVersion": 2,
+        "byteEqual": true,
+        "registered": 41
+      },
+      "physicalIphone": false,
+      "uploaded": false,
+      "productionUnchanged": true,
+      "boundary": "Local only; no push/PR/Pages/Cloudflare/main/original-install/personal-save writes. Exact-preserving perf only.",
+      "evidence": "docs/evidence/fms-speed48-2026-10-18/RESULT.md"
     }
   }
 }

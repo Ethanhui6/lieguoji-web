@@ -1,3 +1,11 @@
+# 当前检查点：方案 C 找到边境格生产者（2026-10-19）
+
+已恢复FilterProvinceCells及727900回调，解决上一批真实写入位置未知：外侧邻接cell逐次追加，排除同省和省0，保留重复；派生邻省/临海/Feature一致性。39项测试（含原作19,928点固定测试省份逐边核对）通过，lint/typecheck通过。模块未接生产Worker，当前试玩不变，不声称AI已改或提速。见[证据](evidence/fms-province-cells53-2026-10-19/RESULT.md)，键webRebuild.provinceCells53Checkpoint。
+
+下一项State.Update边界消费者与原生CellData至当前世界投影；禁止拿三角行军面计数冒充原作格计数。随后版本化10省/1国轮转。保留f6a84e7/5365已验产物，后续核实监听；无上传、旧档/发布锁不变。
+
+---
+
 # 当前检查点：方案 C 边境计算恢复（2026-10-19）
 
 新增突出部与邻省重算纯函数，44项相关单测通过；未接生产引擎、未改变玩法。重要新证据：原作 RecalculateNeighborProvince 清空 borderNeighborCells 但不填回；绘图边界函数输出本侧cell，不能代替该列表。下一步查真实非空写入者/时机，再接State边界消费者与10省/1国轮转，不能靠猜测替换protruding:false。见[证据](evidence/fms-border52-2026-10-19/RESULT.md)，任务键webRebuild.border52Checkpoint。保留5365可玩产物f6a84e7，本批没有新试玩画面、未上传。

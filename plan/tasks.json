@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Claude Plan C: read border52Checkpoint and coreRefresh51Checkpoint. RecalculateNeighborProvince only clears borderNeighborCells and fills neighbor province set; visual IdentifyBorderCells outputs own border cells, not outside neighbors. Two native kernels tested, NOT wired to production. Locate actual nonempty list writer and timing or establish installed-version behavior; then State.Update border consumers and versioned 10 province / 1 state scheduling. Keep immediate defense refresh and daily fiscal semantics. No upload.",
+    "nextRecoveryTarget": "Claude Plan C: provinceCells53Checkpoint resolves actual borderNeighborCells producer: BurgsAndStateGenerator.FilterProvinceCells callback727900 appends external neighbor cells, preserves duplicates, excludes province0. Direct callers generation/sea regeneration/height edit/load verified. Kernels plus original19,928-site synthetic province integration passed, NOT production connected. Next State.Update border consumers and explicit original CellData-to-current-world projection; do not substitute travel triangles or repeat producer search. Then versioned10province/1state scheduling. Keep immediate core defense/daily fiscal; no uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13135,6 +13135,15 @@
       "unitTests": 44,
       "productionBehaviorChanged": false,
       "missing": "actual writer of Province.borderNeighborCells; not visual border cells",
+      "uploaded": false
+    },
+    "provinceCells53Checkpoint": {
+      "date": "2026-10-19",
+      "status": "native-producer-recovered-tested-not-production-integrated",
+      "evidence": "docs/evidence/fms-province-cells53-2026-10-19/RESULT.md",
+      "unitTests": 39,
+      "originalGridSites": 19928,
+      "productionBehaviorChanged": false,
       "uploaded": false
     }
   }

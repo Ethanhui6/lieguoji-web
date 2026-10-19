@@ -5,6 +5,7 @@ import {provinceBorderReader54,stateBorderReader55} from './province-border54';
 import {combatReader47} from './civilization47-combat';
 import {actualForces47} from './force-runtime47';
 import {originalCellProvinces} from '../original/original-politics';
+import {issueAutonomousArmyOrders47} from './civilization47-army-ai';
 let base:FoundingForces47;
 beforeAll(()=>{base=createFoundingForces47(grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0),3,24,'war',{mode:'culture-generated',enabled:['chinese','japanese','english']});},30000);
 it('uses rendered cell ownership and updates the same reader immediately on capture',()=>{
@@ -46,3 +47,15 @@ it('recomputes visible enemy fronts after capture and truce without retaining ol
  expect([...stateBorderReader55(structuredClone(r))(nation,enemies)].sort()).toEqual(expected());
  enemies.clear();expect(read(nation,enemies).size).toBe(0);
 });
+it('issues real inland attacks toward visible enemy fronts and rejects a mutated geography binding',()=>{
+ const r=createFoundingForces47(grid(()=>45),2,24,'war',{mode:'culture-generated',enabled:['chinese','japanese']});
+ r.clock.tick=120;r.world.day=1;
+ const invalid=structuredClone(r);for(const p of invalid.world.provinces)p.neighbors=[];
+ const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
+ expect(()=>issueAutonomousArmyOrders47(invalid,weights)).toThrow('军队位置与当前地形不一致');
+ issueAutonomousArmyOrders47(r,{preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()});
+ const attacks=r.world.armies.filter(a=>r.armyAutonomy.armies[a.id].decision==='attacking');
+ expect(attacks.length).toBeGreaterThan(0);
+ const front=stateBorderReader55(r);
+ for(const a of attacks){const row=r.armyAutonomy.armies[a.id];expect(row.targetId).not.toBeNull();expect(front(a.nationId,new Set(r.world.nations.filter(n=>n.id!==a.nationId).map(n=>n.id))).has(row.targetId!)).toBe(true);expect(r.armyPositions.records[a.id].status).toBe('moving');expect(r.world.provinces.find(p=>p.id===row.targetId)!.controller).not.toBe(a.nationId);}
+},30000);

@@ -1,0 +1,111 @@
+{
+  "sourceCommit": "1eeb869a0c7c9c2c9e37210a208c182803103f2c",
+  "engine": "f98b3e96bc9af0ff2b680a2ef51e8c3a7a105dc86c35898b8606b659f078818b",
+  "days": 56,
+  "tick": 6720,
+  "features": 5,
+  "productionBehaviorChanged": false,
+  "baselineRunFrameEqual": true,
+  "exactJournalReplay": true,
+  "timings": [
+    {
+      "day": 4,
+      "priorCoreMs": 920.0210000000006,
+      "currentCoreMs": 791.6436000000031,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 8,
+      "priorCoreMs": 471.58300000000236,
+      "currentCoreMs": 454.84019999999873,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 12,
+      "priorCoreMs": 449.2360000000008,
+      "currentCoreMs": 405.4815000000017,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 16,
+      "priorCoreMs": 450.02110000000175,
+      "currentCoreMs": 421.70240000000194,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 20,
+      "priorCoreMs": 444.9595999999983,
+      "currentCoreMs": 417.78139999999985,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 24,
+      "priorCoreMs": 453.52730000000156,
+      "currentCoreMs": 438.9458999999988,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 28,
+      "priorCoreMs": 448.3735000000015,
+      "currentCoreMs": 407.6893999999993,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 32,
+      "priorCoreMs": 741.5937999999987,
+      "currentCoreMs": 770.0720000000001,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 36,
+      "priorCoreMs": 549.1093000000001,
+      "currentCoreMs": 543.7194999999992,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 40,
+      "priorCoreMs": 553.4555,
+      "currentCoreMs": 470.0738999999994,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 44,
+      "priorCoreMs": 578.0901000000013,
+      "currentCoreMs": 543.4294000000009,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 48,
+      "priorCoreMs": 535.531500000001,
+      "currentCoreMs": 487.8203000000067,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 52,
+      "priorCoreMs": 561.1487000000052,
+      "currentCoreMs": 550.7159000000029,
+      "changedTargets": 0,
+      "changedOwners": 0
+    },
+    {
+      "day": 56,
+      "priorCoreMs": 576.9074000000037,
+      "currentCoreMs": 555.1930999999968,
+      "changedTargets": 0,
+      "changedOwners": 0
+    }
+  ],
+  "scope": "Real compiled Node Workers, original20k sites, synthetic6-nation60-city war. New rules intentionally differ. No visual/device/equivalence or speed claim."
+}

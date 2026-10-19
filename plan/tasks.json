@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Read border54Checkpoint and latest AUTO_HANDOFF. Border producer now wired to real current AI and combat using SAME cell-to-province projection as rendered map; live ownership updates same reader.70unit/11browser and56day compiled replay verified;10b0 frozen. Next State.Update border consumers and versioned10province/1state rotation. Keep daily fiscal and immediate core defense; no uploads. UI followup: mobile news overlaps army heading, not visually accepted. Local5366 source5944c0d.",
+    "nextRecoveryTarget": "Read stateBorder55Checkpoint. Regular enemy province collection now in actual AI from rendered cell contacts. 39unit/11browser,56day exact baseline and replay; no demonstrated behavior delta, no pace claim. Next complete State.FilterBorderProvince side effects/core connectivity and versioned10province1state rotation. Keep daily fiscal, path/access validation, old saves and release lock. Local5367 source1eeb869;5366 retained.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13158,6 +13158,21 @@
       "exactRunFrameReplay": true,
       "productionBehaviorChanged": true,
       "fullNativeEquivalence": false,
+      "physicalDeviceAccepted": false,
+      "uploaded": false
+    },
+    "stateBorder55Checkpoint": {
+      "date": "2026-10-19",
+      "status": "regular-front-integrated-behavior-delta-not-demonstrated",
+      "sourceCommit": "1eeb869a0c7c9c2c9e37210a208c182803103f2c",
+      "engine": "f98b3e96bc9af0ff2b680a2ef51e8c3a7a105dc86c35898b8606b659f078818b",
+      "evidence": "docs/evidence/fms-state55-2026-10-19/RESULT.md",
+      "unitTests": 39,
+      "browserTests": 11,
+      "compiledWarDays": 56,
+      "baselineRunFrameEqual": true,
+      "exactJournalReplay": true,
+      "fullStateUpdate": false,
       "physicalDeviceAccepted": false,
       "uploaded": false
     }

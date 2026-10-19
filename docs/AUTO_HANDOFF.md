@@ -1,3 +1,11 @@
+# 当前检查点：国家常规敌省集合已接入（2026-10-19）
+
+生产源码1eeb869，引擎f98b3e96bc9af0ff2b680a2ef51e8c3a7a105dc86c35898b8606b659f078818b；本机 http://127.0.0.1:5367/?fms=1 ，独立产物.autopilot/fms-state55-checked。真实AI从显示格边界收集常规敌省，攻占/停战重读；原4ba5字节冻结。39单测、11浏览器、type/lint/build125通过。56日run/frame与5366基线完全相同，日志回放完全相同；行为差异覆盖未命中，不能声称战略/节奏已改善。见[证据](evidence/fms-state55-2026-10-19/RESULT.md)，键webRebuild.stateBorder55Checkpoint。
+
+下一批State.FilterBorderProvince完整副作用/首都连通性与版本化10省1国轮转；不重复恢复本批集合函数。日财政、真实路径/通行、旧档保护保留。完整原作、真机与视觉未验；旧事件横幅遮挡仍在。无上传，保留5366/dist。
+
+---
+
 # 当前检查点：边境规则已进入真实战争（2026-10-19）
 
 源码5944c0d，引擎4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6，本机 http://127.0.0.1:5366/?fms=1，独立产物.autopilot/fms-border54-checked；旧5365/dist保留。真实选敌和战斗不再固定protruding:false；复用显示格归属，按实时控制国计算，原10b0逐字节冻结。70单测、11浏览器、lint/type/build124通过，56日编译Worker第4日5军/第56日19军目标不同，run/frame日志回放相同。没有提速/占领节奏/原作全等声明。

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { projectRoot } from './check-plan.mjs';
-import { blockingReason, isProcessedAsset, localizationSourceNoted, pathsFromNameStatus, PROCESSED_ASSET_DIR, violationsInRange } from './check-private-files.mjs';
+import { blockingReason, isProcessedAsset, localizationSourceNoted, localizationTableContent, ORIGINAL_LOCALIZATION_HEADER, pathsFromNameStatus, PROCESSED_ASSET_DIR, violationsInRange } from './check-private-files.mjs';
 
 const hans = '来源：原作 localization.csv 的简体中文摘录，不是整份原文件。\n城\n';
 const hant = '来源：原作 localization.csv 的繁体中文摘录，不是整份原文件。\n城\n';
@@ -55,9 +55,12 @@ test('private files are blocked and processed original-ui assets with a named so
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/localization-zh-Hant.txt`, { text: hant }), null);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/atlas.png`), null);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/subset.woff2`), null);
-  assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/meta.webp`), null);
+  assert.match(blockingReason(`${PROCESSED_ASSET_DIR}/meta.webp`), /allowlist/);
+  assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/meta.webp`), false);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/meta.json`), null);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/README.md`), null);
+  assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/twkai-charset.txt`, { text: '天地人\n' }), null);
+  assert.equal(localizationTableContent(fs.readFileSync(path.join(projectRoot, `${PROCESSED_ASSET_DIR}/SOURCES.json`), 'utf8')), false);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/SOURCES.json`), null);
   assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/SOURCES.json`), true);
   const sources = fs.readFileSync(path.join(projectRoot, `${PROCESSED_ASSET_DIR}/SOURCES.json`), 'utf8');
@@ -72,6 +75,8 @@ test('private files are blocked and processed original-ui assets with a named so
   assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/subset.woff2`), true);
   assert.equal(isProcessedAsset('src/sim/core.ts'), false);
   assert.equal(localizationSourceNoted('source: localization.csv\n'), true);
+  assert.equal(localizationTableContent(Array.from({ length: 9 }, (_, index) => `k${index},甲,A`).join('\n')), true);
+  assert.equal(localizationTableContent(Array.from({ length: 20 }, () => 'call(a, b, c);').join('\n')), false);
   assert.deepEqual(pathsFromNameStatus('A\tsrc/app.ts\nD\tGameAssembly.dll\nR100\told.dll\treadme.md\n'), ['old.dll', 'readme.md', 'src/app.ts']);
 });
 
@@ -259,4 +264,53 @@ test('a fake remote rejects eighteen private classes and accepts original-ui png
     fs.rmSync(remote, { recursive: true, force: true });
     removeRepo(root);
   }
+});
+
+function simulatedLocalizationCsv() {
+  const header = ORIGINAL_LOCALIZATION_HEADER.join(',');
+  const rows = Array.from({ length: 12 }, (_, index) => ORIGINAL_LOCALIZATION_HEADER.map((cell, column) => (column === 0 ? `ui.button.${index}` : '文')).join(','));
+  return `${header}\n${rows.join('\n')}\n`;
+}
+
+test('public/original-ui/twkai-charset.txt can be pushed', () => {
+  const root = gitRepo();
+  try {
+    write(root, 'src/app.ts', 'export const value = 1;\n');
+    const base = commit(root, 'code');
+    write(root, `${PROCESSED_ASSET_DIR}/twkai-charset.txt`, '天地人日月山川\n');
+    const next = commit(root, 'charset');
+    assert.deepEqual(violationsInRange(root, base, next), []);
+    const result = runCheck(root, ['--from', base, '--to', next]);
+    assert.equal(result.status, 0, result.stderr);
+  } finally { removeRepo(root); }
+});
+
+test('public/original-ui/README.md can be pushed', () => {
+  const root = gitRepo();
+  try {
+    write(root, 'src/app.ts', 'export const value = 1;\n');
+    const base = commit(root, 'code');
+    write(root, `${PROCESSED_ASSET_DIR}/README.md`, '# original ui\n');
+    const next = commit(root, 'readme');
+    assert.deepEqual(violationsInRange(root, base, next), []);
+    const result = runCheck(root, ['--from', base, '--to', next]);
+    assert.equal(result.status, 0, result.stderr);
+  } finally { removeRepo(root); }
+});
+
+test('public/original-ui/x.txt with localization csv content is blocked', () => {
+  const root = gitRepo();
+  try {
+    const csv = simulatedLocalizationCsv();
+    assert.equal(localizationTableContent(csv), true);
+    assert.match(blockingReason(`${PROCESSED_ASSET_DIR}/x.txt`, { text: csv }), /localization table/);
+    write(root, 'src/app.ts', 'export const value = 1;\n');
+    const base = commit(root, 'code');
+    write(root, `${PROCESSED_ASSET_DIR}/x.txt`, csv);
+    const next = commit(root, 'renamed csv');
+    const result = runCheck(root, ['--from', base, '--to', next]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /x\.txt/);
+    assert.match(result.stderr, /localization table/);
+  } finally { removeRepo(root); }
 });

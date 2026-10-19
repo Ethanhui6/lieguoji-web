@@ -16,8 +16,16 @@ export const LOCALIZATION_EXTRACTS = Object.freeze([
 const LOCALIZATION_EXTRACT_SET = new Set(LOCALIZATION_EXTRACTS);
 const ZERO_OID = '0000000000000000000000000000000000000000';
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-const PROCESSED_EXTENSIONS = new Set(['.png', '.webp', '.woff2', '.json']);
+const PROCESSED_EXTENSIONS = new Set(['.png', '.woff2', '.json', '.txt', '.md']);
 const README_NAMES = new Set(['readme', 'readme.md']);
+// Culture naming CSVs reviewed in src/fms/play/native-culture/data/*.json.
+// The UI localization.csv header line is not recorded in this repo.
+export const ORIGINAL_LOCALIZATION_HEADER = Object.freeze([
+  'Key', 'Chinese', 'English', 'TraditionalChinese', 'Russian', 'SpanishSpain',
+  'PortugueseBrazil', 'German', 'Japanese', 'French', 'Polish', 'SpanishLatinAmerica',
+  'PortuguesePortugal', 'Korean', 'Turkish',
+]);
+const GENERIC_CSV_LINE_LIMIT = 8;
 
 function normalizePath(relative) {
   if (typeof relative !== 'string' || !relative || relative.includes('\0') || relative.includes('\\')) return null;
@@ -43,6 +51,25 @@ export function isProcessedAsset(relative) {
 export function localizationSourceNoted(text) {
   if (typeof text !== 'string' || !text.trim()) return false;
   return /(?:来源|source)\s*[:：][^\n]{0,240}localization\.csv/i.test(text.slice(0, 4096));
+}
+
+function csvCells(line) {
+  return line.replace(/^\uFEFF/, '').trim().split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+}
+
+/** True when text matches the reviewed Key+14 language header, or has more than 8 comma rows of at least 3 columns. */
+export function localizationTableContent(text) {
+  if (typeof text !== 'string' || !text.trim()) return false;
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const header = csvCells(lines[0] ?? '');
+  if (header.length === ORIGINAL_LOCALIZATION_HEADER.length && header.every((cell, index) => cell === ORIGINAL_LOCALIZATION_HEADER[index])) return true;
+  let wide = 0;
+  for (const line of lines) {
+    if (/[(){};]/.test(line)) continue;
+    if (csvCells(line).length >= 3) wide += 1;
+    if (wide > GENERIC_CSV_LINE_LIMIT) return true;
+  }
+  return false;
 }
 
 function hardReason(name) {
@@ -73,10 +100,12 @@ export function blockingReason(relative, options = {}) {
   if (!name) return 'unsafe path';
   const hard = hardReason(name);
   if (hard) return hard;
+  if (localizationTableContent(options.text)) return 'localization table content';
   if (LOCALIZATION_EXTRACT_SET.has(name)) {
     if (!localizationSourceNoted(options.text)) return 'localization extract must name localization.csv as its source';
     return null;
   }
+  if (name.startsWith(`${PROCESSED_ASSET_DIR}/`) && !isProcessedAsset(name)) return 'not an original-ui allowlisted file';
   if (unsafeCandidatePath(name) && options.reviewed !== true) return 'private path';
   return null;
 }
@@ -128,8 +157,10 @@ function legacyReviewed(root, oid, relative) {
 export function violationsInRange(root, from, to) {
   const violations = [];
   for (const relative of pathsChangedBetween(root, from, to)) {
-    const extract = LOCALIZATION_EXTRACT_SET.has(normalizePath(relative) ?? '');
-    const text = extract ? readBlob(root, to, relative)?.toString('utf8') ?? '' : undefined;
+    const normalized = normalizePath(relative) ?? '';
+    const extract = LOCALIZATION_EXTRACT_SET.has(normalized);
+    const bytes = readBlob(root, to, relative);
+    const text = bytes ? bytes.subarray(0, 262144).toString('utf8') : extract ? '' : undefined;
     const reviewed = !extract && unsafeCandidatePath(relative) ? legacyReviewed(root, to, relative) : false;
     const reason = blockingReason(relative, { text, reviewed });
     if (reason) violations.push({ path: relative, reason });

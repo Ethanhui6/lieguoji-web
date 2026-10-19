@@ -44,7 +44,9 @@ pre-push 只看这次要推送的提交里新增或修改的路径，不重扫�
 - 整份 `localization.csv`
 - 原有私有规则：`.autopilot/`、`references/private/`、`.env`、密钥、`.log`、`.zip`、存档 json，以及 `scripts/check-release.mjs` 里 `unsafeCandidatePath` 的其余项。已复核的根 `.npmrc` 和列入复核清单的证据日志仍按原字节例外放行。
 
-`public/original-ui/` 放行处理后的 `png`、`webp`、`woff2`、`json` 和 README。目录里的 `SOURCES.json` 写明素材来源。从原作 `localization.csv` 生成的文字只放行这两个注明来源的文件：`public/original-ui/localization-zh-Hans.txt`、`public/original-ui/localization-zh-Hant.txt`。文件开头要有 `来源：` 或 `source:`，并写到 `localization.csv`。同名文件放在别的目录、或没有来源说明，都会被拦住。这个目录里的原作包、整份 csv、ttf/otf 和其他私有文件也不会因为目录名而放行。Vite 会把该目录拷进 `dist/original-ui/`；`scripts/check-dist.mjs` 只接受同一组文件，文字摘录仍要带上来源说明。
+`public/original-ui/` 放行处理后的 `png`、`woff2`、`json`（含 `SOURCES.json`）、`txt` 和 `md`。不放行 `.webp`。字表 `twkai-charset.txt` 和 `README.md` 属于这里。从原作 `localization.csv` 生成的简体、繁体文字如果用这两个文件名，开头仍要写明来源并点名 `localization.csv`：`public/original-ui/localization-zh-Hans.txt`、`public/original-ui/localization-zh-Hant.txt`。同名摘录放在别的目录、或没有来源说明，都会被拦住。
+
+仓库没有界面 `localization.csv` 的表头原文。已核对的原作本地化表是文化命名 CSV（`docs/evidence/fms-culture17-v5-2026-10-07/NATIVE_RECOVERY.md` 的 Key 加 14 语言列，列名见 `src/fms/play/native-culture/data/*.json`）：`Key,Chinese,English,TraditionalChinese,Russian,SpanishSpain,PortugueseBrazil,German,Japanese,French,Polish,SpanishLatinAmerica,PortuguesePortugal,Korean,Turkish`。文件内容以这一行开头就拦，不看文件名。此外用通用特征：去掉空行后，不含 `(){};` 且至少有 3 个逗号分隔列的行超过 8 行也拦。整份 `localization.csv` 和未裁剪的 `.ttf` / `.otf` 放在这个目录里也同样被拦住。Vite 会把该目录拷进 `dist/original-ui/`；`scripts/check-dist.mjs` 只接受同一组文件，并做同样的内容检查。
 
 ## 正式发行仍要的事实
 

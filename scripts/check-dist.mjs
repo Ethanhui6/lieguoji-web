@@ -22,7 +22,7 @@ function inProcessedAssets(name) {
 
 function processedAssetRejection(name) {
   const repoPath = `public/${name}`;
-  const text = LOCALIZATION_EXTRACTS.includes(repoPath) ? fs.readFileSync(path.join(root, name), 'utf8') : undefined;
+  const text = inProcessedAssets(name) ? fs.readFileSync(path.join(root, name)).subarray(0, 262144).toString('utf8') : undefined;
   const blocked = blockingReason(repoPath, {text});
   if (blocked) return blocked;
   if (isProcessedAsset(repoPath) || LOCALIZATION_EXTRACTS.includes(repoPath)) return null;

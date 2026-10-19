@@ -8,12 +8,12 @@ async function saved(page:Page){await page.getByRole('button',{name:'保存文�
 test('Chinese culture world: actual diplomacy, hidden idle news, military preview/cancel, time and durable reload',async({page},info)=>{
  test.setTimeout(240000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await enter(page);await create(page);const nations=await countries(page);expect(nations.every(n=>!/[a-z]/i.test(n.name))).toBe(true);
- await expect(page.getByRole('button',{name:'顶部重要事件'})).toBeVisible();await expect(page.getByRole('button',{name:'顶部重要事件'})).toHaveCount(0,{timeout:12000});
+ await expect(page.getByRole('button',{name:'顶部事件',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'顶部事件',exact:true})).toHaveCount(0,{timeout:12000});
  await page.locator('.c47-nations').getByRole('button',{name:nations[2].name,exact:true}).click();await expect(page.getByRole('complementary',{name:'文化与国家详情'})).toContainText('英格兰文化');
  await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect(page.getByTestId('culture47-app')).not.toHaveAttribute('data-tick','0');
  await page.getByLabel('外交目标国家').selectOption(nations[3].id);await page.getByRole('button',{name:'暂停并预览宣战',exact:true}).click();await expect(page.getByRole('group',{name:'外交预览'})).toBeVisible();await expect(page.getByRole('button',{name:'继续时间',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'取消外交操作'}).click();await expect(page.getByRole('group',{name:'外交预览'})).toHaveCount(0);
- await page.getByRole('button',{name:'暂停并预览宣战',exact:true}).click();await page.getByRole('button',{name:'确认宣战',exact:true}).click();await expect(page.getByRole('button',{name:'顶部重要事件'})).toBeVisible();
+ await page.getByRole('button',{name:'暂停并预览宣战',exact:true}).click();await page.getByRole('button',{name:'确认宣战',exact:true}).click();await expect(page.getByRole('button',{name:'顶部事件',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'查看大事记'}).click();await expect(page.locator('.c47-history')).toContainText('宣战');await page.screenshot({path:info.outputPath('chinese-important-events.png')});
  await page.locator('.c47-nations').getByRole('button',{name:nations[2].name,exact:true}).click();await page.getByLabel('外交目标国家').selectOption(nations[3].id);await page.getByRole('button',{name:'暂停并预览停战',exact:true}).click();await page.getByRole('button',{name:'确认停战',exact:true}).click();
  await page.getByRole('button',{name:'军事模式'}).click();const options=page.getByLabel('选择部队').locator('option[value^="army/"]');expect(await options.count()).toBeGreaterThan(0);await page.getByLabel('选择部队').selectOption((await options.first().getAttribute('value'))!);await expect(page.getByRole('button',{name:'调遣',exact:true})).toBeVisible();

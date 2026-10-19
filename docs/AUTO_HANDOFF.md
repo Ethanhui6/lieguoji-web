@@ -1,3 +1,11 @@
+# 当前检查点：边境规则已进入真实战争（2026-10-19）
+
+源码5944c0d，引擎4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6，本机 http://127.0.0.1:5366/?fms=1，独立产物.autopilot/fms-border54-checked；旧5365/dist保留。真实选敌和战斗不再固定protruding:false；复用显示格归属，按实时控制国计算，原10b0逐字节冻结。70单测、11浏览器、lint/type/build124通过，56日编译Worker第4日5军/第56日19军目标不同，run/frame日志回放相同。没有提速/占领节奏/原作全等声明。
+
+见[证据](evidence/fms-border54-2026-10-19/RESULT.md)，键webRebuild.border54Checkpoint。下一批State.Update边界消费者/版本化10省1国轮转，不重复本批恢复；日财政与即时防御不变。手机仿真不是真机；事件条遮挡军队标题已记录未解决，视觉未过。无上传，发布锁保持。
+
+---
+
 # 当前检查点：方案 C 找到边境格生产者（2026-10-19）
 
 已恢复FilterProvinceCells及727900回调，解决上一批真实写入位置未知：外侧邻接cell逐次追加，排除同省和省0，保留重复；派生邻省/临海/Feature一致性。39项测试（含原作19,928点固定测试省份逐边核对）通过，lint/typecheck通过。模块未接生产Worker，当前试玩不变，不声称AI已改或提速。见[证据](evidence/fms-province-cells53-2026-10-19/RESULT.md)，键webRebuild.provinceCells53Checkpoint。

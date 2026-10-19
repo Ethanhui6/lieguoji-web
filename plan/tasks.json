@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Claude Plan C: provinceCells53Checkpoint resolves actual borderNeighborCells producer: BurgsAndStateGenerator.FilterProvinceCells callback727900 appends external neighbor cells, preserves duplicates, excludes province0. Direct callers generation/sea regeneration/height edit/load verified. Kernels plus original19,928-site synthetic province integration passed, NOT production connected. Next State.Update border consumers and explicit original CellData-to-current-world projection; do not substitute travel triangles or repeat producer search. Then versioned10province/1state scheduling. Keep immediate core defense/daily fiscal; no uploads.",
+    "nextRecoveryTarget": "Read border54Checkpoint and latest AUTO_HANDOFF. Border producer now wired to real current AI and combat using SAME cell-to-province projection as rendered map; live ownership updates same reader.70unit/11browser and56day compiled replay verified;10b0 frozen. Next State.Update border consumers and versioned10province/1state rotation. Keep daily fiscal and immediate core defense; no uploads. UI followup: mobile news overlaps army heading, not visually accepted. Local5366 source5944c0d.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13144,6 +13144,21 @@
       "unitTests": 39,
       "originalGridSites": 19928,
       "productionBehaviorChanged": false,
+      "uploaded": false
+    },
+    "border54Checkpoint": {
+      "date": "2026-10-19",
+      "status": "production-integrated-bounded-loop-verified",
+      "sourceCommit": "5944c0d49cc1977f7695bc357348e23a4a5520bb",
+      "engine": "4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6",
+      "evidence": "docs/evidence/fms-border54-2026-10-19/RESULT.md",
+      "unitTests": 70,
+      "browserTests": 11,
+      "compiledWarDays": 56,
+      "exactRunFrameReplay": true,
+      "productionBehaviorChanged": true,
+      "fullNativeEquivalence": false,
+      "physicalDeviceAccepted": false,
       "uploaded": false
     }
   }

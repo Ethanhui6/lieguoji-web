@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-19",
+  "node": "24.18.1",
+  "unit": {"command": "vitest run", "files": 468, "passed": 5948, "failed": 0},
+  "newUnit": {"file": "src/fms/play/war-frontier55.test.ts", "passed": 6},
+  "frozenVerification": {"file": "src/fms/play/culture47-verification.test.ts", "passed": 5},
+  "lint": "eslint src tests scripts",
+  "typecheck": "tsc --noEmit",
+  "build": {"command": "vite build && check-dist", "approvedArtifacts": 124, "note": "Built before the registry edit. The frozen worker is that build's culture47.worker."},
+  "playwright": {"spec": "tests/fms-war-frontier55.spec.ts", "project": "desktop-chromium", "passed": 1, "durationMs": 4200, "screenshot": "peace-chronicle.png"},
+  "engines": {
+    "baselineSourceAt5944c0d": "4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6",
+    "previousFrozen": "10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5",
+    "previousFile": "engine-10b0.js",
+    "previousBytes": 1419905,
+    "previousSha256": "bfcbf0cbfa4e76690d08fcbf58f22441b66e808ca837fb1eb582bd533ca9c3d9",
+    "previousUnchanged": true,
+    "behaviorBuild": "39456634140137a045d9c92edcdf8cc143a2cd25153809b4a54dc229dd73bc3d",
+    "behaviorFile": "engine-3945.js",
+    "behaviorBytes": 1427436,
+    "behaviorSha256": "4472ade6469d5435ce631d98263ecc8dd4bf6e3a67d29fa1e4d6d8d6b8067cb1",
+    "sourceFingerprintAfterRegistry": "9fddc91f8f250117b9b543428cdc6576947a9d4fcde9cc22006edcc700da4eab"
+  },
+  "playtestArtifactsRewritten": false,
+  "uploaded": false
+}

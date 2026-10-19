@@ -18,6 +18,7 @@ import {armyPreviewTicks47} from './army-route-budget47';
 import {actualForceSpeed47} from './force-speed47';
 import {marchingRation47} from './logistics-clock47';
 import {nativeIdleArmyPools,nativeChooseIdleArmy} from './native-war/army-deployment';
+import {campaignGoalLabel55,contiguousWarTargets55,routeSkipsCell55,warGoalAdvanceReason55,webProvinceNeighbors55} from './war-frontier55';
 
 /** Stable WEB draw per army and assignment epoch. Native selection weights
  * are reused; Unity's global RNG is not claimed. The chosen target is saved. */
@@ -91,17 +92,15 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
       if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous');
       note('resting','军粮、士气或兵力不足，在当前本国陆地休整。',true);continue;
     }
-    const attackIds=new Set<string>(),owned=r.world.provinces.filter(p=>p.controller===a.nationId),invaded=owned.filter(p=>enemyAt(p.id));
-    if(!low&&a.status!=='retreating'&&enemies.size){
-      for(const p of invaded)attackIds.add(p.id);
-      for(const p of owned)for(const id of p.neighbors)if(enemies.has(places.get(id)!.controller))attackIds.add(id);
-      // Ally assistance never inherits another state's wars. This is an
-      // explicit access-and-current-enemy bridge, not native ally eligibility.
-      if(!invaded.length)for(const p of r.world.provinces)if(p.controller!==a.nationId&&access(r.world,a.nationId,p.controller)){
-        if(enemyAt(p.id))attackIds.add(p.id);for(const id of p.neighbors)if(enemies.has(places.get(id)!.controller))attackIds.add(id);
-      }
-      for(const p of r.world.provinces)if(enemies.has(p.controller)&&coasts.has(p.id))attackIds.add(p.id);
-    }
+    const owned=r.world.provinces.filter(p=>p.controller===a.nationId),invaded=owned.filter(p=>enemyAt(p.id));
+    // Ally assistance never inherits another state's wars. This is an
+    // explicit access-and-current-enemy bridge, not native ally eligibility.
+    const assist=!low&&a.status!=='retreating'&&enemies.size&&!invaded.length?r.world.provinces.filter(p=>p.controller!==a.nationId&&access(r.world,a.nationId,p.controller)):[];
+    // webProvinceNeighbors55 is the current border source. Swap in a
+    // ContiguousBorder55 from the parallel CellData borderNeighborCells
+    // projection after that PR merges; do not read its module from here.
+    const frontier=!low&&a.status!=='retreating'&&enemies.size?contiguousWarTargets55({ownedIds:owned.map(p=>p.id),assistIds:assist.map(p=>p.id),invadedIds:invaded.map(p=>p.id),reliefIds:assist.filter(p=>enemyAt(p.id)).map(p=>p.id),provinces:r.world.provinces,enemies:new Set(enemies.keys()),coasts,border:webProvinceNeighbors55(r.world.provinces)}):[];
+    const attackIds=new Set(frontier.map(v=>v.id)),frontierKind=new Map(frontier.map(v=>[v.id,v.kind]));
     const search=createArmyCommandSearch47(r,weights,a.id);
     const location=armyTravelLocation47(here.travel,g),home=places.get(r.tactics.forces[a.id].homeId);if(!home)throw Error('自主军令缺少真实故乡。');
     let candidates:RegularTarget47[]=[...attackIds].map(id=>({id,center:places.get(id)!.center,feature:provinceFeatures.get(id)!,protruding:protruding(id),port:ports.has(id)}));
@@ -125,8 +124,10 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
       }
       reason=preview.reason;candidates=candidates.filter(v=>v!==p);
     }
-    if(chosen){const p=places.get(chosen.id)!,enemy=enemies.has(p.controller)?p.controller:enemyAt(p.id)!.nationId;row.targetId=p.id;row.campaignId=enemies.get(enemy)!;row.issuedTick=r.clock.tick;
-      note(p.controller===a.nationId||access(r.world,a.nationId,p.controller)?'supporting':'attacking','按原目标优先级选定真实陆地，并通过当前外交通行和海陆路径校验。');continue;
+    if(chosen){const p=places.get(chosen.id)!,enemy=enemies.has(p.controller)?p.controller:enemyAt(p.id)!.nationId,campaignId=enemies.get(enemy)!,campaign=r.nativeWars.campaigns.find(c=>c.id===campaignId),number=r.nativeWars.provinceIds.indexOf(p.id)+1,path=r.armyPositions.records[a.id].nodes;
+      if(routeSkipsCell55((from,to)=>g.cells.get(from)!.links.some(l=>l.to===to),path))throw Error('行军路径跳格，军令未保留。');
+      row.targetId=p.id;row.campaignId=campaignId;row.issuedTick=r.clock.tick;
+      note(p.controller===a.nationId||access(r.world,a.nationId,p.controller)?'supporting':'attacking',warGoalAdvanceReason55({kind:frontierKind.get(p.id)??'border',provinceName:p.name,goal:campaign?.history==='complete'?campaignGoalLabel55(campaign.goals,number>0?number:null):null,protruding:protruding(p.id)}));continue;
     }
     // WEB logistics bridge: an inland force first rallies toward its preferred
     // target on safe, stocked home land. Arrival/refill use the real travel and

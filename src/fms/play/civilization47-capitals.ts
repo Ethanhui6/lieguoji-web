@@ -4,7 +4,7 @@ import {reconcileCore} from './core-refresh51';
 
 /** Live candidate transition after land ownership changes. Native July 2026
  * behavior separates immediate relocation from the later capital-fall crisis.
- * Seat selection below is an explicit web adapter: largest connected surviving
+ * Seat selection below is 网页适配: largest connected surviving
  * holding, prefer legal home cities, then population, distance, stable city ID.
  * It does not claim the native candidate scoring or month-later crisis. */
 export function relocateLostCapitals47(r:FoundingForces47):void {

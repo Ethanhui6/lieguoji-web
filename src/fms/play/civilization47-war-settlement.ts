@@ -25,6 +25,7 @@ import {announce} from './civilization47-history';
 import {warHistoryDetails47} from './civilization47-war-history';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';
+import {relocateLostCapitals47} from './civilization47-capitals';
 export const peaceQueries47=(r:PoliticalRun47)=>war28Queries(r,r.nativeWars,{territoryLossThreshold:id=>WAR28_LOSS_THRESHOLD[r.civilization.nations[id].polity],autonomousDiplomacy:id=>r.diplomacy.nations[id]});
 /** All reconciliation is at zero elapsed time and reads actual47 ledgers. */
 export function reconcileDiplomaticForces47(r:PoliticalRun47,participants:Set<string>){
@@ -65,8 +66,16 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
   }
   c.settlement=w?{reason,tick:r.clock.tick,winnerSide:plan?.winnerSide??null,outcomes:[...(plan?.outcomes??[])],enforcedGoals:[...(plan?.enforcedGoals??[])],transfers:structuredClone(plan?.appliedTransfers??[]),effects:structuredClone(plan?.effectResults??[]),confirmedOwnership}:null;
   c.endedTick=r.clock.tick;r.nativeWars.revision++;
-  const label=WAR28_PEACE_LABELS[reason],names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name);
-  announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。`,participants,null);
+  const capitalAt=r.chronicle.entries.length;relocateLostCapitals47(r);
+  const capitalMoves=r.chronicle.entries.slice(capitalAt).filter(e=>e.kind==='capital');
+  const placeName=(pid:number)=>r.world.provinces.find(p=>p.id===r.nativeWars.provinceIds[pid-1])?.name??'未记录地区';
+  const transfers=(plan?.appliedTransfers??[]).map(t=>`${placeName(t.provinceId)}由${r.world.nations.find(n=>n.id===key(t.from))?.name??'未记录国家'}改属${r.world.nations.find(n=>n.id===key(t.to))?.name??'未记录国家'}`);
+  const confirmed=(c.settlement?.confirmedOwnership??[]).map(([pid,owner])=>`${placeName(pid)}实控确认为${r.world.nations.find(n=>n.id===key(owner))?.name??'未记录国家'}`);
+  const capitals=participants.map(id=>{const nation=r.world.nations.find(n=>n.id===id)!,city=r.world.cities.find(c=>c.id===nation.capitalId),province=city?r.world.provinces.find(p=>p.id===city.provinceId):undefined,holder=province?r.world.nations.find(n=>n.id===province.controller)?.name??'未记录国家':'无实控';const move=capitalMoves.find(e=>e.nationIds.includes(id));return `${nation.name}首都${city?.name??'未记录'}，该地现由${holder}控制${move?.sourceEventId!=null?`（迁都事件 ${move.sourceEventId}）`:''}`;});
+  const label=WAR28_PEACE_LABELS[reason],names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name),peaceEventId=r.world.nextEventId;
+  const ledger=`领土：${transfers.length?transfers.join('、'):confirmed.length?confirmed.join('、'):'无和约转地'}。首都：${capitals.join('；')}。大事记事件 ${peaceEventId}。`;
+  const entry=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。${ledger}`,participants,null);
+  if(entry.sourceEventId!==peaceEventId)throw Error('和约事件编号不一致。');
   reconcileDiplomaticForces47(r,new Set(participants));reconcileNativeDiplomacy46(r.nativeDiplomacy,r);return true;
 }
 export function advancePeace47(r:PoliticalRun47,monthStart:boolean){

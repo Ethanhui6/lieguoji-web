@@ -1,3 +1,13 @@
+# 当前检查点：WEB-04-37 战争目标、连片推进与和约账（2026-10-19）
+
+AI 军令写明战争目标原因，只沿相连边境或已失守的邻省推进，路径不相邻则拒绝。玩家停战不割地；大事记写入领土结果、首都归属和事件编号，首都省已失守时沿用既有迁都。外交预览可取消，过期戳由 Worker 拒绝。海路入口、当前邻省表和迁都选址标明网页适配。
+
+新冻结引擎 `39456634140137a045d9c92edcdf8cc143a2cd25153809b4a54dc229dd73bc3d`（`engine-3945.js`，1427436 字节）。旧 10b0 原字节未改。登记后源码指纹为 `9fddc91f8f250117b9b543428cdc6576947a9d4fcde9cc22006edcc700da4eab`。5944c0d 源码指纹 `4ba56e39…` 仍未单独冻结。全仓 5948 项单测、lint、typecheck、构建 124 产物、桌面 Chromium 1/1 通过。见[证据](evidence/fms-war-frontier55-2026-10-19/RESULT.md)，键 webRebuild.warFrontier55Checkpoint。
+
+边境接入点在 `issueArmySelection47` 的 `ContiguousBorder55`：现在传入 `webProvinceNeighbors55`。CellData `borderNeighborCells` 投影合并后只替换这个参数。`war-frontier55.ts` 不引用边境生产者。WEB-04-37 仍 in_progress：厌战、完整和约函数核对与 10 省/1 国轮转未做。5365 产物与旧档未重写，无上传。
+
+---
+
 # 当前检查点：方案 C 找到边境格生产者（2026-10-19）
 
 已恢复FilterProvinceCells及727900回调，解决上一批真实写入位置未知：外侧邻接cell逐次追加，排除同省和省0，保留重复；派生邻省/临海/Feature一致性。39项测试（含原作19,928点固定测试省份逐边核对）通过，lint/typecheck通过。模块未接生产Worker，当前试玩不变，不声称AI已改或提速。见[证据](evidence/fms-province-cells53-2026-10-19/RESULT.md)，键webRebuild.provinceCells53Checkpoint。

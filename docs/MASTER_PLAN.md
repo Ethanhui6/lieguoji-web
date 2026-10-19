@@ -22,7 +22,7 @@
 |---|---|
 | 界面 | 照原作重建。**10-08 的温白 iOS 图标 UI 作废**，旧 iOS 质感规格全部作废，包括 DESIGN_V4、atlas-ui 目标图、浅深色主题、原创 SVG 图标 |
 | 素材 | 直接用原作的贴图、字体和界面文字（原作是 Bob 本人的作品）。第三方素材要单独查许可。许可不清的不用，改用原作素材或 CSS 绘制；许可清楚的写明来源再用 |
-| 字体 | Arial、微软正黑体：CSS 只写系统字体名，后备 Liberation Sans 和 Noto Sans TC，不打包。开源字体（TW-Kai、RobotoSlab、Roboto、Avara、OpenSans、LiberationSans）按字表子集打包，许可登记清楚。TW-Kai 子集已定：补鸣谢 16 字，1,489,072 B / 3,033 字，≤1.5 MB。许可是 OFL-1.1 或政府开放授权 |
+| 字体 | Arial、微软正黑体：CSS 只写系统字体名，后备 Liberation Sans 和 Noto Sans TC，不打包。开源字体（TW-Kai、RobotoSlab、Roboto、Avara、OpenSans、LiberationSans）按字表子集打包，许可登记清楚。TW-Kai 的许可是 OFL-1.1 或政府开放授权。子集已经补上鸣谢面板的 16 个字，现在 3,033 字、1,489,072 B，不超过 1.5 MB |
 | 上线 | 照常公开上线。每个任务一个 PR，测过即合并上线。合并 main 不再另行询问 |
 | 测试两档 | **一档**（往 `codex/ph06-world-generation` 的 PR）：类型检查、构建、相关单测（含冻结引擎兼容和该任务自己的验收测试）、`?fms=1` 冒烟。**二档**（往 main 的 PR）：全套 |
 | 版本报告 | 每次合并上线：打 tag，发中文 GitHub Release（新增、改动、已知问题、网页适配项、试玩链接）。版本号从 v0.5.0 开始 |
@@ -51,7 +51,12 @@
 5. 一个 PR 只做一件事，PR 说明里写：改动清单、原作依据（文件路径、RVA、pathID）、来源等级、对照图、检查结果、没通过的项。
 6. 性能：在共享电脑上用 `?fms=1`（2 万格、种子 1337）做同机新旧对比。绝对硬件通过线不再另等一台未定的 GPU 机器。
 
-**P-0b（#21 合并后，CI 分档）**：往 `codex/ph06-world-generation` 的 PR 只跑类型检查、构建、相关单测（含冻结引擎兼容）和 `?fms=1` 冒烟；往 main 的 PR 跑全套。验收：codex PR 的 CI 明显短于全套（目标 ≤15 分钟）。
+**测试分两档**（与第 2 节同一条）：
+
+- **一档**，往 `codex/ph06-world-generation` 的 PR：类型检查、构建、相关单测（含冻结引擎兼容和该任务自己的验收测试）、`?fms=1` 冒烟。
+- **二档**，往 main 的 PR：全套。
+
+**P-0b（#21 合并后，CI 分两档）**：往 `codex/ph06-world-generation` 的 PR 只跑类型检查、构建、相关单测（含冻结引擎兼容）和 `?fms=1` 冒烟；往 main 的 PR 跑全套。验收：codex PR 的 CI 明显短于全套，不超过 15 分钟。
 
 **落仓前的流程准备（P-0，一个 PR，与本计划文档 PR 分开）**：
 
@@ -62,7 +67,9 @@
 - tasks.json 补登第 5 节里还没有 V5 编号的任务，并在校验允许后把 `nextBatch` 改成完整顺序（本批只登记了已有编号空间里的 WEB-02-06 / WEB-03-07，见第 9 节说明）；
 - 核实引擎指纹的范围，见第 7 节。
 
-本批不改 `releasePolicy`、pre-push、发布策略测试和指纹脚本，避免和 P-0 冲突。
+**P-0 验收补充**：只删发布锁部分。pre-push 拦私有文件的检查保留（解密密钥、存档、`envs.log`、`gameConfigDyV2.json`、原作原始资源包）；试推一个暂存的私有文件必须被拦下。放行白名单只包括经处理的网页素材目录（字体子集、导出的界面贴图）。
+
+`releasePolicy` 这次不改，等 #24 合并后由 Bob 单独指示再动。pre-push、发布策略测试和指纹脚本同样留在那一步。
 
 ## 5. 当前在做的（方案 C）
 
@@ -173,7 +180,7 @@ WEB-02-06 / WEB-03-07 来自路线附表 B-3 的建议编号（此前最高为 W
 
 CODEX_AUTOPILOT_V3/V4/V5.md、ROADMAP.md、README.md 顶部说明、AGENTS.md 里跟本计划冲突的发布和美术条款、docs/FMS_WEB_REBUILD_PLAN.md、docs/PH_ROADMAP_V4.md、docs/DESIGN_V4.md、docs/design/atlas-ui-2026-10-08/*、docs/RELEASE_POLICY_V4.md、docs/DEPLOY_CLOUDFLARE.md 与 docs/GITHUB_WORKFLOW.md 的冻结段、docs/GITHUB_UPLOAD_2026-10-06.md、docs/PLAYTEST_RELEASE_2026-09-24.md、docs/FMS_ORIGINAL_STYLE_EXECUTION_PROMPT_2026-10-15.md、docs/FMS_DESKTOP_WEB_REPLICA_PROMPT_2026-10-06.md（核对清单部分仍可参考）、docs/PRODUCT_SPEC.md、docs/WORLD_V4.md 的规模目标、ADR 0005 的全阶段发布门、ADR 0007 的主题部分、ADR 0008 的规模目标、plan/tasks.json 的 `webRebuild.uiDirectionOverride` 与「体验门未过则不扩建」的产品顺序。
 
-**本批故意不改、等 P-0 的配置**（现有校验仍要求它们保持原样）：
+**本批故意不改的配置**（现有校验仍要求它们保持原样；`releasePolicy` 等 #24 合并后由 Bob 单独指示再动）：
 
 - `plan/tasks.json` 的 `releasePolicy`（`locked`，`cloudWritesAllowed: false`，`local_only_until_all_ph_accepted`）
 - `webRebuild.source` / `webRebuild.roadmap` / `webRebuild.release` / `firstPlayableGate.phaseId`（校验写死为 V5 文件和 WEB-PH02）
@@ -181,6 +188,21 @@ CODEX_AUTOPILOT_V3/V4/V5.md、ROADMAP.md、README.md 顶部说明、AGENTS.md �
 - pre-push、`scripts/check-release.mjs`、发布策略测试、`scripts/engine-fingerprint.ts`、`scripts/fms-culture47-fingerprint.ts`
 
 **保持有效**：CANON.md（正式设定边界）、ADR 0006（冻结引擎；指纹范围按第 7 节以后再改）、旧任务的 done 历史和证据、docs/FMS_PORT_ANALYSIS_2026-10-17.md（路线依据）。
+
+## 策划决定（2026-10-19 15:05，Bob 授权「你自己抉择」）
+
+主计划以这 8 条为准。前文里还写着「等 Bob 拍板」的，按这里执行。
+
+1. 手机竖屏默认镜头放大到陆地填满屏幕，首屏地图至少占 60%：采纳。
+2. 性能测量：在共享电脑上用 `?fms=1` 基准（2 万格、种子 1337）做新旧版本对比，真机手感用每个版本的预览链接实测；不用 Bob 的电脑。
+3. 第三方素材包贴图：许可不清的不用，改用原作素材或 CSS 绘制；许可清楚的写明来源再用。
+4. 桌面验收以 1920×1080 为主，1600×900 作第二检查尺寸。
+5. 版本号从 v0.5.0 开始。
+6. 储备项（闭合轮廓自然化、五国 CANON、第一次长征）：保留在待办池，不排进当前批次。
+7. 真机：以 iPhone 为主，另用 Chrome 的安卓模拟做一次冒烟。
+8. 速度：1× 至少 9.8 日/秒仍是硬线；任务 2 之后把 2×（20 日/秒）作为目标跟踪，不卡合并，用单日结算耗时（2× 约 ≤50 ms）衡量。
+
+合并 main 不再询问。TW-Kai 子集打包此前已定：已经补上鸣谢面板的 16 个字，现在 3,033 字、1,489,072 B，不超过 1.5 MB。
 
 ## 10. 还没定的
 
@@ -191,4 +213,4 @@ CODEX_AUTOPILOT_V3/V4/V5.md、ROADMAP.md、README.md 顶部说明、AGENTS.md �
 - 地图上哪个中文标签用 `ChineseMapFont`，哪个用 `ChineseFont`
 - 8 个外观预设的切换方式（菜单还是点一下）
 
-15:05 已定、不再挂起：手机首屏镜头、共享电脑性能测量、第三方贴图许可、1920×1080 为主验收、版本号从 v0.5.0 起、储备项不进当前批次、真机以 iPhone 为主并加一次安卓模拟冒烟、1× 硬线与 2× 跟踪目标、合并 main 不再询问、TW-Kai 子集打包。
+上面「策划决定」的 8 条、测试分两档、P-0b 的 CI 分档，以及 TW-Kai 子集，都已经定了，不再挂起。

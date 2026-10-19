@@ -14,6 +14,7 @@ test('map generation panel closes, reopens and previews the selected density wit
  await panel.getByRole('button',{name:'关闭生成地图'}).click();await expect(panel).toHaveCount(0);
  await page.getByRole('button',{name:'生成地图',exact:true}).click();
  await expect(panel.getByRole('radio',{name:'3 万格'})).toBeChecked();
+ await expect(panel).toHaveCSS('opacity','1');
  const box=await panel.boundingBox(),view=page.viewportSize()!;expect(box).not.toBeNull();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(view.width);expect(box!.y+box!.height).toBeLessThan(view.height);
  await page.screenshot({path:info.outputPath('generation-panel.png'),fullPage:true});
  const revision=await app.getAttribute('data-revision');

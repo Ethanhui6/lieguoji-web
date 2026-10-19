@@ -1,0 +1,70 @@
+{
+  "source": "level0 RectTransform/GameObject only; serialized values, not runtime screenshot",
+  "rows": [
+    {
+      "path": "/Canvas/EditPanel/MapSize/Background/Scroll View/Viewport/Content/SuperHigh",
+      "go": 384,
+      "parent": 22848,
+      "size": [
+        270,
+        104.19999694824219
+      ],
+      "position": [
+        141.35000610351562,
+        -410.9800109863281
+      ]
+    },
+    {
+      "path": "/Canvas/EditPanel/MapSize/Background/Scroll View/Viewport/Content/High",
+      "go": 3617,
+      "parent": 22848,
+      "size": [
+        270,
+        104.19999694824219
+      ],
+      "position": [
+        141.35000610351562,
+        -297.71002197265625
+      ]
+    },
+    {
+      "path": "/Canvas/EditPanel/MapSize/Background/Scroll View/Viewport/Content/Medium",
+      "go": 5678,
+      "parent": 22848,
+      "size": [
+        270,
+        104.19999694824219
+      ],
+      "position": [
+        141.35000610351562,
+        -184.44000244140625
+      ]
+    },
+    {
+      "path": "/Canvas/EditPanel/MapSize/Background/Scroll View/Viewport/Content/Low",
+      "go": 6075,
+      "parent": 22848,
+      "size": [
+        270,
+        104.19999694824219
+      ],
+      "position": [
+        141.35000610351562,
+        -71.17000579833984
+      ]
+    },
+    {
+      "path": "/Canvas/EditPanel/MapSize",
+      "go": 6585,
+      "parent": 24345,
+      "size": [
+        315.5,
+        483.70001220703125
+      ],
+      "position": [
+        -326.6666259765625,
+        348
+      ]
+    }
+  ]
+}

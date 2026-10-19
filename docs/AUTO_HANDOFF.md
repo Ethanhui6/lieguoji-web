@@ -1,3 +1,11 @@
+# 当前检查点：用户优先地图生成界面（2026-10-19）
+
+按Claude计划阶段4读取原level0 MapSize315.5×483.7结构，生成入口改为左侧窄面板/尺寸列表/固定底部操作，竖屏滚动、可关闭重开。真实生成/取消/确认/撤销/保存/进入6国60城推演通过。13单测、6浏览器、type/lint/build126通过；2项截图补跑不重复计数。源码0e24511676d961d7ebf004a0421613f16b009a6d，本机 http://127.0.0.1:5368/?fms=1 ，产物.autopilot/fms-generation56-checked；旧5367/dist保留，f98b原字节冻结。
+
+见[证据与前后截图](evidence/fms-generation56-2026-10-19/RESULT.md)，键webRebuild.generation56Checkpoint。仅恢复生成面板第一段，8万格/全部原生配置/全局工具条字体及空白海洋仍有差异；真机和用户视觉未过。下一批优先原作生成界面及流程，不被旧国家刷新顺序误导；State55/10省1国未完成项保留。无上传。
+
+---
+
 # 当前检查点：国家常规敌省集合已接入（2026-10-19）
 
 生产源码1eeb869，引擎f98b3e96bc9af0ff2b680a2ef51e8c3a7a105dc86c35898b8606b659f078818b；本机 http://127.0.0.1:5367/?fms=1 ，独立产物.autopilot/fms-state55-checked。真实AI从显示格边界收集常规敌省，攻占/停战重读；原4ba5字节冻结。39单测、11浏览器、type/lint/build125通过。56日run/frame与5366基线完全相同，日志回放完全相同；行为差异覆盖未命中，不能声称战略/节奏已改善。见[证据](evidence/fms-state55-2026-10-19/RESULT.md)，键webRebuild.stateBorder55Checkpoint。

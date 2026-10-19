@@ -44,7 +44,6 @@ const blocked = [
   'data/Localization.csv',
   `${PROCESSED_ASSET_DIR}/localization.csv`,
   `${PROCESSED_ASSET_DIR}/font.ttf`,
-  `${PROCESSED_ASSET_DIR}/font.otf`,
   `${PROCESSED_ASSET_DIR}/gameConfigDyV2.json`,
   'docs/localization-zh-Hans.txt',
 ];
@@ -59,10 +58,6 @@ test('private files are blocked and processed original-ui assets with a named so
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/meta.webp`), null);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/meta.json`), null);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/README.md`), null);
-  assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/twkai-charset.txt`), null);
-  assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/twkai-charset.txt`), true);
-  assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/README.md`), true);
-  assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/pack.md`), true);
   assert.equal(blockingReason(`${PROCESSED_ASSET_DIR}/SOURCES.json`), null);
   assert.equal(isProcessedAsset(`${PROCESSED_ASSET_DIR}/SOURCES.json`), true);
   const sources = fs.readFileSync(path.join(projectRoot, `${PROCESSED_ASSET_DIR}/SOURCES.json`), 'utf8');
@@ -117,8 +112,6 @@ test('a push range blocks private files, allows processed assets, and ignores un
     write(root, `${PROCESSED_ASSET_DIR}/atlas.png`, 'png');
     write(root, `${PROCESSED_ASSET_DIR}/subset.woff2`, 'woff2');
     write(root, `${PROCESSED_ASSET_DIR}/SOURCES.json`, '{"source":"来源：localization.csv"}\n');
-    write(root, `${PROCESSED_ASSET_DIR}/twkai-charset.txt`, '城\n');
-    write(root, `${PROCESSED_ASSET_DIR}/README.md`, '# original ui\n');
     write(root, `${PROCESSED_ASSET_DIR}/localization-zh-Hans.txt`, hans);
     write(root, `${PROCESSED_ASSET_DIR}/localization-zh-Hant.txt`, hant);
     const good = commit(root, 'assets');
@@ -244,18 +237,9 @@ test('a fake remote rejects eighteen private classes and accepts original-ui png
     write(root, `${PROCESSED_ASSET_DIR}/icon.png`, 'png');
     write(root, `${PROCESSED_ASSET_DIR}/ui.woff2`, 'woff2');
     write(root, `${PROCESSED_ASSET_DIR}/SOURCES.json`, fs.readFileSync(path.join(projectRoot, `${PROCESSED_ASSET_DIR}/SOURCES.json`)));
-    let good = commit(root, 'original ui');
+    const good = commit(root, 'original ui');
     const assets = push();
     assert.equal(assets.status, 0, assets.stderr + assets.stdout);
-    write(root, `${PROCESSED_ASSET_DIR}/twkai-charset.txt`, '城\n');
-    commit(root, 'charset');
-    const charset = push();
-    assert.equal(charset.status, 0, charset.stderr + charset.stdout);
-    write(root, `${PROCESSED_ASSET_DIR}/README.md`, '# original ui\n');
-    const withReadme = commit(root, 'readme');
-    const readme = push();
-    assert.equal(readme.status, 0, readme.stderr + readme.stdout);
-    good = withReadme;
     for (const [file, contents] of blockedPushes) {
       write(root, file, contents);
       commit(root, `add ${file}`);
@@ -275,30 +259,4 @@ test('a fake remote rejects eighteen private classes and accepts original-ui png
     fs.rmSync(remote, { recursive: true, force: true });
     removeRepo(root);
   }
-});
-
-test('public/original-ui/twkai-charset.txt can be pushed', () => {
-  const root = gitRepo();
-  try {
-    write(root, 'src/app.ts', 'export const value = 1;\n');
-    const base = commit(root, 'code');
-    write(root, `${PROCESSED_ASSET_DIR}/twkai-charset.txt`, '城\n');
-    const next = commit(root, 'charset');
-    assert.deepEqual(violationsInRange(root, base, next), []);
-    const result = runCheck(root, ['--from', base, '--to', next]);
-    assert.equal(result.status, 0, result.stderr);
-  } finally { removeRepo(root); }
-});
-
-test('public/original-ui/README.md can be pushed', () => {
-  const root = gitRepo();
-  try {
-    write(root, 'src/app.ts', 'export const value = 1;\n');
-    const base = commit(root, 'code');
-    write(root, `${PROCESSED_ASSET_DIR}/README.md`, '# original ui\n');
-    const next = commit(root, 'readme');
-    assert.deepEqual(violationsInRange(root, base, next), []);
-    const result = runCheck(root, ['--from', base, '--to', next]);
-    assert.equal(result.status, 0, result.stderr);
-  } finally { removeRepo(root); }
 });

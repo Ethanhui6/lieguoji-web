@@ -16,7 +16,7 @@ export const LOCALIZATION_EXTRACTS = Object.freeze([
 const LOCALIZATION_EXTRACT_SET = new Set(LOCALIZATION_EXTRACTS);
 const ZERO_OID = '0000000000000000000000000000000000000000';
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-const PROCESSED_EXTENSIONS = new Set(['.png', '.webp', '.woff2', '.json', '.txt', '.md']);
+const PROCESSED_EXTENSIONS = new Set(['.png', '.webp', '.woff2', '.json']);
 const README_NAMES = new Set(['readme', 'readme.md']);
 
 function normalizePath(relative) {

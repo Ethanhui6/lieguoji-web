@@ -8,10 +8,5 @@
       "localization-zh-Hant.txt"
     ],
     "requirement": "这两个文件必须放在本目录，开头写明来源：localization.csv。简体文件写简体中文摘录，繁体文件写繁体中文摘录。"
-  },
-  "allowed": ["png", "woff2", "webp", "json", "txt", "md"],
-  "derived": [
-    "twkai-charset.txt",
-    "README.md"
-  ]
+  }
 }

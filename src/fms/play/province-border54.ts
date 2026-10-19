@@ -9,7 +9,7 @@ type Borders={id:string;outside:number[];indices:number[]}[];
 const cache:{cost:number;witness:unknown;borders:Borders}[]=[];
 function bordersOf(r:Input):Borders{
  const deps={...geographyDependencies47(r),neighbors:r.terrain.neighbors,scale:r.scale};
- const hit=cache.find(e=>sameGeographyContent47(e.witness,deps));if(hit){
+ const hit=cache.find(e=>sameGeographyContent47(deps,e.witness));if(hit){
   if(certifiedGeography47(deps.neighbors)&&(hit.witness as typeof deps).neighbors!==deps.neighbors){const fresh=copyGeographyContent47(deps);if(fresh){hit.witness=fresh.value;hit.cost=fresh.cost;}}
   return hit.borders;
  }

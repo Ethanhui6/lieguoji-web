@@ -2855,6 +2855,7 @@
       "docs/MASTER_PLAN.md"
     ],
     "nextBatch": [
+      "WEB-02-02",
       "WEB-04-37"
     ],
     "phases": [
@@ -3501,8 +3502,8 @@
             ],
             "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。",
             "latest47Observation": "2026-10-15: same saved full-map input full/4/16/40x desktop and portrait checked for world/camera stability, font hierarchy and height-derived shade. Angular coast, coarse triangles, sparse40x detail and original visual/device acceptance remain open; this batch did not change geometry.",
-            "masterPlanScheduling": "reserve",
-            "masterPlanNote": "主计划第 8 节：留在待办池，不排进当前批次。状态、依赖和证据不改。"
+            "masterPlanScheduling": "next-batch",
+            "masterPlanNote": "2026-10-19 策划决定放回 webRebuild.nextBatch。没有完成，也没有取消。状态、依赖和证据不改。"
           },
           {
             "id": "WEB-02-03",
@@ -13192,7 +13193,7 @@
       "uploaded": false
     },
     "masterPlan": "docs/MASTER_PLAN.md",
-    "masterPlanNextBatchNote": "现有校验要求 nextBatch 最多 3 个已存在的 V5 编号。主计划顺序里的 P-0、B-0、A-1 还没有 V5 编号，完整顺序在顶层 masterPlan.order。WEB-02-02 按第 8 节进入储备，移出下一批。当前 V5 队列只保留 WEB-04-37。"
+    "masterPlanNextBatchNote": "现有校验要求 nextBatch 最多 3 个已存在的 V5 编号。主计划顺序里的 P-0、B-0、A-1 还没有 V5 编号，完整顺序在顶层 masterPlan.order。2026-10-19 策划决定把 WEB-02-02 放回下一批，与 WEB-04-37 并列；它没有完成，也没有取消。"
   },
   "masterPlan": {
     "document": "docs/MASTER_PLAN.md",

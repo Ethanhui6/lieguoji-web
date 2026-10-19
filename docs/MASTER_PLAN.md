@@ -1,8 +1,15 @@
-# 《列国纪》主计划（草稿 v0.1）
+# 《列国纪》主计划（定稿 v0.1）
 
-编写：游戏策划，2026-10-19 14:25（JST）。2026-10-19 15:05 的策划决定已并入正文。**草稿**：本文是仓库里的唯一计划。冲突的来龙去脉见当时的 `lieguoji-conflicts.md`（46 条，未随本批落仓）。
+编写：游戏策划，2026-10-19 14:25（JST）。2026-10-19 15:05 的策划决定已并入正文。**定稿（v0.5.0 基线）**：本文是仓库里的唯一计划。冲突的来龙去脉见当时的 `lieguoji-conflicts.md`（46 条，未随本批落仓）。
 
-落仓说明：附表 A（界面）和附表 B（模拟与后续批次）的全文没有随本批材料提供。第 5、6 节已经吸收附表末尾修订，以及 14:10、14:30、14:37 的任务 2 修订和 15:05 的八项决定。附件点名的 `lieguoji-ui-batch-art.md` 不在仓库里，本批不另造缺页。
+附表和对照资料在 [docs/plans/](plans/README.md)，原文保留。第 5、6 节已经吸收附表末尾修订，以及 14:10、14:30、14:37 的任务 2 修订和 15:05 的八项决定。
+
+- [附表 A，界面任务单](plans/lieguoji-ui-batch.md)
+- [美术补充单](plans/lieguoji-ui-batch-art.md)
+- [附表 B，路线](plans/lieguoji-roadmap.md)
+- [界面文字对照表](plans/empty-key-nonmatch.md)
+- [界面文字检查](plans/ui-text-check.md)
+- [TW-Kai 基础字表](plans/twkai-charset.txt)
 
 ## 0. 这份计划管什么
 
@@ -22,7 +29,7 @@
 |---|---|
 | 界面 | 照原作重建。**10-08 的温白 iOS 图标 UI 作废**，旧 iOS 质感规格全部作废，包括 DESIGN_V4、atlas-ui 目标图、浅深色主题、原创 SVG 图标 |
 | 素材 | 直接用原作的贴图、字体和界面文字（原作是 Bob 本人的作品）。第三方素材要单独查许可。许可不清的不用，改用原作素材或 CSS 绘制；许可清楚的写明来源再用 |
-| 字体 | Arial、微软正黑体：CSS 只写系统字体名，后备 Liberation Sans 和 Noto Sans TC，不打包。开源字体（TW-Kai、RobotoSlab、Roboto、Avara、OpenSans、LiberationSans）按字表子集打包，许可登记清楚。TW-Kai 的许可是 OFL-1.1 或政府开放授权。子集已经补上鸣谢面板的 16 个字，现在 3,033 字、1,489,072 B，不超过 1.5 MB |
+| 字体 | Arial、微软正黑体：CSS 只写系统字体名，后备 Liberation Sans 和 Noto Sans TC，不打包。开源字体（TW-Kai、RobotoSlab、Roboto、Avara、OpenSans、LiberationSans）按字表子集打包，许可登记清楚。TW-Kai 的许可是 OFL-1.1 或政府开放授权。子集已经补上鸣谢面板的 16 个字，现在 3,033 字、1,489,072 B，不超过 1.5 MB。`docs/plans/twkai-charset.txt` 是 3,017 字的基础版；实际打包的 3,033 字版和打包命令由美术放在 `public/original-ui/`，重新裁字体以那份为准 |
 | 上线 | 照常公开上线。每个任务一个 PR，测过即合并上线。合并 main 不再另行询问 |
 | 测试两档 | **一档**（往 `codex/ph06-world-generation` 的 PR）：类型检查、构建、相关单测（含冻结引擎兼容和该任务自己的验收测试）、`?fms=1` 冒烟。**二档**（往 main 的 PR）：全套 |
 | 版本报告 | 每次合并上线：打 tag，发中文 GitHub Release（新增、改动、已知问题、网页适配项、试玩链接）。版本号从 v0.5.0 开始 |
@@ -130,7 +137,7 @@ WEB-02-06 / WEB-03-07 来自路线附表 B-3 的建议编号（此前最高为 W
   - 其余 UI 字体：RobotoSlab、LiberationSans、OpenSans、Roboto，加少量 Arial 和微软正黑体；
   - 地图：英文 RobotoSlab/Avara，城市名 Roboto，中文按 World 组件的 `ChineseMapFont`（微软正黑体）和 `ChineseFont`（TW-Kai）区分，具体哪个标签用哪个，等原作还原确认；
   - 逐控件对应关系从 level0 的 TMP 引用来。
-- **文字**：用 root `localization.csv`（1912 个键，有 `Chinese` 简体列），简体列优先。网页新增的文字放在 `src/i18n/web-extra.*`，标「网页新增」。
+- **文字**：原作 root `localization.csv` 有 1912 个键，简体列优先。不整份提交这份 csv。只提交生成的简体和繁体两列，按 key 存放，并注明来源。对照表里的「csv 第 N 行」是原作 localization.csv 的行号，只作溯源备注，查文字一律按 key。网页新增的文字放在 `src/i18n/web-extra.*`，标「网页新增」。
 - **A-2 的战争和外交**：做成 StateInfoNewUI（230×750）里的 War、Diplomacy 折叠分区，框架照原作做，运行时生成的行内容留空。
 - **A-3 外观预设**：8 个都要做，海色和透明度逐个照原作：
   - ① 海 `#3c9cff/#1487ff`，羊皮纸开，透明度 0.8，深色边框开
@@ -167,7 +174,7 @@ WEB-02-06 / WEB-03-07 来自路线附表 B-3 的建议编号（此前最高为 W
 
 这些留在待办池，不排期：
 
-- 闭合轮廓自动自然化、海岸细化（WEB-02-01/02/04/05，用户新增）
+- 闭合轮廓自动自然化、海岸细化（WEB-02-01/04/05，用户新增）。WEB-02-02 没有完成，也没有取消；2026-10-19 策划决定把它放回 `webRebuild.nextBatch`，与 WEB-04-37 并列
 - 五国正式地图和 CANON 剧情（ACCEPT-MAP）、第一次长征（M5）、原 100 项规划（M2-PLAN）
 - 用户扩展：自由绘制战线（WEB-04-11）、侦察埋伏（WEB-04-17）、师团指挥（WEB-04-18）、近岸海域（WEB-04-38）、同盟援军和补给线（WEB-04-19，可能并进 B-2）
 - Android 和平板真机（有设备就测）
@@ -184,7 +191,7 @@ CODEX_AUTOPILOT_V3/V4/V5.md、ROADMAP.md、README.md 顶部说明、AGENTS.md �
 
 - `plan/tasks.json` 的 `releasePolicy`（`locked`，`cloudWritesAllowed: false`，`local_only_until_all_ph_accepted`）
 - `webRebuild.source` / `webRebuild.roadmap` / `webRebuild.release` / `firstPlayableGate.phaseId`（校验写死为 V5 文件和 WEB-PH02）
-- `webRebuild.nextBatch` 只能是最多 3 个已经存在的 V5 编号。本批把它从 `WEB-02-02` + `WEB-04-37` 改成只留 `WEB-04-37`：WEB-02-02 进入第 8 节储备，WEB-04-37 是第 5 节里唯一已登记的当前 V5 任务。P-0、B-0、A-1 还没有 V5 编号，完整顺序写在顶层 `masterPlan.order`，不写进会失败的 `nextBatch`
+- `webRebuild.nextBatch` 只能是最多 3 个已经存在的 V5 编号。策划决定放回 `WEB-02-02` 和 `WEB-04-37`：WEB-02-02 没有完成，也没有取消。P-0、B-0、A-1 还没有 V5 编号，完整顺序写在顶层 `masterPlan.order`
 - pre-push、`scripts/check-release.mjs`、发布策略测试、`scripts/engine-fingerprint.ts`、`scripts/fms-culture47-fingerprint.ts`
 
 **保持有效**：CANON.md（正式设定边界）、ADR 0006（冻结引擎；指纹范围按第 7 节以后再改）、旧任务的 done 历史和证据、docs/FMS_PORT_ANALYSIS_2026-10-17.md（路线依据）。

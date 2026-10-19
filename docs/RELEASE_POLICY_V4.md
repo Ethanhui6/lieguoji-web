@@ -44,7 +44,7 @@ pre-push 只看这次要推送的提交里新增或修改的路径，不重扫�
 - 整份 `localization.csv`
 - 原有私有规则：`.autopilot/`、`references/private/`、`.env`、密钥、`.log`、`.zip`、存档 json，以及 `scripts/check-release.mjs` 里 `unsafeCandidatePath` 的其余项。已复核的根 `.npmrc` 和列入复核清单的证据日志仍按原字节例外放行。
 
-`public/original-ui/` 放行处理后的 `png`、`webp`、`woff2`、`json` 和 README。目录里的 `SOURCES.json` 写明素材来源。从原作 `localization.csv` 生成的文字只放行这两个注明来源的文件：`public/original-ui/localization-zh-Hans.txt`、`public/original-ui/localization-zh-Hant.txt`。文件开头要有 `来源：` 或 `source:`，并写到 `localization.csv`。同名文件放在别的目录、或没有来源说明，都会被拦住。这个目录里的原作包、整份 csv、ttf/otf 和其他私有文件也不会因为目录名而放行。Vite 会把该目录拷进 `dist/original-ui/`；`scripts/check-dist.mjs` 只接受同一组文件，文字摘录仍要带上来源说明。
+`public/original-ui/` 放行处理后的 `png`、`woff2`、`webp`、`json`、`txt` 和 `md`。目录里的 `SOURCES.json` 写明素材来源。美术提交的派生文件也放在这里，包括字表 `public/original-ui/twkai-charset.txt`、`README.md` 和打包命令说明 `.md`。从原作 `localization.csv` 生成的简体、繁体文字如果使用这两个文件名，开头仍要写明来源并点名 `localization.csv`：`public/original-ui/localization-zh-Hans.txt`、`public/original-ui/localization-zh-Hant.txt`。同名摘录放在别的目录、或没有来源说明，都会被拦住。整份 `localization.csv` 和未裁剪的 `.ttf` / `.otf` 放在这个目录里也同样被拦住。Vite 会把该目录拷进 `dist/original-ui/`；`scripts/check-dist.mjs` 只接受同一组文件，那两份文字摘录仍要带上来源说明。
 
 ## 正式发行仍要的事实
 

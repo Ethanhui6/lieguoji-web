@@ -1,5 +1,5 @@
 import {assertArmyBatch47,consumeArmyBatch47} from './army-batch47';
-import {provinceBorderReader54} from './province-border54';
+import {provinceBorderReader54,stateBorderReader55} from './province-border54';
 import type {FoundingForces47} from './civilization47-forces';
 import {nativeRegularTarget47,type RegularTarget47} from './native-war/army-target47';
 import {assertArmyAutonomy47,type ArmyDecision47} from './civilization47-army-ai-state';
@@ -58,6 +58,7 @@ export function issueArmyBatchOrders47(r:FoundingForces47,weights:ArmyRouteWeigh
 }
 function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?:readonly string[]):undefined{
   const protruding=provinceBorderReader54(r);
+  const stateBorders=stateBorderReader55(r);
   assertArmyAutonomy47(r);const state=r.armyAutonomy;
   if((!ids&&r.clock.tick!==r.world.day*TICKS_PER_DAY)||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
   if(!ids&&state.lastDay===r.world.day)return undefined;
@@ -94,7 +95,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     const attackIds=new Set<string>(),owned=r.world.provinces.filter(p=>p.controller===a.nationId),invaded=owned.filter(p=>enemyAt(p.id));
     if(!low&&a.status!=='retreating'&&enemies.size){
       for(const p of invaded)attackIds.add(p.id);
-      for(const p of owned)for(const id of p.neighbors)if(enemies.has(places.get(id)!.controller))attackIds.add(id);
+      for(const id of stateBorders(a.nationId,new Set(enemies.keys())))attackIds.add(id);
       // Ally assistance never inherits another state's wars. This is an
       // explicit access-and-current-enemy bridge, not native ally eligibility.
       if(!invaded.length)for(const p of r.world.provinces)if(p.controller!==a.nationId&&access(r.world,a.nationId,p.controller)){

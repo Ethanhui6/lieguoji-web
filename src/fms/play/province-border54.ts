@@ -3,6 +3,7 @@ import type {World} from '../../sim/types';
 import {originalCellProvinces} from '../original/original-politics';
 import {nativeFilterProvinceCells53} from './native-combat/province-cells53';
 import {nativeProvinceProtruding52} from './native-combat/province-border52';
+import {nativeBorderEnemies55} from './native-war/state-border55';
 import {certifiedGeography47,copyGeographyContent47,sameGeographyContent47,geographyDependencies47,retainGeographyWitness47} from './geography-content47';
 type Input={terrain:FmsDocument;world:World;scale:number};
 type Borders={id:string;outside:number[];indices:number[]}[];
@@ -33,5 +34,19 @@ export function provinceBorderReader54(r:Input,world:World=r.world):(id:string)=
   const row=rows[index],province=world.provinces[index];if(province?.id!==id)throw Error('突出部省份顺序已改变。');
   const states=row.outside.map(i=>{const p=world.provinces[i];if(!p||p.id!==rows[i].id)throw Error('突出部邻省已改变。');return p.controller===province.controller?1:0;});
   return nativeProvinceProtruding52(1,row.indices,states);
+ };
+}
+
+/** Derived WEB bridge to State.FilterBorderEnemyProvince. Use the same
+ * displayed map-cell contacts as combat. Re-read ownership and enemy sets on
+ * each call: a captured province or a truce must not survive in a cached front.
+ * Current campaigns supply regular enemies; native rebel classification is
+ * not claimed. Route/access validation still runs after target selection. */
+export function stateBorderReader55(r:Input){
+ const rows=bordersOf(r),neighbors=new Map(rows.map(row=>[row.id,[...new Set(row.outside.map(i=>rows[i].id))]]));
+ const places=new Map(r.world.provinces.map(p=>[p.id,p]));
+ return (state:string,regular:ReadonlySet<string>)=>{
+  const owned=r.world.provinces.filter(p=>p.controller===state).map(p=>p.id);
+  return nativeBorderEnemies55(state,owned,id=>neighbors.get(id)!,id=>places.get(id)!.controller,regular,regular,new Set<string>()).regular;
  };
 }

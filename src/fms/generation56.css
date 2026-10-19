@@ -1,0 +1,26 @@
+/* Original level0 EditPanel/MapSize is a narrow, scrollable utility panel.
+   This responsive adaptation keeps the map exposed and the action reachable. */
+.fms-app .fms-generation{position:absolute;z-index:4;top:100px;left:24px;width:316px;max-height:calc(100dvh - 210px);display:flex;flex-direction:column;border:1.5px solid #34312b;background:#f3f1eaeF;color:#292821;box-shadow:3px 5px 13px #17150f33;font-family:"Noto Serif SC","Songti SC",SimSun,serif;animation:fms-generation-in 160ms ease-out;}
+.fms-generation>header{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid #b7b1a2;flex-shrink:0;background:#e9e6de;}
+.fms-generation h2{font-size:23px;letter-spacing:.15em;font-weight:500;}
+.fms-app .fms-generation>header button{border:0;border-radius:0;background:transparent;width:40px;min-height:40px;padding:0;font:24px serif;}
+.fms-generation-body{overflow:auto;overscroll-behavior:contain;padding:4px 17px 12px;}
+.fms-generation fieldset{padding:10px 0 14px;margin:10px 0 0;border:0;border-bottom:1px solid #cbc6ba;min-width:0;}
+.fms-generation legend{font-size:16px;letter-spacing:.08em;}
+.fms-grid-list{display:grid;gap:6px;}
+.fms-grid-list label{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 10px;background:#dfdfda;border:1px solid transparent;cursor:pointer;}
+.fms-grid-list label.selected{background:#e3eacb;border-color:#81905d;}
+.fms-grid-list input,.fms-grid-legacy input{accent-color:#5d723e;}
+.fms-grid-list strong{font-size:15px;font-weight:500;}.fms-grid-list span{margin-left:auto;color:#64645b;font:12px system-ui;}
+.fms-generation summary{cursor:pointer;padding:10px 0;font-size:14px;}.fms-grid-legacy{color:#686459;font-size:13px;}.fms-grid-legacy label{display:flex;align-items:center;gap:8px;min-height:40px;}
+.fms-generation-row{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:8px;margin-bottom:8px;font-size:14px;}
+.fms-generation-row select,.fms-generation-row input{width:100%;min-width:0;min-height:40px;border:1px solid #bdb9af;background:#fffdf6;color:#292821;border-radius:2px;padding:6px 8px;font-size:16px;font-family:inherit;}
+.fms-generation .fms-template-description{font-size:12px;color:#6e695e;line-height:1.6;margin:4px 0 13px;}.fms-generation .fms-generation-error{font-size:12px;color:#a8342d;}
+.fms-generation-manual p{font-size:12px;color:#6e695e;line-height:1.6;}.fms-generation-manual>div{display:flex;gap:6px;margin-top:9px;}
+.fms-app .fms-generation-manual button{border-radius:2px;border:1px solid #bdb9af;background:#e4e1d9;flex:1;font-size:13px;}
+.fms-generation>footer{border-top:1px solid #b7b1a2;padding:12px 17px;flex-shrink:0;background:#e9e6de;}
+.fms-app .fms-generation-submit{width:100%;border-radius:2px;border:1px solid #677645;background:#d9e5b8;color:#263516;font:16px "Songti SC",SimSun,serif;letter-spacing:.08em;}
+.fms-app .fms-generation-submit:hover:not(:disabled){background:#e5edce;}.fms-generation footer small{display:block;margin-top:7px;text-align:center;color:#777165;font-size:11px;}
+@keyframes fms-generation-in{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
+@media(max-width:600px){.fms-app .fms-generation{top:121px;left:12px;width:min(316px,calc(100vw - 24px));max-height:calc(100dvh - 284px);}.fms-generation>header{padding:5px 12px;}.fms-generation h2{font-size:21px;}.fms-generation-body{padding-inline:13px;}.fms-generation>footer{padding:9px 13px;}.fms-app:has(.fms-generation) .fms-zoom{right:8px;left:auto;}}
+@media(prefers-reduced-motion:reduce){.fms-app .fms-generation{animation:none;}}

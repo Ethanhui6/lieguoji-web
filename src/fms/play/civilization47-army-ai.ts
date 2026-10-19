@@ -1,4 +1,5 @@
 import {assertArmyBatch47,consumeArmyBatch47} from './army-batch47';
+import {provinceBorderReader54} from './province-border54';
 import type {FoundingForces47} from './civilization47-forces';
 import {nativeRegularTarget47,type RegularTarget47} from './native-war/army-target47';
 import {assertArmyAutonomy47,type ArmyDecision47} from './civilization47-army-ai-state';
@@ -56,6 +57,7 @@ export function issueArmyBatchOrders47(r:FoundingForces47,weights:ArmyRouteWeigh
   issueArmySelection47(r,weights,ids);return true;
 }
 function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?:readonly string[]):undefined{
+  const protruding=provinceBorderReader54(r);
   assertArmyAutonomy47(r);const state=r.armyAutonomy;
   if((!ids&&r.clock.tick!==r.world.day*TICKS_PER_DAY)||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
   if(!ids&&state.lastDay===r.world.day)return undefined;
@@ -102,7 +104,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     }
     const search=createArmyCommandSearch47(r,weights,a.id);
     const location=armyTravelLocation47(here.travel,g),home=places.get(r.tactics.forces[a.id].homeId);if(!home)throw Error('自主军令缺少真实故乡。');
-    let candidates:RegularTarget47[]=[...attackIds].map(id=>({id,center:places.get(id)!.center,feature:provinceFeatures.get(id)!,protruding:false,port:ports.has(id)}));
+    let candidates:RegularTarget47[]=[...attackIds].map(id=>({id,center:places.get(id)!.center,feature:provinceFeatures.get(id)!,protruding:protruding(id),port:ports.has(id)}));
     let chosen:RegularTarget47|null=null,reason='';
     const unfunded:{target:RegularTarget47;preview:ReturnType<typeof previewArmyCommand47>}[]=[];
     const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,cell=>actualForceSpeed47(r,{kind:'army',id:a.id,nationId:a.nationId,withdrawing:false,travel:here.travel},cell))/TICKS_PER_DAY)+3);

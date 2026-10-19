@@ -1,4 +1,5 @@
 import type {Army,Province,World} from '../../sim/types';
+import {provinceBorderReader54} from './province-border54';
 import type {FoundingForces47} from './civilization47-forces';
 import {actualForces47} from './force-runtime47';
 import {readArmySpace47,type ArmySpace47} from './army-space47';
@@ -33,6 +34,7 @@ export function ownedOccupationCombatReader47(r:FoundingForces47,space:ArmySpace
   };
 }
 function makeReader47(r:FoundingForces47,world:World,space:ArmySpace47){
+  const protruding=provinceBorderReader54(r,world);
   const leaders=new Map(world.nations.map(n=>[n.id,livingCombatLeader47(r,n.id)]));
   const national=(id:string)=>{const n=r.upperCombat.nations[id];if(!n||n.polity!==r.civilization.nations[id]?.polity||n.destiny!==r.destiny.nations[id]?.destiny||!Number.isFinite(r.finance.nations[id]?.goldBattleModifier))throw Error('人物战力的国家、国运或财政缓存不一致。');return n;};
   const army=(a:Army)=>{
@@ -44,7 +46,7 @@ function makeReader47(r:FoundingForces47,world:World,space:ArmySpace47){
     // family assignment is not yet exposed; native missing-office fallback
     // is the current live state leader, then a neutral military skill of 50.
     const leadership=nativeLeadership47(leader?.skills.military??50,{kind:snapshot.command});
-    const efficiency=nativeUpperEfficiency({baseCombatEfficiency:base.base,destiny:state.destiny,leadershipModifier:leadership,leaderCombatModifier:r.combatPersonnel.nations[a.nationId].leader.modifier,provinceDefense:p?provinceDefense(r.upperCombat,p.id):1,coreDefense:owner&&defense&&defense.distance!==2147483647&&defense.distance<=owner.coreThreshold?traitProjection(owner.traits).CoreDefenseEfficiencyBoost:1,politicalAttack:politics.attack,politicalDefense:politics.defense,goldBattleModifier:r.finance.nations[a.nationId].goldBattleModifier,attacking,sameNationId:!!p&&p.controller===a.nationId,protruding:false,wellTrained:traits.IsWellTrained,homelandDefense:traits.IsHomelandDefense,conqueror:traits.IsConqueror,unitModifier:nativeUnitModifier(key,attacking,land?.biomes??[],land?.mountain??false),elite:key==='Elite'});
+    const efficiency=nativeUpperEfficiency({baseCombatEfficiency:base.base,destiny:state.destiny,leadershipModifier:leadership,leaderCombatModifier:r.combatPersonnel.nations[a.nationId].leader.modifier,provinceDefense:p?provinceDefense(r.upperCombat,p.id):1,coreDefense:owner&&defense&&defense.distance!==2147483647&&defense.distance<=owner.coreThreshold?traitProjection(owner.traits).CoreDefenseEfficiencyBoost:1,politicalAttack:politics.attack,politicalDefense:politics.defense,goldBattleModifier:r.finance.nations[a.nationId].goldBattleModifier,attacking,sameNationId:!!p&&p.controller===a.nationId,protruding:!!p&&protruding(p.id),wellTrained:traits.IsWellTrained,homelandDefense:traits.IsHomelandDefense,conqueror:traits.IsConqueror,unitModifier:nativeUnitModifier(key,attacking,land?.biomes??[],land?.mountain??false),elite:key==='Elite'});
     if(!Number.isFinite(efficiency)||efficiency<0)throw Error('实际人物战力超出有效范围。');
     return {efficiency,damageToArmy:snapshot.damageToArmy,damageToProvince:snapshot.damageToProvince,multiplier:p?landAttackMultiplier46(world,r.portControl,p.id,a.nationId):1};
   };

@@ -95,7 +95,7 @@ function freezePlain(value:unknown):number|null{
  * remain writable. Outside the private action window, every cache hit compares
  * them element by element; the window also checks all samples before commit. */
 export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplomaticGeography?:unknown}&StaticMilitaryLeaves47){
- freezePlain(r.terrain.points);freezePlain(r.diplomaticGeography);
+ freezePlain(r.terrain.points);freezePlain(r.terrain.neighbors);freezePlain(r.diplomaticGeography);
  if(r.harbors)freezePlain(r.harbors);
  if(r.finance)for(const p of Object.values(r.finance.provinces))freezePlain(p.cellBiomes);
  for(const p of r.world.provinces){freezePlain(p.polygon);freezePlain(p.neighbors);}

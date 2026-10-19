@@ -17,9 +17,9 @@ export function reviewedHistory(root){
  if(h.digest('hex')!==SUMMARY)throw Error('Reviewed history content list changed');return m;
 }
 let cachedRoot,cached;
-export function reviewedHistoricalPath(root,relative){
+export function reviewedHistoricalPath(root,relative,contents){
  if(!relative.startsWith('docs/evidence/'))return false;
- try{if(cachedRoot!==root){cached=reviewedHistory(root);cachedRoot=root;}const f=cached.files.find(f=>f.path===relative);if(!f)return false;const bytes=fs.readFileSync(safeProjectFile(root,relative,false));return bytes.length===f.bytes&&hash(bytes)===f.sha256;}catch{return false;}
+ try{if(cachedRoot!==root){cached=reviewedHistory(root);cachedRoot=root;}const f=cached.files.find(f=>f.path===relative);if(!f)return false;const bytes=contents??fs.readFileSync(safeProjectFile(root,relative,false));return bytes.length===f.bytes&&hash(bytes)===f.sha256;}catch{return false;}
 }
 export function verifyReviewedHistory(root,isUnsafe,isPreviouslyReviewed){
  const m=reviewedHistory(root);git(root,['merge-base','--is-ancestor',BASE,'HEAD']);git(root,['merge-base','--is-ancestor',HEAD,'HEAD']);

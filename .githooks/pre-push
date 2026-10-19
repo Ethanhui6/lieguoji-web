@@ -1,6 +1,5 @@
 #!/bin/sh
-# Retired 2026-10-19. The V4 release lock no longer blocks pushes.
-# Formal PH, device, and visual acceptance are unchanged and are not granted here.
-# `npm run release:status` still reports readiness. This hook does not call it,
-# so a normal git push does not need --no-verify.
-exit 0
+# The release-readiness gate is retired.
+# This hook only blocks private files changed by the commits being pushed.
+root=$(git rev-parse --show-toplevel) || exit 1
+exec node "$root/scripts/check-private-files.mjs" --pre-push

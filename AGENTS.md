@@ -1,6 +1,6 @@
 # 列国纪执行边界
 
-> **2026-10-19：旧推送发布锁已正式解除。** `.githooks/pre-push` 不再拦截推送，也不再调用发布检查。V5 计划检查不再要求 `releasePolicy` 保持 locked。`plan/tasks.json` 的策略记录由计划文档批次更新；本变更不把未完成的 PH、真机或用户视觉验收记为通过。正式发行仍只部署 dist，唯一 Pages 生产链不变。详见 docs/RELEASE_POLICY_V4.md。
+> **2026-10-19：旧推送发布锁已正式解除。** `.githooks/pre-push` 不再做发布就绪、PH 门、单分支快进或 HEAD 绑定；它只拦这次推送里改到的私有文件。处理后的原作素材放在 `public/original-ui/`。V5 计划检查不再要求 `releasePolicy` 保持 locked。`plan/tasks.json` 的策略记录由计划文档批次更新；本变更不把未完成的 PH、真机或用户视觉验收记为通过。正式发行仍只部署 dist，唯一 Pages 生产链不变。详见 docs/RELEASE_POLICY_V4.md。
 
 > 2026-10-06 本轮用户直接要求“继续 做完上传到GitHub”，随后确认“GitHub＋Pages预览，保留正式站”。允许经过本地检查和隐私审查的私库同分支源码快进上传与现有 Pages 原生 Git 预览，范围见 docs/GITHUB_UPLOAD_2026-10-06.md；使用独立 preview20261006 合同。此次不解除完整 PH/真机/视觉门，不更新 main，不复用已过期的9月24日授权。
 
@@ -13,7 +13,7 @@
 > 2026-09-24 最新用户指令例外：用户明确要求现在上传最新版本到 GitHub / Cloudflare 试玩。仅本次经检查、指纹绑定的 codex/ph06-world-generation 分支预览获授权，保留 main 和全部 PH 状态；详见 [本次试玩范围](docs/PLAYTEST_RELEASE_2026-09-24.md)。以下全PH门继续作为其余发布的默认规则；不得绕过更新后的 pre-push。
 
 根目录 CODEX_AUTOPILOT_V5.md 为当前执行指令，用户消息优先；V3/V4保留历史和未冲突的安全/正式设定/完整范围要求。当前交付为用户授权的Fantasy Map Simulator网页/PWA适配与完整沙盒，各国可采用不同行政制度。
-最高当前发布规则：2026-10-19 起旧推送锁已解除。普通分支可以推送并开 PR，`.githooks/pre-push` 不再拦截。PH00—PH35、真实设备和用户视觉验收仍未因本变更完成，不得把未验收项标成通过。正式发行仍只部署 dist，唯一 Pages 链不变。详见 docs/RELEASE_POLICY_V4.md。
+最高当前发布规则：2026-10-19 起旧推送锁已解除。普通分支可以推送并开 PR。`.githooks/pre-push` 只拦私有文件，不再拦发布就绪、PH 门、单分支快进或 HEAD 绑定。处理后的原作素材目录是 `public/original-ui/`。PH00—PH35、真实设备和用户视觉验收仍未因本变更完成，不得把未验收项标成通过。正式发行仍只部署 dist，唯一 Pages 链不变。详见 docs/RELEASE_POLICY_V4.md。
 本项目首次审计为空目录，无 v2 包、原有 100 项任务或地图参考。现有计划是补缺工程计划，不冒充原计划。
 用户最新确认主线为：自由创世 → 海陆与连续地形 → 国家、城市与首都 → 自主推演。固定五国测试战役保留为预设和规则回归，不能代替创世入口。
 自建世界编辑器不依赖原 100 项任务恢复或 ACCEPT-MAP。正式五国地图、CANON 未知项与正史验收仍独立待核；自由创作和测试五国地图都不得自动转为正式设定。

@@ -336,18 +336,35 @@ test('filesystem evidence deletion cannot satisfy the preview gate even with a c
  assert.equal(result.ready, false); assert(result.blockers.some(message => message.includes('Missing or unsafe evidence for playtest coreBrowser')));
 }));
 
-test('retired pre-push allows ordinary pushes and does not consult the release gate', () => withGitFixture(root => {
- fs.mkdirSync(path.join(root, '.githooks')); const hook = path.join(root, '.githooks/pre-push'); fs.copyFileSync(path.join(projectRoot, '.githooks/pre-push'), hook);
- const source = fs.readFileSync(hook, 'utf8');
- assert.doesNotMatch(source, /check-release/); assert.doesNotMatch(source, /Release blocked/);
- const head = 'a'.repeat(40), zero = '0'.repeat(40);
- const gitExec = execFileSync('git', ['--exec-path'], { cwd: root, encoding: 'utf8' }).trim();
- const shell = process.platform === 'win32' ? path.resolve(gitExec, '../../..', 'bin/sh.exe') : '/bin/sh';
- const push = (lines, remote = 'https://github.com/Ethanhui6/lieguoji-web.git') => spawnSync(shell, [hook, 'origin', remote], { cwd: root, input: lines, encoding: 'utf8' });
- const line = `refs/heads/local ${head} refs/heads/cursor/example ${zero}\n`;
- for (const input of ['', line, line + line, `refs/heads/local ${zero} refs/heads/main ${head}\n`, `refs/heads/local ${head} refs/tags/v0.6.0 ${zero}\n`, `refs/heads/local ${head} ${PLAYTEST_BRANCH} ${zero}\n`]) {
-  const result = push(input); assert.equal(result.status, 0, result.error?.message ?? result.stderr + result.stdout);
+test('pre-push calls the private-file check and does not allow every push', () => withGitFixture(root => {
+ execFileSync('git', ['config', 'user.email', 'release-policy@example.invalid'], { cwd: root, stdio: 'ignore' });
+ execFileSync('git', ['config', 'user.name', 'Release Policy Test'], { cwd: root, stdio: 'ignore' });
+ fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+ for (const file of ['check-private-files.mjs', 'check-release.mjs', 'check-plan.mjs', 'release-policy.mjs', 'reviewed-history.mjs']) {
+  fs.copyFileSync(path.join(projectRoot, 'scripts', file), path.join(root, 'scripts', file));
  }
- assert.equal(push(line, 'https://github.com/someone/other.git').status, 0);
- assert.equal(push(line, root).status, 0);
+ fs.mkdirSync(path.join(root, '.githooks'), { recursive: true });
+ const hook = path.join(root, '.githooks/pre-push');
+ fs.copyFileSync(path.join(projectRoot, '.githooks/pre-push'), hook);
+ fs.chmodSync(hook, 0o755);
+ const source = fs.readFileSync(hook, 'utf8');
+ assert.match(source, /check-private-files\.mjs" --pre-push/);
+ assert.doesNotMatch(source, /check-release/);
+ assert.doesNotMatch(source, /Release blocked/);
+ const write = (relative, contents) => { const file = path.join(root, relative); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, contents); };
+ const commit = message => { execFileSync('git', ['add', '-A'], { cwd: root, stdio: 'ignore' }); execFileSync('git', ['commit', '--quiet', '-m', message], { cwd: root, stdio: 'ignore' }); return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(); };
+ write('src/app.ts', 'export const value = 1;\n');
+ const base = commit('code');
+ write('public/original-ui/icon.png', 'png');
+ write('public/original-ui/ui.woff2', 'woff2');
+ const good = commit('assets');
+ const push = (local, remoteOid) => spawnSync('/bin/sh', [hook, 'origin', 'https://example.invalid/repo.git'], { cwd: root, input: `refs/heads/topic ${local} refs/heads/topic ${remoteOid}\n`, encoding: 'utf8' });
+ const accepted = push(good, base);
+ assert.equal(accepted.status, 0, accepted.stderr);
+ write('GameAssembly.dll', 'dll');
+ const blocked = commit('dll');
+ const rejected = push(blocked, good);
+ assert.equal(rejected.status, 1, rejected.stdout);
+ assert.match(rejected.stderr, /Private file blocked: GameAssembly\.dll/);
+ assert.doesNotMatch(rejected.stderr, /Release blocked/);
 }));

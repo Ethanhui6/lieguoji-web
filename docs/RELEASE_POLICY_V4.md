@@ -1,6 +1,6 @@
 # V4 本地开发与统一发布规则
 
-> **2026-10-19：推送发布锁已正式解除。** `.githooks/pre-push` 退出 0，不再限制远端、引用或快进，也不再调用 `scripts/check-release.mjs`。`scripts/check-v5-plan.mjs` 不再要求 `releasePolicy.state=locked`、`cloudWritesAllowed=false`，也不再要求 `webRebuild.release` 保持 local-only，不再要求 `releasePolicyUnchanged`。`npm run release:status` 与 `npm run release:check` 仍只报告正式发行是否就绪，失败不会挡住 git push。`plan/tasks.json` 与 `plan/release-readiness.json` 本次不改，因此记录里的 locked / not_ready 还在，由计划文档批次更新；未完成的 PH、真机和用户视觉验收没有被改成通过。仍只部署 `dist`，唯一生产链不变。以下各节是 2026-09-23 起已退役机制的记录。
+> **2026-10-19：推送发布锁已正式解除。** `.githooks/pre-push` 不再限制远端、引用、快进或 HEAD，也不再调用 `scripts/check-release.mjs`。它改为调用 `scripts/check-private-files.mjs`，只检查这次推送的提交里改到的文件，拦下私有文件。处理后的原作素材目录是 `public/original-ui/`。`scripts/check-v5-plan.mjs` 不再要求 `releasePolicy.state=locked`、`cloudWritesAllowed=false`，也不再要求 `webRebuild.release` 保持 local-only，不再要求 `releasePolicyUnchanged`。`npm run release:status` 与 `npm run release:check` 仍只报告正式发行是否就绪，失败不会挡住 git push。`plan/tasks.json` 与 `plan/release-readiness.json` 本次不改，因此记录里的 locked / not_ready 还在，由计划文档批次更新；未完成的 PH、真机和用户视觉验收没有被改成通过。仍只部署 `dist`，唯一生产链不变。以下各节里，发布就绪冻结是已退役机制；私有文件拦截仍然有效。
 
 > 2026-10-04：产品开发已转为 [V5](../CODEX_AUTOPILOT_V5.md) 的原作网页重建顺序。当时的云端冻结与 pre-push 现已退役；新 8 阶段通过仍然不会自动满足旧的正式验收记录。9月24日单次试玩例外已消耗。
 
@@ -26,9 +26,25 @@
 - `npm run plan:check`：检查旧任务保护、PH 清单、依赖 DAG、子项状态与证据；未完成 PH 不妨碍正常本地开发。
 - `npm run release:status`：只读显示当前门禁状态，不生成发行包、不访问云端、不解除门禁。
 - `npm run release:check`：只读地按正式发行标准失败关闭。它不再被 pre-push 调用，因此未完成 PH 不会挡住普通推送。
-- `.githooks/pre-push` 在锁定期调用上述检查，并且只在本仓库、单个分支、当前 HEAD、快进时才可能通过。2026-10-19 起该 hook 改为直接成功，不再执行这套限制。本地若仍设置 `core.hooksPath=.githooks`，推送会走到这个已退役的 hook，不需要 `--no-verify`。
+- `npm run check:private`：检查一段提交范围里的私有文件。`.githooks/pre-push` 在锁定期调用发布检查，并且只在本仓库、单个分支、当前 HEAD、快进时才可能通过。2026-10-19 起这些发布限制退役。hook 现在只调用 `scripts/check-private-files.mjs`。本地若仍设置 `core.hooksPath=.githooks`，推送会走这个私有文件检查；私有文件失败时不要用 `--no-verify` 跳过。CI 在构建前对本次变更范围跑同一脚本。
 
-锁定期里，Git hook 是防误操作工具，并非不可绕过的服务器保护。解除方式是改 hook 和对应测试，而不是用 `--no-verify` 跳过仍在生效的检查。目录缺文件、格式错误、证据找不到等情况，在正式发行报告里仍应失败关闭。公开构建不包含这些文档、计划、hook、存档和检查点。
+锁定期里，Git hook 是防误操作工具，并非不可绕过的服务器保护。发布锁的解除方式是改 hook 和对应测试，而不是用 `--no-verify` 跳过仍在生效的私有文件检查。目录缺文件、格式错误、证据找不到等情况，在正式发行报告里仍应失败关闭。公开构建不包含这些文档、计划、hook、存档和检查点。
+
+## 推送时仍拦截的私有文件
+
+pre-push 只看这次要推送的提交里新增或修改的路径，不重扫整个仓库，也不再要求发布就绪。下面这些路径会被拦住：
+
+- 原作资源包：`.assets`、`.resS`、`.bundle`、`level0` 场景文件，以及未裁剪的 `.ttf` / `.otf`
+- 解密密钥和 `.save` 存档
+- `envs.log`、`gameConfigDyV2.json`
+- `raw` / `dump` / `dumps` 目录，以及 `.raw`、`.dump`
+- `GameAssembly.dll`、`global-metadata.dat`
+- Il2CppDumper 导出：`dump.cs`、`dump-filtered.cs`、`DummyDll/`
+- Steam 账号配置：`*.vdf`、`steam_api*.ini`
+- 整份 `localization.csv`
+- 原有私有规则：`.autopilot/`、`references/private/`、`.env`、密钥、`.log`、`.zip`、存档 json，以及 `scripts/check-release.mjs` 里 `unsafeCandidatePath` 的其余项。已复核的根 `.npmrc` 和列入复核清单的证据日志仍按原字节例外放行。
+
+`public/original-ui/` 放行处理后的 `png`、`webp`、`woff2`、`json` 和 README。目录里的 `SOURCES.json` 写明素材来源。从原作 `localization.csv` 生成的文字只放行这两个注明来源的文件：`public/original-ui/localization-zh-Hans.txt`、`public/original-ui/localization-zh-Hant.txt`。文件开头要有 `来源：` 或 `source:`，并写到 `localization.csv`。同名文件放在别的目录、或没有来源说明，都会被拦住。这个目录里的原作包、整份 csv、ttf/otf 和其他私有文件也不会因为目录名而放行。Vite 会把该目录拷进 `dist/original-ui/`；`scripts/check-dist.mjs` 只接受同一组文件，文字摘录仍要带上来源说明。
 
 ## 正式发行仍要的事实
 

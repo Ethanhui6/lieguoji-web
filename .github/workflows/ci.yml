@@ -38,6 +38,18 @@ jobs:
       - name: Record tested revision
         run: git rev-parse HEAD
 
+      - name: Block private files in this change
+        run: |
+          set -eu
+          from="${{ github.event.pull_request.base.sha || github.event.before }}"
+          zero=0000000000000000000000000000000000000000
+          if [ -z "$from" ] || [ "$from" = "$zero" ]; then
+            node scripts/check-private-files.mjs --to HEAD
+          else
+            git cat-file -e "$from^{commit}" 2>/dev/null || git fetch --no-tags --depth=1 origin "$from"
+            node scripts/check-private-files.mjs --from "$from" --to HEAD
+          fi
+
       - name: Install locked dependencies
         run: npm ci
 

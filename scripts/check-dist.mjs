@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {blockingReason, isProcessedAsset, LOCALIZATION_EXTRACTS, PROCESSED_ASSET_DIR} from './check-private-files.mjs';
 
 const root = path.resolve('dist');
 const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects', 'terrain-licenses.txt']);
@@ -12,6 +13,21 @@ const battleAtlasHash='12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3
 // Exact parchment derived from the original's sharedassets0 parchmentfinal2 (2048x2048 JPEG).
 const parchmentName=/^parchment-[A-Za-z0-9_-]{8}\.jpg$/;
 const parchmentHash='a8bb5bed39f2ebd43a812e025b2e65b636aaaa082a2d33381463d54b4eb3633e';
+// Vite copies public/original-ui/ here. Only the same processed files the push gate allows.
+const processedRoot = PROCESSED_ASSET_DIR.replace(/^public\//, '');
+
+function inProcessedAssets(name) {
+  return name === processedRoot || name.startsWith(`${processedRoot}/`);
+}
+
+function processedAssetRejection(name) {
+  const repoPath = `public/${name}`;
+  const text = LOCALIZATION_EXTRACTS.includes(repoPath) ? fs.readFileSync(path.join(root, name), 'utf8') : undefined;
+  const blocked = blockingReason(repoPath, {text});
+  if (blocked) return blocked;
+  if (isProcessedAsset(repoPath) || LOCALIZATION_EXTRACTS.includes(repoPath)) return null;
+  return 'not an approved processed asset';
+}
 
 function reject(file, reason) {
   throw new Error(`Publish audit rejected ${file}: ${reason}`);
@@ -38,7 +54,7 @@ function walk(directory, relative = '') {
     }
     const stat = inspect(absolute, name);
     if (stat.isDirectory()) {
-      if (name !== 'assets') reject(name, 'only the assets directory is allowed');
+      if (name !== 'assets' && !inProcessedAssets(name)) reject(name, 'only the assets directory and original-ui are allowed');
       walk(absolute, name);
       continue;
     }
@@ -47,8 +63,13 @@ function walk(directory, relative = '') {
     const parchment=relative==='assets'&&parchmentName.test(entry);
     if(parchment){const bytes=fs.readFileSync(absolute);if(bytes.length!==840709||createHash('sha256').update(bytes).digest('hex')!==parchmentHash)reject(name,'parchment texture differs from reviewed source');}
     if(battleAtlas){const bytes=fs.readFileSync(absolute);if(bytes.length!==482109||createHash('sha256').update(bytes).digest('hex')!==battleAtlasHash)reject(name,'battle animation atlas differs from reviewed source');}
-    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas||parchment);
-    if (!allowed) reject(name, 'not an approved root file or hashed JS/CSS asset');
+    if (inProcessedAssets(name)) {
+      const reason = processedAssetRejection(name);
+      if (reason) reject(name, reason);
+    } else {
+      const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas||parchment);
+      if (!allowed) reject(name, 'not an approved root file or hashed JS/CSS asset');
+    }
     files.push(name);
   }
 }
@@ -88,4 +109,4 @@ for(const e of JSON.parse(fs.readFileSync('src/fms/play/culture47-frozen.json','
   const bytes=fs.readFileSync(path.join(root,matches[0]));
   if(bytes.length!==e.bytes||createHash('sha256').update(bytes).digest('hex')!==e.sha256)reject(e.file,'old culture Worker must retain original bytes');
 }
-console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas and parchment.`);
+console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas and parchment, and processed files under original-ui.`);

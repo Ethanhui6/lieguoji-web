@@ -1,4 +1,5 @@
-// Readiness report. `.githooks/pre-push` no longer invokes this script to block pushes.
+// Formal readiness report. `.githooks/pre-push` does not call this script.
+// Pushes are gated only by scripts/check-private-files.mjs.
 import {reviewedHistoricalPath,verifyReviewedHistory} from './reviewed-history.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,15 +20,15 @@ export function unsafeCandidatePath(relative) {
 
 // Root-project settings reviewed for the explicit playtest; this is not a
 // credential-file exemption. Any byte change or nested config remains blocked.
-export function reviewedProjectConfig(root, relative) {
+export function reviewedProjectConfig(root, relative, contents) {
  if (relative !== '.npmrc') return false;
  try {
-  const absolute = safeProjectFile(root, relative, false);
-  return createHash('sha256').update(fs.readFileSync(absolute)).digest('hex') === 'cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca';
+  const bytes = contents ?? fs.readFileSync(safeProjectFile(root, relative, false));
+  return createHash('sha256').update(bytes).digest('hex') === 'cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca';
  } catch { return false; }
 }
 
-export function reviewedEvidenceFile(root, relative) {
+export function reviewedEvidenceFile(root, relative, contents) {
  const eligible = value => typeof value === 'string' && /^docs\/evidence\/(?:ph04|ph05-verification)\/.+\.log$/.test(value) && !unsafeCandidatePath(value.slice(0, -4) + '.reviewed');
  if (!eligible(relative)) return false;
  try {
@@ -39,7 +40,8 @@ export function reviewedEvidenceFile(root, relative) {
    paths.add(entry.path); if (entry.path === relative) expected = entry.sha256;
   }
   if (!expected) return false;
-  return createHash('sha256').update(fs.readFileSync(safeProjectFile(root, relative, false))).digest('hex') === expected;
+  const bytes = contents ?? fs.readFileSync(safeProjectFile(root, relative, false));
+  return createHash('sha256').update(bytes).digest('hex') === expected;
  } catch { return false; }
 }
 const reviewedCandidatePath = (root, relative) => reviewedProjectConfig(root, relative) || reviewedEvidenceFile(root, relative) || reviewedHistoricalPath(root, relative);

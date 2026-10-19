@@ -1,0 +1,12 @@
+{
+  "directory": "public/original-ui",
+  "source": "来源：处理后的原作界面素材。文字摘录来自 localization.csv，不是整份原文件。",
+  "localization": {
+    "sourceFile": "localization.csv",
+    "extracts": [
+      "localization-zh-Hans.txt",
+      "localization-zh-Hant.txt"
+    ],
+    "requirement": "这两个文件必须放在本目录，开头写明来源：localization.csv。简体文件写简体中文摘录，繁体文件写繁体中文摘录。"
+  }
+}

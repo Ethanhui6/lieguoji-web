@@ -1,6 +1,6 @@
 # 列国纪
 
-> **2026-10-19：旧推送发布锁已解除。** `.githooks/pre-push` 不再拦截推送。详见 [发布规则](docs/RELEASE_POLICY_V4.md)。计划文件与未完成的 PH、真机、用户视觉验收不在这次改动里标成通过。
+> **2026-10-19：旧推送发布锁已解除。** `.githooks/pre-push` 只拦私有文件，不再拦发布就绪。处理后的原作素材放在 `public/original-ui/`。详见 [发布规则](docs/RELEASE_POLICY_V4.md)。计划文件与未完成的 PH、真机、用户视觉验收不在这次改动里标成通过。
 
 > **2026-10-04：按用户要求重做计划，当前进入V5原作网页重建。** 优先忠实还原用户授权的Fantasy Map Simulator；首个试玩为闭合轮廓/海陆笔刷→保留主体形状生成自然地形→连续缩放。iPhone13ProMax的Safari/Chrome竖屏优先，工具折叠，地图和菜单采用原作风格。阅读 [V5指令](CODEX_AUTOPILOT_V5.md)、[新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)、[当前交接](docs/AUTO_HANDOFF.md)；唯一当前状态源为 [任务源](plan/tasks.json) 的webRebuild。旧代码、任务和存档保留。
 

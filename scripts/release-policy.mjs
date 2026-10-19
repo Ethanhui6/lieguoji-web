@@ -100,6 +100,7 @@ export function validatePlan(plan, evidencePaths = new Set()) {
  return { errors: [...new Set(errors)], phaseCount: phases.length, workItemCount, originalTaskCount: original.length };
 }
 
+/** Formal readiness report only. The pre-push hook no longer treats a failure as a push block. */
 export function evaluateRelease(plan, readiness, context = {}) {
  const validation = validatePlan(plan, context.evidencePaths ?? new Set());
  const blockers = [...validation.errors];

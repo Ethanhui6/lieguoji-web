@@ -1,6 +1,8 @@
 # 列国纪
 
-> **2026-10-04：按用户要求重做计划，当前进入V5原作网页重建。** 优先忠实还原用户授权的Fantasy Map Simulator；首个试玩为闭合轮廓/海陆笔刷→保留主体形状生成自然地形→连续缩放。iPhone13ProMax的Safari/Chrome竖屏优先，工具折叠，地图和菜单采用原作风格。阅读 [V5指令](CODEX_AUTOPILOT_V5.md)、[新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)、[当前交接](docs/AUTO_HANDOFF.md)；唯一当前状态源为 [任务源](plan/tasks.json) 的webRebuild。旧代码/任务/存档和 [发布锁](docs/RELEASE_POLICY_V4.md)保留，本轮无云端更新。
+> **2026-10-19：旧推送发布锁已解除。** `.githooks/pre-push` 不再拦截推送。详见 [发布规则](docs/RELEASE_POLICY_V4.md)。计划文件与未完成的 PH、真机、用户视觉验收不在这次改动里标成通过。
+
+> **2026-10-04：按用户要求重做计划，当前进入V5原作网页重建。** 优先忠实还原用户授权的Fantasy Map Simulator；首个试玩为闭合轮廓/海陆笔刷→保留主体形状生成自然地形→连续缩放。iPhone13ProMax的Safari/Chrome竖屏优先，工具折叠，地图和菜单采用原作风格。阅读 [V5指令](CODEX_AUTOPILOT_V5.md)、[新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)、[当前交接](docs/AUTO_HANDOFF.md)；唯一当前状态源为 [任务源](plan/tasks.json) 的webRebuild。旧代码、任务和存档保留。
 
 重规划前本地基线为 `0.5.0-preview.33`，高度模块已提取并能生成/保存独立Atlas地图，但手绘约束未与该模块接通，原Unity拓扑/画笔/渲染未完整恢复，用户未认可体验。旧检查见[原批记录](docs/evidence/fms-direct-generation-2026-10-04/REPORT.md)，本轮审查见[引擎审查](docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md)。重规划文档不是新游戏版本。
 

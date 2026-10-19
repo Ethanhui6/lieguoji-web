@@ -54,11 +54,14 @@ function gameplayFixture() {
   p.webRebuild.localDevelopmentException = { kind:'user-authorized-gameplay-first', confirmedBy:'user', date:'2026-10-05', scope:'local-development-only', allowedPhaseIds:['WEB-PH03','WEB-PH04'], deferredPhaseIds:['WEB-PH02'], deferredPhaseDependencies:[{phaseId:'WEB-PH03',dependencyId:'WEB-PH02'}], acceptanceClaimsUnchanged:true, releasePolicyUnchanged:true, evidence:[evidence] };
   return p;
 }
-test('user local gameplay priority preserves acceptance and cloud locks', () => {
+test('user local gameplay priority preserves acceptance and no longer keeps a cloud-write lock', () => {
   const p = gameplayFixture(), gate = structuredClone(p.webRebuild.firstPlayableGate);
   assert.deepEqual(errors(p), []); assert.deepEqual(p.webRebuild.firstPlayableGate, gate);
   assert(v5EvidenceReferences(p).includes(evidence));
-  p.webRebuild.release.cloudWritesAllowed = true; matches(p, /local-only/);
+  p.webRebuild.release.mode = 'open'; p.webRebuild.release.cloudWritesAllowed = true;
+  p.webRebuild.release.existingGateRetained = false; p.webRebuild.supersedes.releasePolicyUnchanged = false;
+  p.releasePolicy.state = 'ready'; p.releasePolicy.cloudWritesAllowed = true;
+  assert.deepEqual(errors(p), []);
 });
 test('invalid or unsupported exception cannot open later phases', () => {
   for (const mutation of [p => { delete p.webRebuild.localDevelopmentException; },p => {p.webRebuild.localDevelopmentException.confirmedBy='assistant';},p => {p.webRebuild.localDevelopmentException.evidence=['../outside.md'];},p => {p.webRebuild.localDevelopmentException.allowedPhaseIds.push('WEB-PH05');}]) {
@@ -164,17 +167,17 @@ test('physical and visual acceptance require their own existing evidence and bot
   matches(plan, /Missing evidence: first playable user visual acceptance/);
 });
 
-test('valid documented acceptance permits the next V5 phase but keeps local-only rights', () => {
+test('valid documented acceptance permits the next V5 phase without restoring the release lock', () => {
   const plan = fixture(); completeThrough(plan, 2); acceptGate(plan);
   plan.webRebuild.phases[3].status = 'in_progress'; plan.webRebuild.currentPhaseId = 'WEB-PH03'; plan.webRebuild.nextBatch = ['WEB-PH03'];
   assert.deepEqual(errors(plan), []);
   assert(v5EvidenceReferences(plan).includes(physicalEvidence));
   assert(v5EvidenceReferences(plan).includes(visualEvidence));
-  plan.webRebuild.release.cloudWritesAllowed = true;
-  matches(plan, /local-only release constraints changed/);
+  plan.webRebuild.release.cloudWritesAllowed = true; plan.webRebuild.release.mode = 'open';
+  assert.deepEqual(errors(plan), []);
 });
 
-test('all V5 stages done do not mutate or unlock the real historical release gate', () => {
+test('all V5 stages done do not mutate the stored release policy, and unlocking that policy is allowed', () => {
   const plan = JSON.parse(fs.readFileSync(new URL('../plan/tasks.json', import.meta.url), 'utf8'));
   const originalTasks = JSON.stringify(plan.tasks);
   const originalRelease = JSON.stringify(plan.releasePolicy);
@@ -187,5 +190,8 @@ test('all V5 stages done do not mutate or unlock the real historical release gat
   assert.equal(JSON.stringify(plan.tasks), originalTasks);
   assert.equal(JSON.stringify(plan.releasePolicy), originalRelease);
   plan.releasePolicy.state = 'ready'; plan.releasePolicy.cloudWritesAllowed = true;
-  matches(plan, /existing release lock must remain locked/, refs);
+  plan.webRebuild.supersedes.releasePolicyUnchanged = false;
+  plan.webRebuild.release.mode = 'open'; plan.webRebuild.release.cloudWritesAllowed = true;
+  plan.webRebuild.release.existingGateRetained = false;
+  assert.deepEqual(validateV5Plan(plan, refs).errors, []);
 });

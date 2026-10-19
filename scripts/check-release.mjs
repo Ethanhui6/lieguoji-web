@@ -1,3 +1,4 @@
+// Readiness report. `.githooks/pre-push` no longer invokes this script to block pushes.
 import {reviewedHistoricalPath,verifyReviewedHistory} from './reviewed-history.mjs';
 import fs from 'node:fs';
 import path from 'node:path';

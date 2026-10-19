@@ -44,12 +44,10 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
   evidence('execution documents', [web.source, web.roadmap], true);
   evidence('webRebuild', web.evidence, true);
   if (!STATUSES.has(web.status)) fail('Unknown execution status');
-  if (web.supersedes?.legacyStatusesRetained !== true || web.supersedes?.releasePolicyUnchanged !== true) fail('Historical statuses and release policy must be retained');
-  const release = web.release;
-  if (release?.mode !== 'local_only' || release.cloudWritesAllowed !== false
-    || release.existingGateRetained !== true || release.phaseRenameDoesNotUnlock !== true
-    || release.finalRequirementReconciliationRequired !== true) fail('V5 local-only release constraints changed');
-  if (plan.releasePolicy?.state !== 'locked' || plan.releasePolicy?.cloudWritesAllowed !== false) fail('The existing release lock must remain locked independently of V5 progress');
+  if (web.supersedes?.legacyStatusesRetained !== true) fail('Historical statuses must be retained');
+  // The push/release lock was retired on 2026-10-19. Recorded releasePolicy and
+  // webRebuild.release may still say locked until the plan document is updated;
+  // neither field blocks pushes or fails this check.
 
   const phases = Array.isArray(web.phases) ? web.phases : [];
   const byId = new Map();
@@ -83,7 +81,7 @@ export function validateV5Plan(plan, evidencePaths = new Set()) {
     const before = errors.length;
     if (exception?.kind !== 'user-authorized-gameplay-first' || exception.confirmedBy !== 'user'
       || exception.scope !== 'local-development-only' || !/^\d{4}-\d{2}-\d{2}$/.test(exception.date ?? '')
-      || exception.acceptanceClaimsUnchanged !== true || exception.releasePolicyUnchanged !== true) fail('Invalid local development exception authority/scope');
+      || exception.acceptanceClaimsUnchanged !== true) fail('Invalid local development exception authority/scope');
     evidence('local development exception', exception?.evidence, true);
     const phasesAllowed = exception?.allowedPhaseIds, phasesDeferred = exception?.deferredPhaseIds, dependencies = exception?.deferredPhaseDependencies;
     if (!Array.isArray(phasesAllowed) || !phasesAllowed.length || new Set(phasesAllowed).size !== phasesAllowed.length

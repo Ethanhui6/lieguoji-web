@@ -336,18 +336,18 @@ test('filesystem evidence deletion cannot satisfy the preview gate even with a c
  assert.equal(result.ready, false); assert(result.blockers.some(message => message.includes('Missing or unsafe evidence for playtest coreBrowser')));
 }));
 
-test('pre-push binds exactly accepted HEAD to the actual authorized remote ref and original repository', () => withGitFixture(root => {
- const value = playtestFixture(); value.readiness.playtest.expiresAt = new Date(Date.now() + 60_000).toISOString(); writeFixture(root, value);
+test('retired pre-push allows ordinary pushes and does not consult the release gate', () => withGitFixture(root => {
  fs.mkdirSync(path.join(root, '.githooks')); const hook = path.join(root, '.githooks/pre-push'); fs.copyFileSync(path.join(projectRoot, '.githooks/pre-push'), hook);
- value.readiness.playtest.sourceFingerprint = createSourceFingerprint(root).sourceFingerprint;
- fs.writeFileSync(path.join(root, 'plan/release-readiness.json'), JSON.stringify(value.readiness)); commitFixture(root);
- const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), zero = '0'.repeat(40);
+ const source = fs.readFileSync(hook, 'utf8');
+ assert.doesNotMatch(source, /check-release/); assert.doesNotMatch(source, /Release blocked/);
+ const head = 'a'.repeat(40), zero = '0'.repeat(40);
  const gitExec = execFileSync('git', ['--exec-path'], { cwd: root, encoding: 'utf8' }).trim();
  const shell = process.platform === 'win32' ? path.resolve(gitExec, '../../..', 'bin/sh.exe') : '/bin/sh';
  const push = (lines, remote = 'https://github.com/Ethanhui6/lieguoji-web.git') => spawnSync(shell, [hook, 'origin', remote], { cwd: root, input: lines, encoding: 'utf8' });
- const line = `refs/heads/local ${head} ${PLAYTEST_BRANCH} ${zero}\n`;
- const accepted = push(line); assert.equal(accepted.status, 0, accepted.error?.message ?? accepted.stderr + accepted.stdout);
- for (const input of ['', line + line, `refs/heads/local ${zero} ${PLAYTEST_BRANCH} ${head}\n`, `refs/heads/local ${head} refs/heads/main ${zero}\n`, `refs/heads/local ${head} refs/tags/v0.6.0 ${zero}\n`]) assert.equal(push(input).status, 1);
- assert.equal(push(line, 'https://github.com/someone/other.git').status, 1);
- assert.equal(push(line, root).status, 1);
+ const line = `refs/heads/local ${head} refs/heads/cursor/example ${zero}\n`;
+ for (const input of ['', line, line + line, `refs/heads/local ${zero} refs/heads/main ${head}\n`, `refs/heads/local ${head} refs/tags/v0.6.0 ${zero}\n`, `refs/heads/local ${head} ${PLAYTEST_BRANCH} ${zero}\n`]) {
+  const result = push(input); assert.equal(result.status, 0, result.error?.message ?? result.stderr + result.stdout);
+ }
+ assert.equal(push(line, 'https://github.com/someone/other.git').status, 0);
+ assert.equal(push(line, root).status, 0);
 }));

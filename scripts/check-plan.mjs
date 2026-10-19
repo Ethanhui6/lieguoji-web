@@ -63,7 +63,7 @@ async function main() {
  const { validateV5Plan, v5EvidenceReferences } = await import('./check-v5-plan.mjs');
  const v5 = validateV5Plan(plan, collectEvidencePaths(root, v5EvidenceReferences(plan)));
  if (v5.errors.length) throw new Error(v5.errors.join('\n'));
- console.log(`Plan checked: ${plan.tasks.length} tasks, ${result.phaseCount} PH, ${result.workItemCount} work items; original ${result.originalTaskCount} task digest preserved; V5 ${v5.phaseCount} phases/${v5.workItemCount} work items, active ${plan.webRebuild.currentPhaseId}; release lock does not block local development`);
+ console.log(`Plan checked: ${plan.tasks.length} tasks, ${result.phaseCount} PH, ${result.workItemCount} work items; original ${result.originalTaskCount} task digest preserved; V5 ${v5.phaseCount} phases/${v5.workItemCount} work items, active ${plan.webRebuild.currentPhaseId}; release push lock retired`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

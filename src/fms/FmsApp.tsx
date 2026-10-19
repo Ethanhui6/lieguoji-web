@@ -95,7 +95,9 @@ export default function FmsApp() {
     const start = async () => {
       const saved=await loadFmsDocument(); if(disposed)return;
       if(!saved)setNotice('正在准备空白海洋…');
-      const document=saved?.document??await createFmsDocument({signal:lifetime.signal}); if(disposed)return;
+      // Only new worlds use the original rectangular grid. Never rebuild or
+      // migrate a loaded document: its sites, history and saved checksum win.
+      const document=saved?.document??await createFmsOriginalDocument('20k'); if(disposed)return;
       const history=new FmsEditHistory(document);
       renderer=new FmsRenderer(state=>{
         if(disposed)return;

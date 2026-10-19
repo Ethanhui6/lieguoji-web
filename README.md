@@ -1,6 +1,8 @@
 # 列国纪
 
-> **2026-10-04：按用户要求重做计划，当前进入V5原作网页重建。** 优先忠实还原用户授权的Fantasy Map Simulator；首个试玩为闭合轮廓/海陆笔刷→保留主体形状生成自然地形→连续缩放。iPhone13ProMax的Safari/Chrome竖屏优先，工具折叠，地图和菜单采用原作风格。阅读 [V5指令](CODEX_AUTOPILOT_V5.md)、[新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)、[当前交接](docs/AUTO_HANDOFF.md)；唯一当前状态源为 [任务源](plan/tasks.json) 的webRebuild。旧代码/任务/存档和 [发布锁](docs/RELEASE_POLICY_V4.md)保留，本轮无云端更新。
+> **已被主计划取代（2026-10-19）。** 当前唯一计划是 [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md)。《列国纪》是 Bob 本人作品 Fantasy Map Simulator 的网页/PWA 复刻，界面照原作重建，采用方案 C。任务状态看 [plan/tasks.json](plan/tasks.json)，交接看 [docs/AUTO_HANDOFF.md](docs/AUTO_HANDOFF.md)。下面 2026-10-04 的 V5 说明和后文的 0.4 工坊介绍保留为历史。
+
+> **2026-10-04 历史说明：** 按当时要求重做计划，进入 V5 原作网页重建。优先忠实还原用户授权的 Fantasy Map Simulator；首个试玩为闭合轮廓/海陆笔刷→保留主体形状生成自然地形→连续缩放。阅读 [V5指令](CODEX_AUTOPILOT_V5.md)、[新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)。该顺序和「本轮无云端更新」不再是当前计划。
 
 重规划前本地基线为 `0.5.0-preview.33`，高度模块已提取并能生成/保存独立Atlas地图，但手绘约束未与该模块接通，原Unity拓扑/画笔/渲染未完整恢复，用户未认可体验。旧检查见[原批记录](docs/evidence/fms-direct-generation-2026-10-04/REPORT.md)，本轮审查见[引擎审查](docs/evidence/fms-web-replan-2026-10-04/EXISTING_ENGINE_AUDIT.md)。重规划文档不是新游戏版本。
 
@@ -26,6 +28,6 @@ Node 24.18.1，锁文件安装 `npm ci`；启动 `npm run dev`；完整本地检
 
 新世界采用规则 0.2.0，旧 0.1.0 存档继续原规则，不自动升级。旧自建局的国家面板提供「创建经营推演副本」：确认后保留当前日期、地图、军队与事件，初始化新经营账册并沿用旧局敌对关系，在独立运行中继续；原局保留。人口与粮食初值是沙盒参数，不是正式历史统计。
 
-当前编辑精度为 640 个确定性 Voronoi 地理单元，画笔改变真实海陆与归属；连续噪声生成连贯地形及严格下坡河流，国家按陆地连通关系扩张。尚无跨省运输、贸易、海军、外交谈判、征募或皇室人物/谱系/继承模拟；第一次长征、PWA 和最终地图精度另依计划推进。
+0.4 历史基线的编辑精度是 640 个确定性 Voronoi 地理单元。新的原作格网世界以 [主计划第 7 节](docs/MASTER_PLAN.md) 为准：19,928 / 30,030 / 40,050 / 79,924 格，旧 640 单元和 36,864 点连续地形只给旧存档，65,536 / 262,144 已退役。第一次长征和五国正式地图留在储备，不排进当前批次。
 
 续接先读 [docs/AUTO_HANDOFF.md](docs/AUTO_HANDOFF.md)，状态以 [plan/tasks.json](plan/tasks.json) 为准。本批真实 CI 与 HTTPS 证据单列在 [历史功能验收](docs/evidence/2026-09-23-history.md)，此前经营与外交见 [M3 证据](docs/evidence/2026-09-23-statecraft.md)。移动和平板仿真不代表真实设备验收，正式地图和原规划恢复继续独立待核。

@@ -1,3 +1,5 @@
+> **交接入口仍是本文（2026-10-19）。** 方向、规则和顺序以 [MASTER_PLAN.md](MASTER_PLAN.md) 为准。下面的检查点是历史记录。其中的「无上传」「发布锁不变」只描述该批当时的事实，不覆盖主计划已经定下的分档发布流程。`releasePolicy` 配置由并行的 P-0 PR 修改。
+
 # 当前检查点：方案 C 找到边境格生产者（2026-10-19）
 
 已恢复FilterProvinceCells及727900回调，解决上一批真实写入位置未知：外侧邻接cell逐次追加，排除同省和省0，保留重复；派生邻省/临海/Feature一致性。39项测试（含原作19,928点固定测试省份逐边核对）通过，lint/typecheck通过。模块未接生产Worker，当前试玩不变，不声称AI已改或提速。见[证据](evidence/fms-province-cells53-2026-10-19/RESULT.md)，键webRebuild.provinceCells53Checkpoint。

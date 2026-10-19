@@ -1,3 +1,5 @@
+> **已被主计划取代（2026-10-19）。** 当前唯一计划是 [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md)。本文保留为历史。`plan/tasks.json` 的 `webRebuild.source` 仍指向本文件，那是现有校验的要求，不是当前方向。闭合轮廓优先、体验门未过不扩建国家，已由主计划改成方案 C 和原作界面重建。
+
 # Fantasy Map Simulator 网页重建执行指令 V5
 
 > **2026-10-05 当前优先级：关键玩法先行。** 用户要求先做出来可玩的关键内容，再慢慢优化。本地 WEB-PH03/04 核心工作不再等待 WEB-PH02 的人工视觉门：当前 FMS 地图上建国／城市／首都 → 自主推演 → 外交与军令预览确认 → 战争结果与原因 → 独立保存恢复。绘图体验、真机和视觉仍如实待验，完整行政、人物、信仰后续。此例外仅改变本地顺序，不改变云端发布锁、pre-push 或旧任务状态。精确范围见 `plan/tasks.json.webRebuild.localDevelopmentException` 与 `docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md`。下文旧“第一门前不扩建国家”由本条限定覆盖。

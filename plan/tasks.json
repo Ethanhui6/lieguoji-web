@@ -2572,7 +2572,8 @@
         "WEB-PH05",
         "WEB-PH06"
       ],
-      "note": "真机与用户视觉仍未验收；WEB-PH03/04本地关键玩法按localDevelopmentException先行，不解除发布锁。"
+      "note": "真机与用户视觉仍未验收；WEB-PH03/04本地关键玩法按localDevelopmentException先行，不解除发布锁。",
+      "masterPlanNote": "主计划已取代「体验门未过则不扩建国家」的产品顺序。phaseId 和验收状态仍受现有 V5 校验约束，本批不改写成通过。发布锁配置归并行的 P-0。"
     },
     "unknowns": [
       "complete original brush workflow video",
@@ -2850,10 +2851,10 @@
       "docs/evidence/fms-live-observation-v5-2026-10-08/live-ui46-compare.mjs",
       "docs/evidence/fms-continuous-play47-2026-10-10/RESULT.md",
       "docs/evidence/fms-combat-cartography47-2026-10-15/RESULT.md",
-      "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
+      "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json",
+      "docs/MASTER_PLAN.md"
     ],
     "nextBatch": [
-      "WEB-02-02",
       "WEB-04-37"
     ],
     "phases": [
@@ -3472,7 +3473,9 @@
               "原降水河网/增湿与曲线渐宽已适配，但每点flux受网格密度影响；完整4096生物群系捕获/blur及触发链未闭合，细支流偏密仍待处理。",
               "气候/河网已移出主线程；小于192气候采样的细部降水仍有限制。主线程几何/海洋/面积水文、输入克隆和渲染提交仍有成本；桌面短窗口53ms长任务不能代表手机通过。",
               "原河道曲线与渐宽已作网页适配；原总尺度/场景参数、密集支流和极近景/GPU成本仍待处理。"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：留在待办池，不排进当前批次。状态、依赖和证据不改。"
           },
           {
             "id": "WEB-02-02",
@@ -3497,7 +3500,9 @@
               "docs/evidence/fms-combat-cartography47-2026-10-15/verification.json"
             ],
             "progress": "本批直接网格4/16/40倍同相机对照保留；文化世界已接仅视图层暖纸色海面，编辑器源外观与真实海岸/拾取/存档未改。开局仅按显著真实陆块取景，桌面主体清楚但手机没有明显改善；默认单点模板实际陆地仅占1536²海图约1.92%，全图大陆仍极小。01粗轮廓自然感及水系尺度问题未完成，仍未开展同输入直接源/Atlas完整对照；原作视觉与真机未验收。",
-            "latest47Observation": "2026-10-15: same saved full-map input full/4/16/40x desktop and portrait checked for world/camera stability, font hierarchy and height-derived shade. Angular coast, coarse triangles, sparse40x detail and original visual/device acceptance remain open; this batch did not change geometry."
+            "latest47Observation": "2026-10-15: same saved full-map input full/4/16/40x desktop and portrait checked for world/camera stability, font hierarchy and height-derived shade. Angular coast, coarse triangles, sparse40x detail and original visual/device acceptance remain open; this batch did not change geometry.",
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：留在待办池，不排进当前批次。状态、依赖和证据不改。"
           },
           {
             "id": "WEB-02-03",
@@ -3521,7 +3526,9 @@
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
               "docs/evidence/fms-battle-animation-v5-2026-10-06/ORIGINAL_EDITING.md"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：留在待办池，不排进当前批次。状态、依赖和证据不改。"
           },
           {
             "id": "WEB-02-05",
@@ -3534,7 +3541,19 @@
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md",
               "docs/evidence/fms-battle-animation-v5-2026-10-06/ORIGINAL_EDITING.md"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：留在待办池，不排进当前批次。状态、依赖和证据不改。"
+          },
+          {
+            "id": "WEB-02-06",
+            "title": "B-3a 原作 CellData 投影常驻",
+            "status": "todo",
+            "dependsOn": [],
+            "acceptance": "任务 1 的投影从临时转换改成世界的权威数据（Elevation / Biom / Culture / Burg / State / Province / Feature / Neighbor）。渲染、拾取、模拟都读这一份。同一世界的格数等于原作格数（19,928 / 30,030 / 40,050 / 79,924），不能拿三角行军面的数量冒充；每格的 State 和 Province 跟渲染结果逐格一致。产品依赖是 B-0，不是 WEB-02 的海岸储备项。编号来源：路线附表 B-3 建议的 WEB-02-06，2026-10-19 主计划登记，供开发协调确认。来源等级：有证据的桥接。",
+            "evidence": [],
+            "masterPlanId": "B-3a",
+            "masterPlanScheduling": "after-B-0"
           }
         ]
       },
@@ -3689,6 +3708,18 @@
               "docs/evidence/fms-naval-autonomy47-2026-10-08/artifact.json"
             ],
             "progressScope": "2026-10-08: real cultures, independent faith and two place-name modes now feed real families, actual chosen polity, terrain population/resources, first standing Army roster with population debit, native first treasury and destiny, and Army47 initial positions.153 related checks/33 new government cases passed. Full47/Store49/Worker/UI, active lifecycle/secession/restoration and religious simulation pending. Frozen46/player5254 untouched; not a new playable delivery. 2026-10-08 military creation: real cultural candidate now joins actual Army/Fleet states, native calendar-only war accounting, real starter crew/grain charges, exact wet-face fleet positions;95 checks/16 new cases. Full47 daily owner/AI/Store49/Worker/UI still pending. 2026-10-08 actual daily47: real-position fleet/Army food, civilian economy, month tax, safe regular/emergency muster and destiny now settle in an atomic pending-day candidate;108 related tests/24 new cases. Autonomous orders are still an explicit required unresolved stage; combat personnel/full47/Store49/Worker/UI remain pending. No new playable or phone/visual claim. 2026-10-08 real personnel47: common field+province attack/repair resolver, alive current ruler skills/naval traits, cached current-war enemy modifier, saved native40/10 or60/15 Army damage, month refresh/new muster registration verified.131 related cases/23new; explicit central-army, neutral protrusion and web damage-save mapping. Full AI/runtime/Store49/UI not enabled, no new playable/phone/visual pass. 2026-10-08 actual Army autonomy47: native float32 target scoring, shared owned command core without player takeover, actual land/sea daily routes, capture/peace reselection, manual/contact protection and recruit ledger.117 related cases/23new. Isolated two-island movement is not900-day economy/landing acceptance. Full naval/political runtime/Store49/UI remain pending; no new playable/phone/visual pass. 2026-10-08 precise fleet47: strict unchanged V1 plus explicit V2 destination, shared local/gate motion, zero-length end and canonical contact edges, actual stamped sea-only fleet commands and safety/manual guards.133 related checks/21new, real anchor food transfer; not autonomous900-day campaign or new47 UI/save activation. 2026-10-08 actual naval47: native role/reclaim/idle kernels now issue persistent actual-position commands, preserve manual/held/routes, budget routine voyage food and reselect invalid targets immediately. Port occupation uses true positive movement intervals; neutral-held supply denied, land-title sync immediate.146 unique related cases/23new have pass evidence, with grouped long-run timeouts retained and solo108.7s pass. No47 browser/save activation, shipbuilding/war closeout/scale/900day remain."
+          },
+          {
+            "id": "WEB-03-07",
+            "title": "B-3b State / Province / Burg / Army 结构对齐",
+            "status": "todo",
+            "dependsOn": [
+              "WEB-02-06"
+            ],
+            "acceptance": "字段命名和含义对齐原作 StateData / ProvinceData / ArmyData。A-2 面板里显示「—」的原作字段在这一步补数据。验收：新旧结构互相转换的往返测试；旧存档用冻结引擎，不静默升级。只做结构对齐，不导入 .save。编号来源：路线附表 B-3 建议的 WEB-03-07，2026-10-19 主计划登记，供开发协调确认。依赖 B-3a（WEB-02-06）。",
+            "evidence": [],
+            "masterPlanId": "B-3b",
+            "masterPlanScheduling": "after-B-3a"
           }
         ]
       },
@@ -3878,7 +3909,9 @@
               "WEB-04-10"
             ],
             "acceptance": "用户明确两种都要、先做连续地点：后续可绘制战线并选择多军，预览真实可达集结/各军分段道路、确认后协同推进；保留各军战损与撤退状态，不能仅画装饰箭头。先封存已有f50f/Store6再改变规则，并继续核实原作行为；真机/视觉独立验收。",
-            "evidence": []
+            "evidence": [],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：用户扩展，留在待办池，不排进当前批次。状态和证据不改。"
           },
           {
             "id": "WEB-04-12",
@@ -4057,7 +4090,9 @@
             "acceptance": "用户确认在原作基础上新增：上帝视角可见全局，AI只读己方实际观测与会过期的记忆；未发现敌军不能作为即时目标。侦察、隐蔽、伏击准备和触发均有地形/范围/时间与反制规则，保存重放一致，不伪称已拆出原作迷雾。",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：用户扩展，留在待办池，不排进当前批次。状态和证据不改。"
           },
           {
             "id": "WEB-04-18",
@@ -4069,7 +4104,9 @@
             "acceptance": "小编制拥有独立兵员、位置、路线、命令、接触和损耗；上级汇总真实子部队并协调行程。团级小标记、上级大标记、近远景聚合与点选一致，不用装饰点替代模拟。新版本与旧v8隔离，手机数量/性能另实测。",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：用户扩展，留在待办池，不排进当前批次。状态和证据不改。"
           },
           {
             "id": "WEB-04-19",
@@ -4081,7 +4118,9 @@
             "acceptance": "显式联盟与共同敌人/军事通行约束，援军沿实际可达路线抵达才加入；真实粮源、运输或补给线与截断后耗粮/撤退，AI只使用己方情报。区分原作盟友边界择敌证据、本籍重编和新增前线增援，不瞬移补兵。",
             "evidence": [
               "docs/evidence/fms-battle-animation-v5-2026-10-06/RECOVERY.md"
-            ]
+            ],
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：用户扩展，留在待办池，可能并进 B-2。状态和证据不改。"
           },
           {
             "id": "WEB-04-20",
@@ -4805,7 +4844,9 @@
             "evidence": [
               "docs/evidence/fms-live-observation-v5-2026-10-08/CONTRACT.md"
             ],
-            "progressScope": "Contract only. No ocean ownership or conquest currently in the playable v46 UI build."
+            "progressScope": "Contract only. No ocean ownership or conquest currently in the playable v46 UI build.",
+            "masterPlanScheduling": "reserve",
+            "masterPlanNote": "主计划第 8 节：用户扩展，留在待办池，不排进当前批次。状态和证据不改。"
           },
           {
             "id": "WEB-04-39",
@@ -8966,7 +9007,11 @@
       "direction": "地图主导；温白克制 iOS 图标界面；桌面短卡/手机抽屉；原作地理与模拟基线另做真实对照",
       "previousNoSkillRequestSupersededForThisBatch": true,
       "concept": "docs/design/atlas-ui-2026-10-08/target-v1.png",
-      "conceptIsImplementedScreenshot": false
+      "conceptIsImplementedScreenshot": false,
+      "supersededOn": "2026-10-19",
+      "supersededBy": "docs/MASTER_PLAN.md",
+      "standingDirection": "void",
+      "voidReason": "主计划：10-08 温白 iOS 图标 UI 作废，界面照原作重建。历史 direction 与 concept 保留，不当作当前规格。"
     },
     "compactUi46Checkpoint": {
       "date": "2026-10-08",
@@ -13145,6 +13190,93 @@
       "originalGridSites": 19928,
       "productionBehaviorChanged": false,
       "uploaded": false
-    }
+    },
+    "masterPlan": "docs/MASTER_PLAN.md",
+    "masterPlanNextBatchNote": "现有校验要求 nextBatch 最多 3 个已存在的 V5 编号。主计划顺序里的 P-0、B-0、A-1 还没有 V5 编号，完整顺序在顶层 masterPlan.order。WEB-02-02 按第 8 节进入储备，移出下一批。当前 V5 队列只保留 WEB-04-37。"
+  },
+  "masterPlan": {
+    "document": "docs/MASTER_PLAN.md",
+    "adopted": "2026-10-19",
+    "status": "draft-landed",
+    "note": "唯一计划。releasePolicy、webRebuild.source、webRebuild.roadmap、webRebuild.release 和 firstPlayableGate.phaseId 仍受现有校验约束，配置改动归并行的 P-0。nextBatch 只能登记已存在的 V5 编号。",
+    "order": [
+      {
+        "seq": 0,
+        "id": "P-0",
+        "title": "流程准备",
+        "registeredTaskId": null,
+        "note": "并行 PR：发布锁、校验和 CI 分档"
+      },
+      {
+        "seq": 1,
+        "id": "B-0",
+        "title": "方案 C 任务 2：版本化每帧 10 省 / 1 国与月度更新日",
+        "registeredTaskId": null,
+        "dependsOn": [
+          "#21"
+        ]
+      },
+      {
+        "seq": 2,
+        "id": "A-1",
+        "title": "主界面布局",
+        "registeredTaskId": null
+      },
+      {
+        "seq": 3,
+        "id": "A-2",
+        "title": "国家、战争、外交、编辑器四面板",
+        "registeredTaskId": null
+      },
+      {
+        "seq": 4,
+        "id": "A-3",
+        "title": "地图字体、标签分层、8 个外观预设",
+        "registeredTaskId": null
+      },
+      {
+        "seq": 5,
+        "id": "B-3a",
+        "title": "原作 CellData 常驻",
+        "registeredTaskId": "WEB-02-06"
+      },
+      {
+        "seq": 6,
+        "id": "B-1",
+        "title": "继承、战争记录和首都失守、附庸和独立、叛乱和家族内战、联盟和投降",
+        "registeredTaskId": "WEB-04-21",
+        "note": "WEB-04-21 是既有编号，只覆盖战争记录和首都失守"
+      },
+      {
+        "seq": 7,
+        "id": "B-2",
+        "title": "原作 AI 自动远征、封锁、护航",
+        "registeredTaskId": null
+      },
+      {
+        "seq": 8,
+        "id": "B-3b",
+        "title": "State/Province/Burg/Army 结构对齐",
+        "registeredTaskId": "WEB-03-07"
+      },
+      {
+        "seq": 9,
+        "id": "B-3c",
+        "title": "明文 JSON 导出（可选）",
+        "registeredTaskId": null
+      },
+      {
+        "seq": 10,
+        "id": "B-4",
+        "title": "PWA、iPhone 真机、完整验收清单复核",
+        "registeredTaskId": null
+      }
+    ],
+    "current": [
+      "C-T1",
+      "WEB-04-37",
+      "B-0"
+    ],
+    "idSource": "WEB-02-06 与 WEB-03-07 来自路线附表 B-3 的建议编号。主计划正文没有直接写这两个号。本批登记，供开发协调确认。"
   }
 }

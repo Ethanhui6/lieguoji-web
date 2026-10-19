@@ -1,3 +1,5 @@
+> **冻结段已被主计划取代（2026-10-19）。** 当前流程见 [MASTER_PLAN.md](MASTER_PLAN.md)：往 `codex/ph06-world-generation` 的 PR 跑一档，往 main 的 PR 跑二档。Actions 仍只检查，不另建部署链。文中「当前云端写入冻结」保留为历史。pre-push 本批不改。
+
 # GitHub 检查与受控合并
 
 ## 2026-10-09 继续修复后的候选检查

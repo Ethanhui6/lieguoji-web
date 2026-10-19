@@ -1,3 +1,5 @@
+> **已被主计划取代（2026-10-19）。** 当前产品定位和范围以 [MASTER_PLAN.md](MASTER_PLAN.md) 为准。下文「自由创世」主线和 V4 合同保留为历史。正式五国地图仍未核定，测试大陆不可转正。
+
 # 产品目标与当前交付范围
 
 > **V4 目标范围扩展，尚未实现。** 当前产品合同以 [CODEX_AUTOPILOT_V4.md](../CODEX_AUTOPILOT_V4.md)、[WORLD_V4.md](WORLD_V4.md)、[DESIGN_V4.md](DESIGN_V4.md) 与 [PH计划](PH_ROADMAP_V4.md) 为准：大型精细创世、各国不同行政制度、家族与信仰、完整独立PWA。以下为0.4及此前基础功能记录，不代表新版已达标；其中逐批CI/HTTPS要求改为最终统一发布时执行。

@@ -1,3 +1,5 @@
+> **已被主计划取代（2026-10-19）。** 当前唯一计划是 [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md)。本文的 M0—M6 和「自由创世」顺序保留为历史。五国正式地图、第一次长征和原 100 项规划留在储备。任务状态仍看 `plan/tasks.json`。
+
 # 阶段与依赖
 
 > **2026-10-04当前执行主线为V5：WEB-PH00—WEB-PH07。** 阅读 [新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md) 和 [V5执行指令](CODEX_AUTOPILOT_V5.md)，进度只认 `plan/tasks.json.webRebuild`。先原作画图与竖屏手机试玩，方向验收后进入国家、城市和推演。[旧36PH／144子项](docs/PH_ROADMAP_V4.md)与下面M0—M6保留为要求及历史证据，不再决定开发顺序。云端冻结及旧发布检查继续生效，见 [发布规则](docs/RELEASE_POLICY_V4.md)。

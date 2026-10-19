@@ -1,3 +1,5 @@
+> **仍然有效（2026-10-19）。** 本文是 [主计划](MASTER_PLAN.md) 的路线依据。当前方向、顺序和验收以主计划为准，不以本文另立阶段。
+
 # Fantasy Map Simulator 网页移植分析（2026-10-17）
 
 依据：只读分析用户自有安装目录 `D:\steam\steamapps\common\FantasyMapSimulator`（Unity 2021.3.36f1，IL2CPP，Windows x64，817MB）。没有读取 envs.log、个人存档、认证或 SDK 配置；没有运行原游戏。存档密钥等加载器常量只在本机私有目录使用，不进入仓库或网页产物。

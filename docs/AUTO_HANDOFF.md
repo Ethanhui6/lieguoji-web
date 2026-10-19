@@ -1,3 +1,15 @@
+# 当前检查点：方案 C 边境格已接入生产推演（2026-10-19）
+
+State.Update 的边境消费者改为读取 FilterProvinceCells 的 borderNeighborCells。边境数量是格子接触次数（含重复），不是裁剪行军面。进攻选敌走接触次数大于 0。网页适配：省份归属用多边形三角投票，只定格子归属；未保存的 Feature 按同水面格子邻接洪水填充，不是 Unity 编号，也不是行军三角连通。贴海进攻和首都圈驻防仍用行军面贴海与多边形邻省；isSeaNeighbor 不是贴着省 0 海洋。
+
+改动前引擎 4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6 已冻结为 engine-4ba5.js（1423790 字节，sha256 b34a3f494b74fa2aee9c442a79efd8103d0ec85f3fb385eaf31e95a1c6799773）。当前源码指纹 d1ea3eb84b41ef4e06090c58c5a9c18602e75cc535f027f38a93ff897482a064。已验试玩 f6a84e7 / 端口 5365 / 引擎 10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5 未改写。
+
+相关 53 项单测通过（含原作 19,928 格、军令、冻结字节，以及新增投影 4 项和接触计数 2 项），lint 与全仓 typecheck 通过。桌面 Chromium 打开文化世界：24 省、724 次格子接触，推进一天从第 0 日到第 1 日，页面错误 0。见[证据](evidence/fms-celldata-projection55-2026-10-19/RESULT.md)，键 webRebuild.celldataProjection55Checkpoint。不声称提速、视觉对齐或真机验收。
+
+下一项是版本化 10 省/1 国轮转。日财政不得改成每帧。无上传，发布锁与旧档保护不变。
+
+---
+
 # 当前检查点：方案 C 找到边境格生产者（2026-10-19）
 
 已恢复FilterProvinceCells及727900回调，解决上一批真实写入位置未知：外侧邻接cell逐次追加，排除同省和省0，保留重复；派生邻省/临海/Feature一致性。39项测试（含原作19,928点固定测试省份逐边核对）通过，lint/typecheck通过。模块未接生产Worker，当前试玩不变，不声称AI已改或提速。见[证据](evidence/fms-province-cells53-2026-10-19/RESULT.md)，键webRebuild.provinceCells53Checkpoint。

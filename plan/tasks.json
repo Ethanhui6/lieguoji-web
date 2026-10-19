@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Claude Plan C: provinceCells53Checkpoint resolves actual borderNeighborCells producer: BurgsAndStateGenerator.FilterProvinceCells callback727900 appends external neighbor cells, preserves duplicates, excludes province0. Direct callers generation/sea regeneration/height edit/load verified. Kernels plus original19,928-site synthetic province integration passed, NOT production connected. Next State.Update border consumers and explicit original CellData-to-current-world projection; do not substitute travel triangles or repeat producer search. Then versioned10province/1state scheduling. Keep immediate core defense/daily fiscal; no uploads.",
+    "nextRecoveryTarget": "Claude Plan C: celldataProjection55Checkpoint feeds FilterProvinceCells borderNeighborCells into the production worker. Attack borders use original cell-contact counts, including duplicates, not clipped march faces. Neighbors, isSeaNeighbor and Feature stay stable when only controllers change. Garrison coasts and capital-area polygon neighbors stay explicit web adaptations; isSeaNeighbor is not province-0 ocean contact. Previous engine 4ba56e39 is frozen as engine-4ba5. Published 10b0 and port 5365 are unchanged. Next is versioned 10-province/1-state scheduling. Do not fold daily fiscal into per-frame work. No speedup, visual parity, or device acceptance. No uploads.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13144,6 +13144,19 @@
       "unitTests": 39,
       "originalGridSites": 19928,
       "productionBehaviorChanged": false,
+      "uploaded": false
+    },
+    "celldataProjection55Checkpoint": {
+      "date": "2026-10-19",
+      "status": "production-border-consumers-use-cell-contacts",
+      "evidence": "docs/evidence/fms-celldata-projection55-2026-10-19/RESULT.md",
+      "unitTests": 53,
+      "browserTests": 1,
+      "previousEngine": "4ba56e393c0fea00fc5aed46d41391a6db626e65f358fce82fe6702341c10fb6",
+      "engine": "d1ea3eb84b41ef4e06090c58c5a9c18602e75cc535f027f38a93ff897482a064",
+      "publishedEngineUnchanged": "10b0c5adab450993a3c614c2200a20be164ac87044bf5b352ae40201002a4af5",
+      "productionBehaviorChanged": true,
+      "fullProvinceStateScheduling": false,
       "uploaded": false
     }
   }

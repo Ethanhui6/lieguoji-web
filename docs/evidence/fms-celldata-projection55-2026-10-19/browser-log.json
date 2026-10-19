@@ -1,0 +1,21 @@
+{
+  "dayBefore": 0,
+  "dayAfter": 1,
+  "errors": [],
+  "digest": {
+    "source": "cells",
+    "contacts": 724,
+    "provinces": 24,
+    "sample": {
+      "id": "p-0",
+      "contacts": 12,
+      "neighbors": [
+        "p-1",
+        "p-6"
+      ],
+      "sea": false,
+      "feature": 2,
+      "connected": true
+    }
+  }
+}

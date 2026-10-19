@@ -13,6 +13,7 @@ import {FmsRenderer} from '../renderer';
 import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
+import {stateBorderDigest55} from './state-border55';
 import {originalPortCities} from '../original/original-ports';
 import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
@@ -303,7 +304,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,grid=terrainGrid.grid,original=grid?new OriginalPlayRenderer(grid,source.elevations,displayFailed):null;
     const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current());
-    let cellOwners:Int32Array|null=null,stateKey='';
+    let cellOwners:Int32Array|null=null,stateKey='',borderStamp='';
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
@@ -339,6 +340,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
             const nations=new Map(r.world.nations.map(n=>[n.id,Number.parseInt(nationColor(n).slice(1),16)]));
             original.setStates(selection.mapMode==='political'?cellOwners:null,i=>nations.get(r.world.provinces[i]?.controller)??null);}
         }
+        const borderKey=r.world.provinces.map(p=>p.id).join('\n');if(borderKey!==borderStamp){borderStamp=borderKey;canvas.dataset.borderCells=JSON.stringify(stateBorderDigest55(r));}
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
         drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];

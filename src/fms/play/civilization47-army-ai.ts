@@ -1,5 +1,5 @@
 import {assertArmyBatch47,consumeArmyBatch47} from './army-batch47';
-import {provinceBorderReader54} from './province-border54';
+import {stateBorderView55} from './state-border55';
 import type {FoundingForces47} from './civilization47-forces';
 import {nativeRegularTarget47,type RegularTarget47} from './native-war/army-target47';
 import {assertArmyAutonomy47,type ArmyDecision47} from './civilization47-army-ai-state';
@@ -57,7 +57,7 @@ export function issueArmyBatchOrders47(r:FoundingForces47,weights:ArmyRouteWeigh
   issueArmySelection47(r,weights,ids);return true;
 }
 function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?:readonly string[]):undefined{
-  const protruding=provinceBorderReader54(r);
+  const border=stateBorderView55(r),protruding=border.protruding;
   assertArmyAutonomy47(r);const state=r.armyAutonomy;
   if((!ids&&r.clock.tick!==r.world.day*TICKS_PER_DAY)||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
   if(!ids&&state.lastDay===r.world.day)return undefined;
@@ -94,12 +94,16 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     const attackIds=new Set<string>(),owned=r.world.provinces.filter(p=>p.controller===a.nationId),invaded=owned.filter(p=>enemyAt(p.id));
     if(!low&&a.status!=='retreating'&&enemies.size){
       for(const p of invaded)attackIds.add(p.id);
-      for(const p of owned)for(const id of p.neighbors)if(enemies.has(places.get(id)!.controller))attackIds.add(id);
+      // Border quantity is FilterProvinceCells contact multiplicity. A clipped
+      // march face is not a cell.
+      for(const p of owned)for(const contact of border.contacts(p.id))if(contact.cells>0&&enemies.has(places.get(contact.id)!.controller))attackIds.add(contact.id);
       // Ally assistance never inherits another state's wars. This is an
       // explicit access-and-current-enemy bridge, not native ally eligibility.
       if(!invaded.length)for(const p of r.world.provinces)if(p.controller!==a.nationId&&access(r.world,a.nationId,p.controller)){
-        if(enemyAt(p.id))attackIds.add(p.id);for(const id of p.neighbors)if(enemies.has(places.get(id)!.controller))attackIds.add(id);
+        if(enemyAt(p.id))attackIds.add(p.id);for(const contact of border.contacts(p.id))if(contact.cells>0&&enemies.has(places.get(contact.id)!.controller))attackIds.add(contact.id);
       }
+      // 网页适配：贴海进攻仍用行军面是否连到海，不是 isSeaNeighbor。省0海洋在
+      // FilterProvinceCells 里先被排除，只有他省海拔<20 的格子才会置位。
       for(const p of r.world.provinces)if(enemies.has(p.controller)&&coasts.has(p.id))attackIds.add(p.id);
     }
     const search=createArmyCommandSearch47(r,weights,a.id);
@@ -151,6 +155,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
       let id=row.garrisonId;
       if(!id){
         const capital=r.world.cities.find(c=>c.id===r.world.nations.find(n=>n.id===a.nationId)!.capitalId),cp=capital?places.get(capital.provinceId):undefined;
+        // 网页适配：驻防的边境、临海和首都圈仍用多边形邻省与行军面贴海，不用格子接触表替换首都圈。
         const area=new Set(cp?.controller===a.nationId?[cp.id,...cp.neighbors.filter(id=>places.get(id)?.controller===a.nationId)]:[]);
         const inputs=owned.map(p=>{const neighbors=p.neighbors.map(id=>places.get(id)!);return{id:p.id,capitalArea:area.has(p.id),border:coasts.has(p.id)||neighbors.some(n=>n.controller!==a.nationId),land:true,coastal:coasts.has(p.id),allyNeighbor:neighbors.some(n=>n.controller!==a.nationId&&access(r.world,a.nationId,n.controller)),foreignLandNeighbor:neighbors.some(n=>n.controller!==a.nationId),targeting:r.world.armies.filter(b=>b.troops>0&&state.armies[b.id].garrisonId===p.id).length};});
         id=nativeChooseIdleArmy(nativeIdleArmyPools(inputs),owned.some(p=>p.id===home.id)?home.id:null,owned.map(p=>p.id),garrisonRandom47(`${r.world.custom!.seed}/${a.id}/${r.world.day}/garrison47`));

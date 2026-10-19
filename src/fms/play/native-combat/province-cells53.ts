@@ -9,10 +9,10 @@ export interface NativeProvinceCells53 {
  isAllCellsConnected:boolean;
 }
 export interface NativeCellInput53 {
- province:readonly number[];
+ province:ArrayLike<number>;
  neighbor:readonly (readonly number[])[];
- height:readonly number[];
- feature:readonly number[];
+ height:ArrayLike<number>;
+ feature:ArrayLike<number>;
 }
 export function nativeFilterProvinceCells53(input:NativeCellInput53,slots:readonly boolean[]):(NativeProvinceCells53|null)[]{
  const size=input.province.length;

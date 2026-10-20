@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Continue Claude stage4 generation UI. generation57 fixes new handdraw blank grid to original1600x900/19928points; olddocs unchanged. Next unify outer map background/tool visual and real options. 80k exceeds50000point cap and requires versioned compatibility/performance work. Do not claim fullnative or visual acceptance. State55 remains queued. No upload.",
+    "nextRecoveryTarget": "Continue Claude stage4 generation/map experience after generation58 seed fix and actual armyPositions arrows. Native arrow shape/animation, naval arrows and campaign LOD remain open. Map background/fonts/rivers/80k remain. Preserve State55 queue, old saves, local only.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13197,6 +13197,19 @@
       "evidence": "docs/evidence/fms-generation57-2026-10-20/RESULT.md",
       "unitTests": 13,
       "browserTests": 8,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "generation58Checkpoint": {
+      "sourceCommit": "b4d35f0",
+      "status": "local-functional-checks-passed-visual-pending",
+      "preview": "http://127.0.0.1:5370/?fms=1",
+      "artifact": ".autopilot/fms-generation58-checked",
+      "engine": "9d1d97dcd2b209983c26625dfe3ca74e8033e5b47dedc6e0e101ab9fcba30884",
+      "evidence": "docs/evidence/fms-generation58-2026-10-20/RESULT.md",
+      "unitTests": 28,
+      "browserTests": 6,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

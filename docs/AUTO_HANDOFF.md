@@ -1,3 +1,11 @@
+# 当前检查点：随机种子与战争进攻箭头（2026-10-20）
+
+源码b4d35f0，本机 http://127.0.0.1:5370/?fms=1 ，产物.autopilot/fms-generation58-checked。种子默认每次随机，手动固定与换种有效；实际高度数组复现已验。箭头读取真实armyPositions剩余路径，不再依赖废弃省份route；仅敌方目标进攻，连续更新位置，限12条/同目标2条。b0d1冻结，旧5369/dist保留，无上传。
+
+28单测、最终6浏览器、type/lint/build128通过。此前2项箭头失败确实暴露路线源错误，已修复后重测；见[证据](evidence/fms-generation58-2026-10-20/RESULT.md)。构建commit仍为修改前基线4d66cd9，生产修改对应b4d35f0，指纹见任务键generation58Checkpoint。原作视觉/真机未过，箭头原生形状动画/海军与地图背景字体河流等仍待补；按Claude阶段4继续，State55未完成项保留。
+
+---
+
 # 当前检查点：手绘入口统一原作矩形网格（2026-10-20）
 
 源码dee983b；本机 http://127.0.0.1:5369/?fms=1 ，产物.autopilot/fms-generation57-checked。新空白地图1600×900/19,928点，旧档不迁移；d270冻结。13单测、8浏览器流程通过，其中2项补强直接手绘保存回归后重跑通过；type/lint/build127通过。构建commit字段仍是修改前基线b154ecb，实际源码对应dee983b生产修改；引擎指纹见任务键generation57Checkpoint。

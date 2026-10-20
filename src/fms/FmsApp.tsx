@@ -25,6 +25,7 @@ import { FMS_DEFAULT_COASTAL_WIDTH, FMS_MIN_COASTAL_WIDTH, FMS_MAX_COASTAL_WIDTH
 import type { FmsTerrainDisplay } from './height-palette';
 import './fms.css';
 import './fms-interface.css';
+import './editor59.css';
 import {WorldEntry} from './play/WorldEntry';
 
 type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock' | 'hill' | 'template';
@@ -65,6 +66,7 @@ export default function FmsApp() {
   const busyRef=useRef(false), renderUnavailable=useRef(false);
   const [terrainPhase,setTerrainPhaseState]=useState<TerrainPhase>('idle'), [seed,setSeed]=useState(()=>freshMapSeed()), [strength,setStrength]=useState(1), [showOriginal,setShowOriginal]=useState(false);
   const [randomSeed,setRandomSeed]=useState(true);
+  const [mapAppearance,setMapAppearance]=useState<'paper'|'source'>('paper');
   const [generationOpen,setGenerationOpen]=useState(true);
   const [fullMapTemplate,setFullMapTemplate]=useState<SeedTerrainTemplate>('continents');
   // New worlds default to the original's own 1600x900 BasicMap grid.
@@ -138,6 +140,7 @@ export default function FmsApp() {
           } catch(error) { setNotice(messageOf(error)); }
         },
       });
+      s.renderer.setOceanAppearance('paper');
       session.current=s; showDocument(s,document); s.renderer.setCamera(s.camera);
       const canvas=s.renderer.canvas;
       const point=(event:PointerEvent|WheelEvent)=>{const bounds=canvas.getBoundingClientRect();return{x:event.clientX-bounds.left,y:event.clientY-bounds.top};};
@@ -322,11 +325,11 @@ export default function FmsApp() {
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   };
   const changeTerrainDisplay=(display:FmsTerrainDisplay)=>{try{session.current?.gestures.interrupt();session.current?.renderer.setTerrainDisplay(display);}catch(error){setNotice(messageOf(error));}};
-  return <main inert={!!playTerrain} onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
+  return <main inert={!!playTerrain} onPointerDownCapture={event=>{if(event.target!==session.current?.renderer.canvas)session.current?.gestures.interrupt();}} className="fms-app fms-cartographic-editor" data-testid="fms-app" data-revision={stats.revision} data-land-cells={stats.land} data-locked-cells={stats.locked} data-document-version={stats.version} data-tool={tool} data-dirty={stats.dirty} data-terrain-phase={terrainPhase} data-show-original={showOriginal}>
       <div className="fms-map" ref={host}/>
       <button aria-label="进入世界 →" className="play-entry" hidden={expanded || terrainPhase !== 'idle'} disabled={!editable} onClick={()=>{const s=session.current;if(s){s.gestures.interrupt();setExpanded(false);setPlayTerrain(structuredClone(s.history.document));}}}><span>进入世界</span><PlayIcon name="chevron" size={16}/></button>
       {playTerrain&&createPortal(<WorldEntry terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
-    <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button aria-label="生成地图" hidden={stats.land>0} disabled={!editable} onClick={()=>{session.current?.gestures.interrupt();setExpanded(false);setGenerationOpen(v=>!v);}}><PlayIcon name="terrain"/><span>生成地图</span></button><button aria-label="原作地形" onClick={()=>choose('template')} disabled={!editable} title="原作地形"><PlayIcon name="terrain"/><span>地形</span></button><button aria-label="保存地图" title="保存地图" className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}><PlayIcon name="save"/><span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
+    <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><select aria-label="地图外观" value={mapAppearance} disabled={!navigable} onChange={e=>{const value=e.target.value as 'paper'|'source';setMapAppearance(value);session.current?.renderer.setOceanAppearance(value);}}><option value="paper">纸地图</option><option value="source">蓝色海洋</option></select><button aria-label="生成地图" hidden={stats.land>0} disabled={!editable} onClick={()=>{session.current?.gestures.interrupt();setExpanded(false);setGenerationOpen(v=>!v);}}><PlayIcon name="terrain"/><span>生成地图</span></button><button aria-label="原作地形" onClick={()=>choose('template')} disabled={!editable} title="原作地形"><PlayIcon name="terrain"/><span>地形</span></button><button aria-label="保存地图" title="保存地图" className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}><PlayIcon name="save"/><span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
     {ready&&stats.land===0&&!fatal&&!expanded&&generationOpen&&terrainPhase==="idle"&&<GenerationPanel56 grid={fullMapGrid} template={fullMapTemplate} seed={seed} disabled={!editable} onGrid={setFullMapGrid} onTemplate={setFullMapTemplate} randomSeed={randomSeed} onRandomSeed={setRandomSeed} onShuffle={()=>{setSeed(freshMapSeed(seed));setRandomSeed(false);}} onSeed={value=>{setSeed(value);setRandomSeed(false);}} onGenerate={()=>void generateFullMap()} onLocal={previewFirstContinent} onDraw={()=>choose("outline")} onClose={()=>setGenerationOpen(false)}/>}
     {fatal&&<div className="fms-error" role="alert"><strong>地图暂时无法打开</strong><p>{fatal}</p>{!ready&&<button onClick={()=>window.location.reload()}>重新尝试</button>}</div>}

@@ -231,6 +231,15 @@ export class FmsRenderer {
     const entry: NonNullable<typeof this.original> = { points: doc.points, grid: null };this.original = entry;
     void originalGridFor(doc).then(grid => { if (this.original !== entry || this.destroyed || this.contextLost) return; entry.grid = grid; this.applyOriginal(grid); this.draw(); }, error => this.onDisplayError(error));
   }
+  private rainfallPreview = 80;
+  /** Editor-only climate experiment; never changes saved maps or simulation rules. */
+  setRainfallPreview(value: number): boolean {
+    if (this.destroyed || this.contextLost || !Number.isFinite(value) || value < 1 || value > 200 || !this.original?.grid) return false;
+    this.rainfallPreview = value;
+    this.applyOriginal(this.original.grid);
+    this.draw();
+    return true;
+  }
   private applyOriginal(grid: OriginalGrid | null): void {
     const doc = this.currentDocument, entry = this.original;
     // A late grid lookup must never be applied to a different document.
@@ -242,7 +251,7 @@ export class FmsRenderer {
     }
     if (!entry.layer) { entry.layer = new OriginalEditorLayer(() => this.draw()); this.scene.addChildAt(entry.layer.container, 0); }
     if (this.mesh) this.mesh.visible = false; this.rivers.visible = false; if (this.riverMesh) this.riverMesh.visible = false;
-    const stats = entry.layer.update(grid, doc, ORIGINAL_PRESETS[this.oceanAppearanceState === 'paper' ? 7 : 0], this.terrainDisplay === 'height' ? 'height-palette' : this.terrainDisplay === 'biome' ? 'biome' : 'height-background');
+    const stats = entry.layer.update(grid, doc, ORIGINAL_PRESETS[this.oceanAppearanceState === 'paper' ? 7 : 0], this.terrainDisplay === 'height' ? 'height-palette' : this.terrainDisplay === 'biome' ? 'biome' : 'height-background', this.rainfallPreview);
     if (stats && this.initialized) { this.canvas.dataset.editorRenderer = 'original'; this.canvas.dataset.originalEditor = JSON.stringify({ ...stats, grid: grid.id }); }
   }
   /** Display only: keep candidate geometry, camera, history and caches intact. */

@@ -1,4 +1,4 @@
-import { generateFmsClimateGrid, recoveredBiome } from '../climate';
+import { FMS_CLIMATE_DEFAULTS, generateFmsClimateGrid, recoveredBiome } from '../climate';
 import { deriveFmsClimateRivers, recoveredRiverMoisture, type FmsClimateRivers } from '../climate-rivers';
 import { srgbToLinear } from '../height-palette';
 import type { FmsDocument } from '../model';
@@ -15,9 +15,9 @@ export interface OriginalClimate { precipitation: Uint8Array; temperature: Int8A
 
 /** Grid climate and main.mjs Rivers.generate on the original grid's own
  * row-major cells (Voronoi neighbors, no triangle-mesh ribbon). */
-export function originalClimate(grid: OriginalGrid, doc: FmsDocument): OriginalClimate {
+export function originalClimate(grid: OriginalGrid, doc: FmsDocument, rainfall = FMS_CLIMATE_DEFAULTS.precipitation): OriginalClimate {
   const heights = Uint8Array.from(doc.elevations, h => Math.min(100, Math.max(0, h)));
-  const { precipitation, temperature } = generateFmsClimateGrid(heights, grid.cellsX, grid.cellsY);
+  const { precipitation, temperature } = generateFmsClimateGrid(heights, grid.cellsX, grid.cellsY, { ...FMS_CLIMATE_DEFAULTS, precipitation: rainfall });
   return { precipitation, temperature, rivers: deriveFmsClimateRivers({ ...doc, neighbors: grid.neighbors }, precipitation, false) };
 }
 

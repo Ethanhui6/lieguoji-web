@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Continue Claude stage4 after editor59 paper/blue appearance and compact tools. Prioritize river density and meaningful player controls with source evidence; retain actual hydrology consistency. Original font/full menus/80k/attack arrow native geometry and naval arrows remain open; State55 queue preserved. No upload.",
+    "nextRecoveryTarget": "Continue Claude stage4: editor60 rainfall trial is NOT persistent and not passed into world simulation. Next implement versioned climate-map copy with save/undo/world consistency before claiming completed river controls; retain source evidence and old schemas. Original hand river editing/font/full menus/80k/native arrows/naval arrows and State55 queue remain open. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13224,6 +13224,23 @@
       "unitTests": 13,
       "initialBrowserTests": 8,
       "finalCssBrowserTests": 4,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "editor60Checkpoint": {
+      "sourceCommit": "c28ca683",
+      "status": "local-rainfall-trial-passed-not-persistent",
+      "preview": "http://127.0.0.1:5372/?fms=1",
+      "artifact": ".autopilot/fms-editor60-checked",
+      "engine": "ac46a63704cef692fd83bcff733a178aaf0a5c567d95fbb200a481a5bd613d59",
+      "evidence": "docs/evidence/fms-editor60-2026-10-21/RESULT.md",
+      "unitTests": 9,
+      "browserTests": 4,
+      "rivers": {
+        "default80": 297,
+        "dry20": 51
+      },
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

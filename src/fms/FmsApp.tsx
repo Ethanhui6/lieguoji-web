@@ -51,6 +51,10 @@ type TerrainCandidate = { kind:'terrain'; patch:FmsEditPatch; document:FmsDocume
   | { kind:'coast'; document:FmsDocument; result:FmsCoastResult; options:FmsCoastOptions }
   | { kind:'smooth'; document:FmsDocument; result:FmsCoastSmoothResult; options:FmsCoastSmoothOptions };
 const messageOf = (error: unknown) => error instanceof Error ? error.message : '这次操作未能完成，地图保持原样。';
+const freshMapSeed = (previous = '') => {
+  const value=crypto.getRandomValues(new Uint32Array(1))[0];
+  return String(String(value)===previous?(value+1)>>>0:value);
+};
 
 export default function FmsApp() {
   const [playTerrain,setPlayTerrain]=useState<FmsDocument|null>(null);
@@ -59,7 +63,8 @@ export default function FmsApp() {
   const [tool,setTool] = useState<Tool>('outline'), [radius,setRadius] = useState(48), [height,setHeight] = useState(45), [expanded,setExpanded] = useState(false);
   const [ready,setReady] = useState(false), [fatal,setFatal] = useState(''), [busy,setBusy] = useState(false), [notice,setNotice] = useState('正在读取本机地图…');
   const busyRef=useRef(false), renderUnavailable=useRef(false);
-  const [terrainPhase,setTerrainPhaseState]=useState<TerrainPhase>('idle'), [seed,setSeed]=useState('1337'), [strength,setStrength]=useState(1), [showOriginal,setShowOriginal]=useState(false);
+  const [terrainPhase,setTerrainPhaseState]=useState<TerrainPhase>('idle'), [seed,setSeed]=useState(()=>freshMapSeed()), [strength,setStrength]=useState(1), [showOriginal,setShowOriginal]=useState(false);
+  const [randomSeed,setRandomSeed]=useState(true);
   const [generationOpen,setGenerationOpen]=useState(true);
   const [fullMapTemplate,setFullMapTemplate]=useState<SeedTerrainTemplate>('continents');
   // New worlds default to the original's own 1600x900 BasicMap grid.
@@ -215,7 +220,9 @@ export default function FmsApp() {
     const s=session.current;
     if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;
     if(!/^\d{1,10}$/.test(seed)||Number(seed)>0xffffffff){setNotice('地形种子须为0至4294967295之间的整数。');return;}
-    const options={seed,template:fullMapTemplate};
+    const chosenSeed=randomSeed?freshMapSeed(seed):seed;
+    setSeed(chosenSeed);
+    const options={seed:chosenSeed,template:fullMapTemplate};
     s.gestures.interrupt();setExpanded(false);setShowOriginal(false);setGenerationKind('full-map');setTerrainPhase('generating');setNotice('正在生成整张地图；现有地图在确认前不会改变。');
     const token=++generationToken.current,controller=new AbortController();terrainAbort.current=controller;
     try {
@@ -321,7 +328,7 @@ export default function FmsApp() {
       {playTerrain&&createPortal(<WorldEntry terrain={playTerrain} onClose={()=>setPlayTerrain(null)}/>,document.body)}
     <header className="fms-header"><div><span className="fms-kicker">列国纪 · 创世</span><h1>地图编辑</h1></div><div className="fms-header-actions"><button aria-label="生成地图" hidden={stats.land>0} disabled={!editable} onClick={()=>{session.current?.gestures.interrupt();setExpanded(false);setGenerationOpen(v=>!v);}}><PlayIcon name="terrain"/><span>生成地图</span></button><button aria-label="原作地形" onClick={()=>choose('template')} disabled={!editable} title="原作地形"><PlayIcon name="terrain"/><span>地形</span></button><button aria-label="保存地图" title="保存地图" className="fms-save" onClick={()=>void save()} disabled={!ready||busy||terrainPhase!=='idle'}><PlayIcon name="save"/><span className={stats.dirty?'fms-unsaved':'fms-saved'} aria-label={stats.dirty?'有未保存修改':'已保存'}/></button></div></header>
     {!ready&&!fatal&&<div className="fms-loading" role="status">{[notice,displayNotice].filter(Boolean).join(' ')}</div>}
-    {ready&&stats.land===0&&!fatal&&!expanded&&generationOpen&&terrainPhase==="idle"&&<GenerationPanel56 grid={fullMapGrid} template={fullMapTemplate} seed={seed} disabled={!editable} onGrid={setFullMapGrid} onTemplate={setFullMapTemplate} onSeed={setSeed} onGenerate={()=>void generateFullMap()} onLocal={previewFirstContinent} onDraw={()=>choose("outline")} onClose={()=>setGenerationOpen(false)}/>}
+    {ready&&stats.land===0&&!fatal&&!expanded&&generationOpen&&terrainPhase==="idle"&&<GenerationPanel56 grid={fullMapGrid} template={fullMapTemplate} seed={seed} disabled={!editable} onGrid={setFullMapGrid} onTemplate={setFullMapTemplate} randomSeed={randomSeed} onRandomSeed={setRandomSeed} onShuffle={()=>{setSeed(freshMapSeed(seed));setRandomSeed(false);}} onSeed={value=>{setSeed(value);setRandomSeed(false);}} onGenerate={()=>void generateFullMap()} onLocal={previewFirstContinent} onDraw={()=>choose("outline")} onClose={()=>setGenerationOpen(false)}/>}
     {fatal&&<div className="fms-error" role="alert"><strong>地图暂时无法打开</strong><p>{fatal}</p>{!ready&&<button onClick={()=>window.location.reload()}>重新尝试</button>}</div>}
     <div className="fms-zoom" aria-label="地图视角"><button onClick={()=>zoom(1.4)} disabled={!navigable} aria-label="放大"><PlayIcon name="plus"/></button><button onClick={fit} disabled={!navigable} aria-label="查看全图"><PlayIcon name="fit"/></button><button onClick={()=>zoom(1/1.4)} disabled={!navigable} aria-label="缩小"><PlayIcon name="minus"/></button><output>{stats.zoom.toFixed(1)}×</output></div>
     <div className="fms-bottom">

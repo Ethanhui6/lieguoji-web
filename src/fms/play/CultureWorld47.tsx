@@ -56,6 +56,9 @@ import {CombatTimeline47} from './combat-timeline47';
 import {CombatOverlay47} from './CombatOverlay47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
 import {actualForces47} from './force-runtime47';
+import {armySpatialFor47} from './army-geography47';
+import {remainingArmyTravelPoints47} from './army-travel47-state';
+import {nationsAtWar} from './realtime-statecraft';
 import type {MilitaryIntent47} from './culture47-orders';
 
 type Culture47Request=Exclude<WorkerRequest,{type:'load'|'verify'}>|{type:'load';journal:Culture47Journal};
@@ -340,10 +343,20 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
             original.setStates(selection.mapMode==='political'?cellOwners:null,i=>nations.get(r.world.provinces[i]?.controller)??null);}
         }
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
+        const graph=armySpatialFor47(r).graph,places=new Map(r.world.provinces.map(p=>[p.id,p])),colors=new Map(r.world.nations.map(n=>[n.id,nationColor(n)]));
+        const attacks=r.world.armies.flatMap(a=>{
+          const travel=r.armyPositions.records[a.id];
+          if(a.status==='destroyed'||a.status==='retreating'||a.troops<=0||travel?.status!=='moving')return [];
+          const target=graph.cells.get(travel.nodes.at(-1)!)?.provinceId,owner=target?places.get(target)?.controller:undefined;
+          if(!owner||!nationsAtWar(r.world,a.nationId,owner))return [];
+          const points=remainingArmyTravelPoints47(travel,graph);points[0]=frame.armies.get(a.id)??points[0];
+          return [{id:a.id,points,color:colors.get(a.nationId)!,key:a.nationId+'/'+target}];
+        });
+        map.drawActualAttackArrows(attacks,r.scale,view.camera.scale);
         drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
-        canvas.dataset.day=String(r.world.day);canvas.dataset.cityIcons=JSON.stringify(map.iconDiagnostics());canvas.dataset.stateLines=JSON.stringify({algorithm:FMS_STATE_LINE,width:FMS_STATE_LINE_WIDTH,...map.stateLineDiagnostics()});canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
+        canvas.dataset.attackArrows=JSON.stringify(map.orderAnimations());canvas.dataset.day=String(r.world.day);canvas.dataset.cityIcons=JSON.stringify(map.iconDiagnostics());canvas.dataset.stateLines=JSON.stringify({algorithm:FMS_STATE_LINE,width:FMS_STATE_LINE_WIDTH,...map.stateLineDiagnostics()});canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
       };
       // Original-grid worlds stop at PlayerController ZoomMin 5: 10 world units = 66.7 map units tall.
       const setCamera=(c:typeof view.camera)=>{if(original&&c.scale>view.viewport.height/(10/(240/1600))&&c.scale>view.camera.scale)return;view.camera=c;renderer.setCamera(c);paint.current();};

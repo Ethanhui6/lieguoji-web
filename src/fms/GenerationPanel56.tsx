@@ -2,7 +2,7 @@ import {ORIGINAL_GRIDS,type OriginalGridId} from './original/original-grid';
 import {SEED_TERRAIN_TEMPLATES,type SeedTerrainTemplate} from '../world/seed-terrain';
 import './generation56.css';
 
-type Props={grid:OriginalGridId|'square';template:SeedTerrainTemplate;seed:string;disabled:boolean;onGrid:(v:OriginalGridId|'square')=>void;onTemplate:(v:SeedTerrainTemplate)=>void;onSeed:(v:string)=>void;onGenerate:()=>void;onLocal:()=>void;onDraw:()=>void;onClose:()=>void};
+type Props={grid:OriginalGridId|'square';template:SeedTerrainTemplate;seed:string;randomSeed:boolean;onRandomSeed:(v:boolean)=>void;onShuffle:()=>void;disabled:boolean;onGrid:(v:OriginalGridId|'square')=>void;onTemplate:(v:SeedTerrainTemplate)=>void;onSeed:(v:string)=>void;onGenerate:()=>void;onLocal:()=>void;onDraw:()=>void;onClose:()=>void};
 /** Layout follows level0 EditPanel/MapSize's separate size list and footer.
  * Seed/template controls are existing WEB options, not a recovered Unity UI.
  * No unsupported 80k mode, world-reset, or decorative generation callbacks. */
@@ -19,6 +19,7 @@ export function GenerationPanel56(p:Props){
     <label className="fms-generation-row"><span>地形模板</span><select aria-label="整图版图" value={p.template} onChange={e=>p.onTemplate(e.target.value as SeedTerrainTemplate)}>{SEED_TERRAIN_TEMPLATES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></label>
     <p className="fms-template-description">{SEED_TERRAIN_TEMPLATES.find(t=>t.id===p.template)!.description}</p>
     <label className="fms-generation-row"><span>地图种子</span><input aria-label="整图种子" aria-invalid={!valid} inputMode="numeric" maxLength={10} value={p.seed} onChange={e=>p.onSeed(e.target.value)}/></label>
+    <div className="fms-seed-actions"><label><input type="checkbox" checked={p.randomSeed} onChange={e=>p.onRandomSeed(e.target.checked)}/>每次随机</label><button type="button" onClick={p.onShuffle} disabled={p.disabled}>换一个种子</button></div>
     {!valid&&<p role="alert" className="fms-generation-error">请输入0至4294967295之间的整数。</p>}
    </fieldset>
    <details className="fms-generation-manual"><summary>手绘地图</summary><p>闭合轮廓、海陆笔刷，或从一片大陆开始。</p><div><button onClick={p.onDraw} disabled={p.disabled}>绘制轮廓</button><button onClick={p.onLocal} disabled={p.disabled||!valid}>生成大陆</button></div></details>

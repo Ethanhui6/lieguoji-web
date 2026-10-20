@@ -63,7 +63,7 @@ export class PlayMap {
   private orderMotion=new OrderMotion();
   private sinkMotion=new SinkMotion();
   private presentationRun='';
-  private arrowWidgets:{id:string;graphic:Graphics;points:Point[];pixel:number;color:string|number}[]=[];
+  private arrowWidgets:{id:string;graphic:Graphics;points:Point[];pixel:number;color:string|number;actual?:boolean}[]=[];
   private sinkingLayer?:Graphics;
   private battleAtlas?:Texture;
   private battleTextures:Texture[]=[];
@@ -100,9 +100,22 @@ export class PlayMap {
     for(const b of this.battles){const e=state.engagements.find(e=>e.id===b.id);if(e)b.losses=e.losses;}
   }
   capitalPositions(){return this.capitals;}
-  animateBattles(now:number,running:boolean,reduced:boolean){const changed=this.battleClock.step(now,running,reduced);for(const {id,sprite} of this.battleSprites)sprite.texture=this.battleTextures[this.battleClock.frame(id)];for(const hit of this.impacts){const t=this.feedback.strength(hit.id,now,running,reduced);hit.graphic.alpha=t;hit.graphic.scale.set(1+(1-t)*.65);}const arrows=this.orderMotion.step(now,running,reduced);if(arrows)for(const a of this.arrowWidgets){a.graphic.clear();drawAttackArrow(a.graphic,a.points,a.pixel,a.color,false,this.orderMotion.growth(a.id));}const sinking=this.sinkMotion.step(now,reduced);if(sinking)this.drawSinking();return changed&&this.battleSprites.length>0||this.feedback.active(now,running,reduced)||arrows&&this.arrowWidgets.length>0||sinking;}
+  animateBattles(now:number,running:boolean,reduced:boolean){const changed=this.battleClock.step(now,running,reduced);for(const {id,sprite} of this.battleSprites)sprite.texture=this.battleTextures[this.battleClock.frame(id)];for(const hit of this.impacts){const t=this.feedback.strength(hit.id,now,running,reduced);hit.graphic.alpha=t;hit.graphic.scale.set(1+(1-t)*.65);}const arrows=this.orderMotion.step(now,running,reduced);if(arrows)for(const a of this.arrowWidgets){a.graphic.clear();drawAttackArrow(a.graphic,a.points,a.pixel,a.color,false,a.actual?1:this.orderMotion.growth(a.id));}const sinking=this.sinkMotion.step(now,reduced);if(sinking)this.drawSinking();return changed&&this.battleSprites.length>0||this.feedback.active(now,running,reduced)||arrows&&this.arrowWidgets.length>0||sinking;}
   private drawSinking(){const g=this.sinkingLayer;if(!g)return;g.clear();const p=this.projection;for(const f of this.sinkMotion.frames()){const x=f.point.x/p.scale,y=f.point.y/p.scale+f.drop/p.zoom;if(x*p.zoom+p.x<-30||y*p.zoom+p.y<-30||x*p.zoom+p.x>p.width+30||y*p.zoom+p.y>p.height+30)continue;const r=f.radius*f.scale/p.zoom,point=(a:number,b:number)=>[x+(a*Math.cos(f.rotation)-b*Math.sin(f.rotation))*r,y+(a*Math.sin(f.rotation)+b*Math.cos(f.rotation))*r];g.poly([...point(-1,0),...point(1,0),...point(.5,.5),...point(-.5,.5)]).fill({color:f.color,alpha:f.alpha}).stroke({color:0xe2f0e8,width:1/p.zoom,alpha:f.alpha});const a=point(0,0),b=point(0,-1),c=point(.7,-.35),d=point(0,-.35);g.moveTo(a[0],a[1]).lineTo(b[0],b[1]).lineTo(c[0],c[1]).lineTo(d[0],d[1]).stroke({color:0xf4f2d9,width:1/p.zoom,alpha:f.alpha});}}
-  orderAnimations(){return this.arrowWidgets.map(a=>({id:a.id,growth:this.orderMotion.growth(a.id)}));}
+  orderAnimations(){return this.arrowWidgets.map(a=>({id:a.id,growth:a.actual?1:this.orderMotion.growth(a.id)}));}
+  drawActualAttackArrows(routes:{id:string;points:Point[];color:string;key:string}[],scale:number,zoom:number){
+    const perTarget=new Map<string,number>(),pixel=1/zoom;
+
+    for(const r of routes){
+      if(this.arrowWidgets.length>=12||(perTarget.get(r.key)??0)>=2)continue;
+      const points=r.points.map(p=>({x:p.x/scale,y:p.y/scale}));
+      if(points.length<2||Math.hypot(points.at(-1)!.x-points[0].x,points.at(-1)!.y-points[0].y)<12*pixel)continue;
+      const graphic=new Graphics();this.layer.addChild(graphic);
+      this.arrowWidgets.push({id:r.id,graphic,points,pixel,color:r.color,actual:true});
+      drawAttackArrow(graphic,points,pixel,r.color,false,1);
+      perTarget.set(r.key,(perTarget.get(r.key)??0)+1);
+    }
+  }
   sinkDiagnostics(){return this.sinkMotion.diagnostics();}
   sinkAnimations(){return this.sinkMotion.frames().map(f=>({id:f.id,scale:f.scale,alpha:f.alpha,rotation:f.rotation}));}
   battleAnimations(){return this.battleSprites.map(({id,sprite})=>({id,frame:Math.round(sprite.texture.frame.x/258)+Math.round(sprite.texture.frame.y/194)*5,x:sprite.x*this.projection.zoom+this.projection.x,y:sprite.y*this.projection.zoom+this.projection.y,width:sprite.width*this.projection.zoom}));}
@@ -114,6 +127,7 @@ export class PlayMap {
   updatePortControl(controls:NavalView['portControl']){this.shipLayer?.updatePorts(controls);}
   updateUnits(frame:DisplayFrame){
     const p=this.projection;
+    for(const a of this.arrowWidgets){const at=frame.armies.get(a.id);if(!at)continue;a.points[0]={x:at.x/p.scale,y:at.y/p.scale};a.graphic.clear();drawAttackArrow(a.graphic,a.points,a.pixel,a.color,false,a.actual?1:this.orderMotion.growth(a.id));}
     for(const g of this.unitGroups){const points=g.ids.flatMap(id=>frame.armies.has(id)?[frame.armies.get(id)!]:[]);if(!points.length)continue;g.container.position.set(points.reduce((s,v)=>s+v.x,0)/points.length/p.scale+g.offset.x,points.reduce((s,v)=>s+v.y,0)/points.length/p.scale+g.offset.y);const x=g.container.x*p.zoom+p.x,y=g.container.y*p.zoom+p.y;g.container.visible=x>=-30&&y>=-30&&x<=p.width+30&&y<=p.height+30;}
     this.shipLayer?.update(frame.fleets);
     this.sinkMotion.move(frame.fleets);

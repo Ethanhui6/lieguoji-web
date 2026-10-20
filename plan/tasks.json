@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Continue Claude stage4 generation/map experience after generation58 seed fix and actual armyPositions arrows. Native arrow shape/animation, naval arrows and campaign LOD remain open. Map background/fonts/rivers/80k remain. Preserve State55 queue, old saves, local only.",
+    "nextRecoveryTarget": "Continue Claude stage4 after editor59 paper/blue appearance and compact tools. Prioritize river density and meaningful player controls with source evidence; retain actual hydrology consistency. Original font/full menus/80k/attack arrow native geometry and naval arrows remain open; State55 queue preserved. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13210,6 +13210,20 @@
       "evidence": "docs/evidence/fms-generation58-2026-10-20/RESULT.md",
       "unitTests": 28,
       "browserTests": 6,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "editor59Checkpoint": {
+      "sourceCommit": "cf583bf0",
+      "status": "local-functional-checks-passed-visual-pending",
+      "preview": "http://127.0.0.1:5371/?fms=1",
+      "artifact": ".autopilot/fms-editor59-checked",
+      "engine": "486dadbaac2fe61aba591f1f83e4d349974db05c563cdbd0f04daa83be83406f",
+      "evidence": "docs/evidence/fms-editor59-2026-10-21/RESULT.md",
+      "unitTests": 13,
+      "initialBrowserTests": 8,
+      "finalCssBrowserTests": 4,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

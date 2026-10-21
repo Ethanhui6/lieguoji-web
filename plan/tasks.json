@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Claude stage4 climate62: versioned climate-map copy (rainfall persisted with save/undo and passed to world entry, old schemas untouched); then original hand river editing (63). Open: 4x speed equals 1x (worker-bound, target 10 days/s), fonts/menus/80k/native+naval arrows/State55 queue. No upload.",
+    "nextRecoveryTarget": "Claude stage4 climate63: pass saved map precipitation into world rules/storage under a new rules+world-save version (old worlds and frozen engines unchanged), then original hand river editing. Open: 4x speed equals 1x (worker-bound), fonts/menus/80k/native+naval arrows/State55 queue. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13266,6 +13266,27 @@
         }
       },
       "desktopPortraitSheetFailureNotCounted": true,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "climate62Checkpoint": {
+      "sourceCommit": "d52ec60d",
+      "status": "local-map-climate-saved-not-simulated",
+      "preview": "http://127.0.0.1:5374/?fms=1",
+      "artifact": ".autopilot/fms-climate62-checked",
+      "engine": "8a8a054a6eaa8f33637399de4e131db70a87962df3a0d06ff15e3c36c9d25ce0",
+      "frozenPrevious": "3d97",
+      "saveEnvelope": 3,
+      "terrainDocumentUnchanged": true,
+      "evidence": "docs/evidence/fms-climate62-2026-10-21/RESULT.md",
+      "unitTests": 105,
+      "browserTests": 9,
+      "rivers": {
+        "default80": 297,
+        "dry20": 51
+      },
+      "simulationUsesClimate": false,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

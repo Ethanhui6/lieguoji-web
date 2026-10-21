@@ -4,7 +4,7 @@
 
 ## 原作依据（GameAssembly静态反汇编，只读；脚本.autopilot/fms-audit/binary/disasm-methods.py）
 
-- 吞并：LeftClickLogic取被点行省所属国家（非空即调用）→PlayerController.AnnexSelectedState(当前国, 目标国)：同一国直接返回；复制目标国行省列表，凡不属吞并方者逐个Province.ConqueredBy(吞并方, true)，再播放征服动画并刷新面板。**不检查交战**（AnnexTips文字虽写“敌对国家”）。反汇编见original/。
+- 吞并：LeftClickLogic取被点行省所属国家（非空即调用）→PlayerController.AnnexSelectedState(当前国, 目标国)：同一国直接返回；复制目标国行省列表，凡不属吞并方者逐个Province.ConqueredBy(吞并方, true)，再播放征服动画并刷新面板。**不检查交战**（AnnexTips文字虽写“敌对国家”）。反汇编存于本地.autopilot/fms-audit/binary/annex-static/（按约定不提交原始反汇编）。
 - Province.ConqueredBy：家族失地与命运、首都陷落/重算、城市图标、结束战役、国家与区域行省更新、战利品、边境重算。
 - 附庸：PlayerController.MakeVassal(当前国, 被点国)→VassalManager.MakeVassal(附庸=被点国, 宗主=当前国)。CanMakeVassal拒绝原文：附庸或宗主为空/国家不能成为自己的附庸/附庸或宗主已经灭亡/已经是附庸/自身是附庸，不能拥有附庸。
 - 文字：Destroyed“{0}被{1}灭亡”、VassalizationEvent“{0}成为{1}的傀儡国”、VassalLiberationEvent“{0}从{1}的统治下获得独立”、VassalLiberationByDestructionEvent、AnnexTips、RemovePuppy“解除附庸”。

@@ -62,16 +62,25 @@ export function createArmyCommandSearch47(r:ArmyMotionRun47,weights:ArmyRouteWei
  if(!a)throw Error('寻路军队不存在。');
  const start=armyTravelLocation47(r.armyPositions.records[armyId],g).cell.id;
  const searches=new Map<boolean,ReturnType<typeof createArmyTravelSearch47>>();
- return(run:ArmyMotionRun47,id:string,target:number,retreat:boolean)=>{
+ let view:{spatial:ReturnType<typeof armySpatialFor47>;space:ReturnType<typeof readArmySpace47>}|undefined;
+ return Object.assign((run:ArmyMotionRun47,id:string,target:number,retreat:boolean)=>{
   if(run!==r||id!==armyId)throw Error('寻路阶段已经更换。');assertExpected(run,expected);
   if(!searches.has(retreat))searches.set(retreat,createArmyTravelSearch47(g,start,armyTravelPolicy47(r,a,weights,retreat)));
   return searches.get(retreat)!(target);
- };
+ },{
+  /** One position view per search: the same run and stamp mean the same
+   * positions, so every candidate preview of this army can share it. */
+  view(run:ArmyMotionRun47){
+   if(run!==r)throw Error('寻路阶段已经更换。');assertExpected(run,expected);
+   if(!view){const spatial=armySpatialFor47(r);view={spatial,space:readArmySpace47(r.world,spatial)};}
+   return view;
+  },
+ });
 }
 type ArmyCommandSearch47=ReturnType<typeof createArmyCommandSearch47>;
 function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47,search?:ArmyCommandSearch47) {
   assertWritable(r); actionSchema(action);
-  const spatial = armySpatialFor47(r), space = readArmySpace47(r.world, spatial), here = space.byArmy.get(action.armyId);
+  const shared = search?.view(r), spatial = shared?.spatial ?? armySpatialFor47(r), space = shared?.space ?? readArmySpace47(r.world, spatial), here = space.byArmy.get(action.armyId);
   if (!here) throw Error('这支军队不存在或已失去战斗力。');
   const a = here.army;
   if (r.world.scenario !== 'custom-world') throw Error('统一海陆军令仅用于独立自建世界，测试战役仍保留原规则。');

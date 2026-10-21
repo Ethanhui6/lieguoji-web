@@ -1,3 +1,5 @@
+import {liveChecksDeferred47} from './live-checks47';
+import {hasOwnedTravelProof47} from './owned-travel47';
 import type {Army,Point} from '../../sim/types';
 import type {TravelGraph47} from './army-travel47-graph';
 import {locateTravelCell47} from './army-travel47-graph';
@@ -23,7 +25,10 @@ export function assertArmyPositions47(value:unknown,g:TravelGraph47,binding:stri
  const v=value as ArmyPositions47;
  if(!v||typeof v!=='object'||Object.keys(v).sort().join('/')!=='binding/records/revision/version'||v.version!==1||typeof binding!=='string'||!binding||v.binding!==binding||!Number.isSafeInteger(v.revision)||v.revision<0||!v.records||typeof v.records!=='object'||Array.isArray(v.records)||new Set(armyIds).size!==armyIds.length||Object.keys(v.records).length!==armyIds.length)throw Error('统一军队位置账无效，已保留原档。');
  const cargo=new Set(cargoIds);
- for(const id of armyIds){if(cargo.has(id)||!Object.hasOwn(v.records,id)||v.records[id]?.armyId!==id)throw Error('军队出现重复或缺失的位置身份。');assertArmyTravel47(v.records[id],g);}
+ // Identity is always checked; inside a live batch, progress of an already
+ // proven route is re-checked once for the final run (live-checks47).
+ const skip=liveChecksDeferred47();
+ for(const id of armyIds){if(cargo.has(id)||!Object.hasOwn(v.records,id)||v.records[id]?.armyId!==id)throw Error('军队出现重复或缺失的位置身份。');if(!skip||!hasOwnedTravelProof47(v.records[id],g))assertArmyTravel47(v.records[id],g);}
 }
 export type ArmyPresence47={land:Map<string,Army[]>;sea:Map<number,Army[]>;points:Map<string,Point>};
 /** Called before battle, occupation, supply or political presence queries.

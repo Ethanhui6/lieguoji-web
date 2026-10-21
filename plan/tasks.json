@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Continue Claude stage4: editor60 rainfall trial is NOT persistent and not passed into world simulation. Next implement versioned climate-map copy with save/undo/world consistency before claiming completed river controls; retain source evidence and old schemas. Original hand river editing/font/full menus/80k/native arrows/naval arrows and State55 queue remain open. No upload.",
+    "nextRecoveryTarget": "Claude stage4 climate62: versioned climate-map copy (rainfall persisted with save/undo and passed to world entry, old schemas untouched); then original hand river editing (63). Open: 4x speed equals 1x (worker-bound, target 10 days/s), fonts/menus/80k/native+naval arrows/State55 queue. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13241,6 +13241,31 @@
         "default80": 297,
         "dry20": 51
       },
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "experience61Checkpoint": {
+      "sourceCommit": "d09fcd5f",
+      "status": "local-picking-throughput-passed",
+      "preview": "http://127.0.0.1:5373/?fms=1",
+      "artifact": ".autopilot/fms-experience61-checked",
+      "engine": "3d97b1da702e4291200dcfc1bb97075027a147d7940b6c1152e8736a0ab7cf75",
+      "frozenPrevious": "ac46",
+      "evidence": "docs/evidence/fms-experience61-2026-10-21/RESULT.md",
+      "unitTests": 59,
+      "browserTests": 10,
+      "daysPerSecond": {
+        "baseline": {
+          "x1": 4.56,
+          "x4": 4.62
+        },
+        "final": {
+          "x1": 6.84,
+          "x4": 6.63
+        }
+      },
+      "desktopPortraitSheetFailureNotCounted": true,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

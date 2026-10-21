@@ -13378,6 +13378,16 @@
       "visualAccepted": false,
       "uploaded": false
     },
+    "province72Checkpoint": {
+      "status": "local-original-province-info-panel-partial",
+      "preview": "http://127.0.0.1:5385/?fms=1",
+      "artifact": ".autopilot/fms-province72-checked",
+      "engine": "87f050773a7caeda0f4d49557be8d76e165f1982e2b5fe14b09fcf5a6e04a54e",
+      "frozen": ["5582"],
+      "evidence": "docs/evidence/fms-province72-2026-10-21/RESULT.md",
+      "realDevice": "not-verified",
+      "upload": "none"
+    },
     "menu71Checkpoint": {
       "status": "local-original-settings-menu-and-save-library",
       "preview": "http://127.0.0.1:5384/?fms=1",

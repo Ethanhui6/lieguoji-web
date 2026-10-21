@@ -117,6 +117,9 @@ export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplo
  * Public geometry/command helpers outside this window still scan every call. */
 /** Buffers adopted after a verified window, with their private pristine copies. */
 const pristine=new WeakMap<object,Uint32Array|Int32Array>();
+// Comparison memos of adopted buffers are live only inside a window; outside
+// one the caller may mutate the buffer, so a memo hit would hide that change.
+const parkedMemos=new WeakMap<object,WeakMap<object,boolean>>();
 const changed='推演期间地形发生变化，取消本次候选并保留原世界。';
 export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(input:T,action:(candidate:T)=>T):T{
  // Fast path: the frozen terrain record and its two buffers were adopted by an
@@ -125,8 +128,9 @@ export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(inp
  // sample is still checked against the private pristine copy afterwards, and
  // any change is undone before the candidate is rejected.
  const t=input.terrain,keptTriangles=pristine.get(t.triangles),keptElevations=pristine.get(t.elevations);
- if(keptTriangles&&keptElevations&&Object.isFrozen(t)){
+ if(keptTriangles&&keptElevations&&Object.isFrozen(t)&&t.triangles.length===keptTriangles.length&&t.elevations.length===keptElevations.length&&sameSamples(t.triangles,keptTriangles)&&sameSamples(t.elevations,keptElevations)){
   const buffers=[t.triangles,t.elevations] as const,originals=[keptTriangles,keptElevations] as const;
+  for(const a of buffers)numericWindows.set(a,parkedMemos.get(a)??new WeakMap());
   try{
    const result=action({...input}),returned=[result.terrain.triangles,result.terrain.elevations];
    for(let i=0;i<buffers.length;i++)if(buffers[i].length!==originals[i].length||!sameSamples(buffers[i],originals[i])||returned[i].length!==originals[i].length||!sameSamples(returned[i],originals[i]))throw Error(changed);
@@ -134,7 +138,7 @@ export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(inp
   }catch(error){
    for(let i=0;i<buffers.length;i++)if(buffers[i].length===originals[i].length&&!sameSamples(buffers[i],originals[i])){(buffers[i] as Uint32Array).set(originals[i]);numericWindows.set(buffers[i],new WeakMap());}
    throw error;
-  }
+  }finally{for(const a of buffers){const memo=numericWindows.get(a);if(memo)parkedMemos.set(a,memo);numericWindows.delete(a);}}
  }
  const originals=[new Uint32Array(input.terrain.triangles),new Int32Array(input.terrain.elevations)] as const;
  const triangles=new Uint32Array(originals[0]),elevations=new Int32Array(originals[1]);
@@ -151,7 +155,7 @@ export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(inp
    Object.freeze(result.terrain);pristine.set(triangles,originals[0]);pristine.set(elevations,originals[1]);adopted=true;
   }
   return result;
- }finally{if(!adopted)for(const a of buffers)numericWindows.delete(a);}
+ }finally{for(const a of buffers){const memo=numericWindows.get(a);if(adopted&&memo)parkedMemos.set(a,memo);numericWindows.delete(a);}}
 }
 export function shareUnchangedProvinceGeometry47(source:World,target:World){
  const byId=new Map(source.provinces.map(p=>[p.id,p]));

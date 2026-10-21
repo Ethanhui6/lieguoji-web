@@ -58,16 +58,20 @@ export function checkSiegeDisplay47(s:Snapshot){
 export class Culture47DisplayEncoder {
  private witness?:Static;
  private provinceRefs:unknown[]=[];
+ private staticRefs:unknown[]=[];
  private base=crypto.randomUUID();
  private sequence=0;
  encode(s:Snapshot):Culture47DisplayPacket {
-  const refs=s.run.world.provinces.flatMap(p=>[p.polygon,p.neighbors]);
+  const refs=s.run.world.provinces.flatMap(p=>[p.polygon,p.neighbors]),statics=[s.run.terrain,s.run.terrain.triangles,s.run.terrain.elevations,s.run.terrain.points,s.run.diplomaticGeography,s.journal.opening];
   if(!this.witness){freezeDisplayPlain(fixed(s));this.witness=structuredClone(fixed(s));freezeDisplayPlain(this.witness);this.provinceRefs=refs;this.sequence=s.journal.actions.length;return {kind:'full',base:this.base,snapshot:structuredClone(s)};}
   // Shared (certified) province geometry is compared by identity; only new
   // objects are compared in full against the witness, then remembered.
-  const sameRefs=refs.length===this.provinceRefs.length&&refs.every((v,i)=>v===this.provinceRefs[i]);
-  if(!sameDisplayStatic47(sameRefs?{...fixed(s),provinces:this.witness.provinces}:fixed(s),this.witness))throw Error('显示基图发生变化，保留最后确认的进度。');
-  this.provinceRefs=refs;
+  // The session keeps its frozen terrain record and owned buffers across
+  // batches (checked against a private pristine copy after every action), so
+  // static objects already compared with the witness are skipped by identity.
+  const sameRefs=refs.length===this.provinceRefs.length&&refs.every((v,i)=>v===this.provinceRefs[i]),sameStatics=statics.every((v,i)=>v===this.staticRefs[i]);
+  if(!(sameRefs&&sameStatics)&&!sameDisplayStatic47(sameRefs?{...fixed(s),provinces:this.witness.provinces}:fixed(s),this.witness))throw Error('显示基图发生变化，保留最后确认的进度。');
+  this.provinceRefs=refs;this.staticRefs=statics;
   const {terrain:_terrain,diplomaticGeography:_geography,...full}=s.run;
   const run={...full,world:{...full.world,provinces:full.world.provinces.map(({polygon:_p,neighbors:_n,...p})=>p)}} as unknown as DynamicRun;
   const {opening:_opening,...journal}=s.journal;

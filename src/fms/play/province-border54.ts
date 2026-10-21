@@ -2,11 +2,10 @@ import type {FmsDocument} from '../model';
 import type {World} from '../../sim/types';
 import {originalCellProvinces} from '../original/original-politics';
 import {nativeFilterProvinceCells53} from './native-combat/province-cells53';
-import {nativeProvinceProtruding52} from './native-combat/province-border52';
 import {nativeBorderEnemies55} from './native-war/state-border55';
 import {certifiedGeography47,copyGeographyContent47,sameGeographyContent47,geographyDependencies47,retainGeographyWitness47} from './geography-content47';
 type Input={terrain:FmsDocument;world:World;scale:number};
-type Borders={id:string;outside:number[];indices:number[]}[];
+type Borders={id:string;outside:number[];indices:number[];groups?:[number,number][]}[];
 const cache:{cost:number;witness:unknown;borders:Borders}[]=[];
 function bordersOf(r:Input):Borders{
  const deps={...geographyDependencies47(r),neighbors:r.terrain.neighbors,scale:r.scale};
@@ -32,8 +31,12 @@ export function provinceBorderReader54(r:Input,world:World=r.world):(id:string)=
  return id=>{
   const index=byId.get(id);if(index===undefined)throw Error('突出部省份不存在。');
   const row=rows[index],province=world.provinces[index];if(province?.id!==id)throw Error('突出部省份顺序已改变。');
-  const states=row.outside.map(i=>{const p=world.provinces[i];if(!p||p.id!==rows[i].id)throw Error('突出部邻省已改变。');return p.controller===province.controller?1:0;});
-  return nativeProvinceProtruding52(1,row.indices,states);
+  // Same result as nativeProvinceProtruding52 over every border contact: the
+  // foreign contact count is an exact integer, so contacts are grouped once by
+  // neighbouring province and each province's owner is read once per call.
+  const groups=row.groups??=[...row.outside.reduce((m,i)=>m.set(i,(m.get(i)??0)+1),new Map<number,number>())];
+  let foreign=0;for(const [i,count] of groups){const p=world.provinces[i];if(!p||p.id!==rows[i].id)throw Error('突出部邻省已改变。');if(p.controller!==province.controller)foreign+=count;}
+  return Math.fround(Math.fround(foreign)/Math.fround(row.outside.length))>.5;
  };
 }
 

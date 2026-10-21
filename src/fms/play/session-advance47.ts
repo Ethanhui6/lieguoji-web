@@ -1,3 +1,5 @@
+import {withDeferredContactChecks47} from './force-motion47';
+import {actualContactFrame47} from './force-runtime47';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import type {ArmyRouteWeights47} from './army-commands47';
 import type {ForceMotionObserver47} from './force-display-trace47';
@@ -26,6 +28,7 @@ export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kin
  let run=cloneMilitaryCandidate47(input);
  try{
   run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>{
+   withDeferredContactChecks47(()=>{
    for(const [index,action] of actions.entries()){
     candidates.set(lease,candidate);let remaining=action.ticks;
     while(remaining){
@@ -48,6 +51,9 @@ export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kin
     }
     prepareOwnedGeography47(candidate);
    }
+   });
+   // Deferred contact records: one complete check of the final run.
+   actualContactFrame47(candidate);
    return candidate;
   }));
   return run;

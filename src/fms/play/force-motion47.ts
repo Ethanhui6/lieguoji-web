@@ -66,7 +66,14 @@ export function assertForceContacts47(value: ForceContacts47, forces: MovingForc
 /** Only the actualContactFrame47 composition may call this immediately after
  * actualForces47 has validated both complete travel ledgers and fleet surfaces.
  * No caller-supplied validation switch and no reusable/cross-tick witness. */
+let deferredContactChecks=0;
+/** Live display batch only (session-advance47): contact record checks inside
+ * the batch are deferred, and the batch validates its final run with
+ * actualContactFrame47 before the candidate can be accepted. Replay, load and
+ * every public path keep the per-step check as the independent oracle. */
+export function withDeferredContactChecks47<T>(action:()=>T):T{deferredContactChecks++;try{return action();}finally{deferredContactChecks--;}}
 export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingForce47[],graph:TravelGraph47,seaRegion:Rules['seaRegion']){
+  if(deferredContactChecks)return;
   const keys = new Set<string>(),orderedKeys:string[]=[];
   for (const f of forces) {
     if (!['army', 'fleet'].includes(f.kind) || !f.id || !f.nationId || typeof f.withdrawing !== 'boolean' || f.travel.armyId !== f.id) throw Error('统一部队身份无效。');

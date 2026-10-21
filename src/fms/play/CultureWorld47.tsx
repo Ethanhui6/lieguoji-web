@@ -1,3 +1,4 @@
+import {FRAME_TICKS_BY_SPEED47,frameTicks47} from './frame-loop47';
 import {allianceOf46} from './war46-alliance';
 import {CultureNationActions47,PICK_TIPS47,type NationPick47} from './CultureNationActions47';
 import {globalStamp47} from './civilization47-global-orders';
@@ -301,7 +302,11 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,acknowledgedContinuation:true,playing:()=>isPlaying.current,
     batchBoundary:()=>120-(current.current?.run.clock.tick??0)%120,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
-    step:async ticks=>{const s=current.current;if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
+    step:async ticks=>{const s=current.current;
+      // Original timeScale: a new speed takes effect at the next day boundary as a journalled frame length.
+      const wanted=FRAME_TICKS_BY_SPEED47[String(speed)];
+      if(s&&s.journal.engine===__CULTURE47_ENGINE__&&s.run.frameLoop&&wanted!==undefined&&frameTicks47(s.run)!==wanted&&s.run.clock.tick%120===0){await send({type:'action',action:{kind:'frame-length',ticks:wanted},sequence:s.journal.actions.length},true);return;}
+      if(s)await send((s.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(s.journal.engine)?.protocol===2)?{type:'advance-batch',ticks,sequence:s.journal.actions.length}:{type:'action',action:{kind:'advance',ticks},sequence:s.journal.actions.length},true);}});
   const requestMilitary=(intent:MilitaryIntent47)=>{setPlaying(false);setTargetMode(null);setPanel('military');void send({type:'military-preview',intent});};
   const chooseForce=(value:SelectedForce47)=>{previewEpoch.current.military++;selected.current.force=value;setForce(value);setMilitaryPreview(null);setTargetMode(null);setPanel('military');};
   const interaction=useRef({requestMilitary,chooseForce});interaction.current={requestMilitary,chooseForce};

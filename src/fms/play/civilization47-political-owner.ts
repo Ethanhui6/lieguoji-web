@@ -1,3 +1,4 @@
+import {reconcileVassals47} from './civilization47-vassal';
 import {evaluateAlliance47,reconcileAlliances47} from './civilization47-alliance';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {initialDiplomacy,assertDiplomacy} from './war29-diplomacy';
@@ -68,7 +69,7 @@ export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOw
 }
 export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}
 export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean){
-  reconcileGovernmentContinuity47(r);reconcileAlliances47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
+  reconcileGovernmentContinuity47(r);reconcileAlliances47(r);reconcileVassals47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
   if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);});}
   reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }

@@ -97,7 +97,7 @@ export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   if(v.kind==='politics'&&exact(v,['kind','action','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization'])){assertPoliticalCommand47(v.action);return;}
   if(v.kind==='family'&&exact(v,['kind','intent','expected'])&&exact(v.intent,['nationId','personId','provinceId'])&&typeof v.intent.nationId==='string'&&integer(v.intent.personId,1,2147483647)&&typeof v.intent.provinceId==='string'&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='advance'&&exact(v,['kind','ticks'])&&integer(v.ticks,1,120))return;
-  if(v.kind==='global'&&exact(v,['kind','order','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization','settings','alliances'])){assertGlobalOrder47(v.order);return;}
+  if(v.kind==='global'&&exact(v,['kind','order','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization','settings','alliances','vassals'])){assertGlobalOrder47(v.order);return;}
   if(v.kind==='territory'&&exact(v,['kind','edit','expected'])&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization'])){assertTerritoryEdit47(v.edit);return;}
   if(v.kind==='succession'&&exact(v,['kind','nationId'])&&typeof v.nationId==='string'&&/^n-\d+$/.test(v.nationId))return;
   if(v.kind==='identity'&&exact(v,['kind','edit'])&&v.edit&&typeof v.edit==='object'){

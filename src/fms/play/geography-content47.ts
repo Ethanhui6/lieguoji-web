@@ -115,18 +115,43 @@ export function prepareOwnedGeography47(r:{terrain:FmsDocument;world:World;diplo
  * No external callback, async work or mutable buffer escapes during the action.
  * A changed/detached buffer rejects the whole candidate; input stays untouched.
  * Public geometry/command helpers outside this window still scan every call. */
+/** Buffers adopted after a verified window, with their private pristine copies. */
+const pristine=new WeakMap<object,Uint32Array|Int32Array>();
+const changed='推演期间地形发生变化，取消本次候选并保留原世界。';
 export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(input:T,action:(candidate:T)=>T):T{
+ // Fast path: the frozen terrain record and its two buffers were adopted by an
+ // earlier verified window of this owner. Reuse them (keeping their memo of
+ // exact witness comparisons) instead of copying ~0.5 MB per action; every
+ // sample is still checked against the private pristine copy afterwards, and
+ // any change is undone before the candidate is rejected.
+ const t=input.terrain,keptTriangles=pristine.get(t.triangles),keptElevations=pristine.get(t.elevations);
+ if(keptTriangles&&keptElevations&&Object.isFrozen(t)){
+  const buffers=[t.triangles,t.elevations] as const,originals=[keptTriangles,keptElevations] as const;
+  try{
+   const result=action({...input}),returned=[result.terrain.triangles,result.terrain.elevations];
+   for(let i=0;i<buffers.length;i++)if(buffers[i].length!==originals[i].length||!sameSamples(buffers[i],originals[i])||returned[i].length!==originals[i].length||!sameSamples(returned[i],originals[i]))throw Error(changed);
+   return result;
+  }catch(error){
+   for(let i=0;i<buffers.length;i++)if(buffers[i].length===originals[i].length&&!sameSamples(buffers[i],originals[i])){(buffers[i] as Uint32Array).set(originals[i]);numericWindows.set(buffers[i],new WeakMap());}
+   throw error;
+  }
+ }
  const originals=[new Uint32Array(input.terrain.triangles),new Int32Array(input.terrain.elevations)] as const;
  const triangles=new Uint32Array(originals[0]),elevations=new Int32Array(originals[1]);
  const buffers=[triangles,elevations] as const;
  const candidate={...input,terrain:{...input.terrain,triangles,elevations}};
  for(const a of buffers){Object.preventExtensions(a);typedShapes.add(a);numericWindows.set(a,new WeakMap());}
+ let adopted=false;
  try{
   const result=action(candidate);
   const returned=[result.terrain.triangles,result.terrain.elevations];
-  for(let i=0;i<buffers.length;i++)if(buffers[i].length!==originals[i].length||!sameSamples(buffers[i],originals[i])||returned[i].length!==originals[i].length||!sameSamples(returned[i],originals[i]))throw Error('推演期间地形发生变化，取消本次候选并保留原世界。');
+  for(let i=0;i<buffers.length;i++)if(buffers[i].length!==originals[i].length||!sameSamples(buffers[i],originals[i])||returned[i].length!==originals[i].length||!sameSamples(returned[i],originals[i]))throw Error(changed);
+  // The verified buffers become owned: later windows reuse them (fast path).
+  if(result.terrain===candidate.terrain&&returned[0]===triangles&&returned[1]===elevations){
+   Object.freeze(result.terrain);pristine.set(triangles,originals[0]);pristine.set(elevations,originals[1]);adopted=true;
+  }
   return result;
- }finally{for(const a of buffers)numericWindows.delete(a);}
+ }finally{if(!adopted)for(const a of buffers)numericWindows.delete(a);}
 }
 export function shareUnchangedProvinceGeometry47(source:World,target:World){
  const byId=new Map(source.provinces.map(p=>[p.id,p]));

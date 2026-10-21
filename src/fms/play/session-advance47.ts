@@ -21,7 +21,7 @@ export function readSessionAdvanceCandidate47(lease:SessionAdvanceLease47):Polit
  * isolated and checked after EVERY accepted action. Public/replay paths keep
  * their original copies and validation, and remain an independent oracle. */
 export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kind:'advance';ticks:number}[],weights:ArmyRouteWeights47,observe?:ForceMotionObserver47):PoliticalRun47{
- if(!actions.length||actions.length>4||actions.some(a=>a.kind!=='advance'||!Number.isSafeInteger(a.ticks)||a.ticks<1||a.ticks>120))throw Error('私有推进批次无效。');
+ if(!actions.length||actions.length>10||actions.some(a=>a.kind!=='advance'||!Number.isSafeInteger(a.ticks)||a.ticks<1||a.ticks>120))throw Error('私有推进批次无效。');
  const lease=Object.freeze({}) as SessionAdvanceLease47;
  let run=cloneMilitaryCandidate47(input);
  try{

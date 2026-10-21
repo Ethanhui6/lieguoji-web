@@ -19,7 +19,7 @@ self.onmessage=(e:MessageEvent<{id:number;command:Culture47Request}>)=>{
     if(c.type==='action'||c.type==='advance-batch'){
       const actions:Culture47Action[]=[];
       if(c.type==='action')actions.push(c.action);
-      else {if(!Number.isSafeInteger(c.ticks)||c.ticks<1||c.ticks>480)throw Error('推进批次超出范围。');for(let remaining=c.ticks;remaining>0;remaining-=120)actions.push({kind:'advance',ticks:Math.min(120,remaining)});}
+      else {if(!Number.isSafeInteger(c.ticks)||c.ticks<1||c.ticks>1200)throw Error('推进批次超出范围。');for(let remaining=c.ticks;remaining>0;remaining-=120)actions.push({kind:'advance',ticks:Math.min(120,remaining)});}
       const started=performance.now(),display=session.executeDisplay(actions,c.sequence);
       respond({id,display,timing:{compute:performance.now()-started}});return;
     }

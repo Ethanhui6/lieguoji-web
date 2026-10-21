@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Claude stage4 climate63: pass saved map precipitation into world rules/storage under a new rules+world-save version (old worlds and frozen engines unchanged), then original hand river editing. Open: 4x speed equals 1x (worker-bound), fonts/menus/80k/native+naval arrows/State55 queue. No upload.",
+    "nextRecoveryTarget": "Original parity plan (user order): next = in-game paused country editing (territory transfer world command with army/siege/economy revalidation), then nation actions + global toggles, main menu + saves, province panel + views. Climate63 (simulation uses map rainfall) deferred behind user order. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13287,6 +13287,31 @@
         "dry20": 51
       },
       "simulationUsesClimate": false,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "originalParityPlan": {
+      "doc": "docs/FMS_ORIGINAL_PARITY_PLAN_2026-10-21.md",
+      "userOrder": [
+        "edit-countries-provinces",
+        "nation-actions-global-toggles",
+        "main-menu-saves",
+        "province-panel-map-views"
+      ],
+      "decidedAt": "2026-10-21"
+    },
+    "layout63Checkpoint": {
+      "sourceCommit": "4ad88eb9",
+      "status": "local-opening-country-editor-passed",
+      "preview": "http://127.0.0.1:5375/?fms=1",
+      "artifact": ".autopilot/fms-layout63-checked",
+      "engine": "11a9c2088a34d64fdbd05611b1226c81f2aba52c8a672f32314dac8f043cdfaa",
+      "frozenPrevious": "8a8a",
+      "evidence": "docs/evidence/fms-layout63-2026-10-21/RESULT.md",
+      "unitTests": 107,
+      "browserTests": 9,
+      "inGameEditing": false,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

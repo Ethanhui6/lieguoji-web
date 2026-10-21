@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Original parity plan (user order): next = in-game paused country editing (territory transfer world command with army/siege/economy revalidation), then nation actions + global toggles, main menu + saves, province panel + views. Climate63 (simulation uses map rainfall) deferred behind user order. No upload.",
+    "nextRecoveryTarget": "Original parity plan (user order): block 1 done enough for play (opening layout + in-game territory taps). Next = block 2 nation actions + global toggles (declare war/make peace visible in nation panel, alliance, vassal; toggles for rebellion/auto diplomacy/alliance/vassal/civil war bound to real rules). Then main menu + saves, province panel + views. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13312,6 +13312,20 @@
       "unitTests": 107,
       "browserTests": 9,
       "inGameEditing": false,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "territory64Checkpoint": {
+      "sourceCommit": "9f71f781",
+      "status": "local-in-game-territory-editing-passed",
+      "preview": "http://127.0.0.1:5376/?fms=1",
+      "artifact": ".autopilot/fms-territory64-checked",
+      "engine": "a0a0ffcc8f36becc0be5727da9c1aad9ec28f45b6a293e62410e0710bdcb1e4e",
+      "frozenPrevious": "11a9",
+      "evidence": "docs/evidence/fms-territory64-2026-10-21/RESULT.md",
+      "unitTests": 34,
+      "browserTests": 10,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

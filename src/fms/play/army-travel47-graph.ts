@@ -13,12 +13,20 @@ const distance=(a:Point,b:Point)=>Math.hypot(a.x-b.x,a.y-b.y);
  * persisted cell identity resolves the two valid sides of a shared boundary. */
 export function insideTravelCell47(cell:TravelCell47,p:Point):boolean{
  if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return false;
+ // Reject distant cells before polygon tests and shore-distance arithmetic.
+ // Compute bounds from current vertices: callers may supply mutable graphs.
+ let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ for(const v of cell.polygon){minX=Math.min(minX,v.x);maxX=Math.max(maxX,v.x);minY=Math.min(minY,v.y);maxY=Math.max(maxY,v.y);}
+ if(p.x<minX-1e-8||p.x>maxX+1e-8||p.y<minY-1e-8||p.y>maxY+1e-8)return false;
  if(contains(cell.polygon,p))return true;
  return cell.polygon.some((a,i)=>{const b=cell.polygon[(i+1)%cell.polygon.length],dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy,t=len2?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len2)):0;return distance(p,{x:a.x+t*dx,y:a.y+t*dy})<=1e-8;});
 }
 export function locateTravelCell47(g:TravelGraph47,p:Point,provinceId?:string):TravelCell47|null{
- const candidates=provinceId===undefined?[...g.cells.values()]:(g.byProvince.get(provinceId)??[]).map(id=>g.cells.get(id)!);
- return candidates.filter(c=>insideTravelCell47(c,p)).sort((a,b)=>a.id-b.id)[0]??null;
+ let found:TravelCell47|null=null;
+ const visit=(c:TravelCell47)=>{if((!found||c.id<found.id)&&insideTravelCell47(c,p))found=c;};
+ if(provinceId===undefined){for(const c of g.cells.values())visit(c);}
+ else for(const id of g.byProvince.get(provinceId)??[])visit(g.cells.get(id)!);
+ return found;
 }
 const edgeKey=(a:Point,b:Point)=>{const x=`${a.x},${a.y}`,y=`${b.x},${b.y}`;return x<y?x+'/'+y:y+'/'+x;};
 const sourceKey=(ids:readonly number[])=>[...ids].sort((a,b)=>a-b).join('/');

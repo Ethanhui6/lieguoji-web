@@ -5,8 +5,8 @@ test('portrait details leave the map available and expand for long country recor
  test.setTimeout(120000);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/?fms=1');
- await page.getByRole('button',{name:'生成大陆',exact:true}).click();
- await page.getByRole('button',{name:'确认原作地形',exact:true}).click({timeout:90000});
+ await page.getByLabel('整图种子',{exact:true}).fill('421730');await page.getByRole('button',{name:'预览整张地图',exact:true}).click();
+ await page.getByRole('button',{name:'确认整图',exact:true}).click({timeout:90000});
  await page.getByRole('button',{name:'保存地图',exact:true}).click();
  await page.getByRole('button',{name:'进入世界 →',exact:true}).click();
  await create(page);

@@ -508,5 +508,15 @@
     "protocol": 2,
     "source": "culture47-fms-editor59-checked-original-bytes",
     "journalVersion": 2
+  },
+  {
+    "engine": "ac46a63704cef692fd83bcff733a178aaf0a5c567d95fbb200a481a5bd613d59",
+    "file": "engine-ac46.js",
+    "bytes": 1424323,
+    "sha256": "9a6322e90be7895a5cc99cfa5214ce48c7bb3e76dcf5a8b060ce19e187b06620",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-fms-editor60-checked-original-bytes",
+    "journalVersion": 2
   }
 ]

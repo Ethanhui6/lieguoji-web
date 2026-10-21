@@ -1,3 +1,4 @@
+import {pickOriginalProvince} from '../original/original-picking';
 import {ARMY_BATCH_RULE47} from './army-batch47';
 import {CultureFamilyPeople47} from './CultureFamilyPeople47';
 import {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
@@ -366,7 +367,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
       const point=(e:PointerEvent|WheelEvent)=>{const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top};};
       const down=(e:PointerEvent)=>{if(e.button!==0)return;const p=point(e);ids.add(e.pointerId);tap=ids.size===1?{id:e.pointerId,...p}:null;canvas.setPointerCapture(e.pointerId);gestures.down(e.pointerId,p,false);};
       const move=(e:PointerEvent)=>{const p=point(e);if(tap&&Math.hypot(p.x-tap.x,p.y-tap.y)>5)tap=null;gestures.move(e.pointerId,p);};
-      const up=(e:PointerEvent)=>{const p=point(e),t=tap;gestures.up(e.pointerId,p);ids.delete(e.pointerId);tap=null;if(t?.id!==e.pointerId||ids.size||!current.current)return;const r=current.current.run,w=screenToWorld(view.camera,p),at={x:w.x*r.scale,y:w.y*r.scale},id=provinceAt(r.world,at),province=r.world.provinces.find(p=>p.id===id),s=selected.current;
+      const up=(e:PointerEvent)=>{const p=point(e),t=tap;gestures.up(e.pointerId,p);ids.delete(e.pointerId);tap=null;if(t?.id!==e.pointerId||ids.size||!current.current)return;const r=current.current.run,w=screenToWorld(view.camera,p),at={x:w.x*r.scale,y:w.y*r.scale},id=original?(()=>{cellOwners??=originalCellProvinces(source,r.world.provinces,r.scale);const index=pickOriginalProvince(source,cellOwners,w.x,w.y);return index===null?undefined:r.world.provinces[index]?.id;})():provinceAt(r.world,at),province=r.world.provinces.find(p=>p.id===id),s=selected.current;
         if(s.targetMode&&s.force){
           if(current.current.journal.engine!==__CULTURE47_ENGINE__){if(s.force.kind==='army'&&province){interaction.current.requestMilitary({force:'army',command:{type:'army-move',armyId:s.force.id,kind:s.targetMode,target:{kind:'province',id:province.id}}});}else{setNotice('旧版本继续保留原规则；此兼容入口暂只支持陆军地区目标，原试玩入口仍保留。');}return;}
           const g=actualForces47(r).spatial.graph,cells=[...g.cells.values()].filter(c=>s.force!.kind==='army'||c.surface==='sea'),cell=cells.sort((a,b)=>Math.hypot(a.center.x-at.x,a.center.y-at.y)-Math.hypot(b.center.x-at.x,b.center.y-at.y))[0];if(!cell)return;
@@ -376,7 +377,7 @@ export function CultureWorld47({terrain,onClose,onLegacy}:{terrain:FmsDocument;o
         if(s.military){const hit=map.pickUnits(p)[0];if(hit){interaction.current.chooseForce({kind:hit.kind as SelectedForce47['kind'],id:hit.id});return;}}
         const city=map.cityPositions().map(c=>({...c,distance:Math.hypot(c.x-p.x,c.y-p.y)})).filter(c=>c.distance<=14).sort((a,b)=>a.distance-b.distance||a.id.localeCompare(b.id))[0];
         if(city){const cityProvince=r.world.provinces.find(v=>v.id===city.provinceId);if(cityProvince){setNationId(cityProvince.controller);setCityId(city.id);setPanel('nation');return;}}
-        if(province){setNationId(province.controller);setCityId(r.world.cities.find(c=>c.provinceId===id)?.id??null);setPanel('nation');}};
+        if(province){setNationId(province.controller);setCityId(null);setPanel('nation');}else{setCityId(null);setPanel(null);}};
       const cancel=()=>{tap=null;ids.clear();gestures.interrupt();},wheel=(e:WheelEvent)=>{e.preventDefault();gestures.wheel(point(e),e.deltaY);};
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});

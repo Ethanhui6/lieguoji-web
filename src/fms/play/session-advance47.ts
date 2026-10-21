@@ -25,8 +25,8 @@ export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kin
  const lease=Object.freeze({}) as SessionAdvanceLease47;
  let run=cloneMilitaryCandidate47(input);
  try{
-  for(const action of actions){
-   run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>{
+  run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>{
+   for(const action of actions){
     candidates.set(lease,candidate);let remaining=action.ticks;
     while(remaining){
      const current=readSessionAdvanceCandidate47(lease),take=Math.min(remaining,120-current.clock.tick%120);
@@ -36,10 +36,18 @@ export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kin
      advancePolitics47(readSessionAdvanceCandidate47(lease),out.dailyPending);
      remaining-=take;
     }
-    return readSessionAdvanceCandidate47(lease);
-   }));
-   prepareOwnedGeography47(run);
-  }
+    candidate=readSessionAdvanceCandidate47(lease);
+    // Keep the per-action invariant, while retaining one isolated numeric
+    // window (and its verified geometry caches) across this bounded batch.
+    for(const key of ['triangles','elevations'] as const){
+     const before=input.terrain[key],after=candidate.terrain[key];
+     if(before.length!==after.length)throw Error('推演期间地形发生变化，取消本次候选。');
+     for(let i=0;i<before.length;i++)if(before[i]!==after[i])throw Error('推演期间地形发生变化，取消本次候选。');
+    }
+    prepareOwnedGeography47(candidate);
+   }
+   return candidate;
+  }));
   return run;
  }finally{candidates.delete(lease);}
 }

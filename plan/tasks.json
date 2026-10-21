@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Original parity plan (user order): block 1 done enough for play (opening layout + in-game territory taps). Next = block 2 nation actions + global toggles (declare war/make peace visible in nation panel, alliance, vassal; toggles for rebellion/auto diplomacy/alliance/vassal/civil war bound to real rules). Then main menu + saves, province panel + views. No upload.",
+    "nextRecoveryTarget": "Block 2 continued per original: Annex (TryAnnexState, LeftClickAction.AnnexState) and vassal (VassalManager TryMakeVassal/MakeVassalCore via native makeVassal46 bound to 47 run, RemovePuppy, enableVassal toggle), then rebellion/civil war toggles. Then main menu + saves, province panel + views. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13329,6 +13329,26 @@
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false
-    }
+    },
+    "actions65Checkpoint": {
+      "sourceCommit": "10e9daff",
+      "status": "local-original-nation-actions-ai-config-partial",
+      "preview": "http://127.0.0.1:5377/?fms=1",
+      "artifact": ".autopilot/fms-actions65-checked",
+      "engine": "49296436279ce18b00362c1b23d8e4824adb854f3c208c37c79ca57318183fad",
+      "frozenPrevious": "a0a0",
+      "evidence": "docs/evidence/fms-actions65-2026-10-21/RESULT.md",
+      "unitTests": 37,
+      "browserTests": 7,
+      "restoredToggles": [
+        "allowAutoDiplomacy",
+        "allowAlliance",
+        "maxMonthBeforeForceEndWar"
+      ],
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "userDirective20261021": "一切以原作为主：按原作 dump.cs/localization/level0 的做法还原，不另起网页设计。"
   }
 }

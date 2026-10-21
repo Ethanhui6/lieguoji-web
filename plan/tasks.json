@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Per original: vassal tribute/army cap/vassal rebellion (war46 recovered) into 47 run + enableVassal/allowVassalRebel toggles; then rebellion/civil war/family rebellion. User order after block 2: main menu + saves, province panel + views. No upload.",
+    "nextRecoveryTarget": "Block 2 remaining (rebellion/civil war/family rebellion, enableVassal semantics, army cap) needs new original recovery; per user order next = block 3 main menu + save management (original MainMenu: 新的对局/加载游戏/存档管理/自动保存), then block 4 province panel + map views. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13360,6 +13360,20 @@
       "evidence": "docs/evidence/fms-annex66-2026-10-21/RESULT.md",
       "unitTests": 37,
       "browserTests": 9,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    },
+    "vassal67Checkpoint": {
+      "sourceCommit": "adfd44c8",
+      "status": "local-original-vassal-manager-passed",
+      "preview": "http://127.0.0.1:5379/?fms=1",
+      "artifact": ".autopilot/fms-vassal67-checked",
+      "engine": "55d0ff064289225e8fff4198c6d619799f3f8d88ce539aef1eb2d36f42bc0ba3",
+      "frozenPrevious": "a12c",
+      "evidence": "docs/evidence/fms-vassal67-2026-10-21/RESULT.md",
+      "unitTests": 40,
+      "browserTests": 10,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
       "uploaded": false

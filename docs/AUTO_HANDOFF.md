@@ -1,3 +1,11 @@
+# 当前检查点：附庸67原作附庸管理（2026-10-21）
+
+每日推演运行原作VassalManager：12月贡金、季度独立判定发起真实CB16独立战争，推演和约支持该内部战争；“允许附庸叛乱”按恢复结果门控整个管理器。源码adfd44c8，本机 http://127.0.0.1:5379/?fms=1 ，产物.autopilot/fms-vassal67-checked；a12c冻结，无上传。40单测、10项浏览器通过。见[证据](evidence/fms-vassal67-2026-10-21/RESULT.md)。
+
+下一批：按用户顺序进入第3块主菜单与存档管理（以原作MainMenu为准）；第2块剩余叛乱/内战/家族叛乱需新恢复原作函数。真机视觉未验。
+
+---
+
 # 当前检查点：吞并附庸66（2026-10-21）
 
 按原作反汇编还原：吞并=AnnexSelectedState（目标国全部行省ConqueredBy，不要求交战，原文“被…灭亡”）；收为附庸=VassalManager.MakeVassal（被点国为附庸，原作拒绝原因），解除附庸。源码fe28f305，本机 http://127.0.0.1:5378/?fms=1 ，产物.autopilot/fms-annex66-checked；4929冻结，无上传。37单测、9项浏览器通过。见[证据](evidence/fms-annex66-2026-10-21/RESULT.md)。

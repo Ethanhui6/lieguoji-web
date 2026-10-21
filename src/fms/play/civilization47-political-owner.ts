@@ -69,10 +69,12 @@ export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOw
   }if(changed)reconcileGovernmentContinuity47(r);
 }
 export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}
-export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean){
+/** validate=false is only for steps inside one private session batch; that
+ * batch validates its final step before the candidate can be accepted. */
+export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean,validate=true){
   reconcileGovernmentContinuity47(r);reconcileAlliances47(r);reconcileVassals47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
   if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);});advanceVassalManager47(r);}
-  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
+  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);if(validate)assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}
 export function assertPoliticalCommand47(a:unknown):asserts a is PoliticalCommand47 {

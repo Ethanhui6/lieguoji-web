@@ -75,7 +75,7 @@ test('acknowledged pipeline installs every result and drains pending preview/sav
  await expect(map).toHaveAttribute('data-motion-revision',/^\d+$/);
  const initialRevision=Number(await map.getAttribute('data-motion-revision')),initial=await probe(page);
  const speed=page.getByRole('button',{name:'切换推演速度',exact:true});
- for(let i=0;i<4&&(await speed.textContent())!=='4×';i++)await speed.click();await expect(speed).toHaveText('4×');
+ for(let i=0;i<8&&(await speed.textContent())!=='4倍速';i++)await speed.click();await expect(speed).toHaveText('4倍速');
  await page.getByRole('button',{name:'继续时间',exact:true}).click();
  await expect.poll(async()=>(await probe(page)).acks.filter(row=>row.advance).length,{timeout:30000,intervals:[50]}).toBeGreaterThanOrEqual(4);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expectPaused(page);

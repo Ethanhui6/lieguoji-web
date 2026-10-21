@@ -1,8 +1,10 @@
+import {certifyDisplayGeography47} from './geography-content47';
 import type {Culture47Session,Culture47Journal} from './culture47-session';
 import type {ForceDisplayTrace47} from './force-display-trace47';
 
 type Snapshot=ReturnType<Culture47Session['snapshot']>;
-type Static={terrain:Snapshot['run']['terrain'];geography:Snapshot['run']['diplomaticGeography'];opening:Culture47Journal['opening']};
+type ProvinceGeometry={id:string;polygon:unknown;neighbors:unknown};
+type Static={terrain:Snapshot['run']['terrain'];geography:Snapshot['run']['diplomaticGeography'];opening:Culture47Journal['opening'];provinces:ProvinceGeometry[]};
 type DynamicRun=Omit<Snapshot['run'],'terrain'|'diplomaticGeography'>;
 const fixedPlain=new WeakMap<object,boolean>(),equalFixed=new WeakMap<object,WeakSet<object>>();
 function freezeDisplayPlain(value:unknown):boolean {
@@ -36,7 +38,11 @@ export function sameDisplayStatic47(a:unknown,b:unknown):boolean {
  const same=keys.length===other.length&&keys.every(k=>Object.hasOwn(b,k)&&sameDisplayStatic47((a as Record<string,unknown>)[k],(b as Record<string,unknown>)[k]));
  if(same&&immutable){const entries=equalFixed.get(a)??new WeakSet<object>();entries.add(b);equalFixed.set(a,entries);}return same;
 }
-const fixed=(s:Snapshot):Static=>({terrain:s.run.terrain,geography:s.run.diplomaticGeography,opening:s.journal.opening});
+// Province outlines and adjacency never change within a world; updates omit
+// them and the receiver restores the baseline objects (frozen once, so the
+// geography identity checks there are cheap). Old frozen engines still send
+// them in every update and are decoded unchanged.
+const fixed=(s:Snapshot):Static=>({terrain:s.run.terrain,geography:s.run.diplomaticGeography,opening:s.journal.opening,provinces:s.run.world.provinces.map(p=>({id:p.id,polygon:p.polygon,neighbors:p.neighbors}))});
 export function checkSiegeDisplay47(s:Snapshot){
  const ids=s.frame.activeSieges;
  // Frozen workers predate this optional display projection. Their original
@@ -51,12 +57,19 @@ export function checkSiegeDisplay47(s:Snapshot){
  * returned: even the small update is cloned before it leaves the owner. */
 export class Culture47DisplayEncoder {
  private witness?:Static;
+ private provinceRefs:unknown[]=[];
  private base=crypto.randomUUID();
  private sequence=0;
  encode(s:Snapshot):Culture47DisplayPacket {
-  if(!this.witness){freezeDisplayPlain(fixed(s));this.witness=structuredClone(fixed(s));freezeDisplayPlain(this.witness);this.sequence=s.journal.actions.length;return {kind:'full',base:this.base,snapshot:structuredClone(s)};}
-  if(!sameDisplayStatic47(fixed(s),this.witness))throw Error('显示基图发生变化，保留最后确认的进度。');
-  const {terrain:_terrain,diplomaticGeography:_geography,...run}=s.run;
+  const refs=s.run.world.provinces.flatMap(p=>[p.polygon,p.neighbors]);
+  if(!this.witness){freezeDisplayPlain(fixed(s));this.witness=structuredClone(fixed(s));freezeDisplayPlain(this.witness);this.provinceRefs=refs;this.sequence=s.journal.actions.length;return {kind:'full',base:this.base,snapshot:structuredClone(s)};}
+  // Shared (certified) province geometry is compared by identity; only new
+  // objects are compared in full against the witness, then remembered.
+  const sameRefs=refs.length===this.provinceRefs.length&&refs.every((v,i)=>v===this.provinceRefs[i]);
+  if(!sameDisplayStatic47(sameRefs?{...fixed(s),provinces:this.witness.provinces}:fixed(s),this.witness))throw Error('显示基图发生变化，保留最后确认的进度。');
+  this.provinceRefs=refs;
+  const {terrain:_terrain,diplomaticGeography:_geography,...full}=s.run;
+  const run={...full,world:{...full.world,provinces:full.world.provinces.map(({polygon:_p,neighbors:_n,...p})=>p)}} as unknown as DynamicRun;
   const {opening:_opening,...journal}=s.journal;
   void _terrain;void _geography;void _opening;
   const packet=structuredClone({kind:'update' as const,base:this.base,from:this.sequence,run,journal,frame:s.frame});
@@ -82,11 +95,19 @@ export class Culture47DisplayDecoder {
    if(expected.sequence!==undefined||s.journal.engine!==expected.engine||s.run.id!==s.journal.id||!packet.base)throw Error('显示基线不匹配。');
    checkSiegeDisplay47(s);
    this.baseline=fixed(s);freezeDisplayPlain(this.baseline);this.witness=structuredClone(this.baseline);freezeDisplayPlain(this.witness);this.base=packet.base;
+   certifyDisplayGeography47([this.baseline.terrain.points,this.baseline.terrain.neighbors,this.baseline.geography,...this.baseline.provinces.flatMap(p=>[p.polygon,p.neighbors])]);
    this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return s;
   }
   if(!this.baseline||!this.witness||packet.base!==this.base||packet.from!==this.sequence||expected.sequence!==this.sequence||packet.journal.actions.length!==this.sequence+(expected.actions??1)||packet.journal.id!==this.world||packet.journal.engine!==this.engine||packet.journal.engine!==expected.engine||packet.run.id!==this.world||'terrain'in packet.run||'diplomaticGeography'in packet.run||'opening'in packet.journal)throw Error('显示增量不匹配，保留最后确认的进度。');
   if(!sameDisplayStatic47(this.baseline,this.witness))throw Error('显示基图被修改，保留最后确认的进度。');
-  const s:Snapshot={run:{...packet.run,terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...packet.journal,opening:this.baseline.opening},frame:packet.frame};
+  type Province=Snapshot['run']['world']['provinces'][number];
+  const base=this.baseline.provinces,world=packet.run.world,sent=world.provinces as (Province|Omit<Province,'polygon'|'neighbors'>)[];
+  const provinces=sent.map((p,i):Province=>{
+   if('polygon' in p)return p;
+   if(base[i]?.id!==p.id)throw Error('显示行省与基图不一致。');
+   return {...p,polygon:base[i].polygon,neighbors:base[i].neighbors} as Province;
+  });
+  const s:Snapshot={run:{...packet.run,world:{...world,provinces},terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...packet.journal,opening:this.baseline.opening},frame:packet.frame};
   checkSiegeDisplay47(s);
   const motion=packet.motion;
   if(motion){

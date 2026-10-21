@@ -51,6 +51,10 @@ function equal(a:unknown,b:unknown,budget:Budget,depth:number):boolean{
 }
 export function sameGeographyContent47(a:unknown,b:unknown){return equal(a,b,{left:LIMIT},0);}
 export const certifiedGeography47=(value:object)=>immutable.has(value);
+/** Display receiver only: the decoded static baseline (terrain sites and
+ * adjacency, sea partition, province outlines) is reused for every update of
+ * one Worker epoch, so certify it once like the owned session does. */
+export function certifyDisplayGeography47(values:readonly unknown[]){for(const value of values)freezePlain(value);}
 export function copyGeographyContent47<T>(value:T):{value:T;cost:number}|null{
  const budget={left:LIMIT};if(!equal(value,value,budget,0))return null;
  // Immutable certified subtrees can safely be shared with the witness. Typed

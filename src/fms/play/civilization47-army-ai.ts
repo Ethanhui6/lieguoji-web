@@ -26,6 +26,17 @@ function garrisonRandom47(seed:string){let h=2166136261;for(const c of seed)h=Ma
 const featureCache=new WeakMap<TravelGraph47,Map<number,string>>();
 /** Explicit WEB Feature mapping: positive-width same-surface connectivity.
  * Never use ownership, a water district ID, or connect land through sea. */
+/** Province center cell feature and coast flags depend only on the immutable
+ * travel graph and fixed province centers; computed once per graph. */
+const provinceGeographyCache=new WeakMap<TravelGraph47,{key:string;coasts:Set<string>;provinceFeatures:Map<string,string>}>();
+function provinceGeography47(r:FoundingForces47,g:TravelGraph47,features:Map<number,string>){
+  const key=r.world.provinces.map(p=>p.id+'@'+p.center.x+','+p.center.y).join('|'),cached=provinceGeographyCache.get(g);if(cached?.key===key)return cached;
+  const coasts=new Set<string>(),provinceFeatures=new Map<string,string>();
+  for(const p of r.world.provinces){const cell=locateTravelCell47(g,p.center,p.id);if(!cell)throw Error('自主目标中心不在真实陆地。');provinceFeatures.set(p.id,features.get(cell.id)!);
+    if((g.byProvince.get(p.id)??[]).some(id=>g.cells.get(id)!.links.some(l=>g.cells.get(l.to)!.surface==='sea')))coasts.add(p.id);
+  }
+  const out={key,coasts,provinceFeatures};provinceGeographyCache.set(g,out);return out;
+}
 export function travelFeatures47(g:TravelGraph47){
   const cached=featureCache.get(g);if(cached)return cached;const out=new Map<number,string>();let index=0;
   for(const cell of g.cells.values()){if(out.has(cell.id))continue;const feature=cell.surface+'/'+index++,queue=[cell.id];out.set(cell.id,feature);
@@ -63,10 +74,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
   if((!ids&&r.clock.tick!==r.world.day*TICKS_PER_DAY)||r.clock.tick>Number.MAX_SAFE_INTEGER-TICKS_PER_DAY||state.revision>=Number.MAX_SAFE_INTEGER)throw Error('自主军令必须在有效日界执行。');
   if(!ids&&state.lastDay===r.world.day)return undefined;
   const {spatial}=actualForces47(r),g=spatial.graph,features=travelFeatures47(g),space=readArmySpace47(r.world,spatial),access=militaryAccess46(r),held=new Set(r.forceContacts.pairs.flatMap(p=>[p.a,p.b]));
-  const places=new Map(r.world.provinces.map(p=>[p.id,p])),ports=new Set(r.harbors.sites.map(p=>p.provinceId)),coasts=new Set<string>(),provinceFeatures=new Map<string,string>();
-  for(const p of r.world.provinces){const cell=locateTravelCell47(g,p.center,p.id);if(!cell)throw Error('自主目标中心不在真实陆地。');provinceFeatures.set(p.id,features.get(cell.id)!);
-    if((g.byProvince.get(p.id)??[]).some(id=>g.cells.get(id)!.links.some(l=>g.cells.get(l.to)!.surface==='sea')))coasts.add(p.id);
-  }
+  const places=new Map(r.world.provinces.map(p=>[p.id,p])),ports=new Set(r.harbors.sites.map(p=>p.provinceId)),{coasts,provinceFeatures}=provinceGeography47(r,g,features);
   const enemyMaps=new Map(r.world.nations.map(n=>[n.id,regularCampaigns47(r,n.id)]));
   const retry=ids?20:TICKS_PER_DAY;
   for(const a of ids?ids.map(id=>r.world.armies.find(a=>a.id===id)!):r.world.armies){

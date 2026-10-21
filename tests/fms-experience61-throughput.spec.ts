@@ -13,7 +13,7 @@ test('normal continent has measured authoritative throughput at 1x and 4x with d
  for(const speed of [1,4]){
   await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();
   await expect(app).toHaveAttribute('data-tick','0',{timeout:90000});await page.locator('.c47-nations button').first().click();
-  const button=page.getByRole('button',{name:'切换推演速度',exact:true});for(let i=0;i<4&&(await button.textContent())!==speed+'×';i++)await button.click();await expect(button).toHaveText(speed+'×');
+  const button=page.getByRole('button',{name:'切换推演速度',exact:true});for(let i=0;i<8&&(await button.textContent())!==speed+'倍速';i++)await button.click();await expect(button).toHaveText(speed+'倍速');
   const fromTick=Number(await app.getAttribute('data-tick')),start=Date.now();await page.getByRole('button',{name:'继续时间',exact:true}).click();
   await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:70000,intervals:[100]}).toBeGreaterThanOrEqual(fromTick+1200);
   await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:20000});

@@ -26,14 +26,16 @@ export function advanceSessionBatch47(input:PoliticalRun47,actions:readonly {kin
  let run=cloneMilitaryCandidate47(input);
  try{
   run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>{
-   for(const action of actions){
+   for(const [index,action] of actions.entries()){
     candidates.set(lease,candidate);let remaining=action.ticks;
     while(remaining){
      const current=readSessionAdvanceCandidate47(lease),take=Math.min(remaining,120-current.clock.tick%120);
      const out=advanceSessionCivilizationMilitary47(lease,take,weights,observe);
      candidates.set(lease,out.run);
      if(out.dailyPending)candidates.set(lease,settleSessionArmyAutonomyDay47(lease,weights));
-     advancePolitics47(readSessionAdvanceCandidate47(lease),out.dailyPending);
+     // Full world validation once, on the batch's final step (the candidate
+     // is accepted only after it); intermediate steps are inside the same lease.
+     advancePolitics47(readSessionAdvanceCandidate47(lease),out.dailyPending,index===actions.length-1&&remaining===take);
      remaining-=take;
     }
     candidate=readSessionAdvanceCandidate47(lease);

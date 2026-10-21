@@ -1,0 +1,146 @@
+void PlayerController__MakeVassal (PlayerController_o* __this, int32_t firstSelectedStateIndex, int32_t secondSelectedStateIndex, const MethodInfo* method);
+0x4447d0  mov qword ptr [rsp + 0x18], rbx
+0x4447d5  mov qword ptr [rsp + 0x20], rbp
+0x4447da  push rdi
+0x4447db  sub rsp, 0x20
+0x4447df  cmp byte ptr [rip + 0x2c1b85f], 0
+0x4447e6  mov ebp, r8d
+0x4447e9  mov edi, edx
+0x4447eb  mov rbx, rcx
+0x4447ee  jne 0x444833
+0x4447f0  lea rcx, [rip + 0x2aa24f9]
+0x4447f7  call 0x2334a0
+0x4447fc  lea rcx, [rip + 0x2a49e55] ; UnityEngine.Object_TypeInfo
+0x444803  call 0x2334a0
+0x444808  lea rcx, [rip + 0x2a77439] ; StateInfoUI_TypeInfo
+0x44480f  call 0x2334a0
+0x444814  lea rcx, [rip + 0x2a775dd] ; StateManager_TypeInfo
+0x44481b  call 0x2334a0
+0x444820  lea rcx, [rip + 0x2a96d11] ; VassalManager_TypeInfo
+0x444827  call 0x2334a0
+0x44482c  mov byte ptr [rip + 0x2c1b812], 1
+0x444833  mov qword ptr [rsp + 0x30], rsi
+0x444838  cmp edi, ebp
+0x44483a  je 0x4449a9
+0x444840  mov rcx, qword ptr [rip + 0x2a775b1] ; StateManager_TypeInfo
+0x444847  cmp dword ptr [rcx + 0xe0], 0
+0x44484e  jne 0x444855
+0x444850  call 0x233710
+0x444855  xor ecx, ecx
+0x444857  call 0x50e800 ; StateManager$$get_Instance
+0x44485c  test rax, rax
+0x44485f  je 0x4449ee
+0x444865  mov rcx, qword ptr [rax + 0x18]
+0x444869  test rcx, rcx
+0x44486c  je 0x4449ee
+0x444872  mov r8, qword ptr [rip + 0x2aa2477]
+0x444879  mov edx, edi
+0x44487b  call 0x13e2d10 ; System.Collections.Generic.List<KeyValuePair<int, int>>$$get_Item | System.Collections.Generic.List<KeyValuePair<int, Int32Enum>>$$get_Item
+0x444880  xor ecx, ecx
+0x444882  mov rsi, rax
+0x444885  call 0x50e800 ; StateManager$$get_Instance
+0x44488a  test rax, rax
+0x44488d  je 0x4449ee
+0x444893  mov rcx, qword ptr [rax + 0x18]
+0x444897  test rcx, rcx
+0x44489a  je 0x4449ee
+0x4448a0  mov r8, qword ptr [rip + 0x2aa2449]
+0x4448a7  mov edx, ebp
+0x4448a9  call 0x13e2d10 ; System.Collections.Generic.List<KeyValuePair<int, int>>$$get_Item | System.Collections.Generic.List<KeyValuePair<int, Int32Enum>>$$get_Item
+0x4448ae  mov rcx, qword ptr [rbx + 0x20]
+0x4448b2  xor ebp, ebp
+0x4448b4  mov dword ptr [rbx + 0x90], ebp
+0x4448ba  mov rdi, rax
+0x4448bd  test rcx, rcx
+0x4448c0  je 0x4449ee
+0x4448c6  xor edx, edx
+0x4448c8  mov qword ptr [rsp + 0x38], r14
+0x4448cd  call 0x230de40 ; UnityEngine.Component$$get_gameObject
+0x4448d2  mov rcx, qword ptr [rip + 0x2a49d7f] ; UnityEngine.Object_TypeInfo
+0x4448d9  mov r14, rax
+0x4448dc  cmp dword ptr [rcx + 0xe0], ebp
+0x4448e2  jne 0x4448e9
+0x4448e4  call 0x233710
+0x4448e9  xor edx, edx
+0x4448eb  mov rcx, r14
+0x4448ee  call 0x23127b0 ; UnityEngine.Object$$Destroy
+0x4448f3  lea rcx, [rbx + 0x20]
+0x4448f7  mov qword ptr [rbx + 0x20], rbp
+0x4448fb  xor edx, edx
+0x4448fd  call 0x232f70
+0x444902  mov r14, qword ptr [rsp + 0x38]
+0x444907  test rsi, rsi
+0x44490a  je 0x4449ee
+0x444910  cmp byte ptr [rsi + 0xa8], bpl
+0x444917  jne 0x444994
+0x444919  test rdi, rdi
+0x44491c  je 0x4449ee
+0x444922  cmp byte ptr [rdi + 0xa8], bpl
+0x444929  jne 0x444994
+0x44492b  cmp dword ptr [rsi + 0x24], ebp
+0x44492e  je 0x444994
+0x444930  cmp dword ptr [rdi + 0x24], ebp
+0x444933  je 0x444994
+0x444935  mov rcx, qword ptr [rip + 0x2a96bfc] ; VassalManager_TypeInfo
+0x44493c  cmp dword ptr [rcx + 0xe0], ebp
+0x444942  jne 0x444949
+0x444944  call 0x233710
+0x444949  xor ecx, ecx
+0x44494b  call 0x6593c0 ; VassalManager$$get_Instance
+0x444950  test rax, rax
+0x444953  je 0x4449ee
+0x444959  xor r9d, r9d
+0x44495c  mov r8, rsi
+0x44495f  mov rdx, rdi
+0x444962  mov rcx, rax
+0x444965  call 0x657aa0 ; VassalManager$$MakeVassal
+0x44496a  mov rcx, qword ptr [rip + 0x2a772d7] ; StateInfoUI_TypeInfo
+0x444971  cmp dword ptr [rcx + 0xe0], ebp
+0x444977  jne 0x44497e
+0x444979  call 0x233710
+0x44497e  xor ecx, ecx
+0x444980  call 0x4e3600 ; StateInfoUI$$get_Instance
+0x444985  test rax, rax
+0x444988  je 0x4449ee
+0x44498a  xor edx, edx
+0x44498c  mov rcx, rax
+0x44498f  call 0x4d7960 ; StateInfoUI$$RefreshLocalization
+0x444994  mov rsi, qword ptr [rsp + 0x30]
+0x444999  mov rbx, qword ptr [rsp + 0x40]
+0x44499e  mov rbp, qword ptr [rsp + 0x48]
+0x4449a3  add rsp, 0x20
+0x4449a7  pop rdi
+0x4449a8  ret 
+0x4449a9  mov rcx, qword ptr [rbx + 0x20]
+0x4449ad  test rcx, rcx
+0x4449b0  je 0x4449ee
+0x4449b2  xor edx, edx
+0x4449b4  call 0x230de40 ; UnityEngine.Component$$get_gameObject
+0x4449b9  mov rcx, qword ptr [rip + 0x2a49c98] ; UnityEngine.Object_TypeInfo
+0x4449c0  mov rdi, rax
+0x4449c3  cmp dword ptr [rcx + 0xe0], 0
+0x4449ca  jne 0x4449d1
+0x4449cc  call 0x233710
+0x4449d1  xor edx, edx
+0x4449d3  mov rcx, rdi
+0x4449d6  call 0x23127b0 ; UnityEngine.Object$$Destroy
+0x4449db  xor ebp, ebp
+0x4449dd  lea rcx, [rbx + 0x20]
+0x4449e1  xor edx, edx
+0x4449e3  mov qword ptr [rbx + 0x20], rbp
+0x4449e7  call 0x232f70
+0x4449ec  jmp 0x444994
+0x4449ee  call 0x233680
+0x4449f3  int3 
+0x4449f4  int3 
+0x4449f5  int3 
+0x4449f6  int3 
+0x4449f7  int3 
+0x4449f8  int3 
+0x4449f9  int3 
+0x4449fa  int3 
+0x4449fb  int3 
+0x4449fc  int3 
+0x4449fd  int3 
+0x4449fe  int3 
+0x4449ff  int3 

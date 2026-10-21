@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Block 2 continued per original: Annex (TryAnnexState, LeftClickAction.AnnexState) and vassal (VassalManager TryMakeVassal/MakeVassalCore via native makeVassal46 bound to 47 run, RemovePuppy, enableVassal toggle), then rebellion/civil war toggles. Then main menu + saves, province panel + views. No upload.",
+    "nextRecoveryTarget": "Per original: vassal tribute/army cap/vassal rebellion (war46 recovered) into 47 run + enableVassal/allowVassalRebel toggles; then rebellion/civil war/family rebellion. User order after block 2: main menu + saves, province panel + views. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13349,6 +13349,20 @@
       "visualAccepted": false,
       "uploaded": false
     },
-    "userDirective20261021": "一切以原作为主：按原作 dump.cs/localization/level0 的做法还原，不另起网页设计。"
+    "userDirective20261021": "一切以原作为主：按原作 dump.cs/localization/level0 的做法还原，不另起网页设计。",
+    "annex66Checkpoint": {
+      "sourceCommit": "fe28f305",
+      "status": "local-original-annex-vassal-passed",
+      "preview": "http://127.0.0.1:5378/?fms=1",
+      "artifact": ".autopilot/fms-annex66-checked",
+      "engine": "a12c990d2fc37af7d24e055f710ccc8e4bb32ed17dc9e1c2d5aa8e315e65c159",
+      "frozenPrevious": "4929",
+      "evidence": "docs/evidence/fms-annex66-2026-10-21/RESULT.md",
+      "unitTests": 37,
+      "browserTests": 9,
+      "physicalDeviceAccepted": false,
+      "visualAccepted": false,
+      "uploaded": false
+    }
   }
 }

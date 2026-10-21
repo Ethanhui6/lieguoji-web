@@ -1,3 +1,4 @@
+import {setVassalManager47} from './civilization47-vassal-manager';
 import {annexOwned47} from './civilization47-territory-edit';
 import {makeVassal47,releaseVassal47,reconcileVassals47} from './civilization47-vassal';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
@@ -9,9 +10,9 @@ import {reconcileGovernmentContinuity47,assertPolitics47,politicalStamp47} from 
 import {reconcileMilitaryClock47} from './force-tick47';
 
 /** 全局指令 and nation actions recorded as one journaled world command. */
-export type VassalEdit47={type:'make';vassalId:string;overlordId:string}|{type:'release';vassalId:string};
+export type VassalEdit47={type:'make';vassalId:string;overlordId:string}|{type:'release';vassalId:string}|{type:'automatic';enabled:boolean};
 export type GlobalOrder47={kind:'alliance';edit:AllianceEdit46}|{kind:'diplomacy';edit:DiplomacyEdit}|{kind:'vassal';edit:VassalEdit47}|{kind:'annex';edit:{nationId:string;targetId:string}};
-export const globalStamp47=(r:PoliticalRun47)=>({...politicalStamp47(r),settings:r.diplomacy.revision,alliances:r.alliances.revision,vassals:r.vassals.revision});
+export const globalStamp47=(r:PoliticalRun47)=>({...politicalStamp47(r),settings:r.diplomacy.revision,alliances:r.alliances.revision,vassals:r.vassals.revision,vassalManager:r.vassalManager.revision});
 export type GlobalStamp47=ReturnType<typeof globalStamp47>;
 export function assertGlobalOrder47(v:unknown):asserts v is GlobalOrder47{
   const o=v as GlobalOrder47;
@@ -27,6 +28,7 @@ export function applyGlobalOrder47(r:PoliticalRun47,order:GlobalOrder47,expected
   else if(order.kind==='annex'){const e=order.edit;if(Object.keys(e).sort().join()!=='nationId,targetId')throw Error('吞并参数无效。');annexOwned47(next,e.nationId,e.targetId);}
   else{const e=order.edit;
     if(e.type==='make'){if(Object.keys(e).sort().join()!=='overlordId,type,vassalId')throw Error('附庸参数无效。');makeVassal47(next,e.vassalId,e.overlordId);}
+    else if(e.type==='automatic'){if(Object.keys(e).sort().join()!=='enabled,type')throw Error('附庸参数无效。');setVassalManager47(next,e.enabled);}
     else if(e.type==='release'){if(Object.keys(e).sort().join()!=='type,vassalId')throw Error('附庸参数无效。');if(!releaseVassal47(next,e.vassalId))throw Error('该国不是附庸。');}
     else throw Error('附庸参数无效。');}
   reconcileVassals47(next);

@@ -1,3 +1,8 @@
+import {nativeBuildInternalPlan,nativeClassifyInternal,type NativeInternalWar} from './native-war/internal-settlement';
+import {nativeSuppressionDestiny} from './native-war/suppression-destiny';
+import {overlord46} from './war46-vassals';
+import {releaseVassal47} from './civilization47-vassal';
+import {diplomacyRandom46} from './civilization47-diplomatic-state';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {invalidatePoliticalRoutes47} from './civilization47-diplomatic-world';
 import {nativeWar46,reconcileParticipants28,type War46Campaign} from './war47-wars';
@@ -41,13 +46,20 @@ export function reconcileDiplomaticForces47(r:PoliticalRun47,participants:Set<st
 /** Native plan/execute contract, actual47 ownership/economy projection.
  * This slice enables external territorial goals and reparations; it never
  * dispatches unimplemented internal/vassal/religious settlement effects. */
+/** Recovered suppression destiny (war46-rebellion suppressionDestiny46) on the 47 run. */
+function suppressionDestiny47(r:PoliticalRun47,id:string){
+  const land=r.world.provinces.filter(p=>p.controller===id).length,s=r.destiny.nations[id];
+  const value=nativeSuppressionDestiny({eligible:land>0,otherEligibleAlive:r.world.provinces.some(p=>p.controller!==id),totalLand:r.world.provinces.length,ownLand:land,manifest:s.manifest,manifestCount:s.manifestCount,value:()=>Math.fround(diplomacyRandom46(r.nativeDiplomacy)),intRange:(min,max)=>min+Math.floor(diplomacyRandom46(r.nativeDiplomacy)*(max-min))});
+  if(value!==null){s.destiny=value;r.upperCombat.nations[id].destiny=value;r.destiny.revision++;}
+}
 export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceReason){
   if(c.endedTick!==null)return false;
-  if(c.internal)throw Error('内部战争须由完整政治登记器结算。');
+  // Only the vassal independence war (casus belli 16) is registered on the live 47 owner.
+  if(c.internal&&c.internal.casusBelliId!==16)throw Error('内部战争须由完整政治登记器结算。');
   if(c.history==='unknown'&&reason!==11&&reason!==2)throw Error('开局战争没有宣战史，不能推算和约。');
   const q=peaceQueries47(r),participants=participantNationIds46(r.nativeWars,c),key=(id:number)=>{const out=r.nativeWars.nationIds.find(n=>n[0]===id)?.[1];if(!out)throw Error('战争国家身份缺失。');return out;};
   const w=c.history==='complete'?nativeWar46(c):null;
-  const plan=w?nativeBuildSettlementPlan(w,reason,{...q,buildEffect:nativeBuildEffect,buildInternalPlan:()=>{throw Error('内部战争尚未注册。');}}):null;
+  const plan=w?nativeBuildSettlementPlan(w,reason,{...q,buildEffect:nativeBuildEffect,buildInternalPlan:()=>nativeBuildInternalPlan(w,q)}):null;
   const confirmedOwnership:[number,number][]=[];
   const stripOffice=(pid:number)=>{for(const n of Object.values(r.people.nations)){const old=n.offices.assignments??[],next=old.filter(a=>!a||a.officeId!=='Governor'||a.scopeId!==pid);if(next.length!==old.length){n.offices.assignments=next;n.offices.revision++;r.people.revision++;}}};
   const idFor=(state:ReturnType<typeof q.state>)=>{const id=r.nativeWars.nationIds.find(([id])=>q.state(id)===state)?.[0];if(id===undefined)throw Error('和约国家不存在。');return id;};
@@ -55,8 +67,10 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
   if(w)nativeExecuteSettlement(w,plan,{...q,capitalFallSuppression:{depth:0},stateId:idFor,stateColor:s=>color(idFor(s)),
     conquerProvince:(province,target)=>{const p=r.world.provinces.find(p=>p.id===r.nativeWars.provinceIds[province.id-1])!,owner=key(idFor(target));if(p.controller!==owner)transferEconomy(r.world,p.id,p.controller,owner);p.controller=owner;if(participants.includes(p.legalOwner))p.legalOwner=owner;stripOffice(province.id);reconcileCore(r.world,r.upperCombat);reconcileParticipants28(r.nativeWars,r);w.participants=structuredClone(c.participants);w.destroyedParticipants=structuredClone(c.destroyedParticipants);},
     makeConquestAnimation:(_p,_from,_to,transfer)=>transfer,playConquestAnimations:()=>{},warnTransfer:()=>{},warnEffect:()=>{},
-    applyEffect:e=>{if(e.type!==6)throw Error('当前外交尚未启用该和约效果。');const a=q.state(e.beneficiary),b=q.state(e.target);if(!a||!b||b.dead)return nativeEffectResult(e,2,'赔款受益方或承担方不存在/已灭亡');const amount=nativeReparationAmount(b.gold,b.goldPerMonth);b.gold=(b.gold-amount)|0;a.gold=(a.gold+amount)|0;return nativeEffectResult(e,0,null);},
-    classifyInternal:()=>{throw Error('内部战争尚未注册。');},trySuppressionDestiny:()=>{throw Error('内部战争尚未注册。');},wasSettlementOutcomeRecorded:()=>c.settlement!==null,recordOutcome:()=>{},logOutcomeComparison:()=>{},
+    applyEffect:e=>{
+      if(e.type===7&&c.internal?.casusBelliId===16){const rebel=q.state(e.beneficiary);if(!rebel||rebel.dead)return nativeEffectResult(e,2,'反抗方不存在/已灭亡');const id=key(e.beneficiary),lord=overlord46(r,id);if(lord===null)return nativeEffectResult(e,1,'反抗方已经独立');if(lord!==key(e.target))return nativeEffectResult(e,2,'反抗方当前宗主与战争目标不一致');releaseVassal47(r,id,'independence');return nativeEffectResult(e,0,null);}
+      if(e.type!==6)throw Error('当前外交尚未启用该和约效果。');const a=q.state(e.beneficiary),b=q.state(e.target);if(!a||!b||b.dead)return nativeEffectResult(e,2,'赔款受益方或承担方不存在/已灭亡');const amount=nativeReparationAmount(b.gold,b.goldPerMonth);b.gold=(b.gold-amount)|0;a.gold=(a.gold+amount)|0;return nativeEffectResult(e,0,null);},
+    classifyInternal:(war,plan,actual)=>nativeClassifyInternal(war as NativeInternalWar,plan,actual,q),trySuppressionDestiny:(_s,id)=>suppressionDestiny47(r,key(id)),wasSettlementOutcomeRecorded:()=>c.settlement!==null,recordOutcome:()=>{},logOutcomeComparison:()=>{},
   });
   if(plan)for(const [pid,original]of c.initialOwners){const p=r.world.provinces.find(p=>p.id===r.nativeWars.provinceIds[pid-1])!,owner=q.currentOwner(pid);if(owner!==original&&participants.includes(p.controller)&&participants.includes(p.legalOwner)){if(p.legalOwner!==p.controller){p.legalOwner=p.controller;stripOffice(pid);}confirmedOwnership.push([pid,owner]);}}
   for(const [a,b]of opposedPairs46(r.nativeWars,c)){

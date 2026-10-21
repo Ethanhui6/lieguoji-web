@@ -1,3 +1,4 @@
+import type {VassalManager47} from './civilization47-vassal-manager';
 import type {FoundingForces47} from './civilization47-forces';
 import type {DiplomacySettings} from './war29-diplomacy';
 import type {NativeDiplomacy46} from './civilization47-diplomatic-state';
@@ -8,11 +9,11 @@ import {actualForces47} from './force-runtime47';
 import {armyTravelPolicy47} from './army-commands47';
 import {haltArmyTravel47} from './army-travel47-state';
 import {travelFeatures47} from './civilization47-army-ai';
-export type PoliticalRun47=FoundingForces47&{diplomacy:DiplomacySettings;nativeDiplomacy:NativeDiplomacy46};
-export function buildParticipants47(r:PoliticalRun47,attacker:string,defender:string){
+export type PoliticalRun47=FoundingForces47&{diplomacy:DiplomacySettings;nativeDiplomacy:NativeDiplomacy46;vassalManager:VassalManager47};
+export function buildParticipants47(r:PoliticalRun47,attacker:string,defender:string,internal?:{rebelStateId:number;motherStateId:number}){
   const states=r.world.nations.map(n=>({id:r.people.nations[n.id].id,key:n.id,dead:!r.world.provinces.some(p=>p.controller===n.id)})),find=(id:string)=>states.find(n=>n.key===id)??null;
   const a=find(attacker),b=find(defender);if(!a||!b)throw Error('战争主攻或主守国家缺失。');
-  const members=nativeBuildWarSides({attackerId:a.id,defenderId:b.id,internal:false,rebelStateId:-1,motherStateId:-1},r.life.gameTime,{
+  const members=nativeBuildWarSides({attackerId:a.id,defenderId:b.id,internal:!!internal,rebelStateId:internal?.rebelStateId??-1,motherStateId:internal?.motherStateId??-1},r.life.gameTime,{
     state:id=>states.find(s=>s.id===id)??null,allianceMembers:s=>(allianceOf46(r,s.key)?.members??[]).map(find),
     isOverlord:s=>r.vassals.records.some(v=>v.endedTick===null&&v.overlordId===s.key),vassals:s=>r.vassals.records.filter(v=>v.endedTick===null&&v.overlordId===s.key).map(v=>find(v.vassalId)),
     isVassal:s=>overlord46(r,s.key)!==null,overlord:s=>{const id=overlord46(r,s.key);return id?find(id):null;},

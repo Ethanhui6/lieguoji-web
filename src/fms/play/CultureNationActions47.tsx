@@ -1,6 +1,7 @@
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {allianceOf46} from './war46-alliance';
 import {overlord46} from './war46-vassals';
+import {quoteTribute47} from './civilization47-vassal-manager';
 
 /** Original StateInfoUI "国家行为": pick an action, then click a target state
  * on the map (StartWarTips / AllianceTips / ClickGenTips / AnnexTips). Texts
@@ -25,6 +26,6 @@ export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAll
       <button disabled={busy||lord===null} title="解除附庸" onClick={onRelease}>解除附庸</button>
     </div>
     <label className="c47-check"><input type="checkbox" aria-label="本国自主外交" checked={run.diplomacy.nations[nationId]===true} disabled={busy||!alive} onChange={e=>onAutoDiplomacy(e.target.checked)}/>自主外交{run.diplomacy.worldAuto?'':'（全局已关闭）'}</label>
-    <small>{alliance?`联盟信息：${alliance.name} · 成员 ${alliance.members.map(name).join('、')}`:'未加入联盟'}{lord?` · 附庸于${name(lord)}（附庸国无法自主行使外交权力，需独立）`:''}{vassals.length?` · 附庸：${vassals.map(name).join('、')}`:''}</small>
+    <small>{alliance?`联盟信息：${alliance.name} · 成员 ${alliance.members.map(name).join('、')}`:'未加入联盟'}{lord?` · 附庸于${name(lord)}（附庸国无法自主行使外交权力，需独立）${(q=>q?`；贡金约 ${q.amount} 金币，${q.year}年12月${q.day}日缴纳`:'')(quoteTribute47(run,nationId))}`:''}{vassals.length?` · 附庸：${vassals.map(name).join('、')}`:''}</small>
   </details>;
 }

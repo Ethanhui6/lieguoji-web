@@ -1,3 +1,4 @@
+import {initialVassalManager47,advanceVassalManager47} from './civilization47-vassal-manager';
 import {reconcileVassals47} from './civilization47-vassal';
 import {evaluateAlliance47,reconcileAlliances47} from './civilization47-alliance';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
@@ -24,7 +25,7 @@ export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;
 export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
 export function attachPolitics47(r:FoundingForces47):PoliticalRun47 {
-  return {...r,diplomacy:initialDiplomacy(r.world),nativeDiplomacy:initialNativeDiplomacy46(r,'new-world')};
+  return {...r,diplomacy:initialDiplomacy(r.world),nativeDiplomacy:initialNativeDiplomacy46(r,'new-world'),vassalManager:initialVassalManager47(r.world.day)};
 }
 /** New-world preset only. Existing wars with unknown history stay unknown.
  * Stable relation order explicitly selects the initiator; this is not inferred
@@ -70,7 +71,7 @@ export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOw
 export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}
 export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean){
   reconcileGovernmentContinuity47(r);reconcileAlliances47(r);reconcileVassals47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
-  if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);});}
+  if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);});advanceVassalManager47(r);}
   reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}

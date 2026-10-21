@@ -1,3 +1,4 @@
+import {reconcileVassals47} from './civilization47-vassal';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {transferEconomy} from '../../compat/v0_4/sim/statecraft';
 import {reconcileCore} from './core-refresh51';
@@ -44,7 +45,7 @@ function applyOwned(r:PoliticalRun47,e:TerritoryEdit47,annexed?:string):number{
     const target=r.world.nations.find(n=>n.id===annexed)!.name;entry.text=`${target}被${nation.name}灭亡`;entry.reason=`吞并：${target}的${changed.length}个行省全部并入${nation.name}，法理与实控同时转移；结束当前任期，人物、家族、城市与历史保留。`;
     const event=r.world.events.find(v=>v.id===entry.sourceEventId);if(event){event.text=entry.text;event.reason=entry.reason;}
   }
-  reconcileDiplomaticForces47(r,new Set());finishPoliticalTick47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);
+  reconcileDiplomaticForces47(r,new Set());finishPoliticalTick47(r);reconcileVassals47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);
   reconcileMilitaryClock47(r,r.clock.tick);
   assertPolitics47(r);
   return changed.length;

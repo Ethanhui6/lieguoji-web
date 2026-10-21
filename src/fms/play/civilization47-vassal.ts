@@ -60,17 +60,18 @@ export function makeVassal47(r:PoliticalRun47,vassalId:string,overlordId:string)
   if(!result.success)throw Error(result.reason??'无法收为附庸。');
 }
 /** VassalManager.ReleaseVassal (解除附庸). */
-export function releaseVassal47(r:PoliticalRun47,vassalId:string,overlordDestroyed=false){
+export function releaseVassal47(r:PoliticalRun47,vassalId:string,reason:'released'|'independence'|'overlord-destroyed'='released'){
+  const overlordDestroyed=reason==='overlord-destroyed';
   const v=r.vassals.records.find(v=>v.vassalId===vassalId&&v.endedTick===null);if(!v)return false;
-  v.endedTick=r.clock.tick;v.endReason=overlordDestroyed?'overlord-destroyed':'released';bump(r);
+  v.endedTick=r.clock.tick;v.endReason=reason;bump(r);
   announce(r.chronicle,r.world,r.clock.tick,'diplomacy',overlordDestroyed?`${name(r,vassalId)}因${name(r,v.overlordId)}的灭亡而获得独立`:`${name(r,vassalId)}从${name(r,v.overlordId)}的统治下获得独立`,
-    overlordDestroyed?'宗主失去全部领土，附庸恢复独立外交。':'解除附庸：宗属关系结束，恢复独立外交。',[vassalId,v.overlordId],null);
+    overlordDestroyed?'宗主失去全部领土，附庸恢复独立外交。':reason==='independence'?'独立战争和约生效，宗属关系解除。':'解除附庸：宗属关系结束，恢复独立外交。',[vassalId,v.overlordId],null);
   return true;
 }
 /** A destroyed vassal ends silently; a destroyed overlord frees its vassals. */
 export function reconcileVassals47(r:PoliticalRun47){
   for(const v of r.vassals.records.filter(v=>v.endedTick===null)){
     if(!alive(r,v.vassalId)){v.endedTick=r.clock.tick;v.endReason='vassal-destroyed';bump(r);}
-    else if(!alive(r,v.overlordId))releaseVassal47(r,v.vassalId,true);
+    else if(!alive(r,v.overlordId))releaseVassal47(r,v.vassalId,'overlord-destroyed');
   }
 }

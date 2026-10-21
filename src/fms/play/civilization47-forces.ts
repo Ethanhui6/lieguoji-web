@@ -1,3 +1,4 @@
+import type {OpeningLayout47} from './opening-layout47';
 import type {ArmyBatch47} from './army-batch47';
 import type {ArmyRetirement47} from './army-retirement47';
 import type {FrameLoop47} from './frame-loop47';
@@ -70,8 +71,8 @@ export function attachFoundingForces47<T extends Government47>(input:T):T&Foundi
   assertGovernmentOpening47(input);if(fields.some(k=>k in input))throw Error('海陆军事创建只能初始化一次。');
   const result=build(input);assertFoundingForces47(result);return result;
 }
-export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM){
-  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm));
+export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47){
+  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm,layout));
 }
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 function same(a:unknown,b:unknown):boolean{

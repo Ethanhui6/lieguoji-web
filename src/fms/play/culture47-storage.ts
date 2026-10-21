@@ -43,7 +43,7 @@ function future(e:Envelope|undefined){
   if(j?.fork&&'previous'in j.fork){unknown(j.fork.previous,['engine','id','sequence']);if(j.fork.previous&&typeof j.fork.previous.engine==='string'&&j.fork.previous.engine!==CULTURE47_CONTINUATION_SOURCE)fail();}
   if(j&&(j.version>culture47JournalVersion(j.engine)||typeof j.engine==='string'&&!supportsCulture47(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
   if(j?.fork&&typeof j.fork.engine==='string'&&j.fork.engine!==CULTURE47_CONTINUATION_SOURCE&&j.fork.engine!==CULTURE47_RETIREMENT_SOURCE)fail();
-  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm']);
+  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout']);unknown(o?.layout,['seeds','owners']);
   if(o&&Object.hasOwn(o,'settlementAlgorithm')&&o.settlementAlgorithm!==SETTLEMENT47_ALGORITHM)fail();
   unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);

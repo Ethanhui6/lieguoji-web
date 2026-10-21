@@ -3,6 +3,10 @@ import {allianceOf46} from './war46-alliance';
 import {CultureNationActions47,PICK_TIPS47,type NationPick47} from './CultureNationActions47';
 import {globalStamp47} from './civilization47-global-orders';
 import {CultureAIGlobal47} from './CultureAIGlobal47';
+import {CultureMenu47} from './CultureMenu47';
+import {CULTURE47_AUTOSAVE,culture47ScopeOf,culture47SlotRevision,loadCulture47Named,saveCulture47Named} from './culture47-library';
+import {advanceAutoSave47,readCulture47Config,writeCulture47Config,type Culture47Config} from './culture47-config';
+import {downloadBlob47,exportHistoryText47,HISTORY_EXPORT_FILE47} from './culture47-export';
 import {politicalStamp47} from './civilization47-political-owner';
 import {pickOriginalProvince} from '../original/original-picking';
 import {ARMY_BATCH_RULE47} from './army-batch47';
@@ -121,6 +125,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   const setPick=(next:Pick|null)=>{pickRef.current=next;setPickState(next);if(next)setPlaying(false);};
   const territoryNation=pick?.kind==='draw'?pick.nationId:null,setTerritoryNation=(id:string|null)=>setPick(id===null?null:{kind:'draw',nationId:id});
   const [aiGlobalOpen,setAIGlobalOpen]=useState(false),appRoot=useRef<HTMLElement>(null);
+  const [menu,setMenu]=useState<null|'menu'|'load'>(null),[config,setConfigState]=useState<Culture47Config>(readCulture47Config),exportImage=useRef<(()=>Promise<Blob>)|null>(null),[autoSavePrompt,setAutoSavePrompt]=useState<{countdown:number}|'saving'|null>(null);
   const [count,setCount]=useState(6),[cityCount,setCityCount]=useState(60),[mode,setMode]=useState<NamingMode47>('culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(false);
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
@@ -262,6 +267,27 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
     else act({kind:'politics',action:{type:chosen.kind==='war'?'declare-war':'make-peace',nationId,targetNationId:target},expected:politicalStamp47(s.run)});
   };
   const globalOrder=(order:import('./civilization47-global-orders').GlobalOrder47)=>{const s=current.current;if(s)act({kind:'global',order,expected:globalStamp47(s.run)});};
+  const setConfig=(c:Culture47Config)=>{writeCulture47Config(c);setConfigState(c);};
+  /** Original SaveSystem.SaveGame into a named save (菜单选项 → 保存游戏, and the autosave). */
+  async function saveNamed(name:string,quiet=false):Promise<boolean>{
+    const s=current.current;if(!s||inflight.current){if(!quiet)setNotice('正在推演，请稍后再保存。');return false;}
+    inflight.current=true;setBusy(true);if(!quiet)setNotice('正在保存游戏…');const op=new AbortController();operation.current=op;
+    try{const stored=await saveCulture47Named(s.journal,name,async j=>{const c=client.current;if(c&&!c.isClosed&&c.engine===j.engine)await c.verify(j,{signal:op.signal,progress:replayProgress,longReplay:true});else await verifyJournal(j,op.signal,{progress:replayProgress});});if(!lifetime.current?.signal.aborted)setNotice(`已保存游戏：${stored}`);return true;}
+    catch(e){if(!lifetime.current?.signal.aborted)setNotice('保存失败，原存档保留。'+failText(e));return false;}
+    finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);drain();}}
+  }
+  /** LoadSaveDataUI → 加载存档: the save's own map and history replace the open world. */
+  async function loadNamed(name:string):Promise<boolean>{
+    if(inflight.current||busy)return false;setPlaying(false);setPick(null);
+    let journal:Culture47Journal;try{journal=await loadCulture47Named(name);}catch(e){setNotice(failText(e));return false;}
+    await send({type:'load',journal});const s=current.current;
+    if(!s||s.journal.id!==journal.id||s.journal.actions.length!==journal.actions.length)return false;
+    const scope=culture47ScopeOf(journal);storageDatabase.current=scope;
+    try{revision.current=await culture47SlotRevision(scope);setLocked(false);}catch(e){setLocked(true);setNotice(failText(e));}
+    setNotice(`已加载存档：${name}`);return true;
+  }
+  function exportHistory(includeEmergencyMobilize:boolean){const r=current.current?.run;if(!r)return;downloadBlob47(new Blob(['﻿'+exportHistoryText47(r.chronicle.entries,r.life.startDate,includeEmergencyMobilize)],{type:'text/plain;charset=utf-8'}),HISTORY_EXPORT_FILE47);setNotice('历史记录导出完成！');}
+  async function exportMapImage(){const make=exportImage.current;if(!make){setNotice('地图尚未就绪。');return;}setNotice('正在导出中，请稍候...');try{downloadBlob47(await make(),`FantasyMap_${new Date().toISOString().replace(/D/g,'').slice(0,14)}.png`);setNotice('地图截图导出完成！');}catch(e){setNotice('截图保存失败: '+failText(e));}}
   async function continueLongPlay(){
     const source=current.current,original=client.current;
     if(!source||!original||inflight.current||busy||locked||storageReading||![CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(source.journal.engine))return;
@@ -318,6 +344,23 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   }
   function requestClose(){setPlaying(false);if(inflight.current){if(!queued.current){queued.current={kind:'close'};setBusy(true);}return;}if(current.current&&lastSaved.current!==current.current.journal.actions.length)setLeaving(true);else onClose();}
   useEffect(()=>{const protect=(e:BeforeUnloadEvent)=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[]);
+  // AutoSaveManager.Update: counts real seconds once a world exists (isGameStarted).
+  const autoSave=useRef({elapsed:0,pending:false});
+  const hasRun=!!snapshot;
+  useEffect(()=>{
+    autoSave.current={elapsed:0,pending:false};setAutoSavePrompt(null);
+    if(!config.autoSave||!hasRun)return;
+    let last=performance.now();
+    const timer=setInterval(()=>{const now=performance.now(),delta=(now-last)/1000;last=now;const state=autoSave.current;
+      if(state.pending){if(!inflight.current){state.pending=false;void saveNamed(CULTURE47_AUTOSAVE,true).finally(()=>setAutoSavePrompt(null));}return;}
+      if(document.hidden)return;
+      const next=advanceAutoSave47(state.elapsed,delta,config.autoSaveMinutes);state.elapsed=next.elapsed;
+      if(next.due){state.pending=true;setAutoSavePrompt('saving');}else setAutoSavePrompt(next.countdown===null?null:{countdown:next.countdown});
+    },200);
+    const cancel=(e:KeyboardEvent)=>{if(e.key!=='Escape')return;const state=autoSave.current,interval=config.autoSaveMinutes*60;if(!state.pending&&interval-state.elapsed<=5){state.elapsed=0;setAutoSavePrompt(null);}};
+    window.addEventListener('keydown',cancel);
+    return()=>{clearInterval(timer);window.removeEventListener('keydown',cancel);};
+  },[config.autoSave,config.autoSaveMinutes,hasRun]);
   const runId=snapshot?.run.id;
   const motion=useRef(new CultureMotion47());
   const combatTimeline=useRef(new CombatTimeline47());
@@ -369,6 +412,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
     const sea=graphFor46(current.current.run);
     void renderer.init(element).then(()=>{
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
+      exportImage.current=async()=>{paint.current();return await renderer.exportPng();};
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
       const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original&&grid){map.useCellPolitics(true);map.useOriginalIcons(true);const w=current.current!.run;map.setOriginalPorts(originalPortCities(grid,source,w.world.cities.map(c=>({id:c.id,position:c.position,capital:false})),w.scale));}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
@@ -465,9 +509,11 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   return <main ref={appRoot} className="c47-app" data-testid="culture47-app" data-day={r?.world.day} data-tick={r?.clock.tick} data-advancing={advancing}>
     <div className="c47-map" ref={host}/>
     {renderFault&&<div className="c47-render-recovery" role="alert"><span>{renderFault}</span><button onClick={()=>{setRenderFault('');setRendererEpoch(n=>n+1);}}>重新显示地图</button></div>}
-    <header className="c47-bar"><button aria-label="返回绘图" disabled={busy} onClick={requestClose}><PlayIcon name="back"/></button><div><strong>列国纪</strong><small>{r?'真实文化世界':'创建文明'}</small></div>{r&&<><CultureCalendar47 worldId={r.id} startDate={r.life.startDate} tick={()=>motion.current.tick(performance.now())}/><button aria-label="切换地形地图" title="政区 / 地形" aria-pressed={mapMode==='terrain'} onClick={()=>setMapMode(m=>m==='terrain'?'political':'terrain')}><PlayIcon name="layers"/></button><button aria-label="AI全局配置" title="AI全局配置" aria-pressed={aiGlobalOpen} onClick={()=>setAIGlobalOpen(v=>!v)}><PlayIcon name="settings"/></button><button aria-label="编辑国家" title="编辑国家（暂停）" aria-pressed={territoryNation!==null} disabled={busy||locked} onClick={()=>{if(territoryNation!==null){setTerritoryNation(null);return;}setPlaying(false);setMilitary(false);setTargetMode(null);setPanel(null);const alive=r.world.nations.find(n=>n.id===nationId&&r.world.provinces.some(p=>p.controller===n.id))??r.world.nations.find(n=>r.world.provinces.some(p=>p.controller===n.id))!;setTerritoryNation(alive.id);setNotice('编辑国家：已暂停。点击地图，把行省划入所选国家。');}}><PlayIcon name="edit"/></button><button aria-label="军事模式" title="军队与舰队" aria-pressed={military} onClick={()=>{setTerritoryNation(null);setMilitary(v=>!v);setTargetMode(null);setPanel(military?null:'military');}}><PlayIcon name="locate"/></button><button aria-label="保存文化世界" disabled={busy||locked} onClick={()=>void save()}><PlayIcon name="save"/>{lastSaved.current!==snapshot.journal.actions.length&&<i className="c47-unsaved"/>}</button></>}</header>
+    <header className="c47-bar"><button aria-label="返回绘图" disabled={busy} onClick={requestClose}><PlayIcon name="back"/></button><div><strong>列国纪</strong><small>{r?'真实文化世界':'创建文明'}</small></div>{r&&<><CultureCalendar47 worldId={r.id} startDate={r.life.startDate} tick={()=>motion.current.tick(performance.now())}/><button aria-label="切换地形地图" title="政区 / 地形" aria-pressed={mapMode==='terrain'} onClick={()=>setMapMode(m=>m==='terrain'?'political':'terrain')}><PlayIcon name="layers"/></button><button aria-label="菜单选项" title="菜单选项" aria-pressed={menu!==null} onClick={()=>setMenu(m=>m?null:'menu')}><PlayIcon name="more"/></button><button aria-label="AI全局配置" title="AI全局配置" aria-pressed={aiGlobalOpen} onClick={()=>setAIGlobalOpen(v=>!v)}><PlayIcon name="settings"/></button><button aria-label="编辑国家" title="编辑国家（暂停）" aria-pressed={territoryNation!==null} disabled={busy||locked} onClick={()=>{if(territoryNation!==null){setTerritoryNation(null);return;}setPlaying(false);setMilitary(false);setTargetMode(null);setPanel(null);const alive=r.world.nations.find(n=>n.id===nationId&&r.world.provinces.some(p=>p.controller===n.id))??r.world.nations.find(n=>r.world.provinces.some(p=>p.controller===n.id))!;setTerritoryNation(alive.id);setNotice('编辑国家：已暂停。点击地图，把行省划入所选国家。');}}><PlayIcon name="edit"/></button><button aria-label="军事模式" title="军队与舰队" aria-pressed={military} onClick={()=>{setTerritoryNation(null);setMilitary(v=>!v);setTargetMode(null);setPanel(military?null:'military');}}><PlayIcon name="locate"/></button><button aria-label="保存文化世界" disabled={busy||locked} onClick={()=>void save()}><PlayIcon name="save"/>{lastSaved.current!==snapshot.journal.actions.length&&<i className="c47-unsaved"/>}</button></>}</header>
     {leaving&&<div className="c47-exit" role="dialog" aria-modal="true" aria-label="保存后离开"><h2>保留这个世界？</h2><p>尚有未保存的时间或编辑。</p><button disabled={busy||locked} onClick={()=>void save(true)}>保存并返回</button><button disabled={busy} onClick={onClose}>放弃未保存进度</button><button disabled={busy} onClick={()=>setLeaving(false)}>继续查看</button></div>}
     {notice&&<div className="c47-notice" role="status">{notice}</div>}{(storageReading||busy)&&<button className="c47-cancel-replay" onClick={()=>{queued.current=null;resumeAfterRecovery.current=false;setPlaying(false);if(storageReading)storageAbort.current?.abort();else operation.current?.abort();}}>取消处理</button>}
+    {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)}/>}
+    {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存，按 ESC 取消</>}</div>}
     {!r&&<section className="c47-setup"><span className="c47-kicker">文化 · 信仰 · 国家</span><h1>让文明从你的地图诞生</h1><p>为国家选择真实文化，独立设定信仰与政体。名字从同一种文化里生长。</p>{entryNotice&&<p className="c47-entry-note" role="note">{entryNotice}</p>}
       <div className="c47-segment" role="group" aria-label="国号与城市命名模式">{([['culture-generated','文化生成'],['historical-names','历史名称']] as const).map(([v,label])=><button key={v} aria-pressed={mode===v} onClick={()=>{setMode(v);}}>{label}</button>)}</div><small>{mode==='historical-names'?'使用中文历史国号和真实地名；名称用完可同名，480 座城市均可创建。':'使用中文译写的文化名称；每种文化可生成至少 512 个不同城名。'} 人物均按文化生成，不拼接历史人物家谱。</small>
       <div className="c47-counts"><label>国家<select aria-label="国家数量" value={count} onChange={e=>{setLayout(null);setCount(Number(e.target.value));}}>{[...new Set([2,3,4,6,8,12,16,24,count])].sort((a,b)=>a-b).map(n=><option key={n}>{n}</option>)}</select></label><label>城市<select aria-label="城市数量" value={cityCount} onChange={e=>{setLayout(null);setCityCount(Number(e.target.value));}}>{[24,60,120,240,480].map(n=><option key={n}>{n}</option>)}</select></label></div>
@@ -478,6 +524,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
       <button className="c47-primary" disabled={busy||storageReading||!enabled.length} onClick={()=>void send({type:'create',opening:{terrain,count,cityCount,relations:war?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,...(layout?{layout}:{}),setup:{mode,enabled,nations:Object.fromEntries(Array.from({length:count},(_,i)=>['n-'+i,choice(i)]))}}})}>{busy?'正在建立文明…':'从当前地图创建文化世界'}</button>
       {locked&&!storageReading&&<button onClick={()=>setStorageAttempt(n=>n+1)}>重新读取存档</button>}
       {saved&&<button disabled={busy} onClick={()=>void send({type:'load',journal:saved.journal})}>{busy?'正在恢复文化世界…':'继续文化世界'}{saved.recovered?'（已找到有效备份）':''}</button>}
+      <button disabled={busy||storageReading} onClick={()=>setMenu('load')}>加载游戏</button>
       <details><summary>选择存档位置</summary><div className="c47-segment">{([[CULTURE47_GENERATIONS_DATABASE,'世代世界'],[CULTURE47_RETIREMENT_DATABASE,'补军续玩副本'],[CULTURE47_FRESH_DATABASE,'补军版世界'],[CULTURE47_LONGPLAY_DATABASE,'旧续玩副本'],[CULTURE47_NEW_DATABASE,'上版世界'],[CULTURE47_DATABASE,'原版世界']] as const).map(([db,label])=><button key={db} disabled={busy||storageReading} onClick={()=>{setSaved(null);setStorageChoice(db);setStorageAttempt(n=>n+1);}}>{label}</button>)}</div><small>新世界支持婚育与后代成长，使用独立存档。旧世界仍按各自规则继续。</small></details>
       <button onClick={onLegacy} disabled={busy}>继续旧世界 / 原版本功能</button>
       <details className="c47-scope"><summary>本次可试玩的范围</summary><p>真实文化、独立信仰与政体、两种命名、家族传位、财政动员和实际位置行军已接入。可预览宣战及停战；自主外交和有完整宣战史的外战结算已接续。分裂、宗教传播、宗属与内战仍待完善，海陆速度比例尚待校准。</p><p>新世界独立保存；旧世界使用原版本。新版没有固定日数或指令总量的结束门槛，保留完整历史；长历史冷恢复仍需要时间，存储容量取决于设备。旧版保持原 1000 日预算，已验证的版本可明确建立独立续玩副本。已登记版本由原引擎继续，未知版本保留并锁定。旧版兼容入口暂不提供传位预览及任意海面军令。原试玩入口仍保留。</p></details>

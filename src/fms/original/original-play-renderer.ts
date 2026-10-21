@@ -36,6 +36,8 @@ export class OriginalPlayRenderer {
     this.heights = heights; this.coast = originalCoast(grid, heights);
   }
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
+  /** Original SettingsUIInfo 导出图片: the current view as a PNG. */
+  async exportPng(): Promise<Blob> { if (!this.initialized || this.destroyed) throw Error('地图尚未就绪。'); this.app.render(); const canvas = this.app.renderer.extract.canvas({ target: this.app.stage }) as HTMLCanvasElement; return await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(Error('导出图片失败。')), 'image/png')); }
   async init(host: HTMLElement): Promise<void> {
     await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: '#6b6150', preference: 'webgl' });
     this.initialized = true;

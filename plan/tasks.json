@@ -13378,6 +13378,17 @@
       "visualAccepted": false,
       "uploaded": false
     },
+    "menu71Checkpoint": {
+      "status": "local-original-settings-menu-and-save-library",
+      "preview": "http://127.0.0.1:5384/?fms=1",
+      "artifact": ".autopilot/fms-menu71-checked",
+      "engine": "558225d63e31890961ca1cd2cd5ae71bdda7812cde24c5fa5753d60d3c94a5cf",
+      "frozen": ["d217"],
+      "evidence": "docs/evidence/fms-menu71-2026-10-21/RESULT.md",
+      "browserTests": 6,
+      "realDevice": "not-verified",
+      "upload": "none"
+    },
     "speed70Checkpoint": {
       "sourceCommits": [
         "0a1dac0c",

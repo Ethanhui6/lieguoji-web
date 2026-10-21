@@ -116,6 +116,8 @@ export class FmsRenderer {
   private original?: { points: FmsDocument['points']; grid: OriginalGrid | null; layer?: OriginalEditorLayer };
   constructor(private onDisplayState:(state:FmsBiomeDisplayState)=>void=()=>{},private onDisplayError:(error:unknown)=>void=error=>{throw error;}){}
   get canvas(): HTMLCanvasElement { return this.app.canvas; }
+  /** Original SettingsUIInfo 导出图片: the current view as a PNG. */
+  async exportPng(): Promise<Blob> { if (!this.initialized || this.destroyed) throw Error('地图尚未就绪。'); this.app.render(); const canvas = this.app.renderer.extract.canvas({ target: this.app.stage }) as HTMLCanvasElement; return await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(Error('导出图片失败。')), 'image/png')); }
   get oceanAppearance(): FmsOceanAppearance { return this.oceanAppearanceState; }
   /** A caller-owned gameplay overlay shares this exact terrain/camera. */
   attachGameplayLayer(layer: Container): void { this.scene.addChild(layer); this.draw(); }

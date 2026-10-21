@@ -1,4 +1,5 @@
 import { assertFmsDocument, type FmsDocument } from './model';
+import { FMS_DEFAULT_CLIMATE, isDefaultFmsClimate, validFmsMapClimate, type FmsMapClimate } from './map-climate';
 
 export const FMS_DATABASE_NAME = 'lieguoji-fms-web-v1';
 export const FMS_DATABASE_VERSION = 1;
@@ -24,15 +25,18 @@ export interface FmsStoredSnapshot {
   storedAt: string;
   recovery: 'none' | 'backup';
   requiresProtectionUpgrade?: true;
+  /** Envelope v3 only; older saves mean the original default climate. */
+  climate: FmsMapClimate;
 }
 
 interface FmsSaveEnvelope {
   format: typeof FMS_SAVE_FORMAT;
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   storedRevision: number;
   storedAt: string;
   checksum: string;
   document: FmsDocument;
+  climate?: FmsMapClimate;
 }
 
 interface RawSlots { current: unknown; backup: unknown; revision: unknown }
@@ -53,7 +57,7 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function rejectIncompatible(raw: unknown): void {
   if (!record(raw)) return;
-  if (('format' in raw && raw.format !== FMS_SAVE_FORMAT) || ('version' in raw && raw.version !== 1 && raw.version !== 2)) throw future();
+  if (('format' in raw && raw.format !== FMS_SAVE_FORMAT) || ('version' in raw && raw.version !== 1 && raw.version !== 2 && raw.version !== 3)) throw future();
   if (record(raw.document) && (('format' in raw.document && raw.document.format !== 'lieguoji-fms-world')
     || ('version' in raw.document && raw.document.version !== 1 && raw.document.version !== 2))) throw future();
 }
@@ -89,6 +93,7 @@ async function checksum(envelope: Omit<FmsSaveEnvelope, 'checksum'>): Promise<st
       neighbors: document.neighbors, elevations: Array.from(document.elevations),
       ...(document.version === 2 ? { terrainLocks: Array.from(document.terrainLocks!) } : {}),
     },
+    ...(envelope.version === 3 ? { climate: { precipitation: envelope.climate!.precipitation } } : {}),
   }));
   try {
     const hash = await crypto.subtle.digest('SHA-256', bytes);
@@ -99,17 +104,20 @@ async function checksum(envelope: Omit<FmsSaveEnvelope, 'checksum'>): Promise<st
 async function decodeEnvelope(raw: unknown): Promise<FmsSaveEnvelope> {
   rejectIncompatible(raw);
   const keys = ['format', 'version', 'storedRevision', 'storedAt', 'checksum', 'document'];
-  if (!record(raw) || raw.format !== FMS_SAVE_FORMAT || (raw.version !== 1 && raw.version !== 2)
+  if (record(raw) && raw.version === 3) keys.push('climate');
+  if (!record(raw) || raw.format !== FMS_SAVE_FORMAT || (raw.version !== 1 && raw.version !== 2 && raw.version !== 3)
     || Object.keys(raw).length !== keys.length || Object.keys(raw).some(key => !keys.includes(key))
     || !validRevision(raw.storedRevision) || typeof raw.storedAt !== 'string'
     || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(raw.storedAt)
     || !Number.isFinite(Date.parse(raw.storedAt))
     || typeof raw.checksum !== 'string' || !/^[a-f0-9]{64}$/.test(raw.checksum)) throw corrupt();
   validateDocument(raw.document);
-  if (raw.version !== raw.document.version) throw corrupt();
+  // v3 adds map climate beside an unchanged v2 terrain document.
+  if (raw.version === 3 ? raw.document.version !== 2 || !validFmsMapClimate(raw.climate) : raw.version !== raw.document.version) throw corrupt();
   const envelope: FmsSaveEnvelope = {
     format: FMS_SAVE_FORMAT, version: raw.version, storedRevision: raw.storedRevision,
     storedAt: raw.storedAt, checksum: raw.checksum, document: raw.document,
+    ...(raw.version === 3 ? { climate: { precipitation: (raw.climate as FmsMapClimate).precipitation } } : {}),
   };
   if (envelope.checksum !== await checksum(envelope)) throw corrupt();
   return envelope;
@@ -180,7 +188,7 @@ function readSlots(database: IDBDatabase): Promise<RawSlots> {
 
 function snapshot(envelope: FmsSaveEnvelope, revision: number, recovery: FmsStoredSnapshot['recovery']): FmsStoredSnapshot {
   return { document: envelope.document, storedRevision: revision, sourceStoredRevision: envelope.storedRevision,
-    storedAt: envelope.storedAt, recovery };
+    storedAt: envelope.storedAt, recovery, climate: envelope.climate ?? FMS_DEFAULT_CLIMATE };
 }
 
 /** Reads never repair slots or open any legacy game database. */
@@ -206,7 +214,7 @@ function writeCheckedSlots(transaction: IDBTransaction, beforeIdentity: string, 
         const actual: RawSlots = { current: current.result, backup: backup.result, revision: counter.result };
         if (JSON.stringify(actual) !== beforeIdentity) throw conflict();
         const original = checked.current ?? checked.backup;
-        if (envelope.version === 2 && original?.version === 1 && firstProtection.result === undefined) store.put(original, 'beforeProtection');
+        if (envelope.document.version === 2 && original?.document.version === 1 && firstProtection.result === undefined) store.put(original, 'beforeProtection');
         if (checked.current) store.put(checked.current, 'backup');
         store.put(envelope, 'current'); store.put(envelope.storedRevision, 'revision');
       } catch (error) { failure = error instanceof FmsPersistenceError ? error : unavailable(); transaction.abort(); }
@@ -242,18 +250,25 @@ function upgradeProtectedSave(beforeIdentity: string, checked: CheckedSlots, env
 }
 
 /** null is create-only. Hashing finishes before the atomic CAS/backup/current transaction. */
-export async function saveFmsDocument(document: FmsDocument, expectedStoredRevision: number | null): Promise<FmsStoredSnapshot> {
+export async function saveFmsDocument(document: FmsDocument, expectedStoredRevision: number | null, climate: FmsMapClimate = FMS_DEFAULT_CLIMATE): Promise<FmsStoredSnapshot> {
+  if (!validFmsMapClimate(climate)) throw new FmsPersistenceError('invalid-document', '地图气候无效，未写入存档。');
   if (expectedStoredRevision !== null && (!validRevision(expectedStoredRevision) || expectedStoredRevision >= Number.MAX_SAFE_INTEGER))
     throw new FmsPersistenceError('invalid-document', '存档版本计数无效或已达上限，原存档已保留。');
   const copy = snapshotDocument(document);
   const revision = (expectedStoredRevision ?? 0) + 1;
-  const payload: Omit<FmsSaveEnvelope, 'checksum'> = {
-    format: FMS_SAVE_FORMAT, version: copy.version, storedRevision: revision, storedAt: new Date().toISOString(), document: copy,
-  };
-  const envelope: FmsSaveEnvelope = { ...payload, checksum: await checksum(payload) };
   const database = await openDatabase();
   try {
     const before = await readSlots(database);
+    // Once a slot holds climate, keep writing v3 so the climate is never silently dropped.
+    const climateSlot = [before.current, before.backup].some(slot => record(slot) && slot.version === 3);
+    const payload: Omit<FmsSaveEnvelope, 'checksum'> = {
+      format: FMS_SAVE_FORMAT, version: climateSlot || !isDefaultFmsClimate(climate) ? 3 : copy.version, storedRevision: revision, storedAt: new Date().toISOString(), document: copy,
+    };
+    if (payload.version === 3) {
+      if (copy.version !== 2) throw new FmsPersistenceError('invalid-document', '带气候的地图须先启用v2地形格式，未写入存档。');
+      payload.climate = { precipitation: climate.precipitation };
+    }
+    const envelope: FmsSaveEnvelope = { ...payload, checksum: await checksum(payload) };
     const checked = await checkSlots(before);
     if (checked.revision !== expectedStoredRevision) throw conflict();
     const previous = checked.current ?? checked.backup;

@@ -5002,7 +5002,7 @@
         "workItems": []
       }
     ],
-    "nextRecoveryTarget": "Block 2 remaining (rebellion/civil war/family rebellion, enableVassal semantics, army cap) needs new original recovery; per user order next = block 3 main menu + save management (original MainMenu: 新的对局/加载游戏/存档管理/自动保存), then block 4 province panel + map views. No upload.",
+    "nextRecoveryTarget": "Speed: 5x still below original 50 days/s; next targets army AI path search, per-frame travel asserts, geography equality. Then user order block 3 main menu + saves, block 4 province panel + views. No upload.",
     "culture47WarVisibilityCheckpoint": {
       "date": "2026-10-11",
       "task": "WEB-04-37",
@@ -13376,6 +13376,39 @@
       "browserTests": 10,
       "physicalDeviceAccepted": false,
       "visualAccepted": false,
+      "uploaded": false
+    },
+    "speed70Checkpoint": {
+      "sourceCommits": [
+        "0a1dac0c",
+        "cb2f8a67",
+        "e5506675"
+      ],
+      "status": "local-original-speed-levels-and-timescale-frames-partial",
+      "preview": "http://127.0.0.1:5383/?fms=1",
+      "artifact": ".autopilot/fms-speed70-checked",
+      "engine": "d217a4bd98a7587c586a82b4642373ae716589f08bc891250bf92aceeee446b3",
+      "frozen": [
+        "55d0",
+        "b618",
+        "672e"
+      ],
+      "evidence": "docs/evidence/fms-speed70-2026-10-21/RESULT.md",
+      "unitTests": 170,
+      "browserTests": 16,
+      "measuredDaysPerSecond": {
+        "desktop": {
+          "x1": 10.7,
+          "x3": 13.6,
+          "x5": 22.2
+        },
+        "original": {
+          "x1": 10,
+          "x3": 30,
+          "x5": 50
+        }
+      },
+      "physicalDeviceAccepted": false,
       "uploaded": false
     }
   }

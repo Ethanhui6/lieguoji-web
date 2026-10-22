@@ -40,7 +40,7 @@ export function assertFoundings47(r:FoundingRun47){
   const fail=()=>{throw Error('新建国家记录损坏，原世界保留。');};
   const num=(v:unknown)=>typeof v==='number'&&Number.isFinite(v),int=(v:unknown,min=0,max=2147483647)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max,rec=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const provinces=new Set(r.world.provinces.map(p=>p.id)),nationIds=new Set(r.world.nations.map(n=>n.id));
-  if(!exact(s,['version','rule','enabledTick','revision','records','enabled','minMonths','month','random','destinyToRebel','destinyToRebelConnected','recalTime','coreMonths','conquered','lastRebel','recent','updateDays'])||typeof s.enabled!=='boolean'||!int(s.minMonths,0,120)||!int(s.month)||!exact(s.random,['state','draws'])||!int(s.random.state,0,4294967295)||!int(s.random.draws,0,Number.MAX_SAFE_INTEGER)
+  if(!exact(s,['version','rule','enabledTick','revision','records','enabled','minMonths','month','random','destinyToRebel','destinyToRebelConnected','recalTime','coreMonths','conquered','lastRebel','recent','updateDays'])||typeof s.enabled!=='boolean'||!int(s.minMonths,0,240)||!int(s.month)||!exact(s.random,['state','draws'])||!int(s.random.state,0,4294967295)||!int(s.random.draws,0,Number.MAX_SAFE_INTEGER)
     ||!int(s.destinyToRebelConnected,0,100)||s.destinyToRebel!==s.destinyToRebelConnected+10||!num(s.recalTime)||s.recalTime>r.life.gameTime
     ||!rec(s.coreMonths)||Object.entries(s.coreMonths).some(([p,m])=>!provinces.has(p)||!rec(m)||Object.entries(m).some(([n,v])=>!nationIds.has(n)||!num(v)||v<0))
     ||!rec(s.conquered)||!exact(s.conquered,[...provinces])||Object.values(s.conquered).some(v=>!exact(v,['controller','time'])||!nationIds.has(v.controller)||!num(v.time)||v.time>r.life.gameTime)
@@ -126,7 +126,7 @@ export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonl
   }
   r.people.nextPersonId=registry.nextId;kin.revision++;
   r.sovereignty.reigns[reignId]=personId;r.sovereignty.restorations[id]=0;r.sovereignty.revision++;
-  r.houseGovernance&&(r.houseGovernance.enabled[id]=true);
+  if(r.houseGovernance)r.houseGovernance.enabled[id]=true;
   // Government rows: gold starts at 0 (a new State object), destiny by RandomDestiny.
   r.upperCombat.nations[id]={polity:identity.polity,traits:[],destiny:0,coreThreshold:2,coreYear:Math.floor(day/360),provinceOrder:[]};
   r.finance.nations[id]={gold:0,goldPerMonth:0,armyCostGold:0,goldBattleModifier:1,initializedDay:day,lastMonth:Math.floor(day/30),ledger:null};

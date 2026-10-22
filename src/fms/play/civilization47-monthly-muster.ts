@@ -19,13 +19,12 @@ import {initialArmyDecision47} from './civilization47-army-ai-state';
 const alive=(a:FoundingForces47['world']['armies'][number])=>a.troops>0&&a.status!=='destroyed';
 /** Owned candidate only. Preserves native muster kernels and documented web
  * caps/cooldowns while replacing every safety/retirement position query. */
-export function musterMonth47(r:FoundingForces47){
-  const month=Math.floor(r.world.day/30);if(r.world.day%30!==0||r.dailyEconomy.lastMusterMonth>=month)return;
-  if(r.transports.cargo.length)throw Error('旧承运军队尚未明确转成统一位置，不能接新征募。');
-  reconcileCore(r.world,r.upperCombat);const {spatial}=actualForces47(r);
-  const safe=(province:string,nation:string)=>!landHolders47(readArmySpace47(r.world,{...spatial,positions:r.armyPositions}),province).some(a=>nationsAtWar(r.world,a.nationId,nation));
-  const strength=(homeId:string)=>{const values=r.world.statecraft!.provinces.map(p=>p.population).sort((a,b)=>a-b),mid=values.length>>1,median=values.length%2?values[mid]:(values[mid-1]+values[mid])/2;return sourceLegionStrength(r.world.statecraft!.provinces.find(p=>p.provinceId===homeId)!.population,median);};
-  const create=(nationId:string,homeId:string,kind:'regular'|'emergency')=>{
+/** One new Army at its home province (ArmyManager.CreateArmies for one province):
+ * legion strength from the province against the world median population. */
+/** Legion strength of a new army from its home province (world median population). */
+export function forceStrength47(r:FoundingForces47,homeId:string){const values=r.world.statecraft!.provinces.map(p=>p.population).sort((a,b)=>a-b),mid=values.length>>1,median=values.length%2?values[mid]:(values[mid-1]+values[mid])/2;return sourceLegionStrength(r.world.statecraft!.provinces.find(p=>p.provinceId===homeId)!.population,median);}
+export function createForce47(r:FoundingForces47,spatial:ReturnType<typeof actualForces47>['spatial'],nationId:string,homeId:string,kind:'regular'|'emergency'):number{
+  const strength=(homeId:string)=>forceStrength47(r,homeId);
     let id:string;do{if(!Number.isSafeInteger(r.tactics.nextArmyId)||r.tactics.nextArmyId<1||r.tactics.nextArmyId>=2147483647)throw Error('军队编号已达上限。');id='force-'+r.tactics.nextArmyId++;}while(Object.hasOwn(r.tactics.forces,id));
     const home=r.world.provinces.find(p=>p.id===homeId)!,cell=locateTravelCell47(spatial.graph,home.center,homeId);if(!cell)throw Error('新军集结点不在实际领土内。');
     const troops=strength(homeId),unit=unitProfiles[(r.tactics.nextArmyId-2)%unitProfiles.length],name=r.world.cities.find(c=>c.provinceId===homeId)?.name??home.name;
@@ -35,7 +34,14 @@ export function musterMonth47(r:FoundingForces47){
     r.combatPersonnel.armies[id]=initializedArmyCombat47(nationId,r.clock.tick,r.combatPersonnel.nations[nationId].damageTraits);
     r.armyAutonomy.armies[id]=initialArmyDecision47();
     r.upperCombat.armies[id]={base:initializedArmyBase(traitProjection(r.upperCombat.nations[nationId].traits)),initializedTick:r.clock.tick};return troops;
-  };
+}
+export function musterMonth47(r:FoundingForces47){
+  const month=Math.floor(r.world.day/30);if(r.world.day%30!==0||r.dailyEconomy.lastMusterMonth>=month)return;
+  if(r.transports.cargo.length)throw Error('旧承运军队尚未明确转成统一位置，不能接新征募。');
+  reconcileCore(r.world,r.upperCombat);const {spatial}=actualForces47(r);
+  const safe=(province:string,nation:string)=>!landHolders47(readArmySpace47(r.world,{...spatial,positions:r.armyPositions}),province).some(a=>nationsAtWar(r.world,a.nationId,nation));
+  const strength=(homeId:string)=>forceStrength47(r,homeId);
+  const create=(nationId:string,homeId:string,kind:'regular'|'emergency')=>createForce47(r,spatial,nationId,homeId,kind);
   for(const n of r.world.nations){
     const owned=r.world.provinces.filter(p=>p.controller===n.id),land=owned.filter(p=>p.legalOwner===n.id),cap=land.length?Math.max(1,Math.floor(land.length*Math.fround(2/3))):0;
     let formed=0,cost=0;

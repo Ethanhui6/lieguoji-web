@@ -1,3 +1,4 @@
+import type {Foundings47} from './civilization47-founding-time';
 import {setVassalManager47} from './civilization47-vassal-manager';
 import {annexOwned47} from './civilization47-territory-edit';
 import {makeVassal47,releaseVassal47,reconcileVassals47} from './civilization47-vassal';
@@ -11,12 +12,14 @@ import {reconcileMilitaryClock47} from './force-tick47';
 
 /** 全局指令 and nation actions recorded as one journaled world command. */
 export type VassalEdit47={type:'make';vassalId:string;overlordId:string}|{type:'release';vassalId:string}|{type:'automatic';enabled:boolean};
-export type GlobalOrder47={kind:'alliance';edit:AllianceEdit46}|{kind:'diplomacy';edit:DiplomacyEdit}|{kind:'vassal';edit:VassalEdit47}|{kind:'annex';edit:{nationId:string;targetId:string}};
+export type GlobalOrder47={kind:'alliance';edit:AllianceEdit46}|{kind:'diplomacy';edit:DiplomacyEdit}|{kind:'vassal';edit:VassalEdit47}|{kind:'annex';edit:{nationId:string;targetId:string}}|{kind:'rebellion';edit:RebellionEdit47};
+/** EditPanelUI AI全局配置: 开启叛乱 (EnableRebellions) and 行省叛乱最小间隔 (0–240 months). */
+export type RebellionEdit47={type:'enabled';enabled:boolean}|{type:'interval';months:number};
 export const globalStamp47=(r:PoliticalRun47)=>({...politicalStamp47(r),settings:r.diplomacy.revision,alliances:r.alliances.revision,vassals:r.vassals.revision,vassalManager:r.vassalManager.revision});
 export type GlobalStamp47=ReturnType<typeof globalStamp47>;
 export function assertGlobalOrder47(v:unknown):asserts v is GlobalOrder47{
   const o=v as GlobalOrder47;
-  if(!o||typeof o!=='object'||Object.keys(o).sort().join()!=='edit,kind'||!['alliance','diplomacy','vassal','annex'].includes(o.kind)||!o.edit||typeof o.edit!=='object'||Array.isArray(o.edit))throw Error('全局指令无效。');
+  if(!o||typeof o!=='object'||Object.keys(o).sort().join()!=='edit,kind'||!['alliance','diplomacy','vassal','annex','rebellion'].includes(o.kind)||!o.edit||typeof o.edit!=='object'||Array.isArray(o.edit))throw Error('全局指令无效。');
 }
 export function applyGlobalOrder47(r:PoliticalRun47,order:GlobalOrder47,expected:GlobalStamp47){
   assertGlobalOrder47(order);
@@ -25,6 +28,10 @@ export function applyGlobalOrder47(r:PoliticalRun47,order:GlobalOrder47,expected
   const next=structuredClone(r);
   if(order.kind==='alliance')applyAllianceOwned47(next,order.edit);
   else if(order.kind==='diplomacy')applyDiplomacy(next,order.edit);
+  else if(order.kind==='rebellion'){const e=order.edit,s=(next as {foundings?:Foundings47}).foundings;if(!s)throw Error('本世界未启用叛乱规则。');
+    if(e.type==='enabled'&&Object.keys(e).sort().join()==='enabled,type'&&typeof e.enabled==='boolean'&&e.enabled!==s.enabled)s.enabled=e.enabled;
+    else if(e.type==='interval'&&Object.keys(e).sort().join()==='months,type'&&Number.isSafeInteger(e.months)&&e.months>=0&&e.months<=240&&e.months!==s.minMonths)s.minMonths=e.months;
+    else throw Error('叛乱设置无效或未变化。');s.revision++;}
   else if(order.kind==='annex'){const e=order.edit;if(Object.keys(e).sort().join()!=='nationId,targetId')throw Error('吞并参数无效。');annexOwned47(next,e.nationId,e.targetId);}
   else{const e=order.edit;
     if(e.type==='make'){if(Object.keys(e).sort().join()!=='overlordId,type,vassalId')throw Error('附庸参数无效。');makeVassal47(next,e.vassalId,e.overlordId);}

@@ -27,6 +27,8 @@ import {war26Strength} from './war26-strength';
 import {reconcileLosses} from './war27-losses';
 import {graphFor47 as graphFor46} from './sea-geography47';
 import {announce} from './civilization47-history';
+import {nativeGetMonthSince} from './native-economy/character-calendar';
+import {createNativeIsoCalendar} from './civilization47-iso-calendar';
 import {warHistoryDetails47} from './civilization47-war-history';
 import {refreshLeaderCombat47} from './civilization47-combat-state';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';
@@ -55,7 +57,7 @@ function suppressionDestiny47(r:PoliticalRun47,id:string){
 export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceReason){
   if(c.endedTick!==null)return false;
   // Only the vassal independence war (casus belli 16) is registered on the live 47 owner.
-  if(c.internal&&c.internal.casusBelliId!==16)throw Error('内部战争须由完整政治登记器结算。');
+  if(c.internal&&c.internal.casusBelliId!==16&&(c.internal.casusBelliId as number)!==14)throw Error('内部战争须由完整政治登记器结算。');
   if(c.history==='unknown'&&reason!==11&&reason!==2)throw Error('开局战争没有宣战史，不能推算和约。');
   const q=peaceQueries47(r),participants=participantNationIds46(r.nativeWars,c),key=(id:number)=>{const out=r.nativeWars.nationIds.find(n=>n[0]===id)?.[1];if(!out)throw Error('战争国家身份缺失。');return out;};
   const w=c.history==='complete'?nativeWar46(c):null;
@@ -68,6 +70,8 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
     conquerProvince:(province,target)=>{const p=r.world.provinces.find(p=>p.id===r.nativeWars.provinceIds[province.id-1])!,owner=key(idFor(target));if(p.controller!==owner)transferEconomy(r.world,p.id,p.controller,owner);p.controller=owner;if(participants.includes(p.legalOwner))p.legalOwner=owner;stripOffice(province.id);reconcileCore(r.world,r.upperCombat);reconcileParticipants28(r.nativeWars,r);w.participants=structuredClone(c.participants);w.destroyedParticipants=structuredClone(c.destroyedParticipants);},
     makeConquestAnimation:(_p,_from,_to,transfer)=>transfer,playConquestAnimations:()=>{},warnTransfer:()=>{},warnEffect:()=>{},
     applyEffect:e=>{
+      // IndependenceEffectV2: a rebel state founded by the rebellion is already separate.
+      if(e.type===7&&(c.internal?.casusBelliId as number|undefined)===14){const rebel=q.state(e.beneficiary);return rebel&&!rebel.dead?nativeEffectResult(e,1,'叛军国家在建场时已独立存在'):nativeEffectResult(e,2,'独立方不存在/已被镇压');}
       if(e.type===7&&c.internal?.casusBelliId===16){const rebel=q.state(e.beneficiary);if(!rebel||rebel.dead)return nativeEffectResult(e,2,'反抗方不存在/已灭亡');const id=key(e.beneficiary),lord=overlord46(r,id);if(lord===null)return nativeEffectResult(e,1,'反抗方已经独立');if(lord!==key(e.target))return nativeEffectResult(e,2,'反抗方当前宗主与战争目标不一致');releaseVassal47(r,id,'independence');return nativeEffectResult(e,0,null);}
       if(e.type!==6)throw Error('当前外交尚未启用该和约效果。');const a=q.state(e.beneficiary),b=q.state(e.target);if(!a||!b||b.dead)return nativeEffectResult(e,2,'赔款受益方或承担方不存在/已灭亡');const amount=nativeReparationAmount(b.gold,b.goldPerMonth);b.gold=(b.gold-amount)|0;a.gold=(a.gold+amount)|0;return nativeEffectResult(e,0,null);},
     classifyInternal:(war,plan,actual)=>nativeClassifyInternal(war as NativeInternalWar,plan,actual,q),trySuppressionDestiny:(_s,id)=>suppressionDestiny47(r,key(id)),wasSettlementOutcomeRecorded:()=>c.settlement!==null,recordOutcome:()=>{},logOutcomeComparison:()=>{},
@@ -81,7 +85,16 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
   c.endedTick=r.clock.tick;r.nativeWars.revision++;
   const label=WAR28_PEACE_LABELS[reason],names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name);
   announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。`,participants,null);
+  if((c.internal?.casusBelliId as number|undefined)===14)recordRegularRebellionEnd47(r,c);
   reconcileDiplomaticForces47(r,new Set(participants));reconcileNativeDiplomacy46(r.nativeDiplomacy,r);return true;
+}
+/** War.HandleRegularRebellionEnd: RebellionSucceededEvent or RebellionSuppressedEvent. */
+function recordRegularRebellionEnd47(r:PoliticalRun47,c:War46Campaign){
+  const key=(id:number)=>r.nativeWars.nationIds.find(n=>n[0]===id)?.[1],rebel=key(c.internal!.rebelStateId),mother=key(c.internal!.motherStateId);if(!rebel||!mother)return;
+  const name=(id:string)=>r.world.nations.find(n=>n.id===id)!.name,land=r.world.provinces.filter(p=>p.controller===rebel).length,started=c.startTime??Math.fround(c.openedTick/120*r.life.secondsPerDay);
+  const months=nativeGetMonthSince(started,r.life.gameTime,r.life.secondsPerDay,createNativeIsoCalendar(r.life.startDate));
+  if(land)announce(r.chronicle,r.world,r.clock.tick,'independence',`${name(rebel)}推翻了${name(mother)}的统治，控制了${land}个省份，历时${months}个月`,'叛乱战争以叛军存续结束（原作 RebellionSucceeded）。',[rebel,mother],null);
+  else announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`叛军${name(rebel)}被${name(mother)}成功镇压`,'叛军失去全部领土（原作 RebellionSuppressed）。',[mother,rebel],null);
 }
 export function advancePeace47(r:PoliticalRun47,monthStart:boolean){
   const active=()=>r.nativeWars.campaigns.filter(c=>c.endedTick===null);

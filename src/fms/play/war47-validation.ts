@@ -15,7 +15,7 @@ export function assertWarsSchema46(v:unknown){
   if(unknown(c,['coalition','internal','id','relationId','nations','attacker','defender','startTime','openedTick','endedTick','history','participants','destroyedParticipants','initialOwners','initialProvinceCounts','initialCapitals','goals','kills','deaths','settlement'])||c?.history!=null&&!['complete','unknown'].includes(c.history))throw Error('战争历史含未来规则或未知字段，已锁定读写。');
   if(unknown(c?.coalition,['version','members','departures'])||c?.coalition?.version!=null&&c.coalition.version!==1||Array.isArray(c?.coalition?.members)&&c.coalition.members.some(p=>unknown(p,['stateId','side','role','joinedAt','isPrimary'])||p?.side!=null&&![0,1].includes(p.side)||p?.role!=null&&![0,1,2].includes(p.role)))throw Error('参战阵营含未来规则或未知字段，已锁定读写。');
   if(Array.isArray(c?.coalition?.departures)&&c.coalition.departures.some(p=>unknown(p,['stateId','side','tick'])||p?.side!=null&&![0,1].includes(p.side)))throw Error('退战记录含未来规则，已锁定读写。');
-  if(unknown(c?.internal,['casusBelliId','legacyType','rebelStateId','motherStateId'])||c?.internal&&(c.internal.casusBelliId!==16||c.internal.legacyType!==10))throw Error('内部战争含未来规则，已锁定读写。');
+  if(unknown(c?.internal,['casusBelliId','legacyType','rebelStateId','motherStateId'])||c?.internal&&!(c.internal.casusBelliId===16&&c.internal.legacyType===10||(c.internal.casusBelliId as number)===14&&(c.internal.legacyType as number)===2))throw Error('内部战争含未来规则，已锁定读写。');
   const result=c?.settlement;
   if(unknown(result,['reason','tick','winnerSide','outcomes','enforcedGoals','transfers','effects','confirmedOwnership'])||result?.reason!=null&&(!Number.isInteger(result.reason)||result.reason<0||result.reason>11)||result?.winnerSide!=null&&![0,1,2].includes(result.winnerSide))throw Error('和约历史含未来规则或未知字段，已锁定读写。');
   for(const t of Array.isArray(result?.transfers)?result.transfers:[])if(unknown(t,['sourceGoalId','provinceId','from','to','type'])||t?.type!=null&&!externalGoals.includes(t.type))throw Error('和约转地含未知字段或未来类型，已锁定读写。');
@@ -55,7 +55,9 @@ export function assertWars47(s:War46Wars,r:War28World,allowUnregisteredRelations
    if(typeof c.attacker!=='string'||typeof c.defender!=='string'||c.attacker===c.defender||!c.nations.includes(c.attacker)||!c.nations.includes(c.defender)||!f32(c.startTime)||c.startTime>r.life.gameTime||c.initialProvinceCounts.length!==all.length||!c.coalition&&all.some(p=>p.side!==(nations.get(p.stateId)===c.attacker?0:1)))fail();
    for(const [id,count]of c.initialProvinceCounts)if(c.initialOwners.filter(p=>p[1]===id).length!==count)fail();
   }
-  if(c.internal){const v=c.internal;if(!record(v)||Object.keys(v).length!==4||v.casusBelliId!==16||v.legacyType!==10||c.history!=='complete'||v.rebelStateId!==numberById.get(c.attacker!)||v.motherStateId!==numberById.get(c.defender!)||c.goals.length!==1||c.goals[0].type!==7)fail();}else if(c.goals.some(g=>g.type===7))fail();
+  if(c.internal){const v=c.internal;if(!record(v)||Object.keys(v).length!==4||c.history!=='complete'||(v.casusBelliId===16&&v.legacyType===10?v.rebelStateId!==numberById.get(c.attacker!)||v.motherStateId!==numberById.get(c.defender!):
+    // Province rebellion (CB14, WarType 2): the mother state declares on the rebels.
+    (v.casusBelliId as number)!==14||(v.legacyType as number)!==2||v.rebelStateId!==numberById.get(c.defender!)||v.motherStateId!==numberById.get(c.attacker!))||c.goals.length!==1||c.goals[0].type!==7)fail();}else if(c.goals.some(g=>g.type===7))fail();
   const goals=new Set<number>();
   for(const g of c.goals){
    if(!record(g)||!int(g.id,1,2147483647)||goals.has(g.id)||!externalGoals.includes(g.type)||![g.addedBy,g.target,g.beneficiary].every(part)||g.target===g.beneficiary)fail();

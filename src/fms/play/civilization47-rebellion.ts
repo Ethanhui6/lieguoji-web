@@ -14,6 +14,12 @@ import {relocateLostCapitals47} from './civilization47-capitals';
 import {reconcileCore} from './core-refresh51';
 import {reconcilePortLandOwnersOwned47} from './civilization47-ports';
 import {reconcileGovernmentContinuity47} from './civilization47-political-owner';
+import {actualForces47} from './force-runtime47';
+import {readArmySpace47} from './army-space47';
+import {haltArmyTravel47} from './army-travel47-state';
+import {registerWar46,reconcileWar28Identities,stateNumber} from './war47-wars';
+import {buildParticipants47,openCoalitionRelations47} from './civilization47-diplomatic-world';
+import {createForce47} from './civilization47-monthly-muster';
 import {announce} from './civilization47-history';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';
 import {reconcileMilitaryClock47} from './force-tick47';
@@ -119,8 +125,11 @@ export function tryRebel47(r:FoundingRun47,provinceId:string,force:boolean):bool
   announce(r.chronicle,r.world,r.clock.tick,'uprising',`${p.name}发生叛乱`,`${r.world.nations.find(n=>n.id===owner)!.name}的${p.name}起兵反抗。`,[owner],p.id);
   // Former owners for whom this province was core for over 20 months may be re-established.
   const candidates=Object.entries(s.coreMonths[p.id]??{}).filter(([id,months])=>id!==owner&&months>20&&!alive47(r,id)&&(force||(r.sovereignty.restorations[id]??0)<15)).map(([id])=>id);
-  if(candidates.length&&range47(s,0,100)<50)restoreState47(r,candidates[range47(s,0,candidates.length)],p.id);
-  else foundState47(r,owner,[p.id],'叛军按行省文化建立新的国家，领袖与家族按原作新国家初始化生成。');
+  let rebel:string;
+  if(candidates.length&&range47(s,0,100)<50){rebel=candidates[range47(s,0,candidates.length)];destroyArmiesIn47(r,owner,p.id);restoreState47(r,rebel,p.id);}
+  else{destroyArmiesIn47(r,owner,p.id);rebel=foundState47(r,owner,[p.id],'叛军按行省文化建立新的国家，领袖与家族按原作新国家初始化生成。').nationId;}
+  reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);reconcileAlliances47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);reconcileWar28Identities(r.nativeWars,r as never);
+  startRebelWar47(r,rebel,owner);spawnInitialRebelArmies47(r,s,rebel);
   recordNewRebellion47(r,s,owner);
   return true;
 }
@@ -184,3 +193,41 @@ export function advanceRebellion47(r:FoundingRun47){
     if(even&&tryRebel47(r,p.id,false)){reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);reconcileAlliances47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);}
   }
 }
+
+// ---- 12c: rebel war (CB14), mother armies in the province, rebel armies ----
+/** ArmyManager.DestroyArmy for the mother state's armies standing in the rebel province. */
+function destroyArmiesIn47(r:FoundingRun47,nationId:string,provinceId:string){
+  const {spatial}=actualForces47(r),space=readArmySpace47(r.world,{...spatial,positions:r.armyPositions});
+  for(const v of space.byArmy.values()){const a=v.army;if(a.nationId!==nationId||a.status==='destroyed'||v.province?.id!==provinceId)continue;
+    a.troops=0;a.status='destroyed';a.morale=0;a.supplies=0;a.route=[];a.progress=0;r.armyPositions.records[a.id]=haltArmyTravel47(v.travel,spatial.graph);delete r.battles.plans[a.id];delete r.reorganization.active[a.id];delete r.tactics.rounds[a.id];}
+}
+/** CasusBelliServiceV2.BuildInternalWarDeclaration(mother, rebel, rebel, mother,
+ * goal 7, WarType 2, CB 14) + WarManagerV2.StartWar: the mother state declares. */
+function startRebelWar47(r:FoundingRun47,rebelId:string,motherId:string){
+  if(nationsAtWar(r.world,rebelId,motherId))return;
+  const rebel=stateNumber(r,rebelId),mother=stateNumber(r,motherId),internal={casusBelliId:14,legacyType:2,rebelStateId:rebel,motherStateId:mother} as unknown as {casusBelliId:16;legacyType:10;rebelStateId:number;motherStateId:number};
+  const members=buildParticipants47(r,motherId,rebelId,internal);openCoalitionRelations47(r,members);
+  registerWar46(r.nativeWars,r,motherId,rebelId,[{id:1,type:7,addedBy:rebel,target:mother,beneficiary:rebel,scope:{provinceIds:[],requiredCount:0}}],'complete',internal,members);
+  r.nativeDiplomacy.nations[motherId].activeTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.nations[rebelId].passiveTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.revision++;
+}
+/** CreateArmies(emergency) in `count` random provinces of the rebel state. */
+function spawnRebelArmies47(r:FoundingRun47,s:Foundings47,rebelId:string,count:number){
+  const owned=r.world.provinces.filter(p=>p.controller===rebelId);if(!owned.length)return;
+  const {spatial}=actualForces47(r);
+  for(let i=0;i<count;i++){if(r.world.armies.length>=500)break;createForce47(r,spatial,rebelId,owned[range47(s,0,owned.length)].id,'emergency');}
+}
+/** State.SpawnProvinceRebellionInitialArmies: max(1, floor(destiny / 15)). */
+function spawnInitialRebelArmies47(r:FoundingRun47,s:Foundings47,rebelId:string){
+  spawnRebelArmies47(r,s,rebelId,Math.max(1,Math.floor(f(destiny47(r,rebelId)/15))));
+}
+const rebelWar47=(r:FoundingRun47,rebelId:string)=>{const id=stateNumber(r,rebelId);return r.nativeWars.campaigns.find(c=>c.endedTick===null&&(c.internal?.casusBelliId as number|undefined)===14&&c.internal!.rebelStateId===id)??null;};
+/** State.UpdateArmy → TrySpawnProvinceRebellionReinforcement: while the rebel war
+ * has lasted at most 36 months, one more army every third war month. */
+function reinforceRebels47(r:FoundingRun47,id:string){
+  const s=r.foundings,war=s&&alive47(r,id)?rebelWar47(r,id):null;if(!s||!war)return;
+  const months=monthsSince47(r,war.startTime??Math.fround(war.openedTick/120*r.life.secondsPerDay));
+  if(months<=36&&months%3===0)spawnRebelArmies47(r,s,id,1);
+}
+/** State.AdvanceOneMonth: rebel reinforcements (UpdateArmy), then a weakened
+ * superpower's own rebellion check (ProcessRebellion). */
+export function stateRebellionMonth47(r:FoundingRun47,id:string){reinforceRebels47(r,id);processRebellion47(r,id);}

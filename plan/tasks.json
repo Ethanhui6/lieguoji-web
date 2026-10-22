@@ -13378,6 +13378,16 @@
       "visualAccepted": false,
       "uploaded": false
     },
+    "rebel77Checkpoint": {
+      "status": "local-original-province-rebellion",
+      "preview": "http://127.0.0.1:5388/?fms=1",
+      "artifact": ".autopilot/fms-rebel77-checked",
+      "engine": "313ca186c3030184b4f154409f1fea0ae1c68e4abb8a41706e3fc27a5024433a",
+      "frozen": ["41ba"],
+      "evidence": "docs/evidence/fms-rebel77-2026-10-21/RESULT.md",
+      "realDevice": "not-verified",
+      "upload": "none"
+    },
     "views74Checkpoint": {
       "status": "local-original-color-views-partial",
       "preview": "http://127.0.0.1:5387/?fms=1",

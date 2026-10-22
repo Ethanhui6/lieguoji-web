@@ -31,11 +31,17 @@ describe('original rebel state founding (StateManager.CreateRebelState + State.S
     expect(out.foundings!.records).toHaveLength(1);
     expect(out.chronicle.entries.slice(-2).map(e=>e.text)).toEqual([`${target.name}发生叛乱`,`${out.world.nations[3].name} 成立于 ${target.name}`]);
     expect(out.foundings!.records[0].day).toBe(400);
+    const war=out.nativeWars.campaigns.find(c=>c.endedTick===null&&(c.internal?.casusBelliId as number|undefined)===14)!;
+    expect(war).toBeTruthy();expect(war.attacker).toBe(parent.id);expect(war.defender).toBe(id);
+    expect(out.world.armies.filter(a=>a.nationId===id&&a.status!=='destroyed').length).toBeGreaterThanOrEqual(1);
+    expect(out.world.armies.some(a=>a.nationId===parent.id&&a.status!=='destroyed'&&a.provinceId===target.id&&out.armyPositions.records[a.id]?.status!=='moving')).toBe(false);
     for(let i=0;i<400;i++)snap=s.execute({kind:'advance',ticks:120},snap.journal.actions.length);
+    const later0=snap.run as FoundingRun47,ended=later0.nativeWars.campaigns.find(c=>(c.internal?.casusBelliId as number|undefined)===14)!;
+    if(ended.endedTick!==null)expect(later0.chronicle.entries.some(e=>/推翻了.+的统治|被.+成功镇压/.test(e.text))).toBe(true);
     const later=snap.run as FoundingRun47,family=later.kin.families[String(later.people.nations[id].id)];
     expect(family.memberIds.length+family.collateralMemberIds.length).toBeGreaterThan(1);
     expect(later.finance.nations[id].lastMonth).toBe(Math.floor(later.world.day/30));expect(later.finance.nations[id].ledger).not.toBeNull();
-    expect(later.destiny.nations[id].destiny).toBeGreaterThan(0);expect(later.world.provinces.some(p=>p.controller===id)).toBe(true);
+    expect(later.destiny.nations[id].destiny).toBeGreaterThanOrEqual(0);if(ended.endedTick===null)expect(later.world.provinces.some(p=>p.controller===id)).toBe(true);
     expect(new Culture47Session().load(snap.journal)).toEqual(snap);
   },300000);
 });

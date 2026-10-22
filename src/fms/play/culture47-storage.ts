@@ -1,3 +1,4 @@
+import {FOUNDING_RULE47} from './civilization47-founding';
 import {ARMY_BATCH_RULE47} from './army-batch47';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {FRAME_LOOP_RULE47} from './frame-loop47';
@@ -55,6 +56,8 @@ function future(e:Envelope|undefined){
     if(a?.kind==='enable-frame-loop'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FRAME_LOOP_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='frame-length'){unknown(a,['kind','ticks']);continue;}
     if(a?.kind==='global'){const p=a as unknown as {order:{kind?:string;edit?:unknown};expected:unknown};unknown(a,['kind','order','expected']);unknown(p.order,['kind','edit']);if(p.order?.kind&&!['alliance','diplomacy','vassal','annex'].includes(p.order.kind))fail();unknown(p.order?.edit,['type','scope','nationId','targetId','enabled','months','vassalId','overlordId']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization','settings','alliances','vassals','vassalManager']);continue;}
+    if(a?.kind==='enable-foundings'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FOUNDING_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
+    if(a?.kind==='rebellion'){const p=a as unknown as {expected:unknown};unknown(a,['kind','provinceId','expected']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='province'){const p=a as unknown as {edit:unknown;expected:unknown};unknown(a,['kind','edit','expected']);unknown(p.edit,['type','provinceId','current','max','modifier','locked']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='territory'){const p=a as unknown as {edit:unknown;expected:unknown};unknown(a,['kind','edit','expected']);unknown(p.edit,['nationId','provinceIds']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='family-policy'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','enabled','expected']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}

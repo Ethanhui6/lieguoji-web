@@ -1,3 +1,5 @@
+import {FOUNDING_RULE47} from './civilization47-founding';
+import {applyRebellion47,enableRebellion47} from './civilization47-rebellion';
 import {applyProvinceEdit47,assertProvinceEdit47,type ProvinceEdit47} from './civilization47-province-edit';
 import {setFrameLength47,FRAME_TICKS_BY_SPEED47} from './frame-loop47';
 import {assertGlobalOrder47,applyGlobalOrder47,type GlobalOrder47,type GlobalStamp47} from './civilization47-global-orders';
@@ -39,7 +41,7 @@ import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPolitic
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
 export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
 export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47;settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM;layout?:OpeningLayout47};
-export type Culture47Action={kind:'frame-length';ticks:number}|{kind:'global';order:GlobalOrder47;expected:GlobalStamp47}|{kind:'territory';edit:TerritoryEdit47;expected:PoliticalStamp47}|{kind:'province';edit:ProvinceEdit47;expected:PoliticalStamp47}|{kind:'enable-army-batch';rule:typeof ARMY_BATCH_RULE47;expected:PopulationStamp47}|{kind:'enable-generations';rule:typeof GENERATIONS_RULE47;expected:PopulationStamp47}|{kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'enable-recovery';rule:typeof ARMY_RECOVERY_RULE47;expected:PopulationStamp47}|{kind:'enable-frame-loop';rule:typeof FRAME_LOOP_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
+export type Culture47Action={kind:'frame-length';ticks:number}|{kind:'global';order:GlobalOrder47;expected:GlobalStamp47}|{kind:'territory';edit:TerritoryEdit47;expected:PoliticalStamp47}|{kind:'province';edit:ProvinceEdit47;expected:PoliticalStamp47}|{kind:'enable-foundings';rule:typeof FOUNDING_RULE47;expected:PopulationStamp47}|{kind:'rebellion';provinceId:string;expected:PoliticalStamp47}|{kind:'enable-army-batch';rule:typeof ARMY_BATCH_RULE47;expected:PopulationStamp47}|{kind:'enable-generations';rule:typeof GENERATIONS_RULE47;expected:PopulationStamp47}|{kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'enable-recovery';rule:typeof ARMY_RECOVERY_RULE47;expected:PopulationStamp47}|{kind:'enable-frame-loop';rule:typeof FRAME_LOOP_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export const CULTURE47_CONTINUATION_SOURCE='dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8';
 export const CULTURE47_RETIREMENT_SOURCE='9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343';
 export type LegacyCulture47Fork={engine:typeof CULTURE47_CONTINUATION_SOURCE;id:string;sequence:number};
@@ -93,6 +95,8 @@ export function assertCulture47Action(a:unknown):asserts a is Culture47Action {
   if(v.kind==='enable-retirement'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_RETIREMENT_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='enable-recovery'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_RECOVERY_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='enable-army-batch'&&exact(v,['kind','rule','expected'])&&v.rule===ARMY_BATCH_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
+  if(v.kind==='enable-foundings'&&exact(v,['kind','rule','expected'])&&v.rule===FOUNDING_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
+  if(v.kind==='rebellion'&&exact(v,['kind','provinceId','expected'])&&typeof v.provinceId==='string'&&/^p-\d+$/.test(v.provinceId)&&exact(v.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']))return;
   if(v.kind==='enable-frame-loop'&&exact(v,['kind','rule','expected'])&&v.rule===FRAME_LOOP_RULE47&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='family-policy'&&exact(v,['kind','nationId','enabled','expected'])&&typeof v.nationId==='string'&&typeof v.enabled==='boolean'&&exact(v.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']))return;
   if(v.kind==='military'&&exact(v,['kind','intent','expected'])){assertMilitaryIntent47(v.intent);assertMilitaryExpected47(v.expected,v.intent.force);return;}
@@ -125,6 +129,8 @@ function apply(r:PoliticalRun47,a:Culture47Action,observe?:ForceMotionObserver47
   if(a.kind==='enable-recovery')return enableArmyRecovery47(r,a.expected);
   if(a.kind==='enable-army-batch')return enableArmyBatch47(r,a.expected);
   if(a.kind==='enable-frame-loop')return enableFrameLoop47(r,a.expected);
+  if(a.kind==='enable-foundings')return enableRebellion47(r,a.expected);
+  if(a.kind==='rebellion')return applyRebellion47(r,a.provinceId,a.expected);
   if(a.kind==='frame-length')return setFrameLength47(r,a.ticks);
   if(a.kind==='politics')return applyPoliticalCommand47(r,a.action,a.expected);
   if(a.kind==='territory')return applyTerritoryEdit47(r,a.edit,a.expected);

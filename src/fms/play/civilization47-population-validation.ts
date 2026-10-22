@@ -11,6 +11,7 @@ import {assertOrigins47} from './civilization47-origins';
 import {assertHouses47} from './civilization47-houses';
 import {assertHouseGovernance47} from './civilization47-house-governance';
 import {assertGenerations47} from './civilization47-generations-ledger';
+import {foundingMonthOfState47,foundingTimeOfState47} from './civilization47-founding-time';
 
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&(Object.getPrototypeOf(v)===Object.prototype||Object.getPrototypeOf(v)===null);
 const exact=(v:unknown,keys:readonly string[])=>record(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -51,12 +52,14 @@ export function assertPopulation47(r:Population47) {
     assertPersonName47(p.identity,r.civilization.peopleMode,r.civilization.enabled);religion47(p.religionId!);
     // Birth ledger validates new people; old opening sources stay unchanged.
     if(p.source==='newborn'){if(!r.generations||!r.generations.births.some(b=>b.personId===p.id&&b.familyId===p.originalFamilyId))return fail();}
-    else if(p.birthTime>0||p.originalFamilyId!==(p.source==='founding'?p.familyId:0))return fail();
+    // Founding-age people of a state founded mid-run were born before its founding time.
+    else if(p.birthTime>foundingTimeOfState47(r,p.stateId)||p.originalFamilyId!==(p.source==='founding'?p.familyId:0))return fail();
+    const foundedTime=foundingTimeOfState47(r,p.stateId),foundedMonth=foundingMonthOfState47(r,p.stateId);
     const f=s.families[p.familyId],birth=l.persons[id],house=s.families[p.originalFamilyId||p.familyId].surname;
     if(p.cultureName!==f.cultureName||p.identity.cultureId!==p.cultureName||p.identity.given!==p.firstName||p.identity.house!==p.lastName||p.identity.house!==house||p.identity.gender!==p.gender||!exact(birth,['source','birthTime','age','initialAge','updatedMonth'])||birth.birthTime!==p.birthTime||birth.age!==p.age||!integer(birth.updatedMonth,12,month)||p.isAlive&&birth.updatedMonth!==month)return fail();
-    if(p.source==='founding') {if(birth.source!=='native-founding'||!integer(p.initialAge,35,54)||birth.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,0,l.secondsPerDay)||month===12&&p.age!==p.initialAge)return fail();}
+    if(p.source==='founding') {if(birth.source!=='native-founding'||!integer(p.initialAge,35,54)||birth.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge)return fail();}
     else if(birth.source!==(p.source==='newborn'?'web-newborn':'native-family')||birth.initialAge!==null||p.initialAge!==null)return fail();
-    if(p.isAlive&&(p.source!=='founding'||month!==12)&&p.age!==nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar))return fail();
+    if(p.isAlive&&(p.source!=='founding'||month!==foundedMonth)&&p.age!==nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar))return fail();
     for(const key of ['spouseId','fatherId','motherId'] as const){const ref=p[key],other=s.persons[ref];if(!integer(ref)||ref===p.id||ref>0&&(!other||(key==='spouseId'?other.familyId!==p.familyId:other.stateId!==p.stateId||(!r.houses&&other.familyId!==p.familyId))||key==='spouseId'&&(p.isAlive?(!other.isAlive||other.spouseId!==p.id):other.isAlive&&other.spouseId!==0)||key!=='spouseId'&&!other.childrenIds.includes(p.id)||key==='fatherId'&&other.gender!==0||key==='motherId'&&other.gender!==1))return fail();}
     for(const child of p.childrenIds){const c=s.persons[child];if(!c||c.fatherId!==p.id&&c.motherId!==p.id)return fail();}
     const court=r.people.persons[id];if(court&&(court.alive!==p.isAlive||court.stateId!==p.stateId||court.name!==p.identity.name||court.family!==p.identity.house||JSON.stringify(court.base)!==JSON.stringify(p.base)||JSON.stringify(court.traits)!==JSON.stringify(p.traits)))return fail();

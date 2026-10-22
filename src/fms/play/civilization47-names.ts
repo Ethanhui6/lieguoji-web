@@ -54,6 +54,8 @@ export function initialCivilization47(seed:string,count:number,owners:readonly n
   for(const [i,owner] of owners.entries()) {const cultureId=c.nations['n-'+owner].cultureId,used=cities.get(cultureId)??new Set<string>(),name=freshName(cultureId,c.mode,'city',`${seed}/city/${i}`,used);used.add(name.value);cities.set(cultureId,used);c.cities['c-'+i]={cultureId,name};}
   return c;
 }
+/** A state name not used by any current state, from the same culture pool (original GetRandomCountryKeyExceptNames). */
+export function freshStateName47(c:Civilization47,cultureId:CultureId47,seed:string):CulturalName47{return freshName(cultureId,c.mode,'state',seed,new Set(Object.values(c.nations).map(n=>n.name.value)));}
 export const nationName47=(n:NationIdentity47)=>n.name.custom??stateTitle47(n.name.value,n.cultureId,n.polity,n.religionId);
 export const cityName47=(row:Civilization47['cities'][string])=>row.name.custom??row.name.value;
 /** Current office derives from the current polity. The accession identity is

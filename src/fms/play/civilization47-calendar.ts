@@ -4,6 +4,7 @@ import {assertPopulation47} from './civilization47-population-validation';
 import type {Population47} from './civilization47-population-types';
 import {TICKS_PER_DAY} from './clock';
 import {advancePeopleMonthOwned47} from './civilization47-lifecycle';
+import {foundingMonthOfState47,foundingTimeOfState47} from './civilization47-founding-time';
 
 export type FamilyCalendarRun47=Pick<Population47,'clock'|'life'|'kin'>&{world:{day:number}};
 /** Calendar-only runtime contract; it does not validate kinship/identity,
@@ -14,11 +15,11 @@ export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false)
   const date=isoPlusDays(l.startDate,day),ageDay=dailyPending&&date.day===1?day-1:day,ageDate=isoPlusDays(l.startDate,ageDay),month=ageDate.year*12+ageDate.month-1,ageTime=Math.fround((ageDay-ageDate.day+1)*l.secondsPerDay),calendar=createNativeIsoCalendar(l.startDate);
   if(l.startDate.year!==1||l.startDate.month!==1||l.startDate.day!==1||l.currentDate.year!==date.year||l.currentDate.month!==date.month||l.currentDate.day!==date.day||l.lastAgeMonth!==month||k.lastAgeMonth!==month||k.lifecycle.lastMonth!==month||k.ageTime!==ageTime||!l.persons||!k.persons||Array.isArray(l.persons)||Array.isArray(k.persons)||Object.keys(l.persons).length!==Object.keys(k.persons).length)return fail();
   for(const [id,p] of Object.entries(k.persons)){
-    const b=l.persons[id];if(!b||!Object.hasOwn(l.persons,id)||String(p.id)!==id||!Number.isFinite(p.birthTime)||p.birthTime!==Math.fround(p.birthTime)||(p.source==='newborn'?p.birthTime>ageTime:p.birthTime>0)||b.birthTime!==p.birthTime||!integer(p.age)||p.age>20000||b.age!==p.age||typeof p.isAlive!=='boolean'||b.updatedMonth===null||!Number.isSafeInteger(b.updatedMonth)||b.updatedMonth<12||b.updatedMonth>month||p.source==='founding'&&b.source!=='native-founding'||p.source==='initial-family'&&b.source!=='native-family'||p.source==='newborn'&&b.source!=='web-newborn'||!['founding','initial-family','newborn'].includes(p.source))return fail();
+    const b=l.persons[id],foundedTime=foundingTimeOfState47(r,p.stateId),foundedMonth=foundingMonthOfState47(r,p.stateId);if(!b||!Object.hasOwn(l.persons,id)||String(p.id)!==id||!Number.isFinite(p.birthTime)||p.birthTime!==Math.fround(p.birthTime)||(p.source==='newborn'?p.birthTime>ageTime:p.birthTime>foundedTime)||b.birthTime!==p.birthTime||!integer(p.age)||p.age>20000||b.age!==p.age||typeof p.isAlive!=='boolean'||b.updatedMonth===null||!Number.isSafeInteger(b.updatedMonth)||b.updatedMonth<12||b.updatedMonth>month||p.source==='founding'&&b.source!=='native-founding'||p.source==='initial-family'&&b.source!=='native-family'||p.source==='newborn'&&b.source!=='web-newborn'||!['founding','initial-family','newborn'].includes(p.source))return fail();
     if(p.source==='founding'){
-      if(p.initialAge===null||!integer(p.initialAge)||p.initialAge<35||p.initialAge>54||b.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,0,l.secondsPerDay)||month===12&&p.age!==p.initialAge)return fail();
+      if(p.initialAge===null||!integer(p.initialAge)||p.initialAge<35||p.initialAge>54||b.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge)return fail();
     }else if(p.initialAge!==null||b.initialAge!==null)return fail();
-    if(p.isAlive&&(b.updatedMonth!==month||!(p.source==='founding'&&month===12)&&p.age!==nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar)))return fail();
+    if(p.isAlive&&(b.updatedMonth!==month||!(p.source==='founding'&&month===foundedMonth)&&p.age!==nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar)))return fail();
   }
 }
 

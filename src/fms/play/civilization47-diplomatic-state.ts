@@ -31,6 +31,9 @@ function addNation(s:NativeDiplomacy46,r:Input,id:string,origin:DiplomaticNation
  nativeInitializeWarPowers(pools,100,100,(min,max)=>Math.fround(min+Math.fround(Math.fround(diplomacyRandom46(s))*Math.fround(max-min))));
  s.nations[id]={origin,parentId,initializedTick:r.clock.tick,expansionism,activeTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,passiveTime:origin==='explicit-copy'?null:NATIVE_INITIAL_WAR_TIME,pools,updateDay:drawDay(s,r),updatedMonth:diplomacyMonth46(r)-1};
 }
+/** A state founded mid-run (original StateManager.CreateRebelState): its pools and
+ * cooldowns start like any new state; expansionism is inherited from the parent. */
+export function addFoundedNation46(s:NativeDiplomacy46,r:Input,id:string,parentId:string){if(s.nations[id])throw Error('新国家外交记录已存在。');addNation(s,r,id,'secession',parentId);revise(s);}
 export function initialNativeDiplomacy46(r:Input,origin:'new-world'|'explicit-copy'):NativeDiplomacy46{
  const s:NativeDiplomacy46={version:1,revision:0,originTick:r.clock.tick,originTime:r.life.gameTime,rng:seed(`${r.world.custom!.seed}/diplomacy30/${r.clock.tick}`),draws:0,month:diplomacyMonth46(r),lastDay:r.world.day,nations:{},relations:[],declarations:[]};
  for(const n of r.world.nations)addNation(s,r,n.id,origin,null);

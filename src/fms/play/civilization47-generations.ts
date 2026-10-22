@@ -17,10 +17,10 @@ export function enableGenerations47<T extends Population47>(input:T,expected:Pop
  r.generations={version:1,rule:GENERATIONS_RULE47,enabledTick:0,firstPersonId:r.people.nextPersonId,lastMonth:generationMonth47(r),random:{state:nameSeed(r.world.custom!.seed+'/generations47'),draws:0},initialCouples:Object.values(r.kin.persons).filter(p=>p.spouseId>p.id).map(p=>[p.id,p.spouseId]),births:[],marriages:[]};r.kin.revision++;assertPopulation47(r);return r;
 }
 function draw(s:Generations47){if(!Number.isSafeInteger(s.random.draws+1))throw Error('婚育随机记录已达精度上限。');s.random.state=(Math.imul(s.random.state,1664525)+1013904223)>>>0;s.random.draws++;return s.random.state/4294967296;}
-const everMarried=(s:Generations47,id:number)=>s.initialCouples.some(pair=>pair.includes(id))||s.marriages.some(m=>m.aId===id||m.bId===id);
+const everMarried=(s:Generations47,id:number,r?:Population47)=>s.initialCouples.some(pair=>pair.includes(id))||!!(r as {foundings?:{records:{couples:[number,number][]}[]}}|undefined)?.foundings?.records.some(f=>f.couples.some(pair=>pair.includes(id)))||s.marriages.some(m=>m.aId===id||m.bId===id);
 export function marriageEligible47(r:Population47,a:FamilyPerson47,b:FamilyPerson47){
  const s=r.generations,f=r.kin.families[a.familyId],old=r.kin.families[b.familyId];
- return !!s&&a.id!==b.id&&a.isAlive&&b.isAlive&&a.age>=18&&b.age>=18&&a.age<=60&&b.age<=60&&a.gender!==b.gender&&a.stateId===b.stateId&&a.cultureName===b.cultureName&&!a.spouseId&&!b.spouseId&&!a.childrenIds.length&&!b.childrenIds.length&&!everMarried(s,a.id)&&!everMarried(s,b.id)&&!closeKin47(r,a.id,b.id)&&!!f?.headId&&!!old?.headId&&b.source!=='founding'&&old.headId!==b.id&&!b.roles.length&&!Object.hasOwn(r.people.persons,b.id)&&!r.houses?.grants.some(g=>g.founderId===b.id)&&!r.houseGovernance?.returns.some(v=>v.familyId===f.id);
+ return !!s&&a.id!==b.id&&a.isAlive&&b.isAlive&&a.age>=18&&b.age>=18&&a.age<=60&&b.age<=60&&a.gender!==b.gender&&a.stateId===b.stateId&&a.cultureName===b.cultureName&&!a.spouseId&&!b.spouseId&&!a.childrenIds.length&&!b.childrenIds.length&&!everMarried(s,a.id,r)&&!everMarried(s,b.id,r)&&!closeKin47(r,a.id,b.id)&&!!f?.headId&&!!old?.headId&&b.source!=='founding'&&old.headId!==b.id&&!b.roles.length&&!Object.hasOwn(r.people.persons,b.id)&&!r.houses?.grants.some(g=>g.founderId===b.id)&&!r.houseGovernance?.returns.some(v=>v.familyId===f.id);
 }
 /** Private transaction: records actual registered partners, never fabricates a spouse. */
 export function marryPeopleOwned47(r:Population47,aId:number,bId:number){
@@ -55,6 +55,6 @@ export function birthPersonOwned47(r:Population47,fatherId:number,motherId:numbe
 export function advanceGenerationsMonthOwned47(r:Population47){
  const s=r.generations;if(!s)return;const month=generationMonth47(r);if(month===s.lastMonth)return;if(month!==s.lastMonth+1)throw Error('婚育月份不连续。');s.lastMonth=month;
  const people=Object.values(r.kin.persons).sort((a,b)=>a.id-b.id);
- for(const a of people){if(everMarried(s,a.id)||!a.isAlive||a.age<18||a.age>60)continue;const candidates=people.filter(b=>marriageEligible47(r,a,b));if(candidates.length&&draw(s)<.12)marryPeopleOwned47(r,a.id,candidates[Math.floor(draw(s)*candidates.length)].id);}
+ for(const a of people){if(everMarried(s,a.id,r)||!a.isAlive||a.age<18||a.age>60)continue;const candidates=people.filter(b=>marriageEligible47(r,a,b));if(candidates.length&&draw(s)<.12)marryPeopleOwned47(r,a.id,candidates[Math.floor(draw(s)*candidates.length)].id);}
  for(const father of people){const mother=r.kin.persons[father.spouseId];if(mother&&birthEligible47(r,father,mother)&&draw(s)<.12)birthPersonOwned47(r,father.id,mother.id);}
 }

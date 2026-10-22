@@ -71,8 +71,8 @@ export function attachFoundingForces47<T extends Government47>(input:T):T&Foundi
   assertGovernmentOpening47(input);if(fields.some(k=>k in input))throw Error('海陆军事创建只能初始化一次。');
   const result=build(input);assertFoundingForces47(result);return result;
 }
-export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47){
-  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm,layout));
+export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47,families?:'original'){
+  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm,layout,families));
 }
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 function same(a:unknown,b:unknown):boolean{

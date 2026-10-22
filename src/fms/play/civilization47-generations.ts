@@ -12,6 +12,7 @@ import {GENERATIONS_RULE47,generationMonth47,closeKin47,type Generations47} from
 
 export function enableGenerations47<T extends Population47>(input:T,expected:PopulationStamp47):T{
  assertPopulation47(input);const stamp=populationStamp47(input);
+ if('nobility' in input)throw Error('原作家族世界使用原作婚育，不启用网页婚育。');
  if(!expected||Object.keys(expected).length!==Object.keys(stamp).length||Object.entries(stamp).some(([k,v])=>expected[k as keyof PopulationStamp47]!==v)||input.generations||input.clock.tick!==0||input.houses?.grants.length)throw Error('婚育只能在新世界开篇明确启用，旧档保持。');
  const r=structuredClone(input);for(const f of Object.values(r.kin.families)){f.memberIds=[...f.memberIds];f.collateralMemberIds=[...f.collateralMemberIds];}for(const g of r.houses?.grants??[])g.memberIds=[...g.memberIds];
  r.generations={version:1,rule:GENERATIONS_RULE47,enabledTick:0,firstPersonId:r.people.nextPersonId,lastMonth:generationMonth47(r),random:{state:nameSeed(r.world.custom!.seed+'/generations47'),draws:0},initialCouples:Object.values(r.kin.persons).filter(p=>p.spouseId>p.id).map(p=>[p.id,p.spouseId]),births:[],marriages:[]};r.kin.revision++;assertPopulation47(r);return r;

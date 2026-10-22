@@ -72,8 +72,8 @@ export function attachGovernment47<T extends GovernmentInput47>(input:T,setup:Ec
   const destiny=openingDestiny47({...initial,upperCombat}),graph=armyGeographyFor47(r).graph,armyPositions=initialArmyPositions47(r.world.armies.map(a=>({armyId:a.id,provinceId:a.provinceId,point:r.world.provinces.find(p=>p.id===a.provinceId)!.center})),graph,geographyBinding(r));
   const result={...initial,terrainContext,upperCombat,finance,economy,destiny,armyPositions,governmentOpening};assertGovernmentOpening47(result);return result;
 }
-export function createGovernmentWorld47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47){
-  return attachGovernment47(createCivilizationWorld47(terrain,count,cityCount,relations,culture,settlementAlgorithm,layout),economy);
+export function createGovernmentWorld47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47,families?:'original'){
+  return attachGovernment47(createCivilizationWorld47(terrain,count,cityCount,relations,culture,settlementAlgorithm,layout,families),economy);
 }
 /** The run47 command owner must use this synchronized projection. Reforms do
  * not repeat initial recruitment or retroactively rewrite credited gold. */

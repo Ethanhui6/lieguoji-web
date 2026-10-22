@@ -12,6 +12,7 @@ import {assertHouses47} from './civilization47-houses';
 import {assertHouseGovernance47} from './civilization47-house-governance';
 import {assertGenerations47} from './civilization47-generations-ledger';
 import {foundingMonthOfState47,foundingTimeOfState47} from './civilization47-founding-time';
+import {assertNobility47,type NobilityRun47} from './civilization47-nobility-validation';
 
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&(Object.getPrototypeOf(v)===Object.prototype||Object.getPrototypeOf(v)===null);
 const exact=(v:unknown,keys:readonly string[])=>record(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -38,13 +39,16 @@ export function assertPopulation47(r:Population47) {
   // Extra houses need an exact recorded split; never accept arbitrary new IDs.
   assertHouses47(r);
   assertHouseGovernance47(r);
-  if(!exact(s.families,[...Object.values(r.people.nations).map(n=>String(n.id)),...(r.houses?.grants??[]).map(g=>String(g.familyId))]))return fail();
+  // Original noble families (nobility ledger) are families of their state too.
+  const nobles=(r as NobilityRun47).nobility;assertNobility47(r as NobilityRun47);
+  const nobleIds=nobles?Object.keys(nobles.families).filter(id=>!nobles.families[id].ruling):[];
+  if(!exact(s.families,[...Object.values(r.people.nations).map(n=>String(n.id)),...(r.houses?.grants??[]).map(g=>String(g.familyId)),...nobleIds]))return fail();
   const listed=new Set<number>();
   for(const [id,f] of Object.entries(s.families)){
     const head=s.persons[f?.headId];
     if(!exact(f,['id','surname','cultureName','nationId','stateId','headId','heirId','allowFemaleInheritance','memberIds','collateralMemberIds'])||!integer(f.id,1)||String(f.id)!==id||!r.civilization.enabled.includes(f.cultureName)||!Object.hasOwn(r.people.nations,f.nationId)||f.stateId!==r.people.nations[f.nationId].id||!integer(f.headId)||f.headId!==0&&(!head||head.familyId!==f.id)||typeof f.allowFemaleInheritance!=='boolean'||!uniqueIds(f.memberIds)||!uniqueIds(f.collateralMemberIds)||f.headId!==0&&!f.memberIds.includes(f.headId)&&!f.collateralMemberIds.includes(f.headId))return fail();
     for(const member of [...f.memberIds,...f.collateralMemberIds]){const p=s.persons[member];if(!p||p.familyId!==f.id||p.stateId!==f.stateId||listed.has(member))return fail();listed.add(member);}
-    if(f.id!==f.stateId&&!r.houses?.grants.some(g=>g.familyId===f.id)||f.cultureName!==r.civilization.nations[f.nationId].cultureId)return fail();
+    if(f.id!==f.stateId&&!r.houses?.grants.some(g=>g.familyId===f.id)&&!nobleIds.includes(id)||f.cultureName!==r.civilization.nations[f.nationId].cultureId)return fail();
   }
   if(listed.size!==Object.keys(s.persons).length)return fail();
   for(const [id,p] of Object.entries(s.persons)){

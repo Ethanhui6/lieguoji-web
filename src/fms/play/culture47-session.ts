@@ -40,7 +40,7 @@ import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPolitic
 // This local owner stores creation inputs and accepted commands, never accepts
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
 export const CULTURE47_RULE='real-culture-zh-politics-journal-2';
-export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47;settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM;layout?:OpeningLayout47};
+export type Culture47Opening={terrain:FmsDocument;count:number;cityCount:number;relations:'peace'|'war';setup:WorldCultureSetup47;settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM;layout?:OpeningLayout47;families?:'original'};
 export type Culture47Action={kind:'frame-length';ticks:number}|{kind:'global';order:GlobalOrder47;expected:GlobalStamp47}|{kind:'territory';edit:TerritoryEdit47;expected:PoliticalStamp47}|{kind:'province';edit:ProvinceEdit47;expected:PoliticalStamp47}|{kind:'enable-foundings';rule:typeof FOUNDING_RULE47;expected:PopulationStamp47}|{kind:'rebellion';provinceId:string;expected:PoliticalStamp47}|{kind:'enable-army-batch';rule:typeof ARMY_BATCH_RULE47;expected:PopulationStamp47}|{kind:'enable-generations';rule:typeof GENERATIONS_RULE47;expected:PopulationStamp47}|{kind:'enable-retirement';rule:typeof ARMY_RETIREMENT_RULE47;expected:PopulationStamp47}|{kind:'enable-recovery';rule:typeof ARMY_RECOVERY_RULE47;expected:PopulationStamp47}|{kind:'enable-frame-loop';rule:typeof FRAME_LOOP_RULE47;expected:PopulationStamp47}|{kind:'family-policy';nationId:string;enabled:boolean;expected:PopulationStamp47}|{kind:'family';intent:HouseIntent47;expected:PopulationStamp47}|{kind:'advance';ticks:number}|{kind:'identity';edit:CivilizationEdit47}|{kind:'succession';nationId:string}|{kind:'politics';action:PoliticalCommand47;expected:PoliticalStamp47}|{kind:'military';intent:MilitaryIntent47;expected:MilitaryExpected47};
 export const CULTURE47_CONTINUATION_SOURCE='dfd9fa64839f4bed6465b13c0a320ac629b3f57d51f3e468cf184f52f764c4e8';
 export const CULTURE47_RETIREMENT_SOURCE='9c932ccbbd33bbce53e14204552186728935858e0a689c14dd994dfaadf99343';
@@ -59,7 +59,9 @@ export function assertCulture47Journal(value:unknown):asserts value is Culture47
   if(!exact(value,['format','version','rule','engine','id','opening','actions',...(version===2?['fork']:[])])||value.format!=='lieguoji-culture-play'||(version!==1&&version!==2)||value.rule!==CULTURE47_RULE||value.engine!==__CULTURE47_ENGINE__||typeof value.id!=='string'||!/^fms-[0-9a-f-]{36}$/i.test(value.id))throw Error('文化存档包含未知版本或字段，保留原档。');
   const o=value.opening;
   const legacyOpening=exact(o,['terrain','count','cityCount','relations','setup']);
-  const partitionOpening=(exact(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm'])||exact(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout']))&&o.settlementAlgorithm===SETTLEMENT47_ALGORITHM;
+  // Optional keys: a player layout, and the original family system (families:'original').
+  const openingKeys=['terrain','count','cityCount','relations','setup','settlementAlgorithm',...(Object.hasOwn(o??{},'layout')?['layout']:[]),...(Object.hasOwn(o??{},'families')?['families']:[])];
+  const partitionOpening=exact(o,openingKeys)&&o.settlementAlgorithm===SETTLEMENT47_ALGORITHM&&(!Object.hasOwn(o,'families')||o.families==='original');
   if((!legacyOpening&&!partitionOpening)||!integer(o.count,2,24)||!integer(o.cityCount,o.count,480)||!['peace','war'].includes(String(o.relations)))throw Error('文化世界创建记录无效。');
   assertFmsDocument(o.terrain);validateCultureSetup47(o.setup as WorldCultureSetup47,o.count);
   const budget=culture47Budget(version);
@@ -162,7 +164,7 @@ export class Culture47Session {
   private build(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){
     assertCulture47Journal(journal);const o=journal.opening;
     progress?.({stage:'opening',completed:0,total:journal.actions.length,ticks:0});
-    let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,'peace',o.setup,{},o.settlementAlgorithm,o.layout));
+    let run=attachPolitics47(createFoundingForces47(o.terrain,o.count,o.cityCount,'peace',o.setup,{},o.settlementAlgorithm,o.layout,o.families));
     const fork=journal.fork;
     const previous=fork&&'previous'in fork?fork.previous:null;
     run.id=previous?.id??fork?.id??journal.id;run.world.custom!.id=run.id;

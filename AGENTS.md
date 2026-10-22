@@ -1,5 +1,7 @@
 # 列国纪执行边界
 
+> 2026-10-22 用户持续授权：“以后每次更新完版本都上传”，用于在手机上直接体验。每完成一版，经新增历史隐私审查、本地检查、preview20261006 重新绑定和 pre-push 后，快进推送开发分支 codex/ph06-world-generation 触发 Pages 预览；不更新 main，不绕过 hook。Pages 的 build:cf 不含全量单测（20分钟限时），全量单测由 Actions 的 check:full 运行。详见 docs/GITHUB_UPLOAD_2026-10-06.md。
+
 > 2026-10-06 本轮用户直接要求“继续 做完上传到GitHub”，随后确认“GitHub＋Pages预览，保留正式站”。允许经过本地检查和隐私审查的私库同分支源码快进上传与现有 Pages 原生 Git 预览，范围见 docs/GITHUB_UPLOAD_2026-10-06.md；使用独立 preview20261006 合同。此次不解除完整 PH/真机/视觉门，不更新 main，不复用已过期的9月24日授权。
 
 > **2026-10-05 用户优先级调整：** 用户明确要求先做关键功能供试玩、后续再优化。本地顺序改为 FMS 当前地图 → 自动国家／首都／城市 → 自主发展与战争、外交军令 → 独立保存恢复。允许 WEB-PH03/04 的限定核心工作先行；WEB-PH02 真机／视觉及 PH03 完整行政体验仍未完成，历史状态与全部发布锁不变。以 `webRebuild.localDevelopmentException` 和 [本轮指令证据](docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md) 为准，以下“不扩建国家”的旧顺序在此范围内被覆盖。不是完整原作等价或云端发布授权。

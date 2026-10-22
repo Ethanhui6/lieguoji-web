@@ -1,3 +1,7 @@
+import {releaseRebelProvince47} from './civilization47-nobility-fate';
+import type {NobilityRun47} from './civilization47-nobility';
+import {inCivilWar47,startCivilWar47} from './civilization47-nobility-civil-war';
+import {startFamilyRebellion47} from './civilization47-nobility-rebellion';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {populationStamp47,type PopulationStamp47} from './civilization47-population-types';
 import {sameCulture47Value} from './culture47-equal';
@@ -20,6 +24,11 @@ import {haltArmyTravel47} from './army-travel47-state';
 import {registerWar46,reconcileWar28Identities,stateNumber} from './war47-wars';
 import {buildParticipants47,openCoalitionRelations47} from './civilization47-diplomatic-world';
 import {createForce47} from './civilization47-monthly-muster';
+import {initializedArmySpeed47} from './force-speed47';
+import {traitProjection} from './upper14-state';
+import {initializedArmyBase} from './native-combat/state-traits';
+import {initializedArmyCombat47} from './civilization47-combat-state';
+import {initialArmyDecision47} from './civilization47-army-ai-state';
 import {announce} from './civilization47-history';
 import {reconcileNativeDiplomacy46} from './civilization47-diplomatic-state';
 import {reconcileMilitaryClock47} from './force-tick47';
@@ -122,6 +131,8 @@ export function tryRebel47(r:FoundingRun47,provinceId:string,force:boolean):bool
     if(!(range47(s,0,100)<chance))return false;
   }
   if(rebellionBlocker47(r,p.id))return false;
+  // Province.TryRebel: the province leaves its family without a family fate.
+  releaseRebelProvince47(r as unknown as NobilityRun47,p.id);
   announce(r.chronicle,r.world,r.clock.tick,'uprising',`${p.name}发生叛乱`,`${r.world.nations.find(n=>n.id===owner)!.name}的${p.name}起兵反抗。`,[owner],p.id);
   // Former owners for whom this province was core for over 20 months may be re-established.
   const candidates=Object.entries(s.coreMonths[p.id]??{}).filter(([id,months])=>id!==owner&&months>20&&!alive47(r,id)&&(force||(r.sovereignty.restorations[id]??0)<15)).map(([id])=>id);
@@ -203,11 +214,14 @@ function destroyArmiesIn47(r:FoundingRun47,nationId:string,provinceId:string){
 }
 /** CasusBelliServiceV2.BuildInternalWarDeclaration(mother, rebel, rebel, mother,
  * goal 7, WarType 2, CB 14) + WarManagerV2.StartWar: the mother state declares. */
-function startRebelWar47(r:FoundingRun47,rebelId:string,motherId:string){
+function startRebelWar47(r:FoundingRun47,rebelId:string,motherId:string){startInternalWar47(r,rebelId,motherId,14,2);}
+/** The mother state declares an internal war: CB 14 / WarType 2 (province
+ * rebellion) or CB 15 / WarType 4 (family rebellion). */
+export function startInternalWar47(r:FoundingRun47,rebelId:string,motherId:string,casusBelliId:10|11|12|13|14|15,legacyType:2|4|8|9|10|11,goalType:7|8|9|10=7){
   if(nationsAtWar(r.world,rebelId,motherId))return;
-  const rebel=stateNumber(r,rebelId),mother=stateNumber(r,motherId),internal={casusBelliId:14,legacyType:2,rebelStateId:rebel,motherStateId:mother} as unknown as {casusBelliId:16;legacyType:10;rebelStateId:number;motherStateId:number};
+  const rebel=stateNumber(r,rebelId),mother=stateNumber(r,motherId),internal={casusBelliId,legacyType,rebelStateId:rebel,motherStateId:mother} as unknown as {casusBelliId:16;legacyType:10;rebelStateId:number;motherStateId:number};
   const members=buildParticipants47(r,motherId,rebelId,internal);openCoalitionRelations47(r,members);
-  registerWar46(r.nativeWars,r,motherId,rebelId,[{id:1,type:7,addedBy:rebel,target:mother,beneficiary:rebel,scope:{provinceIds:[],requiredCount:0}}],'complete',internal,members);
+  registerWar46(r.nativeWars,r,motherId,rebelId,[{id:1,type:goalType as 7,addedBy:rebel,target:mother,beneficiary:rebel,scope:{provinceIds:[],requiredCount:0}}],'complete',internal,members);
   r.nativeDiplomacy.nations[motherId].activeTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.nations[rebelId].passiveTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.revision++;
 }
 /** CreateArmies(emergency) in `count` random provinces of the rebel state. */
@@ -231,3 +245,75 @@ function reinforceRebels47(r:FoundingRun47,id:string){
 /** State.AdvanceOneMonth: rebel reinforcements (UpdateArmy), then a weakened
  * superpower's own rebellion check (ProcessRebellion). */
 export function stateRebellionMonth47(r:FoundingRun47,id:string){reinforceRebels47(r,id);processRebellion47(r,id);}
+
+/** TransferFamilyArmiesToRebelState: the mother's armies of the rebel families,
+ * and those raised in the rebel land, change sides (out of battle, orders
+ * cleared); with none, one army is raised in the rebel land. */
+export function transferRebelArmies47(r:FoundingRun47,motherId:string,rebelId:string,land:ReadonlySet<string>,familyIds:ReadonlySet<number>){
+  const ledger=(r as unknown as {nobility?:{armies:Record<string,{familyId:number;central:boolean}>}}).nobility?.armies??{};
+  const {spatial}=actualForces47(r),space=readArmySpace47(r.world,{...spatial,positions:r.armyPositions});let moved=0;
+  for(const v of space.byArmy.values()){
+    const a=v.army,row=ledger[a.id];if(a.nationId!==motherId||a.status==='destroyed')continue;
+    if(!(row&&familyIds.has(row.familyId))&&!land.has(a.originId))continue;
+    if(row&&row.central&&land.has(a.originId)){row.familyId=[...familyIds][0];row.central=false;}
+    a.nationId=rebelId;a.status='idle';a.route=[];a.progress=0;r.armyPositions.records[a.id]=haltArmyTravel47(v.travel,spatial.graph);
+    delete r.battles.plans[a.id];delete r.reorganization.active[a.id];delete r.tactics.rounds[a.id];
+    r.forceSpeed.armies[a.id]=initializedArmySpeed47(r.world.custom!.seed,a.id,rebelId,r.clock.tick,false);
+    r.combatPersonnel.armies[a.id]=initializedArmyCombat47(rebelId,r.clock.tick,r.combatPersonnel.nations[rebelId].damageTraits);
+    r.armyAutonomy.armies[a.id]=initialArmyDecision47();
+    r.upperCombat.armies[a.id]={base:initializedArmyBase(traitProjection(r.upperCombat.nations[rebelId].traits)),initializedTick:r.clock.tick};
+    moved++;
+  }
+  if(!moved){const home=[...land].find(p=>r.world.provinces.find(v=>v.id===p)?.controller===rebelId);if(home&&r.world.armies.length<500)createForce47(r,spatial,rebelId,home,'emergency');}
+}
+
+/** FamilyManager.DebugTriggerFamilyRebellion / 家族面板「发动家族叛乱」: the
+ * selected noble family rebels at once (StartFamilyRebellion). */
+export function familyRebellionBlocker47(r:FoundingRun47,familyId:string):string|null{
+  const n=(r as unknown as NobilityRun47).nobility;if(!n)return '本世界未使用原作家族规则。';
+  if(!r.foundings)return '本世界未启用叛乱规则。';
+  const fam=n.families[familyId];if(!fam)return '家族不存在。';
+  if(fam.ruling)return '统治家族不能发动家族叛乱。';
+  if(!fam.controlledProvinces.length)return '没有领地的家族不能发动叛乱。';
+  if(r.world.nations.length>=50)return '本局国家记录已达上限。';
+  return null;
+}
+/** StateInfoUI.OnTriggerCivilWarButtonClicked checks. */
+export function civilWarBlocker47(r:FoundingRun47,nationId:string):string|null{
+  const run=r as unknown as NobilityRun47&FoundingRun47,n=run.nobility;if(!n)return '本世界未使用原作家族规则。';
+  if(!r.foundings)return '本世界未启用叛乱规则。';
+  if(!Object.hasOwn(r.people.nations,nationId)||!r.world.provinces.some(p=>p.controller===nationId))return '国家不存在或已灭亡。';
+  const families=Object.keys(n.families).filter(v=>n.families[v].nationId===nationId);
+  if(!families.some(v=>n.families[v].ruling))return '当前国家没有统治家族，无法发动内战';
+  const others=families.filter(v=>!n.families[v].ruling);
+  if(!others.length)return `国家家族数量太少（只有${others.length}个非统治家族），无法发动内战`;
+  const landed=others.filter(v=>n.families[v].controlledProvinces.length>0);
+  if(landed.length<2)return `需要至少2个拥有领地的非统治家族才能发动内战（当前只有${landed.length}个）`;
+  if(inCivilWar47(run,nationId))return '该国已处于进行中的内战。';
+  if(r.world.nations.length>=50)return '本局国家记录已达上限。';
+  return null;
+}
+/** FamilyManager.DebugTriggerCivilWar: the two most influential landed non-ruling families. */
+export function applyCivilWar47<T extends PoliticalRun47>(input:T,nationId:string,expected:PoliticalStamp47):T{
+  const stamp=politicalStamp47(input),keys=Object.keys(stamp) as (keyof PoliticalStamp47)[];
+  if(!expected||typeof expected!=='object'||Object.keys(expected).length!==keys.length||keys.some(k=>expected[k]!==stamp[k]))throw Error('世界已变化，请重新操作；原世界未改动。');
+  const blocked=civilWarBlocker47(input as FoundingRun47,nationId);if(blocked)throw Error(blocked);
+  const r=structuredClone(input) as T&FoundingRun47,n=(r as unknown as NobilityRun47).nobility!;
+  const rebels=Object.keys(n.families).filter(v=>n.families[v].nationId===nationId&&!n.families[v].ruling&&n.families[v].controlledProvinces.length>0).map((v,i)=>({v,i})).sort((a,b)=>n.families[b.v].influence-n.families[a.v].influence||a.i-b.i).slice(0,2).map(x=>x.v);
+  if(startCivilWar47(r as never,nationId,rebels)===null)throw Error('内战未能发生，原世界未改动。');
+  reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);reconcileAlliances47(r);
+  finishPoliticalTick47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);reconcileMilitaryClock47(r,r.clock.tick);
+  assertFoundings47(r);assertPolitics47(r);
+  return r;
+}
+export function applyFamilyRebellion47<T extends PoliticalRun47>(input:T,familyId:string,expected:PoliticalStamp47):T{
+  const stamp=politicalStamp47(input),keys=Object.keys(stamp) as (keyof PoliticalStamp47)[];
+  if(!expected||typeof expected!=='object'||Object.keys(expected).length!==keys.length||keys.some(k=>expected[k]!==stamp[k]))throw Error('世界已变化，请重新操作；原世界未改动。');
+  const blocked=familyRebellionBlocker47(input as FoundingRun47,familyId);if(blocked)throw Error(blocked);
+  const r=structuredClone(input) as T&FoundingRun47;
+  if(startFamilyRebellion47(r as never,familyId)===null)throw Error('家族叛乱未能发生，原世界未改动。');
+  reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);reconcileAlliances47(r);
+  finishPoliticalTick47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);reconcileMilitaryClock47(r,r.clock.tick);
+  assertFoundings47(r);assertPolitics47(r);
+  return r;
+}

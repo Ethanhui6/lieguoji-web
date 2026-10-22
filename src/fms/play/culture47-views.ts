@@ -25,11 +25,15 @@ const NEUTRAL=0xd8cfb8;
 export function provinceColors47(r:FoundingForces47,view:ColorView47):(index:number)=>number|null{
   const nations=new Map(r.world.nations.map(n=>[n.id,Number.parseInt(nationColor(n).slice(1),16)]));
   const cityOf=new Map(r.world.cities.map(c=>[c.provinceId,c.id]));
+  // Original-family worlds: Province.controllingFamilyId from the family ledger.
+  const nobles=(r as {nobility?:{families:Record<string,{controlledProvinces:string[]}>}}).nobility,holder=new Map<string,string>();
+  if(nobles)for(const [id,fam] of Object.entries(nobles.families))for(const p of fam.controlledProvinces)holder.set(p,id);
   return i=>{
     const p=r.world.provinces[i];if(!p)return null;
     if(view==='state'||view==='district')return nations.get(p.controller)??null;
     if(view==='alliance'){const a=allianceOf46(r,p.controller);return a?pick('alliance/'+a.id):nations.get(p.controller)??null;}
     if(view==='culture'){const city=cityOf.get(p.id),culture=city?r.civilization.cities[city]?.cultureId:undefined;return culture?pick('culture/'+culture):NEUTRAL;}
+    if(view==='family'&&nobles){const id=holder.get(p.id);return id===undefined?NEUTRAL:pick('family/'+id);}
     if(view==='family'){const id=houseTitle47(r,p.id);return id===null?NEUTRAL:pick('family/'+id);}
     const religion=r.civilization.nations[p.controller]?.religionId;return religion?pick('religion/'+religion):NEUTRAL;
   };
@@ -37,6 +41,7 @@ export function provinceColors47(r:FoundingForces47,view:ColorView47):(index:num
 /** Key fragment so the renderer recolors only when the view's inputs change. */
 export function colorViewKey47(r:FoundingForces47,view:ColorView47):string{
   if(view==='alliance')return JSON.stringify(r.alliances.records.filter(a=>a.endedTick===null).map(a=>[a.id,a.members]));
+  if(view==='family'&&(r as {nobility?:unknown}).nobility)return JSON.stringify(Object.entries((r as unknown as {nobility:{families:Record<string,{controlledProvinces:string[]}>}}).nobility.families).map(([id,f])=>[id,f.controlledProvinces]));
   if(view==='family')return JSON.stringify(r.houses?.grants.length??0)+'/'+JSON.stringify(r.houseGovernance?.returns.length??0);
   if(view==='religion')return r.world.nations.map(n=>r.civilization.nations[n.id]?.religionId).join(',');
   if(view==='culture')return String(r.civilization.revision);

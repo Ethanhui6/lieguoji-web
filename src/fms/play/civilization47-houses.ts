@@ -76,7 +76,7 @@ export function assertHouses47(r:Population47){
  // Branch families and states founded mid-run share one id sequence, in creation order.
  const allocated=[...h.grants.map(g=>g?.familyId),...founded].sort((a,b)=>a-b);if(allocated.some((id,i)=>id!==first+i))return fail();let lastFamily=0;
  const moved=new Set<number>(),lands=new Set<string>();let tick=0,entryId=0;
- for(const [i,g] of h.grants.entries()){
+ for(const g of h.grants){
   const f=r.kin.families[g?.familyId],parent=r.kin.families[g?.parentId],p=r.kin.persons[g?.founderId],e=r.chronicle.entries.find(e=>e.id===g?.entryId);
   if(!exact(g,['familyId','parentId','founderId','nationId','provinceId','memberIds','day','tick','entryId'])||g.familyId<=lastFamily||!f||!parent||parent.id!==parent.stateId||!p||p.familyId!==f.id||f.stateId!==parent.stateId||f.nationId!==g.nationId||f.surname!==parent.surname||f.cultureName!==parent.cultureName||!Array.isArray(g.memberIds)||new Set(g.memberIds).size!==g.memberIds.length||!g.memberIds.includes(g.founderId)||(!r.generations&&(g.memberIds.length!==f.memberIds.length+f.collateralMemberIds.length||g.memberIds.some(id=>moved.has(id)||r.kin.persons[id]?.familyId!==f.id)))||!e||e.kind!=='diplomacy'||e.place?.id!==g.provinceId||e.nationIds.length!==1||e.nationIds[0]!==g.nationId||e.day!==g.day||e.tick!==g.tick||g.tick<tick||(!r.houseGovernance&&lands.has(g.provinceId))||!r.world.provinces.some(p=>p.id===g.provinceId))return fail();
   if(g.entryId<=entryId)return fail();entryId=g.entryId;lastFamily=g.familyId;

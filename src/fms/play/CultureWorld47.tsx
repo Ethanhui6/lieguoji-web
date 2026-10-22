@@ -19,6 +19,8 @@ import {CultureLayoutEditor47} from './CultureLayoutEditor47';
 import type {OpeningLayout47} from './opening-layout47';
 import {populationStamp47} from './civilization47-population-types';
 import {CultureHouses47} from './CultureHouses47';
+import {CultureNobility47} from './CultureNobility47';
+import type {NobilityRun47} from './civilization47-nobility';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
 import {useEffect,useLayoutEffect,useRef,useState,useMemo,type ReactNode} from 'react';
@@ -107,6 +109,7 @@ function NationIdentity({run,id,cityId,busy,act,diplomacy,pause,originalEngine=f
     </form></details>
     <details className="c47-cities-section" open={cityId!==null||undefined}><summary>城市 · {cities.length}</summary>{city&&<CityIdentity key={city.id+'/'+run.civilization.cities[city.id].name.custom} cityId={city.id} run={run} busy={busy} edit={edit}/>}<div className="c47-city-list">{cities.map(c=><span key={c.id}>{c.id===nation.capitalId?'♛ ':''}{c.name}</span>)}</div></details>
     {run.houses&&familyCapable&&<CultureHouses47 run={run} id={id} busy={busy} act={act} pause={pause}/>}
+    {(run as unknown as NobilityRun47).nobility&&<CultureNobility47 run={run} id={id} busy={busy} act={act} pause={pause}/>}
     <details onToggle={e=>setFamilyOpen(e.currentTarget.open)}><summary>{family?culture47(identity.cultureId).houseLabel+' · '+family.surname:'家族'}</summary>{family&&<><div className="c47-family-summary"><strong>族长 · {run.kin.persons[family.headId]?.identity.name??'暂缺'}</strong><small>{members.filter(p=>p.isAlive).length} 位在世 · {members.length} 位登记成员</small></div><CultureFamilyPeople47 run={run} ids={members.map(p=>p.id)} leaderId={head??undefined}/></>}{heir&&<><p>继承候选：{heir.name}，{heir.age} 岁</p><button disabled={busy} onClick={()=>setPending(true)}>安排传位</button>{pending&&<div role="group" aria-label="确认传位"><p>由 {heir.name} 接任{heir.title}，成为第 {heir.order} 任。</p><button disabled={busy} onClick={()=>{act({kind:'succession',nationId:id});setPending(false);}}>确认传位</button><button onClick={()=>setPending(false)}>取消</button></div>}</>}</details>
   </>;
 }
@@ -233,7 +236,8 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
       let s=reuse??await client.current.send(dispatched,{signal:op.signal,progress:replayProgress,longReplay:true});if(lifetime.current?.signal.aborted)return;
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-retirement',rule:ARMY_RETIREMENT_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-recovery',rule:ARMY_RECOVERY_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
-      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-generations',rule:GENERATIONS_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
+      // Original-family worlds use the original births and marriages instead.
+      if(command.type==='create'&&!(s.run as unknown as NobilityRun47).nobility)s=await client.current.send({type:'action',action:{kind:'enable-generations',rule:GENERATIONS_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       // New worlds run the original frame loop (frame-loop47.ts); loaded saves keep their own rules.
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-frame-loop',rule:FRAME_LOOP_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-army-batch',rule:ARMY_BATCH_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
@@ -531,7 +535,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
       <fieldset><legend>启用文化</legend><div className="c47-cultures">{CULTURE_IDS47.map(id=><label key={id} className={enabled.includes(id)?'is-selected':''}><input type="checkbox" aria-label={`文化：${CULTURES47[id].label}`} checked={enabled.includes(id)} onChange={e=>setEnabled(old=>e.target.checked?[...old,id]:old.filter(c=>c!==id))}/>{CULTURES47[id].label}</label>)}</div></fieldset>
       <details className="c47-nation-setup"><summary>逐国配置文化、宗教与政体</summary>{Array.from({length:count},(_,i)=>{const c=choice(i);return <div className="c47-choice" key={i}><strong>国家 {i+1}</strong><select aria-label={`国家${i+1}文化`} value={c.cultureId} onChange={e=>{const n=culture47(e.target.value);setChoice(i,{cultureId:n.id,religionId:n.suggestedReligion,polity:n.suggestedPolity});}}>{enabled.map(id=><option value={id} key={id}>{CULTURES47[id].label}</option>)}</select><select aria-label={`国家${i+1}宗教`} value={c.religionId} onChange={e=>setChoice(i,{religionId:e.target.value as ReligionId47})}>{Object.entries(RELIGIONS47).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select><select aria-label={`国家${i+1}政体`} value={c.polity} onChange={e=>setChoice(i,{polity:e.target.value as NativePolity})}>{POLITIES47.map(p=><option key={p} value={p}>{polityLabels[p]}</option>)}</select></div>;})}</details>
       <label className="c47-war"><input type="checkbox" checked={war} onChange={e=>setWar(e.target.checked)}/>战乱开局</label>
-      <button className="c47-primary" disabled={busy||storageReading||!enabled.length} onClick={()=>void send({type:'create',opening:{terrain,count,cityCount,relations:war?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,...(layout?{layout}:{}),setup:{mode,enabled,nations:Object.fromEntries(Array.from({length:count},(_,i)=>['n-'+i,choice(i)]))}}})}>{busy?'正在建立文明…':'从当前地图创建文化世界'}</button>
+      <button className="c47-primary" disabled={busy||storageReading||!enabled.length} onClick={()=>void send({type:'create',opening:{terrain,count,cityCount,relations:war?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,families:'original',...(layout?{layout}:{}),setup:{mode,enabled,nations:Object.fromEntries(Array.from({length:count},(_,i)=>['n-'+i,choice(i)]))}}})}>{busy?'正在建立文明…':'从当前地图创建文化世界'}</button>
       {locked&&!storageReading&&<button onClick={()=>setStorageAttempt(n=>n+1)}>重新读取存档</button>}
       {saved&&<button disabled={busy} onClick={()=>void send({type:'load',journal:saved.journal})}>{busy?'正在恢复文化世界…':'继续文化世界'}{saved.recovered?'（已找到有效备份）':''}</button>}
       <button disabled={busy||storageReading} onClick={()=>setMenu('load')}>加载游戏</button>

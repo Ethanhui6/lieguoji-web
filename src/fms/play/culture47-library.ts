@@ -35,7 +35,7 @@ export function sanitizeSaveName47(input:string,now=new Date()):string{
 /** The continue slot a loaded journal belongs to (same scope rules as culture47-storage). */
 export function culture47ScopeOf(j:Culture47Journal):Culture47Database{
   if(j.fork)return j.fork.engine===CULTURE47_RETIREMENT_SOURCE?CULTURE47_RETIREMENT_DATABASE:CULTURE47_LONGPLAY_DATABASE;
-  return j.actions.some(a=>a.kind==='enable-generations')?CULTURE47_GENERATIONS_DATABASE:CULTURE47_FRESH_DATABASE;
+  return j.actions.some(a=>a.kind==='enable-generations')||(j.opening as {families?:string}).families==='original'?CULTURE47_GENERATIONS_DATABASE:CULTURE47_FRESH_DATABASE;
 }
 function open(factory:IDBFactory,name=CULTURE47_LIBRARY_DATABASE):Promise<IDBDatabase>{return new Promise((resolve,reject)=>{
   let ended=false;const r=factory.open(name,1),timer=setTimeout(()=>{if(!ended){ended=true;reject(Error('打开存档库超时，请关闭其他占用页面后重试。'));}},8000);

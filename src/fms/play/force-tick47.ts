@@ -6,6 +6,8 @@ import {forceKey47} from './force-motion47';
 import {assertForceClock47,reconcileAttackClock47,rescheduleAttack47,type ForceClock47} from './force-clock47';
 import {assertForceDamage47,type ForceDamage47} from './force-losses47';
 import {applyAccountedVolley47} from './force-accounting47';
+import {recordBattleMerit47,recordConquestMerit47} from './civilization47-nobility-war';
+import type {NobilityRun47} from './civilization47-nobility';
 import {nationsAtWar} from './realtime-statecraft';
 import {advanceOwnedTacticsOccupation47,type ProvinceCombat47} from './war47-occupation';
 import type {Province,World} from '../../sim/types';
@@ -66,7 +68,9 @@ function occupy<T extends MilitaryRun47>(r:T,now:number,due:ReadonlySet<string>,
   // twice per tick cannot change a flag or resistance value.
   if(!r.occupation.sieges.length&&![...f.spatial.space.byArmy.values()].some(v=>v.province&&v.army.status!=='retreating'&&nationsAtWar(r.world,v.army.nationId,v.province.controller)))return f;
   const previous={provinces:r.world.provinces.map(p=>({id:p.id,controller:p.controller}))};
-  const out=advanceOwnedTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w,f.spatial.space):undefined);
+  const out=advanceOwnedTacticsOccupation47(r.world,r.occupation,r.units,Math.floor(now),armyDue,r.tactics.unopposed,{...r.terrainContext,upper:r.upperCombat,finance:r.finance},{...f.spatial,positions:r.armyPositions},r.portControl,rules.occupation?w=>rules.occupation!(r,w,f.spatial.space):undefined,
+    // Army.BattleInProvince → RecordConquestMerit for original-family worlds.
+    (_province,armyId)=>{if(armyId&&(r as unknown as NobilityRun47).nobility)recordConquestMerit47(r as unknown as NobilityRun47,armyId);});
   r.world=out.world;r.occupation=out.occupation;
   if(rules.afterOccupation?.(r)!==undefined)throw Error('地权同步必须同步完成，原进度未提交。');
   rules.afterOwnership?.(r,previous);
@@ -121,6 +125,8 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
         // Draw before casualties; every due unit fires from the same snapshot.
         for(const key of due)rescheduleAttack47(r.forceClock,key,now,F);
         const out=applyAccountedVolley47(r,due,rules.combat(r));r=out.run;
+        // AddDamageToEnemyArmyInProvince → RecordBattleMerit for original-family worlds.
+        if((r as unknown as NobilityRun47).nobility)for(const hit of out.nativeHits){const [ak,aid]=JSON.parse(hit.attacker) as [string,string],[vk]=JSON.parse(hit.victim) as [string,string];if(ak==='army'&&vk==='army')recordBattleMerit47(r as unknown as NobilityRun47,aid,hit.nativeDamage);}
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});
         // Web simultaneous-unit policy: even dying units fired the volley;
         // only surviving real holders attack/repair resistance or change flags.

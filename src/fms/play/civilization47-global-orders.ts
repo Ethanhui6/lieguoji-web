@@ -12,14 +12,16 @@ import {reconcileMilitaryClock47} from './force-tick47';
 
 /** 全局指令 and nation actions recorded as one journaled world command. */
 export type VassalEdit47={type:'make';vassalId:string;overlordId:string}|{type:'release';vassalId:string}|{type:'automatic';enabled:boolean};
-export type GlobalOrder47={kind:'alliance';edit:AllianceEdit46}|{kind:'diplomacy';edit:DiplomacyEdit}|{kind:'vassal';edit:VassalEdit47}|{kind:'annex';edit:{nationId:string;targetId:string}}|{kind:'rebellion';edit:RebellionEdit47};
+export type GlobalOrder47={kind:'alliance';edit:AllianceEdit46}|{kind:'diplomacy';edit:DiplomacyEdit}|{kind:'vassal';edit:VassalEdit47}|{kind:'annex';edit:{nationId:string;targetId:string}}|{kind:'rebellion';edit:RebellionEdit47}|{kind:'families';edit:FamilySettingsEdit47};
+/** AI全局配置: 允许家族叛乱 / 家族叛乱最小间隔 / 允许内战 / 内战最小间隔 (original-family worlds). */
+export type FamilySettingsEdit47={type:'family-rebellion'|'civil-war';enabled:boolean}|{type:'family-interval'|'civil-interval';months:number};
 /** EditPanelUI AI全局配置: 开启叛乱 (EnableRebellions) and 行省叛乱最小间隔 (0–240 months). */
 export type RebellionEdit47={type:'enabled';enabled:boolean}|{type:'interval';months:number};
 export const globalStamp47=(r:PoliticalRun47)=>({...politicalStamp47(r),settings:r.diplomacy.revision,alliances:r.alliances.revision,vassals:r.vassals.revision,vassalManager:r.vassalManager.revision});
 export type GlobalStamp47=ReturnType<typeof globalStamp47>;
 export function assertGlobalOrder47(v:unknown):asserts v is GlobalOrder47{
   const o=v as GlobalOrder47;
-  if(!o||typeof o!=='object'||Object.keys(o).sort().join()!=='edit,kind'||!['alliance','diplomacy','vassal','annex','rebellion'].includes(o.kind)||!o.edit||typeof o.edit!=='object'||Array.isArray(o.edit))throw Error('全局指令无效。');
+  if(!o||typeof o!=='object'||Object.keys(o).sort().join()!=='edit,kind'||!['alliance','diplomacy','vassal','annex','rebellion','families'].includes(o.kind)||!o.edit||typeof o.edit!=='object'||Array.isArray(o.edit))throw Error('全局指令无效。');
 }
 export function applyGlobalOrder47(r:PoliticalRun47,order:GlobalOrder47,expected:GlobalStamp47){
   assertGlobalOrder47(order);
@@ -32,6 +34,10 @@ export function applyGlobalOrder47(r:PoliticalRun47,order:GlobalOrder47,expected
     if(e.type==='enabled'&&Object.keys(e).sort().join()==='enabled,type'&&typeof e.enabled==='boolean'&&e.enabled!==s.enabled)s.enabled=e.enabled;
     else if(e.type==='interval'&&Object.keys(e).sort().join()==='months,type'&&Number.isSafeInteger(e.months)&&e.months>=0&&e.months<=240&&e.months!==s.minMonths)s.minMonths=e.months;
     else throw Error('叛乱设置无效或未变化。');s.revision++;}
+  else if(order.kind==='families'){const e=order.edit,n=(next as {nobility?:{settings:{allowFamilyRebellion:boolean;familyRebelMinMonths:number;allowCivilWar:boolean;civilWarMinMonths:number}}}).nobility;if(!n)throw Error('本世界未使用原作家族规则。');const st=n.settings;
+    if((e.type==='family-rebellion'||e.type==='civil-war')&&Object.keys(e).sort().join()==='enabled,type'&&typeof e.enabled==='boolean'){const key=e.type==='family-rebellion'?'allowFamilyRebellion':'allowCivilWar';if(st[key]===e.enabled)throw Error('家族设置未变化。');st[key]=e.enabled;}
+    else if((e.type==='family-interval'||e.type==='civil-interval')&&Object.keys(e).sort().join()==='months,type'&&Number.isSafeInteger(e.months)&&e.months>=0&&e.months<=240){const key=e.type==='family-interval'?'familyRebelMinMonths':'civilWarMinMonths';if(st[key]===e.months)throw Error('家族设置未变化。');st[key]=e.months;}
+    else throw Error('家族设置无效。');}
   else if(order.kind==='annex'){const e=order.edit;if(Object.keys(e).sort().join()!=='nationId,targetId')throw Error('吞并参数无效。');annexOwned47(next,e.nationId,e.targetId);}
   else{const e=order.edit;
     if(e.type==='make'){if(Object.keys(e).sort().join()!=='overlordId,type,vassalId')throw Error('附庸参数无效。');makeVassal47(next,e.vassalId,e.overlordId);}

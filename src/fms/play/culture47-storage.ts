@@ -44,7 +44,7 @@ function future(e:Envelope|undefined){
   if(j?.fork&&'previous'in j.fork){unknown(j.fork.previous,['engine','id','sequence']);if(j.fork.previous&&typeof j.fork.previous.engine==='string'&&j.fork.previous.engine!==CULTURE47_CONTINUATION_SOURCE)fail();}
   if(j&&(j.version>culture47JournalVersion(j.engine)||typeof j.engine==='string'&&!supportsCulture47(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
   if(j?.fork&&typeof j.fork.engine==='string'&&j.fork.engine!==CULTURE47_CONTINUATION_SOURCE&&j.fork.engine!==CULTURE47_RETIREMENT_SOURCE)fail();
-  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout']);unknown(o?.layout,['seeds','owners']);
+  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout','families']);unknown(o?.layout,['seeds','owners']);
   if(o&&Object.hasOwn(o,'settlementAlgorithm')&&o.settlementAlgorithm!==SETTLEMENT47_ALGORITHM)fail();
   unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);
@@ -55,9 +55,11 @@ function future(e:Envelope|undefined){
     if(a?.kind==='enable-army-batch'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_BATCH_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-frame-loop'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FRAME_LOOP_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='frame-length'){unknown(a,['kind','ticks']);continue;}
-    if(a?.kind==='global'){const p=a as unknown as {order:{kind?:string;edit?:unknown};expected:unknown};unknown(a,['kind','order','expected']);unknown(p.order,['kind','edit']);if(p.order?.kind&&!['alliance','diplomacy','vassal','annex','rebellion'].includes(p.order.kind))fail();unknown(p.order?.edit,['type','scope','nationId','targetId','enabled','months','vassalId','overlordId']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization','settings','alliances','vassals','vassalManager']);continue;}
+    if(a?.kind==='global'){const p=a as unknown as {order:{kind?:string;edit?:unknown};expected:unknown};unknown(a,['kind','order','expected']);unknown(p.order,['kind','edit']);if(p.order?.kind&&!['alliance','diplomacy','vassal','annex','rebellion','families'].includes(p.order.kind))fail();unknown(p.order?.edit,['type','scope','nationId','targetId','enabled','months','vassalId','overlordId']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization','settings','alliances','vassals','vassalManager']);continue;}
     if(a?.kind==='enable-foundings'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FOUNDING_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='rebellion'){const p=a as unknown as {expected:unknown};unknown(a,['kind','provinceId','expected']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
+    if(a?.kind==='civil-war'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','expected']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
+    if(a?.kind==='family-rebellion'){const p=a as unknown as {expected:unknown};unknown(a,['kind','familyId','expected']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='province'){const p=a as unknown as {edit:unknown;expected:unknown};unknown(a,['kind','edit','expected']);unknown(p.edit,['type','provinceId','current','max','modifier','locked']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='territory'){const p=a as unknown as {edit:unknown;expected:unknown};unknown(a,['kind','edit','expected']);unknown(p.edit,['nationId','provinceIds']);unknown(p.expected,['runId','day','tick','nextEventId','diplomacy','wars','civilization']);continue;}
     if(a?.kind==='family-policy'){const p=a as unknown as {expected:unknown};unknown(a,['kind','nationId','enabled','expected']);unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
@@ -102,7 +104,7 @@ function checkOrigin(j:Culture47Journal,origin?:Culture47Journal){
   if(!origin||origin.version!==(j.fork.engine===CULTURE47_RETIREMENT_SOURCE?2:1)||origin.engine!==j.fork.engine||origin.id!==j.fork.id||origin.actions.length!==j.fork.sequence||!sameCulture47Value(origin.opening,j.opening)||!sameCulture47Value(origin.actions,j.actions.slice(0,j.fork.sequence)))throw Error('续玩前史与不可轮换来源不一致，原档保留。');
 }
 function checkGenerationScope(j:Culture47Journal,database:Culture47Database){
-  const enabled=j.actions.some(a=>a.kind==='enable-generations');
+  const enabled=j.actions.some(a=>a.kind==='enable-generations')||(j.opening as {families?:string}).families==='original';
   if(enabled!==(database===CULTURE47_GENERATIONS_DATABASE)||enabled&&(j.version!==2||j.fork!==null))throw Error('婚育世界须使用独立的新世界存档，旧档保持。');
 }
 export async function loadCulture47(factory:IDBFactory=indexedDB,verify:Culture47Verifier=replay,signal?:AbortSignal,database:Culture47Database=CULTURE47_DATABASE):Promise<SavedCulture47|null>{

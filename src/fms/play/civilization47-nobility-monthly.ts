@@ -9,6 +9,10 @@ import type {NativePastRole} from './native-economy/role-history';
 import type {NobilityRun47,Nobility47,NobleFamily47} from './civilization47-nobility';
 import {f} from './native-economy/numeric';
 import {processBirths47} from './civilization47-nobility-births';
+import {checkFamilyRebellions47} from './civilization47-nobility-rebellion';
+import {checkCivilWars47} from './civilization47-nobility-civil-war';
+import {familyLostProvince47,decideFamilyFate47,executeFamilyFate47,type FateWar47} from './civilization47-nobility-fate';
+import {reconcileNobleArmies47} from './civilization47-nobility-war';
 import {checkFamilyExtinction47} from './civilization47-nobility-succession';
 import {processMarriages47} from './civilization47-nobility-marriage';
 
@@ -31,17 +35,30 @@ const stateAlive=(r:NobilityRun47,nationId:string)=>r.world.provinces.some(p=>p.
 
 export function advanceNobility47(r:NobilityRun47){
   const n=r.nobility;if(!n)return;
-  // Province.ConqueredBy / TryRebel: land that left the family's state leaves the family
-  // (controllingFamilyId = 0); the landless-family fate comes with war spoils (F4).
+  // Province.ConqueredBy: land taken by another state leaves its family
+  // (controllingFamilyId = 0); a family losing its last land meets its fate.
   const controller=new Map(r.world.provinces.map(p=>[p.id,p.controller]));
-  for(const fam of Object.values(n.families))fam.controlledProvinces=fam.controlledProvinces.filter(p=>controller.get(p)===fam.nationId);
+  for(const id of Object.keys(n.families)){const fam=n.families[id];if(!fam)continue;
+    for(const p of [...fam.controlledProvinces]){const now=controller.get(p)!;if(now!==fam.nationId&&n.families[id])familyLostProvince47(r,id,p,now,fateWar47(r,fam.nationId,now));}}
+  // State.DestroyState → ResolveFamiliesAfterDestruction for states that fell today.
+  const living=r.world.nations.filter(v=>r.world.provinces.some(p=>p.controller===v.id)).map(v=>v.id);
+  for(const dead of n.aliveStates.filter(v=>!living.includes(v))){
+    const conqueror=lastConqueror47(r,dead,living);if(!conqueror)continue;
+    for(const id of Object.keys(n.families).filter(v=>n.families[v].nationId===dead))if(n.families[id])executeFamilyFate47(r,id,decideFamilyFate47(r,id,conqueror,fateWar47(r,dead,conqueror)),conqueror);
+  }
+  n.aliveStates=living;
+  // DetermineArmyFamilyAndType for armies raised since the last day.
+  reconcileNobleArmies47(r);
   const month=monthKey(r);
   if(month!==n.month){
     if(month!==n.month+1)throw Error('家族月份不连续。');n.month=month;
     // AssignRandomUpdateDays: Random.Range(1, 29) for families of living states.
     n.monthFamilies=[];const random=nobilityRandom47(n);
     for(const [id,fam] of Object.entries(n.families)){if(!stateAlive(r,fam.nationId))continue;fam.updateDay=random.intRange(1,29);n.monthFamilies.push(id);}
-    // MonthlyUpdate: CheckFamilyRebellions (months 6/12) and CheckCivilWarConditions (12) come with F5/F6.
+    // MonthlyUpdate: CheckFamilyRebellions in months 6 and 12, CheckCivilWarConditions in 12.
+    for(const fam of Object.values(n.families))if(fam.rallyCooldown>0)fam.rallyCooldown=Math.max(0,fam.rallyCooldown-1);
+    if(r.life.currentDate.month%6===0&&(r as unknown as {foundings?:unknown}).foundings)checkFamilyRebellions47(r as Parameters<typeof checkFamilyRebellions47>[0]);
+    if(r.life.currentDate.month===12&&(r as unknown as {foundings?:unknown}).foundings)checkCivilWars47(r as Parameters<typeof checkCivilWars47>[0]);
   }
   const day=r.life.currentDate.day;
   for(const id of n.monthFamilies){
@@ -118,4 +135,15 @@ function updateClaims(fam:NobleFamily47){
   for(const [p,v] of Object.entries(fam.historicalClaims)){const c=fam.controlledProvinces.includes(p)?f(v+1):f(v-1);if(c>0)next[p]=c;}
   for(const p of fam.controlledProvinces)if(!Object.hasOwn(fam.historicalClaims,p))next[p]=1;
   fam.historicalClaims=next;
+}
+/** WarContextBridgeV2.ResolveWarForFamilyFate: the WarType of the war between the two states. */
+export function fateWar47(r:NobilityRun47,a:string,b:string):FateWar47{
+  const wars=(r as unknown as {nativeWars?:{campaigns:{attacker:string;defender:string;endedTick:number|null;internal?:Record<string,unknown>}[]}}).nativeWars;
+  const c=wars?.campaigns.find(v=>v.endedTick===null&&(v.attacker===a&&v.defender===b||v.attacker===b&&v.defender===a));
+  if(!c)return null;return (c.internal?.casusBelliId as number|undefined)===14?2:0;
+}
+/** The state holding the fallen state's former capital, else any living state. */
+function lastConqueror47(r:NobilityRun47,dead:string,living:string[]){
+  const capital=r.world.cities.find(c=>c.id===r.world.nations.find(v=>v.id===dead)?.capitalId)?.provinceId,holder=r.world.provinces.find(p=>p.id===capital)?.controller;
+  return holder&&holder!==dead&&living.includes(holder)?holder:living[0]??null;
 }

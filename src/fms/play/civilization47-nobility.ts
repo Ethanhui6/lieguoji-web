@@ -20,7 +20,7 @@ import {nameSeed} from './chronicle-records';
 export const NOBILITY_RULE47='original-families-v1';
 export type NobleFamily47={nationId:string;ruling:boolean;homeProvinceId:string;originalHomeProvinceId:string;controlledProvinces:string[];
   influence:number;wealth:number;extendedMembers:number;religionId:string;foundingTime:number;updateDay:number;
-  totalEnemyDestroyed:number;totalProvincesConquered:number;historicalClaims:Record<string,number>;historicalStateIds:string[];lastRulingTime:Record<string,number>;rulingDuration:Record<string,number>;stateResidenceMonths:Record<string,number>};
+  totalEnemyDestroyed:number;totalProvincesConquered:number;rallyCooldown:number;historicalClaims:Record<string,number>;historicalStateIds:string[];lastRulingTime:Record<string,number>;rulingDuration:Record<string,number>;stateResidenceMonths:Record<string,number>};
 /** month/year: last calendar month and year processed; monthFamilies: the
  * month's update list; collaterals: CreateCollateralMember records; detached:
  * dead collateral dropped from the family list (still in the population). */
@@ -35,7 +35,17 @@ export type Nobility47={version:1;rule:typeof NOBILITY_RULE47;families:Record<st
   /** Ruling family by state when not the state family (SetRulingFamily); families retired by CheckFamilyExtinction. */
   rulingFamilies:Record<string,number>;extinct:number[];
   /** Family.relations: stored relation of a family towards another (rally, exile). */
-  relations:Record<string,Record<string,number>>};
+  relations:Record<string,Record<string,number>>;
+  /** Army.familyId / isCentralArmy (DetermineArmyFamilyAndType). */
+  armies:Record<string,{familyId:number;central:boolean}>;
+  /** States alive at the last daily update (to detect DestroyState). */
+  aliveStates:string[];
+  /** AI全局配置: 允许家族叛乱/家族叛乱最小间隔 (18)/允许内战/内战最小间隔 (36); State.timeStampLastFamilyRebellion. */
+  settings:{allowFamilyRebellion:boolean;familyRebelMinMonths:number;allowCivilWar:boolean;civilWarMinMonths:number};lastFamilyRebellion:Record<string,number>;
+  /** State.timeStampLastCivilWar per mother state; running civil wars by rebel state. */
+  lastCivilWar:Record<string,number>;civilWars:Record<string,CivilWar47>};
+/** One civil war started by StartCivilWar (names kept for the end record). */
+export type CivilWar47={motherId:string;type:8|9|10|11;cause:string;familyId:number;familyIds:number[];rebelName:string;motherName:string};
 export type NobilityRun47=Population47&{nobility?:Nobility47};
 
 const provinceNumber=(id:string)=>Number(id.slice(2))+1;
@@ -47,7 +57,7 @@ const provinceKey=(n:number)=>'p-'+(n-1);
 export function attachNobility47<T extends Population47>(input:T):T&{nobility:Nobility47}{
   if(input.clock.tick!==0||'nobility' in input||input.houses||input.generations)throw Error('原作家族只能在新世界开局建立。');
   const r=structuredClone(input) as T&{nobility:Nobility47},seed=r.world.custom!.seed,life:Life47=r.life,kin:Kin47=r.kin,calendar=createNativeIsoCalendar(life.startDate);
-  const nobility:Nobility47={version:1,rule:NOBILITY_RULE47,families:{},month:nobilityMonth47(r),year:r.life.currentDate.year,monthFamilies:[],random:{state:nameSeed(seed+'/nobility47'),draws:0},collaterals:[],detached:[],redistribution:{},warContributions:{},births:[],marriages:[],rulingFamilies:{},extinct:[],relations:{}};r.nobility=nobility;
+  const nobility:Nobility47={version:1,rule:NOBILITY_RULE47,families:{},month:nobilityMonth47(r),year:r.life.currentDate.year,monthFamilies:[],random:{state:nameSeed(seed+'/nobility47'),draws:0},collaterals:[],detached:[],redistribution:{},warContributions:{},births:[],marriages:[],rulingFamilies:{},extinct:[],relations:{},armies:{},aliveStates:r.world.nations.filter(v=>r.world.provinces.some(p=>p.controller===v.id)).map(v=>v.id),settings:{allowFamilyRebellion:true,familyRebelMinMonths:18,allowCivilWar:true,civilWarMinMonths:36},lastFamilyRebellion:{},lastCivilWar:{},civilWars:{}};r.nobility=nobility;
   const scale=r.world.provinces.length?(r as unknown as {scale:number}).scale:1;
   const centers=new Map(r.world.provinces.map(p=>[provinceNumber(p.id),{x:p.center.x/scale,y:p.center.y/scale}]));
   // State.CalculateProvincesDistance: distance between the province centres (original map units).
@@ -84,11 +94,12 @@ export function attachNobility47<T extends Population47>(input:T):T&{nobility:No
     p.identity=personNameFromParts47(culture47(p.cultureName!).id,p.firstName!,p.lastName!,p.gender as 0|1);kin.persons[id]=p;
     life.persons[id]={source:'native-family',birthTime:p.birthTime,age:p.age,initialAge:null,updatedMonth:12};
   }
-  r.people.nextPersonId=registry.nextId;r.people.revision++;kin.revision++;life.revision++;
+  // State and family ids share one number space (a state's family has its state id).
+  r.people.nextPersonId=registry.nextId;r.people.nextStateId=Math.max(r.people.nextStateId,nextFamilyId);r.people.revision++;kin.revision++;life.revision++;
   return r;
 }
 function nobleRecord(nationId:string,ruling:boolean,fam:NativeTerritoryFamily,religionId:string):NobleFamily47{
-  return {nationId,ruling,homeProvinceId:provinceKey(fam.homeProvinceId),originalHomeProvinceId:provinceKey(fam.homeProvinceId),controlledProvinces:fam.controlledProvinces.map(provinceKey),influence:50,wealth:100,extendedMembers:50,religionId,foundingTime:0,updateDay:1,totalEnemyDestroyed:0,totalProvincesConquered:0,historicalClaims:{},historicalStateIds:[],lastRulingTime:{},rulingDuration:{},stateResidenceMonths:{}};
+  return {nationId,ruling,homeProvinceId:provinceKey(fam.homeProvinceId),originalHomeProvinceId:provinceKey(fam.homeProvinceId),controlledProvinces:fam.controlledProvinces.map(provinceKey),influence:50,wealth:100,extendedMembers:50,religionId,foundingTime:0,updateDay:1,totalEnemyDestroyed:0,totalProvincesConquered:0,rallyCooldown:0,historicalClaims:{},historicalStateIds:[],lastRulingTime:{},rulingDuration:{},stateResidenceMonths:{}};
 }
 /** CreateNobleFamilyWithTerritory + FamilyManager.CreateFamily + GenerateNobleFamilyMembers. */
 function createNobleFamily(r:PopulationBase47,kin:Kin47,life:Life47,calendar:ReturnType<typeof createNativeIsoCalendar>,registry:{nextId:number;characters:Map<number,FamilyPerson47>},nationId:string,stateId:number,cultureId:CultureId47,religionId:string,familyId:number,origin:NativeTerritoryProvince,random:ReturnType<typeof seededCharacterRandom>):NativeTerritoryFamily|null{

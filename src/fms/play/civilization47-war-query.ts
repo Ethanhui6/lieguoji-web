@@ -1,4 +1,5 @@
 import {nativeCountLand,type NativeWarProvince} from './native-war/score';
+import {nativeAllInternalGoalsAchieved} from './native-war/achievement';
 import type {NativePeaceQueries} from './native-war/peace';
 import {nativeHasStateCollapsed,nativeGoalAchieved,type NativeCollapseQueries} from './native-war/achievement';
 import type {NativeFatigueNation} from './native-war/weariness';
@@ -27,7 +28,8 @@ export function war28Queries(r:War28World,s:War46Wars,policy:War28Policy):War28Q
   rawTerritoryLossThreshold:(_state,id)=>{const v=policy.territoryLossThreshold(nation(id));if(!Number.isFinite(v))throw Error('国家战争崩溃阈值缺失。');return Math.fround(v);},
   isDeadOrZero:id=>{const value=state(id);return !value||value.dead||nativeCountLand(value)<=0;},
   hasStateCollapsed:(war,id)=>nativeHasStateCollapsed(war,id,q),goalAchieved:(war,goal)=>nativeGoalAchieved(war,goal,q),
-  internalGoalsAchieved:()=>{throw Error('内部战争结算尚未接入，不能走外战适配。');},
+  // WarAIV2.AllInternalGoalsAchieved: wired for the family rebellion (WarType 4) of original-family worlds.
+  internalGoalsAchieved:(war,months)=>{if(war.legacyWarType!==4&&!(war.legacyWarType>=8&&war.legacyWarType<=11))throw Error('内部战争结算尚未接入，不能走外战适配。');return nativeAllInternalGoalsAchieved(war,months,q);},
   autonomousDiplomacy:id=>{const v=policy.autonomousDiplomacy(nation(id));if(typeof v!=='boolean')throw Error('国家自主外交开关缺失。');return v;},
  };
  return q;

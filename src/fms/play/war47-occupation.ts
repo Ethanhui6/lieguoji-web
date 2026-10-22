@@ -43,7 +43,7 @@ export function advanceTacticsOccupation47(world:World,state:OccupationState,uni
 /** Only a military window's already isolated candidate may use this form.
  * Reconciliation and every sequential capture still run; a later failure is
  * rolled back by discarding the outer candidate, including upper and economy. */
-export function advanceOwnedTacticsOccupation47(w:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46,combatFactory?:(world:World)=>ProvinceCombat47){
+export function advanceOwnedTacticsOccupation47(w:World,state:OccupationState,units:UnitAssignments,tick:number,due:Set<string>,unopposed:TacticsState['unopposed'],terrain:TerrainContext,spatial:ArmySpaceInput47,ports?:Ports46,combatFactory?:(world:World)=>ProvinceCombat47,onCapture?:(provinceId:string,armyId:string|null)=>void){
   const s=reconcileOccupation(w,state).occupation,local=stationed(readArmySpace47(w,spatial));
   const combat=combatFactory?.(w);
   for(const p of w.provinces){const group=local.get(p.id)??[];let siege=s.sieges.find(v=>v.provinceId===p.id);if(!siege&&!group.some(a=>nationsAtWar(w,a.nationId,p.controller)))continue;const forces=forcesFromGroup(w,p.id,units,group,terrain,ports,undefined,combat);if(!forces.attacker&&!siege)continue;
@@ -55,14 +55,14 @@ export function advanceOwnedTacticsOccupation47(w:World,state:OccupationState,un
     if(!siege&&forces.attacker){const maximum=resistanceCapacity(w,p);siege={provinceId:p.id,controller:p.controller,attacker:forces.attacker,maximum,resistance:maximum,started:tick,pulse:tick};s.sieges.push(siege);
       if(!immediate)log(w,'battle',`${p.name}${w.cities.some(c=>c.provinceId===p.id)?'争夺城防':'争夺地区'}`,'对军交锋和地区抵抗分别结算；每军独立计时，守军同时回补抵抗。');}
     if(!siege)continue;if(forces.attacker)siege.attacker=forces.attacker;
-    let conqueror=immediate?forces.attacker:null;if(immediate)siege.resistance=0;
+    let conqueror=immediate?forces.attacker:null,captor:string|null=immediate?[...attackers].sort((a,b)=>a.id.localeCompare(b.id))[0]?.id??null:null;if(immediate)siege.resistance=0;
     else for(const a of group.filter(a=>due.has(a.id)).sort((a,b)=>a.id.localeCompare(b.id))){
       const resolved=combat?.(a,p),damage=provinceDamage46(resolved?Math.fround(resolved.damageToProvince*resolved.efficiency):10*combatEfficiency(w,a,units,p,true,terrain),landAttackMultiplier46(w,ports,p.id,a.nationId));
       if(a.nationId===p.controller)siege.resistance=Math.min(siege.maximum,siege.resistance+damage);
       else if(nationsAtWar(w,a.nationId,p.controller)){siege.attacker=a.nationId;siege.resistance=Math.max(0,siege.resistance-damage);}
-      siege.pulse=tick;if(siege.resistance===0){conqueror=a.nationId;break;}
+      siege.pulse=tick;if(siege.resistance===0){conqueror=a.nationId;captor=a.id;break;}
     }
-    if(siege.resistance===0&&conqueror){const old=p.controller,next=conqueror;transferEconomy(w,p.id,old,next);p.controller=next;
+    if(siege.resistance===0&&conqueror){const old=p.controller,next=conqueror;transferEconomy(w,p.id,old,next);p.controller=next;onCapture?.(p.id,captor);
       // The loop observes sequential captures. Refresh ownership and distances
       // before later provinces or daily AI consume the new owner's core boost.
       reconcileCore(w,terrain.upper);

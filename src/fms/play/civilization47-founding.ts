@@ -1,6 +1,7 @@
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {culture47} from './civilization47-catalog';
-import {createRulerIdentity47,freshStateName47,nationName47,personNameFromParts47} from './civilization47-names';
+import {createRulerIdentity47,freshStateName47,nationName47,personNameFromParts47,rulerFromPerson47} from './civilization47-names';
+import {leaderRole47} from './civilization47-roles';
 import {nativeInitialCharacter,seededCharacterRandom} from './native-economy/character-generation';
 import {nativeInitStateLeaderBirth} from './native-economy/leader-birth';
 import {nativeBirthTimeFromAge} from './native-economy/character-calendar';
@@ -83,7 +84,11 @@ function colorFor(r:PoliticalRun47,index:number){
 }
 /** Creates one state on the given provinces of its parent and moves them.
  * War, armies and the rebellion texts are added by the caller. */
-export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonly string[],reason:string):Founding47{
+/** `family` (FamilyManager.StartFamilyRebellion): the state is founded by an
+ * existing family whose living member `leaderId` becomes the first ruler; the
+ * culture is the family's, and `moveFamilies` moves it (and rallied families)
+ * in before the leader takes office. The state's own family record stays empty. */
+export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonly string[],reason:string,family?:{familyId:number;leaderId:number;moveFamilies:(nationId:string)=>void}):Founding47{
   const s=r.foundings;if(!s)throw Error('本世界未启用新建国家规则。');
   const w=r.world,parent=w.nations.find(n=>n.id===parentId);if(!parent)throw Error('叛乱所属国家不存在。');
   const provinces=provinceIds.map(id=>{const p=w.provinces.find(v=>v.id===id);if(!p||p.controller!==parentId)throw Error('叛乱行省不属于该国。');return p;});
@@ -91,7 +96,7 @@ export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonl
   if(w.nations.length>=50)throw Error('本局国家记录已达上限。');
   const index=w.nations.length,id='n-'+index;if(w.nations.some(n=>n.id===id))throw Error('新国家编号冲突。');
   const capital=w.cities.find(c=>c.provinceId===provinces[0].id);if(!capital)throw Error('叛乱行省没有城市。');
-  const seed=w.custom!.seed,day=w.day,tick=r.clock.tick,c=r.civilization,cultureId=c.cities[capital.id].cultureId,profile=culture47(cultureId);
+  const seed=w.custom!.seed,day=w.day,tick=r.clock.tick,c=r.civilization,cultureId=family?r.kin.families[family.familyId].cultureName:c.cities[capital.id].cultureId,profile=culture47(cultureId);
   // Religion follows the provinces (DetermineStateReligion); the web keeps
   // religion per state, so the parent's religion is the provinces' religion.
   const identity={cultureId,religionId:c.nations[parentId].religionId,polity:profile.suggestedPolity,name:freshStateName47(c,cultureId,`${seed}/rebel-state/${id}`),origin:'secession' as const,parentId};
@@ -100,31 +105,44 @@ export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonl
   w.statecraft!.nations.push({nationId:id,priority:'balanced',lastLedger:null,lastDecision:null});
   for(const n of w.nations.filter(n=>n.id!==id)){const [a,b]=[n.id,id].sort();w.statecraft!.relations.push({a,b,status:'peace',sinceDay:day,truceUntilDay:0});}
   // Ruler identity and chronicle reign, as initialCivilizationChronicle47 does at day 0.
-  const reignId=`ruler-${id}-1`,ruler=createRulerIdentity47(c,id,reignId,seed);c.rulers[reignId]=ruler;
+  const reignId=`ruler-${id}-1`,ruler=family?rulerFromPerson47(r.kin.persons[family.leaderId].identity,identity):createRulerIdentity47(c,id,reignId,seed);c.rulers[reignId]=ruler;
   const reign:Ruler={id:reignId,name:ruler.name,family:ruler.house,order:1,regnalName:ruler.given,regnalOrdinal:1,ascendedDay:day,endedDay:null,termEndDay:day+(12+nameSeed(reignId)%14)*365};
   r.chronicle.leaders[id]=[reign];
   // Court person and founding birth (State.InitializeCurrentLeaderRecord), at the current time.
   const life=r.life,stateId=r.houses?r.houses.nextFamilyId:r.people.nextStateId;
   if(r.houses)r.houses.nextFamilyId++;r.people.nextStateId=Math.max(r.people.nextStateId,stateId+1);
   r.people.nations[id]={id:stateId,leaderId:null,offices:{assignments:[],normalized:true,revision:0}};
-  const random=seededCharacterRandom(`${seed}/native-person/${reignId}/${tick}`),generated=nativeInitialCharacter(random),personId=r.people.nextPersonId++,birth={age:0,birthTime:0};
-  nativeInitStateLeaderBirth(birth,random,age=>nativeBirthTimeFromAge(age,life.gameTime,life.secondsPerDay));
-  r.people.persons[personId]={id:personId,stateId,nationId:id,rulerId:reignId,name:ruler.name,family:ruler.house,alive:true,recordedDay:day,base:generated.base,traits:generated.traits.map(t=>t.name)};
-  r.people.nations[id].leaderId=personId;r.people.revision++;
-  const month=life.lastAgeMonth;
-  life.persons[personId]={source:'native-founding',birthTime:birth.birthTime,age:birth.age,initialAge:birth.age,updatedMonth:month};life.revision++;
-  // Ruling family (InitializeCharactersAndFamilies).
-  const name=personNameFromParts47(ruler.cultureId,ruler.given,ruler.house,ruler.gender);
-  const leader:FamilyPerson47={...nativeCharacterDefaults<string,PersonRole47,NativePastRole>(),id:personId,firstName:name.given,lastName:name.house,cultureName:name.cultureId,gender:name.gender,age:birth.age,birthTime:birth.birthTime,familyId:stateId,originalFamilyId:stateId,stateId,religionId:ruler.religionId,base:structuredClone(generated.base),traits:generated.traits.map(t=>t.name),source:'founding',initialAge:birth.age,identity:name};
-  leader.roles.push({...nativeLeaderRoleDefaults(()=>life.gameTime),nativeKind:'leader',holderId:personId,stateId,title:ruler.titleAtAccession});
-  const kin=r.kin,registry={nextId:r.people.nextPersonId,characters:new Map<number,FamilyPerson47>([[personId,leader]])};kin.persons[personId]=leader;
-  const family=kin.families[stateId]={id:stateId,surname:name.house,cultureName:name.cultureId,nationId:id,stateId,headId:personId,heirId:0,allowFemaleInheritance:false,memberIds:[personId],collateralMemberIds:[]};
-  generateFamilyMembers47(r,kin,life,registry,createNativeIsoCalendar(life.startDate),family);
-  for(const [pid,p] of registry.characters){
-    p.identity=personNameFromParts47(culture47(p.cultureName!).id,p.firstName!,p.lastName!,p.gender as 0|1);kin.persons[pid]=p;
-    if(p.source==='initial-family')life.persons[pid]={source:'native-family',birthTime:p.birthTime,age:p.age,initialAge:null,updatedMonth:month};
+  const month=r.life.lastAgeMonth;let personId:number,personIds:number[],couples:[number,number][];
+  if(family){
+    // The family (and rallied families) move in; its leader takes office (AppointLeader 'rebellion').
+    family.moveFamilies(id);
+    const leader=r.kin.persons[family.leaderId];personId=leader.id;
+    if(leader.stateId!==stateId||Object.hasOwn(r.people.persons,personId))throw Error('叛乱家族领袖无法就任。');
+    r.people.persons[personId]={id:personId,stateId,nationId:id,rulerId:reignId,name:ruler.name,family:ruler.house,alive:true,recordedDay:day,base:structuredClone(leader.base),traits:[...(leader.traits??[])]};
+    r.people.nations[id].leaderId=personId;r.people.revision++;
+    leader.roles.push(leaderRole47(r,leader,ruler.titleAtAccession));
+    r.kin.families[stateId]={id:stateId,surname:r.kin.families[family.familyId].surname,cultureName:cultureId,nationId:id,stateId,headId:0,heirId:0,allowFemaleInheritance:false,memberIds:[],collateralMemberIds:[]};
+    r.kin.revision++;personIds=[personId];couples=[];
+  }else{
+    const random=seededCharacterRandom(`${seed}/native-person/${reignId}/${tick}`),generated=nativeInitialCharacter(random),birth={age:0,birthTime:0};personId=r.people.nextPersonId++;
+    nativeInitStateLeaderBirth(birth,random,age=>nativeBirthTimeFromAge(age,life.gameTime,life.secondsPerDay));
+    r.people.persons[personId]={id:personId,stateId,nationId:id,rulerId:reignId,name:ruler.name,family:ruler.house,alive:true,recordedDay:day,base:generated.base,traits:generated.traits.map(t=>t.name)};
+    r.people.nations[id].leaderId=personId;r.people.revision++;
+    life.persons[personId]={source:'native-founding',birthTime:birth.birthTime,age:birth.age,initialAge:birth.age,updatedMonth:month};life.revision++;
+    // Ruling family (InitializeCharactersAndFamilies).
+    const name=personNameFromParts47(ruler.cultureId,ruler.given,ruler.house,ruler.gender);
+    const leader:FamilyPerson47={...nativeCharacterDefaults<string,PersonRole47,NativePastRole>(),id:personId,firstName:name.given,lastName:name.house,cultureName:name.cultureId,gender:name.gender,age:birth.age,birthTime:birth.birthTime,familyId:stateId,originalFamilyId:stateId,stateId,religionId:ruler.religionId,base:structuredClone(generated.base),traits:generated.traits.map(t=>t.name),source:'founding',initialAge:birth.age,identity:name};
+    leader.roles.push({...nativeLeaderRoleDefaults(()=>life.gameTime),nativeKind:'leader',holderId:personId,stateId,title:ruler.titleAtAccession});
+    const kin=r.kin,registry={nextId:r.people.nextPersonId,characters:new Map<number,FamilyPerson47>([[personId,leader]])};kin.persons[personId]=leader;
+    const family=kin.families[stateId]={id:stateId,surname:name.house,cultureName:name.cultureId,nationId:id,stateId,headId:personId,heirId:0,allowFemaleInheritance:false,memberIds:[personId],collateralMemberIds:[]};
+    generateFamilyMembers47(r,kin,life,registry,createNativeIsoCalendar(life.startDate),family);
+    for(const [pid,p] of registry.characters){
+      p.identity=personNameFromParts47(culture47(p.cultureName!).id,p.firstName!,p.lastName!,p.gender as 0|1);kin.persons[pid]=p;
+      if(p.source==='initial-family')life.persons[pid]={source:'native-family',birthTime:p.birthTime,age:p.age,initialAge:null,updatedMonth:month};
+    }
+    r.people.nextPersonId=registry.nextId;kin.revision++;
+    personIds=[...registry.characters.keys()];couples=[...registry.characters.values()].filter(p=>p.spouseId>p.id).map(p=>[p.id,p.spouseId] as [number,number]);
   }
-  r.people.nextPersonId=registry.nextId;kin.revision++;
   r.sovereignty.reigns[reignId]=personId;r.sovereignty.restorations[id]=0;r.sovereignty.revision++;
   if(r.houseGovernance)r.houseGovernance.enabled[id]=true;
   // Government rows: gold starts at 0 (a new State object), destiny by RandomDestiny.
@@ -144,7 +162,7 @@ export function foundState47(r:FoundingRun47,parentId:string,provinceIds:readonl
   r.occupation={...r.occupation,sieges:r.occupation.sieges.filter(v=>!moved.has(v.provinceId))};
   relocateLostCapitals47(r);reconcileCore(w,r.upperCombat);reconcilePortLandOwnersOwned47(r);
   const entry=announce(r.chronicle,w,tick,'uprising',`${w.nations[index].name} 成立于 ${provinces[0].name}`,reason,[parentId,id],provinces[0].id,[reign]);
-  const founding:Founding47={nationId:id,stateId,parentId,provinceIds:[...provinceIds],tick,day,gameTime:life.gameTime,month,leaderId:personId,personIds:[...registry.characters.keys()],couples:[...registry.characters.values()].filter(p=>p.spouseId>p.id).map(p=>[p.id,p.spouseId] as [number,number]),entryId:entry.id};
+  const founding:Founding47={nationId:id,stateId,parentId,provinceIds:[...provinceIds],tick,day,gameTime:life.gameTime,month,leaderId:personId,personIds,couples,entryId:entry.id};
   s.records.push(founding);s.revision++;
   return founding;
 }

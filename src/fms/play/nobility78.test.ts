@@ -8,6 +8,7 @@ import {populationStamp47} from './civilization47-population-types';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {processBirths47} from './civilization47-nobility-births';
 import {familyRelation47} from './civilization47-nobility-relations';
+import {executeFamilyFate47,fateWeights47} from './civilization47-nobility-fate';
 import {nobleMonarchySuccessor47,checkFamilyExtinction47} from './civilization47-nobility-succession';
 import {assertPopulation47} from './civilization47-population-validation';
 
@@ -115,5 +116,31 @@ describe('original opening families (State.InitializeCharactersAndFamilies)',()=
     }
     const other=r.world.nations.map(v=>Object.keys(n.families).find(id=>n.families[id].nationId===v.id)!);
     expect(familyRelation47(r,other[0],other[1])).toBe(0);
+  });
+  it('assigns armies to families and records war merit (RecordBattleMerit/RecordConquestMerit)',()=>{
+    const s=new Culture47Session();let x=s.create({...structuredClone({...opening,setup:{...opening.setup,enabled:[...opening.setup.enabled]}}),relations:'war'});
+    for(let i=0;i<150;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    const r=x.run as NobilityRun47,n=r.nobility!;
+    for(const a of r.world.armies)if(a.status!=='destroyed')expect(n.armies[a.id]).toBeTruthy();
+    for(const [id,row] of Object.entries(n.armies))if(row.familyId>0){const a=r.world.armies.find(v=>v.id===id)!;expect(n.families[String(row.familyId)]?.nationId??a.nationId).toBe(a.nationId);}
+    const merit=Object.values(n.families).reduce((v,fam)=>v+fam.totalEnemyDestroyed+fam.totalProvincesConquered,0);
+    expect(merit).toBeGreaterThan(0);
+    expect(new Culture47Session().load(x.journal)).toEqual(x);
+  },900000);
+  it('executes the original family fates (FamilyFateDecision)',()=>{
+    const base=snap.run as NobilityRun47,[a,b]=base.world.nations.map(v=>v.id);
+    const id=Object.keys(base.nobility!.families).find(v=>base.nobility!.families[v].nationId===a&&!base.nobility!.families[v].ruling)!;
+    const w=fateWeights47(base,id,b,0);expect(Object.values(w).every(v=>v>=0)).toBe(true);
+    for(const fate of ['fealty','restore','dispossessed','exile','purge'] as const){
+      const r=structuredClone(base),n=r.nobility!;
+      n.families[id].controlledProvinces=[];// lost to the conqueror first
+      executeFamilyFate47(r,id,fate,b);assertPopulation47(r);
+      const fam=n.families[id],k=r.kin.families[id];
+      if(fate==='purge'){expect(fam).toBeUndefined();expect(n.extinct).toContain(Number(id));expect(k.memberIds.every(m=>!r.kin.persons[m].isAlive)).toBe(true);continue;}
+      expect(fam.ruling).toBe(false);if(fate!=="restore")expect(fam.controlledProvinces).toEqual([]);
+      if(fate==='fealty')expect(fam.nationId).toBe(b);
+      for(const m of [...k.memberIds,...k.collateralMemberIds])expect(r.kin.persons[m].stateId).toBe(r.people.nations[fam.nationId].id);
+      expect(r.chronicle.entries.at(-1)!.text).toContain(k.surname+'家族');
+    }
   });
 });

@@ -628,5 +628,15 @@
     "protocol": 2,
     "source": "culture47-menu71-original-bytes",
     "journalVersion": 2
+  },
+  {
+    "engine": "87f050773a7caeda0f4d49557be8d76e165f1982e2b5fe14b09fcf5a6e04a54e",
+    "file": "engine-87f0.js",
+    "bytes": 1456169,
+    "sha256": "2b22dba3046ad8be5898a7dd439ceb2ecabba0f85fe66d0f89560cc8b499f0ed",
+    "rule": "real-culture-zh-politics-journal-2",
+    "protocol": 2,
+    "source": "culture47-province72-original-bytes",
+    "journalVersion": 2
   }
 ]

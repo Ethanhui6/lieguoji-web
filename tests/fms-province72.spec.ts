@@ -40,3 +40,22 @@ test('original ProvinceInfoUI: map tap opens 行省信息; 要塞化/去要塞�
   await expect(page.getByRole('complementary',{name:'文化与国家详情'})).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('original 自定义人口 / 自定义防御 dialogs validate like the original and apply as world commands',async({page})=>{
+  test.setTimeout(240000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await enter(page);await create(page,24);
+  const {panel}=await openProvince(page),info=panel.getByRole('region',{name:'行省信息'});
+  await info.getByRole('button',{name:'自定义人口',exact:true}).click();
+  const pop=info.getByRole('form',{name:'设置自定义人口'});
+  await pop.getByLabel('当前人口',{exact:true}).fill('900');await pop.getByLabel('最大人口',{exact:true}).fill('800');await pop.getByRole('button',{name:'确定'}).click();
+  await expect(pop.getByRole('alert')).toContainText('当前人口不能大于最大人口');
+  await pop.getByLabel('当前人口',{exact:true}).fill('700');await pop.getByRole('button',{name:'确定'}).click();
+  await expect(info).toContainText('700/800',{timeout:30000});
+  await info.getByRole('button',{name:'自定义防御',exact:true}).click();
+  const def=info.getByRole('form',{name:'设置自定义防御'});
+  await def.getByLabel('主场作战效率',{exact:true}).fill('12');await def.getByRole('button',{name:'确定'}).click();
+  await expect(def.getByRole('alert')).toContainText('主场作战效率必须在 1 到 10 之间');
+  await def.getByLabel('主场作战效率',{exact:true}).fill('6.5');await def.getByLabel('锁定主场作战效率').check();await def.getByRole('button',{name:'确定'}).click();
+  await expect(info).toContainText('6.50',{timeout:30000});
+  expect(errors).toEqual([]);
+});

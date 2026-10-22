@@ -45,3 +45,24 @@ describe('original ProvinceInfoUI actions',()=>{
     expect(()=>s.execute({kind:'province',edit:{type:'fortress',provinceId:p.id},expected:stamp},s.snapshot().journal.actions.length)).toThrow('世界已变化');
   },60000);
 });
+describe('original ProvinceInfoUI custom population and defense',()=>{
+  it('自定义人口 sets current and max; invalid input is the original message',()=>{
+    const s=load(),run=s.snapshot().run,p=run.world.provinces[0];
+    const out=edit(s,{type:'population',provinceId:p.id,current:1234,max:5000});
+    expect(out.run.world.statecraft!.provinces.find(v=>v.provinceId===p.id)!.population).toBe(1234);
+    expect(out.run.finance.provinces[p.id].maxPopulation).toBe(5000);
+    expect(()=>assertProvinceEdit47({type:'population',provinceId:p.id,current:10,max:5})).toThrow('当前人口不能大于最大人口');
+    expect(()=>assertProvinceEdit47({type:'population',provinceId:p.id,current:-1,max:5})).toThrow('自定义人口输入无效');
+    const after=s.execute({kind:'advance',ticks:120},s.snapshot().journal.actions.length);
+    expect(new Culture47Session().load(after.journal)).toEqual(after);
+  },60000);
+  it('自定义防御: locked keeps the player value 1–10; unlocking returns to the terrain rule',()=>{
+    const s=load(),run=s.snapshot().run,p=run.world.provinces[1],base=provinceDefense(run.upperCombat,p.id);
+    let out=edit(s,{type:'defense',provinceId:p.id,modifier:7.5,locked:true});
+    expect(provinceDefense(out.run.upperCombat,p.id)).toBe(7.5);expect(out.run.upperCombat.provinces[p.id].locked).toBe(true);
+    out=edit(s,{type:'defense',provinceId:p.id,modifier:7.5,locked:false});
+    expect(provinceDefense(out.run.upperCombat,p.id)).toBe(base);
+    expect(()=>assertProvinceEdit47({type:'defense',provinceId:p.id,modifier:11,locked:true})).toThrow('主场作战效率必须在 1 到 10 之间');
+    expect(new Culture47Session().load(out.journal)).toEqual(out);
+  },60000);
+});

@@ -13378,6 +13378,16 @@
       "visualAccepted": false,
       "uploaded": false
     },
+    "custom73Checkpoint": {
+      "status": "local-original-custom-population-defense",
+      "preview": "http://127.0.0.1:5386/?fms=1",
+      "artifact": ".autopilot/fms-custom73-checked",
+      "engine": "ddc46c61ade96004d9a471815462ff65c6423987721e0adf86cd337ce1f01b59",
+      "frozen": ["87f0"],
+      "evidence": "docs/evidence/fms-custom73-2026-10-21/RESULT.md",
+      "realDevice": "not-verified",
+      "upload": "none"
+    },
     "province72Checkpoint": {
       "status": "local-original-province-info-panel-partial",
       "preview": "http://127.0.0.1:5385/?fms=1",

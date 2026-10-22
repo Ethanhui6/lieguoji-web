@@ -17,7 +17,7 @@ import type {Generations47} from './civilization47-generations-ledger';
 
 export type PersonRole47=({nativeKind:'spouse'}&NativeSpouseRole)|({nativeKind:'leader'}&NativeLeaderRole);
 export type FamilyPerson47=NativeRegisteredCharacter<string,PersonRole47,NativePastRole>&{
-  source:'founding'|'initial-family'|'newborn';initialAge:number|null;identity:PersonName47;
+  source:'founding'|'initial-family'|'newborn'|'collateral';initialAge:number|null;identity:PersonName47;
 };
 export type Family47={id:number;surname:string;cultureName:CultureId47;nationId:string;stateId:number;headId:number;heirId:number;allowFemaleInheritance:boolean;memberIds:number[];collateralMemberIds:number[]};
 export type Lifecycle47={version:1;rule:'native-month-death-known-emergency-v1';revision:number;lastMonth:number;random:{state:number;draws:number};stats:NativeMonthlyDeathStats;deaths:{personId:number;day:number;tick:number;age:number;wasLeaderOf:string|null;deathHistoryId:number|null}[];vacancies:Record<string,{sinceDay:number;previousPersonId:number;reason:'no-known-candidate'|'restoration-no-known-candidate'}>};

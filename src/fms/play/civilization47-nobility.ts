@@ -10,6 +10,8 @@ import {nativeAllocateRulingTerritories,nativeAssignRemainingToNearest,nativeGen
 import type {PopulationBase47,Kin47,FamilyPerson47,Life47,PersonRole47,Population47} from './civilization47-population-types';
 import type {NativePastRole} from './native-economy/role-history';
 import {f} from './native-economy/numeric';
+import {nobilityMonth47} from './civilization47-nobility-monthly';
+import {nameSeed} from './chronicle-records';
 
 /** Original family system (FantasyWorld.CharacterSystem.FamilyManager) for new
  * worlds. Kin keeps the people and family membership; this ledger keeps the
@@ -17,8 +19,13 @@ import {f} from './native-economy/numeric';
  * influence 50, wealth 100, extendedMembers 50, updateDay 1. */
 export const NOBILITY_RULE47='original-families-v1';
 export type NobleFamily47={nationId:string;ruling:boolean;homeProvinceId:string;originalHomeProvinceId:string;controlledProvinces:string[];
-  influence:number;wealth:number;extendedMembers:number;religionId:string;foundingTime:number;updateDay:number};
-export type Nobility47={version:1;rule:typeof NOBILITY_RULE47;families:Record<string,NobleFamily47>};
+  influence:number;wealth:number;extendedMembers:number;religionId:string;foundingTime:number;updateDay:number;
+  historicalClaims:Record<string,number>;historicalStateIds:string[];lastRulingTime:Record<string,number>;rulingDuration:Record<string,number>;stateResidenceMonths:Record<string,number>};
+/** month/year: last calendar month and year processed; monthFamilies: the
+ * month's update list; collaterals: CreateCollateralMember records; detached:
+ * dead collateral dropped from the family list (still in the population). */
+export type Nobility47={version:1;rule:typeof NOBILITY_RULE47;families:Record<string,NobleFamily47>;month:number;year:number;monthFamilies:string[];random:{state:number;draws:number};
+  collaterals:{personId:number;familyId:number;day:number}[];detached:number[]};
 export type NobilityRun47=Population47&{nobility?:Nobility47};
 
 const provinceNumber=(id:string)=>Number(id.slice(2))+1;
@@ -30,7 +37,7 @@ const provinceKey=(n:number)=>'p-'+(n-1);
 export function attachNobility47<T extends Population47>(input:T):T&{nobility:Nobility47}{
   if(input.clock.tick!==0||'nobility' in input||input.houses||input.generations)throw Error('原作家族只能在新世界开局建立。');
   const r=structuredClone(input) as T&{nobility:Nobility47},seed=r.world.custom!.seed,life:Life47=r.life,kin:Kin47=r.kin,calendar=createNativeIsoCalendar(life.startDate);
-  const nobility:Nobility47={version:1,rule:NOBILITY_RULE47,families:{}};r.nobility=nobility;
+  const nobility:Nobility47={version:1,rule:NOBILITY_RULE47,families:{},month:nobilityMonth47(r),year:r.life.currentDate.year,monthFamilies:[],random:{state:nameSeed(seed+'/nobility47'),draws:0},collaterals:[],detached:[]};r.nobility=nobility;
   const scale=r.world.provinces.length?(r as unknown as {scale:number}).scale:1;
   const centers=new Map(r.world.provinces.map(p=>[provinceNumber(p.id),{x:p.center.x/scale,y:p.center.y/scale}]));
   // State.CalculateProvincesDistance: distance between the province centres (original map units).
@@ -71,7 +78,7 @@ export function attachNobility47<T extends Population47>(input:T):T&{nobility:No
   return r;
 }
 function nobleRecord(nationId:string,ruling:boolean,fam:NativeTerritoryFamily,religionId:string):NobleFamily47{
-  return {nationId,ruling,homeProvinceId:provinceKey(fam.homeProvinceId),originalHomeProvinceId:provinceKey(fam.homeProvinceId),controlledProvinces:fam.controlledProvinces.map(provinceKey),influence:50,wealth:100,extendedMembers:50,religionId,foundingTime:0,updateDay:1};
+  return {nationId,ruling,homeProvinceId:provinceKey(fam.homeProvinceId),originalHomeProvinceId:provinceKey(fam.homeProvinceId),controlledProvinces:fam.controlledProvinces.map(provinceKey),influence:50,wealth:100,extendedMembers:50,religionId,foundingTime:0,updateDay:1,historicalClaims:{},historicalStateIds:[],lastRulingTime:{},rulingDuration:{},stateResidenceMonths:{}};
 }
 /** CreateNobleFamilyWithTerritory + FamilyManager.CreateFamily + GenerateNobleFamilyMembers. */
 function createNobleFamily(r:PopulationBase47,kin:Kin47,life:Life47,calendar:ReturnType<typeof createNativeIsoCalendar>,registry:{nextId:number;characters:Map<number,FamilyPerson47>},nationId:string,stateId:number,cultureId:CultureId47,religionId:string,familyId:number,origin:NativeTerritoryProvince,random:ReturnType<typeof seededCharacterRandom>):NativeTerritoryFamily|null{

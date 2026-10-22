@@ -36,4 +36,22 @@ describe('original opening families (State.InitializeCharactersAndFamilies)',()=
     expect((x.run as NobilityRun47).nobility).toBeTruthy();
     expect(new Culture47Session().load(x.journal)).toEqual(x);
   },300000);
+  it('runs the original family schedule: update days, duration, influence, collateral, yearly claims',()=>{
+    const s=new Culture47Session();let x=s.load(snap.journal);
+    for(let i=0;i<400;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    const r=x.run as NobilityRun47,n=r.nobility!;
+    expect(n.year).toBe(2);expect(n.monthFamilies.length).toBe(Object.keys(n.families).length);
+    for(const [id,fam] of Object.entries(n.families)){
+      const k=r.kin.families[id];
+      expect(fam.updateDay).toBeGreaterThanOrEqual(1);expect(fam.updateDay).toBeLessThanOrEqual(28);
+      expect(fam.stateResidenceMonths[fam.nationId]).toBeGreaterThanOrEqual(11);
+      expect(k.collateralMemberIds.length).toBeGreaterThanOrEqual(1);expect(k.collateralMemberIds.length).toBeLessThanOrEqual(4);
+      for(const c of k.collateralMemberIds){const p=r.kin.persons[c];expect(p.source).toBe('collateral');expect(p.age).toBeGreaterThanOrEqual(19);}
+      expect(fam.influence).toBeGreaterThan(fam.ruling?100:10);
+      if(fam.ruling){expect(fam.rulingDuration[fam.nationId]).toBe(fam.stateResidenceMonths[fam.nationId]);expect(fam.historicalStateIds).toEqual([fam.nationId]);
+        for(const p of fam.controlledProvinces)expect(fam.historicalClaims[p]).toBeGreaterThan(1);}
+      else for(const p of fam.controlledProvinces)expect(fam.historicalClaims[p]).toBe(1);
+    }
+    expect(new Culture47Session().load(x.journal)).toEqual(x);
+  },600000);
 });

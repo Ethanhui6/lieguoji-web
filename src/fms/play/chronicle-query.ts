@@ -1,6 +1,7 @@
 import {regnalLabel,type HistoricalEntry,type HistoricalKind} from './chronicle-records';
 
-export const historyKinds:Record<HistoricalKind,string>={accession:'君主传位',uprising:'地方起义',independence:'宣布独立',extinction:'国家覆亡',restoration:'复国',occupation:'领土易手',diplomacy:'外交',capital:'迁都'};
+/** 'family' entries exist only in original-family worlds (FamilyManager history events). */
+export const historyKinds:Record<HistoricalKind|'family',string>={accession:'君主传位',uprising:'地方起义',independence:'宣布独立',extinction:'国家覆亡',restoration:'复国',occupation:'领土易手',diplomacy:'外交',capital:'迁都',family:'家族'};
 export const isMajorHistory=(e:Pick<HistoricalEntry,'kind'>)=>e.kind!=='occupation';
 export type HistoryQuery={text:string;kind:HistoricalKind|''|'important';nationId:string};
 const normalize=(text:string)=>text.normalize('NFKC').toLocaleLowerCase();

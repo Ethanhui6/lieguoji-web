@@ -1,5 +1,6 @@
 import {advanceRebellion47,stateRebellionMonth47} from './civilization47-rebellion';
 import {advanceNobility47} from './civilization47-nobility-monthly';
+import {stateNobilityMonth47} from './civilization47-nobility-territory';
 import type {NobilityRun47} from './civilization47-nobility';
 import {initialVassalManager47,advanceVassalManager47} from './civilization47-vassal-manager';
 import {reconcileVassals47} from './civilization47-vassal';
@@ -76,7 +77,7 @@ export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertD
  * batch validates its final step before the candidate can be accepted. */
 export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean,validate=true){
   reconcileGovernmentContinuity47(r);reconcileAlliances47(r);reconcileVassals47(r);advancePeace47(r,dayChanged);reconcileGovernmentContinuity47(r);
-  if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);stateRebellionMonth47(r,id);});advanceVassalManager47(r);advanceRebellion47(r);advanceNobility47(r as unknown as NobilityRun47);}
+  if(dayChanged){advanceHouseGovernance47(r);advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);stateRebellionMonth47(r,id);stateNobilityMonth47(r as unknown as NobilityRun47,id);});advanceVassalManager47(r);advanceRebellion47(r);advanceNobility47(r as unknown as NobilityRun47);}
   reconcileNativeDiplomacy46(r.nativeDiplomacy,r);if(validate)assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}

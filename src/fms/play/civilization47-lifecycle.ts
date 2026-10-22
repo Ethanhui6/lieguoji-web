@@ -13,6 +13,8 @@ import {appointKnownPersonOwned47} from './civilization47-succession';
 import {pastRole47} from './civilization47-roles';
 import {announce} from './civilization47-history';
 import {advanceGenerationsMonthOwned47} from './civilization47-generations';
+import {nobleMonarchySuccessor47,nobleFamiliesForElection47} from './civilization47-nobility-succession';
+import type {NobilityRun47} from './civilization47-nobility';
 import type {Population47,FamilyPerson47,Family47,Lifecycle47,PersonRole47} from './civilization47-population-types';
 
 /** A dedicated persisted web RNG, not Unity's unrecovered global stream. */
@@ -26,11 +28,14 @@ export function knownSuccessor47(r:Population47,nationId:string,previous:FamilyP
  const family=r.kin.families[previous.familyId],getCharacter=lookup47(r),skills=(p:FamilyPerson47)=>nativeCharacterSkills(p.base,combatTraits47(p.traits));
  const abilities={charisma:(p:FamilyPerson47)=>skills(p).charisma,administrative:(p:FamilyPerson47)=>skills(p).administrative,military:(p:FamilyPerson47)=>skills(p).military,diplomatic:(p:FamilyPerson47)=>skills(p).diplomatic};
  const polity=r.civilization.nations[nationId].polity;
+ const nobles=(r as NobilityRun47).nobility;
+ if(nobles&&(polity==='Kingdom'||polity==='Empire'))return nobleMonarchySuccessor47(r as NobilityRun47,nationId,previous);
  if(polity==='Kingdom'||polity==='Empire')return nativeFindSuccessor(family,previous,getCharacter,()=>null)??nativeFamilyFallback(family,{...abilities,getCharacter,getLivingMembers:f=>living47(r,r.kin.families[f.id])});
  // Neutral influence/merit is explicit: only one real family per state exists
  // in this engine. Do not claim multi-house elections or fabricate votes.
- const families=Object.values(r.kin.families).map(f=>({...f,influence:0}));
- const ports={...abilities,familyManager:()=>({getFamiliesByState:(id:number)=>families.filter(f=>f.stateId===id)}),characterManager:()=>({getCharacter}),getLivingMembers:(f:Family47)=>living47(r,f),warMerit:()=>0,stateId:(s:{i:number})=>s.i};
+ // Original-family worlds elect among the state's real families with their influence and war merit.
+ const families=nobles?nobleFamiliesForElection47(r as NobilityRun47,nationId):Object.values(r.kin.families).map(f=>({...f,influence:0,warMerit:0}));
+ const ports={...abilities,familyManager:()=>({getFamiliesByState:(id:number)=>families.filter(f=>f.stateId===id)}),characterManager:()=>({getCharacter}),getLivingMembers:(f:Family47)=>living47(r,f),warMerit:(f:{warMerit:number})=>f.warMerit,stateId:(s:{i:number})=>s.i};
  const state={i:r.people.nations[nationId].id};
  return polity==='Republic'||polity==='Federation'?nativeRepublicEmergencyLeader(state,ports):polity==='Theocracy'?nativeTheocracyEmergencyLeader(state,ports):nativeTribalEmergencyLeader(state,ports);
 }

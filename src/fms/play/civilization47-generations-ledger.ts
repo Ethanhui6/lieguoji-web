@@ -33,7 +33,7 @@ export function familyMembersAt47(r:Population47,familyId:number,beforeEntry=Inf
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 const int=(v:number,min=0,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(v)&&v>=min&&v<=max;
 export function assertGenerations47(r:Population47){
- const s=r.generations;if(!s){if(Object.values(r.kin.persons).some(p=>p.source==='newborn'))throw Error('新生儿缺少出生规则。');return;}
+ const s=r.generations;if(!s){const nobles=(r as {nobility?:{births:{personId:number}[]}}).nobility;if(Object.values(r.kin.persons).some(p=>p.source==='newborn'&&!nobles?.births.some(b=>b.personId===p.id)))throw Error('新生儿缺少出生规则。');return;}
  const fail=():never=>{throw Error('出生、婚姻或家族成员历史不一致。');};
  if(!exact(s,['version','rule','enabledTick','firstPersonId','lastMonth','random','initialCouples','births','marriages'])||s.version!==1||s.rule!==GENERATIONS_RULE47||s.enabledTick!==0||!int(s.firstPersonId,1,2147483646)||s.lastMonth!==generationMonth47(r)||!exact(s.random,['state','draws'])||!int(s.random.state,0,4294967295)||!int(s.random.draws)||!Array.isArray(s.initialCouples)||!Array.isArray(s.births)||!Array.isArray(s.marriages))return fail();
  const couples=new Map<number,number>(),foundings=(r as {foundings?:{records:{personIds:number[];couples:[number,number][]}[]}}).foundings?.records??[],founded=new Set(foundings.flatMap(f=>f.personIds));

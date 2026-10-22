@@ -8,6 +8,9 @@ import type {FamilyPerson47,PersonRole47} from './civilization47-population-type
 import type {NativePastRole} from './native-economy/role-history';
 import type {NobilityRun47,Nobility47,NobleFamily47} from './civilization47-nobility';
 import {f} from './native-economy/numeric';
+import {processBirths47} from './civilization47-nobility-births';
+import {checkFamilyExtinction47} from './civilization47-nobility-succession';
+import {processMarriages47} from './civilization47-nobility-marriage';
 
 /** Original FamilyManager schedule (TimeManager.AdvanceOneDay):
  * month start AssignRandomUpdateDays 853C30 + MonthlyUpdate 865750, daily
@@ -28,6 +31,10 @@ const stateAlive=(r:NobilityRun47,nationId:string)=>r.world.provinces.some(p=>p.
 
 export function advanceNobility47(r:NobilityRun47){
   const n=r.nobility;if(!n)return;
+  // Province.ConqueredBy / TryRebel: land that left the family's state leaves the family
+  // (controllingFamilyId = 0); the landless-family fate comes with war spoils (F4).
+  const controller=new Map(r.world.provinces.map(p=>[p.id,p.controller]));
+  for(const fam of Object.values(n.families))fam.controlledProvinces=fam.controlledProvinces.filter(p=>controller.get(p)===fam.nationId);
   const month=monthKey(r);
   if(month!==n.month){
     if(month!==n.month+1)throw Error('家族月份不连续。');n.month=month;
@@ -39,7 +46,12 @@ export function advanceNobility47(r:NobilityRun47){
   const day=r.life.currentDate.day;
   for(const id of n.monthFamilies){
     const fam=n.families[id];if(!fam||fam.updateDay!==day||!r.kin.families[id])continue;
-    updateFamilyDuration(r,fam);updateInfluence(r,id,fam);maintainCollateral(r,n,id);
+    updateFamilyDuration(r,fam);
+    // ProcessSingleFamilyPopulation: births while the state stands (extinction: F3c).
+    if(stateAlive(r,fam.nationId)){processBirths47(r,n,id);if(checkFamilyExtinction47(r,n,id))continue;}
+    // ProcessSingleFamilyMarriage.
+    if(stateAlive(r,fam.nationId))processMarriages47(r,n,id);
+    updateInfluence(r,id,fam);maintainCollateral(r,n,id);
   }
   if(r.life.currentDate.month===1&&day===1&&n.year!==r.life.currentDate.year){n.year=r.life.currentDate.year;for(const fam of Object.values(n.families))updateClaims(fam);}
 }

@@ -6,6 +6,10 @@ import {NOBILITY_RULE47,type NobilityRun47} from './civilization47-nobility';
 import {nativeMaxProvinceRatio} from './native-economy/noble-families';
 import {populationStamp47} from './civilization47-population-types';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
+import {processBirths47} from './civilization47-nobility-births';
+import {familyRelation47} from './civilization47-nobility-relations';
+import {nobleMonarchySuccessor47,checkFamilyExtinction47} from './civilization47-nobility-succession';
+import {assertPopulation47} from './civilization47-population-validation';
 
 const opening={terrain:grid((x,y)=>x>10&&x<245&&y>10&&y<245?45:0),count:3,cityCount:60,relations:'peace' as const,settlementAlgorithm:SETTLEMENT47_ALGORITHM,setup:{mode:'culture-generated' as const,enabled:['chinese','japanese','arab'] as const},families:'original' as const};
 let snap:ReturnType<Culture47Session['create']>;
@@ -54,4 +58,62 @@ describe('original opening families (State.InitializeCharactersAndFamilies)',()=
     }
     expect(new Culture47Session().load(x.journal)).toEqual(x);
   },600000);
+  it('redistributes family territories every 24 months (RedistributeTerritoriesForState)',()=>{
+    const s=new Culture47Session();let x=s.load(snap.journal);
+    for(let i=0;i<820;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    const r=x.run as NobilityRun47,n=r.nobility!;
+    for(const nation of r.world.nations){
+      const v=n.redistribution[nation.id];expect(v).toBeGreaterThanOrEqual(1);expect(v).toBeLessThanOrEqual(24);
+      const land=r.world.provinces.filter(p=>p.controller===nation.id).map(p=>p.id),held=Object.values(n.families).filter(fam=>fam.nationId===nation.id).flatMap(fam=>fam.controlledProvinces);
+      for(const p of held)expect(land).toContain(p);
+      for(const fam of Object.values(n.families).filter(fam=>fam.nationId===nation.id&&fam.controlledProvinces.length))expect(fam.controlledProvinces).toContain(fam.homeProvinceId);
+    }
+    const entries=r.chronicle.entries.filter(e=>(e.kind as string)==='family');
+    expect(entries.filter(e=>e.text.includes('领土重新分配')).length).toBeGreaterThan(0);
+    // ProcessBirths: the original rate is low (≈2 a year here); drive it directly on a copy.
+    const copy=structuredClone(r);for(let m=0;m<36;m++)for(const id of Object.keys(copy.nobility!.families))processBirths47(copy,copy.nobility!,id);
+    assertPopulation47(copy);expect(copy.nobility!.births.length).toBeGreaterThan(0);
+    for(const b of copy.nobility!.births){const r=copy;const c=r.kin.persons[b.personId];expect(c.source).toBe('newborn');expect(c.fatherId).toBe(b.fatherId);expect(c.motherId).toBe(b.motherId);expect(r.kin.families[b.familyId].memberIds).toContain(c.id);expect(r.kin.persons[b.motherId].gender).toBe(1);}
+    for(const e of entries.filter(e=>e.text.includes('领土重新分配')))expect(e.text).toMatch(/进行领土重新分配，.+家族战功最高，.+家族战功最低/);
+    expect(new Culture47Session().load(x.journal)).toEqual(x);
+  },900000);
+  it('marries unmarried adults across families (ProcessSingleFamilyMarriage)',()=>{
+    const s=new Culture47Session();let x=s.load(snap.journal);
+    for(let i=0;i<200;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    const r=x.run as NobilityRun47,n=r.nobility!;
+    expect(n.marriages.length).toBeGreaterThan(0);
+    for(const m of n.marriages){
+      const a=r.kin.persons[m.aId],b=r.kin.persons[m.bId];expect(a.gender).not.toBe(b.gender);
+      if(a.isAlive&&b.isAlive){expect(a.spouseId).toBe(b.id);expect(b.spouseId).toBe(a.id);}
+      if(m.moverId){const p=r.kin.persons[m.moverId];expect(p.originalFamilyId).toBeGreaterThan(0);expect(m.matrilineal?p.gender:1-p.gender).toBe(0);}
+    }
+    expect(new Culture47Session().load(x.journal)).toEqual(x);
+  },600000);
+  it('picks a new dynasty and retires extinct families (HandleMonarchySuccession, CheckFamilyExtinction)',()=>{
+    const r=structuredClone(snap.run) as NobilityRun47,n=r.nobility!;
+    const nation=r.world.nations.find(v=>['Kingdom','Empire'].includes(r.civilization.nations[v.id].polity))??r.world.nations[0];
+    const rulingId=String(r.people.nations[nation.id].id),leader=r.kin.persons[r.people.nations[nation.id].leaderId!];
+    if(['Kingdom','Empire'].includes(r.civilization.nations[nation.id].polity)){
+      for(const id of [...r.kin.families[rulingId].memberIds,...r.kin.families[rulingId].collateralMemberIds])r.kin.persons[id].isAlive=false;
+      const heir=nobleMonarchySuccessor47(r,nation.id,leader)!;
+      expect(heir.isAlive).toBe(true);expect(String(heir.familyId)).not.toBe(rulingId);expect(n.families[String(heir.familyId)].nationId).toBe(nation.id);
+    }
+    const noble=Object.keys(n.families).find(id=>!n.families[id].ruling)!,k=r.kin.families[noble];
+    for(const id of k.memberIds)r.kin.persons[id].isAlive=false;
+    expect(checkFamilyExtinction47(r,n,noble)).toBe(true);
+    expect(n.families[noble]).toBeUndefined();expect(n.extinct).toContain(Number(noble));
+    expect(r.chronicle.entries.at(-1)!.text).toMatch(new RegExp(`^${k.surname}家族灭绝，最后成员.+去世$`));
+  });
+  it('computes family relations within a state (CalculateFamilyRelation)',()=>{
+    const r=snap.run as NobilityRun47,n=r.nobility!;
+    for(const nation of r.world.nations){
+      const ids=Object.keys(n.families).filter(id=>n.families[id].nationId===nation.id);
+      for(const a of ids)for(const b of ids){
+        const v=familyRelation47(r,a,b);
+        if(a===b)expect(v).toBe(0);else{expect(v).toBeGreaterThanOrEqual(-100);expect(v).toBeLessThanOrEqual(100);}
+      }
+    }
+    const other=r.world.nations.map(v=>Object.keys(n.families).find(id=>n.families[id].nationId===v.id)!);
+    expect(familyRelation47(r,other[0],other[1])).toBe(0);
+  });
 });

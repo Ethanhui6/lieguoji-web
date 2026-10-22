@@ -1,6 +1,0 @@
-{
-  "exitCode": 0,
-  "startedAt": "2026-09-27T14:22:35.8528333+08:00",
-  "finishedAt": "2026-09-27T14:22:37.8257970+08:00",
-  "command": "node node_modules/eslint/bin/eslint.js src/world/transactions.ts src/world/replacement-cooperation.test.ts"
-}

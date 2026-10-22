@@ -1,8 +1,0 @@
-{
-  "url": "http://127.0.0.1:4173/build.json",
-  "observedAt": "2026-09-27T09:36:18.9564787Z",
-  "addFingerprint": "d15f1786b14250dd38281f3d9ec3d3d246d4ea1dea526e09fbe4c41214024b4c",
-  "buildFileSha256": "30b9e2a558e0bf922bf54a75e08d2a3f200db57005e3143614698a6c7d9f58da",
-  "version": "0.5.0-preview.8",
-  "httpStatus": 200
-}

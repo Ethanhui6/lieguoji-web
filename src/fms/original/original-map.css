@@ -1,9 +1,0 @@
-.om-app { position: fixed; inset: 0; background: #6b6150; font-family: "Noto Serif SC", "Songti SC", SimSun, serif; }
-.om-map { position: absolute; inset: 0; touch-action: none; }
-.om-panel { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; max-width: 220px; padding: 10px 12px;
-  background: rgba(244, 233, 210, .92); color: #2f2a22; border: 1px solid #8a7a5c; border-radius: 4px; font-size: 13px; }
-.om-panel label { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
-.om-panel select, .om-panel input, .om-panel button { font: inherit; min-height: 32px; }
-.om-panel input { width: 96px; }
-.om-panel [role=alert] { color: #8c2a1c; }
-@media (max-width: 600px) { .om-panel { left: 8px; right: 8px; max-width: none; } }

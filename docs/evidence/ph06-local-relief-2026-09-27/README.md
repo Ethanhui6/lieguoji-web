@@ -1,9 +1,0 @@
-# 局部山地生成本地证据
-
-archiveComplete=true 仅表示已选择的终态原件复制与SHA核对完成。技术范围 technicalPassed=true，完整必需证据 allRequiredPassed=true，root限定的局部山地工作流接受 localReliefWorkflowAccepted=true。全自然视觉、全PH、用户、真机、性能与云端验收均未通过。缺失或运行中的目录保留pending；脚本exit0不等于游戏完成。
-
-root相关八文件的实际单元数、静态和构建结果分别记录，不与候选仅写出的用例或旧preview11光照结果相加。三端必须实际执行atlas-local-relief.spec.ts，当前源码与dist绑定；旧配方/入口等额外检查不代替它。
-
-新构建须含11个实际生成器身份，包含localDetailReliefGenerator；允许合同/history变更改变旧10个闭包，不能错误套用光照版的identityUnchanged门。原preview11十闭包、37来源和完整字节按既有正式归档核验，仅哈希引用，不复制整包。
-
-manual仅记录本批测试地图UI和截图，无真实存档导出。空锁集未改变不代表已有锁冲突已通过；自然视觉与性能仍需独立验收。所有初次失败与后续复查原字节并存，原始日志/results/trace及源码快照见raw，准备和提升审阅见preparation/provenance。

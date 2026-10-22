@@ -1,5 +1,0 @@
-[96m.autopilot/ph06/natural-ranges-staging/natural-ranges.test.ts[0m:[93m113[0m:[93m57[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'heightPlanning' does not exist in type 'NaturalReliefInput'.
-
-[7m113[0m     const old = await oldRelief({ ...naturalInput(128), heightPlanning: undefined }, 2048, control);
-[7m   [0m [91m                                                        ~~~~~~~~~~~~~~[0m
-

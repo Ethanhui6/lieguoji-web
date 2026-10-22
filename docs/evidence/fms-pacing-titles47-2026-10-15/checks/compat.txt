@@ -1,8 +1,0 @@
-
-Running 1 test using 1 worker
-
-(node:29984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ok 1 [desktop-chromium] › tests\fms-culture47-compat.spec.ts:33:27 › registered original engine-22db.js continues without changing history or engine (7.4s)
-
-  1 passed (8.2s)

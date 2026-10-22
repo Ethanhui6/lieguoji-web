@@ -1,8 +1,0 @@
-{
-  "command": ".\\node_modules\\.bin\\vitest.cmd run src/world/storage.test.ts",
-  "startedUtc": "2026-09-23T20:58:30.9882539Z",
-  "endedUtc": "2026-09-23T20:59:30.3242844Z",
-  "exitCode": 0,
-  "log": ".autopilot\\ph04\\storage-byte-checks\\tests-first.log",
-  "capture": "actual command combined stdout and stderr"
-}

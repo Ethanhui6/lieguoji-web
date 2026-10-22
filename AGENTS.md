@@ -1,29 +1,24 @@
-# 列国纪执行边界
+# 列国纪执行规则
 
-> 2026-10-22 用户持续授权：“以后每次更新完版本都上传”，用于在手机上直接体验。每完成一版，经新增历史隐私审查、本地检查、preview20261006 重新绑定和 pre-push 后，快进推送开发分支 codex/ph06-world-generation 触发 Pages 预览；不更新 main，不绕过 hook。Pages 的 build:cf 不含全量单测（20分钟限时），全量单测由 Actions 的 check:full 运行。详见 docs/GITHUB_UPLOAD_2026-10-06.md。
+列国纪是用户自有作品 Fantasy Map Simulator（安装目录 `D:\steam\steamapps\common\FantasyMapSimulator`）的网页/PWA 复刻。一切以原作为准：原作怎么做，网页就怎么还原。用户消息优先于本文件。报告用中文。
 
-> 2026-10-06 本轮用户直接要求“继续 做完上传到GitHub”，随后确认“GitHub＋Pages预览，保留正式站”。允许经过本地检查和隐私审查的私库同分支源码快进上传与现有 Pages 原生 Git 预览，范围见 docs/GITHUB_UPLOAD_2026-10-06.md；使用独立 preview20261006 合同。此次不解除完整 PH/真机/视觉门，不更新 main，不复用已过期的9月24日授权。
+## 原作素材
+- 用户已授权只读分析该安装目录，并在本项目中适配其中的代码、数据和资源（见 docs/FMS_PACKAGE_REUSE_2026-10-03.md）。
+- 安装目录只读；不读取认证、SDK 配置（如 gameConfigDyV2.json、envs.log）或个人存档。
+- 反汇编、dump 和分析中间产物只放在 `.autopilot/fms-audit`（已忽略），不提交、不进 dist。
 
-> **2026-10-05 用户优先级调整：** 用户明确要求先做关键功能供试玩、后续再优化。本地顺序改为 FMS 当前地图 → 自动国家／首都／城市 → 自主发展与战争、外交军令 → 独立保存恢复。允许 WEB-PH03/04 的限定核心工作先行；WEB-PH02 真机／视觉及 PH03 完整行政体验仍未完成，历史状态与全部发布锁不变。以 `webRebuild.localDevelopmentException` 和 [本轮指令证据](docs/evidence/fms-playable-v5-2026-10-05/USER_PRIORITY.md) 为准，以下“不扩建国家”的旧顺序在此范围内被覆盖。不是完整原作等价或云端发布授权。
+## 版本流程（2026-10-22 起）
+用户要求：每做完一个新版本，就统一上传 GitHub，由 Cloudflare Pages 自动部署到正式站，用户直接在手机上体验；上传后继续做下一版。
+1. 在 main 分支本地开发；改动涉及的单元测试通过，并在浏览器中实际试玩确认。
+2. 提升 package.json 版本号，在 CHANGELOG.md 顶部写本版本的中文日志（新增、修改、修复、已知问题）。
+3. 提交后推送 main。pre-push 会检查：仓库地址、工作区干净、lint、类型、生产构建与产物白名单，并对推送新增的全部内容做密钥/隐私路径扫描。不得跳过 hook。
+4. Cloudflare Pages（原生 Git 集成，构建命令 `npm run build:cf`，输出 dist）自动部署 main；推送后用 `gh api repos/Ethanhui6/lieguoji-web/commits/<sha>/check-runs` 确认 Cloudflare Pages 成功，再告诉用户。GitHub Actions 对同一提交运行全量单测和浏览器测试，结果另行报告。
+5. 不改写已推送的历史，不删除用户数据。
 
-> **2026-10-04 最新重规划：** 用户否定旧版本体验和旧计划，明确要求优先忠实还原自己的 Fantasy Map Simulator。当前执行入口改为 [CODEX_AUTOPILOT_V5.md](CODEX_AUTOPILOT_V5.md) 和 [新8阶段计划](docs/FMS_WEB_REBUILD_PLAN.md)，状态源为 `plan/tasks.json.webRebuild`。iPhone13ProMax / Safari与Chrome / **竖屏优先、原作风格、折叠工具**；先做闭合轮廓＋海陆笔刷、保形自然化、连续缩放的试玩并由用户验收，随后才扩建国家等系统。以下V4开发顺序和iOS美术目标属于历史；旧任务、源代码、存档、兼容约束和全部云端发布锁保留。重规划不自动解锁、不回写旧完成状态。
+## 存档
+从 0.5.0 起只支持当前版本创建的世界；旧版本存档不再读取。以后若引擎改动导致旧档不兼容，在 CHANGELOG 中写明。
 
-> 2026-10-03 素材复用授权：用户声明 `D:\steam\steamapps\common\FantasyMapSimulator` 为自己的已发布作品，并明确要求从当前安装包继续分析、复用到网页。本次可只读分析该指定目录并在本项目中适配有用的代码/数据/资源；这覆盖文末针对该作品的旧“不复制”限制。安装目录不写入，不读取认证/SDK配置或个人存档，第三方组件按实际来源单独记录；完整安装包、分析dump与私密素材不进入dist。此授权不解除云端发布门，也不将任何PH自动标为完成。续接见 docs/FMS_PACKAGE_REUSE_2026-10-03.md。
-
-> 2026-09-24 最新用户指令例外：用户明确要求现在上传最新版本到 GitHub / Cloudflare 试玩。仅本次经检查、指纹绑定的 codex/ph06-world-generation 分支预览获授权，保留 main 和全部 PH 状态；详见 [本次试玩范围](docs/PLAYTEST_RELEASE_2026-09-24.md)。以下全PH门继续作为其余发布的默认规则；不得绕过更新后的 pre-push。
-
-根目录 CODEX_AUTOPILOT_V5.md 为当前执行指令，用户消息优先；V3/V4保留历史和未冲突的安全/正式设定/完整范围要求。当前交付为用户授权的Fantasy Map Simulator网页/PWA适配与完整沙盒，各国可采用不同行政制度。
-最高当前发布规则：PH00—PH35与全部子项、真实设备及用户视觉验收完成前，只在本地开发。禁止push任何分支/tag、远程PR/Issue/Milestone写入、发行包上传、Pages预览或生产触发。允许本地提交/依赖/测试及验证用临时构建；旧站保留。详见docs/RELEASE_POLICY_V4.md，不绕过.githooks/pre-push。
-本项目首次审计为空目录，无 v2 包、原有 100 项任务或地图参考。现有计划是补缺工程计划，不冒充原计划。
-用户最新确认主线为：自由创世 → 海陆与连续地形 → 国家、城市与首都 → 自主推演。固定五国测试战役保留为预设和规则回归，不能代替创世入口。
-自建世界编辑器不依赖原 100 项任务恢复或 ACCEPT-MAP。正式五国地图、CANON 未知项与正史验收仍独立待核；自由创作和测试五国地图都不得自动转为正式设定。
-保留正式设定；测试大陆不可自动转正。生产架构 TypeScript / React / Vite / PixiJS + 独立 sim-core + Web Worker + IndexedDB。
-M2/M3与M4-001/002/003保留已发布0.4.0基线；旧36PH/144子项是保留的完整要求和历史验收账，不再提供当前开发顺序。**当前只按plan/tasks.json.webRebuild推进V5绘图主线，WEB-PH02首份体验门未过前不扩建国家、行政、家族、信仰。** 旧M4-004未完成，范围仍映射PH18—20。不得伪造规则指纹或覆盖源历史；地理样本、模拟区、行政层级与视图LOD分离，地图生成产生真实可编辑数据。
-编辑状态与模拟状态分离；编辑时暂停，启动前校验拓扑与实体引用。自建世界存档与既有测试战役隔离，未来版本锁写、多标签冲突和备份保护不得退化。
-旧 schema1/rules0.1 世界继续原样运行，不静默迁移；新世界 schema2/rules0.2。旧自建世界只通过明确的经营推演副本获得新run和独立库，原历史不写。内外版本、经营层版本均保护；实际日结账与下一日预测分别显示。新外交命令必须 Worker 重验预览的 day/nextEventId，和平判定统一约束寻路、战斗、追击和占领。
-普通本地工程、检查与本地提交自动推进；云端写入受全部PH发布门约束，旧逐批发布授权已被新要求覆盖。登录、App授权、秘密输入、危险操作及不可代验的真机/视觉交由用户。
-每批 1—3 项，plan/tasks.json 是任务状态源，docs/AUTO_HANDOFF.md 是续接入口。
-所有任务以实际证据记录，CI 文件不等于真实云端 CI 已通过，移动仿真不等于真机验收。
-解除全部PH发布门之后才允许发行；仍只部署dist。唯一生产链为Pages原生Git：Ethanhui6/lieguoji-web → lieguoji-web，main生产、其他分支预览，因此锁定期所有push均禁止。不得另建Direct Upload/Actions链。免费私有仓库分支保护API实际403；保留私有/免费，最终同提交CI和预览通过后受控合并，云端结果单独记releaseVerification。
-不得读取认证文件、不得提交秘密、不得改动其他项目或绕过检查。
-参考游戏研究见 docs/REFERENCE_GAME_RESEARCH.md，采用玩法流程与规则关系，不复制代码、美术、文字或界面。未播放的视频不得记作实机观察。
+## 代码约定
+- TypeScript / React / Vite / PixiJS；模拟在 Web Worker（culture47 引擎），存档在 IndexedDB。
+- 模拟必须确定性可重放（journal：开局 + 操作）；改动规则后新建世界即用新规则。
+- 不提交秘密；不改动其他项目。

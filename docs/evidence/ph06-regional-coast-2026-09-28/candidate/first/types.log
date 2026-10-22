@@ -1,7 +1,0 @@
-.autopilot/ph06/regional-coast-staging/src/world/regional-coast-storage.test.ts(21,3): error TS2322: Type '{ format: "lieguoji-atlas-recipe"; version: 1; generator: { id: "add-detail-landmass"; version: 2; fingerprint: string; } | { id: "shape-detail-landmass"; version: 2; fingerprint: string; }; seed: string; parameters: { ...; }; }' is not assignable to type 'NaturalDetailRecipe | AddNaturalDetailRecipe'.
-  Type '{ format: "lieguoji-atlas-recipe"; version: 1; generator: { id: "add-detail-landmass"; version: 2; fingerprint: string; } | { id: "shape-detail-landmass"; version: 2; fingerprint: string; }; seed: string; parameters: { ...; }; }' is not assignable to type 'AddNaturalDetailRecipe'.
-    Types of property 'generator' are incompatible.
-      Type '{ id: "add-detail-landmass"; version: 2; fingerprint: string; } | { id: "shape-detail-landmass"; version: 2; fingerprint: string; }' is not assignable to type '{ id: "add-detail-landmass"; version: 2; fingerprint: string; }'.
-        Type '{ id: "shape-detail-landmass"; version: 2; fingerprint: string; }' is not assignable to type '{ id: "add-detail-landmass"; version: 2; fingerprint: string; }'.
-          Types of property 'id' are incompatible.
-            Type '"shape-detail-landmass"' is not assignable to type '"add-detail-landmass"'.

@@ -1,6 +1,0 @@
-{
-  "finishedAt": "2026-09-27T14:04:22.6032596+08:00",
-  "startedAt": "2026-09-27T14:04:20.5168410+08:00",
-  "command": "node node_modules/eslint/bin/eslint.js src/world/renderer.ts src/world/renderer.test.ts",
-  "exitCode": 0
-}

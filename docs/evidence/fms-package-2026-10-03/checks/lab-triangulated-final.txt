@@ -1,1 +1,0 @@
-[{"device":"desktop","status":"passed","exportedHeightCount":24576},{"device":"mobile","status":"passed","exportedHeightCount":24576}]

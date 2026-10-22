@@ -1,8 +1,0 @@
-{
-  "scope": "Read-only sources consulted after the single mathematical probe; no rerun or product edits",
-  "files": [
-    { "path": "src/world/generation-locks.ts", "sha256": "33728ca18e940fa3d45d45f8f2ea04530a57a824693113e9caec9c759e155881" },
-    { "path": "src/world/generation/detail-shape-natural.ts", "sha256": "11259248bec27fbed7aa13eafb6d1950817dbee1314a61fd36be7371b69b6e63" },
-    { "path": "src/world/generation/detail-shape.test.ts", "sha256": "0e39ac8003f685e4b1a708ac21348516d503841fe1334b7825171b9830c59620" }
-  ]
-}

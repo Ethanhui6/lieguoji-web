@@ -1,7 +1,0 @@
-{
-  "command": "node .autopilot/ph05/archive-evidence-v2.mjs --source-quiescent",
-  "startedAt": "2026-09-24T01:53:31.2900410Z",
-  "endedAt": "2026-09-24T01:53:33.2543548Z",
-  "exitCode": 1,
-  "log": ".autopilot\\ph05-archive-validation\\archive-run.log"
-}

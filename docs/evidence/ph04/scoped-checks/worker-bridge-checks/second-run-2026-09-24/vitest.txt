@@ -1,9 +1,0 @@
-
- RUN  v5.0.1 D:/游戏/架空地图模拟器
-
-
- Test Files  2 passed (2)
-      Tests  16 passed (16)
-   Start at  03:49:36
-   Duration  7.24s (tests 95%, transform 3%, import 2%)
-

@@ -1,5 +1,0 @@
-import type {Voyage24Run} from './voyage24-model';
-export function VoyagePanel({run,nationId,busy,toggle}:{run:Voyage24Run;nationId:string;busy:boolean;toggle:(enabled:boolean)=>void}){
- const s=run.voyages,m=s.missions[nationId],army=m?[...run.world.armies,...run.transports.cargo.map(c=>c.army)].find(a=>a.id===m.armyId):undefined,fleet=m?run.navy.fleets.find(f=>f.id===m.fleetId):undefined;
- return <section className="play-expedition" aria-label="自动跨海远征"><h3>跨海远征</h3><label><input type="checkbox" aria-label="自动组织远征" disabled={busy} checked={s.enabled[nationId]??false} onChange={e=>toggle(e.target.checked)}/> 自动组织远征</label><p role="status">{s.decisions[nationId]?.text??'开始时间后评估可达海岸、兵力、运力与粮储。'}</p>{m&&<dl><dt>阶段</dt><dd>{({assembling:'沿岸集结',outbound:'跨海航行',returning:'返港补给'})[m.phase]}</dd><dt>部队</dt><dd>{army?.name??'历史部队'} · {army?.troops.toLocaleString('zh-CN')} 人</dd><dt>舰队</dt><dd>{fleet?.name} · {fleet?.ships} 艘</dd></dl>}<small className="play-muted">和平期间保持戒备；具备海路联系和优势时，军事或均衡政策可自主宣战。手动接管的军队与舰队交由玩家指挥。关闭后停止新计划，已出海载军会安排安全返航。</small></section>;
-}

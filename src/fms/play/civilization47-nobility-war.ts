@@ -22,6 +22,9 @@ export function nobleArmy47(r:Run,armyId:string){
 }
 export function reconcileNobleArmies47(r:Run){
   const n=r.nobility;if(!n)return;
+  // Armies removed since the last day leave the ledger here.
+  const live=new Set(r.world.armies.filter(a=>a.status!=='destroyed').map(a=>a.id));
+  for(const id of Object.keys(n.armies))if(!live.has(id))delete n.armies[id];
   for(const a of r.world.armies)if(a.status!=='destroyed')nobleArmy47(r,a.id);
 }
 const leaderFamily=(r:Run,nationId:string)=>{const id=r.people.nations[nationId]?.leaderId;const p=id==null?null:r.kin.persons[id];return p?p.familyId:null;};

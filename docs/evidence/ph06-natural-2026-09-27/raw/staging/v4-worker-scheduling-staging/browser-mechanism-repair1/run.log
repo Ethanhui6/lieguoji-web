@@ -1,4 +1,0 @@
-{"mode":"timer","cancelAt":null,"actualMechanism":"setTimeout(0)","support":true,"completed":256,"elapsedMs":1252.5999999940395,"cancelReplyWallMs":null,"passed":true}
-{"mode":"timer","cancelAt":64,"actualMechanism":"setTimeout(0)","support":true,"completed":65,"elapsedMs":286.20000000298023,"cancelReplyWallMs":4.200000002980232,"passed":true}
-{"mode":"helper","cancelAt":null,"actualMechanism":"scheduler.postTask(background)","support":true,"completed":256,"elapsedMs":2.3999999910593033,"cancelReplyWallMs":null,"passed":true}
-{"mode":"helper","cancelAt":64,"actualMechanism":"scheduler.postTask(background)","support":true,"completed":66,"elapsedMs":0.3999999910593033,"cancelReplyWallMs":0.10000000894069672,"passed":true}

@@ -1,6 +1,0 @@
-
- RUN  v5.0.1 D:/游戏/架空地图模拟器
-
-(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
-  - import "../../../vite.config" without a file extension (.autopilot/ph06/v4-worker-scheduling-staging/vitest.config.ts:4:18). Add the file extension
-Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.

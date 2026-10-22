@@ -1,2 +1,0 @@
-src/fms/play/war42.test.ts(28,549): error TS2339: Property 'navy' does not exist on type 'GameRun'.
-  Property 'navy' does not exist on type 'RunBase & { version: 1; }'.

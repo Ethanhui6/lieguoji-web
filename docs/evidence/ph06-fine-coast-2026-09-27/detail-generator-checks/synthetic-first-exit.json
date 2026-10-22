@@ -1,8 +1,0 @@
-{
-  "command": "node .autopilot/ph06/detail-generator-checks/create-synthetic-fixture.mjs",
-  "exitCode": 0,
-  "started": "2026-09-27T14:59:35.3401238+08:00",
-  "finished": "2026-09-27T14:59:36.2401545+08:00",
-  "seconds": 0.9000307,
-  "scope": "Single synthetic evidence fixture generation, not a performance benchmark"
-}

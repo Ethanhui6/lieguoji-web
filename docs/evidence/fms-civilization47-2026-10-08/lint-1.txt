@@ -1,5 +1,0 @@
-
-D:\游戏\架空地图模拟器\src\fms\play\civilization47-names.ts
-  15:100  error  Unexpected control character(s) in regular expression: \x00, \x1f  no-control-regex
-
-✖ 1 problem (1 error, 0 warnings)

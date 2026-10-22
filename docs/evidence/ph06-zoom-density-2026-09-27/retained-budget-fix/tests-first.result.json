@@ -1,6 +1,0 @@
-{
-  "finishedAt": "2026-09-27T14:23:08.4043001+08:00",
-  "exitCode": 0,
-  "startedAt": "2026-09-27T14:22:35.8332940+08:00",
-  "command": "node node_modules/vitest/vitest.mjs run src/world/replacement-cooperation.test.ts src/world/generation-undo.test.ts src/world/constraints-session.test.ts --reporter=verbose --reporter=json --outputFile.json=.autopilot/ph06/current-completion-checks/retained-budget-fix/tests-first.json"
-}

@@ -1,2 +1,0 @@
-src/fms/play/army-commands47.test.ts(218,3): error TS2542: Index signature in type 'Readonly<Record<string, "Infantry" | "Archer" | "Shield" | "Cavalry" | "Elite">>' only permits reading.
-src/fms/play/force-losses47.ts(58,32): error TS2542: Index signature in type 'Readonly<Record<string, "Infantry" | "Archer" | "Shield" | "Cavalry" | "Elite">>' only permits reading.

@@ -1,1 +1,0 @@
-src/world/storage.test.ts(262,125): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.

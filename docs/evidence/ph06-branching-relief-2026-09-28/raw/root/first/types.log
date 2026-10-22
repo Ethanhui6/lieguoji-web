@@ -1,1 +1,0 @@
-src/world/generation/detail-orography.ts(37,5): error TS2322: Type 'number' is not assignable to type '0.000001'.

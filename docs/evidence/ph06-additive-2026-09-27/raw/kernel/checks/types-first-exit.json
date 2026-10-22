@@ -1,7 +1,0 @@
-{
-  "command": "node .autopilot/ph06/v4-additive-staging/checks/typecheck.mjs",
-  "exitCode": 0,
-  "started": "2026-09-27T15:18:06.2018479+08:00",
-  "finished": "2026-09-27T15:18:08.6488525+08:00",
-  "seconds": 2.4470046
-}

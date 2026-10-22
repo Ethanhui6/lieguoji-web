@@ -1,9 +1,0 @@
-
-Running 2 tests using 1 worker
-
-(node:48348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ok 1 [mobile-chromium] › tests\fms-battle-animation.spec.ts:8:1 › FMS: original battle clip follows a real naval contact, pauses and respects reduced motion (1.4m)
-  ok 2 [mobile-chromium] › tests\fms-cartography.spec.ts:7:1 › drawn diagonal world keeps map labels anchored and the chronicle focused on major events (33.1s)
-
-  2 passed (1.9m)

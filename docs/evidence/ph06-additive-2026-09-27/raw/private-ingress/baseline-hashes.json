@@ -1,8 +1,0 @@
-{
-  "recordedAt": "2026-09-27T09:35:03.8732020Z",
-  "source": "src/world/bridge.ts",
-  "sha256": "413834ec234a995fa13f04e670f760b2407c42f7e57f18d35093217f0b3e83cf",
-  "newTest": "src/world/detail-private-ingress.test.ts",
-  "newTestExists": false,
-  "stagingOnly": true
-}

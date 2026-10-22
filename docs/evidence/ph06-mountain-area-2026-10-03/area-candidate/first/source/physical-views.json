@@ -1,5 +1,0 @@
-[
-  {"name":"full","leftWorld":0,"topWorld":0,"stepWorld":8,"width":513,"height":513},
-  {"name":"west-range","leftWorld":1200,"topWorld":850,"stepWorld":2,"width":512,"height":512},
-  {"name":"east-range","leftWorld":2250,"topWorld":850,"stepWorld":2,"width":512,"height":512}
-]

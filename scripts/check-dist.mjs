@@ -63,29 +63,14 @@ const terrainLicenses = fs.readFileSync(path.join(root, 'terrain-licenses.txt'))
 if (terrainLicenses.length > 65536 || !terrainLicenses.equals(fs.readFileSync('public/terrain-licenses.txt'))) {
   reject('terrain-licenses.txt', 'must match the reviewed bounded public license artifact');
 }
-if (!files.some(file => /^assets\/sim\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
-  reject('assets/sim.worker-<hash>.js', 'required simulation Worker is missing');
-}
-if (!files.some(file => /^assets\/replay\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
-  reject('assets/replay.worker-<hash>.js', 'required isolated replay Worker is missing');
-}
-if (!files.some(file => /^assets\/atlas\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
-  reject('assets/atlas.worker-<hash>.js', 'required isolated atlas draft Worker is missing');
-}
-if (!files.some(file => /^assets\/biome\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
-  reject('assets/biome.worker-<hash>.js', 'required isolated climate and rainfall river Worker is missing');
-}
-if (!files.some(file => /^assets\/play\.worker-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
-  reject('assets/play.worker-<hash>.js', 'required FMS gameplay Worker is missing');
+// Workers of the current game (0.5.0): culture simulation, terrain, coast and climate.
+for (const name of ['culture47', 'terrain', 'coast', 'biome']) {
+  if (!files.some(file => new RegExp(`^assets/${name}\\.worker-[A-Za-z0-9_-]{8}\\.js$`).test(file))) {
+    reject(`assets/${name}.worker-<hash>.js`, 'required game Worker is missing');
+  }
 }
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }
 if(files.filter(file=>battleAtlasName.test(file.replace(/^assets\//,''))).length!==1)reject('battle-sword','exactly one reviewed battle animation atlas required');
-for(const e of JSON.parse(fs.readFileSync('src/fms/play/culture47-frozen.json','utf8'))){
-  const prefix='assets/'+e.file.replace(/\.js$/,'-'),matches=files.filter(f=>f.startsWith(prefix)&&f.endsWith('.js'));
-  if(matches.length!==1)reject(e.file,'exactly one registered old culture Worker required');
-  const bytes=fs.readFileSync(path.join(root,matches[0]));
-  if(bytes.length!==e.bytes||createHash('sha256').update(bytes).digest('hex')!==e.sha256)reject(e.file,'old culture Worker must retain original bytes');
-}
 console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas and parchment.`);

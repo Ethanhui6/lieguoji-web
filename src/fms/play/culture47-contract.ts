@@ -1,8 +1,8 @@
-import frozen from './culture47-frozen.json';
 import {assertCulture47Journal,CULTURE47_RULE,culture47Budget,type Culture47Journal} from './culture47-session';
 
-type FrozenEntry=Omit<(typeof frozen)[number],'journalVersion'>&{journalVersion?:number};
-export const frozenCulture47=(engine:string):FrozenEntry|undefined=>frozen.find(e=>e.engine===engine);
+// Since 0.5.0 only worlds of the current engine are supported; older engines are not shipped.
+type FrozenEntry={engine:string;file:string;bytes:number;sha256:string;protocol:number;journalVersion?:number};
+export const frozenCulture47=(engine:string):FrozenEntry|undefined=>void engine as undefined;
 export const culture47JournalVersion=(engine:string)=>engine===__CULTURE47_ENGINE__?2:frozenCulture47(engine)?.journalVersion??1;
 export const supportsCulture47=(engine:string)=>engine===__CULTURE47_ENGINE__||!!frozenCulture47(engine);
 // Execution / transport failure is not evidence of a corrupt journal.

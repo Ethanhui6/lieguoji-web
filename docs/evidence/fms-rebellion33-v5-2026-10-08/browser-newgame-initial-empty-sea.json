@@ -1,8 +1,0 @@
-{
-  "origin": "http://127.0.0.1:5222/?fms=1",
-  "scope": "Fresh disposable context; normal default map/new-game flow, no test save injection",
-  "errors": [],
-  "httpFailures": [],
-  "passed": false,
-  "failure": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('fms-play')\nExpected: \"33\"\nReceived: \"\"\nTimeout:  60000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" getByTestId('fms-play') with timeout 60000ms\n  - waiting for getByTestId('fms-play')\n    121 × locator resolved to <section data-day=\"\" data-run-id=\"\" class=\"fms-play\" data-run-rules=\"\" data-run-version=\"\" data-testid=\"fms-play\" data-map-mode=\"political\" data-interaction=\"nation\">…</section>\n        - unexpected value \"\"\n"
-}

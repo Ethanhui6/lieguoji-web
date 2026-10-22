@@ -1,7 +1,0 @@
-src/fms/play/war34-settlement.ts(37,47): error TS2345: Argument of type 'Omit<NativePeaceWar, "goals"> & { annexationConquerorId: number; goals: NativeSettlementGoal[]; } & { motherStateId: number; } & { rebelStateId: number; casusBelliId: number; }' is not assignable to parameter of type '{ primaryAttackerId: number; primaryDefenderId: number; participants: readonly { stateId: number; side: 0 | 1; }[]; }'.
-  Types of property 'participants' are incompatible.
-    Type 'NativeWarParticipant[]' is not assignable to type 'readonly { stateId: number; side: 0 | 1; }[]'.
-      Type 'NativeWarParticipant' is not assignable to type '{ stateId: number; side: 0 | 1; }'.
-        Types of property 'side' are incompatible.
-          Type 'NativeWarSide' is not assignable to type '0 | 1'.
-            Type '2' is not assignable to type '0 | 1'.

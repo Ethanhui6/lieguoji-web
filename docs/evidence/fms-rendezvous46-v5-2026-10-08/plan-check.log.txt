@@ -1,3 +1,0 @@
-Plan checked: 61 tasks, 36 PH, 144 work items; original 25 task digest preserved; V5 8 phases/57 work items, active WEB-PH04; release lock does not block local development
-
-EXIT_CODE=0

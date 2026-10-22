@@ -1,8 +1,0 @@
-{
-  "origin": "http://127.0.0.1:5234/?fms=1",
-  "scope": "Fresh disposable context; UI creates original terrain on empty sea then new game; no test save injection",
-  "errors": [],
-  "httpFailures": [],
-  "passed": true,
-  "restoredDay": 1
-}

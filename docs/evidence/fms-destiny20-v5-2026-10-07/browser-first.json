@@ -1,6 +1,0 @@
-{
-  "status": "interrupted_after_identified_product_failure",
-  "cause": "Store22 resume button retained old restoration label. Test waiting for correct destiny label after actual create/save/reload. Fixed label; assertions retained.",
-  "artifacts": ".autopilot/destiny20-browser-first",
-  "scope": "Not passed; no full browser report claimed."
-}

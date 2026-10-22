@@ -1,6 +1,0 @@
-{
-  "completedAt": "2026-09-24T04:15:07.1104798+08:00",
-  "exitCode": 0,
-  "startedAt": "2026-09-24T04:14:49.9461868+08:00",
-  "command": "node node_modules/vitest/vitest.mjs run src/world/renderer.test.ts"
-}

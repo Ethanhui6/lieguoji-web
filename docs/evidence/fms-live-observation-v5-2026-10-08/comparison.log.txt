@@ -1,1 +1,0 @@
-[{"label":"before","chromeAreaFraction":0.28704472634960815},{"label":"after","chromeAreaFraction":0.19589913531216568}]

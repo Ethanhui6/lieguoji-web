@@ -1,8 +1,0 @@
-
-Running 1 test using 1 worker
-
-(node:8340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ok 1 [mobile-chromium] › tests\atlas-local-relief.spec.ts:158:1 › [detail-v4-local-relief] native saved continent, land selection, private cancel, real height edit, undo and reload (3.8m)
-
-  1 passed (3.9m)

@@ -1,8 +1,0 @@
-{
-  "scope": "Isolated Chromium dev, real v29 Worker and candidate v30 IndexedDB; no v30 session/UI or native/phone acceptance.",
-  "origin": "http://127.0.0.1:5215",
-  "errors": [],
-  "passed": false,
-  "driver": "project Playwright 1.63; bundled Python lacks playwright",
-  "failure": "Error: page.goto: net::ERR_CONNECTION_RESET at http://127.0.0.1:5215/?fms=1\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5215/?fms=1\", waiting until \"networkidle\"\u001b[22m\n"
-}

@@ -52,7 +52,7 @@ import {sameCulture47Value} from './culture47-equal';
 import {Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import type {Culture47Snapshot,Culture47Request as WorkerRequest} from './culture47.worker';
 import type {Culture47Action,Culture47Journal} from './culture47-session';
-import {loadCulture47,saveCulture47,CULTURE47_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_FRESH_DATABASE,CULTURE47_GENERATIONS_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
+import {loadCulture47,saveCulture47,CULTURE47_LONGPLAY_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_GENERATIONS_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {ARMY_RETIREMENT_RULE47} from './army-retirement47';
 import {ARMY_RECOVERY_RULE47} from './army-recovery47';
@@ -117,7 +117,7 @@ function CityIdentity({cityId,run,busy,edit}:{cityId:string;run:FoundingForces47
   const row=run.civilization.cities[cityId],city=run.world.cities.find(c=>c.id===cityId)!,[value,setValue]=useState(row.name.custom??'');
   return <form onSubmit={e=>{e.preventDefault();edit({kind:'city',id:cityId,customName:value.trim()||null});}}><label>{city.name} · {culture47(row.cultureId).label}文化<input aria-label="自定城市名" value={value} maxLength={100} placeholder={row.name.value} onChange={e=>setValue(e.target.value)}/></label><button disabled={busy}>应用城市名</button></form>;
 }
-export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:FmsDocument;onClose:()=>void;onLegacy:()=>void;entryNotice?:string}){
+export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocument;onClose:()=>void;entryNotice?:string}){
   const [snapshot,setSnapshot]=useState<Culture47Snapshot|null>(null),[busy,setBusy]=useState(false),[playing,setPlayingState]=useState(false),[notice,setNotice]=useState(''),[saved,setSaved]=useState<SavedCulture47|null>(null),[locked,setLocked]=useState(false),[storageReady,setStorageReady]=useState(false);
   // ACK continuations can run before React commits a queued pause. Keep the
   // playback gate synchronous for pause, foreground previews, close and errors.
@@ -175,7 +175,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   const client=useRef<Culture47Client|null>(null),current=useRef(snapshot),inflight=useRef(false),revision=useRef<number|null>(null),lifetime=useRef<AbortController|null>(null),host=useRef<HTMLDivElement>(null);
   const readyWorld=useRef<ReadyCulture47|null>(null);
   const storageDatabase=useRef<Culture47Database>(CULTURE47_LONGPLAY_DATABASE);
-  const [storageChoice,setStorageChoice]=useState<'auto'|Culture47Database>('auto');
+  const storageChoice='auto';
   const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
   current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView};
   useEffect(()=>{const controller=new AbortController(),reading=new AbortController();lifetime.current=controller;storageAbort.current=reading;client.current=new Culture47Client();setStorageReading(true);setStorageReady(false);setLocked(false);
@@ -201,7 +201,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
         candidate.value={client:restored,snapshot:loaded,journal:structuredClone(j)};
       }catch(error){restored.close();throw error;}
     };
-    const readWorld=async()=>{const databases:Culture47Database[]=storageChoice==='auto'?[CULTURE47_GENERATIONS_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_FRESH_DATABASE,CULTURE47_LONGPLAY_DATABASE,CULTURE47_NEW_DATABASE,CULTURE47_DATABASE]:[storageChoice];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db);if(found)return found;}return null;};
+    const readWorld=async()=>{const databases:Culture47Database[]=[CULTURE47_GENERATIONS_DATABASE];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db);if(found)return found;}return null;};
     void readWorld().then(s=>{
       if(controller.signal.aborted||reading.signal.aborted){discard();return;}
       const held=candidate.value;
@@ -539,9 +539,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
       {locked&&!storageReading&&<button onClick={()=>setStorageAttempt(n=>n+1)}>重新读取存档</button>}
       {saved&&<button disabled={busy} onClick={()=>void send({type:'load',journal:saved.journal})}>{busy?'正在恢复文化世界…':'继续文化世界'}{saved.recovered?'（已找到有效备份）':''}</button>}
       <button disabled={busy||storageReading} onClick={()=>setMenu('load')}>加载游戏</button>
-      <details><summary>选择存档位置</summary><div className="c47-segment">{([[CULTURE47_GENERATIONS_DATABASE,'世代世界'],[CULTURE47_RETIREMENT_DATABASE,'补军续玩副本'],[CULTURE47_FRESH_DATABASE,'补军版世界'],[CULTURE47_LONGPLAY_DATABASE,'旧续玩副本'],[CULTURE47_NEW_DATABASE,'上版世界'],[CULTURE47_DATABASE,'原版世界']] as const).map(([db,label])=><button key={db} disabled={busy||storageReading} onClick={()=>{setSaved(null);setStorageChoice(db);setStorageAttempt(n=>n+1);}}>{label}</button>)}</div><small>新世界支持婚育与后代成长，使用独立存档。旧世界仍按各自规则继续。</small></details>
-      <button onClick={onLegacy} disabled={busy}>继续旧世界 / 原版本功能</button>
-      <details className="c47-scope"><summary>本次可试玩的范围</summary><p>真实文化、独立信仰与政体、两种命名、家族传位、财政动员和实际位置行军已接入。可预览宣战及停战；自主外交和有完整宣战史的外战结算已接续。分裂、宗教传播、宗属与内战仍待完善，海陆速度比例尚待校准。</p><p>新世界独立保存；旧世界使用原版本。新版没有固定日数或指令总量的结束门槛，保留完整历史；长历史冷恢复仍需要时间，存储容量取决于设备。旧版保持原 1000 日预算，已验证的版本可明确建立独立续玩副本。已登记版本由原引擎继续，未知版本保留并锁定。旧版兼容入口暂不提供传位预览及任意海面军令。原试玩入口仍保留。</p></details>
+      <details className="c47-scope"><summary>本次可试玩的范围</summary><p>原作地图与文化、国家与城市、自主外交与战争、行省叛乱、原作家族（领地、婚育、继承、家族叛乱与内战）已接入。只支持本版本创建的世界，旧版本存档不再读取。</p></details>
     </section>}
     {r&&<>
       {[CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(snapshot.journal.engine)&&<section className="c47-continuation" aria-label="安全续玩"><span>升级补军规则 · 副本保留全部前史，独立保存</span><button disabled={busy||advancing||locked||storageReading} onClick={()=>void continueLongPlay()}>建立续玩副本</button></section>}

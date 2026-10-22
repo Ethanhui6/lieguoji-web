@@ -1,108 +1,25 @@
-import {fingerprintCulture47,culture47Files} from './scripts/fms-culture47-fingerprint.ts';
-import {verifyFrozenCulture47} from './scripts/fms-culture47-frozen.ts';
-import {fingerprintWar46,war46Files} from './scripts/fms-war46-fingerprint';
-import {fingerprintWar45,war45Files} from './scripts/fms-war45-fingerprint';
-import {fingerprintWar44,war44Files} from './scripts/fms-war44-fingerprint';
-import {fingerprintWar43,war43Files} from './scripts/fms-war43-fingerprint';
-import {fingerprintWar42,war42Files} from './scripts/fms-war42-fingerprint';
-import {fingerprintWar41,war41Files} from './scripts/fms-war41-fingerprint';
-import {fingerprintWar40,war40Files} from './scripts/fms-war40-fingerprint';
-import {fingerprintWar39,war39Files} from './scripts/fms-war39-fingerprint';
-import {fingerprintWar38,war38Files} from './scripts/fms-war38-fingerprint';
-import {fingerprintWar37,war37Files} from './scripts/fms-war37-fingerprint';
-import {fingerprintWar36,war36Files} from './scripts/fms-war36-fingerprint';
-import {fingerprintWar35,war35Files} from './scripts/fms-war35-fingerprint';
-import {fingerprintWar34,war34Files} from './scripts/fms-war34-fingerprint';
-import {fingerprintWar33,war33Files} from './scripts/fms-war33-fingerprint';
-import {fingerprintWar32,war32Files} from './scripts/fms-war32-fingerprint.ts';
-import {fingerprintWar31,war31Files} from './scripts/fms-war31-fingerprint.ts';
-import {fingerprintWar30,war30Files} from './scripts/fms-war30-fingerprint.ts';
-import {fingerprintWar29,war29Files} from './scripts/fms-war29-fingerprint.ts';
-import {fingerprintWar28,war28Files} from './scripts/fms-war28-fingerprint.ts';
-import {fingerprintWar27,war27Files} from './scripts/fms-war27-fingerprint.ts';
-import {fingerprintWar26,war26Files} from './scripts/fms-war26-fingerprint.ts';
-import {settlement25Files,fingerprintSettlement25} from './scripts/fms-settlement25-fingerprint.ts';
-import {voyage24Files,fingerprintVoyage24} from './scripts/fms-voyage24-fingerprint.ts';
-import {dynasty23Files,fingerprintDynasty23} from './scripts/fms-dynasty23-fingerprint.ts';
-import {life22Files,fingerprintLife22} from './scripts/fms-life22-fingerprint.ts';
-import {muster21Files,fingerprintMuster21} from './scripts/fms-muster21-fingerprint.ts';
-import {destiny20Files,fingerprintDestiny20} from './scripts/fms-destiny20-fingerprint.ts';
-import {restoration19Files,fingerprintRestoration19} from './scripts/fms-restoration19-fingerprint.ts';
-import {naming18Files,fingerprintNaming18} from './scripts/fms-naming18-fingerprint.ts';
-import {culture17Files,fingerprintCulture17} from './scripts/fms-culture17-fingerprint.ts';
-import {court16Files,fingerprintCourt16} from './scripts/fms-court16-fingerprint.ts';
-import {fiscal15Files,fingerprintFiscal15} from './scripts/fms-fiscal15-fingerprint.ts';
-import {upper14Files,fingerprintUpper14} from './scripts/fms-upper14-fingerprint.ts';
-import {terrain13Files,fingerprintTerrain13} from './scripts/fms-terrain13-fingerprint.ts';
-import {chronicle2Files,fingerprintChronicle2} from './scripts/fms-chronicle2-fingerprint.ts';
-import {chronicleFiles,fingerprintChronicle} from './scripts/fms-chronicle-fingerprint.ts';
-import {campaignFiles,fingerprintCampaign} from "./scripts/fms-campaign-fingerprint.ts";
-import {tacticsFiles,fingerprintTactics} from './scripts/fms-tactics-fingerprint.ts';
+import {fingerprintCulture47} from './scripts/fms-culture47-fingerprint.ts';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import {fmsPlayFiles,fingerprintFmsPlay} from './scripts/fms-play-fingerprint.ts';
-import { fingerprintSeedTerrain } from './scripts/seed-terrain-fingerprint.ts';
 import { execFileSync } from 'node:child_process';
 import {readFileSync} from 'node:fs';
-import {engineFiles,fingerprintSources,verifyFrozenSources} from './scripts/engine-fingerprint.ts';
-import {fingerprintCoastGenerator,fingerprintIslandGenerator,fingerprintLandformGenerator,fingerprintMacroGenerator,fingerprintShapeGenerator,fingerprintOceanGenerator,fingerprintDetailShapeGenerator,fingerprintAddDetailGenerator,fingerprintNaturalDetailGenerator,fingerprintAddNaturalDetailGenerator,fingerprintLocalDetailReliefGenerator} from './scripts/generator-fingerprint.ts';
+
+// Since 0.5.0 only the current engine is shipped. The older rule stamps the
+// current models still carry are fixed values (scripts/rule-stamps.json),
+// taken from the last build that computed them, so simulation results stay
+// identical; only the current engine fingerprint is computed per build.
 let commit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || 'uncommitted';
 try { if(commit === 'uncommitted') commit = execFileSync('git', ['rev-parse','HEAD'], {stdio:['ignore','pipe','ignore']}).toString().trim(); } catch { /* First local build has no commit. */ }
 const headers=Object.fromEntries(readFileSync('public/_headers','utf8').split('\n').filter(line=>line.startsWith('  ')).map(line=>{const colon=line.indexOf(':');return [line.slice(0,colon).trim(),line.slice(colon+1).trim()];}));
-const engineFingerprint=fingerprintSources(engineFiles);
-const fmsPlayFingerprint=fingerprintFmsPlay();
-const fmsTacticsFingerprint=fingerprintTactics();
-const fmsCampaignFingerprint=fingerprintCampaign();
-const fmsChronicleFingerprint=fingerprintChronicle();
-const fmsChronicle2Fingerprint=fingerprintChronicle2();
-const fmsTerrain13Fingerprint=fingerprintTerrain13();
-const fmsUpper14Fingerprint=fingerprintUpper14();
-const fmsFiscal15Fingerprint=fingerprintFiscal15();
-const fmsCourt16Fingerprint=fingerprintCourt16();
-const fmsCulture17Fingerprint=fingerprintCulture17();
-const macroGenerator=fingerprintMacroGenerator();
-const landformGenerator=fingerprintLandformGenerator();
-const islandGenerator=fingerprintIslandGenerator();
-const coastGenerator=fingerprintCoastGenerator();
-const shapeGenerator=fingerprintShapeGenerator();
-const oceanGenerator=fingerprintOceanGenerator();
-const detailShapeGenerator=fingerprintDetailShapeGenerator();
-const addDetailGenerator=fingerprintAddDetailGenerator();
-const naturalDetailGenerator=fingerprintNaturalDetailGenerator();
-const addNaturalDetailGenerator=fingerprintAddNaturalDetailGenerator();
-const localDetailReliefGenerator=fingerprintLocalDetailReliefGenerator();
-const seedTerrainGenerator=fingerprintSeedTerrain();
-verifyFrozenSources();
-verifyFrozenCulture47();
 const version=JSON.parse(readFileSync('package.json','utf8')).version as string;
-const fmsNaming18Fingerprint=fingerprintNaming18();
-const fmsRestoration19Fingerprint=fingerprintRestoration19();
-const fmsDestiny20Fingerprint=fingerprintDestiny20();
-const fmsMuster21Fingerprint=fingerprintMuster21();
-const fmsLife22Fingerprint=fingerprintLife22();
-const fmsDynasty23Fingerprint=fingerprintDynasty23();
-const fmsWar28Fingerprint=fingerprintWar28();
-const fmsWar27Fingerprint=fingerprintWar27();
-const fmsWar26Fingerprint=fingerprintWar26();
-const fmsSettlement25Fingerprint=fingerprintSettlement25();
-const fmsVoyage24Fingerprint=fingerprintVoyage24();
-const fmsWar29Fingerprint=fingerprintWar29();
-const fmsWar30Fingerprint=fingerprintWar30();
-const fmsWar31Fingerprint=fingerprintWar31();
-const fmsWar32Fingerprint=fingerprintWar32();
-const fmsWar33Fingerprint=fingerprintWar33();
-const fmsWar34Fingerprint=fingerprintWar34();
-const fmsWar35Fingerprint=fingerprintWar35();
-const fmsWar36Fingerprint=fingerprintWar36();
-const fmsWar37Fingerprint=fingerprintWar37();
-const fmsWar38Fingerprint=fingerprintWar38();
-const fmsWar39Fingerprint=fingerprintWar39();
-const fmsWar40Fingerprint=fingerprintWar40();
-const fmsWar41Fingerprint=fingerprintWar41();
-const fmsWar42Fingerprint=fingerprintWar42();
-const fmsWar43Fingerprint=fingerprintWar43();
-const fmsWar44Fingerprint=fingerprintWar44();
-const fmsWar45Fingerprint=fingerprintWar45();
-const fmsWar46Fingerprint=fingerprintWar46();
+const stamps=JSON.parse(readFileSync('scripts/rule-stamps.json','utf8')) as Record<string,string>;
 const culture47Fingerprint=fingerprintCulture47();
-export default defineConfig({ plugins:[react(),{name:'game-build-metadata',configureServer(server){server.watcher.on('change',file=>{if([...culture47Files(),...engineFiles,...fmsPlayFiles,...tacticsFiles,...campaignFiles,...chronicleFiles,...chronicle2Files,...terrain13Files,...upper14Files,...fiscal15Files,...court16Files,...culture17Files,...naming18Files,...restoration19Files,...destiny20Files,...muster21Files,...life22Files,...dynasty23Files,...voyage24Files,...settlement25Files,...war26Files,...war27Files,...war28Files,...war29Files,...war30Files,...war31Files,...war32Files,...war33Files,...war34Files,...war35Files,...war36Files,...war37Files,...war38Files,...war39Files,...war40Files,...war41Files,...war42Files,...war43Files,...war44Files,...war45Files,...war46Files,...macroGenerator.files,...landformGenerator.files,...islandGenerator.files,...coastGenerator.files,...shapeGenerator.files,...oceanGenerator.files,...detailShapeGenerator.files,...addDetailGenerator.files,...naturalDetailGenerator.files,...addNaturalDetailGenerator.files,...localDetailReliefGenerator.files,...seedTerrainGenerator.files,...seedTerrainGenerator.externalFiles].some(source=>file.replace(/\\/g,'/').endsWith(`/${source}`)))void server.restart();});},generateBundle(){this.emitFile({type:'asset',fileName:'build.json',source:JSON.stringify({version,commit,culture47Fingerprint,engineFingerprint,fmsPlayFingerprint,fmsTacticsFingerprint,fmsCampaignFingerprint,fmsChronicleFingerprint,fmsChronicle2Fingerprint,fmsTerrain13Fingerprint,fmsUpper14Fingerprint,fmsFiscal15Fingerprint,fmsCourt16Fingerprint,fmsCulture17Fingerprint,fmsNaming18Fingerprint,fmsRestoration19Fingerprint,fmsDestiny20Fingerprint,fmsMuster21Fingerprint,fmsLife22Fingerprint,fmsDynasty23Fingerprint,fmsVoyage24Fingerprint,fmsSettlement25Fingerprint,fmsWar26Fingerprint,fmsWar27Fingerprint,fmsWar28Fingerprint,fmsWar29Fingerprint,fmsWar30Fingerprint,fmsWar31Fingerprint,fmsWar32Fingerprint,fmsWar33Fingerprint,fmsWar34Fingerprint,fmsWar35Fingerprint,fmsWar36Fingerprint,fmsWar37Fingerprint,fmsWar38Fingerprint,fmsWar39Fingerprint,fmsWar40Fingerprint,fmsWar41Fingerprint,fmsWar42Fingerprint,fmsWar43Fingerprint,fmsWar44Fingerprint,fmsWar45Fingerprint,fmsWar46Fingerprint,macroGenerator,landformGenerator,islandGenerator,coastGenerator,shapeGenerator,oceanGenerator,detailShapeGenerator,addDetailGenerator,naturalDetailGenerator,addNaturalDetailGenerator,localDetailReliefGenerator,seedTerrainGenerator,rules:'0.2.0',supportedRules:['0.1.0','0.2.0'],entry:'world-studio',scenarios:['custom-world','test-continent']})});}}], define:{__CULTURE47_ENGINE__:JSON.stringify(culture47Fingerprint),__FMS_WAR46_ENGINE__:JSON.stringify(fmsWar46Fingerprint),__FMS_WAR45_ENGINE__:JSON.stringify(fmsWar45Fingerprint),__FMS_WAR44_ENGINE__:JSON.stringify(fmsWar44Fingerprint),__FMS_WAR43_ENGINE__:JSON.stringify(fmsWar43Fingerprint),__FMS_WAR42_ENGINE__:JSON.stringify(fmsWar42Fingerprint),__FMS_WAR41_ENGINE__:JSON.stringify(fmsWar41Fingerprint),__FMS_WAR40_ENGINE__:JSON.stringify(fmsWar40Fingerprint),__FMS_WAR39_ENGINE__:JSON.stringify(fmsWar39Fingerprint),__FMS_WAR38_ENGINE__:JSON.stringify(fmsWar38Fingerprint),__FMS_WAR37_ENGINE__:JSON.stringify(fmsWar37Fingerprint),__FMS_WAR36_ENGINE__:JSON.stringify(fmsWar36Fingerprint),__FMS_WAR35_ENGINE__:JSON.stringify(fmsWar35Fingerprint),__FMS_WAR34_ENGINE__:JSON.stringify(fmsWar34Fingerprint),__FMS_WAR33_ENGINE__:JSON.stringify(fmsWar33Fingerprint),__FMS_WAR32_ENGINE__:JSON.stringify(fmsWar32Fingerprint),__FMS_WAR31_ENGINE__:JSON.stringify(fmsWar31Fingerprint),__FMS_WAR30_ENGINE__:JSON.stringify(fmsWar30Fingerprint),__FMS_WAR29_ENGINE__:JSON.stringify(fmsWar29Fingerprint),__FMS_WAR28_ENGINE__:JSON.stringify(fmsWar28Fingerprint),__FMS_WAR27_ENGINE__:JSON.stringify(fmsWar27Fingerprint),__FMS_WAR26_ENGINE__:JSON.stringify(fmsWar26Fingerprint),__FMS_SETTLEMENT25_ENGINE__:JSON.stringify(fmsSettlement25Fingerprint),__FMS_VOYAGE24_ENGINE__:JSON.stringify(fmsVoyage24Fingerprint),__FMS_DYNASTY23_ENGINE__:JSON.stringify(fmsDynasty23Fingerprint),__FMS_LIFE22_ENGINE__:JSON.stringify(fmsLife22Fingerprint),__FMS_MUSTER21_ENGINE__:JSON.stringify(fmsMuster21Fingerprint),__FMS_DESTINY20_ENGINE__:JSON.stringify(fmsDestiny20Fingerprint),__FMS_RESTORATION19_ENGINE__:JSON.stringify(fmsRestoration19Fingerprint),__FMS_NAMING18_ENGINE__:JSON.stringify(fmsNaming18Fingerprint),__FMS_CULTURE17_ENGINE__:JSON.stringify(fmsCulture17Fingerprint),__FMS_COURT16_ENGINE__:JSON.stringify(fmsCourt16Fingerprint),__FMS_FISCAL15_ENGINE__:JSON.stringify(fmsFiscal15Fingerprint),__FMS_UPPER14_ENGINE__:JSON.stringify(fmsUpper14Fingerprint),__FMS_TERRAIN13_ENGINE__:JSON.stringify(fmsTerrain13Fingerprint),__FMS_CHRONICLE2_ENGINE__:JSON.stringify(fmsChronicle2Fingerprint),__FMS_CHRONICLE_ENGINE__:JSON.stringify(fmsChronicleFingerprint),__FMS_CAMPAIGN_ENGINE__:JSON.stringify(fmsCampaignFingerprint),__FMS_TACTICS_ENGINE__:JSON.stringify(fmsTacticsFingerprint),__FMS_PLAY_ENGINE__:JSON.stringify(fmsPlayFingerprint),__BUILD_SHA__:JSON.stringify(commit),__SIM_ENGINE__:JSON.stringify(engineFingerprint),__MACRO_GENERATOR_FINGERPRINT__:JSON.stringify(macroGenerator.sha256),__LANDFORM_GENERATOR_FINGERPRINT__:JSON.stringify(landformGenerator.sha256),__ISLAND_GENERATOR_FINGERPRINT__:JSON.stringify(islandGenerator.sha256),__COAST_GENERATOR_FINGERPRINT__:JSON.stringify(coastGenerator.sha256),__SHAPE_GENERATOR_FINGERPRINT__:JSON.stringify(shapeGenerator.sha256),__OCEAN_GENERATOR_FINGERPRINT__:JSON.stringify(oceanGenerator.sha256),__DETAIL_SHAPE_GENERATOR_FINGERPRINT__:JSON.stringify(detailShapeGenerator.sha256),__ADD_DETAIL_GENERATOR_FINGERPRINT__:JSON.stringify(addDetailGenerator.sha256),__NATURAL_DETAIL_GENERATOR_FINGERPRINT__:JSON.stringify(naturalDetailGenerator.sha256),__ADD_NATURAL_DETAIL_GENERATOR_FINGERPRINT__:JSON.stringify(addNaturalDetailGenerator.sha256),__LOCAL_DETAIL_RELIEF_GENERATOR_FINGERPRINT__:JSON.stringify(localDetailReliefGenerator.sha256),__SEED_TERRAIN_FINGERPRINT__:JSON.stringify(seedTerrainGenerator.sha256)}, test:{include:['src/**/*.test.ts'],maxWorkers:1}, build:{sourcemap:false}, server:{host:'127.0.0.1'},preview:{headers} });
+const define=Object.fromEntries([...Object.entries(stamps),['__CULTURE47_ENGINE__',culture47Fingerprint],['__BUILD_SHA__',commit]].map(([k,v])=>[k,JSON.stringify(v)]));
+export default defineConfig({
+ plugins:[react(),{name:'game-build-metadata',generateBundle(){this.emitFile({type:'asset',fileName:'build.json',source:JSON.stringify({version,commit,culture47Fingerprint})});}}],
+ define,
+ test:{include:['src/**/*.test.ts'],maxWorkers:1},
+ build:{sourcemap:false},
+ server:{host:'127.0.0.1'},
+ preview:{headers},
+});

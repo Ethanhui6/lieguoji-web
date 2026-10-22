@@ -1,8 +1,0 @@
-
-Running 1 test using 1 worker
-
-(node:17412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ok 1 [map-chrome-responsive-chromium] › .autopilot\ph06\map-chrome-browser-staging\tests\atlas-map-chrome.spec.ts:280:1 › map chrome and v4 running cancellation: one UI-created ocean draft (46.0s)
-
-  1 passed (47.0s)

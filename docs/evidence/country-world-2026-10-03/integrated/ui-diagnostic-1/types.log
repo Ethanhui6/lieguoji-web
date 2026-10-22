@@ -1,9 +1,0 @@
-src/world/politics/geography.test.ts(136,84): error TS18048: 'data.detailCoast' is possibly 'undefined'.
-src/world/politics/geography.test.ts(198,105): error TS18048: 'beforeQuery.detailCoast' is possibly 'undefined'.
-src/world/politics/geography.ts(99,46): error TS2322: Type 'AtlasDraftManifest | AtlasDraftManifestV2 | AtlasDraftManifestV3 | AtlasDraftManifestV4' is not assignable to type 'AtlasDraftManifestV4'.
-  Type 'AtlasDraftManifest' is missing the following properties from type 'AtlasDraftManifestV4': origin, surface, detailCoast, generation, constraints
-src/world/politics/geography.ts(249,51): error TS18046: 'a' is of type 'unknown'.
-src/world/politics/geography.ts(249,55): error TS18046: 'b' is of type 'unknown'.
-src/world/politics/geography.ts(253,36): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
-src/world/politics/geography.ts(253,85): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
-

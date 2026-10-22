@@ -1,8 +1,9 @@
-import {useState} from 'react';
+import './play.css';
+import './play-live.css';
+import './play-inspector.css';
+import './family.css';
 import type {FmsDocument} from '../model';
-import FmsGame from './FmsGame';
 import {CultureWorld47} from './CultureWorld47';
 export function WorldEntry({terrain,onClose,entryNotice}:{terrain:FmsDocument;onClose:()=>void;entryNotice?:string}){
-  const [legacy,setLegacy]=useState(false);
-  return legacy?<FmsGame terrain={terrain} onClose={()=>setLegacy(false)}/>:<CultureWorld47 terrain={terrain} onClose={onClose} onLegacy={()=>setLegacy(true)} entryNotice={entryNotice}/>;
+  return <CultureWorld47 terrain={terrain} onClose={onClose} entryNotice={entryNotice}/>;
 }

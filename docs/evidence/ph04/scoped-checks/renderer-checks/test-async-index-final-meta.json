@@ -1,6 +1,0 @@
-{
-  "completedAt": "2026-09-24T04:42:31.2440242+08:00",
-  "command": "node node_modules/vitest/vitest.mjs run src/world/renderer.test.ts src/world/spatial-index.test.ts --maxWorkers=1",
-  "exitCode": 0,
-  "startedAt": "2026-09-24T04:42:05.0573449+08:00"
-}

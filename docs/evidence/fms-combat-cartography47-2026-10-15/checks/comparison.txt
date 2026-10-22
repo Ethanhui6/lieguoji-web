@@ -1,2 +1,0 @@
-{"stage":"after","device":"desktop","tick":"0","cityCount":60,"pan":{"dx":24,"dy":17,"stableAnchors":33,"countryBoxes":33},"selected":{"id":"c-0","name":"松阳"},"reloaded":{"tick":"600","exactForces":true},"errors":[]}
-{"stage":"after","device":"portrait","tick":"0","cityCount":60,"pan":{"dx":24,"dy":17,"stableAnchors":33,"countryBoxes":33},"selected":{"id":"c-0","name":"云阳"},"reloaded":{"tick":"600","exactForces":true},"errors":[]}

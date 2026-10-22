@@ -1,7 +1,0 @@
-{
-  "command": "npx eslint src/world/generation/detail-shape.ts src/world/generation/detail-shape-height.ts src/world/generation/detail-shape.test.ts",
-  "exitCode": 0,
-  "started": "2026-09-27T14:54:23.5963984+08:00",
-  "finished": "2026-09-27T14:54:26.7717023+08:00",
-  "seconds": 3.1754861
-}

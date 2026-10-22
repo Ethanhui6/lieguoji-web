@@ -1,8 +1,0 @@
-{
-  "command": ".\\node_modules\\.bin\\vitest.cmd run src/world/storage.test.ts -t 'PH04 storage timing diagnostics'",
-  "startedUtc": "2026-09-23T20:44:28.9463775Z",
-  "endedUtc": "2026-09-23T20:44:37.3460864Z",
-  "exitCode": 0,
-  "log": ".autopilot\\ph04\\storage-timing-checks\\tests-second.log",
-  "capture": "actual command combined stdout and stderr"
-}

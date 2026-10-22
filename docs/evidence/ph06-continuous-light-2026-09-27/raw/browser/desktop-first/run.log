@@ -1,8 +1,0 @@
-
-Running 1 test using 1 worker
-
-(node:29472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ok 1 [desktop-chromium] › tests\atlas-detail-coast.spec.ts:67:1 › [detail-v4] native contour, private preview, exact saved coast, zoom picks, reload and GPU recovery (1.8m)
-
-  1 passed (1.8m)

@@ -1,5 +1,0 @@
-{
-  "runnerError": "First runner invoked formal release readiness instead of the release-policy unit suite. The actual release gate correctly refused unfinished PH. Local temporary builds remain authorized; no release or deployment was attempted.",
-  "enforcedGateReport": ".autopilot/ph06/zoom-density-checks/cooperative-first/release.log",
-  "formalReleaseReady": false
-}

@@ -1,9 +1,0 @@
-{
-  "checkedAt": "2026-09-27T12:06:43.905Z",
-  "url": "http://127.0.0.1:4173/build.json",
-  "status": 200,
-  "version": "0.5.0-preview.12",
-  "buildJsonSha256": "72d0ea66e58a6e1b966d5fbae5e4a03ccc10aea2de90e6aed116865f9ea4d305",
-  "distMatches": true,
-  "passed": true
-}

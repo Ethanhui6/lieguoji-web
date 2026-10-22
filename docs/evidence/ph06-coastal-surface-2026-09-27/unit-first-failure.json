@@ -1,7 +1,0 @@
-{
-  "startedAt": "2026-09-27T04:49:41.069Z",
-  "failedAt": "2026-09-27T04:57:04.386Z",
-  "buildExit": 1,
-  "browserExit": null,
-  "message": "Error: build:cf failed; browsers were not started."
-}

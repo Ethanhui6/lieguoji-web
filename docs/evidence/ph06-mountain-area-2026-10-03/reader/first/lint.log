@@ -1,6 +1,0 @@
-
-D:\游戏\架空地图模拟器\.autopilot\ph07\reader-staging\src\world\hydrology-reader-owned.test.ts
-  100:7  error  'reader' is never reassigned. Use 'const' instead  prefer-const
-
-✖ 1 problem (1 error, 0 warnings)
-

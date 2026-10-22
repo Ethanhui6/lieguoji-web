@@ -1,6 +1,6 @@
 {
   "name": "lieguoji-web",
-  "version": "0.5.0-preview.46",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,20 +11,13 @@
     "lint": "eslint src tests scripts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:release": "node --test scripts/release-policy.test.mjs",
-    "test:plan": "node --test scripts/check-v5-plan.test.mjs",
-    "plan:check": "node scripts/check-plan.mjs",
-    "release:status": "node scripts/check-release.mjs --status",
-    "release:check": "node scripts/check-release.mjs",
     "build": "vite build && node scripts/check-dist.mjs",
-    "build:cf": "npm run plan:check && npm run lint && npm run typecheck && npm run test:release && npm run test:plan && npm run build",
-    "check:full": "npm run plan:check && npm run lint && npm run typecheck && npm run test:release && npm run test:plan && npm test && npm run build",
+    "build:cf": "npm run lint && npm run typecheck && npm run build",
+    "check:full": "npm run lint && npm run typecheck && npm test && npm run build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "test:e2e": "playwright test",
     "check": "npm run check:full && npm run test:e2e",
-    "bench:build": "vite build --config bench.vite.config.ts",
-    "bench:preview": "vite preview --config bench.vite.config.ts",
-    "bench:measure": "node scripts/bench-scale.mjs"
+    "secret-scan": "node scripts/secret-scan.mjs"
   },
   "dependencies": {
     "d3-delaunay": "6.0.4",

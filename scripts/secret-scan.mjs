@@ -24,7 +24,8 @@ const badPath=/(^|\/)(?:\.env(?:\.|$)|\.dev\.vars|\.wrangler\/|\.ssh\/|\.aws\/|\
 const [base,head]=process.argv.slice(2);
 const blobs=new Map();
 if(base&&head){
- const range=/^0+$/.test(base)?[head]:[`${base}..${head}`];
+ // Content already on the remote was scanned when it was pushed; check only what is new to it.
+ const range=[head,'--not','--remotes=origin',...(/^0+$/.test(base)?[]:[base])];
  const raw=git(['log','--format=','--raw','--no-abbrev','--no-renames','-m','-z',...range]).split('\0');
  for(let i=0;i<raw.length;i++){const m=/:\d+ \d+ [0-9a-f]{40} ([0-9a-f]{40}) (\w)/.exec(raw[i]);if(!m)continue;const file=raw[++i];if(m[2]!=='D')blobs.set(m[1],file);}
  for(const c of git(['rev-list',...range]).trim().split('\n').filter(Boolean))blobs.set('commit:'+c,'(commit message '+c.slice(0,8)+')');

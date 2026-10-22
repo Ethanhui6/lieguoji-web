@@ -95,12 +95,14 @@ export function executeFamilyFate47(r:NobilityRun47,id:string,fate:FamilyFate47,
     event(r,`${name(r,id)}遭到清洗`,`${state(r,conqueror)}处死了家族全部在世成员，家族就此消亡。`,[from,conqueror]);
     retire(r,n,id);
   }else executeExile(r,id,conqueror,from);
+  // A ruling family that lost its rule leaves the state without one (0) until a new leader is appointed.
+  if(wasRuling&&!Object.values(n.families).some(v=>v.nationId===from&&v.ruling))n.rulingFamilies[from]=0;
   // ReduceFamilyWarMerit.
   if(n.families[id])n.families[id].totalEnemyDestroyed=f(n.families[id].totalEnemyDestroyed*f(1/3));
 }
 function retire(r:NobilityRun47,n:Nobility47,id:string){
   const fam=n.families[id];delete n.families[id];n.extinct.push(Number(id));n.monthFamilies=n.monthFamilies.filter(v=>v!==id);
-  if(fam&&n.rulingFamilies[fam.nationId]===Number(id))delete n.rulingFamilies[fam.nationId];
+  if(fam&&n.rulingFamilies[fam.nationId]===Number(id))n.rulingFamilies[fam.nationId]=0;
 }
 function executeDispossessed(r:NobilityRun47,id:string,conqueror:string,from:string){
   const n=r.nobility!,fam=n.families[id];

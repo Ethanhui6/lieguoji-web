@@ -5,6 +5,7 @@ import {globalStamp47} from './civilization47-global-orders';
 import {CultureAIGlobal47} from './CultureAIGlobal47';
 import {CultureMenu47} from './CultureMenu47';
 import {CultureProvince47} from './CultureProvince47';
+import {COLOR_VIEWS47,colorViewKey47,provinceColors47,type ColorView47} from './culture47-views';
 import {CULTURE47_AUTOSAVE,culture47ScopeOf,culture47SlotRevision,loadCulture47Named,saveCulture47Named} from './culture47-library';
 import {advanceAutoSave47,readCulture47Config,writeCulture47Config,type Culture47Config} from './culture47-config';
 import {downloadBlob47,exportHistoryText47,HISTORY_EXPORT_FILE47} from './culture47-export';
@@ -131,7 +132,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
   const [nationId,setNationId]=useState('n-0'),[cityId,setCityId]=useState<string|null>(null),[panel,setPanel]=useState<'nation'|'history'|'military'|'province'|null>(null),[provinceId,setProvinceId]=useState<string|null>(null),[panelExpanded,setPanelExpanded]=useState(false);
-  const [mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
+  const [colorView,setColorView]=useState<ColorView47>('state'),[mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
   const [actualRate,setActualRate]=useState<number|null>(null),rateSample=useRef<{at:number;tick:number}|null>(null);
@@ -171,8 +172,8 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
   const readyWorld=useRef<ReadyCulture47|null>(null);
   const storageDatabase=useRef<Culture47Database>(CULTURE47_LONGPLAY_DATABASE);
   const [storageChoice,setStorageChoice]=useState<'auto'|Culture47Database>('auto');
-  const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
-  current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview};
+  const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
+  current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView};
   useEffect(()=>{const controller=new AbortController(),reading=new AbortController();lifetime.current=controller;storageAbort.current=reading;client.current=new Culture47Client();setStorageReading(true);setStorageReady(false);setLocked(false);
     const candidate:{value:ReadyCulture47|null}={value:null};
     const discard=()=>{candidate.value?.client.close();candidate.value=null;};
@@ -362,6 +363,9 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
     window.addEventListener('keydown',cancel);
     return()=>{clearInterval(timer);window.removeEventListener('keydown',cancel);};
   },[config.autoSave,config.autoSaveMinutes,hasRun]);
+  // Original PlayerController.DebugViewModeSwitch: number keys 1–6 switch the color view.
+  useEffect(()=>{const key=(e:KeyboardEvent)=>{const t=e.target as HTMLElement|null;if(e.ctrlKey||e.metaKey||e.altKey||t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;const v=COLOR_VIEWS47.find(x=>x.key===e.key);if(!v||!current.current)return;if(!v.available){setNotice(v.label+'尚未还原。');return;}setColorView(v.id);setNotice(v.label);};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
+  useEffect(()=>{paint.current();},[colorView]);
   const runId=snapshot?.run.id;
   const portProvinces=useMemo(()=>snapshot?new Set(graphFor46(snapshot.run).ports.map(p=>p.provinceId)):new Set<string>(),[runId]);
   const motion=useRef(new CultureMotion47());
@@ -426,11 +430,11 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
         const frame=displayFrame();
         if(original){
           // Cell colors follow the current controller; recolor only when ownership or view changes.
-          const key=selection.mapMode+'|'+r.world.provinces.map(p=>p.controller).join(',')+'|'+r.world.nations.map(n=>nationColor(n)).join(',');
+          const key=selection.mapMode+'|'+selection.colorView+'|'+colorViewKey47(r,selection.colorView)+'|'+r.world.provinces.map(p=>p.controller).join(',')+'|'+r.world.nations.map(n=>nationColor(n)).join(',');
           if(key!==stateKey){stateKey=key;cellOwners??=originalCellProvinces(source,r.world.provinces,r.scale);
-            const nations=new Map(r.world.nations.map(n=>[n.id,Number.parseInt(nationColor(n).slice(1),16)]));
-            original.setStates(selection.mapMode==='political'?cellOwners:null,i=>nations.get(r.world.provinces[i]?.controller)??null);}
+            original.setStates(selection.mapMode==='political'?cellOwners:null,provinceColors47(r,selection.colorView));canvas.dataset.colorView=selection.colorView;}
         }
+        if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
         const graph=armySpatialFor47(r).graph,places=new Map(r.world.provinces.map(p=>[p.id,p])),colors=new Map(r.world.nations.map(n=>[n.id,nationColor(n)]));
         const attacks=r.world.armies.flatMap(a=>{
@@ -536,6 +540,7 @@ export function CultureWorld47({terrain,onClose,onLegacy,entryNotice}:{terrain:F
       {[CULTURE47_CONTINUATION_SOURCE,CULTURE47_RETIREMENT_SOURCE].includes(snapshot.journal.engine)&&<section className="c47-continuation" aria-label="安全续玩"><span>升级补军规则 · 副本保留全部前史，独立保存</span><button disabled={busy||advancing||locked||storageReading} onClick={()=>void continueLongPlay()}>建立续玩副本</button></section>}
       <CultureNews47 displayTick={()=>motion.current.tick(performance.now())} key={r.id} run={r} open={id=>{setHistoryEpoch(n=>n+1);setHistoryFocus(id);setPanel('history');}}/>
       <div className="c47-nations" aria-label="国家列表">{r.world.nations.map(n=><button key={n.id} aria-pressed={nationId===n.id&&panel==='nation'} onClick={()=>{setNationId(n.id);setCityId(null);setPanel('nation');}}><i style={{background:n.color}}/>{n.name}</button>)}</div>
+      <select className="c47-view-select" aria-label="地图视图" title="地图视图（数字键1—6）" value={colorView} onChange={e=>{const v=COLOR_VIEWS47.find(x=>x.id===e.target.value)!;setColorView(v.id);setNotice(v.label);}}>{COLOR_VIEWS47.map(v=><option key={v.id} value={v.id} disabled={!v.available}>{v.key} · {v.label}{v.available?'':'（尚未还原）'}</option>)}</select>
       <div className="c47-zoom"><button aria-label="放大地图" onClick={()=>mapControl.current?.zoom(1.6)}><PlayIcon name="plus"/></button><button aria-label="缩小地图" onClick={()=>mapControl.current?.zoom(1/1.6)}><PlayIcon name="minus"/></button><button aria-label="显示全图" onClick={()=>mapControl.current?.fit()}><PlayIcon name="fit"/></button></div>
       {panel&&<aside ref={panelScroll} className={`c47-panel${panelExpanded?' is-expanded':''}`} aria-label={panel==='nation'?'文化与国家详情':panel==='military'?'军队与舰队':panel==='province'?'行省详情':'大事记'}><button className="c47-sheet-size" aria-label={panelExpanded?'收起为半屏':'展开详情面板'} aria-expanded={panelExpanded} onClick={()=>setPanelExpanded(v=>!v)}><span aria-hidden="true">{panelExpanded?'⌄':'⌃'}</span></button><button className="c47-dismiss" aria-label="收起详情" onClick={()=>setPanel(null)}>×</button>{panel==='province'&&provinceId?<CultureProvince47 key={r.id+'/'+provinceId} run={r} provinceId={provinceId} ports={portProvinces} busy={busy} onState={id=>{setNationId(id);setCityId(null);setPanel('nation');}} onFamily={id=>{setNationId(id);setCityId(null);setPanel('nation');}} onEdit={edit=>{setPlaying(false);act({kind:'province',edit,expected:politicalStamp47(r)});}}/>:panel==='nation'?<><NationIdentity key={r.id+'/'+nationId} run={r} id={nationId} cityId={cityId} busy={busy||advancing} originalEngine={snapshot.journal.engine!==__CULTURE47_ENGINE__} familyCapable={[__CULTURE47_ENGINE__,'fe7a64ad764f776b80547e14a4bcb0f2b005ca65a9b9f63555b78ba42058e5cc'].includes(snapshot.journal.engine)} act={act} pause={()=>setPlaying(false)} diplomacy={<><CultureNationActions47 key={r.id+'/'+nationId+'/actions'} run={r} nationId={nationId} busy={busy} pick={pick?.nationId===nationId&&pick.kind!=='draw'?pick.kind:null} onPick={kind=>{if(kind){setPick({kind,nationId});setPanel(null);setNotice(PICK_TIPS47[kind]);}else setPick(null);}} onLeaveAlliance={()=>globalOrder({kind:'alliance',edit:{type:'leave',nationId}})} onRelease={()=>globalOrder({kind:'vassal',edit:{type:'release',vassalId:nationId}})} onAutoDiplomacy={enabled=>globalOrder({kind:'diplomacy',edit:{scope:'nation',nationId,enabled}})}/><CultureDiplomacy47 key={r.id+'/'+nationId+'/diplomacy'} run={r} id={nationId} activeSiegeIds={snapshot.frame.activeSieges??[]} busy={busy} preview={politicalPreview} sequence={snapshot.journal.actions.length} onCancel={()=>{previewEpoch.current.political++;setPoliticalPreview(null);}} onPreview={action=>{setPlaying(false);void send({type:'political-preview',action});}} onConfirm={()=>{if(politicalPreview)void send({type:'action',sequence:politicalPreview.sequence,action:{kind:'politics',action:politicalPreview.action,expected:politicalPreview.expected}});}}/></>}/></>:panel==='military'?<CultureMilitary47 snapshot={snapshot} selected={force} busy={busy} preview={militaryPreview} choose={chooseForce} target={mode=>{setPlaying(false);setMilitaryPreview(null);setTargetMode(mode);setPanel(null);}} request={requestMilitary} cancel={()=>{previewEpoch.current.military++;setMilitaryPreview(null);setTargetMode(null);}} confirm={()=>{if(militaryPreview&&intentMatchesForce47(militaryPreview.intent,force))void send({type:'action',sequence:militaryPreview.sequence,action:{kind:'military',intent:militaryPreview.intent,expected:militaryPreview.preview.basedOn}});}}/>:<CultureHistory47 key={r.id+'/'+historyEpoch} run={r} focusId={historyFocus} selectNation={id=>{setNationId(id);setCityId(null);setPanel('nation');}}/>}</aside>}
       {targetMode&&<div className="c47-order-hint" role="status">{force?.kind==='fleet'?'点击海面或港口':'点击行军目的地'}<button aria-label="取消选择目标" onClick={()=>{setTargetMode(null);setPanel('military');}}>×</button></div>}

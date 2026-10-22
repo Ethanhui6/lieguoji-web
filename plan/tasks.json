@@ -13378,6 +13378,16 @@
       "visualAccepted": false,
       "uploaded": false
     },
+    "views74Checkpoint": {
+      "status": "local-original-color-views-partial",
+      "preview": "http://127.0.0.1:5387/?fms=1",
+      "artifact": ".autopilot/fms-views74-checked",
+      "engine": "41ba900ab21bf1921789b0e175c365e58134ce68fb01d7690e54dcab2537ac70",
+      "frozen": ["ddc4"],
+      "evidence": "docs/evidence/fms-views74-2026-10-21/RESULT.md",
+      "realDevice": "not-verified",
+      "upload": "none"
+    },
     "custom73Checkpoint": {
       "status": "local-original-custom-population-defense",
       "preview": "http://127.0.0.1:5386/?fms=1",

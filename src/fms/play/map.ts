@@ -163,6 +163,9 @@ export class PlayMap {
   // province polygons then only carry outlines, borders and selection.
   private cellPolitics=false;
   useCellPolitics(enabled:boolean){this.cellPolitics=enabled;this.politicalKey='';}
+  // Original ViewManager color views: per-province fill override (null keeps the state color).
+  private provinceFill:((index:number)=>number|null)|null=null;private provinceFillKey='';
+  setProvinceFill(fill:((index:number)=>number|null)|null,key:string){this.provinceFill=fill;this.provinceFillKey=key;}
   stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points};}
   coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
@@ -190,14 +193,14 @@ export class PlayMap {
     // Preserve the tessellated political surface while only units/events change.
     // Complete Worker replies replace geometry; ownership, color, selection,
     // zoom and mode independently invalidate the cached display.
-    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
+    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.provinceFillKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
     g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
     const originalLines=this.originalStateLines&&mode==='political';
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
-    for (const p of world.provinces) {
+    for (const [index,p] of world.provinces.entries()) {
       if(this.cellPolitics){if(zoom>.6)g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
-      else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: nationColor(nations.get(p.controller)!), alpha: style.fill });
+      else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: this.provinceFill?.(index) ?? nationColor(nations.get(p.controller)!), alpha: style.fill });
       if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
       if (p.id === selected&&!originalLines) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
       for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==p.controller;}else borders.set(key,{a,b,owner:p.controller,shared:false,foreign:false});}

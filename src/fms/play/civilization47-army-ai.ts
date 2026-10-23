@@ -80,6 +80,9 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
   for(const a of ids?ids.map(id=>r.world.armies.find(a=>a.id===id)!):r.world.armies){
     const row=state.armies[a.id],here=space.byArmy.get(a.id),enemies=enemyMaps.get(a.nationId)!;
     const note=(decision:ArmyDecision47['decision'],reason:string,clear=false)=>{row.decision=decision;row.reason=reason;row.nextTick=r.clock.tick+retry;if(clear){row.targetId=null;row.campaignId=null;row.issuedTick=null;}};
+    // Stop only where the shared command rules allow it: an enemy army in this
+    // province forbids halting (retreat or fight only), so the march continues.
+    const halt=(search?:ReturnType<typeof createArmyCommandSearch47>)=>{const action:ArmyCommand47={type:'army-halt',armyId:a.id};if(previewArmyCommand47(r,action,weights,search).valid)issueArmyOrderOwned47(r,action,weights,'autonomous',search);};
     if(enemies.size||row.garrisonId!==null&&places.get(row.garrisonId)?.controller!==a.nationId)row.garrisonId=null;
     if(!here){row.garrisonId=null;note('lost','部队已失去战斗力，保留既有军令历史。',true);continue;}
     if(r.voyages.manualArmies.includes(a.id)){row.garrisonId=null;note('manual','玩家已接管，自主指挥保留其军令。',true);continue;}
@@ -97,7 +100,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     }
     if(a.status!=='retreating'&&here.province&&nationsAtWar(r.world,a.nationId,here.province.controller)){note('busy','部队已在敌方真实陆地，等待交锋或地区抵抗结算。');continue;}
     if(low&&here.province?.controller===a.nationId){
-      if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous');
+      if(ongoing)halt();
       note('resting','军粮、士气或兵力不足，在当前本国陆地休整。',true);continue;
     }
     const attackIds=new Set<string>(),owned=r.world.provinces.filter(p=>p.controller===a.nationId),invaded=owned.filter(p=>enemyAt(p.id));
@@ -166,7 +169,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
       }
       if(id){
         row.garrisonId=id;
-        if(here.province.id===id){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);row.targetId=id;row.campaignId=null;row.issuedTick??=r.clock.tick;note('garrison','驻守已分配的本国地区，保留驻地，不每天重抽。');continue;}
+        if(here.province.id===id){if(ongoing)halt(search);row.targetId=id;row.campaignId=null;row.issuedTick??=r.clock.tick;note('garrison','驻守已分配的本国地区，保留驻地，不每天重抽。');continue;}
         const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
         if(preview.valid&&a.supplies>=rationCost(preview)){issueArmyOrderOwned47(r,action,weights,'autonomous',search);row.targetId=id;row.campaignId=null;row.issuedTick=r.clock.tick;note('garrison','按原作首都圈与边境驻防权重部署，沿真实路线前往驻地。');continue;}
         reason=preview.valid?'前往既定驻地的粮程不足，补给后重试。':preview.reason;
@@ -174,12 +177,12 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     }
     // No feasible new task at home: keep the exact position. Outside home,
     // choose a reachable owned province; never jump to the historical anchor.
-    if(here.province?.controller===a.nationId){if(ongoing)issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);note(attackIds.size?'no-route':'waiting',reason||'当前没有可执行的常规战争目标，留在本国驻地。',true);continue;}
+    if(here.province?.controller===a.nationId){if(ongoing)halt(search);note(attackIds.size?'no-route':'waiting',reason||'当前没有可执行的常规战争目标，留在本国驻地。',true);continue;}
     const homes=[...owned].sort((x,y)=>Math.hypot(x.center.x-here.point.x,x.center.y-here.point.y)-Math.hypot(y.center.x-here.point.x,y.center.y-here.point.y));let returning=false;
     for(const p of homes){const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'retreat'},preview=previewArmyCommand47(r,action,weights,search);if(!preview.valid){reason=preview.reason;continue;}
       issueArmyOrderOwned47(r,action,weights,'autonomous',search);row.targetId=p.id;row.campaignId=null;row.issuedTick=r.clock.tick;note('returning',low?'部队状态不足，从实际位置撤回本国。':'原目标已结束，从实际位置撤回本国。');returning=true;break;
     }
-    if(!returning){if(ongoing&&(!here.province||!nationsAtWar(r.world,a.nationId,here.province.controller)))issueArmyOrderOwned47(r,{type:'army-halt',armyId:a.id},weights,'autonomous',search);note('no-route',reason||'暂时没有符合当前通行权的返乡路线，保留实际位置。',true);}
+    if(!returning){if(ongoing&&(!here.province||!nationsAtWar(r.world,a.nationId,here.province.controller)))halt(search);note('no-route',reason||'暂时没有符合当前通行权的返乡路线，保留实际位置。',true);}
   }
   state.lastDay=r.world.day;state.revision++;assertArmyAutonomy47(r);return undefined;
 }

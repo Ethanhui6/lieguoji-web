@@ -24,7 +24,7 @@ import {PerfOverlay47} from './PerfOverlay47';
 import type {NobilityRun47} from './civilization47-nobility';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
-import {useEffect,useLayoutEffect,useRef,useState,useMemo,type ReactNode} from 'react';
+import {startTransition,useEffect,useLayoutEffect,useRef,useState,useMemo,type ReactNode} from 'react';
 import {CultureNationOverview47,nationFamily47} from './CultureNationOverview47';
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
@@ -62,7 +62,7 @@ import {continuationJournal47,assertContinuationMatch47} from './culture47-conti
 import {previewFamilySuccession47} from './civilization47-succession';
 import {graphFor46} from './war46-geography';
 import {CultureMotion47} from './CultureMotion47';
-import {culture47PlaybackBudget,CULTURE47_SPEEDS,culture47SpeedLabel} from './culture47-pacing';
+import {culture47PlaybackBudget,CULTURE47_SPEEDS,CULTURE47_MIN_BATCH_MS,culture47SpeedLabel} from './culture47-pacing';
 import type {FoundingForces47} from './civilization47-forces';
 import type {NativePolity} from './native-combat/upper-efficiency';
 import './culture47.css';
@@ -267,7 +267,9 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       // Install every accepted path before allowing the next Worker request.
       // React may coalesce fast snapshots; it must not discard intermediate turns.
       installAcceptedDisplay(s,instantDisplay.current);
-      current.current=s;setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
+      // Background playback renders the panels as an interruptible transition:
+      // the map already holds this batch (installAcceptedDisplay) and keeps painting.
+      current.current=s;if(isAdvance&&background)startTransition(()=>setSnapshot(s));else setSnapshot(s);if(command.type==='political-preview'&&requestEpoch.current.get(command)===previewEpoch.current.political)setPoliticalPreview(s.politicalPreview);if(command.type==='military-preview'&&requestEpoch.current.get(command)===previewEpoch.current.military&&s.militaryPreview&&intentMatchesForce47(s.militaryPreview.intent,selected.current.force))setMilitaryPreview(s.militaryPreview);if(command.type==='action'&&command.action.kind==='military')setMilitaryPreview(null);if(command.type==='action'&&command.action.kind==='politics')setPoliticalPreview(null);if(command.type==='create'||command.type==='load'){setForce(null);setTargetMode(null);setMilitaryPreview(null);setPoliticalPreview(null);setNationId(s.run.world.nations[0].id);setCityId(null);setPanel(null);lastSaved.current=command.type==='load'?s.journal.actions.length:-1;}setNotice('');}
     catch(e){if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice(failText(e)+(client.current?.isClosed?(current.current?' 点击继续可恢复最后确认的进度。':' 可以重新点击创建或继续世界；原档保留。'):''));}}
     finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);setAdvancing(false);drain();}}
   }
@@ -353,7 +355,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   // reloaded page continues from it (the world continue slot).
   const saveOnHide=useRef<()=>void>(()=>{});saveOnHide.current=()=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length)void save(false);};
   useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);saveOnHide.current();}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
-  usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,acknowledgedContinuation:true,playing:()=>isPlaying.current,
+  usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,acknowledgedContinuation:true,minInterval:CULTURE47_MIN_BATCH_MS,playing:()=>isPlaying.current,
     batchBoundary:()=>120-(current.current?.run.clock.tick??0)%120,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
     step:async ticks=>{const s=current.current;

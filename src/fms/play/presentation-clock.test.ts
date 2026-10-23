@@ -92,4 +92,13 @@ describe('bounded visible-world playback',()=>{
   const step=vi.fn(()=>new Promise<void>(r=>{resolve=r;}));const stop=startPresentationClock({playing:()=>playing,blocked:()=>false,tickMillis:25,step});
   await vi.advanceTimersByTimeAsync(32);playing=false;resolve();await vi.advanceTimersByTimeAsync(5000);expect(step).toHaveBeenCalledTimes(1);stop();
  });
+ it('spaces acknowledged batches by the minimum interval without losing credited ticks',async()=>{
+  vi.useFakeTimers();let tick=0;const at:number[]=[];
+  const stop=startPresentationClock({tickMillis:100/120/4,maxBatch:960,acknowledgedContinuation:true,minInterval:150,batchBoundary:()=>120-tick%120,playing:()=>true,blocked:()=>false,step:async n=>{at.push(performance.now());tick+=n;}});
+  await vi.advanceTimersByTimeAsync(3032);stop();
+  expect(at.length).toBeGreaterThan(15);expect(at.length).toBeLessThanOrEqual(21);
+  for(let i=1;i<at.length;i++)expect(at[i]-at[i-1]).toBeGreaterThanOrEqual(150);
+  // 4x is 40 days per second: whole days only, none dropped beyond one batch of credit.
+  expect(tick%120).toBe(0);expect(tick/120).toBeGreaterThanOrEqual(112);expect(tick/120).toBeLessThanOrEqual(121);
+ });
 });

@@ -1,7 +1,7 @@
 import type {FmsDocument} from '../model';
 import type {World} from '../../sim/types';
 import {geographyBinding} from './war30-geography';
-import {buildArmyTravelGraph47, type TravelGraph47} from './army-travel47-graph';
+import {buildArmyTravelGraph47,sealTravelGraph47, type TravelGraph47} from './army-travel47-graph';
 import type {ArmyPositions47} from './army-presence47';
 import {readArmySpace47} from './army-space47';
 import {certifiedGeography47,copyGeographyContent47,geographyDependencies47,retainGeographyWitness47,sameGeographyContent47} from './geography-content47';
@@ -22,7 +22,7 @@ export function armyGeographyFor47(run:Pick<Input,'terrain'|'world'>) {
   const binding = hit?.binding??geographyBinding(run);
   let graph = hit?.graph;
   if (!graph) {
-    graph = buildArmyTravelGraph47(run.terrain, run.world);
+    graph = buildArmyTravelGraph47(run.terrain, run.world);sealTravelGraph47(graph);
     const witness=copyGeographyContent47(dependencies);if(witness)retainGeographyWitness47(cache,{...witness,binding,graph});
   }
   return {graph,binding};

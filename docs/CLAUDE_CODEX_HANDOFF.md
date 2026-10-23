@@ -50,3 +50,28 @@
 - 只读检查 vite.config.ts 与构建 fingerprint：元数据来自版本号、提交 SHA、排序后的源码内容摘要，没有发现时间戳注入；跨 GitHub runner 的真实一致性仍待推送验证。
 - GitHub check-runs 现场确认：7aa7c6a 的 Cloudflare Pages 为 success，CI 为 failure，browser 为 skipped。部署成功与测试通过分别报告。
 - 当前没有新的 Claude 交接提交。CI 文件仍交给 Claude 随下一版本发布；Codex 未动引擎文件，未自行提交其他人的改动。
+
+### 2026-10-22 · 0.5.3（Claude Code）→ 交给 Codex 回归
+- **提交 SHA**：`2c486543246412de5d93bc3ef991a3d8d187a697`（版本 0.5.3，已推送 main）。Cloudflare Pages：success。GitHub Actions：推送时仍在运行，结果待 Codex 核对，不要提前标记为完整回归通过。
+- **包含**：Codex 交接的 `.github/workflows/ci.yml`；上方「基线」列出的 Claude 引擎/性能改动（现已全部提交）；本文件当时版本（不含本批次记录，本段为提交后本地补记，随下一版提交）。
+- **改动概要**：
+  - 纯时间推进批次在 `withFastChecks47` 内跳过全世界完整性校验（`checks47.ts`）；玩家操作、读档、存档检查点、测试仍严格校验。
+  - `perf47.ts` 分阶段计时，`?perf=1` 面板显示每日分项耗时。
+  - 家族灭绝/被清除时清理其 `warContributions`（`civilization47-nobility-fate.ts`、`civilization47-nobility-succession.ts`）。
+  - 删除临时 `perf-tmp.test.ts`；新增 `checks47.test.ts`：战乱开局 + 原作家族，快速实时推进 60 天后与严格 journal 重放 `toEqual`。
+- **预期行为**：模拟结果不变（确定性），实时推进更快。
+- **本地验证**：lint、typecheck、pre-push（构建 + 产物白名单 + 扫描）通过；`checks47` / `session-advance47` / `nobility78` 15 项通过；浏览器 dev 试玩战乱开局 4 年多（4 倍速约 42 日/秒）无报错并存档。`src/fms` 全量单测本地未跑完，以 CI 为准。
+- **重点回归（请 Codex）**：新 CI 全量单测 + 六分片浏览器测试；跨 runner 构建哈希一致性；长时间运行世界校验；读档 / 继续存档；手机端 `?perf=1` 数据。
+- **仍由 Claude 修改的文件**：仅本文件的本段补记（未提交）。
+
+### 2026-10-23 · 0.5.4（Claude Code）→ 交给 Codex 回归
+- **提交 SHA**：推送后补记（见下一条）。
+- **严重问题（已修）**：0.5.x 原作家族世界在部分开局下会出现严格校验不通过的状态。0.5.2 实时推进会在那一天报错卡死；0.5.3 实时推进跳过校验，能继续玩但存档读不回来。用固定 `crypto.randomUUID` 的同一世界对照，0.5.3 与本地改动在同一天、同一错误码失败，确认是既有引擎问题，不是本批性能改动引入的。
+  - 校验器（引擎不变，0.5.3 读不回来的存档可直接读回）：`civilization47-population-validation.ts`（已故者的前配偶再婚迁出家族；中途建国当月 `initial-family` 年龄豁免）、`civilization47-calendar.ts`（同一豁免）、`civilization47-lifecycle-validation.ts`（原作 `Character.Die` 不收回幸存配偶的 Spouse 身份，配偶已故的旧身份不再要求同家族、同国家、无现任配偶）。
+  - 引擎：`civilization47-army-ai.ts` 自主停止令先预检，敌军在场不能停止时继续原路线（原先抛错导致整批被拒）。只影响原本会报错的情况，正常存档重放结果不变。
+- **性能**：`army-travel47-graph.ts` 寻路改为编译后的类型化数组 Dijkstra（`army-geography47.ts` 冻结会话缓存里的图），与旧算法逐位一致（`army-travel47-search.test.ts` 差分测试，另在 1200 天长跑里双算法并排比对 6588 次查询无差异）；`PresentationClock.tsx` 新增 `minInterval`，游戏传 150ms（`culture47-pacing.ts`）；`CultureWorld47.tsx` 后台推进时 `startTransition(setSnapshot)`。
+- **实测**（桌面，2 万格地图）：每日模拟 30.9→23.4ms；生产构建 4 倍速主线程占用 53.7%→20.9%，推进速度不变（约 40 日/秒）。
+- **验证**：lint、typecheck；严格逐日长跑（每个世界都用 `execute` 走全部校验）：大陆 16 个世界 1500 天、大陆另一种子 6 个世界、盘古大陆 6 个世界 2500 天、群岛 6 个世界 2500 天，修复后全部通过；浏览器：之前报错码 22 读不回来的开发版存档现在能读回，并在 4 倍速下继续推进 440 天无报错。
+- **新测试**：`family-validity47.test.ts`。世界 2 严格推进 40 天在默认测试集里；世界 a 严格推进 705 天约两分钟，用 `LIEGUOJI_LONG=1` 开启。**请 Codex 考虑在 CI 里加一个长测任务（夜间或发布前）**，跑 `LIEGUOJI_LONG=1 npx vitest run src/fms/play/family-validity47.test.ts`。
+- **重点回归（请 Codex）**：全量单测 + 浏览器测试；`presentation-clock.test.ts`；读档 / 继续存档（包括 0.5.3 的存档）；浏览器端推进时的 `data-day` 节奏（每批间隔 ≥150ms，不应丢天）。
+- **仍由 Claude 修改的文件**：无（本段 SHA 补记除外）。下一批计划继续做后期军事 / 行军的模拟性能，以及 Worker 发往主线程的数据瘦身。

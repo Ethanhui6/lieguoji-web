@@ -12,6 +12,8 @@ export const culture47SpeedLabel=(speed:number)=>speed+'倍速';
  * batches so the fixed per-request cost is spread over more days. Frozen
  * protocol-2 engines keep their original 4-day limit. */
 export const CULTURE47_MAX_BATCH_TICKS=1200;
+/** Live play requests at most one batch per this many ms (see PresentationClock). */
+export const CULTURE47_MIN_BATCH_MS=150;
 export function culture47PlaybackBudget(secondsPerDay:number,speed:number,batchProtocol:boolean,largeBatch=false){
  if(!Number.isFinite(secondsPerDay)||secondsPerDay<=0||!(CULTURE47_SPEEDS as readonly number[]).includes(speed))throw Error('推演播放速度无效。');
  const maxBatch=!batchProtocol?120:largeBatch?Math.min(CULTURE47_MAX_BATCH_TICKS,Math.max(480,240*Math.ceil(speed))):480;

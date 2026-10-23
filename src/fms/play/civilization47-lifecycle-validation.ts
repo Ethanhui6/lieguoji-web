@@ -40,7 +40,10 @@ export function assertLifecycle47(r:Population47){
     if(!entry||!exact(role,['nativeKind','holderId','startTime','roleType','title','reignStartTime','stateId'])||role.roleType!=='NationalLeader'||role.holderId!==p.id||role.stateId!==p.stateId||n.leaderId!==p.id||last.endedDay!==null||role.startTime!==0||role.reignStartTime!==Math.fround(entry.tick/120*r.life.secondsPerDay)||role.title!==r.civilization.rulers[last.id].titleAtAccession)return fail();
    }else if(role.nativeKind==='spouse'){
     const spouse=r.kin.persons[role.spouseOfId];
-    if(!exact(role,['nativeKind','roleType','holderId','startTime','spouseOfId','stateId'])||role.roleType!=='Spouse'||role.holderId!==p.id||role.stateId!==p.stateId||(role.startTime!==0&&role.startTime!==foundingTimeOfState47(r,p.stateId)&&!r.generations?.marriages.some(m=>(m.aId===p.id&&m.bId===role.spouseOfId||m.bId===p.id&&m.aId===role.spouseOfId)&&role.startTime===Math.fround(m.tick/120*r.life.secondsPerDay)))||!spouse||spouse.familyId!==p.familyId||spouse.isAlive&&p.spouseId!==spouse.id||!spouse.isAlive&&p.spouseId!==0)return fail();
+    // Character.Die clears only the survivor's spouseId, never its Spouse role:
+    // an original-family widow keeps it through remarriage and family moves.
+    const kept=!!(r as {nobility?:unknown}).nobility&&!!spouse&&!spouse.isAlive;
+    if(!exact(role,['nativeKind','roleType','holderId','startTime','spouseOfId','stateId'])||role.roleType!=='Spouse'||role.holderId!==p.id||!kept&&role.stateId!==p.stateId||(role.startTime!==0&&role.startTime!==foundingTimeOfState47(r,p.stateId)&&!r.generations?.marriages.some(m=>(m.aId===p.id&&m.bId===role.spouseOfId||m.bId===p.id&&m.aId===role.spouseOfId)&&role.startTime===Math.fround(m.tick/120*r.life.secondsPerDay)))||!spouse||!kept&&(spouse.familyId!==p.familyId||spouse.isAlive&&p.spouseId!==spouse.id||!spouse.isAlive&&p.spouseId!==0))return fail();
    }else return fail();
   }
   const nation=r.people.nations[r.kin.families[p.familyId].nationId];if(nation.leaderId===p.id&&leaderRoles.length!==1)return fail();

@@ -20,7 +20,7 @@ export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false)
     if(p.source==='founding'){
       if(p.initialAge===null||!integer(p.initialAge)||p.initialAge<35||p.initialAge>54||b.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge)return fail();
     }else if(p.initialAge!==null||b.initialAge!==null)return fail();
-    if(p.isAlive&&(b.updatedMonth!==month||!(p.source==='founding'&&month===foundedMonth)&&p.age!==(p.birthTime>ageTime?0:nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar))))return fail();
+    if(p.isAlive&&(b.updatedMonth!==month||!((p.source==='founding'||p.source==='initial-family')&&month===foundedMonth)&&p.age!==(p.birthTime>ageTime?0:nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar))))return fail();
   }
 }
 

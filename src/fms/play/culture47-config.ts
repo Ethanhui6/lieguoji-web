@@ -4,7 +4,8 @@
 export type Culture47Config={autoSave:boolean;autoSaveMinutes:number};
 export const AUTOSAVE_MIN_MINUTES=5,AUTOSAVE_MAX_MINUTES=60,AUTOSAVE_DEFAULT_MINUTES=10;
 const KEY='lieguoji-fms-config-v1';
-export const DEFAULT_CULTURE47_CONFIG:Culture47Config={autoSave:false,autoSaveMinutes:AUTOSAVE_DEFAULT_MINUTES};
+// Web/phone: autosave is on by default (every 5 minutes) so a reloaded page keeps recent progress.
+export const DEFAULT_CULTURE47_CONFIG:Culture47Config={autoSave:true,autoSaveMinutes:AUTOSAVE_MIN_MINUTES};
 export const clampAutoSaveMinutes=(n:number)=>Math.min(AUTOSAVE_MAX_MINUTES,Math.max(AUTOSAVE_MIN_MINUTES,Math.round(Number.isFinite(n)?n:AUTOSAVE_DEFAULT_MINUTES)));
 export function readCulture47Config():Culture47Config{
   try{const v=JSON.parse(localStorage.getItem(KEY)??'null') as Partial<Culture47Config>|null;

@@ -1,4 +1,4 @@
-import {FOUNDING_RULE47} from './civilization47-founding';
+import {FOUNDING_RULE47,assertFoundings47} from './civilization47-founding';
 import {applyRebellion47,applyFamilyRebellion47,applyCivilWar47,enableRebellion47} from './civilization47-rebellion';
 import {applyProvinceEdit47,assertProvinceEdit47,type ProvinceEdit47} from './civilization47-province-edit';
 import {setFrameLength47,FRAME_TICKS_BY_SPEED47} from './frame-loop47';
@@ -35,7 +35,7 @@ import type {DisplayFrame} from './motion';
 import {activeSiegesFromSpace47} from './siege-display47';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {previewMilitary47,applyMilitary47,assertMilitaryIntent47,assertMilitaryExpected47,type MilitaryIntent47,type MilitaryExpected47} from './culture47-orders';
-import {attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPoliticalTick47,recordPoliticalOccupation47,assertPoliticalCommand47,applyPoliticalCommand47,previewPoliticalCommand47,type PoliticalCommand47,type PoliticalStamp47} from './civilization47-political-owner';
+import {assertPolitics47,attachPolitics47,initializeOpeningWars47,advancePolitics47,finishPoliticalTick47,recordPoliticalOccupation47,assertPoliticalCommand47,applyPoliticalCommand47,previewPoliticalCommand47,type PoliticalCommand47,type PoliticalStamp47} from './civilization47-political-owner';
 
 // This local owner stores creation inputs and accepted commands, never accepts
 // an unvalidated live47 snapshot. It is intentionally separate from Store48.
@@ -158,6 +158,9 @@ export function culture47Frame(r:FoundingForces47):DisplayFrame&{activeSieges?:s
   const points=(book:FoundingForces47['armyPositions'])=>new Map(Object.entries(book.records).map(([id,s])=>[id,armyTravelLocation47(s,spatial.graph).point]));
   return {armies:points(r.armyPositions),fleets:points(r.fleetPositions),alpha:1,activeSieges:activeSiegesFromSpace47(r,spatial.space)};
 }
+/** A saved world state after `actions` journal actions (fast continue). */
+export type Culture47Checkpoint={actions:number;run:unknown};
+export class Culture47CheckpointMismatch extends Error {}
 export class Culture47Session {
   private state?:{run:PoliticalRun47;journal:Culture47Journal;ticks:number};
   private display=new Culture47DisplayEncoder();
@@ -179,6 +182,19 @@ export class Culture47Session {
     for(const action of journal.actions){switchIdentity(completed);run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
     switchIdentity(completed);
     return {run,journal:structuredClone(journal),ticks};
+  }
+  /** The current world for a save: the run after every journal action. */
+  checkpoint():Culture47Checkpoint{if(!this.state)throw Error('请先创建世界。');return {actions:this.state.journal.actions.length,run:structuredClone(this.state.run)};}
+  /** Continue a saved world from its checkpoint instead of replaying the whole
+   * journal: the checkpoint must belong to this journal (same world id, every
+   * action, the same clock) and pass every state validator. */
+  resume(journal:Culture47Journal,checkpoint:Culture47Checkpoint){
+    assertCulture47Journal(journal);
+    if(!checkpoint||typeof checkpoint!=='object'||checkpoint.actions!==journal.actions.length)throw new Culture47CheckpointMismatch('存档检查点与记录不一致。');
+    const run=structuredClone(checkpoint.run) as PoliticalRun47;let ticks=0;for(const a of journal.actions)if(a.kind==='advance')ticks+=a.ticks;
+    if(!run||typeof run!=='object'||run.id!==journal.id||run.world?.custom?.id!==journal.id||run.clock?.tick!==ticks)throw new Culture47CheckpointMismatch('存档检查点与记录不一致。');
+    try{assertPolitics47(run);if((run as unknown as {foundings?:unknown}).foundings)assertFoundings47(run as never);prepareOwnedGeography47(run);}catch(e){throw new Culture47CheckpointMismatch(e instanceof Error?e.message:'存档检查点无效。');}
+    this.state={run,journal:structuredClone(journal),ticks};this.display=new Culture47DisplayEncoder();
   }
   load(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void){const candidate=this.build(journal,progress);this.state=candidate;this.display=new Culture47DisplayEncoder();return this.snapshot();}
   verify(journal:Culture47Journal,progress?:(p:Culture47Progress)=>void):'witness'|'replay'{

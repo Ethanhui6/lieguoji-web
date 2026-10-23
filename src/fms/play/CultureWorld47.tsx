@@ -20,6 +20,7 @@ import type {OpeningLayout47} from './opening-layout47';
 import {populationStamp47} from './civilization47-population-types';
 import {CultureHouses47} from './CultureHouses47';
 import {CultureNobility47} from './CultureNobility47';
+import {PerfOverlay47} from './PerfOverlay47';
 import type {NobilityRun47} from './civilization47-nobility';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
@@ -49,7 +50,7 @@ import {currentRuler47,type CultureChoice47,type CivilizationEdit47} from './civ
 import {rulerDisplayName47} from './civilization47-ruler-label';
 import {Culture47Client} from './culture47-client';
 import {sameCulture47Value} from './culture47-equal';
-import {Culture47Unavailable,frozenCulture47} from './culture47-contract';
+import {Culture47InvalidJournal,Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import type {Culture47Snapshot,Culture47Request as WorkerRequest} from './culture47.worker';
 import type {Culture47Action,Culture47Journal} from './culture47-session';
 import {loadCulture47,saveCulture47,CULTURE47_LONGPLAY_DATABASE,CULTURE47_RETIREMENT_DATABASE,CULTURE47_GENERATIONS_DATABASE,type Culture47Database,type SavedCulture47} from './culture47-storage';
@@ -130,7 +131,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const [pick,setPickState]=useState<Pick|null>(null),pickRef=useRef<Pick|null>(null),territoryTap=useRef<(provinceId:string)=>void>(()=>{});
   const setPick=(next:Pick|null)=>{pickRef.current=next;setPickState(next);if(next)setPlaying(false);};
   const territoryNation=pick?.kind==='draw'?pick.nationId:null,setTerritoryNation=(id:string|null)=>setPick(id===null?null:{kind:'draw',nationId:id});
-  const [aiGlobalOpen,setAIGlobalOpen]=useState(false),appRoot=useRef<HTMLElement>(null);
+  const [aiGlobalOpen,setAIGlobalOpen]=useState(false),appRoot=useRef<HTMLElement>(null),[showPerf]=useState(()=>new URLSearchParams(location.search).has('perf'));
   const [menu,setMenu]=useState<null|'menu'|'load'>(null),[config,setConfigState]=useState<Culture47Config>(readCulture47Config),exportImage=useRef<(()=>Promise<Blob>)|null>(null),[autoSavePrompt,setAutoSavePrompt]=useState<{countdown:number}|'saving'|null>(null);
   const [count,setCount]=useState(6),[cityCount,setCityCount]=useState(60),[mode,setMode]=useState<NamingMode47>('culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(false);
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
@@ -201,7 +202,22 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         candidate.value={client:restored,snapshot:loaded,journal:structuredClone(j)};
       }catch(error){restored.close();throw error;}
     };
-    const readWorld=async()=>{const databases:Culture47Database[]=[CULTURE47_GENERATIONS_DATABASE];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db);if(found)return found;}return null;};
+    const readWorld=async()=>{const databases:Culture47Database[]=[CULTURE47_GENERATIONS_DATABASE];for(const db of databases){reading.signal.throwIfAborted();storageDatabase.current=db;const found=await loadCulture47(indexedDB,verify,reading.signal,db,true);if(found){if(!await resumeFound(found)){staleNotice='这个存档来自旧版本，无法在新版本继续，请新建世界（新世界保存后替换旧档）。';return null;}return found;}}return null;};
+    let staleNotice='';
+    // Fast continue: a save with a checkpoint resumes its world state directly; a checkpoint the
+    // Worker refuses falls back to replaying the journal.
+    // A save of an earlier build continues in this build from its checkpoint (the journal is
+    // re-stamped with the current engine); without one, or if refused, it cannot continue.
+    const resumeFound=async(found:SavedCulture47):Promise<boolean>=>{
+      const older=found.journal.engine!==__CULTURE47_ENGINE__;
+      if(candidate.value)return true;if(!found.checkpoint)return !older;
+      const journal=older?{...found.journal,engine:__CULTURE47_ENGINE__}:found.journal;
+      setNotice('正在载入存档…');const restored=new Culture47Client();
+      try{const loaded=await restored.send({type:'resume',journal,checkpoint:found.checkpoint},{signal:reading.signal,longReplay:true});reading.signal.throwIfAborted();
+        if(!sameCulture47Value(loaded.journal,journal))throw new Culture47Unavailable('恢复结果与存档不一致，原档保留。');
+        candidate.value={client:restored,snapshot:loaded,journal:structuredClone(journal)};found.journal=journal;return true;}
+      catch(error){restored.close();if(!(error instanceof Culture47InvalidJournal))throw error;if(older)return false;await verify(found.journal);return true;}
+    };
     void readWorld().then(s=>{
       if(controller.signal.aborted||reading.signal.aborted){discard();return;}
       const held=candidate.value;
@@ -209,7 +225,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         if(!held||held.client.isClosed||!sameCulture47Value(held.journal,s.journal))throw new Culture47Unavailable('已恢复世界与选中存档不一致，请重新读取。');
         client.current?.close();client.current=held.client;readyWorld.current=held;candidate.value=null;
       }else discard();
-      setSaved(s);revision.current=s?.revision??null;setStorageReady(true);setNotice('');
+      setSaved(s);revision.current=s?.revision??null;setStorageReady(true);setNotice(staleNotice);
     }).catch(e=>{discard();if(!controller.signal.aborted){setLocked(true);setNotice(reading.signal.aborted?'已取消恢复，原存档保持。可重新读取。':failText(e));setStorageReady(true);}}).finally(()=>{if(!controller.signal.aborted)setStorageReading(false);});
     return()=>{controller.abort();reading.abort();discard();operation.current?.abort();readyWorld.current?.client.close();readyWorld.current=null;client.current?.close();client.current=null;};
   },[storageAttempt,storageChoice]);
@@ -333,7 +349,10 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     catch(e){replacement.close();if(!lifetime.current?.signal.aborted){setPlaying(false);setNotice('恢复未完成，当前进度仍保留。'+failText(e));}}
     finally{operation.current=null;inflight.current=false;resumeAfterRecovery.current=false;if(!lifetime.current?.signal.aborted){setRecovering(false);setBusy(false);}}
   }
-  useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
+  // Leaving the page (app switch, lock screen, tab overview) saves the world: a
+  // reloaded page continues from it (the world continue slot).
+  const saveOnHide=useRef<()=>void>(()=>{});saveOnHide.current=()=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length)void save(false);};
+  useEffect(()=>{const pauseHidden=()=>{if(document.hidden){resumeAfterRecovery.current=false;setPlaying(false);saveOnHide.current();}};document.addEventListener('visibilitychange',pauseHidden);return()=>document.removeEventListener('visibilitychange',pauseHidden);},[]);
   usePresentationClock({enabled:playing,policyKey:busy,...playbackBudget,acknowledgedContinuation:true,playing:()=>isPlaying.current,
     batchBoundary:()=>120-(current.current?.run.clock.tick??0)%120,
     blocked:()=>document.hidden||inflight.current||busy||!current.current||!displayReady.current,
@@ -348,7 +367,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   async function save(exit=false){
     if(!current.current||locked||!storageReady)return;if(inflight.current){if(!queued.current){queued.current={kind:'save',exit};setBusy(true);setNotice('正在等待本次推演结束，然后保存…');}return;}inflight.current=true;setBusy(true);setNotice('正在保存当前世界…');
     const op=new AbortController();operation.current=op;
-    try{const s=current.current,n=await saveCulture47(s.journal,revision.current,indexedDB,op.signal,async j=>{const c=client.current;if(c&&!c.isClosed&&c.engine===j.engine)await c.verify(j,{signal:op.signal,progress:replayProgress,longReplay:true});else await verifyJournal(j,op.signal,{progress:replayProgress});},storageDatabase.current);revision.current=n;lastSaved.current=s.journal.actions.length;setSaved({journal:s.journal,revision:n,recovered:false});setNotice('文化世界已保存，刷新后可继续。');if(exit)onClose();}
+    try{const s=current.current,live=client.current,checkpoint=live&&!live.isClosed&&live.engine===s.journal.engine?await live.checkpoint({signal:op.signal}):undefined;
+      const n=await saveCulture47(s.journal,revision.current,indexedDB,op.signal,async j=>{const c=client.current;if(c&&!c.isClosed&&c.engine===j.engine)await c.verify(j,{signal:op.signal,progress:replayProgress,longReplay:true});else await verifyJournal(j,op.signal,{progress:replayProgress});},storageDatabase.current,undefined,checkpoint);revision.current=n;lastSaved.current=s.journal.actions.length;setSaved({journal:s.journal,revision:n,recovered:false});setNotice('文化世界已保存，刷新后可继续。');if(exit)onClose();}
     catch(e){setPlaying(false);setNotice(failText(e));}finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);drain();}}
   }
   function requestClose(){setPlaying(false);if(inflight.current){if(!queued.current){queued.current={kind:'close'};setBusy(true);}return;}if(current.current&&lastSaved.current!==current.current.journal.actions.length)setLeaving(true);else onClose();}
@@ -361,7 +381,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     if(!config.autoSave||!hasRun)return;
     let last=performance.now();
     const timer=setInterval(()=>{const now=performance.now(),delta=(now-last)/1000;last=now;const state=autoSave.current;
-      if(state.pending){if(!inflight.current){state.pending=false;void saveNamed(CULTURE47_AUTOSAVE,true).finally(()=>setAutoSavePrompt(null));}return;}
+      if(state.pending){if(!inflight.current){state.pending=false;void saveNamed(CULTURE47_AUTOSAVE,true).then(()=>saveOnHide.current()).finally(()=>setAutoSavePrompt(null));}return;}
       if(document.hidden)return;
       const next=advanceAutoSave47(state.elapsed,delta,config.autoSaveMinutes);state.elapsed=next.elapsed;
       if(next.due){state.pending=true;setAutoSavePrompt('saving');}else setAutoSavePrompt(next.countdown===null?null:{countdown:next.countdown});
@@ -411,6 +431,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
     const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):initialLandCamera47(source,viewport)};
     const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
+    // Map diagnostics (JSON on the canvas each frame) are for automated tests only; normal play skips them.
+    const testDiagnostics=richDiagnostics||navigator.webdriver===true;
     let combat:ReturnType<typeof combatMarkers47>=[],contactPairs:ReturnType<CombatTimeline47['pairs']>|null=null,combatRun:FoundingForces47|null=null;
     let strengthRun:FoundingForces47|null=null,strengthIndex:ReturnType<typeof createCombatStrengthIndex47>|undefined,paintCount=0;
     const drawCombat=(frame:ReturnType<typeof displayFrame>,now:number)=>{
@@ -419,7 +441,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       if(contactPairs!==pairs||combatRun!==r){combat=combatMarkers47({...r,forceContacts:{version:1,pairs}},motion.current.tick(now)>=r.clock.tick?(s.frame.activeSieges!==undefined?new Set(s.frame.activeSieges):activeSiegeProvinces47(r)):new Set());contactPairs=pairs;combatRun=r;}
       const displayed=displayCombatMarkers47(combat,map.displayForcePoints(frame)),visible=visibleCombatMarkers47(displayed,r,r.scale,view.camera,view.viewport,strengthIndex);
       combatOverlay.draw(visible,combat.filter(m=>m.kind==='contact').map(m=>m.id),r.scale,view.camera.scale,now,isPlaying.current,reducedMotion.matches);
-      if(renderer.canvas){renderer.canvas.dataset.combat=JSON.stringify(displayed);renderer.canvas.dataset.visibleCombat=JSON.stringify(visible);if(richDiagnostics)renderer.canvas.dataset.combatAnimation=JSON.stringify(combatOverlay.diagnostics());}
+      if(renderer.canvas&&testDiagnostics){renderer.canvas.dataset.combat=JSON.stringify(displayed);renderer.canvas.dataset.visibleCombat=JSON.stringify(visible);if(richDiagnostics)renderer.canvas.dataset.combatAnimation=JSON.stringify(combatOverlay.diagnostics());}
     };
     const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
     const sea=graphFor46(current.current.run);
@@ -453,10 +475,10 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
           return [{id:a.id,points,color:colors.get(a.nationId)!,key:a.nationId+'/'+target}];
         });
         map.drawActualAttackArrows(attacks,r.scale,view.camera.scale);
-        drawCombat(frame,performance.now());canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
+        drawCombat(frame,performance.now());if(testDiagnostics)canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
-        canvas.dataset.attackArrows=JSON.stringify(map.orderAnimations());canvas.dataset.day=String(r.world.day);canvas.dataset.cityIcons=JSON.stringify(map.iconDiagnostics());canvas.dataset.stateLines=JSON.stringify({algorithm:FMS_STATE_LINE,width:FMS_STATE_LINE_WIDTH,...map.stateLineDiagnostics()});canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
+        canvas.dataset.day=String(r.world.day);if(testDiagnostics){canvas.dataset.attackArrows=JSON.stringify(map.orderAnimations());canvas.dataset.cityIcons=JSON.stringify(map.iconDiagnostics());canvas.dataset.stateLines=JSON.stringify({algorithm:FMS_STATE_LINE,width:FMS_STATE_LINE_WIDTH,...map.stateLineDiagnostics()});canvas.dataset.forcePositions=JSON.stringify({armies:[...current.current!.frame.armies],fleets:[...current.current!.frame.fleets]});canvas.dataset.countries=JSON.stringify(r.world.nations.map(n=>({id:n.id,name:n.name})));canvas.dataset.cities=JSON.stringify(map.cityPositions().map(c=>({...c,nationId:r.world.provinces.find(p=>p.id===c.provinceId)?.controller})));canvas.dataset.units=JSON.stringify(map.unitPositions().map(u=>({...u,nationId:(u.kind==='army'?r.world.armies:r.navy.fleets).find(a=>a.id===u.id)?.nationId})));if(richDiagnostics){canvas.dataset.countryLabels=JSON.stringify(map.labelPositions());canvas.dataset.mapLabelLayout=JSON.stringify(map.labelDiagnostics());}}renderer.refresh();displayReady.current=true;}catch(e){displayFailed(e);}
       };
       // Original-grid worlds stop at PlayerController ZoomMin 5: 10 world units = 66.7 map units tall.
       const setCamera=(c:typeof view.camera)=>{if(original&&c.scale>view.viewport.height/(10/(240/1600))&&c.scale>view.camera.scale)return;view.camera=c;renderer.setCamera(c);paint.current();};
@@ -527,6 +549,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     {leaving&&<div className="c47-exit" role="dialog" aria-modal="true" aria-label="保存后离开"><h2>保留这个世界？</h2><p>尚有未保存的时间或编辑。</p><button disabled={busy||locked} onClick={()=>void save(true)}>保存并返回</button><button disabled={busy} onClick={onClose}>放弃未保存进度</button><button disabled={busy} onClick={()=>setLeaving(false)}>继续查看</button></div>}
     {notice&&<div className="c47-notice" role="status">{notice}</div>}{(storageReading||busy)&&<button className="c47-cancel-replay" onClick={()=>{queued.current=null;resumeAfterRecovery.current=false;setPlaying(false);if(storageReading)storageAbort.current?.abort();else operation.current?.abort();}}>取消处理</button>}
     {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)}/>}
+    {showPerf&&<PerfOverlay47 root={appRoot}/>}
     {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存，按 ESC 取消</>}</div>}
     {!r&&<section className="c47-setup"><span className="c47-kicker">文化 · 信仰 · 国家</span><h1>让文明从你的地图诞生</h1><p>为国家选择真实文化，独立设定信仰与政体。名字从同一种文化里生长。</p>{entryNotice&&<p className="c47-entry-note" role="note">{entryNotice}</p>}
       <div className="c47-segment" role="group" aria-label="国号与城市命名模式">{([['culture-generated','文化生成'],['historical-names','历史名称']] as const).map(([v,label])=><button key={v} aria-pressed={mode===v} onClick={()=>{setMode(v);}}>{label}</button>)}</div><small>{mode==='historical-names'?'使用中文历史国号和真实地名；名称用完可同名，480 座城市均可创建。':'使用中文译写的文化名称；每种文化可生成至少 512 个不同城名。'} 人物均按文化生成，不拼接历史人物家谱。</small>

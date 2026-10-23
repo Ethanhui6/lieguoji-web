@@ -59,8 +59,8 @@ describe('original LoadSaveDataUI library',()=>{
   });
 });
 describe('original AutoSaveManager',()=>{
-  it('off by default, 10 minutes, 5–60, five-second countdown then due',()=>{
-    expect(DEFAULT_CULTURE47_CONFIG).toEqual({autoSave:false,autoSaveMinutes:10});
+  it('on by default on the web (5 minutes), 5–60, five-second countdown then due',()=>{
+    expect(DEFAULT_CULTURE47_CONFIG).toEqual({autoSave:true,autoSaveMinutes:5});
     expect(clampAutoSaveMinutes(1)).toBe(5);expect(clampAutoSaveMinutes(99)).toBe(60);
     expect(advanceAutoSave47(0,294,5)).toEqual({elapsed:294,countdown:null,due:false});
     expect(advanceAutoSave47(294,1.5,5)).toEqual({elapsed:295.5,countdown:5,due:false});

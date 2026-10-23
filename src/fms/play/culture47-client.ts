@@ -1,5 +1,5 @@
 import type {Culture47Request,Culture47Response,Culture47Snapshot} from './culture47.worker';
-import type {Culture47Journal,Culture47Progress} from './culture47-session';
+import type {Culture47Checkpoint,Culture47Journal,Culture47Progress} from './culture47-session';
 import {Culture47InvalidJournal,Culture47Unavailable,frozenCulture47} from './culture47-contract';
 import {Culture47DisplayDecoder,checkSiegeDisplay47} from './culture47-display';
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
@@ -58,6 +58,12 @@ export class Culture47Client {
     if(!s||s.journal.engine!==this.engine||('journal'in command&&s.journal.id!==command.journal.id)){this.close();throw new Culture47Unavailable('文化模拟返回不匹配的世界，原档保持。');}
     if(result.timing)this.lastTiming={compute:result.timing.compute,roundTrip:received-sent,decode:performance.now()-received};
     return s;
+  }
+  /** The running world's checkpoint for a save (fast continue). */
+  async checkpoint(options:Options={}):Promise<Culture47Checkpoint>{
+    const r=await this.request({type:'checkpoint'},options);
+    if(!r.checkpoint){this.close();throw new Culture47Unavailable('存档检查点未返回。');}
+    return r.checkpoint;
   }
   async verify(journal:Culture47Journal,options:Options={}):Promise<'witness'|'replay'>{
     const r=await this.request({type:'verify',journal},options);

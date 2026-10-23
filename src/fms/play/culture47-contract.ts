@@ -3,7 +3,8 @@ import {assertCulture47Journal,CULTURE47_RULE,culture47Budget,type Culture47Jour
 // Since 0.5.0 only worlds of the current engine are supported; older engines are not shipped.
 type FrozenEntry={engine:string;file:string;bytes:number;sha256:string;protocol:number;journalVersion?:number};
 export const frozenCulture47=(engine:string):FrozenEntry|undefined=>void engine as undefined;
-export const culture47JournalVersion=(engine:string)=>engine===__CULTURE47_ENGINE__?2:frozenCulture47(engine)?.journalVersion??1;
+// Saves since 0.5.0 are all version-2 journals, also those of earlier builds (older engines).
+export const culture47JournalVersion=(engine:string)=>engine===__CULTURE47_ENGINE__?2:frozenCulture47(engine)?.journalVersion??2;
 export const supportsCulture47=(engine:string)=>engine===__CULTURE47_ENGINE__||!!frozenCulture47(engine);
 // Execution / transport failure is not evidence of a corrupt journal.
 export class Culture47Unavailable extends Error {}

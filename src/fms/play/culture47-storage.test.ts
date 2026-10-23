@@ -66,10 +66,10 @@ describe('independent culture journal storage',()=>{
     await expect(saveCulture47(journal,1,f,undefined,async()=>{if(++calls===2)await mutate(f,s=>{const r=s.get('current');r.onsuccess=()=>s.put({...r.result,checksum:'concurrent-slot-write'},'current');});})).rejects.toThrow('另一个页面已修改');
     let rev=0,checksum='';await mutate(f,s=>{const a=s.get('revision'),b=s.get('current');a.onsuccess=()=>{rev=a.result;};b.onsuccess=()=>{checksum=b.result.checksum;};});expect(rev).toBe(1);expect(checksum).toBe('concurrent-slot-write');
   },30000);
-  it('an unknown engine in the backup locks both slots before verifier selection',async()=>{
+  it('a backup from an earlier build (unknown engine) does not lock the current save',async()=>{
     const f=new IDBFactory();await saveCulture47(journal,null,f);await saveCulture47(journal,1,f);
     await mutate(f,s=>{const r=s.get('backup');r.onsuccess=()=>s.put({...r.result,journal:{...r.result.journal,engine:'0'.repeat(64)}},'backup');});
-    await expect(loadCulture47(f)).rejects.toThrow('未来');await expect(saveCulture47(journal,2,f)).rejects.toThrow('未来');
+    expect((await loadCulture47(f))?.revision).toBe(2);expect(await saveCulture47(journal,2,f)).toBe(3);
   },30000);
   it('never falls back or writes after a verifier transport failure',async()=>{
     const f=new IDBFactory();await saveCulture47(journal,null,f);await saveCulture47(journal,1,f);
@@ -121,5 +121,13 @@ describe('independent culture journal storage',()=>{
     let closed=0,aborted=0;const request={onblocked:null as null|(()=>void),onupgradeneeded:null as null|(()=>void),onsuccess:null as null|(()=>void),result:{close:()=>{closed++;}},transaction:{abort:()=>{aborted++;}}};
     const delayed={open:()=>{queueMicrotask(()=>{request.onblocked?.();request.onupgradeneeded?.();request.onsuccess?.();});return request;}} as unknown as IDBFactory;
     await expect(loadCulture47(delayed)).rejects.toThrow('占用');expect(closed).toBe(1);expect(aborted).toBe(1);
+  },30000);
+});
+describe('saves of earlier builds',()=>{
+  it('an earlier build save without checkpoint reads as empty and a new world may replace it',async()=>{
+    const f=new IDBFactory();await saveCulture47(journal,null,f);
+    await mutate(f,s=>{const r=s.get('current');r.onsuccess=()=>s.put({...r.result,journal:{...r.result.journal,engine:'1'.repeat(64)}},'current');});
+    expect(await loadCulture47(f,undefined,undefined,undefined,true)).toBeNull();
+    expect(await saveCulture47(journal,null,f)).toBe(2);expect((await loadCulture47(f))?.revision).toBe(2);
   },30000);
 });

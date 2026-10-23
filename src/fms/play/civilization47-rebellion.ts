@@ -156,6 +156,14 @@ function restoreState47(r:FoundingRun47,id:string,provinceId:string){
   const entry=[...r.chronicle.entries].reverse().find(e=>e.kind==='restoration'&&e.tick===r.clock.tick&&e.nationIds.includes(id));
   if(entry){entry.text=`${r.world.nations.find(n=>n.id===id)!.name}于${p.name}复国`;const event=r.world.events.find(v=>v.id===entry.sourceEventId);if(event)event.text=entry.text;}
 }
+/** A fallen state regains these provinces (family restoration); the capital
+ * is the first one. Its ruler is appointed by the caller. */
+export function reviveState47(r:FoundingRun47,id:string,provinceIds:string[]){
+  for(const provinceId of provinceIds){const p=r.world.provinces.find(v=>v.id===provinceId)!;transferEconomy(r.world,p.id,p.controller,id);p.controller=p.legalOwner=id;}
+  const moved=new Set(provinceIds);r.occupation={...r.occupation,sieges:r.occupation.sieges.filter(v=>!moved.has(v.provinceId))};
+  r.world.nations.find(n=>n.id===id)!.capitalId=r.world.cities.find(c=>c.provinceId===provinceIds[0])!.id;
+  relocateLostCapitals47(r);reconcileCore(r.world,r.upperCombat);reconcilePortLandOwnersOwned47(r);
+}
 /** Province.UpdateProvinceData: MonthsCoreProvinceForState. */
 function updateCoreMonths47(r:PoliticalRun47,s:Foundings47,provinceId:string){
   const p=r.world.provinces.find(v=>v.id===provinceId)!,owner=p.controller,core=isCore47(r,provinceId,owner),m=s.coreMonths[provinceId]??{};

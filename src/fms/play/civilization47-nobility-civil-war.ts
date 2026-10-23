@@ -3,7 +3,7 @@ import type {NobilityRun47,CivilWar47} from './civilization47-nobility';
 import {nobilityRandom47} from './civilization47-nobility-monthly';
 import {familyRelation47} from './civilization47-nobility-relations';
 import {rulingFamilyId47} from './civilization47-nobility-succession';
-import {launchNobleRevolt47,rallyFamilies47,hasCourtRecord47} from './civilization47-nobility-rebellion';
+import {launchNobleRevolt47,rallyFamilies47,hasCourtRecord47,tryFamilyRestoration47} from './civilization47-nobility-rebellion';
 import {civilWarCb47,civilWarGoal47,isCivilWarCb47,type CivilWarType47} from './civil-war47-types';
 import {nativeGetMonthSince} from './native-economy/character-calendar';
 import {createNativeIsoCalendar} from './civilization47-iso-calendar';
@@ -94,10 +94,14 @@ export function startCivilWar47(r:Run,state:string,discontented:string[]):string
   const type=determineCivilWarType47(r,state,rebels);
   n.lastCivilWar[state]=r.life.gameTime;
   const lead=top(r,rebels),cause=civilWarCause47(r,state,rebels,type);
-  for(const v of rallyFamilies47(r,lead))if(!rebels.includes(v))rebels.push(v);
+  const restored=tryFamilyRestoration47(r,lead);
+  for(const v of rallyFamilies47(r,lead,restored))if(!rebels.includes(v))rebels.push(v);
   const motherName=r.world.nations.find(v=>v.id===state)!.name,surname=r.kin.families[lead].surname;
-  const rebel=launchNobleRevolt47(r,lead,[lead,...rebels.filter(v=>v!==lead)],`${surname}家族领导内战，叛军以家族领地建立新的国家。`,{cb:civilWarCb47(type),legacy:type,goal:civilWarGoal47(type)});
+  const rebel=launchNobleRevolt47(r,lead,[lead,...rebels.filter(v=>v!==lead)],`${surname}家族领导内战，${restored?'借内战复国。':'叛军以家族领地建立新的国家。'}`,{cb:civilWarCb47(type),legacy:type,goal:civilWarGoal47(type)},()=>{},restored);
   if(!rebel)return null;
+  // StateNamingInheritanceUtility.GetCivilWarNamingMode: succession, reform and overthrow rebels copy the
+  // mother's custom name; independence clears it; a restored state keeps its own.
+  if(!restored&&type!==10){const own=r.civilization.nations[rebel],from=r.civilization.nations[state].name.custom;if(from!==null){own.name.custom=from;r.world.nations.find(v=>v.id===rebel)!.name=nationName47(own);r.civilization.revision++;}}
   n.lastCivilWar[state]=r.life.gameTime;
   const rebelName=r.world.nations.find(v=>v.id===rebel)!.name,loyal=Object.values(n.families).filter(v=>v.nationId===state).length;
   n.civilWars[rebel]={motherId:state,type,cause,familyId:Number(lead),familyIds:rebels.map(Number),rebelName,motherName} satisfies CivilWar47;

@@ -1,10 +1,9 @@
 name: CI
 
+# Tests run locally before each release (npm run check). The GitHub run is
+# manual only (Actions tab → Run workflow), e.g. when billing allows it.
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

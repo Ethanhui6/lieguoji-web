@@ -25,7 +25,7 @@ async function expectNoNewAdvance(page:Page){
 test('acknowledged pipeline installs every result and drains pending preview/save through real controls',async({page},info)=>{
  test.setTimeout(180000);const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
-  type Packet={id?:number;command?:{type?:string;action?:{kind?:string}};progress?:unknown;error?:unknown;display?:{kind?:string;snapshot?:{run:{clock:{tick:number}}};run?:{clock:{tick:number}}};snapshot?:{run:{clock:{tick:number}}}};
+  type Packet={id?:number;command?:{type?:string;action?:{kind?:string}};progress?:unknown;error?:unknown;display?:{kind?:string;snapshot?:{run:{clock:{tick:number}}};tick?:number};snapshot?:{run:{clock:{tick:number}}}};
   const state:Probe={armed:null,pending:0,maxPending:0,posts:[],acks:[],clicks:[],errors:[]},pending=new Map<string,RequestRow>();
   (window as unknown as ProbeWindow).culture47PipelineProbe=state;
   const NativeWorker=Worker;let workers=0;
@@ -38,8 +38,8 @@ test('acknowledged pipeline installs every result and drains pending preview/sav
      const token=this.probeWorker+'/'+data.id,row=pending.get(token);if(!row)return;
      pending.delete(token);state.pending=pending.size;
      if(data.error){state.errors.push(String(data.error));return;}
-     const run=data.display?.kind==='full'?data.display.snapshot?.run:data.display?.run??data.snapshot?.run;
-     state.acks.push({...row,at:performance.now(),tick:run?.clock.tick??null});
+     const tick=data.display?.kind==='full'?data.display.snapshot?.run.clock.tick:data.display?.tick??data.snapshot?.run.clock.tick;
+     state.acks.push({...row,at:performance.now(),tick:tick??null});
     });
    }
    postMessage(message:unknown,options?:Transferable[]|StructuredSerializeOptions){

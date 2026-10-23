@@ -57,6 +57,8 @@ export class Culture47Client {
     if(result.snapshot)try{checkSiegeDisplay47(result.snapshot);}catch(e){this.close();throw new Culture47Unavailable(e instanceof Error?e.message:'显示证据无法确认。');}
     if(!s||s.journal.engine!==this.engine||('journal'in command&&s.journal.id!==command.journal.id)){this.close();throw new Culture47Unavailable('文化模拟返回不匹配的世界，原档保持。');}
     if(result.timing)this.lastTiming={compute:result.timing.compute,roundTrip:received-sent,decode:performance.now()-received,phases:result.timing.phases};
+    // Diagnostics/browser tests: each accepted (decoded) world, without copying it.
+    if(typeof dispatchEvent==='function')dispatchEvent(new CustomEvent('culture47-snapshot',{detail:s}));
     return s;
   }
   /** The running world's checkpoint for a save (fast continue). */

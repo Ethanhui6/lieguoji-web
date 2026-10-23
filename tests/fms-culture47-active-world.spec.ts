@@ -3,12 +3,13 @@ import {enter,create} from './fms-culture47-fixture';
 
 async function watchSimulation(page:Page){
  await page.addInitScript(()=>{
-  const Real=window.Worker,evidence:{day:number;wars:number;history:number;armyOrders:number;fleetOrders:number;contacts:number}[]=[];
+  const evidence:{day:number;wars:number;history:number;armyOrders:number;fleetOrders:number;contacts:number}[]=[];
   Object.defineProperty(window,'activeWorldEvidence',{value:evidence});
-  window.Worker=class extends Real{constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',event=>{
-   const r=event.data.snapshot?.run??event.data.display?.snapshot?.run??event.data.display?.run;if(!r?.armyAutonomy)return;
+  // Live updates carry only a delta; the client announces each decoded world.
+  window.addEventListener('culture47-snapshot',event=>{
+   const r=(event as CustomEvent).detail.run;if(!r?.armyAutonomy)return;
    evidence.push({day:r.world.day,wars:r.nativeWars.campaigns.length,history:r.chronicle.entries.length,armyOrders:(Object.values(r.armyAutonomy.armies) as {decision:string}[]).filter(a=>a.decision==='attacking').length,fleetOrders:(Object.values(r.navalAutonomy.fleets) as {decision:string}[]).filter(a=>a.decision==='attacking').length,contacts:r.forceContacts.pairs.length});
-  });}};
+  });
  });
 }
 const readEvidence=(page:Page)=>page.evaluate(()=>(window as unknown as {activeWorldEvidence:{day:number;wars:number;history:number;armyOrders:number;fleetOrders:number;contacts:number}[]}).activeWorldEvidence);

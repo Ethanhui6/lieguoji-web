@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import type {FoundingForces47} from './civilization47-forces';
 import {populationStamp47,type PopulationStamp47} from './civilization47-population-types';
 import {sameCulture47Value} from './culture47-equal';
@@ -9,7 +10,7 @@ type RetiredArmy47={army:FoundingForces47['world']['armies'][number];unit:Foundi
 export type ArmyRetirement47={version:1;rule:typeof ARMY_RETIREMENT_RULE47;enabledTick:number;records:Record<string,RetiredArmy47>};
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 const integer=(v:number,min=0)=>Number.isSafeInteger(v)&&v>=min;
-export function assertArmyRetirement47(r:FoundingForces47){
+export function assertArmyRetirement47(r:FoundingForces47){if(fastChecks47())return;
  const s=r.armyRetirement;if(s===undefined)return;
  const fail=()=>{throw Error('退役军队档案不一致，原世界保持。');};
  if(!exact(s,['version','rule','enabledTick','records'])||s.version!==1||s.rule!==ARMY_RETIREMENT_RULE47||!integer(s.enabledTick)||s.enabledTick>r.clock.tick||!s.records||typeof s.records!=='object'||Array.isArray(s.records))return fail();

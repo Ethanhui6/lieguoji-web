@@ -5,15 +5,13 @@ test('a new normal continent enables army recovery and keeps it after save and r
  test.setTimeout(180000);
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
-  const WorkerBase=window.Worker;
   const observed:{rule:string;enabledTick:number;tick:number}[]=[];
   Object.defineProperty(window,'recoveryEvidence',{value:observed});
-  window.Worker=class extends WorkerBase{
-   constructor(url:string|URL,options?:WorkerOptions){super(url,options);this.addEventListener('message',event=>{
-    const run=event.data.snapshot?.run??event.data.display?.snapshot?.run??event.data.display?.run;
-    if(run?.armyRecovery)observed.push({rule:run.armyRecovery.rule,enabledTick:run.armyRecovery.enabledTick,tick:run.clock.tick});
-   });}
-  };
+  // Live updates carry only a delta; the client announces each decoded world.
+  window.addEventListener('culture47-snapshot',event=>{
+   const run=(event as CustomEvent).detail.run;
+   if(run?.armyRecovery)observed.push({rule:run.armyRecovery.rule,enabledTick:run.armyRecovery.enabledTick,tick:run.clock.tick});
+  });
  });
  await page.goto('/?fms=1');
  await page.getByRole('button',{name:'生成大陆',exact:true}).click();

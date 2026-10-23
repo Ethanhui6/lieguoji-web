@@ -65,7 +65,7 @@
 - **仍由 Claude 修改的文件**：仅本文件的本段补记（未提交）。
 
 ### 2026-10-23 · 0.5.4（Claude Code）→ 交给 Codex 回归
-- **提交 SHA**：推送后补记（见下一条）。
+- **提交 SHA**：`4ab4b16241702aca8f21f63d5a2e039aa43bb6da`（版本 0.5.4，已推送 main；Cloudflare Pages success；GitHub Actions 推送时仍在运行，结果待 Codex 核对）。本条为推送后的本地补记。
 - **严重问题（已修）**：0.5.x 原作家族世界在部分开局下会出现严格校验不通过的状态。0.5.2 实时推进会在那一天报错卡死；0.5.3 实时推进跳过校验，能继续玩但存档读不回来。用固定 `crypto.randomUUID` 的同一世界对照，0.5.3 与本地改动在同一天、同一错误码失败，确认是既有引擎问题，不是本批性能改动引入的。
   - 校验器（引擎不变，0.5.3 读不回来的存档可直接读回）：`civilization47-population-validation.ts`（已故者的前配偶再婚迁出家族；中途建国当月 `initial-family` 年龄豁免）、`civilization47-calendar.ts`（同一豁免）、`civilization47-lifecycle-validation.ts`（原作 `Character.Die` 不收回幸存配偶的 Spouse 身份，配偶已故的旧身份不再要求同家族、同国家、无现任配偶）。
   - 引擎：`civilization47-army-ai.ts` 自主停止令先预检，敌军在场不能停止时继续原路线（原先抛错导致整批被拒）。只影响原本会报错的情况，正常存档重放结果不变。
@@ -75,3 +75,25 @@
 - **新测试**：`family-validity47.test.ts`。世界 2 严格推进 40 天在默认测试集里；世界 a 严格推进 705 天约两分钟，用 `LIEGUOJI_LONG=1` 开启。**请 Codex 考虑在 CI 里加一个长测任务（夜间或发布前）**，跑 `LIEGUOJI_LONG=1 npx vitest run src/fms/play/family-validity47.test.ts`。
 - **重点回归（请 Codex）**：全量单测 + 浏览器测试；`presentation-clock.test.ts`；读档 / 继续存档（包括 0.5.3 的存档）；浏览器端推进时的 `data-day` 节奏（每批间隔 ≥150ms，不应丢天）。
 - **仍由 Claude 修改的文件**：无（本段 SHA 补记除外）。下一批计划继续做后期军事 / 行军的模拟性能，以及 Worker 发往主线程的数据瘦身。
+
+### 2026-10-23 · Claude 看到的 0.5.3 CI 结果（请 Codex 分析）
+- `2c486543`：Build and unit checks success；6 个浏览器分片全部 failure，失败步骤都是 "Run every browser test in this project and shard"（产物哈希比对步骤已通过），所以是用例失败，不是构建 / 哈希问题。日志从 Azure blob 下载时一直 EOF，Claude 没拿到具体用例。
+- 7aa7c6a 的浏览器测试当时被跳过，所以这些失败可能从 0.5.2 甚至更早就存在。0.5.4（`4ab4b162`）又改了推演节奏（每批至少间隔 150ms）和面板渲染方式（transition），依赖推进节奏或 `data-day` 立即更新的用例可能受影响。
+- 请 Codex 给出失败用例和证据：属于玩法 / 节奏问题的交给 Claude 修，属于测试本身的由 Codex 修。
+
+### 2026-10-23 · 0.5.5（Claude Code）→ 交给 Codex 回归
+- **提交 SHA**：推送后补记。
+- **严重问题（已修）**：家族每月自动发动的叛乱或内战（`checkFamilyRebellions47` / `checkCivilWars47` → `foundState47`）建国后，没有给新国家补战损记录，下一次每日结算的 `assertLosses` 就会失败，推演停在「战损记录损坏」。一般在第九、十年出现：3500 天扫描 6 个世界里有 2 个失败，开发版存档在第 3621 天失败；0.5.4 代码在同一天同样失败，确认是本来就有的问题。修复：`civilization47-political-owner.ts` 在 `advanceNobility47` 之后调用 `reconcileLosses`（只补缺失的记录，正常世界里不做任何改动）。回归测试 `family-rebellion-monthly.test.ts`：去掉修复会失败，加回后通过。
+- **性能（模拟结果逐位不变：同一固定世界推进 800 天，与 0.5.4 的世界状态 sha256 相同）**：
+  - `display-delta47.ts`（新增）+ `culture47-display.ts`：更新包的 `run` 改为结构化增量（`delta` 字段，按内容逐层比较，主线程在上一份数据上打补丁），`journal` 仍然整份发送。后期每批数据约 760KB→50KB。数据包格式变了，`culture47-display.test.ts` 已同步更新；`tests/` 下读 `display.journal` 的浏览器测试不受影响。
+  - `army-commands47.ts`：一次寻路只算一次位置图（原来每支军队要算 2–3 遍）；目标格按已冻结的地图缓存（`travelGraphSealed47`）。`civilization47-army-ai.ts`：同一支军队的行军速度按地表类型和省份缓存。
+  - `army-geography47.ts`：在数值窗口内（`ownedTerrainWindow47`），地形对象和省份边界都相同就直接复用，跳过逐项比对。
+  - `geography-content47.ts`：复制候选世界时，退役档案只浅复制 `records` 这一层，每条记录冻结后共用（写入后不可变）。
+  - `army-retirement47.ts`：`assertArmyRetirement47` 在快速模式下跳过（与其他整体校验器一致）。
+  - `territory-labels.ts`：国名排布按「国家 + 省份集合」缓存，只重算有变化的领土块（`territory-labels.test.ts`：结果与清空缓存后从头计算一致）。
+- **实测**：后期（第 1400 天以后）每日模拟 26.8→20.7ms。
+- **验证**：lint、typecheck；新增的 `display-delta47`（3000 组随机增量往返，外加真实会话 30 批重建与 Worker 快照一致）、`territory-labels`、`family-rebellion-monthly` 都通过；开发版后期存档从第 3619 天推进到第 4028 天无报错。`src/fms` 全量单测 177 个文件、1761 项通过（1 项长测跳过）；5000 天严格扫描 6 个世界，a–e 全部通过（b、c 修复前在第 3256 天失败），f 见下方「新发现」；生产版冒烟测试：新世界 4 倍速推进约 1000 天无报错，存档、刷新、读档（336ms）、继续推进均正常。
+- **浏览器测试（本地 desktop-chromium，CPU 空闲时，0.5.5 候选与 0.5.4 构建对照）**：`fms-culture47-motion` / `pipeline` / `active-world`（2 项）/ `army-recovery-ui` 在 0.5.4 构建上同样失败（超时，以及 active-world「状态份数 ≥30」、motion「连续变化」两条断言），这一轮没有新增失败。0.5.4 起后台推进改为每批至少间隔 150ms、面板用 transition 渲染，按批次计数或依赖 React 日期立即更新的断言可能因此失效。请 Codex 分析：属于测试计数/节奏假设的由 Codex 修；如果确实是显示连续性问题（motion 的 gap ≤750ms 那条），给出证据交给 Claude。
+- **为适配增量协议，Claude 改了 4 个测试**（Codex 请知悉）：`fms-culture47-active-world.spec.ts`、`fms-culture47-army-recovery-ui.spec.ts` 改为监听客户端新增的 `culture47-snapshot` 事件（带解码后的完整快照，不做复制）；`fms-culture47-motion.spec.ts`、`fms-culture47-pipeline.spec.ts` 改读更新包新增的 `display.tick`。
+- **新发现，未修（下一批由 Claude 处理）**：5000 天扫描中，世界 f（固定 UUID 标记 `f`，大陆地形，种子 421730）在第 4922 天出现人口校验错误码 18（姓名、身份、文化或出生记录对不上，第 13 年以后才出现）。
+- **请 Codex 关注**：数据包格式变化对浏览器测试的影响（`display.kind==='update'` 现在带 `delta`，不再带 `run`）；长测任务里可以加上 `family-rebellion-monthly.test.ts`。

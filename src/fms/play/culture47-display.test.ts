@@ -41,7 +41,9 @@ describe('culture world compact transport and atomic batches',()=>{
   const {owner,decoder,snapshot}=ready();
   const packet=owner.executeDisplay([{kind:'advance',ticks:120},{kind:'advance',ticks:120}],0);
   expect(packet.kind).toBe('update');if(packet.kind!=='update')throw Error('expected update');
-  expect('terrain'in packet.run).toBe(false);expect('diplomaticGeography'in packet.run).toBe(false);expect('opening'in packet.journal).toBe(false);
+  const changed=(packet.delta as {set:Record<string,unknown>}).set;expect('terrain'in changed).toBe(false);expect('diplomaticGeography'in changed).toBe(false);
+  // Only what changed travels: far less than the complete dynamic state.
+  const {terrain:_t,diplomaticGeography:_g,...dynamicRun}=owner.snapshot().run;void _t;void _g;expect(JSON.stringify(packet.delta).length).toBeLessThan(JSON.stringify(dynamicRun).length/2);expect('opening'in packet.journal).toBe(false);
   const result=decoder.decode(packet,expected(0,2));const {motion,...state}=result;expect(state).toEqual(owner.snapshot());expect(motion).toMatchObject({fromTick:0,toTick:240,fromSequence:0,toSequence:2});expect(motion!.armies).not.toEqual({});
   expect(result.run.terrain).toBe(snapshot.run.terrain);expect(result.journal.opening).toBe(snapshot.journal.opening);
   expect(new Culture47Session().load(result.journal)).toEqual(state);
@@ -78,9 +80,10 @@ describe('culture world compact transport and atomic batches',()=>{
   const a=[1,2],b=[1,2];b.length++;expect(sameDisplayStatic47(a,b)).toBe(false);
  },30000);
  it('rejects attempts to replace static fields inside an update',()=>{
-  const {owner,decoder,snapshot}=ready(),packet=owner.executeDisplay([{kind:'advance',ticks:1}],0);
+  const {owner,decoder}=ready(),packet=owner.executeDisplay([{kind:'advance',ticks:1}],0);
   if(packet.kind!=='update')throw Error('expected update');
-  const invalid={...packet,run:{...packet.run,terrain:snapshot.run.terrain}} as Culture47DisplayPacket;
+  // A delta that replaces the dynamic run with one carrying the static terrain.
+  const invalid={...packet,delta:{...owner.snapshot().run}} as Culture47DisplayPacket;
   expect(()=>decoder.decode(invalid,expected(0))).toThrow();expect(withoutMotion(decoder.decode(packet,expected(0)))).toEqual(owner.snapshot());
  },30000);
  it('rejects motion from another batch or an altered endpoint without advancing the display epoch',()=>{

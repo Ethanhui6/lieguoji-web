@@ -3,7 +3,7 @@ import type {War46Run} from './war46-model';
 import type {ArmyPositions47} from './army-presence47';
 import {readArmySpace47, type ArmySpace47, type LocatedArmy47} from './army-space47';
 import {armySpatialFor47} from './army-geography47';
-import {armyTravelPathPoints47, createArmyTravelSearch47, type TravelCell47, type TravelPolicy47} from './army-travel47-graph';
+import {armyTravelPathPoints47, createArmyTravelSearch47, travelGraphSealed47, type TravelCell47, type TravelGraph47, type TravelPolicy47} from './army-travel47-graph';
 import {advanceArmyTravel47, armyTravelLocation47, beginArmyTravel47, haltArmyTravel47, redirectArmyTravel47} from './army-travel47-state';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
@@ -58,11 +58,11 @@ function safeRetreatEnd(r: ArmyMotionRun47, here: LocatedArmy47, space: ArmySpac
  * A preview and its immediately issued order can share a search. It cannot be
  * reused after another order, tick, position revision or run replacement. */
 export function createArmyCommandSearch47(r:ArmyMotionRun47,weights:ArmyRouteWeights47,armyId:string){
- const expected=armyStamp47(r),g=armySpatialFor47(r).graph,a=r.world.armies.find(a=>a.id===armyId);
+ // One position view per search: its stamp check below proves the same positions.
+ const expected=armyStamp47(r),spatial=armySpatialFor47(r),g=spatial.graph,a=r.world.armies.find(a=>a.id===armyId);
  if(!a)throw Error('寻路军队不存在。');
  const start=armyTravelLocation47(r.armyPositions.records[armyId],g).cell.id;
  const searches=new Map<boolean,ReturnType<typeof createArmyTravelSearch47>>();
- let view:{spatial:ReturnType<typeof armySpatialFor47>;space:ReturnType<typeof readArmySpace47>}|undefined;
  return Object.assign((run:ArmyMotionRun47,id:string,target:number,retreat:boolean)=>{
   if(run!==r||id!==armyId)throw Error('寻路阶段已经更换。');assertExpected(run,expected);
   if(!searches.has(retreat))searches.set(retreat,createArmyTravelSearch47(g,start,armyTravelPolicy47(r,a,weights,retreat)));
@@ -72,8 +72,7 @@ export function createArmyCommandSearch47(r:ArmyMotionRun47,weights:ArmyRouteWei
    * positions, so every candidate preview of this army can share it. */
   view(run:ArmyMotionRun47){
    if(run!==r)throw Error('寻路阶段已经更换。');assertExpected(run,expected);
-   if(!view){const spatial=armySpatialFor47(r);view={spatial,space:readArmySpace47(r.world,spatial)};}
-   return view;
+   return {spatial,space:spatial.space};
   },
  });
 }
@@ -102,10 +101,7 @@ function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWe
   } else {
     const id = action.target.id, p = r.world.provinces.find(p => p.id === id);
     const point = r.world.cities.find(c => c.provinceId === id)?.position ?? p?.center;
-    target = point && [...(spatial.graph.byProvince.get(id) ?? [])].sort((x, y) => {
-      const a = spatial.graph.cells.get(x)!.center, b = spatial.graph.cells.get(y)!.center;
-      return Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y) || x - y;
-    })[0];
+    target = point && provinceTargetCell47(spatial.graph, id, point);
     targetName = p?.name ?? '未知地区';
   }
   if (target === undefined) throw Error('目标不在当前地图的实际海陆网格中。');
@@ -119,6 +115,15 @@ function resolve(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWe
   return {spatial, a, travel, points, targetName};
 }
 
+const targetCells=new WeakMap<TravelGraph47,Map<string,number|undefined>>();
+/** The province cell nearest its city (or center), ties by lower id. Cities and
+ * sealed graphs never move, so the choice is cached per sealed graph. */
+function provinceTargetCell47(g:TravelGraph47,id:string,point:Point):number|undefined{
+  const key=id+'\u0000'+point.x+','+point.y,cache=travelGraphSealed47(g)?targetCells.get(g)??targetCells.set(g,new Map()).get(g)!:undefined;
+  if(cache?.has(key))return cache.get(key);
+  const target=[...(g.byProvince.get(id)??[])].sort((x,y)=>{const a=g.cells.get(x)!.center,b=g.cells.get(y)!.center;return Math.hypot(a.x-point.x,a.y-point.y)-Math.hypot(b.x-point.x,b.y-point.y)||x-y;})[0];
+  cache?.set(key,target);return target;
+}
 export function previewArmyCommand47(r: ArmyMotionRun47, action: ArmyCommand47, weights: ArmyRouteWeights47,search?:ArmyCommandSearch47): ArmyPreview47 {
   const basedOn = armyStamp47(r);
   try {

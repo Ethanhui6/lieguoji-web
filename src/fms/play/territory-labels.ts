@@ -14,7 +14,11 @@ export interface TerritoryLabel{nationId:string;componentId:string;point:Point;a
 /** Current control, not capital/legal ownership. Label every land-connected
  * component at a verified interior point with best boundary clearance.
  * This is a bounded web placement adapter, not a reproduction of Unity text paths. */
+// A component's label depends only on its provinces, whose outlines never
+// change within a world: a conquest recomputes just the components it touched.
+let cacheWorld:string|undefined;const cache=new Map<string,TerritoryLabel|null>();
 export function territoryLabels(world:World):TerritoryLabel[]{
+  if(cacheWorld!==world.custom?.id||cache.size>4096){cache.clear();cacheWorld=world.custom?.id;}
   const byId=new Map(world.provinces.map(p=>[p.id,p])),result:TerritoryLabel[]=[];
   for(const nation of world.nations){
     const owned=world.provinces.filter(p=>p.controller===nation.id).sort((a,b)=>a.id.localeCompare(b.id)),seen=new Set<string>();
@@ -26,6 +30,8 @@ export function territoryLabels(world:World):TerritoryLabel[]{
     }
     // Stable component identities survive input reordering; no enclave is dropped.
     for(const largest of groups){
+    const key=nation.id+'|'+largest.map(p=>p.id).join(','),known=cache.get(key);
+    if(known!==undefined){if(known)result.push(known);continue;}
     const largestArea=largest.reduce((sum,p)=>sum+area(p),0);
     const edges=new Map<string,[Point,Point]>(),candidates:Point[]=[];let cx=0,cy=0;
     for(const p of largest){
@@ -41,13 +47,14 @@ export function territoryLabels(world:World):TerritoryLabel[]{
     const centreDistance=(p:Point)=>(p.x-middle.x)**2+(p.y-middle.y)**2;
     let best:Point|undefined,bestDistance=-1;
     for(const p of candidates){const d=clearance(p);if(d>bestDistance||(d===bestDistance&&best&&centreDistance(p)<centreDistance(best))){best=p;bestDistance=d;}}
-    if(!best)continue;
+    if(!best){cache.set(key,null);continue;}
     // Refine locally while always checking membership. No label may migrate
     // into an inland sea or to a distant enclave just because the centroid did.
     let step=Math.sqrt(largestArea)/8,refined:Point=best;
     for(let iteration=0;iteration<7;iteration++,step/=2){const origin:Point=refined;for(const dx of [-step,0,step])for(const dy of [-step,0,step]){const p:Point={x:origin.x+dx,y:origin.y+dy};if(!inLand(p))continue;const d=clearance(p);if(d>bestDistance){refined=p;bestDistance=d;}}}
     const safe=Math.sqrt(bestDistance),angle=territoryAxis(largest,refined),band=territoryTextBand(refined,angle,safe,boundary);
-    result.push({nationId:nation.id,componentId:largest[0].id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:safe,angle,...band});
+    const label={nationId:nation.id,componentId:largest[0].id,point:{...refined},area:largestArea,provinceIds:largest.map(p=>p.id),clearance:safe,angle,...band};
+    cache.set(key,label);result.push(label);
     }
   }
   return result;

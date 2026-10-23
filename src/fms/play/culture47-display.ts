@@ -1,4 +1,5 @@
 import {certifyDisplayGeography47} from './geography-content47';
+import {applyDisplayDelta47,displayDelta47,type DisplayDelta47} from './display-delta47';
 import type {Culture47Session,Culture47Journal} from './culture47-session';
 import type {ForceDisplayTrace47} from './force-display-trace47';
 
@@ -16,7 +17,7 @@ function freezeDisplayPlain(value:unknown):boolean {
 }
 export type Culture47DisplayPacket=(
  |{kind:'full';base:string;snapshot:Snapshot}
- |{kind:'update';base:string;from:number;run:DynamicRun;journal:Omit<Culture47Journal,'opening'>;frame:Snapshot['frame']})&{motion?:ForceDisplayTrace47};
+ |{kind:'update';base:string;from:number;delta:DisplayDelta47;tick:number;journal:Omit<Culture47Journal,'opening'>;frame:Snapshot['frame']})&{motion?:ForceDisplayTrace47};
 
 /** Exact structured data, including every terrain neighbor and lock sample.
  * Typed arrays are compared as bytes rather than allocating a property
@@ -42,6 +43,9 @@ export function sameDisplayStatic47(a:unknown,b:unknown):boolean {
 // them and the receiver restores the baseline objects (frozen once, so the
 // geography identity checks there are cheap). Old frozen engines still send
 // them in every update and are decoded unchanged.
+/** The dynamic part an update carries: no terrain, sea partition, opening or province outlines. */
+const dynamic=(s:Snapshot)=>{const {terrain:_terrain,diplomaticGeography:_geography,...full}=s.run;const {opening:_opening,...journal}=s.journal;void _terrain;void _geography;void _opening;
+ return {run:{...full,world:{...full.world,provinces:full.world.provinces.map(({polygon:_p,neighbors:_n,...p})=>p)}} as unknown as DynamicRun,journal};};
 const fixed=(s:Snapshot):Static=>({terrain:s.run.terrain,geography:s.run.diplomaticGeography,opening:s.journal.opening,provinces:s.run.world.provinces.map(p=>({id:p.id,polygon:p.polygon,neighbors:p.neighbors}))});
 export function checkSiegeDisplay47(s:Snapshot){
  const ids=s.frame.activeSieges;
@@ -61,9 +65,11 @@ export class Culture47DisplayEncoder {
  private staticRefs:unknown[]=[];
  private base=crypto.randomUUID();
  private sequence=0;
+ // The last dynamic run sent: session runs are replaced, never edited, after acceptance.
+ private sent?:ReturnType<typeof dynamic>;
  encode(s:Snapshot):Culture47DisplayPacket {
   const refs=s.run.world.provinces.flatMap(p=>[p.polygon,p.neighbors]),statics=[s.run.terrain,s.run.terrain.triangles,s.run.terrain.elevations,s.run.terrain.points,s.run.diplomaticGeography,s.journal.opening];
-  if(!this.witness){freezeDisplayPlain(fixed(s));this.witness=structuredClone(fixed(s));freezeDisplayPlain(this.witness);this.provinceRefs=refs;this.sequence=s.journal.actions.length;return {kind:'full',base:this.base,snapshot:structuredClone(s)};}
+  if(!this.witness){freezeDisplayPlain(fixed(s));this.witness=structuredClone(fixed(s));freezeDisplayPlain(this.witness);this.provinceRefs=refs;this.sequence=s.journal.actions.length;this.sent=dynamic(s);return {kind:'full',base:this.base,snapshot:structuredClone(s)};}
   // Shared (certified) province geometry is compared by identity; only new
   // objects are compared in full against the witness, then remembered.
   // The session keeps its frozen terrain record and owned buffers across
@@ -72,12 +78,11 @@ export class Culture47DisplayEncoder {
   const sameRefs=refs.length===this.provinceRefs.length&&refs.every((v,i)=>v===this.provinceRefs[i]),sameStatics=statics.every((v,i)=>v===this.staticRefs[i]);
   if(!(sameRefs&&sameStatics)&&!sameDisplayStatic47(sameRefs?{...fixed(s),provinces:this.witness.provinces}:fixed(s),this.witness))throw Error('显示基图发生变化，保留最后确认的进度。');
   this.provinceRefs=refs;this.staticRefs=statics;
-  const {terrain:_terrain,diplomaticGeography:_geography,...full}=s.run;
-  const run={...full,world:{...full.world,provinces:full.world.provinces.map(({polygon:_p,neighbors:_n,...p})=>p)}} as unknown as DynamicRun;
-  const {opening:_opening,...journal}=s.journal;
-  void _terrain;void _geography;void _opening;
-  const packet=structuredClone({kind:'update' as const,base:this.base,from:this.sequence,run,journal,frame:s.frame});
-  this.sequence=s.journal.actions.length;return packet;
+  // Only what changed since the previous packet (display-delta47); the
+  // small delta is still cloned so no internal object leaves the owner.
+  const next=dynamic(s),delta=displayDelta47(this.sent!.run,next.run,5);
+  const packet=structuredClone({kind:'update' as const,base:this.base,from:this.sequence,delta,tick:s.run.clock.tick,journal:next.journal,frame:s.frame});
+  this.sent=next;this.sequence=s.journal.actions.length;return packet;
  }
 }
 
@@ -93,6 +98,7 @@ export class Culture47DisplayDecoder {
  private engine='';
  private sequence=0;
  private tick=0;
+ private received?:ReturnType<typeof dynamic>;
  decode(packet:Culture47DisplayPacket,expected:{engine:string;sequence?:number;actions?:number}):Snapshot&{motion?:ForceDisplayTrace47} {
   if(packet.kind==='full'){
    const s=packet.snapshot;
@@ -100,18 +106,21 @@ export class Culture47DisplayDecoder {
    checkSiegeDisplay47(s);
    this.baseline=fixed(s);freezeDisplayPlain(this.baseline);this.witness=structuredClone(this.baseline);freezeDisplayPlain(this.witness);this.base=packet.base;
    certifyDisplayGeography47([this.baseline.terrain.points,this.baseline.terrain.neighbors,this.baseline.geography,...this.baseline.provinces.flatMap(p=>[p.polygon,p.neighbors])]);
-   this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return s;
+   this.received=dynamic(s);this.world=s.journal.id;this.engine=s.journal.engine;this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return s;
   }
-  if(!this.baseline||!this.witness||packet.base!==this.base||packet.from!==this.sequence||expected.sequence!==this.sequence||packet.journal.actions.length!==this.sequence+(expected.actions??1)||packet.journal.id!==this.world||packet.journal.engine!==this.engine||packet.journal.engine!==expected.engine||packet.run.id!==this.world||'terrain'in packet.run||'diplomaticGeography'in packet.run||'opening'in packet.journal)throw Error('显示增量不匹配，保留最后确认的进度。');
+  if(!this.received)throw Error('显示增量缺少基线，保留最后确认的进度。');
+  const run=applyDisplayDelta47(this.received.run,packet.delta),journal=packet.journal;
+  if(run.clock?.tick!==packet.tick)throw Error('显示增量时间不一致，保留最后确认的进度。');
+  if(!this.baseline||!this.witness||packet.base!==this.base||packet.from!==this.sequence||expected.sequence!==this.sequence||journal.actions.length!==this.sequence+(expected.actions??1)||journal.id!==this.world||journal.engine!==this.engine||journal.engine!==expected.engine||run.id!==this.world||'terrain'in run||'diplomaticGeography'in run||'opening'in journal)throw Error('显示增量不匹配，保留最后确认的进度。');
   if(!sameDisplayStatic47(this.baseline,this.witness))throw Error('显示基图被修改，保留最后确认的进度。');
   type Province=Snapshot['run']['world']['provinces'][number];
-  const base=this.baseline.provinces,world=packet.run.world,sent=world.provinces as (Province|Omit<Province,'polygon'|'neighbors'>)[];
+  const base=this.baseline.provinces,world=run.world,sent=world.provinces as (Province|Omit<Province,'polygon'|'neighbors'>)[];
   const provinces=sent.map((p,i):Province=>{
    if('polygon' in p)return p;
    if(base[i]?.id!==p.id)throw Error('显示行省与基图不一致。');
    return {...p,polygon:base[i].polygon,neighbors:base[i].neighbors} as Province;
   });
-  const s:Snapshot={run:{...packet.run,world:{...world,provinces},terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...packet.journal,opening:this.baseline.opening},frame:packet.frame};
+  const s:Snapshot={run:{...run,world:{...world,provinces},terrain:this.baseline.terrain,diplomaticGeography:this.baseline.geography},journal:{...journal,opening:this.baseline.opening},frame:packet.frame};
   checkSiegeDisplay47(s);
   const motion=packet.motion;
   if(motion){
@@ -136,6 +145,7 @@ export class Culture47DisplayDecoder {
     if(!sameDisplayStatic47(motion.contacts.at(-1)!.pairs,s.run.forceContacts.pairs))throw Error('交战显示终点不一致。');
    }
   }
+  this.received={run,journal};
   this.sequence=s.journal.actions.length;this.tick=s.run.clock.tick;return motion?{...s,motion}:s;
  }
 }

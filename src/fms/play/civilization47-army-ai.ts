@@ -8,6 +8,7 @@ import {readArmySpace47,landHolders47} from './army-space47';
 import {armyTravelLocation47} from './army-travel47-state';
 import {locateTravelCell47,type TravelGraph47} from './army-travel47-graph';
 import {previewArmyCommand47,issueArmyOrderOwned47,createArmyCommandSearch47,type ArmyRouteWeights47,type ArmyCommand47} from './army-commands47';
+import type {TravelCell47} from './army-travel47-graph';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import {forceKey47} from './force-motion47';
@@ -119,7 +120,9 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     let candidates:RegularTarget47[]=[...attackIds].map(id=>({id,center:places.get(id)!.center,feature:provinceFeatures.get(id)!,protruding:protruding(id),port:ports.has(id)}));
     let chosen:RegularTarget47|null=null,reason='';
     const unfunded:{target:RegularTarget47;preview:ReturnType<typeof previewArmyCommand47>}[]=[];
-    const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,cell=>actualForceSpeed47(r,{kind:'army',id:a.id,nationId:a.nationId,withdrawing:false,travel:here.travel},cell))/TICKS_PER_DAY)+3);
+    // This army's speed depends only on the surface and the province's terrain.
+    const speeds=new Map<string,number>(),speed=(cell:TravelCell47)=>{const key=cell.surface==='sea'?'\u0000sea':cell.provinceId!;let v=speeds.get(key);if(v===undefined){v=actualForceSpeed47(r,{kind:'army',id:a.id,nationId:a.nationId,withdrawing:false,travel:here.travel},cell);speeds.set(key,v);}return v;};
+    const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,speed)/TICKS_PER_DAY)+3);
     while(candidates.length){const p=nativeRegularTarget47(location.point,home.center,features.get(location.cell.id)!,candidates);if(!p)break;
       const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
       if(preview.valid){

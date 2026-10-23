@@ -157,6 +157,11 @@ export function withOwnedNumericGeography47<T extends {terrain:FmsDocument}>(inp
   return result;
  }finally{for(const a of buffers){const memo=numericWindows.get(a);if(adopted&&memo)parkedMemos.set(a,memo);numericWindows.delete(a);}}
 }
+/** True inside an owner window whose frozen terrain record holds the two
+ * window buffers (checked in full before commit) and certified points. */
+export function ownedTerrainWindow47(t:FmsDocument):boolean{
+ return Object.isFrozen(t)&&numericWindows.has(t.triangles)&&numericWindows.has(t.elevations)&&immutable.has(t.points);
+}
 export function shareUnchangedProvinceGeometry47(source:World,target:World){
  const byId=new Map(source.provinces.map(p=>[p.id,p]));
  for(const p of target.provinces){const old=byId.get(p.id);if(!old)continue;
@@ -172,6 +177,10 @@ export function cloneMilitaryCandidate47<T extends {terrain:FmsDocument;world:Wo
  const fixedHarbors=input.harbors&&immutable.has(input.harbors),biomes=new Map<string,number[]>();
  const plain={...mutable,diplomaticGeography:fixedWater?null:input.diplomaticGeography,world:{...input.world,provinces:input.world.provinces.map((p,i)=>({...p,polygon:polygons[i]?null:p.polygon,neighbors:neighbors[i]?null:p.neighbors}))}};
  if(fixedHarbors)plain.harbors=null as unknown as HarborLayout46;
+ // Archived armies are written once and never edited: share each (frozen)
+ // record and copy only the record table that new archives are added to.
+ const retired=(input as {armyRetirement?:{records:Record<string,object>}}).armyRetirement;
+ if(retired){for(const v of Object.values(retired.records))freezePlain(v);(plain as {armyRetirement?:unknown}).armyRetirement=null;}
  if(input.finance)plain.finance={...input.finance,provinces:Object.fromEntries(Object.entries(input.finance.provinces).map(([id,p])=>{
   if(!immutable.has(p.cellBiomes))return[id,p];
   biomes.set(id,p.cellBiomes);return[id,{...p,cellBiomes:[]}];
@@ -180,6 +189,7 @@ export function cloneMilitaryCandidate47<T extends {terrain:FmsDocument;world:Wo
  if(fixedWater)next.diplomaticGeography=input.diplomaticGeography;
  if(fixedHarbors)next.harbors=input.harbors;
  for(const [id,cells] of biomes)next.finance!.provinces[id].cellBiomes=cells;
+ if(retired)(next as {armyRetirement?:unknown}).armyRetirement={...retired,records:{...retired.records}};
  next.world.provinces.forEach((p,i)=>{if(polygons[i])p.polygon=input.world.provinces[i].polygon;if(neighbors[i])p.neighbors=input.world.provinces[i].neighbors;});
  return next;
 }

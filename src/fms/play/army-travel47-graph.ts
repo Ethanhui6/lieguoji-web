@@ -118,6 +118,7 @@ export function sealTravelGraph47(g:TravelGraph47):void{
  for(const ids of g.byProvince.values())Object.freeze(ids);
  sealed.add(g);
 }
+export const travelGraphSealed47=(g:TravelGraph47)=>sealed.has(g);
 /** Dense, typed copy of the static search topology. Production graphs are
  * built once and never edited; a replaced cell, link list or center (or a
  * changed cell count) recompiles an unsealed graph, so edited test graphs

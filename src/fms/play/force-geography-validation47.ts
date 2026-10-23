@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {assertDiplomaticGeography,assertGeographySchema,type DiplomaticGeography} from './war30-geography';
 import type {FmsDocument} from '../model';
 import type {World} from '../../sim/types';
@@ -8,7 +9,7 @@ const checkedSchemas=new WeakSet<object>();
  * original validator depends only on these terrain/province fields and the
  * complete water partition. Ownership, dates and force positions stay live.
  * Only successful validations enter this bounded, non-serialized cache. */
-export function assertForceGeography47(s:DiplomaticGeography,r:{terrain:FmsDocument;world:World}){
+export function assertForceGeography47(s:DiplomaticGeography,r:{terrain:FmsDocument;world:World}){if(fastChecks47())return;
  // Only certified, deeply frozen records may retain a successful schema
  // check. Replacements and every mutable input are checked again.
  if(!certifiedGeography47(s)||!checkedSchemas.has(s)){

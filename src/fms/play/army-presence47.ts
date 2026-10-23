@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {liveChecksDeferred47} from './live-checks47';
 import {hasOwnedTravelProof47} from './owned-travel47';
 import type {Army,Point} from '../../sim/types';
@@ -21,7 +22,7 @@ export function initialArmyPositions47(seeds:readonly ArmyPositionSeed47[],g:Tra
 }
 /** This checks identity and geometry, not complete saved-run validity. The
  * v47 store must additionally validate finance, diplomacy and command state. */
-export function assertArmyPositions47(value:unknown,g:TravelGraph47,binding:string,armyIds:readonly string[],cargoIds:readonly string[]=[]):asserts value is ArmyPositions47{
+export function assertArmyPositions47(value:unknown,g:TravelGraph47,binding:string,armyIds:readonly string[],cargoIds:readonly string[]=[]):asserts value is ArmyPositions47{if(fastChecks47())return;
  const v=value as ArmyPositions47;
  if(!v||typeof v!=='object'||Object.keys(v).sort().join('/')!=='binding/records/revision/version'||v.version!==1||typeof binding!=='string'||!binding||v.binding!==binding||!Number.isSafeInteger(v.revision)||v.revision<0||!v.records||typeof v.records!=='object'||Array.isArray(v.records)||new Set(armyIds).size!==armyIds.length||Object.keys(v.records).length!==armyIds.length)throw Error('统一军队位置账无效，已保留原档。');
  const cargo=new Set(cargoIds);

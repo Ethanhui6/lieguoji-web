@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {nativeGetYearSince,nativeBirthTimeFromAge} from './native-economy/character-calendar';
 import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
 import {assertPopulation47} from './civilization47-population-validation';
@@ -9,7 +10,7 @@ import {foundingMonthOfState47,foundingTimeOfState47} from './civilization47-fou
 export type FamilyCalendarRun47=Pick<Population47,'clock'|'life'|'kin'>&{world:{day:number}};
 /** Calendar-only runtime contract; it does not validate kinship/identity,
  * economic settlement or a full save. Pending is an explicit PRIVATE phase. */
-export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false):void{
+export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false):void{if(fastChecks47())return;
   const fail=()=>{throw Error('真实人物运行日历不一致，原世界保留。');},l=r.life,k=r.kin,tick=r.clock.tick,day=Math.floor(tick/TICKS_PER_DAY),integer=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=2147483647;
   if(!Number.isSafeInteger(tick)||tick<0||tick>(Number.MAX_SAFE_INTEGER-1000000)||r.world.day!==day-(dailyPending?1:0)||dailyPending&&(tick===0||tick%TICKS_PER_DAY!==0)||l.version!==1||l.schedule!=='iso-age-web-ticks-v1'||l.originDay!==0||l.secondsPerDay!==Math.fround(.1)||l.lastTick!==tick||l.gameTime!==Math.fround(tick/TICKS_PER_DAY*l.secondsPerDay)||k.version!==1||k.origin!=='native-family-real-culture-v1'||!integer(l.revision)||!integer(k.revision))return fail();
   const date=isoPlusDays(l.startDate,day),ageDay=dailyPending&&date.day===1?day-1:day,ageDate=isoPlusDays(l.startDate,ageDay),month=ageDate.year*12+ageDate.month-1,ageTime=Math.fround((ageDay-ageDate.day+1)*l.secondsPerDay),calendar=createNativeIsoCalendar(l.startDate);

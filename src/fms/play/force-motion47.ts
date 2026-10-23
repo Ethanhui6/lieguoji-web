@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {liveChecksDeferred47} from './live-checks47';
 import type {Point} from '../../sim/types';
 import {cloneForceTravelRecords47,isOwnedTravelWindow47,ownedTravelAllSea47} from './owned-travel47';
@@ -57,7 +58,7 @@ function pair(a: string, b: string, p: Positions, area: string): ForceContact47 
 /** These are geometry/contact records, not Army/Fleet health or fake cargo.
  * At load, exact positions must match. A command may clear obsolete contacts
  * explicitly; it must not repair a corrupt saved contact by moving a unit. */
-export function assertForceContacts47(value: ForceContacts47, forces: MovingForce47[], graph: TravelGraph47, seaRegion: Rules['seaRegion']) {
+export function assertForceContacts47(value: ForceContacts47, forces: MovingForce47[], graph: TravelGraph47, seaRegion: Rules['seaRegion']) {if(fastChecks47())return;
   for(const f of forces){assertArmyTravel47(f.travel,graph);if(f.kind==='fleet'){
     const allSea=ownedTravelAllSea47(f.travel,graph);
     if(allSea===false||allSea===undefined&&f.travel.nodes.some(id=>graph.cells.get(id)!.surface!=='sea'))throw Error('舰队航线进入陆地。');

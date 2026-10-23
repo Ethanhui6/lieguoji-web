@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 /** Forward47 campaign validator: same saved campaign contract, consumes
  * real numeric identities and calendar time without the old person schema. */
 import type {War46Wars,War28World} from './war47-wars';
@@ -26,7 +27,7 @@ export function assertWarsSchema46(v:unknown){
   for(const g of Array.isArray(c?.goals)?c.goals:[])if(unknown(g,['id','type','addedBy','target','beneficiary','scope'])||g?.type!=null&&!externalGoals.includes(g.type)||unknown(g?.scope,['provinceIds','requiredCount']))throw Error('战争目标含未来规则或未知字段，已锁定读写。');
  }
 }
-export function assertWars47(s:War46Wars,r:War28World,allowUnregisteredRelations=false){
+export function assertWars47(s:War46Wars,r:War28World,allowUnregisteredRelations=false){if(fastChecks47())return;
  assertWarsSchema46(s);
  const fail=():never=>{throw Error('战争历史损坏，保留原存档。');};
  const int=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;

@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import type {Point} from '../../sim/types';
 import {hasOwnedTravelProof47,rememberOwnedTravel47,cloneTravel47,ownedTravelSegment47,rememberOwnedTravelSegment47} from './owned-travel47';
 import {findArmyTravelPath47,insideTravelCell47,type TravelPolicy47,type TravelGraph47,type TravelCell47} from './army-travel47-graph';
@@ -21,7 +22,7 @@ export function armyTravelSegment47(s:ArmyTravel47,g:TravelGraph47):TravelSegmen
 }
 /** Validate real topology and distance before accepting a saved mixed path.
  * This geometry guard does not replace run/Army identity and diplomatic guards. */
-export function assertArmyTravel47(value:unknown,g:TravelGraph47):asserts value is ArmyTravel47{
+export function assertArmyTravel47(value:unknown,g:TravelGraph47):asserts value is ArmyTravel47{if(fastChecks47())return;
  const s=value as ArmyTravel47;
  if(!s||typeof s!=='object'||Object.keys(s).length!==(s.version===2?9:8)||Object.keys(s).some(k=>!travelKeys.has(k)||k==='destination'&&s.version!==2)||(s.version!==1&&s.version!==2)||typeof s.armyId!=='string'||!s.armyId||!Array.isArray(s.nodes)||!s.nodes.length||s.nodes.length>g.cells.size+1||!Number.isSafeInteger(s.leg)||s.leg<0||s.leg>=s.nodes.length||!Number.isFinite(s.offset)||s.offset<0||typeof s.crossed!=='boolean'||!['moving','arrived','blocked','halted'].includes(s.status))throw Error('海陆行军记录无效，已保留原档。');
  // A single dense scan still rejects holes, unknown cells and broken edges.

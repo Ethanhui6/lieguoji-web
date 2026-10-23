@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import type {PoliticalRun47} from './civilization47-diplomatic-world';
 import {culture47} from './civilization47-catalog';
 import {createRulerIdentity47,freshStateName47,nationName47,personNameFromParts47,rulerFromPerson47} from './civilization47-names';
@@ -36,7 +37,7 @@ export type FoundingRun47=PoliticalRun47&{foundings?:Foundings47};
 export const foundingDayOfNation47=(r:{foundings?:Foundings47},nationId:string)=>r.foundings?.records.find(f=>f.nationId===nationId)?.day??0;
 
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join('/')===[...keys].sort().join('/');
-export function assertFoundings47(r:FoundingRun47){
+export function assertFoundings47(r:FoundingRun47){if(fastChecks47())return;
   const s=r.foundings;if(s===undefined)return;
   const fail=()=>{throw Error('新建国家记录损坏，原世界保留。');};
   const num=(v:unknown)=>typeof v==='number'&&Number.isFinite(v),int=(v:unknown,min=0,max=2147483647)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max,rec=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);

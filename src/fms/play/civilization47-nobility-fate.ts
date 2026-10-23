@@ -101,7 +101,7 @@ export function executeFamilyFate47(r:NobilityRun47,id:string,fate:FamilyFate47,
   if(n.families[id])n.families[id].totalEnemyDestroyed=f(n.families[id].totalEnemyDestroyed*f(1/3));
 }
 function retire(r:NobilityRun47,n:Nobility47,id:string){
-  const fam=n.families[id];delete n.families[id];n.extinct.push(Number(id));n.monthFamilies=n.monthFamilies.filter(v=>v!==id);
+  const fam=n.families[id];delete n.families[id];n.extinct.push(Number(id));for(const c of Object.values(n.warContributions))delete c[id];n.monthFamilies=n.monthFamilies.filter(v=>v!==id);
   if(fam&&n.rulingFamilies[fam.nationId]===Number(id))n.rulingFamilies[fam.nationId]=0;
 }
 function executeDispossessed(r:NobilityRun47,id:string,conqueror:string,from:string){

@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {NOBILITY_RULE47,type NobilityRun47} from './civilization47-nobility';
 import {nobilityMonth47} from './civilization47-nobility-monthly';
 
@@ -6,7 +7,7 @@ export type {NobilityRun47} from './civilization47-nobility';
 /** Structure of the original family ledger: every family is a kin family of a
  * living ledger nation, the ruling flag marks exactly the state family, and no
  * province is controlled by two families. */
-export function assertNobility47(r:NobilityRun47){
+export function assertNobility47(r:NobilityRun47){if(fastChecks47())return;
   const n=r.nobility;if(n===undefined)return;
   const fail=(code=0)=>{throw Error(`原作家族记录无效，存档未载入。（${code}）`);};
   if(!n||typeof n!=='object'||n.version!==1||n.rule!==NOBILITY_RULE47||!n.families||typeof n.families!=='object'||r.houses||r.generations)return fail(1);

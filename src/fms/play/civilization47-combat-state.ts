@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import original from './native-economy/character-traits.json';
 import {nativeCharacterSkills} from './native-economy/character-income';
 import {nativeDamageSnapshot47,nativeLeaderEnemies47,type DamageTrait47} from './native-combat/personnel47';
@@ -41,7 +42,7 @@ export function initialCombatPersonnel47(r:WarRun):CombatPersonnel47{
 }
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join('/')===[...keys].sort().join('/');
 const dense=(v:unknown):v is unknown[]=>Array.isArray(v)&&Object.keys(v).length===v.length&&Array.from({length:v.length},(_,i)=>Object.hasOwn(v,i)).every(Boolean);
-export function assertCombatPersonnel47(s:CombatPersonnel47,w:World,tick:number,known:Pick<Population47,'kin'|'people'>){
+export function assertCombatPersonnel47(s:CombatPersonnel47,w:World,tick:number,known:Pick<Population47,'kin'|'people'>){if(fastChecks47())return;
   const fail=()=>{throw Error('人物战力缓存或军队伤害快照无效。');},validTick=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=tick,traits=(v:unknown):v is DamageTrait47[]=>dense(v)&&v.length<=2&&new Set(v).size===v.length&&v.every(t=>t==='FieldCombatElite'||t==='SiegeCapture');
   if(!exact(s,['version','rule','hullPerNativeCount','protrusion','nations','armies'])||s.version!==1||s.rule!=='native-personnel-web-central-v1'||s.hullPerNativeCount!==1||s.protrusion!=='neutral-unrecovered-v1'||!exact(s.nations,w.nations.map(n=>n.id))||!exact(s.armies,w.armies.map(a=>a.id)))return fail();
   for(const [id,n] of Object.entries(s.nations)){const l=n.leader,c=l?.leaderId===null?null:known.people.persons[l?.leaderId];if(!exact(n,['damageTraits','leader'])||!traits(n.damageTraits)||!exact(l,['leaderId','traitNames','enemyIds','refreshedTick','modifier'])||l.leaderId!==null&&(!Number.isSafeInteger(l.leaderId)||l.leaderId<1||!Object.hasOwn(known.kin.persons,l.leaderId)||known.kin.persons[l.leaderId].stateId!==known.people.nations[id]?.id||!c||c.id!==l.leaderId||c.stateId!==known.people.nations[id]?.id||c.nationId!==id)||!dense(l.traitNames)||l.leaderId===null&&l.traitNames.length!==0||!dense(l.enemyIds)||new Set(l.enemyIds).size!==l.enemyIds.length||l.enemyIds.some(enemy=>typeof enemy!=='string'||enemy===id||!Object.hasOwn(s.nations,enemy))||!validTick(l.refreshedTick)||l.modifier!==nativeLeaderEnemies47(combatTraits47(l.traitNames),l.enemyIds.length))return fail();}

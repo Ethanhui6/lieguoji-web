@@ -13,8 +13,9 @@ export function PerfOverlay47({root}:{root:{current:HTMLElement|null}}){
     const timer=setInterval(()=>{
       const now=performance.now(),secs=(now-prevAt)/1000,d=day(),days=d!==null&&prevDay!==null?(d-prevDay)/secs:0;prevDay=d;prevAt=now;
       let batch='';
-      try{const p=JSON.parse(root.current?.dataset.pipeline??'null') as {compute:number;roundTrip:number;total:number;ticks:number}|null;
-        if(p&&p.ticks>0){const perDay=(v:number)=>Math.round(v/(p.ticks/120));batch=` · 每日计算 ${perDay(p.compute)}ms · 往返 ${perDay(p.roundTrip)}ms · 含界面 ${perDay(p.total)}ms`;}}catch{/* no batch yet */}
+      try{const p=JSON.parse(root.current?.dataset.pipeline??'null') as {compute:number;roundTrip:number;total:number;ticks:number;phases?:Record<string,number>}|null;
+        if(p&&p.ticks>0){const days=p.ticks/120,perDay=(v:number)=>Math.round(v/days);batch=` · 每日计算 ${perDay(p.compute)}ms · 往返 ${perDay(p.roundTrip)}ms · 含界面 ${perDay(p.total)}ms`;
+          const phases=Object.entries(p.phases??{}).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>`${k} ${perDay(v)}`).join(' · ');if(phases)batch+=` ｜ 每日分项(ms)：${phases}`;}}catch{/* no batch yet */}
       setText(`${days.toFixed(1)} 日/秒 · ${Math.round(frames/secs)} 帧/秒 · 最慢帧 ${Math.round(worst)}ms${batch} · 像素比 ${devicePixelRatio}`);
       frames=0;worst=0;
     },1000);

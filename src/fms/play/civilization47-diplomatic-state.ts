@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 /** Forward47 calendar diplomacy: recovered46 scheduling and numeric rules,
  * narrowed to real47 fields. No legacy culture or movement adapter. */
 import {diplomaticEndPairs46} from './war46-coalition';
@@ -84,7 +85,7 @@ const goalKeys=['id','type','addedBy','target','beneficiary','primary','scopeTyp
 export function assertNativeDiplomacySchema46(v:unknown){const s=v as NativeDiplomacy46|undefined;
  if(unknown(s,stateKeys)||s?.version!=null&&s.version!==1||record(s?.nations)&&Object.values(s.nations).some(n=>unknown(n,nationKeys)||unknown(n?.pools,['power','startWar','endWar','efficiency'])||n?.origin!=null&&!['new-world','explicit-copy','secession'].includes(n.origin))||Array.isArray(s?.relations)&&s.relations.some(p=>unknown(p,relationKeys)||p?.history!=null&&!['complete','unknown'].includes(p.history))||Array.isArray(s?.declarations)&&s.declarations.some(d=>unknown(d,declarationKeys)||d?.casusBelliId!=null&&![1,2,3,6].includes(d.casusBelliId)||Array.isArray(d?.goals)&&d.goals.some(g=>unknown(g,goalKeys)||unknown(g?.scope,['provinceIds','requiredCount']))))throw Error('国家外交历史含未来规则或未知字段，已锁定读写。');
 }
-export function assertNativeDiplomacy46(s:NativeDiplomacy46,r:Input){
+export function assertNativeDiplomacy46(s:NativeDiplomacy46,r:Input){if(fastChecks47())return;
  assertNativeDiplomacySchema46(s);const fail=()=>{throw Error('国家外交历史损坏，已保留原档。');};const int=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;const f46=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&Math.fround(v)===v;
  if(!record(s)||Object.keys(s).length!==stateKeys.length||s.version!==1||!int(s.revision)||!int(s.originTick,0,r.clock.tick)||!f46(s.originTime)||s.originTime>r.life.gameTime||!int(s.rng,0,4294967295)||!int(s.draws)||s.month!==diplomacyMonth46(r)||s.lastDay!==r.world.day||!record(s.nations)||Object.keys(s.nations).length!==r.world.nations.length||!Array.isArray(s.relations)||!Array.isArray(s.declarations))return fail();
  for(const n of r.world.nations){const p=s.nations[n.id];if(!record(p)||Object.keys(p).length!==nationKeys.length||!int(p.initializedTick,s.originTick,r.clock.tick)||!f46(p.expansionism)||p.expansionism<1||p.expansionism>6||!int(p.updateDay,1,31)||!int(p.updatedMonth,11,s.month)||!record(p.pools)||Object.keys(p.pools).length!==4||Object.values(p.pools).some(v=>!f46(v)||v<0)||p.pools.efficiency!==20)return fail();

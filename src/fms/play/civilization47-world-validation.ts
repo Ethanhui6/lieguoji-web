@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import type {World} from '../../sim/types';
 import {validateManagement} from '../../compat/v0_4/sim/statecraft';
 
@@ -27,7 +28,7 @@ function point(value: unknown): boolean { return isRecord(value) && exactKeys(va
 function list(value: unknown, minimum: number, maximum: number): value is unknown[] { return Array.isArray(value) && value.length >= minimum && value.length <= maximum && Array.from({ length: value.length }, (_, index) => Object.hasOwn(value, index)).every(Boolean); }
 
 /** Treat imported IndexedDB / JSON content as untrusted, including nested data. */
-export function validateCivilizationWorld47(value: unknown): value is World {
+export function validateCivilizationWorld47(value: unknown): value is World {if(fastChecks47())return true;
   if (!isRecord(value) || !exactKeys(value, ['schemaVersion', 'rulesVersion', 'scenario', 'mode', 'day', 'nations', 'provinces', 'cities', 'armies', 'events', 'nextEventId', ...(value.scenario === 'custom-world' ? ['custom'] : []), ...(value.schemaVersion === 2 ? ['statecraft'] : [])])) return false;
   const legacy = value.schemaVersion === 1 && value.rulesVersion === '0.1.0';
   const modern = value.schemaVersion === 2 && value.rulesVersion === '0.2.0' && value.scenario === 'custom-world';

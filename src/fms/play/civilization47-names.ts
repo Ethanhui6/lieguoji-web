@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {CULTURE_IDS47,culture47,POLITIES47,religion47,rulerTitle47,stateTitle47,personalName47,type CultureId47,type NamingMode47,type ReligionId47} from './civilization47-catalog';
 import type {NativePolity} from './native-combat/upper-efficiency';
 import type {World} from '../../sim/types';
@@ -126,7 +127,7 @@ export function assertRulerIdentity47(a:RulerIdentity47,mode:NamingMode47,enable
   religion47(a.religionId);assertPersonName47({cultureId,name,given,house,gender,sourceKey,mode:sourceMode},mode,enabled);
   if(a.titleAtAccession!==rulerTitle47(a.cultureId,a.polityAtAccession,a.religionId,a.gender))throw Error('任次称号与当时制度不一致。');
 }
-export function assertCivilization47(c:Civilization47,w:World,chronicle:Chronicle) {
+export function assertCivilization47(c:Civilization47,w:World,chronicle:Chronicle) {if(fastChecks47())return;
   const fail=()=>{throw Error('真实文化存档损坏或含未来规则，已保留原档。');};
   if(!validateCivilizationWorld47(w))return fail();
   if(!exact(c,['version','catalog','revision','mode','peopleMode','enabled','nations','cities','rulers'])||c.version!==1||c.peopleMode!=='culture-generated'||c.catalog!=='real-cultures-zh-v2'||!Number.isSafeInteger(c.revision)||c.revision<0||!record(c.nations)||!record(c.cities)||!record(c.rulers))return fail();

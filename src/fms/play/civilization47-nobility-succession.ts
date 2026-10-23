@@ -60,7 +60,7 @@ export function checkFamilyExtinction47(r:NobilityRun47,n:Nobility47,id:string){
   let last:FamilyPerson47|null=null;
   for(const pid of [...new Set([...k.memberIds,...k.collateralMemberIds])]){const p=r.kin.persons[pid];if(!p||p.isAlive)continue;if(!last||p.deathTime>last.deathTime)last=p;}
   recordHistory(r.chronicle,r.world,r.clock.tick,'family' as HistoricalKind,`${k.surname}家族灭绝，最后成员${last?.identity.name??'未知'}去世`,'家族已无在世成员，领地失去家族控制。',[fam.nationId],null);
-  delete n.families[id];n.extinct.push(Number(id));n.monthFamilies=n.monthFamilies.filter(v=>v!==id);
+  delete n.families[id];n.extinct.push(Number(id));for(const c of Object.values(n.warContributions))delete c[id];n.monthFamilies=n.monthFamilies.filter(v=>v!==id);
   if(n.rulingFamilies[fam.nationId]===Number(id))n.rulingFamilies[fam.nationId]=0;
   return true;
 }

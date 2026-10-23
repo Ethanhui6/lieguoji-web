@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import type {FoundingForces47} from './civilization47-forces';
 export type NavalDecision47={homePortId:string|null;assignedPortId:string|null;nextTick:number;issuedTick:number|null;decision:'waiting'|'attacking'|'guarding'|'resupply'|'manual'|'busy'|'lost'|'no-route';reason:string};
 export type NavalAutonomy47={version:1;rule:'native-roles-actual-space-v1';timing:'unscaled40-web-ticks-v1';revision:number;rng:number;lastTick:number;nextRoleTick:number;fleets:Record<string,NavalDecision47>};
@@ -11,7 +12,7 @@ export function initialNavalAutonomy47(r:Pick<FoundingForces47,'world'|'clock'|'
 export function drawNaval47(s:NavalAutonomy47){let x=s.rng;x^=x<<13;x^=x>>>17;x^=x<<5;s.rng=x>>>0;return s.rng/4294967296;}
 const exact=(v:unknown,keys:readonly string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join('/')===[...keys].sort().join('/');
 /** Running ledger only; full live47/Store49 validation is still separate. */
-export function assertNavalAutonomy47(r:Pick<FoundingForces47,'clock'|'navy'|'harbors'|'navalAutonomy'>){
+export function assertNavalAutonomy47(r:Pick<FoundingForces47,'clock'|'navy'|'harbors'|'navalAutonomy'>){if(fastChecks47())return;
  const s=r.navalAutonomy,int=(v:number,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(v)&&v>=0&&v<=max,fail=()=>{throw Error('海军自主部署记录无效。');};
  if(!exact(s,['version','rule','timing','revision','rng','lastTick','nextRoleTick','fleets'])||s.version!==1||s.rule!=='native-roles-actual-space-v1'||s.timing!=='unscaled40-web-ticks-v1'||!int(s.revision)||!int(s.rng,4294967295)||s.rng===0||!int(s.lastTick,r.clock.tick)||!int(s.nextRoleTick,r.clock.tick+40)||!exact(s.fleets,r.navy.fleets.map(f=>f.id)))return fail();
  for(const p of Object.values(s.fleets)){

@@ -21,7 +21,7 @@ jobs:
     env:
       CI: 'true'
     outputs:
-      artifact: ${{ steps.dist.outputs.artifact-id }}
+      dist-digest: ${{ steps.dist.outputs.digest }}
     steps:
       - name: Check out tested revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
@@ -44,15 +44,12 @@ jobs:
       - name: Lint, types, unit tests and production build
         run: npm run check:full
 
-      - name: Keep checked game build
+      - name: Record checked build digest
         id: dist
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
-        with:
-          name: game-dist-${{ github.sha }}-${{ github.run_attempt }}
-          path: dist/
-          if-no-files-found: error
-          retention-days: 7
-          include-hidden-files: false
+        shell: bash
+        run: |
+          digest=$(cd dist && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
   browser:
     name: Browser / ${{ matrix.project }} / ${{ matrix.shard }}
@@ -76,19 +73,23 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - name: Use the exact build checked by this run
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          artifact-ids: ${{ needs.build.outputs.artifact }}
-          path: dist
-          merge-multiple: true
-          digest-mismatch: error
-      - run: node scripts/check-dist.mjs
+      - name: Build the same revision without artifact storage
+        run: npm run build
+      - name: Verify build matches the unit-check job
+        shell: bash
+        env:
+          EXPECTED_DIGEST: ${{ needs.build.outputs.dist-digest }}
+        run: |
+          git rev-parse HEAD
+          digest=$(cd dist && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)
+          test -n "$EXPECTED_DIGEST" && test "$digest" = "$EXPECTED_DIGEST"
       - run: npx playwright install --with-deps chromium
       - name: Run every browser test in this project and shard
         run: npm run test:e2e -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2 --workers=1
       - name: Keep browser evidence
+        id: evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in docs/GITHUB_WORKFLOW.md
         with:
           name: browser-${{ matrix.project }}-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_attempt }}
@@ -96,8 +97,12 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 1
           include-hidden-files: false
+
+      - name: Warn when downloadable evidence is unavailable
+        if: always() && steps.evidence.outcome == 'failure'
+        run: echo '::warning::Browser evidence upload failed. Read results in the job log; downloadable traces and screenshots may be unavailable.'
 
   checks:
     name: Application checks

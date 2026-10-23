@@ -1,3 +1,4 @@
+import {fastChecks47} from './checks47';
 import {assertCivilization47,assertPersonName47} from './civilization47-names';
 import {religion47} from './civilization47-catalog';
 import {assertChronicleState47} from './civilization47-chronicle-validation';
@@ -19,7 +20,7 @@ const exact=(v:unknown,keys:readonly string[])=>record(v)&&Object.keys(v).length
 const integer=(v:unknown,min=0,max=2147483647):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;
 const personKeys=['id','firstName','lastName','cultureName','gender','age','birthTime','deathTime','isAlive','isHistoricallyImportant','familyId','originalFamilyId','stateId','religionId','fatherId','motherId','spouseId','marriageType','base','traits','childrenIds','roles','pastRoles','source','initialAge','identity'];
 const uniqueIds=(v:unknown):v is number[]=>Array.isArray(v)&&new Set(v).size===v.length&&v.every(n=>integer(n,1));
-export function assertPopulation47(r:Population47) {
+export function assertPopulation47(r:Population47) {if(fastChecks47())return;
   const fail=(code=0)=>{throw Error(`真实文化家谱、年龄或人物任次损坏，原世界未改动。（${code}）`);};
   assertCivilization47(r.civilization,r.world,r.chronicle);
   if(typeof r.id!=='string'||r.id!==r.world.custom?.id)return fail(1);

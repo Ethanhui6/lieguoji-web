@@ -50,8 +50,6 @@
 .c47-panel .c47-identity{margin:0 40px 8px 0;gap:10px}.c47-panel .c47-identity h2{font-size:20px;margin:0}.c47-panel .c47-ruler{padding:8px 0;gap:10px}.c47-panel .c47-ruler strong{font-size:15px}.c47-nation-actions{padding:8px 0;border-bottom:1px solid #d2dcdc}.c47-nation-actions .c47-check{margin:4px 0 0}.c47-panel .c47-overview summary,.c47-panel .c47-diplomacy summary,.c47-panel .c47-relations summary{padding:10px 0}.c47-nation-stats dd.is-lost{color:#a2452a}.c47-activity ol{margin:6px 0;padding-left:18px;font-size:12px}.c47-activity li span{display:block;color:#53656b}
 @media(max-width:600px){.c47-app .c47-panel .c47-action-grid{grid-template-columns:repeat(4,1fr);gap:5px}.c47-app .c47-panel .c47-action-grid button{min-height:32px;padding:4px 2px;font-size:12px}.c47-panel{padding:14px 16px}}
 .c47-app .c47-province-link{width:100%;justify-content:space-between;min-height:34px;margin:2px 0 6px;padding:6px 12px;font-size:13px;background:#e6efec;border:1px solid #d1dcda}
-/* 0.5.9：地图视图选择并入底部控制条；手机端界面尽量不挡地图。 */
-.c47-app .c47-controls .c47-view-select{position:static;max-width:118px;min-height:36px;margin:0 2px;font-size:12px;display:inline-block}
 @media(max-width:600px){
 .c47-app .c47-bar{top:max(6px,env(safe-area-inset-top));left:8px;right:8px;padding:3px 4px;gap:1px;border-radius:14px}
 .c47-app .c47-bar>button{min-height:32px;min-width:32px;padding:4px}
@@ -62,6 +60,14 @@
 .c47-app .c47-news-copy strong{font-size:11px}
 .c47-app .c47-controls{bottom:max(8px,env(safe-area-inset-bottom));padding:3px;gap:2px;border-radius:16px}
 .c47-app .c47-controls button{min-height:34px;padding:5px 9px}
-.c47-app .c47-controls .c47-view-select{max-width:92px;min-height:34px;padding:0 4px;font-size:11px}
 .c47-app .c47-panel{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 48px);max-height:50vh}
 }
+/* 地图样式菜单：底图（政区/地形）与视图（1—6）合并在顶部「图层」按钮下。 */
+.c47-map-menu{position:absolute;z-index:4;top:calc(max(12px,env(safe-area-inset-top)) + 62px);right:16px;width:min(340px,calc(100% - 32px));box-sizing:border-box;padding:12px;border-radius:20px;background:#f3f6f4f2;backdrop-filter:blur(20px);box-shadow:0 8px 28px #0a202033;border:1px solid #ffffffa8;display:grid;gap:10px;animation:c47-in .16s ease-out}
+.c47-map-menu>div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.c47-map-menu small{width:100%;font-size:11px;letter-spacing:.08em;color:#49745e}
+.c47-app .c47-map-menu button{min-height:36px;padding:6px 12px;font-size:13px;border:1px solid #d1dcda}
+.c47-app .c47-map-menu button b{font-size:11px;opacity:.55;margin-right:2px}
+.c47-app .c47-map-menu button[aria-pressed=true]{background:#235d50;color:#fff;border-color:#235d50}
+.c47-app .c47-map-menu button[aria-pressed=true] b{opacity:.8}
+@media(max-width:600px){.c47-map-menu{top:calc(max(6px,env(safe-area-inset-top)) + 46px);left:8px;right:8px;width:calc(100% - 16px)}}

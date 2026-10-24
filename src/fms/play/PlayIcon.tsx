@@ -1,42 +1,17 @@
-const paths = {
-  browse: 'M8 12V5a2 2 0 0 1 4 0v7-9a2 2 0 0 1 4 0v9-7a2 2 0 0 1 4 0v10c0 5-4 7-8 7-3 0-5-2-7-5l-3-4a2 2 0 0 1 3-2l3 3',
-  outline: 'M4 7 11 3l9 6-3 11-12-2L4 7Zm0 0h.01M11 3h.01M20 9h.01M17 20h.01',
-  sea: 'M2 6c3-4 7 4 10 0s7 4 10 0M2 12c3-4 7 4 10 0s7 4 10 0M2 18c3-4 7 4 10 0s7 4 10 0',
-  undo: 'M8 4 3 9l5 5M3 9h11a7 7 0 0 1 0 14',
-  redo: 'm16 4 5 5-5 5M21 9H10a7 7 0 0 0 0 14',
-  lock: 'M6 10h12v12H6V10Zm2 0V6a4 4 0 0 1 8 0v4m-4 5v3',
-  back: 'm14 5-7 7 7 7',
-  save: 'M5 3h12l4 4v14H3V3h2Zm2 0v6h10V3M7 21v-8h10v8',
-  layers: 'm12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5',
-  plus: 'M12 5v14M5 12h14',
-  minus: 'M5 12h14',
-  fit: 'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5',
-  play: 'm8 4 12 8-12 8V4Z',
-  pause: 'M8 4v16M16 4v16',
-  step: 'm4 5 10 7-10 7V5ZM19 5v14',
-  more: 'M4 12h.01M12 12h.01M20 12h.01',
-  close: 'm6 6 12 12M6 18 18 6',
-  chevron: 'm9 5 7 7-7 7',
-  locate: 'M12 2v3m0 14v3M2 12h3m14 0h3M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
-  edit: 'm15 4 5 5M4 15 16 3l5 5L9 20l-6 1 1-6Z',
-  nation: 'M4 21h16M6 21V9m4 12V9m4 12V9m4 12V9M3 9h18L12 3 3 9Z',
-  crown: 'm3 7 4 3 5-6 5 6 4-3-2 12H5L3 7ZM5 16h14',
-  diplomacy: 'M4 3v18M4 5c5-4 10 4 16 0v10c-6 4-11-4-16 0',
-  city: 'M3 21h18M5 21V9h6v12m0-15h8v15M7 12h2m-2 4h2m4-7h4m-4 4h4m-4 4h4',
-  army: 'm12 3-8 3v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Zm-3 9 2 2 4-4',
-  route: 'M5 5h10a4 4 0 0 1 0 8H9a3 3 0 0 0 0 6h10m-3-3 3 3-3 3M7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
-  ship: 'M12 3v10M5 13l7-3 7 3-2 5H7l-2-5ZM8 5H5v8m11-8h3v8M2 21c2 0 3-2 5-2s3 2 5 2 3-2 5-2 3 2 5 2',
-  grain: 'M12 22V7m0 8c-5 0-7-3-7-7 5 0 7 3 7 7Zm0 5c5 0 7-3 7-7-5 0-7 3-7 7Zm0-13c-3-2-3-5 0-7 3 2 3 5 0 7Z',
-  people: 'M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM5 21v-3a7 7 0 0 1 14 0v3M3 9a3 3 0 0 1 3 3M21 9a3 3 0 0 0-3 3',
-  settings: 'M4 6h16M4 12h16M4 18h16M8 3v6m8 0v6M9 15v6',
-  treasury: 'M3 7h18v14H3V7Zm0 5h18M7 3h10v4M8 16h8',
-  terrain: 'm2 20 7-14 5 10 3-6 5 10H2Zm4-8 3 2 2-2',
-  book: 'M12 6c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v15',
-  search: 'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-1 5 6 6',
-  help: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01',
+import {MorphIcon} from 'morphicons/react';
+import {BookOpen,Building2,ChevronLeft,ChevronRight,CircleHelp,Crosshair,Crown,Ellipsis,Flag,Hand,Landmark,Layers,Lock,Maximize,Minus,Mountain,Pause,Pencil,Pentagon,Play,Plus,Redo2,Route,Save,Search,Shield,Ship,SkipForward,SlidersHorizontal,Undo2,Users,Wallet,Waves,Wheat,X} from 'lucide';
+
+/** One icon family for the whole game (map editor and world): Lucide stroke
+ * icons, drawn by Morphicons so that a control whose icon changes (play ↔
+ * pause, menu ↔ close) morphs between the two instead of jumping. */
+const icons={
+  browse:Hand,outline:Pentagon,sea:Waves,undo:Undo2,redo:Redo2,lock:Lock,back:ChevronLeft,save:Save,layers:Layers,
+  plus:Plus,minus:Minus,fit:Maximize,play:Play,pause:Pause,step:SkipForward,more:Ellipsis,close:X,chevron:ChevronRight,
+  locate:Crosshair,edit:Pencil,nation:Landmark,crown:Crown,diplomacy:Flag,city:Building2,army:Shield,route:Route,ship:Ship,
+  grain:Wheat,people:Users,settings:SlidersHorizontal,treasury:Wallet,terrain:Mountain,book:BookOpen,search:Search,help:CircleHelp,
 } as const;
-export type PlayIconName = keyof typeof paths;
-/** Shared, locally drawn symbols. Labels belong to the enclosing control. */
+export type PlayIconName = keyof typeof icons;
+/** Labels belong to the enclosing control; the icon itself is hidden from assistive tech. */
 export function PlayIcon({name,size=20}:{name:PlayIconName;size?:number}){
-  return <svg className="play-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name]}/></svg>;
+  return <MorphIcon className="play-icon" icon={icons[name]} size={size} strokeWidth={1.75} spring="snappy" reducedMotion="user" focusable="false"/>;
 }

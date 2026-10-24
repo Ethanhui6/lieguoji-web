@@ -26,6 +26,7 @@ import type { FmsTerrainDisplay } from './height-palette';
 import './fms.css';
 import './fms-interface.css';
 import './editor59.css';
+import './unified-ui.css';
 import {WorldEntry} from './play/WorldEntry';
 import { FmsMapHistory, isDefaultFmsClimate } from './map-climate';
 

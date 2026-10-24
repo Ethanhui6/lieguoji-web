@@ -1,0 +1,42 @@
+/* 0.5.12：地图编辑与游戏内共用一套界面语言（与 play/culture47.css 的 .c47-* 一致）：
+   毛玻璃浅色面板、20px 圆角面板、13px 圆角按钮、墨绿强调色、系统无衬线字体、Lucide 线条图标。
+   本文件在编辑器样式之后加载，只覆盖外观，不改布局逻辑。 */
+.fms-app.fms-app{--ink:#182b30;--muted:#52656c;--paper:#f3f6f4ed;--border:#ffffffa8;--active:#235d50;--accent:#297d9f;
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;letter-spacing:0;color:var(--ink)}
+.fms-app.fms-app button{border:0;border-radius:13px;background:#fff9;color:inherit;box-shadow:none;font-family:inherit;transition:background .16s,transform .16s}
+.fms-app.fms-app button:hover:not(:disabled){background:#fff}
+.fms-app.fms-app button:active:not(:disabled){transform:scale(.96)}
+.fms-app.fms-app button[aria-pressed=true]{background:#d1e7dc;color:#1d4d42;border:0}
+.fms-app.fms-app button:focus-visible,.fms-app.fms-app input:focus-visible,.fms-app.fms-app select:focus-visible{outline:3px solid #297d9f;outline-offset:2px}
+.fms-app.fms-app select,.fms-app.fms-app input:not([type=checkbox]):not([type=radio]):not([type=range]){background:#fff;border:1px solid #c8d5d4;border-radius:10px;color:#23383d;font-family:inherit}
+/* 面板：与游戏内顶部栏、控制条、详情面板相同的毛玻璃卡片。 */
+.fms-app.fms-app .fms-header>div:first-child,.fms-app.fms-app .fms-header .fms-save,.fms-app.fms-app .fms-header select,
+.fms-app.fms-app .fms-zoom,.fms-app.fms-app .fms-toolbar,.fms-app.fms-app .fms-status,.fms-app.fms-app .fms-settings,.fms-app.fms-app .fms-preview,
+.fms-app.fms-app .fms-generation,.fms-app.fms-app .fms-confirm,.fms-app.fms-app .fms-error,.fms-app.fms-app .fms-loading,.fms-app.fms-app>button.play-entry{
+  background:#f3f6f4ed;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid #ffffffa8;box-shadow:0 8px 28px #0a202022;color:var(--ink)}
+.fms-app.fms-app .fms-header>div:first-child{border-radius:16px;padding:6px 12px}
+.fms-app.fms-app .fms-header h1{font-weight:650;font-size:17px;line-height:1.3;font-family:inherit;letter-spacing:0}
+.fms-app.fms-app .fms-kicker{letter-spacing:.12em;color:#49745e}
+.fms-app.fms-app .fms-header .fms-save,.fms-app.fms-app .fms-header select{border-radius:13px}
+.fms-app.fms-app .fms-zoom,.fms-app.fms-app .fms-toolbar{border-radius:18px;padding:4px;gap:3px}
+.fms-app.fms-app .fms-toolbar nav button{border-radius:12px;border:0}
+.fms-app.fms-app .fms-status{border-radius:12px;color:var(--muted)}
+.fms-app.fms-app .fms-settings,.fms-app.fms-app .fms-preview,.fms-app.fms-app .fms-confirm,.fms-app.fms-app .fms-error{border-radius:20px}
+.fms-app.fms-app>button.play-entry{border-radius:16px;background:#235d50;color:#fff;border:0}
+.fms-app.fms-app>button.play-entry:hover:not(:disabled){background:#1c4d43}
+/* 生成地图面板 */
+.fms-app.fms-app .fms-generation{border-radius:22px;overflow:hidden}
+.fms-app.fms-app .fms-generation>header{background:transparent;border-bottom:1px solid #d2dcdc;padding:10px 14px}
+.fms-app.fms-app .fms-generation h2{font-weight:650;font-size:18px;line-height:1.3;font-family:inherit;letter-spacing:0}
+.fms-app.fms-app .fms-generation>header button{border-radius:12px;font-size:20px;line-height:1;font-family:inherit;background:transparent}
+.fms-app.fms-app .fms-generation fieldset{border-bottom-color:#d2dcdc}
+.fms-app.fms-app .fms-generation legend{font-weight:600;font-size:14px;letter-spacing:0}
+.fms-app.fms-app .fms-generation-row select,.fms-app.fms-app .fms-generation-row input{border-radius:10px;border-color:#c8d5d4;background:#fff}
+.fms-app.fms-app .fms-grid-list label{border-radius:12px;border:1px solid #d1dcda;background:#fff9}
+.fms-app.fms-app .fms-grid-list label.selected{background:#e0eee6;border-color:#86b59a}
+.fms-app.fms-app .fms-generation-submit,.fms-app.fms-app .fms-first-land{background:#235d50;color:#fff;border-radius:14px;border:0}
+.fms-app.fms-app .fms-generation-submit:hover:not(:disabled),.fms-app.fms-app .fms-first-land:hover:not(:disabled){background:#1c4d43}
+.fms-app.fms-app .fms-generation>footer{border-top:1px solid #d2dcdc;background:transparent}
+.fms-app.fms-app .fms-template-description,.fms-app.fms-app .fms-generation footer small{color:var(--muted)}
+.fms-app.fms-app input[type=checkbox],.fms-app.fms-app input[type=radio],.fms-app.fms-app input[type=range]{accent-color:#27775c}
+.fms-app.fms-app *:not(svg):not(path){font-family:inherit;letter-spacing:inherit}

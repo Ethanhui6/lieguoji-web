@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import net from 'node:net';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn,execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {fileURLToPath} from 'node:url';
 import {encodeWire47,decodeWire47} from '../src/fms/play/wire47.ts';
@@ -19,6 +19,13 @@ import {encodeWire47,decodeWire47} from '../src/fms/play/wire47.ts';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dist=path.join(root,'dist');
 const PORT=Number(process.env.HOST_PORT??4180),SITE=process.env.HOST_SITE??'https://lieguoji-web.pages.dev';
+// --prepare（电脑计算.cmd 使用）：先更新到正式站同一版本并构建，过程逐步显示。
+if(process.argv.includes('--prepare')){
+  const run=(title,cmd)=>{console.log(`\n${title}`);try{execSync(cmd,{cwd:root,stdio:'inherit'});return true;}catch{return false;}};
+  console.log('列国纪 电脑计算：正在准备，第一次大约需要一两分钟，请不要关闭窗口……');
+  if(!run('[1/2] 更新到最新版本（git pull）','git pull --ff-only'))console.log('  更新失败，继续使用本机现有版本。');
+  if(!run('[2/2] 构建游戏文件（npm run build）','npm run build')){console.log('\n构建失败，请把这个窗口截图发给 Claude。');process.exit(1);}
+}
 const build=JSON.parse(fs.readFileSync(path.join(dist,'build.json'),'utf8'));
 const bundle=fs.readdirSync(path.join(dist,'assets')).find(n=>/^culture47\.worker-.*\.js$/.test(n));
 if(!bundle)throw Error('dist 中没有模拟引擎，请先运行 npm run build。');

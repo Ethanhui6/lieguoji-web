@@ -76,6 +76,8 @@ import {Graphics} from 'pixi.js';
 import {activeSiegeProvinces47,combatMarkers47,createCombatStrengthIndex47,displayCombatMarkers47,visibleCombatMarkers47} from './combat-map47';
 import {CombatTimeline47} from './combat-timeline47';
 import {CombatOverlay47} from './CombatOverlay47';
+import {WarEffects47} from './WarEffects47';
+import {nationPoles47,warClaimProvinces47} from './war-claims47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
 import {actualForces47} from './force-runtime47';
 import {armySpatialFor47} from './army-geography47';
@@ -156,6 +158,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const playbackBudget=culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2,snapshot?.journal.engine===__CULTURE47_ENGINE__);
   const instantDisplay=useRef(false);
   useEffect(()=>{rateSample.current=null;setActualRate(null);},[playing,speed]);
+  const warEffectsRef=useRef<WarEffects47|null>(null),knownWars=useRef<{runId:string;wars:Map<number,boolean>}|null>(null);
   const panelScroll=useRef<HTMLElement>(null),restamp=useRef(new WeakMap<object,((r:never)=>unknown)|null>());
   // Time stops only when the player pauses. A previewed decision (宣战/停战 preview,
   // military target) holds time while its confirmation is open, then resumes.
@@ -448,7 +451,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,grid=terrainGrid.grid,original=grid?new OriginalPlayRenderer(grid,source.elevations,displayFailed):null;
-    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current());
+    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current()),warEffects=new WarEffects47();warEffectsRef.current=warEffects;if(import.meta.env.DEV)(window as unknown as {__warEffects47?:unknown}).__warEffects47={effects:warEffects,run:()=>current.current?.run};
     let cellOwners:Int32Array|null=null,stateKey='';
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
@@ -470,7 +473,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
     const sea=graphFor46(current.current.run);
     void renderer.init(element).then(()=>{
-      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
+      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(warEffects.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       exportImage.current=async()=>{paint.current();return await renderer.exportPng();};
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
@@ -540,6 +543,9 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       // of ordinary play while retaining it for the browser motion regression.
       const animate=()=>{if(disposed||failed)return;try{
         const now=performance.now(),alpha=motion.current.alpha(now),combatFrame= combatOverlay.animate(now,isPlaying.current,reducedMotion.matches);
+        // War effects animate on their own clock; the on-demand renderer must repaint while
+        // one is alive and once more after the last has gone so nothing is left on screen.
+        const warFrame=warEffects.active;if(warFrame)warEffects.draw(now,view.camera.scale);
         // The authored clip changes at 12 Hz. Keep its clock anchored while
         // paused/offscreen without making a full-map redraw on every RAF.
         if(alpha<1||settled!==motion.current.revision||combatFrame){
@@ -557,15 +563,35 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
             lastDiagnostic=now;
           }
           renderer.refresh();settled=alpha===1?motion.current.revision:-1;
-        }
+        }else if(warFrame)renderer.refresh();
         raf=requestAnimationFrame(animate);
       }catch(e){displayFailed(e);}};
       cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});
-    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();renderer.destroy();map.dispose();};
+    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();warEffects.dispose();if(warEffectsRef.current===warEffects)warEffectsRef.current=null;renderer.destroy();map.dispose();};
   },[runId,rendererEpoch,terrainGrid]);
   useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview]);
+  // Original war presentation: a new declared war draws the red declaration arrow and the
+  // claim markers; an ended war releases a peace bird above every participant.
+  useEffect(()=>{
+    const s=snapshot,effects=warEffectsRef.current;if(!s)return;const r=s.run;
+    const wars=new Map(r.nativeWars.campaigns.map(c=>[c.id,c.endedTick===null]));
+    const known=knownWars.current;knownWars.current={runId:r.id,wars};
+    if(!effects||!known||known.runId!==r.id)return;
+    const now=performance.now(),poles=nationPoles47(r.world),scale=r.scale;
+    const toMap=(p:{x:number;y:number})=>({x:p.x/scale,y:p.y/scale});
+    for(const c of r.nativeWars.campaigns){
+      const before=known.wars.get(c.id);
+      if(before===undefined&&c.endedTick===null&&c.history==='complete'&&c.attacker&&c.defender){
+        const from=poles.get(c.attacker),to=poles.get(c.defender);if(from&&to)effects.declare(toMap(from),toMap(to),now);
+        const color=parseInt((r.world.nations.find(n=>n.id===c.attacker)?.color??'#ff0000').slice(1),16);
+        effects.claims(warClaimProvinces47(r,c).map(p=>toMap(p.center)),color,now);
+      }else if(before===true&&c.endedTick!==null){
+        effects.peace(c.nations.map(id=>poles.get(id)).filter((p):p is {x:number;y:number}=>!!p).map(toMap),now);
+      }
+    }
+  },[snapshot]);
   const choice=(i:number):CultureChoice47=>{const c=culture47(enabled[i%enabled.length]??'chinese');return choices['n-'+i]&&enabled.includes(choices['n-'+i].cultureId)?choices['n-'+i]:{cultureId:c.id,religionId:c.suggestedReligion,polity:c.suggestedPolity};};
   /** Original 生成地图: after 「会删除当前地图」 is confirmed, a new random world
    * (terrain and states) replaces the open one with the current world settings,

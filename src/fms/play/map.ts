@@ -9,6 +9,7 @@ import type { World, Point } from '../../sim/types';
 import { armyMarkers,armyPosition } from './navigation';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
+import type { ViewGroups47 } from './culture47-views';
 import {currentCapital} from './capital-view';
 import {cityLabels,selectedCityLabel,type LabelBox} from './city-labels';
 import {capitalNameLabels} from './map-label-layout';
@@ -175,7 +176,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={},formationForces?:TacticsState['forces']): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={},formationForces?:TacticsState['forces'],viewGroups?:ViewGroups47|null): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
@@ -188,12 +189,14 @@ export class PlayMap {
     const g = this.politicalGraphic, marks = new Graphics(); this.layer.addChild(g, this.coastGraphic, marks);
     const nations = new Map(world.nations.map(n => [n.id, n])), provinces = new Map(world.provinces.map(p => [p.id, p]));
     const pixel = 1 / zoom, style=politicalStyle(mode);
-    const territoryKey=`${world.custom?.id}/${world.provinces.map(p=>`${p.id}:${p.controller}`).join('|')}`;
-    if(territoryKey!==this.territoryKey){this.territoryKey=territoryKey;this.territories=territoryLabels(world);}
+    // Original colour views regroup labels and borders (ViewManager.Update*LabelsAndBorderVisibility).
+    const provinceIndex=new Map(world.provinces.map((p,i)=>[p.id,i])),groupOf=viewGroups?(p:{id:string})=>viewGroups.key(provinceIndex.get(p.id)!):null;
+    const territoryKey=`${world.custom?.id}/${world.provinces.map(p=>`${p.id}:${p.controller}:${groupOf?groupOf(p):''}`).join('|')}`;
+    if(territoryKey!==this.territoryKey){this.territoryKey=territoryKey;this.territories=territoryLabels(world,groupOf??undefined);}
     // Preserve the tessellated political surface while only units/events change.
     // Complete Worker replies replace geometry; ownership, color, selection,
     // zoom and mode independently invalidate the cached display.
-    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.provinceFillKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
+    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.provinceFillKey,territoryKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
     g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
     const originalLines=this.originalStateLines&&mode==='political';
@@ -203,15 +206,15 @@ export class PlayMap {
       else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: this.provinceFill?.(index) ?? nationColor(nations.get(p.controller)!), alpha: style.fill });
       if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
       if (p.id === selected&&!originalLines) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
-      for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==p.controller;}else borders.set(key,{a,b,owner:p.controller,shared:false,foreign:false});}
+      const owner=groupOf?groupOf(p)??'':p.controller;for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==owner;}else borders.set(key,{a,b,owner,shared:false,foreign:false});}
     }
     if(originalLines){
       const outlineKey=territoryKey+'/'+scale;
-      if(outlineKey!==this.stateOutlineKey){this.stateOutlineKey=outlineKey;this.stateOutlines=fmsStateOutlines(world.provinces,scale);}
+      if(outlineKey!==this.stateOutlineKey){this.stateOutlineKey=outlineKey;this.stateOutlines=fmsStateOutlines(groupOf?world.provinces.flatMap(p=>{const k=groupOf(p);return k===null?[]:[{...p,controller:k}];}):world.provinces,scale);}
       for(const [owner,lines]of this.stateOutlines){
         let drawn=false;
         for(const line of lines){if(line.length<2)continue;g.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)g.lineTo(line[i][0],line[i][1]);drawn=true;}
-        if(drawn)g.stroke({color:fmsStateLineColor(nationColor(nations.get(owner)!)),width:FMS_STATE_LINE_WIDTH,join:'round',cap:'round'});
+        if(drawn)g.stroke({color:fmsStateLineColor(viewGroups?'#'+viewGroups.color(owner).toString(16).padStart(6,'0'):nationColor(nations.get(owner)!)),width:FMS_STATE_LINE_WIDTH,join:'round',cap:'round'});
       }
       const chosen=selected?provinces.get(selected):undefined;
       if(chosen)g.poly(chosen.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xffe7a7,width:2.5*pixel});
@@ -247,8 +250,8 @@ export class PlayMap {
     }this.updateOccupation(combat.occupation);}
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
-      const n=nations.get(territory.nationId)!,point=territory.point,factor=zoom/scale;
-      const t=this.retainedText(`country:${mode}:${territory.componentId}`,n.name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:mode==='political'?'#332c24':'#f6efd9',fontWeight:'400',stroke:{color:mode==='political'?'#f3e7ca':'#354338',width:.45},letterSpacing:2});
+      const name=viewGroups?viewGroups.name(territory.nationId):nations.get(territory.nationId)!.name,point=territory.point,factor=zoom/scale;
+      const t=this.retainedText(`country:${mode}:${viewGroups?territory.nationId+':':''}${territory.componentId}`,name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:mode==='political'?'#332c24':'#f6efd9',fontWeight:'400',stroke:{color:mode==='political'?'#f3e7ca':'#354338',width:.45},letterSpacing:2});
       // Fit the measured glyphs in the world-space band, then cap readability.
       // Tiny enclaves keep their name at their true anchor; zoom reveals it.
       const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;

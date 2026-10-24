@@ -6,7 +6,7 @@ import {CultureAIGlobal47} from './CultureAIGlobal47';
 import {CultureMenu47} from './CultureMenu47';
 import {CultureProvince47} from './CultureProvince47';
 import {FOUNDING_RULE47} from './civilization47-founding-time';
-import {COLOR_VIEWS47,colorViewKey47,provinceColors47,type ColorView47} from './culture47-views';
+import {COLOR_VIEWS47,colorViewKey47,provinceColors47,viewGroups47,type ColorView47} from './culture47-views';
 import {CULTURE47_AUTOSAVE,culture47ScopeOf,culture47SlotRevision,loadCulture47Named,saveCulture47Named} from './culture47-library';
 import {advanceAutoSave47,readCulture47Config,writeCulture47Config,type Culture47Config} from './culture47-config';
 import {downloadBlob47,exportHistoryText47,HISTORY_EXPORT_FILE47} from './culture47-export';
@@ -494,7 +494,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
             original.setStates(selection.mapMode==='political'?cellOwners:null,provinceColors47(r,selection.colorView));canvas.dataset.colorView=selection.colorView;}
         }
         if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}
-        map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
+        map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces,viewGroups47(r,selection.colorView));
         battleGrowing=drawBattleArrows(performance.now());
         drawCombat(frame,performance.now());if(testDiagnostics)canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];

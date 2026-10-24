@@ -17,20 +17,25 @@ export interface TerritoryLabel{nationId:string;componentId:string;point:Point;a
 // A component's label depends only on its provinces, whose outlines never
 // change within a world: a conquest recomputes just the components it touched.
 let cacheWorld:string|undefined;const cache=new Map<string,TerritoryLabel|null>();
-export function territoryLabels(world:World):TerritoryLabel[]{
+/** `groupOf` regroups provinces for the original colour views (culture, religion,
+ * family, alliance labels); `nationId` then carries the group key. Ungrouped
+ * provinces (null) get no label. */
+export function territoryLabels(world:World,groupOf?:(p:Province)=>string|null):TerritoryLabel[]{
   if(cacheWorld!==world.custom?.id||cache.size>4096){cache.clear();cacheWorld=world.custom?.id;}
   const byId=new Map(world.provinces.map(p=>[p.id,p])),result:TerritoryLabel[]=[];
-  for(const nation of world.nations){
-    const owned=world.provinces.filter(p=>p.controller===nation.id).sort((a,b)=>a.id.localeCompare(b.id)),seen=new Set<string>();
+  const keyOf=groupOf??((p:Province)=>p.controller),keys=groupOf?[...new Set(world.provinces.map(groupOf).filter((k):k is string=>k!==null))]:world.nations.map(n=>n.id);
+  for(const groupKey of keys){
+    const nation={id:groupKey};
+    const owned=world.provinces.filter(p=>keyOf(p)===nation.id).sort((a,b)=>a.id.localeCompare(b.id)),seen=new Set<string>();
     const groups:Province[][]=[];
     for(const seed of owned){
       if(seen.has(seed.id))continue;const group=[seed];seen.add(seed.id);
-      for(let i=0;i<group.length;i++)for(const id of group[i].neighbors){const p=byId.get(id);if(p?.controller===nation.id&&!seen.has(id)){group.push(p);seen.add(id);}}
+      for(let i=0;i<group.length;i++)for(const id of group[i].neighbors){const p=byId.get(id);if(p&&keyOf(p)===nation.id&&!seen.has(id)){group.push(p);seen.add(id);}}
       groups.push(group.sort((a,b)=>a.id.localeCompare(b.id)));
     }
     // Stable component identities survive input reordering; no enclave is dropped.
     for(const largest of groups){
-    const key=nation.id+'|'+largest.map(p=>p.id).join(','),known=cache.get(key);
+    const key=(groupOf?'view:':'')+nation.id+'|'+largest.map(p=>p.id).join(','),known=cache.get(key);
     if(known!==undefined){if(known)result.push(known);continue;}
     const largestArea=largest.reduce((sum,p)=>sum+area(p),0);
     const edges=new Map<string,[Point,Point]>(),candidates:Point[]=[];let cx=0,cy=0;

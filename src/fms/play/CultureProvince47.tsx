@@ -1,3 +1,4 @@
+import {officeHolder47,type OfficeRun47} from './civilization47-offices';
 import {useState} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {culture47} from './civilization47-catalog';
@@ -8,7 +9,7 @@ import {TICKS_PER_DAY} from './clock';
 import {rebellionBlocker47} from './civilization47-rebellion';
 
 /** Original ProvinceInfoUI (Shift+click, or 行省信息 in the state panel): 基本信息, 行省操作 and 战役信息
- * sections. Rows follow UpdateBasicInfoSection order (宗教、总督、城市防御力 are
+ * sections. Rows follow UpdateBasicInfoSection order (宗教、城市防御力 are
  * not simulated on the web and are left out) and
  * UpdateCampaignInfoSection; city type follows Province.GetProvinceCityType
  * (capital → port → manual fortress/city → mountainous terrain → city). */
@@ -41,6 +42,7 @@ export function CultureProvince47({run,provinceId,ports,busy,onState,onFamily,on
     <details open><summary>基本信息</summary><dl className="c47-province-rows">
       <div><dt>人口</dt><dd>{economy?`${number(economy.population)}/${max===undefined?'—':number(max)}`:'—'}</dd></div>
       <div><dt>国家</dt><dd>{nation?<button className="c47-link" onClick={()=>onState(nation.id)}>{nation.name}</button>:'无'}</dd></div>
+      {(run as unknown as OfficeRun47).offices47&&(()=>{const holder=officeHolder47(run as unknown as OfficeRun47,p.controller,'Governor',run.world.provinces.indexOf(p)+1);return <div data-office="Governor"><dt>总督</dt><dd>{holder?holder.identity.name:'空缺'}</dd></div>;})()}
       <div><dt>区域</dt><dd>无</dd></div>
       <div><dt>核心省份</dt><dd>{core?'是':'否'}</dd></div>
       <div><dt>城市类型</dt><dd>{CITY_TYPE[type]}</dd></div>

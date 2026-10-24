@@ -1,3 +1,4 @@
+import {OFFICE_LABELS47,officeHolder47,type OfficeRun47} from './civilization47-offices';
 import {memo} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationAge47} from './civilization47-origins';
@@ -25,7 +26,7 @@ const number=(n:number)=>Math.round(n).toLocaleString('zh-CN');
 // Parent busy/advancing changes must not rebuild the same force activity graph;
 // a new run reference or selected nation still recomputes every live value.
 /** Original StateInfoUI.UpdateBasicInfoSection rows, in the original order:
- * 国家 · 存在时间 · 首都 · 人口 · 人口上限 · 国库/亏空 · 军队数量 · 战舰数量 ·
+ * 国家 · 存在时间 · (行政首脑 · 财政主管 · 常备军统帅) · 首都 · 人口 · 人口上限 · 国库/亏空 · 军队数量 · 战舰数量 ·
  * 行省数量. 腐化度、三公官职和区域数量 are not simulated on the web yet and are
  * left out rather than shown as placeholders. */
 export const CultureNationOverview47=memo(function CultureNationOverview47({run,id,polity}:{run:FoundingForces47;id:string;polity:string}){
@@ -34,6 +35,7 @@ export const CultureNationOverview47=memo(function CultureNationOverview47({run,
   <dl className="c47-province-rows c47-nation-stats">
    <div><dt>国家</dt><dd>{nation.name} · {polity}{v.extinct?'（已覆亡）':''}</dd></div>
    <div><dt>存在时间</dt><dd>{v.years>0?`${v.years} 年`:`${run.world.day} 日`}</dd></div>
+   {(run as unknown as OfficeRun47).offices47&&(['Chancellor','Steward','Marshal'] as const).map(office=>{const holder=officeHolder47(run as unknown as OfficeRun47,id,office,run.people.nations[id]?.id??0);return <div key={office} data-office={office}><dt>{OFFICE_LABELS47[office]}</dt><dd>{holder?holder.identity.name:'空缺'}</dd></div>;})}
    <div className="c47-capital-line"><dt>首都</dt><dd className={v.extinct||!v.capitalHeld?'is-lost':''}>{v.capital??'无'}{v.capital&&!v.extinct&&!v.capitalHeld?'（失守）':''}</dd></div>
    <div><dt>人口</dt><dd>{number(v.population)}</dd></div>
    <div><dt>人口上限</dt><dd>{number(v.capacity)}</dd></div>

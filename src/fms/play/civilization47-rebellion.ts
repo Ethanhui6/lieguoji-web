@@ -1,3 +1,5 @@
+import {localRebellion47,type OfficeRun47} from './civilization47-offices';
+const roundHalfEven=(v:number)=>{const r=Math.round(v);return Math.abs(v%1)===.5&&r%2!==0?r-1:r;};
 import {releaseRebelProvince47} from './civilization47-nobility-fate';
 import type {NobilityRun47} from './civilization47-nobility';
 import {inCivilWar47,startCivilWar47} from './civilization47-nobility-civil-war';
@@ -127,6 +129,8 @@ export function tryRebel47(r:FoundingRun47,provinceId:string,force:boolean):bool
     // int arithmetic as in C#: an unreachable province (int.MaxValue distance) wraps negative.
     let chance=Math.min(80,Math.imul((c.distance+2)|0,5));
     if(monthsSince47(r,NEVER47)<18)chance=Math.trunc(chance*f(.1));
+    // GetLocalRebellionChanceMultiplier (governor), Mathf.RoundToInt.
+    if((r as unknown as OfficeRun47).offices47)chance=roundHalfEven(f(chance*localRebellion47(r as unknown as OfficeRun47,p.id)));
     chance=Math.max(0,Math.min(100,chance));
     if(!(range47(s,0,100)<chance))return false;
   }
@@ -183,10 +187,16 @@ export function processRebellion47(r:FoundingRun47,id:string){
   let chance=f(f(f(Math.min(1,Math.max(0,f(f(30-destiny)/20))))*f(.3))+f(.35));chance=f(chance/2);
   const leaderId=r.people.nations[id].leaderId,leader=leaderId===null?null:r.people.persons[leaderId];
   if(leader&&leader.alive)chance=f(f(1-nativeRebellionResistance(leader.traits.map(t=>{const found=traits.traits.find(v=>v.name===t);if(!found)throw Error('人物特性缺失。');return found;})))*chance);
+  const offices=(r as unknown as OfficeRun47).offices47?r as unknown as OfficeRun47:null;
+  // GetAverageLocalRebellionChanceMultiplier over the candidate provinces.
+  if(offices){let sum=0;for(const pid of list)sum=f(sum+localRebellion47(offices,pid));chance=f(chance*f(sum/list.length));}
   if(monthsSince47(r,NEVER47)<18)chance=f(chance*f(.1));
   if(value47(s)>chance)return;
-  // SelectProvinceForRebellion: weighted by local office multipliers (all 1 here).
-  const pick=list[Math.min(list.length-1,Math.floor(value47(s)*list.length))];
+  // SelectProvinceForRebellion: weighted by local office multipliers (uniform without offices).
+  let pick:string;
+  if(!offices)pick=list[Math.min(list.length-1,Math.floor(value47(s)*list.length))];
+  else{const weights=list.map(pid=>localRebellion47(offices,pid));let total=0;for(const w of weights)total=f(total+w);
+    pick=list[0];if(total>0){let roll=f(value47(s)*total);pick=list[list.length-1];for(let i=0;i<list.length;i++){roll=f(roll-weights[i]);if(!(0<roll)){pick=list[i];break;}}}}
   if(tryRebel47(r,pick,true))recordNewRebellion47(r,s,id);
 }
 /** ProvinceManager.AssignRandomUpdateDays: day 1..days-in-month per province. */

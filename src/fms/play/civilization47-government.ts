@@ -16,7 +16,7 @@ import {nativeProvinceIncome,nativeGoldSettlement,type GoldSettlementInput} from
 import {defaultPoliticalCombat,type NativePolity} from './native-combat/upper-efficiency';
 import {nativeDestinyDefaults,nativeRandomDestiny,type DestinyRandom} from './native-economy/destiny';
 import {f} from './native-economy/numeric';
-import {courtIncome} from './court16-people';
+import {courtIncome47} from './civilization47-offices';
 import type {DestinyState} from './destiny20-state';
 import type {FiscalState} from './restoration19-state';
 import {initialEconomy47,economicEthnic47,validateEconomySetup47,type Economy47,type EconomySetup47} from './civilization47-economy';
@@ -62,8 +62,8 @@ export function attachGovernment47<T extends GovernmentInput47>(input:T,setup:Ec
   const economy=initialEconomy47(r.world,cells,setup),initial={...r,units:{},tactics:emptyTactics47(r.world)};
   governmentOpening.recruitments=musterFoundingArmies47(initial);
   for(const army of initial.world.armies)upperCombat.armies[army.id]={base:initializedArmyBase(traitProjection(upperCombat.nations[army.nationId].traits)),initializedTick:0};
-  for(const n of r.world.nations){const polity=r.civilization.nations[n.id].polity,ethnic=economicEthnic47(economy,n.id),owned=upperCombat.nations[n.id].provinceOrder,court=courtIncome(r.people,r.world,n.id);
-    const provinceIncome=owned.map(id=>{const p=finance.provinces[id],population=r.world.statecraft!.provinces.find(p=>p.provinceId===id)!.population;return nativeProvinceIncome({population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:0,nationProvinceCount:owned.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome(r.people,r.world,n.id,id).local});});
+  for(const n of r.world.nations){const polity=r.civilization.nations[n.id].polity,ethnic=economicEthnic47(economy,n.id),owned=upperCombat.nations[n.id].provinceOrder,court=courtIncome47(r,n.id);
+    const provinceIncome=owned.map(id=>{const p=finance.provinces[id],population=r.world.statecraft!.provinces.find(p=>p.provinceId===id)!.population;return nativeProvinceIncome({population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:0,nationProvinceCount:owned.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome47(r,n.id,id).local});});
     // Every new Army is idle at its own home; no attack/reorganization fee.
     const value:GoldSettlementInput={gold:0,provinceIncome,leaderTaxMultiplier:court.tax,centralIncomeMultiplier:court.central,armyCostGold:0,goldProductionModifier:defaultPoliticalCombat(polity).goldProduction,ethnic},out=nativeGoldSettlement(value);
     governmentOpening.accounts[n.id]={polity,destiny:0,input:structuredClone(value)};

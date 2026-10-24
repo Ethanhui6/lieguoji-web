@@ -13,6 +13,7 @@ import {downloadBlob47,exportHistoryText47,HISTORY_EXPORT_FILE47} from './cultur
 import {politicalStamp47} from './civilization47-political-owner';
 import {pickOriginalProvince} from '../original/original-picking';
 import {ARMY_BATCH_RULE47} from './army-batch47';
+import {OFFICE_RULE47} from './civilization47-offices';
 import {CultureFamilyPeople47} from './CultureFamilyPeople47';
 import {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
 import {CultureLayoutEditor47} from './CultureLayoutEditor47';
@@ -273,6 +274,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-army-batch',rule:ARMY_BATCH_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       // Original province rebellion (Province.TryRebel) runs in new worlds only.
       if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-foundings',rule:FOUNDING_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
+      // Original government offices (GovernmentOfficeAI) run in new worlds only.
+      if(command.type==='create')s=await client.current.send({type:'action',action:{kind:'enable-offices',rule:OFFICE_RULE47,expected:populationStamp47(s.run)},sequence:s.journal.actions.length},{signal:op.signal});
       if(motionTicks)motion.current.recordAdvance(motionTicks,performance.now()-started);
       const timing=client.current.lastTiming;if(isAdvance&&timing&&appRoot.current)appRoot.current.dataset.pipeline=JSON.stringify({...timing,ticks:motionTicks||(dispatched.type==='advance-batch'?dispatched.ticks:0),total:performance.now()-started});
       if(isAdvance&&background){const at=performance.now(),old=rateSample.current;if(old&&at>old.at&&s.run.clock.tick>old.tick){const rate=(s.run.clock.tick-old.tick)/120/((at-old.at)/1000);setActualRate(previous=>previous===null?rate:previous*.65+rate*.35);}rateSample.current={at,tick:s.run.clock.tick};}else rateSample.current=null;

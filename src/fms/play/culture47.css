@@ -107,3 +107,8 @@
  .c47-app .c47-panel{top:auto;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 50px);border-radius:20px}
 }
 @media(max-width:600px){.c47-app .c47-bar>button{min-width:30px;min-height:30px;padding:3px}.c47-app .c47-bar time{padding:3px 6px;font-size:10.5px;margin-right:auto}.c47-app .c47-bar .play-icon{width:19px;height:19px}}
+/* 基本信息与行省信息同一种「标签—数值」行样式（原作 SinglePanel 一行一项）。 */
+.c47-app .c47-nation-stats.c47-province-rows{display:grid;grid-template-columns:1fr;gap:4px;margin:6px 0 10px;border:0;border-radius:0;background:transparent;overflow:visible}
+.c47-app .c47-nation-stats.c47-province-rows>div{display:flex;justify-content:space-between;gap:12px;padding:0;background:transparent}
+.c47-app .c47-nation-stats.c47-province-rows dt{font-size:13px;color:#546960}
+.c47-app .c47-nation-stats.c47-province-rows dd{margin:0;font-size:13px;font-weight:500;text-align:right}

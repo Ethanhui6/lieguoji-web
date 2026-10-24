@@ -9,7 +9,7 @@ import {nativeInitialResources} from './native-economy/resources';
 import {nativeGoldSettlement,nativeProvinceIncome} from './native-economy/settlement';
 import {defaultPoliticalCombat} from './native-combat/upper-efficiency';
 import {POLITIES47} from './civilization47-catalog';
-import {courtIncome} from './court16-people';
+import {courtIncome47} from './civilization47-offices';
 import {reconcileCore,traitProjection,type UpperCombat} from './upper14-state';
 import {initializedArmyBase} from './native-combat/state-traits';
 import {emptyTactics47,musterFoundingArmies47} from './civilization47-muster';
@@ -60,7 +60,7 @@ export function assertGovernmentOpening47(r:Government47){
   for(const n of r.world.nations){
     const account=r.governmentOpening.accounts[n.id],ethnic=economicEthnic47(r.economy,n.id),owned=expectedUpper.nations[n.id].provinceOrder;
     if(!exact(account,['polity','destiny','input'])||!POLITIES47.includes(account.polity)||account.destiny!==0)return fail();
-    const court=courtIncome(r.people,r.world,n.id),income=owned.map(id=>{const p=r.finance.provinces[id];return nativeProvinceIncome({population:r.world.statecraft!.provinces.find(p=>p.provinceId===id)!.population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:0,nationProvinceCount:owned.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome(r.people,r.world,n.id,id).local});});
+    const court=courtIncome47(r,n.id),income=owned.map(id=>{const p=r.finance.provinces[id];return nativeProvinceIncome({population:r.world.statecraft!.provinces.find(p=>p.provinceId===id)!.population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:0,nationProvinceCount:owned.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome47(r,n.id,id).local});});
     const value={gold:0,provinceIncome:income,leaderTaxMultiplier:court.tax,centralIncomeMultiplier:court.central,armyCostGold:0,goldProductionModifier:defaultPoliticalCombat(account.polity).goldProduction,ethnic};
     if(!equal(account.input,value))return fail();const out=nativeGoldSettlement(value),expected={gold:out.gold,goldPerMonth:out.goldPerMonth,armyCostGold:0,goldBattleModifier:out.goldBattleModifier,initializedDay:0,lastMonth:0,ledger:{...out,day:0,openingGold:0,reorganizationCost:0,distanceSuspended:owned.some(id=>!expectedUpper.provinces[id].connected)}};
     if(!equal(r.finance.nations[n.id],expected))return fail();

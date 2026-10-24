@@ -5,7 +5,7 @@ import {forceKey47} from './force-motion47';
 import {nationsAtWar} from './realtime-statecraft';
 import {reconcileCore} from './core-refresh51';
 import {economicEthnic47} from './civilization47-economy';
-import {courtIncome} from './court16-people';
+import {courtIncome47} from './civilization47-offices';
 import {defaultPoliticalCombat} from './native-combat/upper-efficiency';
 import {nativeProvinceIncome,nativeMonthlyArmyCost,nativeGoldSettlement,type NativeFeeProvince,type NativeFeeArmy} from './native-economy/settlement';
 
@@ -47,8 +47,8 @@ export function settleFiscalMonth47(r:FoundingForces47){
   for(const nation of r.world.nations){
     const id=nation.id,n=r.finance.nations[id],u=r.upperCombat.nations[id];if(!n||!u)throw Error('月税缺少已有国库或国家规则。');
     if(n.lastMonth>=month||!u.provinceOrder.length)continue;
-    const ethnic=economicEthnic47(r.economy,id),fees=monthlyArmyFees47(r,id),court=courtIncome(r.people,r.world,id),openingGold=n.gold;
-    const provinceIncome=u.provinceOrder.map(pid=>{const p=r.finance.provinces[pid],data=r.world.statecraft!.provinces.find(p=>p.provinceId===pid)!;return nativeProvinceIncome({population:data.population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:r.destiny.nations[id].destiny,nationProvinceCount:u.provinceOrder.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome(r.people,r.world,id,pid).local});});
+    const ethnic=economicEthnic47(r.economy,id),fees=monthlyArmyFees47(r,id),court=courtIncome47(r,id),openingGold=n.gold;
+    const provinceIncome=u.provinceOrder.map(pid=>{const p=r.finance.provinces[pid],data=r.world.statecraft!.provinces.find(p=>p.provinceId===pid)!;return nativeProvinceIncome({population:data.population,maxPopulation:p.maxPopulation,cellCount:p.cellBiomes.length,resources:p.resources,ethnic,destiny:r.destiny.nations[id].destiny,nationProvinceCount:u.provinceOrder.length,worldProvinceCount:r.world.provinces.length,localIncomeMultiplier:courtIncome47(r,id,pid).local});});
     const out=nativeGoldSettlement({gold:openingGold,provinceIncome,leaderTaxMultiplier:court.tax,centralIncomeMultiplier:court.central,armyCostGold:fees.cost,goldProductionModifier:defaultPoliticalCombat(u.polity).goldProduction,ethnic});
     Object.assign(n,{gold:out.gold,goldPerMonth:out.goldPerMonth,armyCostGold:out.armyCostGold,goldBattleModifier:out.goldBattleModifier,lastMonth:month,ledger:{...out,day:r.world.day,openingGold,reorganizationCost:0,distanceSuspended:fees.distanceSuspended}});
   }

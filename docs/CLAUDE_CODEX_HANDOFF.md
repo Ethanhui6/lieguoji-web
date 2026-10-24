@@ -82,7 +82,8 @@
 - 请 Codex 给出失败用例和证据：属于玩法 / 节奏问题的交给 Claude 修，属于测试本身的由 Codex 修。
 
 ### 2026-10-23 · 0.5.5（Claude Code）→ 交给 Codex 回归
-- **提交 SHA**：推送后补记。
+- **提交 SHA**：`49dacf5c29a052ef2afc1f622f2b2bd8d8cd2819`（版本 0.5.5，已推送 main；Cloudflare Pages success）。**GitHub Actions 没有运行**：任务在 2 秒内失败、没有执行任何步骤，注释为 “The job was not started because recent account payments have failed or your spending limit needs to be increased”，属于账户付费问题，已告知用户；问题解决后请 Codex 重新运行这次 CI。（本条为推送后的本地补记。）
+- 0.5.4 `4ab4b162` 的 CI：Build and unit checks success；6 个浏览器分片全部 failure（与本地对照结果一致，见下文）。
 - **严重问题（已修）**：家族每月自动发动的叛乱或内战（`checkFamilyRebellions47` / `checkCivilWars47` → `foundState47`）建国后，没有给新国家补战损记录，下一次每日结算的 `assertLosses` 就会失败，推演停在「战损记录损坏」。一般在第九、十年出现：3500 天扫描 6 个世界里有 2 个失败，开发版存档在第 3621 天失败；0.5.4 代码在同一天同样失败，确认是本来就有的问题。修复：`civilization47-political-owner.ts` 在 `advanceNobility47` 之后调用 `reconcileLosses`（只补缺失的记录，正常世界里不做任何改动）。回归测试 `family-rebellion-monthly.test.ts`：去掉修复会失败，加回后通过。
 - **性能（模拟结果逐位不变：同一固定世界推进 800 天，与 0.5.4 的世界状态 sha256 相同）**：
   - `display-delta47.ts`（新增）+ `culture47-display.ts`：更新包的 `run` 改为结构化增量（`delta` 字段，按内容逐层比较，主线程在上一份数据上打补丁），`journal` 仍然整份发送。后期每批数据约 760KB→50KB。数据包格式变了，`culture47-display.test.ts` 已同步更新；`tests/` 下读 `display.journal` 的浏览器测试不受影响。
@@ -97,3 +98,15 @@
 - **为适配增量协议，Claude 改了 4 个测试**（Codex 请知悉）：`fms-culture47-active-world.spec.ts`、`fms-culture47-army-recovery-ui.spec.ts` 改为监听客户端新增的 `culture47-snapshot` 事件（带解码后的完整快照，不做复制）；`fms-culture47-motion.spec.ts`、`fms-culture47-pipeline.spec.ts` 改读更新包新增的 `display.tick`。
 - **新发现，未修（下一批由 Claude 处理）**：5000 天扫描中，世界 f（固定 UUID 标记 `f`，大陆地形，种子 421730）在第 4922 天出现人口校验错误码 18（姓名、身份、文化或出生记录对不上，第 13 年以后才出现）。
 - **请 Codex 关注**：数据包格式变化对浏览器测试的影响（`display.kind==='update'` 现在带 `delta`，不再带 `run`）；长测任务里可以加上 `family-rebellion-monthly.test.ts`。
+
+### 2026-10-23 · 0.5.6（Claude Code）→ 交给 Codex
+- **提交 SHA**：推送后补记。随本版一起推送的还有本地已存在的 `edadb96e`「工程：自动测试改为本地运行，GitHub Actions 只保留手动触发」（作者是用户账号，另一个会话提交的；改了 `ci.yml` 和 `AGENTS.md`）。按新规则，发布前在本地跑 `npm run check`，推送后核对正式站 `build.json`。
+- **改动**：
+  - `culture47-session.ts` `build()`（读档/重放）：连续的推进操作在快速校验模式下按每批最多 10 个走 `advanceSessionBatch47`，遇到存档分叉的身份切换点时断开；玩家操作仍逐个严格执行；最后对最终世界跑 `assertPolitics47`（有 foundings 时再跑 `assertFoundings47`），与检查点恢复的校验相同。十年世界（3625 步）从 327–413 秒降到 74 秒。
+  - `checks47.test.ts`：改为「快速实时推进」和「成批 load」都要等于逐个操作的严格 `execute`。
+  - `force-motion47.ts`：移动阶段的部队键按下标只算一次（`positions()` / `contacts()` 传 keys）。
+  - `force-losses47.ts` / `force-accounting47.ts` / `force-tick47.ts`：军事窗口核心里的交锋结算直接修改私有候选（`owned=true`），结算前先保存伤害余数供后面读取。
+- **结果不变**：世界 a 推进 800 天的哈希与 0.5.4 相同；世界 b 推进 2500 天的哈希与 0.5.5（`49dacf5c`）相同。
+- **实测**：后期实时推进（关闭采样器，各跑两次）0.5.5 每天 17.7–18.1ms，本版 17.0–17.8ms。
+- **本地全量检查**：结果见下一条补记。
+- **仍由 Claude 修改的文件**：无（本段补记除外）。

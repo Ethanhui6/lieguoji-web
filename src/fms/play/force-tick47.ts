@@ -124,7 +124,8 @@ function advanceMilitaryWindowCore47<T extends MilitaryRun47>(input:T,ticks:numb
       if(due.size) {
         // Draw before casualties; every due unit fires from the same snapshot.
         for(const key of due)rescheduleAttack47(r.forceClock,key,now,F);
-        const out=applyAccountedVolley47(r,due,rules.combat(r));r=out.run;
+        // r is this window's private candidate (owned or cloned above).
+        const out=applyAccountedVolley47(r,due,rules.combat(r),true);r=out.run;
         // AddDamageToEnemyArmyInProvince → RecordBattleMerit for original-family worlds.
         if((r as unknown as NobilityRun47).nobility)for(const hit of out.nativeHits){const [ak,aid]=JSON.parse(hit.attacker) as [string,string],[vk]=JSON.parse(hit.victim) as [string,string];if(ak==='army'&&vk==='army')recordBattleMerit47(r as unknown as NobilityRun47,aid,hit.nativeDamage);}
         volleys.push({at:now,due:[...due],hits:out.nativeHits.length,losses:out.casualties.reduce((n,c)=>n+c.strength+c.cargo,0)});

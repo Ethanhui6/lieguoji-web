@@ -9,14 +9,16 @@ type Run = Parameters<typeof applyActualVolley47>[0] & War28World & Pick<War46Ru
  * Native Navy's recovered leaf directly subtracts Army/Fleet strength, without
  * a War damage callback. Its real casualties enter web accounting only; do not
  * invent raw Navy kills in the source-backed Army war-score ledger. */
-export function applyAccountedVolley47<T extends Run>(input: T, due: ReadonlySet<string>, inputs: Parameters<typeof applyActualVolley47>[2]) {
+export function applyAccountedVolley47<T extends Run>(input: T, due: ReadonlySet<string>, inputs: Parameters<typeof applyActualVolley47>[2], owned = false) {
   assertLosses(input.losses,input.world,input.warfare,input.clock.tick);
   const identities=new Map<string,{kind:'army'|'fleet';nation:string}>([
     ...input.world.armies.map(a=>[forceKey47({kind:'army',id:a.id}),{kind:'army',nation:a.nationId}] as const),
     ...input.navy.fleets.map(a=>[forceKey47({kind:'fleet',id:a.id}),{kind:'fleet',nation:a.nationId}] as const),
     ...input.transports.cargo.map(c=>[forceKey47({kind:'army',id:c.army.id}),{kind:'army',nation:c.army.nationId}] as const),
   ]);
-  const output=applyActualVolley47(input,due,inputs), r=output.run;
+  // An owned volley edits input in place: keep the pre-volley carry it reads below.
+  const carry={...input.forceDamage.carry};
+  const output=applyActualVolley47(input,due,inputs,owned), r=output.run;
   reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);
   const raw=war28DamageSink(r.nativeWars,r), loss=lossRecorder(r.losses,r.warfare);
   const attackers=new Map<string,Set<string>>();
@@ -27,7 +29,7 @@ export function applyAccountedVolley47<T extends Run>(input: T, due: ReadonlySet
   }
   for(const c of output.casualties) {
     const identity=identities.get(c.key);if(!identity) throw Error('实际战损缺少原部队身份。');
-    const enemies=(input.forceDamage.carry[c.key]??0)>0?[]:[...(attackers.get(c.key)??[])];
+    const enemies=(carry[c.key]??0)>0?[]:[...(attackers.get(c.key)??[])];
     loss(identity.nation,identity.kind==='army'?'combat':'hull',c.strength,enemies);
     loss(identity.nation,'crew',c.crew,enemies);loss(identity.nation,'ships',c.lostShips,enemies);
     // Cargo was deducted by a carrier sinking, not by an invented Army hit.

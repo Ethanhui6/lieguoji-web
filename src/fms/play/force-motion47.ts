@@ -97,8 +97,8 @@ export function assertContactRecordsOwned47(value:ForceContacts47,forces:MovingF
     seen.add(key);
   }
 }
-function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceContacts47, rules: Rules, ready?:Positions) {
-  const p = ready??positions(forces, graph), pairs = new Map<string, ForceContact47>(), groups = new Map<string, string[]>();
+function contacts(forces: MovingForce47[], graph: TravelGraph47, old: ForceContacts47, rules: Rules, ready?:Positions, keys?:readonly string[]) {
+  const p = ready??positions(forces, graph, keys), pairs = new Map<string, ForceContact47>(), groups = new Map<string, string[]>();
   const eligible = (a: MovingForce47, b: MovingForce47, area: string) => rules.enemy(a.nationId, b.nationId) && (area.startsWith('sea/') || !a.withdrawing && !b.withdrawing);
   for (const c of old.pairs) {
     const a = p.get(c.a), b = p.get(c.b);
@@ -150,11 +150,13 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
   if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isSafeInteger(maxEvents) || maxEvents < 1) throw Error('统一行军时间或事件预算无效。');
   // Clone before decorating; no caller/rules callback runs between keying and
   // this stable sort. Keep the public exact JSON encoding and locale ties.
-  const forces = cloneForceTravelRecords47(input).map(force=>({force,key:forceKey47(force)})).sort((a,b)=>collate(a.key,b.key)).map(row=>row.force);
+  const rows = cloneForceTravelRecords47(input).map(force=>({force,key:forceKey47(force)})).sort((a,b)=>collate(a.key,b.key));
+  // The phase keeps this force order: key each force once, by index.
+  const forces = rows.map(row=>row.force), keys = rows.map(row=>row.key);
   if(!ready)assertForceContacts47(previous, forces, graph, rules.seaRegion);
   let book = ready?.contacts??structuredClone(previous), remaining = seconds, events = 0;
   const exposure: Record<string, number> = {};
-  const initial = ready??contacts(forces, graph, book, rules);
+  const initial = ready??contacts(forces, graph, book, rules, undefined, keys);
   // The military clock must see a contact beginning at time zero before it
   // chooses an attack deadline. Ordinary movement callers still consume dt.
   if (!ready&&stopAtEvent && contactIdentity(initial.contacts) !== contactIdentity(book)) return {...initial, forces, exposure, events, elapsed:0, unusedSeconds:seconds};
@@ -162,8 +164,8 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
   while (remaining > 0) {
     if (++events > maxEvents) throw Error('统一行军事件超出预算，原世界未提交。');
     book = current.contacts;
-    const movers = forces.flatMap(f => {
-      if (current.held.has(forceKey47(f)) || ['arrived', 'halted'].includes(f.travel.status)) return [];
+    const movers = forces.flatMap((f, i) => {
+      if (current.held.has(keys[i]) || ['arrived', 'halted'].includes(f.travel.status)) return [];
       const s = f.travel, edge = segment(f, graph)!;
       if (edge.kind==='gate' && !s.crossed && (s.offset === 0 || s.offset === edge.toGate) && !rules.canEnter(f, edge.to)) {s.status = 'blocked'; return [];}
       s.status = 'moving'; const end = edge.kind==='local'||s.crossed ? edge.end : edge.toGate, left = end - s.offset;
@@ -187,7 +189,7 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
     // of predicting arrival with a second (potentially different) expression.
     let interiorEnd:Positions|undefined;
     if(remaining===0&&!book.pairs.length&&!current.held.size&&!forces.some(f=>f.withdrawing)&&!movers.some(reached)){
-      interiorEnd=positions(forces,graph);
+      interiorEnd=positions(forces,graph,keys);
       if([...interiorEnd].every(([key,p])=>p.cell.id===current.positions.get(key)?.cell.id)){
         current={contacts:initialForceContacts47(),held:new Set(),positions:interiorEnd};
         break;
@@ -198,7 +200,7 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
       else if(s.crossed){s.leg++; s.offset = 0; s.crossed = false;if (s.leg === s.nodes.length - 1) s.status = 'arrived';}
     }
     const requests = movers.filter(m => m.edge.kind==='gate' && m.time <= dt && m.f.travel.status!=='arrived' && !m.f.travel.crossed && m.f.travel.nodes[m.f.travel.leg] === m.edge.from.id && m.f.travel.offset === m.edge.toGate);
-    const before = requests.length?positions(forces, graph):new Map();
+    const before = requests.length?positions(forces, graph, keys):new Map();
     const admitted = requests.filter(m => {if (rules.canEnter(m.f, m.edge.to)) return true; m.f.travel.status = 'blocked'; return false;});
     const stopped = new Set<string>(), meetings: {a: string; b: string; area: string}[] = [];
     // Simultaneous gate exchange is a real contact, never an ID-ordered swap.
@@ -222,7 +224,7 @@ function advanceForceContactsCore47(input: readonly MovingForce47[], previous: F
       // event even if no frame time remains; do not retain invalid full offset.
       if(s.offset===m.edge.end){s.leg++;s.offset=0;s.crossed=false;if(s.leg===s.nodes.length-1)s.status='arrived';}
     }
-    const after = interiorEnd??positions(forces, graph), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
+    const after = interiorEnd??positions(forces, graph, keys), merged = new Map(book.pairs.map(c => [pairKey(c.a, c.b), c]));
     for (const m of meetings) merged.set(pairKey(m.a, m.b), pair(m.a, m.b, after, m.area));
     current = contacts(forces, graph, {version: 1, pairs: [...merged.values()]}, rules,after);
     // Yield AFTER simultaneous admission. This also exposes empty-land entry

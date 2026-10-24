@@ -181,8 +181,22 @@ export class Culture47Session {
     if(o.relations==='war')initializeOpeningWars47(run);
     prepareOwnedGeography47(run);
     let completed=0,ticks=0;
-    for(const action of journal.actions){switchIdentity(completed);run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;if(action.kind==='advance')ticks+=action.ticks;progress?.({stage:'replay',completed,total:journal.actions.length,ticks});}
+    // Runs of time advances replay as live batches (equal to applying each
+    // one, see session-advance47) under the fast checks; player actions stay
+    // strict and the final world passes every state validator, as a resume does.
+    const breaks=new Set([previous?.sequence,fork?.sequence].filter((v):v is number=>typeof v==='number'));
+    const actions=journal.actions;
+    for(let i=0;i<actions.length;){
+      switchIdentity(completed);const action=actions[i];
+      if(action.kind==='advance'){
+        const batch:Extract<Culture47Action,{kind:'advance'}>[]=[];
+        while(i<actions.length&&batch.length<10&&actions[i].kind==='advance'&&(!batch.length||!breaks.has(i))){const next=actions[i] as Extract<Culture47Action,{kind:'advance'}>;batch.push(next);ticks+=next.ticks;i++;}
+        run=withFastChecks47(()=>advanceSessionBatch47(run,batch,weights));completed+=batch.length;
+      }else{run=withOwnedNumericGeography47(run,candidate=>withOwnedTravel47(()=>apply(candidate,action)));prepareOwnedGeography47(run);completed++;i++;}
+      progress?.({stage:'replay',completed,total:actions.length,ticks});
+    }
     switchIdentity(completed);
+    if(actions.length){assertPolitics47(run);if((run as unknown as {foundings?:unknown}).foundings)assertFoundings47(run as never);prepareOwnedGeography47(run);}
     return {run,journal:structuredClone(journal),ticks};
   }
   /** The current world for a save: the run after every journal action. */

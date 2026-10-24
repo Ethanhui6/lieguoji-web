@@ -20,9 +20,11 @@ export function assertForceDamage47(state: ForceDamage47, known: ReadonlySet<str
 /** One due volley computed before ANY deduction, then committed together.
  * Raw native damage remains separate from clamped integer web losses. Fleet
  * cargo loss is distinct from independent Army travelling on the same sea. */
-export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<string>, inputs: CombatInputs) {
+/** owned: the caller passes its own private candidate (the military window
+ * core), so the volley edits it in place instead of copying the whole run. */
+export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<string>, inputs: CombatInputs, owned = false) {
   if (!Number.isFinite(inputs.navyCountToHull) || inputs.navyCountToHull <= 0) throw Error('海军数量与舰体换算无效。');
-  const next=cloneMilitaryCandidate47(input);
+  const next=owned?input:cloneMilitaryCandidate47(input);
   const {spatial, forces} = actualForces47(next), known = new Set([...next.world.armies.map(a => forceKey47({kind: 'army', id: a.id})), ...next.navy.fleets.map(f => forceKey47({kind: 'fleet', id: f.id}))]);
   const state = next.forceDamage;
   assertForceDamage47(state,known);

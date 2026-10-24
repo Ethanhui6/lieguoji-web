@@ -29,6 +29,7 @@ import {startTransition,useEffect,useLayoutEffect,useRef,useState,useMemo,type R
 import {CultureNationActivity47,CultureNationOverview47,nationFamily47} from './CultureNationOverview47';
 import {CultureHistory47} from './CultureHistory47';
 import type {FmsDocument} from '../model';
+import {generateWorldTerrain47} from './world-generate47';
 import {FmsRenderer} from '../renderer';
 import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
@@ -42,7 +43,7 @@ import {FRAME_LOOP_RULE47} from './frame-loop47';
 import {deriveFmsCoastCurves,FMS_COAST_CURVE,FMS_COAST_LINE_COLOR,FMS_COAST_LINE_WIDTH} from '../coast-curve';
 import {FmsGestures} from '../gestures';
 import {fitCamera,screenToWorld,resizeCamera,zoomCameraAt} from '../../world/camera';
-import {initialLandCamera47} from './land-camera47';
+import {coverLandCamera47} from './land-camera47';
 import {PlayMap} from './map';
 import {provinceAt} from './world';
 import {PlayIcon} from './PlayIcon';
@@ -86,6 +87,7 @@ type ReadyCulture47={client:Culture47Client;snapshot:Culture47Snapshot;journal:C
 const polityLabels:Record<NativePolity,string>={Kingdom:'王国',Empire:'帝国',Republic:'共和国',Federation:'联邦',Tribal:'部族',Theocracy:'神权国'};
 const failText=(e:unknown)=>e instanceof Error?e.message:String(e);
 async function verifyJournal(journal:Culture47Journal,signal?:AbortSignal,progress?:Parameters<Culture47Client['verify']>[1]){const client=new Culture47Client(journal.engine);try{await client.verify(journal,{...progress,signal,longReplay:true});}finally{client.close();}}
+const SETUP_KEY='lieguoji-world-setup-v1';
 const defaultCultures:CultureId47[]=['chinese','japanese','english','arab','roman','german'];
 function originalRuler(run:FoundingForces47,id:string){const reign=run.chronicle.leaders[id]?.at(-1);if(!reign||reign.endedDay!==null||Object.hasOwn(run.chronicle.ended,id))return null;const r=run.civilization.rulers[reign.id];return {...reign,name:r.name,given:r.given,title:r.titleAtAccession+'（就任时）'};}
 /** Original StateInfoUI: header (name, leader), state actions, then the
@@ -139,11 +141,14 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const territoryNation=pick?.kind==='draw'?pick.nationId:null,setTerritoryNation=(id:string|null)=>setPick(id===null?null:{kind:'draw',nationId:id});
   const [aiGlobalOpen,setAIGlobalOpen]=useState(false),appRoot=useRef<HTMLElement>(null),[showPerf]=useState(()=>new URLSearchParams(location.search).has('perf'));
   const [menu,setMenu]=useState<null|'menu'|'load'>(null),[config,setConfigState]=useState<Culture47Config>(readCulture47Config),exportImage=useRef<(()=>Promise<Blob>)|null>(null),[autoSavePrompt,setAutoSavePrompt]=useState<{countdown:number}|'saving'|null>(null);
-  const [count,setCount]=useState(6),[cityCount,setCityCount]=useState(60),[mode,setMode]=useState<NamingMode47>('culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(false);
+  // The world settings are remembered: 生成地图 reuses them after a reload.
+  const savedSetup=useMemo(()=>{try{const v=JSON.parse(localStorage.getItem(SETUP_KEY)??'null') as Partial<{count:number;cityCount:number;mode:NamingMode47;enabled:CultureId47[];war:boolean}>|null;return v&&typeof v==='object'?v:{};}catch{return {};}},[]);
+  const [count,setCount]=useState(()=>Number.isInteger(savedSetup.count)?savedSetup.count!:6),[cityCount,setCityCount]=useState(()=>Number.isInteger(savedSetup.cityCount)?savedSetup.cityCount!:60),[mode,setMode]=useState<NamingMode47>(()=>savedSetup.mode==='historical-names'||savedSetup.mode==='culture-generated'?savedSetup.mode:'culture-generated'),[enabled,setEnabled]=useState<CultureId47[]>(()=>Array.isArray(savedSetup.enabled)&&savedSetup.enabled.length&&savedSetup.enabled.every(id=>CULTURE_IDS47.includes(id))?savedSetup.enabled:defaultCultures),[choices,setChoices]=useState<Record<string,CultureChoice47>>({}),[war,setWar]=useState(()=>savedSetup.war===true);
+  useEffect(()=>{try{localStorage.setItem(SETUP_KEY,JSON.stringify({count,cityCount,mode,enabled,war}));}catch{/* storage unavailable */}},[count,cityCount,mode,enabled,war]);
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
   const [nationId,setNationId]=useState('n-0'),[cityId,setCityId]=useState<string|null>(null),[panel,setPanel]=useState<'nation'|'history'|'military'|'province'|null>(null),[provinceId,setProvinceId]=useState<string|null>(null),[panelExpanded,setPanelExpanded]=useState(false);
-  const [colorView,setColorView]=useState<ColorView47>('state'),[mapMenu,setMapMenu]=useState(false),[mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
+  const [colorView,setColorView]=useState<ColorView47>('state'),[mapMenu,setMapMenu]=useState(false),[generateConfirm,setGenerateConfirm]=useState(false),[mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
   const [actualRate,setActualRate]=useState<number|null>(null),rateSample=useRef<{at:number;tick:number}|null>(null);
@@ -445,7 +450,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
     const viewport={width:Math.max(1,element.clientWidth),height:Math.max(1,element.clientHeight)};
-    const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):initialLandCamera47(source,viewport)};
+    const savedView=lastView.current,view={viewport,camera:savedView?.id===runId?resizeCamera(savedView.camera,savedView.viewport,viewport,source):coverLandCamera47(source,viewport)};
     const richDiagnostics=new URLSearchParams(location.search).has('fmsDiagnostics');
     // Map diagnostics (JSON on the canvas each frame) are for automated tests only; normal play skips them.
     const testDiagnostics=richDiagnostics||navigator.webdriver===true;
@@ -559,12 +564,25 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   },[runId,rendererEpoch,terrainGrid]);
   useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview]);
   const choice=(i:number):CultureChoice47=>{const c=culture47(enabled[i%enabled.length]??'chinese');return choices['n-'+i]&&enabled.includes(choices['n-'+i].cultureId)?choices['n-'+i]:{cultureId:c.id,religionId:c.suggestedReligion,polity:c.suggestedPolity};};
+  /** Original 生成地图: after 「会删除当前地图」 is confirmed, a new random world
+   * (terrain and states) replaces the open one with the current world settings,
+   * and time keeps running if it was running. Named saves are untouched. */
+  async function generateNewWorld(){
+    setGenerateConfirm(false);const s=current.current;if(!s||inflight.current||busy)return;
+    const wasPlaying=isPlaying.current;setPlaying(false);setPanel(null);setPick(null);setMapMenu(false);setBusy(true);setNotice('正在生成新地图…');
+    let terrain:FmsDocument;
+    try{terrain=await generateWorldTerrain47(s.run.terrain);}catch(e){setBusy(false);setNotice('生成地图失败，当前世界保持不变。'+failText(e));return;}
+    setBusy(false);
+    await send({type:'create',opening:{terrain,count,cityCount,relations:war?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,families:'original',setup:{mode,enabled,nations:Object.fromEntries(Array.from({length:count},(_,i)=>['n-'+i,choice(i)]))}}});
+    if(wasPlaying&&current.current&&current.current!==s)setPlaying(true);
+  }
   const setChoice=(i:number,patch:Partial<CultureChoice47>)=>setChoices(old=>({...old,['n-'+i]:{...choice(i),...patch}}));
   const r=snapshot?.run;
   return <main ref={appRoot} className="c47-app" data-testid="culture47-app" data-day={r?.world.day} data-tick={r?.clock.tick} data-advancing={advancing}>
     <div className="c47-map" ref={host}/>
     {renderFault&&<div className="c47-render-recovery" role="alert"><span>{renderFault}</span><button onClick={()=>{setRenderFault('');setRendererEpoch(n=>n+1);}}>重新显示地图</button></div>}
-    <header className="c47-bar"><button aria-label="返回绘图" disabled={busy} onClick={requestClose}><PlayIcon name="back"/></button><div><strong>列国纪</strong><small>{r?'真实文化世界':'创建文明'}</small></div>{r&&<><CultureCalendar47 worldId={r.id} startDate={r.life.startDate} tick={()=>motion.current.tick(performance.now())}/><button aria-label="地图样式" title="地图样式与视图（数字键1—6）" aria-expanded={mapMenu} aria-pressed={mapMenu} onClick={()=>setMapMenu(v=>!v)}><PlayIcon name="layers"/></button><button aria-label="菜单选项" title="菜单选项" aria-pressed={menu!==null} onClick={()=>setMenu(m=>m?null:'menu')}><PlayIcon name="more"/></button><button aria-label="AI全局配置" title="AI全局配置" aria-pressed={aiGlobalOpen} onClick={()=>setAIGlobalOpen(v=>!v)}><PlayIcon name="settings"/></button><button aria-label="编辑国家" title="编辑国家" aria-pressed={territoryNation!==null} disabled={busy||locked} onClick={()=>{if(territoryNation!==null){setTerritoryNation(null);return;}setMilitary(false);setTargetMode(null);setPanel(null);const alive=r.world.nations.find(n=>n.id===nationId&&r.world.provinces.some(p=>p.controller===n.id))??r.world.nations.find(n=>r.world.provinces.some(p=>p.controller===n.id))!;setTerritoryNation(alive.id);setNotice('编辑国家：点击地图，把行省划入所选国家。');}}><PlayIcon name="edit"/></button><button aria-label="军事模式" title="军队与舰队" aria-pressed={military} onClick={()=>{setTerritoryNation(null);setMilitary(v=>!v);setTargetMode(null);setPanel(military?null:'military');}}><PlayIcon name="locate"/></button><button aria-label="保存文化世界" disabled={busy||locked} onClick={()=>void save()}><PlayIcon name="save"/>{lastSaved.current!==snapshot.journal.actions.length&&<i className="c47-unsaved"/>}</button></>}</header>
+    <header className="c47-bar"><button aria-label="返回绘图" disabled={busy} onClick={requestClose}><PlayIcon name="back"/></button><div><strong>列国纪</strong><small>{r?'真实文化世界':'创建文明'}</small></div>{r&&<><CultureCalendar47 worldId={r.id} startDate={r.life.startDate} tick={()=>motion.current.tick(performance.now())}/><button aria-label="生成地图" title="生成地图（随机新世界）" disabled={busy||locked} onClick={()=>setGenerateConfirm(true)}><PlayIcon name="generate"/></button><button aria-label="地图样式" title="地图样式与视图（数字键1—6）" aria-expanded={mapMenu} aria-pressed={mapMenu} onClick={()=>setMapMenu(v=>!v)}><PlayIcon name="layers"/></button><button aria-label="菜单选项" title="菜单选项" aria-pressed={menu!==null} onClick={()=>setMenu(m=>m?null:'menu')}><PlayIcon name="more"/></button><button aria-label="AI全局配置" title="AI全局配置" aria-pressed={aiGlobalOpen} onClick={()=>setAIGlobalOpen(v=>!v)}><PlayIcon name="settings"/></button><button aria-label="编辑国家" title="编辑国家" aria-pressed={territoryNation!==null} disabled={busy||locked} onClick={()=>{if(territoryNation!==null){setTerritoryNation(null);return;}setMilitary(false);setTargetMode(null);setPanel(null);const alive=r.world.nations.find(n=>n.id===nationId&&r.world.provinces.some(p=>p.controller===n.id))??r.world.nations.find(n=>r.world.provinces.some(p=>p.controller===n.id))!;setTerritoryNation(alive.id);setNotice('编辑国家：点击地图，把行省划入所选国家。');}}><PlayIcon name="edit"/></button><button aria-label="军事模式" title="军队与舰队" aria-pressed={military} onClick={()=>{setTerritoryNation(null);setMilitary(v=>!v);setTargetMode(null);setPanel(military?null:'military');}}><PlayIcon name="locate"/></button><button aria-label="保存文化世界" disabled={busy||locked} onClick={()=>void save()}><PlayIcon name="save"/>{lastSaved.current!==snapshot.journal.actions.length&&<i className="c47-unsaved"/>}</button></>}</header>
+    {r&&generateConfirm&&<div className="c47-confirm" role="alertdialog" aria-label="生成地图"><p>会删除当前地图</p><small>按当前的国家数、城市数和文化设置随机生成新世界；已保存的存档不受影响。</small><div><button onClick={()=>void generateNewWorld()}>是</button><button onClick={()=>setGenerateConfirm(false)}>否</button></div></div>}
     {r&&mapMenu&&<section className="c47-map-menu" aria-label="地图样式">
       <div role="group" aria-label="底图"><small>底图</small>{([['political','政区'],['terrain','地形']] as const).map(([id,label])=><button key={id} aria-pressed={mapMode===id} onClick={()=>setMapMode(id)}>{label}</button>)}</div>
       <div role="group" aria-label="地图视图"><small>视图</small>{COLOR_VIEWS47.map(v=><button key={v.id} aria-pressed={colorView===v.id} disabled={!v.available} title={v.available?`数字键 ${v.key}`:'尚未还原'} onClick={()=>{setColorView(v.id);setMapMenu(false);}}><b>{v.key}</b>{v.label}</button>)}</div>

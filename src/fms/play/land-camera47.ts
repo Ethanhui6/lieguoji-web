@@ -37,3 +37,14 @@ export function initialLandCamera47(doc:FmsDocument,viewport:CameraSize):AtlasCa
  const scale=Math.max(fitScale,Math.min(maxScale,fitScale*12,desired));
  return {x:viewport.width/2-(minX+maxX)/2*scale,y:viewport.height/2-(minY+maxY)/2*scale,scale};
 }
+/** Original play view: the map always fills the screen (no empty margins around
+ * the map) on landscape screens, so the opening camera is at least the cover
+ * scale and its edges are kept inside the map. */
+export function coverLandCamera47(doc:FmsDocument,viewport:CameraSize,camera:AtlasCamera=initialLandCamera47(doc,viewport)):AtlasCamera{
+ const cover=Math.max(viewport.width/doc.width,viewport.height/doc.height);
+ // Portrait phones would see only a sliver of a 16:9 map at cover scale: keep the land framing there.
+ if(camera.scale>=cover||viewport.width<viewport.height)return camera;
+ const cx=(viewport.width/2-camera.x)/camera.scale,cy=(viewport.height/2-camera.y)/camera.scale,scale=cover;
+ const clamp=(v:number,min:number)=>Math.min(0,Math.max(min,v));
+ return {x:clamp(viewport.width/2-cx*scale,viewport.width-doc.width*scale),y:clamp(viewport.height/2-cy*scale,viewport.height-doc.height*scale),scale};
+}

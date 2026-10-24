@@ -1,6 +1,7 @@
 import type {Culture47Request,Culture47Response,Culture47Snapshot} from './culture47.worker';
 import type {Culture47Checkpoint,Culture47Journal,Culture47Progress} from './culture47-session';
 import {Culture47InvalidJournal,Culture47Unavailable,frozenCulture47} from './culture47-contract';
+import {connectRemote47,remoteHost47} from './culture47-remote';
 import {Culture47DisplayDecoder,checkSiegeDisplay47} from './culture47-display';
 type Options={signal?:AbortSignal;progress?:(p:Culture47Progress)=>void;longReplay?:boolean};
 
@@ -29,7 +30,13 @@ export class Culture47Client {
     }).catch(e=>{this.startupError=new Culture47Unavailable('无法启动此世界的原模拟引擎，存档保持。'+(e instanceof Error?e.message:''));});
   }
   private async start(){
-    if(this.engine===__CULTURE47_ENGINE__)return new Worker(new URL('./culture47.worker.ts',import.meta.url),{type:'module'});
+    if(this.engine===__CULTURE47_ENGINE__){
+      // 电脑计算: the same engine runs on the PC host when one is configured; otherwise (or if it
+      // cannot be reached) the local Worker computes as before.
+      const host=remoteHost47();
+      if(host)try{return await connectRemote47(host,this.engine,this.boot.signal);}catch{/* falls back to the local Worker */}
+      return new Worker(new URL('./culture47.worker.ts',import.meta.url),{type:'module'});
+    }
     throw Error('此存档来自旧版本，新版本不再支持，请新建世界。');
   }
   private watchdog(){clearTimeout(this.timer);this.timer=setTimeout(()=>this.close(),180000);}

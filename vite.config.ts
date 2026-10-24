@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { execFileSync } from 'node:child_process';
 import {readFileSync} from 'node:fs';
+import {availableParallelism} from 'node:os';
 
 // Since 0.5.0 only the current engine is shipped. The older rule stamps the
 // current models still carry are fixed values (scripts/rule-stamps.json),
@@ -18,7 +19,8 @@ const define=Object.fromEntries([...Object.entries(stamps),['__CULTURE47_ENGINE_
 export default defineConfig({
  plugins:[react(),{name:'game-build-metadata',generateBundle(){this.emitFile({type:'asset',fileName:'build.json',source:JSON.stringify({version,commit,culture47Fingerprint})});}}],
  define,
- test:{include:['src/**/*.test.ts'],maxWorkers:1},
+ // Local runs use up to 6 cores; set VITEST_MAX_WORKERS=1 on small machines (the manual GitHub run does).
+ test:{include:['src/**/*.test.ts'],maxWorkers:Number(process.env.VITEST_MAX_WORKERS??Math.max(1,Math.min(6,Math.floor(availableParallelism()/2))))},
  build:{sourcemap:false},
  server:{host:'127.0.0.1'},
  preview:{headers},

@@ -108,5 +108,5 @@
   - `force-losses47.ts` / `force-accounting47.ts` / `force-tick47.ts`：军事窗口核心里的交锋结算直接修改私有候选（`owned=true`），结算前先保存伤害余数供后面读取。
 - **结果不变**：世界 a 推进 800 天的哈希与 0.5.4 相同；世界 b 推进 2500 天的哈希与 0.5.5（`49dacf5c`）相同。
 - **实测**：后期实时推进（关闭采样器，各跑两次）0.5.5 每天 17.7–18.1ms，本版 17.0–17.8ms。
-- **本地全量检查**：结果见下一条补记。
+- **本地全量检查（发布前，`npm run check` 的各步）**：lint、typecheck、`npm test`（186 个文件、1870 项通过，1 项跳过）、build 全部通过。`playwright test`（3 种设备）：156 项中 49 项通过、107 项失败或超时，耗时约 8.4 小时（30333 秒）。有失败的测试文件（失败数/总数）：active-world(6/9)、army-recovery-ui(3/3)、autonomous-history(3/3)、coastline(3/3)、continuation(3/3)、family(3/3)、generations(6/6)、history(3/3)、house-governance(3/3)、houses(3/3)、lifecycle(3/3)、mobile-sheet(2/3)、motion(3/3)、news(3/3)、ocean-style(3/3)、pipeline(3/3)、reference(3/3)、resume(12/15)、retirement(7/9)、save-scope(15/18)、throughput(3/3)、warm-throughput(3/3)、fms-experience61-throughput(3/3)、fms-full-map(3/6)、fms-generation58(1/6)、fms-speed68(3/3)、fms-territory64(1/3)。其中 `resume` 只在桌面设备上对照过：0.5.5（`49dacf5c`）与本版结果完全一致（1 项通过、3 项失败、1 项超时），说明不是本版引入。很多失败用例依赖 0.5.0 已删除的旧引擎（continuation / generations frozen 等），或依赖早期的界面与节奏。**请 Codex 整体梳理浏览器测试**：过时的用例要么删除要么更新；如果确实是玩法问题，附证据交给 Claude。整套跑一遍要 8 小时以上，建议先按设备或文件拆分。完整 JSON 报告只在本地（没有提交）。
 - **仍由 Claude 修改的文件**：无（本段补记除外）。

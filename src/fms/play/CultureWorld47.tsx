@@ -21,6 +21,7 @@ import {populationStamp47} from './civilization47-population-types';
 import {CultureHouses47} from './CultureHouses47';
 import {CultureNobility47} from './CultureNobility47';
 import {PerfOverlay47} from './PerfOverlay47';
+import {RemoteBadge47} from './RemoteBadge47';
 import type {NobilityRun47} from './civilization47-nobility';
 import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
@@ -552,6 +553,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     {notice&&<div className="c47-notice" role="status">{notice}</div>}{(storageReading||busy)&&<button className="c47-cancel-replay" onClick={()=>{queued.current=null;resumeAfterRecovery.current=false;setPlaying(false);if(storageReading)storageAbort.current?.abort();else operation.current?.abort();}}>取消处理</button>}
     {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)}/>}
     {showPerf&&<PerfOverlay47 root={appRoot}/>}
+    <RemoteBadge47/>
     {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存，按 ESC 取消</>}</div>}
     {!r&&<section className="c47-setup"><span className="c47-kicker">文化 · 信仰 · 国家</span><h1>让文明从你的地图诞生</h1><p>为国家选择真实文化，独立设定信仰与政体。名字从同一种文化里生长。</p>{entryNotice&&<p className="c47-entry-note" role="note">{entryNotice}</p>}
       <div className="c47-segment" role="group" aria-label="国号与城市命名模式">{([['culture-generated','文化生成'],['historical-names','历史名称']] as const).map(([v,label])=><button key={v} aria-pressed={mode===v} onClick={()=>{setMode(v);}}>{label}</button>)}</div><small>{mode==='historical-names'?'使用中文历史国号和真实地名；名称用完可同名，480 座城市均可创建。':'使用中文译写的文化名称；每种文化可生成至少 512 个不同城名。'} 人物均按文化生成，不拼接历史人物家谱。</small>

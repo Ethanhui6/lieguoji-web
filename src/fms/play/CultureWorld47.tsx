@@ -450,7 +450,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,grid=terrainGrid.grid,original=grid?new OriginalPlayRenderer(grid,source.elevations,displayFailed):null;
-    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current()),battleArrows=new BattleArrows47(),warEffects=new WarEffects47();warEffectsRef.current=warEffects;if(import.meta.env.DEV)(window as unknown as {__warEffects47?:unknown}).__warEffects47={effects:warEffects,run:()=>current.current?.run,battle:()=>battleState.current,arrows:battleArrows};
+    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current()),battleArrows=new BattleArrows47(),warEffects=new WarEffects47();warEffectsRef.current=warEffects;if(import.meta.env.DEV)(window as unknown as {__warEffects47?:unknown}).__warEffects47={effects:warEffects,run:()=>current.current?.run,battle:()=>battleState.current,arrows:battleArrows,map};
     let cellOwners:Int32Array|null=null,stateKey='';
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.

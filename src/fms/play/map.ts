@@ -6,7 +6,8 @@ import {fleetPosition} from './navy';
 import icons from './military-icons.json';
 import { unitProfile, type UnitAssignments, type UnitKey } from './military-profile';
 import type { World, Point } from '../../sim/types';
-import { armyMarkers,armyPosition } from './navigation';
+import { armyPosition } from './navigation';
+import { wanderPoint } from './army-wander47';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import type { ViewGroups47 } from './culture47-views';
@@ -176,7 +177,7 @@ export class PlayMap {
   private territoryKey='';
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
-  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,reorganizing:Record<string,number>={},formationForces?:TacticsState['forces'],viewGroups?:ViewGroups47|null): void {
+  draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,_reorganizing:Record<string,number>={},formationForces?:TacticsState['forces'],viewGroups?:ViewGroups47|null): void {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
@@ -293,7 +294,6 @@ export class PlayMap {
       if(countryLabels.some(c=>Math.abs(c.point.x-p.center.x)/scale*zoom<(c.width+p.name.length*10)/2&&Math.abs(c.point.y-p.center.y)/scale*zoom<c.size+14))continue;
       placeName(p.name,x,y-5*pixel,10,`province:${p.id}`);
     }
-    const byArmy=new Map(world.armies.map(a=>[a.id,a]));
     this.battles=(combat?.state.engagements??[]).map(e=>{const p=engagementPoint(world,e);return {id:e.id,x:p.x/scale*zoom+this.projection.x,y:p.y/scale*zoom+this.projection.y,armies:e.armies,losses:e.losses};});
     const directions=new Graphics();this.layer.addChild(directions);
     this.orderMotion.sync(world.armies.filter(a=>a.status!=='destroyed'&&(a.route.length||combat?.state.plans[a.id])).map(a=>({id:a.id,route:combat?.state.plans[a.id]?.path??[a.provinceId,...a.route]})));
@@ -307,38 +307,22 @@ export class PlayMap {
       if(active){directions.moveTo(points[0].x,points[0].y);for(const p of points.slice(1))directions.lineTo(p.x,p.y);directions.stroke({color:preview?0xffffff:0xffecc0,width:1.5*pixel,alpha:.8});for(const id of plan?.targets??[]){const p=provinces.get(id)!.center;directions.circle(p.x/scale,p.y/scale,3*pixel).stroke({color:0xfff2c9,width:pixel});}}
       if(combat&&(active||(detail!=='overview'&&foreign&&a.status==='marching'&&(perTarget.get(key)??0)<2&&arrows<(detail==='regional'?6:14)))){const color=preview?0xfff0b0:nationColor(nations.get(a.nationId)!);if(preview)drawAttackArrow(directions,points,pixel,color,true);else{const graphic=new Graphics();this.layer.addChild(graphic);this.arrowWidgets.push({id:a.id,graphic,points,pixel,color});drawAttackArrow(graphic,points,pixel,color,false,this.orderMotion.growth(a.id));}perTarget.set(key,(perTarget.get(key)??0)+1);arrows++;}
     }
-    for (const marker of armyMarkers(world,scale,{x:0,y:0,scale:zoom},armyId,frame?.armies,frame?.independentArmies)) {
-      const army=byArmy.get(marker.ids[0])!,active=marker.ids.includes(armyId??'');
-      const battle=combat?.state.engagements.find(e=>e.armies.includes(army.id));
-      const force=marker.ids.reduce((sum,id)=>sum+(byArmy.get(id)?.troops??0),0);
-      if(detail==='overview'&&!active){
-        // Far-view aggregation must not turn many small formations into a
-        // large numbered flag. Keep every group pickable as a moving point.
-        const container=new Container(),dot=new Graphics(),points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!)),point={x:points.reduce((s,p)=>s+p.x,0)/points.length,y:points.reduce((s,p)=>s+p.y,0)/points.length};
-        dot.circle(0,0,1.65*pixel).fill(nationColor(nations.get(army.nationId)!)).stroke({color:0xeee8c8,width:.55*pixel});
-        container.addChild(dot);container.position.set(point.x/scale,point.y/scale);this.layer.addChild(container);
-        this.unitGroups.push({ids:marker.ids,container,offset:{x:0,y:0},display:'dot'});continue;
-      }
-      if(battle){const sides=[...new Set(battle.armies.map(id=>byArmy.get(id)!.nationId))].sort(),side=sides.indexOf(army.nationId),angle=Math.PI+side*2*Math.PI/sides.length;marker.x+=Math.cos(angle)*17;marker.y+=Math.sin(angle)*17-8;}
-      const container=new Container(),marks=new Graphics();container.addChild(marks);this.layer.addChild(container);container.position.set(marker.x/zoom,marker.y/zoom);
-      const points=marker.ids.map(id=>frame?.armies.get(id)??armyPosition(world,byArmy.get(id)!));
-      const strength=formationForces?armyStrength47(marker.ids.map(id=>byArmy.get(id)!),formationForces):undefined;
-      this.unitGroups.push({ids:marker.ids,container,display:'detail',strength,offset:{x:marker.x/zoom-points.reduce((s,p)=>s+p.x,0)/points.length/scale,y:marker.y/zoom-points.reduce((s,p)=>s+p.y,0)/points.length/scale}});
-      // Marker size reflects real soldiers in this unit/group, not an invented hierarchy.
-      // The independent 22px picking radius still makes small units easy to select.
-      const x=0,y=0,r=(force>=12000?8:force>=5000?6.5:5)+(active?2:marker.near?0:-1.5);
-      const unit=units?unitProfile(units[army.id]):undefined,texture=unit&&this.textures.get(unit.key);
-      if(active)marks.circle(x,y,(r+3)*pixel).fill({color:0x263931,alpha:.35}).stroke({color:0xffe6a6,width:1.5*pixel});
-      marks.roundRect(-r*pixel,(r-1)*pixel,2*r*pixel,3*pixel,pixel).fill(0x263931);
-      const fraction=strength?.fraction??1;if(fraction>0)marks.rect(-r*pixel,(r-1)*pixel,2*r*pixel*fraction,3*pixel).fill(nationColor(nations.get(army.nationId)!));
-      marks.roundRect(-r*pixel,(r-1)*pixel,2*r*pixel,3*pixel,pixel).stroke({color:0x263931,width:.65*pixel});
-      if(marker.ids.length>1)label(String(marker.ids.length),x,y+5*pixel,9,'#f9f1d4',container);
-      else if((marker.near||active)&&texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=(r*2-3)*pixel;sprite.height=(r*2-3)*pixel;sprite.position.set(x,y);container.addChild(sprite);}
-      else marks.moveTo(x-2*pixel,y+3*pixel).lineTo(x-2*pixel,y-3*pixel).lineTo(x+3*pixel,y-1*pixel).stroke({color:0xfff3d4,width:pixel});
-      const strengthText=active?label(String(army.troops),x,y+24*pixel,10,'#f9f1d4',container):undefined;
-      if(reorganizing[army.id]&&(active||marker.near)&&marker.ids.length===1){const bar=new Graphics();container.addChild(bar);this.reorganizationWidgets.push({id:army.id,bar,pixel,r,full:reorganizing[army.id],text:strengthText});}
-      if(battle){const bar=new Graphics();container.addChild(bar);this.battleWidgets.push({ids:marker.ids,bar,r,pixel,text:strengthText});}
-      if((army.status==='marching'||army.status==='retreating')&&army.route.length){const from=provinces.get(army.provinceId)!.center,to=provinces.get(army.route[0])!.center,arrow=new Graphics();arrow.poly([(r+2)*pixel,-2*pixel,(r+6)*pixel,0,(r+2)*pixel,2*pixel]).fill(army.status==='retreating'?0xfacba0:0xfff8d6);arrow.rotation=Math.atan2(to.y-from.y,to.x-from.x);container.addChild(arrow);}
+    // Original Army sprite icons (Army.ApplyDisplayedSpriteIcon / ApplySpriteRendererTransform):
+    // every army is one unit icon tinted with its state colour, a 2.56-unit sprite at local scale
+    // 0.84 under the army scale ArmyIconScale 0.35 (World.ctor), elite ×1.5 (GetArmyLabelScale);
+    // no strength bars or group badges. Idle armies wander inside their province
+    // (RandomMoveInProvince); the web spreads stationary armies to fixed points of the province.
+    const iconSize=2.56*.84*.35*(1600/240),moving=(a:World['armies'][number],at:Point)=>{const end=armyPosition(world,a);return !!frame?.independentArmies?.has(a.id)||a.status==='marching'||a.status==='retreating'||Math.hypot(at.x-end.x,at.y-end.y)>1e-7;};
+    for(const army of world.armies){
+      if(army.troops<=0||army.status==='destroyed')continue;
+      const at=frame?.armies.get(army.id)??armyPosition(world,army),active=army.id===armyId,home=provinces.get(army.provinceId);
+      const spot=!moving(army,at)&&home?wanderPoint(home.polygon,army.id):at;
+      const container=new Container();this.layer.addChild(container);container.position.set(spot.x/scale,spot.y/scale);
+      this.unitGroups.push({ids:[army.id],container,display:'detail',offset:{x:(spot.x-at.x)/scale,y:(spot.y-at.y)/scale}});
+      const unit=units?unitProfile(units[army.id]):undefined,texture=this.textures.get(unit?.key??'Cavalry'),size=Math.max(iconSize*(unit?.key==='Elite'?1.5:1),7*pixel);
+      if(active){const ring=new Graphics();ring.circle(0,0,size*.75).fill({color:0x263931,alpha:.25}).stroke({color:0xffe6a6,width:1.5*pixel});container.addChild(ring);}
+      if(texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=size;sprite.height=size;sprite.tint=nationColor(nations.get(army.nationId)!);container.addChild(sprite);}
+      else{const dot=new Graphics();dot.circle(0,0,size*.3).fill(nationColor(nations.get(army.nationId)!));container.addChild(dot);}
     }
     for(const e of combat?.state.engagements??[]){if(detail==='overview')continue;const p=engagementPoint(world,e),x=p.x/scale,y=p.y/scale,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,5*pixel).fill({color:0x392c28,alpha:.8});mark.moveTo(x-3*pixel,y-3*pixel).lineTo(x+3*pixel,y+3*pixel).moveTo(x+3*pixel,y-3*pixel).lineTo(x-3*pixel,y+3*pixel).stroke({color:0xffe4b4,width:1.5*pixel});const impact=new Graphics();impact.position.set(x,y);impact.circle(0,0,7*pixel).stroke({color:0xffd69a,width:1.5*pixel});for(let i=0;i<6;i++){const a=i*Math.PI/3;impact.moveTo(Math.cos(a)*9*pixel,Math.sin(a)*9*pixel).lineTo(Math.cos(a)*13*pixel,Math.sin(a)*13*pixel).stroke({color:0xffe6b9,width:pixel});}impact.alpha=0;this.layer.addChild(impact);this.impacts.push({id:e.id,graphic:impact});}
     if(combat)this.updateBattles(world,combat.state);this.updateReorganization(world);

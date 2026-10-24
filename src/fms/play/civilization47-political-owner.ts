@@ -70,7 +70,7 @@ export function recordPoliticalOccupation47(r:FoundingForces47,before:PreviousOw
   let changed=false;
   for(const p of r.world.provinces){const old=before.provinces.find(v=>v.id===p.id);if(!old||old.controller===p.controller)continue;changed=true;
     const names=[old.controller,p.controller].map(id=>r.world.nations.find(n=>n.id===id)!.name);
-    recordHistory(r.chronicle,r.world,r.clock.tick,'occupation',`${names[1]}取得${p.name}`,`实际控制从${names[0]}转移至${names[1]}；城市、地形与法理归属分别保留。`,[old.controller,p.controller],p.id);
+    recordHistory(r.chronicle,r.world,r.clock.tick,'occupation',`${p.name}被${names[1]}占领`,`实际控制从${names[0]}转移至${names[1]}；城市、地形与法理归属分别保留。`,[old.controller,p.controller],p.id);
   }if(changed)reconcileGovernmentContinuity47(r);
 }
 export function assertPolitics47(r:PoliticalRun47){assertPopulation47(r);assertDiplomacy(r.diplomacy,r.world);assertWars47(r.nativeWars,r);assertNativeDiplomacy46(r.nativeDiplomacy,r);assertArmyAutonomy47(r);assertNavalAutonomy47(r);}

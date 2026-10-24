@@ -13,7 +13,7 @@ function declared(){const session=new Culture47Session();session.load(journal);c
 describe('committed campaign card projection',()=>{
  it('uses the live relation, exact declaration record and only current participants without mutating the run',()=>{
   const run=declared(),campaign=run.nativeWars.campaigns[0],before=structuredClone(run),card=campaignCard47(run,campaign,['verified-siege'])!;
-  expect(card.history).toBe('complete');expect(card.declarationReason).toBe('领土争夺');expect(card.goalCount).toBeGreaterThan(0);expect(card.sides[0].label).toBe('进攻方');expect(card.sides[0].nationIds).toContain('n-0');expect(card.sides[1].nationIds).toContain('n-1');expect(card.globalActiveSieges).toBe(1);expect(card.territoryLedgerNote).toMatch(/可靠的战役归属字段/);expect(campaignCardsForNation47(run,'n-0',['verified-siege']).map(item=>item.id)).toEqual([campaign.id]);expect(run).toEqual(before);
+  expect(card.history).toBe('complete');expect(card.declarationReason).toBe('领土征服');expect(card.goalCount).toBeGreaterThan(0);expect(card.sides[0].label).toBe('进攻方');expect(card.sides[0].nationIds).toContain('n-0');expect(card.sides[1].nationIds).toContain('n-1');expect(card.globalActiveSieges).toBe(1);expect(card.territoryLedgerNote).toMatch(/可靠的战役归属字段/);expect(campaignCardsForNation47(run,'n-0',['verified-siege']).map(item=>item.id)).toEqual([campaign.id]);expect(run).toEqual(before);
  });
  it('does not invent an initiator, reason or original goals for an unknown opening war',()=>{
   const run=attachPolitics47(createFoundingForces47(opening.terrain,opening.count,opening.cityCount,'war',opening.setup)),campaign=run.nativeWars.campaigns[0],card=campaignCard47(run,campaign)!;

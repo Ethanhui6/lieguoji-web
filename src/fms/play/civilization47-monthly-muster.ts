@@ -68,7 +68,7 @@ export function musterMonth47(r:FoundingForces47){
     if(!q.allowed||!Number.isSafeInteger(q.count)||q.count<0||!places.length||r.world.armies.length+q.count>500)continue;
     history.lastMonth=month;history.recent=[...history.recent,month].slice(-3);
     for(let i=0;i<q.count;i++){r.tactics.seed=(Math.imul(1664525,r.tactics.seed)+1013904223)>>>0;create(n.id,places[r.tactics.seed%places.length].id,'emergency');}
-    if(q.count)announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${n.name}紧急动员，征召${q.count}支军队`,'原月检国运与君主特性决定数量；网页按安全核心集结、保留年度与五年冷却，不扣常备兵源或粮储。',[n.id],null);
+    if(q.count)announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${n.name}进行一次紧急动员，征招${q.count}个军团`,'原月检国运与君主特性决定数量；网页按安全核心集结、保留年度与五年冷却，不扣常备兵源或粮储。',[n.id],null);
   }
   r.dailyEconomy.lastMusterMonth=month;
 }

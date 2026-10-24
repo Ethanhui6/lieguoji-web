@@ -67,7 +67,7 @@ export function diePersonOwned47(r:Population47,person:FamilyPerson47){
    // Chronicle's historical envelope is shared by old engines. Keep its kind
    // vocabulary immutable; the typed lifecycle ledger binds the death subtype
    // by ID for validation/UI, never by matching a person's displayed name.
-   row.deathHistoryId=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===s.nationId)!.name}：${person.identity.name}去世，享年${person.age}岁`,'真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。',[s.nationId],null,[old]).id;
+   row.deathHistoryId=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===s.nationId)!.name}${person.identity.name}逝世`,`享年${person.age}岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。`,[s.nationId],null,[old]).id;
   },recordState:(s,e)=>{if(s.i!==e.stateId||row.deathHistoryId===null)throw Error('死亡历史国家归属不一致。');},
   pastRole:(role,time,reason)=>pastRole47(role,time,reason),resolveState:s=>resolveKnownSuccessionOwned47(r,s.nationId,person,'death'),
  });

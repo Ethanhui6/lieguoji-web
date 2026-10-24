@@ -29,7 +29,7 @@ describe('real47 monthly death and known-person government continuity',()=>{
   const next=advanceFoundingPopulation47(input,31*120);
   expect(input).toEqual(before);expect(next.kin.persons[id].isAlive).toBe(false);expect(next.people.persons[id].alive).toBe(false);
   expect(next.kin.persons[id].spouseId).toBe(spouse);expect(next.kin.persons[spouse].spouseId).toBe(0);expect(next.kin.persons[id].roles).toEqual([]);expect(next.kin.persons[id].pastRoles.some(p=>p.endReason==='death'&&p.roleType==='NationalLeader')).toBe(true);
-  const death=next.kin.lifecycle.deaths.find(d=>d.personId===id)!;expect(death).toMatchObject({day:31,tick:3720,wasLeaderOf:nation});expect(next.chronicle.entries.find(e=>e.id===death.deathHistoryId)?.text).toContain('去世');
+  const death=next.kin.lifecycle.deaths.find(d=>d.personId===id)!;expect(death).toMatchObject({day:31,tick:3720,wasLeaderOf:nation});expect(next.chronicle.entries.find(e=>e.id===death.deathHistoryId)?.text).toContain('逝世');
   expect(next.chronicle.leaders[nation][0].endedDay).toBe(31);expect(next.people.nations[nation].leaderId).not.toBe(id);expect(next.chronicle.ended[nation]).toBeUndefined();expect(next.kin.lifecycle.random.draws).toBe(Object.keys(input.kin.persons).length);assertPopulation47(next);
  });
  it('replays split month steps and JSON population restoration exactly without changing other randomness',()=>{

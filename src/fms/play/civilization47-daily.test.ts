@@ -88,7 +88,7 @@ describe('atomic real47 food, monthly tax and muster candidate',()=>{
     for(const rel of r.world.statecraft!.relations)if([id,other].includes(rel.a)&&[id,other].includes(rel.b))rel.status='war';r.upperCombat.nations[id].coreThreshold=100;r.destiny.nations[id].destiny=50;r.upperCombat.nations[id].destiny=50;
     const person=r.people.persons[r.people.nations[id].leaderId!];person.traits=[];r.kin.persons[person.id].traits=[];const expected=nativeMonthlyEmergencyQuantity(50,personTraits(person)).count,oldIds=new Set(r.world.armies.map(a=>a.id));
     const out=settleCivilizationDay47(r,noOrders),emergency=out.world.armies.filter(a=>a.nationId===id&&!oldIds.has(a.id)&&out.tactics.forces[a.id].kind==='emergency');expect(emergency.length).toBe(expected);expect(expected).toBeGreaterThan(0);expect(out.tactics.mobilizations[id].lastMonth).toBe(1);
-    const entry=out.chronicle.entries.filter(e=>e.nationIds.includes(id)&&e.text.includes('紧急动员'));expect(entry).toHaveLength(1);expect(entry[0].text).toContain(`征召${expected}支军队`);expect(entry[0].nationIds).toEqual([id]);expect(out.world.events.some(e=>e.id===entry[0].sourceEventId)).toBe(true);
+    const entry=out.chronicle.entries.filter(e=>e.nationIds.includes(id)&&e.text.includes('紧急动员'));expect(entry).toHaveLength(1);expect(entry[0].text).toContain(`征招${expected}个军团`);expect(entry[0].nationIds).toEqual([id]);expect(out.world.events.some(e=>e.id===entry[0].sourceEventId)).toBe(true);
     const snapshot=structuredClone(out);musterMonth47(out);expect(out).toEqual(snapshot);expect(emergency.every(a=>out.forceSpeed.armies[a.id]&&out.armyPositions.records[a.id])).toBe(true);
   });
   it('peace retirement excludes idle armies still at sea or in transit and adds no war losses',()=>{

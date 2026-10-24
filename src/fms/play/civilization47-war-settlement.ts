@@ -1,3 +1,4 @@
+import {warSettledText47} from './casus-labels47';
 import {nativeBuildInternalPlan,nativeClassifyInternal,type NativeInternalWar} from './native-war/internal-settlement';
 import {nativeSuppressionDestiny} from './native-war/suppression-destiny';
 import {isCivilWarCb47} from './civil-war47-types';
@@ -14,7 +15,6 @@ import {nativeBuildSettlementPlan} from './native-war/settlement-plan';
 import {nativeExecuteSettlement} from './native-war/settlement-execute';
 import {nativeBuildEffect,nativeEffectResult,nativeReparationAmount} from './native-war/settlement-effects';
 import {nativeDecidePeaceReason,nativeHasAutonomousDiplomacyParticipant,nativeMaximumDurationWarIds,type NativePeaceReason} from './native-war/peace';
-import {WAR28_PEACE_LABELS} from './war28-settlement';
 import {participantNationIds46,opposedPairs46,coversPair46} from './war46-coalition';
 import {transferEconomy} from '../../compat/v0_4/sim/statecraft';
 import {reconcileCore} from './core-refresh51';
@@ -87,8 +87,10 @@ export function settleWar47(r:PoliticalRun47,c:War46Campaign,reason:NativePeaceR
   }
   c.settlement=w?{reason,tick:r.clock.tick,winnerSide:plan?.winnerSide??null,outcomes:[...(plan?.outcomes??[])],enforcedGoals:[...(plan?.enforcedGoals??[])],transfers:structuredClone(plan?.appliedTransfers??[]),effects:structuredClone(plan?.effectResults??[]),confirmedOwnership}:null;
   c.endedTick=r.clock.tick;r.nativeWars.revision++;
-  const label=WAR28_PEACE_LABELS[reason],names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name);
-  announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${names.join('与')}的战争结束：${label}`,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。`,participants,null);
+  const names=c.nations.map(id=>r.world.nations.find(n=>n.id===id)!.name);
+  const nameOf=(id:string|null,fallback:string)=>r.world.nations.find(n=>n.id===id)?.name??fallback,declaration=r.nativeDiplomacy.declarations.find(d=>d.warId===c.id);
+  const text=warSettledText47({aggressor:nameOf(c.attacker,names[0]),defender:nameOf(c.defender,names[1]),winnerSide:plan?.winnerSide===0||plan?.winnerSide===1?plan.winnerSide:null,annexed:!!plan?.annexation,reason,goal:declaration?.goals.find(g=>g.primary)??declaration?.goals[0],ceded:plan?.appliedTransfers.length??0,months:Math.floor((r.clock.tick-c.openedTick)/120/30)});
+  announce(r.chronicle,r.world,r.clock.tick,'diplomacy',text,`${reason===11?'玩家干预停战，不执行割地和赔款。':plan?`按原作和约规则执行：${plan.appliedTransfers.length}项转地。`:'开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。'}${warHistoryDetails47(r,c,true)}其他仍在进行的战争保留。`,participants,null);
   if((c.internal?.casusBelliId as number|undefined)===14)recordRegularRebellionEnd47(r,c);
   if((c.internal?.casusBelliId as number|undefined)===15)recordFamilyRebellionEnd47(r,c);
   if(isCivilWarCb47(c.internal?.casusBelliId as number))recordCivilWarEnd47(r as unknown as Parameters<typeof recordCivilWarEnd47>[0],c);

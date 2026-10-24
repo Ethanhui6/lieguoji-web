@@ -52,9 +52,13 @@ export function appointKnownPersonOwned47(r:Population47,nationId:string,heir:Fa
   r.sovereignty.reigns[id]=heir.id;r.sovereignty.revision++;delete r.kin.lifecycle.vacancies[nationId];
   // StateManager.AppointLeader: the new leader's family rules (original-family worlds).
   setRulingFamily47(r,nationId,heir.familyId);
-  const start=cause==='abdication'?`${old.name}传位，`:cause==='death'?`${old.name}去世后，`:cause==='restoration'?'重获领土后，':'领袖空缺后，';
-  const leaderName=rulerDisplayName47(nation,{...reign,given:identity.given},identity.titleAtAccession);
+  const leaderName=rulerDisplayName47(nation,{...reign,given:identity.given},identity.titleAtAccession),stateName=r.world.nations.find(n=>n.id===nationId)!.name;
+  // LeaderAscensionEvent.GetDescription: hereditary texts by polity, election for republics.
+  const text=cause==='restoration'?`${leaderName}恢复${stateName}的统治，取代了${old.name}`:cause!=='death'?`${leaderName}成为${stateName}的统治者，前任领导人${old.name}卸任`:
+    ['Republic','Federation'].includes(nation.polity)?`${leaderName}在选举中当选为${stateName}的领导人，前任${old.name}卸任`:
+    nation.polity==='Empire'?`${leaderName}继承${stateName}的帝位，前皇帝${old.name}驾崩`:nation.polity==='Kingdom'?`${leaderName}继承${stateName}的王位，前国王${old.name}去世`:
+    nation.polity==='Tribal'?`${leaderName}成为${stateName}的酋长，前酋长${old.name}去世`:nation.polity==='Theocracy'?`${leaderName}被选为${stateName}的教宗，前教宗${old.name}去世`:`${leaderName}继承${stateName}的统治权，前任统治者${old.name}去世`;
   const reason=cause==='abdication'?'玩家安排已知家族成员传位，前任仍然在世。':(['Republic','Federation'].includes(nation.polity)?'按原作共和国／联邦紧急候选规则，从至少25岁的已知在世成员中补位；正常投票选举尚未接入。':'按已恢复的本政体候选规则，从真实登记的在世人物中接任。');
-  announce(r.chronicle,r.world,r.clock.tick,'accession',`${r.world.nations.find(n=>n.id===nationId)!.name}：${start}${leaderName}继任（第${order}任）`,reason+' 人物身份、生日、能力和亲属关系保留；家主独立继承。',[nationId],null,[reign]);
+  announce(r.chronicle,r.world,r.clock.tick,'accession',text,reason+' 人物身份、生日、能力和亲属关系保留；家主独立继承。',[nationId],null,[reign]);
   return reign;
 }

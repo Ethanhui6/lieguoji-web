@@ -26,11 +26,12 @@ import {personSkills} from './court16-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {POLITIES} from './upper14-state';
 import {recordHistory} from './civilization47-history';
+import {CASUS_BELLI_NAMES47,warDeclaredText47} from './casus-labels47';
 import {warHistoryDetails47} from './civilization47-war-history';
 
 import {reconcileLosses} from './war27-losses';
 
-export const DECLARATION_LABELS46:Record<number,string>={1:'领土争夺',2:'吞并战争',3:'附庸战争',6:'文化统一'};
+export const DECLARATION_LABELS46:Record<number,string>=CASUS_BELLI_NAMES47;
 // Only effects already executed by the live settlement adapter may be chosen.
 // Religion/internal CBs remain explicitly unavailable in this slice.
 const supported=NATIVE_CASUS_BELLI_CATALOG.filter(c=>[1,2,6].includes(c.id));
@@ -77,8 +78,8 @@ function start(r:War46Run,d:NativeDeclaration<NativeDeclaredGoal>,c:ReturnType<t
  // Actual military and naval targets consume the selected declaration scope.
  // Actual47 Army autonomy consumes current campaigns and real land/sea paths.
  // The old port-to-port executor must not gate these declarations.
- const an=r.world.nations.find(n=>n.id===a.nationId)!.name,bn=r.world.nations.find(n=>n.id===b.nationId)!.name,reason=`${DECLARATION_LABELS46[d.casusBelliId]}。${warHistoryDetails47(r,war)}`;
- r.world.events.push({id:r.world.nextEventId++,day:r.world.day,kind:'diplomacy',text:`${an}向${bn}宣战：${DECLARATION_LABELS46[d.casusBelliId]}`,reason});r.world.events=r.world.events.slice(-160);setDecision(r.world,a.nationId,'宣战',reason);setDecision(r.world,b.nationId,'应战',reason);recordHistory(r.chronicle,r.world,r.clock.tick,'diplomacy',`${an}向${bn}宣战：${DECLARATION_LABELS46[d.casusBelliId]}`,reason,members.map(m=>r.nativeWars.nationIds.find(n=>n[0]===m.stateId)![1]),null,[],r.world.nextEventId-1);return war;
+ const an=r.world.nations.find(n=>n.id===a.nationId)!.name,bn=r.world.nations.find(n=>n.id===b.nationId)!.name,reason=`${DECLARATION_LABELS46[d.casusBelliId]}。${warHistoryDetails47(r,war)}`,side=(n:0|1)=>(war.coalition?.members??[]).filter(m=>m.side===n).length,text=warDeclaredText47(an,d.casusBelliId,bn,d.goals.find(g=>g.primary)??d.goals[0],side(0),side(1));
+ r.world.events.push({id:r.world.nextEventId++,day:r.world.day,kind:'diplomacy',text,reason});r.world.events=r.world.events.slice(-160);setDecision(r.world,a.nationId,'宣战',reason);setDecision(r.world,b.nationId,'应战',reason);recordHistory(r.chronicle,r.world,r.clock.tick,'diplomacy',text,reason,members.map(m=>r.nativeWars.nationIds.find(n=>n[0]===m.stateId)![1]),null,[],r.world.nextEventId-1);return war;
 }
 export function evaluateDeclaration47(r:War46Run,id:string){
  if(!r.diplomacy.worldAuto||!r.diplomacy.nations[id]||overlord46(r,id)!==null)return null;

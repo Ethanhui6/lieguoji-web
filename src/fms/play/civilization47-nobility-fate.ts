@@ -86,13 +86,13 @@ export function executeFamilyFate47(r:NobilityRun47,id:string,fate:FamilyFate47,
   const from=fam.nationId,wasRuling=fam.ruling;
   if(fate==='fealty'){
     fam.ruling=false;fam.influence=f(fam.influence*f(wasRuling?.7:.5));moveFamily47(r,id,conqueror);
-    event(r,`${name(r,id)}向${state(r,conqueror)}宣誓效忠`,'失去全部领地后归附攻占方，影响力下降。',[from,conqueror]);
+    event(r,`${name(r,id)}放弃抵抗向${state(r,conqueror)}宣誓效忠，影响力下降${wasRuling?30:50}%`,'失去全部领地后归附攻占方，影响力下降。',[from,conqueror]);
   }else if(fate==='restore')executePartialRestore(r,id,conqueror,from);
   else if(fate==='dispossessed')executeDispossessed(r,id,conqueror,from);
   else if(fate==='purge'){
     const k=r.kin.families[id];
-    for(const pid of [...new Set([...k.memberIds,...k.collateralMemberIds])]){const p=r.kin.persons[pid];if(p?.isAlive)diePersonOwned47(r,p);}
-    event(r,`${name(r,id)}遭到清洗`,`${state(r,conqueror)}处死了家族全部在世成员，家族就此消亡。`,[from,conqueror]);
+    let killed=0;for(const pid of [...new Set([...k.memberIds,...k.collateralMemberIds])]){const p=r.kin.persons[pid];if(p?.isAlive){diePersonOwned47(r,p);killed++;}}
+    event(r,`${name(r,id)}被${state(r,conqueror)}彻底清洗，${killed}名成员全部被处决`,`${state(r,conqueror)}处死了家族全部在世成员，家族就此消亡。`,[from,conqueror]);
     retire(r,n,id);
   }else executeExile(r,id,conqueror,from);
   // A ruling family that lost its rule leaves the state without one (0) until a new leader is appointed.
@@ -108,7 +108,7 @@ function executeDispossessed(r:NobilityRun47,id:string,conqueror:string,from:str
   const n=r.nobility!,fam=n.families[id];
   release(n,fam);fam.influence=f(fam.influence*f(.2));fam.wealth=Math.trunc(f(fam.wealth*f(.5)));fam.ruling=false;
   if(!alive(r,from))moveFamily47(r,id,conqueror);
-  event(r,`${name(r,id)}被剥夺全部领地`,'失去领地后影响力与财富大减。',[from,conqueror]);
+  event(r,`${name(r,id)}被${state(r,conqueror)}剥夺全部封地，沦为无地贵族`,'失去领地后影响力与财富大减。',[from,conqueror]);
 }
 /** CanReclaimProvince: free land, or a holder with more than one province that is outweighed. */
 function canReclaim(r:NobilityRun47,provinceId:string,id:string,nationId:string){
@@ -137,7 +137,7 @@ function executePartialRestore(r:NobilityRun47,id:string,conqueror:string,from:s
   fam.ruling=false;fam.influence=f(fam.influence*f(.5));
   if(fam.nationId!==conqueror&&!moveFamily47(r,id,conqueror)){executeDispossessed(r,id,conqueror,from);return;}
   for(const v of lands.slice(0,count))grant(r,v.p,id);
-  event(r,`${name(r,id)}在${state(r,conqueror)}治下收复${count}个故地`,'凭历史宣称部分恢复领地并归附攻占方。',[from,conqueror]);
+  event(r,`${name(r,id)}在被${state(r,conqueror)}征服后获准恢复${count}块历史领地（共${lands.length}块）`,'凭历史宣称部分恢复领地并归附攻占方。',[from,conqueror]);
 }
 function executeExile(r:NobilityRun47,id:string,conqueror:string,from:string){
   const n=r.nobility!,fam=n.families[id],random=nobilityRandom47(n);
@@ -165,7 +165,7 @@ function executeExile(r:NobilityRun47,id:string,conqueror:string,from:string){
   const rel=n.relations[id]??(n.relations[id]={});
   if(victor&&victor.familyId>0&&n.families[String(victor.familyId)])rel[String(victor.familyId)]=-15;
   if(host&&host.familyId>0&&n.families[String(host.familyId)]&&String(host.familyId)!==id)rel[String(host.familyId)]=15;
-  event(r,`${name(r,id)}流亡${state(r,target)}`,`失去领地后离开，投奔${state(r,target)}。`,[from,conqueror,target]);
+  event(r,`${name(r,id)}被${state(r,conqueror)}击败后流亡至${state(r,target)}`,`失去领地后离开，投奔${state(r,target)}。`,[from,conqueror,target]);
 }
 /** Province.ConqueredBy for the province's family: drop it; the last one decides the fate. */
 export function familyLostProvince47(r:NobilityRun47,id:string,provinceId:string,conqueror:string,war:FateWar47){

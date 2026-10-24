@@ -54,7 +54,7 @@ describe('actual known-heir accession and current office share the presentation 
     const before=structuredClone(base),oldEntries=structuredClone(base.chronicle.entries),oldRulers=structuredClone(base.civilization.rulers);
     const preview=previewFamilySuccession47(base,id),next=appointFamilyRuler47(base,id,preview.expected),ruler=currentRuler47(next.civilization,next.chronicle,id)!,office=next.civilization.nations[id];
     const display=rulerDisplayName47(office,ruler,ruler.title),event=next.chronicle.entries.at(-1)!;
-    expect(event.text).toContain(`${display}继任（第2任）`);
+    expect(event.text).toMatch(new RegExp(`^${display}成为.+的统治者，前任领导人.+卸任$`));
     expect(next.chronicle.entries.slice(0,oldEntries.length)).toEqual(oldEntries);
     for(const [key,value] of Object.entries(oldRulers))expect(next.civilization.rulers[key]).toEqual(value);
     if(office.cultureId==='chinese'||office.cultureId==='japanese')expect(event.text).not.toContain(ruler.regnalName+'一世');
@@ -65,7 +65,7 @@ describe('actual known-heir accession and current office share the presentation 
     const id='n-0',preview=previewFamilySuccession47(base,id,'景明'),next=appointFamilyRuler47(base,id,preview.expected,'景明'),ruler=currentRuler47(next.civilization,next.chronicle,id)!;
     const title=ruler.title;
     expect(rulerDisplayName47(next.civilization.nations[id],ruler,title)).toBe('景明'+title);
-    expect(next.chronicle.entries.at(-1)!.text).toContain(`景明${title}继任（第2任）`);
+    expect(next.chronicle.entries.at(-1)!.text).toMatch(new RegExp(`^景明${title}成为`));
     expect(next.chronicle.entries.at(-1)!.text).not.toContain('景明一世');
     expect(next.kin.persons[preview.personId].identity.name).toBe(preview.name);
     expect(next.chronicle.leaders[id].at(-1)!.regnalName).toBe('景明');assertPopulation47(next);
@@ -83,7 +83,7 @@ describe('actual known-heir accession and current office share the presentation 
     diePersonOwned47(next,next.kin.persons[id]);assertPopulation47(next);
     const ruler=currentRuler47(next.civilization,next.chronicle,'n-4')!;
     expect(ruler).not.toBeNull();expect(ruler.title).toBe('执政官');
-    expect(next.chronicle.entries.at(-1)!.text).toContain(`${ruler.name}执政官继任（第2任）`);
+    expect(next.chronicle.entries.at(-1)!.text).toContain(`${ruler.name}执政官在选举中当选为`);
     expect(rulerDisplayName47(next.civilization.nations['n-4'],ruler,ruler.title)).toBe(ruler.name+'执政官');
   });
 });

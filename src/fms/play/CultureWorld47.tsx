@@ -81,8 +81,7 @@ import {nationPoles47,warClaimProvinces47} from './war-claims47';
 import {CultureMilitary47,intentMatchesForce47,type SelectedForce47} from './CultureMilitary47';
 import {actualForces47} from './force-runtime47';
 import {armySpatialFor47} from './army-geography47';
-import {remainingArmyTravelPoints47} from './army-travel47-state';
-import {nationsAtWar} from './realtime-statecraft';
+import {BattleArrowState47,BattleArrows47} from './battle-arrows47';
 import type {MilitaryIntent47} from './culture47-orders';
 
 type Culture47Request=Exclude<WorkerRequest,{type:'load'|'verify'}>|{type:'load';journal:Culture47Journal};
@@ -90,7 +89,7 @@ type ReadyCulture47={client:Culture47Client;snapshot:Culture47Snapshot;journal:C
 const polityLabels:Record<NativePolity,string>={Kingdom:'王国',Empire:'帝国',Republic:'共和国',Federation:'联邦',Tribal:'部族',Theocracy:'神权国'};
 const failText=(e:unknown)=>e instanceof Error?e.message:String(e);
 async function verifyJournal(journal:Culture47Journal,signal?:AbortSignal,progress?:Parameters<Culture47Client['verify']>[1]){const client=new Culture47Client(journal.engine);try{await client.verify(journal,{...progress,signal,longReplay:true});}finally{client.close();}}
-const SETUP_KEY='lieguoji-world-setup-v1';
+const SETUP_KEY='lieguoji-world-setup-v1',ATTACK_ARROWS_KEY='lieguoji-attack-arrows-v1';
 const defaultCultures:CultureId47[]=['chinese','japanese','english','arab','roman','german'];
 function originalRuler(run:FoundingForces47,id:string){const reign=run.chronicle.leaders[id]?.at(-1);if(!reign||reign.endedDay!==null||Object.hasOwn(run.chronicle.ended,id))return null;const r=run.civilization.rulers[reign.id];return {...reign,name:r.name,given:r.given,title:r.titleAtAccession+'（就任时）'};}
 /** Original StateInfoUI: header (name, leader), state actions, then the
@@ -151,14 +150,14 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const [leaving,setLeaving]=useState(false),[historyFocus,setHistoryFocus]=useState<number|null>(null),[historyEpoch,setHistoryEpoch]=useState(0);
   const [politicalPreview,setPoliticalPreview]=useState<Culture47Snapshot['politicalPreview']|null>(null);
   const [nationId,setNationId]=useState('n-0'),[cityId,setCityId]=useState<string|null>(null),[panel,setPanel]=useState<'nation'|'history'|'military'|'province'|null>(null),[provinceId,setProvinceId]=useState<string|null>(null),[panelExpanded,setPanelExpanded]=useState(false);
-  const [colorView,setColorView]=useState<ColorView47>('state'),[mapMenu,setMapMenu]=useState(false),[generateConfirm,setGenerateConfirm]=useState(false),[mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
+  const [colorView,setColorView]=useState<ColorView47>('state'),[mapMenu,setMapMenu]=useState(false),[attackArrows,setAttackArrows]=useState(()=>{try{return localStorage.getItem(ATTACK_ARROWS_KEY)==='1';}catch{return false;}}),[generateConfirm,setGenerateConfirm]=useState(false),[mapMode,setMapMode]=useState<'political'|'terrain'>('political'),[military,setMilitary]=useState(false),[force,setForce]=useState<SelectedForce47|null>(null),[targetMode,setTargetMode]=useState<'march'|'retreat'|null>(null),[speed,setSpeed]=useState(1);
   const [militaryPreview,setMilitaryPreview]=useState<Culture47Snapshot['militaryPreview']|null>(null),queued=useRef<({kind:'command';command:Culture47Request}|{kind:'save';exit:boolean}|{kind:'close'})|null>(null);
   const [advancing,setAdvancing]=useState(false),[storageReading,setStorageReading]=useState(true),[storageAttempt,setStorageAttempt]=useState(0);
   const [actualRate,setActualRate]=useState<number|null>(null),rateSample=useRef<{at:number;tick:number}|null>(null);
   const playbackBudget=culture47PlaybackBudget(snapshot?.run.life.secondsPerDay??.1,speed,snapshot?.journal.engine===__CULTURE47_ENGINE__||frozenCulture47(snapshot?.journal.engine??'')?.protocol===2,snapshot?.journal.engine===__CULTURE47_ENGINE__);
   const instantDisplay=useRef(false);
   useEffect(()=>{rateSample.current=null;setActualRate(null);},[playing,speed]);
-  const warEffectsRef=useRef<WarEffects47|null>(null),knownWars=useRef<{runId:string;wars:Map<number,boolean>}|null>(null);
+  const battleState=useRef<{runId:string;state:BattleArrowState47}|null>(null),warEffectsRef=useRef<WarEffects47|null>(null),knownWars=useRef<{runId:string;wars:Map<number,boolean>}|null>(null);
   const panelScroll=useRef<HTMLElement>(null),restamp=useRef(new WeakMap<object,((r:never)=>unknown)|null>());
   // Time stops only when the player pauses. A previewed decision (宣战/停战 preview,
   // military target) holds time while its confirmation is open, then resumes.
@@ -194,8 +193,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const readyWorld=useRef<ReadyCulture47|null>(null);
   const storageDatabase=useRef<Culture47Database>(CULTURE47_LONGPLAY_DATABASE);
   const storageChoice='auto';
-  const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
-  current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView};
+  const mapControl=useRef<{zoom:(n:number)=>void;fit:()=>void}|null>(null),selected=useRef({nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView,attackArrows,selectedState:null as string|null}),paint=useRef<()=>void>(()=>{}),lastSaved=useRef(-1);
+  current.current=snapshot;selected.current={nationId,cityId,force,targetMode,military,mapMode,militaryPreview,colorView,attackArrows,selectedState:panel==='nation'?nationId:null};
   useEffect(()=>{const controller=new AbortController(),reading=new AbortController();lifetime.current=controller;storageAbort.current=reading;client.current=new Culture47Client();setStorageReading(true);setStorageReady(false);setLocked(false);
     const candidate:{value:ReadyCulture47|null}={value:null};
     const discard=()=>{candidate.value?.client.close();candidate.value=null;};
@@ -451,7 +450,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     let disposed=false,failed=false,cleanup=()=>{};
     const displayFailed=(e:unknown)=>{if(disposed||failed)return;failed=true;displayReady.current=false;resumeAfterRecovery.current=false;setPlaying(false);cleanup();setRenderFault(failText(e));};
     const element=host.current,source=current.current.run.terrain,grid=terrainGrid.grid,original=grid?new OriginalPlayRenderer(grid,source.elevations,displayFailed):null;
-    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current()),warEffects=new WarEffects47();warEffectsRef.current=warEffects;if(import.meta.env.DEV)(window as unknown as {__warEffects47?:unknown}).__warEffects47={effects:warEffects,run:()=>current.current?.run};
+    const renderer:FmsRenderer|OriginalPlayRenderer=original??new FmsRenderer(()=>{},displayFailed),map=new PlayMap(()=>paint.current(),false),orderLine=new Graphics(),combatOverlay=new CombatOverlay47(()=>paint.current()),battleArrows=new BattleArrows47(),warEffects=new WarEffects47();warEffectsRef.current=warEffects;if(import.meta.env.DEV)(window as unknown as {__warEffects47?:unknown}).__warEffects47={effects:warEffects,run:()=>current.current?.run,battle:()=>battleState.current,arrows:battleArrows};
     let cellOwners:Int32Array|null=null,stateKey='';
     renderer.setOceanAppearance('paper');
     // Pulsing contact geometry must not invalidate the terrain/label render group.
@@ -473,12 +472,16 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
     const sea=graphFor46(current.current.run);
     void renderer.init(element).then(()=>{
-      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(warEffects.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
+      if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(battleArrows.layer);renderer.attachGameplayLayer(warEffects.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       exportImage.current=async()=>{paint.current();return await renderer.exportPng();};
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
       const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original&&grid){map.useCellPolitics(true);map.useOriginalIcons(true);const w=current.current!.run;map.setOriginalPorts(originalPortCities(grid,source,w.world.cities.map(c=>({id:c.id,position:c.position,capital:false})),w.scale));}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
       canvas.dataset.coastline=JSON.stringify({algorithm:FMS_COAST_CURVE,chains:coast.chains,sourceSegments:coast.sourceSegments,points:coast.points,width:FMS_COAST_LINE_WIDTH,color:FMS_COAST_LINE_COLOR});
+      // Province battle arrows (original Province.UpdateAttackArrow), redrawn at the camera.
+      let battleGrowing=false;
+      const drawBattleArrows=(now:number)=>{const s=current.current,state=battleState.current;if(!s||!state||state.runId!==s.run.id)return false;const r=s.run,selection=selected.current;
+        return battleArrows.draw(state.state.all,new Map(r.world.nations.map(n=>[n.id,nationColor(n)])),p=>({x:p.x/r.scale,y:p.y/r.scale}),view.camera.scale,view.viewport.width/view.camera.scale*(240/1600),selection.attackArrows,selection.selectedState,now);};
       paint.current=()=>{const s=current.current;if(disposed||failed||!s)return;try{const r=s.run;
         if(richDiagnostics)canvas.dataset.mapPaints=String(++paintCount);
         const selectedCity=r.world.cities.find(c=>c.id===selected.current.cityId);
@@ -492,16 +495,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         }
         if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}
         map.draw(r.world,r.scale,view.camera.scale,selectedCity?.provinceId??null,selection.force?.kind==='army'?selection.force.id:null,selection.mapMode,r.units,view,{navy:r.navy,graph:sea,selected:selection.force?.kind==='fleet'?selection.force.id:null,nationId:selection.nationId,preview:[],maritime:r.maritime,portControl:r.portControl.ports},frame,undefined,[],r.id,source,{},r.tactics.forces);
-        const graph=armySpatialFor47(r).graph,places=new Map(r.world.provinces.map(p=>[p.id,p])),colors=new Map(r.world.nations.map(n=>[n.id,nationColor(n)]));
-        const attacks=r.world.armies.flatMap(a=>{
-          const travel=r.armyPositions.records[a.id];
-          if(a.status==='destroyed'||a.status==='retreating'||a.troops<=0||travel?.status!=='moving')return [];
-          const target=graph.cells.get(travel.nodes.at(-1)!)?.provinceId,owner=target?places.get(target)?.controller:undefined;
-          if(!owner||!nationsAtWar(r.world,a.nationId,owner))return [];
-          const points=remainingArmyTravelPoints47(travel,graph);points[0]=frame.armies.get(a.id)??points[0];
-          return [{id:a.id,points,color:colors.get(a.nationId)!,key:a.nationId+'/'+target}];
-        });
-        map.drawActualAttackArrows(attacks,r.scale,view.camera.scale);
+        battleGrowing=drawBattleArrows(performance.now());
         drawCombat(frame,performance.now());if(testDiagnostics)canvas.dataset.projection=JSON.stringify({scale:r.scale,zoom:view.camera.scale,x:view.camera.x,y:view.camera.y});
         orderLine.clear();const points=selection.militaryPreview?.preview.points??[];
         if(points.length){orderLine.moveTo(points[0].x/r.scale,points[0].y/r.scale);for(const p of points.slice(1))orderLine.lineTo(p.x/r.scale,p.y/r.scale);orderLine.stroke({color:0xffedb4,width:3/view.camera.scale,alpha:.95});const end=points.at(-1)!;orderLine.circle(end.x/r.scale,end.y/r.scale,7/view.camera.scale).stroke({color:0xffffff,width:2/view.camera.scale});}
@@ -545,7 +539,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         const now=performance.now(),alpha=motion.current.alpha(now),combatFrame= combatOverlay.animate(now,isPlaying.current,reducedMotion.matches);
         // War effects animate on their own clock; the on-demand renderer must repaint while
         // one is alive and once more after the last has gone so nothing is left on screen.
-        const warFrame=warEffects.active;if(warFrame)warEffects.draw(now,view.camera.scale);
+        const warFrame=warEffects.active||battleGrowing;if(warEffects.active)warEffects.draw(now,view.camera.scale);if(battleGrowing)battleGrowing=drawBattleArrows(now);
         // The authored clip changes at 12 Hz. Keep its clock anchored while
         // paused/offscreen without making a full-map redraw on every RAF.
         if(alpha<1||settled!==motion.current.revision||combatFrame){
@@ -569,9 +563,17 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});
-    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();warEffects.dispose();if(warEffectsRef.current===warEffects)warEffectsRef.current=null;renderer.destroy();map.dispose();};
+    return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();battleArrows.dispose();warEffects.dispose();if(warEffectsRef.current===warEffects)warEffectsRef.current=null;renderer.destroy();map.dispose();};
   },[runId,rendererEpoch,terrainGrid]);
-  useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview]);
+  useEffect(()=>{paint.current();},[snapshot,nationId,cityId,force,mapMode,militaryPreview,attackArrows,panel]);
+  // Province.Update → UpdateAttackArrow once per accepted world update, in province order.
+  useEffect(()=>{
+    const s=snapshot;if(!s)return;const r=s.run;
+    if(battleState.current?.runId!==r.id)battleState.current={runId:r.id,state:new BattleArrowState47(armySpatialFor47(r).graph,r.scale)};
+    const targeting=new Map<string,string[]>();
+    for(const a of r.world.armies){if(a.status==='destroyed'||a.troops<=0)continue;const target=r.armyAutonomy.armies[a.id]?.targetId;if(!target)continue;const list=targeting.get(target)??[];list.push(a.nationId);targeting.set(target,list);}
+    battleState.current.state.update(r.world,targeting,performance.now());
+  },[snapshot]);
   // Original war presentation: a new declared war draws the red declaration arrow and the
   // claim markers; an ended war releases a peace bird above every participant.
   useEffect(()=>{
@@ -614,6 +616,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     {r&&generateConfirm&&<div className="c47-confirm" role="alertdialog" aria-label="生成地图"><p>会删除当前地图</p><small>按当前的国家数、城市数和文化设置随机生成新世界；已保存的存档不受影响。</small><div><button onClick={()=>void generateNewWorld()}>是</button><button onClick={()=>setGenerateConfirm(false)}>否</button></div></div>}
     {r&&mapMenu&&<section className="c47-map-menu" aria-label="地图样式">
       <div role="group" aria-label="底图"><small>底图</small>{([['political','政区'],['terrain','地形']] as const).map(([id,label])=><button key={id} aria-pressed={mapMode===id} onClick={()=>setMapMode(id)}>{label}</button>)}</div>
+      <div role="group" aria-label="进攻箭头"><small>箭头</small><button aria-pressed={attackArrows} title="关闭时只显示所选国家的进攻箭头（原作默认）" onClick={()=>{const next=!attackArrows;setAttackArrows(next);try{localStorage.setItem(ATTACK_ARROWS_KEY,next?'1':'0');}catch{/* per-viewer convenience */}}}>全部进攻箭头</button></div>
       <div role="group" aria-label="地图视图"><small>视图</small>{COLOR_VIEWS47.map(v=><button key={v.id} aria-pressed={colorView===v.id} disabled={!v.available} title={v.available?`数字键 ${v.key}`:'尚未还原'} onClick={()=>{setColorView(v.id);setMapMenu(false);}}><b>{v.key}</b>{v.label}</button>)}</div>
     </section>}
     {leaving&&<div className="c47-exit" role="dialog" aria-modal="true" aria-label="保存后离开"><h2>保留这个世界？</h2><p>尚有未保存的时间或编辑。</p><button disabled={busy||locked} onClick={()=>void save(true)}>保存并返回</button><button disabled={busy} onClick={onClose}>放弃未保存进度</button><button disabled={busy} onClick={()=>setLeaving(false)}>继续查看</button></div>}

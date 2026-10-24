@@ -19,6 +19,7 @@ import {armyPreviewTicks47} from './army-route-budget47';
 import {actualForceSpeed47} from './force-speed47';
 import {marchingRation47} from './logistics-clock47';
 import {nativeIdleArmyPools,nativeChooseIdleArmy} from './native-war/army-deployment';
+import {originalArmy47} from './civilization47-original-army';
 
 /** Stable WEB draw per army and assignment epoch. Native selection weights
  * are reused; Unity's global RNG is not claimed. The chosen target is saved. */
@@ -77,7 +78,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
   const {spatial}=actualForces47(r),g=spatial.graph,features=travelFeatures47(g),space=readArmySpace47(r.world,spatial),access=militaryAccess46(r),held=new Set(r.forceContacts.pairs.flatMap(p=>[p.a,p.b]));
   const places=new Map(r.world.provinces.map(p=>[p.id,p])),ports=new Set(r.harbors.sites.map(p=>p.provinceId)),{coasts,provinceFeatures}=provinceGeography47(r,g,features);
   const enemyMaps=new Map(r.world.nations.map(n=>[n.id,regularCampaigns47(r,n.id)]));
-  const retry=ids?20:TICKS_PER_DAY;
+  const retry=ids?20:TICKS_PER_DAY,original=originalArmy47(r);
   for(const a of ids?ids.map(id=>r.world.armies.find(a=>a.id===id)!):r.world.armies){
     const row=state.armies[a.id],here=space.byArmy.get(a.id),enemies=enemyMaps.get(a.nationId)!;
     const note=(decision:ArmyDecision47['decision'],reason:string,clear=false)=>{row.decision=decision;row.reason=reason;row.nextTick=r.clock.tick+retry;if(clear){row.targetId=null;row.campaignId=null;row.issuedTick=null;}};
@@ -91,7 +92,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     if(r.clock.tick<row.nextTick)continue;
     const enemyAt=(id:string)=>landHolders47(space,id).find(b=>enemies.has(b.nationId));
     const target=row.targetId===null?null:places.get(row.targetId),targetEnemy=target&&(enemies.has(target.controller)?target.controller:access(r.world,a.nationId,target.controller)?enemyAt(target.id)?.nationId:undefined);
-    const ongoing=here.travel.status==='moving',low=a.supplies<35||a.morale<50||a.troops<=180;
+    const ongoing=here.travel.status==='moving',low=!original&&(a.supplies<35||a.morale<50||a.troops<=180);
     // Unknown/handed-back moving routes are preserved. Known offensive goals
     // are reselected only after capture/peace; their remaining travel is not reset daily.
     if(ongoing&&!(low&&here.province?.controller===a.nationId)&&(!row.targetId||targetEnemy||row.decision==='returning'&&target?.controller===a.nationId||row.decision==='staging'&&target?.controller===a.nationId&&enemies.size>0||row.garrisonId===target?.id&&target?.controller===a.nationId&&enemies.size===0||a.status==='retreating')){
@@ -122,7 +123,8 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     const unfunded:{target:RegularTarget47;preview:ReturnType<typeof previewArmyCommand47>}[]=[];
     // This army's speed depends only on the surface and the province's terrain.
     const speeds=new Map<string,number>(),speed=(cell:TravelCell47)=>{const key=cell.surface==='sea'?'\u0000sea':cell.provinceId!;let v=speeds.get(key);if(v===undefined){v=actualForceSpeed47(r,{kind:'army',id:a.id,nationId:a.nationId,withdrawing:false,travel:here.travel},cell);speeds.set(key,v);}return v;};
-    const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,speed)/TICKS_PER_DAY)+3);
+    // Original armies have no rations: every valid route is affordable (new worlds).
+    const rationCost=(preview:ReturnType<typeof previewArmyCommand47>)=>original?0:marchingRation47*(Math.ceil(armyPreviewTicks47(preview,g,speed)/TICKS_PER_DAY)+3);
     while(candidates.length){const p=nativeRegularTarget47(location.point,home.center,features.get(location.cell.id)!,candidates);if(!p)break;
       const action:ArmyCommand47={type:'army-move',armyId:a.id,target:{kind:'province',id:p.id},kind:'march'},preview=previewArmyCommand47(r,action,weights,search);
       if(preview.valid){
@@ -146,7 +148,7 @@ function issueArmySelection47(r:FoundingForces47,weights:ArmyRouteWeights47,ids?
     // WEB logistics bridge: an inland force first rallies toward its preferred
     // target on safe, stocked home land. Arrival/refill use the real travel and
     // daily economy; never grant food or jump to a coastal staging point.
-    if(unfunded.length&&here.province?.controller===a.nationId){
+    if(!original&&unfunded.length&&here.province?.controller===a.nationId){
       const route=unfunded[0].preview,water=route.cells.findIndex(id=>g.cells.get(id)!.surface==='sea');
       const stocked=new Set(owned.filter(p=>!enemyAt(p.id)&&r.world.statecraft!.provinces.some(stock=>stock.provinceId===p.id&&stock.grain>stock.population)).map(p=>p.id));
       // Follow an affordable prefix of the chosen real route, stopping before

@@ -12,6 +12,7 @@ import {createArmyEconomy47} from './war47-economy';
 import {settleFiscalMonth47,assertMonthlyAccounts47} from './civilization47-fiscal';
 import {musterMonth47} from './civilization47-monthly-muster';
 import {settleDestinyMonth} from './destiny20-state';
+import {settleOriginalArmyDay47} from './civilization47-original-army';
 import {settleFleetFood47,settleArmyFoodConsequences47,finishDailyForces47,dailyEvent47,assertDailyResources47} from './civilization47-upkeep';
 import {LOGISTICS_DAY_FACTOR47} from './logistics-clock47';
 import {TICKS_PER_DAY} from './clock';
@@ -46,7 +47,8 @@ function settleCivilizationDayCore47<T extends FoundingForces47>(input:T,dailyOr
   settleFleetFood47(r);
   const economy=createArmyEconomy47(r.finance,()=>({...actualForces47(r).spatial,positions:r.armyPositions}),LOGISTICS_DAY_FACTOR47);
   economy.advanceEconomy(r.world,(world,kind,text,reason)=>dailyEvent47({world},kind,text,reason));
-  settleArmyFoodConsequences47(r);finishDailyForces47(r);retireArmiesOwned47(r);recoverArmiesOwned47(r);
+  // Original armies carry no rations (new worlds): no starvation, the food fields stay full.
+  if(!settleOriginalArmyDay47(r))settleArmyFoodConsequences47(r);finishDailyForces47(r);retireArmiesOwned47(r);recoverArmiesOwned47(r);
   settleFiscalMonth47(r);
   const result:unknown=dailyOrders(r);
   // A Promise must never continue mutating a returned candidate after final

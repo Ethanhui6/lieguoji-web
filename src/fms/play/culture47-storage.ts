@@ -1,6 +1,7 @@
 import {FOUNDING_RULE47} from './civilization47-founding';
 import {ARMY_BATCH_RULE47} from './army-batch47';
 import {OFFICE_RULE47} from './civilization47-offices';
+import {ORIGINAL_ARMY_RULE47} from './civilization47-original-army';
 import {GENERATIONS_RULE47} from './civilization47-generations-ledger';
 import {FRAME_LOOP_RULE47} from './frame-loop47';
 import {ARMY_RECOVERY_RULE47} from './army-recovery47';
@@ -59,6 +60,7 @@ function future(e:Envelope|undefined){
     if(a?.kind==='enable-retirement'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!=='retired-roster-web-v1')fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-recovery'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_RECOVERY_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-offices'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==OFFICE_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
+    if(a?.kind==='enable-original-army'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ORIGINAL_ARMY_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-army-batch'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==ARMY_BATCH_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='enable-frame-loop'){const p=a as unknown as {rule?:string;expected:unknown};unknown(a,['kind','rule','expected']);if(typeof p.rule==='string'&&p.rule!==FRAME_LOOP_RULE47)fail();unknown(p.expected,['id','day','tick','nextEventId','civilization','kin','people','sovereignty','nextEntryId']);continue;}
     if(a?.kind==='frame-length'){unknown(a,['kind','ticks']);continue;}

@@ -10,12 +10,11 @@ import {quoteTribute47} from './civilization47-vassal-manager';
 export type NationPick47='war'|'peace'|'alliance'|'expand'|'draw'|'annex'|'vassal';
 export const PICK_TIPS47:Record<NationPick47,string>={war:'点击其他国家，发动战争',peace:'点击交战国家，停止战争',alliance:'点击其他国家，缔结同盟',expand:'点击地图，将点击的省份设置为当前国家领土',draw:'点击地图，将点击的省份设置为所选国家领土',annex:'点击敌对国家，直接吞并',vassal:'点击其他国家，收为附庸'};
 export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAlliance,onRelease,onAutoDiplomacy}:{run:PoliticalRun47;nationId:string;busy:boolean;pick:NationPick47|null;onPick:(kind:NationPick47|null)=>void;onLeaveAlliance:()=>void;onRelease:()=>void;onAutoDiplomacy:(enabled:boolean)=>void}){
-  const alive=run.world.provinces.some(p=>p.controller===nationId),alliance=allianceOf46(run,nationId),lord=overlord46(run,nationId),vassals=run.vassals.records.filter(v=>v.endedTick===null&&v.overlordId===nationId).map(v=>v.vassalId);
-  const name=(id:string)=>run.world.nations.find(n=>n.id===id)?.name??id;
+  const alive=run.world.provinces.some(p=>p.controller===nationId),alliance=allianceOf46(run,nationId),lord=overlord46(run,nationId);
   const atWar=run.world.statecraft!.relations.some(r=>[r.a,r.b].includes(nationId)&&r.status==='war');
   const button=(kind:NationPick47,label:string,disabled=false)=><button aria-pressed={pick===kind} disabled={busy||!alive||disabled} title={PICK_TIPS47[kind]} onClick={()=>onPick(pick===kind?null:kind)}>{label}</button>;
-  return <details open className="c47-nation-actions"><summary>国家行为</summary>
-    <div className="c47-action-grid" role="group" aria-label="国家行为">
+  return <div className="c47-nation-actions" role="group" aria-label="国家行为">
+    <div className="c47-action-grid">
       {button('war','宣战',lord!==null)}
       {button('peace','停战',!atWar)}
       {button('alliance','缔结盟约',lord!==null)}
@@ -26,6 +25,22 @@ export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAll
       <button disabled={busy||lord===null} title="解除附庸" onClick={onRelease}>解除附庸</button>
     </div>
     <label className="c47-check"><input type="checkbox" aria-label="本国自主外交" checked={run.diplomacy.nations[nationId]===true} disabled={busy||!alive} onChange={e=>onAutoDiplomacy(e.target.checked)}/>自主外交{run.diplomacy.worldAuto?'':'（全局已关闭）'}</label>
-    <small>{alliance?`联盟信息：${alliance.name} · 成员 ${alliance.members.map(name).join('、')}`:'未加入联盟'}{lord?` · 附庸于${name(lord)}（附庸国无法自主行使外交权力，需独立）${(q=>q?`；贡金约 ${q.amount} 金币，${q.year}年12月${q.day}日缴纳`:'')(quoteTribute47(run,nationId))}`:''}{vassals.length?` · 附庸：${vassals.map(name).join('、')}`:''}</small>
+  </div>;
+}
+/** Original StateInfoUI.UpdateDiplomacySection: 敌对国家 / 同盟国家 /
+ * 宗主国 / 附庸 lines, or 暂无外交关系. */
+export function CultureNationRelations47({run,nationId}:{run:PoliticalRun47;nationId:string}){
+  const alliance=allianceOf46(run,nationId),lord=overlord46(run,nationId),vassals=run.vassals.records.filter(v=>v.endedTick===null&&v.overlordId===nationId).map(v=>v.vassalId);
+  const name=(id:string)=>run.world.nations.find(n=>n.id===id)?.name??id;
+  const enemies=run.world.statecraft!.relations.filter(r=>[r.a,r.b].includes(nationId)&&r.status==='war').map(r=>r.a===nationId?r.b:r.a);
+  const allies=alliance?alliance.members.filter(id=>id!==nationId):[];
+  const tribute=lord?quoteTribute47(run,nationId):null;
+  const rows:[string,string][]=[];
+  if(enemies.length)rows.push(['敌对国家',enemies.map(name).join('、')]);
+  if(allies.length)rows.push(['同盟国家',`${alliance!.name}：${allies.map(name).join('、')}`]);
+  if(lord)rows.push(['宗主国',name(lord)+(tribute?`（贡金约 ${tribute.amount}，${tribute.year}年12月${tribute.day}日）`:'')]);
+  if(vassals.length)rows.push(['附庸',vassals.map(name).join('、')]);
+  return <details className="c47-relations"><summary>外交{enemies.length?` · ${enemies.length} 国交战`:''}</summary>
+    {rows.length?<dl className="c47-province-rows">{rows.map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>:<p>暂无外交关系</p>}
   </details>;
 }

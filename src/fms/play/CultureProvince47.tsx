@@ -7,8 +7,9 @@ import {assertProvinceEdit47,provinceEditBlocker47,type ProvinceEdit47} from './
 import {TICKS_PER_DAY} from './clock';
 import {rebellionBlocker47} from './civilization47-rebellion';
 
-/** Original ProvinceInfoUI: 行省信息 with the 基本信息, 行省操作 and 战役信息
- * sections. Rows and texts follow UpdateBasicInfoSection /
+/** Original ProvinceInfoUI (Shift+click, or 行省信息 in the state panel): 基本信息, 行省操作 and 战役信息
+ * sections. Rows follow UpdateBasicInfoSection order (宗教、总督、城市防御力 are
+ * not simulated on the web and are left out) and
  * UpdateCampaignInfoSection; city type follows Province.GetProvinceCityType
  * (capital → port → manual fortress/city → mountainous terrain → city). */
 export type ProvinceCityType47='Capital'|'Port'|'Fortress'|'City';
@@ -46,14 +47,12 @@ export function CultureProvince47({run,provinceId,ports,busy,onState,onFamily,on
       <div><dt>文化</dt><dd>{culture?culture47(culture).label:'无'}</dd></div>
       <div><dt>家庭</dt><dd>{family&&nation?<button className="c47-link" onClick={()=>onFamily(family.nationId)}>{family.surname}</button>:'无'}</dd></div>
       <div><dt>主场作战效率</dt><dd>{combat?provinceDefense(run.upperCombat,p.id).toFixed(2):'—'}</dd></div>
-      <div className="is-pending"><dt>宗教 · 总督 · 城市防御力</dt><dd>尚未还原</dd></div>
     </dl></details>
-    <details open><summary>行省操作</summary><div className="c47-action-grid" role="group" aria-label="行省操作">
+    <details><summary>行省操作</summary><div className="c47-action-grid" role="group" aria-label="行省操作">
       {action('capital','设为首都')}{action('fortress','要塞化')}{action('city','去要塞化')}
       <button disabled={busy||!economy||max===undefined} title="设置当前人口、最大人口和最大人口锁定状态。" onClick={()=>setDialog({kind:'population',current:String(economy!.population),max:String(max),error:''})}>自定义人口</button>
       <button disabled={busy||!combat} title="设置当前城市防御、最大城市防御和主场作战效率。城市防御是攻占血量，主场作战效率会影响本行省陆战攻防。" onClick={()=>setDialog({kind:'defense',modifier:provinceDefense(run.upperCombat,p.id).toFixed(2),locked:combat!.locked,error:''})}>自定义防御</button>
       {(()=>{const reason=rebellionBlocker47(run as never,p.id);return <button disabled={busy||!!reason} title={reason??'随机省份煽动叛乱，成立新的国家'} onClick={onRebel}>煽动叛乱</button>;})()}
-      <button disabled title="尚未还原">设为区域中心</button>
     </div>
     {dialog?.kind==='population'&&<form className="c47-province-dialog" aria-label="设置自定义人口" onSubmit={e=>{e.preventDefault();const edit={type:'population' as const,provinceId:p.id,current:Number(dialog.current.trim()),max:Number(dialog.max.trim())};try{if(!/^\d{1,10}$/.test(dialog.current.trim())||!/^\d{1,10}$/.test(dialog.max.trim()))throw Error();assertProvinceEdit47(edit);}catch{setDialog({...dialog,error:'自定义人口输入无效，请输入有效整数，当前人口不能小于 0，最大人口必须大于 0，且当前人口不能大于最大人口'});return;}setDialog(null);onEdit(edit);}}>
       <strong>设置自定义人口</strong>
@@ -71,8 +70,8 @@ export function CultureProvince47({run,provinceId,ports,busy,onState,onFamily,on
       {dialog.error&&<p className="c47-menu-error" role="alert">{dialog.error}</p>}
       <div><button type="submit" disabled={busy}>确定</button><button type="button" onClick={()=>setDialog(null)}>取消</button></div>
     </form>}
-    <small>操作会暂停推演并记入本世界存档。区域中心尚未还原。</small></details>
-    <details open><summary>战役信息</summary>{siege?<dl className="c47-province-rows">
+</details>
+    <details open={!!siege||undefined}><summary>战役信息</summary>{siege?<dl className="c47-province-rows">
       <div><dt>交战国</dt><dd><b>{name(siege.attacker)}</b> vs <b>{name(siege.controller)}</b></dd></div>
       <div><dt>战役持续时间</dt><dd>{Math.max(0,Math.floor((run.clock.tick-siege.started)/TICKS_PER_DAY))} 天</dd></div>
       <div><dt>占领进度</dt><dd>{siege.maximum>0?(100*(1-siege.resistance/siege.maximum)).toFixed(2):'0.00'}%</dd></div>

@@ -6,6 +6,7 @@ import {assertForceContacts47, forceKey47, reconcileForceContactsOwned47} from '
 import {forceVolley47} from './force-volley47';
 import {nationsAtWar} from './realtime-statecraft';
 import {cloneMilitaryCandidate47} from './geography-content47';
+import {creditArmyKills47,reorganizeDefeatedArmy47} from './civilization47-original-army';
 export type ForceDamage47 = {version: 1; carry: Record<string, number>; losses: Record<string, number>};
 export const initialForceDamage47 = (): ForceDamage47 => ({version: 1, carry: {}, losses: {}});
 type Run = ForceRun47 & {units: UnitAssignments; forceDamage: ForceDamage47};
@@ -35,6 +36,8 @@ export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<st
     onLand: f => armyTravelLocation47(f.travel, spatial.graph).onLand,
     elite: f => f.kind === 'army' && next.units[f.id] === 'Elite',
   });
+  const armyByKey = new Map(forces.filter(f => f.kind === 'army').map(f => [forceKey47(f), f.id]));
+  creditArmyKills47(next, hits, key => armyByKey.get(key) ?? null);
   const incoming = new Map<string, number>();
   for (const hit of hits) incoming.set(hit.victim, (incoming.get(hit.victim) ?? 0) + hit.nativeDamage);
   const casualties: {key: string; strength: number; crew: number; lostShips: number; cargo: number}[] = [];
@@ -49,7 +52,8 @@ export function applyActualVolley47<T extends Run>(input: T, due: ReadonlySet<st
       const a = next.world.armies.find(a => a.id === force.id)!, before = a.troops;
       strength = Math.min(before, whole); a.troops -= strength;
       if (strength) a.morale = Math.max(0, a.morale - Math.max(.2, strength / Math.max(1, before) * 46));
-      if (!a.troops) {a.status = 'destroyed'; a.morale = 0; a.route = []; a.progress = 0; next.armyPositions.records[a.id] = haltArmyTravel47(force.travel, spatial.graph); delete next.battles.plans[a.id];}
+      if (!a.troops && reorganizeDefeatedArmy47(next as never, a, spatial.graph)) {/* original Reorganization */}
+      else if (!a.troops) {a.status = 'destroyed'; a.morale = 0; a.route = []; a.progress = 0; next.armyPositions.records[a.id] = haltArmyTravel47(force.travel, spatial.graph); delete next.battles.plans[a.id];}
     } else {
       const f = next.navy.fleets.find(f => f.id === force.id)!, before = next.maritime.hulls[f.id], oldCrew = f.crew;
       strength = Math.min(before, whole); next.maritime.hulls[f.id] = before - strength;

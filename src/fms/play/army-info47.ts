@@ -1,6 +1,7 @@
 import type {FoundingForces47} from './civilization47-forces';
 import type {ForceActivity47} from './force-activity47';
 import {unitProfile,isUnitKey} from './military-profile';
+import {armyKills47} from './civilization47-original-army';
 
 type Army=FoundingForces47['world']['armies'][number];
 /** Army.GetName: the "ArmyName" text 「{0}第{1}军团」 with the state name and the army id. */
@@ -33,6 +34,7 @@ export function armyInfo47(r:FoundingForces47,army:Army,activity:ForceActivity47
   const position=activity?activity.location.kind==='sea'?'在海洋中航行':activity.location.label:provinces.get(army.provinceId)?.name??'未知';
   return [
     {label:'军队人数',value:Math.round(army.troops).toLocaleString('zh-CN')},
+    ...(()=>{const kills=armyKills47(r,army.id);return kills===null?[]:[{label:'战史共歼灭敌军',value:kills.toLocaleString('zh-CN')}];})(),
     {label:'兵种',value:unit&&isUnitKey(unit)?unitProfile(unit).name:'步兵'},
     {label:'当前状态',value:status()},
     {label:'故乡',value:homeValue},

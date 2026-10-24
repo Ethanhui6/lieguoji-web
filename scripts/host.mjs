@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 import {Buffer} from 'node:buffer';
 import fs from 'node:fs';
 import os from 'node:os';
+import net from 'node:net';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
@@ -103,16 +104,27 @@ server.listen(PORT,'0.0.0.0',()=>{
   }else console.log('没有找到局域网地址，请确认电脑已连接 Wi-Fi 或网线。');
   console.log(`\n访问码：${CODE}（局域网页面已自动填好）`);
   console.log('关闭这个窗口即停止电脑计算，手机会自动改回本机计算。');
-  if(process.argv.includes('--tunnel'))startTunnel();
+  if(process.argv.includes('--tunnel'))void startTunnel();
   else console.log('（要在外面用手机流量连接，请加 --tunnel 启动外网隧道）');
 });
-function startTunnel(){
+// 本机代理（Clash 等）的 HTTP 端口：申请隧道时经代理发出；隧道主连接需要代理规则把 argotunnel.com 设为直连。
+const portOpen=port=>new Promise(resolve=>{const s=net.connect(port,'127.0.0.1');s.once('connect',()=>{s.destroy();resolve(true);});s.once('error',()=>resolve(false));s.setTimeout(500,()=>{s.destroy();resolve(false);});});
+let tunnelChild=null;
+process.on('exit',()=>tunnelChild?.kill());process.on('SIGINT',()=>{tunnelChild?.kill();process.exit(0);});
+async function startTunnel(attempt=1){
   const exe=process.env.CLOUDFLARED??['C:/Program Files (x86)/cloudflared/cloudflared.exe','C:/Program Files/cloudflared/cloudflared.exe'].find(f=>fs.existsSync(f))??'cloudflared';
-  const child=spawn(exe,['tunnel','--no-autoupdate','--protocol','http2','--url',`http://localhost:${PORT}`],{stdio:['ignore','pipe','pipe']});
+  const env={...process.env};
+  if(!env.HTTPS_PROXY)for(const port of [7897,7890]){if(await portOpen(port)){env.HTTPS_PROXY=env.HTTP_PROXY=`http://127.0.0.1:${port}`;if(attempt===1)console.log(`隧道申请经本机代理 127.0.0.1:${port} 发出。`);break;}}
+  const child=tunnelChild=spawn(exe,['tunnel','--no-autoupdate','--protocol','http2','--url',`http://localhost:${PORT}`],{stdio:['ignore','pipe','pipe'],env});
+  let link=null,warned=false,connected=false,failed=false;
   child.on('error',()=>console.log('\n没有找到 cloudflared。请先安装：winget install --id Cloudflare.cloudflared'));
-  let shown=false;
-  const scan=chunk=>{const m=/https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(chunk.toString());if(m&&!shown){shown=true;
-    console.log(`\n外网隧道已就绪。在手机上打开下面的链接（可发到微信再点开）：\n${m[0]}\n`);}};
+  const scan=chunk=>{
+    const text=chunk.toString();
+    // 申请失败（偶发）：退出后重试，最多 5 次。
+    if(/failed to request quick Tunnel/.test(text)&&!failed){failed=true;child.kill();if(attempt<5){console.log(`隧道申请失败，第 ${attempt+1} 次重试……`);setTimeout(()=>void startTunnel(attempt+1),3000);}else console.log('隧道申请多次失败，请稍后重新启动。局域网地址仍可使用。');return;}
+    const m=/https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/.exec(text);if(m&&!link)link=m[0];
+    if(/Registered tunnel connection/.test(text)&&!connected){connected=true;console.log(`\n外网隧道已连通。在外面用手机打开下面的链接（可发到微信再点开）：\n    ${link??'（链接见上方日志）'}\n`);}
+    else if(/TLS handshake with edge error/.test(text)&&!warned){warned=true;console.log('隧道连不上 Cloudflare：请在代理软件里把 argotunnel.com 和 198.41.192.0/20 设为直连。');}
+  };
   child.stdout.on('data',scan);child.stderr.on('data',scan);
-  process.on('exit',()=>child.kill());process.on('SIGINT',()=>{child.kill();process.exit(0);});
 }

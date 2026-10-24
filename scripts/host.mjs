@@ -1,11 +1,14 @@
-// 电脑计算主机：手机打开正式站并连接到这里，模拟在电脑上运行，手机只负责显示和操作。
-// 用法：npm run build（或已有 dist）后 npm run host [-- --tunnel]
-//   --tunnel  用 Cloudflare 免费隧道生成外网地址（需要已安装 cloudflared），在外面也能连。
-// 使用的是 dist 里与网页完全相同的模拟引擎文件，存档互通。
+// 电脑计算主机：模拟在电脑上运行，手机只负责显示和操作。
+// 用法：npm run build（或已有 dist）后 npm run host [-- --tunnel]，或双击仓库根目录的「电脑计算.cmd」。
+//   局域网（默认）：手机与电脑连同一个 Wi-Fi，手机浏览器打开屏幕上显示的 http://电脑IP:4180，
+//                   网页和计算都由这台电脑提供，不经过任何隧道或代理。
+//   --tunnel        用 Cloudflare 免费隧道生成外网地址（需要已安装 cloudflared），在外面也能连。
+// 使用的是 dist 里与网页完全相同的模拟引擎文件。
 import http from 'node:http';
 import crypto from 'node:crypto';
 import {Buffer} from 'node:buffer';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
@@ -13,12 +16,13 @@ import {fileURLToPath} from 'node:url';
 import {encodeWire47,decodeWire47} from '../src/fms/play/wire47.ts';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const dist=path.join(root,'dist');
 const PORT=Number(process.env.HOST_PORT??4180),SITE=process.env.HOST_SITE??'https://lieguoji-web.pages.dev';
-const build=JSON.parse(fs.readFileSync(path.join(root,'dist/build.json'),'utf8'));
-const bundle=fs.readdirSync(path.join(root,'dist/assets')).find(n=>/^culture47\.worker-.*\.js$/.test(n));
+const build=JSON.parse(fs.readFileSync(path.join(dist,'build.json'),'utf8'));
+const bundle=fs.readdirSync(path.join(dist,'assets')).find(n=>/^culture47\.worker-.*\.js$/.test(n));
 if(!bundle)throw Error('dist 中没有模拟引擎，请先运行 npm run build。');
 const CODE=process.env.HOST_CODE??String(crypto.randomInt(100000,1000000));
-const allowedOrigin=o=>!o||o===new URL(SITE).origin||/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
+const allowedOrigin=(o,host)=>!o||o===new URL(SITE).origin||/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)||!!host&&(o==='http://'+host||o==='https://'+host);
 
 // ---- 最小 WebSocket（RFC 6455，文本帧，无扩展）----
 function accept(key){return crypto.createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');}
@@ -47,12 +51,27 @@ function reader(onText,onClose){
   };
 }
 
-const server=http.createServer((req,res)=>{
-  res.writeHead(200,{'content-type':'text/plain; charset=utf-8','access-control-allow-origin':'*'});
-  res.end(`列国纪电脑计算主机运行中\n版本 ${build.version} · 引擎 ${build.culture47Fingerprint.slice(0,8)}\n`);
-});
+// ---- 局域网直连：由这台电脑提供整个网页（同源 ws://，无需 https 隧道）----
+const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.txt':'text/plain; charset=utf-8','.woff2':'font/woff2','.wasm':'application/wasm'};
+// http:// 局域网页面不是安全上下文，浏览器不提供 crypto.randomUUID；用 getRandomValues 补上。
+const UUID_SHIM="if(typeof crypto!=='undefined'&&!crypto.randomUUID)crypto.randomUUID=()=>{const b=crypto.getRandomValues(new Uint8Array(16));b[6]=b[6]&15|64;b[8]=b[8]&63|128;const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};\n";
+// 页面打开时自动记住本机计算地址和访问码，无需手动输入。
+const REMOTE_SCRIPT=`<script>${UUID_SHIM}try{localStorage.setItem('lieguoji-remote-host-v1',JSON.stringify({url:(location.protocol==='https:'?'wss://':'ws://')+location.host+'/engine',code:${JSON.stringify(CODE)}}));}catch{}</script>`;
+function serveStatic(req,res){
+  let file;
+  try{file=path.normalize(path.join(dist,decodeURIComponent(new URL(req.url??'/','http://x').pathname)));}catch{res.writeHead(400);res.end();return;}
+  if(!file.startsWith(dist)){res.writeHead(403);res.end();return;}
+  if(!fs.existsSync(file)||fs.statSync(file).isDirectory())file=path.join(dist,'index.html');
+  const ext=path.extname(file);let body=fs.readFileSync(file);
+  if(ext==='.html')body=Buffer.from(body.toString('utf8').replace('<head>','<head>'+REMOTE_SCRIPT));
+  else if(ext==='.js')body=Buffer.concat([Buffer.from(UUID_SHIM),body]);
+  res.writeHead(200,{'content-type':TYPES[ext]??'application/octet-stream','cache-control':ext==='.html'?'no-store':'public, max-age=3600'});
+  res.end(body);
+}
+
+const server=http.createServer(serveStatic);
 server.on('upgrade',(req,socket)=>{
-  if(req.url!=='/engine'||!req.headers['sec-websocket-key']||!allowedOrigin(req.headers.origin)){socket.destroy();return;}
+  if(req.url!=='/engine'||!req.headers['sec-websocket-key']||!allowedOrigin(req.headers.origin,req.headers.host)){socket.destroy();return;}
   socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept(req.headers['sec-websocket-key'])}\r\n\r\n`);
   socket.setNoDelay(true);
   const send=value=>{if(!socket.destroyed)socket.write(frame(typeof value==='string'?value:JSON.stringify(value)));};
@@ -63,7 +82,7 @@ server.on('upgrade',(req,socket)=>{
       let hello;try{hello=JSON.parse(text);}catch{return close();}
       if(hello?.type!=='hello'||hello.code!==CODE){send({type:'denied',reason:'访问码不正确。'});return close();}
       if(hello.engine!==build.culture47Fingerprint){send({type:'denied',reason:`电脑端版本（${build.version}）与网页不一致，请在电脑上更新并重新构建后再连接。`});return close();}
-      worker=new Worker(path.join(root,'scripts/host-engine.mjs'),{workerData:{bundle:path.join(root,'dist/assets',bundle)}});
+      worker=new Worker(path.join(root,'scripts/host-engine.mjs'),{workerData:{bundle:path.join(dist,'assets',bundle)}});
       worker.on('message',m=>{if(m&&m.ready){send({type:'ready',version:build.version});console.log(`[${new Date().toLocaleTimeString()}] 手机已连接，开始在电脑上计算`);return;}send(encodeWire47(m));});
       worker.on('error',e=>{console.error('模拟引擎出错：',e);close();});
       return;
@@ -72,21 +91,28 @@ server.on('upgrade',(req,socket)=>{
   },close));
   socket.on('close',close);socket.on('error',close);
 });
-server.listen(PORT,'127.0.0.1',()=>{
+// 局域网地址：跳过回环、自动分配地址和代理 TUN 的 198.18.0.0/15 假地址。
+const lanAddresses=()=>Object.values(os.networkInterfaces()).flat().filter(a=>a&&a.family==='IPv4'&&!a.internal&&!/^198\.1[89]\./.test(a.address)&&!/^169\.254\./.test(a.address)).map(a=>a.address);
+server.listen(PORT,'0.0.0.0',()=>{
   console.log(`\n列国纪电脑计算主机 · 版本 ${build.version}`);
-  console.log(`访问码：${CODE}`);
-  console.log(`本机测试：${SITE}/?host=${encodeURIComponent(`ws://localhost:${PORT}/engine`)}&code=${CODE}`);
+  const lan=lanAddresses();
+  if(lan.length){
+    console.log('\n【手机与电脑连同一个 Wi-Fi】在手机浏览器地址栏输入：');
+    for(const a of lan)console.log(`    http://${a}:${PORT}`);
+    console.log('  打开后右上角显示「电脑计算中」即成功。第一次运行时如果 Windows 防火墙弹窗，请勾选「专用网络」并点允许。');
+  }else console.log('没有找到局域网地址，请确认电脑已连接 Wi-Fi 或网线。');
+  console.log(`\n访问码：${CODE}（局域网页面已自动填好）`);
+  console.log('关闭这个窗口即停止电脑计算，手机会自动改回本机计算。');
   if(process.argv.includes('--tunnel'))startTunnel();
-  else console.log('（要在手机上使用，请加 --tunnel 启动外网隧道）');
+  else console.log('（要在外面用手机流量连接，请加 --tunnel 启动外网隧道）');
 });
 function startTunnel(){
   const exe=process.env.CLOUDFLARED??['C:/Program Files (x86)/cloudflared/cloudflared.exe','C:/Program Files/cloudflared/cloudflared.exe'].find(f=>fs.existsSync(f))??'cloudflared';
-  const child=spawn(exe,['tunnel','--no-autoupdate','--url',`http://localhost:${PORT}`],{stdio:['ignore','pipe','pipe']});
+  const child=spawn(exe,['tunnel','--no-autoupdate','--protocol','http2','--url',`http://localhost:${PORT}`],{stdio:['ignore','pipe','pipe']});
   child.on('error',()=>console.log('\n没有找到 cloudflared。请先安装：winget install --id Cloudflare.cloudflared'));
   let shown=false;
   const scan=chunk=>{const m=/https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(chunk.toString());if(m&&!shown){shown=true;
-    const link=`${SITE}/?host=${encodeURIComponent(m[0].replace('https://','wss://')+'/engine')}&code=${CODE}`;
-    console.log(`\n外网隧道已就绪。在手机上打开下面的链接（可发到微信再点开）：\n${link}\n`);}};
+    console.log(`\n外网隧道已就绪。在手机上打开下面的链接（可发到微信再点开）：\n${m[0]}\n`);}};
   child.stdout.on('data',scan);child.stderr.on('data',scan);
   process.on('exit',()=>child.kill());process.on('SIGINT',()=>{child.kill();process.exit(0);});
 }

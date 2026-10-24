@@ -50,3 +50,18 @@
 .c47-panel .c47-identity{margin:0 40px 8px 0;gap:10px}.c47-panel .c47-identity h2{font-size:20px;margin:0}.c47-panel .c47-ruler{padding:8px 0;gap:10px}.c47-panel .c47-ruler strong{font-size:15px}.c47-nation-actions{padding:8px 0;border-bottom:1px solid #d2dcdc}.c47-nation-actions .c47-check{margin:4px 0 0}.c47-panel .c47-overview summary,.c47-panel .c47-diplomacy summary,.c47-panel .c47-relations summary{padding:10px 0}.c47-nation-stats dd.is-lost{color:#a2452a}.c47-activity ol{margin:6px 0;padding-left:18px;font-size:12px}.c47-activity li span{display:block;color:#53656b}
 @media(max-width:600px){.c47-app .c47-panel .c47-action-grid{grid-template-columns:repeat(4,1fr);gap:5px}.c47-app .c47-panel .c47-action-grid button{min-height:32px;padding:4px 2px;font-size:12px}.c47-panel{padding:14px 16px}}
 .c47-app .c47-province-link{width:100%;justify-content:space-between;min-height:34px;margin:2px 0 6px;padding:6px 12px;font-size:13px;background:#e6efec;border:1px solid #d1dcda}
+/* 0.5.9：地图视图选择并入底部控制条；手机端界面尽量不挡地图。 */
+.c47-app .c47-controls .c47-view-select{position:static;max-width:118px;min-height:36px;margin:0 2px;font-size:12px;display:inline-block}
+@media(max-width:600px){
+.c47-app .c47-bar{top:max(6px,env(safe-area-inset-top));left:8px;right:8px;padding:3px 4px;gap:1px;border-radius:14px}
+.c47-app .c47-bar>button{min-height:32px;min-width:32px;padding:4px}
+.c47-app .c47-bar time{font-size:11px;white-space:nowrap;line-height:1.2}
+.c47-app .c47-nations,.c47-app .c47-zoom,.c47-app .c47-playback-status{display:none}
+.c47-app .c47-news{top:calc(max(6px,env(safe-area-inset-top)) + 44px);left:8px;right:8px;width:auto;transform:none;height:28px;min-height:28px;padding:2px 8px;border-radius:10px;background:#f1f6f0c4}
+.c47-app .c47-news:active{transform:scale(.98)}
+.c47-app .c47-news-copy strong{font-size:11px}
+.c47-app .c47-controls{bottom:max(8px,env(safe-area-inset-bottom));padding:3px;gap:2px;border-radius:16px}
+.c47-app .c47-controls button{min-height:34px;padding:5px 9px}
+.c47-app .c47-controls .c47-view-select{max-width:92px;min-height:34px;padding:0 4px;font-size:11px}
+.c47-app .c47-panel{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 48px);max-height:50vh}
+}

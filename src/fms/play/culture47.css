@@ -272,3 +272,78 @@
 .c47-app .c47-cloud-row>span b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .c47-app .c47-cloud-row>span small{color:var(--ink-2);font-size:12px}
 .c47-app .c47-cloud-row button{min-height:32px;padding:4px 10px;flex-shrink:0}
+/* Province sheet (0.5.30): title with type badge and owner chip, key figures as tiles,
+   iOS grouped rows; on phones the size toggle sits beside ×, and the tool rail steps
+   aside while a details sheet is expanded. */
+.c47-app .c47-prov-head{margin:0 0 12px;padding-right:76px}
+.c47-app .c47-prov-head h2{margin:0 0 6px;font-size:22px;letter-spacing:.02em;color:var(--ink)}
+.c47-app .c47-prov-head p{display:flex;flex-wrap:wrap;gap:6px;margin:0;align-items:center}
+.c47-app .c47-badge{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:12px;background:rgba(47,93,80,.12);color:var(--accent);font-size:12px;font-weight:600}
+.c47-app .c47-badge[data-type=Capital]{background:rgba(176,124,30,.16);color:#8a5a12}
+.c47-app .c47-badge[data-type=Fortress]{background:rgba(90,80,70,.14);color:#5a4c3e}
+.c47-app .c47-badge.is-war{background:rgba(170,40,30,.14);color:#9a2a1e}
+.c47-app .c47-chip{display:inline-flex;align-items:center;gap:6px;height:24px;min-height:24px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);font-size:12px}
+.c47-app .c47-chip i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.c47-app .c47-prov-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.c47-app .c47-tile{display:grid;gap:2px;padding:10px 12px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line)}
+.c47-app .c47-tile.is-wide{grid-column:1/-1}
+.c47-app .c47-tile small{font-size:12px;color:var(--ink-2)}
+.c47-app .c47-tile b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+.c47-app .c47-tile b em{font-style:normal;font-size:13px;font-weight:500;color:var(--ink-2)}
+.c47-app .c47-tile progress{width:100%;height:5px;margin-top:4px;-webkit-appearance:none;appearance:none;border:0;border-radius:3px;overflow:hidden;background:rgba(118,118,128,.16)}
+.c47-app .c47-tile progress::-webkit-progress-bar{background:rgba(118,118,128,.16)}
+.c47-app .c47-tile progress::-webkit-progress-value{background:var(--accent);border-radius:3px;transition:width .6s var(--ease-ios,ease-out)}
+.c47-app .c47-tile progress::-moz-progress-bar{background:var(--accent)}
+.c47-app .c47-province details{margin:0 0 10px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line);overflow:hidden}
+.c47-app .c47-province summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 14px;list-style:none;font-weight:600;cursor:pointer}
+.c47-app .c47-province summary::-webkit-details-marker{display:none}
+.c47-app .c47-province summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);rotate:45deg;translate:0 -2px;transition:rotate .3s var(--ease-ios,ease-out)}
+.c47-app .c47-province details[open]>summary::after{rotate:-135deg;translate:0 2px}
+.c47-app .c47-province details>:not(summary){margin:0 14px 12px}
+.c47-app .c47-province .c47-province-rows>div{display:flex;justify-content:space-between;gap:12px;min-height:40px;align-items:center;border-top:.5px solid var(--line)}
+.c47-app .c47-province .c47-province-rows dt{color:var(--ink-2)}
+.c47-app .c47-province .c47-province-rows dd{margin:0;text-align:right;font-weight:500}
+@media(max-width:600px){
+ .c47-app .c47-panel>.c47-sheet-size{position:absolute;float:none;top:14px;right:58px;margin:0;width:36px;height:36px;min-height:36px;border-radius:18px;font-size:18px}
+ .c47-app .c47-panel>.c47-dismiss{position:absolute;float:none;top:14px;right:14px;margin:0;width:36px;height:36px;min-height:36px;border-radius:18px}
+ .c47-app:has(.c47-panel.is-expanded) .c47-rail{opacity:0;pointer-events:none;translate:-12px 0;transition:opacity .25s,translate .35s var(--ease-ios,ease-out)}
+ .c47-app .c47-rail{transition:opacity .25s,translate .35s var(--ease-ios,ease-out)}
+}
+.c47-app .c47-chevron{display:block;width:9px;height:9px;border-left:2px solid currentColor;border-top:2px solid currentColor;rotate:45deg;translate:0 2px;transition:rotate .35s var(--ease-ios,ease-out),translate .35s var(--ease-ios,ease-out)}
+.c47-app .c47-chevron[data-open=true]{rotate:225deg;translate:0 -2px}
+/* World history (original HistoryInfoPanel / HistoryTimelineUI). */
+.c47-app .c47-chronicle>.c47-segment{margin-bottom:12px}
+.c47-app .c47-history-period{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+.c47-app .c47-history-period strong{font-size:18px;color:var(--ink)}
+.c47-app .c47-history-period button{min-height:30px;padding:2px 10px;font-size:12px}
+.c47-app .c47-history-years>input[type=range]{width:100%;margin:4px 0 8px}
+.c47-app .c47-history-nav{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:10px}
+.c47-app .c47-history-nav button{min-height:36px;padding:4px 14px}
+.c47-app .c47-history-nav input{width:100%;height:36px;box-sizing:border-box;padding:4px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);text-align:center;font-size:14px;-webkit-user-select:text;user-select:text}
+.c47-app .c47-history-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.c47-app .c47-history-filters button{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:2px 10px;border:1px solid var(--line);border-radius:14px;background:var(--paper);font-size:12px;color:var(--ink)}
+.c47-app .c47-history-filters button[aria-pressed=false]{opacity:.45}
+.c47-app .c47-history-filters i{width:8px;height:8px;border-radius:50%}
+.c47-app .c47-history-cards{display:grid;gap:8px}
+.c47-app .c47-history-cards>*{animation:c47-rank-in .35s var(--ease-ios,ease-out) both}
+.c47-app .c47-history-card{position:relative;padding:10px 12px 10px 16px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);overflow:hidden}
+.c47-app .c47-history-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--type)}
+.c47-app .c47-history-card header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.c47-app .c47-history-type{font-size:12px;font-weight:650;color:var(--type)}
+.c47-app .c47-history-card time{font-size:12px;color:var(--ink-2)}
+.c47-app .c47-history-card p{margin:0;line-height:1.5}
+.c47-app .c47-history-scope{margin-top:12px;font-size:13px;color:var(--ink-2)}
+.c47-app .c47-timeline-bar{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.c47-app .c47-timeline-bar span{flex:1;color:var(--ink-2);font-size:13px}
+.c47-app .c47-timeline-bar button{width:36px;height:32px;min-height:32px;padding:0;font-size:16px}
+.c47-app .c47-timeline-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);margin-bottom:10px;touch-action:pan-x;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.c47-app .c47-timeline-track{position:relative}
+.c47-app .c47-timeline-axis{position:absolute;left:12px;right:12px;bottom:22px;height:2px;background:var(--ink-2);opacity:.5}
+.c47-app .c47-timeline-axis::after{content:'';position:absolute;right:-2px;top:-4px;border-left:8px solid var(--ink-2);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.c47-app .c47-timeline-tick{position:absolute;bottom:4px;translate:-50% 0;font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.c47-app .c47-timeline-node{position:absolute;width:12px;height:12px;min-width:0;min-height:0;padding:0;border:2px solid var(--paper);border-radius:50%;translate:-50% 50%;box-shadow:0 1px 2px rgba(0,0,0,.25);animation:c47-pop .3s var(--ease-spring,ease-out) both}
+.c47-app .c47-timeline-node[aria-pressed=true]{width:16px;height:16px;box-shadow:0 0 0 3px rgba(47,93,80,.35)}
+.c47-app .c47-timeline-node:active:not(:disabled){transform:none}
+.c47-app .c47-timeline-node{display:grid;place-items:center;translate:-50% 50%}
+.c47-app .c47-timeline-node b{font-size:10px;color:#fff;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.c47-app .c47-timeline-node[aria-pressed=true]{box-shadow:0 0 0 3px rgba(47,93,80,.4)}

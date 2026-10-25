@@ -4,6 +4,7 @@ import type {HistoricalEntry} from './chronicle-records';
 import {isoPlusDays,type IsoDate} from './civilization47-iso-calendar';
 import {historyKinds,isMajorHistory} from './chronicle-query';
 import {PlayIcon} from './PlayIcon';
+import {HistoryTimeline47,HistoryYears47} from './CultureHistoryViews47';
 
 export const historyDate47=(start:IsoDate,day:number)=>isoPlusDays(start,day);
 export type HistoryScope47='important'|'all';
@@ -44,7 +45,15 @@ export function CultureHistory47({run,focusId,selectNation}:{run:FoundingForces4
  useEffect(()=>{if(focusId===null||focusYear===null)return;setYear(focusYear);setCount(Math.max(40,entryRef.current.findIndex(e=>e.id===focusId)+1));},[focusId,focusYear]);
  useEffect(()=>{if(focusId!==null)list.current?.querySelector(`[data-history-id="${focusId}"]`)?.scrollIntoView({block:'nearest'});},[focusId,year,count]);
  const matches=entries.filter(e=>year===null||yearOf(e)===year),shown=matches.slice(0,count);
- return <section className="c47-chronicle" aria-label="文化世界史书"><h2><PlayIcon name="book"/>大事记</h2>
+ const [mode,setMode]=useState<'years'|'timeline'|'list'>(()=>focusId!==null?'list':'years');
+ useEffect(()=>{if(focusId!==null)setMode('list');},[focusId]);
+ // Original HistoryInfoPanel (by half-year) and HistoryTimelineUI; the full ledger stays as 全部记录.
+ const tabs=<div className="c47-segment" role="tablist" aria-label="大事记视图">{([['years','年表'],['timeline','时间轴'],['list','全部记录']] as const).map(([id,label])=><button key={id} role="tab" aria-selected={mode===id} onClick={()=>setMode(id)}>{label}</button>)}</div>;
+ if(mode!=='list')return <section className="c47-chronicle" aria-label="文化世界史书"><h2><PlayIcon name="book"/>世界历史</h2>{tabs}
+  {mode==='years'?<HistoryYears47 run={run} entries={entries} selectNation={selectNation}/>:<HistoryTimeline47 run={run} entries={entries} selectNation={selectNation}/>}
+  <div className="c47-history-scope"><label>范围<select aria-label="大事记范围" value={scope} onChange={e=>setScope(e.target.value as HistoryScope47)}><option value="important">重要大事</option><option value="all">全部记录（含领土易手）</option></select></label></div>
+ </section>;
+ return <section className="c47-chronicle" aria-label="文化世界史书"><h2><PlayIcon name="book"/>大事记</h2>{tabs}
   <div className="c47-history-toolbar"><span>{entries.length} 条{scope==='important'?'要闻':'记录'}</span><label>范围<select aria-label="大事记范围" value={scope} onChange={e=>{setScope(e.target.value as HistoryScope47);setCount(40);}}><option value="important">重要大事</option><option value="all">全部记录（含领土易手）</option></select></label><label>年份<select aria-label="大事记年份" value={year??'all'} onChange={e=>{setYear(e.target.value==='all'?null:Number(e.target.value));setCount(40);}}><option value="all">全部年份</option>{years.map(y=><option key={y} value={y}>{y} 年</option>)}</select></label></div>
   <ol ref={list} className="c47-history">{shown.map((e,i)=>{const date=historyDate47(run.life.startDate,e.day),related=run.world.nations.filter(n=>e.nationIds.includes(n.id)),first=i===0||yearOf(shown[i-1])!==date.year,presentation=historyPresentation47(e,run.kin.lifecycle?.deaths.some(d=>d.deathHistoryId===e.id));return <li key={e.id} data-history-id={e.id} data-focused={focusId===e.id}>
    {first&&<h3>{date.year} 年</h3>}<article><div className="c47-history-meta"><time dateTime={`${String(date.year).padStart(4,'0')}-${String(date.month).padStart(2,'0')}-${String(date.day).padStart(2,'0')}`}>{date.month}月{date.day}日</time><span>{presentation.kind}</span></div>

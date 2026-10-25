@@ -7,6 +7,7 @@ import {provinceDefense} from './upper14-state';
 import {assertProvinceEdit47,provinceEditBlocker47,type ProvinceEdit47} from './civilization47-province-edit';
 import {TICKS_PER_DAY} from './clock';
 import {rebellionBlocker47} from './civilization47-rebellion';
+import {nationColor} from './politics';
 
 /** Original ProvinceInfoUI (Shift+click, or 行省信息 in the state panel): 基本信息, 行省操作 and 战役信息
  * sections. Rows follow UpdateBasicInfoSection order (宗教、城市防御力 are
@@ -38,17 +39,22 @@ export function CultureProvince47({run,provinceId,ports,busy,onState,onFamily,on
   const blankState=!nation;
   const action=(type:'capital'|'fortress'|'city',label:string)=>{const reason=provinceEditBlocker47(run as never,{type,provinceId:p.id});return <button disabled={busy||blankState||!!reason} title={reason??undefined} onClick={()=>onEdit({type,provinceId:p.id})}>{label}</button>;};
   return <section className="c47-province" aria-label="行省信息" data-city-type={type}>
-    <h2>{p.name}</h2>
+    <header className="c47-prov-head"><h2>{p.name}</h2>
+      <p><span className="c47-badge" data-type={type}>{CITY_TYPE[type]}</span>{nation?<button className="c47-chip" onClick={()=>onState(nation.id)}><i style={{background:nationColor(nation)}} aria-hidden="true"/>{nation.name}</button>:<span className="c47-chip">无主之地</span>}{siege&&<span className="c47-badge is-war">围城中</span>}</p>
+    </header>
+    {/* 人口、主场作战效率、核心省份 of UpdateBasicInfoSection as glanceable tiles (web layout). */}
+    <div className="c47-prov-tiles" role="group" aria-label="行省概况">
+      <div className="c47-tile is-wide"><small>人口</small><b>{economy?number(economy.population):'—'}<em>{max!==undefined?` / ${number(max)}`:''}</em></b>{economy&&max?<progress max={max} value={Math.min(max,economy.population)}/>:null}</div>
+      <div className="c47-tile"><small>主场作战效率</small><b>{combat?provinceDefense(run.upperCombat,p.id).toFixed(2):'—'}</b></div>
+      <div className="c47-tile"><small>核心省份</small><b>{core?'是':'否'}</b></div>
+    </div>
     <details open><summary>基本信息</summary><dl className="c47-province-rows">
-      <div><dt>人口</dt><dd>{economy?`${number(economy.population)}/${max===undefined?'—':number(max)}`:'—'}</dd></div>
       <div><dt>国家</dt><dd>{nation?<button className="c47-link" onClick={()=>onState(nation.id)}>{nation.name}</button>:'无'}</dd></div>
       {(run as unknown as OfficeRun47).offices47&&(()=>{const holder=officeHolder47(run as unknown as OfficeRun47,p.controller,'Governor',run.world.provinces.indexOf(p)+1);return <div data-office="Governor"><dt>总督</dt><dd>{holder?holder.identity.name:'空缺'}</dd></div>;})()}
       <div><dt>区域</dt><dd>无</dd></div>
-      <div><dt>核心省份</dt><dd>{core?'是':'否'}</dd></div>
       <div><dt>城市类型</dt><dd>{CITY_TYPE[type]}</dd></div>
       <div><dt>文化</dt><dd>{culture?culture47(culture).label:'无'}</dd></div>
       <div><dt>家庭</dt><dd>{family&&nation?<button className="c47-link" onClick={()=>onFamily(family.nationId)}>{family.surname}</button>:'无'}</dd></div>
-      <div><dt>主场作战效率</dt><dd>{combat?provinceDefense(run.upperCombat,p.id).toFixed(2):'—'}</dd></div>
     </dl></details>
     <details><summary>行省操作</summary><div className="c47-action-grid" role="group" aria-label="行省操作">
       {action('capital','设为首都')}{action('fortress','要塞化')}{action('city','去要塞化')}

@@ -369,3 +369,25 @@
 .c47-app .c47-family-actions p{flex-basis:100%;margin:0 0 2px;font-weight:600}
 .c47-app .c47-family-actions button{min-height:32px;padding:4px 12px;font-size:13px}
 .c47-app .c47-family-actions .is-danger{border-color:rgba(154,42,30,.5);color:#9a2a1e}
+/* 官员任用 (original GovernmentOfficeManagementPanel). */
+.c47-app .c47-offices h2{margin:0 0 4px;font-size:18px}
+.c47-app .c47-offices h3{margin:14px 0 2px;font-size:15px}
+.c47-app .c47-offices h3 small{font-weight:400;color:var(--ink-2);font-size:12px}
+.c47-app .c47-office-hint{display:block;margin:2px 0 8px;color:var(--ink-2);font-size:12px}
+.c47-app .c47-office-buttons{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.c47-app .c47-office-buttons button{min-height:32px;padding:4px 12px;font-size:13px}
+.c47-app .c47-office-buttons .is-danger{border-color:rgba(154,42,30,.5);color:#9a2a1e}
+.c47-app .c47-office-list,.c47-app .c47-candidates{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.c47-app .c47-office-row{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2)}
+.c47-app .c47-office-row>div:first-child{display:grid;gap:1px}
+.c47-app .c47-office-row strong{font-size:13px;color:var(--ink-2);font-weight:600}
+.c47-app .c47-office-row span{font-size:15px;font-weight:600}
+.c47-app .c47-office-row em{font-style:normal;color:#9a2a1e}
+.c47-app .c47-office-row small{font-size:12px;color:var(--ink-2)}
+.c47-app .c47-office-pages{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0}
+.c47-app .c47-candidates button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);text-align:left}
+.c47-app .c47-candidates button[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px rgba(47,93,80,.25)}
+.c47-app .c47-candidates span{display:grid}
+.c47-app .c47-candidates small{color:var(--ink-2);font-size:12px}
+.c47-app .c47-candidates b{font-size:13px;color:var(--accent)}
+.c47-app .c47-offices-enter{width:100%;min-height:40px;margin:8px 0 0;border-radius:10px;border:1px solid var(--accent);background:rgba(47,93,80,.08);color:var(--accent);font-weight:650}

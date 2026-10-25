@@ -21,8 +21,10 @@ export const OFFICE_RULE47='original-government-office-v1';
 export type Office47Id='Chancellor'|'Steward'|'Marshal'|'Governor';
 /** scopeKind 0 = state (scopeId = state id), 1 = province (scopeId = province index + 1).
  * source: GovernmentOfficeAppointmentSource (0 AI, 3 Emergency). */
-export type Office47Assignment={officeId:Office47Id;holderId:number;scopeKind:0|1;scopeId:number;startTime:number;source:0|3};
-export type Offices47={version:1;rule:typeof OFFICE_RULE47;revision:number;nations:Record<string,{assignments:Office47Assignment[];reviewYear:number}>};
+/** locked (锁定任命): the annual review keeps this holder. Optional so older worlds replay unchanged. */
+export type Office47Assignment={officeId:Office47Id;holderId:number;scopeKind:0|1;scopeId:number;startTime:number;source:0|1|3;locked?:true};
+/** manual: AI 自动任命 switched off for this state (no AI filling or review); optional. */
+export type Offices47={version:1;rule:typeof OFFICE_RULE47;revision:number;nations:Record<string,{assignments:Office47Assignment[];reviewYear:number;manual?:true}>};
 export type OfficeRun47=NobilityRun47&{offices47?:Offices47};
 
 /** GovernmentOfficeDefinitionCatalog: AI weights (administrative, military,
@@ -238,6 +240,8 @@ function processMonthly(r:OfficeRun47,nationId:string){
   // Holders who can no longer hold their office are dismissed ('ineligible'), then their slots are refilled first.
   const ineligible=b.assignments.filter(a=>!canHold(ctx,r.kin.persons[a.holderId],a.officeId,a.scopeId));
   if(ineligible.length){b.assignments=b.assignments.filter(a=>!ineligible.includes(a));r.offices47!.revision++;ctx=context(r,nationId);}
+  // AI 自动任命 off: the player fills the offices (invalid holders are still released above).
+  if(b.manual)return;
   let count=0;
   for(const a of ineligible){if(count>=MAX_APPOINTMENTS_PER_MONTH)return;if(tryFill(ctx,a.officeId,a.scopeKind,a.scopeId))count++;}
   for(const office of CENTRAL){
@@ -254,12 +258,14 @@ function processMonthly(r:OfficeRun47,nationId:string){
 function reviewAnnual(r:OfficeRun47,nationId:string){
   const b=book(r,nationId),year=r.life.currentDate.year;
   if(b.reviewYear===year)return;b.reviewYear=year;
+  if(b.manual)return;
   reconcile(r,nationId);
   const ctx=context(r,nationId),threshold=REPLACEMENT[r.civilization.nations[nationId]?.polity??'']??15;
   const list=[...b.assignments].sort((a,c)=>a.scopeKind-c.scopeKind||a.scopeId-c.scopeId);
   let replaced=0;
   for(const a of list){
     if(replaced>=MAX_ANNUAL_REPLACEMENTS)break;
+    if(a.locked)continue;
     if(monthsSince(r,a.startTime)<MIN_TENURE_MONTHS)continue;
     const holder=r.kin.persons[a.holderId];if(!holder)continue;
     const current=officeScore47(ctx,holder,a.officeId,a.scopeId);
@@ -276,3 +282,70 @@ export function courtIncome47(r:{people:Parameters<typeof courtIncome>[0];world:
   if(!o.offices47)return base;
   return {tax:base.tax,central:centralIncome47(o,nationId),local:provinceId?localIncome47(o,provinceId):1};
 }
+
+/** Original GovernmentOfficeManagementPanel (官员任用 · 官职与将领): the player's appointments.
+ * 任命 sets a candidate who meets CanAppointHolderForValidSlot (source 玩家); 撤职 vacates the slot;
+ * 锁定任命 / 允许换届 keep or release the holder from the annual review; 启用/关闭 AI 自动任命;
+ * 补齐空缺 runs the AI selection for every vacant slot at once. */
+export type OfficeManage47=
+  |{type:'appoint';nationId:string;officeId:Office47Id;scopeId:number;holderId:number}
+  |{type:'dismiss';nationId:string;officeId:Office47Id;scopeId:number}
+  |{type:'lock';nationId:string;officeId:Office47Id;scopeId:number;locked:boolean}
+  |{type:'auto';nationId:string;enabled:boolean}
+  |{type:'fill';nationId:string};
+export type OfficeSlot47={officeId:Office47Id;scopeKind:0|1;scopeId:number;provinceId:string|null;assignment:Office47Assignment|null;holder:FamilyPerson47|null};
+/** Central offices, then one governorship per owned province (province order). */
+export function officeSlots47(input:NobilityRun47,nationId:string):OfficeSlot47[]{
+  const r=input as OfficeRun47;if(!r.offices47)return [];
+  const stateId=stateIdOf(r,nationId),list=r.offices47.nations[nationId]?.assignments??[],slot=(officeId:Office47Id,scopeKind:0|1,scopeId:number,provinceId:string|null):OfficeSlot47=>{const assignment=list.find(a=>a.officeId===officeId&&a.scopeId===scopeId)??null;return {officeId,scopeKind,scopeId,provinceId,assignment,holder:officeHolder47(r,nationId,officeId,scopeId)};};
+  return [...CENTRAL.map(o=>slot(o,0,stateId,null)),...r.world.provinces.flatMap((p,i)=>p.controller===nationId?[slot('Governor',1,i+1,p.id)]:[])];
+}
+/** Eligible candidates for a slot, best AI score first (GovernmentOfficeAI scores). */
+export function officeCandidates47(input:NobilityRun47,nationId:string,officeId:Office47Id,scopeId:number,limit=30){
+  const r=input as OfficeRun47;if(!r.offices47)return [];
+  return candidates(context(r,nationId),officeId,scopeId).slice(0,limit).map(c=>({person:c.p,score:c.score}));
+}
+export function officeManageBlocker47(input:NobilityRun47,edit:OfficeManage47):string|null{
+  const r=input as OfficeRun47;
+  if(!r.offices47)return '这个世界没有启用官职系统。';
+  if(!r.people.nations[edit.nationId]||!r.world.provinces.some(p=>p.controller===edit.nationId))return '国家无效或已灭亡。';
+  if(edit.type==='auto'||edit.type==='fill')return null;
+  const stateId=stateIdOf(r,edit.nationId),central=OFFICE_DEFS47[edit.officeId].category===0;
+  if(central?edit.scopeId!==stateId:!ownsProvince(r,edit.nationId,edit.scopeId))return '该官职的管辖范围已失效。';
+  const current=book(r,edit.nationId).assignments.find(a=>a.officeId===edit.officeId&&a.scopeId===edit.scopeId);
+  if(edit.type==='appoint'){const p=r.kin.persons[edit.holderId];if(!p||!canHold(context(r,edit.nationId),p,edit.officeId,edit.scopeId))return '任命失败，请选择其他候选人。';return null;}
+  if(!current)return '该官职目前空缺。';
+  return null;
+}
+export function assertOfficeManage47(v:unknown):asserts v is OfficeManage47{
+  const e=v as Record<string,unknown>,ids=['Chancellor','Steward','Marshal','Governor'];
+  const ok=!!e&&typeof e==='object'&&typeof e.nationId==='string'&&(
+    e.type==='auto'?Object.keys(e).length===3&&typeof e.enabled==='boolean':
+    e.type==='fill'?Object.keys(e).length===2:
+    ids.includes(String(e.officeId))&&Number.isSafeInteger(e.scopeId)&&(
+      e.type==='appoint'?Object.keys(e).length===5&&Number.isSafeInteger(e.holderId):
+      e.type==='dismiss'?Object.keys(e).length===4:
+      e.type==='lock'&&Object.keys(e).length===5&&typeof e.locked==='boolean'));
+  if(!ok)throw Error('官员任用命令无效。');
+}
+export function applyOfficeManage47<T extends NobilityRun47>(run:T,edit:OfficeManage47,expected:PopulationStamp47):T{
+  assertOfficeManage47(edit);
+  if(!sameCulture47Value(expected,populationStamp47(run)))throw Error('世界已经推进，请重新操作。');
+  const reason=officeManageBlocker47(run,edit);if(reason)throw Error(reason);
+  const {terrain,...rest}=run as T&{terrain?:unknown},next={...structuredClone(rest),...(terrain===undefined?{}:{terrain})} as T&OfficeRun47;
+  const b=book(next,edit.nationId),at=(o:Office47Id,s:number)=>b.assignments.findIndex(a=>a.officeId===o&&a.scopeId===s);
+  if(edit.type==='appoint'){
+    const value:Office47Assignment={officeId:edit.officeId,holderId:edit.holderId,scopeKind:OFFICE_DEFS47[edit.officeId].category,scopeId:edit.scopeId,startTime:next.life.gameTime,source:1};
+    const i=at(edit.officeId,edit.scopeId);if(i>=0)b.assignments[i]=value;else b.assignments.push(value);
+  }else if(edit.type==='dismiss'){b.assignments.splice(at(edit.officeId,edit.scopeId),1);}
+  else if(edit.type==='lock'){const a=b.assignments[at(edit.officeId,edit.scopeId)];if(edit.locked)a.locked=true;else delete a.locked;}
+  else if(edit.type==='auto'){if(edit.enabled)delete b.manual;else b.manual=true;}
+  else{
+    reconcile(next,edit.nationId);
+    for(const slot of officeSlots47(next,edit.nationId))if(!slot.assignment)tryFill(context(next,edit.nationId),slot.officeId,slot.scopeKind,slot.scopeId);
+  }
+  next.offices47!.revision++;next.kin.revision++;
+  return next;
+}
+/** Months in office (GovernmentOfficeTenure 任期：{0} 年 {1} 个月). */
+export const officeTenureMonths47=(input:NobilityRun47,startTime:number)=>monthsSince(input as OfficeRun47,startTime);

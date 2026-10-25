@@ -29,6 +29,18 @@ export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAll
 }
 /** Original StateInfoUI.UpdateDiplomacySection: 敌对国家 / 同盟国家 /
  * 宗主国 / 附庸 lines, or 暂无外交关系. */
+/** Original StateRelationsHighlighter.UpdateStateHighlights colours for the selected state:
+ * enemies red, alliance members blue, vassals green, the overlord magenta; the state itself
+ * keeps the selected-line colour. Nation id → 0xRRGGBB. */
+export function relationHighlights47(run:PoliticalRun47,nationId:string):Map<string,number>{
+  const out=new Map<string,number>();
+  for(const r of run.world.statecraft!.relations)if(r.status==='war'&&(r.a===nationId||r.b===nationId))out.set(r.a===nationId?r.b:r.a,0xff0000);
+  for(const id of allianceOf46(run,nationId)?.members??[])if(id!==nationId)out.set(id,0x0000ff);
+  for(const v of run.vassals.records)if(v.endedTick===null&&v.overlordId===nationId)out.set(v.vassalId,0x00ff00);
+  const lord=overlord46(run,nationId);if(lord)out.set(lord,0xff00ff);
+  out.set(nationId,0xfff1b8);
+  return out;
+}
 export function CultureNationRelations47({run,nationId}:{run:PoliticalRun47;nationId:string}){
   const alliance=allianceOf46(run,nationId),lord=overlord46(run,nationId),vassals=run.vassals.records.filter(v=>v.endedTick===null&&v.overlordId===nationId).map(v=>v.vassalId);
   const name=(id:string)=>run.world.nations.find(n=>n.id===id)?.name??id;

@@ -1,7 +1,7 @@
 import { Container, Graphics, Text, Texture, Sprite, Rectangle, type TextStyleOptions } from 'pixi.js';
 import battleAtlasUrl from './assets/battle-sword.png';
 import {BattleAnimationClock} from './battle-animation';
-import {OrderMotion,SinkMotion} from './order-motion';
+import {FallMotion,OrderMotion,SinkMotion,type FallenPose} from './order-motion';
 import {fleetPosition} from './navy';
 import icons from './military-icons.json';
 import { unitProfile, type UnitAssignments, type UnitKey } from './military-profile';
@@ -66,6 +66,8 @@ export class PlayMap {
   private battleClock=new BattleAnimationClock();
   private orderMotion=new OrderMotion();
   private sinkMotion=new SinkMotion();
+  private fallMotion=new FallMotion();
+  private fallLayer?:Container;
   private presentationRun='';
   private arrowWidgets:{id:string;graphic:Graphics;points:Point[];pixel:number;color:string|number;actual?:boolean}[]=[];
   private sinkingLayer?:Graphics;
@@ -105,6 +107,13 @@ export class PlayMap {
   }
   capitalPositions(){return this.capitals;}
   animateBattles(now:number,running:boolean,reduced:boolean){const changed=this.battleClock.step(now,running,reduced);for(const {id,sprite} of this.battleSprites)sprite.texture=this.battleTextures[this.battleClock.frame(id)];for(const hit of this.impacts){const t=this.feedback.strength(hit.id,now,running,reduced);hit.graphic.alpha=t;hit.graphic.scale.set(1+(1-t)*.65);}const arrows=this.orderMotion.step(now,running,reduced);if(arrows)for(const a of this.arrowWidgets){a.graphic.clear();drawAttackArrow(a.graphic,a.points,a.pixel,a.color,false,a.actual?1:this.orderMotion.growth(a.id));}const sinking=this.sinkMotion.step(now,reduced);if(sinking)this.drawSinking();return changed&&this.battleSprites.length>0||this.feedback.active(now,running,reduced)||arrows&&this.arrowWidgets.length>0||sinking;}
+  /** Fleet sinking and army falling ghosts; true while one is still animating. */
+  animateGhosts(now:number,reduced:boolean){const sinking=this.sinkMotion.step(now,reduced);if(sinking)this.drawSinking();const falling=this.fallMotion.step(now,reduced);if(falling)this.drawFalling(now);return sinking||falling;}
+  private drawFalling(now:number){const layer=this.fallLayer;if(!layer||layer.destroyed)return;for(const c of layer.removeChildren())c.destroy();
+    for(const f of this.fallMotion.frames(now)){const texture=this.textures.get(f.texture as Parameters<typeof this.textures.get>[0]);
+      const dust=new Graphics();dust.ellipse(f.x,f.y+f.size*.32,f.size*(.35+.55*f.dust),f.size*(.12+.16*f.dust)).fill({color:0x5a4a34,alpha:.28*(1-f.dust)});layer.addChild(dust);
+      if(!texture)continue;const s=new Sprite(texture);s.anchor.set(.5,.9);s.position.set(f.x,f.y+f.size*.4+f.drop);s.width=s.height=f.size*f.scale;s.rotation=f.rotation;s.alpha=f.alpha;s.tint=f.tint;layer.addChild(s);}
+  }
   private drawSinking(){const g=this.sinkingLayer;if(!g)return;g.clear();const p=this.projection;for(const f of this.sinkMotion.frames()){const x=f.point.x/p.scale,y=f.point.y/p.scale+f.drop/p.zoom;if(x*p.zoom+p.x<-30||y*p.zoom+p.y<-30||x*p.zoom+p.x>p.width+30||y*p.zoom+p.y>p.height+30)continue;const r=f.radius*f.scale/p.zoom,point=(a:number,b:number)=>[x+(a*Math.cos(f.rotation)-b*Math.sin(f.rotation))*r,y+(a*Math.sin(f.rotation)+b*Math.cos(f.rotation))*r];g.poly([...point(-1,0),...point(1,0),...point(.5,.5),...point(-.5,.5)]).fill({color:f.color,alpha:f.alpha}).stroke({color:0xe2f0e8,width:1/p.zoom,alpha:f.alpha});const a=point(0,0),b=point(0,-1),c=point(.7,-.35),d=point(0,-.35);g.moveTo(a[0],a[1]).lineTo(b[0],b[1]).lineTo(c[0],c[1]).lineTo(d[0],d[1]).stroke({color:0xf4f2d9,width:1/p.zoom,alpha:f.alpha});}}
   orderAnimations(){return this.arrowWidgets.map(a=>({id:a.id,growth:a.actual?1:this.orderMotion.growth(a.id)}));}
   drawActualAttackArrows(routes:{id:string;points:Point[];color:string;key:string}[],scale:number,zoom:number){
@@ -170,6 +179,9 @@ export class PlayMap {
   private labelGrid:{grid:LabelGrid47;owners:ArrayLike<number>}|null=null;private stateBoxes:{key:string;boxes:StateLabelBox47[]}|null=null;
   /** Original grid and cell → province index, for the original state-name placement. */
   setLabelGrid(grid:LabelGrid47,owners:ArrayLike<number>){this.labelGrid={grid,owners};this.stateBoxes=null;this.politicalKey='';}
+  private relations:ReadonlyMap<string,number>=new Map();private relationsKey='';
+  /** Original StateRelationsHighlighter: state lines of the selected state's relations, nation id → colour. */
+  setRelationHighlight(relations:ReadonlyMap<string,number>){this.relations=relations;this.relationsKey=[...relations].map(([k,v])=>k+':'+v).join(',');}
   setCellEdges(edges:readonly OriginalPoliticalEdge[]){this.cellEdges=edges;this.stateOutlineKey='';this.politicalKey='';}
   useCellPolitics(enabled:boolean){this.cellPolitics=enabled;this.politicalKey='';}
   // Original ViewManager color views: per-province fill override (null keeps the state color).
@@ -185,7 +197,7 @@ export class PlayMap {
   private territories:TerritoryLabel[]=[];
   labelPositions(){return this.territories.map(({nationId,componentId,provinceIds,point,angle,length,height})=>({nationId,componentId,provinceIds,...point,angle,length,height}));}
   draw(world: World, scale: number, zoom: number, selected: string | null, armyId: string | null, mode:PoliticalView='political',units?:UnitAssignments,view?:{camera:{x:number;y:number};viewport:{width:number;height:number}},naval?:NavalView,frame?:DisplayFrame&{independentArmies?:ReadonlySet<string>},combat?:{state:BattleState;preview:string[];occupation?:OccupationState},selectedWars:readonly string[]=[],runId=world.custom?.id??'',geometry?:object,_reorganizing:Record<string,number>={},formationForces?:TacticsState['forces'],viewGroups?:ViewGroups47|null): void {
-    if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
+    if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.fallMotion=new FallMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
     for(const text of this.retainedLabels.values())text.removeFromParent();this.usedLabels.clear();
@@ -204,7 +216,7 @@ export class PlayMap {
     // Preserve the tessellated political surface while only units/events change.
     // Complete Worker replies replace geometry; ownership, color, selection,
     // zoom and mode independently invalidate the cached display.
-    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.provinceFillKey,territoryKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
+    const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.relationsKey,this.provinceFillKey,territoryKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
     g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
     const originalLines=this.originalStateLines&&(mode==='political'||this.cellPolitics);
@@ -234,6 +246,16 @@ export class PlayMap {
     else for(const edge of borders.values())if(edge.foreign){
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0xfff5db,width:(style.border+1.5)*pixel,alpha:.8});
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0x35453a,width:style.border*pixel,alpha:.9});
+    }
+    // Whole state outline (land borders and coast) of each highlighted relation, drawn over the
+    // ordinary state lines; the selected state itself last so it stays on top.
+    if(this.cellEdges&&this.relations.size&&!groupOf){
+      const owner=(i:number)=>i>=0?world.provinces[i]?.controller??null:null;
+      for(const [nationId,color]of [...this.relations].sort((x,y)=>x[1]===0xfff1b8?1:y[1]===0xfff1b8?-1:0)){
+        let drawn=false;
+        for(const {a,b,segment:[ax,ay,bx,by]}of this.cellEdges){const oa=owner(a),ob=owner(b);if((oa===nationId)!==(ob===nationId)){g.moveTo(ax,ay).lineTo(bx,by);drawn=true;}}
+        if(drawn)g.stroke({color,width:Math.max(FMS_STATE_LINE_WIDTH*1.3,2.4*pixel),alpha:.95,join:'round',cap:'round'});
+      }
     }
     if(selected&&this.cellEdges){const index=provinceIndex.get(selected);for(const {a,b,segment:[ax,ay,bx,by]}of this.cellEdges)if(a===index||b===index)g.moveTo(ax,ay).lineTo(bx,by);g.stroke({color:0xffe7a7,width:2.5*pixel});}
     }
@@ -349,6 +371,7 @@ export class PlayMap {
     // (RandomMoveInProvince); the web spreads stationary armies to fixed points of the province.
     const iconSize=2.56*.84*.35*(1600/240),moving=(a:World['armies'][number],at:Point)=>{const end=armyPosition(world,a);return !!frame?.independentArmies?.has(a.id)||a.status==='marching'||a.status==='retreating'||Math.hypot(at.x-end.x,at.y-end.y)>1e-7;};
     const citySpots=new Map<string,Point[]>();for(const c of world.cities){const list=citySpots.get(c.provinceId)??[];list.push(c.position);citySpots.set(c.provinceId,list);}
+    const fallen:FallenPose[]=[];
     for(const army of world.armies){
       if(army.troops<=0||army.status==='destroyed')continue;
       const at=frame?.armies.get(army.id)??armyPosition(world,army),active=army.id===armyId,home=provinces.get(army.provinceId);
@@ -357,9 +380,10 @@ export class PlayMap {
       this.unitGroups.push({ids:[army.id],container,display:'detail',offset:{x:(spot.x-at.x)/scale,y:(spot.y-at.y)/scale}});
       const unit=units?unitProfile(units[army.id]):undefined,texture=this.textures.get(unit?.key??'Cavalry'),size=Math.max(iconSize*(unit?.key==='Elite'?1.5:1),7*pixel);
       if(active){const ring=new Graphics();ring.circle(0,0,size*.75).fill({color:0x263931,alpha:.25}).stroke({color:0xffe6a6,width:1.5*pixel});container.addChild(ring);}
-      if(texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=size;sprite.height=size;sprite.tint=nationColor(nations.get(army.nationId)!);container.addChild(sprite);}
+      if(texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=size;sprite.height=size;sprite.tint=nationColor(nations.get(army.nationId)!);container.addChild(sprite);fallen.push({id:army.id,x:spot.x/scale,y:spot.y/scale,texture:unit?.key??'Cavalry',tint:sprite.tint as number,size});}
       else{const dot=new Graphics();dot.circle(0,0,size*.3).fill(nationColor(nations.get(army.nationId)!));container.addChild(dot);}
     }
+    this.fallMotion.sync(fallen);this.fallLayer=new Container();this.layer.addChild(this.fallLayer);this.drawFalling(performance.now());
     for(const e of combat?.state.engagements??[]){if(detail==='overview')continue;const p=engagementPoint(world,e),x=p.x/scale,y=p.y/scale,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,5*pixel).fill({color:0x392c28,alpha:.8});mark.moveTo(x-3*pixel,y-3*pixel).lineTo(x+3*pixel,y+3*pixel).moveTo(x+3*pixel,y-3*pixel).lineTo(x-3*pixel,y+3*pixel).stroke({color:0xffe4b4,width:1.5*pixel});const impact=new Graphics();impact.position.set(x,y);impact.circle(0,0,7*pixel).stroke({color:0xffd69a,width:1.5*pixel});for(let i=0;i<6;i++){const a=i*Math.PI/3;impact.moveTo(Math.cos(a)*9*pixel,Math.sin(a)*9*pixel).lineTo(Math.cos(a)*13*pixel,Math.sin(a)*13*pixel).stroke({color:0xffe6b9,width:pixel});}impact.alpha=0;this.layer.addChild(impact);this.impacts.push({id:e.id,graphic:impact});}
     if(combat)this.updateBattles(world,combat.state);this.updateReorganization(world);
     if(naval){this.sinkMotion.sync(naval.navy.fleets.filter(f=>f.status!=='lost').map(f=>({id:f.id,point:frame?.fleets.get(f.id)??fleetPosition(naval.graph,f),color:nationColor(nations.get(f.nationId)!),radius:6})),naval.navy.fleets.filter(f=>f.status==='lost').map(f=>({id:f.id,point:fleetPosition(naval.graph,f),color:nationColor(nations.get(f.nationId)!),radius:6})));this.shipLayer=drawNavy(this.layer,world,scale,zoom,naval,frame?.fleets,detail==='overview');}this.sinkingLayer=new Graphics();this.layer.addChild(this.sinkingLayer);this.drawSinking();

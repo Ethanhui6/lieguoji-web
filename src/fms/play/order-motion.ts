@@ -45,3 +45,25 @@ export class SinkMotion {
   }
   frames(){return [...this.ghosts.values()].map(({pose,elapsed})=>{const u=Math.min(1,elapsed/800),s=u*u*(3-2*u);return {...pose,scale:1-.72*s,rotation:14*Math.PI/180*s,alpha:.95*(1-s),drop:s*pose.radius*.7};});}
 }
+
+export interface FallenPose {id:string;x:number;y:number;texture:string;tint:number;size:number}
+/** Web addition (the original destroys the army object at once): an army icon that leaves the
+ * map — troops gone, destroyed or disbanded — topples, sinks and fades over 900 ms, with a
+ * dust ring spreading under it. Display only; the ghost has no interaction. */
+export const FALL_MS=900;
+export class FallMotion {
+  private known=new Map<string,FallenPose>();
+  private ghosts=new Map<string,{pose:FallenPose;born:number}>();
+  sync(live:readonly FallenPose[],now=performance.now()){
+    const ids=new Set(live.map(p=>p.id));
+    for(const [id,pose]of this.known)if(!ids.has(id)&&!this.ghosts.has(id))this.ghosts.set(id,{pose,born:now});
+    this.known=new Map(live.map(p=>[p.id,{...p}]));
+  }
+  step(now:number,reduced:boolean){const changed=this.ghosts.size>0;for(const [id,g]of this.ghosts)if(reduced||now-g.born>=FALL_MS)this.ghosts.delete(id);return changed;}
+  frames(now=performance.now()){
+    return [...this.ghosts.values()].map(({pose,born})=>{
+      const u=Math.min(1,Math.max(0,(now-born)/FALL_MS)),ease=1-(1-u)**3;
+      return {...pose,u,rotation:ease*75*Math.PI/180,drop:ease*pose.size*.3,scale:1-.18*ease,alpha:u<.35?1:1-((u-.35)/.65)**1.4,dust:ease};
+    });
+  }
+}

@@ -16,9 +16,9 @@ import {DotNetRandom} from './native-economy/dotnet-random';
  * - Family: the controlling family's colour, white without;
  * - District: not restored (the web has no districts yet).
  * Labels and borders follow ViewManager.Update*LabelsAndBorderVisibility: state names and
- * state borders only in the state view and, in the alliance view, for states outside an
- * alliance (State.SetStateLabelTriggerCheck); every other view shows the names and borders
- * of its own groups instead.
+ * state borders in the state view and the alliance view (where every member keeps its own
+ * name, in the alliance colour); every other view shows the names and borders of its own
+ * groups instead.
  * Colours: families use FamilyManager's palette (cctor 0x873680) with GetNextFamilyColor's
  * HSV jitter; the web's cultures and religions are its own real-world set, not the original's
  * data files, so they take the same palette in catalogue order. */
@@ -59,17 +59,18 @@ export function viewGroups47(r:FoundingForces47,view:ColorView47):ViewGroups47|n
   const kin=(r as unknown as {kin?:Families}).kin;
   const nobles=(r as {nobility?:{families:Record<string,{controlledProvinces:string[];nationId:string}>}}).nobility,holder=new Map<string,string>();
   if(nobles)for(const [id,fam] of Object.entries(nobles.families))for(const p of fam.controlledProvinces)holder.set(p,id);
-  const alliances=new Map<string,{id:number;name:string;members:string[]}>();
   const province=(i:number)=>r.world.provinces[i];
+  // Every state keeps its own name and borders; members of one alliance share the alliance
+  // colour (its strongest member's), so the bloc reads as one colour with each state named.
   if(view==='alliance')return {
-    key:i=>{const p=province(i);if(!p)return null;const a=allianceOf46(r,p.controller);if(!a)return 'state:'+p.controller;alliances.set('alliance:'+a.id,a);return 'alliance:'+a.id;},
-    name:k=>k.startsWith('state:')?nations.get(k.slice(6))?.name??'':alliances.get(k)?.name??'',
+    key:i=>{const p=province(i);return p?'state:'+p.controller:null;},
+    name:k=>nations.get(k.slice(6))?.name??'',
     color:k=>{
-      if(k.startsWith('state:'))return hex(nationColor(nations.get(k.slice(6))!));
-      const a=alliances.get(k)!,owned=(id:string)=>r.world.provinces.filter(p=>p.controller===id).length;
+      const id=k.slice(6),a=allianceOf46(r,id);if(!a)return hex(nationColor(nations.get(id)!));
+      const owned=(n:string)=>r.world.provinces.filter(p=>p.controller===n).length;
       const strongest=[...a.members].sort((x,y)=>owned(y)-owned(x))[0];return hex(nationColor(nations.get(strongest)!));
     },
-    state:k=>k.startsWith('state:'),
+    state:()=>true,
   };
   if(view==='culture')return {
     key:i=>{const p=province(i);if(!p)return null;const city=cityOf.get(p.id),c=city?r.civilization.cities[city]?.cultureId:r.civilization.nations[p.controller]?.cultureId;return c?'culture:'+c:null;},

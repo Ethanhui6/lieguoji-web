@@ -256,3 +256,19 @@
 .c47-app .c47-rank b{position:absolute;left:10px;bottom:5px;height:3px;border-radius:2px;opacity:.75;max-width:calc(100% - 20px);transform-origin:left;animation:c47-bar .6s var(--ease-ios,ease-out) both}
 @keyframes c47-rank-in{from{opacity:0;translate:0 6px}}
 @keyframes c47-bar{from{transform:scaleX(0)}}
+/* Cloud saves (菜单 → 云存档). */
+.c47-app .c47-cloud-form{display:grid;gap:10px}
+.c47-app .c47-cloud-form label{display:grid;gap:4px;font-size:13px;color:var(--ink-2)}
+.c47-app .c47-cloud-form input,.c47-app .c47-cloud-upload input{min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font-size:15px;box-sizing:border-box;width:100%;-webkit-user-select:text;user-select:text}
+.c47-app .c47-cloud-form input:focus,.c47-app .c47-cloud-upload input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.c47-app .c47-cloud .c47-primary{min-height:42px;border-radius:10px;background:var(--accent);color:#fff;border:0;font-weight:600}
+.c47-app .c47-cloud .c47-primary:disabled{opacity:.5}
+.c47-app .c47-cloud-account{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2)}
+.c47-app .c47-cloud-account button{min-height:32px;padding:4px 12px}
+.c47-app .c47-cloud-upload{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.c47-app .c47-cloud-upload input{height:42px;min-height:0}
+.c47-app .c47-cloud-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2)}
+.c47-app .c47-cloud-row>span{flex:1;min-width:0;display:grid}
+.c47-app .c47-cloud-row>span b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.c47-app .c47-cloud-row>span small{color:var(--ink-2);font-size:12px}
+.c47-app .c47-cloud-row button{min-height:32px;padding:4px 10px;flex-shrink:0}

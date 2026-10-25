@@ -1,6 +1,8 @@
 import {Fragment,useEffect,useState} from 'react';
 import {AUTOSAVE_MAX_MINUTES,AUTOSAVE_MIN_MINUTES,clampAutoSaveMinutes,type Culture47Config} from './culture47-config';
 import {gameAudio47,useAudio47} from '../audio/audio47';
+import {CultureCloud47} from './CultureCloud47';
+import type {Culture47Journal} from './culture47-session';
 import {defaultSaveName47,deleteCulture47Named,listCulture47Saves,type Culture47SaveInfo} from './culture47-library';
 
 /** Original SettingsUIInfo "菜单选项" with LoadSaveDataUI / NewSaveSlot
@@ -10,12 +12,13 @@ import {defaultSaveName47,deleteCulture47Named,listCulture47Saves,type Culture47
 type View=
   |{kind:'menu'}|{kind:'library';mode:'load'|'save'}|{kind:'new-save';name:string}
   |{kind:'overwrite';name:string}|{kind:'load-or-delete';name:string}|{kind:'delete';name:string}|{kind:'load-confirm';name:string}
-  |{kind:'autosave'}|{kind:'export'}|{kind:'export-image'}|{kind:'export-history';mobilize:boolean}|{kind:'other'};
+  |{kind:'autosave'}|{kind:'cloud'}|{kind:'export'}|{kind:'export-image'}|{kind:'export-history';mobilize:boolean}|{kind:'other'};
 const savedAtText=(iso:string)=>{const d=new Date(iso);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
-export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onSaveNamed,onLoadNamed,onExportImage,onExportHistory,onQuit,onClose}:{
+export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onSaveNamed,onLoadNamed,onExportImage,onExportHistory,onQuit,onClose,cloudCurrent,onCloudImport}:{
   busy:boolean;hasWorld:boolean;unsaved:boolean;initial?:'load';config:Culture47Config;onConfig:(c:Culture47Config)=>void;
   onSaveNamed:(name:string)=>Promise<boolean>;onLoadNamed:(name:string)=>Promise<boolean>;
   onExportImage:()=>Promise<void>;onExportHistory:(includeEmergencyMobilize:boolean)=>void;onQuit:()=>void;onClose:()=>void;
+  cloudCurrent:()=>{journal:Culture47Journal;day:string}|null;onCloudImport:(journal:Culture47Journal,name:string)=>Promise<boolean>;
 }){
   const [view,setView]=useState<View>(initial==='load'?{kind:'library',mode:'load'}:{kind:'menu'});
   const [saves,setSaves]=useState<Culture47SaveInfo[]|null>(null),[error,setError]=useState(''),[minutes,setMinutes]=useState(config.autoSaveMinutes);
@@ -35,6 +38,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button disabled={busy||!hasWorld} onClick={()=>library('save')}>保存游戏</button>
       <button disabled={busy||!hasWorld} onClick={()=>setView({kind:'export'})}>导出</button>
       <button disabled={busy} onClick={()=>setView({kind:'autosave'})}>自动保存</button>
+      <button disabled={busy} onClick={()=>setView({kind:'cloud'})}>云存档<small>登录后跨设备保存</small></button>
       <button disabled={!document.fullscreenEnabled} onClick={()=>{void (document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()).catch(()=>{});}}>屏幕模式<small>{fullscreen?'全屏':'窗口'}</small></button>
       {/* Original SettingsUIInfo.volumeSlider (RandomMusicPlayer volume); sound effects and vibration are web additions. */}
       <label className="c47-slider">音乐音量<output>{Math.round(audio.music*100)}</output>
@@ -96,13 +100,14 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button onClick={()=>onExportHistory(view.mobilize)}>开始导出</button>
       <button onClick={()=>setView({kind:'export'})}>关闭</button>
     </div>;break;
+    case 'cloud':body=<CultureCloud47 busy={busy} current={cloudCurrent} onImport={onCloudImport} onBack={back}/>;break;
     case 'other':body=<div className="c47-menu-list" aria-label="其他设置">
       <p className="c47-menu-hint">其他设置</p>
       {['分辨率','音乐音量','镜头缩放速度','显示提示','地图坐标','植被图标'].map(t=><label key={t} className="c47-check is-pending"><input type="checkbox" disabled/>{t}<small>尚未还原</small></label>)}
       <button onClick={back}>关闭</button>
     </div>;break;
   }
-  const title=view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind.startsWith('export')?'菜单选项':'存档管理';
+  const title=view.kind==='cloud'?'云存档':view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind.startsWith('export')?'菜单选项':'存档管理';
   return <section className="c47-menu" role="dialog" aria-label={title}>
     <header><strong>{title}</strong><button aria-label="关闭菜单选项" onClick={onClose}>×</button></header>
     <Fragment key={view.kind}>{body}</Fragment>

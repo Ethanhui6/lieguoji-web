@@ -39,6 +39,7 @@ import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
 import {originalPoliticalEdges} from '../original/original-political-edges';
 import {loadMapFont47} from './map-font47';
+import {isoPlusDays} from './civilization47-iso-calendar';
 import {gameAudio47} from '../audio/audio47';
 import {useSheetGesture47} from './sheet-gesture47';
 import {markWorldOpen47,takeWorldResume47} from './world-resume47';
@@ -338,6 +339,14 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     finally{operation.current=null;inflight.current=false;if(!lifetime.current?.signal.aborted){setBusy(false);drain();}}
   }
   /** LoadSaveDataUI → 加载存档: the save's own map and history replace the open world. */
+  /** Cloud saves: the current world for upload, and a downloaded journal replayed before it
+   * enters the local library (the same verification as any named save). */
+  const cloudCurrent=()=>{const s=current.current;if(!s)return null;const d=isoPlusDays(s.run.life.startDate,s.run.world.day);return {journal:s.journal,day:`公元${d.year}年${d.month}月${d.day}日`};};
+  async function cloudImport(journal:Culture47Journal,name:string):Promise<boolean>{
+    const op=new AbortController();
+    try{await saveCulture47Named(journal,name,async j=>{await verifyJournal(j,op.signal,{progress:replayProgress});});setNotice(`已下载云存档：${name}`);return true;}
+    catch(e){setNotice('云存档校验失败，未写入本地。'+failText(e));return false;}
+  }
   async function loadNamed(name:string):Promise<boolean>{
     if(inflight.current||busy)return false;setPlaying(false);setPick(null);
     let journal:Culture47Journal;try{journal=await loadCulture47Named(name);}catch(e){setNotice(failText(e));return false;}
@@ -659,7 +668,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     </section>}
     {leaving&&<div className="c47-exit" role="dialog" aria-modal="true" aria-label="保存后离开"><h2>保留这个世界？</h2><p>尚有未保存的时间或编辑。</p><button disabled={busy||locked} onClick={()=>void save(true)}>保存并返回</button><button disabled={busy} onClick={onClose}>放弃未保存进度</button><button disabled={busy} onClick={()=>setLeaving(false)}>继续查看</button></div>}
     {notice&&<div className="c47-notice" role="status">{notice}</div>}{(storageReading||busy)&&<button className="c47-cancel-replay" onClick={()=>{queued.current=null;resumeAfterRecovery.current=false;setPlaying(false);if(storageReading)storageAbort.current?.abort();else operation.current?.abort();}}>取消处理</button>}
-    {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)}/>}
+    {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)} cloudCurrent={cloudCurrent} onCloudImport={cloudImport}/>}
     {showPerf&&<PerfOverlay47 root={appRoot}/>}
     <RemoteBadge47/>
     {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存，按 ESC 取消</>}</div>}

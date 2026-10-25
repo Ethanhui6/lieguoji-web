@@ -12,7 +12,7 @@ import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import type { ViewGroups47 } from './culture47-views';
 import {autoFontSize47,cityLabel47,MAP_UNIT47,stateLabelBoxes47,type LabelGrid47,type StateLabelBox47} from './original-labels47';
-import {MAP_FONT47,mapFontEpoch47} from './map-font47';
+import {MAP_FONT47,mapFontEpoch47,mapFontSettled47} from './map-font47';
 import {currentCapital} from './capital-view';
 import {selectedCityLabel,type LabelBox} from './city-labels';
 import { drawNavy, type NavalView } from './naval-map';
@@ -51,14 +51,19 @@ export class PlayMap {
   private retainedLabels=new Map<string,Text>();
   private usedLabels=new Set<string>();
   private labelCreations=0;
+  /** Country and city names live in one layer that is never cleared: Pixi v8 rebuilds a
+   * text's texture whenever the text is re-attached, so detaching ~130 names on every redraw
+   * re-uploaded all of them each simulation reply (most of the frame budget on phones). */
+  private labelLayer=(()=>{const c=new Container();c.sortableChildren=true;return c;})();
+  private keepLabel(t:Text,z:number){t.zIndex=z;if(t.parent!==this.labelLayer)this.labelLayer.addChild(t);t.visible=true;}
   textDiagnostics(){return {created:this.labelCreations,retained:this.retainedLabels.size};}
-  private retainedText(key:string,text:string,style:TextStyleOptions){
+  private retainedText(key:string,text:string,style:TextStyleOptions,resolution=2){
     this.usedLabels.add(key);let label=this.retainedLabels.get(key);
-    if(!label){label=new Text({text,style,resolution:2});this.retainedLabels.set(key,label);this.labelCreations++;}
+    if(!label){label=new Text({text,style,resolution});this.retainedLabels.set(key,label);this.labelCreations++;}
     else if(label.text!==text)label.text=text;
     // Layout measures unscaled glyphs. A previous camera pose must not feed
     // back into the next territory fit or make its letters shrink repeatedly.
-    label.scale.set(1);label.rotation=0;label.alpha=1;return label;
+    label.scale.set(1);label.rotation=0;label.alpha=1;label.visible=true;return label;
   }
   private textures=new Map<UnitKey,Texture>();
   private disposed=false;
@@ -97,7 +102,7 @@ export class PlayMap {
   private battleWidgets:{ids:string[];bar:Graphics;r:number;pixel:number;text?:Text}[]=[];
   private siegeWidgets:{id:string;bar:Graphics;text:Text;x:number;y:number;pixel:number;percent:number}[]=[];
   siegePositions(){const p=this.projection;return this.siegeWidgets.map(w=>({id:w.id,percent:w.percent,x:w.x*p.zoom+p.x,y:w.y*p.zoom+p.y}));}
-  updateOccupation(state:OccupationState){for(const w of this.siegeWidgets){const s=state.sieges.find(s=>s.provinceId===w.id);if(!s)continue;w.percent=(1-s.resistance/s.maximum)*100;w.bar.clear().roundRect(-22*w.pixel,0,44*w.pixel,5*w.pixel,2*w.pixel).fill(0x293931).rect(-22*w.pixel,0,44*w.pixel*w.percent/100,5*w.pixel).fill(0xf4c16a);w.text.text='围攻 '+w.percent.toFixed(0)+'%';}}
+  updateOccupation(state:OccupationState){for(const w of this.siegeWidgets){const s=state.sieges.find(s=>s.provinceId===w.id);if(!s)continue;w.percent=(1-s.resistance/s.maximum)*100;w.bar.clear().roundRect(-22*w.pixel,0,44*w.pixel,5*w.pixel,2*w.pixel).fill(0x293931).rect(-22*w.pixel,0,44*w.pixel*w.percent/100,5*w.pixel).fill(0xf4c16a);const t='围攻 '+w.percent.toFixed(0)+'%';if(w.text.text!==t)w.text.text=t;}}
   battlePositions(){return this.battles;}
   updateBattles(world:World,state:BattleState){
     this.feedback.observe(state,performance.now());
@@ -200,8 +205,8 @@ export class PlayMap {
     if(this.presentationRun!==runId){this.presentationRun=runId;this.orderMotion=new OrderMotion();this.sinkMotion=new SinkMotion();this.fallMotion=new FallMotion();this.battleClock=new BattleAnimationClock();this.feedback=new BattleFeedback();}
     // Keep text objects and their glyph textures across simulation replies.
     // Detach before destroying old containers, including the capital layer.
-    for(const text of this.retainedLabels.values())text.removeFromParent();this.usedLabels.clear();
-    for (const child of this.layer.removeChildren()) if(child!==this.politicalGraphic&&child!==this.coastGraphic)child.destroy({ children: true });
+    for(const text of this.retainedLabels.values()){if(text.parent===this.labelLayer)text.visible=false;else text.removeFromParent();}this.usedLabels.clear();
+    for (const child of [...this.layer.children]) if(child!==this.labelLayer){this.layer.removeChild(child);if(child!==this.politicalGraphic&&child!==this.coastGraphic)child.destroy({ children: true });}
     this.unitGroups=[];this.reorganizationWidgets=[];this.battleWidgets=[];this.siegeWidgets=[];this.impacts=[];this.battleSprites=[];this.arrowWidgets=[];this.shipLayer=undefined;this.projection={scale,zoom,x:view?.camera.x??0,y:view?.camera.y??0,width:view?.viewport.width??1280,height:view?.viewport.height??720};
     const detail=warDetail(world,scale,zoom),sites=warSites(world,combat?.state,combat?.occupation,naval);
     this.wars=warMarkers(world,sites,naval,scale,{x:this.projection.x,y:this.projection.y,scale:zoom},{width:this.projection.width,height:this.projection.height},selectedWars);
@@ -280,13 +285,14 @@ export class PlayMap {
       // A progress marker is not a fictitious cell-level ownership front.
       marks.poly(p.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xe2b568,width:1.7*pixel,alpha:.85});
       const group=new Container(),x=p.center.x/scale,y=p.center.y/scale+28*pixel;group.position.set(x,y);this.layer.addChild(group);
-      const bar=new Graphics();group.addChild(bar);const text=label('',0,0,10,'#ffdf9c',group);text.position.y=-2*pixel;
+      const bar=new Graphics();group.addChild(bar);const text=label('',0,0,10,'#ffdf9c',group,`siege:${p.id}`);text.position.y=-2*pixel;
       this.siegeWidgets.push({id:p.id,bar,text,x,y,pixel,percent:0});
     }this.updateOccupation(combat.occupation);}
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     // Original state names (State.UpdateStateName): one horizontal TW-Kai name per group,
     // black face with an 80 % outline in the group colour (LabelUtility.UpdateLabelMaterial),
     // auto-sized in its box; sized in world units, so it scales with the map.
+    if(this.labelLayer.parent===this.layer)this.layer.setChildIndex(this.labelLayer,this.layer.children.length-1);else this.layer.addChild(this.labelLayer);
     const mapFontEpoch=mapFontEpoch47();
     const groupKeyOf=(p:{id:string;controller:string})=>groupOf?groupOf(p):p.controller;
     let boxes:StateLabelBox47[];
@@ -299,12 +305,14 @@ export class PlayMap {
       const largest=new Map<string,TerritoryLabel>();for(const t of this.territories){const old=largest.get(t.nationId);if(!old||t.area>old.area)largest.set(t.nationId,t);}
       boxes=[...largest.values()].map(t=>({key:t.nationId,x:t.point.x/scale,y:t.point.y/scale,width:t.length/scale/MAP_UNIT47,height:Math.max(t.height/scale/MAP_UNIT47,1.5),fontMax:40,fontMin:15,cells:0}));
     }
-    const countryLabels=boxes.flatMap(box=>{
+    // Names wait for the map font (mapFontReady47) so they are rasterized once.
+    const namesReady=mapFontSettled47();
+    const countryLabels=(namesReady?boxes:[]).flatMap(box=>{
       const name=viewGroups?viewGroups.name(box.key):nations.get(box.key)?.name;if(!name)return [];
       const tint=viewGroups?viewGroups.color(box.key):Number.parseInt(nationColor(nations.get(box.key)!).slice(1),16);
-      const t=this.retainedText(`country:${mapFontEpoch}:${box.key}:${tint}`,name,{fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill:0x000000,stroke:{color:tint,width:13,alpha:.8,join:'round'}});
+      const t=this.retainedText(`country:${mapFontEpoch}:${box.key}:${tint}`,name,{fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill:0x000000,stroke:{color:tint,width:13,alpha:.8,join:'round'}},1.5);
       const size=autoFontSize47(box,{width:Math.max(1,t.width-13)/64,height:Math.max(1,t.height-13)/64}),em=size/10*MAP_UNIT47,k=em/64;
-      t.anchor.set(.5);t.rotation=0;t.scale.set(k);t.position.set(box.x,box.y);t.alpha=1;this.layer.addChild(t);
+      t.anchor.set(.5);t.rotation=0;t.scale.set(k);t.position.set(box.x,box.y);t.alpha=1;this.keepLabel(t,0);
       const width=t.width,height=t.height,screen={x:box.x*zoom+this.projection.x,y:box.y*zoom+this.projection.y,width:width*zoom,height:height*zoom};countryBoxes.push(screen);
       return [{point:{x:box.x*scale,y:box.y*scale},size:em*zoom,width:screen.width}];
     });
@@ -327,15 +335,15 @@ export class PlayMap {
     const capitalText:(LabelBox&{id:string})[]=[];
     const cityObstacles=[...countryBoxes,...capitalIcons];
     const cityText:{id:string;name:string;labelX:number;labelY:number;box:LabelBox}[]=[];
-    for(const c of this.cities){
+    for(const c of namesReady?this.cities:[]){
       const at={x:(c.x-this.projection.x)/zoom,y:(c.y-this.projection.y)/zoom},l=cityLabel47(at,c.capital);
       if(l.em*zoom<9)continue;
-      const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle);t.anchor.set(.5);t.scale.set(l.em/64);t.position.set(l.x,l.y);
+      const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle,1);t.anchor.set(.5);t.scale.set(l.em/64);t.position.set(l.x,l.y);
       const box={x:l.x*zoom+this.projection.x,y:l.y*zoom+this.projection.y,width:t.width*zoom,height:t.height*zoom};
       cityText.push({id:c.id,name:c.name,labelX:box.x,labelY:box.y,box});if(c.capital)capitalText.push({...box,id:c.id});
       // A selected city shows its callout instead; its name keeps its place in the layout.
       if(c.provinceId===selected)continue;
-      this.layer.addChild(t);c.label=true;
+      this.keepLabel(t,1);c.label=true;
     }
     this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
     // Near view resolves actual local names. A countryside province is not
@@ -393,7 +401,7 @@ export class PlayMap {
     for(const contact of naval?.maritime?.contacts??[]){const a=naval!.navy.fleets.find(f=>f.id===contact.a),b=naval!.navy.fleets.find(f=>f.id===contact.b);if(!a||!b)continue;const id=`sea:${[a.id,b.id].sort().join('/')}`;if(detail!=='local'&&!selectedWars.includes(id)&&naval?.selected!==a.id&&naval?.selected!==b.id)continue;const p=frame?.fleets.get(a.id)??fleetPosition(naval!.graph,a),q=frame?.fleets.get(b.id)??fleetPosition(naval!.graph,b);effects.push({id,point:{x:(p.x+q.x)/2,y:(p.y+q.y)/2},fleets:[a.id,b.id]});}
     this.battleClock.sync([...(combat?.state.engagements??[]).map(e=>`land:${e.id}`),...(naval?.maritime?.contacts??[]).map(c=>`sea:${[c.a,c.b].sort().join('/')}`)]);
     for(const effect of effects){const x=effect.point.x/scale,y=effect.point.y/scale,sx=x*zoom+this.projection.x,sy=y*zoom+this.projection.y;if(!this.battleTextures.length||this.battleSprites.length>=32||sx<-40||sy<-40||sx>this.projection.width+40||sy>this.projection.height+40)continue;const sprite=new Sprite(this.battleTextures[this.battleClock.frame(effect.id)]);sprite.anchor.set(.5);sprite.position.set(x,y);sprite.width=(zoom>1.2?42:zoom>.6?32:22)*pixel;sprite.height=sprite.width*194/258;this.layer.addChild(sprite);this.battleSprites.push({id:effect.id,sprite,fleets:effect.fleets});}
-    for(const war of this.wars){const x=(war.x-this.projection.x)/zoom,y=(war.y-this.projection.y)/zoom,r=(detail==='local'?5:9)*pixel,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,r).fill({color:0x49362a,alpha:.92}).stroke({color:war.selected?0xffefb9:0xd6b67a,width:(war.selected?2:1)*pixel});mark.moveTo(x-3*pixel,y-3*pixel).lineTo(x+3*pixel,y+3*pixel).moveTo(x+3*pixel,y-3*pixel).lineTo(x-3*pixel,y+3*pixel).stroke({color:0xffe9bd,width:1.3*pixel});if(detail!=='local')label(war.troops?`${(war.troops/1000).toFixed(1)}千`:`${war.ships}艘`,x,y+26*pixel,10);}
+    for(const war of this.wars){const x=(war.x-this.projection.x)/zoom,y=(war.y-this.projection.y)/zoom,r=(detail==='local'?5:9)*pixel,mark=new Graphics();this.layer.addChild(mark);mark.circle(x,y,r).fill({color:0x49362a,alpha:.92}).stroke({color:war.selected?0xffefb9:0xd6b67a,width:(war.selected?2:1)*pixel});mark.moveTo(x-3*pixel,y-3*pixel).lineTo(x+3*pixel,y+3*pixel).moveTo(x+3*pixel,y-3*pixel).lineTo(x-3*pixel,y+3*pixel).stroke({color:0xffe9bd,width:1.3*pixel});if(detail!=='local')label(war.troops?`${(war.troops/1000).toFixed(1)}千`:`${war.ships}艘`,x,y+26*pixel,10,undefined,undefined,`war:${war.ids[0]??war.x}`);}
     // Original package's CityCapitalFinal: dark outer disc / white ring / dark
     // center. Keep capitals above terrain/country labels and ordinary cities.
     const capitalLayer=new Container();this.layer.addChild(capitalLayer);

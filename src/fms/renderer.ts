@@ -1,3 +1,4 @@
+import { displayResolution } from './play/display-budget47';
 import { Application, Container, Geometry, GlProgram, Graphics, Mesh, Shader, UniformGroup, type BufferImageSource } from 'pixi.js';
 // Pixi's no-eval polyfill preserves the existing strict production CSP.
 import 'pixi.js/unsafe-eval';
@@ -123,7 +124,7 @@ export class FmsRenderer {
   attachGameplayLayer(layer: Container): void { this.scene.addChild(layer); this.draw(); }
   refresh(): void { this.draw(); }
   async init(host: HTMLElement): Promise<void> {
-    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, antialias: true, autoStart: false, background: FMS_OCEAN_APPEARANCES[this.oceanAppearanceState].background, preference: 'webgl' });
+    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: displayResolution(), autoDensity: true, antialias: true, autoStart: false, background: FMS_OCEAN_APPEARANCES[this.oceanAppearanceState].background, preference: 'webgl' });
     this.initialized = true;
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
     // A caller may switch palettes while the asynchronous Pixi init is pending.

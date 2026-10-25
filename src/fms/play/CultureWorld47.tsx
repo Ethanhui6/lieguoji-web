@@ -38,10 +38,11 @@ import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
 import {originalPoliticalEdges} from '../original/original-political-edges';
-import {loadMapFont47} from './map-font47';
+import {loadMapFont47,mapFontReady47} from './map-font47';
 import {isoPlusDays} from './civilization47-iso-calendar';
 import {gameAudio47} from '../audio/audio47';
 import {useSheetGesture47} from './sheet-gesture47';
+import {coarsePointer,PLAYBACK_FRAME_MS47} from './display-budget47';
 import {markWorldOpen47,takeWorldResume47} from './world-resume47';
 import {batchCue47,CUE_GAP47,MINOR_CUES47,MINOR_GAP47} from '../audio/event-sounds47';
 import {originalPortCities} from '../original/original-ports';
@@ -516,7 +517,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(battleArrows.layer);renderer.attachGameplayLayer(warEffects.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       exportImage.current=async()=>{paint.current();return await renderer.exportPng();};
       // Original TW-Kai map names: repaint once the font subset has loaded.
-      void loadMapFont47().then(ok=>{if(ok&&!disposed)paint.current();});
+      void loadMapFont47().then(ok=>{if(ok&&!disposed)paint.current();});void mapFontReady47().then(()=>{if(!disposed)paint.current();});
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
       const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original&&grid){map.useCellPolitics(true);map.useOriginalIcons(true);const w=current.current!.run;map.setOriginalPorts(originalPortCities(grid,source,w.world.cities.map(c=>({id:c.id,position:c.position,capital:false})),w.scale));}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
@@ -579,7 +580,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
       window.addEventListener('blur',reset);document.addEventListener('visibilitychange',hidden);
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
-      let raf=0,settled=-1,lastDiagnostic=0;
+      let raf=0,settled=-1,lastDiagnostic=0,lastMotionPaint=0;const coarse=coarsePointer();
       // Full force snapshots are test evidence, not gameplay. Serializing every
       // army/fleet and querying every visual marker on each interpolated frame
       // steals time from the same main thread that must paint the map. An
@@ -592,7 +593,10 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         const ghostFrame=map.animateGhosts(now,reducedMotion.matches),warFrame=warEffects.active||battleGrowing||ghostFrame;if(warEffects.active)warEffects.draw(now,view.camera.scale);if(battleGrowing)battleGrowing=drawBattleArrows(now);
         // The authored clip changes at 12 Hz. Keep its clock anchored while
         // paused/offscreen without making a full-map redraw on every RAF.
-        if(alpha<1||settled!==motion.current.revision||combatFrame){
+        // Phones: moving units repaint at most 30 times a second during playback (camera
+        // gestures render on their own path); the final settled pose is always drawn.
+        const throttled=coarse&&alpha<1&&isPlaying.current&&now-lastMotionPaint<PLAYBACK_FRAME_MS47;
+        if(!throttled&&(alpha<1||settled!==motion.current.revision||combatFrame)){lastMotionPaint=now;
           const frame=motion.current.frame(now);map.updateUnits(frame);
           drawCombat(frame,now);
           // The renderer itself updates every RAF. Rich diagnostics are opted

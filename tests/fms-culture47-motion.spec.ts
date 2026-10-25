@@ -7,7 +7,7 @@ async function issueReachableMarch(page:Page,map:Locator){
  await page.getByRole('button',{name:'军事模式',exact:true}).click();
  const chooser=page.getByLabel('选择部队'),army=await chooser.locator('option').evaluateAll(options=>{const option=options.find(v=>v instanceof HTMLOptionElement&&v.value.startsWith('army/')) as HTMLOptionElement|undefined;return option?{value:option.value,label:option.textContent??''}:null;});
  expect(army).not.toBeNull();const selected=army!;
- const nation=await map.evaluate((node:HTMLElement,label:string)=>{const countries=JSON.parse(node.dataset.countries??'[]') as {id:string;name:string}[];return countries.find(v=>label.startsWith(v.name+' · '))?.id??null;},selected.label);
+ const nation=await map.evaluate((node:HTMLElement,label:string)=>{const countries=JSON.parse(node.dataset.countries??'[]') as {id:string;name:string}[];return countries.filter(v=>label.startsWith(v.name+'第')).sort((a,b)=>b.name.length-a.name.length)[0]?.id??null;},selected.label);
  expect(nation).not.toBeNull();
  const forceId=selected.value.slice('army/'.length),unit=await map.evaluate((node:HTMLElement,id:string)=>{const positions=JSON.parse(node.dataset.displayPositions??'{"armies":[]}') as {armies:[string,{x:number;y:number}][]};const point=positions.armies.find(([forceId])=>forceId===id)?.[1];return point?{id,kind:'army',...point}:null;},forceId) as MapUnit|null;
  expect(unit).not.toBeNull();

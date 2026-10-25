@@ -328,10 +328,11 @@ export class PlayMap {
     // no strength bars or group badges. Idle armies wander inside their province
     // (RandomMoveInProvince); the web spreads stationary armies to fixed points of the province.
     const iconSize=2.56*.84*.35*(1600/240),moving=(a:World['armies'][number],at:Point)=>{const end=armyPosition(world,a);return !!frame?.independentArmies?.has(a.id)||a.status==='marching'||a.status==='retreating'||Math.hypot(at.x-end.x,at.y-end.y)>1e-7;};
+    const citySpots=new Map<string,Point[]>();for(const c of world.cities){const list=citySpots.get(c.provinceId)??[];list.push(c.position);citySpots.set(c.provinceId,list);}
     for(const army of world.armies){
       if(army.troops<=0||army.status==='destroyed')continue;
       const at=frame?.armies.get(army.id)??armyPosition(world,army),active=army.id===armyId,home=provinces.get(army.provinceId);
-      const spot=!moving(army,at)&&home?wanderPoint(home.polygon,army.id):at;
+      const spot=!moving(army,at)&&home?wanderPoint(home.polygon,army.id,citySpots.get(home.id)):at;
       const container=new Container();this.layer.addChild(container);container.position.set(spot.x/scale,spot.y/scale);
       this.unitGroups.push({ids:[army.id],container,display:'detail',offset:{x:(spot.x-at.x)/scale,y:(spot.y-at.y)/scale}});
       const unit=units?unitProfile(units[army.id]):undefined,texture=this.textures.get(unit?.key??'Cavalry'),size=Math.max(iconSize*(unit?.key==='Elite'?1.5:1),7*pixel);

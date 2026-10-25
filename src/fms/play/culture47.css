@@ -120,3 +120,23 @@
  .c47-app .c47-panel{width:300px;padding:18px;bottom:104px}
  .c47-app .c47-identity h2{font-family:'Songti SC',SimSun,Georgia,serif;font-size:23px}
 }
+/* 参考图第二批：顶栏（标题·日期居中·图层/菜单/存档）与左侧工具栏（国家/军事/历史/编辑/AI/生成）。 */
+.c47-app .c47-rail{position:absolute;z-index:2;left:16px;top:calc(max(12px,env(safe-area-inset-top)) + 60px);display:flex;flex-direction:column;gap:2px;padding:5px;background:var(--glass);border:1px solid var(--glass-line);border-radius:10px;box-shadow:var(--glass-shadow)}
+.c47-app .c47-rail button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:54px;min-height:52px;padding:5px 2px;border:0;border-radius:8px;background:transparent;color:#2c3a33;font-size:11px;line-height:1.1}
+.c47-app .c47-rail button:hover:not(:disabled){background:#fffaf0}
+.c47-app .c47-rail button[aria-pressed=true]{background:#d1e7dc;color:#1d4d42}
+.c47-app .c47-rail button:disabled{opacity:.45}
+.c47-app .c47-bar .c47-bar-label{margin-left:5px;font-size:13px;font-weight:500}
+@media(min-width:901px){
+ .c47-app .c47-bar>button:has(.c47-bar-label){min-width:auto;padding:6px 11px;border:1px solid #a3947140;background:#fbf7ec}
+ .c47-app .c47-bar time{position:absolute;left:50%;transform:translateX(-50%);margin:0}
+}
+@media(max-width:900px){
+ .c47-app .c47-bar .c47-bar-label,.c47-app .c47-rail span{display:none}
+ .c47-app .c47-rail{left:8px;top:calc(max(6px,env(safe-area-inset-top)) + 46px);padding:3px;gap:1px;border-radius:10px}
+ .c47-app .c47-rail button{width:34px;min-height:34px;padding:4px}
+}
+/* 参考图：手机上国家/行省详情默认收起为短底栏（名称与首行信息），点 ⌃ 展开，× 关闭。 */
+@media(max-width:600px){
+ .c47-app .c47-panel[data-kind=nation]:not(.is-expanded),.c47-app .c47-panel[data-kind=province]:not(.is-expanded){max-height:132px;overflow:hidden}
+}

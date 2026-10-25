@@ -22,4 +22,12 @@ describe('original army name and info rows',()=>{
     for(const p of [a,b]){expect(p.x).toBeGreaterThan(0);expect(p.x).toBeLessThan(10);expect(p.y).toBeGreaterThan(0);expect(p.y).toBeLessThan(10);}
     expect(wanderPoint(square,'force-1')).toEqual(a);expect(a).not.toEqual(b);
   });
+  it('stationary armies keep clear of the city marker and its name when they can',()=>{
+    const big=[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}],city={x:50,y:50},clear=100*.22;
+    for(const id of ['force-1','force-2','force-3','force-4','force-5']){
+      const p=wanderPoint(big,id,[city]);
+      expect(Math.abs(p.x-city.x)>clear*1.6||p.y-city.y>clear*.6||city.y-p.y>clear*1.2).toBe(true);
+    }
+  });
 });
+

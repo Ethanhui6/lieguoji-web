@@ -34,8 +34,6 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button disabled={busy||!hasWorld} onClick={()=>setView({kind:'export'})}>导出</button>
       <button disabled={busy} onClick={()=>setView({kind:'autosave'})}>自动保存</button>
       <button disabled={!document.fullscreenEnabled} onClick={()=>{void (document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()).catch(()=>{});}}>屏幕模式<small>{fullscreen?'全屏':'窗口'}</small></button>
-      <button disabled title="网页版仅提供简体中文">语言<small>简体中文</small></button>
-      <button onClick={()=>setView({kind:'other'})}>其他设置</button>
       <button disabled={busy} onClick={onQuit}>退出游戏<small>返回地图编辑</small></button>
       <button onClick={onClose}>关闭</button>
     </div>;break;

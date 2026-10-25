@@ -5,6 +5,7 @@ import {readArmySpace47, type ArmySpace47, type LocatedArmy47} from './army-spac
 import {armySpatialFor47} from './army-geography47';
 import {armyTravelPathPoints47, createArmyTravelSearch47, travelGraphSealed47, type TravelCell47, type TravelGraph47, type TravelPolicy47} from './army-travel47-graph';
 import {advanceArmyTravel47, armyTravelLocation47, beginArmyTravel47, haltArmyTravel47, redirectArmyTravel47} from './army-travel47-state';
+import {originalPaths47} from './civilization47-original-army';
 import {militaryAccess46} from './war46-access';
 import {nationsAtWar} from './realtime-statecraft';
 import type {ForceContacts47} from './force-motion47';
@@ -39,10 +40,13 @@ export function armyTravelPolicy47(r: ArmyMotionRun47, a: Army, weights: ArmyRou
 /** One immutable movement phase only. The closure captures this world; discard
  * it after any ownership/diplomacy change instead of retaining old access. */
 export function armyTravelPolicyFactory47(r:ArmyMotionRun47,weights:ArmyRouteWeights47){
-  const access = militaryAccess46(r), provinces = new Map(r.world.provinces.map(p => [p.id, p]));
+  const access = militaryAccess46(r), provinces = new Map(r.world.provinces.map(p => [p.id, p])), original = originalPaths47(r);
   return (a:Army,retreat:boolean):TravelPolicy47=>{
+  // Pathfinding.ArmyPathfinding.FindProvincePath (isCheckPassable): the start province's state
+  // is always passable, so an army left in a former enemy's land after peace can walk home.
+  const here = original ? provinces.get(a.provinceId)?.controller : undefined;
   return {...weights, allowLand: true, allowSea: !r.reorganization.active[a.id], canEnter: id => {
-    const p = provinces.get(id); return !!p && (access(r.world, a.nationId, p.controller) || !retreat && nationsAtWar(r.world, a.nationId, p.controller));
+    const p = provinces.get(id); return !!p && (access(r.world, a.nationId, p.controller) || p.controller === here || !retreat && nationsAtWar(r.world, a.nationId, p.controller));
   }};
   };
 }

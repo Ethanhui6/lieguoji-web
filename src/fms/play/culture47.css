@@ -54,7 +54,7 @@
 .c47-app .c47-bar{top:max(6px,env(safe-area-inset-top));left:8px;right:8px;padding:3px 4px;gap:1px;border-radius:10px}
 .c47-app .c47-bar>button{min-height:32px;min-width:32px;padding:4px}
 .c47-app .c47-bar time{font-size:11px;white-space:nowrap;line-height:1.2}
-.c47-app .c47-nations,.c47-app .c47-zoom,.c47-app .c47-playback-status{display:none}
+.c47-app .c47-nations,.c47-app .c47-playback-status{display:none}
 .c47-app .c47-news{top:calc(max(6px,env(safe-area-inset-top)) + 44px);left:8px;right:8px;width:auto;transform:none;height:28px;min-height:28px;padding:2px 8px;border-radius:10px;background:#f1f6f0c4}
 .c47-app .c47-news:active{transform:scale(.98)}
 .c47-app .c47-news-copy strong{font-size:11px}
@@ -140,3 +140,60 @@
 @media(max-width:600px){
  .c47-app .c47-panel[data-kind=nation]:not(.is-expanded),.c47-app .c47-panel[data-kind=province]:not(.is-expanded){max-height:132px;overflow:hidden}
 }
+/* 手机：放大/缩小保留在右下，避开播放条。 */
+@media(max-width:600px){.c47-app .c47-zoom{display:flex;flex-direction:column;left:auto;right:8px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 56px);padding:2px;border-radius:10px}.c47-app .c47-zoom button{min-width:34px;min-height:34px}}
+/* 二级界面统一：不透明暖纸底、细边、统一圆角与间距，层级高于工具栏与事件条。 */
+.c47-app .c47-map-menu,.c47-app .c47-menu,.c47-app .c47-ai-global,.c47-app .c47-territory{z-index:6;background:#f7f2e4;border:1px solid #a3947159;border-radius:12px;box-shadow:0 8px 28px #2a24181f,0 1px 2px #2a241814;backdrop-filter:none}
+.c47-app:has(.c47-map-menu) .c47-news,.c47-app:has(.c47-menu) .c47-news,.c47-app:has(.c47-ai-global) .c47-news{display:none}
+.c47-app .c47-map-menu{display:grid;gap:12px;padding:14px;width:min(360px,calc(100% - 32px));box-sizing:border-box}
+.c47-app .c47-map-menu>div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:stretch}
+.c47-app .c47-map-menu>div>small{grid-column:1/-1;margin:0 0 2px;font-size:12px;font-weight:600;color:#6b5f45;letter-spacing:.04em}
+.c47-app .c47-map-menu button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:36px;padding:6px 8px;border:1px solid #a3947140;border-radius:8px;background:#fffdf6;color:#2c3a33;font-size:13px;line-height:1.2}
+.c47-app .c47-map-menu button b{font-size:11px;font-weight:600;color:#8a7d60}
+.c47-app .c47-map-menu button[aria-pressed=true]{background:#2f5d50;border-color:#2f5d50;color:#fff}
+.c47-app .c47-map-menu button[aria-pressed=true] b{color:#d7e8df}
+.c47-app .c47-map-menu button:disabled{opacity:.45}
+@media(min-width:601px){.c47-app .c47-map-menu{right:16px;left:auto}}
+@media(max-width:600px){
+ .c47-app .c47-map-menu,.c47-app .c47-menu,.c47-app .c47-ai-global{left:8px;right:8px;width:auto;max-height:calc(100% - 150px);overflow:auto}
+ .c47-app .c47-rail{top:calc(max(6px,env(safe-area-inset-top)) + 80px)}
+}
+/* ===== 统一二级界面（图层 / 菜单及子页 / AI 配置 / 编辑国家 / 详情面板）=====
+   同一外壳：暖纸底、细边、12px 圆角；桌面在右侧顶栏下方，手机为播放条上方的底部抽屉；
+   同一标题栏（标题 + × 关闭）、同一列表行、开关行、滑块行。未还原的占位项不显示。 */
+.c47-app{--paper:#f7f2e4;--paper-2:#fffdf7;--ink:#2a2b24;--ink-2:#6b6450;--line:#a3947150;--accent:#2f5d50;--accent-soft:#e2eee7;--sheet-shadow:0 10px 30px #2a24181f,0 1px 2px #2a241814}
+.c47-app .is-pending,.c47-app .c47-map-menu button:disabled{display:none!important}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory){position:absolute;z-index:6;top:calc(max(12px,env(safe-area-inset-top)) + 64px);right:16px;left:auto;bottom:auto;transform:none;display:flex;flex-direction:column;gap:8px;width:360px;max-width:calc(100% - 32px);max-height:calc(100% - 170px);overflow:auto;box-sizing:border-box;padding:0 14px 14px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sheet-shadow);backdrop-filter:none}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory)>header{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 -14px 2px;padding:12px 14px 10px;background:var(--paper);border-bottom:1px solid var(--line)}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory)>header strong{font-size:15px;font-weight:600;letter-spacing:.02em;color:var(--ink)}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory)>header button{display:grid;place-items:center;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink-2);font-size:17px;line-height:1}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory)>header button:hover{border-color:var(--accent);color:var(--accent)}
+/* 列表行 */
+.c47-app .c47-menu-list{display:flex;flex-direction:column;gap:6px}
+.c47-app .c47-menu-list>button,.c47-app .c47-save-list>*{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink);font-size:14px;text-align:left}
+.c47-app .c47-menu-list>button small{font-size:12px;color:var(--ink-2)}
+.c47-app .c47-menu-list>button:hover:not(:disabled){border-color:var(--accent)}
+.c47-app .c47-menu-list>button:disabled{opacity:.45}
+.c47-app .c47-menu-hint{margin:2px 0;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.04em}
+.c47-app .c47-menu-back{min-height:40px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink-2)}
+/* 开关行与滑块行 */
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:40px;margin:0;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink);font-size:14px}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check input{order:2;width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-slider{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 10px;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink);font-size:14px}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-slider output{font-size:13px;font-weight:600;color:var(--accent)}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-slider input{grid-column:1/-1;width:100%;margin:0;accent-color:var(--accent)}
+/* 确认框与输入 */
+.c47-app .c47-menu-confirm{padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--paper-2)}
+.c47-app .c47-menu-confirm>div{display:flex;gap:8px;margin-top:8px}
+.c47-app .c47-menu-confirm button,.c47-app .c47-new-save button{flex:1;min-height:38px;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink)}
+.c47-app .c47-menu-confirm button:first-child,.c47-app .c47-new-save button[type=submit]{background:var(--accent);border-color:var(--accent);color:#fff}
+.c47-app .c47-new-save input{width:100%;box-sizing:border-box;min-height:38px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+/* 详情面板与确认对话框沿用同一材质 */
+.c47-app .c47-panel,.c47-app .c47-confirm,.c47-app .c47-exit{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sheet-shadow);backdrop-filter:none}
+.c47-app .c47-panel .c47-dismiss,.c47-app .c47-panel .c47-sheet-size{width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);color:var(--ink-2)}
+@media(max-width:600px){
+ .c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory){top:auto;left:8px;right:8px;width:auto;max-width:none;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 54px);max-height:min(70vh,calc(100% - 130px));border-radius:12px}
+}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check{justify-content:flex-start}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check input{margin-left:auto}
+.c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check small{font-size:12px;color:var(--ink-2)}

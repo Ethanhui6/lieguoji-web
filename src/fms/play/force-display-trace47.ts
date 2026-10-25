@@ -32,5 +32,15 @@ export class ForceDisplayTraceCollector47 {
   frames.push({tick,pairs:structuredClone(contacts.pairs)});this.size+=contacts.pairs.length+1;if(this.size>200000)this.overflow=true;
  }
  observe:ForceMotionObserver47=(forces,graph,tick,contacts)=>{if(this.overflow)return;for(const force of forces)this.record(force.kind,force.id,tick,armyTravelLocation47(force.travel,graph).point);if(contacts)this.recordContacts(tick,contacts);};
+ /** End every traced path at the accepted frame. A force can change place without moving
+  * (an original Reorganization puts a beaten army back home); its path then ends there
+  * instead of failing the whole display batch. */
+ close(tick:number,frame:{armies:ReadonlyMap<string,Point>;fleets:ReadonlyMap<string,Point>}){
+  if(this.overflow)return;
+  for(const [kind,book,positions] of [['army',this.value.armies,frame.armies],['fleet',this.value.fleets,frame.fleets]] as const)for(const [id,path] of Object.entries(book)){
+   const end=positions.get(id),last=path.at(-1);if(!end||!last||Math.hypot(end.x-last.x,end.y-last.y)<=1e-7)continue;
+   if(last.tick===tick)path[path.length-1]={tick,x:end.x,y:end.y};else this.record(kind,id,tick,end);
+  }
+ }
  finish(toSequence:number,toTick:number){if(this.overflow)return undefined;this.value.toSequence=toSequence;this.value.toTick=toTick;return this.value;}
 }

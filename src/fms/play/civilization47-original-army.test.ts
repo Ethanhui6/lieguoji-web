@@ -3,9 +3,10 @@ import {grid} from './fixture.test-support';
 import {Culture47Session} from './culture47-session';
 import {SETTLEMENT47_ALGORITHM} from './settlement47-regions';
 import {populationStamp47} from './civilization47-population-types';
-import {ORIGINAL_ARMY_RULE47,armyKills47,creditArmyKills47,originalArmy47,progressOriginalReorganization47,reorganizeDefeatedArmy47} from './civilization47-original-army';
+import {ORIGINAL_ARMY_RULE47,originalPaths47,armyKills47,creditArmyKills47,originalArmy47,progressOriginalReorganization47,reorganizeDefeatedArmy47} from './civilization47-original-army';
 import {armySpatialFor47} from './army-geography47';
 import {forceStrength47} from './civilization47-monthly-muster';
+import {armyTravelPolicy47} from './army-commands47';
 
 describe('original armies without rations',()=>{
   it('a war world never starves its armies and replays exactly',()=>{
@@ -46,4 +47,18 @@ describe('original armies without rations',()=>{
     const emergency={...a,id:'x'};r.tactics.forces.x={...r.tactics.forces[a.id],kind:'emergency'};r.world.armies.push(emergency);
     expect(reorganizeDefeatedArmy47(r,emergency,graph)).toBe(false);
   });
+  it('an army may always walk through the state it stands in (FindProvincePath start state), in new worlds only',()=>{
+    const s=new Culture47Session();
+    let x=s.create({terrain:grid((x,y)=>x>10&&x<245&&y>10&&y<245?45:0),count:3,cityCount:30,relations:'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,setup:{mode:'culture-generated',enabled:['chinese','japanese','arab']}});
+    x=s.execute({kind:'enable-original-army',rule:ORIGINAL_ARMY_RULE47,expected:populationStamp47(x.run)},x.journal.actions.length);
+    const r=structuredClone(x.run);expect(originalPaths47(r)).toBe(true);
+    const a=r.world.armies.find(a=>a.troops>0)!,foreign=r.world.provinces.find(p=>p.controller!==a.nationId)!;
+    const weights={preferPorts:false,portSeaFaces:new Set<number>(),oceanRouteFaces:new Set<number>()};
+    expect(armyTravelPolicy47(r,a,weights,true).canEnter(foreign.id)).toBe(false);
+    const stranded={...a,provinceId:foreign.id};
+    expect(armyTravelPolicy47(r,stranded,weights,true).canEnter(foreign.id)).toBe(true);
+    const older=structuredClone(r);delete (older as unknown as {originalArmy47:{paths?:1}}).originalArmy47.paths;
+    expect(armyTravelPolicy47(older,stranded,weights,true).canEnter(foreign.id)).toBe(false);
+  });
 });
+

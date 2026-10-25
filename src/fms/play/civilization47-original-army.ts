@@ -14,14 +14,19 @@ import {dailyEvent47} from './civilization47-upkeep';
  * unchanged; fleets keep their food until the navy batch.) */
 export const ORIGINAL_ARMY_RULE47='original-army-no-rations-v1';
 /** `kills`: Army.enemyArmyDestroyedCount per army, in soldiers (worlds from 0.5.20). */
-export type OriginalArmy47={version:1;rule:typeof ORIGINAL_ARMY_RULE47;kills?:Record<string,number>};
+/** Each later behaviour has its own marker so older worlds of the same rule replay unchanged:
+ * `kills` (0.5.20: kill record and Reorganization), `paths` (0.5.24: start-state passability). */
+export type OriginalArmy47={version:1;rule:typeof ORIGINAL_ARMY_RULE47;kills?:Record<string,number>;paths?:1};
 type Run={originalArmy47?:OriginalArmy47};
 
 export const originalArmy47=(r:object)=>!!(r as Run).originalArmy47;
+/** Worlds from 0.5.20 (Reorganization) and 0.5.24 (start-state passability). */
+export const originalReorganization47=(r:object)=>!!(r as Run).originalArmy47?.kills;
+export const originalPaths47=(r:object)=>(r as Run).originalArmy47?.paths===1;
 export function assertOriginalArmy47(r:object){
   const s=(r as Run).originalArmy47;if(s===undefined)return;
   const keys=Object.keys(s??{}).sort().join('/');
-  if(!s||typeof s!=='object'||keys!=='rule/version'&&keys!=='kills/rule/version'||s.version!==1||s.rule!==ORIGINAL_ARMY_RULE47)throw Error('原作军队规则记录无效。');
+  if(!s||typeof s!=='object'||!['rule/version','kills/rule/version','kills/paths/rule/version'].includes(keys)||s.version!==1||s.rule!==ORIGINAL_ARMY_RULE47||s.paths!==undefined&&s.paths!==1)throw Error('原作军队规则记录无效。');
   if(s.kills&&(typeof s.kills!=='object'||Array.isArray(s.kills)||Object.values(s.kills).some(v=>typeof v!=='number'||!Number.isFinite(v)||v<0)))throw Error('军团歼敌记录无效。');
 }
 /** Journalled switch for a newly created world only. */
@@ -29,7 +34,7 @@ export function enableOriginalArmy47<T extends FoundingForces47>(input:T,expecte
   assertOriginalArmy47(input);
   if(originalArmy47(input)||!sameCulture47Value(expected,populationStamp47(input as never)))throw Error('原作军队规则只能在世界未变化时启用，请重新操作。');
   const next=structuredClone(input) as T&Run;
-  next.originalArmy47={version:1,rule:ORIGINAL_ARMY_RULE47,kills:{}};
+  next.originalArmy47={version:1,rule:ORIGINAL_ARMY_RULE47,kills:{},paths:1};
   for(const a of next.world.armies)if(a.troops>0&&a.status!=='destroyed'){a.supplies=100;a.morale=100;}
   return next;
 }
@@ -47,7 +52,7 @@ type Army=FoundingForces47['world']['armies'][number];
  * its state, and no other army of that home is alive (Province.armyLimit 1). Army.Reorganization
  * then puts it back at the home province centre with a tenth of a full legion. */
 export function reorganizeDefeatedArmy47(r:FoundingForces47,a:Army,graph:TravelGraph47):boolean{
-  if(!originalArmy47(r))return false;
+  if(!originalReorganization47(r))return false;
   const force=r.tactics.forces[a.id];if(!force||force.kind==='emergency')return false;
   const home=r.world.provinces.find(p=>p.id===force.homeId);if(!home||home.controller!==a.nationId)return false;
   if(r.world.armies.some(o=>o.id!==a.id&&o.troops>0&&o.status!=='destroyed'&&r.tactics.forces[o.id]?.homeId===home.id&&o.nationId===a.nationId))return false;

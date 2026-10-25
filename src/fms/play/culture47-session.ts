@@ -243,7 +243,7 @@ export class Culture47Session {
     // renderer can only jump after the next Worker acknowledgement.
     if(trace&&previous){const frame=this.lastFrame?.run===previous.run?this.lastFrame.frame:culture47Frame(previous.run);for(const [id,point]of frame.armies)trace.record('army',id,previous.run.clock.tick,point);for(const [id,point]of frame.fleets)trace.record('fleet',id,previous.run.clock.tick,point);trace.recordContacts(previous.run.clock.tick,previous.run.forceContacts);}
     // Live play: a pure time-advance batch skips the whole-world validators (checks47).
-    try {if(actions.every(a=>a.kind==='advance'))withFastChecks47(()=>this.append(actions,sequence,trace?.observe));else this.append(actions,sequence,trace?.observe);const packet=time47('打包显示',()=>this.displaySnapshot());trace?.recordContacts(this.state!.run.clock.tick,this.state!.run.forceContacts);const motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
+    try {if(actions.every(a=>a.kind==='advance'))withFastChecks47(()=>this.append(actions,sequence,trace?.observe));else this.append(actions,sequence,trace?.observe);const packet=time47('打包显示',()=>this.displaySnapshot());trace?.recordContacts(this.state!.run.clock.tick,this.state!.run.forceContacts);if(this.lastFrame)trace?.close(this.state!.run.clock.tick,this.lastFrame.frame);const motion=trace?.finish(this.state!.journal.actions.length,this.state!.run.clock.tick);return motion?{...packet,motion}:packet;}
     catch(error){this.state=previous;throw error;}
   }
   /** The frame encoded for the last accepted run anchors the next display trace. */

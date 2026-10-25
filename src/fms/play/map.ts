@@ -184,6 +184,9 @@ export class PlayMap {
   private labelGrid:{grid:LabelGrid47;owners:ArrayLike<number>}|null=null;private stateBoxes:{key:string;boxes:StateLabelBox47[]}|null=null;
   /** Original grid and cell → province index, for the original state-name placement. */
   setLabelGrid(grid:LabelGrid47,owners:ArrayLike<number>){this.labelGrid={grid,owners};this.stateBoxes=null;this.politicalKey='';}
+  /** 即时战略模式: armies in the player's selection box get the selection ring. */
+  private rtsSelected:ReadonlySet<string>=new Set();
+  setRtsSelection(ids:ReadonlySet<string>){this.rtsSelected=ids;}
   private relations:ReadonlyMap<string,number>=new Map();private relationsKey='';
   /** Original StateRelationsHighlighter: state lines of the selected state's relations, nation id → colour. */
   setRelationHighlight(relations:ReadonlyMap<string,number>){this.relations=relations;this.relationsKey=[...relations].map(([k,v])=>k+':'+v).join(',');}
@@ -382,7 +385,7 @@ export class PlayMap {
     const fallen:FallenPose[]=[];
     for(const army of world.armies){
       if(army.troops<=0||army.status==='destroyed')continue;
-      const at=frame?.armies.get(army.id)??armyPosition(world,army),active=army.id===armyId,home=provinces.get(army.provinceId);
+      const at=frame?.armies.get(army.id)??armyPosition(world,army),active=army.id===armyId||this.rtsSelected.has(army.id),home=provinces.get(army.provinceId);
       const spot=!moving(army,at)&&home?wanderPoint(home.polygon,army.id,citySpots.get(home.id)):at;
       const container=new Container();this.layer.addChild(container);container.position.set(spot.x/scale,spot.y/scale);
       this.unitGroups.push({ids:[army.id],container,display:'detail',offset:{x:(spot.x-at.x)/scale,y:(spot.y-at.y)/scale}});

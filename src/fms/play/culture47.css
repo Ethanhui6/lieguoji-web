@@ -347,3 +347,17 @@
 .c47-app .c47-timeline-node{display:grid;place-items:center;translate:-50% 50%}
 .c47-app .c47-timeline-node b{font-size:10px;color:#fff;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.35)}
 .c47-app .c47-timeline-node[aria-pressed=true]{box-shadow:0 0 0 3px rgba(47,93,80,.4)}
+/* 即时战略模式 (original RTSController) toolbar. */
+.c47-app .c47-rts{position:absolute;z-index:7;top:72px;left:50%;translate:-50% 0;width:min(520px,calc(100% - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;background:var(--paper);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,26,43,.22);display:grid;gap:8px;animation:c47-rise .3s var(--ease-ios,ease-out)}
+.c47-app .c47-rts-head{display:flex;align-items:center;gap:8px}
+.c47-app .c47-rts-head strong{font-size:15px;color:#9a2a1e}
+.c47-app .c47-rts-head span{flex:1;display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c47-app .c47-rts-head span i{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.c47-app .c47-rts-head button{min-height:32px;padding:4px 10px;font-size:13px}
+.c47-app .c47-rts-row{display:flex;gap:6px;align-items:center}
+.c47-app .c47-rts-row .c47-segment{flex:1;margin:0}
+.c47-app .c47-rts-row>button{min-height:32px;padding:4px 12px}
+.c47-app .c47-rts small{font-size:12px;color:var(--ink-2);line-height:1.4}
+.c47-app .c47-rts-enter{width:100%;min-height:40px;margin:8px 0;border-radius:10px;border:1px solid #9a2a1e;background:rgba(154,42,30,.08);color:#9a2a1e;font-weight:650}
+.c47-app:has(.c47-rts) .c47-news{display:none}
+@media(max-width:600px){.c47-app .c47-rts{top:64px}}

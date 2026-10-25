@@ -532,9 +532,15 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         // for the clicked province's state; Shift+click opens ProvinceInfoUI.
         setNationId(target.controller);setCityId(city?.id??null);setProvinceId(target.id);
         setPanel(e.shiftKey||!r.world.nations.some(n=>n.id===target.controller)?'province':'nation');};
-      const cancel=()=>{tap=null;ids.clear();gestures.interrupt();},wheel=(e:WheelEvent)=>{e.preventDefault();gestures.wheel(point(e),e.deltaY);};
+      // OS/browser cancellation ends this pointer. Retaining it makes the next
+      // pinch look like three/four fingers and silently disables zoom.
+      const cancel=(e:PointerEvent)=>{tap=null;ids.delete(e.pointerId);gestures.cancelPointer(e.pointerId);};
+      const reset=()=>{tap=null;ids.clear();gestures.reset();};
+      const hidden=()=>{if(document.hidden)reset();};
+      const wheel=(e:WheelEvent)=>{e.preventDefault();gestures.wheel(point(e),e.deltaY);};
       const contextLost=(e:Event)=>{e.preventDefault();if(!disposed)displayFailed(new Error('地图渲染中断，推演已暂停。当前世界仍保留，可以重新显示地图。'));};
       canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('wheel',wheel,{passive:false});
+      window.addEventListener('blur',reset);document.addEventListener('visibilitychange',hidden);
       const observer=new ResizeObserver(()=>{if(disposed||failed)return;try{const next={width:element.clientWidth,height:element.clientHeight};if(next.width<=0||next.height<=0)return;view.camera=resizeCamera(view.camera,view.viewport,next,source);view.viewport=next;renderer.resize(next.width,next.height);renderer.setCamera(view.camera);paint.current();}catch(e){displayFailed(e);}});
       let raf=0,settled=-1,lastDiagnostic=0;
       // Full force snapshots are test evidence, not gameplay. Serializing every
@@ -567,7 +573,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         }else if(warFrame)renderer.refresh();
         raf=requestAnimationFrame(animate);
       }catch(e){displayFailed(e);}};
-      cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
+      cleanup=()=>{reset();window.removeEventListener('blur',reset);document.removeEventListener('visibilitychange',hidden);cancelAnimationFrame(raf);observer.disconnect();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('wheel',wheel);};
       observer.observe(element);paint.current();if(!failed){setRenderFault('');raf=requestAnimationFrame(animate);}
     }).catch(e=>{if(!disposed)displayFailed(e);});
     return()=>{lastView.current={id:runId,camera:view.camera,viewport:view.viewport};disposed=true;displayReady.current=false;cleanup();paint.current=()=>{};mapControl.current=null;combatOverlay.dispose();battleArrows.dispose();warEffects.dispose();if(warEffectsRef.current===warEffects)warEffectsRef.current=null;renderer.destroy();map.dispose();};

@@ -160,3 +160,10 @@
 - 第二批与 Claude 0.5.17 的视图分组兼容：格子边界按 `groupOf` 分组，文化/宗教/家族/联盟视图的边界随视图变化。
 - 参考大图 lieguoji-map-ui-reference.png（3MB）不入仓库，只提交 CLAUDE_IMPLEMENTATION.md。
 - 之后这些文件由 Claude 继续按 CLAUDE_IMPLEMENTATION.md 推进（军队旗标与城市名避让、桌面侧栏布局等）；如 Codex 需要再改，请先在本文件登记占用。
+
+### 2026-10-24 · Codex 手机触控修复（进行中）
+- 用户要求修复手机双指缩放、二级菜单滚动并发布。当前基线 6101bc69 / 0.5.24；仅有未跟踪参考大图，保留不提交。
+- 本批占用 src/main.tsx、src/fms/play/CultureWorld47.tsx、src/fms/play/culture47.css、触控相关新增测试；版本与日志待验证后更新。
+- 先以真实触摸事件回归，随后核对 Claude 军事计划的剩余差距。不会把桌面移动仿真称为 iPhone 真机验收。
+- 军事追加占用 force-activity47.ts / force-activity47.test.ts：修复玩家航行令被错误显示成出生母港；无任务舰队不再伪造返港目标。属于现有舰队指挥可读性修复，不变更模拟或存档格式。
+- 2026-10-24 Claude 收尾：用例最后一步失败原因是 Chromium 惯性滑动后的第一次点触只用来停住惯性、不产生 click（不是应用缺陷）；用例改为先点一下无交互的标题。随 0.5.25 发布，以上占用文件释放。

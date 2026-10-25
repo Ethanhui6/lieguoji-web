@@ -197,3 +197,10 @@
 .c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check{justify-content:flex-start}
 .c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check input{margin-left:auto}
 .c47-app :is(.c47-menu,.c47-ai-global,.c47-territory) .c47-check small{font-size:12px;color:var(--ink-2)}
+/* Let the sheet own vertical scrolling, including swipes beginning on labels.
+   Flex children keep their height so constrained mobile sheets overflow. */
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory,.c47-panel,.c47-setup){touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-x:hidden;scroll-padding-block:48px 16px}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory)>*{flex-shrink:0}
+@media(max-width:600px){
+ .c47-app .c47-panel[data-kind=nation]:not(.is-expanded),.c47-app .c47-panel[data-kind=province]:not(.is-expanded){max-height:32dvh;overflow-y:auto}
+}

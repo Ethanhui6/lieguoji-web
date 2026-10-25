@@ -16,6 +16,14 @@ function declarePairWar(r:typeof base,a:string,b:string){
 }
 
 describe('committed real47 force activity projection',()=>{
+ it('shows a player fleet destination, never its stale AI assignment or founding home',()=>{
+  const r=structuredClone(base),fleet=r.navy.fleets.find(f=>f.status!=='lost'&&r.maritime.hulls[f.id]>0)!;
+  const row=r.navalAutonomy.fleets[fleet.id],target=r.harbors.sites.find(p=>p.id!==row.homePortId)!;
+  row.assignedPortId=row.homePortId;fleet.targetId=target.id;r.voyages.manualFleets.push(fleet.id);
+  const before=structuredClone(r);expect(forceActivity47(r,'fleet',fleet.id)?.target?.id).toBe(target.id);expect(r).toEqual(before);
+  fleet.targetId=null;expect(forceActivity47(r,'fleet',fleet.id)?.target).toBeNull();
+  r.voyages.manualFleets=[];row.assignedPortId=null;expect(forceActivity47(r,'fleet',fleet.id)?.target).toBeNull();
+ });
  it('reports an army at its committed sea cell rather than its legacy province and does not mutate the run',()=>{
   const r=structuredClone(base),army=r.world.armies[0],{spatial}=actualForces47(r),sea=[...spatial.graph.cells.values()].find(cell=>cell.surface==='sea')!,target=r.world.provinces.find(p=>p.controller!==army.nationId)!;
   r.armyPositions.records[army.id]=beginArmyTravel47(army.id,[sea.id],spatial.graph);

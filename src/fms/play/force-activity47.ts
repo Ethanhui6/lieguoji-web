@@ -64,7 +64,10 @@ export function forceActivities47(run:FoundingForces47,activeSiegeIds?:readonly 
   for(const fleet of run.navy.fleets){
     if(fleet.status==='lost'||run.maritime.hulls[fleet.id]<=0)continue;
     const travel=run.fleetPositions.records[fleet.id],located=armyTravelLocation47(travel,spatial.graph),row=run.navalAutonomy.fleets[fleet.id];
-    const harborId=row.assignedPortId??row.homePortId,harbor=harborId?run.harbors.sites.find(site=>site.id===harborId):undefined,province=harbor?provinces.get(harbor.provinceId):undefined,city=harbor?run.world.cities.find(candidate=>candidate.id===harbor.capitalId):undefined;
+    // A player order clears the AI booking. Its committed destination is on
+    // the fleet itself; the founding home is not a current sailing order.
+    const manual=run.voyages.manualFleets.includes(fleet.id)||!fleet.patrol;
+    const harborId=manual?fleet.targetId:row.assignedPortId,harbor=harborId?run.harbors.sites.find(site=>site.id===harborId):undefined,province=harbor?provinces.get(harbor.provinceId):undefined,city=harbor?run.world.cities.find(candidate=>candidate.id===harbor.capitalId):undefined;
     const contact=contactKeys.has(forceKey47({kind:'fleet',id:fleet.id}));
     output.push({kind:'fleet',id:fleet.id,nationId:fleet.nationId,name:fleet.name,location:{kind:'sea',face:located.cell.face,label:'海上'},target:harbor&&province?{kind:'port',id:harbor.id,label:city?`${city.name}港`:province.name}:null,decision:row.decision,decisionLabel:navalDecisionLabel(row.decision),reason:row.reason,issuedTick:row.issuedTick,nextTick:row.nextTick,provisions:{label:'舰队口粮',current:fleet.food},contact,siege:null,active:travel.status==='moving'||travel.status==='blocked'||contact||activeFleetDecision.has(row.decision)});
   }

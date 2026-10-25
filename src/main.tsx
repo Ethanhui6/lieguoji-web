@@ -8,5 +8,7 @@ for (const type of ['gesturestart', 'gesturechange', 'gestureend']) document.add
 }, { passive: false });
 // Long press shows no copy / save menu (text inputs keep theirs).
 document.addEventListener('contextmenu', e => { const t = e.target as HTMLElement | null; if (!t?.closest('input,textarea,[contenteditable]')) e.preventDefault(); });
+// Original background music (RandomMusicPlayer) and the web's control sounds; loaded apart from the entry.
+void import('./fms/audio/audio47').then(m => m.installGameAudio47());
 const Entry = lazy(() => import('./fms/FmsApp'));
 createRoot(document.getElementById('root')!).render(<StrictMode><Suspense fallback={<p role="status">正在打开地图…</p>}><Entry /></Suspense></StrictMode>);

@@ -38,6 +38,8 @@ import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
 import {originalPoliticalEdges} from '../original/original-political-edges';
 import {loadMapFont47} from './map-font47';
+import {gameAudio47} from '../audio/audio47';
+import {batchCue47,CUE_GAP47,MINOR_CUES47,MINOR_GAP47} from '../audio/event-sounds47';
 import {originalPortCities} from '../original/original-ports';
 import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
@@ -441,6 +443,14 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   // A queued passive effect may belong to an older React commit than the
   // latest ACK. It must never reinstall an already superseded accepted path.
   useEffect(()=>{if(snapshot&&snapshot===current.current)installAcceptedDisplay(snapshot,instantDisplay.current);},[snapshot,renderFault]);
+  // Web addition: one sound per accepted batch for the most important new world event
+  // (war, a fallen state, a captured city, peace…). Loads and paused worlds stay silent.
+  const cueSeen=useRef<number|null>(null),minorCue=useRef(-Infinity);
+  useEffect(()=>{const r=snapshot?.run;if(!r)return;const events=r.world.events,last=events.at(-1)?.id??0,prev=cueSeen.current;cueSeen.current=last;
+    if(prev===null||!playing||last<=prev)return;
+    const cue=batchCue47(events.filter(e=>e.id>prev&&e.day>=r.world.day-3)),now=performance.now();if(!cue)return;
+    if(MINOR_CUES47.has(cue)){if(now-minorCue.current<MINOR_GAP47)return;minorCue.current=now;}
+    gameAudio47.cue(cue,CUE_GAP47[cue]);},[snapshot,playing]);
   useEffect(()=>{const now=performance.now();motion.current.setRunning(playing&&!renderFault,now);if(!playing&&!renderFault)motion.current.finishAccepted(now);},[playing,renderFault]);
   // Worlds made on the original's BasicMap grid are drawn the original way.
   const [terrainGrid,setTerrainGrid]=useState<{runId:string;grid:OriginalGrid|null}|null>(null);

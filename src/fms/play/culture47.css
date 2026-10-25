@@ -204,3 +204,28 @@
 @media(max-width:600px){
  .c47-app .c47-panel[data-kind=nation]:not(.is-expanded),.c47-app .c47-panel[data-kind=province]:not(.is-expanded){max-height:32dvh;overflow-y:auto}
 }
+/* Motion and control feedback (0.5.26). One easing family: quick out-curve for sheets,
+   a short spring for confirmations, 50 ms press-in so a tap feels immediate. */
+.c47-app{--ease-out:cubic-bezier(.2,.8,.2,1);--ease-spring:cubic-bezier(.34,1.45,.64,1)}
+.c47-app :is(button,summary,select){-webkit-tap-highlight-color:transparent;transition:background-color .16s,color .16s,box-shadow .16s,opacity .16s,transform .16s var(--ease-out)}
+.c47-app :is(button,summary):active:not(:disabled){transform:scale(.95);transition-duration:.05s}
+.c47-app :is(.c47-rail,.c47-bar,.c47-controls,.c47-zoom,.c47-map-menu) button:active:not(:disabled){background-color:color-mix(in srgb,var(--accent) 16%,transparent)}
+.c47-app :is(button,summary,select,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.c47-app input:is([type=checkbox],[type=radio],[type=range]){accent-color:var(--accent)}
+.c47-app .c47-slider{row-gap:2px}
+.c47-app .c47-slider input[type=range]{box-sizing:border-box;width:100%;height:24px;padding:0;margin:0;touch-action:pan-y}
+.c47-app input:is([type=checkbox],[type=radio]){transition:transform .12s var(--ease-spring)}
+.c47-app input:is([type=checkbox],[type=radio]):active{transform:scale(.82)}
+.c47-app .c47-check,.c47-app :is(.c47-menu,.c47-map-menu) button{transition:background-color .16s}
+@keyframes c47-rise{from{opacity:0;translate:0 12px;scale:.985}}
+@keyframes c47-drawer{from{opacity:.3;translate:0 60%}}
+@keyframes c47-step{from{opacity:0;translate:12px 0}}
+@keyframes c47-pop{from{opacity:0;scale:.9}}
+.c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory,.c47-panel){animation:c47-rise .24s var(--ease-out)}
+.c47-app .c47-menu>:not(header){animation:c47-step .2s var(--ease-out)}
+.c47-app .c47-confirm{animation:c47-pop .22s var(--ease-spring)}
+.c47-app .c47-rail button[aria-pressed=true] svg{animation:c47-pop .26s var(--ease-spring)}
+@media(max-width:600px){
+ .c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory,.c47-panel){animation:c47-drawer .3s var(--ease-out)}
+}
+@media(prefers-reduced-motion:reduce){.c47-app *{animation:none!important;transition:none!important}}

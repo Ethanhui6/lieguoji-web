@@ -1,5 +1,6 @@
-import {useEffect,useState} from 'react';
+import {Fragment,useEffect,useState} from 'react';
 import {AUTOSAVE_MAX_MINUTES,AUTOSAVE_MIN_MINUTES,clampAutoSaveMinutes,type Culture47Config} from './culture47-config';
+import {gameAudio47,useAudio47} from '../audio/audio47';
 import {defaultSaveName47,deleteCulture47Named,listCulture47Saves,type Culture47SaveInfo} from './culture47-library';
 
 /** Original SettingsUIInfo "菜单选项" with LoadSaveDataUI / NewSaveSlot
@@ -18,6 +19,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
 }){
   const [view,setView]=useState<View>(initial==='load'?{kind:'library',mode:'load'}:{kind:'menu'});
   const [saves,setSaves]=useState<Culture47SaveInfo[]|null>(null),[error,setError]=useState(''),[minutes,setMinutes]=useState(config.autoSaveMinutes);
+  const audio=useAudio47();
   const [fullscreen,setFullscreen]=useState(()=>!!document.fullscreenElement);
   const refresh=()=>{setSaves(null);setError('');listCulture47Saves().then(setSaves,e=>{setSaves([]);setError(e instanceof Error?e.message:'不能读取存档库。');});};
   useEffect(()=>{if(view.kind==='library')refresh();},[view.kind==='library'?view.mode:null]);
@@ -34,6 +36,12 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button disabled={busy||!hasWorld} onClick={()=>setView({kind:'export'})}>导出</button>
       <button disabled={busy} onClick={()=>setView({kind:'autosave'})}>自动保存</button>
       <button disabled={!document.fullscreenEnabled} onClick={()=>{void (document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()).catch(()=>{});}}>屏幕模式<small>{fullscreen?'全屏':'窗口'}</small></button>
+      {/* Original SettingsUIInfo.volumeSlider (RandomMusicPlayer volume); sound effects and vibration are web additions. */}
+      <label className="c47-slider">音乐音量<output>{Math.round(audio.music*100)}</output>
+        <input type="range" aria-label="音乐音量" min={0} max={100} step={1} value={Math.round(audio.music*100)} onChange={e=>gameAudio47.update({music:Number(e.target.value)/100})}/></label>
+      <label className="c47-slider">音效音量<output>{Math.round(audio.sfx*100)}</output>
+        <input type="range" aria-label="音效音量" min={0} max={100} step={1} value={Math.round(audio.sfx*100)} onChange={e=>gameAudio47.update({sfx:Number(e.target.value)/100})}/></label>
+      {'vibrate' in navigator&&<label className="c47-check"><input type="checkbox" aria-label="触感反馈" checked={audio.haptics} onChange={e=>gameAudio47.update({haptics:e.target.checked})}/>触感反馈</label>}
       <button disabled={busy} onClick={onQuit}>退出游戏<small>返回地图编辑</small></button>
       <button onClick={onClose}>关闭</button>
     </div>;break;
@@ -97,6 +105,6 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
   const title=view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind.startsWith('export')?'菜单选项':'存档管理';
   return <section className="c47-menu" role="dialog" aria-label={title}>
     <header><strong>{title}</strong><button aria-label="关闭菜单选项" onClick={onClose}>×</button></header>
-    {body}
+    <Fragment key={view.kind}>{body}</Fragment>
   </section>;
 }

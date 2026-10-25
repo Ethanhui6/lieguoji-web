@@ -34,6 +34,8 @@ test('real touch pinch repeats and secondary menus scroll without changing setti
  expect(await page.evaluate(()=>visualViewport!.scale)).toBe(1);
  await page.getByRole('button',{name:'AI全局配置',exact:true}).tap();
  const panel=page.locator('.c47-ai-global');await expect(panel).toBeVisible();
+ // Measure after the sheet's opening animation has settled.
+ await panel.evaluate(e=>Promise.all(e.getAnimations({subtree:true}).map(a=>a.finished)));
  const box=(await panel.boundingBox())!;
  const checks=await panel.locator('input[type=checkbox]').evaluateAll(es=>es.map(e=>(e as HTMLInputElement).checked));
  const label=(await panel.locator('.c47-check').nth(2).boundingBox())!;
@@ -58,7 +60,7 @@ test('real touch pinch repeats and secondary menus scroll without changing setti
  await touch(c,'touchStart',[{id:1,x:close.x+close.width/2,y:close.y+close.height/2}]);await touch(c,'touchEnd',[]);await expect(panel).toBeHidden();
  await page.getByRole('button',{name:'国家',exact:true}).tap();
  const details=page.getByRole('complementary',{name:'文化与国家详情'});
- await expect(details).toBeVisible();
+ await expect(details).toBeVisible();await details.evaluate(e=>Promise.all(e.getAnimations({subtree:true}).map(a=>a.finished)));
  const db=(await details.boundingBox())!,cy=db.y+db.height-28,cx=db.x+db.width*.45;
  const before=await camera();
  await touch(c,'touchStart',[{id:1,x:cx,y:cy}]);

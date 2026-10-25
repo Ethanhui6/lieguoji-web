@@ -125,3 +125,10 @@ FMS研究/命名子项仅作为本批记录；原61任务、36PH/144子项与发
 两段Worker依次执行生成与原有严格转换/保存，沿用512KiB包、12MiB上限、ACK、摘要校验和持久回执。地图仍为独立Atlas v4、origin:null、generation.lastApplied:null；创世记录单独下载。本批实现、最终检查与限制见 [直接生成报告](evidence/fms-direct-generation-2026-10-04/REPORT.md) 和 [最终核验](evidence/fms-direct-generation-2026-10-04/verification.json)。
 
 BasicMap点序观察进一步显示188×106、231×130、267×150、377×212排列；这些是坐标推断，不是源中存储的分辨率。高程全0且缺邻接/边界的事实不变；未静默补点、降采样或将它们当作完整大陆导入。手绘轮廓与恢复内核结合、原生拓扑及完整模拟继续按主计划推进；本批不解除PH或云端发布门。
+
+## 背景音乐（2026-10-25 补充）
+
+- 原作只有 5 段背景音乐（sharedassets0 的 AudioClip，Vorbis）：Land of Heroes、Deplasa Pe、Final Stance、Guild of Adventurers、Wonders And Mysteries Alt；另有一段 2.4 秒的 `espannol`，与游戏流程无关，不使用。原作没有任何音效素材（396 个 ButtonManager 均未挂点击/悬停音）。
+- 用户确认这些曲目的授权允许用于网页版（2026-10-25 对话）。转码为 AAC 96 kb/s（.m4a，共约 11 MB）放在 `src/fms/audio/music/`；`scripts/check-dist.mjs` 按大小和 SHA-256 逐个核对，不放行其他音频。
+- 播放规则来自 RandomMusicPlayer（level0 实例：首曲 Land of Heroes，避开最近 3 首，曲间 4～10 秒，音量 1）与 PlayMusicWithIntervals 的反汇编；解码、转码中间文件只在 `.autopilot/fms-audit/audio`。
+- 网页的界面音效与战争事件音效由 Web Audio 程序合成，不来自安装包。

@@ -11,9 +11,10 @@ import { wanderPoint } from './army-wander47';
 import { nationColor, politicalStyle, type PoliticalView } from './politics';
 import { territoryLabels, type TerritoryLabel } from './territory-labels';
 import type { ViewGroups47 } from './culture47-views';
+import {autoFontSize47,cityLabel47,MAP_UNIT47,stateLabelBoxes47,type LabelGrid47,type StateLabelBox47} from './original-labels47';
+import {MAP_FONT47,mapFontEpoch47} from './map-font47';
 import {currentCapital} from './capital-view';
-import {cityLabels,selectedCityLabel,type LabelBox} from './city-labels';
-import {capitalNameLabels} from './map-label-layout';
+import {selectedCityLabel,type LabelBox} from './city-labels';
 import { drawNavy, type NavalView } from './naval-map';
 import type { DisplayFrame } from './motion';
 import {engagementPoint,type BattleState} from './battle';
@@ -166,6 +167,9 @@ export class PlayMap {
   // province polygons then only carry outlines, borders and selection.
   private cellPolitics=false;
   private cellEdges:readonly OriginalPoliticalEdge[]|null=null;
+  private labelGrid:{grid:LabelGrid47;owners:ArrayLike<number>}|null=null;private stateBoxes:{key:string;boxes:StateLabelBox47[]}|null=null;
+  /** Original grid and cell → province index, for the original state-name placement. */
+  setLabelGrid(grid:LabelGrid47,owners:ArrayLike<number>){this.labelGrid={grid,owners};this.stateBoxes=null;this.politicalKey='';}
   setCellEdges(edges:readonly OriginalPoliticalEdge[]){this.cellEdges=edges;this.stateOutlineKey='';this.politicalKey='';}
   useCellPolitics(enabled:boolean){this.cellPolitics=enabled;this.politicalKey='';}
   // Original ViewManager color views: per-province fill override (null keeps the state color).
@@ -241,7 +245,7 @@ export class PlayMap {
     // Place names belong to the map's paper/ink hierarchy, independently of
     // high-contrast troop counts and battle feedback. Keep terrain readable.
     const placeStyle=(size:number,capital=false):TextStyleOptions=>({
-      fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:size,
+      fontFamily:MAP_FONT47,fontSize:size,
       fontWeight:capital?'600':'400',
       fill:'#302b23',
       stroke:{color:'#f7ebd1',width:capital?1.4:1},
@@ -258,16 +262,29 @@ export class PlayMap {
       this.siegeWidgets.push({id:p.id,bar,text,x,y,pixel,percent:0});
     }this.updateOccupation(combat.occupation);}
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
-    const countryLabels=this.territories.map(territory=>{
-      const name=viewGroups?viewGroups.name(territory.nationId):nations.get(territory.nationId)!.name,point=territory.point,factor=zoom/scale;
-      const t=this.retainedText(`country:${mode}:${viewGroups?territory.nationId+':':''}${territory.componentId}`,name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:'#29271f',fontWeight:'400',stroke:{color:'#f3e7ca',width:1},letterSpacing:2});
-      // Fit the measured glyphs in the world-space band, then cap readability.
-      // Tiny enclaves keep their name at their true anchor; zoom reveals it.
-      const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;
-      const width=t.width*textScale,height=t.height*textScale,c=Math.abs(Math.cos(territory.angle)),s=Math.abs(Math.sin(territory.angle));
-      const box={x:point.x*factor+this.projection.x,y:point.y*factor+this.projection.y,width:width*c+height*s,height:width*s+height*c};countryBoxes.push(box);
-      t.anchor.set(.5);t.scale.set(pixel*textScale);t.rotation=territory.angle;t.position.set(point.x/scale,point.y/scale);t.alpha=mode==='political'?.94:.7;this.layer.addChild(t);
-      return {point,size,width:box.width};
+    // Original state names (State.UpdateStateName): one horizontal TW-Kai name per group,
+    // black face with an 80 % outline in the group colour (LabelUtility.UpdateLabelMaterial),
+    // auto-sized in its box; sized in world units, so it scales with the map.
+    const mapFontEpoch=mapFontEpoch47();
+    const groupKeyOf=(p:{id:string;controller:string})=>groupOf?groupOf(p):p.controller;
+    let boxes:StateLabelBox47[];
+    if(this.labelGrid){
+      const owners=this.labelGrid.owners,cellKey=(c:number)=>{const i=owners[c];const p=i>=0?world.provinces[i]:undefined;return p?groupKeyOf(p):null;};
+      const singles=new Map<string,number>();if(!groupOf)for(const p of world.provinces)singles.set(p.controller,(singles.get(p.controller)??0)+1);
+      if(this.stateBoxes?.key!==territoryKey)this.stateBoxes={key:territoryKey,boxes:stateLabelBoxes47(this.labelGrid.grid,cellKey,(key,cells)=>!groupOf&&singles.get(key)===1&&cells<30)};
+      boxes=this.stateBoxes.boxes;
+    }else{
+      const largest=new Map<string,TerritoryLabel>();for(const t of this.territories){const old=largest.get(t.nationId);if(!old||t.area>old.area)largest.set(t.nationId,t);}
+      boxes=[...largest.values()].map(t=>({key:t.nationId,x:t.point.x/scale,y:t.point.y/scale,width:t.length/scale/MAP_UNIT47,height:Math.max(t.height/scale/MAP_UNIT47,1.5),fontMax:40,fontMin:15,cells:0}));
+    }
+    const countryLabels=boxes.flatMap(box=>{
+      const name=viewGroups?viewGroups.name(box.key):nations.get(box.key)?.name;if(!name)return [];
+      const tint=viewGroups?viewGroups.color(box.key):Number.parseInt(nationColor(nations.get(box.key)!).slice(1),16);
+      const t=this.retainedText(`country:${mapFontEpoch}:${box.key}:${tint}`,name,{fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill:0x000000,stroke:{color:tint,width:13,alpha:.8,join:'round'}});
+      const size=autoFontSize47(box,{width:Math.max(1,t.width-13)/64,height:Math.max(1,t.height-13)/64}),em=size/10*MAP_UNIT47,k=em/64;
+      t.anchor.set(.5);t.rotation=0;t.scale.set(k);t.position.set(box.x,box.y);t.alpha=1;this.layer.addChild(t);
+      const width=t.width,height=t.height,screen={x:box.x*zoom+this.projection.x,y:box.y*zoom+this.projection.y,width:width*zoom,height:height*zoom};countryBoxes.push(screen);
+      return [{point:{x:box.x*scale,y:box.y*scale},size:em*zoom,width:screen.width}];
     });
     this.cities=[];
     // Province.GetProvinceCityType: Port cities follow the original rule (original-ports.ts).
@@ -281,21 +298,24 @@ export class PlayMap {
       else if(this.originalIcons){marks.circle(x,y,ORIGINAL_CITY_UNIT).fill(0x000000).circle(x,y,.56*ORIGINAL_CITY_UNIT).fill(0xffffff);this.iconCounts.cities++;}
       else marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
-    const capitalFont=detail==='overview'?13:15;
-    const measuredCity=(c:typeof this.cities[number],capital:boolean)=>{
-      const font=capital?capitalFont:11;
-      const text=this.retainedText(capital?`capital:${mode}:${c.id}:${font}`:`place:${mode}:town:${c.id}`,c.name,placeStyle(font,capital));
-      return {...c,selected:false,labelWidth:text.width+6,labelHeight:text.height+4};
-    };
-    // Keep selection out of layout: reserve the normal name before drawing
-    // its selected callout, so neighbouring labels do not change position.
-    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital).map(c=>measuredCity(c,true)),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);
-    const cityObstacles=[
-      ...countryBoxes,...capitalIcons,...capitalText
-    ];
-    const cityText=cityLabels(this.cities.filter(c=>!c.capital).map(c=>measuredCity(c,false)),cityObstacles,this.projection,detail==='overview');
+    // Original city names (World.CreateCityLabel): bold TW-Kai, centred a fixed offset above
+    // the city (below at the top border), state capitals 1.5×; world-sized. Names smaller than
+    // 9 screen pixels are skipped (they would be unreadable specks).
+    const cityStyle:TextStyleOptions={fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill:mode==='political'?0x111111:0xf6efd9,stroke:{color:mode==='political'?0xf3e7ca:0x2b3a31,width:6,alpha:.7,join:'round'}};
+    const capitalText:(LabelBox&{id:string})[]=[];
+    const cityObstacles=[...countryBoxes,...capitalIcons];
+    const cityText:{id:string;name:string;labelX:number;labelY:number;box:LabelBox}[]=[];
+    for(const c of this.cities){
+      const at={x:(c.x-this.projection.x)/zoom,y:(c.y-this.projection.y)/zoom},l=cityLabel47(at,c.capital);
+      if(l.em*zoom<9)continue;
+      const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle);t.anchor.set(.5);t.scale.set(l.em/64);t.position.set(l.x,l.y);
+      const box={x:l.x*zoom+this.projection.x,y:l.y*zoom+this.projection.y,width:t.width*zoom,height:t.height*zoom};
+      cityText.push({id:c.id,name:c.name,labelX:box.x,labelY:box.y,box});if(c.capital)capitalText.push({...box,id:c.id});
+      // A selected city shows its callout instead; its name keeps its place in the layout.
+      if(c.provinceId===selected)continue;
+      this.layer.addChild(t);c.label=true;
+    }
     this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
-    for(const c of cityText){if(this.cities.find(v=>v.id===c.id)!.provinceId===selected)continue;placeName(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,11,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
@@ -356,10 +376,6 @@ export class PlayMap {
     for(const capital of this.capitals){const x=capital.point.x/scale,y=capital.point.y/scale,icon=new Graphics();capitalLayer.addChild(icon);
       if(this.originalIcons)icon.circle(x,y,1.3*ORIGINAL_CAPITAL_UNIT).fill(0x000000).circle(x,y,.885*ORIGINAL_CAPITAL_UNIT).fill(0xffffff).circle(x,y,.43*ORIGINAL_CAPITAL_UNIT).fill(0x000000);
       else icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
-    }
-    for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;if(city.provinceId===selected)continue;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
-      const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:mode==='political'?0x665842:0xeee8cd,width:.65*pixel,alpha:.45});capitalLayer.addChild(line);
-      const name=this.retainedText(`capital:${mode}:${c.id}:${capitalFont}`,c.name,placeStyle(capitalFont,true));name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
     }
     if(frame)this.updateUnits(frame);
     // Draw the one actively inspected small city above moving units and effects.

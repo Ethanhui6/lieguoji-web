@@ -37,6 +37,7 @@ import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
 import {originalPoliticalEdges} from '../original/original-political-edges';
+import {loadMapFont47} from './map-font47';
 import {originalPortCities} from '../original/original-ports';
 import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
@@ -478,6 +479,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     void renderer.init(element).then(()=>{
       if(disposed)return;renderer.setDocument(source);renderer.setTerrainDisplay('biome');renderer.attachGameplayLayer(map.layer);renderer.attachGameplayLayer(combatOverlay.layer);renderer.attachGameplayLayer(battleArrows.layer);renderer.attachGameplayLayer(warEffects.layer);renderer.attachGameplayLayer(orderLine);renderer.setCamera(view.camera);
       exportImage.current=async()=>{paint.current();return await renderer.exportPng();};
+      // Original TW-Kai map names: repaint once the font subset has loaded.
+      void loadMapFont47().then(ok=>{if(ok&&!disposed)paint.current();});
       const canvas=renderer.canvas;canvas.setAttribute('aria-label','真实文化世界地图');canvas.dataset.testid='culture47-map';
       // The run terrain is immutable while this world is open; one smoothed coastline serves every paint.
       const coast=original?original.coast:deriveFmsCoastCurves(extractFmsOceanCoast(source));if(original&&grid){map.useCellPolitics(true);map.useOriginalIcons(true);const w=current.current!.run;map.setOriginalPorts(originalPortCities(grid,source,w.world.cities.map(c=>({id:c.id,position:c.position,capital:false})),w.scale));}map.setCoastline(coast.lines,FMS_COAST_LINE_WIDTH,FMS_COAST_LINE_COLOR);map.useOriginalStateLines(true);
@@ -494,7 +497,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         if(original){
           // Cell colors follow the current controller; recolor only when ownership or view changes.
           const key=selection.mapMode+'|'+selection.colorView+'|'+colorViewKey47(r,selection.colorView)+'|'+r.world.provinces.map(p=>p.controller).join(',')+'|'+r.world.nations.map(n=>nationColor(n)).join(',');
-          if(key!==stateKey){stateKey=key;if(!cellOwners){cellOwners=originalCellProvinces(source,r.world.provinces,r.scale);if(grid)map.setCellEdges(originalPoliticalEdges(grid,source.elevations,cellOwners));}
+          if(key!==stateKey){stateKey=key;if(!cellOwners){cellOwners=originalCellProvinces(source,r.world.provinces,r.scale);if(grid){map.setCellEdges(originalPoliticalEdges(grid,source.elevations,cellOwners));map.setLabelGrid(grid,cellOwners);}}
             original.setStates(selection.mapMode==='political'?cellOwners:null,provinceColors47(r,selection.colorView));canvas.dataset.colorView=selection.colorView;}
         }
         if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}

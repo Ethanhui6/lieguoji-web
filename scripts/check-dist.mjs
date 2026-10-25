@@ -12,6 +12,9 @@ const battleAtlasHash='12b0852354a1975fa927cb9f5191665741cc87d262810a54d21f8b1d3
 // Exact parchment derived from the original's sharedassets0 parchmentfinal2 (2048x2048 JPEG).
 const parchmentName=/^parchment-[A-Za-z0-9_-]{8}\.jpg$/;
 const parchmentHash='a8bb5bed39f2ebd43a812e025b2e65b636aaaa082a2d33381463d54b4eb3633e';
+// Exact subset of the original's map-name font TW-Kai-98_1 (Open Government Data License v1.0).
+const mapFontName=/^tw-kai-subset-[A-Za-z0-9_-]{8}\.woff2$/;
+const mapFontHash='4d99de452741f3ca96ae6b58f9ecdee651040f03bf7452b74f2c526623de723c';
 
 function reject(file, reason) {
   throw new Error(`Publish audit rejected ${file}: ${reason}`);
@@ -45,9 +48,11 @@ function walk(directory, relative = '') {
     if (!stat.isFile()) reject(name, 'only regular files are allowed');
     const battleAtlas=relative==='assets'&&battleAtlasName.test(entry);
     const parchment=relative==='assets'&&parchmentName.test(entry);
+    const mapFont=relative==='assets'&&mapFontName.test(entry);
+    if(mapFont){const bytes=fs.readFileSync(absolute);if(bytes.length!==1224684||createHash('sha256').update(bytes).digest('hex')!==mapFontHash)reject(name,'map font subset differs from reviewed source');}
     if(parchment){const bytes=fs.readFileSync(absolute);if(bytes.length!==840709||createHash('sha256').update(bytes).digest('hex')!==parchmentHash)reject(name,'parchment texture differs from reviewed source');}
     if(battleAtlas){const bytes=fs.readFileSync(absolute);if(bytes.length!==482109||createHash('sha256').update(bytes).digest('hex')!==battleAtlasHash)reject(name,'battle animation atlas differs from reviewed source');}
-    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas||parchment);
+    const allowed = relative === '' ? requiredFiles.has(name) : relative === 'assets' && (assetName.test(entry)||battleAtlas||parchment||mapFont);
     if (!allowed) reject(name, 'not an approved root file or hashed JS/CSS asset');
     files.push(name);
   }
@@ -73,4 +78,4 @@ if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }
 if(files.filter(file=>battleAtlasName.test(file.replace(/^assets\//,''))).length!==1)reject('battle-sword','exactly one reviewed battle animation atlas required');
-console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas and parchment.`);
+console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas, parchment and map font subset.`);

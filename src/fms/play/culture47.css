@@ -361,3 +361,11 @@
 .c47-app .c47-rts-enter{width:100%;min-height:40px;margin:8px 0;border-radius:10px;border:1px solid #9a2a1e;background:rgba(154,42,30,.08);color:#9a2a1e;font-weight:650}
 .c47-app:has(.c47-rts) .c47-news{display:none}
 @media(max-width:600px){.c47-app .c47-rts{top:64px}}
+/* Family members with the original FamilyTreeUI actions. */
+.c47-app .c47-person-pick{display:grid;gap:2px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:inherit;text-align:left;font:inherit}
+.c47-app .c47-family-people li[aria-current=true]>.c47-person-pick{background:rgba(47,93,80,.08)}
+.c47-app .c47-person-badge{display:inline-block;margin-left:6px;padding:0 6px;border-radius:8px;background:rgba(176,124,30,.16);color:#8a5a12;font-size:11px;font-style:normal;font-weight:650;vertical-align:1px}
+.c47-app .c47-family-actions{display:flex;flex-wrap:wrap;gap:6px;padding:4px 10px 10px;animation:c47-rise .25s var(--ease-ios,ease-out)}
+.c47-app .c47-family-actions p{flex-basis:100%;margin:0 0 2px;font-weight:600}
+.c47-app .c47-family-actions button{min-height:32px;padding:4px 12px;font-size:13px}
+.c47-app .c47-family-actions .is-danger{border-color:rgba(154,42,30,.5);color:#9a2a1e}

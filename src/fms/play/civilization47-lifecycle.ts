@@ -48,7 +48,8 @@ export function resolveKnownSuccessionOwned47(r:Population47,nationId:string,pre
 function familyFacade47(f:Family47){return {id:f.id,get patriarchId(){return f.headId;},set patriarchId(v:number){f.headId=v;},get heirId(){return f.heirId;},set heirId(v:number){f.heirId=v;}};}
 /** Private transaction primitive. The public Session/calendar caller owns
  * rollback of every death, role, event, candidate and random draw together. */
-export function diePersonOwned47(r:Population47,person:FamilyPerson47){
+/** `cause`: natural (the monthly age check) or executed (原作 FamilyTreeUI 处死角色); only the chronicle wording differs. */
+export function diePersonOwned47(r:Population47,person:FamilyPerson47,cause:'natural'|'executed'='natural'){
  if(r.kin.persons[person.id]!==person||!person.isAlive||r.kin.lifecycle.deaths.some(d=>d.personId===person.id))throw Error('死亡人物缺失或已记录。');
  const stateById=(id:number)=>{const entry=Object.entries(r.people.nations).find(([,v])=>v.id===id);return entry?{nationId:entry[0],i:id}:null;};
  const getCharacter=lookup47(r),calendar=createNativeIsoCalendar(r.life.startDate),getYearSince=(time:number)=>nativeGetYearSince(time,r.life.gameTime,r.life.secondsPerDay,calendar);
@@ -67,7 +68,7 @@ export function diePersonOwned47(r:Population47,person:FamilyPerson47){
    // Chronicle's historical envelope is shared by old engines. Keep its kind
    // vocabulary immutable; the typed lifecycle ledger binds the death subtype
    // by ID for validation/UI, never by matching a person's displayed name.
-   row.deathHistoryId=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===s.nationId)!.name}${person.identity.name}逝世`,`享年${person.age}岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。`,[s.nationId],null,[old]).id;
+   row.deathHistoryId=announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${r.world.nations.find(n=>n.id===s.nationId)!.name}${person.identity.name}${cause==='executed'?'被处死':'逝世'}`,cause==='executed'?`享年${person.age}岁。被下令处死；终止实际任期，保留人物及其家谱履历。`:`享年${person.age}岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。`,[s.nationId],null,[old]).id;
   },recordState:(s,e)=>{if(s.i!==e.stateId||row.deathHistoryId===null)throw Error('死亡历史国家归属不一致。');},
   pastRole:(role,time,reason)=>pastRole47(role,time,reason),resolveState:s=>resolveKnownSuccessionOwned47(r,s.nationId,person,'death'),
  });

@@ -125,15 +125,15 @@ uniform mat3 uProjectionMatrix;
 uniform mat3 uWorldTransformMatrix;
 uniform mat3 uTransformMatrix;
 void main(){vec3 p=uProjectionMatrix*uWorldTransformMatrix*uTransformMatrix*vec3(aPosition,1.0);gl_Position=vec4(p.xy,0.0,1.0);}`;
-const fragment = `#version 300 es
+const fragment = (color:readonly number[])=>`#version 300 es
 precision highp float;
 out vec4 finalColor;
-void main(){finalColor=vec4(${ORIGINAL_RIVER_COLOR.map(c => c.toFixed(6)).join(',')},1.0);}`;
+void main(){finalColor=vec4(${color.map(c => c.toFixed(6)).join(',')},1.0);}`;
 
 /** One opaque mesh: overlapping ribbons at confluences do not darken. */
-export function originalRiverMesh(geometry: OriginalRiverGeometry): Mesh<Geometry, Shader> {
+export function originalRiverMesh(geometry: OriginalRiverGeometry,color:readonly number[]=ORIGINAL_RIVER_COLOR): Mesh<Geometry, Shader> {
   return new Mesh({
     geometry: new Geometry({ attributes: { aPosition: { buffer: geometry.positions, format: 'float32x2' } } }),
-    shader: new Shader({ glProgram: GlProgram.from({ vertex, fragment, name: 'original-rivers' }) }),
+    shader: new Shader({ glProgram: GlProgram.from({ vertex, fragment:fragment(color), name: 'original-rivers' }) }),
   });
 }

@@ -36,6 +36,7 @@ import {FmsRenderer} from '../renderer';
 import {OriginalPlayRenderer} from '../original/original-play-renderer';
 import {originalGridFor} from '../original/original-document';
 import {originalCellProvinces} from '../original/original-politics';
+import {originalPoliticalEdges} from '../original/original-political-edges';
 import {originalPortCities} from '../original/original-ports';
 import {nationColor} from './politics';
 import type {OriginalGrid} from '../original/original-grid';
@@ -493,7 +494,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
         if(original){
           // Cell colors follow the current controller; recolor only when ownership or view changes.
           const key=selection.mapMode+'|'+selection.colorView+'|'+colorViewKey47(r,selection.colorView)+'|'+r.world.provinces.map(p=>p.controller).join(',')+'|'+r.world.nations.map(n=>nationColor(n)).join(',');
-          if(key!==stateKey){stateKey=key;cellOwners??=originalCellProvinces(source,r.world.provinces,r.scale);
+          if(key!==stateKey){stateKey=key;if(!cellOwners){cellOwners=originalCellProvinces(source,r.world.provinces,r.scale);if(grid)map.setCellEdges(originalPoliticalEdges(grid,source.elevations,cellOwners));}
             original.setStates(selection.mapMode==='political'?cellOwners:null,provinceColors47(r,selection.colorView));canvas.dataset.colorView=selection.colorView;}
         }
         if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}

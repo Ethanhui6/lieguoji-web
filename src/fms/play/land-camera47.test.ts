@@ -1,9 +1,18 @@
 import {describe,it,expect} from 'vitest';
 import {fitCamera,worldToScreen,cameraWorldBounds} from '../../world/camera';
 import {grid} from './fixture.test-support';
-import {initialLandCamera47} from './land-camera47';
+import {initialLandCamera47,coverLandCamera47} from './land-camera47';
 
 describe('first playable land camera',()=>{
+ it.each([{width:360,height:800},{width:390,height:844},{width:1440,height:900}])('covers the playable viewport without exposing outside-map space: %o',viewport=>{
+  const doc=grid(()=>45),before=structuredClone(doc);
+  const camera=coverLandCamera47(doc,viewport),bounds=cameraWorldBounds(camera,viewport);
+  expect(bounds.minX).toBeGreaterThanOrEqual(-1e-8);
+  expect(bounds.minY).toBeGreaterThanOrEqual(-1e-8);
+  expect(bounds.maxX).toBeLessThanOrEqual(doc.width+1e-8);
+  expect(bounds.maxY).toBeLessThanOrEqual(doc.height+1e-8);
+  expect(doc).toEqual(before);
+ });
  it('frames a small real continent on portrait without changing data or losing its coastline',()=>{
   const doc=grid((x,y)=>x>=100&&x<=170&&y>=100&&y<=180?45:0),before=structuredClone(doc),viewport={width:393,height:800};
   const camera=initialLandCamera47(doc,viewport),whole=fitCamera(doc,viewport);

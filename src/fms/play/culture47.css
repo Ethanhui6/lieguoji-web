@@ -51,7 +51,7 @@
 @media(max-width:600px){.c47-app .c47-panel .c47-action-grid{grid-template-columns:repeat(4,1fr);gap:5px}.c47-app .c47-panel .c47-action-grid button{min-height:32px;padding:4px 2px;font-size:12px}.c47-panel{padding:14px 16px}}
 .c47-app .c47-province-link{width:100%;justify-content:space-between;min-height:34px;margin:2px 0 6px;padding:6px 12px;font-size:13px;background:#e6efec;border:1px solid #d1dcda}
 @media(max-width:600px){
-.c47-app .c47-bar{top:max(6px,env(safe-area-inset-top));left:8px;right:8px;padding:3px 4px;gap:1px;border-radius:14px}
+.c47-app .c47-bar{top:max(6px,env(safe-area-inset-top));left:8px;right:8px;padding:3px 4px;gap:1px;border-radius:10px}
 .c47-app .c47-bar>button{min-height:32px;min-width:32px;padding:4px}
 .c47-app .c47-bar time{font-size:11px;white-space:nowrap;line-height:1.2}
 .c47-app .c47-nations,.c47-app .c47-zoom,.c47-app .c47-playback-status{display:none}
@@ -79,32 +79,32 @@
 .c47-app .c47-confirm button{flex:1;min-height:42px}
 .c47-app .c47-confirm button:first-child{background:#235d50;color:#fff}
 .c47-app .c47-confirm button:first-child:hover{background:#1c4d43}
-/* 0.6.0 整体打磨：同一套浮层规格（玻璃底 #f4f7f5e8、1px 白边、柔和阴影；圆角 栏 18 / 面板 20 / 按钮 12），去掉重复入口。 */
-.c47-app{--glass:#f4f7f5e8;--glass-line:#ffffffb0;--glass-shadow:0 6px 24px #0a20201f,0 1px 2px #0a202014}
-.c47-app .c47-bar,.c47-app .c47-controls,.c47-app .c47-zoom,.c47-app .c47-panel,.c47-app .c47-news,.c47-app .c47-map-menu,.c47-app .c47-ai-global,.c47-app .c47-menu,.c47-app .c47-territory{background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2)}
+/* 参考图首批：暖纸浮层、细黄褐边、柔和阴影；紧凑栏与面板，保留现有入口和交互。 */
+.c47-app{--glass:#f4efdfed;--glass-line:#a3947166;--glass-shadow:0 4px 16px #302a201f,0 1px 2px #302a2014}
+.c47-app .c47-bar,.c47-app .c47-controls,.c47-app .c47-zoom,.c47-app .c47-panel,.c47-app .c47-news,.c47-app .c47-map-menu,.c47-app .c47-ai-global,.c47-app .c47-menu,.c47-app .c47-territory{background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .c47-app .c47-nations,.c47-app .c47-playback-status{display:none}
-.c47-app .c47-bar{padding:5px 6px;gap:4px;border-radius:18px}
+.c47-app .c47-bar{padding:5px 6px;gap:4px;border-radius:10px}
 .c47-app .c47-bar>div{margin-right:auto;padding:0 6px}
 .c47-app .c47-bar strong{font-size:15px;letter-spacing:.02em}
 .c47-app .c47-bar>button{min-width:38px;min-height:38px;padding:7px;border-radius:12px;background:transparent}
 .c47-app .c47-bar>button:hover:not(:disabled){background:#ffffffcc}
 .c47-app .c47-bar>button[aria-pressed=true]{background:#d1e7dc;color:#1d4d42}
-.c47-app .c47-bar time{margin:0 8px 0 0;padding:4px 10px;border-radius:10px;background:#e8efeb;font-size:13px;font-weight:600;color:#23443c}
+.c47-app .c47-bar time{margin:0 8px 0 0;padding:4px 10px;border-radius:10px;background:#e8e1cf;font-size:13px;font-weight:600;color:#23443c}
 .c47-app .c47-news{top:calc(max(12px,env(safe-area-inset-top)) + 60px);border-radius:14px}
-.c47-app .c47-panel{top:calc(max(12px,env(safe-area-inset-top)) + 60px);bottom:84px;border-radius:20px}
+.c47-app .c47-panel{top:calc(max(12px,env(safe-area-inset-top)) + 60px);bottom:84px;border-radius:12px}
 .c47-app .c47-map-menu{top:calc(max(12px,env(safe-area-inset-top)) + 60px)}
 .c47-app .c47-zoom{bottom:max(16px,env(safe-area-inset-bottom));border-radius:16px;padding:3px}
 .c47-app .c47-zoom button{min-height:36px;min-width:36px;border-radius:12px;background:transparent}
-.c47-app .c47-controls{border-radius:18px;padding:5px;gap:4px}
+.c47-app .c47-controls{border-radius:10px;padding:5px;gap:4px}
 .c47-app .c47-controls button{border-radius:12px}
 .c47-app .c47-controls button[aria-pressed=true]{background:#d1e7dc;color:#1d4d42}
 @media(max-width:600px){
- .c47-app .c47-bar{padding:3px 4px;gap:1px;border-radius:14px}
+ .c47-app .c47-bar{padding:3px 4px;gap:1px;border-radius:10px}
  .c47-app .c47-bar>button{min-width:32px;min-height:32px;padding:4px}
  .c47-app .c47-bar time{margin-right:auto;padding:3px 8px;font-size:11px}
  .c47-app .c47-news{top:calc(max(6px,env(safe-area-inset-top)) + 44px)}
  .c47-app .c47-map-menu{top:calc(max(6px,env(safe-area-inset-top)) + 44px)}
- .c47-app .c47-panel{top:auto;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 50px);border-radius:20px}
+ .c47-app .c47-panel{top:auto;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 50px);border-radius:12px}
 }
 @media(max-width:600px){.c47-app .c47-bar>button{min-width:30px;min-height:30px;padding:3px}.c47-app .c47-bar time{padding:3px 6px;font-size:10.5px;margin-right:auto}.c47-app .c47-bar .play-icon{width:19px;height:19px}}
 /* 基本信息与行省信息同一种「标签—数值」行样式（原作 SinglePanel 一行一项）。 */
@@ -112,3 +112,11 @@
 .c47-app .c47-nation-stats.c47-province-rows>div{display:flex;justify-content:space-between;gap:12px;padding:0;background:transparent}
 .c47-app .c47-nation-stats.c47-province-rows dt{font-size:13px;color:#546960}
 .c47-app .c47-nation-stats.c47-province-rows dd{margin:0;font-size:13px;font-weight:500;text-align:right}
+/* 参考图：桌面事件栏移至左下，给地图中央留出空间。窄屏继续使用顶部短消息。 */
+@media(min-width:1000px){
+ .c47-app .c47-news,.c47-app:has(.c47-panel) .c47-news{top:auto;bottom:20px;left:16px;right:auto;transform:none;width:320px;min-height:64px;border-radius:10px;padding:10px 14px}
+ .c47-app .c47-news:active{transform:scale(.98)}
+ .c47-app .c47-zoom{left:auto;right:16px;bottom:20px}
+ .c47-app .c47-panel{width:300px;padding:18px;bottom:104px}
+ .c47-app .c47-identity h2{font-family:'Songti SC',SimSun,Georgia,serif;font-size:23px}
+}

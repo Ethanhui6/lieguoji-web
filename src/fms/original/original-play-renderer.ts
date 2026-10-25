@@ -1,4 +1,5 @@
-import { Application, Assets, Container, Sprite, Texture } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import {drawOriginalRelief} from './original-relief';
 import 'pixi.js/unsafe-eval';
 import parchmentUrl from './assets/parchment.jpg';
 import type { AtlasCamera } from '../../world/camera';
@@ -24,6 +25,7 @@ export class OriginalPlayRenderer {
   private cells?: OriginalCellMesh;
   private overlays = new Container();
   private parchment = new Sprite();
+  private relief = new Graphics();
   private initialized = false;
   private destroyed = false;
   private preset: OriginalPreset = ORIGINAL_PRESETS[0];
@@ -55,11 +57,13 @@ export class OriginalPlayRenderer {
   /** The play terrain is fixed for the open world; elevations select land cells. */
   setDocument(doc: FmsDocument): void { this.heights = doc.elevations; this.document = doc; if (this.initialized && !this.destroyed) { this.build(); this.draw(); } }
   setTerrainDisplay(): void {}
-  /** 'paper' (the user's parchment screenshot sea) = preset 8, white sea under
-   * parchment; 'source' = preset 1, the level0 blue sea. */
+  /** Reference-paper appearance uses muted sea and translucent political fill.
+   * Source appearance retains the recovered level0 preset. */
   setOceanAppearance(appearance: FmsOceanAppearance): void {
-    this.preset = ORIGINAL_PRESETS[appearance === 'paper' ? 7 : 0];
-    if (this.initialized && !this.destroyed) { this.buildSea(); this.parchment.visible = this.preset.parchment; this.draw(); }
+    this.preset = appearance === 'paper'
+      ? { ...ORIGINAL_PRESETS[7], shallowSea: 0x8eafb1, deepSea: 0x527c86, stateMapTransparency: .78 }
+      : ORIGINAL_PRESETS[0];
+    if (this.initialized && !this.destroyed) { this.buildSea(); this.destroyRivers(); this.buildRivers(); this.recolor(); this.parchment.visible = this.preset.parchment; this.draw(); }
   }
   setStates(owner: Int32Array | null, color: (province: number) => number | null): void {
     this.states = owner ? { owner, color } : null; this.recolor(); this.draw();
@@ -89,12 +93,14 @@ export class OriginalPlayRenderer {
     if (this.rivers?.source !== doc) {
       this.destroyRivers();
       const climate = originalClimate(this.grid, doc), ids = originalBiomeIds(this.grid, doc, climate), geometry = originalRiverGeometry(this.grid, doc, climate);
-      this.rivers = { source: doc, mesh: originalRiverMesh(geometry), biome: originalBiomeLinear(this.grid, ids) };
+      this.rivers = { source: doc, mesh: originalRiverMesh(geometry,this.preset===ORIGINAL_PRESETS[0]?undefined:[.38,.69,.74]), biome: originalBiomeLinear(this.grid, ids) };
       const counts = new Array<number>(13).fill(0); this.cells.cells.forEach(cell => counts[ids[cell]]++);
+      this.canvas.dataset.relief=JSON.stringify(drawOriginalRelief(this.relief,this.grid,doc.elevations,ids));
       this.canvas.dataset.originalBiomes = JSON.stringify(counts);
       this.canvas.dataset.originalRivers = JSON.stringify(geometry.stats);
     }
     this.scene.addChildAt(this.rivers.mesh, this.scene.getChildIndex(this.cells.mesh) + 1);
+    this.scene.addChildAt(this.relief, this.scene.getChildIndex(this.cells.mesh) + 1);
   }
   private destroyRivers(): void {
     if (!this.rivers) return;

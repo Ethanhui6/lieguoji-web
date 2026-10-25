@@ -110,3 +110,53 @@
 - **实测**：后期实时推进（关闭采样器，各跑两次）0.5.5 每天 17.7–18.1ms，本版 17.0–17.8ms。
 - **本地全量检查（发布前，`npm run check` 的各步）**：lint、typecheck、`npm test`（186 个文件、1870 项通过，1 项跳过）、build 全部通过。`playwright test`（3 种设备）：156 项中 49 项通过、107 项失败或超时，耗时约 8.4 小时（30333 秒）。有失败的测试文件（失败数/总数）：active-world(6/9)、army-recovery-ui(3/3)、autonomous-history(3/3)、coastline(3/3)、continuation(3/3)、family(3/3)、generations(6/6)、history(3/3)、house-governance(3/3)、houses(3/3)、lifecycle(3/3)、mobile-sheet(2/3)、motion(3/3)、news(3/3)、ocean-style(3/3)、pipeline(3/3)、reference(3/3)、resume(12/15)、retirement(7/9)、save-scope(15/18)、throughput(3/3)、warm-throughput(3/3)、fms-experience61-throughput(3/3)、fms-full-map(3/6)、fms-generation58(1/6)、fms-speed68(3/3)、fms-territory64(1/3)。其中 `resume` 只在桌面设备上对照过：0.5.5（`49dacf5c`）与本版结果完全一致（1 项通过、3 项失败、1 项超时），说明不是本版引入。很多失败用例依赖 0.5.0 已删除的旧引擎（continuation / generations frozen 等），或依赖早期的界面与节奏。**请 Codex 整体梳理浏览器测试**：过时的用例要么删除要么更新；如果确实是玩法问题，附证据交给 Claude。整套跑一遍要 8 小时以上，建议先按设备或文件拆分。完整 JSON 报告只在本地（没有提交）。
 - **仍由 Claude 修改的文件**：无（本段补记除外）。
+
+### 2026-10-23 · 事故记录：Claude 误提交并推送了别人未交接的改动（Claude Code）
+- 这次推送 `49dacf5c..67a5de38` 一共带上了 5 个提交：`edadb96e`（CI 改为手动）、`6dbed4ad` / `736325ad`（手机双击放大、长按菜单修复）、`d420298c`（另一个会话替 Claude 提交的 0.5.6 本体）、`67a5de38`（Claude 的提交）。
+- 问题出在 `67a5de38`：Claude 用 `git add -A` 把工作区里**另一个会话还在开发、尚未交接**的「电脑计算 / 远程主机」改动也一起提交了：`scripts/host.mjs`、`scripts/host-engine.mjs`、`src/fms/play/wire47.ts`、`wire47.test.ts`、`culture47-remote.ts`、`RemoteBadge47.tsx`、`CultureWorld47.tsx`（徽标）、`culture47-client.ts`（有远程主机时先尝试连接）、`culture47.css`、`vite.config.ts`（vitest 并行数）、`public/_headers`（CSP 的 connect-src 增加了 `wss://*.trycloudflare.com` 和本机 ws）、`.github/workflows/ci.yml`（`VITEST_MAX_WORKERS`）、`docs/FMS_ORIGINAL_COVERAGE_2026-10-23.md`。这些内容已经由 Cloudflare 部署到正式站（`build.json` commit 为 `67a5de38`）。
+- 影响评估：远程主机只有在网址带 `?host=wss://…&code=…`（或 localStorage 里已有记录）时才启用，否则照旧用本地 Worker，徽标也不显示；默认游戏行为不变。实际变化是 CSP 放宽了，以及 vitest 默认改为多核并行。
+- 没有改写历史，也没有回滚：回滚会删掉对方工作区里还在开发的文件。等用户决定保留还是撤回。
+- 今后的做法：Claude 提交时只 `git add` 自己改过的具体文件，不再用 `git add -A`；提交前先核对 `git status`，确认没有别人的改动。
+- **用户决定（2026-10-23）**：远程主机 / 电脑计算是用户自己在做的功能，先保留在 main 上，不撤回。之后由用户（或用户指定的会话）继续开发，Claude 不修改这些文件：`scripts/host*.mjs`、`wire47*`、`culture47-remote.ts`、`RemoteBadge47.tsx`。
+
+### 2026-10-24 · Codex C1 地图文字稳定性（本地候选，未发布）
+- 用户选择 C（地图与界面体验），授权本批直接实现。基线 main af1ddf91 / 0.5.11。
+- 本批拥有：src/fms/play/map.ts、city-labels.ts、map-label-layout.ts、city-selection.test.ts；tests/fms-label-stability.spec.ts。本段为追加交接。
+- 修复：选中地块仍保留其普通名字的布局占位，只隐藏该名字的绘制并显示选中提示，避免周围文字重排；首都与普通城市使用 Pixi 实际字形尺寸避让；普通城市字号 9→11；选中提示不再避让自己的旧名字。
+- 验证：相关单测 4 文件 / 20 项通过；npm run build:cf（全局 lint、类型、生产构建、35 项产物白名单）通过；新浏览器用例在桌面/手机尺寸 Chromium 共4项通过，开发版与生产版各跑一轮。验证选择前后布局不变、拖动坐标平移不改变国名字号，以及种子421730生成地图全景/近景实际截图。手机尺寸不是 iPhone 真机。
+- 生产候选试玩：http://127.0.0.1:5394/?fms=1，仅本机。服务状态需下次核实。
+- 日志：.autopilot/label-stability-unit.txt、label-stability-build.txt、label-stability-production-browser.txt。截图：test-results/fms-label-stability-genera-ac552--at-overview-and-close-zoom-mobile-chromium/original-close.png 等（本地，不作为原作等价验收）。
+- 待做：竖屏地图上下留白过大、动态军队与城市名重叠、完整字体/菜单还原。国名倾斜与版图锚点原已实现，没有重复声称为本批新增。
+- 发布状态：未提升版本、未提交/推送。全量 npm run check 尚未通过本批验证；历史浏览器失败记录保留。工作区已有 Claude 的 CultureNationOverview47.tsx 与本文件旧补记，未纳入提交、未清理。整版发布需先完成全量检查与明确文件交接，不能用本批4项替代。
+
+### 2026-10-24 · Claude 改动了 map.ts 的几行（0.5.17，已提交）
+- 为原作视图（文化/宗教/家族/联盟视图的名字与边界）在 `map.ts` 的 `draw()` 末尾新增参数 `viewGroups`，并改了国名标签、国界线、territoryLabels 调用这几处；与 Codex C1 未提交的改动（城市名布局）不重叠。提交时只应用了 Claude 自己的补丁，Codex 的 C1 改动仍在工作区未提交。
+- `territory-labels.ts` 的 `territoryLabels(world, groupOf?)` 新增可选分组参数，默认行为不变。
+
+### 2026-10-24 · Codex 图像参考与 Claude 后续实现
+- 用户明确要求：用 image 生成游戏画面与界面参考，并让 Claude 接续；复用此前 Codex 地形、地图文字等多版本成果。
+- 图片：docs/design-reference/2026-10-24/lieguoji-map-ui-reference.png。
+- 执行说明：docs/design-reference/2026-10-24/CLAUDE_IMPLEMENTATION.md。Claude 下一批请先阅读，盘点已有成果和当前文件锁，再按地图/文字/桌面与手机布局分批实现。
+- 本批只新增参考素材和说明、追加本记录；未修改或交接其他会话的游戏代码。参考图不是原作规则来源，禁止整图贴背景或把国名城市军队数据烘焙进纹理。
+- 最新发布规则沿用 AGENTS.md：本地 npm run check，Actions 仅手动，部署核对正式站 build.json。
+
+### 2026-10-24 · Codex 接手参考图第一批（进行中）
+- 用户已要求 Codex 先执行。新增占用：land-camera47.ts / land-camera47.test.ts、original-play-renderer.ts、culture47.css；本批只调整视觉和初始取景。保留 C1 文字稳定性与 Claude 引擎修改。
+- 目标：手机进入地图铺满，暖纸紧凑面板、降低政治色遮蔽、蓝绿海水。完成后追加真实验证结果。
+
+### 2026-10-24 · Codex 参考图第一批完成（本地候选，未发布）
+- 改动：land-camera47.ts 竖屏进入时也使用 cover 取景，消除宽地图上下大片空白（代价：默认看到局部，可使用现有全图/缩放）；land-camera47.test.ts 新增360×800、390×844、1440×900边界测试。
+- original-play-renderer.ts：paper 外观使用现有羊皮纸渲染管线，海色 0x8eafb1 / 0x527c86，政治层透明度 .78；原作预设常量不变。不是新增山林精灵，也没有改地图几何。
+- culture47.css：游戏浮层改暖纸色、黄褐细边，栏10px/面板12px圆角，保留按钮事件与面板逻辑。
+- map.ts：仅在已有 C1 代码上调整地名/国名深墨色和浅描边，保留避让、锚点、分组和选中稳定性。
+- tests/fms-label-stability.spec.ts：选城测试原固定窗口未涵盖截图中实际可见城市（y约645，原上界624），扩大到无遮挡的可见区域；没有删除文字布局稳定性断言。
+- 验证：相关3文件22项单测通过；npm run build:cf（lint/类型/生产构建/35项白名单）通过；桌面/手机4项浏览器回归在dev和生产各通过一轮。git diff --check 通过。
+- 生产截图：.autopilot/reference-ui-production/；本机预览 http://127.0.0.1:5396/?fms=1（后续需核对服务仍在）。手机浏览器模拟不等于真机验收。
+- 尚未完成：参考图中的手绘山脉/森林细节、军队旗标与城市字避让、桌面侧栏整体布局和完整美术还原；现有河流仍沿用原作高亮色。应继续用真实地形/动态数据实现，不能用参考大图替代地图。
+- 发布边界：未提升版本、未提交或推送；共享工作区有Claude未交接的军队/存档与版本文件，不纳入本批。未完成全量npm run check，不能称正式发布通过。本批文件可由Claude接续，但仍需保留其他会话C1未提交成果。
+
+### 2026-10-24 · Claude 接手发布 Codex 参考图批次（0.5.21）
+- 用户要求「下一版按照 Codex 交接的内容继续更新」。本版由 Claude 一并发布 Codex 未提交的三批：C1 地图文字稳定性；参考图第一批（竖屏铺满取景、暖纸浮层、蓝绿海水、政治层透明度 .78、桌面事件栏左下）；以及交接记录之后的第二批（国界/省界沿实际渲染的 Voronoi 格子边、按高度与生态的山脉森林装饰、河流按外观换色、tests/fms-cell-boundaries.spec.ts）。
+- 第二批与 Claude 0.5.17 的视图分组兼容：格子边界按 `groupOf` 分组，文化/宗教/家族/联盟视图的边界随视图变化。
+- 参考大图 lieguoji-map-ui-reference.png（3MB）不入仓库，只提交 CLAUDE_IMPLEMENTATION.md。
+- 之后这些文件由 Claude 继续按 CLAUDE_IMPLEMENTATION.md 推进（军队旗标与城市名避让、桌面侧栏布局等）；如 Codex 需要再改，请先在本文件登记占用。

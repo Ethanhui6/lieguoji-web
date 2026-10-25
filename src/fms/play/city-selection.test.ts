@@ -34,3 +34,11 @@ it('keeps a selected capital near its real position when dense small units leave
   expect(Math.hypot(label.callout!.x-capital.x,label.callout!.y-capital.y)).toBeLessThan(80);
   expect(label.lines!.join('')).toBe(capital.name);expect(label.x).toBe(capital.x);expect(label.y).toBe(capital.y);
 });
+it('uses measured glyph bounds for mixed-script names and clips the whole label',()=>{
+ const a={id:'a',name:'iiiiiiii',x:50,y:60,selected:false,labelWidth:20,labelHeight:18};
+ const b={...a,id:'b',name:'京城',x:85,labelWidth:28};
+ const labels=cityLabels([a,b],[],{width:200,height:100},false);
+ expect(labels).toHaveLength(2);expect(labels[0].box?.width).toBe(20);expect(labels[1].labelY).toBe(labels[0].labelY);
+ expect(cityLabels([{...a,x:-5}],[],{width:200,height:100},false)).toHaveLength(1);
+ expect(cityLabels([{...a,x:-11}],[],{width:200,height:100},false)).toHaveLength(0);
+});

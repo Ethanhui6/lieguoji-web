@@ -19,7 +19,7 @@ export function countryLabelBox(anchor:LabelBox,clearance:number,obstacles:Label
 export function capitalNameLabels(cities:CityCandidate[],size:number,obstacles:LabelBox[],viewport:{width:number;height:number},clip=true){
   const boxes=[...obstacles],labels:(CityCandidate&LabelBox)[]=[];
   for(const c of [...cities].sort((a,b)=>a.id.localeCompare(b.id))){
-    const width=Array.from(c.name).length*size+6,height=size+6,dx=width/2+15,dy=height/2+15;
+    const width=c.labelWidth??Array.from(c.name).length*size+6,height=c.labelHeight??size+6,dx=width/2+15,dy=height/2+15;
     const offsets=[[0,-dy],[0,dy],[dx,0],[-dx,0],[dx,-dy],[-dx,-dy],[dx,dy],[-dx,dy]];
     if(width>viewport.width-8||height>viewport.height-8)continue;
     const box=offsets.map(([x,y])=>({x:c.x+x,y:c.y+y,width,height})).find(b=>!boxes.some(o=>overlap(b,o)>0));

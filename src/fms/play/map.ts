@@ -23,6 +23,7 @@ import {BattleFeedback} from './battle-feedback';
 import {warDetail,warSites,warMarkers,type WarMarker,type WarDetail} from './war-view';
 import {armyStrength47} from './army-strength47';
 import {fmsStateLineColor,fmsStateOutlines,FMS_STATE_LINE_WIDTH} from '../state-line';
+import {originalPoliticalOutlines,type OriginalPoliticalEdge} from '../original/original-political-edges';
 import type {TacticsState} from './tactics-model';
 
 /** One prefab local unit in map units: World.CreateCity sets localScale =
@@ -164,11 +165,13 @@ export class PlayMap {
   // The original colors states per Voronoi cell in the terrain renderer; the
   // province polygons then only carry outlines, borders and selection.
   private cellPolitics=false;
+  private cellEdges:readonly OriginalPoliticalEdge[]|null=null;
+  setCellEdges(edges:readonly OriginalPoliticalEdge[]){this.cellEdges=edges;this.stateOutlineKey='';this.politicalKey='';}
   useCellPolitics(enabled:boolean){this.cellPolitics=enabled;this.politicalKey='';}
   // Original ViewManager color views: per-province fill override (null keeps the state color).
   private provinceFill:((index:number)=>number|null)|null=null;private provinceFillKey='';
   setProvinceFill(fill:((index:number)=>number|null)|null,key:string){this.provinceFill=fill;this.provinceFillKey=key;}
-  stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points};}
+  stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points,geometry:this.cellEdges?'rendered-voronoi-edges':'province-polygons',provinceEdges:this.cellEdges?.length??0};}
   coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
   private politicalKey='';
@@ -200,30 +203,35 @@ export class PlayMap {
     const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.provinceFillKey,territoryKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
     g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
-    const originalLines=this.originalStateLines&&mode==='political';
+    const originalLines=this.originalStateLines&&(mode==='political'||this.cellPolitics);
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
     for (const [index,p] of world.provinces.entries()) {
-      if(this.cellPolitics){if(zoom>.6)g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
+      if(this.cellPolitics){/* Cell province boundaries are drawn below from the fill topology. */}
       else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: this.provinceFill?.(index) ?? nationColor(nations.get(p.controller)!), alpha: style.fill });
       if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
-      if (p.id === selected&&!originalLines) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
+      if (p.id === selected&&!originalLines&&!this.cellEdges) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
       const owner=groupOf?groupOf(p)??'':p.controller;for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==owner;}else borders.set(key,{a,b,owner,shared:false,foreign:false});}
+    }
+    if(this.cellEdges&&zoom>.6){
+      for(const {a,b,segment:[ax,ay,bx,by]} of this.cellEdges)if(a>=0&&b>=0)g.moveTo(ax,ay).lineTo(bx,by);
+      g.stroke({color:0x303e37,alpha:style.province,width:.55*pixel});
     }
     if(originalLines){
       const outlineKey=territoryKey+'/'+scale;
-      if(outlineKey!==this.stateOutlineKey){this.stateOutlineKey=outlineKey;this.stateOutlines=fmsStateOutlines(groupOf?world.provinces.flatMap(p=>{const k=groupOf(p);return k===null?[]:[{...p,controller:k}];}):world.provinces,scale);}
+      if(outlineKey!==this.stateOutlineKey){this.stateOutlineKey=outlineKey;this.stateOutlines=this.cellEdges?originalPoliticalOutlines(this.cellEdges,i=>{const p=world.provinces[i];return p?(groupOf?groupOf(p):p.controller):null;}):fmsStateOutlines(groupOf?world.provinces.flatMap(p=>{const k=groupOf(p);return k===null?[]:[{...p,controller:k}];}):world.provinces,scale);}
       for(const [owner,lines]of this.stateOutlines){
         let drawn=false;
         for(const line of lines){if(line.length<2)continue;g.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)g.lineTo(line[i][0],line[i][1]);drawn=true;}
         if(drawn)g.stroke({color:fmsStateLineColor(viewGroups?'#'+viewGroups.color(owner).toString(16).padStart(6,'0'):nationColor(nations.get(owner)!)),width:FMS_STATE_LINE_WIDTH,join:'round',cap:'round'});
       }
       const chosen=selected?provinces.get(selected):undefined;
-      if(chosen)g.poly(chosen.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xffe7a7,width:2.5*pixel});
+      if(chosen&&!this.cellEdges)g.poly(chosen.polygon.flatMap(v=>[v.x/scale,v.y/scale])).stroke({color:0xffe7a7,width:2.5*pixel});
     }
     else for(const edge of borders.values())if(edge.foreign){
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0xfff5db,width:(style.border+1.5)*pixel,alpha:.8});
       g.moveTo(edge.a.x/scale,edge.a.y/scale).lineTo(edge.b.x/scale,edge.b.y/scale).stroke({color:0x35453a,width:style.border*pixel,alpha:.9});
     }
+    if(selected&&this.cellEdges){const index=provinceIndex.get(selected);for(const {a,b,segment:[ax,ay,bx,by]}of this.cellEdges)if(a===index||b===index)g.moveTo(ax,ay).lineTo(bx,by);g.stroke({color:0xffe7a7,width:2.5*pixel});}
     }
     const label = (text: string, x: number, y: number, size: number, color = '#f9f1d4',parent=this.layer,key?:string) => {
       const style:TextStyleOptions={fontFamily:'Georgia, serif',fontSize:size,fill:color,fontWeight:'bold',stroke:{color:'#263d40',width:3}};
@@ -235,8 +243,8 @@ export class PlayMap {
     const placeStyle=(size:number,capital=false):TextStyleOptions=>({
       fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:size,
       fontWeight:capital?'600':'400',
-      fill:mode==='political'?'#3b3429':'#f6efd9',
-      stroke:{color:mode==='political'?'#f7ebd1':'#354338',width:capital?.6:.35},
+      fill:'#302b23',
+      stroke:{color:'#f7ebd1',width:capital?1.4:1},
     });
     const placeName=(text:string,x:number,y:number,size:number,key:string)=>{
       const t=this.retainedText(`place:${mode}:${key}`,text,placeStyle(size));
@@ -252,7 +260,7 @@ export class PlayMap {
     const capitalIcons=this.capitals.map(c=>({cityId:c.cityId,x:c.point.x/scale*zoom+this.projection.x,y:c.point.y/scale*zoom+this.projection.y,width:22,height:22})),countryBoxes:LabelBox[]=[];
     const countryLabels=this.territories.map(territory=>{
       const name=viewGroups?viewGroups.name(territory.nationId):nations.get(territory.nationId)!.name,point=territory.point,factor=zoom/scale;
-      const t=this.retainedText(`country:${mode}:${viewGroups?territory.nationId+':':''}${territory.componentId}`,name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:mode==='political'?'#332c24':'#f6efd9',fontWeight:'400',stroke:{color:mode==='political'?'#f3e7ca':'#354338',width:.45},letterSpacing:2});
+      const t=this.retainedText(`country:${mode}:${viewGroups?territory.nationId+':':''}${territory.componentId}`,name,{fontFamily:'"Songti SC", SimSun, Georgia, serif',fontSize:26,fill:'#29271f',fontWeight:'400',stroke:{color:'#f3e7ca',width:1},letterSpacing:2});
       // Fit the measured glyphs in the world-space band, then cap readability.
       // Tiny enclaves keep their name at their true anchor; zoom reveals it.
       const textScale=Math.max(0,Math.min(1,territory.length*factor/Math.max(1,t.width),territory.height*factor/Math.max(1,t.height))),size=26*textScale;
@@ -274,13 +282,20 @@ export class PlayMap {
       else marks.circle(x, y, (detail==='overview'?1:1.6) * pixel).fill(0xf0e5cc).stroke({width:.65*pixel,color:0x38453e});
     }
     const capitalFont=detail==='overview'?13:15;
-    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);
+    const measuredCity=(c:typeof this.cities[number],capital:boolean)=>{
+      const font=capital?capitalFont:11;
+      const text=this.retainedText(capital?`capital:${mode}:${c.id}:${font}`:`place:${mode}:town:${c.id}`,c.name,placeStyle(font,capital));
+      return {...c,selected:false,labelWidth:text.width+6,labelHeight:text.height+4};
+    };
+    // Keep selection out of layout: reserve the normal name before drawing
+    // its selected callout, so neighbouring labels do not change position.
+    const capitalText=capitalNameLabels(this.cities.filter(c=>c.capital).map(c=>measuredCity(c,true)),capitalFont,[...countryBoxes,...capitalIcons],this.projection,false);
     const cityObstacles=[
       ...countryBoxes,...capitalIcons,...capitalText
     ];
-    const cityText=cityLabels(this.cities.filter(c=>!c.capital&&c.provinceId!==selected).map(c=>({...c,selected:false})),cityObstacles,this.projection,detail==='overview');
+    const cityText=cityLabels(this.cities.filter(c=>!c.capital).map(c=>measuredCity(c,false)),cityObstacles,this.projection,detail==='overview');
     this.labelLayout={detail,countries:countryBoxes,capitals:capitalText.map(({x,y,width,height})=>({x,y,width,height})),towns:cityText.map(c=>({id:c.id,x:c.labelX,y:c.labelY}))};
-    for(const c of cityText){placeName(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,9,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
+    for(const c of cityText){if(this.cities.find(v=>v.id===c.id)!.provinceId===selected)continue;placeName(c.name,(c.labelX-this.projection.x)/zoom,(c.labelY-this.projection.y)/zoom,11,`town:${c.id}`);this.cities.find(v=>v.id===c.id)!.label=true;}
     // Near view resolves actual local names. A countryside province is not
     // presented as an invented city merely to fill the map with settlements.
     const cityProvinces=new Set(world.cities.map(c=>c.provinceId));
@@ -341,7 +356,7 @@ export class PlayMap {
       if(this.originalIcons)icon.circle(x,y,1.3*ORIGINAL_CAPITAL_UNIT).fill(0x000000).circle(x,y,.885*ORIGINAL_CAPITAL_UNIT).fill(0xffffff).circle(x,y,.43*ORIGINAL_CAPITAL_UNIT).fill(0x000000);
       else icon.circle(x,y,9*pixel).fill(0xf8f5e9).circle(x,y,8*pixel).fill(0x182623).circle(x,y,5.45*pixel).fill(0xfffced).circle(x,y,2.65*pixel).fill(0x182623);
     }
-    for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
+    for(const c of capitalText){const city=this.cities.find(v=>v.id===c.id)!;if(city.provinceId===selected)continue;city.label=true;const x=(c.x-this.projection.x)/zoom,y=(c.y-this.projection.y)/zoom;
       const line=new Graphics();line.moveTo((city.x-this.projection.x)/zoom,(city.y-this.projection.y)/zoom).lineTo(x,y).stroke({color:mode==='political'?0x665842:0xeee8cd,width:.65*pixel,alpha:.45});capitalLayer.addChild(line);
       const name=this.retainedText(`capital:${mode}:${c.id}:${capitalFont}`,c.name,placeStyle(capitalFont,true));name.anchor.set(.5);name.scale.set(pixel);name.position.set(x,y);capitalLayer.addChild(name);
     }
@@ -353,7 +368,7 @@ export class PlayMap {
     if(activeCity){
       // The callout already leaves a gap around its own point. Reserving its
       // capital's padded icon box again rejected every nearby position.
-      const selectedLabel=selectedCityLabel({...activeCity,selected:true},[...cityObstacles.filter(b=>!('cityId'in b&&b.cityId===activeCity.id)),...cityText.map(c=>({x:c.labelX,y:c.labelY-5,width:c.name.length*10+4,height:12})),...this.unitPositions().map(u=>{const dot='display'in u&&u.display==='dot';return{x:u.x,y:u.y+(dot?0:5),width:dot?6:32,height:dot?6:46};})],this.projection,this.uiObstacles);
+      const selectedLabel=selectedCityLabel({...activeCity,selected:true},[...cityObstacles.filter(b=>!('cityId'in b&&b.cityId===activeCity.id)&&!('id'in b&&b.id===activeCity.id)),...cityText.filter(c=>c.id!==activeCity.id).map(c=>c.box!),...this.unitPositions().map(u=>{const dot='display'in u&&u.display==='dot';return{x:u.x,y:u.y+(dot?0:5),width:dot?6:32,height:dot?6:46};})],this.projection,this.uiObstacles);
       if(selectedLabel?.callout){
         const box=selectedLabel.callout,px=this.projection.x,py=this.projection.y,x=(box.x-px)/zoom,y=(box.y-py)/zoom,cx=(activeCity.x-px)/zoom,cy=(activeCity.y-py)/zoom;
         const endX=(Math.max(box.x-box.width/2,Math.min(box.x+box.width/2,activeCity.x))-px)/zoom,endY=(Math.max(box.y-box.height/2,Math.min(box.y+box.height/2,activeCity.y))-py)/zoom;

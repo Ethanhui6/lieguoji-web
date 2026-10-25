@@ -1,6 +1,6 @@
 export type LabelBox={x:number;y:number;width:number;height:number};
-export type CityCandidate={id:string;name:string;x:number;y:number;selected:boolean};
-export type CityLabel=CityCandidate&{labelX:number;labelY:number;callout?:LabelBox;lines?:string[]};
+export type CityCandidate={id:string;name:string;x:number;y:number;selected:boolean;labelWidth?:number;labelHeight?:number};
+export type CityLabel=CityCandidate&{labelX:number;labelY:number;box?:LabelBox;callout?:LabelBox;lines?:string[]};
 const overlaps=(a:LabelBox,b:LabelBox)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+4&&Math.abs(a.y-b.y)<(a.height+b.height)/2+4;
 /** A selected city keeps its complete name even when ordinary labels are culled.
  * Placement avoids obstacles when possible; in a fully crowded view the opaque
@@ -31,10 +31,10 @@ export function cityLabels(cities:CityCandidate[],obstacles:LabelBox[],viewport:
     if(overview&&!c.selected)continue;
     if(c.selected){const label=selectedCityLabel(c,boxes,viewport);if(label){result.push(label);boxes.push(label.callout!);}continue;}
     for(const offset of [-14,15,-28,29]){
-      const box={x:c.x,y:c.y+offset,width:c.name.length*10+4,height:12};
+      const box={x:c.x,y:c.y+offset,width:c.labelWidth??Array.from(c.name).length*10+4,height:c.labelHeight??12};
       if(boxes.some(b=>overlaps(box,b)))continue;
-      result.push({...c,labelX:box.x,labelY:box.y+5});boxes.push(box);break;
+      result.push({...c,box,labelX:box.x,labelY:box.y+box.height/2});boxes.push(box);break;
     }
   }
-  return result.filter(c=>c.selected||c.labelX+c.name.length*5>=0&&c.labelX-c.name.length*5<=viewport.width&&c.labelY>=0&&c.labelY<=viewport.height);
+  return result.filter(c=>c.selected||c.box!.x+c.box!.width/2>=0&&c.box!.x-c.box!.width/2<=viewport.width&&c.box!.y+c.box!.height/2>=0&&c.box!.y-c.box!.height/2<=viewport.height);
 }

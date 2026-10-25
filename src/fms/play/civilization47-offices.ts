@@ -18,24 +18,27 @@ import {f} from './native-economy/numeric';
  * year (ReviewAnnualAppointments). Districts and wartime commanders are not on
  * the web yet. Holders are real family characters (kin persons). */
 export const OFFICE_RULE47='original-government-office-v1';
-export type Office47Id='Chancellor'|'Steward'|'Marshal'|'Governor';
+export type Office47Id='Chancellor'|'Steward'|'Marshal'|'Governor'|'WarCommander';
 /** scopeKind 0 = state (scopeId = state id), 1 = province (scopeId = province index + 1).
  * source: GovernmentOfficeAppointmentSource (0 AI, 3 Emergency). */
 /** locked (锁定任命): the annual review keeps this holder. Optional so older worlds replay unchanged. */
-export type Office47Assignment={officeId:Office47Id;holderId:number;scopeKind:0|1;scopeId:number;startTime:number;source:0|1|3;locked?:true};
+export type Office47Assignment={officeId:Office47Id;holderId:number;scopeKind:0|1|2;scopeId:number;startTime:number;source:0|1|3;locked?:true};
 /** manual: AI 自动任命 switched off for this state (no AI filling or review); optional. */
-export type Offices47={version:1;rule:typeof OFFICE_RULE47;revision:number;nations:Record<string,{assignments:Office47Assignment[];reviewYear:number;manual?:true}>};
+/** wars: worlds from 0.5.35 — the monthly AI also appoints 战时统帅 (scopeKind 2, scopeId = the enemy state id). */
+export type Offices47={version:1;rule:typeof OFFICE_RULE47;revision:number;wars?:1;nations:Record<string,{assignments:Office47Assignment[];reviewYear:number;manual?:true}>};
 export type OfficeRun47=NobilityRun47&{offices47?:Offices47};
 
 /** GovernmentOfficeDefinitionCatalog: AI weights (administrative, military,
  * diplomatic, charisma), category (0 central, 1 local) and effect caps. */
-export const OFFICE_DEFS47:Record<Office47Id,{w:[number,number,number,number];category:0|1;economic:number;rebellion:number;leadership:number}>={
+export const OFFICE_DEFS47:Record<Office47Id,{w:[number,number,number,number];category:0|1|2;economic:number;rebellion:number;leadership:number}>={
   Chancellor:{w:[.45,.05,.3,.2],category:0,economic:.06,rebellion:0,leadership:0},
   Steward:{w:[.65,.05,.15,.15],category:0,economic:.08,rebellion:0,leadership:0},
   Marshal:{w:[.2,.6,.05,.15],category:0,economic:0,rebellion:0,leadership:.1},
   Governor:{w:[.5,.1,.2,.2],category:1,economic:.08,rebellion:.15,leadership:0},
+  // GovernmentOfficeDefinitionCatalog..cctor: Wartime category and scope, AI 0.1/0.65/0.05/0.2, leadership cap 0.2.
+  WarCommander:{w:[.1,.65,.05,.2],category:2,economic:0,rebellion:0,leadership:.2},
 };
-export const OFFICE_LABELS47:Record<Office47Id,string>={Chancellor:'行政首脑',Steward:'财政主管',Marshal:'常备军统帅',Governor:'总督'};
+export const OFFICE_LABELS47:Record<Office47Id,string>={Chancellor:'行政首脑',Steward:'财政主管',Marshal:'常备军统帅',Governor:'总督',WarCommander:'战时统帅'};
 const CENTRAL:Office47Id[]=['Chancellor','Steward','Marshal'];
 const MAX_APPOINTMENTS_PER_MONTH=4,MAX_ANNUAL_REPLACEMENTS=2,MIN_TENURE_MONTHS=48;
 /** GetReplacementThreshold by PoliticalSystem. */
@@ -50,7 +53,7 @@ export function enableOffices47<T extends NobilityRun47>(input:T,expected:Popula
   const r=input as T&OfficeRun47;
   if(r.offices47||!sameCulture47Value(expected,populationStamp47(r)))throw Error('官职规则只能在世界未变化时启用，请重新操作。');
   const next=structuredClone(r) as T&OfficeRun47;
-  next.offices47={version:1,rule:OFFICE_RULE47,revision:0,nations:Object.fromEntries(next.world.nations.map(n=>[n.id,{assignments:[],reviewYear:-1}]))};
+  next.offices47={version:1,rule:OFFICE_RULE47,revision:0,wars:1,nations:Object.fromEntries(next.world.nations.map(n=>[n.id,{assignments:[],reviewYear:-1}]))};
   return next;
 }
 
@@ -61,6 +64,11 @@ const personSkills47=(p:FamilyPerson47):NativeBaseSkills=>nativeCharacterSkills(
 const validHolder=(p:FamilyPerson47|undefined,stateId:number):p is FamilyPerson47=>!!p&&p.isAlive&&p.stateId===stateId;
 const provinceAt=(r:OfficeRun47,scopeId:number)=>r.world.provinces[scopeId-1];
 const ownsProvince=(r:OfficeRun47,nationId:string,scopeId:number)=>provinceAt(r,scopeId)?.controller===nationId;
+/** Wars in progress for a state: one 战时统帅 slot each, scoped by the enemy's state id. */
+export function officeWars47(r:Pick<OfficeRun47,'world'|'people'>,nationId:string){
+  return (r.world.statecraft?.relations??[]).filter(x=>x.status==='war'&&(x.a===nationId||x.b===nationId)).map(x=>{const enemy=x.a===nationId?x.b:x.a;return {enemy,scopeId:r.people.nations[enemy]?.id??0,sinceDay:x.sinceDay};}).filter(w=>w.scopeId>0);
+}
+const atWar=(r:OfficeRun47,nationId:string,scopeId:number)=>officeWars47(r,nationId).some(w=>w.scopeId===scopeId);
 
 /** GetGovernanceFactor: leader acumen (0.6 adm + 0.4 cha, 25 without a leader)
  * and destiny, remapped from [0.45, 0.85] to [0, 1]. */
@@ -105,7 +113,10 @@ export function localRebellion47(r:OfficeRun47,provinceId:string){
   return f(1-f(officeSuitability47(r,p.controller,'Governor',index+1)*OFFICE_DEFS47.Governor.rebellion));
 }
 /** GetMilitaryLeader (no wartime commander on the web): the Marshal, then the live state leader; skill 50 without either. */
-export function militaryLeaderSkill47(r:OfficeRun47,nationId:string):number|null{
+export function militaryLeaderSkill47(r:OfficeRun47,nationId:string,enemyId?:string):number|null{
+  // GetMilitaryLeader: the war's 战时统帅 first (战时统帅 → 军务统帅 → 君主).
+  const war=enemyId?r.people.nations[enemyId]?.id:undefined,commander=war!==undefined?officeHolder47(r,nationId,'WarCommander',war):null;
+  if(commander)return personSkills47(commander).military;
   const marshal=officeHolder47(r,nationId,'Marshal',stateIdOf(r,nationId));
   return marshal?personSkills47(marshal).military:null;
 }
@@ -117,8 +128,10 @@ function canHold(ctx:Ctx,p:FamilyPerson47,officeId:Office47Id,scopeId:number){
   if(!validHolder(p,stateId)||p.age<18||p.age>75)return false;
   if(p.roles.some(v=>v.nativeKind==='leader'&&(v as {stateId?:number}).stateId!==undefined&&(v as {stateId:number}).stateId>0&&(v as {stateId:number}).stateId!==stateId))return false;
   let central=false,local=0;
-  for(const a of book(r,ctx.nationId).assignments){if(a.holderId!==p.id||a.officeId===officeId&&a.scopeId===scopeId)continue;if(OFFICE_DEFS47[a.officeId].category===0)central=true;else local++;}
+  for(const a of book(r,ctx.nationId).assignments){if(a.holderId!==p.id||a.officeId===officeId&&a.scopeId===scopeId)continue;{const c=OFFICE_DEFS47[a.officeId].category;if(c===0)central=true;else if(c===1)local++;}}
   const category=OFFICE_DEFS47[officeId].category;
+  // 战时统帅一人一场战争; it may be held beside a central or local office.
+  if(category===2)return !book(r,ctx.nationId).assignments.some(a=>a.holderId===p.id&&OFFICE_DEFS47[a.officeId].category===2&&a.scopeId!==scopeId);
   if(category===0&&central)return false;
   if(category===0&&local>0||category===1&&central)return false;
   if(category===1&&local>=2)return false;
@@ -198,7 +211,7 @@ function candidates(ctx:Ctx,officeId:Office47Id,scopeId:number,exclude=-1):Candi
   return list.sort((a,b)=>b.score-a.score||a.p.id-b.p.id);
 }
 /** SelectFromTopCandidates: top 3, weighted max(1, score − min + 2) with a System.Random seeded by FNV(state, scope, year, office). */
-function select(ctx:Ctx,list:Candidate[],officeId:Office47Id,scopeKind:0|1,scopeId:number){
+function select(ctx:Ctx,list:Candidate[],officeId:Office47Id,scopeKind:0|1|2,scopeId:number){
   const top=list.slice(0,3);if(top.length===1)return top[0];
   let h=fnv(fnv(fnv(fnv(fnvStart(ctx.stateId),scopeKind),scopeId),0),ctx.r.life.currentDate.year);
   for(let i=0;i<officeId.length;i++)h=fnv(h,officeId.charCodeAt(i));
@@ -208,12 +221,12 @@ function select(ctx:Ctx,list:Candidate[],officeId:Office47Id,scopeKind:0|1,scope
   for(let i=0;i<top.length;i++){roll-=weights[i];if(!(0<roll))return top[i];}
   return top[0];
 }
-function appoint(ctx:Ctx,officeId:Office47Id,scopeKind:0|1,scopeId:number,holderId:number){
+function appoint(ctx:Ctx,officeId:Office47Id,scopeKind:0|1|2,scopeId:number,holderId:number){
   const list=book(ctx.r,ctx.nationId).assignments,a=list.find(v=>v.officeId===officeId&&v.scopeId===scopeId);
   const value:Office47Assignment={officeId,holderId,scopeKind,scopeId,startTime:ctx.r.life.gameTime,source:0};
   if(a)Object.assign(a,value);else list.push(value);ctx.r.offices47!.revision++;
 }
-function tryFill(ctx:Ctx,officeId:Office47Id,scopeKind:0|1,scopeId:number){
+function tryFill(ctx:Ctx,officeId:Office47Id,scopeKind:0|1|2,scopeId:number){
   const list=candidates(ctx,officeId,scopeId);if(!list.length)return false;
   const chosen=select(ctx,list,officeId,scopeKind,scopeId);if(!chosen)return false;
   appoint(ctx,officeId,scopeKind,scopeId,chosen.p.id);return true;
@@ -221,7 +234,7 @@ function tryFill(ctx:Ctx,officeId:Office47Id,scopeKind:0|1,scopeId:number){
 /** ReconcileState: drop assignments whose holder or scope is no longer valid. */
 function reconcile(r:OfficeRun47,nationId:string){
   const b=book(r,nationId),stateId=stateIdOf(r,nationId),before=b.assignments.length;
-  b.assignments=b.assignments.filter(a=>validHolder(r.kin.persons[a.holderId],stateId)&&(a.scopeKind===0?a.scopeId===stateId:ownsProvince(r,nationId,a.scopeId)));
+  b.assignments=b.assignments.filter(a=>validHolder(r.kin.persons[a.holderId],stateId)&&(a.scopeKind===2?atWar(r,nationId,a.scopeId):a.scopeKind===0?a.scopeId===stateId:ownsProvince(r,nationId,a.scopeId)));
   if(b.assignments.length!==before)r.offices47!.revision++;
 }
 const monthsSince=(r:OfficeRun47,time:number)=>nativeGetMonthSince(time,r.life.gameTime,r.life.secondsPerDay,createNativeIsoCalendar(r.life.startDate));
@@ -247,6 +260,10 @@ function processMonthly(r:OfficeRun47,nationId:string){
   for(const office of CENTRAL){
     if(count>=MAX_APPOINTMENTS_PER_MONTH)return;
     if(!b.assignments.some(a=>a.officeId===office&&a.scopeId===ctx.stateId)&&tryFill(ctx,office,0,ctx.stateId))count++;
+  }
+  if(r.offices47!.wars)for(const w of officeWars47(r,nationId)){
+    if(count>=MAX_APPOINTMENTS_PER_MONTH)return;
+    if(!b.assignments.some(a=>a.officeId==='WarCommander'&&a.scopeId===w.scopeId)&&tryFill(ctx,'WarCommander',2,w.scopeId))count++;
   }
   // Provinces in id order (land provinces of this state).
   for(let i=0;i<r.world.provinces.length;i++){
@@ -293,12 +310,12 @@ export type OfficeManage47=
   |{type:'lock';nationId:string;officeId:Office47Id;scopeId:number;locked:boolean}
   |{type:'auto';nationId:string;enabled:boolean}
   |{type:'fill';nationId:string};
-export type OfficeSlot47={officeId:Office47Id;scopeKind:0|1;scopeId:number;provinceId:string|null;assignment:Office47Assignment|null;holder:FamilyPerson47|null};
+export type OfficeSlot47={officeId:Office47Id;scopeKind:0|1|2;scopeId:number;provinceId:string|null;assignment:Office47Assignment|null;holder:FamilyPerson47|null};
 /** Central offices, then one governorship per owned province (province order). */
 export function officeSlots47(input:NobilityRun47,nationId:string):OfficeSlot47[]{
   const r=input as OfficeRun47;if(!r.offices47)return [];
-  const stateId=stateIdOf(r,nationId),list=r.offices47.nations[nationId]?.assignments??[],slot=(officeId:Office47Id,scopeKind:0|1,scopeId:number,provinceId:string|null):OfficeSlot47=>{const assignment=list.find(a=>a.officeId===officeId&&a.scopeId===scopeId)??null;return {officeId,scopeKind,scopeId,provinceId,assignment,holder:officeHolder47(r,nationId,officeId,scopeId)};};
-  return [...CENTRAL.map(o=>slot(o,0,stateId,null)),...r.world.provinces.flatMap((p,i)=>p.controller===nationId?[slot('Governor',1,i+1,p.id)]:[])];
+  const stateId=stateIdOf(r,nationId),list=r.offices47.nations[nationId]?.assignments??[],slot=(officeId:Office47Id,scopeKind:0|1|2,scopeId:number,provinceId:string|null):OfficeSlot47=>{const assignment=list.find(a=>a.officeId===officeId&&a.scopeId===scopeId)??null;return {officeId,scopeKind,scopeId,provinceId,assignment,holder:officeHolder47(r,nationId,officeId,scopeId)};};
+  return [...CENTRAL.map(o=>slot(o,0,stateId,null)),...officeWars47(r,nationId).map(w=>slot('WarCommander',2,w.scopeId,null)),...r.world.provinces.flatMap((p,i)=>p.controller===nationId?[slot('Governor',1,i+1,p.id)]:[])];
 }
 /** Eligible candidates for a slot, best AI score first (GovernmentOfficeAI scores). */
 export function officeCandidates47(input:NobilityRun47,nationId:string,officeId:Office47Id,scopeId:number,limit=30){
@@ -310,15 +327,15 @@ export function officeManageBlocker47(input:NobilityRun47,edit:OfficeManage47):s
   if(!r.offices47)return '这个世界没有启用官职系统。';
   if(!r.people.nations[edit.nationId]||!r.world.provinces.some(p=>p.controller===edit.nationId))return '国家无效或已灭亡。';
   if(edit.type==='auto'||edit.type==='fill')return null;
-  const stateId=stateIdOf(r,edit.nationId),central=OFFICE_DEFS47[edit.officeId].category===0;
-  if(central?edit.scopeId!==stateId:!ownsProvince(r,edit.nationId,edit.scopeId))return '该官职的管辖范围已失效。';
+  const stateId=stateIdOf(r,edit.nationId),category=OFFICE_DEFS47[edit.officeId].category;
+  if(category===2?!atWar(r,edit.nationId,edit.scopeId):category===0?edit.scopeId!==stateId:!ownsProvince(r,edit.nationId,edit.scopeId))return '该官职的管辖范围已失效。';
   const current=book(r,edit.nationId).assignments.find(a=>a.officeId===edit.officeId&&a.scopeId===edit.scopeId);
   if(edit.type==='appoint'){const p=r.kin.persons[edit.holderId];if(!p||!canHold(context(r,edit.nationId),p,edit.officeId,edit.scopeId))return '任命失败，请选择其他候选人。';return null;}
   if(!current)return '该官职目前空缺。';
   return null;
 }
 export function assertOfficeManage47(v:unknown):asserts v is OfficeManage47{
-  const e=v as Record<string,unknown>,ids=['Chancellor','Steward','Marshal','Governor'];
+  const e=v as Record<string,unknown>,ids=['Chancellor','Steward','Marshal','Governor','WarCommander'];
   const ok=!!e&&typeof e==='object'&&typeof e.nationId==='string'&&(
     e.type==='auto'?Object.keys(e).length===3&&typeof e.enabled==='boolean':
     e.type==='fill'?Object.keys(e).length===2:

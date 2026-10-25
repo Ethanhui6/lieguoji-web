@@ -1,4 +1,4 @@
-import {militaryLeaderSkill47,type OfficeRun47} from './civilization47-offices';
+import {militaryLeaderSkill47,officeWars47,type OfficeRun47} from './civilization47-offices';
 import type {Army,Province,World} from '../../sim/types';
 import {provinceBorderReader54} from './province-border54';
 import type {FoundingForces47} from './civilization47-forces';
@@ -43,9 +43,11 @@ function makeReader47(r:FoundingForces47,world:World,space:ArmySpace47){
     const p=location.province,state=national(a.nationId),snapshot=r.combatPersonnel.armies[a.id],base=r.upperCombat.armies[a.id],owner=p?r.upperCombat.nations[p.controller]:undefined,defense=p?r.upperCombat.provinces[p.id]:undefined;
     if(!base||p&&(!owner||!defense))throw Error('军队或实际地区的战力记录缺失。');
     const attacking=!p||p.controller!==a.nationId,traits=traitProjection(state.traits),politics=defaultPoliticalCombat(state.polity),land=p?r.terrainContext.provinces[p.id]:undefined,key=unitProfile(r.units[a.id]).key,leader=leaders.get(a.nationId);
-    // GetMilitaryLeader: the Marshal (worlds with original offices), then the
-    // live state leader, then a neutral military skill of 50.
-    const leadership=nativeLeadership47(militaryLeaderSkill47(r as unknown as OfficeRun47,a.nationId)??leader?.skills.military??50,{kind:snapshot.command});
+    // GetMilitaryLeader: the war's 战时统帅, then the Marshal (worlds with original
+    // offices), then the live state leader, then a neutral military skill of 50.
+    // The battle's war: the owner of the attacked province, or the only war a defender is in.
+    const wars=officeWars47(r as unknown as OfficeRun47,a.nationId),enemy=p&&attacking?p.controller:wars.length===1?wars[0].enemy:undefined;
+    const leadership=nativeLeadership47(militaryLeaderSkill47(r as unknown as OfficeRun47,a.nationId,enemy)??leader?.skills.military??50,{kind:snapshot.command});
     const efficiency=nativeUpperEfficiency({baseCombatEfficiency:base.base,destiny:state.destiny,leadershipModifier:leadership,leaderCombatModifier:r.combatPersonnel.nations[a.nationId].leader.modifier,provinceDefense:p?provinceDefense(r.upperCombat,p.id):1,coreDefense:owner&&defense&&defense.distance!==2147483647&&defense.distance<=owner.coreThreshold?traitProjection(owner.traits).CoreDefenseEfficiencyBoost:1,politicalAttack:politics.attack,politicalDefense:politics.defense,goldBattleModifier:r.finance.nations[a.nationId].goldBattleModifier,attacking,sameNationId:!!p&&p.controller===a.nationId,protruding:!!p&&protruding(p.id),wellTrained:traits.IsWellTrained,homelandDefense:traits.IsHomelandDefense,conqueror:traits.IsConqueror,unitModifier:nativeUnitModifier(key,attacking,land?.biomes??[],land?.mountain??false),elite:key==='Elite'});
     if(!Number.isFinite(efficiency)||efficiency<0)throw Error('实际人物战力超出有效范围。');
     return {efficiency,damageToArmy:snapshot.damageToArmy,damageToProvince:snapshot.damageToProvince,multiplier:p?landAttackMultiplier46(world,r.portControl,p.id,a.nationId):1};

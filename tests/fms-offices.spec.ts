@@ -11,6 +11,7 @@ test('官员任用: fill vacancies and appoint a chosen candidate',async({page},
   const panel=page.getByRole('region',{name:'官职与将领'});await expect(panel).toBeVisible();
   await panel.getByRole('button',{name:'关闭 AI 自动任命'}).click();
   await expect(panel.getByRole('button',{name:'启用 AI 自动任命'})).toBeVisible({timeout:20000});
+  await expect(panel).toContainText('官职称谓：');
   await panel.getByRole('button',{name:'补齐空缺'}).click();
   await expect(panel).toContainText(/已任命 [1-9]\d*\//,{timeout:20000});
   const first=panel.locator('.c47-office-row').first();

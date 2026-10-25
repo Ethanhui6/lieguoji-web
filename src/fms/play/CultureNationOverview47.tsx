@@ -1,4 +1,5 @@
-import {OFFICE_LABELS47,officeHolder47,type OfficeRun47} from './civilization47-offices';
+import {officeTitle47} from './official-title-presets47';
+import {officeHolder47,type OfficeRun47} from './civilization47-offices';
 import {memo} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationAge47} from './civilization47-origins';
@@ -35,7 +36,7 @@ export const CultureNationOverview47=memo(function CultureNationOverview47({run,
   <dl className="c47-province-rows c47-nation-stats">
    <div><dt>国家</dt><dd>{nation.name} · {polity}{v.extinct?'（已覆亡）':''}</dd></div>
    <div><dt>存在时间</dt><dd>{v.years>0?`${v.years} 年`:`${run.world.day} 日`}</dd></div>
-   {(run as unknown as OfficeRun47).offices47&&(['Chancellor','Steward','Marshal'] as const).map(office=>{const holder=officeHolder47(run as unknown as OfficeRun47,id,office,run.people.nations[id]?.id??0);return <div key={office} data-office={office}><dt>{OFFICE_LABELS47[office]}</dt><dd>{holder?holder.identity.name:'空缺'}</dd></div>;})}
+   {(run as unknown as OfficeRun47).offices47&&(['Chancellor','Steward','Marshal'] as const).map(office=>{const holder=officeHolder47(run as unknown as OfficeRun47,id,office,run.people.nations[id]?.id??0);return <div key={office} data-office={office}><dt>{officeTitle47(run.civilization.nations[id].cultureId,run.civilization.nations[id].polity,office)}</dt><dd>{holder?holder.identity.name:'空缺'}</dd></div>;})}
    <div className="c47-capital-line"><dt>首都</dt><dd className={v.extinct||!v.capitalHeld?'is-lost':''}>{v.capital??'无'}{v.capital&&!v.extinct&&!v.capitalHeld?'（失守）':''}</dd></div>
    <div><dt>人口</dt><dd>{number(v.population)}</dd></div>
    <div><dt>人口上限</dt><dd>{number(v.capacity)}</dd></div>

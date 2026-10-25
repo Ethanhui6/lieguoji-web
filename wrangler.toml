@@ -1,0 +1,11 @@
+# Cloudflare Pages config for 列国纪 (Git integration builds `npm run build:cf` into dist).
+# Only the cloud-save Functions (functions/api/cloud) use the runtime settings below.
+name = "lieguoji-web"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lieguoji-cloud"
+database_id = "056427fc-c2dd-4ac2-b15d-7baf97e52a95"
+migrations_dir = "migrations"

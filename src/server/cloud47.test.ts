@@ -62,7 +62,7 @@ describe('cloud saves (web addition)',()=>{
 describe('cloud schema',()=>{
   it('the migration file and the built-in schema are the same statements',async()=>{
     const {readFileSync}=await import('node:fs');const {CLOUD_SCHEMA47}=await import('./cloud47');
-    const file=readFileSync('migrations/0001_cloud.sql','utf8').split('\n').filter(l=>l&&!l.startsWith('--')).map(l=>l.replace(/;$/,''));
+    const file=readFileSync('migrations/0001_cloud.sql','utf8').split(/\r?\n/).filter(l=>l&&!l.startsWith('--')).map(l=>l.replace(/;$/,''));
     expect(file).toEqual(CLOUD_SCHEMA47);
   });
 });

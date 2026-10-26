@@ -39,4 +39,32 @@ describe('family actions (original FamilyTreeUI)',()=>{
     expect(()=>s.execute({kind:'family-edit',edit:{type:'kill',personId:ruler},expected:populationStamp47(x.run)},x.journal.actions.length)).toThrow('人物已故。');
     expect(()=>s.execute({kind:'family-edit',edit:{type:'heir',personId:heir.id},expected:{...populationStamp47(x.run),tick:0}},x.journal.actions.length)).toThrow();
   },300000);
+  it('设置年龄、添加配偶、添加子嗣 change the people and survive months of simulation and replay',()=>{
+    const s=new Culture47Session();
+    let x=s.create({terrain:grid((x,y)=>x>10&&x<245&&y>10&&y<245?45:0),count:3,cityCount:30,relations:'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,families:'original',setup:{mode:'culture-generated',enabled:['chinese','japanese','arab']}});
+    const stamp=()=>populationStamp47(x.run),act=(edit:Parameters<typeof familyEditBlocker47>[1])=>{x=s.execute({kind:'family-edit',edit,expected:stamp()},x.journal.actions.length);};
+    // At the opening, a founder becomes 20.
+    const nation=x.run.world.nations[0].id,ruler=x.run.people.nations[nation].leaderId!;
+    act({type:'age',personId:ruler,age:20});
+    expect(x.run.kin.persons[ruler].age).toBe(20);
+    for(let i=0;i<3;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    const single=Object.values(x.run.kin.persons).find(p=>p.isAlive&&!p.spouseId&&p.age>=18)!;
+    act({type:'spouse',personId:single.id});
+    const spouse=x.run.kin.persons[x.run.kin.persons[single.id].spouseId];
+    expect(spouse.isAlive).toBe(true);expect(spouse.gender).not.toBe(single.gender);expect(spouse.age).toBeGreaterThanOrEqual(18);expect(spouse.age).toBeLessThanOrEqual(Math.max(18,single.age+10));
+    expect(spouse.familyId).toBe(single.familyId);expect(spouse.spouseId).toBe(single.id);
+    expect(familyEditBlocker47(x.run,{type:'spouse',personId:single.id})).toBe('已有配偶。');
+    act({type:'child',personId:single.id});
+    const child=x.run.kin.persons[x.run.kin.persons[single.id].childrenIds.at(-1)!];
+    expect(child.age).toBeLessThanOrEqual(5);expect([child.fatherId,child.motherId].sort()).toEqual([single.id,spouse.id].sort());
+    expect(x.run.chronicle.entries.some(e=>e.text===`${child.identity.name}出生`)).toBe(true);
+    act({type:'age',personId:child.id,age:0});
+    expect(x.run.kin.persons[child.id].age).toBe(0);
+    expect(familyEditBlocker47(x.run,{type:'age',personId:child.id,age:201})).toBe('年龄超出范围（0-200）');
+    for(let i=0;i<400;i++)x=s.execute({kind:'advance',ticks:120},x.journal.actions.length);
+    expect(()=>assertPopulation47(x.run)).not.toThrow();
+    expect(x.run.kin.persons[ruler].age===20||x.run.kin.persons[ruler].age===21||!x.run.kin.persons[ruler].isAlive).toBe(true);
+    const replay=new Culture47Session().load(x.journal);
+    expect(replay.run.kin).toEqual(x.run.kin);
+  },300000);
 });

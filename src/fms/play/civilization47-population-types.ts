@@ -30,3 +30,8 @@ export type PopulationBase47={id:string;world:World;clock:{version:1;tick:number
 export type Population47=PopulationBase47&{kin:Kin47;sovereignty:Sovereignty;origins?:Origins47;houses?:Houses47;houseGovernance?:HouseGovernance47;generations?:Generations47};
 export const populationStamp47=(r:Population47)=>({id:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,civilization:r.civilization.revision,kin:r.kin.revision,people:r.people.revision,sovereignty:r.sovereignty.revision,nextEntryId:r.chronicle.nextEntryId});
 export type PopulationStamp47=ReturnType<typeof populationStamp47>;
+/** 设置年龄 (original FamilyTreeUI SetAge) moves a birth time; checks of how a person came
+ * into the world use the birth time before the first edit. Only original-family worlds edit. */
+type AgeEdits47={nobility?:{ageEdits?:{personId:number;from:number}[]}};
+export const bornAt47=(r:object,p:{id:number;birthTime:number})=>(r as AgeEdits47).nobility?.ageEdits?.find(e=>e.personId===p.id)?.from??p.birthTime;
+export const ageEdited47=(r:object,id:number)=>!!(r as AgeEdits47).nobility?.ageEdits?.some(e=>e.personId===id);

@@ -32,6 +32,9 @@ export type Nobility47={version:1;rule:typeof NOBILITY_RULE47;families:Record<st
   births:{personId:number;familyId:number;fatherId:number;motherId:number;day:number}[];
   /** ExecuteMarriage records; moverId 0 when nobody changed family. */
   marriages:{aId:number;bId:number;moverId:number;fromFamilyId:number;toFamilyId:number;matrilineal:boolean;day:number}[];
+  /** Player family actions (FamilyTreeUI): 设置年龄 records the birth time it replaced; 添加配偶 spouses
+   * are generated people (also listed in collaterals) who keep their own surname. Absent until used. */
+  ageEdits?:{personId:number;from:number;to:number;day:number}[];spouses?:number[];
   /** Ruling family by state when not the state family (SetRulingFamily); families retired by CheckFamilyExtinction. */
   rulingFamilies:Record<string,number>;extinct:number[];
   /** Family.relations: stored relation of a family towards another (rally, exile). */

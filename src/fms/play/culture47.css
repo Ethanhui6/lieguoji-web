@@ -369,6 +369,9 @@
 .c47-app .c47-family-actions p{flex-basis:100%;margin:0 0 2px;font-weight:600}
 .c47-app .c47-family-actions button{min-height:32px;padding:4px 12px;font-size:13px}
 .c47-app .c47-family-actions .is-danger{border-color:rgba(154,42,30,.5);color:#9a2a1e}
+.c47-app .c47-family-age{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex-basis:100%}
+.c47-app .c47-family-age input{width:9em;min-height:32px;padding:4px 10px;font-size:16px;border:1px solid rgba(60,40,20,.25);border-radius:8px;background:rgba(255,255,255,.7)}
+.c47-app .c47-family-age p{color:#9a2a1e;font-weight:500}
 /* 官员任用 (original GovernmentOfficeManagementPanel). */
 .c47-app .c47-offices h2{margin:0 0 4px;font-size:18px}
 .c47-app .c47-offices h3{margin:14px 0 2px;font-size:15px}

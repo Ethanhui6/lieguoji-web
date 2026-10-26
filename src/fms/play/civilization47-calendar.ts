@@ -2,7 +2,7 @@ import {fastChecks47} from './checks47';
 import {nativeGetYearSince,nativeBirthTimeFromAge} from './native-economy/character-calendar';
 import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
 import {assertPopulation47} from './civilization47-population-validation';
-import type {Population47} from './civilization47-population-types';
+import {ageEdited47,bornAt47,type Population47} from './civilization47-population-types';
 import {TICKS_PER_DAY} from './clock';
 import {advancePeopleMonthOwned47} from './civilization47-lifecycle';
 import {foundingMonthOfState47,foundingTimeOfState47} from './civilization47-founding-time';
@@ -16,9 +16,9 @@ export function assertFamilyCalendar47(r:FamilyCalendarRun47,dailyPending=false)
   const date=isoPlusDays(l.startDate,day),ageDay=dailyPending&&date.day===1?day-1:day,ageDate=isoPlusDays(l.startDate,ageDay),month=ageDate.year*12+ageDate.month-1,ageTime=Math.fround((ageDay-ageDate.day+1)*l.secondsPerDay),calendar=createNativeIsoCalendar(l.startDate);
   if(l.startDate.year!==1||l.startDate.month!==1||l.startDate.day!==1||l.currentDate.year!==date.year||l.currentDate.month!==date.month||l.currentDate.day!==date.day||l.lastAgeMonth!==month||k.lastAgeMonth!==month||k.lifecycle.lastMonth!==month||k.ageTime!==ageTime||!l.persons||!k.persons||Array.isArray(l.persons)||Array.isArray(k.persons)||Object.keys(l.persons).length!==Object.keys(k.persons).length)return fail();
   for(const [id,p] of Object.entries(k.persons)){
-    const b=l.persons[id],foundedTime=foundingTimeOfState47(r,p.stateId),foundedMonth=foundingMonthOfState47(r,p.stateId);if(!b||!Object.hasOwn(l.persons,id)||String(p.id)!==id||!Number.isFinite(p.birthTime)||p.birthTime!==Math.fround(p.birthTime)||(p.source==='newborn'?p.birthTime>l.gameTime:p.source==='collateral'?p.birthTime>ageTime:p.birthTime>foundedTime)||b.birthTime!==p.birthTime||!integer(p.age)||p.age>20000||b.age!==p.age||typeof p.isAlive!=='boolean'||b.updatedMonth===null||!Number.isSafeInteger(b.updatedMonth)||b.updatedMonth<12||b.updatedMonth>month||p.source==='founding'&&b.source!=='native-founding'||(p.source==='initial-family'||p.source==='collateral')&&b.source!=='native-family'||p.source==='newborn'&&b.source!=='web-newborn'||!['founding','initial-family','newborn','collateral'].includes(p.source))return fail();
+    const b=l.persons[id],foundedTime=foundingTimeOfState47(r,p.stateId),foundedMonth=foundingMonthOfState47(r,p.stateId);if(!b||!Object.hasOwn(l.persons,id)||String(p.id)!==id||!Number.isFinite(p.birthTime)||p.birthTime!==Math.fround(p.birthTime)||(p.source==='newborn'?bornAt47(r,p)>l.gameTime:p.source==='collateral'?bornAt47(r,p)>ageTime:bornAt47(r,p)>foundedTime)||b.birthTime!==p.birthTime||!integer(p.age)||p.age>20000||b.age!==p.age||typeof p.isAlive!=='boolean'||b.updatedMonth===null||!Number.isSafeInteger(b.updatedMonth)||b.updatedMonth<12||b.updatedMonth>month||p.source==='founding'&&b.source!=='native-founding'||(p.source==='initial-family'||p.source==='collateral')&&b.source!=='native-family'||p.source==='newborn'&&b.source!=='web-newborn'||!['founding','initial-family','newborn','collateral'].includes(p.source))return fail();
     if(p.source==='founding'){
-      if(p.initialAge===null||!integer(p.initialAge)||p.initialAge<35||p.initialAge>54||b.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge)return fail();
+      if(p.initialAge===null||!integer(p.initialAge)||p.initialAge<35||p.initialAge>54||b.initialAge!==p.initialAge||bornAt47(r,p)!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge&&!ageEdited47(r,p.id))return fail();
     }else if(p.initialAge!==null||b.initialAge!==null)return fail();
     if(p.isAlive&&(b.updatedMonth!==month||!((p.source==='founding'||p.source==='initial-family')&&month===foundedMonth)&&p.age!==(p.birthTime>ageTime?0:nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar))))return fail();
   }

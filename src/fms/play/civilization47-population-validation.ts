@@ -7,7 +7,7 @@ import {assertPeople} from './restoration19-people';
 import {NATIVE_CHARACTER_POOL} from './native-economy/character-generation';
 import {nativeBirthTimeFromAge,nativeGetYearSince} from './native-economy/character-calendar';
 import {createNativeIsoCalendar,isoPlusDays} from './civilization47-iso-calendar';
-import type {Population47} from './civilization47-population-types';
+import {ageEdited47,bornAt47,type Population47} from './civilization47-population-types';
 import {assertOrigins47} from './civilization47-origins';
 import {assertHouses47} from './civilization47-houses';
 import {assertHouseGovernance47} from './civilization47-house-governance';
@@ -66,11 +66,11 @@ export function assertPopulation47(r:Population47) {if(fastChecks47())return;
     // ExecuteMarriage: a spouse who moved keeps the birth family as originalFamilyId.
     else if(p.source==='collateral'){if(!nobles||!nobles.collaterals.some(c=>c.personId===p.id&&c.familyId===(firstMove?.fromFamilyId??p.familyId))||p.originalFamilyId!==(firstMove?.fromFamilyId??0))return fail(16);}
     // Founding-age people of a state founded mid-run were born before its founding time.
-    else if(p.birthTime>foundingTimeOfState47(r,p.stateId)||p.originalFamilyId!==(p.source==='founding'?(firstMove?.fromFamilyId??p.familyId):firstMove?.fromFamilyId??0))return fail(17);
+    else if(bornAt47(r,p)>foundingTimeOfState47(r,p.stateId)||p.originalFamilyId!==(p.source==='founding'?(firstMove?.fromFamilyId??p.familyId):firstMove?.fromFamilyId??0))return fail(17);
     const foundedTime=foundingTimeOfState47(r,p.stateId),foundedMonth=foundingMonthOfState47(r,p.stateId);
     const f=s.families[p.familyId],birth=l.persons[id],house=s.families[p.originalFamilyId||p.familyId].surname;
-    if(p.cultureName!==f.cultureName&&!firstMove||p.identity.cultureId!==p.cultureName||p.identity.given!==p.firstName||p.identity.house!==p.lastName||p.identity.house!==house&&!(firstMove&&p.identity.house===f.surname)||p.identity.gender!==p.gender||!exact(birth,['source','birthTime','age','initialAge','updatedMonth'])||birth.birthTime!==p.birthTime||birth.age!==p.age||!integer(birth.updatedMonth,12,month)||p.isAlive&&birth.updatedMonth!==month)return fail(18);
-    if(p.source==='founding') {if(birth.source!=='native-founding'||!integer(p.initialAge,35,54)||birth.initialAge!==p.initialAge||p.birthTime!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge)return fail(19);}
+    if(p.cultureName!==f.cultureName&&!firstMove||p.identity.cultureId!==p.cultureName||p.identity.given!==p.firstName||p.identity.house!==p.lastName||p.identity.house!==house&&!(firstMove&&p.identity.house===f.surname)&&!nobles?.spouses?.includes(p.id)||p.identity.gender!==p.gender||!exact(birth,['source','birthTime','age','initialAge','updatedMonth'])||birth.birthTime!==p.birthTime||birth.age!==p.age||!integer(birth.updatedMonth,12,month)||p.isAlive&&birth.updatedMonth!==month)return fail(18);
+    if(p.source==='founding') {if(birth.source!=='native-founding'||!integer(p.initialAge,35,54)||birth.initialAge!==p.initialAge||bornAt47(r,p)!==nativeBirthTimeFromAge(p.initialAge,foundedTime,l.secondsPerDay)||month===foundedMonth&&p.age!==p.initialAge&&!ageEdited47(r,p.id))return fail(19);}
     else if(birth.source!==(p.source==='newborn'?'web-newborn':'native-family')||birth.initialAge!==null||p.initialAge!==null)return fail(20);
     if(p.isAlive&&(p.source!=='founding'&&p.source!=='initial-family'||month!==foundedMonth)&&p.age!==(p.birthTime>ageTime?0:nativeGetYearSince(p.birthTime,ageTime,l.secondsPerDay,calendar)))return fail(21);
     // Original families: a dead person's former spouse may have remarried into another family.

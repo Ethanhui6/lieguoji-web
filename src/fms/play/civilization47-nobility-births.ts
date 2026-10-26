@@ -64,6 +64,16 @@ function createChild47(r:NobilityRun47,n:Nobility47,id:string,mother:FamilyPerso
   child.familyId=k.id;child.originalFamilyId=k.id;child.stateId=k.stateId;child.fatherId=father.id;child.motherId=mother.id;child.isAlive=true;child.age=0;
   const scale=f(random.floatRange(-.2,.2)+1),mean=f(f(charisma(father)+charisma(mother))*f(.5)),cha=f(scale*mean);
   child.base.charisma=0>cha?0:cha>100?100:cha;child.base.military=random.floatRange(20,80);child.base.diplomatic=random.floatRange(20,80);child.base.administrative=random.floatRange(20,80);
+  inheritTraits47(child,father,mother,random);
+  father.childrenIds.push(child.id);mother.childrenIds.push(child.id);k.memberIds.push(child.id);
+  r.kin.persons[child.id]=child;life.persons[child.id]={source:'web-newborn',birthTime:child.birthTime,age:0,initialAge:null,updatedMonth:r.kin.lastAgeMonth};
+  r.people.nextPersonId=registry.nextId;r.people.revision++;r.kin.revision++;life.revision++;
+  n.births.push({personId:child.id,familyId:k.id,fatherId:father.id,motherId:mother.id,day:r.world.day});
+  if(importantBirth(n.families[String(k.id)],r.kin.families[String(k.id)],child,father,mother,r))
+    recordHistory(r.chronicle,r.world,r.clock.tick,'family' as HistoricalKind,`${child.identity.name}出生`,`${k.surname}家族的${father.identity.name}与${mother.identity.name}之子女出生。`,[k.nationId],null);
+}
+/** InheritTraits 864520: each congenital trait of a parent passes with chance 0.2 unless incompatible. */
+export function inheritTraits47(child:FamilyPerson47,father:FamilyPerson47,mother:FamilyPerson47,random:CharacterRandom){
   for(const parent of [father,mother])for(const name of parent.traits??[]){
     const t=NATIVE_CHARACTER_POOL.find(t=>t.name===name) as {isCongenital?:boolean;incompatibleTraits?:readonly string[]|null}|undefined;
     if(!t?.isCongenital||!(f(.2)>random.value()))continue;
@@ -71,12 +81,6 @@ function createChild47(r:NobilityRun47,n:Nobility47,id:string,mother:FamilyPerso
     if(traits.some(o=>t.incompatibleTraits?.includes(o)||(NATIVE_CHARACTER_POOL.find(v=>v.name===o)?.incompatibleTraits??[]).includes(name)))continue;
     traits.push(name);
   }
-  father.childrenIds.push(child.id);mother.childrenIds.push(child.id);k.memberIds.push(child.id);
-  r.kin.persons[child.id]=child;life.persons[child.id]={source:'web-newborn',birthTime:child.birthTime,age:0,initialAge:null,updatedMonth:r.kin.lastAgeMonth};
-  r.people.nextPersonId=registry.nextId;r.people.revision++;r.kin.revision++;life.revision++;
-  n.births.push({personId:child.id,familyId:k.id,fatherId:father.id,motherId:mother.id,day:r.world.day});
-  if(importantBirth(n.families[String(k.id)],r.kin.families[String(k.id)],child,father,mother,r))
-    recordHistory(r.chronicle,r.world,r.clock.tick,'family' as HistoricalKind,`${child.identity.name}出生`,`${k.surname}家族的${father.identity.name}与${mother.identity.name}之子女出生。`,[k.nationId],null);
 }
 function importantBirth(fam:NobleFamily47|undefined,k:{headId:number;heirId:number},child:FamilyPerson47,father:FamilyPerson47,mother:FamilyPerson47,r:NobilityRun47){
   if(!fam)return false;

@@ -112,6 +112,12 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <label className="c47-slider">国名颜色<input type="color" aria-label="国名颜色" value={d.stateNameColor} onChange={e=>setDisplaySettings47({stateNameColor:e.target.value})}/></label>
       <label className="c47-check"><input type="checkbox" aria-label="显示完整国名" checked={d.fullName} onChange={e=>setDisplaySettings47({fullName:e.target.checked})}/>显示完整国名</label>
       {scale('城市缩放','cityScale')}{scale('军队图标缩放','armyScale')}
+      <label className="c47-slider">行省边界颜色<input type="color" aria-label="行省边界颜色" value={d.provinceBorderColor} onChange={e=>setDisplaySettings47({provinceBorderColor:e.target.value})}/></label>
+      <label className="c47-check"><input type="checkbox" aria-label="显示行省边界" checked={d.provinceBorders} onChange={e=>setDisplaySettings47({provinceBorders:e.target.checked})}/>显示行省边界</label>
+      <label className="c47-check"><input type="checkbox" aria-label="显示城市名" checked={d.cityNames} onChange={e=>setDisplaySettings47({cityNames:e.target.checked})}/>显示城市名</label>
+      <label className="c47-check"><input type="checkbox" aria-label="植被图标" checked={d.biomeIcons} onChange={e=>setDisplaySettings47({biomeIcons:e.target.checked})}/>植被图标</label>
+      <label className="c47-slider">国家颜色浓度<output>{Math.round((d.stateOpacity??.78)*100)}%</output><input type="range" aria-label="国家颜色浓度" min="0" max="1" step="0.01" value={d.stateOpacity??.78} onChange={e=>setDisplaySettings47({stateOpacity:Number(e.target.value)})}/></label>
+      <small>浓度越低，地形底色越明显。关闭行省边界后仍保留国界和选中行省的轮廓。</small>
       <label className="c47-check"><input type="checkbox" aria-label="时间显示" checked={d.timeDisplay} onChange={e=>setDisplaySettings47({timeDisplay:e.target.checked})}/>时间显示</label>
       <label className="c47-check"><input type="checkbox" aria-label="事件显示" checked={d.eventDisplay} onChange={e=>setDisplaySettings47({eventDisplay:e.target.checked})}/>事件显示</label>
       <small>国家名字后缀由政治体制和复国次数决定；如果想自定义后缀，可以在地图外观中关闭完整国名显示。</small>
@@ -120,7 +126,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
     </div>;break;}
     case 'other':body=<div className="c47-menu-list" aria-label="其他设置">
       <p className="c47-menu-hint">其他设置</p>
-      {['分辨率','音乐音量','镜头缩放速度','显示提示','地图坐标','植被图标'].map(t=><label key={t} className="c47-check is-pending"><input type="checkbox" disabled/>{t}<small>尚未还原</small></label>)}
+      {['分辨率','音乐音量','镜头缩放速度','显示提示','地图坐标'].map(t=><label key={t} className="c47-check is-pending"><input type="checkbox" disabled/>{t}<small>尚未还原</small></label>)}
       <button onClick={back}>关闭</button>
     </div>;break;
   }

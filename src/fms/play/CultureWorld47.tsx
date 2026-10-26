@@ -559,7 +559,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
           if(key!==stateKey){stateKey=key;if(!cellOwners){cellOwners=originalCellProvinces(source,r.world.provinces,r.scale);if(grid){map.setCellEdges(originalPoliticalEdges(grid,source.elevations,cellOwners));map.setLabelGrid(grid,cellOwners);}}
             original.setStates(selection.mapMode==='political'?cellOwners:null,provinceColors47(r,selection.colorView));canvas.dataset.colorView=selection.colorView;}
         }
-        map.setDisplay(displaySettings47(),new Map(r.world.nations.map(n=>[n.id,stateBaseName47(r.civilization.nations[n.id])])));
+        const appearance=displaySettings47();original?.setDisplaySettings(appearance);
+        map.setDisplay(appearance,new Map(r.world.nations.map(n=>[n.id,stateBaseName47(r.civilization.nations[n.id])])));
         map.setRtsSelection(new Set(rtsRef.current?.selected??[]));
         map.setRelationHighlight(selection.selectedState&&selection.mapMode==='political'&&selection.colorView==='state'&&r.world.statecraft?relationHighlights47(r,selection.selectedState):new Map());
         if(!original){const viewKey=selection.colorView+'|'+colorViewKey47(r,selection.colorView);map.setProvinceFill(selection.colorView==='state'?null:provinceColors47(r,selection.colorView),viewKey);canvas.dataset.colorView=selection.colorView;}

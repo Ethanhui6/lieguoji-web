@@ -190,7 +190,7 @@ export class PlayMap {
   setRtsSelection(ids:ReadonlySet<string>){this.rtsSelected=ids;}
   /** Original DisplaySettings (地图外观): name scale and colour, full or short state names, city and army scale. */
   private display:DisplaySettings47=DISPLAY_DEFAULTS47;private shortNames:ReadonlyMap<string,string>=new Map();
-  setDisplay(d:DisplaySettings47,shortNames:ReadonlyMap<string,string>){this.display=d;this.shortNames=shortNames;}
+  setDisplay(d:DisplaySettings47,shortNames:ReadonlyMap<string,string>){if(d.provinceBorderColor!==this.display.provinceBorderColor||d.provinceBorders!==this.display.provinceBorders)this.politicalKey='';this.display=d;this.shortNames=shortNames;}
   private relations:ReadonlyMap<string,number>=new Map();private relationsKey='';
   /** Original StateRelationsHighlighter: state lines of the selected state's relations, nation id → colour. */
   setRelationHighlight(relations:ReadonlyMap<string,number>){this.relations=relations;this.relationsKey=[...relations].map(([k,v])=>k+':'+v).join(',');}
@@ -199,7 +199,8 @@ export class PlayMap {
   // Original ViewManager color views: per-province fill override (null keeps the state color).
   private provinceFill:((index:number)=>number|null)|null=null;private provinceFillKey='';
   setProvinceFill(fill:((index:number)=>number|null)|null,key:string){this.provinceFill=fill;this.provinceFillKey=key;}
-  stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points,geometry:this.cellEdges?'rendered-voronoi-edges':'province-polygons',provinceEdges:this.cellEdges?.length??0};}
+  private drawnProvinceEdges=0;
+  stateLineDiagnostics(){let lines=0,points=0;for(const set of this.stateOutlines.values()){lines+=set.length;for(const line of set)points+=line.length;}return {enabled:this.originalStateLines,nations:this.stateOutlines.size,lines,points,geometry:this.cellEdges?'rendered-voronoi-edges':'province-polygons',provinceEdges:this.cellEdges?.length??0,drawnProvinceEdges:this.drawnProvinceEdges,provinceBorderColor:this.display.provinceBorderColor};}
   coastlineDiagnostics(){return {points:this.coastPoints,attached:this.coastGraphic.parent===this.layer};}
   private politicalGeometry?:object;
   private politicalKey='';
@@ -230,19 +231,19 @@ export class PlayMap {
     // zoom and mode independently invalidate the cached display.
     const politicalKey=JSON.stringify([runId,scale,zoom,mode,selected,this.relationsKey,this.provinceFillKey,territoryKey,world.provinces.map(p=>[p.id,p.controller]),world.nations.map(n=>[n.id,nationColor(n)])]);
     if(!geometry||geometry!==this.politicalGeometry||politicalKey!==this.politicalKey){
-    g.clear();this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
+    g.clear();this.drawnProvinceEdges=0;this.politicalGeometry=geometry;this.politicalKey=politicalKey;this.politicalBuilds++;
     const originalLines=this.originalStateLines&&(mode==='political'||this.cellPolitics);
     const borders = new Map<string, { a: { x:number;y:number }; b: {x:number;y:number}; owner:string; shared:boolean; foreign:boolean }>();
     for (const [index,p] of world.provinces.entries()) {
       if(this.cellPolitics){/* Cell province boundaries are drawn below from the fill topology. */}
       else {g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).fill({ color: this.provinceFill?.(index) ?? nationColor(nations.get(p.controller)!), alpha: style.fill });
-      if(zoom>.6)g.stroke({ color: 0x303e37, alpha: style.province, width: .55 * pixel });}
+      if(zoom>.6&&this.display.provinceBorders)g.stroke({ color: Number.parseInt(this.display.provinceBorderColor.slice(1),16), alpha: style.province, width: .55 * pixel });}
       if (p.id === selected&&!originalLines&&!this.cellEdges) g.poly(p.polygon.flatMap(v => [v.x / scale, v.y / scale])).stroke({ color: 0xffe7a7, width: 2.5 * pixel });
       const owner=groupOf?groupOf(p)??'':p.controller;for(let i=0;i<p.polygon.length;i++) {const a=p.polygon[i],b=p.polygon[(i+1)%p.polygon.length],ka=`${a.x},${a.y}`,kb=`${b.x},${b.y}`,key=ka<kb?`${ka}/${kb}`:`${kb}/${ka}`,old=borders.get(key);if(old){old.shared=true;old.foreign=old.owner!==owner;}else borders.set(key,{a,b,owner,shared:false,foreign:false});}
     }
-    if(this.cellEdges&&zoom>.6){
-      for(const {a,b,segment:[ax,ay,bx,by]} of this.cellEdges)if(a>=0&&b>=0)g.moveTo(ax,ay).lineTo(bx,by);
-      g.stroke({color:0x303e37,alpha:style.province,width:.55*pixel});
+    if(this.cellEdges&&zoom>.6&&this.display.provinceBorders){
+      for(const {a,b,segment:[ax,ay,bx,by]} of this.cellEdges)if(a>=0&&b>=0){g.moveTo(ax,ay).lineTo(bx,by);this.drawnProvinceEdges++;}
+      g.stroke({color:Number.parseInt(this.display.provinceBorderColor.slice(1),16),alpha:style.province,width:.55*pixel});
     }
     if(originalLines){
       const outlineKey=territoryKey+'/'+scale;
@@ -343,7 +344,7 @@ export class PlayMap {
     const capitalText:(LabelBox&{id:string})[]=[];
     const cityObstacles=[...countryBoxes,...capitalIcons];
     const cityText:{id:string;name:string;labelX:number;labelY:number;box:LabelBox}[]=[];
-    for(const c of namesReady?this.cities:[]){
+    for(const c of namesReady&&this.display.cityNames?this.cities:[]){
       const at={x:(c.x-this.projection.x)/zoom,y:(c.y-this.projection.y)/zoom},l=cityLabel47(at,c.capital);
       const em=l.em*this.display.cityScale;if(em*zoom<9)continue;
       const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle,1);t.anchor.set(.5);t.scale.set(em/64);t.position.set(l.x,l.y);

@@ -175,3 +175,13 @@
 - 全量检查首轮 lint / typecheck / 210 文件、1933 单测 / 生产构建通过。收尾后重跑 `npm run check -- -- --max-failures=1`，lint/typecheck 通过，1932 单测通过、1 跳过，full-map-terrain 一项超过默认 5 秒；该文件独立复测 8/8 全通过。全套浏览器另行首错停止运行，旧 actions65 使用隐藏的 `.c47-nations button` 导致超时，不能声称全套通过。原始日志保留于 `.autopilot/release-0.5.39-check.log`、`release-0.5.39-final-check.log`、`039-timeout-recheck.log`、`full-browser-039.log`。
 - 参考 PNG 按 Claude 0.5.21 约定仅本地保存，通过 `.git/info/exclude` 排除；未删除、未进入 dist 或提交。
 - 下一批 0.5.40 由 Codex 负责 display-settings47、CultureMenu47、map.ts、original-play-renderer.ts 及 CultureWorld47 的显示连接；仅补原作 DisplaySettings，不改模拟规则。覆盖比例沿用可核对的文本统计，不据此宣称玩法全部还原。
+
+### 2026-10-26 · Codex 0.5.40 地图外观补全
+- 0.5.39 已推送 main，提交 cbbda721；正式站 build.json 已核对 version=0.5.39、commit=cbbda721707d0e011d82dac272150d82e2e42e6b。
+- 0.5.40 接入原作 DisplaySettings 中 ProvinceBorderColorImage、DisplayProvinceBorderToggle、DisplayBurgNameToggle、IsEnableBiomeIconToggle、StateMapTransparencySlider。省界颜色/开关使用实际格子边，改变设置会失效重绘缓存；隐藏省界仍保留国界与选择轮廓。地形层通过已有 Graphics.visible 控制，政治色混合只更新现有 mesh 颜色。
+- 显示设置保存在原 localStorage key，新增字段兼容旧值；默认 stateOpacity=null 表示沿用外观预设（paper 为 .78），避免恢复默认强行覆盖其他预设。模拟规则和 journal 未修改。
+- 新增单测覆盖旧偏好迁移、显式关闭/零浓度、损坏数据与数值边界。全量本地检查 lint/typecheck、211 文件/1936 单测通过（1 跳过）、生产构建/42 产物白名单通过。全套浏览器首错停止仍遇到 actions65 的隐藏国家列表按钮；保留原用例，未跳过 hook。
+- 新的外观浏览器测试使用真正生成的 421730 地图而非简化 fixture，保存地形后刷新，等待原作 Voronoi 渲染器就绪再缩放，验证设置保留及恢复；另跑舰队、官员、连续推进、RTS、国家系统回归。三种尺寸共 18 项通过，不代表真机验收。
+- 日志：`.autopilot/release-0.5.40-check.log`、`display-040-unit.log`、`display-040-final.log`、`regression-040.log`。外观截图：`.autopilot/display-040-final/`。这些文件仅本地保存。
+- 覆盖清单保留 Claude 的 639/1419 文本快照，逐项列出本版已接入字段，未臆造新的总覆盖率。地形装饰还不是原作美术完整还原；旧浏览器测试入口仍需独立整理。
+- 本批涉及的显示文件在发布后释放，可在此基础继续推进。远程主机/电脑计算相关保留文件未修改。

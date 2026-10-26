@@ -12,6 +12,7 @@ import { ORIGINAL_PRESETS, originalParchmentRect, type OriginalPreset } from './
 import { originalRiverGeometry, originalRiverMesh } from './original-rivers';
 import { originalBiomeIds, originalBiomeLinear, originalClimate } from './original-biomes';
 import type { Geometry, Mesh, Shader } from 'pixi.js';
+import type {DisplaySettings47} from '../play/display-settings47';
 
 /** The playable world drawn the original's way, with the same surface the
  * culture world uses from FmsRenderer. Scene order mirrors the original
@@ -34,6 +35,7 @@ export class OriginalPlayRenderer {
   private document?: FmsDocument;
   private rivers?: { source: FmsDocument; mesh: Mesh<Geometry, Shader>; biome: Float32Array };
   private states: { owner: Int32Array; color: (province: number) => number | null } | null = null;
+  private stateOpacity:number|null=null;
   readonly coast: ReturnType<typeof originalCoast>;
   constructor(private grid: OriginalGrid, heights: ArrayLike<number>, private onDisplayError: (error: unknown) => void = error => { throw error; }) {
     this.heights = heights; this.coast = originalCoast(grid, heights);
@@ -68,6 +70,14 @@ export class OriginalPlayRenderer {
   }
   setStates(owner: Int32Array | null, color: (province: number) => number | null): void {
     this.states = owner ? { owner, color } : null; this.recolor(); this.draw();
+  }
+  /** Original DisplaySettings: update existing layers, without rebuilding terrain or sea textures. */
+  setDisplaySettings(d:Pick<DisplaySettings47,'biomeIcons'|'stateOpacity'>):void {
+    const recolor=d.stateOpacity!==this.stateOpacity,visibility=d.biomeIcons!==this.relief.visible;
+    this.stateOpacity=d.stateOpacity;this.relief.visible=d.biomeIcons;
+    if(recolor)this.recolor();
+    if(this.initialized)this.canvas.dataset.terrainDisplay=JSON.stringify({biomeIcons:this.relief.visible,stateOpacity:this.stateOpacity??this.preset.stateMapTransparency});
+    if(recolor||visibility)this.draw();
   }
   attachGameplayLayer(layer: Container): void { this.overlays.addChild(layer); this.draw(); }
   setCamera(camera: AtlasCamera): void { this.scene.position.set(camera.x, camera.y); this.scene.scale.set(camera.scale); this.draw(); }
@@ -110,7 +120,7 @@ export class OriginalPlayRenderer {
   }
   private recolor(): void {
     const cells = this.cells, heights = this.heights; if (!cells || !heights) return;
-    const states = this.states, alpha = this.preset.stateMapTransparency, mode = this.preset.heightBackground ? 'height-background' : 'height-palette';
+    const states = this.states, alpha = this.stateOpacity??this.preset.stateMapTransparency, mode = this.preset.heightBackground ? 'height-background' : 'height-palette';
     // Without the political overlay (terrain view) the land is Shader189
     // mode 0: the per-cell biome color (DisplayBiomHeightMap).
     const biome = !states ? this.rivers?.biome : undefined;

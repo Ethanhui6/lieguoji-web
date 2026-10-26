@@ -394,3 +394,8 @@
 .c47-app .c47-candidates small{color:var(--ink-2);font-size:12px}
 .c47-app .c47-candidates b{font-size:13px;color:var(--accent)}
 .c47-app .c47-offices-enter{width:100%;min-height:40px;margin:8px 0 0;border-radius:10px;border:1px solid var(--accent);background:rgba(47,93,80,.08);color:var(--accent);font-weight:650}
+/* 领导人历史 (original StateInfoUI leader history). */
+.c47-app .c47-leader-records{list-style:none;margin:6px 0;padding:0;display:grid;gap:8px}
+.c47-app .c47-leader-records li{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);display:grid;gap:2px}
+.c47-app .c47-leader-records small{color:rgba(60,40,20,.65)}
+.c47-app .c47-leader-records p{margin:0;font-size:13px;line-height:1.5}

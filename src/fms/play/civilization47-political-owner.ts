@@ -27,6 +27,7 @@ import type {PreviousOwnership47} from './force-tick47';
 import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 import {advanceHouseGovernance47} from './civilization47-house-governance';
+import {recordReigns47,type LeaderRun47} from './leader-history47';
 export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;targetNationId:string};
 export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
@@ -83,7 +84,7 @@ export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean,validate=t
     // A monthly family rebellion or civil war may found a state: give it its
     // loss ledger now, as a province rebellion does (no-op otherwise).
     reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);}
-  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);if(validate)assertPolitics47(r);
+  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);recordReigns47(r);if(validate)assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}
 export function assertPoliticalCommand47(a:unknown):asserts a is PoliticalCommand47 {
@@ -91,7 +92,7 @@ export function assertPoliticalCommand47(a:unknown):asserts a is PoliticalComman
 }
 function applyOwned(r:PoliticalRun47,a:PoliticalCommand47){
   assertPoliticalCommand47(a);
-  if(a.type==='declare-war'){declareWar47(r,a.nationId,a.targetNationId);reconcileDiplomaticForces47(r,new Set());}
+  if(a.type==='declare-war'){declareWar47(r,a.nationId,a.targetNationId);const l=r as LeaderRun47;if(l.reigns47)(l.forcedWars47??=[]).push(r.nativeWars.campaigns.at(-1)!.id);reconcileDiplomaticForces47(r,new Set());}
   else {const c=r.nativeWars.campaigns.find(c=>c.endedTick===null&&coversPair46(c,r.nativeWars,a.nationId,a.targetNationId));if(!c)throw Error('两国当前没有可结束的战争。');settleWar47(r,c,11);}
   reconcileGovernmentContinuity47(r);reconcileNativeDiplomacy46(r.nativeDiplomacy,r);assertPolitics47(r);
 }

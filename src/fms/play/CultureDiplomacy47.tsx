@@ -12,6 +12,7 @@ export function CultureDiplomacy47({run,id,activeSiegeIds,busy,preview,sequence,
     {wars.map(w=>{const mine=w.sides.find(side=>side.nationIds.includes(id));return <article className="c47-campaign-card" data-campaign-id={w.id} key={w.id}>
       <strong>{w.sides[0].nationNames[0]??'—'} → {w.sides[1].nationNames[0]??'—'}</strong>
       <dl className="c47-province-rows">
+        <div><dt>战争类型</dt><dd>{w.warType}</dd></div>
         <div><dt>我方阵营</dt><dd>{mine?(mine.side===0?'发起方':'防御方'):'中立'}</dd></div>
         {w.goalTexts.length>0&&<div><dt>战争目标</dt><dd>{w.goalTexts.join('、')}</dd></div>}
         {mine&&<div><dt>阵亡</dt><dd>{Math.round(mine.recordedLoss)}</dd></div>}

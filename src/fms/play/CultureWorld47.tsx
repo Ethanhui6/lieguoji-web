@@ -29,6 +29,7 @@ import {CultureCalendar47} from './CultureCalendar47';
 import {reignAge47} from './civilization47-origins';
 import {startTransition,useEffect,useLayoutEffect,useRef,useState,useMemo,type ReactNode} from 'react';
 import {CultureNationActivity47,CultureNationOverview47,nationFamily47} from './CultureNationOverview47';
+import {CultureLeaderHistory47} from './CultureLeaderHistory47';
 import {CultureHistory47} from './CultureHistory47';
 import {CultureStatistics47} from './CultureStatistics47';
 import {CultureOffices47} from './CultureOffices47';
@@ -122,7 +123,7 @@ function NationIdentity({run,id,cityId,provinceId,onProvince,busy,act,actions,wa
     {!ruler&&run.kin.lifecycle?.vacancies[id]&&<section className="c47-ruler"><PlayIcon name="crown"/><div><small>领袖暂缺</small><strong>尚无符合当前政体的接任者</strong></div></section>}
     {ruler&&<section className="c47-ruler"><PlayIcon name="crown"/><div><strong>{rulerDisplayName47(identity,ruler,ruler.title)}</strong><span>第 {ruler.order} 任{person?` · ${person.age} 岁`:''}{reignAge?` · 在位${reignAge.years>0?`${reignAge.years}年`:`${reignAge.days}日`}`:''}</span></div></section>}
     {clicked&&<button className="c47-province-link" onClick={onProvince}>行省信息 · {clicked.name}<span aria-hidden="true">›</span></button>}
-    {actions}<CultureNationOverview47 run={run} id={id} polity={polityLabels[identity.polity]}/>{war}<CultureNationRelations47 run={run as never} nationId={id}/>
+    {actions}<CultureNationOverview47 run={run} id={id} polity={polityLabels[identity.polity]}/><CultureLeaderHistory47 run={run} id={id}/>{war}<CultureNationRelations47 run={run as never} nationId={id}/>
     {run.houses&&familyCapable&&<CultureHouses47 run={run} id={id} busy={busy} act={act} pause={pause}/>}
     {(run as unknown as NobilityRun47).nobility&&<CultureNobility47 run={run} id={id} busy={busy} act={act} pause={pause}/>}
     <details onToggle={e=>setFamilyOpen(e.currentTarget.open)}><summary>{family?culture47(identity.cultureId).houseLabel+' · '+family.surname:'家族'}</summary>{family&&<><div className="c47-family-summary"><strong>族长 · {run.kin.persons[family.headId]?.identity.name??'暂缺'}</strong><small>{members.filter(p=>p.isAlive).length} 位在世 · {members.length} 位登记成员</small></div><CultureFamilyPeople47 run={run} ids={members.map(p=>p.id)} leaderId={head??undefined} busy={busy} onAction={edit=>act({kind:'family-edit',edit,expected:populationStamp47(run as never)})}/></>}{heir&&<><p>继承候选：{heir.name}，{heir.age} 岁</p><button disabled={busy} onClick={()=>setPending(true)}>安排传位</button>{pending&&<div role="group" aria-label="确认传位"><p>由 {heir.name} 接任{heir.title}，成为第 {heir.order} 任。</p><button disabled={busy} onClick={()=>{act({kind:'succession',nationId:id});setPending(false);}}>确认传位</button><button onClick={()=>setPending(false)}>取消</button></div>}</>}</details>

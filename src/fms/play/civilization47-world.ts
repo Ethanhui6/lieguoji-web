@@ -38,7 +38,8 @@ export function createCivilizationWorld47(document:FmsDocument,count:number,city
   // Original family system: noble families and family territories replace the web fief rules.
   const withHouses=()=>attachHouseGovernance47(attachHouses47(base));
   // Typed as the house variant: houses and houseGovernance are optional on every consumer.
-  if(families==='original')return attachNobility47(base) as unknown as ReturnType<typeof withHouses>;
+  // reigns47: LeaderHistoryRecord snapshots, kept by worlds created since 0.5.37.
+  if(families==='original')return {...attachNobility47(base),reigns47:{}} as unknown as ReturnType<typeof withHouses>;
   if(families!==undefined)throw Error('家族规则无效。');
   return withHouses();
 }

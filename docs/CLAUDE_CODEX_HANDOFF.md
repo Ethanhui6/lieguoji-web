@@ -167,3 +167,11 @@
 - 先以真实触摸事件回归，随后核对 Claude 军事计划的剩余差距。不会把桌面移动仿真称为 iPhone 真机验收。
 - 军事追加占用 force-activity47.ts / force-activity47.test.ts：修复玩家航行令被错误显示成出生母港；无任务舰队不再伪造返港目标。属于现有舰队指挥可读性修复，不变更模拟或存档格式。
 - 2026-10-24 Claude 收尾：用例最后一步失败原因是 Chromium 惯性滑动后的第一次点触只用来停住惯性、不产生 click（不是应用缺陷）；用例改为先点一下无交互的标题。随 0.5.25 发布，以上占用文件释放。
+
+### 2026-10-26 · Codex 接续 Claude 0.5.39 海军信息
+- 用户明确要求接续现有工作区，依次发布 0.5.39、0.5.40。基线 main e41bff65 / 0.5.38；接收 Claude 留下的海军信息、跟随、覆盖清单与版本日志，不另起项目。
+- 收尾修复：暂停时开启跟随立即居中；舰队离开可显示集合后解除跟随。新增浏览器断言验证真实舰队坐标投影到画布中心，不能只以复选框勾选代替镜头生效。
+- 验证：舰队信息、官员任用、连续推进、RTS、国家系统共 15 项浏览器回归通过（桌面、手机尺寸、平板尺寸 Chromium）；本地截图位于 `.autopilot/navy-039-final/`。不是手机真机验收。
+- 全量检查首轮 lint / typecheck / 210 文件、1933 单测 / 生产构建通过。收尾后重跑 `npm run check -- -- --max-failures=1`，lint/typecheck 通过，1932 单测通过、1 跳过，full-map-terrain 一项超过默认 5 秒；该文件独立复测 8/8 全通过。全套浏览器另行首错停止运行，旧 actions65 使用隐藏的 `.c47-nations button` 导致超时，不能声称全套通过。原始日志保留于 `.autopilot/release-0.5.39-check.log`、`release-0.5.39-final-check.log`、`039-timeout-recheck.log`、`full-browser-039.log`。
+- 参考 PNG 按 Claude 0.5.21 约定仅本地保存，通过 `.git/info/exclude` 排除；未删除、未进入 dist 或提交。
+- 下一批 0.5.40 由 Codex 负责 display-settings47、CultureMenu47、map.ts、original-play-renderer.ts 及 CultureWorld47 的显示连接；仅补原作 DisplaySettings，不改模拟规则。覆盖比例沿用可核对的文本统计，不据此宣称玩法全部还原。

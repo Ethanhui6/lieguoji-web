@@ -57,7 +57,28 @@ export function initialCivilization47(seed:string,count:number,owners:readonly n
 }
 /** A state name not used by any current state, from the same culture pool (original GetRandomCountryKeyExceptNames). */
 export function freshStateName47(c:Civilization47,cultureId:CultureId47,seed:string):CulturalName47{return freshName(cultureId,c.mode,'state',seed,new Set(Object.values(c.nations).map(n=>n.name.value)));}
-export const nationName47=(n:NationIdentity47)=>n.name.custom??stateTitle47(n.name.value,n.cultureId,n.polity,n.religionId);
+/** Original StateCustomNamingPanel: a custom name is a full-name template with {Name} (the state
+ * name) and {RestorationOrdinal}; the state name itself may be renamed too. Stored in name.custom as
+ * "state name␟template" (or only the template); a custom name without {Name} is a literal full
+ * name, as custom names were before. The web has no restoration ordinal: it reads empty. */
+export const CUSTOM_NAME_SEPARATOR47='␟';
+export function customNaming47(custom:string|null):{base:string|null;template:string}|null{
+  if(custom===null)return null;const i=custom.indexOf(CUSTOM_NAME_SEPARATOR47);
+  return i<0?{base:null,template:custom}:{base:custom.slice(0,i),template:custom.slice(i+1)};
+}
+/** StateNameFormatUtility.ValidateStateFullNameTemplate / HasRequiredPlaceholders. */
+export function fullNameTemplateError47(template:string):string|null{
+  const bad=template.replace(/\{Name\}|\{RestorationOrdinal\}/g,'');
+  if(/[{}]/.test(bad))return '全名模板无效，请检查大括号与格式化语法';
+  if(!template.includes('{Name}'))return '全名模板必须包含 {Name}';
+  return null;
+}
+export const stateBaseName47=(n:NationIdentity47)=>customNaming47(n.name.custom)?.base??n.name.value;
+export function nationName47(n:NationIdentity47){
+  const c=customNaming47(n.name.custom);if(!c)return stateTitle47(n.name.value,n.cultureId,n.polity,n.religionId);
+  if(!c.template.includes('{Name}')||fullNameTemplateError47(c.template))return c.template;
+  return c.template.replaceAll('{Name}',c.base??n.name.value).replaceAll('{RestorationOrdinal}','');
+}
 export const cityName47=(row:Civilization47['cities'][string])=>row.name.custom??row.name.value;
 /** Current office derives from the current polity. The accession identity is
  * immutable evidence of the earlier office, so reforms do not rewrite history. */

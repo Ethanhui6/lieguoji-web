@@ -37,7 +37,7 @@ describe('original VassalManager.Update on the live world',()=>{
     const war=r.nativeWars.campaigns.find(c=>c.endedTick===null&&c.internal?.casusBelliId===16)!;
     expect(war).toBeDefined();expect(r.vassalManager.rebellions.at(-1)).toMatchObject({vassalId,overlordId,reason:'powerful'});
     const names=[vassalId,overlordId].map(id=>r.world.nations.find(n=>n.id===id)!.name);
-    expect(r.chronicle.entries.some(e=>e.text===`${names[0]}反抗其宗主国${names[1]}`)).toBe(true);
+    expect(r.chronicle.entries.some(e=>e.text===`傀儡国${names[0]}发生叛变`&&e.reason.startsWith(`反抗宗主国${names[1]}：`))).toBe(true);
     expect(overlord46(r,vassalId)).toBe(overlordId);
     // Player intervention (reason 11) skips the settlement effects: the relation survives.
     const kept=structuredClone(r);settleWar47(kept,kept.nativeWars.campaigns.find(c=>c.id===war.id)!,11);expect(overlord46(kept,vassalId)).toBe(overlordId);

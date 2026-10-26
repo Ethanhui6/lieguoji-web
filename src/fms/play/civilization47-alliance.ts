@@ -33,7 +33,7 @@ function join(r:PoliticalRun47,v:Alliance46,id:string,record=true){
 function dissolve(r:PoliticalRun47,v:Alliance46,actor:string|null,force=false){
   if(v.endedTick!==null||v.unbreakable&&!force)return false;
   const members=[...v.members];v.members=[];v.endedTick=r.clock.tick;
-  if(actor!==null){for(const id of members)r.alliances.lastAction[id]=Math.fround(r.life.gameTime);notice(r,`${v.name}被${name(r,actor)}解散`,`${name(r,actor)}终止联盟；既有战争与土地归属保留。`,members);}
+  if(actor!==null){for(const id of members)r.alliances.lastAction[id]=Math.fround(r.life.gameTime);notice(r,`${v.name.replace(/联盟$/,'')}联盟被${name(r,actor)}解散`,`${name(r,actor)}终止联盟；既有战争与土地归属保留。`,members);}
   bump(r);return true;
 }
 /** Monthly AI step (native AllianceManager via the diplomatic schedule). */

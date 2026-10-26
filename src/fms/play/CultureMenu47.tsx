@@ -4,6 +4,7 @@ import {gameAudio47,useAudio47} from '../audio/audio47';
 import {CultureCloud47} from './CultureCloud47';
 import type {Culture47Journal} from './culture47-session';
 import {defaultSaveName47,deleteCulture47Named,listCulture47Saves,type Culture47SaveInfo} from './culture47-library';
+import {DISPLAY_DEFAULTS47,DISPLAY_SCALE_RANGE47,setDisplaySettings47,useDisplaySettings47} from './display-settings47';
 
 /** Original SettingsUIInfo "菜单选项" with LoadSaveDataUI / NewSaveSlot
  * (存档管理), WarningWithAction confirmations, the EditPanelUI autosave panel
@@ -12,7 +13,7 @@ import {defaultSaveName47,deleteCulture47Named,listCulture47Saves,type Culture47
 type View=
   |{kind:'menu'}|{kind:'library';mode:'load'|'save'}|{kind:'new-save';name:string}
   |{kind:'overwrite';name:string}|{kind:'load-or-delete';name:string}|{kind:'delete';name:string}|{kind:'load-confirm';name:string}
-  |{kind:'autosave'}|{kind:'cloud'}|{kind:'export'}|{kind:'export-image'}|{kind:'export-history';mobilize:boolean}|{kind:'other'};
+  |{kind:'autosave'}|{kind:'cloud'}|{kind:'export'}|{kind:'export-image'}|{kind:'export-history';mobilize:boolean}|{kind:'other'}|{kind:'display'};
 const savedAtText=(iso:string)=>{const d=new Date(iso);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
 export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onSaveNamed,onLoadNamed,onExportImage,onExportHistory,onQuit,onClose,cloudCurrent,onCloudImport}:{
   busy:boolean;hasWorld:boolean;unsaved:boolean;initial?:'load';config:Culture47Config;onConfig:(c:Culture47Config)=>void;
@@ -22,7 +23,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
 }){
   const [view,setView]=useState<View>(initial==='load'?{kind:'library',mode:'load'}:{kind:'menu'});
   const [saves,setSaves]=useState<Culture47SaveInfo[]|null>(null),[error,setError]=useState(''),[minutes,setMinutes]=useState(config.autoSaveMinutes);
-  const audio=useAudio47();
+  const audio=useAudio47(),display=useDisplaySettings47();
   const [fullscreen,setFullscreen]=useState(()=>!!document.fullscreenElement);
   const refresh=()=>{setSaves(null);setError('');listCulture47Saves().then(setSaves,e=>{setSaves([]);setError(e instanceof Error?e.message:'不能读取存档库。');});};
   useEffect(()=>{if(view.kind==='library')refresh();},[view.kind==='library'?view.mode:null]);
@@ -38,6 +39,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button disabled={busy||!hasWorld} onClick={()=>library('save')}>保存游戏</button>
       <button disabled={busy||!hasWorld} onClick={()=>setView({kind:'export'})}>导出</button>
       <button disabled={busy} onClick={()=>setView({kind:'autosave'})}>自动保存</button>
+      <button onClick={()=>setView({kind:'display'})}>地图外观<small>国名、城市与军队的显示</small></button>
       <button disabled={busy} onClick={()=>setView({kind:'cloud'})}>云存档<small>登录后跨设备保存</small></button>
       <button disabled={!document.fullscreenEnabled} onClick={()=>{void (document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()).catch(()=>{});}}>屏幕模式<small>{fullscreen?'全屏':'窗口'}</small></button>
       {/* Original SettingsUIInfo.volumeSlider (RandomMusicPlayer volume); sound effects and vibration are web additions. */}
@@ -101,13 +103,28 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button onClick={()=>setView({kind:'export'})}>关闭</button>
     </div>;break;
     case 'cloud':body=<CultureCloud47 busy={busy} current={cloudCurrent} onImport={onCloudImport} onBack={back}/>;break;
+    case 'display':{const d=display,scale=(label:string,key:'stateNameScale'|'cityScale'|'armyScale')=><label className="c47-slider" key={key}>{label}<output>{d[key].toFixed(2)}</output>
+        <input type="range" aria-label={label} min={DISPLAY_SCALE_RANGE47.min} max={DISPLAY_SCALE_RANGE47.max} step={DISPLAY_SCALE_RANGE47.step} value={d[key]} onChange={e=>setDisplaySettings47({[key]:Number(e.target.value)})}/></label>;
+      // Original DisplaySettings (地图外观): the settings that only change how the map is drawn.
+      body=<div className="c47-menu-list" aria-label="地图外观">
+      <p className="c47-menu-hint">地图外观</p>
+      {scale('国名缩放','stateNameScale')}
+      <label className="c47-slider">国名颜色<input type="color" aria-label="国名颜色" value={d.stateNameColor} onChange={e=>setDisplaySettings47({stateNameColor:e.target.value})}/></label>
+      <label className="c47-check"><input type="checkbox" aria-label="显示完整国名" checked={d.fullName} onChange={e=>setDisplaySettings47({fullName:e.target.checked})}/>显示完整国名</label>
+      {scale('城市缩放','cityScale')}{scale('军队图标缩放','armyScale')}
+      <label className="c47-check"><input type="checkbox" aria-label="时间显示" checked={d.timeDisplay} onChange={e=>setDisplaySettings47({timeDisplay:e.target.checked})}/>时间显示</label>
+      <label className="c47-check"><input type="checkbox" aria-label="事件显示" checked={d.eventDisplay} onChange={e=>setDisplaySettings47({eventDisplay:e.target.checked})}/>事件显示</label>
+      <small>国家名字后缀由政治体制和复国次数决定；如果想自定义后缀，可以在地图外观中关闭完整国名显示。</small>
+      <button onClick={()=>setDisplaySettings47({...DISPLAY_DEFAULTS47})}>恢复默认</button>
+      <button onClick={back}>关闭</button>
+    </div>;break;}
     case 'other':body=<div className="c47-menu-list" aria-label="其他设置">
       <p className="c47-menu-hint">其他设置</p>
       {['分辨率','音乐音量','镜头缩放速度','显示提示','地图坐标','植被图标'].map(t=><label key={t} className="c47-check is-pending"><input type="checkbox" disabled/>{t}<small>尚未还原</small></label>)}
       <button onClick={back}>关闭</button>
     </div>;break;
   }
-  const title=view.kind==='cloud'?'云存档':view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind.startsWith('export')?'菜单选项':'存档管理';
+  const title=view.kind==='cloud'?'云存档':view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind==='display'||view.kind.startsWith('export')?'菜单选项':'存档管理';
   return <section className="c47-menu" role="dialog" aria-label={title}>
     <header><strong>{title}</strong><button aria-label="关闭菜单选项" onClick={onClose}>×</button></header>
     <Fragment key={view.kind}>{body}</Fragment>

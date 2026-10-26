@@ -20,7 +20,7 @@ export function CultureNobility47({run,id,busy,act,pause}:{run:FoundingForces47;
       const fam=n.families[v],k=r.kin.families[v],head=r.kin.persons[k.headId],alive=k.memberIds.filter(p=>r.kin.persons[p]?.isAlive).length;
       const relation=ruling&&ruling!==v?Math.round(familyRelation47(r,v,ruling)):null,blocked=familyRebellionBlocker47(run as unknown as FoundingRun47,v);
       return <li key={v} data-family-id={v}>
-        <strong>{k.surname}家族{fam.ruling?' · 统治家族':''}</strong>
+        <strong>{k.surname}家族{fam.ruling?' · 统治家族':' · 附庸家族'}</strong>
         <small>族长 {head?.isAlive?head.identity.name:'暂缺'} · 影响力 {Math.round(fam.influence)} · 领地 {fam.controlledProvinces.length} · 在世成员 {alive} · 旁支 {k.collateralMemberIds.length}{relation===null?'':` · 对统治家族 ${relation>0?'+':''}${relation}`}</small>
         {!fam.ruling&&<button disabled={busy||!!blocked} title={blocked??undefined} onClick={()=>{pause();act({kind:'family-rebellion',familyId:v,expected:politicalStamp47(run as PoliticalRun47)});}}>发动家族叛乱</button>}
       </li>;

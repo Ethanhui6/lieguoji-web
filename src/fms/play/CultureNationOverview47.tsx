@@ -1,6 +1,7 @@
 import {officeTitle47} from './official-title-presets47';
 import {officeHolder47,type OfficeRun47} from './civilization47-offices';
 import {memo} from 'react';
+import {stateTrait47} from './state-traits47';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationAge47} from './civilization47-origins';
 import {forceKey47} from './force-motion47';
@@ -28,10 +29,11 @@ const number=(n:number)=>Math.round(n).toLocaleString('zh-CN');
 // a new run reference or selected nation still recomputes every live value.
 /** Original StateInfoUI.UpdateBasicInfoSection rows, in the original order:
  * 国家 · 存在时间 · (行政首脑 · 财政主管 · 常备军统帅) · 首都 · 人口 · 人口上限 · 国库/亏空 · 军队数量 · 战舰数量 ·
- * 行省数量. 腐化度、三公官职和区域数量 are not simulated on the web yet and are
+ * 行省数量 · 国家特性. 腐化度、三公官职和区域数量 are not simulated on the web yet and are
  * left out rather than shown as placeholders. */
 export const CultureNationOverview47=memo(function CultureNationOverview47({run,id,polity}:{run:FoundingForces47;id:string;polity:string}){
  const v=nationOverview47(run,id),nation=run.world.nations.find(n=>n.id===id)!;
+ const traits=(run as unknown as {stateTraits47?:Record<string,string[]>}).stateTraits47?.[id]??null;
  return <details open className="c47-overview" aria-label="基本信息" data-population={v.population} data-regions={v.regions} data-gold={v.gold}><summary>基本信息</summary>
   <dl className="c47-province-rows c47-nation-stats">
    <div><dt>国家</dt><dd>{nation.name} · {polity}{v.extinct?'（已覆亡）':''}</dd></div>
@@ -44,6 +46,7 @@ export const CultureNationOverview47=memo(function CultureNationOverview47({run,
    <div><dt>军队数量</dt><dd>{number(v.armies)} · {number(v.troops)} 人</dd></div>
    <div><dt>战舰数量</dt><dd>{number(v.ships)}</dd></div>
    <div><dt>行省数量</dt><dd>{number(v.regions)}</dd></div>
+   {traits&&<div className="c47-state-traits"><dt>国家特性</dt><dd>{traits.length?traits.map(t=>{const d=stateTrait47(t);return d&&<span key={t} title={d.description} data-trait={t}>{d.label}</span>;}):'无'}</dd></div>}
   </dl>
  </details>;
 });

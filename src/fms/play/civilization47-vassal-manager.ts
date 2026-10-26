@@ -66,7 +66,7 @@ export function advanceVassalManager47(r:Run){
     s.rebellions.push({warId:war.id,vassalId:p.vassalId,overlordId:p.overlordId,tick:r.clock.tick,years:p.years,reason:p.reason});
     r.nativeDiplomacy.nations[p.vassalId].activeTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.nations[p.overlordId].passiveTime=Math.fround(r.life.gameTime);r.nativeDiplomacy.revision++;
     // Original VassalRebellionEvent text.
-    announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`${name(r,p.vassalId)}反抗其宗主国${name(r,p.overlordId)}`,`${REBELLION_REASONS47[p.reason]}；已附属 ${p.years} 年。保持宗属关系直到实际和约解除，交战期间不缴贡金。`,[p.vassalId,p.overlordId],null);
+    announce(r.chronicle,r.world,r.clock.tick,'diplomacy',`傀儡国${name(r,p.vassalId)}发生叛变`,`反抗宗主国${name(r,p.overlordId)}：${REBELLION_REASONS47[p.reason]}；已附属 ${p.years} 年。保持宗属关系直到实际和约解除，交战期间不缴贡金。`,[p.vassalId,p.overlordId],null);
   }
 }
 export function setVassalManager47(r:Run,enabled:boolean){

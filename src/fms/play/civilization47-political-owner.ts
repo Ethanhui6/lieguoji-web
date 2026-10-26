@@ -28,6 +28,7 @@ import {assertArmyAutonomy47} from './civilization47-army-ai-state';
 import {assertNavalAutonomy47} from './civilization47-naval-ai-state';
 import {advanceHouseGovernance47} from './civilization47-house-governance';
 import {recordReigns47,type LeaderRun47} from './leader-history47';
+import {recordStateTraits47} from './state-traits47';
 export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;targetNationId:string};
 export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
@@ -84,7 +85,7 @@ export function advancePolitics47(r:PoliticalRun47,dayChanged:boolean,validate=t
     // A monthly family rebellion or civil war may found a state: give it its
     // loss ledger now, as a province rebellion does (no-op otherwise).
     reconcileLosses(r.losses,r.world,r.warfare,r.clock.tick);}
-  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);recordReigns47(r);if(validate)assertPolitics47(r);
+  reconcileNativeDiplomacy46(r.nativeDiplomacy,r);recordReigns47(r);recordStateTraits47(r);if(validate)assertPolitics47(r);
 }
 export function finishPoliticalTick47(r:PoliticalRun47){advancePeace47(r,false);reconcileGovernmentContinuity47(r);}
 export function assertPoliticalCommand47(a:unknown):asserts a is PoliticalCommand47 {

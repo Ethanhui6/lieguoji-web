@@ -399,3 +399,17 @@
 .c47-app .c47-leader-records li{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);display:grid;gap:2px}
 .c47-app .c47-leader-records small{color:rgba(60,40,20,.65)}
 .c47-app .c47-leader-records p{margin:0;font-size:13px;line-height:1.5}
+.c47-app .c47-state-traits dd{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.c47-app .c47-state-traits span{padding:1px 8px;border-radius:999px;background:rgba(60,40,20,.08);font-size:12px}
+.c47-app .c47-naming label{display:grid;gap:4px;margin:6px 0}
+.c47-app .c47-naming input{min-height:34px;padding:4px 10px;font-size:16px;border:1px solid rgba(60,40,20,.25);border-radius:8px;background:rgba(255,255,255,.7)}
+.c47-app .c47-naming-placeholders{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.c47-app .c47-naming-placeholders small{flex-basis:100%}
+.c47-app .c47-naming-preview{margin:6px 0}
+.c47-app .c47-naming-error{color:#9a2a1e;margin:4px 0}
+.c47-app .c47-alliance-members{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px}
+.c47-app .c47-alliance-members button{width:100%;display:flex;align-items:center;gap:8px;text-align:left}
+.c47-app .c47-alliance-members button[aria-pressed="true"]{outline:2px solid #9a2a1e}
+.c47-app .c47-alliance-members i{width:12px;height:12px;border-radius:3px;flex:none}
+.c47-app .c47-alliance-members small{margin-left:auto}
+.c47-app .c47-slider input[type="color"]{width:52px;height:32px;padding:0;border:1px solid rgba(60,40,20,.25);border-radius:8px;background:none;justify-self:end}

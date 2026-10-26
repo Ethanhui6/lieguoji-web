@@ -26,6 +26,7 @@ import {armyStrength47} from './army-strength47';
 import {fmsStateLineColor,fmsStateOutlines,FMS_STATE_LINE_WIDTH} from '../state-line';
 import {originalPoliticalOutlines,type OriginalPoliticalEdge} from '../original/original-political-edges';
 import type {TacticsState} from './tactics-model';
+import {DISPLAY_DEFAULTS47,type DisplaySettings47} from './display-settings47';
 
 /** One prefab local unit in map units: World.CreateCity sets localScale =
  * _burgCityLabelScale (1) x cityCircleScale (.23) x GetCityScale(type), where
@@ -187,6 +188,9 @@ export class PlayMap {
   /** 即时战略模式: armies in the player's selection box get the selection ring. */
   private rtsSelected:ReadonlySet<string>=new Set();
   setRtsSelection(ids:ReadonlySet<string>){this.rtsSelected=ids;}
+  /** Original DisplaySettings (地图外观): name scale and colour, full or short state names, city and army scale. */
+  private display:DisplaySettings47=DISPLAY_DEFAULTS47;private shortNames:ReadonlyMap<string,string>=new Map();
+  setDisplay(d:DisplaySettings47,shortNames:ReadonlyMap<string,string>){this.display=d;this.shortNames=shortNames;}
   private relations:ReadonlyMap<string,number>=new Map();private relationsKey='';
   /** Original StateRelationsHighlighter: state lines of the selected state's relations, nation id → colour. */
   setRelationHighlight(relations:ReadonlyMap<string,number>){this.relations=relations;this.relationsKey=[...relations].map(([k,v])=>k+':'+v).join(',');}
@@ -311,10 +315,11 @@ export class PlayMap {
     // Names wait for the map font (mapFontReady47) so they are rasterized once.
     const namesReady=mapFontSettled47();
     const countryLabels=(namesReady?boxes:[]).flatMap(box=>{
-      const name=viewGroups?viewGroups.name(box.key):nations.get(box.key)?.name;if(!name)return [];
+      const name=viewGroups?viewGroups.name(box.key):this.display.fullName?nations.get(box.key)?.name:this.shortNames.get(box.key)??nations.get(box.key)?.name;if(!name)return [];
+      const fill=Number.parseInt(this.display.stateNameColor.slice(1),16);
       const tint=viewGroups?viewGroups.color(box.key):Number.parseInt(nationColor(nations.get(box.key)!).slice(1),16);
-      const t=this.retainedText(`country:${mapFontEpoch}:${box.key}:${tint}`,name,{fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill:0x000000,stroke:{color:tint,width:13,alpha:.8,join:'round'}},1.5);
-      const size=autoFontSize47(box,{width:Math.max(1,t.width-13)/64,height:Math.max(1,t.height-13)/64}),em=size/10*MAP_UNIT47,k=em/64;
+      const t=this.retainedText(`country:${mapFontEpoch}:${box.key}:${tint}:${fill}`,name,{fontFamily:MAP_FONT47,fontSize:64,fontWeight:'bold',fill,stroke:{color:tint,width:13,alpha:.8,join:'round'}},1.5);
+      const size=autoFontSize47(box,{width:Math.max(1,t.width-13)/64,height:Math.max(1,t.height-13)/64}),em=size/10*MAP_UNIT47*this.display.stateNameScale,k=em/64;
       t.anchor.set(.5);t.rotation=0;t.scale.set(k);t.position.set(box.x,box.y);t.alpha=1;this.keepLabel(t,0);
       const width=t.width,height=t.height,screen={x:box.x*zoom+this.projection.x,y:box.y*zoom+this.projection.y,width:width*zoom,height:height*zoom};countryBoxes.push(screen);
       return [{point:{x:box.x*scale,y:box.y*scale},size:em*zoom,width:screen.width}];
@@ -340,8 +345,8 @@ export class PlayMap {
     const cityText:{id:string;name:string;labelX:number;labelY:number;box:LabelBox}[]=[];
     for(const c of namesReady?this.cities:[]){
       const at={x:(c.x-this.projection.x)/zoom,y:(c.y-this.projection.y)/zoom},l=cityLabel47(at,c.capital);
-      if(l.em*zoom<9)continue;
-      const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle,1);t.anchor.set(.5);t.scale.set(l.em/64);t.position.set(l.x,l.y);
+      const em=l.em*this.display.cityScale;if(em*zoom<9)continue;
+      const t=this.retainedText(`city:${mapFontEpoch}:${mode}:${c.id}`,c.name,cityStyle,1);t.anchor.set(.5);t.scale.set(em/64);t.position.set(l.x,l.y);
       const box={x:l.x*zoom+this.projection.x,y:l.y*zoom+this.projection.y,width:t.width*zoom,height:t.height*zoom};
       cityText.push({id:c.id,name:c.name,labelX:box.x,labelY:box.y,box});if(c.capital)capitalText.push({...box,id:c.id});
       // A selected city shows its callout instead; its name keeps its place in the layout.
@@ -389,7 +394,7 @@ export class PlayMap {
       const spot=!moving(army,at)&&home?wanderPoint(home.polygon,army.id,citySpots.get(home.id)):at;
       const container=new Container();this.layer.addChild(container);container.position.set(spot.x/scale,spot.y/scale);
       this.unitGroups.push({ids:[army.id],container,display:'detail',offset:{x:(spot.x-at.x)/scale,y:(spot.y-at.y)/scale}});
-      const unit=units?unitProfile(units[army.id]):undefined,texture=this.textures.get(unit?.key??'Cavalry'),size=Math.max(iconSize*(unit?.key==='Elite'?1.5:1),7*pixel);
+      const unit=units?unitProfile(units[army.id]):undefined,texture=this.textures.get(unit?.key??'Cavalry'),size=Math.max(iconSize*(unit?.key==='Elite'?1.5:1)*this.display.armyScale,7*pixel*this.display.armyScale);
       if(active){const ring=new Graphics();ring.circle(0,0,size*.75).fill({color:0x263931,alpha:.25}).stroke({color:0xffe6a6,width:1.5*pixel});container.addChild(ring);}
       if(texture){const sprite=new Sprite(texture);sprite.anchor.set(.5);sprite.width=size;sprite.height=size;sprite.tint=nationColor(nations.get(army.nationId)!);container.addChild(sprite);fallen.push({id:army.id,x:spot.x/scale,y:spot.y/scale,texture:unit?.key??'Cavalry',tint:sprite.tint as number,size});}
       else{const dot=new Graphics();dot.circle(0,0,size*.3).fill(nationColor(nations.get(army.nationId)!));container.addChild(dot);}

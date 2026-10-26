@@ -9,10 +9,11 @@ import {quoteTribute47} from './civilization47-vassal-manager';
  * wording because the original has no such strings. */
 export type NationPick47='war'|'peace'|'alliance'|'expand'|'draw'|'annex'|'vassal';
 export const PICK_TIPS47:Record<NationPick47,string>={war:'点击其他国家，发动战争',peace:'点击交战国家，停止战争',alliance:'点击其他国家，缔结同盟',expand:'点击地图，将点击的省份设置为当前国家领土',draw:'点击地图，将点击的省份设置为所选国家领土',annex:'点击敌对国家，直接吞并',vassal:'点击其他国家，收为附庸'};
-export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAlliance,onRelease,onAutoDiplomacy}:{run:PoliticalRun47;nationId:string;busy:boolean;pick:NationPick47|null;onPick:(kind:NationPick47|null)=>void;onLeaveAlliance:()=>void;onRelease:()=>void;onAutoDiplomacy:(enabled:boolean)=>void}){
+export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAlliance,onRelease,onAutoDiplomacy,onCivilWar}:{onCivilWar?:()=>void;run:PoliticalRun47;nationId:string;busy:boolean;pick:NationPick47|null;onPick:(kind:NationPick47|null)=>void;onLeaveAlliance:()=>void;onRelease:()=>void;onAutoDiplomacy:(enabled:boolean)=>void}){
   const alive=run.world.provinces.some(p=>p.controller===nationId),alliance=allianceOf46(run,nationId),lord=overlord46(run,nationId);
   const atWar=run.world.statecraft!.relations.some(r=>[r.a,r.b].includes(nationId)&&r.status==='war');
-  const button=(kind:NationPick47,label:string,disabled=false)=><button aria-pressed={pick===kind} disabled={busy||!alive||disabled} title={PICK_TIPS47[kind]} onClick={()=>onPick(pick===kind?null:kind)}>{label}</button>;
+  const vassalHint='附庸国无法自主行使外交权力，需独立';
+  const button=(kind:NationPick47,label:string,disabled=false)=><button aria-pressed={pick===kind} disabled={busy||!alive||disabled} title={disabled&&lord!==null&&kind!=='peace'?vassalHint:PICK_TIPS47[kind]} onClick={()=>onPick(pick===kind?null:kind)}>{label}</button>;
   return <div className="c47-nation-actions" role="group" aria-label="国家行为">
     <div className="c47-action-grid">
       {button('war','宣战',lord!==null)}
@@ -23,7 +24,9 @@ export function CultureNationActions47({run,nationId,busy,pick,onPick,onLeaveAll
       {button('annex','吞并')}
       {button('vassal','收为附庸',lord!==null)}
       <button disabled={busy||lord===null} title="解除附庸" onClick={onRelease}>解除附庸</button>
+      {onCivilWar&&(run as {nobility?:unknown}).nobility!==undefined&&<button disabled={busy||!alive} title="让与统治家族关系最差的家族起兵" onClick={onCivilWar}>触发内战</button>}
     </div>
+    {lord!==null&&<small className="c47-office-hint">{vassalHint}</small>}
     <label className="c47-check"><input type="checkbox" aria-label="本国自主外交" checked={run.diplomacy.nations[nationId]===true} disabled={busy||!alive} onChange={e=>onAutoDiplomacy(e.target.checked)}/>自主外交{run.diplomacy.worldAuto?'':'（全局已关闭）'}</label>
   </div>;
 }

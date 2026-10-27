@@ -1,3 +1,4 @@
+import {forceFaceBiomes47} from './force-biomes47';
 import {stateTraitsFor47} from './state-traits47';
 import type {OpeningLayout47} from './opening-layout47';
 import type {ArmyBatch47} from './army-batch47';
@@ -65,7 +66,7 @@ function build<T extends Government47>(input:T):T&FoundingForces47{
   const base={...r,world,navy,harbors,maritime,reorganization,battles:initialBattles(),occupation:initialOccupation(),transports:initialTransports(),voyages:initialVoyages(world),alliances,vassals:initialVassals46(),diplomaticGeography:buildDiplomaticGeography(r),fleetPositions};
   const warfare=initialWar26();reconcileWar26(world,warfare,sea,r.clock.tick,(w,id)=>war26Strength(w,base,id));
   const inputWars={...base,warfare},nativeWars=initialWar28(inputWars);importUnknownWars28(nativeWars,inputWars);
-  const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`),r.life.secondsPerDay/TICKS_PER_DAY),forceDamage:initialForceDamage47(),forceSpeed:initialForceSpeed47(world,r.clock.tick,id=>stateTraitsFor47(r,id).includes('CavalryTradition')),dailyEconomy:{version:1 as const,lastDay:0,lastMusterMonth:0},navalOpening};
+  const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`),r.life.secondsPerDay/TICKS_PER_DAY),forceDamage:initialForceDamage47(),forceSpeed:initialForceSpeed47(world,r.clock.tick,id=>stateTraitsFor47(r,id).includes('CavalryTradition'),'stateTraits47' in r?forceFaceBiomes47(r.terrain):undefined),dailyEconomy:{version:1 as const,lastDay:0,lastMusterMonth:0},navalOpening};
   const result={...out,combatPersonnel:initialCombatPersonnel47(out),armyAutonomy:initialArmyAutonomy47(world),navalAutonomy:initialNavalAutonomy47(out)};actualForces47(result);return result;
 }
 export function attachFoundingForces47<T extends Government47>(input:T):T&FoundingForces47{

@@ -186,7 +186,7 @@
 - 覆盖清单保留 Claude 的 639/1419 文本快照，逐项列出本版已接入字段，未臆造新的总覆盖率。地形装饰还不是原作美术完整还原；旧浏览器测试入口仍需独立整理。
 - 本批涉及的显示文件在发布后释放，可在此基础继续推进。远程主机/电脑计算相关保留文件未修改。
 
-### 2026-10-27 · Codex 0.5.41 属性实际效果（待推送）
+### 2026-10-27 · Codex 0.5.41 属性实际效果（已发布）
 - 用户已明确优先属性系统，并选择人物、国家、军队三类全部推进。以 main 8064e99f / 0.5.40 为基线；撤回本批尚未提交的家族树尝试，保留既有家族操作。
 - 接通国家特性至初始军队、后续征募和叛军换属时的速度/伤害快照：CavalryTradition、FieldCombatElite、SiegeCapture。原有军队快照不因每日记录而重写。无国家特性账本的旧内核测试保留原有显式 damageTraits 来源。
 - ManifestDestiny 在开局政治挂接与后续国家记录时同步，仅布尔变化时刷新次数；不每日重抽，不直接覆盖当前国运。Ambitious 从当前真实领袖进入原作宣战权重，不再固定 false。
@@ -197,3 +197,13 @@
 - 浏览器：属性/官员/国家系统 9 项通过；属性滚动可见性、家族操作、舰队信息与连续推进最终 15 项通过（属性 3 项重复，共 21 个不同用例）。日志 attributes-041-browser.log、attributes-041-final-browser.log，截图目录同名去掉 .log。手机 headless 截图的属性面板文字正常，但面板外有黑块绘制异常；未证明真机同样出现，亦未把自动化通过当作真机视觉验收。
 - 最终全量检查：.autopilot/release-0.5.41-final-check.log，lint/typecheck、212 文件/1941 单测通过（1 跳过）、构建/42 产物白名单通过。完整浏览器仍在 fms-actions65:16 的隐藏 .c47-nations button 超时，1 失败/203 未运行；保留原用例，不声称全套通过。
 - 已对照 .autopilot/regression-040 中的 mobile offices.png：同样存在面板外黑块，属于已有截图异常。本版未修复，不作真机视觉验收。
+
+### 2026-10-27 · Codex 0.5.42 地形行军属性实施与验证
+- 0.5.41 已推送 a421c5c8 并核对正式站 build.json，正式站属性浏览器测试 1 项通过。当前以干净 main 为基线继续。
+- 继续核查剩余国家特性：State.UpdateDiplomacy 的 V2 开关分支明确区分新旧宣战；本批不把旧外交特性强行加入 V2。
+- 恢复 Biomes.SpeedModifier 的 13 项 float32 初始化表，52 字节 SHA256 与元数据字段名完全一致。Army.GetSpeed 先判断当前省份山地/高原，再索引当前格子的生物群系；非省份平均值。审计中间文件只在 .autopilot/fms-audit/binary/attribute-042。
+- 热/冷沙漠、积雪 0.7，其余 1；山地 0.5、高原 0.7 覆盖普通地形，不叠乘。网页旅行格仍是三角面，用面中心最近陆地源顶点的生物群系（同距离按顶点编号）明确适配；新世界保存 faceBiomes，非原作家族兼容测试世界保持旧速度策略。
+- 本批修改 force-speed47、civilization47-forces、新增 force-biomes47、native-war/biome-speed、army-movement-info47，军队面板、相关测试、版本与公告；发布后释放。
+- 针对性 19 项单测通过，包含真正 advanceArmyTravel47 的同军队、同路线、同时间移动距离对照。属性、连续推进、军队调遣三种尺寸共 9 项浏览器测试通过；军队面板地形行改为全宽后属性 3 项再次通过，断言面板速度与初速、兵种、地形的乘积一致。
+- 全量 npm run check 的 lint/typecheck 通过；1942 项单测通过、2 项 full-map-terrain 超过默认 5 秒、1 项跳过，独立复测该文件 8/8 通过。生产构建与 42 项产物白名单通过。原始日志 release-0.5.42-check.log、attributes-042-map-retest.log、attributes-042-build.log、attributes-042-browser.log、attributes-042-final-browser.log 均在 .autopilot。
+- 完整浏览器另行执行首错停止，仍在 tests/fms-actions65.spec.ts:16 的隐藏 .c47-nations button 超时：1 失败、203 未运行，日志 .autopilot/attributes-042-full-browser.log。未改动或跳过原测试，不声称全套通过。下一批需要修复这项旧入口测试，地形路径几何仍需继续向原作靠拢。

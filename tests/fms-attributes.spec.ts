@@ -23,8 +23,10 @@ test('人物四维与军队实算属性可见',async({page},info)=>{
  const select=page.getByRole('combobox',{name:'选择部队'});
  const army=await select.locator('optgroup[label="陆军"] option').first().getAttribute('value');expect(army).toBeTruthy();await select.selectOption(army!);
  const stats=page.locator('.c47-military-stats');
- for(const name of ['当前战斗效率','对军基础伤害','攻城基础伤害','初始行军速度'])await expect(stats).toContainText(name);
- await stats.getByText('当前战斗效率',{exact:true}).scrollIntoViewIfNeeded();
- await expect(stats.getByText('当前战斗效率',{exact:true})).toBeInViewport();
+ for(const name of ['当前战斗效率','对军基础伤害','攻城基础伤害','初始行军速度','当前行军速度','地形速度倍率','兵种速度倍率'])await expect(stats).toContainText(name);
+ const value=async(label:string)=>Number.parseFloat(await stats.locator('div').filter({has:page.getByText(label,{exact:true})}).locator('dd').innerText());
+ expect(Math.abs(await value('当前行军速度')-await value('初始行军速度')*await value('地形速度倍率')*await value('兵种速度倍率'))).toBeLessThan(.005);
+ await stats.getByText('当前行军速度',{exact:true}).scrollIntoViewIfNeeded();
+ await expect(stats.getByText('当前行军速度',{exact:true})).toBeInViewport();
  await page.screenshot({path:info.outputPath('army-attributes.png'),animations:'disabled'});expect(errors).toEqual([]);
 });

@@ -3,6 +3,7 @@ import {actualForces47} from './force-runtime47';
 import {readArmySpace47,landHolders47} from './army-space47';
 import {locateTravelCell47} from './army-travel47-graph';
 import {beginArmyTravel47,haltArmyTravel47} from './army-travel47-state';
+import {stateTraitsFor47,damageTraitsFor47} from './state-traits47';
 import {initializedArmySpeed47} from './force-speed47';
 import {reconcileCore} from './core-refresh51';
 import {traitProjection} from './upper14-state';
@@ -30,8 +31,8 @@ export function createForce47(r:FoundingForces47,spatial:ReturnType<typeof actua
     const troops=strength(homeId),unit=unitProfiles[(r.tactics.nextArmyId-2)%unitProfiles.length],name=r.world.cities.find(c=>c.provinceId===homeId)?.name??home.name;
     r.world.armies.push({id,name:name+(kind==='emergency'?'动员':'')+unit.name,nationId,provinceId:homeId,originId:homeId,troops,morale:80,supplies:100,status:'idle',route:[],progress:0});
     r.units={...r.units,[id]:unit.key};r.tactics.forces[id]={homeId,kind,fullStrength:troops};r.armyPositions.records[id]=beginArmyTravel47(id,[cell.id],spatial.graph,home.center);
-    r.forceSpeed.armies[id]=initializedArmySpeed47(r.world.custom!.seed,id,nationId,r.clock.tick,false);
-    r.combatPersonnel.armies[id]=initializedArmyCombat47(nationId,r.clock.tick,r.combatPersonnel.nations[nationId].damageTraits);
+    r.forceSpeed.armies[id]=initializedArmySpeed47(r.world.custom!.seed,id,nationId,r.clock.tick,stateTraitsFor47(r,nationId).includes('CavalryTradition'));
+    r.combatPersonnel.armies[id]=initializedArmyCombat47(nationId,r.clock.tick,damageTraitsFor47(r,nationId));
     r.armyAutonomy.armies[id]=initialArmyDecision47();
     r.upperCombat.armies[id]={base:initializedArmyBase(traitProjection(r.upperCombat.nations[nationId].traits)),initializedTick:r.clock.tick};return troops;
 }

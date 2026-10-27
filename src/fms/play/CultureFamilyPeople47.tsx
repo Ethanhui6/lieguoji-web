@@ -1,3 +1,4 @@
+import {CharacterAttributes47} from './CharacterAttributes47';
 import {useState} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {isoPlusDays} from './civilization47-iso-calendar';
@@ -15,7 +16,7 @@ export function CultureFamilyPeople47({run,ids,leaderId,busy,onAction}:{run:Foun
   const family=run.kin.families[p.familyId],badges=[family?.headId===p.id&&'族长',family?.heirId===p.id&&'继承人'].filter(Boolean) as string[];
   const open=onAction&&selected===p.id;
   const body=<><strong>{p.identity.name}{badges.map(b=><em key={b} className="c47-person-badge">{b}</em>)}<small>{p.isAlive?(p.id===leaderId?'现任领袖':p.age<18?'未成年':'成年'):'已故'} · {p.age} 岁</small></strong>
-   {date&&<small>生于 {date.year} 年 {date.month} 月 {date.day} 日</small>}
+   <CharacterAttributes47 person={{base:p.base,traits:p.traits??[]}}/>{date&&<small>生于 {date.year} 年 {date.month} 月 {date.day} 日</small>}
    {(father||mother)&&<small>父母 · {[father?.identity.name,mother?.identity.name].filter(Boolean).join(' / ')}</small>}
    {spouse&&<small>配偶 · {spouse.identity.name}{spouse.isAlive?'':'（已故）'}</small>}
    {!!p.childrenIds.length&&<small>子女 · {p.childrenIds.map(id=>run.kin.persons[id]?.identity.name).join('、')}</small>}</>;

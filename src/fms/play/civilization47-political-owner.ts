@@ -33,6 +33,7 @@ export type PoliticalCommand47={type:'declare-war'|'make-peace';nationId:string;
 export const politicalStamp47=(r:PoliticalRun47)=>({runId:r.id,day:r.world.day,tick:r.clock.tick,nextEventId:r.world.nextEventId,diplomacy:r.nativeDiplomacy.revision,wars:r.nativeWars.revision,civilization:r.civilization.revision});
 export type PoliticalStamp47=ReturnType<typeof politicalStamp47>;
 export function attachPolitics47(r:FoundingForces47):PoliticalRun47 {
+  recordStateTraits47(r);
   return {...r,diplomacy:initialDiplomacy(r.world),nativeDiplomacy:initialNativeDiplomacy46(r,'new-world'),vassalManager:initialVassalManager47(r.world.day)};
 }
 /** New-world preset only. Existing wars with unknown history stay unknown.

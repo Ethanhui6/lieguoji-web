@@ -414,3 +414,7 @@
 .c47-app .c47-alliance-members small{margin-left:auto}
 .c47-app .c47-slider input[type="color"]{width:52px;height:32px;padding:0;border:1px solid rgba(60,40,20,.25);border-radius:8px;background:none;justify-self:end}
 .c47-military-stats .is-wide{grid-column:1/-1}.c47-military-stats .is-wide dd{font-size:15px;line-height:1.4}
+.c47-app .c47-person-attributes{display:grid;gap:3px;font-size:12px;line-height:1.6}
+.c47-app .c47-person-attributes>span{display:flex;flex-wrap:wrap;gap:4px 10px}
+.c47-app .c47-person-attributes>span>span{display:inline;white-space:nowrap}
+.c47-app .c47-person-attributes small span{display:inline}

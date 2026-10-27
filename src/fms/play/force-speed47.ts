@@ -25,11 +25,11 @@ export function initializedArmySpeed47(seed:string,armyId:string,nationId:string
   const draw=f((h>>>0)/4294967296),ordinary=f(f(f(.7)+f(f(f(1.1)-f(.7))*draw))*f(1.5));
   return {nationAtInitialization:nationId,initializedTick:tick,cavalryTradition,base:cavalryTradition?f(1.9499999284744263):ordinary};
 }
-/** No real culture implies a cavalry tradition. The current founding rule
- * has none; an explicit future state-trait command must own that lifecycle. */
-export function initialForceSpeed47(world:World,tick:number):ForceSpeed47{
+/** The founding state's explicit trait ledger supplies the tradition;
+ * legacy worlds without that ledger retain their original ordinary speeds. */
+export function initialForceSpeed47(world:World,tick:number,cavalryTradition:(id:string)=>boolean=()=>false):ForceSpeed47{
   const state:ForceSpeed47={version:2,basis:'native-standard-map-v2',mapUnitsPerNativeUnit:MAP_UNITS_PER_NATIVE_UNIT47,biomePolicy:'neutral-unrecovered-v1',armies:{}};
-  for(const a of world.armies)state.armies[a.id]=initializedArmySpeed47(world.custom!.seed,a.id,a.nationId,tick,false);
+  for(const a of world.armies)state.armies[a.id]=initializedArmySpeed47(world.custom!.seed,a.id,a.nationId,tick,cavalryTradition(a.nationId));
   assertForceSpeed47(state,world,tick);return state;
 }
 export function assertForceSpeed47(s:ForceSpeed47,world:World,tick:number){

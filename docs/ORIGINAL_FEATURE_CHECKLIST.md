@@ -6,6 +6,13 @@
 
 总覆盖：639/1419（45%），2026-10-26 测量。重新测量：在项目根目录运行本脚本（保存在会话草稿区）。
 
+### 0.5.41 属性实际效果（功能核对，不混算文本比例）
+- 人物四维直接读取 `nativeCharacterSkills`；家族和官员候选显示原作中文特质。军事能力经现任指挥者进入交锋/攻城，行政等四维按官职权重影响收入，领袖外交能力进入外交关系评估；“雄心勃勃”现已接入宣战权重。
+- `CavalryTradition`、`FieldCombatElite`、`SiegeCapture` 接通初始军队、征募与叛军初始化；`ManifestDestiny` 接通国运特性刷新，避免重复刷新次数。已有 5 项战斗/核心特性继续有效。
+- 国家显示实际国运、官员收入和财政战力倍率；军队显示实际位置战斗效率与初始化伤害/速度。基础伤害不等于最终固定伤亡，仍经过原有战斗结算。
+- `FightToTheEnd`、`BullyTheWeak`、`DefyTheStrong` 的已发现字段使用者位于旧战争逻辑；`TotalWar` 的有效调用尚未确认。四项未接入当前 WarAIV2，界面明确标注，不计作已完成。
+- 本版未重新运行 Claude 的文本统计脚本，保留上方统计快照。
+
 ### 0.5.40 已接入的显示设置（功能核对，不混算文本比例）
 - 原作 `DisplaySettings.ProvinceBorderColorImage` / `DisplayProvinceBorderToggle`：行省边界颜色、显示行省边界，作用于实际填色所用的 Voronoi 格子边；国界和选择轮廓保留。
 - `DisplayBurgNameToggle`：显示城市名，保留城市标记和点击选择。

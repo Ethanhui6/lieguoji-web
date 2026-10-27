@@ -185,3 +185,15 @@
 - 日志：`.autopilot/release-0.5.40-check.log`、`display-040-unit.log`、`display-040-final.log`、`regression-040.log`。外观截图：`.autopilot/display-040-final/`。这些文件仅本地保存。
 - 覆盖清单保留 Claude 的 639/1419 文本快照，逐项列出本版已接入字段，未臆造新的总覆盖率。地形装饰还不是原作美术完整还原；旧浏览器测试入口仍需独立整理。
 - 本批涉及的显示文件在发布后释放，可在此基础继续推进。远程主机/电脑计算相关保留文件未修改。
+
+### 2026-10-27 · Codex 0.5.41 属性实际效果（待推送）
+- 用户已明确优先属性系统，并选择人物、国家、军队三类全部推进。以 main 8064e99f / 0.5.40 为基线；撤回本批尚未提交的家族树尝试，保留既有家族操作。
+- 接通国家特性至初始军队、后续征募和叛军换属时的速度/伤害快照：CavalryTradition、FieldCombatElite、SiegeCapture。原有军队快照不因每日记录而重写。无国家特性账本的旧内核测试保留原有显式 damageTraits 来源。
+- ManifestDestiny 在开局政治挂接与后续国家记录时同步，仅布尔变化时刷新次数；不每日重抽，不直接覆盖当前国运。Ambitious 从当前真实领袖进入原作宣战权重，不再固定 false。
+- 人物与官员候选显示实际四维/特质；国家显示实际国运、中央官员收入倍率、财政战力倍率；军队显示实际位置的战斗效率、对军/攻城基础伤害和初始化速度。最终伤亡另受兵种、地形、兵力等因素影响，基础伤害不是每次固定扣血。
+- 原作只读证据：原 character traits JSON、localization.csv 和已有 native kernels。新增二进制字段引用核查位于 .autopilot/fms-audit/binary/attribute-041：FightToTheEnd 在旧 State.TryEndWar/War.Start，BullyTheWeak/DefyTheStrong 在旧 DiplomacyUtil，当前 WarAIV2 宣战/和谈入口没有这些字段读。TotalWar 仅找到属性存取，不能把这些旧逻辑强加给新版战争流程；四项在 UI 标注效果待还原，后续需要追踪实际调用路径。
+- 验证执行中：.autopilot/release-0.5.41-check.log；新增五项接线/实际财政对照测试已通过，原作军事/速度/国家回归 40 项已通过。新浏览器测试 tests/fms-attributes.spec.ts 覆盖人物四维和军队实算信息。
+- 规则变更需要新建世界；版本门禁继续仅接受当前版本存档，不迁移或删除旧档。
+- 浏览器：属性/官员/国家系统 9 项通过；属性滚动可见性、家族操作、舰队信息与连续推进最终 15 项通过（属性 3 项重复，共 21 个不同用例）。日志 attributes-041-browser.log、attributes-041-final-browser.log，截图目录同名去掉 .log。手机 headless 截图的属性面板文字正常，但面板外有黑块绘制异常；未证明真机同样出现，亦未把自动化通过当作真机视觉验收。
+- 最终全量检查：.autopilot/release-0.5.41-final-check.log，lint/typecheck、212 文件/1941 单测通过（1 跳过）、构建/42 产物白名单通过。完整浏览器仍在 fms-actions65:16 的隐藏 .c47-nations button 超时，1 失败/203 未运行；保留原用例，不声称全套通过。
+- 已对照 .autopilot/regression-040 中的 mobile offices.png：同样存在面板外黑块，属于已有截图异常。本版未修复，不作真机视觉验收。

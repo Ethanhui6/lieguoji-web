@@ -1,5 +1,8 @@
 import {nameSeed} from './chronicle-records';
 import {TRAITS,type CombatTrait,type UpperCombat} from './upper14-state';
+import {refreshDestinyTrait,type DestinyState} from './destiny20-state';
+import type {DamageTrait47} from './native-combat/personnel47';
+import type {CombatPersonnel47} from './civilization47-combat-state';
 
 /** Original state traits (StreamingAssets/Base/Traits/StateTraits/traits.json, Chinese names and
  * descriptions from its localization.csv). */
@@ -21,7 +24,7 @@ export const STATE_TRAITS47=[
 export type StateTrait47=typeof STATE_TRAITS47[number]['id'];
 export const stateTrait47=(id:string)=>STATE_TRAITS47.find(t=>t.id===id);
 /** Traits whose effects the web's combat already applies (upperCombat nation traits). */
-export const ACTIVE_STATE_TRAITS47:readonly string[]=TRAITS;
+export const ACTIVE_STATE_TRAITS47:readonly string[]=[...TRAITS,'CavalryTradition','FieldCombatElite','SiegeCapture','ManifestDestiny'];
 
 /** MapCulture.GenerateTraitsForState: Random.Range(2,6) traits drawn without repetition, each by its
  * culture weight (CultureData.TraitProbabilities). The original's fantasy presets weigh every
@@ -32,7 +35,11 @@ export function generateStateTraits47(seed:string,nationId:string):StateTrait47[
   while(out.length<count&&pool.length)out.push(pool.splice(Math.floor(next()*pool.length),1)[0]);
   return out;
 }
-export type StateTraitRun47={world:{nations:{id:string}[];custom?:{seed:string}};upperCombat:UpperCombat;stateTraits47?:Record<string,StateTrait47[]>};
+type TraitSource47={world:{custom?:{seed:string}};stateTraits47?:Record<string,StateTrait47[]>};
+/** Read the deterministic founding traits even before the daily ledger is recorded. */
+export function stateTraitsFor47(r:TraitSource47,id:string):readonly StateTrait47[]{return r.stateTraits47?(r.stateTraits47[id]??generateStateTraits47(r.world.custom!.seed,id)):[];}
+export function damageTraitsFor47(r:TraitSource47&{combatPersonnel?:CombatPersonnel47},id:string):DamageTrait47[]{return r.stateTraits47?(['FieldCombatElite','SiegeCapture'] as const).filter(t=>stateTraitsFor47(r,id).includes(t)):[...(r.combatPersonnel?.nations[id]?.damageTraits??[])];}
+export type StateTraitRun47=TraitSource47&{world:{nations:{id:string}[];custom?:{seed:string}};upperCombat:UpperCombat;destiny?:DestinyState;combatPersonnel?:CombatPersonnel47};
 /** Worlds created with the ledger give every state its traits once (states founded later too) and
  * keep the combat traits in the state's combat record. */
 export function recordStateTraits47(r:StateTraitRun47){
@@ -41,5 +48,8 @@ export function recordStateTraits47(r:StateTraitRun47){
     const traits=ledger[n.id]??(ledger[n.id]=generateStateTraits47(r.world.custom!.seed,n.id)),combat=r.upperCombat.nations[n.id];if(!combat)continue;
     const want=TRAITS.filter(t=>(traits as readonly string[]).includes(t)) as CombatTrait[];
     if(want.join()!==combat.traits.join())combat.traits=want;
+    const personnel=r.combatPersonnel?.nations[n.id];if(personnel)personnel.damageTraits=damageTraitsFor47(r,n.id);
+    const destiny=r.destiny?.nations[n.id],manifest=traits.includes('ManifestDestiny');
+    if(destiny&&destiny.manifest!==manifest)refreshDestinyTrait(r.destiny!,n.id,manifest);
   }
 }

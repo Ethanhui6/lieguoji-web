@@ -26,6 +26,7 @@ import {haltArmyTravel47} from './army-travel47-state';
 import {registerWar46,reconcileWar28Identities,stateNumber} from './war47-wars';
 import {buildParticipants47,openCoalitionRelations47} from './civilization47-diplomatic-world';
 import {createForce47} from './civilization47-monthly-muster';
+import {stateTraitsFor47,damageTraitsFor47} from './state-traits47';
 import {initializedArmySpeed47} from './force-speed47';
 import {traitProjection} from './upper14-state';
 import {initializedArmyBase} from './native-combat/state-traits';
@@ -276,8 +277,8 @@ export function transferRebelArmies47(r:FoundingRun47,motherId:string,rebelId:st
     if(row&&row.central&&land.has(a.originId)){row.familyId=[...familyIds][0];row.central=false;}
     a.nationId=rebelId;a.status='idle';a.route=[];a.progress=0;r.armyPositions.records[a.id]=haltArmyTravel47(v.travel,spatial.graph);
     delete r.battles.plans[a.id];delete r.reorganization.active[a.id];delete r.tactics.rounds[a.id];
-    r.forceSpeed.armies[a.id]=initializedArmySpeed47(r.world.custom!.seed,a.id,rebelId,r.clock.tick,false);
-    r.combatPersonnel.armies[a.id]=initializedArmyCombat47(rebelId,r.clock.tick,r.combatPersonnel.nations[rebelId].damageTraits);
+    r.forceSpeed.armies[a.id]=initializedArmySpeed47(r.world.custom!.seed,a.id,rebelId,r.clock.tick,stateTraitsFor47(r,rebelId).includes('CavalryTradition'));
+    r.combatPersonnel.armies[a.id]=initializedArmyCombat47(rebelId,r.clock.tick,damageTraitsFor47(r,rebelId));
     r.armyAutonomy.armies[a.id]=initialArmyDecision47();
     r.upperCombat.armies[a.id]={base:initializedArmyBase(traitProjection(r.upperCombat.nations[rebelId].traits)),initializedTick:r.clock.tick};
     moved++;

@@ -1,7 +1,7 @@
 import {officeTitle47} from './official-title-presets47';
-import {officeHolder47,type OfficeRun47} from './civilization47-offices';
+import {officeHolder47,centralIncome47,type OfficeRun47} from './civilization47-offices';
 import {memo} from 'react';
-import {stateTrait47} from './state-traits47';
+import {stateTrait47,ACTIVE_STATE_TRAITS47} from './state-traits47';
 import type {FoundingForces47} from './civilization47-forces';
 import {nationAge47} from './civilization47-origins';
 import {forceKey47} from './force-motion47';
@@ -43,10 +43,13 @@ export const CultureNationOverview47=memo(function CultureNationOverview47({run,
    <div><dt>人口</dt><dd>{number(v.population)}</dd></div>
    <div><dt>人口上限</dt><dd>{number(v.capacity)}</dd></div>
    <div><dt>{v.gold<0?'亏空':'国库'}</dt><dd>{number(Math.abs(v.gold))}</dd></div>
+   <div><dt>国运</dt><dd>{run.destiny.nations[id].destiny.toFixed(1)}</dd></div>
+   <div><dt>中央官员收入倍率</dt><dd>{centralIncome47(run as unknown as OfficeRun47,id).toFixed(3)} ×</dd></div>
+   <div><dt>财政战力倍率</dt><dd>{run.finance.nations[id].goldBattleModifier.toFixed(3)} ×</dd></div>
    <div><dt>军队数量</dt><dd>{number(v.armies)} · {number(v.troops)} 人</dd></div>
    <div><dt>战舰数量</dt><dd>{number(v.ships)}</dd></div>
    <div><dt>行省数量</dt><dd>{number(v.regions)}</dd></div>
-   {traits&&<div className="c47-state-traits"><dt>国家特性</dt><dd>{traits.length?traits.map(t=>{const d=stateTrait47(t);return d&&<span key={t} title={d.description} data-trait={t}>{d.label}</span>;}):'无'}</dd></div>}
+   {traits&&<div className="c47-state-traits"><dt>国家特性</dt><dd>{traits.length?traits.map(t=>{const d=stateTrait47(t);return d&&<span key={t} title={d.description} data-trait={t}>{d.label}{ACTIVE_STATE_TRAITS47.includes(t)?'':'（效果待还原）'}</span>;}):'无'}</dd></div>}
   </dl>
  </details>;
 });

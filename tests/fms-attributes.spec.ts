@@ -1,0 +1,30 @@
+import {test,expect} from '@playwright/test';
+import {enter,create} from './fms-culture47-fixture';
+
+test('人物四维与军队实算属性可见',async({page},info)=>{
+ test.setTimeout(150000);
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await enter(page);await create(page);
+ if(await page.getByRole('button',{name:'暂停时间',exact:true}).isVisible())await page.getByRole('button',{name:'暂停时间',exact:true}).click();
+ const map=page.getByTestId('culture47-map'),b=(await map.boundingBox())!;
+ await map.click({position:{x:b.width*.5,y:b.height*.45}});
+ const panel=page.getByRole('complementary',{name:'文化与国家详情'});
+ await expect(panel).toBeVisible();
+ const family=panel.locator('details').filter({has:page.locator('.c47-family-people')}).first();
+ await family.locator('summary').click();
+ const attributes=family.getByLabel('人物属性').first();await expect(attributes).toBeVisible();
+ for(const name of ['魅力','军事','外交','行政'])await expect(attributes).toContainText(name);
+ const numbers=await attributes.locator('b').allTextContents();expect(numbers).toHaveLength(4);
+ expect(numbers.every(n=>Number(n)>=0&&Number(n)<=100)).toBe(true);
+ await attributes.scrollIntoViewIfNeeded();await expect(attributes).toBeInViewport();
+ await page.screenshot({path:info.outputPath('person-attributes.png'),animations:'disabled'});
+ await page.getByRole('button',{name:'收起详情',exact:true}).click();
+ await page.getByRole('button',{name:/军事|军队/}).first().click();
+ const select=page.getByRole('combobox',{name:'选择部队'});
+ const army=await select.locator('optgroup[label="陆军"] option').first().getAttribute('value');expect(army).toBeTruthy();await select.selectOption(army!);
+ const stats=page.locator('.c47-military-stats');
+ for(const name of ['当前战斗效率','对军基础伤害','攻城基础伤害','初始行军速度'])await expect(stats).toContainText(name);
+ await stats.getByText('当前战斗效率',{exact:true}).scrollIntoViewIfNeeded();
+ await expect(stats.getByText('当前战斗效率',{exact:true})).toBeInViewport();
+ await page.screenshot({path:info.outputPath('army-attributes.png'),animations:'disabled'});expect(errors).toEqual([]);
+});

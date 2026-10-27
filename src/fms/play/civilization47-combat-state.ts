@@ -1,3 +1,4 @@
+import {damageTraitsFor47} from './state-traits47';
 import {fastChecks47} from './checks47';
 import original from './native-economy/character-traits.json';
 import {nativeCharacterSkills} from './native-economy/character-income';
@@ -38,7 +39,7 @@ export function initializedArmyCombat47(nationId:string,tick:number,traits:reado
   return {nationAtInitialization:nationId,initializedTick:tick,command:'central',damageTraitsAtInitialization:[...traits],...nativeDamageSnapshot47(traits)};
 }
 export function initialCombatPersonnel47(r:WarRun):CombatPersonnel47{
-  const out:CombatPersonnel47={version:1,rule:'native-personnel-web-central-v1',hullPerNativeCount:1,protrusion:'neutral-unrecovered-v1',nations:Object.fromEntries(r.world.nations.map(n=>[n.id,{damageTraits:[],leader:{leaderId:null,traitNames:[],enemyIds:[],refreshedTick:0,modifier:0}}])),armies:Object.fromEntries(r.world.armies.map(a=>[a.id,initializedArmyCombat47(a.nationId,r.clock.tick,[])]))};refreshLeaderCombat47(r,out);return out;
+  const out:CombatPersonnel47={version:1,rule:'native-personnel-web-central-v1',hullPerNativeCount:1,protrusion:'neutral-unrecovered-v1',nations:Object.fromEntries(r.world.nations.map(n=>[n.id,{damageTraits:damageTraitsFor47(r,n.id),leader:{leaderId:null,traitNames:[],enemyIds:[],refreshedTick:0,modifier:0}}])),armies:Object.fromEntries(r.world.armies.map(a=>[a.id,initializedArmyCombat47(a.nationId,r.clock.tick,damageTraitsFor47(r,a.nationId))]))};refreshLeaderCombat47(r,out);return out;
 }
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join('/')===[...keys].sort().join('/');
 const dense=(v:unknown):v is unknown[]=>Array.isArray(v)&&Object.keys(v).length===v.length&&Array.from({length:v.length},(_,i)=>Object.hasOwn(v,i)).every(Boolean);

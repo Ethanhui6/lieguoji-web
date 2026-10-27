@@ -1,3 +1,4 @@
+import {CharacterAttributes47} from './CharacterAttributes47';
 import {useState} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import type {NobilityRun47} from './civilization47-nobility';
@@ -36,7 +37,7 @@ export function CultureOffices47({run,nationId,busy,onManage,onBack}:{run:Foundi
     return <section className="c47-offices" aria-label="选择任职人选">
       <h2>选择任职人选</h2><p className="c47-menu-hint">{label(picking)} · 任命{T(picking.officeId)} · 符合条件的候选人：{list.length}</p>
       {list.length?<ol className="c47-candidates">{list.map(c=><li key={c.person.id}><button aria-pressed={chosen===c.person.id} onClick={()=>setChosen(c.person.id)}>
-        <span>{c.person.identity.name}<small>{c.person.age} 岁 · {c.person.identity.house}</small></span><b title="AI 评分综合能力、年龄、文化与宗教、家族等因素">适任度 {Math.round(c.score)}</b></button></li>)}</ol>
+        <span>{c.person.identity.name}<small>{c.person.age} 岁 · {c.person.identity.house}</small><CharacterAttributes47 person={{base:c.person.base,traits:c.person.traits??[]}}/></span><b title="AI 评分综合能力、年龄、文化与宗教、家族等因素">适任度 {Math.round(c.score)}</b></button></li>)}</ol>
         :<p>没有符合{T(picking.officeId)}任职条件的人物。</p>}
       <p className="c47-menu-hint">{person?`已选择：${person.person.identity.name}。确认后立即任命。`:'请选择一名候选人以继续。'}</p>
       <div className="c47-office-buttons"><button className="c47-primary" disabled={busy||!person||!!officeManageBlocker47(r,{type:'appoint',nationId,officeId:picking.officeId,scopeId:picking.scopeId,holderId:chosen??0})} onClick={()=>{send({type:'appoint',nationId,officeId:picking.officeId,scopeId:picking.scopeId,holderId:chosen!});setPicking(null);}}>确认任命</button><button onClick={()=>setPicking(null)}>返回总览</button></div>

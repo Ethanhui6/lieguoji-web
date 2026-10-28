@@ -1,4 +1,5 @@
 import {CharacterAttributes47} from './CharacterAttributes47';
+import {CharacterAttributeDetails47} from './CharacterAttributeDetails47';
 import {useState} from 'react';
 import type {FoundingForces47} from './civilization47-forces';
 import {isoPlusDays} from './civilization47-iso-calendar';
@@ -26,6 +27,7 @@ export function CultureFamilyPeople47({run,ids,leaderId,busy,onAction}:{run:Foun
   const pick=(type:FamilyEdit47['type'])=>{const a=FAMILY_ACTIONS47.find(a=>a.type===type)!;if(a.confirm)setStep({kind:'confirm',type});else if(type==='age')setStep({kind:'age',text:String(p.age),error:null});else if(type==='spouse')setStep({kind:'spouse'});else done(edit(type));};
   return <li key={p.id} data-person-id={p.id} aria-current={open||undefined}>
    {onAction?<button className="c47-person-pick" aria-expanded={!!open} onClick={()=>{setSelected(open?null:p.id);setStep(null);}}>{body}</button>:body}
+   {open&&<CharacterAttributeDetails47 person={p}/>}
    {open&&<div className="c47-family-actions" role="group" aria-label="家族行为">
     {step?.kind==='confirm'?<><p>{FAMILY_ACTIONS47.find(a=>a.type===step.type)!.confirm}</p><button className="is-danger" disabled={busy} onClick={()=>done(edit(step.type))}>确定</button><button onClick={()=>setStep(null)}>取消</button></>
      :step?.kind==='age'?<form className="c47-family-age" onSubmit={e=>{e.preventDefault();submitAge(step.text);}}>

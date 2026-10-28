@@ -207,3 +207,12 @@
 - 针对性 19 项单测通过，包含真正 advanceArmyTravel47 的同军队、同路线、同时间移动距离对照。属性、连续推进、军队调遣三种尺寸共 9 项浏览器测试通过；军队面板地形行改为全宽后属性 3 项再次通过，断言面板速度与初速、兵种、地形的乘积一致。
 - 全量 npm run check 的 lint/typecheck 通过；1942 项单测通过、2 项 full-map-terrain 超过默认 5 秒、1 项跳过，独立复测该文件 8/8 通过。生产构建与 42 项产物白名单通过。原始日志 release-0.5.42-check.log、attributes-042-map-retest.log、attributes-042-build.log、attributes-042-browser.log、attributes-042-final-browser.log 均在 .autopilot。
 - 完整浏览器另行执行首错停止，仍在 tests/fms-actions65.spec.ts:16 的隐藏 .c47-nations button 超时：1 失败、203 未运行，日志 .autopilot/attributes-042-full-browser.log。未改动或跳过原测试，不声称全套通过。下一批需要修复这项旧入口测试，地形路径几何仍需继续向原作靠拢。
+
+### 2026-10-27 · Codex 0.5.43 人物属性明细
+- 基线干净 main 6f466383 / 0.5.42，fetch 后远端无新增提交；继续当前共享工作区。
+- 原作只读核查 GetMilitaryLeadershipSkill / GetMilitaryLeader / CalculateLeadershipModifierInternal，审计在 .autopilot/fms-audit/binary/attribute-043。统率技能调用没有把 LeadershipModifierCap 当额外倍率，不擅自添加。
+- 新增 character-attribute-info47 与 CharacterAttributeDetails47，家族人物选中后显示基础、修正、当前值；调用现有原作税收/叛乱抵抗/海战/敌国战斗函数，说明领袖条件和最终概率边界。改革家明确待还原。本版主要是现有属性的可读明细，不改变模拟规则。
+- 3 项单测通过（含原作结算/伤害/随机叛乱对照）；三种尺寸属性和家族行为 9 项浏览器测试通过。日志 .autopilot/attributes-043-unit.log、attributes-043-browser.log。已查看桌面/手机截图：明细表格可读，手机面板外既有黑块仍在，不作真机验收。
+- 本批文件：CultureFamilyPeople47、culture47.css、新增人物明细与模型/测试、fms-attributes.spec.ts、版本和文档；发布后释放。
+- 全量检查 .autopilot/release-0.5.43-check.log：lint/typecheck、214 文件/1947 单测通过（1 跳过），生产构建/42 产物白名单通过。
+- 完整浏览器首错停止仍在 fms-actions65:16 的隐藏 .c47-nations button 超时，1 失败、203 未运行。保留失败，不跳过 hook，不声称全套通过。正式站版本/提交及线上属性检查在发布后另核对。

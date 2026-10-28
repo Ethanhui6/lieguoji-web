@@ -418,3 +418,9 @@
 .c47-app .c47-person-attributes>span{display:flex;flex-wrap:wrap;gap:4px 10px}
 .c47-app .c47-person-attributes>span>span{display:inline;white-space:nowrap}
 .c47-app .c47-person-attributes small span{display:inline}
+.c47-app .c47-attribute-details{padding:8px 10px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.c47-app .c47-attribute-details table{width:100%;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.c47-app .c47-attribute-details th,.c47-app .c47-attribute-details td{padding:4px 2px;text-align:right;border-bottom:1px solid rgba(80,65,45,.15)}
+.c47-app .c47-attribute-details th:first-child{text-align:left}
+.c47-app .c47-attribute-details h4{margin:8px 0 4px}
+.c47-app .c47-attribute-details p{margin:4px 0}

@@ -16,6 +16,19 @@ test('人物四维与军队实算属性可见',async({page},info)=>{
  for(const name of ['魅力','军事','外交','行政'])await expect(attributes).toContainText(name);
  const numbers=await attributes.locator('b').allTextContents();expect(numbers).toHaveLength(4);
  expect(numbers.every(n=>Number(n)>=0&&Number(n)<=100)).toBe(true);
+ await attributes.click();
+ const detail=family.getByRole('region',{name:'人物属性明细'});
+ await expect(detail).toBeVisible();
+ const rows=detail.locator('tbody tr');await expect(rows).toHaveCount(4);
+ for(const row of await rows.all()){
+  const [base,modifier,current]=(await row.locator('td').allTextContents()).map(Number);
+  expect(Math.abs(current-Math.max(0,Math.min(100,base+modifier)))).toBeLessThan(.11);
+ }
+ await detail.scrollIntoViewIfNeeded();
+ await expect(detail).toContainText('担任领袖时');
+ await expect(detail).toContainText('不是最终概率');
+ expect(await detail.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath('person-attribute-details.png'),animations:'disabled'});
  await attributes.scrollIntoViewIfNeeded();await expect(attributes).toBeInViewport();
  await page.screenshot({path:info.outputPath('person-attributes.png'),animations:'disabled'});
  await page.getByRole('button',{name:'收起详情',exact:true}).click();

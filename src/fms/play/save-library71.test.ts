@@ -4,7 +4,7 @@ import {grid} from './fixture.test-support';
 import {Culture47Session,type Culture47Journal} from './culture47-session';
 import {CULTURE47_AUTOSAVE,CULTURE47_LIBRARY_DATABASE,culture47ScopeOf,deleteCulture47Named,listCulture47Saves,loadCulture47Named,sanitizeSaveName47,saveCulture47Named,defaultSaveName47,culture47SlotRevision} from './culture47-library';
 import {CULTURE47_FRESH_DATABASE,CULTURE47_GENERATIONS_DATABASE,saveCulture47} from './culture47-storage';
-import {advanceAutoSave47,clampAutoSaveMinutes,DEFAULT_CULTURE47_CONFIG} from './culture47-config';
+import {advanceAutoSave47,canCancelAutoSave47,clampAutoSaveMinutes,DEFAULT_CULTURE47_CONFIG} from './culture47-config';
 import {exportHistoryText47} from './culture47-export';
 
 let journal:Culture47Journal;
@@ -66,6 +66,10 @@ describe('original AutoSaveManager',()=>{
     expect(advanceAutoSave47(294,1.5,5)).toEqual({elapsed:295.5,countdown:5,due:false});
     expect(advanceAutoSave47(295.5,4,5)).toEqual({elapsed:299.5,countdown:1,due:false});
     expect(advanceAutoSave47(299.5,.6,5)).toEqual({elapsed:0,countdown:null,due:true});
+    expect(canCancelAutoSave47(295.5,5,false)).toBe(true);
+    expect(canCancelAutoSave47(294,5,false)).toBe(false);
+    expect(canCancelAutoSave47(299.5,5,true)).toBe(false);
+    expect(canCancelAutoSave47(0,5,false)).toBe(false);
   });
 });
 describe('original HistoryManager.ExportHistoryEvents',()=>{

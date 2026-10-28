@@ -1,0 +1,102 @@
+name: iOS unsigned IPA
+
+# Manual only. macOS minutes are not spent on push or pull request.
+# Produces an unsigned device .ipa the owner re-signs locally.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    name: Unsigned device IPA
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      CI: 'true'
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1; verified in the existing CI workflow
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0; verified in the existing CI workflow
+        with:
+          node-version: '24.18.1'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Show Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build the web app
+        run: npm run build
+
+      - name: Copy the web build into the iOS project
+        run: npm run ios:sync
+
+      - name: Build an unsigned device app
+        run: |
+          version=$(node -p "require('./package.json').version")
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
+            VALIDATE_PRODUCT=NO \
+            MARKETING_VERSION="$version" \
+            build
+
+      - name: Package the unsigned IPA
+        run: |
+          set -euo pipefail
+          app=$(find ios/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -1)
+          test -n "$app"
+          test ! -e "$app/embedded.mobileprovision"
+          name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$app/Info.plist")
+          test "$name" = "列国纪"
+          short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
+          test "$short" = "$(node -p "require('./package.json').version")"
+          exe=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")
+          file "$app/$exe" | grep -q 'arm64'
+          sign=$(codesign -dv "$app" 2>&1 || true)
+          echo "$sign"
+          if printf '%s\n' "$sign" | grep -q 'Authority='; then
+            echo 'Refusing to upload an IPA signed with a certificate.'
+            exit 1
+          fi
+          stage="${RUNNER_TEMP}/ipa"
+          rm -rf "$stage"
+          mkdir -p "$stage/Payload"
+          cp -R "$app" "$stage/Payload/"
+          ditto -c -k --keepParent "$stage/Payload" lieguoji-unsigned.ipa
+          unzip -l lieguoji-unsigned.ipa | head -n 20
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in the existing CI workflow
+        with:
+          name: lieguoji-unsigned-ipa
+          path: lieguoji-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

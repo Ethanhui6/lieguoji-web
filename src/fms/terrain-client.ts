@@ -288,7 +288,7 @@ export class FmsTerrainClient {
       snapshot.hill = { options: { ...hillOptions }, centerCell, selected: selectFmsHillCells(document, hillOptions) };
     }
     if (!this.worker) {
-      try { this.worker = new Worker(new URL('./terrain.worker.ts', import.meta.url), { type: 'module' }); }
+      try { this.worker = new Worker(new URL('./terrain.worker.ts', import.meta.url)); }
       catch { throw new FmsTerrainClientError('worker-start', '无法启动地形线程，请重试。'); }
       const worker = this.worker;
       worker.onmessage = event => { if (this.worker === worker) this.receive(event.data); };

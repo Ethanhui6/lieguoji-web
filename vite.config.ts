@@ -1,5 +1,5 @@
 import {fingerprintCulture47} from './scripts/fms-culture47-fingerprint.ts';
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { execFileSync } from 'node:child_process';
 import {readFileSync} from 'node:fs';
@@ -16,8 +16,23 @@ const version=JSON.parse(readFileSync('package.json','utf8')).version as string;
 const stamps=JSON.parse(readFileSync('scripts/rule-stamps.json','utf8')) as Record<string,string>;
 const culture47Fingerprint=fingerprintCulture47();
 const define=Object.fromEntries([...Object.entries(stamps),['__CULTURE47_ENGINE__',culture47Fingerprint],['__BUILD_SHA__',commit]].map(([k,v])=>[k,JSON.stringify(v)]));
+// Vite marks module/preload/style tags `crossorigin`, which forces a CORS-anonymous
+// fetch. Capacitor serves the packaged app on the capacitor:// scheme and only
+// adds Access-Control-Allow-Origin while live-reloading (WebViewAssetHandler).
+// WebKit refuses that CORS mode for a custom scheme (WebKit bug 201180), so the
+// module graph never runs and the map stays blank. Same-origin loads do not need
+// the attribute; Cloudflare still serves these files from the page origin.
+const stripCrossOrigin: Plugin = {
+  name: 'strip-crossorigin',
+  transformIndexHtml: {
+    order: 'post',
+    handler(html) {
+      return html.replace(/\s+crossorigin(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/g, '');
+    },
+  },
+};
 export default defineConfig({
- plugins:[react(),{name:'game-build-metadata',generateBundle(){this.emitFile({type:'asset',fileName:'build.json',source:JSON.stringify({version,commit,culture47Fingerprint})});}}],
+ plugins:[react(),stripCrossOrigin,{name:'game-build-metadata',generateBundle(){this.emitFile({type:'asset',fileName:'build.json',source:JSON.stringify({version,commit,culture47Fingerprint})});}}],
  define,
  // Local runs use up to 6 cores; set VITEST_MAX_WORKERS=1 on small machines (the manual GitHub run does).
  test:{include:['src/**/*.test.ts'],maxWorkers:Number(process.env.VITEST_MAX_WORKERS??Math.max(1,Math.min(6,Math.floor(availableParallelism()/2))))},

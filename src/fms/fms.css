@@ -10,7 +10,7 @@
 .fms-app h1,.fms-app h2,.fms-app p { margin:0; }
 .fms-map { position:absolute;inset:0;touch-action:none; }
 .fms-map canvas { display:block;width:100%;height:100%;touch-action:none;outline:none; }
-.fms-header { position:absolute;left:24px;right:24px;top:max(20px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;pointer-events:none; }
+.fms-header { position:absolute;left:24px;right:24px;top:max(20px,var(--safe-top, env(safe-area-inset-top)));display:flex;align-items:center;justify-content:space-between;pointer-events:none; }
 .fms-header>div { color:#f4efd9;text-shadow:0 1px 5px #243e4c; }
 .fms-header h1 { font-size:22px;font-weight:500;letter-spacing:3px;font-family:"Songti SC",SimSun,serif; }
 .fms-kicker { font-size:10px;letter-spacing:2px;opacity:.8; }
@@ -27,7 +27,7 @@
 .fms-zoom { position:absolute;right:24px;top:38%;display:flex;flex-direction:column;gap:4px; }
 .fms-zoom button { width:44px;padding:0;font-size:22px;background:#e4e5d3ed; }
 .fms-zoom output { color:#e1e7d9;font-size:11px;text-align:center;font-variant-numeric:tabular-nums; }
-.fms-bottom { position:absolute;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);display:flex;flex-direction:column;align-items:center; }
+.fms-bottom { position:absolute;left:50%;bottom:max(24px,var(--safe-bottom, env(safe-area-inset-bottom)));transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);display:flex;flex-direction:column;align-items:center; }
 .fms-status { max-width:650px;margin-bottom:12px;padding:5px 12px;border-radius:2px;background:#2c4854db;color:#e3e9dc;font-size:12px;text-align:center;pointer-events:none; }
 .fms-status:empty { display:none; }
 .fms-toolbar { display:flex;gap:12px;padding:6px;background:var(--paper);border:1px solid #a4a892;box-shadow:0 4px 20px #17323e4d;border-radius:4px; }
@@ -70,9 +70,9 @@
 .fms-lock-mode { align-self:stretch;display:flex;align-items:center;justify-content:space-between;background:#e5d6b3;border:1px solid #a08a60;padding:3px 8px;margin-bottom:5px; }
 .fms-lock-mode button { min-height:44px;border:0;background:transparent; }
 @media(max-width:600px) {
- .fms-header { left:16px;right:16px;top:max(14px,env(safe-area-inset-top)); }
+ .fms-header { left:16px;right:16px;top:max(14px,var(--safe-top, env(safe-area-inset-top))); }
  .fms-header h1 { font-size:20px; }
- .fms-bottom { width:calc(100% - 24px);max-width:500px;bottom:max(12px,env(safe-area-inset-bottom)); }
+ .fms-bottom { width:calc(100% - 24px);max-width:500px;bottom:max(12px,var(--safe-bottom, env(safe-area-inset-bottom))); }
  .fms-toolbar { width:100%;gap:0;padding:5px;justify-content:space-between; }
  .fms-toolbar nav { flex:1;gap:0; }
  .fms-toolbar nav button { flex:1;min-width:44px;padding:5px 3px;flex-direction:column;gap:5px;font-size:11px; }

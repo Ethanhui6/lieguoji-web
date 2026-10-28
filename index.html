@@ -1,2 +1,27 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/><style>html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;touch-action:manipulation}*{touch-action:manipulation}body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}img,canvas{-webkit-user-drag:none}</style><meta name="theme-color" content="#102b3b"/><meta name="description" content="列国纪：亲手画出大陆，生成地形，创建国家与首都，观察架空世界的兴亡。"/><link rel="icon" href="/favicon.svg"/><title>列国纪 · 世界工坊</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;touch-action:manipulation}
+*{touch-action:manipulation;-webkit-touch-callout:none}
+body{-webkit-user-select:none;user-select:none}
+input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+img,canvas{-webkit-user-drag:none;-webkit-touch-callout:none}
+#boot-diagnostic[hidden]{display:none}
+#boot-diagnostic{position:fixed;z-index:10000;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));max-height:46vh;overflow:auto;margin:0;padding:12px 14px;border-radius:12px;background:#fff7e8;color:#2a2116;font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;white-space:pre-wrap;box-shadow:0 8px 28px #0006;pointer-events:none}
+#boot-diagnostic[data-kind=error]{pointer-events:auto;background:#fff1e8;border:1px solid #a12a1f}
+</style>
+<meta name="theme-color" content="#102b3b"/>
+<meta name="description" content="列国纪：亲手画出大陆，生成地形，创建国家与首都，观察架空世界的兴亡。"/>
+<link rel="icon" href="/favicon.svg"/>
+<title>列国纪 · 世界工坊</title>
+</head>
+<body>
+<div id="boot-diagnostic" role="status" hidden></div>
+<div id="root"></div>
+<script src="/boot-diagnostic.js"></script>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

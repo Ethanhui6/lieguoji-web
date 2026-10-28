@@ -6,6 +6,7 @@
     "contentInset": "never",
     "scrollEnabled": false,
     "backgroundColor": "#102b3b",
-    "allowsLinkPreview": false
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile"
   }
 }

@@ -1,0 +1,93 @@
+/* Safe-area tokens. --sat/--sab/--sal/--sar are published by the iOS shell when
+   env() stays 0 (Capacitor content inset "never" on some WebKit builds).
+   Without those variables this resolves to the same env() the web app already used. */
+:root {
+  --sat: 0px;
+  --sab: 0px;
+  --sal: 0px;
+  --sar: 0px;
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--sat));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--sab));
+  --safe-left: max(env(safe-area-inset-left, 0px), var(--sal));
+  --safe-right: max(env(safe-area-inset-right, 0px), var(--sar));
+  --keyboard-inset: 0px;
+}
+
+/* The class is set only for the Capacitor shell (or an explicit proof flag).
+   Phone browsers and desktop keep the rules above them. */
+html.ios-shell,
+html.ios-shell body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.ios-shell .fms-app,
+html.ios-shell .c47-app,
+html.ios-shell .fms-play {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: var(--keyboard-inset);
+  height: auto;
+}
+
+html.ios-shell .fms-app button,
+html.ios-shell .c47-app button,
+html.ios-shell .fms-play button,
+html.ios-shell .c47-app summary,
+html.ios-shell .fms-play summary {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+html.ios-shell input,
+html.ios-shell textarea,
+html.ios-shell select {
+  font-size: 16px;
+}
+
+html.ios-shell .fms-toolbar,
+html.ios-shell .c47-app .c47-bar,
+html.ios-shell .fms-header-actions {
+  flex-wrap: wrap;
+}
+
+html.ios-shell .fms-app .fms-generation {
+  top: calc(var(--safe-top) + 72px);
+  left: max(12px, var(--safe-left));
+  max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - var(--keyboard-inset) - 150px);
+}
+
+html.ios-shell .c47-app :is(.c47-menu, .c47-map-menu, .c47-ai-global, .c47-territory, .c47-panel) {
+  max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - var(--keyboard-inset) - 96px);
+}
+
+@media (max-width: 600px) {
+  html.ios-shell .c47-app :is(.c47-menu, .c47-map-menu, .c47-ai-global, .c47-territory) {
+    left: max(8px, var(--safe-left));
+    right: max(8px, var(--safe-right));
+    bottom: calc(max(8px, var(--safe-bottom)) + var(--keyboard-inset) + 54px);
+  }
+  html.ios-shell .fms-bottom,
+  html.ios-shell .c47-app .c47-controls {
+    left: max(8px, var(--safe-left));
+    right: max(8px, var(--safe-right));
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+}
+
+@media (max-height: 500px) {
+  html.ios-shell .fms-bottom { bottom: max(4px, var(--safe-bottom)); }
+  html.ios-shell .fms-settings,
+  html.ios-shell .fms-app .fms-generation,
+  html.ios-shell .c47-app :is(.c47-menu, .c47-map-menu, .c47-ai-global, .c47-territory, .c47-panel) {
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - var(--keyboard-inset) - 72px);
+  }
+  html.ios-shell .c47-app .c47-rail { top: calc(var(--safe-top) + 48px); }
+}

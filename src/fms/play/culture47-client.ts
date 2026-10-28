@@ -35,7 +35,7 @@ export class Culture47Client {
       // cannot be reached) the local Worker computes as before.
       const host=remoteHost47();
       if(host)try{return await connectRemote47(host,this.engine,this.boot.signal);}catch{/* falls back to the local Worker */}
-      return new Worker(new URL('./culture47.worker.ts',import.meta.url),{type:'module'});
+      return new Worker(new URL('./culture47.worker.ts',import.meta.url));
     }
     throw Error('此存档来自旧版本，新版本不再支持，请新建世界。');
   }

@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 
 const root = path.resolve('dist');
-const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects', 'terrain-licenses.txt']);
+const requiredFiles = new Set(['index.html', 'build.json', 'favicon.svg', '_headers', '_redirects', 'terrain-licenses.txt', 'boot-diagnostic.js']);
 const assetName = /^[A-Za-z0-9][A-Za-z0-9._-]*-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
 const files = [];
 // Exact authorized clip atlas; accepting this artifact does not allow other images or raw Unity files.
@@ -88,6 +88,10 @@ for (const name of ['culture47', 'terrain', 'coast', 'biome']) {
 if (!files.some(file => /^assets\/index-[A-Za-z0-9_-]{8}\.js$/.test(file))) {
   reject('assets/index-<hash>.js', 'required application entry is missing');
 }
+const builtHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+if (/\scrossorigin(?:=|\s|>)/.test(builtHtml)) reject('index.html', 'crossorigin would block module scripts on the iOS capacitor:// page');
+if (!builtHtml.includes('src="/boot-diagnostic.js"')) reject('index.html', 'classic iOS boot diagnostic script is missing');
+if (!builtHtml.includes('viewport-fit=cover')) reject('index.html', 'viewport-fit=cover is required for iOS safe areas');
 for(const track of Object.keys(musicTracks))if(files.filter(file=>file.startsWith(`assets/${track}-`)&&file.endsWith('.m4a')).length!==1)reject(`assets/${track}.m4a`,'exactly one reviewed music track required');
 if(files.filter(file=>battleAtlasName.test(file.replace(/^assets\//,''))).length!==1)reject('battle-sword','exactly one reviewed battle animation atlas required');
 console.log(`Publish audit: ${files.length} approved game artifacts; only required root files, hashed JS/CSS, the exact reviewed battle atlas, parchment, map font subset and five music tracks.`);

@@ -52,7 +52,7 @@ export class FmsBiomeClient implements FmsBiomeComputer {
       const cancel=()=>finish(aborted()),timer=setTimeout(()=>finish(Error('气候计算超时，已保留高度视图；可以重新选择气候地貌重试。')),this.timeoutMs);
       this.cancel=cancel;signal.addEventListener('abort',cancel,{once:true});
       try{
-        worker=this.worker??new Worker(new URL('./biome.worker.ts',import.meta.url),{type:'module'});this.worker=worker;
+        worker=this.worker??new Worker(new URL('./biome.worker.ts',import.meta.url));this.worker=worker;
         worker.onmessage=event=>{
           if(settled)return;
           const raw=event.data as FmsBiomeResponse|undefined;

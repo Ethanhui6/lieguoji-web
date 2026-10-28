@@ -1,3 +1,4 @@
+import { reportMapCanvas } from './boot-report';
 import { displayResolution } from './play/display-budget47';
 import { Application, Container, Geometry, GlProgram, Graphics, Mesh, Shader, UniformGroup, type BufferImageSource } from 'pixi.js';
 // Pixi's no-eval polyfill preserves the existing strict production CSP.
@@ -131,7 +132,7 @@ export class FmsRenderer {
     this.app.renderer.background.color = FMS_OCEAN_APPEARANCES[this.oceanAppearanceState].background;
     this.canvas.setAttribute('aria-label','创世地图画布'); this.canvas.setAttribute('data-testid','fms-canvas'); this.canvas.tabIndex = 0;
     this.canvas.dataset.oceanAppearance = this.oceanAppearanceState;
-    host.appendChild(this.canvas); this.app.stage.addChild(this.scene);
+    host.appendChild(this.canvas); this.app.stage.addChild(this.scene); reportMapCanvas(this.canvas);
     this.canvas.addEventListener('webglcontextlost', () => { this.contextLost = true; this.biomeFields.close(); });
   }
   /** Change only ocean colors and clear color; geometry, coast-distance texture, picking and saved data stay intact.

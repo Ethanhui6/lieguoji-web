@@ -1,5 +1,21 @@
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
+import { reportBoot } from './fms/boot-report';
+import './fms/ios-shell.css';
+reportBoot('module');
+const keyboardInset = () => {
+  if (!document.documentElement.classList.contains('ios-shell')) return;
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+  const apply = () => {
+    const overlap = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+    document.documentElement.style.setProperty('--keyboard-inset', `${overlap}px`);
+  };
+  viewport.addEventListener('resize', apply);
+  viewport.addEventListener('scroll', apply);
+  apply();
+};
+keyboardInset();
 // Only the map owns pinch gestures. Native panel scrolling and control clicks
 // must not be cancelled/replayed by a document-wide touchend handler.
 // touch-action:none handles Pointer Events; Safari also emits gesture events.

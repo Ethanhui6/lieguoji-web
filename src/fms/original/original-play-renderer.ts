@@ -1,3 +1,4 @@
+import { reportMapCanvas } from '../boot-report';
 import { displayResolution } from '../play/display-budget47';
 import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import {drawOriginalRelief} from './original-relief';
@@ -47,7 +48,7 @@ export class OriginalPlayRenderer {
     await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), resolution: displayResolution(), autoDensity: true, antialias: true, autoStart: false, background: '#6b6150', preference: 'webgl' });
     this.initialized = true;
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
-    host.appendChild(this.canvas); this.canvas.tabIndex = 0;
+    host.appendChild(this.canvas); this.canvas.tabIndex = 0; reportMapCanvas(this.canvas);
     const texture = await Assets.load<Texture>(parchmentUrl);
     if (this.destroyed) return;
     this.parchment.texture = texture; this.parchment.blendMode = 'multiply';

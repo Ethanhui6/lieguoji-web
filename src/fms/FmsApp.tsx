@@ -1,3 +1,4 @@
+import {reportBoot,reportMapCanvas} from './boot-report';
 import {markWorldOpen47,resumeWorld47,worldWasOpen47} from './play/world-resume47';
 import {GenerationPanel56} from './GenerationPanel56';
 import {PlayIcon,type PlayIconName} from './play/PlayIcon';
@@ -65,6 +66,7 @@ export default function FmsApp() {
   const [playTerrain,setPlayTerrain]=useState<FmsDocument|null>(null);
   const playingRef=useRef(false);playingRef.current=!!playTerrain;
   const host = useRef<HTMLDivElement>(null), session = useRef<Session | null>(null), stroke = useRef<Stroke | null>(null);
+  const saveRef = useRef<((quiet?: boolean) => Promise<void>) | null>(null);
   const [tool,setTool] = useState<Tool>('outline'), [radius,setRadius] = useState(48), [height,setHeight] = useState(45), [expanded,setExpanded] = useState(false);
   const [ready,setReady] = useState(false), [fatal,setFatal] = useState(''), [busy,setBusy] = useState(false), [notice,setNotice] = useState('正在读取本机地图…');
   const busyRef=useRef(false), renderUnavailable=useRef(false);
@@ -115,7 +117,7 @@ export default function FmsApp() {
         if(disposed)return;
         setTerrainDisplay(state.requested);
         setDisplayNotice(state.error?'气候地貌暂不可用，已保留当前地图的高度视图；可重新选择重试。':state.pending?'正在计算气候与河流，暂显示高度；可以继续移动、缩放。':'');
-      },error=>{if(!disposed){renderUnavailable.current=true;setFatal(messageOf(error));setNotice('地图显示未能更新，未保存的绘图仍可保存。');}}); await renderer.init(host.current!); if(disposed)return;
+      },error=>{if(!disposed){const message=messageOf(error);renderUnavailable.current=true;setFatal(message);setNotice('地图显示未能更新，未保存的绘图仍可保存。');reportBoot('error',message);}}); await renderer.init(host.current!); if(disposed)return; reportMapCanvas(renderer.canvas);
       // A newly opened/hidden app panel can briefly have no layout size. Match
       // the renderer's safe initial extent; ResizeObserver fits its real size.
       const viewport={width:Math.max(1,host.current!.clientWidth),height:Math.max(1,host.current!.clientHeight)};
@@ -157,11 +159,13 @@ export default function FmsApp() {
       canvas.addEventListener('lostpointercapture',event=>s.gestures.cancelPointer(event.pointerId),options);
       canvas.addEventListener('wheel',event=>{event.preventDefault();if(!renderUnavailable.current)s.gestures.wheel(point(event),event.deltaY);},{...options,passive:false});
       canvas.addEventListener('contextmenu',event=>event.preventDefault(),options);
-      canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();renderUnavailable.current=true;s.gestures.reset();cancelTerrain(false);setNotice('未确认的地形已取消；已提交的地图仍可保存。');setFatal('地图显示连接中断。未保存的绘图仍在内存中，请先保存，再重新打开。');},options);
+      canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();renderUnavailable.current=true;s.gestures.reset();cancelTerrain(false);setNotice('未确认的地形已取消；已提交的地图仍可保存。');setFatal('地图显示连接中断。未保存的绘图仍在内存中，请先保存，再重新打开。');reportBoot('error','WebGL 上下文丢失');},options);
       window.addEventListener('blur',()=>s.gestures.reset(),options);
-      window.addEventListener('pagehide',()=>s.gestures.reset(),options);
+      const persist=()=>{if(unsaved(s))void saveRef.current?.(true);};
+      window.addEventListener('pagehide',()=>{s.gestures.reset();persist();},options);
       window.addEventListener('beforeunload',event=>{if(unsaved(s)||terrainPhaseRef.current!=='idle'){event.preventDefault();event.returnValue='';}},options);
-      documentVisibility(options,()=>s.gestures.reset());
+      // `document` in this function is the map document, not the page.
+      window.document.addEventListener('visibilitychange',()=>{if(window.document.hidden){s.gestures.reset();persist();}},options);
       window.addEventListener('keydown',event=>{
         if(playingRef.current)return;
         if(event.key==='Escape'){s.gestures.interrupt();if(terrainPhaseRef.current!=='idle')cancelTerrain();setExpanded(false);}
@@ -173,28 +177,28 @@ export default function FmsApp() {
       observer=new ResizeObserver(()=>{
         const size={width:host.current?.clientWidth??0,height:host.current?.clientHeight??0};
         if(size.width<=0||size.height<=0||(size.width===s.viewport.width&&size.height===s.viewport.height))return;
-        s.gestures.interrupt();s.camera=resizeCamera(s.camera,s.viewport,size,s.history.document);s.viewport=size;s.renderer.resize(size.width,size.height);s.renderer.setCamera(s.camera);refresh(s);
+        s.gestures.interrupt();s.camera=resizeCamera(s.camera,s.viewport,size,s.history.document);s.viewport=size;s.renderer.resize(size.width,size.height);s.renderer.setCamera(s.camera);reportMapCanvas(s.renderer.canvas);refresh(s);
       }); observer.observe(host.current!);
       // A tab the browser reloaded while a world was open (e.g. iOS freeing memory) goes back into that world.
       if(worldWasOpen47()){setPlayTerrain(structuredClone(s.history.document));resumeWorld47();}
       refresh(s);setReady(true);setNotice(saved?.requiresProtectionUpgrade?'保护存档损坏，已恢复不含保护区域的旧备份。重新启用保护后才能保存。':saved?(saved.recovery==='backup'?'已从有效备份恢复。确认地图后保存可修复当前记录。':'已恢复本机地图，可以继续绘制。'):'先描一块大陆，再用陆地与海洋笔刷修改。');
     };
-    void start().catch(error=>{if(!disposed){setFatal(messageOf(error));setNotice('已有存档未被覆盖。');}});
+    void start().catch(error=>{if(!disposed){const message=messageOf(error);setFatal(message);setNotice('已有存档未被覆盖。');reportBoot('error',message);}});
     return()=>{disposed=true;lifetime.abort();generationToken.current++;terrainAbort.current?.abort();terrainClient.current?.close();terrainClient.current=null;coastClient.current?.close();coastClient.current=null;terrainCandidate.current=null;observer?.disconnect();session.current?.gestures.reset();session.current=null;renderer?.destroy();};
   },[]);
 
-  function documentVisibility(options: { signal: AbortSignal }, reset: () => void) { document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();},options); }
   const choose = (next:Tool) => {setGenerationOpen(false);session.current?.gestures.interrupt();setTool(next);setNotice(tools.find(t=>t.id===next)!.help);if(next==='lock'||next==='unlock'||next==='hill'||next==='template')setExpanded(false);};
   const historyAction = (redo:boolean) => {const s=session.current;if(!s||busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();const doc=redo?s.history.redo():s.history.undo();showDocument(s,doc);refresh(s);setNotice(redo?'已重做上一笔。':'已撤销上一笔。');};
   const zoom = (factor:number) => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=zoomCameraAt(s.camera,factor,{x:s.viewport.width/2,y:s.viewport.height/2},s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
   const fit = () => {const s=session.current;if(!s||renderUnavailable.current)return;s.gestures.interrupt();s.camera=fitCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);refresh(s);};
-  const save = async () => {
-    const s=session.current;if(!s||busyRef.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();busyRef.current=true;setBusy(true);setNotice('正在保存到此浏览器…');
+  const save = async (quiet=false) => {
+    const s=session.current;if(!s||busyRef.current||terrainPhaseRef.current!=='idle')return;s.gestures.interrupt();busyRef.current=true;setBusy(true);if(!quiet)setNotice('正在保存到此浏览器…');
     const captured:FmsDocument=s.history.document,climate=s.history.climate;
-    try {const saved=await saveFmsDocument(captured,s.storedRevision,climate);if(session.current!==s)return;s.storedRevision=saved.storedRevision;s.savedDocumentRevision=captured.revision;s.savedPrecipitation=climate.precipitation;refresh(s);setNotice('已保存到此浏览器，刷新后可以继续。');}
+    try {const saved=await saveFmsDocument(captured,s.storedRevision,climate);if(session.current!==s)return;s.storedRevision=saved.storedRevision;s.savedDocumentRevision=captured.revision;s.savedPrecipitation=climate.precipitation;refresh(s);if(!quiet)setNotice('已保存到此浏览器，刷新后可以继续。');}
     catch(error){if(session.current===s)setNotice(messageOf(error));}
     finally{busyRef.current=false;setBusy(false);}
   };
+  saveRef.current=save;
   function cancelTerrain(announce=true) {
     generationToken.current++;terrainAbort.current?.abort();terrainAbort.current=null;
     const s=session.current, hadPreview=terrainCandidate.current!==null, resized=terrainCandidate.current?.kind==='full-map'&&!!terrainCandidate.current.switchTo;

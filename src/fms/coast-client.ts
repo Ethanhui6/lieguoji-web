@@ -31,7 +31,8 @@ export class FmsCoastClient {
     assertFmsDocument(document);if(!(kind==='refine-coast'?validFmsCoastOptions(options):validFmsCoastSmoothOptions(options)))throw failMessage();
     const source=structuredClone(document),chosen={...options},id=++this.requestId;
     if(!this.worker){
-      this.worker=new Worker(new URL('./coast.worker.ts',import.meta.url),{type:'module'});
+      // Classic worker: a module worker is a CORS fetch, which WebKit drops on capacitor://.
+      this.worker=new Worker(new URL('./coast.worker.ts',import.meta.url));
       const worker=this.worker;
       worker.onmessage=event=>{if(this.worker===worker)this.receive(event.data);};
       worker.onerror=()=>{if(this.worker===worker)this.fail(new Error('海岸线程运行失败，原地图未改变。'));};

@@ -28,7 +28,7 @@ npm run dev
 
 占位 Bundle ID 写在 `capacitor.config.json` 的 `appId`。改完后重新跑上面的工作流（工作流会执行 `npm run ios:sync`，把标识写进 Xcode 工程）。工作流拒绝带 Apple 证书的包。不要把证书、描述文件或私钥放进仓库。
 
-横屏和竖屏都可以。画面铺满屏幕，刘海和底部横条沿用网页已有的安全区留白。
+横屏和竖屏都可以。状态栏保留（深色内容），地图铺满屏幕，刘海和底部横条用安全区留白。壳会把真实 insets 写成 `--sat` 等变量，避免 `env(safe-area-inset-*)` 在 WebView 里变成 0 时控件钻进刘海。切到后台时，未保存的地图和进行中的世界会写入本机存档。
 
 ## 目录
 - `src/fms` 游戏：地图编辑与生成（FmsApp）、文化世界与推演（`play/`，culture47 引擎运行在 Web Worker）。

@@ -91,3 +91,54 @@ html.ios-shell .c47-app :is(.c47-menu, .c47-map-menu, .c47-ai-global, .c47-terri
   }
   html.ios-shell .c47-app .c47-rail { top: calc(var(--safe-top) + 48px); }
 }
+
+/* Phone HUD dimensions share the 44px touch target, including native safe areas.
+   Desktop selectors/layout remain untouched. Keep rows separate, never wrap a
+   fixed-height header over the next row. Landscape rails scroll independently. */
+@media (max-width: 600px), (max-height: 500px) and (pointer: coarse) {
+  html:root .fms-app { --editor-top: max(8px, var(--safe-top)); }
+  html:root .fms-app .fms-header {
+    top: var(--editor-top); left: max(8px, var(--safe-left)); right: max(8px, var(--safe-right));
+    height: 44px; gap: 6px; align-items: center;
+  }
+  html:root .fms-app.fms-app .fms-header > div:first-child { padding: 6px; flex-shrink: 0; }
+  html:root .fms-app.fms-app .fms-header h1 { font-size: 15px; }
+  html:root .fms-app .fms-kicker { display: none; }
+  html:root .fms-app .fms-header .fms-header-actions { flex-wrap: nowrap; gap: 4px; min-width: 0; }
+  html:root .fms-app .fms-header-actions button { width: 44px; min-width: 44px; height: 44px; padding: 4px; }
+  html:root .fms-app .fms-header-actions button > span { display: none; }
+  html:root .fms-app .fms-header select { min-width: 0; width: 94px; max-width: 94px; height: 44px; padding: 4px; font-size: 15px; }
+  html:root .fms-app.fms-app > button.play-entry { top: calc(var(--editor-top) + 52px); right: max(8px, var(--safe-right)); left: auto; bottom: auto; min-height: 44px; }
+  html:root .fms-app .fms-zoom { top: calc(var(--editor-top) + 104px); right: max(8px, var(--safe-right)); }
+  html:root .c47-app { --hud-top: max(8px, var(--safe-top)); --hud-bottom: max(8px, var(--safe-bottom)); }
+  html:root .c47-app .c47-bar { top: var(--hud-top); left: max(8px, var(--safe-left)); right: max(8px, var(--safe-right)); height: 52px; box-sizing: border-box; flex-wrap: nowrap; gap: 2px; padding: 3px; }
+  html:root .c47-app .c47-bar button { min-width: 44px; min-height: 44px; padding: 4px; flex-shrink: 0; }
+  html:root .c47-app .c47-bar time { min-width: 0; font-size: 12px; }
+  html:root .c47-app .c47-news { top: calc(var(--hud-top) + 60px); left: max(8px, var(--safe-left)); right: max(8px, var(--safe-right)); width: auto; height: 44px; min-height: 44px; box-sizing: border-box; transform: none; }
+  html:root .c47-app .c47-rail { top: calc(var(--hud-top) + 112px); bottom: calc(var(--hud-bottom) + 60px); left: max(8px, var(--safe-left)); height: max-content; max-height: calc(100% - var(--hud-top) - var(--hud-bottom) - 172px); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; }
+  html:root .c47-app .c47-rail button { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+  html:root .c47-app .c47-controls { bottom: var(--hud-bottom); left: max(8px, var(--safe-left)); right: max(8px, var(--safe-right)); width: auto; transform: none; height: 52px; box-sizing: border-box; }
+  html:root .c47-app .c47-controls button { min-height: 44px; }
+  html:root .c47-app .c47-zoom { left: auto; right: max(8px, var(--safe-right)); bottom: calc(var(--hud-bottom) + 60px); }
+  html:root .c47-app :is(.c47-map-menu,.c47-menu,.c47-ai-global,.c47-territory,.c47-panel,.c47-setup) {
+    top: calc(var(--hud-top) + 60px); bottom: calc(var(--hud-bottom) + 60px); left: max(8px, var(--safe-left)); right: max(8px, var(--safe-right));
+    width: auto; max-width: none; max-height: calc(100% - var(--hud-top) - var(--hud-bottom) - 120px); overflow-y: auto; transform: none; box-sizing: border-box;
+  }
+}
+@media (max-width: 600px), (max-height: 500px) and (pointer: coarse) {
+  html:root .c47-app .c47-territory { top: auto; flex-wrap: nowrap; align-items: stretch; padding: 12px 14px; }
+  html:root .c47-app .c47-territory small { flex-basis: auto; }
+  html:root .c47-app .c47-territory label { display: flex; min-width: 0; }
+  html:root .c47-app .c47-territory select { flex: 1; min-width: 0; }
+  html:root .c47-app .c47-notice { top: calc(var(--hud-top) + 112px); max-width: calc(100% - var(--safe-left) - var(--safe-right) - 144px); pointer-events: none; }
+  html:root .c47-app .c47-panel { top: auto; min-height: 0; }
+  html:root .c47-app .c47-panel > .c47-dismiss { right: 10px; }
+  html:root .c47-app .c47-panel > .c47-sheet-size { right: 62px; }
+}
+@media (max-height: 500px) and (pointer: coarse) {
+  html:root .fms-app .fms-zoom { top: calc(var(--editor-top) + 104px); flex-direction: row; }
+  html:root .fms-app .fms-zoom output { display: none; }
+  html:root .fms-app .fms-bottom { max-width: calc(100% - var(--safe-left) - var(--safe-right) - 140px); }
+  html:root .fms-app .fms-status { display: none; }
+  html:root .c47-app .c47-zoom { flex-direction: row; }
+}

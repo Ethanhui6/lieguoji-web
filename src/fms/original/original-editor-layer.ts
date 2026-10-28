@@ -1,5 +1,6 @@
-import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { Geometry, Mesh, Shader } from 'pixi.js';
+import { loadLocalTexture } from '../local-texture';
 import parchmentUrl from './assets/parchment.jpg';
 import { FMS_COAST_LINE_WIDTH } from '../coast-curve';
 import type { FmsDocument } from '../model';
@@ -30,10 +31,10 @@ export class OriginalEditorLayer {
   private destroyed = false;
   private rainfall = 80;
   private climateBuilds = 0;
-  constructor(private onReady: () => void = () => {}) {
+  constructor(private onReady: () => void = () => {}, private onError: (error: unknown) => void = () => {}) {
     this.parchment.blendMode = 'multiply';
     this.container.addChild(this.sea, this.coast, this.parchment);
-    void Assets.load<Texture>(parchmentUrl).then(texture => { if (this.destroyed) return; this.parchment.texture = texture; this.onReady(); });
+    void loadLocalTexture(parchmentUrl).then(texture => { if (this.destroyed) return; this.parchment.texture = texture; this.onReady(); }).catch(error => { if (!this.destroyed) this.onError(error); });
   }
   /** Rebuild only when the grid, heights or preset changed. */
   update(grid: OriginalGrid, doc: FmsDocument, preset: OriginalPreset, mode: OriginalEditorMode, rainfall = 80): OriginalEditorStats | null {

@@ -16,12 +16,10 @@ const version=JSON.parse(readFileSync('package.json','utf8')).version as string;
 const stamps=JSON.parse(readFileSync('scripts/rule-stamps.json','utf8')) as Record<string,string>;
 const culture47Fingerprint=fingerprintCulture47();
 const define=Object.fromEntries([...Object.entries(stamps),['__CULTURE47_ENGINE__',culture47Fingerprint],['__BUILD_SHA__',commit]].map(([k,v])=>[k,JSON.stringify(v)]));
-// Vite marks module/preload/style tags `crossorigin`, which forces a CORS-anonymous
-// fetch. Capacitor serves the packaged app on the capacitor:// scheme and only
-// adds Access-Control-Allow-Origin while live-reloading (WebViewAssetHandler).
-// WebKit refuses that CORS mode for a custom scheme (WebKit bug 201180), so the
-// module graph never runs and the map stays blank. Same-origin loads do not need
-// the attribute; Cloudflare still serves these files from the page origin.
+// Capacitor's packaged WKURLSchemeHandler does not add CORS headers (only
+// live reload does). Avoid explicit anonymous-CORS attributes on local assets.
+// Custom-scheme behaviour still needs native verification; HTTP WebKit tests
+// alone cannot establish how WKWebView will load its module graph.
 const stripCrossOrigin: Plugin = {
   name: 'strip-crossorigin',
   transformIndexHtml: {
@@ -36,7 +34,10 @@ export default defineConfig({
  define,
  // Local runs use up to 6 cores; set VITEST_MAX_WORKERS=1 on small machines (the manual GitHub run does).
  test:{include:['src/**/*.test.ts'],maxWorkers:Number(process.env.VITEST_MAX_WORKERS??Math.max(1,Math.min(6,Math.floor(availableParallelism()/2))))},
- build:{sourcemap:false},
+ // Vite's dynamic preload helper adds link.crossOrigin="" too. With one
+ // stylesheet and no module preloads, native import() owns the module graph;
+ // the HTML stylesheet is handled by stripCrossOrigin above.
+ build:{sourcemap:false,modulePreload:false,cssCodeSplit:false},
  server:{host:'127.0.0.1'},
  preview:{headers},
 });

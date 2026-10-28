@@ -248,7 +248,7 @@ export class FmsRenderer {
       if (this.initialized) delete this.canvas.dataset.editorRenderer;
       return;
     }
-    if (!entry.layer) { entry.layer = new OriginalEditorLayer(() => this.draw()); this.scene.addChildAt(entry.layer.container, 0); }
+    if (!entry.layer) { entry.layer = new OriginalEditorLayer(() => this.draw(), this.onDisplayError); this.scene.addChildAt(entry.layer.container, 0); }
     if (this.mesh) this.mesh.visible = false; this.rivers.visible = false; if (this.riverMesh) this.riverMesh.visible = false;
     const stats = entry.layer.update(grid, doc, ORIGINAL_PRESETS[this.oceanAppearanceState === 'paper' ? 7 : 0], this.terrainDisplay === 'height' ? 'height-palette' : this.terrainDisplay === 'biome' ? 'biome' : 'height-background', this.mapPrecipitation);
     if (stats && this.initialized) { this.canvas.dataset.editorRenderer = 'original'; this.canvas.dataset.originalEditor = JSON.stringify({ ...stats, grid: grid.id }); }

@@ -4,35 +4,38 @@
 
 ## 0.5.44 — 2026-10-27
 
-iOS 安装包打开后整页没有地图：生产包给模块脚本加了 `crossorigin`，而 Capacitor 的 `capacitor://` 本地响应只在热重载时带 CORS 头，WebKit 因此不执行这些脚本。本版去掉该属性，让创世地图能画出来，并给 iOS 壳补上安全区、触摸和后台保存。桌面网页外观与 Cloudflare 部署配置不变。
+修复 iOS 安装包地图资源加载与手机布局。用户本次 IPA 真机截图显示：编辑器已能绘制地形，但羊皮纸缺失，地图缩成白色横条，进入世界按钮压住顶栏；进入世界后因 `capacitor://assets/parchment-DcvfQmoH.jpg` 加载失败而空白，世界 HUD 也发生重叠。这些发现说明此前仅验证编辑器不足以证明问题解决。本次修复经过浏览器回归，尚未重新打包做真机验收。
 
 ### 新增
-- 经典脚本启动诊断（`boot-diagnostic.js`）。模块没跑起来、画布没有尺寸或 WebGL 中断时，屏幕上写出地址、脚本是否仍带 `crossorigin`、有没有画布。地图画出来后提示收起。只在 `capacitor:` / `ionic:` 出现，普通浏览器不显示。
-- iOS 壳在布局时把真实安全区写成 `--sat`、`--sab`、`--sal`、`--sar`。状态栏改为深色内容并保持可见。
+- 保留经典脚本启动诊断（`boot-diagnostic.js`）和原生壳安全区变量；未处理错误、画布尺寸或图形上下文异常可显示诊断。
+- 新增独立 WebKit / iPhone 回归配置：393×852 竖屏与 852×393 横屏，真实生产 bundle 在 `/ios-proof/` 子路径、无 CORS 头的静态服务器上运行。捕获 console error、pageerror、请求失败和 HTTP 错误；检查地图像素，保存并刷新地图和世界。
+- 新增包内 URL、纹理共享和失败重试单测。审计说明及四张小尺寸截图放在 `docs/ios-proof/`；完整 PNG 和本轮执行日志放在 `/workspace/lj-codex-shots/`。
 
 ### 修改
-- 地形、海岸、气候和文化模拟改为经典 Worker。模块 Worker 在自定义协议上属于 CORS 请求，和入口脚本是同一类失败。
-- 壳内按钮至少 44×44，面板跟着安全区和键盘，页面不回弹，地图不弹出长按菜单。退到后台或页面被收起时，未保存的地图和进行中的世界写入本机。
-- 版本号 0.5.44。iOS 未签名 IPA 工作流仍只手动触发，不随推送运行。
+- 手机编辑器初始视角覆盖视口，可平移查看其余地形；「查看全图」仍可缩回整张地图。桌面相机与布局规则不变。
+- 手机顶栏、进入世界、事件条、工具栏与播放条统一按 44px 点击目标和安全区计算间距。横屏工具栏可独立滚动，面板避开顶部和底部安全区。修复「编辑国家」继承 flex 换行和 100% flex-basis 导致「完成编辑」被挤到屏幕外；提示信息移到顶栏下方。
+- 保留经典地形、海岸、气候、文化 Worker，以及后台本地保存。版本仍为 0.5.44，模拟规则和存档格式不变。
+- iOS 工作流仍只允许手动触发；Cloudflare 配置、正式构建 base、原生协议与主机均未修改。本轮不提交、不推送。
 
 ### 修复
-- 修复 iOS 包里脚本不执行、地图完全不画的问题。Vite 在构建 HTML 时给模块、预加载和样式加上 `crossorigin`；Capacitor 8.5.3 的 `WebViewAssetHandler` 仅在热重载时设置 `Access-Control-Allow-Origin`。WebKit 对自定义协议的 CORS 请求直接拒绝（WebKit 201180）。去掉属性后，同源加载可以执行。
-- 绝对路径在协议根目录是对的，没有改 `base`。`?fms=1` 已经不再切换路由。没有 Service Worker。大格网是动态导入，不是白屏原因。Cloudflare 的 `_headers` 未改。
+- 根因：Pixi 8.21 的 `path.isUrl` 只识别 HTTP(S)，`rootname('capacitor://localhost/')` 丢失主机，`Assets.load('/assets/...')` 拼成 `capacitor://assets/...`。直接执行安装的 Pixi 源码复现了该错误。
+- 两个原作渲染器的羊皮纸统一改用浏览器 `new URL` 和不设 crossOrigin 的原生 Image，不再经过 Pixi URL 拼接、匿名 CORS 或 bitmap worker。编辑器异步纹理失败也会进入显示错误处理。
+- 楷体改为显式 same-origin 获取二进制后创建 FontFace；关闭 Vite 模块预加载并合并 CSS，避免动态预加载重新生成带 crossorigin 的 link。保留 HTML crossorigin 清理，不能据此声称所有 WKWebView 协议限制已在真机解决。
+- 核对 Capacitor 8.5.3：本地资源处理器只在 live reload 添加 CORS 头，HTTP(S) 本地 scheme 会被规范化回默认协议；未找到能修复上述 URL 的公开壳配置。保留 `capacitor://localhost` 和所有存储 key，不迁移或删除 IndexedDB/localStorage。
 
 ### 验证
-- 对照 Capacitor iOS 源码和构建后的 `index.html`：正式包不再含 `crossorigin`，入口仍是 `/assets/*.js`，另有不带该属性的经典诊断脚本。
-- Playwright WebKit、iPhone 13 用户代理、全屏视口（竖屏 390×844、横屏 844×390）：创世地图画布铺满，关闭生成面板后中心像素为羊皮纸色（约 213,181,119 和 194,159,88），不是白屏。强制壳并写入 47px 顶栏安全区后，标题顶边为 47，工具按钮高 44。横屏页面没有横向溢出。不是真机，也不是 `capacitor://`。
-- 负例：文档放在 `/sub/` 时绝对 `/assets` 返回 404，页面没有画布。安装包开在协议根上，不会走这条路径。
-- 模拟：把 `crossorigin` 加回并中止 CORS 模式的脚本请求后，诊断条留在屏幕上，写明模块脚本没有执行，页面里没有画布。这只复现失败现象，不能代替 WKWebView。
-- 已执行 `npm run check`：lint、类型检查通过。全量单测 1948 项通过、1 项跳过、1 项超时。超时在未修改的 `army-recovery47.test.ts`（60 秒上限）；单独复测该文件 4/4 通过，用时 9.14 秒。因此这次 `npm run check` 在单测失败后退出，没有进入浏览器套件。同内容的生产构建和 44 项产物白名单在这次检查的前一轮已经通过。
-- 安装本环境缺少的 Chromium 后单独执行 `npm run test:e2e`。写这条记录时套件未跑完（204 项 × 3 个项目，单线程）。已结束的桌面项：人物属性、音乐、格子边界、降雨、丢失图形上下文 5 项通过；`fms-actions65`、附庸、两条主动世界、军队恢复界面共 5 项超时。失败点仍是按钮一直不可见或点不到（隐藏的国家列表、未展开的「生成大陆」），错误记录里没有模块加载或 Worker 启动失败。不记为全套通过，也不是手机真机验收。
-- 本环境第一次 `npm run check` 的浏览器阶段曾在 1 毫秒内全部失败，原因是 Playwright Chromium 没装，不是游戏回归。
+- `npm run check:full` 完整通过：lint、类型检查、216 个单测文件（1953 项通过、1 项跳过），生产构建及 38 项产物白名单通过。
+- 最终补充的纹理缓存/重试测试单独复测 5/5 通过，最终 lint、类型检查再次通过。
+- Chromium 相关回归：`fms-editor59`、`fms-culture47-land-camera` 在 desktop-chromium / mobile-chromium 共 4/4 通过，涵盖外观切换、保存刷新、地图拾取、世界视角和查看全图。
+- WebKit 子路径无 CORS 头测试最终 2/2 通过（约 1.4 分钟）：横竖屏生成、保存、进入世界、地图像素、实际字体加载、全部左侧工具入口、图层/菜单开关和世界保存刷新；console error、pageerror、请求失败和 HTTP 错误均为 0。
+- 补完面板 CSS 与测试断言后，最终 lint、类型检查及生产构建/38 项白名单再次通过；不把相关回归等同于全量 e2e。
+- 初次 WebKit 执行因本机缺少锁定版本浏览器而无法启动，安装对应浏览器后执行；开发中修正了 DPR 约 0.33px 的尺寸断言容差及 canvas 定位错误，没有跳过错误监听或用 DOM click 代替正常点击。
+- 没有执行全量 e2e，也不宣称全套通过；用户指出的既有 `fms-actions` 失败不在本次相关回归范围内。
 
 ### 已知问题
-- 没有 iPhone 真机验收，也没有在 WKWebView 里打开 `capacitor://`。
-- 这块 Playwright WebKit 上，合成触摸点击会让进程崩溃；DOM `click` 不会。不能据此判断真机手势。
-- 没有在 WebKit 里走完「进入世界」。世界画面的羊皮纸和楷体若在 `capacitor://` 上按跨域方式加载，这次没有实测。
-- 浏览器全套仍被既有按钮等待拖住。本版不改模拟规则和存档格式；旧的当前版本世界可以继续使用。
+- 尚未在新 IPA / iPhone 真机的 `capacitor://localhost` 上复测。HTTP WebKit 不能忠实模拟 WKURLSchemeHandler 的 scheme/CORS 语义，纹理 GPU 上传、字体、Worker、音频与系统手势仍需真机验收。
+- 云存档是后端 API，并非包内资源；原生壳不提供本地 `/api/cloud/` 服务，本次仅验证本地存档，没有擅自把认证请求转发到外站。
+- 构建仍有既有的大 chunk 提示。完整浏览器套件的既有失败未在本轮处理。
 
 ## 0.5.43 — 2026-10-27
 

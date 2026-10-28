@@ -21,7 +21,11 @@ export function loadMapFont47():Promise<boolean>{
   if(!asked)asked=performance.now();
   loading??=(async()=>{
     if(typeof FontFace==='undefined'||typeof document==='undefined')return false;
-    const face=new FontFace('LieguojiKai',`url(${kaiUrl}) format("woff2")`,{display:'swap'});
+    // Binary FontFace avoids the font URL loader's implicit anonymous CORS mode
+    // on WKWebView custom schemes. Keep the request explicitly same-origin.
+    const response=await fetch(new URL(kaiUrl,document.baseURI),{mode:'same-origin'});
+    if(!response.ok)throw new Error(`地图字体加载失败：${response.status}`);
+    const face=new FontFace('LieguojiKai',await response.arrayBuffer(),{display:'swap'});
     await face.load();document.fonts.add(face);epoch++;return true;
   })().catch(()=>false).then(ok=>{settled=true;return ok;});
   return loading;

@@ -32,6 +32,14 @@ import './unified-ui.css';
 import {WorldEntry} from './play/WorldEntry';
 import { FmsMapHistory, isDefaultFmsClimate } from './map-climate';
 
+// A phone's tall viewport should open onto terrain, not a narrow fitted strip.
+// The explicit "查看全图" action below still offers the complete map.
+function editorCamera(world: CameraSize, viewport: CameraSize): AtlasCamera {
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 600px), (max-height: 500px) and (pointer: coarse)').matches) return fitCamera(world, viewport);
+  const scale = Math.max(viewport.width / world.width, viewport.height / world.height);
+  return { x: (viewport.width - world.width * scale) / 2, y: (viewport.height - world.height * scale) / 2, scale };
+}
+
 type Tool = 'browse' | 'outline' | 'land' | 'sea' | 'lock' | 'unlock' | 'hill' | 'template';
 const tools: { id: Tool; name: string; symbol: string; help: string }[] = [
   { id:'browse',name:'浏览',symbol:'✥',help:'单指移动地图，双指缩放。' },
@@ -121,7 +129,7 @@ export default function FmsApp() {
       // A newly opened/hidden app panel can briefly have no layout size. Match
       // the renderer's safe initial extent; ResizeObserver fits its real size.
       const viewport={width:Math.max(1,host.current!.clientWidth),height:Math.max(1,host.current!.clientHeight)};
-      const s = {history,renderer,viewport,camera:fitCamera(document,viewport),storedRevision:saved?.storedRevision??null,savedDocumentRevision:saved?document.revision:-1,savedPrecipitation:history.climate.precipitation} as Session;
+      const s = {history,renderer,viewport,camera:editorCamera(document,viewport),storedRevision:saved?.storedRevision??null,savedDocumentRevision:saved?document.revision:-1,savedPrecipitation:history.climate.precipitation} as Session;
       s.gestures=new FmsGestures({camera:()=>s.camera,world:()=>s.history.document,viewport:()=>s.viewport,
         setCamera:camera=>{s.camera=camera;s.renderer.setCamera(camera);refresh(s);},
         begin:point=>{ if(busyRef.current||renderUnavailable.current||terrainPhaseRef.current!=='idle')return; stroke.current={points:[],...settings.current};append(point); },
@@ -203,7 +211,7 @@ export default function FmsApp() {
     generationToken.current++;terrainAbort.current?.abort();terrainAbort.current=null;
     const s=session.current, hadPreview=terrainCandidate.current!==null, resized=terrainCandidate.current?.kind==='full-map'&&!!terrainCandidate.current.switchTo;
     terrainCandidate.current=null;setTerrainPhase('idle');setShowOriginal(false);
-    if(s&&hadPreview&&!renderUnavailable.current){showDocument(s,s.history.document);if(resized){s.camera=fitCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);}}
+    if(s&&hadPreview&&!renderUnavailable.current){showDocument(s,s.history.document);if(resized){s.camera=editorCamera(s.history.document,s.viewport);s.renderer.setCamera(s.camera);}}
     if(announce)setNotice('已取消地形预览，原地图保持不变。');
   }
   async function generateTemplate(options:FmsTemplateOptions){
@@ -257,7 +265,7 @@ export default function FmsApp() {
       if(generationToken.current!==token||session.current!==s||renderUnavailable.current)return;
       if(!prepared.patch.changes.length){setTerrainPhase('idle');setNotice('该种子没有生成可见地形，原地图保持不变。');return;}
       terrainCandidate.current={kind:'full-map',...prepared,drainage:result.drainage,changedCells:result.stats.changedCells,landCells:result.stats.landCells,template:options.template,switchTo};
-      showDocument(s,prepared.document,result.drainage);if(switchTo){s.camera=fitCamera(prepared.document,s.viewport);s.renderer.setCamera(s.camera);}setTerrainPhase('preview');setNotice('整图地形已预览；可移动缩放、对照原图，确认后仍可撤销和保存。');
+      showDocument(s,prepared.document,result.drainage);if(switchTo){s.camera=editorCamera(prepared.document,s.viewport);s.renderer.setCamera(s.camera);}setTerrainPhase('preview');setNotice('整图地形已预览；可移动缩放、对照原图，确认后仍可撤销和保存。');
     }catch(error){if(generationToken.current===token&&session.current===s){terrainCandidate.current=null;setTerrainPhase('idle');showDocument(s,s.history.document);setNotice(messageOf(error));}}
     finally{if(generationToken.current===token)terrainAbort.current=null;}
   }

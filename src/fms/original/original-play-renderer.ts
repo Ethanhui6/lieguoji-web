@@ -1,8 +1,9 @@
 import { reportMapCanvas } from '../boot-report';
 import { displayResolution } from '../play/display-budget47';
-import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import {drawOriginalRelief} from './original-relief';
 import 'pixi.js/unsafe-eval';
+import { loadLocalTexture } from '../local-texture';
 import parchmentUrl from './assets/parchment.jpg';
 import type { AtlasCamera } from '../../world/camera';
 import type { FmsDocument } from '../model';
@@ -49,7 +50,7 @@ export class OriginalPlayRenderer {
     this.initialized = true;
     if (this.destroyed) { this.app.destroy(true, { children: true }); return; }
     host.appendChild(this.canvas); this.canvas.tabIndex = 0; reportMapCanvas(this.canvas);
-    const texture = await Assets.load<Texture>(parchmentUrl);
+    const texture = await loadLocalTexture(parchmentUrl);
     if (this.destroyed) return;
     this.parchment.texture = texture; this.parchment.blendMode = 'multiply';
     const rect = originalParchmentRect(this.grid.width, this.grid.height);

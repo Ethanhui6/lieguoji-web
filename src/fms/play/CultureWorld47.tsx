@@ -8,7 +8,7 @@ import {CultureProvince47} from './CultureProvince47';
 import {FOUNDING_RULE47} from './civilization47-founding-time';
 import {COLOR_VIEWS47,colorViewKey47,provinceColors47,viewGroups47,type ColorView47} from './culture47-views';
 import {CULTURE47_AUTOSAVE,culture47ScopeOf,culture47SlotRevision,loadCulture47Named,saveCulture47Named} from './culture47-library';
-import {advanceAutoSave47,readCulture47Config,writeCulture47Config,type Culture47Config} from './culture47-config';
+import {advanceAutoSave47,canCancelAutoSave47,readCulture47Config,writeCulture47Config,type Culture47Config} from './culture47-config';
 import {downloadBlob47,exportHistoryText47,HISTORY_EXPORT_FILE47} from './culture47-export';
 import {politicalStamp47} from './civilization47-political-owner';
 import {pickOriginalProvince} from '../original/original-picking';
@@ -327,7 +327,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   const rtsRef=useRef(rts);rtsRef.current=rts;
   const rtsName=(id:string)=>current.current?.run.world.nations.find(n=>n.id===id)?.name??'';
   const rtsArmies=(id:string)=>(current.current?.run.world.armies??[]).filter(a=>a.nationId===id&&a.troops>0&&a.status!=='destroyed').map(a=>a.id);
-  const enterRts=(id:string)=>{setRts({nationId:id,selected:[],mode:'attack'});setPanel(null);setMilitary(false);setTargetMode(null);setNotice(`${rtsName(id)}进入了RTS指挥模式 ESC退出`);};
+  const enterRts=(id:string)=>{setRts({nationId:id,selected:[],mode:'attack'});setPanel(null);setMilitary(false);setTargetMode(null);setNotice(`${rtsName(id)}进入了即时战略模式，点「退出」结束`);};
   const exitRts=()=>{const v=rtsRef.current;if(!v)return;setRts(null);setNotice(`${rtsName(v.nationId)}退出了RTS指挥模式`);};
   const rtsToggle=useRef((_ids:string[])=>{});rtsToggle.current=ids=>setRts(v=>{if(!v)return v;const on=ids.every(id=>v.selected.includes(id));return {...v,selected:on?v.selected.filter(id=>!ids.includes(id)):[...new Set([...v.selected,...ids])]};});
   const rtsCommand=useRef((_provinceId:string)=>{});rtsCommand.current=provinceId=>{const v=rtsRef.current;if(!v)return;const alive=new Set(rtsArmies(v.nationId)),armyIds=v.selected.filter(id=>alive.has(id));if(!armyIds.length){setNotice('先点选本国军团，或点「全选」。');return;}
@@ -456,6 +456,8 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
   useEffect(()=>{const protect=(e:BeforeUnloadEvent)=>{if(current.current&&lastSaved.current!==current.current.journal.actions.length){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect);},[]);
   // AutoSaveManager.Update: counts real seconds once a world exists (isGameStarted).
   const autoSave=useRef({elapsed:0,pending:false});
+  const cancelAutoSaveCountdown=useRef(()=>{});
+  cancelAutoSaveCountdown.current=()=>{const state=autoSave.current;if(!canCancelAutoSave47(state.elapsed,config.autoSaveMinutes,state.pending))return;state.elapsed=0;setAutoSavePrompt(null);};
   const hasRun=!!snapshot;
   useEffect(()=>{
     autoSave.current={elapsed:0,pending:false};setAutoSavePrompt(null);
@@ -467,7 +469,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
       const next=advanceAutoSave47(state.elapsed,delta,config.autoSaveMinutes);state.elapsed=next.elapsed;
       if(next.due){state.pending=true;setAutoSavePrompt('saving');}else setAutoSavePrompt(next.countdown===null?null:{countdown:next.countdown});
     },200);
-    const cancel=(e:KeyboardEvent)=>{if(e.key!=='Escape')return;const state=autoSave.current,interval=config.autoSaveMinutes*60;if(!state.pending&&interval-state.elapsed<=5){state.elapsed=0;setAutoSavePrompt(null);}};
+    const cancel=(e:KeyboardEvent)=>{if(e.key==='Escape')cancelAutoSaveCountdown.current();};
     window.addEventListener('keydown',cancel);
     return()=>{clearInterval(timer);window.removeEventListener('keydown',cancel);};
   },[config.autoSave,config.autoSaveMinutes,hasRun]);
@@ -712,7 +714,7 @@ export function CultureWorld47({terrain,onClose,entryNotice}:{terrain:FmsDocumen
     {menu&&<CultureMenu47 key={menu} busy={busy||storageReading} hasWorld={!!r} unsaved={!!snapshot&&lastSaved.current!==snapshot.journal.actions.length} initial={menu==='load'?'load':undefined} config={config} onConfig={setConfig} onSaveNamed={name=>saveNamed(name)} onLoadNamed={loadNamed} onExportImage={exportMapImage} onExportHistory={exportHistory} onQuit={()=>{setMenu(null);requestClose();}} onClose={()=>setMenu(null)} cloudCurrent={cloudCurrent} onCloudImport={cloudImport}/>}
     {showPerf&&<PerfOverlay47 root={appRoot}/>}
     <RemoteBadge47/>
-    {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存，按 ESC 取消</>}</div>}
+    {autoSavePrompt&&<div className="c47-autosave" role="status">{autoSavePrompt==='saving'?'正在自动保存':<><b>{autoSavePrompt.countdown}秒</b>后将自动保存<button type="button" onClick={()=>cancelAutoSaveCountdown.current()}>取消</button></>}</div>}
     {!r&&<section className="c47-setup"><span className="c47-kicker">文化 · 信仰 · 国家</span><h1>让文明从你的地图诞生</h1><p>为国家选择真实文化，独立设定信仰与政体。名字从同一种文化里生长。</p>{entryNotice&&<p className="c47-entry-note" role="note">{entryNotice}</p>}
       <div className="c47-segment" role="group" aria-label="国号与城市命名模式">{([['culture-generated','文化生成'],['historical-names','历史名称']] as const).map(([v,label])=><button key={v} aria-pressed={mode===v} onClick={()=>{setMode(v);}}>{label}</button>)}</div><small>{mode==='historical-names'?'使用中文历史国号和真实地名；名称用完可同名，480 座城市均可创建。':'使用中文译写的文化名称；每种文化可生成至少 512 个不同城名。'} 人物均按文化生成，不拼接历史人物家谱。</small>
       <div className="c47-counts"><label>国家<select aria-label="国家数量" value={count} onChange={e=>{setLayout(null);setCount(Number(e.target.value));}}>{[...new Set([2,3,4,6,8,12,16,24,count])].sort((a,b)=>a-b).map(n=><option key={n}>{n}</option>)}</select></label><label>城市<select aria-label="城市数量" value={cityCount} onChange={e=>{setLayout(null);setCityCount(Number(e.target.value));}}>{[24,60,120,240,480].map(n=><option key={n}>{n}</option>)}</select></label></div>

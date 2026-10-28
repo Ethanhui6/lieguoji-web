@@ -17,7 +17,8 @@ export function writeCulture47Config(c:Culture47Config){try{localStorage.setItem
 
 /** AutoSaveManager.Update: real seconds count only while the game has
  * started; in the last 5 seconds a cancelable countdown is shown once per
- * second; ESC restarts the full interval; at the interval the save runs. */
+ * second; ESC or the on-screen button restarts the full interval; at the
+ * interval the save runs and can no longer be cancelled. */
 export const AUTOSAVE_COUNTDOWN_SECONDS=5;
 export type AutoSaveTick47={elapsed:number;countdown:number|null;due:boolean};
 export function advanceAutoSave47(elapsed:number,deltaSeconds:number,minutes:number):AutoSaveTick47{
@@ -25,4 +26,9 @@ export function advanceAutoSave47(elapsed:number,deltaSeconds:number,minutes:num
   if(next>=interval)return {elapsed:0,countdown:null,due:true};
   const remaining=Math.ceil(interval-next);
   return {elapsed:next,countdown:remaining>=1&&remaining<=AUTOSAVE_COUNTDOWN_SECONDS?remaining:null,due:false};
+}
+/** True only during the visible countdown, before the save has started. */
+export function canCancelAutoSave47(elapsed:number,minutes:number,pending:boolean){
+  if(pending)return false;
+  return clampAutoSaveMinutes(minutes)*60-elapsed<=AUTOSAVE_COUNTDOWN_SECONDS;
 }

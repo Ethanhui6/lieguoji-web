@@ -1,0 +1,11 @@
+{
+  "appId": "app.lieguoji.game",
+  "appName": "列国纪",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#102b3b",
+    "allowsLinkPreview": false
+  }
+}

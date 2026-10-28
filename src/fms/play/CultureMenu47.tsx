@@ -80,7 +80,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <label className="c47-check"><input type="checkbox" aria-label="自动保存开关" checked={config.autoSave} onChange={e=>onConfig({...config,autoSave:e.target.checked})}/>自动保存开关</label>
       <label className="c47-slider">自动保存间隔(分钟)<output>{minutes}</output>
         <input type="range" aria-label="自动保存间隔(分钟)" min={AUTOSAVE_MIN_MINUTES} max={AUTOSAVE_MAX_MINUTES} step={1} value={minutes} onChange={e=>{const m=clampAutoSaveMinutes(Number(e.target.value));setMinutes(m);onConfig({...config,autoSaveMinutes:m});}}/></label>
-      <small>推演开始后按真实时间计时；保存前5秒可按 ESC 取消。存为“autosave”。</small>
+      <small>推演开始后按真实时间计时；保存前 5 秒可点「取消」或按 ESC。存为“autosave”。</small>
       <button onClick={back}>关闭</button>
     </div>;break;
     case 'export':body=<div className="c47-menu-list" aria-label="请选择需要导出的内容">

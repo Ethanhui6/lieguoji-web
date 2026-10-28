@@ -26,6 +26,11 @@ references/private/
 *.protected.json
 *.zip
 .DS_Store
+# iOS shell. The Xcode project is committed; synced web assets and build output are not.
+ios/App/App/public/
+ios/DerivedData/
+ios/App/build/
+*.ipa
 # Rebuildable GPU-harness dependency cache is not evidence or game source.
 docs/evidence/ph06-fine-coast-2026-09-27/detail-shader-checks/vite-cache/
 # Local Claude Code preview settings.

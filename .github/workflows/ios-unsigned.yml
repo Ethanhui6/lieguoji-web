@@ -70,27 +70,34 @@ jobs:
       - name: Package the unsigned IPA
         run: |
           set -euo pipefail
-          app=$(find ios/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -1)
+          # Actions enables pipefail. find | head can exit 141 and fail a good build.
+          shopt -s nullglob
+          candidates=(ios/DerivedData/Build/Products/Release-iphoneos/*.app)
+          app=${candidates[0]-}
           test -n "$app"
+          test -d "$app"
           test ! -e "$app/embedded.mobileprovision"
           name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$app/Info.plist")
           test "$name" = "列国纪"
           short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
           test "$short" = "$(node -p "require('./package.json').version")"
           exe=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")
-          file "$app/$exe" | grep -q 'arm64'
+          case "$(file "$app/$exe")" in
+            *arm64*) ;;
+            *) echo 'expected an arm64 device binary'; exit 1 ;;
+          esac
           sign=$(codesign -dv "$app" 2>&1 || true)
           echo "$sign"
-          if printf '%s\n' "$sign" | grep -q 'Authority='; then
-            echo 'Refusing to upload an IPA signed with a certificate.'
-            exit 1
-          fi
+          case "$sign" in
+            *Authority=*) echo 'Refusing to upload an IPA signed with a certificate.'; exit 1 ;;
+          esac
           stage="${RUNNER_TEMP}/ipa"
           rm -rf "$stage"
           mkdir -p "$stage/Payload"
           cp -R "$app" "$stage/Payload/"
           ditto -c -k --keepParent "$stage/Payload" lieguoji-unsigned.ipa
-          unzip -l lieguoji-unsigned.ipa | head -n 20
+          unzip -l lieguoji-unsigned.ipa > "${RUNNER_TEMP}/ipa-listing.txt"
+          head -n 20 "${RUNNER_TEMP}/ipa-listing.txt"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1; verified in the existing CI workflow

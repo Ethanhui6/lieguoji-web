@@ -147,7 +147,7 @@ export class PlayMap {
   updateUnits(frame:DisplayFrame){
     const p=this.projection;
     for(const a of this.arrowWidgets){const at=frame.armies.get(a.id);if(!at)continue;a.points[0]={x:at.x/p.scale,y:at.y/p.scale};a.graphic.clear();drawAttackArrow(a.graphic,a.points,a.pixel,a.color,false,a.actual?1:this.orderMotion.growth(a.id));}
-    for(const g of this.unitGroups){const points=g.ids.flatMap(id=>frame.armies.has(id)?[frame.armies.get(id)!]:[]);if(!points.length)continue;g.container.position.set(points.reduce((s,v)=>s+v.x,0)/points.length/p.scale+g.offset.x,points.reduce((s,v)=>s+v.y,0)/points.length/p.scale+g.offset.y);const x=g.container.x*p.zoom+p.x,y=g.container.y*p.zoom+p.y;g.container.visible=x>=-30&&y>=-30&&x<=p.width+30&&y<=p.height+30;}
+    for(const g of this.unitGroups){let sx=0,sy=0,count=0;for(const id of g.ids){const at=frame.armies.get(id);if(at){sx+=at.x;sy+=at.y;count++;}}if(!count)continue;g.container.position.set(sx/count/p.scale+g.offset.x,sy/count/p.scale+g.offset.y);const x=g.container.x*p.zoom+p.x,y=g.container.y*p.zoom+p.y;g.container.visible=x>=-30&&y>=-30&&x<=p.width+30&&y<=p.height+30;}
     this.shipLayer?.update(frame.fleets);
     this.sinkMotion.move(frame.fleets);
     for(const effect of this.battleSprites){if(!effect.fleets)continue;const a=frame.fleets.get(effect.fleets[0]),b=frame.fleets.get(effect.fleets[1]);if(a&&b)effect.sprite.position.set((a.x+b.x)/2/p.scale,(a.y+b.y)/2/p.scale);}

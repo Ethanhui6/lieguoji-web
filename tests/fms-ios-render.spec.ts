@@ -1,5 +1,5 @@
+import {tool} from './fms-culture47-fixture';
 import { expect, test, type Page } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 const { PNG } = createRequire(import.meta.url)('playwright-core/lib/utilsBundle') as { PNG: { sync: { read: (bytes: Buffer) => { width: number; height: number; data: Buffer } } } };
 async function renderedTerrain(page: Page) {
@@ -50,8 +50,7 @@ test('iPhone bundled editor → world, safe areas and local saves', async ({ pag
   await expect(page.getByTestId('fms-app')).toHaveAttribute('data-dirty', 'false');
   const land = await page.getByTestId('fms-app').getAttribute('data-land-cells');
   await renderedTerrain(page);
-  await mkdir('/workspace/lj-codex-shots', { recursive:true });
-  await page.screenshot({ path:`/workspace/lj-codex-shots/${info.project.name}-editor.png` });
+  await page.screenshot({ path:info.outputPath('editor.png') });
   await page.screenshot({ path:`docs/ios-proof/${info.project.name}-editor.jpg`, quality:75, scale:'css' });
   await page.reload();
   await expect(page.getByTestId('fms-app')).toHaveAttribute('data-land-cells', land!);
@@ -62,18 +61,20 @@ test('iPhone bundled editor → world, safe areas and local saves', async ({ pag
   await expect(world).toHaveAttribute('data-renderer', 'original', { timeout:90000 });
   await expect.poll(async () => Number(await world.getAttribute('data-original-cells'))).toBeGreaterThan(0);
   await expect(page.getByRole('button', { name:'重新显示地图', exact:true })).toHaveCount(0);
+  await page.getByRole('button',{name:'展开工具栏',exact:true}).click();
   await separate(page, '.c47-bar', '.c47-rail');
   if (await page.locator('.c47-news').isVisible()) { await separate(page, '.c47-bar', '.c47-news'); await separate(page, '.c47-news', '.c47-rail'); }
   await renderedTerrain(page);
-  await page.screenshot({ path:`/workspace/lj-codex-shots/${info.project.name}-world.png` });
+  await page.screenshot({ path:info.outputPath('world.png') });
   await page.screenshot({ path:`docs/ios-proof/${info.project.name}-world.jpg`, quality:75, scale:'css' });
   for (const button of await page.locator('.c47-rail button').all()) {
     await button.scrollIntoViewIfNeeded();
     await expect(button).toBeInViewport();
   }
+  await page.getByRole('button',{name:'展开工具栏',exact:true}).click();
   await expect.poll(() => page.evaluate(() => Array.from(document.fonts).some(face => face.family === 'LieguojiKai' && face.status === 'loaded'))).toBe(true);
   for (const name of ['国家', '军事模式', '查看大事记', '统计']) {
-    await page.getByRole('button', { name, exact:true }).click();
+    await tool(page,name);
     const panel = page.locator('.c47-panel');
     await expect(panel).toBeVisible();
     await expect(page.getByRole('button', { name:'收起详情', exact:true })).toBeInViewport();
@@ -88,12 +89,12 @@ test('iPhone bundled editor → world, safe areas and local saves', async ({ pag
     ['AI全局配置', '关闭AI全局配置', '.c47-ai-global'],
     ['编辑国家', '完成编辑', '.c47-territory'],
   ]) {
-    await page.getByRole('button', { name:open, exact:true }).click();
+    if(['国家','军事模式','查看大事记','统计','编辑国家','AI全局配置','生成地图'].includes(open))await tool(page,open);else await page.getByRole('button', { name:open, exact:true }).click();
     await expect(page.locator(panel)).toBeVisible();
     await expect(page.getByRole('button', { name:close, exact:true })).toBeInViewport();
     await page.getByRole('button', { name:close, exact:true }).click();
   }
-  await page.getByRole('button', { name:'生成地图', exact:true }).click();
+  await tool(page,'生成地图');
   await expect(page.getByRole('alertdialog', { name:'生成地图' })).toBeInViewport();
   await page.getByRole('button', { name:'否', exact:true }).click();
   await page.getByRole('button', { name:'保存文化世界', exact:true }).click();

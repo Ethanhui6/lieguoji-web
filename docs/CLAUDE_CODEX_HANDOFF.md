@@ -216,3 +216,9 @@
 - 本批文件：CultureFamilyPeople47、culture47.css、新增人物明细与模型/测试、fms-attributes.spec.ts、版本和文档；发布后释放。
 - 全量检查 .autopilot/release-0.5.43-check.log：lint/typecheck、214 文件/1947 单测通过（1 跳过），生产构建/42 产物白名单通过。
 - 完整浏览器首错停止仍在 fms-actions65:16 的隐藏 .c47-nations button 超时，1 失败、203 未运行。保留失败，不跳过 hook，不声称全套通过。正式站版本/提交及线上属性检查在发布后另核对。
+
+### 2026-10-28 · 0.5.45 iOS 接续集成（Codex）
+- 从 GitHub 最新 a333b5c0（PR #28、0.5.44）快进本地 main 后实施，保留 capacitor URL 与安全区修复。
+- 新 AppIcon、悬浮按钮及可折叠工具网格；取消手机行军 30Hz 上限、编队位置减少临时数组、无战斗时省去全军显示坐标集合。
+- 验证详见 CHANGELOG 0.5.45 和 docs/ios-proof；单测全过、专用 WebKit 2/2、手机动画回归通过，全量浏览器首次被历史外交断言阻断；该断言已修正且单独回归通过，全量重跑中，不能宣称全绿或真机 120fps。
+- 用户要求交付未签名包，使用现有手动 ios-unsigned 工作流；无需改动签名凭据。

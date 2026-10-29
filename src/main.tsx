@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { reportBoot } from './fms/boot-report';
 import './fms/ios-shell.css';
+import './fms/ios-polish.css';
 reportBoot('module');
 const keyboardInset = () => {
   if (!document.documentElement.classList.contains('ios-shell')) return;
@@ -59,3 +60,4 @@ document.addEventListener('contextmenu', e => { const t = e.target as HTMLElemen
 void import('./fms/audio/audio47').then(m => m.installGameAudio47());
 const Entry = lazy(() => import('./fms/FmsApp'));
 createRoot(document.getElementById('root')!).render(<StrictMode><Suspense fallback={<p role="status">正在打开地图…</p>}><Entry /></Suspense></StrictMode>);
+

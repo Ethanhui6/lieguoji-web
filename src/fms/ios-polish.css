@@ -1,0 +1,37 @@
+/* Shared jade glass language. Small HUD surfaces use a bounded blur; large
+   scrolling sheets are opaque to avoid re-compositing the map behind each row. */
+html:root :is(.c47-app,.fms-app.fms-app){--ink:#183a39;--muted:#596c68;--paper:#f2f5ef;--active:#205c50;--c47-ink:#183a39;--c47-muted:#596c68;color:#183a39;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif}
+html:root :is(.c47-app,.fms-app.fms-app) :is(button,input,select){border-radius:12px;font-family:inherit}
+html:root :is(.c47-app,.fms-app.fms-app) button:focus-visible{outline:3px solid #207c79;outline-offset:2px}
+html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup,.c47-confirm,.c47-territory),
+html:root .fms-app.fms-app :is(.fms-generation,.fms-settings,.fms-preview,.fms-confirm){background:#f2f5ef;color:#183a39;border:1px solid #fff;border-radius:22px;box-shadow:0 12px 36px #092e3429;-webkit-backdrop-filter:none;backdrop-filter:none}
+html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup){padding:16px;line-height:1.5}
+html:root .c47-app :is(h2,h3,h4){font-family:inherit;letter-spacing:0}
+html:root .c47-app :is(input,select){background:#fff;border:1px solid #b9cdc6;color:#183a39;max-width:100%}
+html:root .c47-app button[aria-pressed=true]{background:#d2e7dc;color:#184f43}
+html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail){background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0;gap:6px}
+html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail)>button,
+html:root .c47-app .c47-tools-toggle{background:#f3f8f0e8;border:1px solid #ffffffdf;border-radius:18px;box-shadow:0 3px 12px #14363224,inset 0 1px 0 #fff;min-height:44px;min-width:44px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html:root .c47-app .c47-bar>div{display:none}
+html:root .c47-app .c47-bar time{background:#f3f8f0e8;border:1px solid #fff;border-radius:18px;padding:10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+html:root .c47-app .c47-controls{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);height:auto}
+html:root .c47-app .c47-controls>button{flex:none;min-width:48px}
+html:root .c47-app .c47-tools-toggle{display:none}
+@media(max-width:600px),(max-height:500px) and (pointer:coarse){
+ html:root .c47-app .c47-bar{height:44px;gap:6px;right:auto;max-width:calc(100% - var(--safe-left) - var(--safe-right) - 16px)}
+ html:root .c47-app .c47-bar time{padding:8px 6px;font-size:11px;flex:1}
+ html:root .c47-app .c47-bar button{width:44px;padding:8px}
+ html:root .c47-app .c47-bar-label{display:none}
+ html:root .c47-app .c47-news{top:calc(var(--hud-top) + 52px);left:auto;right:max(8px,var(--safe-right));max-width:calc(100% - var(--safe-left) - var(--safe-right) - 78px);height:36px;min-height:36px;font-size:11px;border-radius:18px;background:#f3f8f0e8;box-shadow:0 2px 8px #14363214;-webkit-backdrop-filter:none;backdrop-filter:none}
+ html:root .c47-app .c47-tools-toggle{display:flex;align-items:center;justify-content:center;flex-direction:column;position:absolute;z-index:21;left:max(8px,var(--safe-left));top:calc(var(--hud-top) + 52px);padding:5px;font-size:10px;gap:0}
+ html:root .c47-app .c47-tools-toggle svg{width:20px;height:20px}
+ html:root .c47-app .c47-rail{display:none}
+ html:root .c47-app .c47-rail.c47-rail-open{display:grid;grid-template-columns:repeat(3,56px);gap:6px;top:calc(var(--hud-top) + 104px);bottom:auto;max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 168px);padding:8px;border-radius:22px;background:#edf4ecef;z-index:22}
+ html:root .c47-app .c47-rail button{width:56px;height:56px;min-height:56px;border-radius:14px;padding:4px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+ html:root .c47-app .c47-rail button span{display:block;font-size:10px}
+ html:root .c47-app .c47-controls{left:50%;right:auto;transform:translateX(-50%);width:max-content;height:auto}
+ html:root .c47-app .c47-zoom{bottom:var(--hud-bottom)}
+ html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup){padding:14px}
+}
+@media(prefers-reduced-transparency:reduce){html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail)>button,html:root .c47-app .c47-tools-toggle{background:#f2f5ef;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){html:root :is(.fms-app,.c47-app) *{scroll-behavior:auto;animation:none;transition:none}}

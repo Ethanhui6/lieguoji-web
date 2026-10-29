@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {expect,test} from '@playwright/test';
 
 test('map generation panel closes, reopens and previews the selected density without committing',async({page},info)=>{
@@ -12,7 +13,7 @@ test('map generation panel closes, reopens and previews the selected density wit
  await panel.getByLabel('整图种子',{exact:true}).fill('421730');
  await panel.getByLabel('整图版图').selectOption('pangea');
  await panel.getByRole('button',{name:'关闭生成地图'}).click();await expect(panel).toHaveCount(0);
- await page.getByRole('button',{name:'生成地图',exact:true}).click();
+ await tool(page,'生成地图');
  await expect(panel.getByRole('radio',{name:'3 万格'})).toBeChecked();
  await expect(panel).toHaveCSS('opacity','1');
  const box=await panel.boundingBox(),view=page.viewportSize()!;expect(box).not.toBeNull();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(view.width);expect(box!.y+box!.height).toBeLessThan(view.height);

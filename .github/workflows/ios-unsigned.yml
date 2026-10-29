@@ -43,6 +43,17 @@ jobs:
       - name: Build the web app
         run: npm run build
 
+      - name: Verify WebKit phone layouts
+        id: webkit
+        continue-on-error: true
+        run: |
+          npx playwright install webkit
+          npx playwright test --config=playwright.ios.config.ts
+
+      - name: Record WebKit result
+        if: always()
+        run: echo "WebKit phone regression = ${{ steps.webkit.outcome }}. This is not physical iPhone validation." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Copy the web build into the iOS project
         run: npm run ios:sync
 

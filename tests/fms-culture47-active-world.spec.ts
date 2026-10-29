@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {test,expect,type Page} from '@playwright/test';
 import {enter,create} from './fms-culture47-fixture';
 
@@ -22,7 +23,7 @@ test('peaceful founding makes autonomous decisions and declares a real war in it
  await expect.poll(async()=>Number(await app.getAttribute('data-day')),{timeout:140000}).toBeGreaterThanOrEqual(30);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false',{timeout:30000});
  const evidence=await readEvidence(page);expect(evidence.some(e=>e.wars>evidence[0].wars&&e.armyOrders>0)).toBe(true);expect(evidence.at(-1)!.history).toBeGreaterThan(evidence[0].history);
- await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(page.locator('.c47-history')).toContainText('宣战');expect(errors).toEqual([]);
+ await tool(page,'查看大事记');await expect(page.locator('.c47-history')).toContainText('宣战');expect(errors).toEqual([]);
  await page.screenshot({path:info.outputPath('autonomous-first-month.png')});await info.attach('actual-simulation',{body:JSON.stringify({fixture:'synthetic terrain; unchanged founding countries, resources, RNG and positions; no manual declaration',evidence,errors,physicalIphone:false}),contentType:'application/json'});
 });
 

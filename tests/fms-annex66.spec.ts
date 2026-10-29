@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {expect,test,type Page} from '@playwright/test';
 import {create} from './fms-culture47-fixture';
 
@@ -23,7 +24,7 @@ test('original vassalize and annex from the nation panel by clicking target stat
   await actions.getByRole('button',{name:'吞并',exact:true}).click();
   await expect(page.getByRole('region',{name:'国家行为选择'})).toContainText('点击敌对国家，直接吞并');
   await clickTargets(page,async()=>Number((await panel.textContent())!.match(/实控地区(\d+)/)![1])>before);
-  await page.getByRole('button',{name:'查看大事记',exact:true}).click();
+  await tool(page,'查看大事记');
   await expect(page.getByRole('complementary',{name:'大事记'})).toContainText('灭亡');
   await page.screenshot({path:info.outputPath('annex.png')});
   expect(errors).toEqual([]);

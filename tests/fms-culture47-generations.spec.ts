@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {test,expect} from '@playwright/test';
 import fs from 'node:fs';
 import {enter,create} from './fms-culture47-fixture';
@@ -6,7 +7,7 @@ import type {Culture47Request,Culture47Response} from '../src/fms/play/culture47
 
 test('normal play births appear in the family and chronicle, continue while inspected, then cold restore',async({page},info)=>{
  test.setTimeout(240000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await enter(page,'00000000-0000-4000-8000-00000000065b');await create(page,24);
- const app=page.getByTestId('culture47-app');await page.getByRole('button',{name:'继续时间',exact:true}).click();await page.getByRole('button',{name:'查看大事记',exact:true}).click();
+ const app=page.getByTestId('culture47-app');await page.getByRole('button',{name:'继续时间',exact:true}).click();await tool(page,'查看大事记');
  const history=page.getByRole('region',{name:'文化世界史书'});await expect(history.locator('.c47-history-meta').filter({hasText:'出生'}).first()).toBeVisible({timeout:160000});
  await expect(page.getByRole('button',{name:'暂停时间',exact:true})).toBeVisible();await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');
  const row=history.locator('article').filter({has:page.locator('.c47-history-meta').filter({hasText:'出生'})}).first(),text=await row.locator('p').first().innerText();await row.locator('.c47-history-nations button').click();
@@ -16,7 +17,7 @@ test('normal play births appear in the family and chronicle, continue while insp
  await page.setViewportSize({width:428,height:926});await page.screenshot({path:info.outputPath('generations-portrait.png')});
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:90000});
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await expect(app).toHaveAttribute('data-tick',tick!,{timeout:90000});
- await page.getByRole('button',{name:'查看大事记',exact:true}).click();await expect(history).toContainText(text);
+ await tool(page,'查看大事记');await expect(history).toContainText(text);
  await history.locator('article').filter({hasText:text}).locator('.c47-history-nations button').click();await houses.locator(':scope > summary').click();expect(await houses.locator('.c47-family-people').allTextContents()).toEqual(people);
  await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(app).toHaveAttribute('data-day',String(Number(day)+1));expect(errors).toEqual([]);
  await info.attach('generations-play',{body:JSON.stringify({day,tick,birth:text,people,coldRestored:true,errors,physicalIphone:false}),contentType:'application/json'});
@@ -32,7 +33,7 @@ test('frozen fe7 keeps original families and no birth-rule upgrade when loaded i
    const db=await new Promise<IDBDatabase>((ok,no)=>{const q=indexedDB.open('lieguoji-fms-culture47-newworld-v3',1);q.onupgradeneeded=()=>q.result.createObjectStore('slots');q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});await new Promise<void>((ok,no)=>{const tx=db.transaction('slots','readwrite'),s=tx.objectStore('slots');s.put({version:1,revision:1,checksum,journal},'current');s.put(1,'revision');tx.oncomplete=()=>ok();tx.onerror=()=>no(tx.error);});db.close();
   }finally{worker.terminate();}
  },{asset,data});
- await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await page.getByRole('button',{name:'查看大事记',exact:true}).click();await page.locator('.c47-history-nations button').last().click();
+ await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();await tool(page,'查看大事记');await page.locator('.c47-history-nations button').last().click();
  const houses=page.locator('.c47-houses');await houses.locator(':scope > summary').click();await expect(page.getByRole('button',{name:'自主分封：开',exact:true})).toBeVisible();await expect(page.getByLabel('世代记录')).toHaveCount(0);
  await page.getByRole('button',{name:'自主分封：开',exact:true}).click();await expect(page.getByRole('button',{name:'自主分封：关',exact:true})).toBeVisible();await page.getByRole('button',{name:'推进一天',exact:true}).click();await expect(page.getByTestId('culture47-app')).toHaveAttribute('data-day','1');
  await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存');

@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {expect,test} from '@playwright/test';
 import {create} from './fms-culture47-fixture';
 
@@ -10,7 +11,7 @@ test('pause and edit countries in a running world: taps redraw territory, persis
   const app=page.getByTestId('culture47-app'),map=page.getByTestId('culture47-map');
   await page.getByRole('button',{name:'继续时间',exact:true}).click();
   await expect.poll(async()=>Number(await app.getAttribute('data-tick')),{timeout:60000}).toBeGreaterThan(600);
-  await page.getByRole('button',{name:'编辑国家',exact:true}).click();
+  await tool(page,'编辑国家');
   const banner=page.getByRole('region',{name:'编辑国家'});await expect(banner).toBeVisible();
   await expect(page.getByRole('button',{name:'继续时间',exact:true})).toBeVisible();
   await expect(app).toHaveAttribute('data-advancing','false',{timeout:20000});
@@ -25,12 +26,12 @@ test('pause and edit countries in a running world: taps redraw territory, persis
   await expect(app).toHaveAttribute('data-tick',pausedTick!);
   await page.screenshot({path:info.outputPath('territory-edit.png')});
   await idle();const owned=await banner.getAttribute('data-owned');
-  await page.getByRole('button',{name:'查看大事记',exact:true}).click();await page.getByLabel('大事记范围').selectOption({label:'全部记录（含领土易手）'});
+  await tool(page,'查看大事记');await page.getByLabel('大事记范围').selectOption({label:'全部记录（含领土易手）'});
   await expect(page.getByRole('complementary',{name:'大事记'})).toContainText('地图编辑');
   await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
   await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();
   await expect(app).toHaveAttribute('data-tick',pausedTick!,{timeout:120000});
-  await page.getByRole('button',{name:'编辑国家',exact:true}).click();
+  await tool(page,'编辑国家');
   await expect(page.getByRole('region',{name:'编辑国家'})).toHaveAttribute('data-owned',owned!);
   // Resuming leaves edit mode (original: editing pauses the game).
   await page.getByRole('button',{name:'继续时间',exact:true}).click();

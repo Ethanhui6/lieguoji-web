@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {test,expect} from '@playwright/test';
 import {create} from './fms-culture47-fixture';
 
@@ -14,7 +15,7 @@ test('real monthly news uses one-second normal and eight-second major dwell with
  });
  await create(page);
  const changes=()=>page.evaluate(()=>(window as typeof window&{newsChanges:NewsChange[]}).newsChanges);
- const app=page.getByTestId('culture47-app');await page.getByRole('button',{name:'查看大事记',exact:true}).click();const history=page.getByRole('region',{name:'文化世界史书'});
+ const app=page.getByTestId('culture47-app');await tool(page,'查看大事记');const history=page.getByRole('region',{name:'文化世界史书'});
  await page.getByRole('button',{name:'继续时间',exact:true}).click();await expect.poll(async()=>Number(await app.getAttribute('data-day')),{timeout:60000}).toBeGreaterThanOrEqual(35);
  await page.getByRole('button',{name:'暂停时间',exact:true}).click();await expect(app).toHaveAttribute('data-advancing','false');
  const records=await history.locator('li article>p').allTextContents();expect(records.some(t=>t.includes('宣战：'))).toBe(true);expect(records.some(t=>/新编\d+支常备军$/.test(t))).toBe(true);

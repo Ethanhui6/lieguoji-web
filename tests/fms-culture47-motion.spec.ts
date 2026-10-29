@@ -1,10 +1,11 @@
+import {tool} from './fms-culture47-fixture';
 import {test,expect,type Locator,type Page} from '@playwright/test';
 import {create} from './fms-culture47-fixture';
 test.use({video:{mode:'on',size:{width:960,height:720}}});
 type MapUnit={id:string;kind:string;x:number;y:number};
 type MapCity={id:string;name:string;nationId:string;x:number;y:number};
 async function issueReachableMarch(page:Page,map:Locator){
- await page.getByRole('button',{name:'军事模式',exact:true}).click();
+ await tool(page,'军事模式');
  const chooser=page.getByLabel('选择部队'),army=await chooser.locator('option').evaluateAll(options=>{const option=options.find(v=>v instanceof HTMLOptionElement&&v.value.startsWith('army/')) as HTMLOptionElement|undefined;return option?{value:option.value,label:option.textContent??''}:null;});
  expect(army).not.toBeNull();const selected=army!;
  const nation=await map.evaluate((node:HTMLElement,label:string)=>{const countries=JSON.parse(node.dataset.countries??'[]') as {id:string;name:string}[];return countries.filter(v=>label.startsWith(v.name+'第')).sort((a,b)=>b.name.length-a.name.length)[0]?.id??null;},selected.label);
@@ -40,7 +41,7 @@ test('actual army display changes continuously between slow Worker replies and k
  expect(Number(await app.getAttribute('data-tick'))).toBe(await page.evaluate(()=>(window as unknown as {motionAckTick:number}).motionAckTick));
  const pose=async()=>{const value=JSON.parse((await map.getAttribute('data-display-positions'))!) as Record<'armies'|'fleets',[string,{x:number;y:number}][]>;return {armies:value.armies.map(([id,{x,y}])=>[id,x,y]),fleets:value.fleets.map(([id,{x,y}])=>[id,x,y])};};
  const paused=await pose(),pausedTick=await map.getAttribute('data-display-tick');await page.waitForTimeout(400);expect(await pose()).toEqual(paused);expect(await map.getAttribute('data-display-tick')).toBe(pausedTick);
- const militaryMode=page.getByRole('button',{name:'军事模式',exact:true});if(await militaryMode.getAttribute('aria-pressed')!=='true')await militaryMode.click();const dismiss=page.getByRole('button',{name:'收起详情',exact:true});if(await dismiss.isVisible())await dismiss.click();
+ const militaryMode=page.locator('.c47-rail button[aria-label=军事模式]');if(await militaryMode.getAttribute('aria-pressed')!=='true')await tool(page,'军事模式');const dismiss=page.getByRole('button',{name:'收起详情',exact:true});if(await dismiss.isVisible())await dismiss.click();
  const units=JSON.parse((await map.getAttribute('data-display-units'))!) as {id:string;kind:string;x:number;y:number}[],box=await map.boundingBox();const target=units.find(u=>u.kind==='army'&&u.x>70&&u.y>180&&u.x<box!.width-70&&u.y<box!.height-150&&units.every(v=>v.id===u.id||Math.hypot(u.x-v.x,u.y-v.y)>22));expect(target).toBeDefined();
  await map.click({position:{x:target!.x,y:target!.y}});await expect(page.getByRole('complementary',{name:'军队与舰队'})).toBeVisible();
  await page.screenshot({path:info.outputPath('continuous-army-selected.png')});expect(errors).toEqual([]);

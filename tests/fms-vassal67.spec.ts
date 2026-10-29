@@ -1,3 +1,4 @@
+import {tool} from './fms-culture47-fixture';
 import {expect,test,type Page} from '@playwright/test';
 import {create} from './fms-culture47-fixture';
 
@@ -20,14 +21,14 @@ test('vassal shows original tribute terms; 允许附庸叛乱 is a saved world s
   const text=(await panel.textContent())!,vassal=(await page.locator('.c47-nations button').allTextContents()).map(n=>n.trim()).find(n=>text.includes('附庸：'+n))!;expect(vassal).toBeTruthy();
   await page.locator('.c47-nations button',{hasText:vassal}).click();
   await expect(panel).toContainText('贡金约');await expect(panel).toContainText('年12月');
-  await page.getByRole('button',{name:'AI全局配置',exact:true}).click();
+  await tool(page,'AI全局配置');
   const dialog=page.getByRole('dialog',{name:'AI全局配置'});
   await expect(dialog.getByLabel('允许附庸叛乱')).toBeChecked();
   await dialog.getByLabel('允许附庸叛乱').click();await expect(dialog.getByLabel('允许附庸叛乱')).not.toBeChecked({timeout:30000});
   await page.getByRole('button',{name:'保存文化世界',exact:true}).click();await expect(page.locator('.c47-notice')).toContainText('已保存',{timeout:30000});
   await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await page.getByRole('button',{name:'继续文化世界',exact:true}).click();
   await expect(page.getByTestId('culture47-map')).toBeVisible({timeout:120000});
-  await page.getByRole('button',{name:'AI全局配置',exact:true}).click();
+  await tool(page,'AI全局配置');
   await expect(page.getByRole('dialog',{name:'AI全局配置'}).getByLabel('允许附庸叛乱')).not.toBeChecked();
   expect(errors).toEqual([]);
 });

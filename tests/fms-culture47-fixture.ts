@@ -12,3 +12,10 @@ export async function enter(page:Page,worldId?:string){
  await page.reload();await page.getByRole('button',{name:'进入世界 →',exact:true}).click();await expect(page.getByRole('heading',{name:'让文明从你的地图诞生'})).toBeVisible();
 }
 export async function create(page:Page,cities=60){await page.getByLabel('城市数量',{exact:true}).selectOption(String(cities));await page.getByRole('button',{name:'从当前地图创建文化世界',exact:true}).click();await expect(page.getByTestId('culture47-map')).toBeVisible({timeout:90000});}
+
+/** Open a compact HUD tool through its visible disclosure on phones. */
+export async function tool(page:Page,name:string){
+ const button=page.getByRole('button',{name,exact:true});
+ if(!await button.isVisible())await page.getByRole('button',{name:'展开工具栏',exact:true}).click();
+ await button.click();
+}

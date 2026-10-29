@@ -19,7 +19,12 @@ test('all primary surfaces share bounded aligned panels',async({page},info)=>{
  };
  await page.goto('/?fms=1');await capture('01-generation',page.locator('.fms-generation'));
  await enter(page);await capture('02-world-setup',page.locator('.c47-setup'));
- await create(page);if(await page.getByRole('button',{name:'暂停时间',exact:true}).isVisible())await page.getByRole('button',{name:'暂停时间',exact:true}).click();
+ await create(page);
+ const saveIcon=page.getByRole('button',{name:'保存文化世界',exact:true});
+ const buttonBox=(await saveIcon.boundingBox())!,iconBox=(await saveIcon.locator('.play-icon').boundingBox())!;
+ expect(Math.abs(buttonBox.x+buttonBox.width/2-iconBox.x-iconBox.width/2)).toBeLessThanOrEqual(1);
+ expect(Math.abs(buttonBox.y+buttonBox.height/2-iconBox.y-iconBox.height/2)).toBeLessThanOrEqual(1);
+ if(await page.getByRole('button',{name:'暂停时间',exact:true}).isVisible())await page.getByRole('button',{name:'暂停时间',exact:true}).click();
  await tool(page,'国家');
  const panel=page.locator('.c47-panel');await capture('03-nation',panel);
  const family=panel.locator('details').filter({has:page.locator('.c47-family-people')}).first();await family.locator('summary').click();
@@ -36,7 +41,14 @@ test('all primary surfaces share bounded aligned panels',async({page},info)=>{
  await tool(page,'编辑国家');await capture('12-territory',page.locator('.c47-territory'));await page.getByRole('button',{name:'完成编辑',exact:true}).click();
  await page.getByRole('button',{name:'菜单选项',exact:true}).click();const menu=page.locator('.c47-menu');await capture('13-menu',menu);
  for(const [button,name] of [['地图外观','14-display'],['自动保存','15-autosave'],['云存档','16-cloud'],['加载游戏','17-load'],['保存游戏','18-save'],['导出','19-export']]){
-  await menu.getByRole('button',{name:new RegExp('^'+button)}).click();await capture(name,menu);await menu.getByRole('button',{name:'关闭',exact:true}).click();
+  await menu.getByRole('button',{name:new RegExp('^'+button)}).click();await capture(name,menu);
+  if(name==='18-save'){
+   await menu.getByText('新建存档',{exact:true}).click();await capture('18a-save-form',menu);
+   const input=(await menu.getByRole('textbox',{name:'存档名称'}).boundingBox())!,submit=(await menu.getByRole('button',{name:'保存游戏',exact:true}).boundingBox())!;
+   expect(Math.abs(input.x-submit.x)).toBeLessThanOrEqual(1);expect(Math.abs(input.width-submit.width)).toBeLessThanOrEqual(1);
+   await menu.getByRole('button',{name:'关闭',exact:true}).click();
+  }
+  await menu.getByRole('button',{name:'关闭',exact:true}).click();
  }
  await menu.getByRole('button',{name:'关闭菜单选项',exact:true}).click();
  await tool(page,'生成地图');await capture('20-confirm',page.locator('.c47-confirm'));await page.getByRole('button',{name:'否',exact:true}).click();

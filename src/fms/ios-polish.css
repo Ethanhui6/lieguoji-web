@@ -1,37 +1,95 @@
-/* Shared jade glass language. Small HUD surfaces use a bounded blur; large
-   scrolling sheets are opaque to avoid re-compositing the map behind each row. */
-html:root :is(.c47-app,.fms-app.fms-app){--ink:#183a39;--muted:#596c68;--paper:#f2f5ef;--active:#205c50;--c47-ink:#183a39;--c47-muted:#596c68;color:#183a39;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif}
-html:root :is(.c47-app,.fms-app.fms-app) :is(button,input,select){border-radius:12px;font-family:inherit}
-html:root :is(.c47-app,.fms-app.fms-app) button:focus-visible{outline:3px solid #207c79;outline-offset:2px}
-html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup,.c47-confirm,.c47-territory),
-html:root .fms-app.fms-app :is(.fms-generation,.fms-settings,.fms-preview,.fms-confirm){background:#f2f5ef;color:#183a39;border:1px solid #fff;border-radius:22px;box-shadow:0 12px 36px #092e3429;-webkit-backdrop-filter:none;backdrop-filter:none}
-html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup){padding:16px;line-height:1.5}
-html:root .c47-app :is(h2,h3,h4){font-family:inherit;letter-spacing:0}
-html:root .c47-app :is(input,select){background:#fff;border:1px solid #b9cdc6;color:#183a39;max-width:100%}
-html:root .c47-app button[aria-pressed=true]{background:#d2e7dc;color:#184f43}
-html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail){background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0;gap:6px}
-html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail)>button,
-html:root .c47-app .c47-tools-toggle{background:#f3f8f0e8;border:1px solid #ffffffdf;border-radius:18px;box-shadow:0 3px 12px #14363224,inset 0 1px 0 #fff;min-height:44px;min-width:44px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-html:root .c47-app .c47-bar>div{display:none}
-html:root .c47-app .c47-bar time{background:#f3f8f0e8;border:1px solid #fff;border-radius:18px;padding:10px;white-space:nowrap;font-variant-numeric:tabular-nums}
-html:root .c47-app .c47-controls{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);height:auto}
-html:root .c47-app .c47-controls>button{flex:none;min-width:48px}
+/* iOS control layer: neutral materials, shared geometry, content-led sheets. */
+html:root :is(.c47-app,.fms-app.fms-app){--ui-ink:#1c1c1e;--ui-secondary:#636366;--ui-accent:#007aff;--ui-surface:#f2f2f7;--ui-line:#3c3c431f;--ui-glass:rgba(250,250,252,.72);--ui-shadow:0 6px 24px #15212b1f,inset 0 1px 0 #ffffffcc;--ink:var(--ui-ink);--muted:var(--ui-secondary);--paper:var(--ui-surface);--active:var(--ui-accent);color:var(--ui-ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;letter-spacing:0}
+html:root :is(.c47-app,.fms-app.fms-app) button{box-sizing:border-box;font:inherit;line-height:1.25;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--ui-ink);border:0;border-radius:12px;box-shadow:none;min-height:44px;text-align:center}
+html:root :is(.c47-app,.fms-app.fms-app) button:focus-visible{outline:3px solid #007aff;outline-offset:3px}
+html:root :is(.c47-app,.fms-app.fms-app) :is(input,select){font:inherit;color:var(--ui-ink);border:1px solid var(--ui-line);border-radius:12px;box-sizing:border-box;background:#fff}
+html:root .c47-app :is(h1,h2,h3,h4){font-family:inherit;letter-spacing:0;color:var(--ui-ink)}
+html:root .c47-app small{color:var(--ui-secondary)}
+html:root .c47-app button[aria-pressed=true]{background:#007aff16;color:#0066d6}
+html:root .c47-app :is(.c47-navigation,.c47-toolbar-actions,.c47-controls,.c47-zoom,.c47-tools-toggle,.c47-rail,.c47-news){background:var(--ui-glass);border:1px solid #ffffffa3;box-shadow:var(--ui-shadow);-webkit-backdrop-filter:blur(16px) saturate(1.45);backdrop-filter:blur(16px) saturate(1.45);border-radius:28px}
+html:root .c47-app .c47-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;left:max(12px,var(--safe-left));right:max(12px,var(--safe-right));top:max(12px,var(--safe-top));height:52px;width:auto;max-width:none;padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;flex-wrap:nowrap}
+html:root .c47-app .c47-bar>div{display:flex;align-items:center;gap:0;margin:0;padding:3px;min-width:0;height:52px;box-sizing:border-box}
+html:root .c47-app .c47-navigation{flex:0 1 auto}
+html:root .c47-app .c47-toolbar-actions{flex-shrink:0}
+html:root .c47-app .c47-bar time{position:static;transform:none;background:none;margin:0;padding:0 10px 0 2px;border:0;border-radius:0;color:var(--ui-ink);font-size:13px;font-weight:600;white-space:nowrap;line-height:1.2;font-variant-numeric:tabular-nums;min-width:0}
+html:root .c47-app .c47-navigation>strong{padding:0 12px 0 4px;font-size:15px}
+html:root .c47-app :is(.c47-bar,.c47-controls,.c47-zoom)>button,
+html:root .c47-app .c47-bar>div>button{position:relative;display:flex;align-items:center;justify-content:center;gap:0;width:44px;height:44px;min-width:44px;min-height:44px;flex:0 0 44px;padding:0;border:0;border-radius:50%;background:transparent;box-shadow:none}
+html:root .c47-app .c47-bar .c47-bar-label{display:none}
+html:root .c47-app :is(.c47-bar,.c47-controls,.c47-zoom,.c47-tools-toggle) .play-icon{display:block;flex:none;width:22px;height:22px;margin:0}
+html:root .c47-app .c47-unsaved{position:absolute;right:7px;top:7px;width:5px;height:5px;margin:0;border:1px solid #fff;background:#ff9500;border-radius:50%;pointer-events:none}
+html:root .c47-app .c47-controls{display:flex;align-items:center;gap:4px;padding:3px;left:50%;right:auto;bottom:max(12px,var(--safe-bottom));transform:translateX(-50%);width:max-content;height:52px;box-sizing:border-box}
+html:root .c47-app .c47-controls>button{font-size:13px;font-weight:600}
+html:root .c47-app .c47-zoom{padding:3px;gap:0;right:max(12px,var(--safe-right));left:auto;bottom:max(12px,var(--safe-bottom))}
 html:root .c47-app .c47-tools-toggle{display:none}
-@media(max-width:600px),(max-height:500px) and (pointer:coarse){
- html:root .c47-app .c47-bar{height:44px;gap:6px;right:auto;max-width:calc(100% - var(--safe-left) - var(--safe-right) - 16px)}
- html:root .c47-app .c47-bar time{padding:8px 6px;font-size:11px;flex:1}
- html:root .c47-app .c47-bar button{width:44px;padding:8px}
- html:root .c47-app .c47-bar-label{display:none}
- html:root .c47-app .c47-news{top:calc(var(--hud-top) + 52px);left:auto;right:max(8px,var(--safe-right));max-width:calc(100% - var(--safe-left) - var(--safe-right) - 78px);height:36px;min-height:36px;font-size:11px;border-radius:18px;background:#f3f8f0e8;box-shadow:0 2px 8px #14363214;-webkit-backdrop-filter:none;backdrop-filter:none}
- html:root .c47-app .c47-tools-toggle{display:flex;align-items:center;justify-content:center;flex-direction:column;position:absolute;z-index:21;left:max(8px,var(--safe-left));top:calc(var(--hud-top) + 52px);padding:5px;font-size:10px;gap:0}
- html:root .c47-app .c47-tools-toggle svg{width:20px;height:20px}
+html:root .c47-app .c47-news{font-size:12px;color:var(--ui-ink)}
+html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup,.c47-confirm,.c47-territory,.c47-exit),
+html:root .fms-app.fms-app :is(.fms-generation,.fms-settings,.fms-preview,.fms-confirm){background:#f2f2f7;color:var(--ui-ink);border:1px solid #ffffffb3;border-radius:28px;box-shadow:0 16px 48px #13202e26;-webkit-backdrop-filter:none;backdrop-filter:none;box-sizing:border-box}
+html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup){padding:20px;line-height:1.5}
+html:root .c47-app :is(.c47-menu,.c47-map-menu,.c47-ai-global)>header{display:flex;align-items:center;justify-content:center;position:sticky;top:-20px;z-index:3;min-height:52px;padding:0 44px;margin:-8px 0 16px;border:0;background:#f2f2f7;text-align:center}
+html:root .c47-app :is(.c47-menu,.c47-map-menu,.c47-ai-global)>header strong{font-size:17px;font-weight:600;line-height:1.3}
+html:root .c47-app :is(.c47-menu,.c47-map-menu,.c47-ai-global)>header button{position:absolute;right:0;top:4px;width:44px;height:44px;padding:0;border-radius:50%;background:#76768012;font-size:24px;line-height:1}
+html:root .c47-app .c47-menu{top:auto;bottom:calc(max(12px,var(--safe-bottom)) + 68px);left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100% - var(--safe-left) - var(--safe-right) - 24px));max-width:440px;max-height:calc(100% - var(--safe-top) - var(--safe-bottom) - 156px);height:auto;overflow-y:auto}
+html:root .c47-app .c47-menu :is(.c47-menu-list,.c47-save-list){display:flex;flex-direction:column;gap:1px;background:transparent;padding:0;margin:0}
+html:root .c47-app .c47-menu-list>button,html:root .c47-app .c47-save-list>button{min-height:50px;width:100%;padding:12px 16px;justify-content:flex-start;text-align:left;border:0;background:#fff;border-radius:12px;margin:0 0 6px;color:var(--ui-ink);font-size:15px;box-sizing:border-box}
+html:root .c47-app .c47-menu-list>button small{margin-left:auto;text-align:right;font-size:11px;max-width:55%}
+html:root .c47-app .c47-menu-list>button:last-child,html:root .c47-app .c47-menu-back{justify-content:center;text-align:center;width:100%;background:#7676800f;margin:12px 0 0;min-height:48px;color:#007aff;border:0;border-radius:14px}
+html:root .c47-app .c47-menu :is(.c47-slider,.c47-check){background:#fff;border:0;border-radius:12px;margin:0 0 6px;padding:12px 16px;font-size:14px}
+html:root .c47-app .c47-menu-hint{font-size:13px;font-weight:400;color:var(--ui-secondary);margin:0 0 12px;text-align:center}
+html:root .c47-app .c47-menu :is(.c47-new-save,.c47-save-name){display:flex;flex-direction:column;align-items:stretch;gap:10px;width:100%;margin:0;padding:0}
+html:root .c47-app .c47-save-name{font-size:13px;color:var(--ui-secondary);text-align:left}
+html:root .c47-app .c47-new-save input{width:100%;height:50px;margin:0;padding:12px 14px;font-size:16px;background:#fff;border:1px solid var(--ui-line);text-align:left}
+html:root .c47-app .c47-new-save>div{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px;width:100%}
+html:root .c47-app .c47-new-save button{width:100%;min-height:50px;margin:0;justify-content:center;text-align:center;border-radius:25px;background:#7676800f;color:#007aff}
+html:root .c47-app .c47-new-save button[type=submit],html:root .c47-app .c47-save-list .c47-create-save{background:#007aff;color:#fff;justify-content:center;text-align:center;font-weight:600;border-radius:25px}
+html:root .c47-app .c47-menu-confirm>div{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html:root .c47-app .c47-panel :is(.c47-dismiss,.c47-sheet-size){width:44px;height:44px;min-height:44px;top:12px;background:#76768012;border:0;border-radius:50%;padding:0;line-height:1}
+html:root .c47-app .c47-panel .c47-dismiss{right:12px}html:root .c47-app .c47-panel .c47-sheet-size{right:64px}
+html:root .c47-app .c47-identity{padding-right:80px;margin:0 0 16px;min-height:44px;align-items:center}
+html:root .c47-app .c47-identity h2{font:600 20px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif}
+html:root .c47-app .c47-identity p{font-size:12px;color:var(--ui-secondary)}
+html:root .c47-app input:is([type=range],[type=checkbox]){accent-color:#007aff}
+html:root .c47-app .c47-primary,html:root .fms-app.fms-app :is(.fms-generation-submit,.play-entry){background:#007aff;color:#fff;border:0;border-radius:24px}
+@media(max-width:900px){
+ html:root .c47-app{--hud-top:max(12px,var(--safe-top));--hud-bottom:max(12px,var(--safe-bottom))}
+ html:root .c47-app .c47-tools-toggle{position:absolute;z-index:21;display:flex;align-items:center;justify-content:center;left:max(12px,var(--safe-left));top:calc(var(--hud-top) + 64px);width:48px;height:48px;min-height:48px;padding:0}
+ html:root .c47-app .c47-tools-toggle span{display:none}
+ html:root .c47-app .c47-news{top:calc(var(--hud-top) + 68px);right:max(12px,var(--safe-right));left:auto;transform:none;width:auto;max-width:calc(100% - var(--safe-left) - var(--safe-right) - 88px);height:40px;min-height:40px;padding:8px 12px;box-sizing:border-box}
  html:root .c47-app .c47-rail{display:none}
- html:root .c47-app .c47-rail.c47-rail-open{display:grid;grid-template-columns:repeat(3,56px);gap:6px;top:calc(var(--hud-top) + 104px);bottom:auto;max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 168px);padding:8px;border-radius:22px;background:#edf4ecef;z-index:22}
- html:root .c47-app .c47-rail button{width:56px;height:56px;min-height:56px;border-radius:14px;padding:4px;display:flex;flex-direction:column;justify-content:center;align-items:center}
- html:root .c47-app .c47-rail button span{display:block;font-size:10px}
- html:root .c47-app .c47-controls{left:50%;right:auto;transform:translateX(-50%);width:max-content;height:auto}
- html:root .c47-app .c47-zoom{bottom:var(--hud-bottom)}
- html:root .c47-app :is(.c47-panel,.c47-menu,.c47-map-menu,.c47-ai-global,.c47-setup){padding:14px}
+ html:root .c47-app .c47-rail.c47-rail-open{display:grid;grid-template-columns:repeat(3,60px);gap:8px;top:calc(var(--hud-top) + 124px);left:max(12px,var(--safe-left));bottom:auto;max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 190px);height:max-content;overflow-y:auto;padding:12px;z-index:22;border-radius:28px}
+ html:root .c47-app .c47-rail button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:60px;height:60px;min-height:60px;padding:6px;background:#ffffff50;border-radius:18px;color:var(--ui-ink)}
+ html:root .c47-app .c47-rail button span{display:block;font-size:11px}
+ html:root .c47-app :is(.c47-panel,.c47-map-menu,.c47-ai-global,.c47-territory){left:12px;right:12px;width:auto;max-width:none;bottom:calc(var(--hud-bottom) + 68px);max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 192px);top:auto;padding:20px;border-radius:28px}
+ html:root .c47-app .c47-panel{height:auto}
+ html:root .c47-app .c47-zoom{bottom:var(--hud-bottom);display:flex;flex-direction:column}
 }
-@media(prefers-reduced-transparency:reduce){html:root .c47-app :is(.c47-bar,.c47-controls,.c47-rail)>button,html:root .c47-app .c47-tools-toggle{background:#f2f5ef;-webkit-backdrop-filter:none;backdrop-filter:none}}
-@media(prefers-reduced-motion:reduce){html:root :is(.fms-app,.c47-app) *{scroll-behavior:auto;animation:none;transition:none}}
+@media(max-height:500px) and (pointer:coarse){
+ html:root .c47-app :is(.c47-menu,.c47-panel,.c47-map-menu,.c47-ai-global,.c47-territory){top:calc(var(--hud-top) + 64px);bottom:calc(var(--hud-bottom) + 64px);max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 128px);height:auto;left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100% - var(--safe-left) - var(--safe-right) - 148px))}
+ html:root .c47-app .c47-zoom{flex-direction:row}
+ html:root .c47-app .c47-rail.c47-rail-open{grid-template-columns:repeat(4,60px);max-height:calc(100% - var(--hud-top) - var(--hud-bottom) - 190px)}
+}
+@media(prefers-reduced-transparency:reduce){html:root .c47-app :is(.c47-navigation,.c47-toolbar-actions,.c47-controls,.c47-zoom,.c47-tools-toggle,.c47-rail,.c47-news){background:#f2f2f7;backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){html:root :is(.fms-app,.c47-app) *{animation:none;transition:none;scroll-behavior:auto}}
+
+html:root .c47-app button.c47-tools-toggle{border-radius:50%;background:var(--ui-glass);border:1px solid #ffffffa3;box-shadow:var(--ui-shadow)}
+html:root .c47-app button.c47-menu-scrim{position:absolute;inset:0;z-index:30;width:100%;height:100%;border:0;border-radius:0;background:#00000026;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;transform:none;padding:0;cursor:default}
+html:root .c47-app .c47-menu{z-index:40}
+html:root .c47-app .c47-notice{background:#f2f2f7;color:#1c1c1e;border:0;border-radius:18px;font-size:13px;box-shadow:0 4px 16px #0002}
+html:root .c47-app .c47-menu .c47-slider output{color:var(--ui-secondary)}
+
+html.ios-shell:root .c47-app .c47-menu:has(input:focus){bottom:max(8px,var(--safe-bottom));top:auto;max-height:calc(100% - var(--safe-bottom) - 16px)}
+/* Shared secondary controls retain semantic warning colours, not old theme borders. */
+html:root .c47-app :is(.c47-offices-enter,.c47-rts-enter){border:0;border-radius:14px;min-height:48px;font-weight:500}
+html:root .c47-app .c47-offices-enter{background:#007aff12;color:#0066d6}
+html:root .c47-app .c47-rts-enter{background:#ff3b3010;color:#c52b23}
+html:root .c47-app .c47-action-grid button{border:0;border-radius:12px;background:#fff;min-height:44px;color:#1c1c1e}
+html:root .c47-app .c47-segment{background:#7676801a;border-radius:10px;padding:3px}
+html:root .c47-app .c47-segment button{min-height:36px;border-radius:8px;font-size:13px}
+html:root .c47-app .c47-segment button[aria-pressed=true]{background:#fff;color:#1c1c1e;box-shadow:0 1px 4px #00000015}
+html:root .fms-app.fms-app .fms-generation>header{background:none;border-color:var(--ui-line)}
+html:root .fms-app.fms-app .fms-grid-list label.selected{background:#007aff0d;border-color:#007aff55}
+html:root .fms-app.fms-app :is(input[type=checkbox],input[type=radio],input[type=range]){accent-color:#007aff}
+html:root .fms-app.fms-app .fms-generation :is(h2,legend){color:#1c1c1e}
+html:root .fms-app.fms-app .fms-generation-submit{background:#007aff;border-radius:24px;min-height:48px;font-weight:600}
+
+html:root :is(.c47-app,.fms-app.fms-app) :is(input,select):focus-visible{outline:2px solid #007aff;outline-offset:2px}

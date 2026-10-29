@@ -91,6 +91,23 @@ test('iPhone bundled editor → world, safe areas and local saves', async ({ pag
   ]) {
     if(['国家','军事模式','查看大事记','统计','编辑国家','AI全局配置','生成地图'].includes(open))await tool(page,open);else await page.getByRole('button', { name:open, exact:true }).click();
     await expect(page.locator(panel)).toBeVisible();
+    if(open==='菜单选项'){
+      const dialog=page.locator('.c47-menu');
+      await dialog.getByRole('button',{name:'保存游戏',exact:true}).click();
+      await dialog.getByText('新建存档',{exact:true}).click();
+      const input=dialog.getByRole('textbox',{name:'存档名称'});await input.fill('iOS 对齐验证');
+      await page.screenshot({path:info.outputPath('save-form.png')});
+      await page.screenshot({path:`docs/ios-proof/${info.project.name}-save.jpg`,quality:80,scale:'css'});
+      const field=(await input.boundingBox())!,save=(await dialog.getByRole('button',{name:'保存游戏',exact:true}).boundingBox())!;
+      expect(Math.abs(field.x-save.x)).toBeLessThanOrEqual(1);expect(Math.abs(field.width-save.width)).toBeLessThanOrEqual(1);
+      await input.focus();await page.evaluate(()=>document.documentElement.style.setProperty('--keyboard-inset','220px'));
+      await dialog.getByRole('button',{name:'保存游戏',exact:true}).scrollIntoViewIfNeeded();
+      await expect(dialog.getByRole('button',{name:'保存游戏',exact:true})).toBeInViewport();
+      await page.evaluate(()=>document.documentElement.style.setProperty('--keyboard-inset','0px'));await input.blur();
+      await dialog.getByRole('button',{name:'保存游戏',exact:true}).click();
+      await expect(dialog).toHaveCount(0);await expect(page.locator('.c47-notice')).toContainText('已保存');
+      continue;
+    }
     await expect(page.getByRole('button', { name:close, exact:true })).toBeInViewport();
     await page.getByRole('button', { name:close, exact:true }).click();
   }

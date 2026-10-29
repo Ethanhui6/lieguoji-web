@@ -1,4 +1,5 @@
 import {Fragment,useEffect,useState} from 'react';
+import {PlayIcon} from './PlayIcon';
 import {AUTOSAVE_MAX_MINUTES,AUTOSAVE_MIN_MINUTES,clampAutoSaveMinutes,type Culture47Config} from './culture47-config';
 import {gameAudio47,useAudio47} from '../audio/audio47';
 import {CultureCloud47} from './CultureCloud47';
@@ -54,7 +55,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
     case 'library':body=<>
       <p className="c47-menu-hint">选择存档</p>
       <div className="c47-save-list" role="list" aria-label="存档列表">
-        {view.mode==='save'&&<button role="listitem" disabled={busy} onClick={()=>setView({kind:'new-save',name:defaultSaveName47()})}>New Save</button>}
+        {view.mode==='save'&&<button role="listitem" disabled={busy} onClick={()=>setView({kind:'new-save',name:defaultSaveName47()})} className="c47-create-save"><PlayIcon name="plus"/>新建存档</button>}
         {saves===null?<small>正在读取存档…</small>:saves.map(s=><button role="listitem" key={s.name} disabled={busy||!!s.locked} title={s.locked} onClick={()=>setView(view.mode==='save'?{kind:'overwrite',name:s.name}:{kind:'load-or-delete',name:s.name})}><span>{s.name}</span><small>{s.locked??savedAtText(s.savedAt)}</small></button>)}
         {saves?.length===0&&view.mode==='load'&&<small>暂无存档</small>}
       </div>
@@ -62,7 +63,7 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
       <button className="c47-menu-back" onClick={back}>关闭</button>
     </>;break;
     case 'new-save':body=<form className="c47-new-save" onSubmit={e=>{e.preventDefault();void save(view.name);}}>
-      <input aria-label="存档名称" value={view.name} maxLength={120} onChange={e=>setView({kind:'new-save',name:e.target.value})}/>
+      <label className="c47-save-name">存档名称<input aria-label="存档名称" value={view.name} maxLength={120} onChange={e=>setView({kind:'new-save',name:e.target.value})}/></label>
       <div><button type="submit" disabled={busy}>保存游戏</button><button type="button" onClick={()=>library('save')}>关闭</button></div>
     </form>;break;
     case 'overwrite':body=confirm(`是否覆盖该存档？存档：${view.name}`,()=>void save(view.name),()=>library('save'));break;
@@ -131,8 +132,8 @@ export function CultureMenu47({busy,hasWorld,unsaved,initial,config,onConfig,onS
     </div>;break;
   }
   const title=view.kind==='cloud'?'云存档':view.kind==='menu'||view.kind==='autosave'||view.kind==='other'||view.kind==='display'||view.kind.startsWith('export')?'菜单选项':'存档管理';
-  return <section className="c47-menu" role="dialog" aria-label={title}>
-    <header><strong>{title}</strong><button aria-label="关闭菜单选项" onClick={onClose}>×</button></header>
+  return <><button className="c47-menu-scrim" aria-label="关闭菜单背景" tabIndex={-1} onClick={onClose}/><section className="c47-menu" data-view={view.kind} role="dialog" aria-label={title}>
+    <header><strong>{title}</strong><button aria-label="关闭菜单选项" onClick={onClose}><PlayIcon name="close"/></button></header>
     <Fragment key={view.kind}>{body}</Fragment>
-  </section>;
+  </section></>;
 }

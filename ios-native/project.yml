@@ -25,6 +25,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: 列国纪·原生
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true
         UILaunchScreen: {}
         UIApplicationSceneManifest:

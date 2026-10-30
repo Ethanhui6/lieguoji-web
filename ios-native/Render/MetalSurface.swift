@@ -22,7 +22,19 @@ struct MetalSurface: UIViewRepresentable {
         private var previous: CFTimeInterval = 0
         private var lastReport: CFTimeInterval = 0
         private var stats = FrameStatistics()
+        private var renderer: TerrainRenderer?
+        private weak var mapView: MTKView?
+        private var loading: Task<Void, Never>?
         func install(on view: MTKView) {
+            mapView = view
+            do { if let device = view.device { renderer = try TerrainRenderer(device: device, format: view.colorPixelFormat) } } catch { label.text = error.localizedDescription }
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(pan(_:))); pan.maximumNumberOfTouches = 1; view.addGestureRecognizer(pan)
+            view.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(pinch(_:))))
+            let tap = UITapGestureRecognizer(target: self, action: #selector(doubleTap(_:))); tap.numberOfTapsRequired = 2; view.addGestureRecognizer(tap)
+            loading = Task { @MainActor [weak self] in
+                do { let tiles = try await TerrainLoader().load(); guard !Task.isCancelled else { return }; self?.renderer?.install(tiles) }
+                catch { self?.label.text = error.localizedDescription; self?.label.isHidden = false }
+            }
             label.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             label.textColor = .white; label.backgroundColor = UIColor.black.withAlphaComponent(0.65)
             label.numberOfLines = 0; label.translatesAutoresizingMaskIntoConstraints = false
@@ -33,9 +45,23 @@ struct MetalSurface: UIViewRepresentable {
             displayLink.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 120, preferred: 120)
             displayLink.add(to: .main, forMode: .common); link = displayLink
         }
-        func stop() { link?.invalidate(); link = nil }
+        func stop() { loading?.cancel(); link?.invalidate(); link = nil }
+        @objc private func pan(_ g: UIPanGestureRecognizer) {
+            let delta = g.translation(in: mapView); renderer?.camera.pan(dx: delta.x,dy: delta.y); g.setTranslation(.zero,in: mapView)
+            renderer?.velocity = g.state == .ended ? g.velocity(in: mapView) : .zero
+        }
+        @objc private func pinch(_ g: UIPinchGestureRecognizer) {
+            guard let view = mapView else { return }; let p = g.location(in: view); renderer?.velocity = .zero
+            renderer?.camera.zoom(factor: g.scale,anchorX: p.x,anchorY: p.y,width: view.bounds.width,height: view.bounds.height); g.scale = 1
+        }
+        @objc private func doubleTap(_ g: UITapGestureRecognizer) {
+            guard let view = mapView else { return }; let p = g.location(in: view); renderer?.velocity = .zero
+            renderer?.camera.zoom(factor: 2,anchorX: p.x,anchorY: p.y,width: view.bounds.width,height: view.bounds.height)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
         @objc private func frame(_ sender: CADisplayLink) {
             if previous > 0, sender.timestamp - previous < 1 { stats.record(seconds: sender.timestamp - previous) }
+            renderer?.coast(seconds: sender.timestamp - previous)
             previous = sender.timestamp
             if sender.timestamp - lastReport >= 0.5 {
                 label.text = String(format: " 平均 %.2f ms · 1%% low %.1f fps \n CADisplayLink 回调，非 GPU 耗时 ", stats.averageMilliseconds, stats.onePercentLow)
@@ -44,9 +70,8 @@ struct MetalSurface: UIViewRepresentable {
         }
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
         func draw(in view: MTKView) {
-            guard let descriptor = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
-                  let buffer = queue?.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: descriptor) else { return }
-            encoder.endEncoding(); buffer.present(drawable); buffer.commit()
+            guard let queue else { return }
+            renderer?.draw(view: view, queue: queue)
         }
     }
 }

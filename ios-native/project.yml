@@ -13,14 +13,14 @@ targets:
   LieguojiNative:
     type: application
     platform: iOS
-    sources: [App, Render]
+    sources: [App, Render, Resources]
     dependencies:
       - package: LieguojiCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "2"
     info:
       path: App/Info.plist
       properties:

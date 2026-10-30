@@ -35,10 +35,10 @@ jobs:
         run: |
           mkdir -p ios-native/build/Payload
           cp -R ios-native/build/LieguojiNative.xcarchive/Products/Applications/*.app ios-native/build/Payload/
-          ditto -c -k --keepParent ios-native/build/Payload ios-native/build/lieguoji-native-stage1-unsigned.ipa
+          ditto -c -k --keepParent ios-native/build/Payload ios-native/build/lieguoji-native-stage2-unsigned.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: lieguoji-native-stage1-unsigned
-          path: ios-native/build/lieguoji-native-stage1-unsigned.ipa
+          name: lieguoji-native-stage2-unsigned
+          path: ios-native/build/lieguoji-native-stage2-unsigned.ipa
           if-no-files-found: error
           retention-days: 14

@@ -9,7 +9,7 @@ struct GameShell: View {
         NavigationStack {
             MetalSurface(showMetrics: metrics)
                 .overlay(alignment: .bottom) {
-                    Text("阶段 1 · Metal 渲染骨架 · 尚未载入地图")
+                    Text("真实 20k 地形 · 拖动与双指缩放")
                         .font(.caption).padding().background(.regularMaterial, in: Capsule()).padding()
                 }
                 .navigationTitle("列国纪").navigationBarTitleDisplayMode(.inline)
@@ -26,8 +26,8 @@ struct GameShell: View {
                         List {
                             Text("SwiftUI + Metal，无网页运行时")
                             Text("请求 120Hz；实际帧率由设备、系统与负载决定。")
-                            Text("当前仅验证工程、渲染入口与性能统计。地图和游戏规则尚未移植。")
-                        }.navigationTitle("原生版 · 阶段 1")
+                            Text("地图数据已接入，模拟尚未移植。")
+                        }.navigationTitle("原生版 · 地图预览")
                             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { information = false } } }
                     }.presentationDetents([.medium, .large])
                 }

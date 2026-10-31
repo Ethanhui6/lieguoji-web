@@ -26,7 +26,7 @@ public struct WorldMap: Sendable {
     public let coast: [Float]
     /// River ribbons as triangles, x, y per vertex.
     public let rivers: [Float]
-    public let meta: WorldMeta
+    public var meta: WorldMeta
 
     public struct Edge: Sendable, Equatable {
         public let a: Int32

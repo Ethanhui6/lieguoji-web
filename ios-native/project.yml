@@ -29,8 +29,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
-        MARKETING_VERSION: "0.6.0"
-        CURRENT_PROJECT_VERSION: "6"
+        MARKETING_VERSION: "0.7.0"
+        CURRENT_PROJECT_VERSION: "7"
     info:
       path: App/Info.plist
       properties:

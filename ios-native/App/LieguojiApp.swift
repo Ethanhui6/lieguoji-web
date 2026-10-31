@@ -57,12 +57,13 @@ struct RootView: View {
 }
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), military, nations, history, ranking, menu, pending(String)
+    case province(Int), army(Int), military, diplomacy, nations, history, ranking, menu, pending(String)
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
         case .military: return "military"
+        case .diplomacy: return "diplomacy"
         case .nations: return "nations"
         case .history: return "history"
         case .ranking: return "ranking"
@@ -142,6 +143,8 @@ struct GameView: View {
             })
             .presentationDetents([.height(300), .medium])
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .diplomacy:
+            DiplomacySheet(map: map, sim: sim) { text in say(text) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(map: map, sim: sim) { army in
                 self.panel = nil
@@ -216,6 +219,7 @@ struct GameView: View {
         VStack(spacing: 2) {
             RailButton(symbol: "building.columns", title: "国家") { panel = .nations }
             RailButton(symbol: "shield", title: "军事") { panel = .military }
+            RailButton(symbol: "scroll", title: "外交") { panel = .diplomacy }
             RailButton(symbol: "book", title: "历史") { panel = .history }
             RailButton(symbol: "chart.bar", title: "排行") { panel = .ranking }
             RailButton(symbol: "pencil", title: "编辑") { panel = .pending("地图编辑") }
@@ -262,6 +266,7 @@ struct GameView: View {
     /// The newest line for the event card: a nation's grain report (the web's 日粮结算 event, every
     /// 7 days or on famine) once time runs, the opening chronicle before.
     private var latestEvent: String {
+        if let last = sim.state.diplomacy?.chronicle.last, sim.state.day - last.day < 30 { return last.text }
         if sim.state.day > 0 {
             let famine = sim.state.ledgers.indices.first { sim.state.ledgers[$0].starvationDeaths > 0 }
             let n = famine ?? (sim.state.day / 7) % max(1, map.meta.nations.count)
@@ -722,5 +727,100 @@ struct MilitaryRow: View {
             Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
+    }
+}
+
+
+/// Wars, declarations and peace (the web's diplomacy panel): the wars now being fought, a declaration
+/// between any two states, and the diplomatic chronicle.
+struct DiplomacySheet: View {
+    let map: WorldMap
+    @ObservedObject var sim: SimulationModel
+    let say: (String) -> Void
+    @State private var attacker = 0
+    @State private var defender = 1
+    var body: some View {
+        let d = sim.state.diplomacy
+        let active = d?.wars.indices.filter { d!.wars[$0].endDay == nil } ?? []
+        VStack(spacing: 0) {
+            SheetHeader(title: "外交", subtitle: active.isEmpty ? "天下太平" : "\(active.count) 场战争进行中", color: nil) {}
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if let d, !active.isEmpty {
+                        Text("战争").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                        PaperGroup {
+                            ForEach(active, id: \.self) { i in
+                                let war = d.wars[i].declared
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        NationChip(map: map, nation: war.attacker)
+                                        Image(systemName: "bolt.fill").font(.caption).foregroundStyle(Color(red: 0.6, green: 0.15, blue: 0.1))
+                                        NationChip(map: map, nation: war.defender)
+                                        Spacer()
+                                        Button("议和") {
+                                            Task { if let e = await sim.makePeace(war.attacker, war.defender) { say(e) } else { say("\(map.meta.nations[war.attacker].name)与\(map.meta.nations[war.defender].name)议和") } }
+                                        }
+                                        .font(.caption.weight(.semibold)).padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(Theme.accentSoft, in: Capsule()).foregroundStyle(Theme.accent).buttonStyle(.plain)
+                                    }
+                                    Text("\(WarText.casusBelli(war.casusBelli)) · \(war.goals.first.map { WarText.goal($0.type, $0.scope.count) } ?? "") · \(IsoDate.start.plus(days: d.wars[i].startDay).shortText)开战")
+                                        .font(.caption).foregroundStyle(Theme.ink2)
+                                    if war.participants.count > 2 {
+                                        Text("参战：" + war.participants.map { p in (d.world.nations.firstIndex { $0.id == p.state }).map { map.meta.nations[$0].name } ?? "" }.joined(separator: "、"))
+                                            .font(.caption2).foregroundStyle(Theme.ink2)
+                                    }
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 10)
+                                if i != active.last { Divider().padding(.leading, 14) }
+                            }
+                        }
+                    }
+                    Text("宣战").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                    PaperGroup {
+                        Picker("宣战国", selection: $attacker) { ForEach(map.meta.nations.indices, id: \.self) { Text(map.meta.nations[$0].name).tag($0) } }
+                            .padding(.horizontal, 14).padding(.vertical, 4)
+                        Divider().padding(.leading, 14)
+                        Picker("目标国", selection: $defender) { ForEach(map.meta.nations.indices, id: \.self) { Text(map.meta.nations[$0].name).tag($0) } }
+                            .padding(.horizontal, 14).padding(.vertical, 4)
+                        Divider().padding(.leading, 14)
+                        Button {
+                            Task {
+                                if let e = await sim.declare(attacker: attacker, defender: defender) { say(e) }
+                                else { say(sim.state.diplomacy?.chronicle.last?.text ?? "已宣战") }
+                            }
+                        } label: {
+                            Label("宣战", systemImage: "flag.2.crossed").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 11)
+                                .foregroundStyle(Color(red: 0.6, green: 0.15, blue: 0.1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .tint(Theme.accent)
+                    if let d, !d.chronicle.isEmpty {
+                        Text("外交纪事").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                        PaperGroup {
+                            ForEach(Array(d.chronicle.suffix(40).reversed().enumerated()), id: \.offset) { _, e in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(IsoDate.start.plus(days: e.day).shortText).font(.caption2).foregroundStyle(Theme.ink2)
+                                    Text(e.text).font(.subheadline).foregroundStyle(Theme.ink)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 14).padding(.vertical, 8)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16).padding(.bottom, 24)
+            }
+        }
+    }
+}
+
+struct NationChip: View {
+    let map: WorldMap
+    let nation: Int
+    var body: some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 3).fill(Names.color(map.meta.nations[nation].color)).frame(width: 12, height: 12)
+            Text(map.meta.nations[nation].name).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+        }
     }
 }

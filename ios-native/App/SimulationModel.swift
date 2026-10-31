@@ -15,8 +15,9 @@ import LieguojiCore
     init(map: WorldMap, graph: TravelGraph?) {
         self.map = map
         let motion = graph.map { ArmyMotion(graph: $0, start: map.meta.travel) }
-        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion)
-        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion)
+        let diplomacy = DiplomacyState(start: map.meta.diplomacy, names: map.meta.nations.map(\.name))
+        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy)
+        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy)
     }
 
     // MARK: army orders
@@ -28,6 +29,11 @@ import LieguojiCore
         return error?.message
     }
     func halt(army: Int) async { state = await simulation.halt(army: army) }
+
+    // MARK: diplomacy
+
+    func declare(attacker: Int, defender: Int) async -> String? { let (next, e) = await simulation.declare(attacker: attacker, defender: defender); state = next; return e }
+    func makePeace(_ a: Int, _ b: Int) async -> String? { let (next, e) = await simulation.makePeace(a, b); state = next; return e }
 
     /// Army icons: the exported idle spot until an army first moves, then its exact travel point.
     func armySprites(selected: Int?) -> [MapRenderer.ArmySprite] {

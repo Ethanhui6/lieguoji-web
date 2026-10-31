@@ -118,6 +118,8 @@ public struct WorldMeta: Codable, Sendable {
     public let monthly: [MonthlyStart]
     /// Army motion start (travel.bin): scale, clock, each army's travel cell, point and speed.
     public let travel: TravelStart
+    /// Diplomacy start: geography, day-0 snapshot and calendar.
+    public let diplomacy: DiplomacyStart
     /// Where the parchment texture lies over the map (originalParchmentRect).
     public let parchment: Rect
     public let source: [String: String]

@@ -78,10 +78,12 @@ public struct SimState: Sendable, Equatable {
     public let provinceStatics: [Int: MonthlyStart.Province]
     /// Army journeys (nil without a travel graph).
     public var motion: ArmyMotion?
+    /// Declarations, wars and peace (nil without diplomacy data).
+    public var diplomacy: DiplomacyState?
     public let worldProvinces: Int
 
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil) {
-        self.motion = motion
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil) {
+        self.motion = motion; self.diplomacy = diplomacy
         day = start.day; tick = start.day * SimState.ticksPerDay
         provinces = start.provinces.map { Province(province: $0.province, nation: $0.nation, terrain: $0.terrain, supply: $0.supply, capacity: $0.capacity, population: $0.population, grain: $0.grain) }
         priorities = start.nations.map(\.priority)
@@ -194,7 +196,9 @@ public enum MonthEnd {
 
 public actor Simulation {
     public private(set) var state: SimState
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces, motion: motion) }
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces, motion: motion, diplomacy: diplomacy) }
+    public func declare(attacker: Int, defender: Int) -> (SimState, String?) { let e = state.declareWar(attacker: attacker, defender: defender); return (state, e) }
+    public func makePeace(_ a: Int, _ b: Int) -> (SimState, String?) { let e = state.makePeace(a, b); return (state, e) }
     public func order(army: Int, toProvince province: Int) -> (SimState, SimState.OrderError?) { let e = state.order(army: army, toProvince: province); return (state, e) }
     public func halt(army: Int) -> SimState { state.halt(army: army); return state }
     public func advance(days: Int) -> SimState {
@@ -204,7 +208,32 @@ public actor Simulation {
             DailyEconomy.advance(&state)
             DailyEconomy.originalArmyReset(&state)
             MonthEnd.settle(&state)
+            state.advanceDiplomacy()
         }
         return state
+    }
+}
+
+
+extension SimState {
+    /// The day's diplomacy: synchronise land and armies, run the monthly calendar, mirror wars.
+    mutating func advanceDiplomacy() {
+        guard var d = diplomacy else { return }
+        let owners = controllers()
+        var troops = [[Int]](repeating: [], count: d.world.nations.count)
+        for a in armies where a.troops > 0 && a.status != "destroyed" && troops.indices.contains(a.nation) { troops[a.nation].append(a.troops) }
+        _ = d.advance(day: day, tick: tick, owners: owners, troops: troops)
+        diplomacy = d
+        wars = d.warPairs
+    }
+    public mutating func declareWar(attacker: Int, defender: Int) -> String? {
+        guard var d = diplomacy else { return "外交尚未就绪。" }
+        let e = d.declare(attacker: attacker, defender: defender, day: day)
+        diplomacy = d; wars = d.warPairs; return e
+    }
+    public mutating func makePeace(_ a: Int, _ b: Int) -> String? {
+        guard var d = diplomacy else { return "外交尚未就绪。" }
+        let e = d.makePeace(a, b, day: day)
+        diplomacy = d; wars = d.warPairs; return e
     }
 }

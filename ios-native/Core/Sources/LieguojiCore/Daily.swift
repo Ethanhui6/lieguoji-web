@@ -256,7 +256,7 @@ public enum Daily {
             let ethnic = r.economy.nations[id].ethnic.asString, fees = armyFees(r, id), openingGold = n.gold.asInt
             let incomes = u.provinceOrder.asArray.map { pidJS -> Int in
                 let pid = pidJS.asString, p = r.finance.provinces[pid], data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == pid }!
-                let resources = p.resources.asArray.map { Treasury.Resource(base: $0.base.asInt, probability: $0.probability.asNumber, affectedBy: $0.affectedBy.asArray.map(\.asString)) }
+                let resources = p.resources.asArray.map { Treasury.Resource(base: $0.baseValue.asInt, probability: $0.probability.asNumber, affectedBy: $0.affectedBy.asArray.map(\.asString)) }
                 return Treasury.provinceIncome(Treasury.ProvinceInput(population: data.population.asInt, capacity: p.maxPopulation.asInt, cells: p.cellBiomes.length, resources: resources,
                                                                       local: r.offices47.isNull ? 1 : Offices.localIncome(r, pid)),
                                                ethnic: ethnic, destiny: r.destiny.nations[id].destiny.asNumber, nationProvinces: u.provinceOrder.length, worldProvinces: r.world.provinces.length)

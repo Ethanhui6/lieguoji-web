@@ -13,7 +13,7 @@ public enum Regions {
 
     static func edgeKey(_ a: Vertex, _ b: Vertex) -> String { a.key.utf16.lexicographicallyPrecedes(b.key.utf16) ? a.key + "/" + b.key : b.key + "/" + a.key }
     static func polygonArea(_ p: [Vertex]) -> Double {
-        var sum = 0.0; for i in p.indices { let a = p[i], b = p[(i + 1) % p.count]; sum += a.x * b.y - b.x * a.y }
+        var sum = 0.0; for i in p.indices { let a = p[i], b = p[(i + 1) % p.count]; sum = sum + a.x * b.y - b.x * a.y }
         return abs(sum) / 2
     }
     static func middle(_ ring: [Vertex]) -> (Double, Double) {
@@ -47,7 +47,7 @@ public enum Regions {
             var unique = [Vertex](), at = [String: Int]()
             for v in ring { if let i = at[v.key] { unique[i] = v } else { at[v.key] = unique.count; unique.append(v) } }
             if unique.count < 3 || polygonArea(unique) < 1e-7 { continue }
-            var signed = 0.0; for i in unique.indices { let a = unique[i], b = unique[(i + 1) % unique.count]; signed += a.x * b.y - b.x * a.y }
+            var signed = 0.0; for i in unique.indices { let a = unique[i], b = unique[(i + 1) % unique.count]; signed = signed + a.x * b.y - b.x * a.y }
             if signed < 0 { unique.reverse() }
             faces.append(Face(ring: unique, neighbors: [], height: Double(ids.reduce(0) { $0 + elevations[$1] }) / 3, source: ids))
         }

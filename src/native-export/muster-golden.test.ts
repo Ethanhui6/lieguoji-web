@@ -6,6 +6,7 @@ import {readArmySpace47,landHolders47} from '../fms/play/army-space47';
 import {musterMonth47} from '../fms/play/civilization47-monthly-muster';
 import {reconcileCore} from '../fms/play/core-refresh51';
 import {personTraits} from '../fms/play/court16-people';
+import type {EmergencyTrait} from '../fms/play/native-economy/emergency-muster';
 import {unitProfiles} from '../fms/play/military-profile';
 import type {FoundingForces47} from '../fms/play/civilization47-forces';
 
@@ -22,7 +23,7 @@ function musterSnapshot(r:Run){
     day:w.day,nextArmyId:r.tactics.nextArmyId,seed:r.tactics.seed,armyCount:w.armies.length,
     nations:w.nations.map(n=>{const u=r.upperCombat.nations[n.id],h=r.tactics.mobilizations[n.id],leader=r.people.nations[n.id].leaderId,person=leader===null?null:r.people.persons[leader];
       return {name:n.name,coreThreshold:u.coreThreshold,lastMonth:h.lastMonth,recent:h.recent,destiny:r.destiny.nations[n.id].destiny,
-        traits:person?personTraits(person).map(t=>({modifier:t.emergencyMobilizationModifier??0,allowed:t.canEmergencyMobilization!==false})):null};}),
+        traits:person?(personTraits(person) as EmergencyTrait[]).map(t=>({modifier:t.emergencyMobilizationModifier??0,allowed:t.canEmergencyMobilization!==false})):null};}),
     provinces:w.provinces.map(p=>({name:p.name,city:w.cities.find(c=>c.provinceId===p.id)?.name??null,controller:nation.get(p.controller)!,legal:nation.get(p.legalOwner)!,
       population:pop.get(p.id)!,distance:r.upperCombat.provinces[p.id].distance,neighbors:p.neighbors.map(id=>index.get(id)!),
       holders:[...new Set(landHolders47(space,p.id).map(a=>nation.get(a.nationId)!))]})),

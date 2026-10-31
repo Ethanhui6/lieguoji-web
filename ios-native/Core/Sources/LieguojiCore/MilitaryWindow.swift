@@ -126,8 +126,15 @@ public struct MilitaryWindow {
         let homes = Dictionary(uniqueKeysWithValues: s.homes.map { ($0.key, $0) })
         for (i, f) in s.world.forces.enumerated() where f.kind == "army" {
             let p = province(s, i), c = combat(&s, f.id, p), h = homes[f.key]
-            armies.append(.init(key: f.key, efficiency: c.map { Efficiency.compute($0.input) } ?? 0, damageToArmy: c?.damageToArmy ?? 40, multiplier: Double(c?.multiplier ?? 1),
-                                emergency: h?.emergency ?? true, home: h?.home ?? -1, homeCell: h?.homeCell ?? -1, homeX: h?.homeX ?? 0, homeY: h?.homeY ?? 0, full: h?.full ?? 0))
+            let efficiency: Double = c.map { Efficiency.compute($0.input) } ?? 0
+            let damage: Double = c?.damageToArmy ?? 40
+            let multiplier: Double = Double(c?.multiplier ?? 1)
+            let emergency: Bool = h?.emergency ?? true
+            let home: Int = h?.home ?? -1, homeCell: Int = h?.homeCell ?? -1, full: Int = h?.full ?? 0
+            let homeX: Double = h?.homeX ?? 0, homeY: Double = h?.homeY ?? 0
+            let army = CombatWorld.VolleyInputs.Army(key: f.key, efficiency: efficiency, damageToArmy: damage, multiplier: multiplier,
+                                                    emergency: emergency, home: home, homeCell: homeCell, homeX: homeX, homeY: homeY, full: full)
+            armies.append(army)
         }
         let inputs = CombatWorld.VolleyInputs(navyCountToHull: 1, reorganize: s.reorganize, armies: armies, fleets: [])
         let before = Dictionary(uniqueKeysWithValues: s.world.forces.map { ($0.key, $0.losses) })

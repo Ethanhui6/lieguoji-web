@@ -1,0 +1,199 @@
+import SwiftUI
+import LieguojiCore
+
+/// The whole app's state: the launch sequence, the title screen, world generation and the running
+/// game, driven by the web engine (EngineHost). Speeds follow the web: 1倍速 ≈ 10 days a second when
+/// the device keeps up, 2 / 4 倍速 proportionally faster.
+@MainActor final class GameModel: ObservableObject {
+    enum Phase: Equatable { case splash, title, generating, playing }
+    @Published var phase: Phase = .splash
+    @Published private(set) var map: WorldMap?
+    @Published private(set) var state: GameState?
+    @Published private(set) var playing = false
+    @Published var speed = 1
+    @Published var failure: String?
+    @Published var generationNote = ""
+    /// Bumped whenever a different world is opened, so the map view rebuilds.
+    @Published private(set) var worldID = UUID()
+    let engine = EngineHost()
+    let controller = MapController()
+    private var loop: Task<Void, Never>?
+    private var lastSavedDay = 0
+
+    init() {
+        engine.onCrash = { [weak self] in self?.engineCrashed() }
+    }
+
+    /// The bundled world, used as the title backdrop before a game exists.
+    func loadBackdrop() async {
+        guard map == nil, let url = Bundle.main.url(forResource: "World", withExtension: nil) else { return }
+        if let world = try? await Task.detached(priority: .userInitiated, operation: { try WorldMap.load(directory: url) }).value {
+            map = world; worldID = UUID()
+        }
+    }
+
+    static var saveURL: URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("列国纪", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("当前世界.lgj")
+    }
+    var hasSave: Bool { FileManager.default.fileExists(atPath: Self.saveURL.path) }
+
+    // MARK: worlds
+
+    struct NewWorld { var template = "continents"; var nations = 8; var seed = "" }
+
+    func generate(_ options: NewWorld) async {
+        pause()
+        phase = .generating; failure = nil
+        generationNote = "正在生成地形"
+        do {
+            var json: [String: Any] = ["template": options.template, "count": options.nations]
+            if !options.seed.isEmpty { json["seed"] = options.seed }
+            let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
+            let world = try await open(try await engine.call("generate(options)", ["options": text]))
+            generationNote = ""
+            await reveal(world)
+            save()
+        } catch { failure = error.localizedDescription; phase = map == nil ? .title : .title }
+    }
+
+    func continueGame() async {
+        pause()
+        phase = .generating; failure = nil; generationNote = "正在读取存档"
+        do {
+            let saved = try String(contentsOf: Self.saveURL, encoding: .utf8)
+            let world = try await open(try await engine.call("load(text)", ["text": saved]))
+            generationNote = ""
+            await reveal(world)
+        } catch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title }
+    }
+
+    private func open(_ text: String) async throws -> WorldMap {
+        let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState) in
+            let decoded = try JSONDecoder().decode(LoadedWorld.self, from: Data(text.utf8))
+            guard let bin = Data(base64Encoded: decoded.bin) else { throw EngineError.message("地图数据损坏") }
+            return (try WorldMap(binary: bin, meta: decoded.meta), decoded.state)
+        }.value
+        map = loaded.0; worldID = UUID(); controller.world = nil
+        apply(loaded.1)
+        lastSavedDay = loaded.1.day
+        return loaded.0
+    }
+
+    /// Land rises from the sea, then the states' colours wash over it (about two seconds).
+    private func reveal(_ world: WorldMap) async {
+        controller.interactive = false
+        controller.reveal = 0
+        phase = .playing
+        let start = Date()
+        while true {
+            let t = Float(Date().timeIntervalSince(start) / 2.2)
+            controller.reveal = min(1, t)
+            if t >= 1 { break }
+            try? await Task.sleep(nanoseconds: 16_000_000)
+        }
+        controller.interactive = true
+    }
+
+    func backToTitle() { pause(); save(); phase = .title }
+
+    private func engineCrashed() {
+        pause()
+        failure = "游戏引擎被系统中止，已回到标题画面；可从存档继续。"
+        phase = .title
+    }
+
+    // MARK: time
+
+    func togglePlay() { playing ? pause() : play() }
+    func play() {
+        guard loop == nil, state != nil else { return }
+        playing = true
+        loop = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let started = Date()
+                do { try await self.step(days: self.speed >= 4 ? 2 : 1) }
+                catch { self.failure = error.localizedDescription; self.pause(); return }
+                let budget = (self.speed >= 4 ? 0.2 : 0.1) / Double(min(2, self.speed))
+                let rest = budget - Date().timeIntervalSince(started)
+                if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
+            }
+        }
+    }
+    func pause() { loop?.cancel(); loop = nil; playing = false }
+    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : 1 }
+    func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
+
+    private func step(days: Int) async throws {
+        let text = try await engine.call("step(days)", ["days": days])
+        let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: Data(text.utf8)) }.value
+        apply(next)
+        if next.day - lastSavedDay >= 30 { save(); lastSavedDay = next.day }
+    }
+
+    private func apply(_ next: GameState) {
+        state = next
+        guard var world = controller.world ?? map else { return }
+        var changed = false
+        for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
+            world.meta.provinces[i].nation = owner; changed = true
+        }
+        if let labels = next.labels { world.meta.labels = labels; changed = true }
+        if changed { controller.world = world }
+        refreshArmies()
+    }
+
+    func save() {
+        guard state != nil else { return }
+        Task {
+            if let text = try? await engine.call("save()") { try? text.write(to: Self.saveURL, atomically: true, encoding: .utf8) }
+        }
+    }
+
+    // MARK: armies on the map
+
+    func refreshArmies() {
+        guard let state else { controller.armies = []; return }
+        let selected = controller.marchingArmy ?? controller.selectedArmy
+        controller.armies = state.armies.enumerated().map { i, a in
+            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected)
+        }
+        if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
+            let id = state.armies[selected].id
+            Task {
+                guard let text = try? await engine.call("route(id)", ["id": id]),
+                      let points = try? JSONDecoder().decode([[Float]].self, from: Data(text.utf8)) else { return }
+                controller.route = points.map { SIMD2($0[0], $0[1]) }
+            }
+        } else { controller.route = [] }
+    }
+
+    func army(_ index: Int?) -> GameState.Army? { index.flatMap { i in state?.armies.indices.contains(i) == true ? state!.armies[i] : nil } }
+
+    // MARK: commands
+
+    /// A player march to a province, or a halt (province nil).
+    func order(army index: Int, to province: Int?) async -> String? {
+        guard let a = army(index) else { return "这支军队不存在或已失去战斗力。" }
+        return await command("order(id, province)", ["id": a.id, "province": province ?? -1])
+    }
+    func declareWar(_ a: Int, on b: Int) async -> String? { await command("politics(type, a, b)", ["type": "declare-war", "a": a, "b": b]) }
+    func makePeace(_ a: Int, _ b: Int) async -> String? { await command("politics(type, a, b)", ["type": "make-peace", "a": a, "b": b]) }
+
+    /// Returns nil on success, or the engine's reason.
+    private func command(_ body: String, _ args: [String: Any]) async -> String? {
+        do {
+            let text = try await engine.call(body, args)
+            let result = try JSONDecoder().decode(CommandResult.self, from: Data(text.utf8))
+            if let next = result.state { apply(next) }
+            return result.ok ? nil : result.reason
+        } catch { return error.localizedDescription }
+    }
+
+    func provinceInfo(_ index: Int) async -> ProvinceInfo? {
+        guard state != nil, let text = try? await engine.call("province(index)", ["index": index]) else { return nil }
+        return try? JSONDecoder().decode(ProvinceInfo.self, from: Data(text.utf8))
+    }
+}

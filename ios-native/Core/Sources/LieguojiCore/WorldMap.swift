@@ -89,7 +89,7 @@ public struct WorldMap: Sendable {
 }
 
 public struct WorldMeta: Codable, Sendable {
-    public struct Province: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let nation: Int; public let terrain: String }
+    public struct Province: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public var nation: Int; public let terrain: String }
     public struct Nation: Codable, Sendable {
         public let id: String; public let name: String; public let color: String
         /// State-line colour (ColorUtils.AdjustColor of the nation colour, fmsStateLineColor).
@@ -97,7 +97,7 @@ public struct WorldMeta: Codable, Sendable {
         public let capital: Int; public let culture: String; public let polity: String; public let religion: String
     }
     /// LabelUtility name box of a nation, map units; font size between fontMin and fontMax.
-    public struct LabelBox: Codable, Sendable { public let nation: Int; public let x: Float; public let y: Float; public let width: Float; public let height: Float; public let fontMax: Float; public let fontMin: Float }
+    public struct LabelBox: Codable, Sendable, Equatable { public let nation: Int; public let x: Float; public let y: Float; public let width: Float; public let height: Float; public let fontMax: Float; public let fontMin: Float }
     public struct Event: Codable, Sendable { public let day: Int; public let text: String; public let reason: String }
     public struct Rect: Codable, Sendable { public let x: Float; public let y: Float; public let width: Float; public let height: Float }
     public struct City: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let province: Int }
@@ -106,25 +106,25 @@ public struct WorldMeta: Codable, Sendable {
     public let seed: String
     public let template: String
     public let grid: String
-    public let provinces: [Province]
+    public var provinces: [Province]
     public let nations: [Nation]
     public let cities: [City]
-    public let labels: [LabelBox]
+    public var labels: [LabelBox]
     /// The world's opening chronicle.
     public let events: [Event]
     /// Where the Swift simulation starts (day 0 of the web world).
-    public let economy: EconomyStart
+    public let economy: EconomyStart?
     /// Month-end treasury and destiny start.
-    public let monthly: [MonthlyStart]
+    public let monthly: [MonthlyStart]?
     /// Army motion start (travel.bin): scale, clock, each army's travel cell, point and speed.
-    public let travel: TravelStart
+    public let travel: TravelStart?
     /// Diplomacy start: geography, day-0 snapshot and calendar.
-    public let diplomacy: DiplomacyStart
+    public let diplomacy: DiplomacyStart?
     /// Army autonomy start.
-    public let armyAi: ArmyAIStart
+    public let armyAi: ArmyAIStart?
     /// Where the parchment texture lies over the map (originalParchmentRect).
     public let parchment: Rect
-    public let source: [String: String]
+    public let source: [String: String]?
 }
 
 struct ByteReader {

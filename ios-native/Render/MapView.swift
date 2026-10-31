@@ -20,6 +20,14 @@ import LieguojiCore
     /// While set, the next tap on land is the march destination of this army.
     @Published var marchingArmy: Int?
     var onMarchTarget: ((Int) -> Void)?
+    /// The live world (ownership and nation labels follow the engine); nil keeps the opening map.
+    @Published var world: WorldMap?
+    /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
+    @Published var reveal: Float = 1
+    /// Title screen: the map is a backdrop and takes no gestures.
+    @Published var interactive = true
+    /// Slow drift of the title backdrop.
+    @Published var drifting = false
     func fly(to province: Int) { focus = (province, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
@@ -34,7 +42,7 @@ struct MapView: UIViewRepresentable {
     static func dismantleUIView(_ view: MapContainerView, coordinator: Coordinator) { coordinator.stop() }
 
     @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        let map: WorldMap
+        var map: WorldMap
         let controller: MapController
         private let picker: CellPicker
         private var container: MapContainerView!
@@ -219,6 +227,19 @@ struct MapView: UIViewRepresentable {
         // MARK: SwiftUI → map
 
         func sync() {
+            if let next = controller.world, next.meta.provinces.map(\.nation) != map.meta.provinces.map(\.nation) || next.meta.labels.count != map.meta.labels.count
+                || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y }) {
+                map = next
+                renderer?.setMap(next)
+                let fresh = MapLabelsView(map: next)
+                fresh.frame = labels.frame; fresh.autoresizingMask = labels.autoresizingMask; fresh.isUserInteractionEnabled = false
+                container.insertSubview(fresh, aboveSubview: labels); labels.removeFromSuperview(); labels = fresh
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+            }
+            if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
+            labels?.alpha = controller.reveal >= 1 ? 1 : 0
+            mtk?.isUserInteractionEnabled = controller.interactive
+            if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince)
             if let armies = controller.armies { renderer?.setArmies(armies, route: controller.route) }
             labels?.setSelected(controller.selectedProvince)
@@ -248,7 +269,19 @@ struct MapView: UIViewRepresentable {
             }
         }
 
-        func stop() { link?.invalidate(); link = nil }
+        func stop() { link?.invalidate(); link = nil; drift?.invalidate(); drift = nil }
+
+        private var drift: CADisplayLink?
+        private func startDrift() {
+            guard drift == nil else { return }
+            let l = CADisplayLink(target: self, selector: #selector(driftStep(_:)))
+            l.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+            l.add(to: .main, forMode: .common); drift = l
+        }
+        @objc private func driftStep(_ l: CADisplayLink) {
+            guard controller.drifting else { drift?.invalidate(); drift = nil; return }
+            set(camera.panned(dx: -8 * (l.targetTimestamp - l.timestamp), dy: 0))
+        }
     }
 }
 

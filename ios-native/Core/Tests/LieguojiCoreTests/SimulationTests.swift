@@ -40,10 +40,10 @@ final class SimulationTests: XCTestCase {
 
     func testSimulationActorAdvancesTheClock() async throws {
         let map = WorldMapTests.map
-        let sim = Simulation(start: map.meta.economy)
+        let sim = Simulation(start: map.meta.economy!)
         let s = await sim.advance(days: 3)
         XCTAssertEqual(s.day, 3); XCTAssertEqual(s.tick, 360); XCTAssertEqual(s.date, IsoDate(year: 1, month: 1, day: 4))
         XCTAssertTrue(s.armies.allSatisfy { $0.supplies == 100 })
-        XCTAssertEqual(map.meta.economy.armies.count, 51)
+        XCTAssertEqual(map.meta.economy!.armies.count, 51)
     }
 }

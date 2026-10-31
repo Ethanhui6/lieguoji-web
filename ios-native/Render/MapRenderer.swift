@@ -31,7 +31,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
-    let map: WorldMap
+    private(set) var map: WorldMap
     private let nationColors: [RGB]
     var camera: MapCamera
     var onDraw: ((CFTimeInterval) -> Void)?
@@ -117,7 +117,42 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         for unit in ["Infantry", "Archer", "Shield", "Cavalry", "Elite"] {
             if let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[unit] = texture }
         }
-        setArmies(map.meta.economy.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
+        if let start = map.meta.economy {
+            setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
+        }
+    }
+
+    /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
+    func setMap(_ next: WorldMap) {
+        map = next
+        outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
+        recolor()
+    }
+
+    /// The title screen's generation animation: 0 shows only the sea; land rises from the coast to the
+    /// mountains, then the states' colours wash over it; at 1 every layer is drawn.
+    private(set) var reveal: Float = 1
+    func setReveal(_ t: Float) { reveal = max(0, min(1, t)); recolor() }
+
+    private func recolor() {
+        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight)
+        if reveal < 1 {
+            let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
+            let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.6), wash = max(0, (reveal - 0.6) / 0.4)
+            let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
+            for cell in 0..<map.cellCount where map.isLand(cell) {
+                let h = (Float(map.elevation[cell]) - 20) / (top - 20)
+                let shown = min(1, max(0, (rise * 1.15 - h) * 8))
+                for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
+                    for k in 0..<3 {
+                        let ground = terrain[v * 4 + k] + (c[v * 4 + k] - terrain[v * 4 + k]) * wash
+                        let water = k == 0 ? sea.r : k == 1 ? sea.g : sea.b
+                        c[v * 4 + k] = water + (ground - water) * shown
+                    }
+                }
+            }
+        }
+        if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
     }
 
     struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool }
@@ -163,8 +198,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setAppearance(mode: MapMode, highlight: Int?) {
         guard mode != self.mode || highlight != self.highlight else { return }
         self.mode = mode; self.highlight = highlight
-        let c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight)
-        if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
+        recolor()
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
@@ -199,7 +233,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
         // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
-        if let lines = provinceLines, camera.scale > 0.9 {
+        if let lines = provinceLines, camera.scale > 0.9, reveal >= 1 {
             u.halfWidth = 0.55 / 2
             var color = SIMD4<Float>(0x30 / 255.0, 0x3E / 255.0, 0x37 / 255.0, 0.2)
             encoder.setRenderPipelineState(linePipeline)
@@ -208,7 +242,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: lines.count)
         }
-        if let rivers {
+        if let rivers, reveal > 0.5 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, 1)
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
@@ -217,6 +251,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
         colored(relief)
+        if reveal >= 1 {
         colored(outlines)
         colored(icons)
         colored(route)
@@ -227,6 +262,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentTexture(unit.texture, index: 0)
             encoder.setFragmentSamplerState(sampler, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+        }
         }
         let r = map.meta.parchment
         quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)

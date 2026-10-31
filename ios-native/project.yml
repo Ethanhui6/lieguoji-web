@@ -24,17 +24,22 @@ targets:
       - path: Resources/Fonts
         type: folder
         buildPhase: resources
+      # The web game's engine (src/native-bridge, built by vite.bridge.config.ts), hosted invisibly.
+      - path: Resources/Engine
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: LieguojiCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
-        MARKETING_VERSION: "0.8.0"
-        CURRENT_PROJECT_VERSION: "8"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "0.9.0"
+        CURRENT_PROJECT_VERSION: "9"
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: 列国纪·原生
+        CFBundleDisplayName: 列国纪
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true

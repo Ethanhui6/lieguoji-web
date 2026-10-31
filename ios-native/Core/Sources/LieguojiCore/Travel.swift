@@ -158,21 +158,27 @@ public struct ArmyTravel: Sendable, Equatable {
     public var offset = 0.0
     public var crossed = false
     public var status: Status
+    /// Version 2 journeys end at an exact point (beginArmyTravelToPoint47); nil for version 1.
+    public var destination: TravelPoint? = nil
     /// beginArmyTravel47: from an exact point along a cell path.
     public init(origin: TravelPoint, nodes: [Int]) { self.origin = origin; self.nodes = nodes; status = nodes.count == 1 ? .arrived : .moving }
     /// A stationary army at a point of its cell.
     public static func stationed(at point: TravelPoint, cell: Int) -> ArmyTravel { ArmyTravel(origin: point, nodes: [cell]) }
 }
 
-struct TravelSegment { let a: Int, b: Int, start: TravelPoint, gate: TravelPoint, end: TravelPoint, toGate: Double, distance: Double }
+struct TravelSegment { let a: Int, b: Int, start: TravelPoint, gate: TravelPoint, end: TravelPoint, toGate: Double, distance: Double; var local = false }
 
 extension TravelGraph {
     /// armyTravelSegment47 for version 1 records.
     func segment(_ s: ArmyTravel) -> TravelSegment? {
+        if let d = s.destination, s.nodes.count == 1 {
+            let distance = jsHypot(s.origin.x - d.x, s.origin.y - d.y), a = s.nodes[0]
+            return TravelSegment(a: a, b: a, start: s.origin, gate: d, end: d, toGate: distance, distance: distance, local: true)
+        }
         guard s.leg + 1 < s.nodes.count else { return nil }
         let a = s.nodes[s.leg], b = s.nodes[s.leg + 1]
         guard let k = link(from: a, to: b) else { return nil }
-        let start = s.leg == 0 ? s.origin : centers[a], gate = gates[k], end = centers[b]
+        let start = s.leg == 0 ? s.origin : centers[a], gate = gates[k], end = s.destination != nil && s.leg == s.nodes.count - 2 ? s.destination! : centers[b]
         let toGate = jsHypot(start.x - gate.x, start.y - gate.y)
         return TravelSegment(a: a, b: b, start: start, gate: gate, end: end, toGate: toGate, distance: toGate + jsHypot(gate.x - end.x, gate.y - end.y))
     }
@@ -180,7 +186,11 @@ extension TravelGraph {
     /// armyTravelLocation47: the exact point and cell of a journey.
     public func location(_ s: ArmyTravel) -> (point: TravelPoint, cell: Int) {
         let a = s.nodes[s.leg]
-        guard let l = segment(s) else { return (s.leg == 0 ? s.origin : centers[a], a) }
+        guard let l = segment(s) else { return (s.destination ?? (s.leg == 0 ? s.origin : centers[a]), a) }
+        if l.local {
+            let ratio = l.distance > 0 ? s.offset / l.distance : 1
+            return (ratio == 1 ? l.end : ratio == 0 ? l.start : TravelPoint(x: l.start.x + (l.end.x - l.start.x) * ratio, y: l.start.y + (l.end.y - l.start.y) * ratio), a)
+        }
         let first = !s.crossed, start = first ? l.start : l.gate, end = first ? l.gate : l.end
         let total = first ? l.toGate : l.distance - l.toGate
         let ratio = total > 0 ? (first ? s.offset : s.offset - l.toGate) / total : 0

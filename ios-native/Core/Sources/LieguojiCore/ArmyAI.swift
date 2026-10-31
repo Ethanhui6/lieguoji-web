@@ -51,10 +51,11 @@ public struct ArmyAIWorld: Codable, Sendable, Equatable {
 extension ArmyTravel {
     /// From a web travel record (cell ids → graph indices).
     public init?(record t: ArmyAIWorld.Travel, graph g: TravelGraph) {
-        guard t.version == 1 else { return nil }
+        guard t.version == 1 || t.version == 2 else { return nil }
         let nodes = t.nodes.compactMap { g.cell(id: $0) }
         guard nodes.count == t.nodes.count else { return nil }
         self.init(origin: TravelPoint(x: t.origin.x, y: t.origin.y), nodes: nodes)
+        if t.version == 2, let d = t.destination { destination = TravelPoint(x: d.x, y: d.y) }
         leg = t.leg; offset = t.offset; crossed = t.crossed
         status = ["moving": .moving, "arrived": .arrived, "blocked": .blocked, "halted": .halted][t.status] ?? .arrived
     }

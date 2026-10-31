@@ -64,6 +64,7 @@ struct RootView: View {
             case .splash: EmptyView()
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
+            case .founding: FoundingView(reveal: model.controller.reveal).transition(.opacity)
             case .playing: GameView(model: model).transition(.opacity)
             }
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
@@ -77,6 +78,11 @@ struct RootView: View {
     }
 
     private func finishSplash() {
+        guard model.map != nil else {
+            // The device-built backdrop is still being generated: wait for it.
+            Task { @MainActor in while model.map == nil { try? await Task.sleep(nanoseconds: 50_000_000) }; finishSplash() }
+            return
+        }
         model.controller.interactive = false
         model.controller.drifting = true
         model.controller.reveal = 0
@@ -767,6 +773,7 @@ struct MenuSheet: View {
     @ObservedObject var controller: MapController
     let close: () -> Void
     @State private var creating = false
+    @State private var notes = false
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单")
@@ -777,6 +784,8 @@ struct MenuSheet: View {
                 Divider2()
                 Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
                 Divider2()
+                Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "更新内容") }.buttonStyle(.plain)
+                Divider2()
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
@@ -786,6 +795,60 @@ struct MenuSheet: View {
             NewWorldSheet { options in creating = false; close(); Task { await model.generate(options) } }
                 .presentationDetents([.medium]).presentationBackground(Theme.paper)
         }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground(Theme.paper) }
+    }
+}
+
+/// What changed in each version, newest first.
+struct ReleaseNotesSheet: View {
+    static let notes: [(version: String, lines: [String])] = [
+        ("0.9.3", ["点「新世界」后，地形、河流、省份和首都由本机立即算出，生成动画马上开始；完整世界（人物、军队）在后台建好后无缝接上。",
+                   "标题画面的背景地图每次启动随机生成一张新的。",
+                   "本机生成与网页引擎对同一种子逐格一致（高度、气候、河流、省份、首都均经对照测试）。",
+                   "新增「更新内容」页。"]),
+        ("0.9.2", ["军队平滑行军；交战火焰脉冲；围城进度环；攻城国色闪光；宣战、议和、攻克印章横幅。"]),
+        ("0.9.1", ["固定浅色纸面，不随深色模式变灰；自绘控件；国名描边改为字下圆角描边；启动与界面动画；新地图图标。"]),
+        ("0.9.0", ["原生界面 + 网页原引擎：交战、占领、议和、家族等规则与网页完全一致；启动动画、标题生成动画、统一原作字体。"]),
+    ]
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "更新内容")
+                ForEach(Self.notes, id: \.version) { note in
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(note.version).font(Theme.kai(20)).foregroundStyle(Theme.seal)
+                            ForEach(note.lines, id: \.self) { line in
+                                HStack(alignment: .top, spacing: 8) { Text("·").foregroundStyle(Theme.ink2); Text(line).font(Theme.kai(16)).foregroundStyle(Theme.ink) }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
+            .padding(.bottom, 24)
+        }
+    }
+}
+
+/// Over the rising device-built world while the engine founds its nations, people and armies.
+struct FoundingView: View {
+    let reveal: Float
+    @State private var spin = false
+    var body: some View {
+        VStack {
+            Spacer()
+            HStack(spacing: 10) {
+                Circle().trim(from: 0, to: 0.7).stroke(Theme.seal, style: StrokeStyle(lineWidth: 2.5, lineCap: .round)).frame(width: 18, height: 18)
+                    .rotationEffect(.degrees(spin ? 360 : 0)).animation(.linear(duration: 1).repeatForever(autoreverses: false), value: spin)
+                Text(reveal < 1 ? "山川河流成形中" : "正在建立国家、人物与军队").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    .contentTransition(.opacity).animation(.easeInOut, value: reveal < 1)
+            }
+            .padding(.horizontal, 18).frame(height: 44).glass(Capsule())
+            .padding(.bottom, 40)
+        }
+        .onAppear { spin = true }
     }
 }
 

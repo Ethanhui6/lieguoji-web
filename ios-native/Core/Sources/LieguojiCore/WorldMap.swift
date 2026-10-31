@@ -9,23 +9,23 @@ public struct WorldMap: Sendable {
     public let offsets: [UInt32]
     /// Flat x, y pairs in map units (0...width, 0...height).
     public let vertices: [Float]
-    public let elevation: [Int16]
-    public let biome: [UInt8]
+    public var elevation: [Int16]
+    public var biome: [UInt8]
     /// Province index of a land cell, −1 for sea.
-    public let province: [Int32]
+    public var province: [Int32]
     /// Original per-cell biome colour, sRGB 0...255, three bytes per cell.
-    public let biomeRGB: [UInt8]
+    public var biomeRGB: [UInt8]
     public let edges: [Edge]
     /// Voronoi site of each cell (OriginalGrid.points).
     public let sites: [Float]
     /// Sea colour texture (reference-paper appearance, distance from the smoothed coast), RGBA.
     public let seaWidth: Int
     public let seaHeight: Int
-    public let seaRGBA: [UInt8]
+    public var seaRGBA: [UInt8]
     /// Smoothed coastline segments x1, y1, x2, y2.
-    public let coast: [Float]
+    public var coast: [Float]
     /// River ribbons as triangles, x, y per vertex.
-    public let rivers: [Float]
+    public var rivers: [Float]
     public var meta: WorldMeta
 
     public struct Edge: Sendable, Equatable {
@@ -107,8 +107,8 @@ public struct WorldMeta: Codable, Sendable {
     public let template: String
     public let grid: String
     public var provinces: [Province]
-    public let nations: [Nation]
-    public let cities: [City]
+    public var nations: [Nation]
+    public var cities: [City]
     public var labels: [LabelBox]
     /// The world's opening chronicle.
     public let events: [Event]

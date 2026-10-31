@@ -6,7 +6,7 @@ import LieguojiCore
 /// game, driven by the web engine (EngineHost). Speeds follow the web: 1倍速 ≈ 10 days a second when
 /// the device keeps up, 2 / 4 倍速 proportionally faster.
 @MainActor final class GameModel: ObservableObject {
-    enum Phase: Equatable { case splash, title, generating, playing }
+    enum Phase: Equatable { case splash, title, generating, founding, playing }
     @Published var phase: Phase = .splash
     @Published private(set) var map: WorldMap?
     @Published private(set) var state: GameState?
@@ -31,11 +31,21 @@ import LieguojiCore
     }
 
     /// The bundled world, used as the title backdrop before a game exists.
+    /// The original grid geometry and the ported generators, for worlds built on the device.
+    private(set) var previewInputs: PreviewWorld.Inputs?
+
+    /// A fresh random world for the title backdrop, generated on the device by the Swift ports.
     func loadBackdrop() async {
         guard map == nil, let url = Bundle.main.url(forResource: "World", withExtension: nil) else { return }
-        if let world = try? await Task.detached(priority: .userInitiated, operation: { try WorldMap.load(directory: url) }).value {
-            map = world; worldID = UUID()
-        }
+        let built = try? await Task.detached(priority: .userInitiated) { () throws -> (PreviewWorld.Inputs, WorldMap) in
+            let base = try WorldMap.load(directory: url)
+            let inputs = PreviewWorld.Inputs(base: base, grid: try TerrainGraph(data: Data(contentsOf: url.appendingPathComponent("grid20k.bin"))),
+                                             document: try TerrainDocument(data: Data(contentsOf: url.appendingPathComponent("doc20k.bin"))))
+            let template = Names.templates.randomElement()!.id
+            return (inputs, PreviewWorld.build(inputs, seed: String(UInt32.random(in: 0...UInt32.max)), template: template, nations: 8, cities: 80))
+        }.value
+        if let built { previewInputs = built.0; map = built.1; worldID = UUID() }
+        else if let world = try? WorldMap.load(directory: url) { map = world; worldID = UUID() }
     }
 
     static var saveURL: URL {
@@ -49,19 +59,46 @@ import LieguojiCore
 
     struct NewWorld { var template = "continents"; var nations = 8; var seed = "" }
 
+    /// The terrain, rivers, provinces and capitals are generated on the device at once (the Swift
+    /// ports give the web engine's exact result for the same seed) and rise on screen while the
+    /// engine builds the same world with its people and armies; that world then takes over.
     func generate(_ options: NewWorld) async {
         pause()
         phase = .generating; failure = nil
         generationNote = "正在生成地形"
+        let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
-            var json: [String: Any] = ["template": options.template, "count": options.nations]
-            if !options.seed.isEmpty { json["seed"] = options.seed }
+            let json: [String: Any] = ["template": options.template, "count": options.nations, "seed": seed]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
-            let world = try await open(try await engine.call("generate(options)", ["options": text]))
+            let engine = self.engine
+            let full = Task { try await engine.call("generate(options)", ["options": text]) }
+            if let inputs = previewInputs {
+                let nations = options.nations
+                let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: nations * 10) }.value
+                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects()
+                map = preview; worldID = UUID()
+                generationNote = ""
+                phase = .founding
+                await rise()
+            }
+            let world = try await open(try await full.value)
             generationNote = ""
-            await reveal(world)
+            if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
             save()
-        } catch { failure = error.localizedDescription; phase = map == nil ? .title : .title }
+        } catch { failure = error.localizedDescription; phase = .title }
+    }
+
+    /// The generation animation on the device-built world.
+    private func rise() async {
+        controller.interactive = false
+        controller.reveal = 0
+        let start = Date()
+        while true {
+            let t = Float(Date().timeIntervalSince(start) / 2.6)
+            controller.reveal = min(1, t)
+            if t >= 1 { break }
+            try? await Task.sleep(nanoseconds: 16_000_000)
+        }
     }
 
     func continueGame() async {

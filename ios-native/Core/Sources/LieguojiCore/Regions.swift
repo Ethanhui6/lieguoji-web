@@ -113,16 +113,16 @@ public enum Regions {
 
     /// settlementRegions47: the established unions (with the cut fallback), and if they stall the
     /// perimeter-aware unions. Nil when the web also fails.
-    public static func partition(_ d: TerrainDocument, elevations: [Int], cities: Int) -> (regions: [Region], perimeter: Bool)? {
+    public static func partition(_ d: TerrainDocument, elevations: [Int], cities: Int, surface known: Climate.Surface? = nil) -> (regions: [Region], perimeter: Bool, faces: [Face])? {
         let faces = landFaces(d, elevations)
-        let surface = Climate.surface(d, elevations: elevations)
+        let surface = known ?? Climate.surface(d, elevations: elevations)
         // Only the explicit stall of the established unions falls back to the perimeter unions.
         switch unions(d, elevations, faces, surface, cities, perimeter: false) {
-        case .ok(let r): return (r, false)
+        case .ok(let r): return (r, false, faces)
         case .failed: return nil
         case .stalled: break
         }
-        if case .ok(let r) = unions(d, elevations, faces, surface, cities, perimeter: true) { return (r, true) }
+        if case .ok(let r) = unions(d, elevations, faces, surface, cities, perimeter: true) { return (r, true, faces) }
         return nil
     }
 

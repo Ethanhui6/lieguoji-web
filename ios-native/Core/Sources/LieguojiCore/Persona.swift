@@ -2,7 +2,7 @@ import Foundation
 
 /// Character skill getters (native-economy character-income nativeCharacterSkills): base plus the
 /// ordered float32 sum of the traits' modifiers, clamped to 0…100 after the add.
-public enum Character {
+public enum Persona {
     public struct Skills: Codable, Sendable, Equatable { public var administrative: Double, military: Double, diplomatic: Double, charisma: Double }
     /// The four skill modifiers of one trait (character-traits.json).
     public struct TraitModifiers: Codable, Sendable { public let administrative: Double, military: Double, diplomatic: Double, charisma: Double }

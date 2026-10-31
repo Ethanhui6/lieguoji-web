@@ -53,7 +53,7 @@ public enum Treasury {
         return min(fr(1.2), max(fr(0.8), fr(fr(fr(production) * fr(positive ? 1.1 : 0.9)) * fr(ethnicFactor))))
     }
 
-    public struct Settlement: Sendable, Equatable { public let gold: Int; public let goldPerMonth: Int; public let goldBattleModifier: Double }
+    public struct Settlement: Sendable, Equatable { public let gold: Int; public let goldPerMonth: Int; public let goldBattleModifier: Double; public var baseIncome = 0; public var inventoryFactor = 1.0; public var goldBeforeArmyCost = 0 }
     public static func settle(gold start: Int, incomes: [Int], tax: Double, central: Double, armyCost: Int, production: Double, ethnic: String) -> Settlement {
         let fr = Native.fr
         var sum = 0
@@ -69,9 +69,9 @@ public enum Treasury {
         let credited = Native.roundInt(fr(fr(Double(income)) * factor))
         var gold = Native.iadd(start, credited)
         if gold < 0 && abs(fr(Double(gold))) > fr(Double(Native.imul(15, credited))) { gold = Native.imul(-15, credited) }
-        let battle = goldBattleModifier(gold: gold, production: production, ethnic: ethnic)
+        let battle = goldBattleModifier(gold: gold, production: production, ethnic: ethnic), beforeCost = gold
         gold = Native.iadd(gold, -armyCost)
-        return Settlement(gold: gold, goldPerMonth: credited, goldBattleModifier: battle)
+        return Settlement(gold: gold, goldPerMonth: credited, goldBattleModifier: battle, baseIncome: income, inventoryFactor: factor, goldBeforeArmyCost: beforeCost)
     }
 }
 

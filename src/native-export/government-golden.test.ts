@@ -14,7 +14,7 @@ function governmentView(r:Run){
   v.world.cities=w.cities.map(c=>({id:c.id,name:c.name,provinceId:c.provinceId,position:c.position}));
   v.world.statecraft={provinces:w.statecraft!.provinces.map(p=>({provinceId:p.provinceId,population:p.population}))};
   v.world.nations=w.nations.map(n=>({id:n.id,name:n.name,capitalId:n.capitalId}));
-  v.vassals=r.vassals;v.combatPersonnel={nations:r.combatPersonnel.nations};v.destiny=r.destiny;
+  v.vassals=r.vassals;v.nativeWars=r.nativeWars;v.combatPersonnel={nations:r.combatPersonnel.nations};v.destiny=r.destiny;
   v.stateTraits47=(r as {stateTraits47?:unknown}).stateTraits47??null;v.reigns47=(r as {reigns47?:unknown}).reigns47??null;
   v.upperCombat={provinces:Object.fromEntries(Object.entries(r.upperCombat.provinces).map(([k,p])=>[k,{distance:p.distance,connected:p.connected}])),nations:r.upperCombat.nations};
   return structuredClone(v);

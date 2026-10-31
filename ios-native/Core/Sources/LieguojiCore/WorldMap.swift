@@ -16,6 +16,16 @@ public struct WorldMap: Sendable {
     /// Original per-cell biome colour, sRGB 0...255, three bytes per cell.
     public let biomeRGB: [UInt8]
     public let edges: [Edge]
+    /// Voronoi site of each cell (OriginalGrid.points).
+    public let sites: [Float]
+    /// Sea colour texture (reference-paper appearance, distance from the smoothed coast), RGBA.
+    public let seaWidth: Int
+    public let seaHeight: Int
+    public let seaRGBA: [UInt8]
+    /// Smoothed coastline segments x1, y1, x2, y2.
+    public let coast: [Float]
+    /// River ribbons as triangles, x, y per vertex.
+    public let rivers: [Float]
     public let meta: WorldMeta
 
     public struct Edge: Sendable, Equatable {
@@ -34,7 +44,7 @@ public struct WorldMap: Sendable {
         var reader = ByteReader(data)
         guard try reader.u32() == 0x574A_474C else { throw LoadError.badMagic }
         let version = try reader.u32()
-        guard version == 1 else { throw LoadError.unsupportedVersion(version) }
+        guard version == 2 else { throw LoadError.unsupportedVersion(version) }
         width = try reader.f32()
         height = try reader.f32()
         let cells = Int(try reader.u32()), vertexCount = Int(try reader.u32()), edgeCount = Int(try reader.u32())
@@ -53,6 +63,11 @@ public struct WorldMap: Sendable {
             list.append(Edge(a: try reader.i32(), b: try reader.i32(), x1: try reader.f32(), y1: try reader.f32(), x2: try reader.f32(), y2: try reader.f32()))
         }
         edges = list
+        sites = try reader.f32s(cells * 2)
+        seaWidth = Int(try reader.u32()); seaHeight = Int(try reader.u32())
+        seaRGBA = try reader.bytes(seaWidth * seaHeight * 4)
+        coast = try reader.f32s(Int(try reader.u32()) * 4)
+        rivers = try reader.f32s(Int(try reader.u32()) * 2)
         guard reader.remaining == 0 else { throw LoadError.inconsistent("trailing bytes") }
         guard province.allSatisfy({ $0 < Int32(meta.provinces.count) }) else { throw LoadError.inconsistent("province index") }
         self.meta = meta
@@ -75,7 +90,16 @@ public struct WorldMap: Sendable {
 
 public struct WorldMeta: Codable, Sendable {
     public struct Province: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let nation: Int; public let terrain: String }
-    public struct Nation: Codable, Sendable { public let id: String; public let name: String; public let color: String; public let capital: Int; public let culture: String; public let polity: String; public let religion: String }
+    public struct Nation: Codable, Sendable {
+        public let id: String; public let name: String; public let color: String
+        /// State-line colour (ColorUtils.AdjustColor of the nation colour, fmsStateLineColor).
+        public let line: String
+        public let capital: Int; public let culture: String; public let polity: String; public let religion: String
+    }
+    /// LabelUtility name box of a nation, map units; font size between fontMin and fontMax.
+    public struct LabelBox: Codable, Sendable { public let nation: Int; public let x: Float; public let y: Float; public let width: Float; public let height: Float; public let fontMax: Float; public let fontMin: Float }
+    public struct Event: Codable, Sendable { public let day: Int; public let text: String; public let reason: String }
+    public struct Rect: Codable, Sendable { public let x: Float; public let y: Float; public let width: Float; public let height: Float }
     public struct City: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let province: Int }
     public let format: String
     public let version: Int
@@ -85,6 +109,11 @@ public struct WorldMeta: Codable, Sendable {
     public let provinces: [Province]
     public let nations: [Nation]
     public let cities: [City]
+    public let labels: [LabelBox]
+    /// The world's opening chronicle.
+    public let events: [Event]
+    /// Where the parchment texture lies over the map (originalParchmentRect).
+    public let parchment: Rect
     public let source: [String: String]
 }
 

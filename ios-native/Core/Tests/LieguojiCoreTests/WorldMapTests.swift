@@ -52,9 +52,37 @@ final class WorldMapTests: XCTestCase {
         XCTAssertNil(picker.cell(atX: -1, y: 10))
     }
 
+    func testVersionTwoSections() {
+        let map = Self.map
+        XCTAssertEqual(map.sites.count, map.cellCount * 2)
+        XCTAssertEqual(map.seaWidth, 800); XCTAssertEqual(map.seaHeight, 450)
+        // Exporter reference values: open sea at the corner, the coastal glow lighter.
+        XCTAssertEqual(Array(map.seaRGBA[0..<4]), [0x52, 0x7C, 0x86, 0xFF])
+        XCTAssertEqual(map.coast.count, 11108 * 4)
+        XCTAssertEqual(map.rivers.count, 103614 * 2)
+        XCTAssertEqual(map.meta.labels.count, 7)
+        XCTAssertEqual(map.meta.nations[0].line, "#2d6993")
+        XCTAssertEqual(map.meta.parchment.width, 1662, accuracy: 1e-3)
+    }
+
+    func testOrnamentLayers() {
+        let map = Self.map
+        let relief = MapLayers.relief(map), outlines = MapLayers.outlines(map), icons = MapLayers.cityIcons(map)
+        XCTAssertGreaterThan(relief.vertexCount, 1000); XCTAssertEqual(relief.vertexCount % 3, 0)
+        XCTAssertGreaterThan(outlines.vertexCount, 11108 * 6 - 1)
+        XCTAssertEqual(icons.vertexCount, (80 - 8) * 2 * 14 * 3 + 8 * 3 * 20 * 3)
+        // Ear clipping covers the polygon area exactly, in either winding.
+        let square: [Float] = [0, 0, 2, 0, 2, 2, 0, 2], dent: [Float] = [0, 0, 4, 0, 4, 4, 2, 1, 0, 4]
+        for poly in [square, Array(square.reversed()), dent] {
+            let t = Triangulation.earClip(poly)
+            XCTAssertEqual(t.count, (poly.count / 2 - 2) * 3)
+        }
+        XCTAssertEqual(MapLayers.labelFontSize(box: map.meta.labels[0], emWidth: 4, emHeight: 1.2), min(40, max(15, min(map.meta.labels[0].width * 10 / 4, map.meta.labels[0].height * 10 / 1.2))), accuracy: 1e-4)
+    }
+
     func testMeshAndBorders() {
         let map = Self.map, mesh = CellMesh(map: map)
-        let triangles = (0..<map.cellCount).reduce(0) { $0 + Int(map.offsets[$1 + 1] - map.offsets[$1]) - 2 }
+        let triangles = (0..<map.cellCount).filter(map.isLand).reduce(0) { $0 + Int(map.offsets[$1 + 1] - map.offsets[$1]) - 2 }
         XCTAssertEqual(mesh.indices.count, triangles * 3)
         XCTAssertTrue(mesh.indices.allSatisfy { Int($0) < map.vertices.count / 2 })
         let borders = BorderMesh(map: map)
@@ -70,7 +98,7 @@ final class WorldMapTests: XCTestCase {
         let land = (0..<map.cellCount).first(where: { map.nation(ofCell: $0) == 0 })!
         let c = MapPalette.cellColor(map: map, cell: land, mode: .political, nationColors: colors)
         let gray = MapPalette.heightGray(map.elevation[land])
-        XCTAssertEqual(c.r, MapPalette.linearToSrgb(gray + (MapPalette.srgbToLinear(colors[0].r) - gray) * 0.8), accuracy: 1e-6)
+        XCTAssertEqual(c.r, MapPalette.linearToSrgb(gray + (MapPalette.srgbToLinear(colors[0].r) - gray) * 0.78), accuracy: 1e-6)
         let sea = (0..<map.cellCount).first(where: { !map.isLand($0) })!
         XCTAssertEqual(MapPalette.cellColor(map: map, cell: sea, mode: .political, nationColors: colors), MapPalette.cellColor(map: map, cell: sea, mode: .terrain, nationColors: colors))
         for x: Float in [0, 0.002, 0.5, 1] { XCTAssertEqual(MapPalette.linearToSrgb(MapPalette.srgbToLinear(x)), x, accuracy: 1e-5) }

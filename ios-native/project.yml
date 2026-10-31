@@ -20,13 +20,17 @@ targets:
       - path: Resources/World
         type: folder
         buildPhase: resources
+      # TW-Kai (the original's map font, as the web ships it), converted from the web's woff2 subset to TrueType.
+      - path: Resources/Fonts
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: LieguojiCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "0.3.0"
+        CURRENT_PROJECT_VERSION: "3"
     info:
       path: App/Info.plist
       properties:

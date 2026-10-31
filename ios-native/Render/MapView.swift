@@ -11,7 +11,10 @@ import LieguojiCore
     /// Province to fly to; the id makes repeated requests for the same province animate again.
     @Published var focus: (province: Int, id: UUID)?
     @Published var resetRequest = UUID()
+    /// Zoom by a factor around the screen centre (the + / − buttons).
+    @Published var zoomRequest: (factor: Double, id: UUID)?
     func fly(to province: Int) { focus = (province, UUID()) }
+    func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
 
 struct MapView: UIViewRepresentable {
@@ -42,6 +45,7 @@ struct MapView: UIViewRepresentable {
         private var placed = false
         private var focusID: UUID?
         private var resetID: UUID?
+        private var zoomID: UUID?
         private let selection = UISelectionFeedbackGenerator()
         private let impact = UIImpactFeedbackGenerator(style: .light)
 
@@ -58,12 +62,12 @@ struct MapView: UIViewRepresentable {
         func build() -> MapContainerView {
             container = MapContainerView()
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
-            mtk.clearColor = MTLClearColor(red: 0.078, green: 0.53, blue: 1, alpha: 1)
+            mtk.clearColor = MTLClearColor(red: 0x52 / 255.0, green: 0x7C / 255.0, blue: 0x86 / 255.0, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
             mtk.autoResizeDrawable = true
-            renderer = MapRenderer(view: mtk, map: map)
+            renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"))
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             labels = MapLabelsView(map: map)
@@ -201,6 +205,10 @@ struct MapView: UIViewRepresentable {
                 let p = map.meta.provinces[f.province]
                 animate(to: MapCamera(centerX: Double(p.x), centerY: Double(p.y), scale: max(camera.scale, bounds.lowerBound * 4)), duration: 0.5)
             }
+            if let z = controller.zoomRequest, z.id != zoomID {
+                zoomID = z.id
+                animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
+            }
             if controller.resetRequest != resetID {
                 resetID = controller.resetRequest
                 animate(to: MapCamera.cover(map: mapSize, viewport: viewport), duration: 0.45)
@@ -226,76 +234,72 @@ final class MapContainerView: UIView {
     override func layoutSubviews() { super.layoutSubviews(); onLayout?() }
 }
 
-/// Nation names scale with the map like the original's state labels; city names keep a fixed
-/// size and appear once the map is close enough to read them.
+/// Map labels as the web draws them (map.ts / original-labels47.ts), in the original's TW-Kai:
+/// - state names: one per LabelUtility box, TextMeshPro auto-size between fontMin and fontMax, black with
+///   an outline in the state colour at 0.8; they zoom with the map;
+/// - city names: size 64 × BurgLabelScale 0.13 (capital × 1.5) placed 0.7 × scale above the city, skipped
+///   below 9 pt on screen.
+/// Text is re-rendered at the on-screen size whenever the zoom moves it by more than 25 %, so it stays sharp.
 final class MapLabelsView: UIView {
-    private let map: WorldMap
-    private var nationLabels: [(label: UILabel, x: Double, y: Double)] = []
-    private var cityLabels: [(label: UILabel, dot: UIView, x: Double, y: Double, province: Int)] = []
-    private static let nationBase: CGFloat = 32
+    static let fontName = "TW-Kai-98_1"
+    private final class Label {
+        let view = UILabel()
+        let text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?
+        var rendered: Double = 0
+        init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
+            self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
+        }
+    }
+    private var nations: [Label] = []
+    private var cities: [Label] = []
+
+    static func font(_ size: CGFloat) -> UIFont { UIFont(name: fontName, size: size) ?? .systemFont(ofSize: size, weight: .semibold) }
 
     init(map: WorldMap) {
-        self.map = map
         super.init(frame: .zero)
-        for (i, n) in map.meta.nations.enumerated() {
-            let owned = map.meta.provinces.filter { $0.nation == i }
-            guard !owned.isEmpty else { continue }
-            let x = owned.reduce(0.0) { $0 + Double($1.x) } / Double(owned.count), y = owned.reduce(0.0) { $0 + Double($1.y) } / Double(owned.count)
-            let label = UILabel()
-            label.attributedText = NSAttributedString(string: n.name, attributes: [
-                .font: UIFont.systemFont(ofSize: Self.nationBase, weight: .heavy),
-                .foregroundColor: UIColor(white: 0.05, alpha: 0.9),
-                .strokeColor: UIColor(white: 1, alpha: 0.55), .strokeWidth: -2.5, .kern: 4,
-            ])
-            label.sizeToFit()
-            addSubview(label)
-            nationLabels.append((label, x, y))
+        let unit = Double(MapLayers.fontUnit)
+        for box in map.meta.labels where box.nation >= 0 {
+            let n = map.meta.nations[box.nation]
+            let measured = (n.name as NSString).size(withAttributes: [.font: Self.font(1)])
+            let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
+            let tint = Self.color(n.color).withAlphaComponent(0.8)
+            nations.append(Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: -14, minPoints: 4, province: nil))
         }
+        let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? map.meta.cities[$0.capital].id : nil })
         for c in map.meta.cities {
-            let capital = map.meta.nations.contains { $0.capital >= 0 && map.meta.cities.indices.contains($0.capital) && map.meta.cities[$0.capital].id == c.id }
-            let label = UILabel()
-            label.attributedText = NSAttributedString(string: c.name, attributes: [
-                .font: UIFont.systemFont(ofSize: capital ? 13 : 11, weight: capital ? .bold : .semibold),
-                .foregroundColor: UIColor(white: 0.08, alpha: 1), .strokeColor: UIColor(white: 1, alpha: 0.85), .strokeWidth: -3,
-            ])
-            label.sizeToFit()
-            let dot = UIView(frame: CGRect(x: 0, y: 0, width: capital ? 7 : 5, height: capital ? 7 : 5))
-            dot.backgroundColor = capital ? UIColor(red: 0.75, green: 0.1, blue: 0.1, alpha: 1) : UIColor(white: 0.1, alpha: 1)
-            dot.layer.cornerRadius = dot.bounds.width / 2
-            dot.layer.borderColor = UIColor.white.cgColor; dot.layer.borderWidth = 1
-            addSubview(dot); addSubview(label)
-            cityLabels.append((label, dot, Double(c.x), Double(c.y), c.province))
+            let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
+            cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
+                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: -10, minPoints: 9, province: c.province))
         }
+        for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    private var selected: Int?
-    func setSelected(_ province: Int?) {
-        guard province != selected else { return }
-        selected = province
-        for c in cityLabels { c.label.alpha = province == nil || c.province == province ? 1 : 0.75 }
+    static func color(_ css: String) -> UIColor {
+        let c = RGB(css: css) ?? RGB(0.5, 0.5, 0.5)
+        return UIColor(red: CGFloat(c.r), green: CGFloat(c.g), blue: CGFloat(c.b), alpha: 1)
     }
+
+    private var selected: Int?
+    func setSelected(_ province: Int?) { selected = province }
 
     func update(camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
-        // About 22 map units tall; never smaller than 11 pt or larger than 72 pt on screen.
-        let size = min(72, max(11, 22 * camera.scale))
-        let k = CGFloat(size) / Self.nationBase
-        let fadeOut = camera.scale > 5 ? max(0, 1 - (camera.scale - 5) / 3) : 1
-        for n in nationLabels {
-            let p = camera.toScreen(x: n.x, y: n.y, viewport: vp)
-            n.label.transform = CGAffineTransform(scaleX: k, y: k)
-            n.label.center = CGPoint(x: p.x, y: p.y)
-            n.label.alpha = CGFloat(fadeOut)
-        }
-        let showCities = camera.scale > 1.4
-        for c in cityLabels {
-            c.label.isHidden = !showCities; c.dot.isHidden = !showCities
-            guard showCities else { continue }
-            let p = camera.toScreen(x: c.x, y: c.y, viewport: vp)
-            guard p.x > -80, p.y > -40, p.x < vp.width + 80, p.y < vp.height + 40 else { c.label.isHidden = true; c.dot.isHidden = true; continue }
-            c.dot.center = CGPoint(x: p.x, y: p.y)
-            c.label.center = CGPoint(x: CGFloat(p.x), y: CGFloat(p.y) - c.label.bounds.height / 2 - 4)
+        for l in nations + cities {
+            let points = l.mapEm * camera.scale
+            let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+            guard points >= l.minPoints, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
+            if l.rendered == 0 || points / l.rendered > 1.25 || points / l.rendered < 0.8 {
+                l.rendered = (points * 2).rounded() / 2
+                l.view.transform = .identity
+                l.view.attributedText = NSAttributedString(string: l.text, attributes: [.font: Self.font(CGFloat(l.rendered)), .foregroundColor: l.fill,
+                                                                                        .strokeColor: l.stroke, .strokeWidth: l.strokeWidth])
+                l.view.sizeToFit()
+            }
+            let k = CGFloat(points / l.rendered)
+            l.view.transform = CGAffineTransform(scaleX: k, y: k)
+            l.view.center = CGPoint(x: p.x, y: p.y)
+            l.view.isHidden = false
         }
     }
 }

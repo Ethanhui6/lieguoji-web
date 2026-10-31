@@ -1,9 +1,10 @@
 import Foundation
 
-/// Colours of the original first display preset (src/fms/original/original-style.ts ORIGINAL_PRESETS[0]
-/// and original-layers.ts originalCellColor): land is the height background, grey = 1 − elevation / 100,
-/// and a state colour is laid over at StateMapTransparency 0.8, mixed in linear space. The terrain view
-/// uses the original per-cell biome colour. Sea fades from shallow to deep with depth.
+/// Land colours of the web's reference-paper appearance (original-play-renderer: ORIGINAL_PRESETS[7] with
+/// StateMapTransparency 0.78; original-layers.ts originalCellColor): land is the height background,
+/// grey = 1 − elevation / 100, and a state colour is laid over at 0.78, mixed in linear space. The terrain
+/// view uses the original per-cell biome colour. The sea is the exported coastal-distance texture; the
+/// per-cell sea colour below is only a fallback.
 public enum MapMode: String, CaseIterable, Sendable { case political, terrain }
 
 public struct RGB: Equatable, Sendable {
@@ -18,9 +19,9 @@ public struct RGB: Equatable, Sendable {
 }
 
 public enum MapPalette {
-    public static let stateAlpha: Float = 0.8
-    public static let shallowSea = RGB(hex: 0x3C9CFF)
-    public static let deepSea = RGB(hex: 0x1487FF)
+    public static let stateAlpha: Float = 0.78
+    public static let shallowSea = RGB(hex: 0x8EAFB1)
+    public static let deepSea = RGB(hex: 0x527C86)
     public static let coastLine = RGB(hex: 0x5F5F5F)
     public static let stateLine = RGB(hex: 0x1487FF)
 

@@ -4,14 +4,15 @@ import Foundation
 public struct CellMesh: Sendable {
     /// x, y per vertex (the world vertices, unchanged order).
     public let positions: [Float]
-    /// Triangle fan indices of every cell (Voronoi cells are convex).
+    /// Triangle fan indices of every land cell (Voronoi cells are convex).
     public let indices: [UInt32]
 
     public init(map: WorldMap) {
         positions = map.vertices
         var list: [UInt32] = []
         list.reserveCapacity((map.vertices.count / 2) * 3)
-        for c in 0..<map.cellCount {
+        // Only land: the sea is the coastal-distance texture drawn underneath.
+        for c in 0..<map.cellCount where map.isLand(c) {
             let start = map.offsets[c], end = map.offsets[c + 1]
             guard end >= start + 3 else { continue }
             for j in (start + 1)..<(end - 1) { list.append(start); list.append(j); list.append(j + 1) }

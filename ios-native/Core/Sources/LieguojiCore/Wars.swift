@@ -83,13 +83,13 @@ public enum Wars {
     }
     /// registerWar46.
     @discardableResult
-    public static func register(_ r: JS, attacker: String, defender: String, goals: JS, history: String = "complete", internal: JS? = nil, members: JS? = nil) -> JS {
+    public static func register(_ r: JS, attacker: String, defender: String, goals: JS, history: String = "complete", internalWar: JS? = nil, members: JS? = nil) -> JS {
         let s = r.nativeWars, rel = relation(r, attacker, defender)!
         let relationId = relationIdentity(attacker, defender, rel.sinceDay.asInt)
         if let existing = s.campaigns.asArray.first(where: { $0.relationId.asString == relationId && $0.endedTick.isNull }) { return existing }
         let ids = [stateNumber(r, attacker), stateNumber(r, defender)], complete = history == "complete"
         let c = JS.object()
-        if let internal { c.internal = internal.clone() }
+        if let internalWar { c.internal = internalWar.clone() }
         if let members { let co = JS.object(); co.version = JS(1); co.members = members.clone(); co.departures = .array(); c.coalition = co }
         c.id = s.nextId.clone(); c.relationId = JS(relationId); c.nations = .array([rel.a.clone(), rel.b.clone()])
         c.attacker = complete ? JS(attacker) : .null; c.defender = complete ? JS(defender) : .null

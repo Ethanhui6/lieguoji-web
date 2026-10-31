@@ -5,7 +5,7 @@ import Foundation
 /// peace reason WarAIV2.DecidePeaceReason returns.
 public struct PeaceWar: Codable, Sendable {
     public struct Participant: Codable, Sendable { public let stateId: Int; public let side: Int }
-    public struct Goal: Codable, Sendable { public let type: Int; public let addedBy: Int; public let target: Int; public let beneficiary: Int; public let provinceIds: [Int]?; public let requiredCount: Int; public let hasScope: Bool }
+    public struct Goal: Codable, Sendable { public let id: Int?; public let type: Int; public let addedBy: Int; public let target: Int; public let beneficiary: Int; public let provinceIds: [Int]?; public let requiredCount: Int; public let hasScope: Bool }
     public let id: Int; public let `internal`: Bool; public let legacyWarType: Int
     public let primaryAttackerId: Int; public let primaryDefenderId: Int; public let startTime: Double
     public let participants: [Participant]; public let destroyedParticipants: [Participant]; public let goals: [Goal]

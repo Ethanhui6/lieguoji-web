@@ -71,7 +71,7 @@ public enum Settlement {
             guard let owner = ai.owner(id), owner != g.beneficiary else { continue }
             if g.type == 2 || !defenders.contains(owner) { continue }
             if !annex && ai.countLand(ai.byState[owner]) <= 1 { continue }
-            p.transfers.append(Transfer(sourceGoalId: g.id, provinceId: id, from: owner, to: g.beneficiary, type: g.type))
+            p.transfers.append(Transfer(sourceGoalId: g.id ?? 0, provinceId: id, from: owner, to: g.beneficiary, type: g.type))
         }
     }
 
@@ -147,8 +147,8 @@ public enum Settlement {
             let forced = !achieved && [0, 1, 4, 6, 11].contains(g.type) && victorSide != nil && ai.side(g.beneficiary) == victorSide
             if !achieved && !forced { continue }
             if [4, 6, 11].contains(g.type) {
-                if !p.annexation { enforced.append(g.id); p.effects.append(Effect(sourceGoalId: g.id, type: g.type, beneficiary: g.beneficiary, target: g.target, status: 0)) }
-            } else { enforced.append(g.id); collectTransfers(ai, &p, g, p.annexation, defenders) }
+                if !p.annexation { enforced.append(g.id ?? 0); p.effects.append(Effect(sourceGoalId: g.id ?? 0, type: g.type, beneficiary: g.beneficiary, target: g.target, status: 0)) }
+            } else { enforced.append(g.id ?? 0); collectTransfers(ai, &p, g, p.annexation, defenders) }
         }
         if decisive {
             for pid in ai.byState[w.primaryDefenderId]?.provinces ?? [] where !p.transfers.contains(where: { $0.provinceId == pid }) {

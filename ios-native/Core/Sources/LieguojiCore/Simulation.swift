@@ -80,10 +80,12 @@ public struct SimState: Sendable, Equatable {
     public var motion: ArmyMotion?
     /// Declarations, wars and peace (nil without diplomacy data).
     public var diplomacy: DiplomacyState?
+    /// AI army orders (nil without a travel graph).
+    public var armyAI: ArmyAIState?
     public let worldProvinces: Int
 
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil) {
-        self.motion = motion; self.diplomacy = diplomacy
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil, armyAI: ArmyAIState? = nil) {
+        self.motion = motion; self.diplomacy = diplomacy; self.armyAI = armyAI
         day = start.day; tick = start.day * SimState.ticksPerDay
         provinces = start.provinces.map { Province(province: $0.province, nation: $0.nation, terrain: $0.terrain, supply: $0.supply, capacity: $0.capacity, population: $0.population, grain: $0.grain) }
         priorities = start.nations.map(\.priority)
@@ -196,7 +198,7 @@ public enum MonthEnd {
 
 public actor Simulation {
     public private(set) var state: SimState
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces, motion: motion, diplomacy: diplomacy) }
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil, diplomacy: DiplomacyState? = nil, armyAI: ArmyAIState? = nil) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces, motion: motion, diplomacy: diplomacy, armyAI: armyAI) }
     public func declare(attacker: Int, defender: Int) -> (SimState, String?) { let e = state.declareWar(attacker: attacker, defender: defender); return (state, e) }
     public func makePeace(_ a: Int, _ b: Int) -> (SimState, String?) { let e = state.makePeace(a, b); return (state, e) }
     public func order(army: Int, toProvince province: Int) -> (SimState, SimState.OrderError?) { let e = state.order(army: army, toProvince: province); return (state, e) }

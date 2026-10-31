@@ -120,6 +120,8 @@ public struct WorldMeta: Codable, Sendable {
     public let travel: TravelStart
     /// Diplomacy start: geography, day-0 snapshot and calendar.
     public let diplomacy: DiplomacyStart
+    /// Army autonomy start.
+    public let armyAi: ArmyAIStart
     /// Where the parchment texture lies over the map (originalParchmentRect).
     public let parchment: Rect
     public let source: [String: String]

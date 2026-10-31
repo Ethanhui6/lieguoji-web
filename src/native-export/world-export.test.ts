@@ -5,6 +5,7 @@ import {originalGridFor} from '../fms/original/original-document';
 import {createNativeWorld,NATIVE_WORLD_OPTIONS} from './native-world';
 import {nativeEconomyState,monthlyInputs,nativeTravelState} from './native-state';
 import {diplomacyStatic,diplomacySnapshot,diplomacySchedule} from './diplomacy-state';
+import {armyAiStatic,armyAiSnapshot} from './army-ai-state';
 import type {PoliticalRun47} from '../fms/play/civilization47-diplomatic-world';
 import militaryIcons from '../fms/play/military-icons.json';
 import {originalCellProvinces} from '../fms/original/original-politics';
@@ -81,6 +82,8 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports the stage-2 native wor
     // Army motion (travel.bin graph): normalized→map scale, scaled seconds per tick, each army's travel cell and point, speed.
     travel:nativeTravelState(run),
     // Diplomacy (Swift DeclarationEngine): static geography, the day-0 snapshot and the monthly calendar.
+    // Army autonomy (Swift ArmyAutonomy): static geography and the day-0 snapshot.
+    armyAi:{statics:armyAiStatic(run),world:armyAiSnapshot(run)},
     diplomacy:{statics:diplomacyStatic(run as PoliticalRun47),world:diplomacySnapshot(run as PoliticalRun47),schedule:diplomacySchedule(run as PoliticalRun47)},
     // Month-end treasury and destiny inputs on day 0 (static parts: resources, cells, offices, livelihood).
     monthly:monthlyInputs(structuredClone(run)),

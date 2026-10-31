@@ -358,6 +358,7 @@ extension SimState {
         m.travels[i] = ArmyTravel(origin: at.point, nodes: path.nodes)
         m.moved[i] = true
         motion = m
+        armyAI?.world.armies[i].manual = true
         armies[i].status = "idle"
         armies[i].travel = m.travels[i].status == .moving ? "moving" : "arrived"
         return nil
@@ -366,27 +367,47 @@ extension SimState {
     /// Stops an army where it stands (haltArmyTravel47).
     public mutating func halt(army i: Int) {
         guard var m = motion, m.travels.indices.contains(i), m.travels[i].status == .moving || m.travels[i].status == .blocked else { return }
-        m.travels[i].status = .halted; motion = m; armies[i].travel = "halted"
+        m.travels[i].status = .halted; motion = m; armies[i].travel = "halted"; armyAI?.world.armies[i].manual = true
     }
 
     /// One day of movement: six frames of the motion phase from this day's first tick.
     mutating func advanceMotion() {
-        guard var m = motion, m.travels.contains(where: { $0.status == .moving || $0.status == .blocked }) else { return }
+        guard var m = motion else { return }
+        if armyAI == nil && !m.travels.contains(where: { $0.status == .moving || $0.status == .blocked }) { return }
         let owners = controllers()
-        let homes = armies.indices.map { i -> Int in let p = m.province(i); return p >= 0 ? owners[p] : -1 }
-        let nations = armies.map(\.nation), retreat = armies.map { $0.status == "retreating" }
+        let homes = armies.indices.map { i -> Int in
+            if let ai = armyAI { let anchor = ai.world.armies[i].anchor; return ai.originalPaths && anchor >= 0 ? owners[anchor] : -1 }
+            let p = m.province(i); return p >= 0 ? owners[p] : -1
+        }
+        let nations = armies.map(\.nation)
         let g = m.graph, speeds = m.start.armies, seconds = m.start.secondsPerTick
         let wars = self.wars
-        let rules = ForceMotion.Rules(
-            canEnter: { f, cell in
-                let q = Int(g.provinces[cell]); if q < 0 { return true }
-                let c = owners[q]
-                return c == nations[f] || c == homes[f] && homes[f] >= 0 || !retreat[f] && wars.contains([nations[f], c])
-            },
-            speed: { f, cell in ForceMotion.armySpeed(base: speeds[f].base, unitSpeed: speeds[f].unitSpeed, cell: cell, graph: g, secondsPerTick: seconds) })
+        let access = Dictionary(uniqueKeysWithValues: Set(nations).flatMap { a in Set(owners).map { b in ([a, b], militaryAccess(a, b)) } })
         let frames = SimState.ticksPerDay / max(1, m.start.frameTicks)
         for f in 0..<frames {
-            ForceMotion.frame(&m.travels, graph: g, start: Double(tick + f * m.start.frameTicks), frameTicks: Double(m.start.frameTicks), rules: rules)
+            // armyTravelPolicyFactory47.canEnter, with each army's retreat flag as it stands this frame.
+            let retreat = armies.map { $0.status == "retreating" }
+            let rules = ForceMotion.Rules(
+                canEnter: { f, cell in
+                    let q = Int(g.provinces[cell]); if q < 0 { return true }
+                    let c = owners[q]
+                    return access[[nations[f], c]] == true || c == homes[f] && homes[f] >= 0 || !retreat[f] && wars.contains([nations[f], c])
+                },
+                speed: { f, cell in ForceMotion.armySpeed(base: speeds[f].base, unitSpeed: speeds[f].unitSpeed, cell: cell, graph: g, secondsPerTick: seconds) })
+            if m.travels.contains(where: { $0.status == .moving || $0.status == .blocked }) {
+                ForceMotion.frame(&m.travels, graph: g, start: Double(tick + f * m.start.frameTicks), frameTicks: Double(m.start.frameTicks), rules: rules)
+                completeRetreats(m, owners: owners)
+            }
+            if var ai = armyAI {
+                syncAI(&ai.world, motion: m, owners: owners, tick: tick + (f + 1) * m.start.frameTicks)
+                let before = m.travels
+                ai.engine.issueBatch(&ai.world, travels: &m.travels)
+                for i in armies.indices where i < ai.world.armies.count {
+                    armies[i].status = ai.world.armies[i].status
+                    if m.travels[i] != before[i] { m.moved[i] = true }
+                }
+                armyAI = ai
+            }
         }
         for i in armies.indices where m.moved[i] {
             armies[i].province = m.province(i)
@@ -400,4 +421,43 @@ extension SimState {
 extension ArmyMotion: Equatable {
     /// The graph and start never change within a world; journeys decide equality.
     public static func == (a: ArmyMotion, b: ArmyMotion) -> Bool { a.travels == b.travels && a.moved == b.moved }
+}
+
+extension SimState {
+    /// militaryAccess46: own land, or an ally or vassal not at war.
+    func militaryAccess(_ a: Int, _ b: Int) -> Bool {
+        if a == b { return true }
+        if atWar(a, b) { return false }
+        guard let d = diplomacy else { return false }
+        return d.world.alliances.contains { !$0.ended && $0.members.contains(a) && $0.members.contains(b) } || d.world.vassals.contains { $0[0] == a && $0[1] == b }
+    }
+    /// force-runtime47: a retreating army that stopped on accessible land free of enemies is idle again.
+    mutating func completeRetreats(_ m: ArmyMotion, owners: [Int]) {
+        var holders = [Int: [Int]]()
+        for i in armies.indices where armies[i].troops > 0 && armies[i].status != "destroyed" { let p = m.province(i); if p >= 0 { holders[p, default: []].append(i) } }
+        for i in armies.indices where armies[i].status == "retreating" && (m.travels[i].status == .arrived || m.travels[i].status == .halted) {
+            let p = m.province(i), n = armies[i].nation
+            guard p >= 0 else { continue }
+            let c = owners[p], ok = militaryAccess(n, c)
+            if ok && !(holders[p] ?? []).contains(where: { armies[$0].status != "retreating" && atWar(n, armies[$0].nation) }) { armies[i].status = "idle" }
+        }
+    }
+    /// Mirror the live world into the autonomy snapshot at a frame boundary.
+    func syncAI(_ w: inout ArmyAIWorld, motion m: ArmyMotion, owners: [Int], tick: Int) {
+        w.tick = tick; w.day = day
+        w.owners = owners
+        w.wars = wars.filter { $0[0] < $0[1] }.sorted { $0.lexicographicallyPrecedes($1) }
+        if let d = diplomacy {
+            var byID = [Int: Int](); for (i, n) in d.world.nations.enumerated() { byID[n.id] = i }
+            w.campaigns = d.wars.enumerated().map { k, war in
+                .init(id: k + 1, ended: war.endDay != nil, internal: false, participants: war.declared.participants.compactMap { p in byID[p.state].map { .init(nation: $0, side: p.side) } })
+            }
+            w.alliances = d.world.alliances.filter { !$0.ended }.map(\.members)
+            w.vassals = d.world.vassals
+        }
+        for i in armies.indices where i < w.armies.count {
+            w.armies[i].troops = armies[i].troops; w.armies[i].status = armies[i].status
+            w.armies[i].busy = false; w.armies[i].engaged = armies[i].status == "fighting"
+        }
+    }
 }

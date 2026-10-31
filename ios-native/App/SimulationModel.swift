@@ -16,8 +16,9 @@ import LieguojiCore
         self.map = map
         let motion = graph.map { ArmyMotion(graph: $0, start: map.meta.travel) }
         let diplomacy = DiplomacyState(start: map.meta.diplomacy, names: map.meta.nations.map(\.name))
-        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy)
-        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy)
+        let armyAI = graph.map { ArmyAIState(start: map.meta.armyAi, graph: $0) }
+        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy, armyAI: armyAI)
+        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion, diplomacy: diplomacy, armyAI: armyAI)
     }
 
     // MARK: army orders

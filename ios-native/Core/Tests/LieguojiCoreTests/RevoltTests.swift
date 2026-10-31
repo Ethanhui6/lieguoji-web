@@ -21,7 +21,7 @@ final class RevoltTests: XCTestCase {
             if let previous = input { let next = previous.clone(); NobilityTests.apply(s.inputPatch, to: next); input = next } else { input = s.input }
             let r = input!.clone(), expected = input!.clone()
             NobilityTests.apply(s.patch, to: expected)
-            let result = s.civil.asBool ? NobleRevolt.startCivilWar(r, s.args.state.asString, s.args.list.asArray.map(.asString)) : NobleRevolt.startFamilyRebellion(r, s.args.family.asString)
+            let result = s.civil.asBool ? NobleRevolt.startCivilWar(r, s.args.state.asString, s.args.list.asArray.map { $0.asString }) : NobleRevolt.startFamilyRebellion(r, s.args.family.asString)
             XCTAssertEqual(result, s.result.optionalString, "result, sample (k)")
             r.chronicle.entries.asArray = Array(r.chronicle.entries.asArray.suffix(4))
             if let d = r.difference(expected) { failures += 1; if failures <= 10 { XCTFail("sample \(k): \(d)") } }

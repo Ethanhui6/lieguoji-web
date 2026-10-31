@@ -5,6 +5,7 @@ import {patch} from './run-view';
 import {diplomacyStatic} from './diplomacy-state';
 import {advanceDiplomaticSchedule46} from '../fms/play/civilization47-diplomatic-state';
 import {evaluateDeclaration47} from '../fms/play/civilization47-declaration';
+import {evaluateAlliance47} from '../fms/play/civilization47-alliance';
 import type {PoliticalRun47} from '../fms/play/civilization47-diplomatic-world';
 
 type Run=PoliticalRun47;
@@ -27,7 +28,7 @@ function declareView(r:Run){
 }
 
 /** Golden samples for the Swift calendar diplomacy (advanceDiplomaticSchedule46 with
- * evaluateDeclaration47 as the monthly step): every day of the first two years on a copy moved one day
+ * evaluateAlliance47 and evaluateDeclaration47 as the monthly steps): every day of the first two years on a copy moved one day
  * ahead of the schedule. Inputs are chained. */
 it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports declaration golden samples',async()=>{
   const {session,snapshot}=await createNativeWorld();
@@ -41,9 +42,9 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports declaration golden sam
     const r=structuredClone(before);
     r.life.currentDate=structuredClone(after.life.currentDate);r.life.gameTime=after.life.gameTime;r.clock.tick=after.clock.tick;r.world.day=after.world.day;
     const input=declareView(r);
-    advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateDeclaration47(r,id);});
+    advanceDiplomaticSchedule46(r.nativeDiplomacy,r,id=>{evaluateAlliance47(r,id);evaluateDeclaration47(r,id);});
     const output=declareView(r);
-    if(samples.length%3!==0&&JSON.stringify(input.nativeWars)===JSON.stringify(output.nativeWars)&&JSON.stringify(input.nativeDiplomacy.nations)===JSON.stringify(output.nativeDiplomacy.nations))continue;
+    if(samples.length%3!==0&&JSON.stringify(input.nativeWars)===JSON.stringify(output.nativeWars)&&JSON.stringify(input.alliances)===JSON.stringify(output.alliances)&&JSON.stringify(input.nativeDiplomacy.nations)===JSON.stringify(output.nativeDiplomacy.nations))continue;
     samples.push({inputPatch:previous===null?null:patch(previous,input),input:previous===null?input:undefined,patch:patch(input,output)});previous=input;
   }
   expect(samples.length).toBeGreaterThan(30);

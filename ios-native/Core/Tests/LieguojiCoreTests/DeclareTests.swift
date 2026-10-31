@@ -18,7 +18,7 @@ final class DeclareTests: XCTestCase {
             if let previous = input { let next = previous.clone(); NobilityTests.apply(s.inputPatch, to: next); input = next } else { input = s.input }
             let r = input!.clone(), expected = input!.clone()
             NobilityTests.apply(s.patch, to: expected)
-            DiplomacyBridge.schedule(r) { DiplomacyBridge.evaluateDeclaration(r, $0, engine: engine) }
+            DiplomacyBridge.schedule(r) { DiplomacyBridge.evaluateAlliance(r, $0, engine: engine); DiplomacyBridge.evaluateDeclaration(r, $0, engine: engine) }
             r.chronicle.entries.asArray = Array(r.chronicle.entries.asArray.suffix(3))
             if let d = r.difference(expected) { failures += 1; if failures <= 10 { XCTFail("sample \(k): \(d)") } }
         }

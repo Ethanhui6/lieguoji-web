@@ -34,7 +34,7 @@ final class WindowTests: XCTestCase {
         let graph = try TravelGraph(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/travel.bin")))
         let golden = try JSONDecoder().decode(WindowGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/window.json")))
         let window = MilitaryWindow(graph: graph, statics: golden.statics)
-        var failures = 0, volleys = 0
+        var failures = 0, volleys = 0, misses = 0
         for (k, sample) in golden.samples.enumerated() {
             let i = sample.input
             var s = MilitaryState(world: i.world, clock: AttackClock(secondsPerTick: i.clock.secondsPerTick, now: i.clock.now, rng: i.clock.rng, draws: i.clock.draws, deadlines: i.clock.deadlines),
@@ -63,5 +63,6 @@ final class WindowTests: XCTestCase {
             if s.world.owners != o.world.owners || s.clock.rng != o.clock.rng || got.map(\.losses) != o.volleys.map(\.losses) { failures += 1; if failures > 5 { return } }
         }
         XCTAssertGreaterThan(volleys, 0)
+        XCTAssertLessThan(misses, 3, "efficiency lookups outside the exported table")
     }
 }

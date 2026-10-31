@@ -26,6 +26,8 @@ final class PeopleTests: XCTestCase {
             } else {
                 XCTAssertTrue(People.month(r))
             }
+            // The exported view keeps the chronicle's last three entries.
+            r.chronicle.entries.asArray = Array(r.chronicle.entries.asArray.suffix(3))
             deaths += r.kin.lifecycle.deaths.length
             XCTAssertNil(r.difference(expected), "\(s.kind.asString), sample \(k)")
         }

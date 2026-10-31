@@ -146,3 +146,28 @@ public enum Recovery {
         return (consumed, events)
     }
 }
+
+/// Rebuilding at home (civilization47-original-army progressOriginalReorganization47, original
+/// Army.ReorganizationUpdate): each day the army gains full × secondsPerDay / duration troops, with
+/// duration 20 − 10 × population/25000 (clamped) and the fraction carried; full strength ends it.
+public enum Reorganization {
+    public struct Active: Codable, Sendable {
+        public let id: String, alive: Bool, home: Int
+        public var fraction: Double, troops: Double, completed: Int
+    }
+    /// Returns, per entry, whether it is still rebuilding and the army's new full strength (0 when dropped).
+    public static func day(_ active: inout [Active], populations: [Double], others: [Double], secondsPerDay: Double) -> [(active: Bool, fullStrength: Double)] {
+        let values = (populations + others).sorted(), mid = values.count >> 1
+        let median = values.count % 2 == 1 ? values[mid] : (values[mid - 1] + values[mid]) / 2
+        return active.indices.map { i in
+            let v = active[i]
+            guard v.alive, v.home >= 0 else { return (false, 0) }
+            let pop = max(0, min(25000, populations[v.home]))
+            let full = Double(Muster.legionStrength(populations[v.home], median: median)), duration = 20 - 10 * pop / 25000
+            let amount = full * secondsPerDay / duration + v.fraction, whole = amount.rounded(.down)
+            active[i].fraction = amount - whole; active[i].troops = min(full, v.troops + whole)
+            if active[i].troops >= full { active[i].completed += 1; return (false, full) }
+            return (true, full)
+        }
+    }
+}

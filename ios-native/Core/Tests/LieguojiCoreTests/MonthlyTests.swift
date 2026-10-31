@@ -40,7 +40,7 @@ final class MonthlyTests: XCTestCase {
                 var d = Destiny.State(destiny: i.destiny.destiny, decrease: i.destiny.decrease, manifestCount: i.destiny.manifestCount, manifest: i.destiny.manifest, seed: i.destiny.seed, lastMonth: i.destiny.lastMonth)
                 if i.destiny.lastMonth < month && i.ownedCapacity > 0 {
                     let ratio = Native.fr(Native.fr(Double(i.ownedPopulation)) / Native.fr(Double(i.ownedCapacity)))
-                    if Destiny.month(&d, populationRatio: ratio, gold: r.gold, leaderAdministrative: i.administrative) { resets += 1 }
+                    if Destiny.month(&d, populationRatio: ratio, gold: r.gold, leaderAdministrative: i.administrative).reset { resets += 1 }
                 }
                 XCTAssertEqual(d.destiny, r.destiny, "destiny of nation \(n) on day \(m.day)")
                 XCTAssertEqual(d.decrease, r.decrease); XCTAssertEqual(d.manifestCount, r.manifestCount); XCTAssertEqual(d.seed, r.seed)

@@ -96,7 +96,8 @@ public enum Destiny {
     }
     /// One month: decline by the decrease rate (faster with a full population and debt; the leader's
     /// administration slows it above 30), and a redraw once it falls below the threshold.
-    public static func month(_ s: inout State, populationRatio: Double, gold: Int, leaderAdministrative: Double?) -> Bool {
+    @discardableResult
+    public static func month(_ s: inout State, populationRatio: Double, gold: Int, leaderAdministrative: Double?) -> (reset: Bool, cleared: Bool) {
         let fr = Native.fr
         var random = Random(seed: s.seed)
         let ratio = fr(populationRatio), base = fr(s.decrease * fr(0.3333))
@@ -107,17 +108,17 @@ public enum Destiny {
             let administrative = min(1, max(0, fr(skill / fr(100)))), factor = fr(fr(1.5) - administrative)
             s.destiny = fr(s.destiny - fr(factor * raw))
         }
-        var reset = false
+        var reset = false, cleared = false
         if s.destiny < threshold(s.manifestCount) {
             reset = true
             s.manifestCount = random.intRange(2, 5)
             let manifest = s.manifest && s.manifestCount > 0
             s.manifestCount = Native.i32(s.manifestCount - 1)
             if manifest { s.destiny = Double(random.intRange(70, 90)) }
-            else { s.destiny = Double(random.intRange(10, 90)); s.decrease = random.floatRange(0.043, 0.28) }
+            else { s.destiny = Double(random.intRange(10, 90)); s.decrease = random.floatRange(0.043, 0.28); cleared = true }
         }
         s.seed = random.seed
-        return reset
+        return (reset, cleared)
     }
 }
 

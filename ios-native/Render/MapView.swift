@@ -13,6 +13,13 @@ import LieguojiCore
     @Published var resetRequest = UUID()
     /// Zoom by a factor around the screen centre (the + / − buttons).
     @Published var zoomRequest: (factor: Double, id: UUID)?
+    /// Army icons and the selected army's remaining route, from the simulation (nil keeps the opening icons).
+    @Published var armies: [MapRenderer.ArmySprite]?
+    @Published var route: [SIMD2<Float>] = []
+    @Published var selectedArmy: Int?
+    /// While set, the next tap on land is the march destination of this army.
+    @Published var marchingArmy: Int?
+    var onMarchTarget: ((Int) -> Void)?
     func fly(to province: Int) { focus = (province, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
@@ -159,6 +166,20 @@ struct MapView: UIViewRepresentable {
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
             var province: Int?
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
+            if controller.marchingArmy != nil {
+                if let province { impact.impactOccurred(); controller.onMarchTarget?(province) }
+                return
+            }
+            // An army icon under the finger (14 points) takes the tap before the province.
+            if let armies = controller.armies {
+                var best: (army: Int, d: Double)?
+                for a in armies {
+                    let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport)
+                    let d = hypot(s.x - Double(p.x), s.y - Double(p.y))
+                    if d < 14, best == nil || d < best!.d { best = (a.army, d) }
+                }
+                if let best { selection.selectionChanged(); controller.selectedArmy = best.army; return }
+            }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.selectedProvince = province
         }
@@ -199,6 +220,7 @@ struct MapView: UIViewRepresentable {
 
         func sync() {
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince)
+            if let armies = controller.armies { renderer?.setArmies(armies, route: controller.route) }
             labels?.setSelected(controller.selectedProvince)
             metrics.isHidden = !controller.showMetrics
             if let f = controller.focus, f.id != focusID {

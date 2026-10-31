@@ -116,6 +116,8 @@ public struct WorldMeta: Codable, Sendable {
     public let economy: EconomyStart
     /// Month-end treasury and destiny start.
     public let monthly: [MonthlyStart]
+    /// Army motion start (travel.bin): scale, clock, each army's travel cell, point and speed.
+    public let travel: TravelStart
     /// Where the parchment texture lies over the map (originalParchmentRect).
     public let parchment: Rect
     public let source: [String: String]

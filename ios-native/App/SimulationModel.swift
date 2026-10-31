@@ -11,9 +11,37 @@ import LieguojiCore
     private let simulation: Simulation
     private var loop: Task<Void, Never>?
 
-    init(map: WorldMap) {
-        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count)
-        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count)
+    private let map: WorldMap
+    init(map: WorldMap, graph: TravelGraph?) {
+        self.map = map
+        let motion = graph.map { ArmyMotion(graph: $0, start: map.meta.travel) }
+        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion)
+        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count, motion: motion)
+    }
+
+    // MARK: army orders
+
+    /// A player march (army-commands47): returns the error text, or nil once the order stands.
+    func march(army: Int, to province: Int) async -> String? {
+        let (next, error) = await simulation.order(army: army, toProvince: province)
+        state = next
+        return error?.message
+    }
+    func halt(army: Int) async { state = await simulation.halt(army: army) }
+
+    /// Army icons: the exported idle spot until an army first moves, then its exact travel point.
+    func armySprites(selected: Int?) -> [MapRenderer.ArmySprite] {
+        let start = map.meta.economy.armies
+        return state.armies.indices.compactMap { i in
+            let a = state.armies[i]; guard a.troops > 0, start.indices.contains(i) else { return nil }
+            var x = start[i].x, y = start[i].y
+            if let m = state.motion, m.moved[i] { let p = m.mapPoint(i); x = Float(p.x); y = Float(p.y) }
+            return MapRenderer.ArmySprite(army: i, x: x, y: y, unit: start[i].unit, nation: a.nation, selected: i == selected)
+        }
+    }
+    func route(army: Int?) -> [SIMD2<Float>] {
+        guard let army, let m = state.motion, m.travels.indices.contains(army) else { return [] }
+        return m.route(army).map { SIMD2(Float($0.x), Float($0.y)) }
     }
 
     func togglePlay() { playing ? pause() : play() }

@@ -27,11 +27,12 @@ enum Theme {
 /// Loads the bundled world once, off the main thread.
 struct RootView: View {
     @State private var world: WorldMap?
+    @State private var graph: TravelGraph?
     @State private var failure: String?
     var body: some View {
         ZStack {
             Color(red: 0x52 / 255, green: 0x7C / 255, blue: 0x86 / 255).ignoresSafeArea()
-            if let world { GameView(map: world) }
+            if let world { GameView(map: world, graph: graph) }
             else if let failure { ContentUnavailableView("无法载入地图", systemImage: "exclamationmark.triangle", description: Text(failure)).background(Theme.paper) }
             else {
                 VStack(spacing: 14) {
@@ -44,17 +45,24 @@ struct RootView: View {
             guard world == nil, let url = Bundle.main.url(forResource: "World", withExtension: nil) else {
                 if world == nil { failure = "安装包缺少地图资源" }; return
             }
-            do { world = try await Task.detached(priority: .userInitiated) { try WorldMap.load(directory: url) }.value }
+            do {
+                let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, TravelGraph) in
+                    (try WorldMap.load(directory: url), try TravelGraph(data: Data(contentsOf: url.appendingPathComponent("travel.bin"))))
+                }.value
+                graph = loaded.1; world = loaded.0
+            }
             catch { failure = String(describing: error) }
         }
     }
 }
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), nations, history, ranking, menu, pending(String)
+    case province(Int), army(Int), military, nations, history, ranking, menu, pending(String)
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
+        case .army(let a): return "a\(a)"
+        case .military: return "military"
         case .nations: return "nations"
         case .history: return "history"
         case .ranking: return "ranking"
@@ -68,14 +76,14 @@ struct GameView: View {
     let map: WorldMap
     @StateObject private var controller = MapController()
     @StateObject private var sim: SimulationModel
-    init(map: WorldMap) { self.map = map; _sim = StateObject(wrappedValue: SimulationModel(map: map)) }
+    init(map: WorldMap, graph: TravelGraph?) { self.map = map; _sim = StateObject(wrappedValue: SimulationModel(map: map, graph: graph)) }
     @State private var panel: Panel?
     @State private var toast: String?
 
     var body: some View {
         MapView(map: map, controller: controller)
             .ignoresSafeArea()
-            .overlay(alignment: .top) { topBar }
+            .overlay(alignment: .top) { VStack(spacing: 8) { topBar; if controller.marchingArmy != nil { marchBanner } } }
             .overlay(alignment: .leading) { rail.padding(.leading, 10) }
             .overlay(alignment: .bottom) { bottomBar }
             .overlay(alignment: .bottomTrailing) { zoomControls.padding(.trailing, 12).padding(.bottom, 74) }
@@ -87,12 +95,28 @@ struct GameView: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: toast)
+            .onAppear {
+                refreshArmies()
+                controller.onMarchTarget = { province in
+                    guard let army = controller.marchingArmy else { return }
+                    Task {
+                        if let error = await sim.march(army: army, to: province) { say(error) }
+                        else { say("\(map.meta.economy.armies[army].name)前往\(map.meta.provinces[province].name)"); controller.marchingArmy = nil }
+                        refreshArmies()
+                    }
+                }
+            }
+            .onChange(of: sim.state) { _, _ in refreshArmies() }
+            .onChange(of: controller.selectedArmy) { _, army in
+                refreshArmies()
+                if let army { panel = .army(army) } else if case .army = panel { panel = nil }
+            }
             .onChange(of: controller.selectedProvince) { _, province in
                 if let province { panel = .province(province) } else if case .province = panel { panel = nil }
             }
             .sheet(item: $panel, onDismiss: {
                 // Swiping the province panel away clears the selection; switching panels does not.
-                if panel == nil { controller.selectedProvince = nil }
+                if panel == nil { controller.selectedProvince = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
             }) { panel in
                 sheet(for: panel)
                     .presentationBackground(Theme.paper)
@@ -108,6 +132,23 @@ struct GameView: View {
             ProvinceSheet(map: map, province: p, controller: controller, sim: sim)
                 .presentationDetents([.height(260), .medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .army(let a):
+            ArmySheet(map: map, army: a, sim: sim, onMarch: {
+                controller.marchingArmy = a; self.panel = nil
+                say("点选地图上的目的地")
+            }, onHalt: { Task { await sim.halt(army: a); refreshArmies() } }, onLocate: {
+                let p = sim.state.armies[a].province
+                if p >= 0 { controller.fly(to: p) }
+            })
+            .presentationDetents([.height(300), .medium])
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .military:
+            MilitarySheet(map: map, sim: sim) { army in
+                self.panel = nil
+                let p = sim.state.armies[army].province
+                if p >= 0 { controller.fly(to: p) }
+                controller.selectedArmy = army
+            }.presentationDetents([.medium, .large])
         case .nations:
             NationsSheet(map: map, sim: sim) { province in
                 self.panel = nil
@@ -123,6 +164,23 @@ struct GameView: View {
         case .pending(let title):
             PendingSheet(title: title).presentationDetents([.height(240)])
         }
+    }
+
+    private func refreshArmies() {
+        let selected = controller.marchingArmy ?? controller.selectedArmy
+        controller.armies = sim.armySprites(selected: selected)
+        controller.route = sim.route(army: selected)
+    }
+
+    /// Shown while the player picks a march destination.
+    private var marchBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.turn.up.right.diamond").foregroundStyle(Theme.accent)
+            Text("调兵：点选目的地").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; refreshArmies() }
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accent)
+        }
+        .padding(.horizontal, 14).frame(height: 38).paperCapsule()
     }
 
     private func say(_ text: String) {
@@ -157,7 +215,7 @@ struct GameView: View {
     private var rail: some View {
         VStack(spacing: 2) {
             RailButton(symbol: "building.columns", title: "国家") { panel = .nations }
-            RailButton(symbol: "shield", title: "军事") { panel = .pending("军事") }
+            RailButton(symbol: "shield", title: "军事") { panel = .military }
             RailButton(symbol: "book", title: "历史") { panel = .history }
             RailButton(symbol: "chart.bar", title: "排行") { panel = .ranking }
             RailButton(symbol: "pencil", title: "编辑") { panel = .pending("地图编辑") }
@@ -550,5 +608,119 @@ struct PendingSheet: View {
                 .font(.subheadline).foregroundStyle(Theme.ink2).padding(.horizontal, 20).frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
         }
+    }
+}
+
+
+enum UnitNames {
+    static let name = ["Infantry": "步兵", "Archer": "弓兵", "Shield": "盾兵", "Cavalry": "骑兵", "Elite": "精锐"]
+    static func travel(_ t: String) -> String { ["moving": "行军中", "arrived": "驻扎", "blocked": "受阻", "halted": "已停止"][t] ?? t }
+    static func status(_ s: String) -> String { ["idle": "待命", "fighting": "交战", "retreating": "撤退", "sieging": "围城"][s] ?? s }
+}
+
+/// One army (the web's army panel): troops, unit, supplies, morale, where it is, and its orders.
+struct ArmySheet: View {
+    let map: WorldMap
+    let army: Int
+    @ObservedObject var sim: SimulationModel
+    let onMarch: () -> Void
+    let onHalt: () -> Void
+    let onLocate: () -> Void
+    var body: some View {
+        let start = map.meta.economy.armies[army], a = sim.state.armies[army]
+        let nation = a.nation >= 0 && a.nation < map.meta.nations.count ? map.meta.nations[a.nation] : nil
+        let place = a.province >= 0 ? map.meta.provinces[a.province].name : "海上"
+        let moving = a.travel == "moving" || a.travel == "blocked"
+        VStack(spacing: 0) {
+            SheetHeader(title: start.name, subtitle: nation.map { "\($0.name) · \(UnitNames.name[start.unit] ?? start.unit)" }, color: nation.map { Names.color($0.color) }) { onLocate() }
+            ScrollView {
+                VStack(spacing: 12) {
+                    PaperGroup {
+                        InfoRow(label: "兵力", value: a.troops.formatted()); Divider().padding(.leading, 14)
+                        InfoRow(label: "所在", value: place); Divider().padding(.leading, 14)
+                        InfoRow(label: "状态", value: "\(UnitNames.status(a.status)) · \(UnitNames.travel(a.travel))"); Divider().padding(.leading, 14)
+                        InfoRow(label: "粮草", value: String(format: "%.0f", a.supplies)); Divider().padding(.leading, 14)
+                        InfoRow(label: "士气", value: String(format: "%.0f", a.morale))
+                    }
+                    HStack(spacing: 10) {
+                        Button(action: onMarch) {
+                            Label("调兵", systemImage: "arrow.triangle.turn.up.right.diamond").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous)).foregroundStyle(Theme.paper)
+                        }
+                        if moving {
+                            Button(action: onHalt) {
+                                Label("停止", systemImage: "stop.fill").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 12)
+                                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous)).foregroundStyle(Theme.accent)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16).padding(.bottom, 24)
+            }
+        }
+    }
+}
+
+/// All armies by nation (the web's military panel); a row selects the army on the map.
+struct MilitarySheet: View {
+    let map: WorldMap
+    @ObservedObject var sim: SimulationModel
+    let onSelect: (Int) -> Void
+    var body: some View {
+        VStack(spacing: 0) {
+            SheetHeader(title: "军事", subtitle: "\(sim.state.armies.filter { $0.troops > 0 }.count) 支军队", color: nil) {}
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(map.meta.nations.indices, id: \.self) { n in
+                        MilitaryNationGroup(map: map, sim: sim, nation: n, onSelect: onSelect)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.bottom, 24)
+            }
+        }
+    }
+}
+
+struct MilitaryNationGroup: View {
+    let map: WorldMap
+    @ObservedObject var sim: SimulationModel
+    let nation: Int
+    let onSelect: (Int) -> Void
+    var body: some View {
+        let rows = sim.state.armies.indices.filter { sim.state.armies[$0].nation == nation && sim.state.armies[$0].troops > 0 }
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle().fill(Names.color(map.meta.nations[nation].color)).frame(width: 10, height: 10)
+                    Text(map.meta.nations[nation].name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                }
+                PaperGroup {
+                    ForEach(rows, id: \.self) { i in
+                        Button { onSelect(i) } label: { MilitaryRow(map: map, army: i, state: sim.state.armies[i]) }.buttonStyle(.plain)
+                        if i != rows.last { Divider().padding(.leading, 14) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct MilitaryRow: View {
+    let map: WorldMap
+    let army: Int
+    let state: SimState.Army
+    var body: some View {
+        let start = map.meta.economy.armies[army]
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(start.name).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                Text("\(UnitNames.name[start.unit] ?? start.unit) · \(state.province >= 0 ? map.meta.provinces[state.province].name : "海上") · \(UnitNames.travel(state.travel))").font(.caption).foregroundStyle(Theme.ink2)
+            }
+            Spacer()
+            Text(state.troops.formatted()).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.ink)
+            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.ink2)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
     }
 }

@@ -114,19 +114,43 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
         let loader = MTKTextureLoader(device: device)
-        let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
-        var byUnit: [String: [Float]] = [:]
-        for a in map.meta.economy.armies where a.troops > 0 {
-            let c = nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-            let size = iconSize * (a.unit == "Elite" ? 1.5 : 1)
-            for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                byUnit[a.unit, default: []].append(contentsOf: [a.x, a.y, cx, cy, c.r, c.g, c.b, 1, size])
+        for unit in ["Infantry", "Archer", "Shield", "Cavalry", "Elite"] {
+            if let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[unit] = texture }
+        }
+        setArmies(map.meta.economy.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
+    }
+
+    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool }
+    private var unitTextures: [String: MTLTexture] = [:]
+    private var route: (buffer: MTLBuffer, count: Int)?
+    private var armySprites: [ArmySprite] = []
+    private var routePoints: [SIMD2<Float>] = []
+
+    /// Army icons at their current points (moving armies follow their journey) and the selected
+    /// army's remaining route.
+    func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>]) {
+        if sprites != armySprites {
+            armySprites = sprites
+            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
+            var byUnit: [String: [Float]] = [:]
+            for a in sprites {
+                let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
+                let size = iconSize * (a.unit == "Elite" ? 1.5 : 1) * (a.selected ? 1.35 : 1)
+                for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
+                    byUnit[a.unit, default: []].append(contentsOf: [a.x, a.y, cx, cy, c.r, c.g, c.b, 1, size])
+                }
+            }
+            units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
+                guard let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+                return (texture: texture, buffer: b, count: data.count / 9)
             }
         }
-        for (unit, data) in byUnit {
-            guard let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]),
-                  let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { continue }
-            units.append((texture, b, data.count / 9))
+        if points != routePoints {
+            routePoints = points
+            var mesh = ColoredMesh()
+            let ink = RGB(0.55, 0.12, 0.08)
+            for (a, b) in zip(points, points.dropFirst()) { mesh.segment(a.x, a.y, b.x, b.y, width: 1.1, ink, alpha: 0.85) }
+            route = buffer(mesh.vertices, stride: 6)
         }
     }
 
@@ -195,6 +219,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         colored(relief)
         colored(outlines)
         colored(icons)
+        colored(route)
         for unit in units {
             encoder.setRenderPipelineState(spritePipeline)
             encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)

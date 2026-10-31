@@ -76,9 +76,12 @@ public struct SimState: Sendable, Equatable {
     public var treasuries: [NationTreasury]
     /// Static per-province month-end inputs by world province index (cells, resources, governor multiplier).
     public let provinceStatics: [Int: MonthlyStart.Province]
+    /// Army journeys (nil without a travel graph).
+    public var motion: ArmyMotion?
     public let worldProvinces: Int
 
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0) {
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil) {
+        self.motion = motion
         day = start.day; tick = start.day * SimState.ticksPerDay
         provinces = start.provinces.map { Province(province: $0.province, nation: $0.nation, terrain: $0.terrain, supply: $0.supply, capacity: $0.capacity, population: $0.population, grain: $0.grain) }
         priorities = start.nations.map(\.priority)
@@ -191,9 +194,12 @@ public enum MonthEnd {
 
 public actor Simulation {
     public private(set) var state: SimState
-    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces) }
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0, motion: ArmyMotion? = nil) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces, motion: motion) }
+    public func order(army: Int, toProvince province: Int) -> (SimState, SimState.OrderError?) { let e = state.order(army: army, toProvince: province); return (state, e) }
+    public func halt(army: Int) -> SimState { state.halt(army: army); return state }
     public func advance(days: Int) -> SimState {
         for _ in 0..<max(0, days) {
+            state.advanceMotion()
             state.day += 1; state.tick = state.day * SimState.ticksPerDay
             DailyEconomy.advance(&state)
             DailyEconomy.originalArmyReset(&state)

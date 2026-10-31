@@ -269,3 +269,135 @@ public enum ForceMotion {
         return value * mapUnitsPerNativeUnit * secondsPerTick
     }
 }
+
+/// Army motion start exported from the web world (src/native-export/native-state.ts nativeTravelState).
+/// Points are normalized web units; map coordinates are point / scale.
+public struct TravelStart: Codable, Sendable {
+    public struct Army: Codable, Sendable { public let cell: Int; public let x: Double; public let y: Double; public let base: Double; public let unitSpeed: Double }
+    public let scale: Double
+    public let secondsPerTick: Double
+    public let frameTicks: Int
+    public let armies: [Army]
+}
+
+/// The armies' journeys inside the Swift simulation: one record per army (world.armies order), moved
+/// six frames a day by the shared motion phase. Orders follow army-commands47 (target cell of the
+/// province, plain Dijkstra under the nation's access, from the army's exact current point).
+public struct ArmyMotion: Sendable {
+    public let graph: TravelGraph
+    public let start: TravelStart
+    public var travels: [ArmyTravel]
+    /// Whether the army has left its exported idle spot (drawn at its travel point from then on).
+    public var moved: [Bool]
+
+    public init(graph: TravelGraph, start: TravelStart) {
+        self.graph = graph; self.start = start
+        travels = start.armies.map { a in ArmyTravel.stationed(at: TravelPoint(x: a.x, y: a.y), cell: graph.cell(id: a.cell) ?? 0) }
+        moved = Array(repeating: false, count: start.armies.count)
+    }
+
+    /// Map position of a journey's current point.
+    public func mapPoint(_ army: Int) -> (x: Double, y: Double) {
+        let p = graph.location(travels[army]).point
+        return (p.x / start.scale, p.y / start.scale)
+    }
+    public func cell(_ army: Int) -> Int { graph.location(travels[army]).cell }
+    /// World province index under the army, −1 at sea.
+    public func province(_ army: Int) -> Int { Int(graph.provinces[cell(army)]) }
+    /// The remaining route in map coordinates (current point, then gates and cell centres).
+    public func route(_ army: Int) -> [(x: Double, y: Double)] {
+        let s = travels[army]
+        guard s.status == .moving || s.status == .blocked else { return [] }
+        var points = [mapPoint(army)]
+        for leg in s.leg..<(s.nodes.count - 1) {
+            var part = s; part.leg = leg
+            guard let seg = graph.segment(part) else { break }
+            if leg != s.leg || !s.crossed { points.append((seg.gate.x / start.scale, seg.gate.y / start.scale)) }
+            points.append((seg.end.x / start.scale, seg.end.y / start.scale))
+        }
+        return points
+    }
+}
+
+extension SimState {
+    public enum OrderError: Error, Sendable, Equatable { case unknownArmy, notSafe, sameTarget, noTarget, noRoute
+        public var message: String {
+            switch self {
+            case .unknownArmy: return "这支军队不存在或已失去战斗力。"
+            case .notSafe: return "当前地区尚未安全，只能撤退或等待交锋与占领完成。"
+            case .sameTarget: return "军队正在前往这个目标。"
+            case .noTarget: return "目标不在当前地图的实际海陆网格中。"
+            case .noRoute: return "没有符合当前外交通行限制的海陆路线。"
+            }
+        }
+    }
+
+    /// Controller nation of each world province (−1 unowned).
+    func controllers() -> [Int] {
+        var out = [Int](repeating: -1, count: worldProvinces)
+        for p in provinces where out.indices.contains(p.province) { out[p.province] = p.nation }
+        return out
+    }
+
+    /// armyTravelPolicyFactory47.canEnter: own (allied, vassal) land, the army's starting state, or
+    /// enemy land when not retreating. Sea is always allowed outside reorganization.
+    func canEnter(nation: Int, home: Int, controller: Int, retreat: Bool) -> Bool {
+        controller == nation || controller == home && home >= 0 || !retreat && atWar(nation, controller)
+    }
+
+    /// issueArmyOrderOwned47 for a player march to a province.
+    public mutating func order(army i: Int, toProvince target: Int) -> OrderError? {
+        guard var m = motion, armies.indices.contains(i), armies[i].troops > 0, m.travels.indices.contains(i) else { return .unknownArmy }
+        let a = armies[i], owners = controllers(), here = m.province(i)
+        if here >= 0, atWar(a.nation, owners[here]) { return .notSafe }
+        guard let cell = m.graph.targetCell(province: target) else { return .noTarget }
+        let t = m.travels[i]
+        if cell == t.nodes.last && t.status == .moving { return .sameTarget }
+        let at = m.graph.location(t), home = here >= 0 ? owners[here] : -1
+        guard let path = m.graph.path(from: at.cell, to: cell, canEnterProvince: { q in canEnter(nation: a.nation, home: home, controller: owners[q], retreat: false) }) else { return .noRoute }
+        m.travels[i] = ArmyTravel(origin: at.point, nodes: path.nodes)
+        m.moved[i] = true
+        motion = m
+        armies[i].status = "idle"
+        armies[i].travel = m.travels[i].status == .moving ? "moving" : "arrived"
+        return nil
+    }
+
+    /// Stops an army where it stands (haltArmyTravel47).
+    public mutating func halt(army i: Int) {
+        guard var m = motion, m.travels.indices.contains(i), m.travels[i].status == .moving || m.travels[i].status == .blocked else { return }
+        m.travels[i].status = .halted; motion = m; armies[i].travel = "halted"
+    }
+
+    /// One day of movement: six frames of the motion phase from this day's first tick.
+    mutating func advanceMotion() {
+        guard var m = motion, m.travels.contains(where: { $0.status == .moving || $0.status == .blocked }) else { return }
+        let owners = controllers()
+        let homes = armies.indices.map { i -> Int in let p = m.province(i); return p >= 0 ? owners[p] : -1 }
+        let nations = armies.map(\.nation), retreat = armies.map { $0.status == "retreating" }
+        let g = m.graph, speeds = m.start.armies, seconds = m.start.secondsPerTick
+        let wars = self.wars
+        let rules = ForceMotion.Rules(
+            canEnter: { f, cell in
+                let q = Int(g.provinces[cell]); if q < 0 { return true }
+                let c = owners[q]
+                return c == nations[f] || c == homes[f] && homes[f] >= 0 || !retreat[f] && wars.contains([nations[f], c])
+            },
+            speed: { f, cell in ForceMotion.armySpeed(base: speeds[f].base, unitSpeed: speeds[f].unitSpeed, cell: cell, graph: g, secondsPerTick: seconds) })
+        let frames = SimState.ticksPerDay / max(1, m.start.frameTicks)
+        for f in 0..<frames {
+            ForceMotion.frame(&m.travels, graph: g, start: Double(tick + f * m.start.frameTicks), frameTicks: Double(m.start.frameTicks), rules: rules)
+        }
+        for i in armies.indices where m.moved[i] {
+            armies[i].province = m.province(i)
+            switch m.travels[i].status { case .moving: armies[i].travel = "moving"; case .blocked: armies[i].travel = "blocked"
+            case .arrived: armies[i].travel = "arrived"; case .halted: armies[i].travel = "halted" }
+        }
+        motion = m
+    }
+}
+
+extension ArmyMotion: Equatable {
+    /// The graph and start never change within a world; journeys decide equality.
+    public static func == (a: ArmyMotion, b: ArmyMotion) -> Bool { a.travels == b.travels && a.moved == b.moved }
+}

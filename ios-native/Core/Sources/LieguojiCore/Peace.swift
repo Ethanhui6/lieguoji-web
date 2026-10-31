@@ -15,14 +15,14 @@ public struct PeaceWar: Codable, Sendable {
 
 public struct PeaceWorld: Codable, Sendable {
     public struct State: Codable, Sendable {
-        public let id: Int; public let dead: Bool; public let provinces: [Int]
-        public let gold: Double; public let goldPerMonth: Double; public let armyCostGold: Double
+        public let id: Int; public var dead: Bool; public var provinces: [Int]
+        public var gold: Double; public let goldPerMonth: Double; public let armyCostGold: Double
         public let strength: Double; public let lossThreshold: Double; public let autonomous: Bool
     }
     public let gameTime: Double; public let secondsPerDay: Double; public let start: DiplomacyWorld.Start
     /// State number of each province's controller (province numbers are index + 1).
-    public let provinceStates: [Int]
-    public let states: [State]
+    public var provinceStates: [Int]
+    public var states: [State]
 }
 
 public struct PeaceAI {

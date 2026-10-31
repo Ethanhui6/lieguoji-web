@@ -17,7 +17,7 @@ function peaceSnapshot(r:Run,c:Run['nativeWars']['campaigns'][number]){
   const w=nativeWar46(c),q=peaceQueries47(r),index=new Map(r.world.provinces.map((p,i)=>[p.id,i+1]));
   return {
     war:{id:w.id,internal:w.internal,legacyWarType:w.legacyWarType,primaryAttackerId:w.primaryAttackerId,primaryDefenderId:w.primaryDefenderId,startTime:w.startTime,
-      participants:w.participants,destroyedParticipants:w.destroyedParticipants,goals:w.goals.map(g=>({type:g.type,addedBy:g.addedBy,target:g.target,beneficiary:g.beneficiary,provinceIds:g.scope?.provinceIds??null,requiredCount:g.scope?.requiredCount??0,hasScope:!!g.scope})),
+      participants:w.participants,destroyedParticipants:w.destroyedParticipants,goals:w.goals.map(g=>({id:(g as {id?:number}).id??0,type:g.type,addedBy:g.addedBy,target:g.target,beneficiary:g.beneficiary,provinceIds:g.scope?.provinceIds??null,requiredCount:g.scope?.requiredCount??0,hasScope:!!g.scope})),
       initialOwners:[...w.initialOwners],initialProvinceCounts:[...w.initialProvinceCounts],initialCapitals:[...(w.initialCapitals??new Map())],kills:[...w.killsByState],deaths:[...w.deathsByState]},
     world:{gameTime:r.life.gameTime,secondsPerDay:r.life.secondsPerDay,start:r.life.startDate,
       provinceStates:r.world.provinces.map(p=>stateNumber(r,p.controller)),

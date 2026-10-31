@@ -418,6 +418,9 @@ struct NationsSheet: View {
                                 VStack(alignment: .trailing, spacing: 2) {
                                     Text("\(row.provinces) 省").font(.callout.monospacedDigit()).foregroundStyle(Theme.ink)
                                     Text("\(sim.totals(nation: row.index).population.wan) 人 · \(sim.armies(nation: row.index).troops.wan) 兵").font(.caption2.monospacedDigit()).foregroundStyle(Theme.ink2)
+                                    if let t = sim.treasury(nation: row.index) {
+                                        Text("国库 \(t.gold.wan) · 国运 \(String(format: "%.1f", t.destiny.destiny))").font(.caption2.monospacedDigit()).foregroundStyle(Theme.ink2)
+                                    }
                                 }
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
                             }
@@ -441,6 +444,20 @@ struct HistorySheet: View {
             SheetHeader(title: "大事记", subtitle: "\(sim.state.date.text) · 开篇以来 \(sim.state.day) 日")
             ScrollView {
                 VStack(spacing: 10) {
+                    if sim.state.day >= 30 {
+                        PaperGroup {
+                            ForEach(map.meta.nations.indices, id: \.self) { n in
+                                if let t = sim.treasury(nation: n) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("\(map.meta.nations[n].name)月税").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                        Text("本月入账 \(t.goldPerMonth) 金 · 国库 \(t.gold) · 财政战力 ×\(String(format: "%.3f", t.goldBattleModifier)) · 国运 \(String(format: "%.2f", t.destiny.destiny))").font(.caption).foregroundStyle(Theme.ink2)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 14).padding(.vertical, 9)
+                                    if n < map.meta.nations.count - 1 { Divider().padding(.leading, 14) }
+                                }
+                            }
+                        }
+                    }
                     if sim.state.day > 0 {
                         PaperGroup {
                             ForEach(map.meta.nations.indices, id: \.self) { n in
@@ -510,10 +527,10 @@ struct MenuSheet: View {
                     }
                     PaperGroup {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("原生版 0.4.0").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                            Text("原生版 0.5.0").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
                             Text("SwiftUI 界面 + Metal 地图，没有网页运行时。地图来自网页版同一套生成：原作 20k 格网、种子 \(map.meta.seed)，开局第 0 日。画面按网页版的原作纸地图外观：海岸距离海面、羊皮纸、河流、山林、台湾楷体国名。")
                                 .font(.caption).foregroundStyle(Theme.ink2)
-                            Text("已用 Swift 移植并与网页引擎逐日逐位对照：日历、每日粮食与人口结算、原作军队补给重置。尚未移植：军队行军与 AI、战争、外交、家族、人物、月税与征兵——推演时这些暂不发生，军队停在原地。").font(.caption).foregroundStyle(Theme.ink2)
+                            Text("已用 Swift 移植并与网页引擎逐位对照：日历、每日粮食与人口、原作军队补给重置、月税（国库）、国运。尚未移植：军队行军与 AI、征兵、战争、外交、家族、人物、官职——推演时这些暂不发生，军队停在原地，官员倍率与领袖保持开局。").font(.caption).foregroundStyle(Theme.ink2)
                         }
                         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
                     }

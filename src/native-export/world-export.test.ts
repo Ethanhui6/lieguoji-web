@@ -3,7 +3,7 @@ import {writeFile,mkdir,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {originalGridFor} from '../fms/original/original-document';
 import {createNativeWorld,NATIVE_WORLD_OPTIONS} from './native-world';
-import {nativeEconomyState} from './native-state';
+import {nativeEconomyState,monthlyInputs} from './native-state';
 import militaryIcons from '../fms/play/military-icons.json';
 import {originalCellProvinces} from '../fms/original/original-politics';
 import {originalClimate,originalBiomeIds,originalBiomeLinear} from '../fms/original/original-biomes';
@@ -76,6 +76,8 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports the stage-2 native wor
     labels:labelBoxes,parchment:originalParchmentRect(grid.width,grid.height),
     // Simulation start (provinces, policies, wars, armies) for the Swift engine.
     economy:nativeEconomyState(run),
+    // Month-end treasury and destiny inputs on day 0 (static parts: resources, cells, offices, livelihood).
+    monthly:monthlyInputs(structuredClone(run)),
     // The opening chronicle (CultureNews47 shows these at the start), day 0.
     events:run.chronicle.entries.slice(0,12).map(e=>({day:e.day,text:e.text,reason:e.reason})),
     cities:world.cities.map(c=>({id:c.id,name:c.name,x:c.position.x/sc,y:c.position.y/sc,province:world.provinces.findIndex(p=>p.id===c.provinceId)})),

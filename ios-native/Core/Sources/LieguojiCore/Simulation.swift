@@ -73,14 +73,27 @@ public struct SimState: Sendable, Equatable {
     public var wars: Set<[Int]>
     public var armies: [Army]
     public var ledgers: [Ledger]
+    public var treasuries: [NationTreasury]
+    /// Static per-province month-end inputs by world province index (cells, resources, governor multiplier).
+    public let provinceStatics: [Int: MonthlyStart.Province]
+    public let worldProvinces: Int
 
-    public init(start: EconomyStart) {
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0) {
         day = start.day; tick = start.day * SimState.ticksPerDay
         provinces = start.provinces.map { Province(province: $0.province, nation: $0.nation, terrain: $0.terrain, supply: $0.supply, capacity: $0.capacity, population: $0.population, grain: $0.grain) }
         priorities = start.nations.map(\.priority)
         wars = Set(start.wars.flatMap { [[$0[0], $0[1]], [$0[1], $0[0]]] })
         armies = start.armies.map { Army(id: $0.id, nation: $0.nation, province: $0.province, troops: $0.troops, status: $0.status, travel: $0.travel, supplies: $0.supplies, morale: $0.morale) }
         ledgers = Array(repeating: Ledger(), count: start.nations.count)
+        treasuries = monthly.map { m in
+            NationTreasury(gold: m.gold, goldPerMonth: 0, goldBattleModifier: 1, lastMonth: m.lastMonth,
+                           destiny: Destiny.State(destiny: m.destiny.destiny, decrease: m.destiny.decrease, manifestCount: m.destiny.manifestCount, manifest: m.destiny.manifest, seed: m.destiny.seed, lastMonth: m.destiny.lastMonth),
+                           ethnic: m.ethnic, goldProduction: m.goldProduction, tax: m.tax, central: m.central, administrative: m.administrative)
+        }
+        var statics: [Int: MonthlyStart.Province] = [:]
+        for m in monthly { for p in m.provinces { statics[p.province] = p } }
+        provinceStatics = statics
+        self.worldProvinces = worldProvinces
     }
     public var date: IsoDate { IsoDate.start.plus(days: day) }
     public func atWar(_ a: Int, _ b: Int) -> Bool { wars.contains([a, b]) }
@@ -147,14 +160,44 @@ public enum DailyEconomy {
 
 /// Owns the state off the main thread. Each day runs the ported modules in the web's order
 /// (settleCivilizationDay47: … army economy → original-army reset …).
+/// civilization47-fiscal settleFiscalMonth47 then destiny20-state settleDestinyMonth, every 30th day.
+public enum MonthEnd {
+    public static func settle(_ s: inout SimState) {
+        guard s.day % 30 == 0, !s.treasuries.isEmpty else { return }
+        let month = s.day / 30
+        for n in s.treasuries.indices {
+            let owned = s.provinces.filter { $0.nation == n }
+            var t = s.treasuries[n]
+            if t.lastMonth < month && !owned.isEmpty {
+                let incomes = owned.compactMap { p -> Int? in
+                    guard let st = s.provinceStatics[p.province] else { return nil }
+                    return Treasury.provinceIncome(Treasury.ProvinceInput(population: p.population, capacity: p.capacity, cells: st.cells, resources: st.resources, local: st.local),
+                                                   ethnic: t.ethnic, destiny: t.destiny.destiny, nationProvinces: owned.count, worldProvinces: s.worldProvinces)
+                }
+                // Army costs need real movement (monthlyArmyFees47): armies do not move yet, so none accrue.
+                let r = Treasury.settle(gold: t.gold, incomes: incomes, tax: t.tax, central: t.central, armyCost: 0, production: t.goldProduction, ethnic: t.ethnic)
+                t.gold = r.gold; t.goldPerMonth = r.goldPerMonth; t.goldBattleModifier = r.goldBattleModifier; t.lastMonth = month
+            }
+            let capacity = owned.reduce(0) { $0 + $1.capacity }, population = owned.reduce(0) { $0 + $1.population }
+            if t.destiny.lastMonth < month && capacity > 0 {
+                let ratio = Native.fr(Native.fr(Double(population)) / Native.fr(Double(capacity)))
+                _ = Destiny.month(&t.destiny, populationRatio: ratio, gold: t.gold, leaderAdministrative: t.administrative)
+                t.destiny.lastMonth = month
+            }
+            s.treasuries[n] = t
+        }
+    }
+}
+
 public actor Simulation {
     public private(set) var state: SimState
-    public init(start: EconomyStart) { state = SimState(start: start) }
+    public init(start: EconomyStart, monthly: [MonthlyStart] = [], worldProvinces: Int = 0) { state = SimState(start: start, monthly: monthly, worldProvinces: worldProvinces) }
     public func advance(days: Int) -> SimState {
         for _ in 0..<max(0, days) {
             state.day += 1; state.tick = state.day * SimState.ticksPerDay
             DailyEconomy.advance(&state)
             DailyEconomy.originalArmyReset(&state)
+            MonthEnd.settle(&state)
         }
         return state
     }

@@ -12,8 +12,8 @@ import LieguojiCore
     private var loop: Task<Void, Never>?
 
     init(map: WorldMap) {
-        simulation = Simulation(start: map.meta.economy)
-        state = SimState(start: map.meta.economy)
+        simulation = Simulation(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count)
+        state = SimState(start: map.meta.economy, monthly: map.meta.monthly, worldProvinces: map.meta.provinces.count)
     }
 
     func togglePlay() { playing ? pause() : play() }
@@ -46,6 +46,7 @@ import LieguojiCore
     func totals(nation: Int) -> (population: Int, grain: Int, provinces: Int) {
         state.provinces.reduce((0, 0, 0)) { r, p in p.nation == nation ? (r.0 + p.population, r.1 + p.grain, r.2 + 1) : r }
     }
+    func treasury(nation: Int) -> NationTreasury? { state.treasuries.indices.contains(nation) ? state.treasuries[nation] : nil }
     func armies(nation: Int) -> (count: Int, troops: Int) {
         state.armies.reduce((0, 0)) { r, a in a.nation == nation && a.troops > 0 ? (r.0 + 1, r.1 + a.troops) : r }
     }

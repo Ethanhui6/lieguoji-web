@@ -155,7 +155,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
     }
 
-    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool }
+    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = "" }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
@@ -163,22 +163,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     /// Army icons at their current points (moving armies follow their journey) and the selected
     /// army's remaining route.
+    /// Armies glide from their previous point to the new one (one engine step) instead of jumping.
+    private var tweenFrom: [String: SIMD2<Float>] = [:]
+    private var tweenStart: CFTimeInterval = 0
+    var tweenDuration: CFTimeInterval = 0.14
+    var isAnimating: Bool { CACurrentMediaTime() - tweenStart < tweenDuration }
+    private func tweenProgress() -> Float {
+        let t = Float(min(1, max(0, (CACurrentMediaTime() - tweenStart) / tweenDuration)))
+        return t * t * (3 - 2 * t)
+    }
+    private func displayed(_ s: ArmySprite, _ t: Float) -> SIMD2<Float> {
+        guard let from = tweenFrom[s.key], !s.key.isEmpty else { return SIMD2(s.x, s.y) }
+        let to = SIMD2(s.x, s.y), d = to - from
+        // A jump across the map (reorganization at home) is not animated.
+        if d.x * d.x + d.y * d.y > 400 { return to }
+        return from + d * t
+    }
+
     func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>]) {
         if sprites != armySprites {
+            let t = tweenProgress()
+            var from = [String: SIMD2<Float>]()
+            for s in armySprites where !s.key.isEmpty { from[s.key] = displayed(s, t) }
+            tweenFrom = from; tweenStart = CACurrentMediaTime()
             armySprites = sprites
-            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
-            var byUnit: [String: [Float]] = [:]
-            for a in sprites {
-                let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-                let size = iconSize * (a.unit == "Elite" ? 1.5 : 1) * (a.selected ? 1.35 : 1)
-                for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byUnit[a.unit, default: []].append(contentsOf: [a.x, a.y, cx, cy, c.r, c.g, c.b, 1, size])
-                }
-            }
-            units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
-                guard let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
-                return (texture: texture, buffer: b, count: data.count / 9)
-            }
+            rebuildArmies(progress: 0)
         }
         if points != routePoints {
             routePoints = points
@@ -186,6 +195,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let ink = RGB(0.55, 0.12, 0.08)
             for (a, b) in zip(points, points.dropFirst()) { mesh.segment(a.x, a.y, b.x, b.y, width: 1.1, ink, alpha: 0.85) }
             route = buffer(mesh.vertices, stride: 6)
+        }
+    }
+
+    private func rebuildArmies(progress t: Float) {
+        do {
+            let sprites = armySprites
+            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
+            var byUnit: [String: [Float]] = [:]
+            for a in sprites {
+                let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
+                let size = iconSize * (a.unit == "Elite" ? 1.5 : 1) * (a.selected ? 1.35 : 1)
+                let at = displayed(a, t)
+                for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
+                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size])
+                }
+            }
+            units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
+                guard let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+                return (texture: texture, buffer: b, count: data.count / 9)
+            }
         }
     }
 
@@ -206,6 +235,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+        if isAnimating || tweenStart > 0 && CACurrentMediaTime() - tweenStart < tweenDuration + 0.05 { rebuildArmies(progress: tweenProgress()) }
         let size = view.bounds.size
         var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
         let uniformLength = MemoryLayout<Uniforms>.stride

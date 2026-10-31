@@ -284,7 +284,15 @@ struct GameView: View {
             Color.clear
         }
         .overlay(alignment: .top) {
-            VStack(spacing: 8) { topBar; if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) } }
+            VStack(spacing: 8) {
+                topBar
+                if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if let h = model.herald, let map = model.map {
+                    HeraldBanner(herald: h, map: map).id(h.id)
+                        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .scale(scale: 0.85)).combined(with: .opacity), removal: .opacity.combined(with: .scale(scale: 0.95))))
+                }
+            }
+            .animation(.spring(response: 0.5, dampingFraction: 0.78), value: model.herald)
                 .offset(y: controller.reveal >= 1 ? 0 : -80)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
         }
@@ -882,5 +890,37 @@ struct NationGrid: View {
                 .buttonStyle(PressStyle())
             }
         }
+    }
+}
+
+/// A war declared, a peace made or a city taken: a seal and the text, dropped in from the top.
+struct HeraldBanner: View {
+    let herald: GameModel.Herald
+    let map: WorldMap
+    @State private var stamped = false
+    var body: some View {
+        let (word, color): (String, Color) = herald.kind == .war ? ("宣战", Theme.seal) : herald.kind == .peace ? ("议和", Theme.jade) : ("攻克", Theme.ink)
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous).fill(color)
+                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.paper2.opacity(0.85), lineWidth: 1.2).padding(3))
+                .overlay(Text(word).font(Theme.kai(15)).foregroundStyle(Theme.paper2))
+                .frame(width: 46, height: 46)
+                .scaleEffect(stamped ? 1 : 1.5).rotationEffect(.degrees(stamped ? 0 : -12)).opacity(stamped ? 1 : 0)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    ForEach(Array(herald.nations.enumerated()), id: \.offset) { pair in
+                        if pair.offset > 0 { Image(systemName: herald.kind == .peace ? "hands.clap.fill" : "bolt.fill").font(.system(size: 10)).foregroundStyle(color) }
+                        NationChip(map: map, nation: pair.element)
+                    }
+                }
+                Text(herald.text).font(Theme.kai(15)).foregroundStyle(Theme.ink2).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .frame(maxWidth: 440)
+        .glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 14)
+        .onAppear { withAnimation(.spring(response: 0.36, dampingFraction: 0.55).delay(0.12)) { stamped = true } }
     }
 }

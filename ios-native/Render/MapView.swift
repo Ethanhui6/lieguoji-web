@@ -20,6 +20,8 @@ import LieguojiCore
     /// While set, the next tap on land is the march destination of this army.
     @Published var marchingArmy: Int?
     var onMarchTarget: ((Int) -> Void)?
+    /// Battles, sieges and capture flashes over the map.
+    @Published var effects = MapEffects()
     /// The live world (ownership and nation labels follow the engine); nil keeps the opening map.
     @Published var world: WorldMap?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
@@ -49,6 +51,8 @@ struct MapView: UIViewRepresentable {
         private var mtk: MTKView!
         private var renderer: MapRenderer?
         private var labels: MapLabelsView!
+        private let effects = EffectsView()
+        private var shownEffects = MapEffects()
         private let metrics = UILabel()
         private var stats = FrameStatistics()
         private var lastFrame: CFTimeInterval = 0
@@ -89,6 +93,7 @@ struct MapView: UIViewRepresentable {
             labels = MapLabelsView(map: map)
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
+            effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
             metrics.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             metrics.textColor = .white; metrics.backgroundColor = UIColor.black.withAlphaComponent(0.6)
             metrics.numberOfLines = 0; metrics.layer.cornerRadius = 8; metrics.layer.masksToBounds = true
@@ -136,6 +141,7 @@ struct MapView: UIViewRepresentable {
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             renderer.camera = c.clamped(map: mapSize, viewport: viewport)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
+            effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
             mtk.setNeedsDisplay()
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
@@ -218,8 +224,12 @@ struct MapView: UIViewRepresentable {
                 set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt))
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
+            } else if renderer?.isAnimating == true {
+                velocity = .zero
+                mtk.setNeedsDisplay()
             } else {
                 velocity = .zero
+                mtk.setNeedsDisplay()
                 link?.invalidate(); link = nil
             }
         }
@@ -241,7 +251,11 @@ struct MapView: UIViewRepresentable {
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince)
-            if let armies = controller.armies { renderer?.setArmies(armies, route: controller.route) }
+            if let armies = controller.armies {
+                renderer?.setArmies(armies, route: controller.route)
+                if renderer?.isAnimating == true { startLink() }
+            }
+            if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
             metrics.isHidden = !controller.showMetrics
             if let f = controller.focus, f.id != focusID {

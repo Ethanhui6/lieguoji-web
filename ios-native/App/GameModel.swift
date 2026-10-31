@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import LieguojiCore
 
 /// The whole app's state: the launch sequence, the title screen, world generation and the running
@@ -13,6 +14,11 @@ import LieguojiCore
     @Published var speed = 1
     @Published var failure: String?
     @Published var generationNote = ""
+    /// A war declared, a peace made or a province taken: shown as a banner for a moment.
+    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture } }
+    @Published var herald: Herald?
+    private var heraldQueue: [Herald] = []
+    private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
     @Published private(set) var worldID = UUID()
     let engine = EngineHost()
@@ -134,7 +140,9 @@ import LieguojiCore
     }
 
     private func apply(_ next: GameState) {
+        let previous = state
         state = next
+        if let previous { announce(previous, next) }
         guard var world = controller.world ?? map else { return }
         var changed = false
         for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
@@ -143,6 +151,70 @@ import LieguojiCore
         if let labels = next.labels { world.meta.labels = labels; changed = true }
         if changed { controller.world = world }
         refreshArmies()
+        refreshEffects(previous: previous)
+    }
+
+    /// Wars declared or ended and provinces taken since the last state, as banners.
+    private func announce(_ old: GameState, _ next: GameState) {
+        guard let map else { return }
+        let name = { (n: Int) in n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "" }
+        let before = Set(old.wars.map(\.id)), after = Set(next.wars.map(\.id))
+        for w in next.wars where !before.contains(w.id) {
+            enqueue(Herald(kind: .war, text: "\(name(w.attacker))以\(w.casusBelli.isEmpty ? "开战" : w.casusBelli)为由向\(name(w.defender))宣战", nations: [w.attacker, w.defender]))
+        }
+        for w in old.wars where !after.contains(w.id) {
+            enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
+        }
+        var captures = 0
+        for (p, owner) in next.owners.enumerated() where p < old.owners.count && old.owners[p] != owner && owner >= 0 {
+            captures += 1; if captures > 2 { break }
+            enqueue(Herald(kind: .capture, text: "\(name(owner))攻下\(map.meta.provinces[p].name)", nations: [owner]))
+        }
+    }
+    private func enqueue(_ h: Herald) {
+        heraldQueue.append(h)
+        if heraldQueue.count > 4 { heraldQueue.removeFirst(heraldQueue.count - 4) }
+        guard heraldTask == nil else { return }
+        heraldTask = Task { [weak self] in
+            while let self, !self.heraldQueue.isEmpty {
+                let h = self.heraldQueue.removeFirst()
+                self.herald = h
+                if h.kind == .war { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
+                try? await Task.sleep(nanoseconds: h.kind == .capture ? 1_600_000_000 : 2_600_000_000)
+                self.herald = nil
+                try? await Task.sleep(nanoseconds: 350_000_000)
+            }
+            self?.heraldTask = nil
+        }
+    }
+
+    /// Battles (fighting armies, grouped by province), sieges and fresh captures on the map.
+    private func refreshEffects(previous: GameState?) {
+        guard let state, let map else { return }
+        func rgb(_ n: Int) -> (Double, Double, Double) {
+            let c = n >= 0 && n < map.meta.nations.count ? (RGB(css: map.meta.nations[n].color) ?? RGB(0.6, 0.6, 0.6)) : RGB(0.6, 0.6, 0.6)
+            return (Double(c.r), Double(c.g), Double(c.b))
+        }
+        var e = MapEffects()
+        var seen = Set<Int>()
+        for a in state.armies where a.status == "fighting" {
+            let key = a.province >= 0 ? a.province : -1
+            if key >= 0 && !seen.insert(key).inserted { continue }
+            e.battles.append(.init(key: key >= 0 ? "p\(key)" : "a\(a.id)", x: Double(a.x), y: Double(a.y) - 4))
+        }
+        for s in state.sieges where s.province >= 0 && s.province < map.meta.provinces.count {
+            let p = map.meta.provinces[s.province], c = rgb(s.nation)
+            e.sieges.append(.init(key: "s\(s.province)", x: Double(p.x), y: Double(p.y), progress: s.progress, r: c.0, g: c.1, b: c.2))
+        }
+        var flashes = controller.effects.flashes.suffix(6).map { $0 }
+        if let previous {
+            for (p, owner) in state.owners.enumerated() where p < previous.owners.count && previous.owners[p] != owner && p < map.meta.provinces.count {
+                let c = rgb(owner), pr = map.meta.provinces[p]
+                flashes.append(.init(id: "\(state.day)-\(p)", x: Double(pr.x), y: Double(pr.y), r: c.0, g: c.1, b: c.2))
+            }
+        }
+        e.flashes = flashes
+        controller.effects = e
     }
 
     func save() {
@@ -158,7 +230,7 @@ import LieguojiCore
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
         controller.armies = state.armies.enumerated().map { i, a in
-            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected)
+            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected, key: a.id)
         }
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id

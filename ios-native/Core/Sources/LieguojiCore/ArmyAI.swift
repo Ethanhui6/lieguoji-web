@@ -20,7 +20,7 @@ public struct ArmyAIStatic: Codable, Sendable {
 /// Dynamic inputs at a frame boundary (armyAiSnapshot).
 public struct ArmyAIWorld: Codable, Sendable, Equatable {
     public struct Participant: Codable, Sendable, Equatable { public let nation: Int; public let side: Int }
-    public struct Campaign: Codable, Sendable, Equatable { public var id: Int; public var ended: Bool; public var internal: Bool; public var participants: [Participant] }
+    public struct Campaign: Codable, Sendable, Equatable { public var id: Int; public var ended: Bool; public var `internal`: Bool; public var participants: [Participant] }
     public struct Point: Codable, Sendable, Equatable { public let x: Double; public let y: Double }
     public struct Travel: Codable, Sendable, Equatable {
         public let version: Int; public let origin: Point; public let destination: Point?

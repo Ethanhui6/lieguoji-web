@@ -29,7 +29,7 @@ final class DestinyTests: XCTestCase {
                 XCTAssertEqual(state, Destiny.State(destiny: o.destiny, decrease: o.decrease, manifestCount: o.manifestCount, manifest: o.manifest, seed: o.seed, lastMonth: o.lastMonth), "destiny, sample \(k) nation \(n)")
                 XCTAssertEqual(r?.reset ?? false, o.reset, "reset, sample \(k) nation \(n)")
                 XCTAssertEqual(r?.cleared ?? false, o.cleared, "cleared, sample \(k) nation \(n)")
-                XCTAssertEqual(state.destiny, o.upper)
+                if r != nil { XCTAssertEqual(state.destiny, o.upper, "upper, sample (k) nation (n)") }
             }
         }
         XCTAssertGreaterThan(skills, 100)

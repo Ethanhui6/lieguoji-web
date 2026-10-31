@@ -1,3 +1,6 @@
+import {armyTravelLocation47} from '../fms/play/army-travel47-state';
+import {unitProfile} from '../fms/play/military-profile';
+import {FRAME_TICKS47} from '../fms/play/frame-loop47';
 import {actualForces47} from '../fms/play/force-runtime47';
 import {readArmySpace47} from '../fms/play/army-space47';
 import {wanderPoint} from '../fms/play/army-wander47';
@@ -52,3 +55,12 @@ export function monthlyInputs(r:FoundingForces47){
   });
 }
 
+/** Army motion state for the Swift travel engine (travel.bin): the normalized→map divisor (run.scale),
+ * force-clock seconds per tick, the frame length, and per army (world.armies order) its actual travel
+ * cell id and point (army-travel47-state armyTravelLocation47), saved base speed and unit multiplier. */
+export function nativeTravelState(run:FoundingForces47){
+  const g=actualForces47(run).spatial.graph;
+  return {scale:run.scale,secondsPerTick:run.forceClock.secondsPerTick,frameTicks:FRAME_TICKS47,
+    armies:run.world.armies.map(a=>{const at=armyTravelLocation47(run.armyPositions.records[a.id],g);
+      return {cell:at.cell.id,x:at.point.x,y:at.point.y,base:run.forceSpeed.armies[a.id].base,unitSpeed:unitProfile(run.units[a.id]).speed};})};
+}

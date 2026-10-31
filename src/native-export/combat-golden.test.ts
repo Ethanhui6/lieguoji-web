@@ -80,7 +80,7 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports combat golden samples'
       const out=applyAccountedVolley47(r,due,combatReader47(r).volley,true);
       const after=forceSnapshot(out.run);
       volleys.push({input,inputs,due:[...due].sort(),output:{hits:out.nativeHits,casualties:out.casualties,
-        forces:out.run.world.armies.map(a=>({key:forceKey47({kind:'army',id:a.id}),troops:a.troops,morale:a.morale,status:a.status,travel:travel(out.run.armyPositions.records[a.id])}))
+        forces:out.run.world.armies.map(a=>({key:forceKey47({kind:'army',id:a.id}),troops:a.troops,morale:a.morale,status:a.status as string,travel:travel(out.run.armyPositions.records[a.id])}))
           .concat(out.run.navy.fleets.map(f=>({key:forceKey47({kind:'fleet',id:f.id}),troops:out.run.maritime.hulls[f.id],morale:f.crew,status:f.status,travel:travel(out.run.fleetPositions.records[f.id])}))),
         carry:out.run.forceDamage.carry,losses:out.run.forceDamage.losses,contacts:after.contacts}});
     }

@@ -22,6 +22,9 @@ export function patch(a:unknown,b:unknown,path:string[]=[],out:Patch=[]):Patch{
   if(object(a)&&object(b)){
     for(const k of Object.keys(b))if(!Object.hasOwn(a,k))out.push({p:[...path,k],v:b[k]});else patch(a[k],b[k],[...path,k],out);
     for(const k of Object.keys(a))if(!Object.hasOwn(b,k))out.push({p:[...path,k],d:1});
+  }else if(Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.length>0&&a.some(x=>x&&typeof x==='object')){
+    // Same-length arrays of records recurse by index (the path segment is the index).
+    for(let i=0;i<a.length;i++)patch(a[i],b[i],[...path,String(i)],out);
   }else if(JSON.stringify(a)!==JSON.stringify(b))out.push({p:path,v:b});
   return out;
 }

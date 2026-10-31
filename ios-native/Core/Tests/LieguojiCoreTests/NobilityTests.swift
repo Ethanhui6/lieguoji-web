@@ -9,8 +9,10 @@ final class NobilityTests: XCTestCase {
         for op in patch.asArray {
             let path = op.p.asArray.map(\.asString)
             var node = root
-            for k in path.dropLast() { node = node[k] }
-            if op.d.isTruthy { node.delete(path.last!) } else { node[path.last!] = op.v.clone() }
+            func isArray(_ n: JS) -> Bool { if case .array = n.storage { return true }; return false }
+            for k in path.dropLast() { node = isArray(node) ? node[Int(k)!] : node[k] }
+            let last = path.last!
+            if isArray(node) { node[Int(last)!] = op.v.clone() } else if op.d.isTruthy { node.delete(last) } else { node[last] = op.v.clone() }
         }
     }
     func testFamilyStepMatchesTheWeb() throws {

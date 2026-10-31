@@ -8,7 +8,7 @@ public enum Rebellion {
     static let f = Native.fr
     static let never = -10000.0
     /// The rebellion that happens once a province's check succeeds (founding/restoration, war, armies).
-    public static var onRebel: ((JS, String, Bool) -> Void)?
+    public static var onRebel: ((JS, String, Bool) -> Bool)?
     /// Rebel reinforcement army creation (createForce47 emergency) in a province.
     public static var spawnArmy: ((JS, String, String) -> Void)?
 
@@ -98,8 +98,7 @@ public enum Rebellion {
             if !(range(s, 0, 100) < chance) { return false }
         }
         guard let onRebel else { return false }
-        onRebel(r, province, force)
-        return true
+        return onRebel(r, province, force)
     }
     static func updateCoreMonths(_ r: JS, _ s: JS, _ province: String) {
         let p = r.world.provinces.asArray.first { $0.id.asString == province }!, owner = p.controller.asString, core = isCore(r, province, owner)

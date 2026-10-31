@@ -10,7 +10,7 @@ import {locateTravelCell47} from '../fms/play/army-travel47-graph';
 function musterView(r:Run){
   const w=r.world,x=r as unknown as Record<string,unknown>;
   return structuredClone({clock:r.clock,life:{gameTime:r.life.gameTime},
-    world:{day:w.day,nextEventId:w.nextEventId,events:w.events,custom:{seed:w.custom!.seed},nations:w.nations.map(n=>({id:n.id,name:n.name})),
+    world:{day:w.day,nextEventId:w.nextEventId,events:w.events,custom:{seed:w.custom!.seed},nations:w.nations.map(n=>({id:n.id,name:n.name,capitalId:n.capitalId})),
       provinces:w.provinces.map(p=>({id:p.id,name:p.name,controller:p.controller,legalOwner:p.legalOwner,center:p.center,neighbors:p.neighbors})),cities:w.cities.map(c=>({id:c.id,name:c.name,provinceId:c.provinceId})),
       armies:w.armies,statecraft:{provinces:w.statecraft!.provinces.map(p=>({provinceId:p.provinceId,population:p.population})),relations:w.statecraft!.relations}},
     armyPositions:r.armyPositions,tactics:r.tactics,units:r.units,forceSpeed:{armies:r.forceSpeed.armies},combatPersonnel:r.combatPersonnel,armyAutonomy:{armies:r.armyAutonomy.armies},

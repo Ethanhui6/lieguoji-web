@@ -85,15 +85,20 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports military window golden
   const samples:unknown[]=[];
   for(let day=0;day<220;day++){
     x=session.execute({kind:'advance',ticks:120} as never,x.journal.actions.length);
-    if(day<60||day%8!==0)continue;
-    const r=structuredClone(x.run) as Run;
+    if(day<60||day%3!==0)continue;
+    // The day's six frames in sequence; keep the frames in which a volley or a capture happens,
+    // plus every fifth quiet frame.
+    let r=structuredClone(x.run) as Run;
     if(r.navy.fleets.length)throw Error('fleets are not covered by this sample');
-    const input=windowSnapshot(r);
-    const out=advanceMilitaryWindow47(r,FRAME_TICKS47,weights,{speed:actualForceSpeed47,combat:q=>combatReader47(q).volley,occupation:(q,_w,space)=>ownedOccupationCombatReader47(q,space),frameTicks:FRAME_TICKS47});
-    const after=windowSnapshot(out.run);
-    samples.push({input,output:{world:after.world,clock:after.clock,sieges:after.sieges,volleys:out.volleys}});
+    for(let f=0;f<6;f++){
+      const input=windowSnapshot(r);
+      const out=advanceMilitaryWindow47(r,FRAME_TICKS47,weights,{speed:actualForceSpeed47,combat:q=>combatReader47(q).volley,occupation:(q,_w,space)=>ownedOccupationCombatReader47(q,space),frameTicks:FRAME_TICKS47});
+      r=out.run;
+      const after=windowSnapshot(r),changed=out.volleys.length>0||JSON.stringify(after.world.owners)!==JSON.stringify(input.world.owners);
+      if(changed||(day+f)%30===0)samples.push({input,output:{world:after.world,clock:after.clock,sieges:after.sieges,volleys:out.volleys}});
+    }
   }
-  expect(samples.length).toBeGreaterThan(10);
+  expect(samples.filter(s=>(s as {output:{volleys:unknown[]}}).output.volleys.length).length).toBeGreaterThan(5);
   await mkdir('ios-native/Core/Tests/LieguojiCoreTests/Golden',{recursive:true});
   await writeFile('ios-native/Core/Tests/LieguojiCoreTests/Golden/window.json',JSON.stringify({statics,samples}));
 },3600000);

@@ -317,7 +317,14 @@ public struct DeclarationEngine: Sendable {
             guard let first = ranking.first else { return false }
             return s == first || ranking.count > 1 && s == ranking[1] && strength(s) > Native.fr(strength(first) * 0.5)
         }
-        func relation(_ a: Int, _ b: Int) -> DiplomacyWorld.Relation { w.relation(states[a].index, states[b].index) }
+        /// relation46 creates the pair's record on first use (the bridge mirrors the new rows into the run).
+        mutating func relation(_ a: Int, _ b: Int) -> DiplomacyWorld.Relation {
+            let x = states[a].index, y = states[b].index
+            if let p = w.relations.first(where: { $0.a == x && $0.b == y || $0.a == y && $0.b == x }) { return p }
+            let p = DiplomacyWorld.Relation(a: x, b: y, lastWar: -200, warCount: 0)
+            w.relations.append(p)
+            return p
+        }
         static func key(_ a: Int, _ b: Int) -> Int64 { (Int64(min(a, b)) << 32) | Int64(max(a, b)) }
 
         static let systemAffinity: [[Double]] = [[10, -10, 10, 10, 0, 5], [15, -30, -20, -20, 0, 0], [10, -20, 20, 20, -10, -20],

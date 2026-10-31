@@ -59,8 +59,10 @@ extension DiplomacyBridge {
         func years(_ t: JS) -> Int { People.yearSince(r, t.isNull ? r.alliances.originTime.asNumber : t.asNumber) }
         let current = Vassals.allianceOf(r, nationId)
         var w = world(r)
+        let known = w.relations.count
         let action = engine.allianceDecision(&w, nation: i, enabled: r.alliances.enabled.isTruthy, sinceAction: years(r.alliances.lastAction[nationId]),
                                              sinceJoin: current.map { years($0.joinedTime) }, age: current.map { years($0.startedTime) })
+        mirrorRelations(r, w, from: known)
         let s = r.nativeDiplomacy
         s.rng = JS(Double(w.rng)); s.draws = JS(w.draws); s.nations[nationId].pools.power = JS(w.nations[i].pools.power)
         guard let action else { return nil }

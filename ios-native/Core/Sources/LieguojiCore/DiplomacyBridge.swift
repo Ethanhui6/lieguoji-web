@@ -95,12 +95,18 @@ public enum DiplomacyBridge {
                               alliances: alliances.map { DiplomacyWorld.Alliance(ended: !$0.endedTick.isNull, members: $0.members.asArray.map { index[$0.asString]! }) },
                               vassals: r.vassals.records.asArray.filter { $0.endedTick.isNull }.map { [index[$0.overlordId.asString]!, index[$0.vassalId.asString]!] })
     }
+    /// Pairs the typed evaluation touched for the first time become relation rows, in that order.
+    static func mirrorRelations(_ r: JS, _ w: DiplomacyWorld, from known: Int) {
+        for p in w.relations.dropFirst(known) { relation(r, r.world.nations[p.a].id.asString, r.world.nations[p.b].id.asString) }
+    }
     /// evaluateDeclaration47 for one state on its update day.
     @discardableResult
     public static func evaluateDeclaration(_ r: JS, _ nationId: String, engine: DeclarationEngine) -> JS? {
         guard let i = r.world.nations.asArray.firstIndex(where: { $0.id.asString == nationId }) else { return nil }
         var w = world(r)
+        let known = w.relations.count
         let declared = engine.evaluate(&w, nation: i)
+        mirrorRelations(r, w, from: known)
         let s = r.nativeDiplomacy
         s.rng = JS(Double(w.rng)); s.draws = JS(w.draws)
         s.nations[nationId].pools.startWar = JS(w.nations[i].pools.startWar)
@@ -108,18 +114,19 @@ public enum DiplomacyBridge {
         return start(r, declared)
     }
     static func start(_ r: JS, _ d: DeclaredWar) -> JS {
-        func key(_ stateId: Int) -> String { r.world.nations.asArray.first { r.people.nations[$0.id.asString].id.asInt == stateId }!.id.asString }
-        let a = key(d.attacker), b = key(d.defender)
+        // The typed declaration names nations by index; goals and records use state numbers.
+        let a = r.world.nations[d.attacker].id.asString, b = r.world.nations[d.defender].id.asString
+        let attackerId = Wars.stateNumber(r, a), defenderId = Wars.stateNumber(r, b)
         let members = Vassals.buildParticipants(r, attacker: a, defender: b)
         Vassals.openCoalitionRelations(r, members)
         let goals = JS.array(d.goals.map { g in
-            let o = JS.object(); o.id = JS(g.id); o.type = JS(g.type); o.addedBy = JS(d.attacker); o.target = JS(d.defender); o.beneficiary = JS(d.attacker)
+            let o = JS.object(); o.id = JS(g.id); o.type = JS(g.type); o.addedBy = JS(attackerId); o.target = JS(defenderId); o.beneficiary = JS(attackerId)
             let scope = JS.object(); scope.provinceIds = .array(g.scope.map { JS($0) }); scope.requiredCount = JS(g.requiredCount); o.scope = scope
             return o
         })
         let war = Wars.register(r, attacker: a, defender: b, goals: goals, members: members)
         let decl = JS.object()
-        decl.warId = war.id.clone(); decl.attackerId = JS(d.attacker); decl.defenderId = JS(d.defender); decl.casusBelliId = JS(d.casusBelli)
+        decl.warId = war.id.clone(); decl.attackerId = JS(attackerId); decl.defenderId = JS(defenderId); decl.casusBelliId = JS(d.casusBelli)
         decl.goals = .array(goals.asArray.enumerated().map { i, g in
             let o = JS.object(); o.id = g.id.clone(); o.type = g.type.clone(); o.addedBy = g.addedBy.clone(); o.target = g.target.clone(); o.beneficiary = g.beneficiary.clone()
             o.primary = JS(i == 0); o.scopeType = JS([3, 4, 11].contains(g.type.asInt) ? 3 : 0); o.scope = g.scope.clone(); o.districtId = JS(0); o.secondaryStateId = JS(0)

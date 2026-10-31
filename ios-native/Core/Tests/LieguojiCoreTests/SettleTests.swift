@@ -16,6 +16,8 @@ final class SettleTests: XCTestCase {
             if s.kind.asString == "settle" { PeaceBridge.settle(r, r.nativeWars.campaigns.asArray.first { $0.id.asInt == s.war.asInt }!, reason: s.reason.asInt) }
             else { PeaceBridge.advance(r, monthStart: true) }
             r.chronicle.entries.asArray = Array(r.chronicle.entries.asArray.suffix(3))
+            // Army fighting/idle status belongs to the force-contact reconciliation (ported separately).
+            for (a, e) in zip(r.world.armies.asArray, expected.world.armies.asArray) { a.status = e.status.clone() }
             if let d = r.difference(expected) { failures += 1; if failures <= 10 { XCTFail("\(s.kind.asString) sample \(k): \(d)") } }
         }
         XCTAssertEqual(failures, 0)

@@ -29,8 +29,8 @@ public final class JS: CustomStringConvertible {
         }
         public var entries: [(String, JS)] { keys.map { ($0, values[$0]!) } }
     }
-    public var value: Value
-    public init(_ value: Value) { self.value = value }
+    public var storage: Value
+    public init(_ value: Value) { self.storage = value }
     public static var null: JS { JS(.null) }
     public static func object() -> JS { JS(.object(Object())) }
     public static func array(_ items: [JS] = []) -> JS { JS(.array(items)) }
@@ -39,17 +39,17 @@ public final class JS: CustomStringConvertible {
     public convenience init(_ s: String) { self.init(.string(s)) }
     public convenience init(_ b: Bool) { self.init(.bool(b)) }
 
-    // MARK: Reading
-    public var isNull: Bool { if case .null = value { return true }; return false }
-    public var number: Double { if case .number(let n) = value { return n }; fatalError("not a number: \(self)") }
-    public var int: Int { Int(number) }
-    public var string: String { if case .string(let s) = value { return s }; fatalError("not a string: \(self)") }
-    public var bool: Bool { if case .bool(let b) = value { return b }; fatalError("not a bool: \(self)") }
-    public var optionalNumber: Double? { if case .number(let n) = value { return n }; return nil }
-    public var optionalString: String? { if case .string(let s) = value { return s }; return nil }
+    // MARK: Reading (names chosen not to collide with fields of the game data)
+    public var isNull: Bool { if case .null = storage { return true }; return false }
+    public var asNumber: Double { if case .number(let n) = storage { return n }; fatalError("not a number: \(self)") }
+    public var asInt: Int { Int(asNumber) }
+    public var asString: String { if case .string(let s) = storage { return s }; fatalError("not a string: \(self)") }
+    public var asBool: Bool { if case .bool(let b) = storage { return b }; fatalError("not a bool: \(self)") }
+    public var optionalNumber: Double? { if case .number(let n) = storage { return n }; return nil }
+    public var optionalString: String? { if case .string(let s) = storage { return s }; return nil }
     /// JavaScript truthiness.
-    public var truthy: Bool {
-        switch value {
+    public var isTruthy: Bool {
+        switch storage {
         case .null: return false
         case .bool(let b): return b
         case .number(let n): return n != 0 && !n.isNaN
@@ -57,46 +57,46 @@ public final class JS: CustomStringConvertible {
         default: return true
         }
     }
-    public var items: [JS] {
-        get { if case .array(let a) = value { return a }; fatalError("not an array: \(self)") }
-        set { value = .array(newValue) }
+    public var asArray: [JS] {
+        get { if case .array(let a) = storage { return a }; fatalError("not an array: \(self)") }
+        set { storage = .array(newValue) }
     }
-    public var count: Int { items.count }
-    public var keys: [String] { if case .object(let o) = value { return o.keys }; fatalError("not an object: \(self)") }
+    public var length: Int { asArray.count }
+    public var objectKeys: [String] { if case .object(let o) = storage { return o.keys }; fatalError("not an object: \(self)") }
     /// Object.entries order.
-    public var entries: [(String, JS)] { if case .object(let o) = value { return o.entries }; fatalError("not an object: \(self)") }
-    public var values: [JS] { entries.map(\.1) }
-    public func has(_ key: String) -> Bool { if case .object(let o) = value { return o[key] != nil }; return false }
+    public var objectEntries: [(String, JS)] { if case .object(let o) = storage { return o.entries }; fatalError("not an object: \(self)") }
+    public var objectValues: [JS] { objectEntries.map(\.1) }
+    public func has(_ key: String) -> Bool { if case .object(let o) = storage { return o[key] != nil }; return false }
 
     // MARK: Members
     /// Missing members read as a fresh null (JavaScript undefined) that is not attached.
     public subscript(key: String) -> JS {
-        get { if case .object(let o) = value, let v = o[key] { return v }; return .null }
-        set { guard case .object(var o) = value else { fatalError("set \(key) on \(self)") }; value = .null; o[key] = newValue; value = .object(o) }
+        get { if case .object(let o) = storage, let v = o[key] { return v }; return .null }
+        set { guard case .object(var o) = storage else { fatalError("set \(key) on \(self)") }; storage = .null; o[key] = newValue; storage = .object(o) }
     }
     public subscript(dynamicMember key: String) -> JS {
         get { self[key] }
         set { self[key] = newValue }
     }
     public subscript(index: Int) -> JS {
-        get { items[index] }
-        set { var a = items; a[index] = newValue; items = a }
+        get { asArray[index] }
+        set { var a = asArray; a[index] = newValue; asArray = a }
     }
-    public func delete(_ key: String) { guard case .object(var o) = value else { return }; value = .null; o[key] = nil; value = .object(o) }
-    public func push(_ v: JS) { guard case .array(var a) = value else { fatalError("push on \(self)") }; value = .null; a.append(v); value = .array(a) }
+    public func delete(_ key: String) { guard case .object(var o) = storage else { return }; storage = .null; o[key] = nil; storage = .object(o) }
+    public func push(_ v: JS) { guard case .array(var a) = storage else { fatalError("push on \(self)") }; storage = .null; a.append(v); storage = .array(a) }
 
     // MARK: Copies and comparison
     /// structuredClone.
     public func clone() -> JS {
-        switch value {
+        switch storage {
         case .array(let a): return JS(.array(a.map { $0.clone() }))
         case .object(let o): var c = Object(); for (k, v) in o.entries { c[k] = v.clone() }; return JS(.object(c))
-        default: return JS(value)
+        default: return JS(storage)
         }
     }
     /// Deep equality with exact numbers and key order ignored; returns the first differing path.
     public func difference(_ other: JS, path: String = "$") -> String? {
-        switch (value, other.value) {
+        switch (storage, other.storage) {
         case (.null, .null): return nil
         case (.bool(let a), .bool(let b)): return a == b ? nil : "\(path): \(a) ≠ \(b)"
         case (.number(let a), .number(let b)): return a == b || (a.isNaN && b.isNaN) ? nil : "\(path): \(a) ≠ \(b)"
@@ -114,7 +114,7 @@ public final class JS: CustomStringConvertible {
         }
     }
     public var description: String {
-        switch value {
+        switch storage {
         case .null: return "null"
         case .bool(let b): return "\(b)"
         case .number(let n): return n == n.rounded() && abs(n) < 1e15 ? String(Int(n)) : "\(n)"

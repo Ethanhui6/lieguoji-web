@@ -12,7 +12,7 @@ import LieguojiCore
         UISegmentedControl.appearance().setTitleTextAttributes([.font: kai.withSize(14)], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: kai]
     }
-    var body: some Scene { WindowGroup { RootView().font(Theme.kai(17)) } }
+    var body: some Scene { WindowGroup { RootView().font(Theme.kai(17)).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
 }
 
 /// Warm paper and ink, one vermilion seal colour and the jade of the web game.
@@ -20,9 +20,10 @@ enum Theme {
     static let fontName = "TW-Kai-98_1"
     static let paper = Color(red: 0.957, green: 0.933, blue: 0.886)
     static let paper2 = Color(red: 0.984, green: 0.972, blue: 0.945)
-    static let ink = Color(red: 0.165, green: 0.145, blue: 0.114)
-    static let ink2 = Color(red: 0.46, green: 0.424, blue: 0.369)
-    static let line = Color(red: 0.165, green: 0.145, blue: 0.114).opacity(0.1)
+    static let ink = Color(red: 0.098, green: 0.082, blue: 0.063)
+    static let ink2 = Color(red: 0.36, green: 0.325, blue: 0.27)
+    static let line = Color(red: 0.165, green: 0.145, blue: 0.114).opacity(0.14)
+    static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
     static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
     static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
     static let sea = Color(red: 0x52 / 255, green: 0x7C / 255, blue: 0x86 / 255)
@@ -100,26 +101,39 @@ struct RootView: View {
 struct SplashView: View {
     let done: () -> Void
     @State private var stamped = false
+    @State private var rippled = false
     @State private var named = false
     var body: some View {
         ZStack {
             Theme.paper.ignoresSafeArea()
             VStack(spacing: 26) {
-                SealMark(size: 132)
-                    .scaleEffect(stamped ? 1 : 1.6)
-                    .opacity(stamped ? 1 : 0)
-                    .rotationEffect(.degrees(stamped ? 0 : -8))
-                Text("列國紀").font(Theme.kai(40)).tracking(10).foregroundStyle(Theme.ink)
-                    .opacity(named ? 1 : 0).offset(y: named ? 0 : 8)
+                ZStack {
+                    // Ink spreading from the stamp.
+                    ForEach(0..<2) { i in
+                        RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(Theme.seal.opacity(0.35), lineWidth: 2)
+                            .frame(width: 132, height: 132)
+                            .scaleEffect(rippled ? 1.9 + CGFloat(i) * 0.5 : 1).opacity(rippled ? 0 : 0.9)
+                            .animation(.easeOut(duration: 1.1).delay(Double(i) * 0.12), value: rippled)
+                    }
+                    SealMark(size: 132)
+                        .scaleEffect(stamped ? 1 : 1.7)
+                        .opacity(stamped ? 1 : 0)
+                        .rotationEffect(.degrees(stamped ? 0 : -10))
+                        .blur(radius: stamped ? 0 : 6)
+                }
+                Text("列國紀").font(Theme.kai(42)).tracking(named ? 12 : 30).foregroundStyle(Theme.ink)
+                    .opacity(named ? 1 : 0).offset(y: named ? 0 : 10)
                 Text("架空世界 · 列国兴衰").font(Theme.kai(15)).tracking(4).foregroundStyle(Theme.ink2)
                     .opacity(named ? 1 : 0)
             }
         }
         .task {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) { stamped = true }
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            withAnimation(.easeOut(duration: 0.6)) { named = true }
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) { stamped = true }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.8)
+            rippled = true
+            withAnimation(.spring(response: 0.9, dampingFraction: 0.9)) { named = true }
             try? await Task.sleep(nanoseconds: 1_250_000_000)
             done()
         }
@@ -144,6 +158,7 @@ struct SealMark: View {
 struct TitleView: View {
     @ObservedObject var model: GameModel
     @State private var creating = false
+    @State private var shown = false
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -157,14 +172,15 @@ struct TitleView: View {
                     }
                 }
                 .padding(.top, 10)
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle())
             }
             .padding(.horizontal, 28).padding(.vertical, 30)
             .frame(maxWidth: 420)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(Color.white.opacity(0.35)))
+            .glass(RoundedRectangle(cornerRadius: 30, style: .continuous))
             .padding(.horizontal, 20).padding(.bottom, 34)
+            .offset(y: shown ? 0 : 60).opacity(shown ? 1 : 0)
         }
+        .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.4 : 0.1)) { shown = true } }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
                 .presentationDetents([.medium]).presentationBackground(Theme.paper)
@@ -195,19 +211,20 @@ struct NewWorldSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("新世界").font(Theme.kai(28)).foregroundStyle(Theme.ink)
-            VStack(alignment: .leading, spacing: 8) {
-                Text("地形").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
-                Picker("地形", selection: $options.template) { ForEach(Names.templates, id: \.id) { Text($0.name).tag($0.id) } }.pickerStyle(.segmented)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("地形").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
             }
-            Stepper(value: $options.nations, in: 2...24) {
-                HStack { Text("国家").foregroundStyle(Theme.ink2); Spacer(); Text("\(options.nations) 国").foregroundStyle(Theme.ink) }.font(Theme.kai(17))
-            }
+            PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
             HStack {
                 Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-                TextField("随机", text: $options.seed).font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                Spacer()
+                TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
+                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
+                    .padding(.horizontal, 12).frame(width: 160, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
             }
             Spacer(minLength: 0)
-            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(.plain)
+            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
         }
         .padding(24)
     }
@@ -266,18 +283,22 @@ struct GameView: View {
         ZStack {
             Color.clear
         }
-        .overlay(alignment: .top) { VStack(spacing: 8) { topBar; if controller.marchingArmy != nil { marchBanner } } }
-        .overlay(alignment: .bottom) { bottomBar }
+        .overlay(alignment: .top) {
+            VStack(spacing: 8) { topBar; if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) } }
+                .offset(y: controller.reveal >= 1 ? 0 : -80)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
+        }
+        .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
         .overlay(alignment: .center) {
             if let toast {
-                Text(toast).font(Theme.kai(16)).foregroundStyle(Theme.ink).multilineTextAlignment(.center).padding(.horizontal, 18).padding(.vertical, 12)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous)).padding(.horizontal, 40)
+                Text(toast).font(Theme.kai(17)).foregroundStyle(Theme.ink).multilineTextAlignment(.center).padding(.horizontal, 18).padding(.vertical, 12)
+                    .glass(RoundedRectangle(cornerRadius: 16, style: .continuous)).padding(.horizontal, 40)
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
         .animation(.easeOut(duration: 0.2), value: toast)
         .opacity(controller.reveal >= 1 ? 1 : 0)
-        .animation(.easeOut(duration: 0.4), value: controller.reveal >= 1)
+        .animation(.spring(response: 0.55, dampingFraction: 0.85), value: controller.reveal >= 1)
         .onAppear {
             controller.drifting = false
             controller.onMarchTarget = { province in
@@ -346,13 +367,12 @@ struct GameView: View {
             }
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
             Spacer()
-            Menu {
-                Picker("图层", selection: $controller.mode) {
-                    Label("政治", systemImage: "flag").tag(MapMode.political)
-                    Label("地形", systemImage: "mountain.2").tag(MapMode.terrain)
-                }
-            } label: { CircleIcon(symbol: "square.3.layers.3d") }
-            Button { panel = .menu } label: { CircleIcon(symbol: "ellipsis") }
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { controller.mode = controller.mode == .political ? .terrain : .political }
+                say(controller.mode == .political ? "政治地图" : "地形地图")
+            } label: { CircleIcon(symbol: controller.mode == .political ? "flag.fill" : "mountain.2.fill") }
+            .buttonStyle(PressStyle())
+            Button { panel = .menu } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
     }
@@ -385,11 +405,14 @@ struct GameView: View {
                 }
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
                 HStack(spacing: 2) {
-                    Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(17)).foregroundStyle(Theme.ink).frame(width: 40, height: 50) }
+                    Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
+                        .buttonStyle(PressStyle())
                     Button { model.togglePlay() } label: {
                         Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
+                            .contentTransition(.symbolEffect(.replace))
                     }
+                    .buttonStyle(PressStyle())
                     .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
                 }
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
@@ -403,7 +426,9 @@ struct GameView: View {
 extension View {
     /// Frosted glass with a hairline, the iOS 17 floating-control look.
     func glass<S: Shape>(_ shape: S) -> some View {
-        background(.regularMaterial, in: shape).overlay(shape.stroke(Color.white.opacity(0.4), lineWidth: 0.5)).shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+        background(Theme.paper2.opacity(0.97), in: shape)
+            .overlay(shape.stroke(Theme.ink.opacity(0.12), lineWidth: 1))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 14, y: 5)
     }
 }
 
@@ -424,7 +449,7 @@ struct TabButton: View {
             }
             .foregroundStyle(Theme.ink).frame(width: 56, height: 50).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
     }
 }
 
@@ -685,11 +710,13 @@ struct DiplomacySheet: View {
                     }
                     Text("宣战").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
                     Group2 {
-                        Picker("宣战国", selection: $attacker) { ForEach(map.meta.nations.indices, id: \.self) { Text(map.meta.nations[$0].name).tag($0) } }
-                            .padding(.horizontal, 16).padding(.vertical, 6)
-                        Divider2()
-                        Picker("目标国", selection: $defender) { ForEach(map.meta.nations.indices, id: \.self) { Text(map.meta.nations[$0].name).tag($0) } }
-                            .padding(.horizontal, 16).padding(.vertical, 6)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("宣战国").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                            NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive }, selection: $attacker)
+                            Text("目标国").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.top, 6)
+                            NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 != attacker }, selection: $defender)
+                        }
+                        .padding(14)
                         Divider2()
                         Button {
                             Task { if let e = await model.declareWar(attacker, on: defender) { say(e) } else { say(model.state?.events.last?.text ?? "已宣战") } }
@@ -742,7 +769,7 @@ struct MenuSheet: View {
                 Divider2()
                 Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
                 Divider2()
-                Toggle(isOn: $controller.showMetrics) { Text("显示帧率").font(Theme.kai(17)).foregroundStyle(Theme.ink) }.padding(.horizontal, 16).padding(.vertical, 8)
+                PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
             Spacer()
@@ -764,5 +791,96 @@ struct MenuRow: View {
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 13).contentShape(Rectangle())
+    }
+}
+
+/// Pressed buttons sink slightly, like paper under a finger.
+struct PressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.scaleEffect(configuration.isPressed ? 0.96 : 1).opacity(configuration.isPressed ? 0.86 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+/// A row of paper chips (replaces the system segmented control).
+struct ChipPicker<T: Hashable>: View {
+    let items: [(T, String)]
+    @Binding var selection: T
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(items.indices, id: \.self) { i in
+                let item = items[i], on = item.0 == selection
+                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selection = item.0 } } label: {
+                    Text(item.1).font(Theme.kai(16)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                }
+                .buttonStyle(PressStyle())
+            }
+        }
+    }
+}
+
+/// − value + (replaces the system stepper).
+struct PaperStepper: View {
+    let title: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let unit: String
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            Spacer()
+            Button { if value > range.lowerBound { value -= 1 } } label: { Image(systemName: "minus").font(.system(size: 15, weight: .bold)).frame(width: 40, height: 36) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+            Text("\(value) \(unit)").font(Theme.kai(19)).foregroundStyle(Theme.ink).frame(minWidth: 56)
+            Button { if value < range.upperBound { value += 1 } } label: { Image(systemName: "plus").font(.system(size: 15, weight: .bold)).frame(width: 40, height: 36) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+        }
+    }
+}
+
+/// A paper switch (replaces the system toggle).
+struct PaperSwitch: View {
+    let title: String
+    @Binding var on: Bool
+    var body: some View {
+        Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { on.toggle() } } label: {
+            HStack {
+                Text(title).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Spacer()
+                ZStack(alignment: on ? .trailing : .leading) {
+                    Capsule().fill(on ? Theme.seal : Theme.wash).frame(width: 50, height: 30)
+                    Circle().fill(Theme.paper2).frame(width: 24, height: 24).padding(3).shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Nation chips in a wrapping grid (replaces the system menu picker).
+struct NationGrid: View {
+    let map: WorldMap
+    let nations: [Int]
+    @Binding var selection: Int
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
+            ForEach(nations, id: \.self) { n in
+                let on = n == selection
+                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selection = n } } label: {
+                    HStack(spacing: 6) {
+                        RoundedRectangle(cornerRadius: 3).fill(Names.color(map.meta.nations[n].color)).frame(width: 12, height: 12)
+                        Text(map.meta.nations[n].name).font(Theme.kai(16)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .foregroundStyle(Theme.ink).frame(maxWidth: .infinity).frame(height: 38)
+                    .background(on ? Theme.wash : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Theme.seal : Theme.line, lineWidth: on ? 2 : 1))
+                }
+                .buttonStyle(PressStyle())
+            }
+        }
     }
 }

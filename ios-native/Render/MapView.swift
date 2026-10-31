@@ -299,7 +299,7 @@ final class MapContainerView: UIView {
 final class MapLabelsView: UIView {
     static let fontName = "TW-Kai-98_1"
     private final class Label {
-        let view = UILabel()
+        let view = UIImageView()
         let text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?
         var rendered: Double = 0
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
@@ -319,13 +319,13 @@ final class MapLabelsView: UIView {
             let measured = (n.name as NSString).size(withAttributes: [.font: Self.font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             let tint = Self.color(n.color).withAlphaComponent(0.8)
-            nations.append(Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: -14, minPoints: 4, province: nil))
+            nations.append(Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: 13.0 / 64, minPoints: 4, province: nil))
         }
         let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? map.meta.cities[$0.capital].id : nil })
         for c in map.meta.cities {
             let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
-                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: -10, minPoints: 9, province: c.province))
+                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 9, province: c.province))
         }
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }
@@ -339,6 +339,22 @@ final class MapLabelsView: UIView {
     private var selected: Int?
     func setSelected(_ province: Int?) { selected = province }
 
+    /// The web's Pixi text: the outline (a round-joined stroke, its width a fraction of the em) is
+    /// drawn first and the fill on top, with the browser's synthetic bold (a thin fill-coloured stroke).
+    static func render(_ text: String, size: CGFloat, fill: UIColor, stroke: UIColor, strokeEm: CGFloat) -> UIImage {
+        let font = font(size), width = size * strokeEm, pad = ceil(width / 2 + 2)
+        let measured = (text as NSString).size(withAttributes: [.font: font])
+        let canvas = CGSize(width: ceil(measured.width + pad * 2), height: ceil(measured.height + pad * 2))
+        return UIGraphicsImageRenderer(size: canvas).image { ctx in
+            let c = ctx.cgContext
+            c.setLineJoin(.round); c.setLineCap(.round)
+            let origin = CGPoint(x: pad, y: pad)
+            // NSAttributedString stroke width is a percentage of the point size, centred on the outline.
+            (text as NSString).draw(at: origin, withAttributes: [.font: font, .strokeColor: stroke, .strokeWidth: strokeEm * 100])
+            (text as NSString).draw(at: origin, withAttributes: [.font: font, .foregroundColor: fill, .strokeColor: fill, .strokeWidth: -3.5])
+        }
+    }
+
     func update(camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         for l in nations + cities {
@@ -348,8 +364,7 @@ final class MapLabelsView: UIView {
             if l.rendered == 0 || points / l.rendered > 1.25 || points / l.rendered < 0.8 {
                 l.rendered = (points * 2).rounded() / 2
                 l.view.transform = .identity
-                l.view.attributedText = NSAttributedString(string: l.text, attributes: [.font: Self.font(CGFloat(l.rendered)), .foregroundColor: l.fill,
-                                                                                        .strokeColor: l.stroke, .strokeWidth: l.strokeWidth])
+                l.view.image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
                 l.view.sizeToFit()
             }
             let k = CGFloat(points / l.rendered)

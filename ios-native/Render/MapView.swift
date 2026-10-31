@@ -67,7 +67,8 @@ struct MapView: UIViewRepresentable {
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
             mtk.autoResizeDrawable = true
-            renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"))
+            renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
+                                   unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             labels = MapLabelsView(map: map)

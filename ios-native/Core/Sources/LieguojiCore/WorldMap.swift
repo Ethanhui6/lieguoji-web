@@ -112,6 +112,8 @@ public struct WorldMeta: Codable, Sendable {
     public let labels: [LabelBox]
     /// The world's opening chronicle.
     public let events: [Event]
+    /// Where the Swift simulation starts (day 0 of the web world).
+    public let economy: EconomyStart
     /// Where the parchment texture lies over the map (originalParchmentRect).
     public let parchment: Rect
     public let source: [String: String]

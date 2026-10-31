@@ -67,6 +67,8 @@ enum Panel: Identifiable, Equatable {
 struct GameView: View {
     let map: WorldMap
     @StateObject private var controller = MapController()
+    @StateObject private var sim: SimulationModel
+    init(map: WorldMap) { self.map = map; _sim = StateObject(wrappedValue: SimulationModel(map: map)) }
     @State private var panel: Panel?
     @State private var toast: String?
 
@@ -103,19 +105,19 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(map: map, province: p, controller: controller)
+            ProvinceSheet(map: map, province: p, controller: controller, sim: sim)
                 .presentationDetents([.height(260), .medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nations:
-            NationsSheet(map: map) { province in
+            NationsSheet(map: map, sim: sim) { province in
                 self.panel = nil
                 controller.fly(to: province)
                 controller.selectedProvince = province
             }.presentationDetents([.medium, .large])
         case .history:
-            HistorySheet(map: map).presentationDetents([.medium, .large])
+            HistorySheet(map: map, sim: sim).presentationDetents([.medium, .large])
         case .ranking:
-            RankingSheet(map: map).presentationDetents([.medium, .large])
+            RankingSheet(map: map, sim: sim).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(map: map, controller: controller).presentationDetents([.medium, .large])
         case .pending(let title):
@@ -133,7 +135,7 @@ struct GameView: View {
 
     private var topBar: some View {
         HStack(spacing: 8) {
-            Text("公元1年1月1日").font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(Theme.ink)
+            Text(sim.state.date.text).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(Theme.ink)
                 .padding(.horizontal, 14).frame(height: 38).paperCapsule()
             Spacer()
             HStack(spacing: 2) {
@@ -174,8 +176,8 @@ struct GameView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "book").font(.system(size: 14)).foregroundStyle(Theme.ink2)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("1年1月1日").font(.caption2).foregroundStyle(Theme.ink2)
-                        Text(map.meta.events.first?.text ?? "").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(2).multilineTextAlignment(.leading)
+                        Text(sim.state.day == 0 ? "1年1月1日" : sim.state.date.shortText).font(.caption2).foregroundStyle(Theme.ink2)
+                        Text(latestEvent).font(.caption.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(2).multilineTextAlignment(.leading)
                     }
                     Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.ink2)
                 }
@@ -187,13 +189,28 @@ struct GameView: View {
             .buttonStyle(.plain)
             Spacer(minLength: 8)
             HStack(spacing: 4) {
-                Button { say("时间推进还在用 Swift 重写，尚不能推演") } label: { ChromeIcon(symbol: "play.fill") }
-                Text("1倍速").font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink)
-                Button { say("时间推进还在用 Swift 重写，尚不能推演") } label: { ChromeIcon(symbol: "forward.end") }
+                Button { sim.togglePlay() } label: { ChromeIcon(symbol: sim.playing ? "pause.fill" : "play.fill") }
+                    .accessibilityLabel(sim.playing ? "暂停时间" : "开始推演")
+                    .sensoryFeedback(.impact(weight: .light), trigger: sim.playing)
+                Button { sim.cycleSpeed() } label: { Text("\(sim.speed)倍速").font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(Theme.ink).frame(minWidth: 44, minHeight: 38) }
+                    .accessibilityLabel("推演速度")
+                Button { sim.step() } label: { ChromeIcon(symbol: "forward.end") }.disabled(sim.playing).accessibilityLabel("推进一天")
             }
             .padding(.horizontal, 6).frame(height: 44).paperCapsule()
         }
         .padding(.horizontal, 12).padding(.bottom, 6)
+    }
+
+    /// The newest line for the event card: a nation's grain report (the web's 日粮结算 event, every
+    /// 7 days or on famine) once time runs, the opening chronicle before.
+    private var latestEvent: String {
+        if sim.state.day > 0 {
+            let famine = sim.state.ledgers.indices.first { sim.state.ledgers[$0].starvationDeaths > 0 }
+            let n = famine ?? (sim.state.day / 7) % max(1, map.meta.nations.count)
+            let l = sim.state.ledgers[n]
+            return "\(map.meta.nations[n].name)日粮结算" + (l.starvationDeaths > 0 ? "：饥荒死亡 \(l.starvationDeaths)" : "：期末存粮 \(l.closingGrain.wan)")
+        }
+        return map.meta.events.first?.text ?? ""
     }
 
     private var zoomControls: some View {
@@ -309,6 +326,7 @@ struct ProvinceSheet: View {
     let map: WorldMap
     let province: Int
     @ObservedObject var controller: MapController
+    @ObservedObject var sim: SimulationModel
     var body: some View {
         let p = map.meta.provinces[province]
         let nation = p.nation >= 0 ? map.meta.nations[p.nation] : nil
@@ -325,6 +343,14 @@ struct ProvinceSheet: View {
                             InfoRow(label: "宗教", value: Names.religion[nation.religion] ?? nation.religion); Divider().padding(.leading, 14)
                         }
                         InfoRow(label: "地形", value: Names.terrain[p.terrain] ?? p.terrain)
+                    }
+                    if let e = sim.province(province) {
+                        PaperGroup {
+                            InfoRow(label: "人口", value: e.population.formatted()); Divider().padding(.leading, 14)
+                            InfoRow(label: "人口上限", value: e.capacity.formatted()); Divider().padding(.leading, 14)
+                            InfoRow(label: "存粮", value: e.grain.formatted()); Divider().padding(.leading, 14)
+                            InfoRow(label: "补给", value: String(format: "%.0f", e.supply))
+                        }
                     }
                     if !cities.isEmpty {
                         PaperGroup {
@@ -368,6 +394,7 @@ func nationRows(_ map: WorldMap) -> [NationRow] {
 
 struct NationsSheet: View {
     let map: WorldMap
+    @ObservedObject var sim: SimulationModel
     let select: (Int) -> Void
     var body: some View {
         VStack(spacing: 0) {
@@ -388,7 +415,10 @@ struct NationsSheet: View {
                                         .font(.caption).foregroundStyle(Theme.ink2)
                                 }
                                 Spacer()
-                                Text("\(row.provinces) 省").font(.callout.monospacedDigit()).foregroundStyle(Theme.ink2)
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("\(row.provinces) 省").font(.callout.monospacedDigit()).foregroundStyle(Theme.ink)
+                                    Text("\(sim.totals(nation: row.index).population.wan) 人 · \(sim.armies(nation: row.index).troops.wan) 兵").font(.caption2.monospacedDigit()).foregroundStyle(Theme.ink2)
+                                }
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 11).contentShape(Rectangle())
@@ -405,11 +435,25 @@ struct NationsSheet: View {
 
 struct HistorySheet: View {
     let map: WorldMap
+    @ObservedObject var sim: SimulationModel
     var body: some View {
         VStack(spacing: 0) {
-            SheetHeader(title: "大事记", subtitle: "公元1年1月1日 · 开篇")
+            SheetHeader(title: "大事记", subtitle: "\(sim.state.date.text) · 开篇以来 \(sim.state.day) 日")
             ScrollView {
                 VStack(spacing: 10) {
+                    if sim.state.day > 0 {
+                        PaperGroup {
+                            ForEach(map.meta.nations.indices, id: \.self) { n in
+                                let l = sim.state.ledgers[n]
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("\(map.meta.nations[n].name)日粮结算\(l.starvationDeaths > 0 ? "：饥荒死亡 \(l.starvationDeaths)" : "")").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                    Text("期初 \(l.openingGrain.wan) + 生产 \(l.production.wan) − 民用 \(l.civilianConsumed.wan) − 军用 \(l.militaryConsumed.wan) = 期末 \(l.closingGrain.wan) 人日粮").font(.caption).foregroundStyle(Theme.ink2)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 14).padding(.vertical, 9)
+                                if n < map.meta.nations.count - 1 { Divider().padding(.leading, 14) }
+                            }
+                        }
+                    }
                     ForEach(Array(map.meta.events.enumerated()), id: \.offset) { item in
                         VStack(alignment: .leading, spacing: 4) {
                             Text("1年1月1日").font(.caption2).foregroundStyle(Theme.ink2)
@@ -429,18 +473,19 @@ struct HistorySheet: View {
 
 struct RankingSheet: View {
     let map: WorldMap
+    @ObservedObject var sim: SimulationModel
     var body: some View {
         VStack(spacing: 0) {
-            SheetHeader(title: "排行", subtitle: "按行省数量 · 开局")
+            SheetHeader(title: "人口排名", subtitle: sim.state.date.text)
             ScrollView {
                 PaperGroup {
-                    ForEach(Array(nationRows(map).enumerated()), id: \.element.id) { item in
+                    ForEach(Array(nationRows(map).sorted { sim.totals(nation: $0.index).population > sim.totals(nation: $1.index).population }.enumerated()), id: \.element.id) { item in
                         HStack(spacing: 12) {
                             Text("\(item.offset + 1)").font(.headline.monospacedDigit()).foregroundStyle(item.offset < 3 ? Theme.accent : Theme.ink2).frame(width: 24)
                             Circle().fill(Names.color(item.element.nation.color)).frame(width: 12, height: 12)
                             Text(item.element.nation.name).font(Theme.kai(19)).foregroundStyle(Theme.ink)
                             Spacer()
-                            Text("\(item.element.provinces) 省 · \(item.element.cities) 城").font(.callout.monospacedDigit()).foregroundStyle(Theme.ink2)
+                            Text("\(sim.totals(nation: item.element.index).population.wan) · \(item.element.provinces) 省").font(.callout.monospacedDigit()).foregroundStyle(Theme.ink2)
                         }
                         .padding(.horizontal, 14).padding(.vertical, 11)
                         if item.offset < map.meta.nations.count - 1 { Divider().padding(.leading, 50) }
@@ -465,10 +510,10 @@ struct MenuSheet: View {
                     }
                     PaperGroup {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("原生版 0.3.0").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                            Text("原生版 0.4.0").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
                             Text("SwiftUI 界面 + Metal 地图，没有网页运行时。地图来自网页版同一套生成：原作 20k 格网、种子 \(map.meta.seed)，开局第 0 日。画面按网页版的原作纸地图外观：海岸距离海面、羊皮纸、河流、山林、台湾楷体国名。")
                                 .font(.caption).foregroundStyle(Theme.ink2)
-                            Text("游戏规则（时间推进、战争、外交、家族）正在用 Swift 重写，暂时不能推演。").font(.caption).foregroundStyle(Theme.ink2)
+                            Text("已用 Swift 移植并与网页引擎逐日逐位对照：日历、每日粮食与人口结算、原作军队补给重置。尚未移植：军队行军与 AI、战争、外交、家族、人物、月税与征兵——推演时这些暂不发生，军队停在原地。").font(.caption).foregroundStyle(Theme.ink2)
                         }
                         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
                     }

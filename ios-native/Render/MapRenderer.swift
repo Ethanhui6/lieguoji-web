@@ -16,6 +16,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let coloredPipeline: MTLRenderPipelineState
     private let texturePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
+    private let spritePipeline: MTLRenderPipelineState
+    /// Army icons grouped by unit type: the texture and its quads.
+    private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
     private let positions: MTLBuffer
     private let indices: MTLBuffer
     private let indexCount: Int
@@ -38,7 +41,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float }
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
 
-    init?(view: MTKView, map: WorldMap, parchmentURL: URL?) {
+    init?(view: MTKView, map: WorldMap, parchmentURL: URL?, unitURL: (String) -> URL? = { _ in nil }) {
         guard let device = view.device, let queue = device.makeCommandQueue() else { return nil }
         self.device = device; self.queue = queue; self.map = map
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
@@ -75,6 +78,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
+            spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
         } catch { return nil }
         let mesh = CellMesh(map: map)
         guard let p = device.makeBuffer(bytes: mesh.positions, length: mesh.positions.count * 4, options: .storageModeShared),
@@ -107,6 +111,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         relief = buffer(MapLayers.relief(map).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
+        // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
+        // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
+        let loader = MTKTextureLoader(device: device)
+        let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
+        var byUnit: [String: [Float]] = [:]
+        for a in map.meta.economy.armies where a.troops > 0 {
+            let c = nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
+            let size = iconSize * (a.unit == "Elite" ? 1.5 : 1)
+            for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
+                byUnit[a.unit, default: []].append(contentsOf: [a.x, a.y, cx, cy, c.r, c.g, c.b, 1, size])
+            }
+        }
+        for (unit, data) in byUnit {
+            guard let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]),
+                  let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { continue }
+            units.append((texture, b, data.count / 9))
+        }
     }
 
     private func buffer(_ data: [Float], stride: Int) -> (MTLBuffer, Int)? {
@@ -174,6 +195,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         colored(relief)
         colored(outlines)
         colored(icons)
+        for unit in units {
+            encoder.setRenderPipelineState(spritePipeline)
+            encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentTexture(unit.texture, index: 0)
+            encoder.setFragmentSamplerState(sampler, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+        }
         let r = map.meta.parchment
         quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
         encoder.endEncoding()
@@ -213,6 +242,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex QuadOut quadVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]], constant QuadUniforms& q [[buffer(3)]]) {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
         QuadOut o; float2 c = corners[id]; o.position = clip(q.origin + c * q.size, u, float2(0.0)); o.uv = c; return o;
+    }
+    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; };
+    struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
+    vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        SpriteVertex s = v[id];
+        float pixels = max(s.size * u.scale, 7.0);
+        SpriteOut o; o.position = clip(float2(s.center), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
+    }
+    fragment float4 spriteFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
+        float4 c = t.sample(s, in.uv);
+        return float4(c.rgb * in.tint.rgb, c.a * in.tint.a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);

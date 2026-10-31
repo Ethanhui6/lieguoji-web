@@ -1,10 +1,10 @@
 import {it,expect} from 'vitest';
 import {writeFile,mkdir,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
-import {generateFmsFullMap,prepareFmsFullMapPreview} from '../fms/full-map-terrain';
-import {Culture47Session,type Culture47Opening} from '../fms/play/culture47-session';
-import {SETTLEMENT47_ALGORITHM} from '../fms/play/settlement47-regions';
+import {originalGridFor} from '../fms/original/original-document';
+import {createNativeWorld,NATIVE_WORLD_OPTIONS} from './native-world';
+import {nativeEconomyState} from './native-state';
+import militaryIcons from '../fms/play/military-icons.json';
 import {originalCellProvinces} from '../fms/original/original-politics';
 import {originalClimate,originalBiomeIds,originalBiomeLinear} from '../fms/original/original-biomes';
 import {nationColor} from '../fms/play/politics';
@@ -33,14 +33,7 @@ import {stateLabelBoxes47} from '../fms/play/original-labels47';
  * Run with EXPORT_NATIVE_WORLD=1; the ordinary test suite skips it. */
 const OUT='ios-native/Resources/World';
 it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports the stage-2 native world resources',async()=>{
-  const blank=await createFmsOriginalDocument('20k');
-  blank.worldId='42173000-0000-4000-8000-000000000001';
-  const options={seed:'421730',template:'continents'} as const;
-  const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,
-    ...await generateFmsFullMap(blank,options,{yieldTask:async()=>{}})},options)).document;
-  const opening:Culture47Opening={terrain,count:8,cityCount:80,relations:'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
-    setup:{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman','german']},families:'original'};
-  const {run}=new Culture47Session().create(opening);
+  const {terrain,snapshot}=await createNativeWorld(),run=snapshot.run,options=NATIVE_WORLD_OPTIONS;
   const grid=(await originalGridFor(terrain))!;
   const province=originalCellProvinces(terrain,run.world.provinces,run.scale);
   const biome=originalBiomeIds(grid,terrain,originalClimate(grid,terrain)),linear=originalBiomeLinear(grid,biome);
@@ -81,6 +74,8 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports the stage-2 native wor
     nations:world.nations.map(n=>({id:n.id,name:n.name,color:nationColor(n),line:'#'+fmsStateLineColor(nationColor(n)).toString(16).padStart(6,'0'),capital:world.cities.findIndex(c=>c.id===n.capitalId),
       culture:run.civilization.nations[n.id].cultureId,polity:run.civilization.nations[n.id].polity,religion:run.civilization.nations[n.id].religionId})),
     labels:labelBoxes,parchment:originalParchmentRect(grid.width,grid.height),
+    // Simulation start (provinces, policies, wars, armies) for the Swift engine.
+    economy:nativeEconomyState(run),
     // The opening chronicle (CultureNews47 shows these at the start), day 0.
     events:run.chronicle.entries.slice(0,12).map(e=>({day:e.day,text:e.text,reason:e.reason})),
     cities:world.cities.map(c=>({id:c.id,name:c.name,x:c.position.x/sc,y:c.position.y/sc,province:world.provinces.findIndex(p=>p.id===c.provinceId)})),
@@ -93,6 +88,8 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports the stage-2 native wor
   await mkdir(OUT,{recursive:true});
   await writeFile(`${OUT}/world.bin`,bin);
   await writeFile(`${OUT}/world.json`,JSON.stringify(meta));
+  // The original unit icons the web draws armies with (military-icons.json).
+  for(const [key,url] of Object.entries(militaryIcons))await writeFile(`${OUT}/unit-${key}.png`,Buffer.from((url as string).split(',')[1],'base64'));
   // The original's parchment (sharedassets0 parchmentfinal2), the same reviewed file the web ships.
   await writeFile(`${OUT}/parchment.jpg`,await readFile('src/fms/original/assets/parchment.jpg'));
 },300000);

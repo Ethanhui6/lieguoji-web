@@ -878,6 +878,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.12", ["【手机上能点到】字体统一：内置楷体（全字库正楷体 TW-Kai，政府资料开放授权）由 2617 字扩到 7799 字（含 GB2312 全部汉字与全部名称目录用字），人名、地名不再混入系统字体。",
+                    "【手机上能点到】地图国名去掉国家色描边，改为与城市名相同的浅纸色细描边。",
+                    "【手机上能点到】人物特质补齐中文（统一者、越战越勇、厌战、海军精通、船舶大师、改革家、天生领袖、难以服众），不再显示英文。宣战／议和横幅的图标改为文字「对」「与」。",
+                    "【简化】国名描边样式按 Bob 的反馈改动，网页为国家色描边，此处与网页不同。",
+                    "【未在真机验证】以上只在 CI 构建通过，未在真机上验证。"]),
         ("0.9.11", ["【手机上能点到】军队详情新增「目的地」（行军中显示终点省份）与「指挥」：玩家军令、AI 远征（集结／出航／返航）或 AI 自主调度。",
                     "【手机上能点到】军事列表每支军队显示「→ 目的地」。调兵（点地图选目的地）、停止、行军路线照旧。",
                     "【仍在核心代码】军队 AI 的进攻目标选择与轮转军令已在 Swift 中逐帧运行（与网页一致），界面只显示结果，不显示 AI 的内部评分。",
@@ -1085,7 +1090,7 @@ struct HeraldBanner: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     ForEach(Array(herald.nations.enumerated()), id: \.offset) { pair in
-                        if pair.offset > 0 { Image(systemName: herald.kind == .peace ? "hands.clap.fill" : "bolt.fill").font(.system(size: 10)).foregroundStyle(color) }
+                        if pair.offset > 0 { Text(herald.kind == .peace ? "与" : "对").font(Theme.kai(14)).foregroundStyle(color) }
                         NationChip(map: map, nation: pair.element)
                     }
                 }

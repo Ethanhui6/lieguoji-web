@@ -20,7 +20,7 @@ targets:
       - path: Resources/World
         type: folder
         buildPhase: resources
-      # TW-Kai (the original's map font, as the web ships it), converted from the web's woff2 subset to TrueType.
+      # TW-Kai（全字库正楷体，© 2018 台湾国家发展委员会，政府资料开放授权第1版）：GB2312 全部汉字 + 网页与原生名称目录用字的子集。
       - path: Resources/Fonts
         type: folder
         buildPhase: resources
@@ -38,8 +38,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.9.11"
-        CURRENT_PROJECT_VERSION: "20"
+        MARKETING_VERSION: "0.9.12"
+        CURRENT_PROJECT_VERSION: "21"
     info:
       path: App/Info.plist
       properties:

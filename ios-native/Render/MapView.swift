@@ -377,8 +377,7 @@ final class MapLabelsView: UIView {
             let n = map.meta.nations[box.nation]
             let measured = (n.name as NSString).size(withAttributes: [.font: font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            let tint = color(n.color).withAlphaComponent(0.8)
-            return Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: 13.0 / 64, minPoints: 4, province: nil)
+            return Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.

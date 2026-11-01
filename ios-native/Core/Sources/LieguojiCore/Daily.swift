@@ -304,14 +304,14 @@ public enum Daily {
     /// settleCivilizationDayCore47.
     public static func settle(_ r: JS) {
         r.world.day = JS(r.world.day.asNumber + 1)
-        if People.month(r) || r.world.day.asInt % 30 == 0 { Government.refreshLeaderCombat(r) }
+        if Profile.measure("d.people", { People.month(r) }) || r.world.day.asInt % 30 == 0 { Government.refreshLeaderCombat(r) }
         Founding.reconcilePorts?(r)
-        economy(r)
-        _ = originalArmyDay(r)
-        finishForces(r); retire(r); recover(r)
-        fiscalMonth(r)
+        Profile.measure("d.economy") { economy(r) }
+        _ = Profile.measure("d.armyDay") { originalArmyDay(r) }
+        Profile.measure("d.forces") { finishForces(r); retire(r); recover(r) }
+        Profile.measure("d.fiscal") { fiscalMonth(r) }
         dailyOrders?(r)
-        Armies.muster(r); destinyMonth(r); finishForces(r, commit: true); retire(r)
+        Profile.measure("d.muster") { Armies.muster(r) }; Profile.measure("d.destiny") { destinyMonth(r) }; Profile.measure("d.forces") { finishForces(r, commit: true); retire(r) }
         r.dailyEconomy.lastDay = r.world.day.clone()
     }
 }

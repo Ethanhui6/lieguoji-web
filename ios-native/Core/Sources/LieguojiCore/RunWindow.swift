@@ -268,27 +268,27 @@ public enum RunWindow {
             if boundary {
                 while true {
                     events += 1; if events > 100_000 { break }
-                    occupy(r, now: now, due: [])
-                    Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: now)
+                    Profile.measure("w.occupy") { occupy(r, now: now, due: []) }
+                    Profile.measure("w.frame") { Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: now) }
                     let due = r.forceClock.deadlines.objectEntries.filter { $0.1.asNumber <= now }.map(\.0).sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
                     if !due.isEmpty {
                         for k in due { reschedule(r, k, now: now) }
-                        let out = volley(r, due: due)
+                        let out = Profile.measure("w.volley") { volley(r, due: due) }
                         volleys.append(Salvo(at: now, due: due, hits: out.hits, losses: out.losses))
-                        occupy(r, now: now, due: Set(due))
-                        Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: now)
+                        Profile.measure("w.occupy") { occupy(r, now: now, due: Set(due)) }
+                        Profile.measure("w.frame") { Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: now) }
                     }
                     if now == Double(tick) { break }
                     let stop = F != nil ? Double(tick) : min(Double(tick), r.forceClock.deadlines.objectValues.map(\.asNumber).min() ?? Double(tick))
-                    let moved = motion(r, seconds: stop - now)
+                    let moved = Profile.measure("w.motion") { motion(r, seconds: stop - now) }
                     now = moved.unused == 0 ? stop : now + moved.elapsed
                 }
             }
             for (id, until) in (r.maritime.retreating.isNull ? [] : r.maritime.retreating.objectEntries) where until.asNumber <= Double(tick) { r.maritime.retreating.delete(id) }
             r.clock.tick = JS(tick); r.forceClock.now = JS(tick)
-            afterTick?(r, tick == untilDay, boundary)
+            Profile.measure("w.afterTick") { afterTick?(r, tick == untilDay, boundary) }
             if !boundary { continue }
-            Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: Double(tick))
+            Profile.measure("w.frame") { Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: Double(tick)) }
         }
         return (volleys, r.clock.tick.asInt == untilDay)
     }

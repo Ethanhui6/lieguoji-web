@@ -24,25 +24,25 @@ public enum Session {
     static func afterTick(_ r: JS, _ dailyPending: Bool, _ boundary: Bool) {
         calendar(r, r.clock.tick.asInt)
         if !boundary { return }
-        if !dailyPending { finishPoliticalTick(r) }
-        ArmyOrders.issueBatch(r)
+        if !dailyPending { Profile.measure("t.finishPolitics") { finishPoliticalTick(r) } }
+        Profile.measure("t.orders") { ArmyOrders.issueBatch(r) }
     }
     /// advancePolitics47.
     public static func politics(_ r: JS, dayChanged: Bool) {
         Government.reconcileContinuity(r); Vassals.reconcileAlliances(r); Vassals.reconcileVassals(r)
         PeaceBridge.advance(r, monthStart: dayChanged); Government.reconcileContinuity(r)
         if dayChanged {
-            DiplomacyBridge.schedule(r) { id in
+            Profile.measure("p.schedule") { DiplomacyBridge.schedule(r) { id in
                 if let engine { DiplomacyBridge.evaluateAlliance(r, id, engine: engine); DiplomacyBridge.evaluateDeclaration(r, id, engine: engine) }
                 Rebellion.stateMonth(r, id)
                 if !r.nobility.isNull { Nobility.stateMonth(r, id) }
                 if !r.offices47.isNull { Offices.month(r, id) }
-            }
-            Vassals.advanceManager(r); Rebellion.advance(r)
-            if !r.nobility.isNull { Nobility.advance(r) }
+            } }
+            Profile.measure("p.vassals") { Vassals.advanceManager(r) }; Profile.measure("p.rebellion") { Rebellion.advance(r) }
+            if !r.nobility.isNull { Profile.measure("p.nobility") { Nobility.advance(r) } }
             Wars.reconcileLosses(r)
         }
-        DiplomacyBridge.reconcile(r); Government.recordReigns(r); Government.recordStateTraits(r)
+        Profile.measure("p.records") { DiplomacyBridge.reconcile(r); Government.recordReigns(r); Government.recordStateTraits(r) }
     }
     /// Advance `ticks` world ticks: military windows up to each day boundary, the daily settlement
     /// there, and the political step after every window.
@@ -53,9 +53,9 @@ public enum Session {
         Daily.dailyOrders = { r in if !r.armyBatch.isNull { r.armyAutonomy.lastDay = r.world.day.clone() } }
         while remaining > 0 {
             let take = min(remaining, 120 - r.clock.tick.asInt % 120)
-            let out = RunWindow.advance(r, ticks: take)
-            if out.dailyPending { Daily.settle(r) }
-            politics(r, dayChanged: out.dailyPending)
+            let out = Profile.measure("window") { RunWindow.advance(r, ticks: take) }
+            if out.dailyPending { Profile.measure("daily") { Daily.settle(r) } }
+            Profile.measure(out.dailyPending ? "politics.day" : "politics") { politics(r, dayChanged: out.dailyPending) }
             remaining -= take
         }
     }

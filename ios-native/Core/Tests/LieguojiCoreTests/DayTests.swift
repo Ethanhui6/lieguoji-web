@@ -22,7 +22,8 @@ final class DayTests: XCTestCase {
         for (k, v) in golden.homeCells.objectEntries { Armies.homeCells[k] = v.asInt }
         CombatReader.borders = golden.borders.asArray.map { $0.asArray.map(\.asInt) }
         RunWindow.afterOccupation = nil
-        defer { Session.uninstall() }
+        defer { Session.uninstall(); Profile.enabled = false; print(Profile.report.split(separator: "\n").map { "PROFILE " + $0 }.joined(separator: "\n")) }
+        Profile.reset(); Profile.enabled = true
         var input: JS?, failures = 0
         for (k, s) in golden.samples.asArray.enumerated() {
             if let previous = input { let next = previous.clone(); NobilityTests.apply(s.inputPatch, to: next); input = next } else { input = s.input }

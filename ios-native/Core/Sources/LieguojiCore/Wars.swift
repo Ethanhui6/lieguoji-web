@@ -79,7 +79,7 @@ public enum Wars {
     public static func diplomaticEndPairs(_ s: JS, _ c: JS) -> [(String, String)] { opposedPairs(s, c, currentOnly: !c.coalition.isNull) }
     public static func coversPair(_ c: JS, _ s: JS, _ a: String, _ b: String) -> Bool { opposedPairs(s, c).contains { [$0.0, $0.1].contains(a) && [$0.0, $0.1].contains(b) } }
     static func relation(_ r: JS, _ a: String, _ b: String) -> JS? {
-        r.world.statecraft.relations.asArray.first { [$0.a.asString, $0.b.asString].contains(a) && [$0.a.asString, $0.b.asString].contains(b) }
+        r.world.statecraft.relations.asArray.first { let x = $0.a.asString, y = $0.b.asString; return (x == a || y == a) && (x == b || y == b) }
     }
     /// registerWar46.
     @discardableResult

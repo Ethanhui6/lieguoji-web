@@ -281,7 +281,7 @@ public enum RunWindow {
         let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true) }
         Profile.measure("m.write") { for m in moving where before[m.id + (m.kind == .army ? "|a" : "|f")] != m.travel {
             let book = m.kind == .army ? r.armyPositions : r.fleetPositions
-            let t = book.records[m.id].clone(); bridge.write(m.travel, to: t); book.records[m.id] = t
+            let t = book.records[m.id].shallowClone(); bridge.write(m.travel, to: t); book.records[m.id] = t
         } }
         r.forceContacts.pairs = .array(out.contacts.map(ForceBridge.json))
         let space = Profile.measure("m.space") { Armies.space(r) }

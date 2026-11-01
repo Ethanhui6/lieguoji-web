@@ -21,6 +21,15 @@ public enum Daily {
         r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json))
         var eligible = Set<String>()
         let nations = r.world.nations.asArray.map(\.id.asString)
+        // Read once per frame: active sieges (province|besieger) and each state pair's war status.
+        var sieging = Set<String>()
+        for sg in r.occupation.sieges.asArray where sg.resistance.asNumber < sg.maximum.asNumber { sieging.insert(sg.provinceId.asString + "|" + sg.controller.asString) }
+        var warWith = [String: Bool]()
+        func war(_ a: String, _ b: String) -> Bool {
+            let k = a + "|" + b
+            if let v = warWith[k] { return v }
+            let v = Wars.relation(r, a, b)?.status.asString == "war"; warWith[k] = v; return v
+        }
         for force in forces where !force.withdrawing {
             let k = force.key
             if result.held.contains(k) { eligible.insert(k); continue }
@@ -28,8 +37,8 @@ public enum Daily {
             let cell = bridge.graph.location(force.travel).cell, q = Int(bridge.graph.provinces[cell])
             guard q >= 0 else { continue }
             let p = r.world.provinces[q], nation = nations[force.nation]
-            if Wars.relation(r, nation, p.controller.asString)?.status.asString == "war" && nation != p.controller.asString
-                || r.occupation.sieges.asArray.contains(where: { $0.provinceId.asString == p.id.asString && $0.controller.asString == nation && $0.resistance.asNumber < $0.maximum.asNumber }) {
+            let controller = p.controller.asString
+            if nation != controller && war(nation, controller) || sieging.contains(p.id.asString + "|" + nation) {
                 eligible.insert(k)
             }
         }

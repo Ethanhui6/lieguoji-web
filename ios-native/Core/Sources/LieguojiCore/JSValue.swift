@@ -87,6 +87,14 @@ public final class JS: CustomStringConvertible {
 
     // MARK: Copies and comparison
     /// structuredClone.
+    /// A new object/array sharing its children: enough when every field written is replaced whole.
+    public func shallowClone() -> JS {
+        switch storage {
+        case .array(let a): return JS(.array(a))
+        case .object(let o): return JS(.object(o))
+        default: return JS(storage)
+        }
+    }
     public func clone() -> JS {
         switch storage {
         case .array(let a): return JS(.array(a.map { $0.clone() }))

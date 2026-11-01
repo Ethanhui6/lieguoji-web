@@ -209,6 +209,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return from + d * t
     }
 
+    /// Where every icon is drawn right now (mid-glide included), for taps and troop labels.
+    func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
+        let t = tweenProgress()
+        return armySprites.map { s in let p = displayed(s, t); return (s, p.x, p.y) }
+    }
+
     func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>]) {
         if sprites != armySprites {
             let t = tweenProgress()

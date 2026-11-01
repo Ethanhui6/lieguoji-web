@@ -45,6 +45,8 @@ import LieguojiCore
     private(set) var worldRevision = 0
     /// How long army icons glide to their next positions (the play step interval).
     var tween: Double = 0.3
+    /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
+    var troopTexts: [String: String] = [:]
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     var onFleetTarget: ((Int) -> Void)?
@@ -93,6 +95,7 @@ struct MapView: UIViewRepresentable {
         private var renderer: MapRenderer?
         private var labels: MapLabelsView!
         private let effects = EffectsView()
+        private let troops = TroopLabelsView()
         private var shownEffects = MapEffects()
         private var shownRevision = -1
         private var shownViewLabels: [GroupLabel]?
@@ -139,6 +142,7 @@ struct MapView: UIViewRepresentable {
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
             effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
+            troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
             metrics.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             metrics.textColor = .white; metrics.backgroundColor = UIColor.black.withAlphaComponent(0.6)
             metrics.numberOfLines = 0; metrics.layer.cornerRadius = 8; metrics.layer.masksToBounds = true
@@ -187,7 +191,13 @@ struct MapView: UIViewRepresentable {
             renderer.camera = c.clamped(map: mapSize, viewport: viewport)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
             effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
+            updateTroops()
             mtk.setNeedsDisplay()
+        }
+        private func updateTroops() {
+            guard let renderer else { return }
+            troops.texts = controller.troopTexts
+            troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size)
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
 
@@ -273,12 +283,12 @@ struct MapView: UIViewRepresentable {
                 return
             }
             // An army icon under the finger (14 points) takes the tap before the province.
-            if let armies = controller.armies {
+            if controller.armies != nil, let placed = renderer?.placedSprites() {
                 var best: (army: Int, d: Double)?
-                for a in armies where a.army > -100_000 {
+                for a in placed where a.sprite.army > -100_000 {
                     let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport)
                     let d = hypot(s.x - Double(p.x), s.y - Double(p.y))
-                    if d < 14, best == nil || d < best!.d { best = (a.army, d) }
+                    if d < 16, best == nil || d < best!.d { best = (a.sprite.army, d) }
                 }
                 if let best { selection.selectionChanged(); if best.army < 0 { controller.selectedFleet = -best.army - 1 } else { controller.selectedArmy = best.army }; return }
             }
@@ -314,6 +324,7 @@ struct MapView: UIViewRepresentable {
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
             } else if renderer?.isAnimating == true {
                 velocity = .zero
+                updateTroops()
                 mtk.setNeedsDisplay()
             } else {
                 velocity = .zero
@@ -347,6 +358,7 @@ struct MapView: UIViewRepresentable {
                 renderer?.tweenDuration = controller.tween
                 renderer?.tweenEase = controller.tween <= 0.3
                 renderer?.setArmies(armies, route: controller.route)
+                updateTroops()
                 if renderer?.isAnimating == true { startLink() }
             }
             if controller.viewLabels != shownViewLabels {
@@ -530,5 +542,49 @@ final class MapLabelsView: UIView {
             l.view.center = CGPoint(x: p.x, y: p.y)
             l.view.isHidden = false
         }
+    }
+}
+
+/// Troop and ship counts under the icons once the map is zoomed in (the original shows unit
+/// strength up close); they follow the icons while they glide.
+final class TroopLabelsView: UIView {
+    var texts: [String: String] = [:]
+    private var layers = [String: CATextLayer]()
+    private static let font = UIFont(name: "TW-Kai-98_1", size: 10) ?? .systemFont(ofSize: 10, weight: .semibold)
+    override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
+        let vp = (width: Double(viewport.width), height: Double(viewport.height))
+        // Icon size on screen (the renderer's icon size in map units × scale).
+        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * camera.scale
+        var seen = Set<String>()
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        if icon >= 20 {
+            for p in placed where p.sprite.army > -100_000 {
+                guard let text = texts[p.sprite.key] else { continue }
+                let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
+                guard s.x > -40, s.y > -40, s.x < vp.width + 40, s.y < vp.height + 40 else { continue }
+                let l = layers[p.sprite.key] ?? make(p.sprite.key)
+                if (l.string as? String) != text {
+                    l.string = text
+                    let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 8
+                    l.bounds = CGRect(x: 0, y: 0, width: w, height: 14)
+                }
+                l.position = CGPoint(x: s.x, y: s.y + icon * 0.5 + 6)
+                seen.insert(p.sprite.key)
+            }
+        }
+        for (k, l) in layers where !seen.contains(k) { l.removeFromSuperlayer(); layers[k] = nil }
+        CATransaction.commit()
+    }
+    private func make(_ key: String) -> CATextLayer {
+        let l = CATextLayer()
+        l.font = Self.font; l.fontSize = 10; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
+        l.foregroundColor = UIColor(white: 0.1, alpha: 1).cgColor
+        l.backgroundColor = UIColor(red: 0.984, green: 0.972, blue: 0.945, alpha: 0.88).cgColor
+        l.cornerRadius = 3; l.borderWidth = 0.5; l.borderColor = UIColor(white: 0, alpha: 0.2).cgColor
+        layer.addSublayer(l); layers[key] = l
+        return l
     }
 }

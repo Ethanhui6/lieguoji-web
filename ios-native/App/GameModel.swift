@@ -429,6 +429,10 @@ import LieguojiCore
         for (i, f) in (state.fleets ?? []).enumerated() {
             sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id))
         }
+        var texts = [String: String]()
+        for a in state.armies { texts[a.id] = Names.wan(a.troops) }
+        for f in state.fleets ?? [] { texts[f.id] = "\(f.ships)船" }
+        controller.troopTexts = texts
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id

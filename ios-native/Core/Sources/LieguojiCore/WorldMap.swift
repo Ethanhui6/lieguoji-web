@@ -95,6 +95,9 @@ public struct WorldMeta: Codable, Sendable {
         /// State-line colour (ColorUtils.AdjustColor of the nation colour, fmsStateLineColor).
         public let line: String
         public let capital: Int; public let culture: String; public let polity: String; public let religion: String
+        public init(id: String, name: String, color: String, line: String, capital: Int, culture: String, polity: String, religion: String) {
+            self.id = id; self.name = name; self.color = color; self.line = line; self.capital = capital; self.culture = culture; self.polity = polity; self.religion = religion
+        }
     }
     /// LabelUtility name box of a nation, map units; font size between fontMin and fontMax.
     public struct LabelBox: Codable, Sendable, Equatable { public let nation: Int; public let x: Float; public let y: Float; public let width: Float; public let height: Float; public let fontMax: Float; public let fontMin: Float }

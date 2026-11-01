@@ -6,6 +6,8 @@ import LieguojiCore
 /// State shared between SwiftUI panels and the Metal map.
 @MainActor final class MapController: ObservableObject {
     @Published var mode: MapMode = .political
+    /// The selected state's relations on the map (StateRelationsHighlighter): nation → 0xRRGGBB.
+    @Published var relations: [Int: UInt32] = [:]
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
     /// Province to fly to; the id makes repeated requests for the same province animate again.
@@ -257,7 +259,7 @@ struct MapView: UIViewRepresentable {
             labels?.alpha = controller.reveal >= 1 ? 1 : 0
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
-            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince)
+            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) })
             if let armies = controller.armies {
                 renderer?.setArmies(armies, route: controller.route)
                 if renderer?.isAnimating == true { startLink() }

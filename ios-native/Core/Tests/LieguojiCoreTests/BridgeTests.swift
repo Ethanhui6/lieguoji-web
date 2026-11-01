@@ -23,5 +23,16 @@ final class BridgeTests: XCTestCase {
         if let d = r.difference(expected) { XCTFail(d) }
         let state = try JSONSerialization.jsonObject(with: engine.state(includeLabels: false)) as? [String: Any]
         XCTAssertEqual(state?["day"] as? Int, expected.world.day.asInt)
+        // The nation panel and the state-level actions run on the live run.
+        for i in 0..<engine.run.world.nations.length { XCTAssertNotNil(try JSONSerialization.jsonObject(with: XCTUnwrap(engine.nationInfo(i)))) }
+        let a = (0..<engine.run.world.nations.length).filter { Vassals.alive(engine.run, engine.run.world.nations[$0].id.asString) }
+        XCTAssertTrue(engine.alliance(a[0], with: a[1]).ok)
+        XCTAssertNotNil(Vassals.allianceOf(engine.run, engine.run.world.nations[a[0]].id.asString))
+        XCTAssertFalse(engine.alliance(a[0], with: a[1]).ok)
+        XCTAssertTrue(engine.alliance(a[0], with: -1).ok)
+        XCTAssertTrue(engine.setAutoDiplomacy(a[0], enabled: false).ok)
+        XCTAssertFalse(engine.setAutoDiplomacy(a[0], enabled: false).ok)
+        engine.advance(days: 3)
+        XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }
 }

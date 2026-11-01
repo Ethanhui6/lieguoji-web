@@ -26,6 +26,21 @@ extension NativeEngine {
         return (polygon.map(\.0).reduce(0, +) / Double(polygon.count), polygon.map(\.1).reduce(0, +) / Double(polygon.count))
     }
 
+    /// state-line fmsStateLineColor: AdjustColor(AdjustColor(colour, +0.1 s, −0.05 v), +0.2 s, −0.2 v).
+    static func stateLineColor(_ css: String) -> String {
+        let v = Int(css.dropFirst(), radix: 16) ?? 0x999999
+        func adjust(_ c: (Double, Double, Double), _ ds: Double, _ dv: Double) -> (Double, Double, Double) {
+            let (r, g, b) = c, mx = max(r, g, b), mn = min(r, g, b), d = mx - mn
+            var h = 0.0
+            if d > 0 { h = mx == r ? ((g - b) / d) / 6 : mx == g ? (2 + (b - r) / d) / 6 : (4 + (r - g) / d) / 6; if h < 0 { h += 1 } }
+            let s = min(1, max(0, (mx > 0 ? d / mx : 0) + ds)), val = min(1, max(0, mx - dv))
+            let sector = h * 6, i = Int(sector.rounded(.down)) % 6, f = sector - sector.rounded(.down)
+            let p = val * (1 - s), q = val * (1 - s * f), t = val * (1 - s * (1 - f))
+            return [(val, t, p), (q, val, p), (p, val, t), (p, q, val), (t, p, val), (val, p, q)][i]
+        }
+        let c = adjust(adjust((Double(v >> 16 & 255) / 255, Double(v >> 8 & 255) / 255, Double(v & 255) / 255), 0.1, 0.05), 0.2, 0.2)
+        return String(format: "#%02x%02x%02x", Int((c.0 * 255).rounded()), Int((c.1 * 255).rounded()), Int((c.2 * 255).rounded()))
+    }
     /// original-labels47 stateLabelBoxes47 over the label grid of the statics (cell → land province).
     func labels(_ owners: [Int]) -> JS {
         let grid = statics.labelGrid
@@ -71,6 +86,11 @@ extension NativeEngine {
         o.nations = .array(nations.map { n in
             let id = n.id.asString, own = provinces.filter { $0.controller.asString == id }, ownIds = Set(own.map(\.id.asString))
             let x = JS.object()
+            // Identity for the map legend: states founded during play are not in the opening map.
+            let civ = r.civilization.nations[id], color = n.color.optionalString ?? "#999999"
+            x.id = n.id; x.name = n.name; x.color = JS(color); x.line = JS(Self.stateLineColor(color))
+            x.capital = JS(w.cities.asArray.firstIndex { $0.id.optionalString == n.capitalId.optionalString } ?? -1)
+            x.culture = JS(civ.cultureId.optionalString ?? ""); x.polity = JS(civ.polity.optionalString ?? ""); x.religion = JS(civ.religionId.optionalString ?? "")
             x.provinces = JS(own.count); x.cities = JS(w.cities.asArray.filter { ownIds.contains($0.provinceId.asString) }.count)
             x.population = JS(own.reduce(0.0) { $0 + (stock[$1.id.asString]?.population.optionalNumber ?? 0) })
             x.grain = JS(own.reduce(0.0) { $0 + (stock[$1.id.asString]?.grain.optionalNumber ?? 0) })

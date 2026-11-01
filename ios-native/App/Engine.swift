@@ -67,6 +67,9 @@ struct EngineView: UIViewRepresentable {
 struct GameState: Decodable, Equatable {
     struct Date: Decodable, Equatable { let year: Int; let month: Int; let day: Int }
     struct Nation: Decodable, Equatable {
+        /// Identity (Swift engine): states founded in play extend the opening map's legend.
+        var id: String? = nil; var name: String? = nil; var color: String? = nil; var line: String? = nil
+        var capital: Int? = nil; var culture: String? = nil; var polity: String? = nil; var religion: String? = nil
         let provinces: Int; let cities: Int; let population: Int; let grain: Double; let troops: Int; let gold: Double; let destiny: Double
         let enemies: [Int]; let alive: Bool
     }

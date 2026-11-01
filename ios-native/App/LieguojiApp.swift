@@ -264,11 +264,12 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), nations, military, diplomacy, chronicle, menu
+    case province(Int), army(Int), nation(Int), nations, military, diplomacy, chronicle, menu
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
+        case .nation(let n): return "n\(n)"
         case .nations: return "nations"
         case .military: return "military"
         case .diplomacy: return "diplomacy"
@@ -341,14 +342,17 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(model: model, province: p).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in self.panel = .nation(n) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
             ArmySheet(model: model, army: a, onMarch: {
                 controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
             }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } })
             .presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .nation(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
+                .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nations:
-            NationsSheet(model: model) { province in self.panel = nil; controller.fly(to: province) }.presentationDetents([.medium, .large])
+            NationsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(model: model) { army in
                 self.panel = nil
@@ -518,6 +522,7 @@ struct NationChip: View {
 struct ProvinceSheet: View {
     @ObservedObject var model: GameModel
     let province: Int
+    var openNation: (Int) -> Void = { _ in }
     @State private var info: ProvinceInfo?
     var body: some View {
         if let map = model.map {
@@ -535,7 +540,14 @@ struct ProvinceSheet: View {
                             Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
                             if info.owner != info.controller, info.owner >= 0 { Row(label: "法理归属", value: map.meta.nations[info.owner].name); Divider2() }
                         }
-                        if let n = nation { Row(label: "政体", value: Names.polity[n.polity] ?? n.polity); Divider2(); Row(label: "文化", value: Names.culture[n.culture] ?? n.culture) }
+                        if let n = nation {
+                            Row(label: "政体", value: Names.polity[n.polity] ?? n.polity); Divider2(); Row(label: "文化", value: Names.culture[n.culture] ?? n.culture); Divider2()
+                            Button { openNation(owner) } label: {
+                                HStack { Text("国家详情").foregroundStyle(Theme.ink); Spacer(); Text(n.name).foregroundStyle(Theme.ink2); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }
+                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.horizontal, 16)
                     if let siege = model.state?.sieges.first(where: { $0.province == province }) {
@@ -623,10 +635,7 @@ struct NationsSheet: View {
                     Group2 {
                         ForEach(order, id: \.self) { i in
                             let n = map.meta.nations[i], s = state.nations[i]
-                            Button {
-                                let capital = n.capital >= 0 ? map.meta.cities[n.capital].province : nil
-                                if let target = capital ?? state.owners.firstIndex(of: i) { select(target) }
-                            } label: {
+                            Button { select(i) } label: {
                                 HStack(spacing: 12) {
                                     RoundedRectangle(cornerRadius: 5).fill(Names.color(n.color)).frame(width: 22, height: 22)
                                     VStack(alignment: .leading, spacing: 3) {

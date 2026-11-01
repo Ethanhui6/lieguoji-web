@@ -215,6 +215,17 @@ import LieguojiCore
             world.meta.provinces[i].nation = owner; changed = true
         }
         if let labels = next.labels { world.meta.labels = labels; changed = true }
+        // States founded by rebellion or civil war, and renamed states, join the legend.
+        var legend = false
+        for (i, s) in next.nations.enumerated() {
+            guard let id = s.id, let name = s.name, let color = s.color else { continue }
+            let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
+            if i < world.meta.nations.count {
+                let old = world.meta.nations[i]
+                if old.name != name || old.color != color || old.polity != entry.polity || old.capital != entry.capital { world.meta.nations[i] = entry; legend = true }
+            } else { world.meta.nations.append(entry); legend = true }
+        }
+        if legend { changed = true; map?.meta.nations = world.meta.nations }
         if changed { controller.world = world }
         refreshArmies()
         refreshEffects(previous: previous)
@@ -324,6 +335,15 @@ import LieguojiCore
         if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
         return result.ok ? nil : result.reason
     }
+
+    func nationInfo(_ index: Int) async -> NationInfo? {
+        guard state != nil, let data = await native.nationInfo(index) else { return nil }
+        return try? JSONDecoder().decode(NationInfo.self, from: data)
+    }
+    /// Alliance with another state, or leaving the current one (b < 0).
+    func alliance(_ a: Int, with b: Int) async -> String? { finish(await native.alliance(a, with: b)) }
+    func releaseVassal(_ n: Int) async -> String? { finish(await native.releaseVassal(n)) }
+    func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
         guard state != nil, let data = await native.province(index) else { return nil }

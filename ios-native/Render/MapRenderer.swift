@@ -32,7 +32,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
     private(set) var map: WorldMap
-    private let nationColors: [RGB]
+    private var nationColors: [RGB]
+    private var tint: [Int: RGB] = [:]
     var camera: MapCamera
     var onDraw: ((CFTimeInterval) -> Void)?
     private(set) var mode: MapMode = .political
@@ -127,6 +128,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
         map = next
+        nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         recolor()
         outlineGeneration += 1
         let generation = outlineGeneration
@@ -149,7 +151,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setReveal(_ t: Float) { reveal = max(0, min(1, t)); recolor() }
 
     private func recolor() {
-        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight)
+        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint)
         if reveal < 1 {
             let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
             let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.6), wash = max(0, (reveal - 0.6) / 0.4)
@@ -238,9 +240,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Recolours the land (view mode or selected province highlight).
-    func setAppearance(mode: MapMode, highlight: Int?) {
-        guard mode != self.mode || highlight != self.highlight else { return }
-        self.mode = mode; self.highlight = highlight
+    func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:]) {
+        guard mode != self.mode || highlight != self.highlight || tint != self.tint else { return }
+        self.mode = mode; self.highlight = highlight; self.tint = tint
         recolor()
     }
 

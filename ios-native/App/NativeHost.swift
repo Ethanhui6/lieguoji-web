@@ -54,6 +54,14 @@ actor NativeHost {
         return (out.ok, out.reason, out.ok ? state() : nil)
     }
     func province(_ index: Int) -> Data? { engine?.province(index) }
+    func nationInfo(_ index: Int) -> Data? { engine?.nationInfo(index) }
+    private func command(_ out: (ok: Bool, reason: String)?) -> (ok: Bool, reason: String, state: Data?) {
+        guard let out else { return (false, "世界尚未载入。", nil) }
+        return (out.ok, out.reason, out.ok ? state() : nil)
+    }
+    func alliance(_ a: Int, with b: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.alliance(a, with: b)) }
+    func releaseVassal(_ n: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.releaseVassal(n)) }
+    func setAutoDiplomacy(_ n: Int, _ enabled: Bool) -> (ok: Bool, reason: String, state: Data?) { command(engine?.setAutoDiplomacy(n, enabled: enabled)) }
     func route(armyId: String) -> [[Double]] { engine?.route(armyId: armyId) ?? [] }
     func save() -> Data? { engine?.save() }
 }
